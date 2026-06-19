@@ -61,6 +61,12 @@ services:
       - ./backend:/app
       - scan_data:/tmp/scans
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   worker_ip:
     build:
@@ -80,11 +86,18 @@ services:
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
       NVD_API_KEY: ${NVD_API_KEY:-}
+      CELERY_QUEUE: ip_scan
+      CELERY_CONCURRENCY: 2
     volumes:
       - ./workers:/app
       - ./backend:/backend
       - scan_data:/tmp/scans
-    command: celery -A celery_app worker -Q ip_scan --concurrency=2 --loglevel=info
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
 
   worker_domain:
     build:
@@ -103,10 +116,17 @@ services:
       CELERY_BROKER_URL: ${CELERY_BROKER_URL}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
+      CELERY_QUEUE: domain_scan
+      CELERY_CONCURRENCY: 2
     volumes:
       - ./workers:/app
       - ./backend:/backend
-    command: celery -A celery_app worker -Q domain_scan --concurrency=2 --loglevel=info
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
 
   worker_mobile:
     build:
@@ -125,11 +145,18 @@ services:
       CELERY_BROKER_URL: ${CELERY_BROKER_URL}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
+      CELERY_QUEUE: mobile_scan
+      CELERY_CONCURRENCY: 1
     volumes:
       - ./workers:/app
       - ./backend:/backend
       - scan_data:/tmp/scans
-    command: celery -A celery_app worker -Q mobile_scan --concurrency=1 --loglevel=info
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
 
   frontend:
     build:
@@ -149,6 +176,12 @@ services:
       - ./frontend:/app
       - /app/node_modules
     command: npm run dev -- --host 0.0.0.0
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:5173"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   nginx:
     build:
@@ -158,9 +191,22 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
     depends_on:
-      - frontend
-      - backend
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 volumes:
   postgres_data:

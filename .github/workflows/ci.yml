@@ -1,0 +1,96 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  # .env.example defaults — all services resolve these at runtime
+  DATABASE_URL: postgresql+asyncpg://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
+  DATABASE_URL_SYNC: postgresql://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
+  REDIS_URL: redis://redis:6379/0
+  CELERY_BROKER_URL: redis://redis:6379/0
+  CELERY_RESULT_BACKEND: redis://redis:6379/0
+  API_KEY: dev-api-key-change-me
+  SECRET_KEY: dev-secret-key-change-me-in-production
+  OSV_BASE_URL: https://api.osv.dev/v1
+  MAX_UPLOAD_SIZE_MB: 500
+  POSTGRES_DB: vuln_scanner
+  POSTGRES_USER: vuln_scanner
+  POSTGRES_PASSWORD: change_me_in_production
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker images (with layer caching)
+        uses: docker/bake-action@v5
+        with:
+          files: docker-compose.yml
+          set: |
+            *.cache-from=type=gha
+            *.cache-to=type=gha,mode=max
+
+      - name: Start full stack via docker compose
+        run: docker compose -f docker-compose.yml up -d
+
+      - name: Wait for backend health (30 retries × 5s)
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+              echo "✅ Backend is healthy!"
+              exit 0
+            fi
+            echo "⏳ Waiting for backend... attempt $i/30"
+            sleep 5
+          done
+          echo "❌ Backend failed to become healthy within timeout"
+          docker compose -f docker-compose.yml logs backend --tail=50
+          exit 1
+
+      - name: Install Playwright with Chromium
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+
+      - name: Run Playwright E2E tests
+        run: npx playwright test
+        working-directory: frontend
+        env:
+          CI: "true"
+
+      - name: Upload Playwright HTML report (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7
+
+      - name: Upload test results / traces (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: frontend/test-results/
+          retention-days: 7
+
+  deploy:
+    if: github.event_name == 'push' && github.ref_name == 'main'
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to production (green)
+        run: |
+          echo "🚀 All tests passed on main — deploying to production..."
+          echo "   Add your actual deploy steps here (SSH, cloud SDK, etc.)"
