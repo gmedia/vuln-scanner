@@ -14,61 +14,47 @@ test.describe("Scan Detail Page", () => {
     await expect(page).toHaveURL("/");
   });
 
-  test("completed scan shows all sections", async ({ page }) => {
+  async function getFirstCompletedScanHref(page: any): Promise<string | null> {
     await page.goto("/");
-    await page.waitForTimeout(2000);
-    // Find first completed scan with findings
-    const scanLink = page.locator("a[href^='/scan/']").filter({ hasText: "completed" }).first();
-    const href = await scanLink.getAttribute("href");
-    if (href) {
-      await page.goto(href);
-      await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({ timeout: 15_000 });
+    // Wait for scan history to load
+    await page.waitForSelector("a[href^='/scan/']", { timeout: 10_000 });
+    const links = await page.locator("a[href^='/scan/']").all();
+    for (const link of links) {
+      const href = await link.getAttribute("href");
+      if (href) return href;
     }
+    return null;
+  }
+
+  test("completed scan shows all sections", async ({ page }) => {
+    const href = await getFirstCompletedScanHref(page);
+    await page.goto(href!);
+    await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({ timeout: 15_000 });
   });
 
   test("scan detail shows severity chart", async ({ page }) => {
-    await page.goto("/");
-    await page.waitForTimeout(2000);
-    const scanLink = page.locator("a[href^='/scan/']").filter({ hasText: "completed" }).first();
-    const href = await scanLink.getAttribute("href");
-    if (href) {
-      await page.goto(href);
-      await expect(page.locator("h3:has-text('SEVERITY')")).toBeVisible({ timeout: 15_000 });
-    }
+    const href = await getFirstCompletedScanHref(page);
+    await page.goto(href!);
+    await expect(page.locator("h3:has-text('SEVERITY')")).toBeVisible({ timeout: 15_000 });
   });
 
   test("scan detail shows findings table headers", async ({ page }) => {
-    await page.goto("/");
-    await page.waitForTimeout(2000);
-    const scanLink = page.locator("a[href^='/scan/']").filter({ hasText: "completed" }).first();
-    const href = await scanLink.getAttribute("href");
-    if (href) {
-      await page.goto(href);
-      await expect(page.locator("h3:has-text('FINDINGS')")).toBeVisible({ timeout: 15_000 });
-    }
+    const href = await getFirstCompletedScanHref(page);
+    await page.goto(href!);
+    await expect(page.locator("h3:has-text('FINDINGS')")).toBeVisible({ timeout: 15_000 });
   });
 
   test("scan info section shows metadata", async ({ page }) => {
-    await page.goto("/");
-    await page.waitForTimeout(2000);
-    const scanLink = page.locator("a[href^='/scan/']").filter({ hasText: "completed" }).first();
-    const href = await scanLink.getAttribute("href");
-    if (href) {
-      await page.goto(href);
-      await expect(page.locator("h3:has-text('SCAN INFO')")).toBeVisible({ timeout: 15_000 });
-    }
+    const href = await getFirstCompletedScanHref(page);
+    await page.goto(href!);
+    await expect(page.locator("h3:has-text('SCAN INFO')")).toBeVisible({ timeout: 15_000 });
   });
 
   test("back arrow navigates to dashboard", async ({ page }) => {
-    await page.goto("/");
-    await page.waitForTimeout(2000);
-    const scanLink = page.locator("a[href^='/scan/']").filter({ hasText: "completed" }).first();
-    const href = await scanLink.getAttribute("href");
-    if (href) {
-      await page.goto(href);
-      await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({ timeout: 15_000 });
-      await page.locator("a[href='/']").first().click();
-      await expect(page).toHaveURL("/");
-    }
+    const href = await getFirstCompletedScanHref(page);
+    await page.goto(href!);
+    await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({ timeout: 15_000 });
+    await page.locator("a[href='/']").first().click();
+    await expect(page).toHaveURL("/");
   });
 });
