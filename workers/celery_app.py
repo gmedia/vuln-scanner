@@ -1,0 +1,33 @@
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
+
+from celery import Celery
+
+celery_app = Celery(
+    "vuln_scanner",
+    broker=os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0"),
+    backend=os.getenv("CELERY_RESULT_BACKEND", "redis://redis:6379/0"),
+)
+
+celery_app.conf.update(
+    task_serializer="json",
+    accept_content=["json"],
+    result_serializer="json",
+    timezone="UTC",
+    enable_utc=True,
+    task_track_started=True,
+    task_soft_time_limit=600,
+    task_time_limit=900,
+    worker_prefetch_multiplier=1,
+    task_acks_late=True,
+    task_routes={
+        "ip_scan.run": {"queue": "ip_scan"},
+        "domain_scan.run": {"queue": "domain_scan"},
+        "mobile_scan.run": {"queue": "mobile_scan"},
+    },
+)
+
+celery_app.autodiscover_tasks(["tasks.ip_scan", "tasks.domain_scan", "tasks.mobile_scan"])
