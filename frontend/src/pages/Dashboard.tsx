@@ -1,19 +1,67 @@
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Radar, Globe, Smartphone, Crosshair, AlertTriangle, ArrowRight, Clock } from "lucide-react";
+import { Radar, Globe, Smartphone, Crosshair, AlertTriangle, ArrowRight, Clock, ChevronDown, Loader2 } from "lucide-react";
 import { useScanHistory } from "@/hooks/useScan";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { Separator } from "@/components/ui/Separator";
+import {
+  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
+} from "@/components/ui/Select";
 import { SCAN_TYPE_LABELS } from "@/lib/constants";
 import type { ScanJob } from "@/api/scans";
 import { cn } from "@/lib/utils";
 
-function Dashboard() {
-  const { data: history, isLoading } = useScanHistory(1, 10);
+const PAGE_LIMIT = 20;
 
-  const scans = history?.items ?? [];
+const FILTER_OPTIONS = [
+  { value: "", label: "All Types" },
+  { value: "ip", label: "IP Address" },
+  { value: "domain", label: "Domain" },
+  { value: "apk", label: "APK" },
+  { value: "ipa", label: "IPA" },
+] as const;
+
+function Dashboard() {
+  const [filter, setFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState<ScanJob[][]>([]);
+  const [allLoaded, setAllLoaded] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const { data: pageData, isLoading, isFetching } = useScanHistory(
+    page,
+    PAGE_LIMIT,
+    filter || undefined,
+  );
+
+  const prevFilter = useRef(filter);
+  useEffect(() => {
+    if (prevFilter.current !== filter) {
+      setPage(1);
+      setPages([]);
+      setAllLoaded(false);
+      prevFilter.current = filter;
+    }
+  }, [filter]);
+
+  useEffect(() => {
+    if (!pageData || isFetching) return;
+    if (pageData.page !== page) return;
+
+    setPages((prev) => {
+      if (prev.length >= page) return prev;
+      const next = [...prev, pageData.items];
+      if (next.length * PAGE_LIMIT >= pageData.total) {
+        setAllLoaded(true);
+      }
+      return next;
+    });
+    setLoadingMore(false);
+  }, [pageData, isFetching, page]);
+
+  const scans = pages.flat();
 
   const totals = scans.reduce(
     (acc, s) => {
@@ -30,7 +78,14 @@ function Dashboard() {
     { total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 },
   );
 
-  const totalScans = history?.total ?? scans.length;
+  const totalScans = pageData?.total ?? scans.length;
+
+  const handleLoadMore = useCallback(() => {
+    setPage((p) => p + 1);
+    setLoadingMore(true);
+  }, []);
+
+  const isFirstLoad = isLoading && pages.length === 0;
 
   const quickActions = [
     {
@@ -63,25 +118,25 @@ function Dashboard() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total Scans" value={totalScans} isLoading={isLoading} />
+        <StatCard label="Total Scans" value={totalScans} isLoading={isFirstLoad} />
         <StatCard
           label="Critical"
           value={totals.critical}
-          isLoading={isLoading}
+          isLoading={isFirstLoad}
           className="border-red-600/30"
           valueClassName="text-red-400"
         />
         <StatCard
           label="High"
           value={totals.high}
-          isLoading={isLoading}
+          isLoading={isFirstLoad}
           className="border-orange-500/30"
           valueClassName="text-orange-400"
         />
         <StatCard
           label="Medium"
           value={totals.medium}
-          isLoading={isLoading}
+          isLoading={isFirstLoad}
           className="border-yellow-500/30"
           valueClassName="text-yellow-400"
         />
@@ -89,18 +144,32 @@ function Dashboard() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2 flex flex-col">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="font-mono text-sm tracking-wide">
-              RECENT SCANS
+          <CardHeader className="flex flex-row items-center justify-between gap-4">
+            <CardTitle className="font-mono text-sm tracking-wide shrink-0">
+              SCAN HISTORY
             </CardTitle>
-            {totalScans > 0 && (
-              <span className="font-mono text-xs text-muted-foreground">
-                {totalScans} total
-              </span>
-            )}
+            <div className="flex items-center gap-3">
+              <Select value={filter} onValueChange={(v) => setFilter(v === "" ? "" : v)}>
+                <SelectTrigger className="h-7 w-[130px] text-[11px]">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  {FILTER_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value} className="text-[11px]">
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {totalScans > 0 && (
+                <span className="font-mono text-[10px] text-muted-foreground shrink-0">
+                  {totalScans} total
+                </span>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="flex-1">
-            {isLoading ? (
+            {isFirstLoad ? (
               <div className="space-y-3">
                 {Array.from({ length: 4 }).map((_, i) => (
                   <Skeleton key={i} className="h-14 w-full" />
@@ -115,7 +184,9 @@ function Dashboard() {
                   No scans yet
                 </p>
                 <p className="mb-4 font-mono text-xs text-muted-foreground">
-                  Start your first vulnerability scan.
+                  {filter
+                    ? `No ${SCAN_TYPE_LABELS[filter]?.toLowerCase() ?? filter} scans found.`
+                    : "Start your first vulnerability scan."}
                 </p>
               </div>
             ) : (
@@ -155,6 +226,30 @@ function Dashboard() {
                     <ArrowRight className="ml-2 h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
                   </Link>
                 ))}
+              </div>
+            )}
+
+            {!isFirstLoad && scans.length > 0 && !allLoaded && (
+              <div className="mt-4 flex justify-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLoadMore}
+                  disabled={loadingMore || isFetching}
+                  className="font-mono text-xs"
+                >
+                  {loadingMore || isFetching ? (
+                    <>
+                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="mr-2 h-3 w-3" />
+                      Load More
+                    </>
+                  )}
+                </Button>
               </div>
             )}
           </CardContent>
