@@ -114,6 +114,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Deploy to production
-        run: |
-          echo "All tests passed on main — deploying to production..."
-          echo "Add deploy steps here (SSH, cloud SDK, etc.)"
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}
+            git pull origin main
+            docker compose down
+            docker compose up -d --build
+            echo "Waiting for services to be healthy..."
+            sleep 15
+            curl -sf http://localhost:8000/health || (echo "Health check FAILED" && docker compose logs backend --tail=30 && exit 1)
+            echo "Deploy completed successfully"
