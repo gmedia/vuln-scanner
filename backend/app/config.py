@@ -11,8 +11,6 @@ class Settings(BaseSettings):
     api_key: str = "dev-api-key-change-me"
     secret_key: str = "dev-secret-key"
     osv_base_url: str = "https://api.osv.dev/v1"
-    nvd_api_key: str = ""
-    mobsf_url: str = ""
     max_upload_size_mb: int = 500
 
     class Config:

@@ -1,24 +1,55 @@
 import os
 import json
+import hashlib
 import httpx
+import redis
 from typing import Any
 
 
 OSV_BASE_URL = os.getenv("OSV_BASE_URL", "https://api.osv.dev/v1")
-NVD_API_KEY = os.getenv("NVD_API_KEY", "")
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+CVE_CACHE_TTL = int(os.getenv("CVE_CACHE_TTL", "3600"))
 
 
-async def query_osv(package_name: str, version: str) -> list[dict[str, Any]]:
+def _cache_key(package_name: str, ecosystem: str, version: str) -> str:
+    raw = f"{ecosystem}:{package_name}:{version}"
+    return f"cve_cache:{hashlib.sha256(raw.encode()).hexdigest()}"
+
+
+def _get_cached_vulns(package_name: str, ecosystem: str, version: str) -> list[dict] | None:
+    try:
+        r = redis.Redis.from_url(REDIS_URL)
+        data = r.get(_cache_key(package_name, ecosystem, version))
+        if data:
+            return json.loads(data)
+    except Exception:
+        pass
+    return None
+
+
+def _set_cached_vulns(package_name: str, ecosystem: str, version: str, vulns: list[dict]) -> None:
+    try:
+        r = redis.Redis.from_url(REDIS_URL)
+        r.setex(_cache_key(package_name, ecosystem, version), CVE_CACHE_TTL, json.dumps(vulns))
+    except Exception:
+        pass
+
+
+async def _query_ecosystem(package_name: str, ecosystem: str, version: str) -> list[dict[str, Any]]:
+    cached = _get_cached_vulns(package_name, ecosystem, version)
+    if cached is not None:
+        return cached
     payload = {
-        "package": {"name": package_name, "ecosystem": "Debian"},
+        "package": {"name": package_name, "ecosystem": ecosystem},
         "version": version,
     }
     try:
-        async with httpx.AsyncClient(timeout=15) as client:
+        async with httpx.AsyncClient(timeout=10) as client:
             resp = await client.post(f"{OSV_BASE_URL}/query", json=payload)
             if resp.status_code == 200:
-                data = resp.json()
-                return data.get("vulns", [])
+                vulns = resp.json().get("vulns", [])
+                _set_cached_vulns(package_name, ecosystem, version, vulns)
+                return vulns
             return []
     except Exception:
         return []
@@ -29,18 +60,8 @@ async def query_osv_ecosystems(package_name: str, version: str) -> list[dict[str
     all_vulns = []
 
     for ecosystem in ecosystems:
-        payload = {
-            "package": {"name": package_name, "ecosystem": ecosystem},
-            "version": version,
-        }
-        try:
-            async with httpx.AsyncClient(timeout=10) as client:
-                resp = await client.post(f"{OSV_BASE_URL}/query", json=payload)
-                if resp.status_code == 200:
-                    vulns = resp.json().get("vulns", [])
-                    all_vulns.extend(vulns)
-        except Exception:
-            continue
+        vulns = await _query_ecosystem(package_name, ecosystem, version)
+        all_vulns.extend(vulns)
 
     return all_vulns
 
@@ -76,6 +97,23 @@ def extract_cvss(vuln: dict[str, Any]) -> float | None:
     return None
 
 
+def _extract_remediation(vuln: dict[str, Any]) -> str | None:
+    parts = []
+    db_specific = vuln.get("database_specific") or {}
+    fixed = db_specific.get("fixed_version") or db_specific.get("fixed")
+    if fixed:
+        parts.append(f"Upgrade to version {fixed} or later")
+    refs = vuln.get("references") or []
+    fix_urls = [r["url"] for r in refs if r.get("type") == "FIX" and r.get("url")]
+    if fix_urls:
+        parts.append("Fix commits: " + ", ".join(fix_urls[:3]))
+    if not parts:
+        advisory_urls = [r["url"] for r in refs if r.get("type") == "ADVISORY" and r.get("url")]
+        if advisory_urls:
+            parts.append("Advisory: " + advisory_urls[0])
+    return "\n".join(parts) if parts else None
+
+
 def format_vuln_finding(vuln: dict[str, Any], cvss_score: float | None) -> dict:
     aliases = vuln.get("aliases", [])
     cve_id = ""
@@ -98,6 +136,8 @@ def format_vuln_finding(vuln: dict[str, Any], cvss_score: float | None) -> dict:
         "description": summary,
         "cve_id": cve_id,
         "cvss_score": cvss_score,
+        "remediation": _extract_remediation(vuln),
+        "raw_data": vuln,
     }
 
 
