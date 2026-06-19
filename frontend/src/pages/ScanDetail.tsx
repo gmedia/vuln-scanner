@@ -1,7 +1,9 @@
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Clock, Crosshair, Shield, Target } from "lucide-react";
 import { useScanDetail } from "@/hooks/useScan";
+import type { ScanFinding } from "@/api/scans";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
+import { Progress } from "@/components/ui/Progress";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -153,6 +155,10 @@ function ScanDetail() {
         </Card>
       </div>
 
+      {scan.status === "completed" && scan.findings && scan.findings.length > 0 && (
+        <RemediationCard findings={scan.findings} />
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="font-mono text-sm tracking-wide">
@@ -217,6 +223,43 @@ function InfoRow({
         {value}
       </span>
     </div>
+  );
+}
+
+function RemediationCard({ findings }: { findings: ScanFinding[] }) {
+  const total = findings.length;
+  const remediated = findings.filter((f) => f.remediation !== null).length;
+  const pct = total > 0 ? Math.round((remediated / total) * 100) : 0;
+
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-emerald-500/10">
+            <Shield className="h-4 w-4 text-emerald-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="font-mono text-xs text-muted-foreground">
+                Remediation Available
+              </p>
+              <p className="font-mono text-sm font-semibold text-foreground whitespace-nowrap">
+                {remediated}
+                <span className="text-muted-foreground font-normal">
+                  /{total}
+                </span>
+              </p>
+            </div>
+            <div className="mt-1.5 flex items-center gap-2">
+              <Progress value={pct} className="h-1.5" />
+              <span className="font-mono text-[10px] text-muted-foreground shrink-0 w-8 text-right">
+                {pct}%
+              </span>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

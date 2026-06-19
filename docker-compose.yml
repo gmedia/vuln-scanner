@@ -176,11 +176,11 @@ services:
       - /app/node_modules
     command: npm run dev -- --host 0.0.0.0
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:5173"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5173"]
+      interval: 30s
+      timeout: 10s
+      retries: 6
+      start_period: 90s
 
   nginx:
     build:

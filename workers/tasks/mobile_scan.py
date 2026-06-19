@@ -7,6 +7,7 @@ import redis
 from celery import shared_task
 from sqlalchemy import update
 
+from loguru import logger
 from utils.database import get_sync_session
 from utils.mobile_utils import analyze_apk, analyze_ipa
 from utils.cve_lookup import lookup_service_cves, extract_cvss, format_vuln_finding
@@ -22,8 +23,8 @@ def publish_progress(job_id: str, step: str, progress: int, message: str):
             f"scan_progress:{job_id}",
             json.dumps({"type": "progress", "step": step, "progress": progress, "message": message}),
         )
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Redis publish failed for job {job_id} step {step}: {error}", job_id=job_id, step=step, error=e)
 
 
 def _run_async(coro):
@@ -38,6 +39,7 @@ def _run_async(coro):
 
 @shared_task(bind=True, name="mobile_scan.run", max_retries=2, default_retry_delay=60)
 def run_mobile_scan(self, job_id: str, file_path: str, platform: str):
+    logger.info("Mobile scan started: job={job_id} platform={platform} path={path}", job_id=job_id, platform=platform, path=file_path)
     session = get_sync_session()
 
     _update_status(session, job_id, "running", started_at=datetime.now(timezone.utc))
@@ -86,7 +88,8 @@ def run_mobile_scan(self, job_id: str, file_path: str, platform: str):
             if sf not in all_findings:
                 all_findings.append(sf)
         publish_progress(job_id, "secrets_done", 65, f"Found {len(secret_findings)} potential secrets")
-    except Exception:
+    except Exception as e:
+        logger.warning("Secret scan failed for job {job_id}: {error}", job_id=job_id, error=e)
         publish_progress(job_id, "secrets_done", 65, "Secret scan skipped")
 
     publish_progress(job_id, "cve_lookup", 70, "Looking up CVEs for embedded libraries...")
@@ -99,7 +102,8 @@ def run_mobile_scan(self, job_id: str, file_path: str, platform: str):
         seen_libs.add(lib_name)
         try:
             vulns = _run_async(lookup_service_cves(lib_name, lib_name, ""))
-        except Exception:
+        except Exception as e:
+            logger.warning("CVE lookup failed for lib {lib}: {error}", lib=lib_name, error=e)
             vulns = []
         for vuln in vulns:
             cvss = extract_cvss(vuln)
@@ -122,14 +126,17 @@ def run_mobile_scan(self, job_id: str, file_path: str, platform: str):
     session.commit()
     session.close()
 
+    logger.info("Mobile scan complete: job={job_id} platform={platform} findings={total} critical={c} high={h} medium={m} low={l}",
+                job_id=job_id, platform=platform, total=summary['total_findings'], c=summary['critical'],
+                h=summary['high'], m=summary['medium'], l=summary['low'])
     publish_progress(job_id, "completed", 100,
                    f"Done: {summary['total_findings']} findings "
                    f"({summary['critical']}C/{summary['high']}H/{summary['medium']}M/{summary['low']}L)")
 
     try:
         os.remove(file_path)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Failed to remove mobile scan file {path}: {error}", path=file_path, error=e)
 
     return {"job_id": job_id, "summary": summary}
 

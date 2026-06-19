@@ -7,6 +7,7 @@ import redis
 from celery import shared_task
 from sqlalchemy import update
 
+from loguru import logger
 from utils.database import get_sync_session
 from utils.domain_utils import (
     resolve_dns, enumerate_subdomains, check_http, check_ssl,
@@ -26,8 +27,8 @@ def publish_progress(job_id: str, step: str, progress: int, message: str):
             f"scan_progress:{job_id}",
             json.dumps({"type": "progress", "step": step, "progress": progress, "message": message}),
         )
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Redis publish failed for job {job_id} step {step}: {error}", job_id=job_id, step=step, error=e)
 
 
 def _run_async(coro):
@@ -42,6 +43,7 @@ def _run_async(coro):
 
 @shared_task(bind=True, name="domain_scan.run", max_retries=2, default_retry_delay=60)
 def run_domain_scan(self, job_id: str, domain: str):
+    logger.info("Domain scan started: job={job_id} domain={domain}", job_id=job_id, domain=domain)
     domain = domain.lower().strip()
     if domain.startswith("http://") or domain.startswith("https://"):
         from urllib.parse import urlparse
@@ -96,8 +98,8 @@ def run_domain_scan(self, job_id: str, domain: str):
         nmap_result = _run_async(run_nmap(domain, "1-1000"))
         base_nmap = findings_from_nmap(nmap_result)
         all_findings.extend(base_nmap)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Nmap scan failed for domain scan {domain}: {error}", domain=domain, error=e)
 
     publish_progress(job_id, "cve_lookup", 75, "Looking up CVEs for detected technologies...")
     total_vuln = 0
@@ -105,7 +107,8 @@ def run_domain_scan(self, job_id: str, domain: str):
         if tech.name and tech.category:
             try:
                 vulns = _run_async(lookup_service_cves(tech.name, tech.name, tech.version or ""))
-            except Exception:
+            except Exception as e:
+                logger.warning("CVE lookup failed for {tech} {ver}: {error}", tech=tech.name, ver=tech.version or "", error=e)
                 vulns = []
             for vuln in vulns:
                 cvss = extract_cvss(vuln)
@@ -128,6 +131,9 @@ def run_domain_scan(self, job_id: str, domain: str):
     session.commit()
     session.close()
 
+    logger.info("Domain scan complete: job={job_id} domain={domain} findings={total} critical={c} high={h} medium={m} low={l}",
+                job_id=job_id, domain=domain, total=summary['total_findings'], c=summary['critical'],
+                h=summary['high'], m=summary['medium'], l=summary['low'])
     publish_progress(job_id, "completed", 100,
                    f"Done: {summary['total_findings']} findings "
                    f"({summary['critical']}C/{summary['high']}H/{summary['medium']}M/{summary['low']}L)")

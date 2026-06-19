@@ -88,6 +88,14 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
     return "text-blue-400";
   };
 
+  const cvssBarColor = (score: number | null) => {
+    if (score === null) return "bg-muted-foreground";
+    if (score >= 9) return "bg-red-400";
+    if (score >= 7) return "bg-orange-400";
+    if (score >= 4) return "bg-yellow-400";
+    return "bg-blue-400";
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -152,21 +160,21 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
                 onClick={() => toggleSort("category")}
               />
               <Th
-                label="CVE"
+                label="CVSS"
                 sortKey="cvss_score"
                 active={sortKey}
                 dir={sortDir}
                 onClick={() => toggleSort("cvss_score")}
               />
-              <th className="px-3 py-2.5 text-right font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                CVSS
+              <th className="px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                Remediation
               </th>
             </tr>
           </thead>
           <tbody>
             {sorted.length === 0 ? (
               <tr>
-                <td colSpan={5} className="p-8 text-center font-mono text-sm text-muted-foreground">
+                <td colSpan={6} className="p-8 text-center font-mono text-sm text-muted-foreground">
                   No matching findings
                 </td>
               </tr>
@@ -217,10 +225,38 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
                       "-"
                     )}
                   </td>
-                  <td className="px-3 py-2.5 font-mono text-xs font-medium text-right">
-                    <span className={cvssColor(finding.cvss_score)}>
-                      {finding.cvss_score?.toFixed(1) ?? "-"}
-                    </span>
+                  <td className="px-3 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 w-12 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className={cn(
+                            "h-full rounded-full transition-all",
+                            cvssBarColor(finding.cvss_score),
+                          )}
+                          style={{
+                            width: `${((finding.cvss_score ?? 0) / 10) * 100}%`,
+                          }}
+                        />
+                      </div>
+                      <span
+                        className={cn(
+                          "font-mono text-xs font-medium",
+                          cvssColor(finding.cvss_score),
+                        )}
+                      >
+                        {finding.cvss_score?.toFixed(1) ?? "-"}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-2.5 font-mono text-xs">
+                    {finding.remediation ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                        Fix
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
                   </td>
                   <td className="px-3 py-2.5 text-center">
                     {expandedId === finding.id ? (

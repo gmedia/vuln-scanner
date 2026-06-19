@@ -7,6 +7,7 @@ import redis
 from celery import shared_task
 from sqlalchemy import update
 
+from loguru import logger
 from utils.database import get_sync_session
 from utils.nmap_runner import run_nmap, findings_from_nmap
 from utils.cve_lookup import lookup_service_cves, extract_cvss, format_vuln_finding
@@ -22,8 +23,8 @@ def publish_progress(job_id: str, step: str, progress: int, message: str):
             f"scan_progress:{job_id}",
             json.dumps({"type": "progress", "step": step, "progress": progress, "message": message}),
         )
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Redis publish failed for job {job_id} step {step}: {error}", job_id=job_id, step=step, error=e)
 
 
 def _run_async(coro):
@@ -38,6 +39,7 @@ def _run_async(coro):
 
 @shared_task(bind=True, name="ip_scan.run", max_retries=2, default_retry_delay=60)
 def run_ip_scan(self, job_id: str, target: str, ports: str = "1-1000"):
+    logger.info("IP scan started: job={job_id} target={target} ports={ports}", job_id=job_id, target=target, ports=ports)
     session = get_sync_session()
 
     _update_status(session, job_id, "running", started_at=datetime.now(timezone.utc))
@@ -56,6 +58,7 @@ def run_ip_scan(self, job_id: str, target: str, ports: str = "1-1000"):
 
     hosts_up = [h for h in nmap_result.hosts if h.status == "up"]
     port_count = sum(len(h.ports) for h in hosts_up)
+    logger.info("IP scan nmap complete: job={job_id} hosts={hosts} ports={ports}", job_id=job_id, hosts=len(hosts_up), ports=port_count)
     publish_progress(job_id, "nmap_done", 30, f"Found {len(hosts_up)} hosts, {port_count} open ports")
 
     base_findings = findings_from_nmap(nmap_result)
@@ -69,7 +72,8 @@ def run_ip_scan(self, job_id: str, target: str, ports: str = "1-1000"):
             if port.product and port.version:
                 try:
                     vulns = _run_async(lookup_service_cves(port.service, port.product, port.version))
-                except Exception:
+                except Exception as e:
+                    logger.warning("CVE lookup failed for {service} {product} {ver}: {error}", service=port.service, product=port.product, ver=port.version, error=e)
                     vulns = []
                 for vuln in vulns:
                     cvss = extract_cvss(vuln)
@@ -96,6 +100,9 @@ def run_ip_scan(self, job_id: str, target: str, ports: str = "1-1000"):
     session.commit()
     session.close()
 
+    logger.info("IP scan complete: job={job_id} findings={total} critical={c} high={h} medium={m} low={l}",
+                job_id=job_id, total=summary['total_findings'], c=summary['critical'], h=summary['high'],
+                m=summary['medium'], l=summary['low'])
     publish_progress(job_id, "completed", 100,
                    f"Done: {summary['total_findings']} findings "
                    f"({summary['critical']}C/{summary['high']}H/{summary['medium']}M/{summary['low']}L)")

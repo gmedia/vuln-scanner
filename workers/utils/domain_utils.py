@@ -4,6 +4,7 @@ import asyncio
 import re
 from dataclasses import dataclass, field
 from urllib.parse import urlparse
+from loguru import logger
 
 
 @dataclass
@@ -71,7 +72,7 @@ async def resolve_dns(domain: str) -> tuple[list[str], list[DnsRecord]]:
                 ips.append(addr)
                 records.append(DnsRecord(record_type="A", value=addr))
     except socket.gaierror:
-        pass
+        logger.debug("DNS resolution failed for {domain}", domain=domain)
 
     await asyncio.sleep(0)
     return ips, records
@@ -96,8 +97,8 @@ async def enumerate_subdomains(domain: str) -> list[str]:
                 if not chunk:
                     break
                 data += chunk
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Error reading crt.sh response for {domain}: {error}", domain=domain, error=e)
 
         writer.close()
         await writer.wait_closed()
@@ -116,10 +117,10 @@ async def enumerate_subdomains(domain: str) -> list[str]:
                     if sub.endswith(domain) and sub != domain and sub not in seen:
                         seen.add(sub)
                         subdomains.append(sub)
-        except (json.JSONDecodeError, TypeError):
-            pass
-    except Exception:
-        pass
+        except (json.JSONDecodeError, TypeError) as e:
+            logger.warning("Failed to parse crt.sh JSON for {domain}: {error}", domain=domain, error=e)
+    except Exception as e:
+        logger.warning("Subdomain enumeration failed for {domain}: {error}", domain=domain, error=e)
 
     return subdomains
 
@@ -147,8 +148,8 @@ async def check_http(domain: str) -> tuple[bool, bool, int, dict[str, str]]:
                     if not chunk:
                         break
                     response += chunk
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Error reading HTTP response for {domain}:{port}: {error}", domain=domain, port=port, error=e)
 
             writer.close()
             await writer.wait_closed()
@@ -172,7 +173,8 @@ async def check_http(domain: str) -> tuple[bool, bool, int, dict[str, str]]:
             else:
                 https_reachable = True
 
-        except Exception:
+        except Exception as e:
+            logger.debug("HTTP check failed for {domain}:{port}: {error}", domain=domain, port=port, error=e)
             continue
 
     return http_reachable, https_reachable, status_code, headers
@@ -202,7 +204,8 @@ async def check_ssl(domain: str) -> SslInfo:
                 import datetime
                 not_after_dt = datetime.datetime.strptime(not_after, "%b %d %H:%M:%S %Y %Z")
                 info.days_remaining = (not_after_dt - datetime.datetime.utcnow()).days
-            except Exception:
+            except Exception as e:
+                logger.trace("Failed to parse cert date {date} for {domain}: {error}", date=not_after, domain=domain, error=e)
                 info.days_remaining = -1
 
             cipher_info = cert.cipher() if hasattr(cert, "cipher") else ("", "", 0)
@@ -216,6 +219,7 @@ async def check_ssl(domain: str) -> SslInfo:
         info.supported_versions = ["TLSv1.2", "TLSv1.3"]
 
     except Exception as e:
+        logger.warning("SSL check failed for {domain}: {error}", domain=domain, error=e)
         info.issues.append(f"SSL check failed: {str(e)[:100]}")
 
     return info

@@ -2,6 +2,7 @@ import asyncio
 import xml.etree.ElementTree as ET
 import re
 from dataclasses import dataclass, field
+from loguru import logger
 
 
 @dataclass
@@ -36,7 +37,8 @@ def parse_nmap_xml(xml_output: str) -> NmapResult:
     result = NmapResult(raw_xml=xml_output)
     try:
         root = ET.fromstring(xml_output)
-    except ET.ParseError:
+    except ET.ParseError as e:
+        logger.error("Failed to parse nmap XML output: {error}", error=e)
         return result
 
     for host_elem in root.findall("host"):
@@ -103,6 +105,7 @@ def parse_nmap_xml(xml_output: str) -> NmapResult:
 
 
 async def run_nmap(target: str, ports: str = "1-1000") -> NmapResult:
+    logger.info("Starting nmap scan on {target} ports {ports}", target=target, ports=ports)
     cmd = [
         "nmap",
         "-sV",
@@ -125,7 +128,9 @@ async def run_nmap(target: str, ports: str = "1-1000") -> NmapResult:
 
     if proc.returncode != 0:
         stderr_text = stderr.decode("utf-8", errors="replace")
+        logger.warning("nmap exited with code {code} for {target}: {stderr}", code=proc.returncode, target=target, stderr=stderr_text[:200])
         if "Failed to open" in stderr_text or "Permission denied" in stderr_text:
+            logger.info("Retrying nmap without OS detection for {target}", target=target)
             cmd_fallback = [
                 "nmap",
                 "-sV",
