@@ -61,6 +61,12 @@ services:
       - ./backend:/app
       - scan_data:/tmp/scans
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   worker_ip:
     build:
@@ -161,11 +167,28 @@ services:
       - frontend
       - backend
 
+  seed:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vuln-e2e-seed
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
+      DATABASE_URL_SYNC: postgresql://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
+    volumes:
+      - ./backend:/app
+    command: python -m scripts.seed_e2e
+
   e2e-runner:
     image: mcr.microsoft.com/playwright:v1.52.0
     container_name: vuln-e2e-runner
     working_dir: /e2e
     depends_on:
+      seed:
+        condition: service_completed_successfully
       nginx:
         condition: service_started
     environment:
@@ -174,8 +197,9 @@ services:
     volumes:
       - ./frontend/e2e:/e2e/e2e
       - ./frontend/playwright.config.ts:/e2e/playwright.config.ts
+      - ./frontend/tsconfig.json:/e2e/tsconfig.json
     ipc: host
-    command: sh -c 'npm init -y && npm install @playwright/test@1.52.0 && npx playwright test --reporter=list,html || true'
+    command: sh -c 'npm init -y && npm install --save-dev @playwright/test@1.52.0 && npx playwright test --reporter=list,html'
     profiles:
       - e2e
 
