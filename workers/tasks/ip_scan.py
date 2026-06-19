@@ -1,5 +1,6 @@
 import os
 import json
+import time
 import uuid
 from datetime import datetime, timezone
 
@@ -12,6 +13,7 @@ from utils.database import get_sync_session
 from utils.nmap_runner import run_nmap, findings_from_nmap
 from utils.cve_lookup import lookup_service_cves, extract_cvss, format_vuln_finding
 from utils.severity import compute_severity_summary, sort_findings_by_severity
+from tasks.dead_letter import dead_letter_handler
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
@@ -37,7 +39,7 @@ def _run_async(coro):
     return loop.run_until_complete(coro)
 
 
-@shared_task(bind=True, name="ip_scan.run", max_retries=2, default_retry_delay=60)
+@shared_task(bind=True, name="ip_scan.run", max_retries=3)
 def run_ip_scan(self, job_id: str, target: str, ports: str = "1-1000"):
     logger.info("IP scan started: job={job_id} target={target} ports={ports}", job_id=job_id, target=target, ports=ports)
     session = get_sync_session()
@@ -54,7 +56,14 @@ def run_ip_scan(self, job_id: str, target: str, ports: str = "1-1000"):
         session.commit()
         session.close()
         publish_progress(job_id, "failed", 100, f"Nmap scan failed: {str(e)[:200]}")
-        raise self.retry(exc=e)
+        if self.request.retries >= self.max_retries:
+            dead_letter_handler.delay(
+                task_name="ip_scan.run",
+                args=[job_id, target, ports],
+                kwargs={},
+                exception_info=str(e),
+            )
+        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries))
 
     hosts_up = [h for h in nmap_result.hosts if h.status == "up"]
     port_count = sum(len(h.ports) for h in hosts_up)
@@ -106,6 +115,12 @@ def run_ip_scan(self, job_id: str, target: str, ports: str = "1-1000"):
     publish_progress(job_id, "completed", 100,
                    f"Done: {summary['total_findings']} findings "
                    f"({summary['critical']}C/{summary['high']}H/{summary['medium']}M/{summary['low']}L)")
+
+    try:
+        r = redis.Redis.from_url(REDIS_URL)
+        r.set("health:last_task_completed", time.time())
+    except Exception:
+        pass
 
     return {"job_id": job_id, "summary": summary}
 

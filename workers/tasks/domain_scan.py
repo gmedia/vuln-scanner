@@ -1,5 +1,6 @@
 import os
 import json
+import time
 import uuid
 from datetime import datetime, timezone
 
@@ -16,6 +17,7 @@ from utils.domain_utils import (
 from utils.cve_lookup import lookup_service_cves, extract_cvss, format_vuln_finding
 from utils.severity import compute_severity_summary, sort_findings_by_severity
 from utils.nmap_runner import run_nmap, findings_from_nmap
+from tasks.dead_letter import dead_letter_handler
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
@@ -41,7 +43,7 @@ def _run_async(coro):
     return loop.run_until_complete(coro)
 
 
-@shared_task(bind=True, name="domain_scan.run", max_retries=2, default_retry_delay=60)
+@shared_task(bind=True, name="domain_scan.run", max_retries=3)
 def run_domain_scan(self, job_id: str, domain: str):
     logger.info("Domain scan started: job={job_id} domain={domain}", job_id=job_id, domain=domain)
     domain = domain.lower().strip()
@@ -49,96 +51,119 @@ def run_domain_scan(self, job_id: str, domain: str):
         from urllib.parse import urlparse
         domain = urlparse(domain).hostname or domain
 
-    session = get_sync_session()
-    _update_status(session, job_id, "running", started_at=datetime.now(timezone.utc))
-    session.commit()
-
-    publish_progress(job_id, "dns_resolve", 5, f"Resolving DNS for {domain}...")
-
-    ips, records = _run_async(resolve_dns(domain))
-    publish_progress(job_id, "dns_resolved", 10, f"Found {len(ips)} IP(s) for {domain}")
-
-    publish_progress(job_id, "subdomain_enum", 15, "Enumerating subdomains via crt.sh...")
-    subdomains = _run_async(enumerate_subdomains(domain))
-    publish_progress(job_id, "subdomain_done", 25, f"Found {len(subdomains)} subdomains")
-
-    publish_progress(job_id, "http_check", 30, f"Checking HTTP/HTTPS connectivity for {domain}...")
-    http_ok, https_ok, status, headers = _run_async(check_http(domain))
-    publish_progress(job_id, "http_done", 40, f"{'HTTPS' if https_ok else 'HTTP' if http_ok else 'No HTTP'} reachable (status {status})")
-
-    ssl_info = None
-    if https_ok:
-        publish_progress(job_id, "ssl_check", 45, "Checking SSL/TLS certificate...")
-        ssl_info = _run_async(check_ssl(domain))
-
-    publish_progress(job_id, "headers_check", 55, "Analyzing security headers...")
-    header_checks = check_security_headers(headers)
-
-    publish_progress(job_id, "tech_detect", 65, "Detecting technology stack...")
-    tech_stack = detect_tech_stack(domain, headers)
-
-    domain_result = type("DomainResult", (), {
-        "domain": domain,
-        "ip_addresses": ips,
-        "dns_records": records,
-        "subdomains": subdomains,
-        "http_reachable": http_ok,
-        "https_reachable": https_ok,
-        "status_code": status,
-        "response_headers": headers,
-        "ssl_info": ssl_info or type("obj", (), {"issues": [], "cipher": "", "subject": "", "issuer": "", "not_after": "", "days_remaining": 0}),
-        "tech_stack": tech_stack,
-        "header_checks": header_checks,
-    })()
-
-    all_findings = findings_from_domain(domain_result)
-
-    publish_progress(job_id, "nmap_scan", 70, f"Running quick nmap scan on {domain}...")
     try:
-        nmap_result = _run_async(run_nmap(domain, "1-1000"))
-        base_nmap = findings_from_nmap(nmap_result)
-        all_findings.extend(base_nmap)
+        session = get_sync_session()
+        _update_status(session, job_id, "running", started_at=datetime.now(timezone.utc))
+        session.commit()
+
+        publish_progress(job_id, "dns_resolve", 5, f"Resolving DNS for {domain}...")
+
+        ips, records = _run_async(resolve_dns(domain))
+        publish_progress(job_id, "dns_resolved", 10, f"Found {len(ips)} IP(s) for {domain}")
+
+        publish_progress(job_id, "subdomain_enum", 15, "Enumerating subdomains via crt.sh...")
+        subdomains = _run_async(enumerate_subdomains(domain))
+        publish_progress(job_id, "subdomain_done", 25, f"Found {len(subdomains)} subdomains")
+
+        publish_progress(job_id, "http_check", 30, f"Checking HTTP/HTTPS connectivity for {domain}...")
+        http_ok, https_ok, status, headers = _run_async(check_http(domain))
+        publish_progress(job_id, "http_done", 40, f"{'HTTPS' if https_ok else 'HTTP' if http_ok else 'No HTTP'} reachable (status {status})")
+
+        ssl_info = None
+        if https_ok:
+            publish_progress(job_id, "ssl_check", 45, "Checking SSL/TLS certificate...")
+            ssl_info = _run_async(check_ssl(domain))
+
+        publish_progress(job_id, "headers_check", 55, "Analyzing security headers...")
+        header_checks = check_security_headers(headers)
+
+        publish_progress(job_id, "tech_detect", 65, "Detecting technology stack...")
+        tech_stack = detect_tech_stack(domain, headers)
+
+        domain_result = type("DomainResult", (), {
+            "domain": domain,
+            "ip_addresses": ips,
+            "dns_records": records,
+            "subdomains": subdomains,
+            "http_reachable": http_ok,
+            "https_reachable": https_ok,
+            "status_code": status,
+            "response_headers": headers,
+            "ssl_info": ssl_info or type("obj", (), {"issues": [], "cipher": "", "subject": "", "issuer": "", "not_after": "", "days_remaining": 0}),
+            "tech_stack": tech_stack,
+            "header_checks": header_checks,
+        })()
+
+        all_findings = findings_from_domain(domain_result)
+
+        publish_progress(job_id, "nmap_scan", 70, f"Running quick nmap scan on {domain}...")
+        try:
+            nmap_result = _run_async(run_nmap(domain, "1-1000"))
+            base_nmap = findings_from_nmap(nmap_result)
+            all_findings.extend(base_nmap)
+        except Exception as e:
+            logger.warning("Nmap scan failed for domain scan {domain}: {error}", domain=domain, error=e)
+
+        publish_progress(job_id, "cve_lookup", 75, "Looking up CVEs for detected technologies...")
+        total_vuln = 0
+        for tech in tech_stack:
+            if tech.name and tech.category:
+                try:
+                    vulns = _run_async(lookup_service_cves(tech.name, tech.name, tech.version or ""))
+                except Exception as e:
+                    logger.warning("CVE lookup failed for {tech} {ver}: {error}", tech=tech.name, ver=tech.version or "", error=e)
+                    vulns = []
+                for vuln in vulns:
+                    cvss = extract_cvss(vuln)
+                    finding = format_vuln_finding(vuln, cvss)
+                    finding["description"] = (
+                        f"[{domain}] {tech.name} ({tech.category})\n"
+                        + (finding.get("description") or "")
+                    )
+                    all_findings.append(finding)
+                    total_vuln += 1
+
+        all_findings = sort_findings_by_severity(all_findings)
+        summary = compute_severity_summary(all_findings)
+
+        publish_progress(job_id, "saving", 90, "Saving results...")
+        _save_findings(session, job_id, all_findings)
+
+        _update_status(session, job_id, "completed", progress=100,
+                       result_summary=summary, completed_at=datetime.now(timezone.utc))
+        session.commit()
+        session.close()
+
+        logger.info("Domain scan complete: job={job_id} domain={domain} findings={total} critical={c} high={h} medium={m} low={l}",
+                    job_id=job_id, domain=domain, total=summary['total_findings'], c=summary['critical'],
+                    h=summary['high'], m=summary['medium'], l=summary['low'])
+        publish_progress(job_id, "completed", 100,
+                       f"Done: {summary['total_findings']} findings "
+                       f"({summary['critical']}C/{summary['high']}H/{summary['medium']}M/{summary['low']}L)")
+
+        try:
+            r = redis.Redis.from_url(REDIS_URL)
+            r.set("health:last_task_completed", time.time())
+        except Exception:
+            pass
+
+        return {"job_id": job_id, "summary": summary}
     except Exception as e:
-        logger.warning("Nmap scan failed for domain scan {domain}: {error}", domain=domain, error=e)
-
-    publish_progress(job_id, "cve_lookup", 75, "Looking up CVEs for detected technologies...")
-    total_vuln = 0
-    for tech in tech_stack:
-        if tech.name and tech.category:
-            try:
-                vulns = _run_async(lookup_service_cves(tech.name, tech.name, tech.version or ""))
-            except Exception as e:
-                logger.warning("CVE lookup failed for {tech} {ver}: {error}", tech=tech.name, ver=tech.version or "", error=e)
-                vulns = []
-            for vuln in vulns:
-                cvss = extract_cvss(vuln)
-                finding = format_vuln_finding(vuln, cvss)
-                finding["description"] = (
-                    f"[{domain}] {tech.name} ({tech.category})\n"
-                    + (finding.get("description") or "")
-                )
-                all_findings.append(finding)
-                total_vuln += 1
-
-    all_findings = sort_findings_by_severity(all_findings)
-    summary = compute_severity_summary(all_findings)
-
-    publish_progress(job_id, "saving", 90, "Saving results...")
-    _save_findings(session, job_id, all_findings)
-
-    _update_status(session, job_id, "completed", progress=100,
-                   result_summary=summary, completed_at=datetime.now(timezone.utc))
-    session.commit()
-    session.close()
-
-    logger.info("Domain scan complete: job={job_id} domain={domain} findings={total} critical={c} high={h} medium={m} low={l}",
-                job_id=job_id, domain=domain, total=summary['total_findings'], c=summary['critical'],
-                h=summary['high'], m=summary['medium'], l=summary['low'])
-    publish_progress(job_id, "completed", 100,
-                   f"Done: {summary['total_findings']} findings "
-                   f"({summary['critical']}C/{summary['high']}H/{summary['medium']}M/{summary['low']}L)")
-
-    return {"job_id": job_id, "summary": summary}
+        try:
+            _update_status(session, job_id, "failed")
+            session.commit()
+            session.close()
+        except Exception:
+            pass
+        publish_progress(job_id, "failed", 100, f"Domain scan failed: {str(e)[:200]}")
+        if self.request.retries >= self.max_retries:
+            dead_letter_handler.delay(
+                task_name="domain_scan.run",
+                args=[job_id, domain],
+                kwargs={},
+                exception_info=str(e),
+            )
+        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries))
 
 
 def _update_status(session, job_id: str, status: str, **kwargs):

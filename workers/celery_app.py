@@ -23,11 +23,19 @@ celery_app.conf.update(
     task_time_limit=900,
     worker_prefetch_multiplier=1,
     task_acks_late=True,
+    task_reject_on_worker_lost=True,
+    broker_connection_retry_on_startup=True,
+    worker_max_tasks_per_child=50,
     task_routes={
         "ip_scan.run": {"queue": "ip_scan"},
         "domain_scan.run": {"queue": "domain_scan"},
         "mobile_scan.run": {"queue": "mobile_scan"},
+        "dead_letter.handle": {"queue": "dead_letter"},
+    },
+    task_annotations={
+        "ip_scan.run": {"rate_limit": "10/m"},
+        "domain_scan.run": {"rate_limit": "10/m"},
     },
 )
 
-celery_app.autodiscover_tasks(["tasks.ip_scan", "tasks.domain_scan", "tasks.mobile_scan"])
+celery_app.autodiscover_tasks(["tasks.ip_scan", "tasks.domain_scan", "tasks.mobile_scan", "tasks.dead_letter"])
