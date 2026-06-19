@@ -31,6 +31,84 @@ docker compose up -d
 # http://localhost
 ```
 
+## Local Development
+
+Prerequisites: Node.js 20+, Python 3.12+, Docker (PostgreSQL & Redis).
+
+### 1. Infrastructure (PostgreSQL + Redis)
+
+```bash
+docker run -d --name vscan-pg -e POSTGRES_USER=vscan -e POSTGRES_PASSWORD=vscan -e POSTGRES_DB=vscan -p 5432:5432 postgres:16
+docker run -d --name vscan-redis -p 6379:6379 redis:7
+```
+
+### 2. Backend
+
+```bash
+cd backend
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+# Run migrations
+alembic upgrade head
+
+# Start dev server (hot-reload)
+uvicorn app.main:app --reload --port 8000
+```
+
+### 3. Workers
+
+Open separate terminals — one per queue:
+
+```bash
+cd workers
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+# Terminal 1 — IP scans
+celery -A celery_app worker -Q ip_scan --loglevel=info
+
+# Terminal 2 — Domain scans
+celery -A celery_app worker -Q domain_scan --loglevel=info
+
+# Terminal 3 — Mobile scans
+celery -A celery_app worker -Q mobile_scan --loglevel=info
+```
+
+### 4. Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev  # → http://localhost:5173
+```
+
+### Project Structure
+
+```
+vuln-scanner/
+├── backend/             # FastAPI app
+│   ├── app/
+│   │   ├── api/         # Routes, WebSocket, router
+│   │   ├── models/      # SQLAlchemy models
+│   │   ├── schemas/     # Pydantic schemas
+│   │   └── services/    # Business logic
+│   └── alembic/         # DB migrations
+├── workers/             # Celery workers
+│   ├── tasks/           # ip_scan, domain_scan, mobile_scan
+│   └── utils/           # nmap, CVE lookup, domain/mobile utils
+├── frontend/            # React + Vite
+│   └── src/
+│       ├── api/         # API client
+│       ├── components/  # UI components
+│       ├── hooks/       # WebSocket hooks
+│       ├── pages/       # Page views
+│       └── store/       # State management
+├── nginx/               # Reverse proxy config
+├── docker-compose.yml   # Production stack
+└── .env.example         # Environment template
+```
+
 ## Scan Modes
 
 | Mode | Input | What It Does |
