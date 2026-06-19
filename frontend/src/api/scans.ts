@@ -1,12 +1,13 @@
 import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
+const API_KEY = import.meta.env.VITE_API_KEY || "";
 
 const api = axios.create({
   baseURL: API_BASE,
   headers: {
     "Content-Type": "application/json",
-    "X-API-Key": "dev-api-key-change-me",
+    ...(API_KEY ? { "X-API-Key": API_KEY } : {}),
   },
 });
 
@@ -103,7 +104,11 @@ export function getWsUrl(jobId: string): string {
   const wsBase = import.meta.env.VITE_WS_URL || "";
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   const host = window.location.host;
-  return wsBase
+  const url = wsBase
     ? `${wsBase}/ws/scan/${jobId}`
     : `${protocol}//${host}/ws/scan/${jobId}`;
+  const params = new URLSearchParams();
+  if (API_KEY) params.set("api_key", API_KEY);
+  const qs = params.toString();
+  return qs ? `${url}?${qs}` : url;
 }

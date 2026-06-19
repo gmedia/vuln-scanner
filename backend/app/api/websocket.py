@@ -1,6 +1,10 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+import hashlib
+from sqlalchemy import select
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 from redis.asyncio import Redis
 from app.config import settings
+from app.database import async_session
+from app.models.api_key import ApiKey
 
 router = APIRouter(tags=["websocket"])
 
@@ -14,8 +18,35 @@ async def get_redis():
     return redis
 
 
+async def validate_api_key(api_key: str | None) -> bool:
+    """Validate an API key. Returns True if valid, False otherwise."""
+    if not api_key:
+        return False
+
+    # Check against master key from settings
+    if api_key == settings.api_key:
+        return True
+
+    # Check against DB-stored keys
+    key_hash = hashlib.sha256(api_key.encode()).hexdigest()
+    async with async_session() as session:
+        result = await session.execute(
+            select(ApiKey).where(ApiKey.key_hash == key_hash, ApiKey.is_active == True)
+        )
+        return result.scalar_one_or_none() is not None
+
+
 @router.websocket("/ws/scan/{job_id}")
-async def scan_progress(websocket: WebSocket, job_id: str):
+async def scan_progress(
+    websocket: WebSocket,
+    job_id: str,
+    api_key: str | None = Query(None, alias="api_key"),
+):
+    # Validate API key before accepting the connection
+    if not await validate_api_key(api_key):
+        await websocket.close(code=4001, reason="Unauthorized: invalid or missing API key")
+        return
+
     await websocket.accept()
     r = await get_redis()
     pubsub = r.pubsub()

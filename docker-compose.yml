@@ -169,6 +169,7 @@ services:
     environment:
       VITE_API_URL: ""
       VITE_WS_URL: ""
+      VITE_API_KEY: ${API_KEY:-dev-api-key-change-me}
     ports:
       - "5173:5173"
     volumes:
