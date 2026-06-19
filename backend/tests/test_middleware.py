@@ -5,15 +5,13 @@ API_KEY = settings.api_key
 
 
 def test_auth_missing_key(client):
-    from fastapi.exceptions import HTTPException
-    with pytest.raises((HTTPException, ExceptionGroup)):
-        client.get("/api/scan/history")
+    resp = client.get("/api/scan/history")
+    assert resp.status_code == 401
 
 
 def test_auth_invalid_key(client):
-    from fastapi.exceptions import HTTPException
-    with pytest.raises((HTTPException, ExceptionGroup)):
-        client.get("/api/scan/history", headers={"X-API-Key": "wrong-key"})
+    resp = client.get("/api/scan/history", headers={"X-API-Key": "wrong-key"})
+    assert resp.status_code == 401
 
 
 def test_auth_valid_key(client, mock_celery):
@@ -33,13 +31,24 @@ def test_websocket_excluded(client):
     assert resp.status_code in (404, 405)
 
 
-def test_rate_limit_exceeded(client, mock_celery):
-    from fastapi.exceptions import HTTPException
-    for _ in range(1000):
-        resp = client.get("/api/scan/history", headers={"X-API-Key": API_KEY})
-        assert resp.status_code == 200
+def test_rate_limit_headers_present(client, mock_celery):
+    resp = client.get("/api/scan/history", headers={"X-API-Key": API_KEY})
+    assert resp.status_code == 200
+    assert "X-RateLimit-Limit" in resp.headers
+    assert "X-RateLimit-Remaining" in resp.headers
+    assert "X-RateLimit-Reset" in resp.headers
+    remaining = int(resp.headers["X-RateLimit-Remaining"])
+    assert remaining < 1000
 
-    with pytest.raises(HTTPException) as exc_info:
-        client.get("/api/scan/history", headers={"X-API-Key": API_KEY})
-    assert exc_info.value.status_code == 429
-    assert "rate limit" in exc_info.value.detail.lower()
+
+def test_ip_rate_limit_exceeded(client, mock_celery):
+    mock_ip = "10.0.0.99"
+    for _ in range(300):
+        resp = client.get(
+            "/api/scan/history",
+            headers={"X-API-Key": API_KEY},
+        )
+        assert resp.status_code == 200, f"Expected 200, got {resp.status_code} at iteration {_}"
+    resp = client.get("/api/scan/history", headers={"X-API-Key": API_KEY})
+    assert resp.status_code == 429
+    assert "IP rate limit" in resp.json()["detail"]
