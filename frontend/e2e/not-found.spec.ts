@@ -16,7 +16,7 @@ test.describe("404 Page", () => {
   test("return button navigates to dashboard", async ({ page }) => {
     await page.goto("/random-path");
     await expect(page.locator("text=404")).toBeVisible();
-    await page.locator('button:has-text("Return to Dashboard")').click();
+    await page.locator('a:has-text("Return to Dashboard")').click();
     await expect(page).toHaveURL("/");
   });
 });
