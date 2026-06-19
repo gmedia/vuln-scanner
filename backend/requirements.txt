@@ -1,5 +1,9 @@
 # Backend requirements
 fastapi==0.115.6
+pytest==8.3.4
+pytest-asyncio==0.24.0
+httpx==0.28.1
+aiosqlite==0.20.0
 uvicorn[standard]==0.34.0
 sqlalchemy[asyncio]==2.0.36
 asyncpg==0.30.0
