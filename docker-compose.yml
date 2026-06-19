@@ -141,8 +141,8 @@ services:
     depends_on:
       - backend
     environment:
-      VITE_API_URL: http://localhost:8000
-      VITE_WS_URL: ws://localhost:8000
+      VITE_API_URL: ""
+      VITE_WS_URL: ""
     ports:
       - "5173:5173"
     volumes:

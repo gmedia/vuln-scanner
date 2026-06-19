@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_URL || "";
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -99,6 +99,10 @@ export async function getScanHistory(
 }
 
 export function getWsUrl(jobId: string): string {
-  const wsBase = import.meta.env.VITE_WS_URL || "ws://localhost:8000";
-  return `${wsBase}/ws/scan/${jobId}`;
+  const wsBase = import.meta.env.VITE_WS_URL || "";
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const host = window.location.host;
+  return wsBase
+    ? `${wsBase}/ws/scan/${jobId}`
+    : `${protocol}//${host}/ws/scan/${jobId}`;
 }
