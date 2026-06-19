@@ -1,0 +1,103 @@
+# Production override for docker-compose.yml
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Overrides:
+#   - frontend: target=production (nginx serving built assets, not Vite dev server)
+#   - backend: no --reload, no live-code volumes
+#   - workers: no live-code volumes
+#   - nginx: production config (proxies to frontend built assets on port 80)
+#   - Resource limits on all services
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: production
+    container_name: vuln-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: ""
+      VITE_WS_URL: ""
+      VITE_API_KEY: ${API_KEY:-dev-api-key-change-me}
+    expose:
+      - "80"
+    volumes: []
+    command: []
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 6
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+
+  backend:
+    container_name: vuln-backend
+    restart: unless-stopped
+    volumes:
+      - scan_data:/tmp/scans
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  worker_ip:
+    container_name: vuln-worker-ip
+    restart: unless-stopped
+    volumes:
+      - scan_data:/tmp/scans
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  worker_domain:
+    container_name: vuln-worker-domain
+    restart: unless-stopped
+    volumes:
+      - scan_data:/tmp/scans
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  worker_mobile:
+    container_name: vuln-worker-mobile
+    restart: unless-stopped
+    volumes:
+      - scan_data:/tmp/scans
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+
+  nginx:
+    container_name: vuln-nginx
+    restart: unless-stopped
+    volumes:
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+      - ./nginx/default.prod.conf:/etc/nginx/conf.d/default.conf:ro
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
