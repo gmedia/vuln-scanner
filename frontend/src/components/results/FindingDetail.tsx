@@ -85,7 +85,9 @@ function FindingDetail({ finding }: FindingDetailProps) {
 
       {showRaw && (
         <pre className="mt-2 overflow-x-auto rounded-md bg-muted p-3 font-mono text-[10px] text-muted-foreground leading-relaxed">
-          {JSON.stringify(finding, null, 2)}
+          {finding.raw_data
+            ? JSON.stringify(finding.raw_data, null, 2)
+            : "No raw data available for this finding."}
         </pre>
       )}
     </div>

@@ -18,7 +18,7 @@ class ScanJobResponse(BaseModel):
     target: str
     status: str
     progress: int
-    result_summary: dict | None
+    result_summary: dict[str, object] | None
     celery_task_id: str | None
     started_at: datetime | None
     completed_at: datetime | None
@@ -38,6 +38,7 @@ class ScanFindingResponse(BaseModel):
     cve_id: str | None
     cvss_score: float | None
     remediation: str | None
+    raw_data: dict[str, object] | None
     found_at: datetime
 
     class Config:

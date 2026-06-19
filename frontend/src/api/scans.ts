@@ -42,6 +42,7 @@ export interface ScanFinding {
   cve_id: string | null;
   cvss_score: number | null;
   remediation: string | null;
+  raw_data: Record<string, unknown> | null;
   found_at: string;
 }
 
