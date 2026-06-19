@@ -1,0 +1,185 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: vuln-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: vuln_scanner
+      POSTGRES_USER: vuln_scanner
+      POSTGRES_PASSWORD: change_me_in_production
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vuln_scanner"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:8-alpine
+    container_name: vuln-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vuln-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
+      DATABASE_URL_SYNC: postgresql://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      API_KEY: dev-api-key-change-me
+      SECRET_KEY: dev-secret-key
+      OSV_BASE_URL: https://api.osv.dev/v1
+      MAX_UPLOAD_SIZE_MB: 500
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - scan_data:/tmp/scans
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  worker_ip:
+    build:
+      context: ./workers
+      dockerfile: Dockerfile
+    container_name: vuln-worker-ip-e2e
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
+      DATABASE_URL_SYNC: postgresql://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      OSV_BASE_URL: https://api.osv.dev/v1
+    volumes:
+      - ./workers:/app
+      - ./backend:/backend
+      - scan_data:/tmp/scans
+    command: celery -A celery_app worker -Q ip_scan --concurrency=2 --loglevel=info
+
+  worker_domain:
+    build:
+      context: ./workers
+      dockerfile: Dockerfile
+    container_name: vuln-worker-domain-e2e
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
+      DATABASE_URL_SYNC: postgresql://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      OSV_BASE_URL: https://api.osv.dev/v1
+    volumes:
+      - ./workers:/app
+      - ./backend:/backend
+    command: celery -A celery_app worker -Q domain_scan --concurrency=2 --loglevel=info
+
+  worker_mobile:
+    build:
+      context: ./workers
+      dockerfile: Dockerfile
+    container_name: vuln-worker-mobile-e2e
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
+      DATABASE_URL_SYNC: postgresql://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      OSV_BASE_URL: https://api.osv.dev/v1
+    volumes:
+      - ./workers:/app
+      - ./backend:/backend
+      - scan_data:/tmp/scans
+    command: celery -A celery_app worker -Q mobile_scan --concurrency=1 --loglevel=info
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: vuln-frontend-e2e
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: ""
+      VITE_WS_URL: ""
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: vuln-nginx-e2e
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - backend
+
+  e2e-runner:
+    image: mcr.microsoft.com/playwright:v1.52.0
+    container_name: vuln-e2e-runner
+    working_dir: /e2e
+    depends_on:
+      nginx:
+        condition: service_started
+    environment:
+      CI: "true"
+      PLAYWRIGHT_HTML_REPORT: /e2e/playwright-report
+    volumes:
+      - ./frontend/e2e:/e2e/e2e
+      - ./frontend/playwright.config.ts:/e2e/playwright.config.ts
+    ipc: host
+    command: sh -c 'npm init -y && npm install @playwright/test@1.52.0 && npx playwright test --reporter=list,html || true'
+    profiles:
+      - e2e
+
+volumes:
+  postgres_data:
+  redis_data:
+  scan_data:
