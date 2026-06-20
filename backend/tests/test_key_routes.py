@@ -111,3 +111,72 @@ def test_delete_nonexistent_key(client):
         headers={"X-API-Key": API_KEY},
     )
     assert resp.status_code == 404
+
+
+def test_revoke_key_success(client):
+    create_resp = client.post(
+        "/api/keys/generate",
+        headers={"X-API-Key": API_KEY},
+        json={"name": "revoke-success", "rate_limit": 10},
+    )
+    assert create_resp.status_code == 201
+    key_id = create_resp.json()["id"]
+
+    revoke_resp = client.post(
+        f"/api/keys/revoke/{key_id}",
+        headers={"X-API-Key": API_KEY},
+    )
+    assert revoke_resp.status_code == 200
+    data = revoke_resp.json()
+    assert data["is_active"] is False
+    assert data["id"] == key_id
+
+
+def test_list_keys_returns_key_fields(client):
+    create_resp = client.post(
+        "/api/keys/generate",
+        headers={"X-API-Key": API_KEY},
+        json={"name": "list-fields-key", "rate_limit": 25},
+    )
+    assert create_resp.status_code == 201
+
+    list_resp = client.get(
+        "/api/keys",
+        headers={"X-API-Key": API_KEY},
+    )
+    assert list_resp.status_code == 200
+    data = list_resp.json()
+    assert "keys" in data
+    keys = data["keys"]
+    assert len(keys) >= 1
+
+    created_key = next((k for k in keys if k["name"] == "list-fields-key"), None)
+    assert created_key is not None
+    assert created_key["id"] is not None
+    assert created_key["is_active"] is True
+    assert created_key["rate_limit"] == 25
+    assert created_key["created_at"] is not None
+
+
+def test_delete_key_success(client):
+    create_resp = client.post(
+        "/api/keys/generate",
+        headers={"X-API-Key": API_KEY},
+        json={"name": "delete-success"},
+    )
+    assert create_resp.status_code == 201
+    key_id = create_resp.json()["id"]
+
+    delete_resp = client.delete(
+        f"/api/keys/{key_id}",
+        headers={"X-API-Key": API_KEY},
+    )
+    assert delete_resp.status_code == 204
+
+    list_resp = client.get(
+        "/api/keys",
+        headers={"X-API-Key": API_KEY},
+    )
+    assert list_resp.status_code == 200
+    ids = [k["id"] for k in list_resp.json()["keys"]]
+    assert key_id not in ids

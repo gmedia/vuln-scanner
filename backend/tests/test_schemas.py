@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 from pydantic import ValidationError
@@ -55,7 +55,7 @@ class TestPaginatedResponse:
             celery_task_id=None,
             started_at=None,
             completed_at=None,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
         resp = PaginatedResponse(
             items=[item],
@@ -78,7 +78,7 @@ class TestErrorResponse:
 
 class TestScanFindingResponseFromOrm:
     def test_from_orm(self):
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         job_id = uuid.uuid4()
         finding_id = uuid.uuid4()
         finding = ScanFindingResponse(

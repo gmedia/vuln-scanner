@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import WebSocketDisconnect
@@ -112,3 +112,37 @@ async def test_validate_empty_api_key():
 
     result = await validate_api_key(None)
     assert result is False
+
+
+@pytest.mark.asyncio
+async def test_get_redis_lazy_init(monkeypatch):
+    monkeypatch.setattr("app.api.websocket.redis", None)
+
+    mock_redis_instance = AsyncMock()
+    with patch("app.api.websocket.Redis.from_url", return_value=mock_redis_instance) as mock_from_url:
+        from app.api.websocket import get_redis
+        from app.config import settings
+
+        result = await get_redis()
+
+        mock_from_url.assert_called_once_with(settings.redis_url)
+        assert result is mock_redis_instance
+
+
+@pytest.mark.asyncio
+async def test_validate_api_key_db_found(monkeypatch):
+    mock_session = AsyncMock()
+    mock_session.execute.return_value.scalar_one_or_none.return_value = MagicMock()
+
+    class FakeAsyncSession:
+        async def __aenter__(self):
+            return mock_session
+        async def __aexit__(self, *args, **kwargs):
+            pass
+
+    monkeypatch.setattr("app.api.websocket.async_session", lambda: FakeAsyncSession())
+
+    from app.api.websocket import validate_api_key
+
+    result = await validate_api_key("db-stored-key-not-master")
+    assert result is True

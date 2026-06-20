@@ -225,3 +225,56 @@ def test_start_mobile_scan_cleanup_error(client, monkeypatch):
         headers=HEADERS,
     )
     assert resp.status_code == 500
+
+
+def test_start_mobile_scan_cleanup_remove_fails(client, monkeypatch):
+    """POST /api/scan/mobile: os.remove fails during cleanup → covered (lines 167-168)."""
+    async def _raise(*args, **kwargs):
+        raise Exception("simulated failure")
+
+    monkeypatch.setattr(
+        "app.api.scan_routes.ScannerService.start_scan", _raise
+    )
+    monkeypatch.setattr("app.api.scan_routes.os.remove", lambda p: (_ for _ in ()).throw(Exception("remove failed")))
+
+    client._transport.raise_server_exceptions = False
+    resp = client.post(
+        "/api/scan/mobile",
+        files={"file": ("test.apk", b"fake-apk-content")},
+        data={"platform": "android"},
+        headers=HEADERS,
+    )
+    assert resp.status_code == 500
+
+
+def test_export_json_helper_null_dates():
+    """_export_json with null started_at/completed_at → duration_seconds is None (line 32 else branch)."""
+    from app.api.scan_routes import _export_json
+
+    class _MockFinding:
+        severity = "high"
+        category = "Network"
+        title = "Open port 22"
+        description = "SSH port is open"
+        cve_id = None
+        cvss_score = None
+        remediation = "Close the port"
+        raw_data = None
+
+    class _MockJob:
+        id = "00000000-0000-0000-0000-000000000000"
+        scan_type = "ip"
+        target = "10.0.0.1"
+        status = "pending"
+        started_at = None
+        completed_at = None
+        result_summary = None
+        findings = [_MockFinding()]
+
+    result = _export_json(_MockJob())
+    assert result["scan_id"] == "00000000-0000-0000-0000-000000000000"
+    assert result["started_at"] is None
+    assert result["completed_at"] is None
+    assert result["duration_seconds"] is None
+    assert result["summary"] is None
+    assert len(result["findings"]) == 1

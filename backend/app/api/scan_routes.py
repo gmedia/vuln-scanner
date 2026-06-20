@@ -1,6 +1,6 @@
 import os
 import shutil
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -44,7 +44,7 @@ def _export_json(job: ScanJobDetailResponse) -> dict:
             }
             for f in job.findings
         ],
-        "exported_at": datetime.utcnow().isoformat(),
+        "exported_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -118,7 +118,7 @@ def _render_pdf_html(job: ScanJobDetailResponse) -> str:
         medium=summary.get("medium", 0),
         low=summary.get("low", 0),
         info=summary.get("info", 0),
-        exported_at=datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+        exported_at=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
         findings_rows=findings_rows,
     )
 

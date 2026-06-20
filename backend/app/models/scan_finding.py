@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import CheckConstraint, DateTime, Float, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -21,7 +21,7 @@ class ScanFinding(Base):
     cvss_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     remediation: Mapped[str | None] = mapped_column(Text, nullable=True)
     raw_data: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    found_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    found_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     __table_args__ = (
         CheckConstraint("severity IN ('critical', 'high', 'medium', 'low', 'info')", name="ck_severity"),
