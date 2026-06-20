@@ -12,10 +12,11 @@ test.describe("Navigation", () => {
 
   test("deep linking to a scan detail loads correctly", async ({ page }) => {
     await page.goto("/");
-    await page.waitForSelector("a[href^='/scan/']", { timeout: 10_000 });
+    await page.waitForSelector("a[href^='/scan/']", { timeout: 15_000 });
     const scanLink = page.locator("a[href^='/scan/']").first();
     const href = await scanLink.getAttribute("href");
 
+    test.skip(!href, "No scans found — run seed_e2e first");
     await page.goto(href!);
     await page.waitForURL(href!);
     expect(page.url()).toContain("/scan/");

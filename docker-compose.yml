@@ -175,7 +175,7 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    command: npm run dev -- --host 0.0.0.0
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:5173"]
       interval: 30s

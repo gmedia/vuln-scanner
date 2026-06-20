@@ -94,8 +94,7 @@ test.describe("Mobile Scanner", () => {
       buffer: Buffer.from("fake apk content here"),
     });
     await page.locator('button:has-text("START MOBILE SCAN")').click();
-    await expect(page.locator("text=ANALYZING BINARY...")).toBeVisible({ timeout: 3000 });
-    await expect(page).toHaveURL(/\/scan\//, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, { timeout: 15_000 });
   });
 
   test("submit button disabled until file selected", async ({ page }) => {

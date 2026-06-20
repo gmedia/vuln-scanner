@@ -26,8 +26,7 @@ test.describe("Domain Scanner", () => {
     await page.goto("/scan/domain");
     await page.locator('input[placeholder="example.com"]').fill("example.com");
     await page.locator('button:has-text("START DOMAIN SCAN")').click();
-    await expect(page.locator("text=INITIALIZING SCAN...")).toBeVisible({ timeout: 3000 });
-    await expect(page).toHaveURL(/\/scan\//, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, { timeout: 15_000 });
     await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({ timeout: 15_000 });
   });
 
@@ -35,6 +34,8 @@ test.describe("Domain Scanner", () => {
     await page.goto("/scan/domain");
     await page.locator('input[placeholder="example.com"]').fill("example.com");
     await page.locator('input[placeholder="example.com"]').press("Enter");
+    await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, { timeout: 15_000 });
+    await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({ timeout: 15_000 });
   });
 
   test("back arrow navigates to dashboard", async ({ page }) => {

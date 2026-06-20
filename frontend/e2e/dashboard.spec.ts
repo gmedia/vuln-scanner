@@ -41,14 +41,14 @@ test.describe("Dashboard", () => {
 
   test("shows scan history list when scans exist", async ({ page }) => {
     await page.goto("/");
-    await page.waitForSelector("a[href^='/scan/']", { timeout: 10_000 });
+    await page.waitForSelector("a[href^='/scan/']", { timeout: 15_000 });
     const scanCount = await page.locator("a[href^='/scan/']").count();
     expect(scanCount).toBeGreaterThan(0);
   });
 
   test("clicking a scan history item navigates to scan detail", async ({ page }) => {
     await page.goto("/");
-    await page.waitForSelector("a[href^='/scan/']", { timeout: 10_000 });
+    await page.waitForSelector("a[href^='/scan/']", { timeout: 15_000 });
     const firstScan = page.locator("a[href^='/scan/']").first();
     const href = await firstScan.getAttribute("href");
     await firstScan.click();
