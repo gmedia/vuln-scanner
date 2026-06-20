@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ScanRequest(BaseModel):
@@ -14,6 +14,8 @@ class DomainScanRequest(BaseModel):
 
 
 class ScanJobResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     scan_type: str
     target: str
@@ -25,11 +27,10 @@ class ScanJobResponse(BaseModel):
     completed_at: datetime | None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 class ScanFindingResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     job_id: uuid.UUID
     severity: str
@@ -41,9 +42,6 @@ class ScanFindingResponse(BaseModel):
     remediation: str | None
     raw_data: dict[str, object] | None
     found_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class ScanJobDetailResponse(ScanJobResponse):
