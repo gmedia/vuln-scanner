@@ -15,7 +15,6 @@ def test_generate_key(client):
     assert data["is_active"] is True
     assert data["rate_limit"] == 10
     assert data["key"].startswith("sk_")
-    return data
 
 
 def test_generate_key_defaults(client):

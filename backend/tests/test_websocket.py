@@ -132,7 +132,9 @@ async def test_get_redis_lazy_init(monkeypatch):
 @pytest.mark.asyncio
 async def test_validate_api_key_db_found(monkeypatch):
     mock_session = AsyncMock()
-    mock_session.execute.return_value.scalar_one_or_none.return_value = MagicMock()
+    mock_scalar = MagicMock()
+    mock_scalar.scalar_one_or_none.return_value = MagicMock()
+    mock_session.execute.return_value = mock_scalar
 
     class FakeAsyncSession:
         async def __aenter__(self):
