@@ -94,3 +94,21 @@ def test_handles_redis_pubsub_messages(client, monkeypatch):
 
         data2 = ws.receive_json()
         assert data2 == {"type": "heartbeat"}
+
+
+@pytest.mark.asyncio
+async def test_validate_master_api_key_direct():
+    """Tests the actual validate_api_key function with the master API key directly."""
+    from app.api.websocket import validate_api_key
+
+    result = await validate_api_key(settings.api_key)
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_validate_empty_api_key():
+    """Tests the actual validate_api_key function with None (empty key path)."""
+    from app.api.websocket import validate_api_key
+
+    result = await validate_api_key(None)
+    assert result is False
