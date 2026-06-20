@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 # Import models first so metadata is populated
 from app.database import Base
+from app.models.api_key import ApiKey
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 
