@@ -35,4 +35,31 @@ app.include_router(api_router, prefix="/api")
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok"}
+    import redis.asyncio as aioredis
+
+    checks = {"status": "ok"}
+
+    try:
+        from app.database import engine
+        from sqlalchemy import text
+
+        async with engine.connect() as conn:
+            _ = await conn.execute(text("SELECT 1"))
+        checks["database"] = "connected"
+    except Exception as e:
+        checks["database"] = f"error: {e}"
+        checks["status"] = "degraded"
+
+    try:
+        r = aioredis.from_url(settings.redis_url, socket_connect_timeout=3)
+        await r.ping()
+        await r.aclose()
+        checks["redis"] = "connected"
+    except Exception as e:
+        checks["redis"] = f"error: {e}"
+        checks["status"] = "degraded"
+
+    status_code = 200 if checks["status"] == "ok" else 503
+    from starlette.responses import JSONResponse
+
+    return JSONResponse(checks, status_code=status_code)

@@ -167,8 +167,5 @@ jobs:
             cd ${{ secrets.DEPLOY_PATH }}
             git pull origin main
             docker compose down
-            docker compose up -d --build
-            echo "Waiting for services to be healthy..."
-            sleep 15
-            curl -sf http://localhost:8000/health || (echo "Health check FAILED" && docker compose logs backend --tail=30 && exit 1)
+            docker compose up -d --build --wait
             echo "Deploy completed successfully"

@@ -63,9 +63,9 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
       interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      timeout: 10s
+      retries: 12
+      start_period: 15s
 
   worker_ip:
     build:
@@ -92,11 +92,11 @@ services:
       - ./backend:/backend
       - scan_data:/tmp/scans
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/ready')"]
       interval: 15s
       timeout: 5s
-      retries: 3
-      start_period: 45s
+      retries: 5
+      start_period: 15s
 
   worker_domain:
     build:
@@ -121,11 +121,11 @@ services:
       - ./workers:/app
       - ./backend:/backend
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/ready')"]
       interval: 15s
       timeout: 5s
-      retries: 3
-      start_period: 45s
+      retries: 5
+      start_period: 15s
 
   worker_mobile:
     build:
@@ -151,11 +151,11 @@ services:
       - ./backend:/backend
       - scan_data:/tmp/scans
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/ready')"]
       interval: 15s
       timeout: 5s
-      retries: 3
-      start_period: 45s
+      retries: 5
+      start_period: 15s
 
   frontend:
     build:
