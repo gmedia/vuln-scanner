@@ -12,5 +12,8 @@ redis_data/
 scan_data/
 .DS_Store
 *.log
+*.tsbuildinfo
+.coverage
+.sisyphus/
 certbot/www/*
 certbot/conf/*
