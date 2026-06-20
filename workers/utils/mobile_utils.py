@@ -1,13 +1,12 @@
 import os
-import re
-import zipfile
-import tempfile
-import shutil
 import plistlib
+import re
+import shutil
+import tempfile
+import zipfile
 from dataclasses import dataclass, field
 
 from loguru import logger
-from utils.database import get_sync_session
 
 
 @dataclass
@@ -203,7 +202,7 @@ def _parse_ios_plist(plist_data: dict) -> IpaInfo:
     info.min_ios = plist_data.get("MinimumOSVersion", "")
     info.platform = plist_data.get("DTPlatformName", "")
 
-    info.app_transport_security = plist_data.get("NSAppTransportSecurity", None)
+    info.app_transport_security = plist_data.get("NSAppTransportSecurity")
     if isinstance(info.app_transport_security, dict):
         domains = info.app_transport_security.get("NSExceptionDomains", {})
         info.ats_exceptions = list(domains.keys()) if isinstance(domains, dict) else []

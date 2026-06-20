@@ -1,23 +1,17 @@
 """Tests for mobile_utils.py: manifest parsing, secret scanning, plist parsing."""
 
-import os
-import json
-import plistlib
-import zipfile
-import tempfile
 
-import pytest
 
 from utils.mobile_utils import (
-    _parse_android_manifest,
-    _sdk_to_android_version,
-    _parse_ios_plist,
-    _scan_secrets,
-    _extract_library_names,
-    _build_android_findings,
-    _build_ios_findings,
     AndroidManifestInfo,
     IpaInfo,
+    _build_android_findings,
+    _build_ios_findings,
+    _extract_library_names,
+    _parse_android_manifest,
+    _parse_ios_plist,
+    _scan_secrets,
+    _sdk_to_android_version,
 )
 
 

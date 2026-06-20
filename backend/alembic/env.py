@@ -1,16 +1,14 @@
-from logging.config import fileConfig
-from sqlalchemy import engine_from_config, pool
-from alembic import context
 import os
 import sys
+from logging.config import fileConfig
+
+from sqlalchemy import engine_from_config, pool
+
+from alembic import context
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from app.database import Base
-from app.models.scan_job import ScanJob
-from app.models.scan_finding import ScanFinding
-from app.models.cve_cache import CveCache
-from app.models.api_key import ApiKey
 
 config = context.config
 

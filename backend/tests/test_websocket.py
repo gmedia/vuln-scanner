@@ -15,11 +15,10 @@ def test_reject_no_api_key(client, monkeypatch):
     monkeypatch.setattr("app.api.websocket.validate_api_key", mock_validate)
 
     headers = {"X-API-Key": settings.api_key}
-    with pytest.raises(WebSocketDisconnect) as exc_info:
-        with client.websocket_connect(
-            "/api/ws/scan/test-job-id", headers=headers
-        ):
-            pass
+    with pytest.raises(WebSocketDisconnect) as exc_info, client.websocket_connect(
+        "/api/ws/scan/test-job-id", headers=headers
+    ):
+        pass
     assert exc_info.value.code == 4001
 
 
@@ -30,11 +29,10 @@ def test_reject_invalid_api_key(client, monkeypatch):
     monkeypatch.setattr("app.api.websocket.validate_api_key", mock_validate)
 
     headers = {"X-API-Key": settings.api_key}
-    with pytest.raises(WebSocketDisconnect) as exc_info:
-        with client.websocket_connect(
-            "/api/ws/scan/test-job-id?api_key=bad-key", headers=headers
-        ):
-            pass
+    with pytest.raises(WebSocketDisconnect) as exc_info, client.websocket_connect(
+        "/api/ws/scan/test-job-id?api_key=bad-key", headers=headers
+    ):
+        pass
     assert exc_info.value.code == 4001
 
 

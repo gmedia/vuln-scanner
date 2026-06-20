@@ -5,16 +5,15 @@ Inserts sample scan jobs + findings so frontend E2E tests have data to work with
 """
 import asyncio
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.config import settings
-from app.models.scan_job import ScanJob
-from app.models.scan_finding import ScanFinding
 from app.database import Base
-
+from app.models.scan_finding import ScanFinding
+from app.models.scan_job import ScanJob
 
 SEED_DATA = [
     {
@@ -75,7 +74,7 @@ async def seed():
             await engine.dispose()
             return
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         for i, item in enumerate(SEED_DATA):
             job_id = uuid.uuid4()

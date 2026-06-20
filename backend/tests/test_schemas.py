@@ -1,18 +1,17 @@
 import uuid
 from datetime import datetime
+
 import pytest
 from pydantic import ValidationError
 
 from app.schemas.scan import (
-    ScanRequest,
     DomainScanRequest,
-    ScanJobResponse,
-    ScanFindingResponse,
-    ScanJobDetailResponse,
-    PaginatedResponse,
     ErrorResponse,
+    PaginatedResponse,
+    ScanFindingResponse,
+    ScanJobResponse,
+    ScanRequest,
 )
-from app.models.scan_job import ScanJob
 
 
 class TestScanRequest:

@@ -1,11 +1,11 @@
-import os
-import json
 import hashlib
+import json
+import os
+from typing import Any
+
 import httpx
 import redis
-from typing import Any
 from loguru import logger
-
 
 OSV_BASE_URL = os.getenv("OSV_BASE_URL", "https://api.osv.dev/v1")
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")

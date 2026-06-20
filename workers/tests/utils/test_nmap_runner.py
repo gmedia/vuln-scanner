@@ -1,7 +1,6 @@
 """Tests for nmap_runner.py: XML parsing and findings extraction."""
 
-import pytest
-from utils.nmap_runner import parse_nmap_xml, findings_from_nmap, NmapResult
+from utils.nmap_runner import NmapResult, findings_from_nmap, parse_nmap_xml
 
 
 class TestParseNmapXml:

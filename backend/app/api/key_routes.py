@@ -1,16 +1,18 @@
 import hashlib
 import secrets
 
-from fastapi import APIRouter, HTTPException, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.api_key import ApiKey
 from app.schemas.api_key import (
-    KeyCreateRequest, KeyResponse, KeyRevokeResponse, KeyListResponse,
+    KeyCreateRequest,
+    KeyListResponse,
+    KeyResponse,
+    KeyRevokeResponse,
 )
-from app.config import settings
 
 router = APIRouter(prefix="/keys", tags=["keys"])
 

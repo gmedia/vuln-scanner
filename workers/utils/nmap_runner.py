@@ -1,7 +1,7 @@
 import asyncio
 import xml.etree.ElementTree as ET
-import re
 from dataclasses import dataclass, field
+
 from loguru import logger
 
 

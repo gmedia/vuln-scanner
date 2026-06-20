@@ -1,7 +1,7 @@
 import os
-import json
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
 DATABASE_URL_SYNC = os.getenv(
     "DATABASE_URL_SYNC",

@@ -1,10 +1,11 @@
 import sys
+
 sys.path.insert(0, "/home/ubuntu/vuln-scanner/workers")
 
-from unittest.mock import patch, MagicMock, ANY, PropertyMock
+from unittest.mock import ANY, MagicMock, PropertyMock, patch
+
 import pytest
 from celery.exceptions import Retry
-
 
 JOB_ID = "test-job-mobile-9012"
 FILE_PATH = "/tmp/test-app.apk"

@@ -1,15 +1,19 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, Query
-from fastapi.responses import JSONResponse, HTMLResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 import os
 import shutil
-import json
 from datetime import datetime
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi.responses import HTMLResponse, JSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.schemas.scan import (
-    ScanRequest, DomainScanRequest, ScanJobResponse, ScanJobDetailResponse,
-    ScanFindingResponse, PaginatedResponse, ErrorResponse,
+    DomainScanRequest,
+    PaginatedResponse,
+    ScanFindingResponse,
+    ScanJobDetailResponse,
+    ScanJobResponse,
+    ScanRequest,
 )
 from app.services.scanner import ScannerService
 

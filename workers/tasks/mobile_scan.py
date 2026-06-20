@@ -1,19 +1,19 @@
-import os
 import json
+import os
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import redis
 from celery import shared_task
+from loguru import logger
 from sqlalchemy import update
 
-from loguru import logger
+from tasks.dead_letter import dead_letter_handler
+from utils.cve_lookup import extract_cvss, format_vuln_finding, lookup_service_cves
 from utils.database import get_sync_session
 from utils.mobile_utils import analyze_apk, analyze_ipa
-from utils.cve_lookup import lookup_service_cves, extract_cvss, format_vuln_finding
 from utils.severity import compute_severity_summary, sort_findings_by_severity
-from tasks.dead_letter import dead_letter_handler
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
@@ -44,7 +44,7 @@ def run_mobile_scan(self, job_id: str, file_path: str, platform: str):
     logger.info("Mobile scan started: job={job_id} platform={platform} path={path}", job_id=job_id, platform=platform, path=file_path)
     session = get_sync_session()
 
-    _update_status(session, job_id, "running", started_at=datetime.now(timezone.utc))
+    _update_status(session, job_id, "running", started_at=datetime.now(UTC))
     session.commit()
 
     if not os.path.exists(file_path):
@@ -125,7 +125,7 @@ def run_mobile_scan(self, job_id: str, file_path: str, platform: str):
         _save_findings(session, job_id, all_findings)
 
         _update_status(session, job_id, "completed", progress=100,
-                       result_summary=summary, completed_at=datetime.now(timezone.utc))
+                       result_summary=summary, completed_at=datetime.now(UTC))
         session.commit()
         session.close()
 

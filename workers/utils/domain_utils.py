@@ -1,9 +1,9 @@
-import ssl
-import socket
 import asyncio
 import re
+import socket
+import ssl
 from dataclasses import dataclass, field
-from urllib.parse import urlparse
+
 from loguru import logger
 
 

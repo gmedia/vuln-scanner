@@ -1,12 +1,13 @@
 """Tests for workers.tasks.ip_scan — Celery task orchestration."""
 
 import sys
+
 sys.path.insert(0, "/home/ubuntu/vuln-scanner/workers")
 
-from unittest.mock import patch, AsyncMock, MagicMock, ANY, PropertyMock
+from unittest.mock import ANY, AsyncMock, MagicMock, PropertyMock, patch
+
 import pytest
 from celery.exceptions import Retry
-
 
 JOB_ID = "test-job-uuid-1234"
 TARGET = "192.168.1.1"

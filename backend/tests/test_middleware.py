@@ -1,4 +1,3 @@
-import pytest
 from app.config import settings
 
 API_KEY = settings.api_key

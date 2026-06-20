@@ -1,22 +1,22 @@
 import sys
+
 sys.path.insert(0, "/home/ubuntu/vuln-scanner/backend")
 
-import uuid
 import json
+import uuid
 from unittest.mock import MagicMock
 
 import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
 from sqlalchemy import String, Text, TypeDecorator
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 # Import models first so metadata is populated
 from app.database import Base
-from app.models.scan_job import ScanJob
 from app.models.scan_finding import ScanFinding
-from app.models.cve_cache import CveCache
-from app.models.api_key import ApiKey
+from app.models.scan_job import ScanJob
+
 
 # Build SQLite-safe type decorators
 class UUIDType(TypeDecorator):
@@ -50,7 +50,9 @@ class JSONBType(TypeDecorator):
         return value
 
 # Replace PostgreSQL types on metadata with SQLite-safe decorators
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB as PG_JSONB
+from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+
 for table in Base.metadata.tables.values():
     for column in table.columns:
         if isinstance(column.type, PG_UUID):
@@ -61,7 +63,6 @@ for table in Base.metadata.tables.values():
 # Now safe to import the rest of the app
 from app.database import get_db
 from app.main import app
-from app.config import settings
 
 
 @pytest_asyncio.fixture

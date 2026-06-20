@@ -1,11 +1,9 @@
 import uuid
+
 import pytest
-from datetime import datetime
 
-from app.models.scan_job import ScanJob
 from app.models.scan_finding import ScanFinding
-from app.schemas.scan import ScanJobResponse, ScanJobDetailResponse
-
+from app.models.scan_job import ScanJob
 
 API_KEY = "dev-api-key-change-me"
 HEADERS = {"X-API-Key": API_KEY}

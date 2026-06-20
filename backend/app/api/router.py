@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 
+from app.api.key_routes import router as key_router
 from app.api.scan_routes import router as scan_router
 from app.api.websocket import router as ws_router
-from app.api.key_routes import router as key_router
 
 api_router = APIRouter()
 

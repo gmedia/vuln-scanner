@@ -1,12 +1,14 @@
-import uuid
 import math
+import uuid
+
 from celery import Celery
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+
 from app.config import settings
-from app.models.scan_job import ScanJob
 from app.models.scan_finding import ScanFinding
-from app.schemas.scan import ScanJobResponse, ScanJobDetailResponse, ScanFindingResponse, PaginatedResponse
+from app.models.scan_job import ScanJob
+from app.schemas.scan import PaginatedResponse, ScanFindingResponse, ScanJobDetailResponse, ScanJobResponse
 
 celery_app = Celery(
     "vuln_scanner_api",

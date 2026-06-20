@@ -1,9 +1,11 @@
 """Shared fixtures for workers tasks tests."""
 
 import sys
+
 sys.path.insert(0, "/home/ubuntu/vuln-scanner/workers")
 
 from unittest.mock import MagicMock
+
 import pytest
 from celery.exceptions import Retry
 
@@ -37,7 +39,7 @@ def mock_self_mid_retry():
 
 @pytest.fixture
 def sample_nmap_result():
-    from utils.nmap_runner import NmapResult, HostInfo, PortInfo
+    from utils.nmap_runner import HostInfo, NmapResult, PortInfo
 
     host = HostInfo(
         ip="192.168.1.1",
@@ -66,14 +68,14 @@ def sample_nmap_result_no_hosts():
 
 @pytest.fixture
 def sample_nmap_result_host_down():
-    from utils.nmap_runner import NmapResult, HostInfo
+    from utils.nmap_runner import HostInfo, NmapResult
     host = HostInfo(ip="10.0.0.1", status="down")
     return NmapResult(hosts=[host])
 
 
 @pytest.fixture
 def sample_nmap_result_no_product():
-    from utils.nmap_runner import NmapResult, HostInfo, PortInfo
+    from utils.nmap_runner import HostInfo, NmapResult, PortInfo
     host = HostInfo(ip="10.0.0.1", status="up")
     host.ports = [
         PortInfo(
@@ -120,7 +122,7 @@ def sample_nmap_result_no_hosts():
 @pytest.fixture
 def sample_nmap_result_host_down():
     """NmapResult with a host that is down (no open ports listed)."""
-    from utils.nmap_runner import NmapResult, HostInfo
+    from utils.nmap_runner import HostInfo, NmapResult
 
     host = HostInfo(ip="10.0.0.1", status="down")
     return NmapResult(hosts=[host])
@@ -129,7 +131,7 @@ def sample_nmap_result_host_down():
 @pytest.fixture
 def sample_nmap_result_no_product():
     """NmapResult with a host up but ports that have no product/version."""
-    from utils.nmap_runner import NmapResult, HostInfo, PortInfo
+    from utils.nmap_runner import HostInfo, NmapResult, PortInfo
 
     host = HostInfo(ip="10.0.0.1", status="up")
     host.ports = [

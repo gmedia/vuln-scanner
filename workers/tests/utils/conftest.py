@@ -1,13 +1,13 @@
 """Shared fixtures for workers utils tests."""
 
 import sys
+
 sys.path.insert(0, "/home/ubuntu/vuln-scanner/workers")
 
 import json
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 
 # ---------------------------------------------------------------------------
 # Sample nmap XML fixtures

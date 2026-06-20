@@ -1,6 +1,5 @@
 """Tests for severity.py: classification, summary, sorting."""
 
-import pytest
 from utils.severity import (
     classify_severity,
     compute_severity_summary,

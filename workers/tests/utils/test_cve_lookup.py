@@ -1,20 +1,20 @@
 """Tests for cve_lookup.py: caching, OSV query, CVSS extraction, formatting."""
 
 import json
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from utils.cve_lookup import (
     _cache_key,
-    _get_cached_vulns,
-    _set_cached_vulns,
-    _query_ecosystem,
-    query_osv_ecosystems,
-    lookup_service_cves,
-    extract_cvss,
     _extract_remediation,
+    _get_cached_vulns,
+    _query_ecosystem,
+    _set_cached_vulns,
+    extract_cvss,
     format_vuln_finding,
+    lookup_service_cves,
+    query_osv_ecosystems,
     severity_from_cvss,
 )
 

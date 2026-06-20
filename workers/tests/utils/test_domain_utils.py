@@ -1,17 +1,15 @@
 """Tests for domain_utils.py: security headers, tech detection, findings."""
 
-from unittest.mock import patch, MagicMock
-
-import pytest
+from unittest.mock import patch
 
 from utils.domain_utils import (
+    DomainResult,
+    HeaderCheck,
+    SslInfo,
+    TechInfo,
     check_security_headers,
     detect_tech_stack,
     findings_from_domain,
-    DomainResult,
-    SslInfo,
-    HeaderCheck,
-    TechInfo,
 )
 
 

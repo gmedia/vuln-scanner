@@ -1,14 +1,13 @@
 import uuid
-import pytest
-from sqlalchemy import select
 
-from app.services.scanner import ScannerService
-from app.models.scan_job import ScanJob
+import pytest
+
 from app.schemas.scan import (
-    ScanJobDetailResponse,
-    ScanFindingResponse,
     PaginatedResponse,
+    ScanFindingResponse,
+    ScanJobDetailResponse,
 )
+from app.services.scanner import ScannerService
 
 
 @pytest.mark.asyncio

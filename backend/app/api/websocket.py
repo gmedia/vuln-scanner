@@ -1,7 +1,9 @@
 import hashlib
-from sqlalchemy import select
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
+
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from redis.asyncio import Redis
+from sqlalchemy import select
+
 from app.config import settings
 from app.database import async_session
 from app.models.api_key import ApiKey
