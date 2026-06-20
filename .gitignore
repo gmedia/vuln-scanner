@@ -15,5 +15,7 @@ scan_data/
 *.tsbuildinfo
 .coverage
 .sisyphus/
+test-results/
+playwright-report/
 certbot/www/*
 certbot/conf/*
