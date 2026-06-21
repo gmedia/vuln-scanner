@@ -113,7 +113,7 @@ async def run_nmap(target: str, ports: str = "1-1000") -> NmapResult:
         "-O",
         "--osscan-guess",
         "-p", ports,
-        target,
+        "--", target,
         "-oX", "-",
     ]
 
@@ -137,7 +137,7 @@ async def run_nmap(target: str, ports: str = "1-1000") -> NmapResult:
                 "-sV",
                 "-sC",
                 "-p", ports,
-                target,
+                "--", target,
                 "-oX", "-",
             ]
             proc = await asyncio.create_subprocess_exec(

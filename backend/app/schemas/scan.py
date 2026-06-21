@@ -1,12 +1,27 @@
+import re
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+TARGET_PATTERN = re.compile(
+    r"^(\d{1,3}\.){3}\d{1,3}$"            # IPv4
+    r"|^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$"  # domain
+)
 
 
 class ScanRequest(BaseModel):
     target: str = Field(..., min_length=1, max_length=500)
     ports: str | None = Field(default="1-1000", pattern=r"^\d+(-\d+)?(,\d+(-\d+)?)*$")
+
+    @field_validator("target")
+    @classmethod
+    def validate_target(cls, v: str) -> str:
+        if not TARGET_PATTERN.match(v):
+            raise ValueError(
+                "target must be a valid IPv4 address or fully-qualified domain name"
+            )
+        return v
 
 
 class DomainScanRequest(BaseModel):
