@@ -209,6 +209,35 @@ jobs:
           docker compose -f docker-compose.yml logs worker_ip --tail=30
           docker compose -f docker-compose.yml logs worker_domain --tail=30
 
+  docker-scan:
+    needs: []
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dir: [backend, workers, frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build ${{ matrix.dir }} image
+        run: docker build -t vuln-scanner-${{ matrix.dir }}:${{ github.sha }} ${{ matrix.dir }}
+
+      - name: Scan ${{ matrix.dir }} image with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        continue-on-error: true
+        with:
+          image-ref: vuln-scanner-${{ matrix.dir }}:${{ github.sha }}
+          format: sarif
+          output: trivy-results-${{ matrix.dir }}.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+
+      - name: Upload Trivy SARIF results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results-${{ matrix.dir }}.sarif
+          category: trivy-${{ matrix.dir }}
+
   deploy:
     if: github.event_name == 'push' && github.ref_name == 'main'
     needs: [python-tests, frontend-typecheck, frontend-unit-tests, frontend-build, python-lint, python-typecheck, frontend-lint, e2e-tests]
