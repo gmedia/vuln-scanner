@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
 from app.config import settings
+from app.middleware.auth import ApiKeyMiddleware
 
 
 @asynccontextmanager
@@ -17,8 +18,6 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
-
-from app.middleware.auth import ApiKeyMiddleware
 
 app.add_middleware(
     CORSMiddleware,
@@ -40,8 +39,9 @@ async def health_check():
     checks = {"status": "ok"}
 
     try:
-        from app.database import engine
         from sqlalchemy import text
+
+        from app.database import engine
 
         async with engine.connect() as conn:
             _ = await conn.execute(text("SELECT 1"))

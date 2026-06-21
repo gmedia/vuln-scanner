@@ -1,6 +1,7 @@
+import contextlib
 import os
 import shutil
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -29,7 +30,9 @@ def _export_json(job: ScanJobDetailResponse) -> dict:
         "status": job.status,
         "started_at": job.started_at.isoformat() if job.started_at else None,
         "completed_at": job.completed_at.isoformat() if job.completed_at else None,
-        "duration_seconds": (job.completed_at - job.started_at).total_seconds() if job.started_at and job.completed_at else None,
+        "duration_seconds": (job.completed_at - job.started_at).total_seconds()
+        if job.started_at and job.completed_at
+        else None,
         "summary": job.result_summary,
         "findings": [
             {
@@ -44,11 +47,17 @@ def _export_json(job: ScanJobDetailResponse) -> dict:
             }
             for f in job.findings
         ],
-        "exported_at": datetime.now(timezone.utc).isoformat(),
+        "exported_at": datetime.now(UTC).isoformat(),
     }
 
 
-SEVERITY_COLOR_MAP = {"critical": "#dc2626", "high": "#f97316", "medium": "#eab308", "low": "#3b82f6", "info": "#6b7280"}
+SEVERITY_COLOR_MAP = {
+    "critical": "#dc2626",
+    "high": "#f97316",
+    "medium": "#eab308",
+    "low": "#3b82f6",
+    "info": "#6b7280",
+}
 SEVERITY_ICON_MAP = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "🔵", "info": "⚪"}
 
 PDF_TEMPLATE = """<!DOCTYPE html>
@@ -80,8 +89,10 @@ p {{ margin: 5px 0; color: #aaa; }}
 <p><strong>Scan Type:</strong> {scan_type}</p>
 <p><strong>Status:</strong> {status}</p>
 <p><strong>Duration:</strong> {duration}</p>
-<p><strong>Findings:</strong> {total_findings} total ({critical} critical, {high} high, {medium} medium, {low} low, {info} info)</p>
-<p><strong>Exported:</strong> {exported_at}</p>
+""" + (
+    "<p><strong>Findings:</strong> {total_findings} total "
+    "({critical} critical, {high} high, {medium} medium, {low} low, {info} info)</p>\n"
+) + """<p><strong>Exported:</strong> {exported_at}</p>
 
 <h2>Findings</h2>
 <table>
@@ -111,14 +122,16 @@ def _render_pdf_html(job: ScanJobDetailResponse) -> str:
         target=job.target,
         scan_type=job.scan_type,
         status=job.status,
-        duration=f"{(job.completed_at - job.started_at).total_seconds():.0f}s" if job.started_at and job.completed_at else "N/A",
+        duration=f"{(job.completed_at - job.started_at).total_seconds():.0f}s"
+        if job.started_at and job.completed_at
+        else "N/A",
         total_findings=summary.get("total_findings", 0),
         critical=summary.get("critical", 0),
         high=summary.get("high", 0),
         medium=summary.get("medium", 0),
         low=summary.get("low", 0),
         info=summary.get("info", 0),
-        exported_at=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+        exported_at=datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC"),
         findings_rows=findings_rows,
     )
 
@@ -162,10 +175,8 @@ async def start_mobile_scan(
         job = await svc.start_scan(scan_type=scan_type, target=file.filename, platform=platform, file_path=file_path)
         return job
     except Exception:
-        try:
+        with contextlib.suppress(Exception):
             os.remove(file_path)
-        except Exception:
-            pass
         raise
 
 

@@ -33,7 +33,7 @@ async def validate_api_key(api_key: str | None) -> bool:
     key_hash = hashlib.sha256(api_key.encode()).hexdigest()
     async with async_session() as session:
         result = await session.execute(
-            select(ApiKey).where(ApiKey.key_hash == key_hash, ApiKey.is_active == True)
+            select(ApiKey).where(ApiKey.key_hash == key_hash, ApiKey.is_active.is_(True))
         )
         return result.scalar_one_or_none() is not None
 
