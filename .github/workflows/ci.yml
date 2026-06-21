@@ -222,7 +222,7 @@ jobs:
         run: docker build -t vuln-scanner-${{ matrix.dir }}:${{ github.sha }} ${{ matrix.dir }}
 
       - name: Scan ${{ matrix.dir }} image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.28.0
         continue-on-error: true
         with:
           image-ref: vuln-scanner-${{ matrix.dir }}:${{ github.sha }}

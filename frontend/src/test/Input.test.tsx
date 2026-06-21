@@ -34,7 +34,8 @@ describe("Input", () => {
       />,
     );
     expect(refValue).toBeInstanceOf(HTMLInputElement);
-    expect(refValue?.tagName).toBe("INPUT");
+    const el = refValue as unknown as HTMLInputElement | null;
+    expect(el?.tagName).toBe("INPUT");
   });
 
   it("can be disabled", () => {

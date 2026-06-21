@@ -583,7 +583,9 @@ class TestCheckSsl:
     @pytest.mark.asyncio
     async def test_valid_cert_populates_fields(self):
         """Normal cert → subject, issuer, not_after, cipher, supported_versions."""
-        future_date = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=365)).strftime("%b %d %H:%M:%S %Y %Z")
+        future_date = (
+            datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=365)
+        ).strftime("%b %d %H:%M:%S %Y %Z")
         ssl_obj = _fake_ssl_object("example.com", "Let's Encrypt", future_date)
 
         reader = AsyncMock()
@@ -608,7 +610,9 @@ class TestCheckSsl:
     @pytest.mark.asyncio
     async def test_expiring_within_30_days_adds_issue(self):
         """Certificate expires in 15 days → issues list populated."""
-        near_date = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=15)).strftime("%b %d %H:%M:%S %Y %Z")
+        near_date = (
+            datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=15)
+        ).strftime("%b %d %H:%M:%S %Y %Z")
         ssl_obj = _fake_ssl_object("example.com", "CA", near_date)
 
         reader = AsyncMock()
@@ -628,7 +632,9 @@ class TestCheckSsl:
     @pytest.mark.asyncio
     async def test_expiring_exactly_30_days_adds_issue(self):
         """30 days remaining → still adds issue (<= 30)."""
-        near_date = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=30)).strftime("%b %d %H:%M:%S %Y %Z")
+        near_date = (
+            datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=30)
+        ).strftime("%b %d %H:%M:%S %Y %Z")
         ssl_obj = _fake_ssl_object("example.com", "CA", near_date)
 
         reader = AsyncMock()
@@ -647,7 +653,9 @@ class TestCheckSsl:
     @pytest.mark.asyncio
     async def test_not_expiring_adds_no_issue(self):
         """Certificate expires far in future → issues list empty (supported_versions still set)."""
-        far_date = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=365)).strftime("%b %d %H:%M:%S %Y %Z")
+        far_date = (
+            datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=365)
+        ).strftime("%b %d %H:%M:%S %Y %Z")
         ssl_obj = _fake_ssl_object("example.com", "CA", far_date)
 
         reader = AsyncMock()
@@ -711,7 +719,9 @@ class TestCheckSsl:
     @pytest.mark.asyncio
     async def test_expired_cert_days_remaining_negative(self):
         """Certificate expired 30 days ago → days_remaining is negative."""
-        past_date = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=30)).strftime("%b %d %H:%M:%S %Y %Z")
+        past_date = (
+            datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=30)
+        ).strftime("%b %d %H:%M:%S %Y %Z")
         ssl_obj = _fake_ssl_object("example.com", "CA", past_date)
 
         reader = AsyncMock()
