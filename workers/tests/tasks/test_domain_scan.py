@@ -140,6 +140,11 @@ class TestDomainScanSuccessfulFlow:
         ]
         assert len(progress_calls) > 5
 
+    def test_ssl_not_checked_when_no_https(self):
+        self.mock_http.return_value = (True, False, 200, {})
+        self._call_task()
+        self.mock_ssl.assert_not_called()
+
 
 class TestDomainScanFailure:
     _RETRIES = 0
@@ -258,3 +263,105 @@ class TestDomainScanNmapFailure:
             ANY, JOB_ID, "completed", progress=100,
             result_summary=ANY, completed_at=ANY,
         )
+
+    @patch("tasks.domain_scan.lookup_service_cves", new_callable=AsyncMock)
+    @patch("tasks.domain_scan.check_ssl", new_callable=AsyncMock)
+    def test_cve_lookup_failure_does_not_crash(self, mock_ssl, mock_cve):
+        mock_ssl.return_value = MagicMock(
+            issues=[], cipher="TLS_AES_256_GCM_SHA384",
+            subject="CN=example.com", issuer="CN=CA",
+            not_after="2026-01-01", days_remaining=365,
+        )
+        mock_cve.side_effect = Exception("CVE lookup failed")
+        result = self._call_task()
+        self.mock_save_findings.assert_called_once()
+        self.mock_update_status.assert_any_call(
+            ANY, JOB_ID, "completed", progress=100,
+            result_summary=ANY, completed_at=ANY,
+        )
+        assert result["job_id"] == JOB_ID
+
+    @patch("tasks.domain_scan.check_ssl", new_callable=AsyncMock)
+    def test_redis_health_failure_does_not_crash(self, mock_ssl):
+        mock_ssl.return_value = MagicMock(
+            issues=[], cipher="TLS_AES_256_GCM_SHA384",
+            subject="CN=example.com", issuer="CN=CA",
+            not_after="2026-01-01", days_remaining=365,
+        )
+        self.mock_redis.side_effect = Exception("Redis connection failed")
+        result = self._call_task()
+        self.mock_save_findings.assert_called_once()
+        self.mock_update_status.assert_any_call(
+            ANY, JOB_ID, "completed", progress=100,
+            result_summary=ANY, completed_at=ANY,
+        )
+        assert result["job_id"] == JOB_ID
+
+    @patch("tasks.domain_scan.check_ssl", new_callable=AsyncMock)
+    def test_publish_progress_failure_does_not_crash(self, mock_ssl):
+        mock_ssl.return_value = MagicMock(
+            issues=[], cipher="TLS_AES_256_GCM_SHA384",
+            subject="CN=example.com", issuer="CN=CA",
+            not_after="2026-01-01", days_remaining=365,
+        )
+        def publish_side_effect(job_id, step, progress, message):
+            if step == "completed":
+                raise Exception("Publish failed")
+            return None
+        self.mock_progress.side_effect = publish_side_effect
+        with pytest.raises(Exception, match="Publish failed"):
+            self._call_task()
+        self.mock_save_findings.assert_called_once()
+
+
+class TestDomainScanNestedStatusUpdateFailure:
+    @pytest.fixture(autouse=True)
+    def _setup_patches(self):
+        with (
+            patch("tasks.domain_scan.get_sync_session") as mock_session,
+            patch("tasks.domain_scan.resolve_dns", new_callable=AsyncMock) as mock_dns,
+            patch("tasks.domain_scan.publish_progress") as mock_progress,
+            patch("tasks.domain_scan._update_status") as mock_update_status,
+            patch("tasks.domain_scan.redis.Redis.from_url") as mock_redis,
+        ):
+            mock_dns.side_effect = Exception("DNS resolution failed")
+            mock_session.return_value = MagicMock()
+            mock_redis.return_value = MagicMock()
+
+            self.mock_session = mock_session
+            self.mock_dns = mock_dns
+            self.mock_progress = mock_progress
+            self.mock_update_status = mock_update_status
+            self.mock_redis = mock_redis
+            yield
+
+    def _call_task(self):
+        from tasks.domain_scan import run_domain_scan
+        task_cls = type(run_domain_scan._get_current_object())
+        with (
+            patch.object(task_cls, "request", new_callable=PropertyMock) as mock_req,
+            patch.object(task_cls, "retry", side_effect=Retry()) as mock_retry,
+            patch.object(task_cls, "max_retries", 3),
+            patch("tasks.domain_scan.dead_letter_handler") as mock_dead_letter,
+        ):
+            mock_req.return_value = MagicMock(retries=0)
+            self.mock_retry = mock_retry
+            self.mock_dead_letter = mock_dead_letter
+            run_domain_scan(JOB_ID, DOMAIN)
+
+    def test_nested_update_status_failure_does_not_crash(self):
+        call_count = 0
+
+        def update_status_side_effect(session, job_id, status, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 2:
+                raise Exception("DB update failed in except handler")
+            return None
+
+        self.mock_update_status.side_effect = update_status_side_effect
+
+        with pytest.raises(Retry):
+            self._call_task()
+        self.mock_retry.assert_called_once()
+
