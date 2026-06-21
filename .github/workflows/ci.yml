@@ -136,6 +136,7 @@ jobs:
         working-directory: frontend
         env:
           CI: "true"
+          BASE_URL: "http://localhost:5173"
 
       - name: Upload Playwright HTML report (on failure)
         if: failure()

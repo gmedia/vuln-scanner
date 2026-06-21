@@ -8,7 +8,7 @@ export default defineConfig({
   workers: 1,
   reporter: [["list"], ["html", { outputFolder: "playwright-report" }]],
   use: {
-    baseURL: "http://localhost",
+    baseURL: process.env.BASE_URL || "http://localhost",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
