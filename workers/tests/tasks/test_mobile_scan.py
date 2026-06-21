@@ -2,7 +2,7 @@ import sys
 
 sys.path.insert(0, "/home/ubuntu/vuln-scanner/workers")
 
-from unittest.mock import ANY, MagicMock, PropertyMock, patch
+from unittest.mock import ANY, MagicMock, PropertyMock, mock_open, patch
 
 import pytest
 from celery.exceptions import Retry
@@ -21,7 +21,7 @@ class TestMobileAndroidSuccessfulFlow:
             patch("tasks.mobile_scan.get_sync_session") as mock_session,
             patch("tasks.mobile_scan.analyze_apk") as mock_apk,
             patch("tasks.mobile_scan.analyze_ipa") as mock_ipa,
-            patch("tasks.mobile_scan._scan_secrets") as mock_secrets,
+            patch("utils.mobile_utils._scan_secrets") as mock_secrets,
             patch("tasks.mobile_scan.lookup_service_cves") as mock_cve,
             patch("tasks.mobile_scan.publish_progress") as mock_progress,
             patch("tasks.mobile_scan._update_status") as mock_update_status,
@@ -30,6 +30,7 @@ class TestMobileAndroidSuccessfulFlow:
             patch("tasks.mobile_scan.os.path.exists") as mock_exists,
             patch("tasks.mobile_scan.os.path.getsize") as mock_size,
             patch("tasks.mobile_scan.os.remove") as mock_remove,
+            patch("builtins.open", mock_open(read_data=b"test data")),
         ):
             manifest_info = AndroidManifestInfo(
                 package_name="com.example.app",
@@ -250,6 +251,7 @@ class TestMobileScanIos:
             patch("tasks.mobile_scan.os.path.exists") as mock_exists,
             patch("tasks.mobile_scan.os.path.getsize") as mock_size,
             patch("tasks.mobile_scan.os.remove") as mock_remove,
+            patch("builtins.open", mock_open(read_data=b"test data")),
         ):
             mock_ipa.return_value = (MagicMock(), [], [])
             mock_apk.return_value = (MagicMock(), [], [])
