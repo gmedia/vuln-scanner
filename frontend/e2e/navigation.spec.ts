@@ -5,7 +5,7 @@ test.describe("Navigation", () => {
     const routes = ["/", "/scan/ip", "/scan/domain", "/scan/mobile", "/nonexistent"];
     for (const route of routes) {
       await page.goto(route);
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState("networkidle");
       expect(await page.locator("body").isVisible()).toBe(true);
     }
   });
