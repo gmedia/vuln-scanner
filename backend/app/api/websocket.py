@@ -2,14 +2,14 @@ import hashlib
 import logging
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
-
-logger = logging.getLogger(__name__)
 from redis.asyncio import Redis
 from sqlalchemy import select
 
 from app.config import settings
 from app.database import async_session
 from app.models.api_key import ApiKey
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["websocket"])
 
