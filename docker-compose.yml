@@ -50,6 +50,7 @@ services:
       REDIS_URL: ${REDIS_URL}
       CELERY_BROKER_URL: ${CELERY_BROKER_URL}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost,http://localhost:8000}
       API_KEY: ${API_KEY:-dev-api-key-change-me}
       SECRET_KEY: ${SECRET_KEY:-dev-secret-key}
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
