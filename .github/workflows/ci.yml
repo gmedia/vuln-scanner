@@ -118,6 +118,10 @@ jobs:
       - name: Seed E2E test data
         run: docker compose -f docker-compose.yml exec -T backend python -m scripts.seed_e2e
 
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
       - name: Install Playwright with Chromium
         run: npx playwright install --with-deps chromium
         working-directory: frontend
