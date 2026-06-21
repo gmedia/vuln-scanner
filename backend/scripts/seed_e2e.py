@@ -23,9 +23,27 @@ SEED_DATA = [
         "progress": 100,
         "result_summary": {"total_findings": 3, "critical": 1, "high": 1, "medium": 1, "low": 0, "info": 0},
         "findings": [
-            {"severity": "critical", "category": "Open Port", "title": "Port 53 (DNS) open — possible DNS amplification", "cve_id": None, "cvss_score": None},
-            {"severity": "high", "category": "Open Port", "title": "Port 443 (HTTPS) open", "cve_id": None, "cvss_score": None},
-            {"severity": "medium", "category": "Service Detection", "title": "Google DNS server detected", "cve_id": None, "cvss_score": None},
+            {
+                "severity": "critical",
+                "category": "Open Port",
+                "title": "Port 53 (DNS) open — possible DNS amplification",
+                "cve_id": None,
+                "cvss_score": None,
+            },
+            {
+                "severity": "high",
+                "category": "Open Port",
+                "title": "Port 443 (HTTPS) open",
+                "cve_id": None,
+                "cvss_score": None,
+            },
+            {
+                "severity": "medium",
+                "category": "Service Detection",
+                "title": "Google DNS server detected",
+                "cve_id": None,
+                "cvss_score": None,
+            },
         ],
     },
     {
@@ -35,8 +53,20 @@ SEED_DATA = [
         "progress": 100,
         "result_summary": {"total_findings": 2, "critical": 0, "high": 1, "medium": 1, "low": 0, "info": 0},
         "findings": [
-            {"severity": "high", "category": "Security Headers", "title": "Missing X-Frame-Options header", "cve_id": None, "cvss_score": None},
-            {"severity": "medium", "category": "TLS", "title": "TLS 1.0 supported", "cve_id": None, "cvss_score": None},
+            {
+                "severity": "high",
+                "category": "Security Headers",
+                "title": "Missing X-Frame-Options header",
+                "cve_id": None,
+                "cvss_score": None,
+            },
+            {
+                "severity": "medium",
+                "category": "TLS",
+                "title": "TLS 1.0 supported",
+                "cve_id": None,
+                "cvss_score": None,
+            },
         ],
     },
     {
