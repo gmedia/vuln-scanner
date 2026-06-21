@@ -1,4 +1,4 @@
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { X, LayoutDashboard, Radar, Globe, Smartphone, Crosshair } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useScanStore } from "@/store/scanStore";
@@ -18,7 +18,6 @@ const navItems = [
 ];
 
 function Sidebar({ open, onClose }: SidebarProps) {
-  const location = useLocation();
   const activeJobId = useScanStore((s) => s.activeJobId);
 
   return (

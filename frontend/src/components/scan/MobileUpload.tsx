@@ -2,7 +2,6 @@ import { useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Upload, Smartphone, FileWarning, Loader2, X, File } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import { useStartMobileScan } from "@/hooks/useScan";
 import { useScanStore } from "@/store/scanStore";
 
