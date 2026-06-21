@@ -128,7 +128,8 @@ async def run_nmap(target: str, ports: str = "1-1000") -> NmapResult:
 
     if proc.returncode != 0:
         stderr_text = stderr.decode("utf-8", errors="replace")
-        logger.warning("nmap exited with code {code} for {target}: {stderr}", code=proc.returncode, target=target, stderr=stderr_text[:200])
+        logger.warning("nmap exited with code {code} for {target}: {stderr}",
+                       code=proc.returncode, target=target, stderr=stderr_text[:200])
         if "Failed to open" in stderr_text or "Permission denied" in stderr_text:
             logger.info("Retrying nmap without OS detection for {target}", target=target)
             cmd_fallback = [

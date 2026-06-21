@@ -78,7 +78,8 @@ def analyze_apk(file_path: str) -> tuple[AndroidManifestInfo, list[dict], list[s
             all_files = zf.namelist()
             classes_dex = [f for f in all_files if f.endswith(".dex")]
             lib_files = [f for f in all_files if ".so" in f]
-            logger.info("APK extracted: {n} files, {dex} dex, {lib} libs", n=len(all_files), dex=len(classes_dex), lib=len(lib_files))
+            logger.info("APK extracted: {n} files, {dex} dex, {lib} libs",
+                        n=len(all_files), dex=len(classes_dex), lib=len(lib_files))
 
             if "AndroidManifest.xml" in all_files:
                 zf.extract("AndroidManifest.xml", extracts_dir)
@@ -103,7 +104,6 @@ def analyze_apk(file_path: str) -> tuple[AndroidManifestInfo, list[dict], list[s
 def analyze_ipa(file_path: str) -> tuple[IpaInfo, list[dict], list[str]]:
     info = IpaInfo()
     extracts_dir = tempfile.mkdtemp(prefix="ipa_")
-    strings_content = ""
 
     try:
         with zipfile.ZipFile(file_path, "r") as zf:
@@ -122,8 +122,6 @@ def analyze_ipa(file_path: str) -> tuple[IpaInfo, list[dict], list[str]]:
                 except Exception as e:
                     logger.warning("Failed to parse plist {path}: {error}", path=plist_path, error=e)
                     continue
-
-            strings_content = _extract_text_from_zip(zf, all_files, ".plist", ".nib", ".storyboardc")
 
             lib_files = [f for f in all_files if ".framework" in f or ".dylib" in f]
     except Exception as e:

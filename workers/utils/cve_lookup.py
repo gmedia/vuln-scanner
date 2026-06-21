@@ -27,7 +27,8 @@ def _get_cached_vulns(package_name: str, ecosystem: str, version: str) -> list[d
             return json.loads(data)
         logger.debug("CVE cache MISS for {ecosystem}:{pkg}@{ver}", ecosystem=ecosystem, pkg=package_name, ver=version)
     except Exception as e:
-        logger.warning("CVE cache read error for {ecosystem}:{pkg}@{ver}: {error}", ecosystem=ecosystem, pkg=package_name, ver=version, error=e)
+        logger.warning("CVE cache read error for {ecosystem}:{pkg}@{ver}: {error}",
+                       ecosystem=ecosystem, pkg=package_name, ver=version, error=e)
     return None
 
 
@@ -36,7 +37,8 @@ def _set_cached_vulns(package_name: str, ecosystem: str, version: str, vulns: li
         r = redis.Redis.from_url(REDIS_URL)
         r.setex(_cache_key(package_name, ecosystem, version), CVE_CACHE_TTL, json.dumps(vulns))
     except Exception as e:
-        logger.warning("CVE cache write error for {ecosystem}:{pkg}@{ver}: {error}", ecosystem=ecosystem, pkg=package_name, ver=version, error=e)
+        logger.warning("CVE cache write error for {ecosystem}:{pkg}@{ver}: {error}",
+                       ecosystem=ecosystem, pkg=package_name, ver=version, error=e)
 
 
 async def _query_ecosystem(package_name: str, ecosystem: str, version: str) -> list[dict[str, Any]]:
@@ -54,10 +56,12 @@ async def _query_ecosystem(package_name: str, ecosystem: str, version: str) -> l
                 vulns = resp.json().get("vulns", [])
                 _set_cached_vulns(package_name, ecosystem, version, vulns)
                 return vulns
-            logger.warning("OSV query returned status {status} for {ecosystem}:{pkg}@{ver}", status=resp.status_code, ecosystem=ecosystem, pkg=package_name, ver=version)
+            logger.warning("OSV query returned status {status} for {ecosystem}:{pkg}@{ver}",
+                           status=resp.status_code, ecosystem=ecosystem, pkg=package_name, ver=version)
             return []
     except Exception as e:
-        logger.error("OSV query failed for {ecosystem}:{pkg}@{ver}: {error}", ecosystem=ecosystem, pkg=package_name, ver=version, error=e)
+        logger.error("OSV query failed for {ecosystem}:{pkg}@{ver}: {error}",
+                     ecosystem=ecosystem, pkg=package_name, ver=version, error=e)
         return []
 
 

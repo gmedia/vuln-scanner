@@ -86,7 +86,10 @@ async def enumerate_subdomains(domain: str) -> list[str]:
             asyncio.open_connection("crt.sh", 443, ssl=True),
             timeout=10,
         )
-        request = f"GET /?q=%.{domain}&output=json HTTP/1.1\r\nHost: crt.sh\r\nUser-Agent: VulnScanner/1.0\r\nConnection: close\r\n\r\n"
+        request = (
+            f"GET /?q=%.{domain}&output=json HTTP/1.1\r\n"
+            "Host: crt.sh\r\nUser-Agent: VulnScanner/1.0\r\nConnection: close\r\n\r\n"
+        )
         writer.write(request.encode())
         await writer.drain()
 
@@ -149,7 +152,8 @@ async def check_http(domain: str) -> tuple[bool, bool, int, dict[str, str]]:
                         break
                     response += chunk
             except Exception as e:
-                logger.warning("Error reading HTTP response for {domain}:{port}: {error}", domain=domain, port=port, error=e)
+                logger.warning("Error reading HTTP response for {domain}:{port}: {error}",
+                               domain=domain, port=port, error=e)
 
             writer.close()
             await writer.wait_closed()
@@ -205,7 +209,8 @@ async def check_ssl(domain: str) -> SslInfo:
                 not_after_dt = datetime.datetime.strptime(not_after, "%b %d %H:%M:%S %Y %Z")
                 info.days_remaining = (not_after_dt - datetime.datetime.utcnow()).days
             except Exception as e:
-                logger.trace("Failed to parse cert date {date} for {domain}: {error}", date=not_after, domain=domain, error=e)
+                logger.trace("Failed to parse cert date {date} for {domain}: {error}",
+                             date=not_after, domain=domain, error=e)
                 info.days_remaining = -1
 
             cipher_info = cert.cipher() if hasattr(cert, "cipher") else ("", "", 0)
@@ -370,7 +375,10 @@ def findings_from_domain(result: DomainResult) -> list[dict]:
             "severity": "info",
             "category": "ssl_cipher",
             "title": f"SSL Cipher: {result.ssl_info.cipher}",
-            "description": f"Certificate expires on {result.ssl_info.not_after} ({result.ssl_info.days_remaining} days)",
+            "description": (
+                f"Certificate expires on {result.ssl_info.not_after} "
+                f"({result.ssl_info.days_remaining} days)"
+            ),
         })
 
     for check in result.header_checks:
