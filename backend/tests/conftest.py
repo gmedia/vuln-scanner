@@ -1,4 +1,7 @@
+import os
 import sys
+
+os.environ.setdefault("API_KEY", "dev-api-key-change-me")
 
 sys.path.insert(0, "/home/ubuntu/vuln-scanner/backend")
 

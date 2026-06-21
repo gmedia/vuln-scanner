@@ -2,11 +2,11 @@ import uuid
 
 import pytest
 
+from app.config import settings
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 
-API_KEY = "dev-api-key-change-me"
-HEADERS = {"X-API-Key": API_KEY}
+HEADERS = {"X-API-Key": settings.api_key}
 
 
 # ── POST /api/scan/ip ──────────────────────────────────────────────────────

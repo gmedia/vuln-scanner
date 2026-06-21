@@ -3,10 +3,11 @@ from datetime import UTC, datetime
 
 import pytest
 
+from app.config import settings
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 
-HEADERS = {"X-API-Key": "dev-api-key-change-me"}
+HEADERS = {"X-API-Key": settings.api_key}
 
 
 @pytest.mark.asyncio
