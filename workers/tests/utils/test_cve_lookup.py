@@ -86,34 +86,42 @@ class TestSetCachedVulns:
 class TestQueryEcosystem:
     @pytest.mark.asyncio
     async def test_cache_hit_skips_http(self, mock_redis_hit):
-        with patch("utils.cve_lookup._get_cached_vulns", return_value=[{"id": "CVE-1"}]):
-            with patch("utils.cve_lookup.httpx.AsyncClient") as mock_http:
-                result = await _query_ecosystem("pkg", "PyPI", "1.0")
-                assert len(result) == 1
-                mock_http.assert_not_called()
+        with (
+            patch("utils.cve_lookup._get_cached_vulns", return_value=[{"id": "CVE-1"}]),
+            patch("utils.cve_lookup.httpx.AsyncClient") as mock_http,
+        ):
+            result = await _query_ecosystem("pkg", "PyPI", "1.0")
+            assert len(result) == 1
+            mock_http.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_cache_miss_calls_osv(self, mock_httpx_osv_success):
-        with patch("utils.cve_lookup._get_cached_vulns", return_value=None):
-            with patch("utils.cve_lookup._set_cached_vulns") as mock_set:
-                with patch("utils.cve_lookup.httpx.AsyncClient", return_value=mock_httpx_osv_success):
-                    result = await _query_ecosystem("pkg", "PyPI", "1.0")
-                    assert len(result) == 2
-                    mock_set.assert_called_once()
+        with (
+            patch("utils.cve_lookup._get_cached_vulns", return_value=None),
+            patch("utils.cve_lookup._set_cached_vulns") as mock_set,
+            patch("utils.cve_lookup.httpx.AsyncClient", return_value=mock_httpx_osv_success),
+        ):
+            result = await _query_ecosystem("pkg", "PyPI", "1.0")
+            assert len(result) == 2
+            mock_set.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_osv_404_returns_empty(self, mock_httpx_osv_not_found):
-        with patch("utils.cve_lookup._get_cached_vulns", return_value=None):
-            with patch("utils.cve_lookup.httpx.AsyncClient", return_value=mock_httpx_osv_not_found):
-                result = await _query_ecosystem("pkg", "PyPI", "1.0")
-                assert result == []
+        with (
+            patch("utils.cve_lookup._get_cached_vulns", return_value=None),
+            patch("utils.cve_lookup.httpx.AsyncClient", return_value=mock_httpx_osv_not_found),
+        ):
+            result = await _query_ecosystem("pkg", "PyPI", "1.0")
+            assert result == []
 
     @pytest.mark.asyncio
     async def test_osv_exception_returns_empty(self, mock_httpx_osv_error):
-        with patch("utils.cve_lookup._get_cached_vulns", return_value=None):
-            with patch("utils.cve_lookup.httpx.AsyncClient", return_value=mock_httpx_osv_error):
-                result = await _query_ecosystem("pkg", "PyPI", "1.0")
-                assert result == []
+        with (
+            patch("utils.cve_lookup._get_cached_vulns", return_value=None),
+            patch("utils.cve_lookup.httpx.AsyncClient", return_value=mock_httpx_osv_error),
+        ):
+            result = await _query_ecosystem("pkg", "PyPI", "1.0")
+            assert result == []
 
 
 class TestQueryOsvEcosystems:
@@ -192,7 +200,7 @@ class TestLookupServiceCves:
             return [{"id": f"CVE-{call_count[0]}"}]
 
         with patch("utils.cve_lookup.query_osv_ecosystems", side_effect=mock_query):
-            result = await lookup_service_cves("nginx", "nginx", "1.24")
+            await lookup_service_cves("nginx", "nginx", "1.24")
             assert call_count[0] == 1
 
     @pytest.mark.asyncio
@@ -204,7 +212,7 @@ class TestLookupServiceCves:
             return [{"id": f"CVE-{call_count[0]}"}]
 
         with patch("utils.cve_lookup.query_osv_ecosystems", side_effect=mock_query):
-            result = await lookup_service_cves("nginx", "openssl", "1.24")
+            await lookup_service_cves("nginx", "openssl", "1.24")
             assert call_count[0] == 2
 
 

@@ -243,7 +243,7 @@ class TestMobileScanIos:
             patch("tasks.mobile_scan.get_sync_session") as mock_session,
             patch("tasks.mobile_scan.analyze_apk") as mock_apk,
             patch("tasks.mobile_scan.analyze_ipa") as mock_ipa,
-            patch("tasks.mobile_scan.publish_progress") as mock_progress,
+            patch("tasks.mobile_scan.publish_progress"),
             patch("tasks.mobile_scan._update_status") as mock_update_status,
             patch("tasks.mobile_scan._save_findings") as mock_save_findings,
             patch("tasks.mobile_scan.redis.Redis.from_url") as mock_redis,
