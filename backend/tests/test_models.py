@@ -1,19 +1,19 @@
 import json
 import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import pytest
 from sqlalchemy import String, Text, TypeDecorator
+from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
 from app.database import Base
-from app.models.scan_finding import ScanFinding
-from app.models.scan_job import ScanJob
 
 # CveCache is not imported in conftest.py, so its JSONB/UUID column types
 # are never patched for SQLite. Import it here and patch its table columns.
 from app.models.cve_cache import CveCache
-from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from app.models.scan_finding import ScanFinding
+from app.models.scan_job import ScanJob
 
 
 class _UUIDType(TypeDecorator):
@@ -60,7 +60,7 @@ if cve_cache_table is not None:
 class TestCveCache:
     @pytest.mark.asyncio
     async def test_create_all_fields(self, db_session):
-        cached_at = datetime.now(timezone.utc)
+        cached_at = datetime.now(UTC)
         cve = CveCache(
             cve_id="CVE-2024-1234",
             description="A test vulnerability",
@@ -84,7 +84,7 @@ class TestCveCache:
 
     @pytest.mark.asyncio
     async def test_create_null_optionals(self, db_session):
-        cached_at = datetime.now(timezone.utc)
+        cached_at = datetime.now(UTC)
         cve = CveCache(
             cve_id="CVE-2024-5678",
             cached_at=cached_at,
@@ -138,7 +138,7 @@ class TestScanJob:
 
     @pytest.mark.asyncio
     async def test_create_with_all_optional_fields(self, db_session):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         job_id = uuid.uuid4()
         job = ScanJob(
             id=job_id,

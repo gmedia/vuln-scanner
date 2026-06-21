@@ -41,7 +41,6 @@ def test_rate_limit_headers_present(client, mock_celery):
 
 
 def test_ip_rate_limit_exceeded(client, mock_celery):
-    mock_ip = "10.0.0.99"
     for _ in range(300):
         resp = client.get(
             "/api/scan/history",

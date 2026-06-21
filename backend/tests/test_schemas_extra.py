@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
@@ -47,7 +47,7 @@ class TestScanRequest:
 
 class TestScanFindingResponseAllOptionalNone:
     def test_all_optional_fields_none(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         finding_id = uuid.uuid4()
         job_id = uuid.uuid4()
         finding = ScanFindingResponse(

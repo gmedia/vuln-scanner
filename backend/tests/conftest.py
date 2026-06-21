@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 # Import models first so metadata is populated
 from app.database import Base
-from app.models.api_key import ApiKey
+from app.models.api_key import ApiKey  # noqa: F401
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 
@@ -51,8 +51,8 @@ class JSONBType(TypeDecorator):
         return value
 
 # Replace PostgreSQL types on metadata with SQLite-safe decorators
-from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB  # noqa: E402
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID  # noqa: E402
 
 for table in Base.metadata.tables.values():
     for column in table.columns:
@@ -62,8 +62,8 @@ for table in Base.metadata.tables.values():
             column.type = JSONBType()
 
 # Now safe to import the rest of the app
-from app.database import get_db
-from app.main import app
+from app.database import get_db  # noqa: E402
+from app.main import app  # noqa: E402
 
 
 @pytest_asyncio.fixture

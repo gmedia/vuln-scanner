@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -12,7 +12,7 @@ HEADERS = {"X-API-Key": "dev-api-key-change-me"}
 @pytest.mark.asyncio
 async def test_export_json(client, db_session):
     """GET /api/scan/{id}/export?format=json → 200, verify JSON keys."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     job = ScanJob(
         id=uuid.uuid4(),
         scan_type="ip",
@@ -52,7 +52,7 @@ async def test_export_json(client, db_session):
 @pytest.mark.asyncio
 async def test_export_html(client, db_session):
     """GET /api/scan/{id}/export?format=html → 200, check DOCTYPE."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     job = ScanJob(
         id=uuid.uuid4(),
         scan_type="domain",
@@ -86,7 +86,7 @@ def test_start_mobile_scan_no_filename(client):
 @pytest.mark.asyncio
 async def test_get_scan_detail_with_findings_and_export(client, db_session):
     """Create job + findings, verify export JSON includes them."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     job = ScanJob(
         id=uuid.uuid4(),
         scan_type="ip",
@@ -147,7 +147,7 @@ def test_get_scan_history_empty(client):
 @pytest.mark.asyncio
 async def test_export_html_with_findings(client, db_session):
     """GET /api/scan/{id}/export?format=html with findings → 200, verify badges and CVE."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     job = ScanJob(
         id=uuid.uuid4(),
         scan_type="ip",
