@@ -33,3 +33,12 @@ repos:
       - id: check-toml
       - id: check-added-large-files
       - id: debug-statements
+      - id: bandit
+        args: ["-c", "pyproject.toml"]
+        files: ^(backend|workers)/.*\.py$
+
+  - repo: https://github.com/pyupio/safety
+    rev: "3.3.1"
+    hooks:
+      - id: safety
+        args: ["check", "--file=backend/requirements.txt", "--file=workers/requirements.txt"]
