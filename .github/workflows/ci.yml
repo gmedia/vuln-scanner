@@ -31,8 +31,15 @@ jobs:
           cache-dependency-path: ${{ matrix.dir }}/requirements.txt
       - name: Install dependencies
         run: pip install -r requirements.txt
-      - name: Run tests
-        run: python -m pytest tests/ -v --tb=short
+      - name: Run tests with coverage
+        run: python -m pytest tests/ -v --tb=short --cov-report=xml
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.dir }}
+          path: ${{ matrix.dir }}/coverage.xml
+          retention-days: 7
 
   frontend-typecheck:
     runs-on: ubuntu-latest
@@ -86,6 +93,26 @@ jobs:
       - name: Run ruff check
         run: ruff check --output-format=github
 
+  python-typecheck:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dir: [backend, workers]
+    defaults:
+      run:
+        working-directory: ${{ matrix.dir }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install mypy
+        run: pip install mypy==1.13.0
+      - name: Install runtime deps (for type stubs)
+        run: pip install -r requirements.txt
+      - name: Run mypy
+        run: mypy --config-file=pyproject.toml .
+
   frontend-lint:
     runs-on: ubuntu-latest
     defaults:
@@ -104,7 +131,7 @@ jobs:
         run: npm run lint
 
   e2e-tests:
-    needs: [python-tests, frontend-typecheck, frontend-unit-tests, python-lint, frontend-lint]
+    needs: [python-tests, frontend-typecheck, frontend-unit-tests, python-lint, python-typecheck, frontend-lint]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -165,7 +192,7 @@ jobs:
 
   deploy:
     if: github.event_name == 'push' && github.ref_name == 'main'
-    needs: [python-tests, frontend-typecheck, frontend-unit-tests, python-lint, frontend-lint, e2e-tests]
+    needs: [python-tests, frontend-typecheck, frontend-unit-tests, python-lint, python-typecheck, frontend-lint, e2e-tests]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
