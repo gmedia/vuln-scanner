@@ -26,6 +26,19 @@ if [ -n "$MISSING" ]; then
 fi
 echo "[OK] All required env vars are set"
 
+# --- Warn about dev/default credentials ---
+for var in API_KEY SECRET_KEY; do
+  eval "val=\"\$$var\""
+  case "$val" in
+    dev-*|dev-api-key-*|dev-secret-key-*)
+      echo "[WARN] $var is set to a development placeholder (${val%%????????????????}...). Generate a strong key."
+      ;;
+  esac
+done
+if echo "$CORS_ORIGINS" | grep -qE '^\*$'; then
+  echo "[WARN] CORS_ORIGINS is set to wildcard (*). Restrict to specific origins."
+fi
+
 # --- Wait for PostgreSQL ---
 DB_HOST=$(echo "$DATABASE_URL_SYNC" | sed 's/.*@//' | sed 's/:.*//')
 DB_PORT=$(echo "$DATABASE_URL_SYNC" | sed 's/.*://' | sed 's/\/.*//')

@@ -4,12 +4,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
-from app.config import settings
+from app.config import check_settings, settings
 from app.middleware.auth import ApiKeyMiddleware
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    check_settings()
     yield
 
 

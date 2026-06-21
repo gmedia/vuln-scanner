@@ -51,7 +51,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
-      API_KEY: dev-api-key-change-me
+      API_KEY: e2e-test-key
       SECRET_KEY: dev-secret-key
       OSV_BASE_URL: https://api.osv.dev/v1
       MAX_UPLOAD_SIZE_MB: 500
