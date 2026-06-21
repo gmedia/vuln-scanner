@@ -39,7 +39,7 @@ Prerequisites: Node.js 20+, Python 3.12+, Docker (PostgreSQL & Redis).
 
 ```bash
 docker run -d --name vscan-pg -e POSTGRES_USER=vscan -e POSTGRES_PASSWORD=vscan -e POSTGRES_DB=vscan -p 5432:5432 postgres:16
-docker run -d --name vscan-redis -p 6379:6379 redis:7
+docker run -d --name vscan-redis -p 6379:6379 redis:8
 ```
 
 ### 2. Backend
