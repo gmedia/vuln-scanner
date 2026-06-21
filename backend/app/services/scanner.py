@@ -21,7 +21,14 @@ class ScannerService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def start_scan(self, scan_type: str, target: str, ports: str | None = None, platform: str | None = None, file_path: str | None = None) -> ScanJob:
+    async def start_scan(
+        self,
+        scan_type: str,
+        target: str,
+        ports: str | None = None,
+        platform: str | None = None,
+        file_path: str | None = None,
+    ) -> ScanJob:
         job = ScanJob(
             id=uuid.uuid4(),
             scan_type=scan_type,
@@ -41,7 +48,15 @@ class ScannerService:
 
         return job
 
-    def _dispatch_task(self, job_id: str, scan_type: str, target: str, ports: str | None, platform: str | None, file_path: str | None = None):
+    def _dispatch_task(
+        self,
+        job_id: str,
+        scan_type: str,
+        target: str,
+        ports: str | None,
+        platform: str | None,
+        file_path: str | None = None,
+    ):
         if scan_type == "ip":
             return celery_app.send_task(
                 "ip_scan.run",
