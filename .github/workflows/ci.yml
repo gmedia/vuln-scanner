@@ -109,6 +109,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Create .env from example
+        run: cp .env.example .env
+
       - name: Start full stack via Docker Compose
         run: docker compose -f docker-compose.yml up -d --wait
 
