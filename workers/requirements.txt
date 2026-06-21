@@ -7,7 +7,7 @@ psycopg2-binary==2.9.10
 pydantic==2.10.3
 pydantic-settings==2.7.0
 httpx==0.28.1
-python-dotenv==1.0.1
+python-dotenv==1.2.2
 loguru==0.7.3
 pytest==8.3.4
 pytest-asyncio==0.25.0
