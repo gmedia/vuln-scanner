@@ -1,0 +1,15 @@
+__pycache__
+*.pyc
+*.pyo
+.venv
+.pytest_cache
+.coverage
+coverage.xml
+htmlcov
+*.egg-info
+tests/
+.git
+.gitignore
+Dockerfile
+.dockerignore
+docker-compose*
