@@ -124,6 +124,48 @@ class TestMobileAndroidSuccessfulFlow:
         self._call_task()
         assert self.mock_cve.call_count > 0
 
+    def test_secret_scan_failure_does_not_crash(self):
+        self.mock_secrets.side_effect = Exception("secret scan failed")
+        result = self._call_task()
+        assert result["job_id"] == JOB_ID
+        assert "summary" in result
+        self.mock_update_status.assert_any_call(
+            self.mock_session.return_value, JOB_ID, "completed",
+            progress=100, result_summary=ANY, completed_at=ANY,
+        )
+        self.mock_save_findings.assert_called_once()
+
+    def test_cve_lookup_failure_does_not_crash(self):
+        self.mock_cve.side_effect = Exception("CVE failed")
+        result = self._call_task()
+        assert result["job_id"] == JOB_ID
+        assert "summary" in result
+        self.mock_update_status.assert_any_call(
+            self.mock_session.return_value, JOB_ID, "completed",
+            progress=100, result_summary=ANY, completed_at=ANY,
+        )
+        self.mock_save_findings.assert_called_once()
+
+    def test_os_remove_failure_does_not_crash(self):
+        self.mock_remove.side_effect = Exception("remove failed")
+        result = self._call_task()
+        assert result["job_id"] == JOB_ID
+        assert "summary" in result
+        self.mock_update_status.assert_any_call(
+            self.mock_session.return_value, JOB_ID, "completed",
+            progress=100, result_summary=ANY, completed_at=ANY,
+        )
+
+    def test_redis_health_failure_does_not_crash(self):
+        self.mock_redis.side_effect = Exception("redis health failed")
+        result = self._call_task()
+        assert result["job_id"] == JOB_ID
+        assert "summary" in result
+        self.mock_update_status.assert_any_call(
+            self.mock_session.return_value, JOB_ID, "completed",
+            progress=100, result_summary=ANY, completed_at=ANY,
+        )
+
 
 class TestMobileScanFileNotFound:
     @pytest.fixture(autouse=True)
@@ -235,6 +277,65 @@ class TestMobileScanFinalRetry(TestMobileScanFailureAndRetry):
         args, kwargs = self.mock_dead_letter.delay.call_args
         assert kwargs["task_name"] == "mobile_scan.run"
         assert kwargs["args"] == [JOB_ID, FILE_PATH, PLATFORM]
+
+
+class TestMobileScanNestedStatusUpdateFailure:
+    """Verify the catch-all handler (lines 153-168) does not crash when
+    _update_status itself fails inside the except block."""
+
+    @pytest.fixture(autouse=True)
+    def _setup_patches(self):
+        with (
+            patch("tasks.mobile_scan.get_sync_session") as mock_session,
+            patch("tasks.mobile_scan.analyze_apk") as mock_apk,
+            patch("tasks.mobile_scan.publish_progress") as mock_progress,
+            patch("tasks.mobile_scan._update_status") as mock_update_status,
+            patch("tasks.mobile_scan.redis.Redis.from_url") as mock_redis,
+            patch("tasks.mobile_scan.os.path.exists") as mock_exists,
+            patch("tasks.mobile_scan.os.path.getsize") as mock_size,
+        ):
+            mock_exists.return_value = True
+            mock_size.return_value = 5 * 1024 * 1024
+            mock_session.return_value = MagicMock()
+            mock_redis.return_value = MagicMock()
+            # First call: "running" (line 48) — succeeds
+            # Second call: "failed" inside except (line 155) — raises
+            mock_update_status.side_effect = [None, Exception("nested status update failed")]
+            mock_apk.side_effect = Exception("APK parsing failed")
+
+            self.mock_session = mock_session
+            self.mock_apk = mock_apk
+            self.mock_progress = mock_progress
+            self.mock_update_status = mock_update_status
+            self.mock_redis = mock_redis
+            yield
+
+    def _call_task(self):
+        from tasks.mobile_scan import run_mobile_scan
+
+        task_cls = type(run_mobile_scan._get_current_object())
+        with (
+            patch.object(task_cls, "request", new_callable=PropertyMock) as mock_req,
+            patch.object(task_cls, "retry", side_effect=Retry()) as mock_retry,
+            patch.object(task_cls, "max_retries", 3),
+            patch("tasks.mobile_scan.dead_letter_handler") as mock_dead_letter,
+        ):
+            mock_req.return_value = MagicMock(retries=0)
+            self.mock_retry = mock_retry
+            self.mock_dead_letter = mock_dead_letter
+            run_mobile_scan(JOB_ID, FILE_PATH, PLATFORM)
+
+    def test_nested_status_update_failure_triggers_retry(self):
+        with pytest.raises(Retry):
+            self._call_task()
+        self.mock_retry.assert_called_once()
+
+    def test_nested_status_update_failure_publishes_progress(self):
+        with pytest.raises(Retry):
+            self._call_task()
+        self.mock_progress.assert_called_with(
+            JOB_ID, "failed", 100, ANY,
+        )
 
 
 class TestMobileScanIos:
