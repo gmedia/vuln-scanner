@@ -21,11 +21,13 @@ IP_LIMIT = 300
 
 
 class ApiKeyMiddleware(BaseHTTPMiddleware):
+    """FastAPI middleware that validates API keys and enforces rate limiting."""
     def __init__(self, app):
         super().__init__(app)
         self.redis = redis.Redis.from_url(settings.redis_url, decode_responses=True)
 
     async def dispatch(self, request: Request, call_next):
+        """Authenticate request via X-API-Key header and enforce IP and key rate limits."""
         if request.url.path in EXCLUDED_PATHS or request.url.path.startswith("/ws/"):
             return await call_next(request)
 
@@ -85,6 +87,7 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
         key_id: str,
         rate_limit: int,
     ):
+        """Check per-key rate limit, forward request, and attach rate-limit headers."""
         key = f"ratelimit:key:{key_id}"
         try:
             count = await self.redis.incr(key)

@@ -19,6 +19,7 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
 
 def publish_progress(job_id: str, step: str, progress: int, message: str):
+    """Publish a progress update to the scan's Redis pubsub channel."""
     try:
         r = redis.Redis.from_url(REDIS_URL)
         r.publish(
@@ -41,6 +42,7 @@ def _run_async(coro):
 
 @shared_task(bind=True, name="ip_scan.run", max_retries=3)
 def run_ip_scan(self, job_id: str, target: str, ports: str = "1-1000"):
+    """Execute a full IP scan: nmap, CVE lookup, and persist findings to the database."""
     logger.info("IP scan started: job={job_id} target={target} ports={ports}",
                 job_id=job_id, target=target, ports=ports)
     session = get_sync_session()

@@ -138,6 +138,7 @@ def _render_pdf_html(job: ScanJobDetailResponse) -> str:
 
 @router.post("/scan/ip", response_model=ScanJobResponse, status_code=202)
 async def start_ip_scan(req: ScanRequest, db: AsyncSession = Depends(get_db)):
+    """Submit a new IP/port scan job. Returns the created scan job with pending status."""
     svc = ScannerService(db)
     job = await svc.start_scan(scan_type="ip", target=req.target, ports=req.ports)
     return job
@@ -145,6 +146,7 @@ async def start_ip_scan(req: ScanRequest, db: AsyncSession = Depends(get_db)):
 
 @router.post("/scan/domain", response_model=ScanJobResponse, status_code=202)
 async def start_domain_scan(req: DomainScanRequest, db: AsyncSession = Depends(get_db)):
+    """Submit a new domain scan job. Returns the created scan job with pending status."""
     svc = ScannerService(db)
     job = await svc.start_scan(scan_type="domain", target=req.domain)
     return job
@@ -156,6 +158,7 @@ async def start_mobile_scan(
     platform: str = Form(...),
     db: AsyncSession = Depends(get_db),
 ):
+    """Submit a new mobile (APK/IPA) scan job. Accepts file upload and platform type."""
     if platform not in ("android", "ios"):
         raise HTTPException(status_code=400, detail="platform must be 'android' or 'ios'")
     if not file.filename:
@@ -187,12 +190,14 @@ async def get_scan_history(
     scan_type: str | None = None,
     db: AsyncSession = Depends(get_db),
 ):
+    """List scan jobs with pagination. Optionally filter by scan type."""
     svc = ScannerService(db)
     return await svc.get_history(page=page, limit=limit, scan_type=scan_type)
 
 
 @router.get("/scan/{job_id}", response_model=ScanJobDetailResponse)
 async def get_scan(job_id: str, db: AsyncSession = Depends(get_db)):
+    """Retrieve a single scan job with all findings by job ID."""
     svc = ScannerService(db)
     job = await svc.get_job(job_id)
     if not job:
@@ -202,6 +207,7 @@ async def get_scan(job_id: str, db: AsyncSession = Depends(get_db)):
 
 @router.get("/scan/{job_id}/findings", response_model=list[ScanFindingResponse])
 async def get_scan_findings(job_id: str, db: AsyncSession = Depends(get_db)):
+    """Retrieve only the findings for a scan job."""
     svc = ScannerService(db)
     findings = await svc.get_findings(job_id)
     return findings
@@ -209,6 +215,7 @@ async def get_scan_findings(job_id: str, db: AsyncSession = Depends(get_db)):
 
 @router.get("/scan/{job_id}/export")
 async def export_scan(job_id: str, format: str = Query(default="json"), db: AsyncSession = Depends(get_db)):
+    """Export scan results as JSON or HTML. Returns file download or rendered page."""
     svc = ScannerService(db)
     job = await svc.get_job(job_id)
     if not job:

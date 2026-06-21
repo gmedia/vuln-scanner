@@ -40,6 +40,7 @@ def _celery_broker_ok(r):
 
 
 class HealthHandler(BaseHTTPRequestHandler):
+    """HTTP handler serving /health and /ready endpoints for worker monitoring."""
     def _json_response(self, code, data):
         self.send_response(code)
         self.send_header("Content-Type", "application/json")

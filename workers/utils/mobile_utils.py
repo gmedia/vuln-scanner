@@ -11,6 +11,7 @@ from loguru import logger
 
 @dataclass
 class AndroidManifestInfo:
+    """Parsed AndroidManifest.xml data: package, SDK, permissions, and security flags."""
     package_name: str = ""
     version_name: str = ""
     version_code: str = ""
@@ -25,6 +26,7 @@ class AndroidManifestInfo:
 
 @dataclass
 class IpaInfo:
+    """Parsed iOS Info.plist data: bundle, version, ATS settings, and URL schemes."""
     bundle_id: str = ""
     version: str = ""
     build: str = ""
@@ -67,6 +69,7 @@ DANGEROUS_PERMISSIONS = {
 
 
 def analyze_apk(file_path: str) -> tuple[AndroidManifestInfo, list[dict], list[str]]:
+    """Analyze an APK file: parse manifest, scan for secrets, and extract library names."""
     info = AndroidManifestInfo()
     extracts_dir = tempfile.mkdtemp(prefix="apk_")
     secret_findings: list[dict] = []
@@ -102,6 +105,7 @@ def analyze_apk(file_path: str) -> tuple[AndroidManifestInfo, list[dict], list[s
 
 
 def analyze_ipa(file_path: str) -> tuple[IpaInfo, list[dict], list[str]]:
+    """Analyze an IPA file: parse Info.plist, scan for secrets, and extract library names."""
     info = IpaInfo()
     extracts_dir = tempfile.mkdtemp(prefix="ipa_")
 

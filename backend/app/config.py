@@ -12,6 +12,8 @@ _SENTINEL = "__UNSET__"
 
 
 class Settings(BaseSettings):
+    """Application settings loaded from environment and .env file."""
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     database_url: str = "postgresql+asyncpg://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner"
@@ -44,6 +46,7 @@ def _warn_dev_value(name: str, val: str) -> None:
 
 
 def check_settings() -> None:
+    """Validate security-critical settings and warn on insecure defaults."""
     if settings.api_key == _SENTINEL:
         logger.warning(
             "[SECURITY] API_KEY is not set.  All API requests will be rejected. "

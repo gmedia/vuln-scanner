@@ -10,6 +10,7 @@ from app.middleware.auth import ApiKeyMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Verify settings on startup and clean up on shutdown."""
     check_settings()
     yield
 
@@ -35,6 +36,7 @@ app.include_router(api_router, prefix="/api")
 
 @app.get("/health")
 async def health_check():
+    """Check database and Redis connectivity. Returns 200 if both are reachable, 503 if degraded."""
     import redis.asyncio as aioredis
 
     checks = {"status": "ok"}

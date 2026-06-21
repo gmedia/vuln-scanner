@@ -1,4 +1,5 @@
 def classify_severity(cvss_score: float | None) -> str:
+    """Map a CVSS score to a severity label: critical, high, medium, low, or info."""
     if cvss_score is None:
         return "medium"
     if cvss_score >= 9.0:
@@ -13,6 +14,7 @@ def classify_severity(cvss_score: float | None) -> str:
 
 
 def compute_severity_summary(findings: list[dict]) -> dict:
+    """Count findings by severity level and return a summary with totals."""
     counts = {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0}
     for f in findings:
         sev = f.get("severity", "info")
@@ -32,4 +34,5 @@ SEVERITY_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
 
 
 def sort_findings_by_severity(findings: list[dict]) -> list[dict]:
+    """Sort findings in descending severity order (critical first, info last)."""
     return sorted(findings, key=lambda f: SEVERITY_ORDER.get(f.get("severity", "info"), 4))

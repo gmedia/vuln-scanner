@@ -11,6 +11,8 @@ TARGET_PATTERN = re.compile(
 
 
 class ScanRequest(BaseModel):
+    """Request body for starting an IP scan with target address and optional port range."""
+
     target: str = Field(..., min_length=1, max_length=500)
     ports: str | None = Field(default="1-1000", pattern=r"^\d+(-\d+)?(,\d+(-\d+)?)*$")
 
@@ -25,10 +27,14 @@ class ScanRequest(BaseModel):
 
 
 class DomainScanRequest(BaseModel):
+    """Request body for starting a domain scan with the target domain name."""
+
     domain: str = Field(..., min_length=3, max_length=253)
 
 
 class ScanJobResponse(BaseModel):
+    """Public representation of a scan job returned in lists and creation responses."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
@@ -44,6 +50,8 @@ class ScanJobResponse(BaseModel):
 
 
 class ScanFindingResponse(BaseModel):
+    """A single vulnerability finding associated with a scan job."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
@@ -60,16 +68,22 @@ class ScanFindingResponse(BaseModel):
 
 
 class ScanJobDetailResponse(ScanJobResponse):
+    """Full scan job detail including all findings."""
+
     findings: list[ScanFindingResponse] = []
 
 
 class ScanHistoryParams(BaseModel):
+    """Query parameters for listing scan history with pagination and optional type filter."""
+
     page: int = Field(default=1, ge=1)
     limit: int = Field(default=20, ge=1, le=100)
     scan_type: str | None = None
 
 
 class PaginatedResponse(BaseModel):
+    """Generic paginated list response with metadata."""
+
     items: list[ScanJobResponse]
     total: int
     page: int
@@ -78,4 +92,6 @@ class PaginatedResponse(BaseModel):
 
 
 class ErrorResponse(BaseModel):
+    """Standard API error response with a detail message."""
+
     detail: str

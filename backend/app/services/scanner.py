@@ -18,6 +18,8 @@ celery_app = Celery(
 
 
 class ScannerService:
+    """Service layer for creating, querying, and listing scan jobs and findings."""
+
     def __init__(self, db: AsyncSession):
         self.db = db
 
@@ -29,6 +31,7 @@ class ScannerService:
         platform: str | None = None,
         file_path: str | None = None,
     ) -> ScanJob:
+        """Create a new scan job, persist it, and dispatch a Celery task to the appropriate queue."""
         job = ScanJob(
             id=uuid.uuid4(),
             scan_type=scan_type,
@@ -78,6 +81,7 @@ class ScannerService:
         raise ValueError(f"Unknown scan type: {scan_type}")
 
     async def get_job(self, job_id: str) -> ScanJobDetailResponse | None:
+        """Retrieve a scan job by ID with all associated findings."""
         result = await self.db.execute(
             select(ScanJob).where(ScanJob.id == job_id)
         )
@@ -95,6 +99,7 @@ class ScannerService:
         return detail
 
     async def get_findings(self, job_id: str) -> list[ScanFindingResponse]:
+        """Retrieve only the findings for a scan job, without job metadata."""
         result = await self.db.execute(
             select(ScanFinding).where(ScanFinding.job_id == job_id)
         )
@@ -102,6 +107,7 @@ class ScannerService:
         return [ScanFindingResponse.model_validate(f) for f in findings]
 
     async def get_history(self, page: int = 1, limit: int = 20, scan_type: str | None = None) -> PaginatedResponse:
+        """List scan jobs with pagination, optionally filtered by scan type."""
         query = select(ScanJob)
         count_query = select(func.count(ScanJob.id))
 

@@ -28,6 +28,7 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
 
 def publish_progress(job_id: str, step: str, progress: int, message: str):
+    """Publish a progress update to the scan's Redis pubsub channel."""
     try:
         r = redis.Redis.from_url(REDIS_URL)
         r.publish(
@@ -50,6 +51,7 @@ def _run_async(coro):
 
 @shared_task(bind=True, name="domain_scan.run", max_retries=3)
 def run_domain_scan(self, job_id: str, domain: str):
+    """Execute a full domain scan: DNS, subdomains, HTTP, SSL, headers, tech stack, nmap, and CVEs."""
     logger.info("Domain scan started: job={job_id} domain={domain}", job_id=job_id, domain=domain)
     domain = domain.lower().strip()
     if domain.startswith("http://") or domain.startswith("https://"):

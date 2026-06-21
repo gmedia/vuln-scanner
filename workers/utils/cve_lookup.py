@@ -66,6 +66,7 @@ async def _query_ecosystem(package_name: str, ecosystem: str, version: str) -> l
 
 
 async def query_osv_ecosystems(package_name: str, version: str) -> list[dict[str, Any]]:
+    """Query the OSV.dev API across multiple ecosystems for known vulnerabilities."""
     ecosystems = ["Debian", "Alpine", "Ubuntu", "PyPI", "npm", "Maven", "Go"]
     all_vulns = []
 
@@ -77,6 +78,7 @@ async def query_osv_ecosystems(package_name: str, version: str) -> list[dict[str
 
 
 async def lookup_service_cves(service_name: str, product: str, version: str) -> list[dict[str, Any]]:
+    """Look up CVEs for a service by name, product, and version using OSV.dev."""
     all_vulns = await query_osv_ecosystems(service_name, version)
     if product and product != service_name:
         product_vulns = await query_osv_ecosystems(product, version)
@@ -94,6 +96,7 @@ async def lookup_service_cves(service_name: str, product: str, version: str) -> 
 
 
 def extract_cvss(vuln: dict[str, Any]) -> float | None:
+    """Extract the CVSS v3 score from an OSV vulnerability entry, falling back to any score."""
     severity_list = vuln.get("severity", [])
     for sev in severity_list:
         if sev.get("type") == "CVSS_V3":
@@ -125,6 +128,7 @@ def _extract_remediation(vuln: dict[str, Any]) -> str | None:
 
 
 def format_vuln_finding(vuln: dict[str, Any], cvss_score: float | None) -> dict:
+    """Format an OSV vulnerability into a standardized finding dict with severity and remediation."""
     aliases = vuln.get("aliases", [])
     cve_id = ""
     for alias in aliases:
@@ -152,6 +156,7 @@ def format_vuln_finding(vuln: dict[str, Any], cvss_score: float | None) -> dict:
 
 
 def severity_from_cvss(cvss: float | None) -> str:
+    """Map a CVSS score to a severity label: critical, high, medium, low, or info."""
     if cvss is None:
         return "medium"
     if cvss >= 9.0:

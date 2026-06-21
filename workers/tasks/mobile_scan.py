@@ -19,6 +19,7 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
 
 def publish_progress(job_id: str, step: str, progress: int, message: str):
+    """Publish a progress update to the scan's Redis pubsub channel."""
     try:
         r = redis.Redis.from_url(REDIS_URL)
         r.publish(
@@ -41,6 +42,7 @@ def _run_async(coro):
 
 @shared_task(bind=True, name="mobile_scan.run", max_retries=3)
 def run_mobile_scan(self, job_id: str, file_path: str, platform: str):
+    """Execute a full mobile scan: APK/IPA analysis, secret scanning, CVE lookup for embedded libraries."""
     logger.info("Mobile scan started: job={job_id} platform={platform} path={path}",
                 job_id=job_id, platform=platform, path=file_path)
     session = get_sync_session()

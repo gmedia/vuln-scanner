@@ -7,6 +7,7 @@ from loguru import logger
 
 @dataclass
 class PortInfo:
+    """Open port details: port number, protocol, service name, and product version."""
     port: int
     protocol: str
     state: str
@@ -18,6 +19,7 @@ class PortInfo:
 
 @dataclass
 class HostInfo:
+    """Host scan results: IP, hostname(s), OS guess, open ports, and scan time."""
     ip: str
     hostname: str = ""
     status: str = "unknown"
@@ -29,11 +31,13 @@ class HostInfo:
 
 @dataclass
 class NmapResult:
+    """Aggregated nmap scan result: list of hosts, command line, and raw XML."""
     hosts: list[HostInfo] = field(default_factory=list)
     raw_xml: str = ""
 
 
 def parse_nmap_xml(xml_output: str) -> NmapResult:
+    """Parse raw nmap XML string into an NmapResult dataclass."""
     result = NmapResult(raw_xml=xml_output)
     try:
         root = ET.fromstring(xml_output)
@@ -105,6 +109,7 @@ def parse_nmap_xml(xml_output: str) -> NmapResult:
 
 
 async def run_nmap(target: str, ports: str = "1-1000") -> NmapResult:
+    """Run nmap against a target and return parsed results."""
     logger.info("Starting nmap scan on {target} ports {ports}", target=target, ports=ports)
     cmd = [
         "nmap",
@@ -152,6 +157,7 @@ async def run_nmap(target: str, ports: str = "1-1000") -> NmapResult:
 
 
 def findings_from_nmap(result: NmapResult) -> list[dict]:
+    """Convert nmap results into a list of finding dicts for database persistence."""
     findings = []
 
     for host in result.hosts:

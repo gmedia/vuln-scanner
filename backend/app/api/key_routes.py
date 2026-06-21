@@ -29,6 +29,7 @@ def _generate_key() -> str:
 
 @router.post("/generate", response_model=KeyResponse, status_code=201)
 async def generate_key(req: KeyCreateRequest, db: AsyncSession = Depends(get_db)):
+    """Generate a new API key. Returns the plain-text key once; only the hash is stored."""
     plain_key = _generate_key()
     key_hash = _hash_key(plain_key)
 
@@ -54,6 +55,7 @@ async def generate_key(req: KeyCreateRequest, db: AsyncSession = Depends(get_db)
 
 @router.post("/revoke/{key_id}", response_model=KeyRevokeResponse)
 async def revoke_key(key_id: str, db: AsyncSession = Depends(get_db)):
+    """Revoke an API key by ID. Sets is_active=False; does not delete."""
     result = await db.execute(select(ApiKey).where(ApiKey.id == key_id))
     api_key = result.scalar_one_or_none()
     if not api_key:
@@ -68,6 +70,7 @@ async def revoke_key(key_id: str, db: AsyncSession = Depends(get_db)):
 
 @router.get("", response_model=KeyListResponse)
 async def list_keys(db: AsyncSession = Depends(get_db)):
+    """List all API keys ordered by creation date descending."""
     result = await db.execute(select(ApiKey).order_by(ApiKey.created_at.desc()))
     keys = result.scalars().all()
     return KeyListResponse(
@@ -86,6 +89,7 @@ async def list_keys(db: AsyncSession = Depends(get_db)):
 
 @router.delete("/{key_id}", status_code=204)
 async def delete_key(key_id: str, db: AsyncSession = Depends(get_db)):
+    """Permanently delete an API key by ID."""
     result = await db.execute(select(ApiKey).where(ApiKey.id == key_id))
     api_key = result.scalar_one_or_none()
     if not api_key:

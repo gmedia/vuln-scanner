@@ -9,12 +9,14 @@ from loguru import logger
 
 @dataclass
 class DnsRecord:
+    """DNS record: type (A, AAAA, MX, etc.) and value."""
     record_type: str
     value: str
 
 
 @dataclass
 class SslInfo:
+    """SSL/TLS certificate details: subject, issuer, validity, cipher, and issues found."""
     subject: str = ""
     issuer: str = ""
     not_before: str = ""
@@ -28,6 +30,7 @@ class SslInfo:
 
 @dataclass
 class HeaderCheck:
+    """Security header check result: name, presence, value, severity, and recommendation."""
     name: str
     present: bool
     value: str = ""
@@ -37,6 +40,7 @@ class HeaderCheck:
 
 @dataclass
 class TechInfo:
+    """Detected technology: name, category, version, and confidence percentage."""
     name: str
     category: str = ""
     version: str = ""
@@ -45,6 +49,7 @@ class TechInfo:
 
 @dataclass
 class DomainResult:
+    """Aggregated domain scan results: DNS, HTTP, SSL, headers, tech stack, and subdomains."""
     domain: str
     ip_addresses: list[str] = field(default_factory=list)
     dns_records: list[DnsRecord] = field(default_factory=list)
@@ -59,6 +64,7 @@ class DomainResult:
 
 
 async def resolve_dns(domain: str) -> tuple[list[str], list[DnsRecord]]:
+    """Resolve a domain to its IP addresses and A records."""
     ips = []
     records = []
 
@@ -79,6 +85,7 @@ async def resolve_dns(domain: str) -> tuple[list[str], list[DnsRecord]]:
 
 
 async def enumerate_subdomains(domain: str) -> list[str]:
+    """Discover subdomains via crt.sh certificate transparency logs."""
     subdomains = []
 
     try:
@@ -129,6 +136,7 @@ async def enumerate_subdomains(domain: str) -> list[str]:
 
 
 async def check_http(domain: str) -> tuple[bool, bool, int, dict[str, str]]:
+    """Check HTTP/HTTPS reachability for a domain and return response headers."""
     http_reachable = False
     https_reachable = False
     status_code = 0
@@ -185,6 +193,7 @@ async def check_http(domain: str) -> tuple[bool, bool, int, dict[str, str]]:
 
 
 async def check_ssl(domain: str) -> SslInfo:
+    """Retrieve and validate the SSL/TLS certificate for a domain."""
     info = SslInfo()
 
     try:
@@ -270,6 +279,7 @@ SECURITY_HEADERS = {
 
 
 def check_security_headers(response_headers: dict[str, str]) -> list[HeaderCheck]:
+    """Audit HTTP response headers against a baseline of security headers."""
     checks = []
     for header_key, config in SECURITY_HEADERS.items():
         header_value = response_headers.get(header_key, "")
@@ -311,6 +321,7 @@ TECH_SIGNATURES: list[tuple[str, str, str, list[str]]] = [
 
 
 def detect_tech_stack(domain: str, headers: dict[str, str]) -> list[TechInfo]:
+    """Fingerprint the technology stack from HTTP response headers and signatures."""
     detected = []
     seen_names = set()
 
@@ -343,6 +354,7 @@ def detect_tech_stack(domain: str, headers: dict[str, str]) -> list[TechInfo]:
 
 
 def findings_from_domain(result: DomainResult) -> list[dict]:
+    """Convert a DomainResult into a list of finding dicts for database persistence."""
     findings = []
 
     for ip in result.ip_addresses:

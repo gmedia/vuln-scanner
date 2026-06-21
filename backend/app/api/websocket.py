@@ -17,6 +17,7 @@ redis: Redis | None = None
 
 
 async def get_redis():
+    """Return a shared Redis connection, creating it lazily on first call."""
     global redis
     if redis is None:
         redis = Redis.from_url(settings.redis_url)
@@ -47,6 +48,7 @@ async def scan_progress(
     job_id: str,
     api_key: str | None = Query(None, alias="api_key"),
 ):
+    """WebSocket endpoint that streams scan progress updates for a given job ID."""
     # Validate API key before accepting the connection
     if not await validate_api_key(api_key):
         await websocket.close(code=4001, reason="Unauthorized: invalid or missing API key")
