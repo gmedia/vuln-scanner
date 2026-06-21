@@ -41,7 +41,8 @@ def _run_async(coro):
 
 @shared_task(bind=True, name="ip_scan.run", max_retries=3)
 def run_ip_scan(self, job_id: str, target: str, ports: str = "1-1000"):
-    logger.info("IP scan started: job={job_id} target={target} ports={ports}", job_id=job_id, target=target, ports=ports)
+    logger.info("IP scan started: job={job_id} target={target} ports={ports}",
+                job_id=job_id, target=target, ports=ports)
     session = get_sync_session()
 
     _update_status(session, job_id, "running", started_at=datetime.now(UTC))
@@ -63,11 +64,12 @@ def run_ip_scan(self, job_id: str, target: str, ports: str = "1-1000"):
                 kwargs={},
                 exception_info=str(e),
             )
-        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries))
+        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries)) from e
 
     hosts_up = [h for h in nmap_result.hosts if h.status == "up"]
     port_count = sum(len(h.ports) for h in hosts_up)
-    logger.info("IP scan nmap complete: job={job_id} hosts={hosts} ports={ports}", job_id=job_id, hosts=len(hosts_up), ports=port_count)
+    logger.info("IP scan nmap complete: job={job_id} hosts={hosts} ports={ports}",
+                job_id=job_id, hosts=len(hosts_up), ports=port_count)
     publish_progress(job_id, "nmap_done", 30, f"Found {len(hosts_up)} hosts, {port_count} open ports")
 
     base_findings = findings_from_nmap(nmap_result)
@@ -82,7 +84,8 @@ def run_ip_scan(self, job_id: str, target: str, ports: str = "1-1000"):
                 try:
                     vulns = _run_async(lookup_service_cves(port.service, port.product, port.version))
                 except Exception as e:
-                    logger.warning("CVE lookup failed for {service} {product} {ver}: {error}", service=port.service, product=port.product, ver=port.version, error=e)
+                    logger.warning("CVE lookup failed for {service} {product} {ver}: {error}",
+                                   service=port.service, product=port.product, ver=port.version, error=e)
                     vulns = []
                 for vuln in vulns:
                     cvss = extract_cvss(vuln)

@@ -72,7 +72,8 @@ def run_domain_scan(self, job_id: str, domain: str):
 
         publish_progress(job_id, "http_check", 30, f"Checking HTTP/HTTPS connectivity for {domain}...")
         http_ok, https_ok, status, headers = _run_async(check_http(domain))
-        publish_progress(job_id, "http_done", 40, f"{'HTTPS' if https_ok else 'HTTP' if http_ok else 'No HTTP'} reachable (status {status})")
+        publish_progress(job_id, "http_done", 40,
+                         f"{'HTTPS' if https_ok else 'HTTP' if http_ok else 'No HTTP'} reachable (status {status})")
 
         ssl_info = None
         if https_ok:
@@ -94,7 +95,10 @@ def run_domain_scan(self, job_id: str, domain: str):
             "https_reachable": https_ok,
             "status_code": status,
             "response_headers": headers,
-            "ssl_info": ssl_info or type("obj", (), {"issues": [], "cipher": "", "subject": "", "issuer": "", "not_after": "", "days_remaining": 0}),
+            "ssl_info": ssl_info or type("obj", (), {
+                "issues": [], "cipher": "", "subject": "", "issuer": "",
+                "not_after": "", "days_remaining": 0,
+            }),
             "tech_stack": tech_stack,
             "header_checks": header_checks,
         })()
@@ -116,7 +120,8 @@ def run_domain_scan(self, job_id: str, domain: str):
                 try:
                     vulns = _run_async(lookup_service_cves(tech.name, tech.name, tech.version or ""))
                 except Exception as e:
-                    logger.warning("CVE lookup failed for {tech} {ver}: {error}", tech=tech.name, ver=tech.version or "", error=e)
+                    logger.warning("CVE lookup failed for {tech} {ver}: {error}",
+                                   tech=tech.name, ver=tech.version or "", error=e)
                     vulns = []
                 for vuln in vulns:
                     cvss = extract_cvss(vuln)
@@ -139,7 +144,8 @@ def run_domain_scan(self, job_id: str, domain: str):
         session.commit()
         session.close()
 
-        logger.info("Domain scan complete: job={job_id} domain={domain} findings={total} critical={c} high={h} medium={m} low={l}",
+        logger.info("Domain scan complete: job={job_id} domain={domain} findings={total} "
+                    "critical={c} high={h} medium={m} low={l}",
                     job_id=job_id, domain=domain, total=summary['total_findings'], c=summary['critical'],
                     h=summary['high'], m=summary['medium'], l=summary['low'])
         publish_progress(job_id, "completed", 100,
@@ -168,7 +174,7 @@ def run_domain_scan(self, job_id: str, domain: str):
                 kwargs={},
                 exception_info=str(e),
             )
-        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries))
+        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries)) from e
 
 
 def _update_status(session, job_id: str, status: str, **kwargs):

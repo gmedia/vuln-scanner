@@ -41,7 +41,8 @@ def _run_async(coro):
 
 @shared_task(bind=True, name="mobile_scan.run", max_retries=3)
 def run_mobile_scan(self, job_id: str, file_path: str, platform: str):
-    logger.info("Mobile scan started: job={job_id} platform={platform} path={path}", job_id=job_id, platform=platform, path=file_path)
+    logger.info("Mobile scan started: job={job_id} platform={platform} path={path}",
+                job_id=job_id, platform=platform, path=file_path)
     session = get_sync_session()
 
     _update_status(session, job_id, "running", started_at=datetime.now(UTC))
@@ -129,7 +130,8 @@ def run_mobile_scan(self, job_id: str, file_path: str, platform: str):
         session.commit()
         session.close()
 
-        logger.info("Mobile scan complete: job={job_id} platform={platform} findings={total} critical={c} high={h} medium={m} low={l}",
+        logger.info("Mobile scan complete: job={job_id} platform={platform} findings={total} "
+                    "critical={c} high={h} medium={m} low={l}",
                     job_id=job_id, platform=platform, total=summary['total_findings'], c=summary['critical'],
                     h=summary['high'], m=summary['medium'], l=summary['low'])
         publish_progress(job_id, "completed", 100,
@@ -163,7 +165,7 @@ def run_mobile_scan(self, job_id: str, file_path: str, platform: str):
                 kwargs={},
                 exception_info=str(e),
             )
-        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries))
+        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries)) from e
 
 
 def _update_status(session, job_id: str, status: str, **kwargs):
