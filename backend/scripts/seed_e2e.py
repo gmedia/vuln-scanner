@@ -123,6 +123,7 @@ async def seed():
                 created_at=started,
             )
             session.add(job)
+            await session.flush()  # Persist job before findings reference it
 
             for finding_data in item["findings"]:
                 finding = ScanFinding(
