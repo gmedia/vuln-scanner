@@ -1,6 +1,9 @@
 import hashlib
+import logging
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+
+logger = logging.getLogger(__name__)
 from redis.asyncio import Redis
 from sqlalchemy import select
 
@@ -62,6 +65,6 @@ async def scan_progress(
             else:
                 await websocket.send_json({"type": "heartbeat"})
     except WebSocketDisconnect:
-        pass
+        logger.info("Client disconnected from job %s", job_id)
     finally:
         await pubsub.unsubscribe(f"scan_progress:{job_id}")

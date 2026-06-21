@@ -155,8 +155,8 @@ def run_domain_scan(self, job_id: str, domain: str):
         try:
             r = redis.Redis.from_url(REDIS_URL)
             r.set("health:last_task_completed", time.time())
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Failed to update Redis health timestamp for job {job_id}: {error}", job_id=job_id, error=e)
 
         return {"job_id": job_id, "summary": summary}
     except Exception as e:
@@ -164,8 +164,8 @@ def run_domain_scan(self, job_id: str, domain: str):
             _update_status(session, job_id, "failed")
             session.commit()
             session.close()
-        except Exception:
-            pass
+        except Exception as e2:
+            logger.warning("Failed to update status/commit for failed job {job_id}: {error}", job_id=job_id, error=e2)
         publish_progress(job_id, "failed", 100, f"Domain scan failed: {str(e)[:200]}")
         if self.request.retries >= self.max_retries:
             dead_letter_handler.delay(

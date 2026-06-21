@@ -122,8 +122,8 @@ def run_ip_scan(self, job_id: str, target: str, ports: str = "1-1000"):
     try:
         r = redis.Redis.from_url(REDIS_URL)
         r.set("health:last_task_completed", time.time())
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Failed to update Redis health timestamp for job {job_id}: {error}", job_id=job_id, error=e)
 
     return {"job_id": job_id, "summary": summary}
 
