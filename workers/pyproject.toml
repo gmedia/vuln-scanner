@@ -7,3 +7,24 @@ select = ["E", "F", "W", "I", "N", "UP", "B", "SIM"]
 
 [tool.ruff.format]
 quote-style = "double"
+
+[tool.pytest.ini_options]
+addopts = "--cov=. --cov-report=term-missing --cov-fail-under=76"
+
+[tool.coverage.run]
+source = ["."]
+omit = ["tests/*", "health_server.py", "celery_app.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+
+[tool.mypy]
+python_version = "3.12"
+strict = false
+warn_return_any = true
+warn_unused_configs = true
+warn_no_return = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+exclude = ["tests/"]
