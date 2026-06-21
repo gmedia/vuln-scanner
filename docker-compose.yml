@@ -6,13 +6,13 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-vuln_scanner}
       POSTGRES_USER: ${POSTGRES_USER:-vuln_scanner}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_in_production}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vuln_scanner}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -21,7 +21,7 @@ services:
     image: redis:8-alpine
     container_name: vuln-redis
     restart: unless-stopped
-    command: redis-server /usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD:-redis_dev_password}
     volumes:
       - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
       - redis_data:/data
@@ -51,8 +51,8 @@ services:
       CELERY_BROKER_URL: ${CELERY_BROKER_URL}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost,http://localhost:8000}
-      API_KEY: ${API_KEY:-dev-api-key-change-me}
-      SECRET_KEY: ${SECRET_KEY:-dev-secret-key}
+      API_KEY: ${API_KEY}
+      SECRET_KEY: ${SECRET_KEY}
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
       MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-500}
     ports:
