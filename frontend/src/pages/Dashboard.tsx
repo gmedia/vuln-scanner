@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Radar, Globe, Smartphone, Crosshair, AlertTriangle, ArrowRight, Clock, ChevronDown, Loader2 } from "lucide-react";
+import { Radar, Globe, Smartphone, Crosshair, ArrowRight, Clock, ChevronDown, Loader2 } from "lucide-react";
 import { useScanHistory } from "@/hooks/useScan";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -46,20 +46,21 @@ function Dashboard() {
     }
   }, [filter]);
 
-  useEffect(() => {
-    if (!pageData || isFetching) return;
-    if (pageData.page !== page) return;
-
-    setPages((prev) => {
-      if (prev.length >= page) return prev;
-      const next = [...prev, pageData.items];
-      if (next.length * PAGE_LIMIT >= pageData.total) {
-        setAllLoaded(true);
-      }
-      return next;
-    });
-    setLoadingMore(false);
-  }, [pageData, isFetching, page]);
+  if (
+    pageData &&
+    !isFetching &&
+    pageData.page === page &&
+    pages.length < page
+  ) {
+    const next = [...pages, pageData.items];
+    setPages(next);
+    if (next.length * PAGE_LIMIT >= pageData.total) {
+      setAllLoaded(true);
+    }
+    if (loadingMore) {
+      setLoadingMore(false);
+    }
+  }
 
   const scans = pages.flat();
 

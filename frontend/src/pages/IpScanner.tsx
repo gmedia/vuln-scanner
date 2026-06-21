@@ -1,4 +1,4 @@
-import { Radar, ArrowLeft, CheckCircle2, AlertTriangle, ShieldBan, ShieldCheck } from "lucide-react";
+import { Radar, ArrowLeft, CheckCircle2, AlertTriangle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import IpScanForm from "@/components/scan/IpScanForm";
 import ScanProgress from "@/components/scan/ScanProgress";
