@@ -39,9 +39,18 @@ class TestScanHistoryParams:
 
 class TestScanRequest:
     def test_max_length_target(self):
-        target = "a" * 500
+        # Build a valid domain (multiple labels) that hits the max_length boundary
+        labels = []
+        remaining = 500 - len(".example.com")
+        while remaining > 0:
+            label_len = min(60, remaining - 1 if remaining > 60 else remaining)
+            if label_len < 1:
+                break
+            labels.append("a" * label_len)
+            remaining -= label_len + 1
+        target = ".".join(labels) + ".example.com"
         req = ScanRequest(target=target, ports="80")
-        assert len(req.target) == 500
+        assert len(req.target) == 499
         assert req.ports == "80"
 
 

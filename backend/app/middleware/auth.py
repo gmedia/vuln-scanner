@@ -24,7 +24,13 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
     """FastAPI middleware that validates API keys and enforces rate limiting."""
     def __init__(self, app):
         super().__init__(app)
-        self.redis = redis.Redis.from_url(settings.redis_url, decode_responses=True)
+        self._redis = None
+
+    async def _get_redis(self):
+        """Lazy Redis connection — avoids hanging at startup when Redis is unavailable."""
+        if self._redis is None:
+            self._redis = redis.Redis.from_url(settings.redis_url, decode_responses=True)
+        return self._redis
 
     async def dispatch(self, request: Request, call_next):
         """Authenticate request via X-API-Key header and enforce IP and key rate limits."""
@@ -41,9 +47,9 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
         client_ip = request.client.host if request.client else "unknown"
         ip_key = f"ratelimit:ip:{client_ip}"
         try:
-            ip_count = await self.redis.incr(ip_key)
+            ip_count = await (await self._get_redis()).incr(ip_key)
             if ip_count == 1:
-                await self.redis.expire(ip_key, 3600)
+                await (await self._get_redis()).expire(ip_key, 3600)
             if ip_count > IP_LIMIT:
                 return JSONResponse(
                     status_code=429,
@@ -90,9 +96,9 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
         """Check per-key rate limit, forward request, and attach rate-limit headers."""
         key = f"ratelimit:key:{key_id}"
         try:
-            count = await self.redis.incr(key)
+            count = await (await self._get_redis()).incr(key)
             if count == 1:
-                await self.redis.expire(key, 3600)
+                await (await self._get_redis()).expire(key, 3600)
             if count > rate_limit:
                 return JSONResponse(
                     status_code=429,
