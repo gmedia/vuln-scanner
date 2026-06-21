@@ -3,8 +3,6 @@ import { renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import {
   getScanHistory,
-  getScan,
-  getScanFindings,
   startIpScan,
   startDomainScan,
   startMobileScan,

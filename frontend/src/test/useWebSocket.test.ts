@@ -30,8 +30,8 @@ describe("useWebSocket", () => {
       this.close = vi.fn();
       this.send = vi.fn();
       this.readyState = 1;
-      lastWs = this;
       allWs.push(this);
+      lastWs = allWs[allWs.length - 1];
     }) as unknown as typeof globalThis.WebSocket;
 
     vi.stubGlobal("WebSocket", MockWebSocket);
