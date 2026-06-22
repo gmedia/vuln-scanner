@@ -9,7 +9,7 @@ async function globalSetup(config: FullConfig) {
 
   const registerRes = await page.request.post(`${baseURL}/api/auth/register`, {
     data: {
-      email: "e2e@vulnscan.test",
+      email: "e2e@vulnscan.dev",
       password: "E2eTestPass123!",
       confirm_password: "E2eTestPass123!",
     },
@@ -23,7 +23,7 @@ async function globalSetup(config: FullConfig) {
 
   const loginRes = await page.request.post(`${baseURL}/api/auth/login`, {
     data: {
-      email: "e2e@vulnscan.test",
+      email: "e2e@vulnscan.dev",
       password: "E2eTestPass123!",
     },
   });
