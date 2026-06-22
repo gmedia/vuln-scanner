@@ -68,7 +68,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   logout: async () => {
     try {
       await authApi.refreshToken();
-    } catch { }
+    } catch { /* refresh token cleanup — ignore failures */ }
     delete authApi.authApi.defaults.headers.common["Authorization"];
     set({
       user: null,

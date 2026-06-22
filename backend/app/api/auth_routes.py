@@ -1,7 +1,7 @@
 import logging
-from typing import cast
 import secrets
 from datetime import UTC, datetime, timedelta
+from typing import cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
@@ -154,7 +154,7 @@ async def verify_email(body: VerifyEmailRequest, db: AsyncSession = Depends(get_
 async def refresh(
     request: Request,
     body: RefreshRequest | None = None,
-    response: Response | None = None,
+    response: Response = None,  # type: ignore[assignment]
     db: AsyncSession = Depends(get_db),
 ) -> TokenResponse:
     refresh_token_str: str | None = None
@@ -172,11 +172,11 @@ async def refresh(
 
     try:
         payload = decode_token(refresh_token_str)
-    except JWTError:
+    except JWTError as err:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired refresh token",
-        )
+        ) from err
 
     if payload.get("type") != "refresh":
         raise HTTPException(
@@ -193,11 +193,11 @@ async def refresh(
 
     try:
         uid = UUID(user_id_str)
-    except ValueError:
+    except ValueError as err:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid user identifier in token",
-        )
+        ) from err
 
     user_result = await db.execute(select(User).where(User.id == uid))
     user = user_result.scalar_one_or_none()

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 from uuid import UUID
 
@@ -29,7 +29,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 
 def create_access_token(user_id: str, email: str) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_EXPIRE)
+    expire = datetime.now(UTC) + timedelta(minutes=ACCESS_EXPIRE)
     payload = {
         "sub": user_id,
         "email": email,
@@ -40,7 +40,7 @@ def create_access_token(user_id: str, email: str) -> str:
 
 
 def create_refresh_token(user_id: str) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_EXPIRE)
+    expire = datetime.now(UTC) + timedelta(days=REFRESH_EXPIRE)
     payload = {
         "sub": user_id,
         "type": "refresh",
@@ -73,11 +73,11 @@ async def get_current_user(
 
     try:
         payload = decode_token(token)
-    except JWTError:
+    except JWTError as err:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
-        )
+        ) from err
 
     user_id: str | None = cast(str | None, payload.get("sub"))
     if not user_id:
