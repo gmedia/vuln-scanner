@@ -16,6 +16,8 @@ from app.schemas.scan import (
     ScanJobResponse,
     ScanRequest,
 )
+from app.models.user import User
+from app.services.auth import get_current_user
 from app.services.scanner import ScannerService
 
 router = APIRouter(tags=["scans"])
@@ -137,18 +139,24 @@ def _render_pdf_html(job: ScanJobDetailResponse) -> str:
 
 
 @router.post("/scan/ip", response_model=ScanJobResponse, status_code=202)
-async def start_ip_scan(req: ScanRequest, db: AsyncSession = Depends(get_db)):
-    """Submit a new IP/port scan job. Returns the created scan job with pending status."""
+async def start_ip_scan(
+    req: ScanRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     svc = ScannerService(db)
-    job = await svc.start_scan(scan_type="ip", target=req.target, ports=req.ports)
+    job = await svc.start_scan(user=current_user, scan_type="ip", target=req.target, ports=req.ports)
     return job
 
 
 @router.post("/scan/domain", response_model=ScanJobResponse, status_code=202)
-async def start_domain_scan(req: DomainScanRequest, db: AsyncSession = Depends(get_db)):
-    """Submit a new domain scan job. Returns the created scan job with pending status."""
+async def start_domain_scan(
+    req: DomainScanRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     svc = ScannerService(db)
-    job = await svc.start_scan(scan_type="domain", target=req.domain)
+    job = await svc.start_scan(user=current_user, scan_type="domain", target=req.domain)
     return job
 
 
@@ -156,9 +164,9 @@ async def start_domain_scan(req: DomainScanRequest, db: AsyncSession = Depends(g
 async def start_mobile_scan(
     file: UploadFile = File(...),
     platform: str = Form(...),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Submit a new mobile (APK/IPA) scan job. Accepts file upload and platform type."""
     if platform not in ("android", "ios"):
         raise HTTPException(status_code=400, detail="platform must be 'android' or 'ios'")
     if not file.filename:
@@ -175,7 +183,7 @@ async def start_mobile_scan(
     try:
         scan_type = "apk" if platform == "android" else "ipa"
         svc = ScannerService(db)
-        job = await svc.start_scan(scan_type=scan_type, target=file.filename, platform=platform, file_path=file_path)
+        job = await svc.start_scan(user=current_user, scan_type=scan_type, target=file.filename, platform=platform, file_path=file_path)
         return job
     except Exception:
         with contextlib.suppress(Exception):

@@ -28,11 +28,12 @@ def verify_password(plain: str, hashed: str) -> bool:
     return bool(pwd_context.verify(plain, hashed))
 
 
-def create_access_token(user_id: str, email: str) -> str:
+def create_access_token(user_id: str, email: str, is_admin: bool = False) -> str:
     expire = datetime.now(UTC) + timedelta(minutes=ACCESS_EXPIRE)
     payload = {
         "sub": user_id,
         "email": email,
+        "is_admin": is_admin,
         "type": "access",
         "exp": expire,
     }
@@ -103,3 +104,11 @@ async def get_current_user(
         )
 
     return user
+
+
+async def get_current_admin(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user

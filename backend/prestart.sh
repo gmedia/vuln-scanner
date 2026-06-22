@@ -11,7 +11,7 @@ set -e
 echo "=== Prestart: validating environment ==="
 
 # --- Env var validation ---
-REQUIRED_VARS="API_KEY DATABASE_URL DATABASE_URL_SYNC REDIS_URL SECRET_KEY"
+REQUIRED_VARS="API_KEY DATABASE_URL DATABASE_URL_SYNC REDIS_URL SECRET_KEY JWT_SECRET"
 MISSING=""
 for var in $REQUIRED_VARS; do
   eval "val=\"\$$var\""
@@ -37,6 +37,17 @@ for var in API_KEY SECRET_KEY; do
 done
 if echo "$CORS_ORIGINS" | grep -qE '^\*$'; then
   echo "[WARN] CORS_ORIGINS is set to wildcard (*). Restrict to specific origins."
+fi
+
+# --- Warn about default admin credentials ---
+if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASSWORD" ]; then
+  case "$ADMIN_PASSWORD" in
+    change_me*|changeme*|admin|password|123456*)
+      echo "[WARN] ADMIN_PASSWORD appears weak or is a placeholder. Change it."
+      ;;
+  esac
+else
+  echo "[WARN] ADMIN_EMAIL or ADMIN_PASSWORD not set. Admin user will not be seeded."
 fi
 
 # --- Wait for PostgreSQL ---

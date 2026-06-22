@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import uuid
 from datetime import datetime
 
@@ -28,7 +30,17 @@ class UserResponse(BaseModel):
     id: uuid.UUID
     email: str
     is_verified: bool
+    is_admin: bool
+    credits: int
     created_at: datetime
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    expires_in: int
+    user: UserResponse
 
 
 class VerifyEmailRequest(BaseModel):

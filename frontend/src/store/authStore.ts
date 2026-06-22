@@ -13,6 +13,8 @@ interface User {
   id: string;
   email: string;
   is_verified: boolean;
+  is_admin: boolean;
+  credits: number;
 }
 
 interface AuthStore {
@@ -29,6 +31,7 @@ interface AuthStore {
   clearError: () => void;
   initialize: () => Promise<void>;
   setAccessToken: (token: string | null) => void;
+  setCredits: (credits: number) => void;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -40,6 +43,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   setAccessToken: (token) => set({ accessToken: token }),
 
+  setCredits: (credits) => {
+    const currentUser = get().user;
+    if (currentUser) {
+      set({ user: { ...currentUser, credits } });
+    }
+  },
+
   login: async (email, password) => {
     set({ isLoading: true, error: null });
     try {
@@ -48,7 +58,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       authApi.authApi.defaults.headers.common["Authorization"] = `Bearer ${loginRes.access_token}`;
       const user = await authApi.getMe();
       set({
-        user: { id: user.id, email: user.email, is_verified: user.is_verified },
+        user: {
+          id: user.id,
+          email: user.email,
+          is_verified: user.is_verified,
+          is_admin: (user as { is_admin?: boolean }).is_admin ?? false,
+          credits: (user as { credits?: number }).credits ?? 0,
+        },
         isAuthenticated: true,
         isLoading: false,
       });
@@ -111,7 +127,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       authApi.authApi.defaults.headers.common["Authorization"] = `Bearer ${refreshRes.access_token}`;
       const user = await authApi.getMe();
       set({
-        user: { id: user.id, email: user.email, is_verified: user.is_verified },
+        user: {
+          id: user.id,
+          email: user.email,
+          is_verified: user.is_verified,
+          is_admin: (user as { is_admin?: boolean }).is_admin ?? false,
+          credits: (user as { credits?: number }).credits ?? 0,
+        },
         isAuthenticated: true,
       });
       return true;

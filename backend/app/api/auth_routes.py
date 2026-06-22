@@ -11,10 +11,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
+from app.models.credit_log import CreditLog
 from app.models.email_verification import EmailVerificationToken
 from app.models.user import User
 from app.schemas.auth import (
     LoginRequest,
+    LoginResponse,
     MessageResponse,
     RefreshRequest,
     RegisterRequest,
@@ -57,9 +59,18 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
         email=body.email,
         password_hash=hash_password(body.password),
         is_verified=False,
+        credits=settings.default_register_credits,
     )
     db.add(user)
     await db.flush()
+
+    credit_log = CreditLog(
+        user_id=user.id,
+        amount=settings.default_register_credits,
+        type="credit",
+        description="Welcome bonus",
+    )
+    db.add(credit_log)
 
     token_str = secrets.token_urlsafe(32)
     verification_token = EmailVerificationToken(
@@ -78,7 +89,7 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     return MessageResponse(message="Registrasi berhasil. Periksa email Anda untuk verifikasi.")
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=LoginResponse)
 async def login(body: LoginRequest, response: Response, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
@@ -95,7 +106,7 @@ async def login(body: LoginRequest, response: Response, db: AsyncSession = Depen
         )
 
     user_id_str = str(user.id)
-    access_token = create_access_token(user_id=user_id_str, email=user.email)
+    access_token = create_access_token(user_id=user_id_str, email=user.email, is_admin=user.is_admin)
     refresh_token = create_refresh_token(user_id=user_id_str)
 
     response.set_cookie(
@@ -109,10 +120,11 @@ async def login(body: LoginRequest, response: Response, db: AsyncSession = Depen
     )
 
     access_minutes = settings.jwt_access_expire_minutes
-    return TokenResponse(
+    return LoginResponse(
         access_token=access_token,
         refresh_token=refresh_token,
         expires_in=access_minutes * 60,
+        user=UserResponse.model_validate(user),
     )
 
 
@@ -207,7 +219,7 @@ async def refresh(
             detail="Pengguna tidak ditemukan",
         )
 
-    new_access_token = create_access_token(user_id=user_id_str, email=user.email)
+    new_access_token = create_access_token(user_id=user_id_str, email=user.email, is_admin=user.is_admin)
     new_refresh_token = create_refresh_token(user_id=user_id_str)
 
     refresh_days = settings.jwt_refresh_expire_days

@@ -47,18 +47,98 @@ def run_ip_scan(self, job_id: str, target: str, ports: str = "1-1000"):
                 job_id=job_id, target=target, ports=ports)
     session = get_sync_session()
 
-    _update_status(session, job_id, "running", started_at=datetime.now(UTC))
-    session.commit()
-
-    publish_progress(job_id, "nmap_scan", 5, f"Starting Nmap scan on {target} ports {ports}...")
-
     try:
-        nmap_result = _run_async(run_nmap(target, ports))
-    except Exception as e:
-        _update_status(session, job_id, "failed")
+        _update_status(session, job_id, "running", started_at=datetime.now(UTC))
+        session.commit()
+
+        publish_progress(job_id, "nmap_scan", 5, f"Starting Nmap scan on {target} ports {ports}...")
+
+        try:
+            nmap_result = _run_async(run_nmap(target, ports))
+        except Exception as e:
+            _update_status(session, job_id, "failed")
+            _refund_credits(session, job_id, "ip")
+            session.commit()
+            session.close()
+            publish_progress(job_id, "failed", 100, f"Nmap scan failed: {str(e)[:200]}")
+            if self.request.retries >= self.max_retries:
+                dead_letter_handler.delay(
+                    task_name="ip_scan.run",
+                    args=[job_id, target, ports],
+                    kwargs={},
+                    exception_info=str(e),
+                )
+            raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries)) from e
+
+        hosts_up = [h for h in nmap_result.hosts if h.status == "up"]
+        port_count = sum(len(h.ports) for h in hosts_up)
+        logger.info("IP scan nmap complete: job={job_id} hosts={hosts} ports={ports}",
+                    job_id=job_id, hosts=len(hosts_up), ports=port_count)
+        publish_progress(job_id, "nmap_done", 30, f"Found {len(hosts_up)} hosts, {port_count} open ports")
+
+        base_findings = findings_from_nmap(nmap_result)
+        all_findings = list(base_findings)
+
+        total_vuln = 0
+        checked = 0
+        for host in hosts_up:
+            for port in host.ports:
+                checked += 1
+                if port.product and port.version:
+                    try:
+                        vulns = _run_async(lookup_service_cves(port.service, port.product, port.version))
+                    except Exception as e:
+                        logger.warning("CVE lookup failed for {service} {product} {ver}: {error}",
+                                       service=port.service, product=port.product, ver=port.version, error=e)
+                        vulns = []
+                    for vuln in vulns:
+                        cvss = extract_cvss(vuln)
+                        finding = format_vuln_finding(vuln, cvss)
+                        finding["description"] = (
+                            f"[{host.ip}:{port.port}/{port.protocol}] {port.service} {port.product} {port.version}\n"
+                            + (finding.get("description") or "")
+                        )
+                        all_findings.append(finding)
+                        total_vuln += 1
+
+                progress = 35 + int((checked / max(port_count, 1)) * 50)
+                publish_progress(job_id, "cve_lookup", progress,
+                               f"Checked {checked}/{port_count} services, found {total_vuln} CVEs")
+
+        all_findings = sort_findings_by_severity(all_findings)
+        summary = compute_severity_summary(all_findings)
+
+        publish_progress(job_id, "saving", 85, "Saving results...")
+        _save_findings(session, job_id, all_findings)
+
+        _update_status(session, job_id, "completed", progress=100,
+                       result_summary=summary, completed_at=datetime.now(UTC))
         session.commit()
         session.close()
-        publish_progress(job_id, "failed", 100, f"Nmap scan failed: {str(e)[:200]}")
+
+        logger.info("IP scan complete: job={job_id} findings={total} critical={c} high={h} medium={m} low={l}",
+                    job_id=job_id, total=summary['total_findings'], c=summary['critical'], h=summary['high'],
+                    m=summary['medium'], l=summary['low'])
+        publish_progress(job_id, "completed", 100,
+                       f"Done: {summary['total_findings']} findings "
+                       f"({summary['critical']}C/{summary['high']}H/{summary['medium']}M/{summary['low']}L)")
+
+        try:
+            r = redis.Redis.from_url(REDIS_URL)
+            r.set("health:last_task_completed", time.time())
+        except Exception as e:
+            logger.warning("Failed to update Redis health timestamp for job {job_id}: {error}", job_id=job_id, error=e)
+
+        return {"job_id": job_id, "summary": summary}
+    except Exception as e:
+        try:
+            _update_status(session, job_id, "failed")
+            _refund_credits(session, job_id, "ip")
+            session.commit()
+            session.close()
+        except Exception as e2:
+            logger.warning("Failed to update status/commit for failed job {job_id}: {error}", job_id=job_id, error=e2)
+        publish_progress(job_id, "failed", 100, f"IP scan failed: {str(e)[:200]}")
         if self.request.retries >= self.max_retries:
             dead_letter_handler.delay(
                 task_name="ip_scan.run",
@@ -67,67 +147,6 @@ def run_ip_scan(self, job_id: str, target: str, ports: str = "1-1000"):
                 exception_info=str(e),
             )
         raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries)) from e
-
-    hosts_up = [h for h in nmap_result.hosts if h.status == "up"]
-    port_count = sum(len(h.ports) for h in hosts_up)
-    logger.info("IP scan nmap complete: job={job_id} hosts={hosts} ports={ports}",
-                job_id=job_id, hosts=len(hosts_up), ports=port_count)
-    publish_progress(job_id, "nmap_done", 30, f"Found {len(hosts_up)} hosts, {port_count} open ports")
-
-    base_findings = findings_from_nmap(nmap_result)
-    all_findings = list(base_findings)
-
-    total_vuln = 0
-    checked = 0
-    for host in hosts_up:
-        for port in host.ports:
-            checked += 1
-            if port.product and port.version:
-                try:
-                    vulns = _run_async(lookup_service_cves(port.service, port.product, port.version))
-                except Exception as e:
-                    logger.warning("CVE lookup failed for {service} {product} {ver}: {error}",
-                                   service=port.service, product=port.product, ver=port.version, error=e)
-                    vulns = []
-                for vuln in vulns:
-                    cvss = extract_cvss(vuln)
-                    finding = format_vuln_finding(vuln, cvss)
-                    finding["description"] = (
-                        f"[{host.ip}:{port.port}/{port.protocol}] {port.service} {port.product} {port.version}\n"
-                        + (finding.get("description") or "")
-                    )
-                    all_findings.append(finding)
-                    total_vuln += 1
-
-            progress = 35 + int((checked / max(port_count, 1)) * 50)
-            publish_progress(job_id, "cve_lookup", progress,
-                           f"Checked {checked}/{port_count} services, found {total_vuln} CVEs")
-
-    all_findings = sort_findings_by_severity(all_findings)
-    summary = compute_severity_summary(all_findings)
-
-    publish_progress(job_id, "saving", 85, "Saving results...")
-    _save_findings(session, job_id, all_findings)
-
-    _update_status(session, job_id, "completed", progress=100,
-                   result_summary=summary, completed_at=datetime.now(UTC))
-    session.commit()
-    session.close()
-
-    logger.info("IP scan complete: job={job_id} findings={total} critical={c} high={h} medium={m} low={l}",
-                job_id=job_id, total=summary['total_findings'], c=summary['critical'], h=summary['high'],
-                m=summary['medium'], l=summary['low'])
-    publish_progress(job_id, "completed", 100,
-                   f"Done: {summary['total_findings']} findings "
-                   f"({summary['critical']}C/{summary['high']}H/{summary['medium']}M/{summary['low']}L)")
-
-    try:
-        r = redis.Redis.from_url(REDIS_URL)
-        r.set("health:last_task_completed", time.time())
-    except Exception as e:
-        logger.warning("Failed to update Redis health timestamp for job {job_id}: {error}", job_id=job_id, error=e)
-
-    return {"job_id": job_id, "summary": summary}
 
 
 def _update_status(session, job_id: str, status: str, **kwargs):
@@ -152,3 +171,27 @@ def _save_findings(session, job_id: str, findings: list[dict]):
             raw_data=f.get("raw_data"),
         )
         session.add(finding)
+
+
+def _refund_credits(session, job_id: str, scan_type: str):
+    from app.models.credit_log import CreditLog
+    from app.models.scan_job import ScanJob
+    from app.models.user import User
+
+    job = session.query(ScanJob).where(ScanJob.id == job_id).one_or_none()
+    if not job or not job.user_id or not job.credit_cost:
+        return
+
+    user = session.query(User).where(User.id == job.user_id).one_or_none()
+    if not user:
+        return
+
+    user.credits += job.credit_cost
+    refund_log = CreditLog(
+        user_id=user.id,
+        amount=job.credit_cost,
+        type="refund",
+        description=f"Refund: {scan_type} scan failed",
+        reference_id=job.id,
+    )
+    session.add(refund_log)

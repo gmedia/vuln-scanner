@@ -67,6 +67,13 @@ services:
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-VulnScanner <noreply@vs.appmedia.id>}
       FRONTEND_URL: ${FRONTEND_URL:-https://vs.appmedia.id}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      DEFAULT_REGISTER_CREDITS: ${DEFAULT_REGISTER_CREDITS:-30}
+      IP_SCAN_CREDIT_COST: ${IP_SCAN_CREDIT_COST:-1}
+      DOMAIN_SCAN_CREDIT_COST: ${DOMAIN_SCAN_CREDIT_COST:-2}
+      APK_SCAN_CREDIT_COST: ${APK_SCAN_CREDIT_COST:-3}
+      IPA_SCAN_CREDIT_COST: ${IPA_SCAN_CREDIT_COST:-3}
     volumes:
       - scan_data:/tmp/scans
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000

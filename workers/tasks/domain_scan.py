@@ -164,6 +164,7 @@ def run_domain_scan(self, job_id: str, domain: str):
     except Exception as e:
         try:
             _update_status(session, job_id, "failed")
+            _refund_credits(session, job_id, "domain")
             session.commit()
             session.close()
         except Exception as e2:
@@ -201,3 +202,27 @@ def _save_findings(session, job_id: str, findings: list[dict]):
             raw_data=f.get("raw_data"),
         )
         session.add(finding)
+
+
+def _refund_credits(session, job_id: str, scan_type: str):
+    from app.models.credit_log import CreditLog
+    from app.models.scan_job import ScanJob
+    from app.models.user import User
+
+    job = session.query(ScanJob).where(ScanJob.id == job_id).one_or_none()
+    if not job or not job.user_id or not job.credit_cost:
+        return
+
+    user = session.query(User).where(User.id == job.user_id).one_or_none()
+    if not user:
+        return
+
+    user.credits += job.credit_cost
+    refund_log = CreditLog(
+        user_id=user.id,
+        amount=job.credit_cost,
+        type="refund",
+        description=f"Refund: {scan_type} scan failed",
+        reference_id=job.id,
+    )
+    session.add(refund_log)

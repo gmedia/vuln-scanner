@@ -2,12 +2,16 @@ import math
 import uuid
 
 from celery import Celery
-from sqlalchemy import func, select
+from fastapi import HTTPException
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.models.credit_log import CreditLog
+from app.models.pricing import PricingConfig
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
+from app.models.user import User
 from app.schemas.scan import PaginatedResponse, ScanFindingResponse, ScanJobDetailResponse, ScanJobResponse
 
 celery_app = Celery(
@@ -16,34 +20,97 @@ celery_app = Celery(
     backend=settings.celery_result_backend,
 )
 
+SCAN_TYPE_PRICING_MAP = {
+    "ip": "ip_scan_credit_cost",
+    "domain": "domain_scan_credit_cost",
+    "apk": "apk_scan_credit_cost",
+    "ipa": "ipa_scan_credit_cost",
+}
+
 
 class ScannerService:
-    """Service layer for creating, querying, and listing scan jobs and findings."""
-
     def __init__(self, db: AsyncSession):
         self.db = db
 
     async def start_scan(
         self,
+        user: User,
         scan_type: str,
         target: str,
         ports: str | None = None,
         platform: str | None = None,
         file_path: str | None = None,
     ) -> ScanJob:
-        """Create a new scan job, persist it, and dispatch a Celery task to the appropriate queue."""
+        result = await self.db.execute(
+            select(PricingConfig).where(PricingConfig.scan_type == scan_type)
+        )
+        pricing = result.scalar_one_or_none()
+        if pricing:
+            credit_cost = pricing.credit_cost
+        else:
+            config_attr = SCAN_TYPE_PRICING_MAP.get(scan_type, "")
+            credit_cost = getattr(settings, config_attr, 0) if config_attr else 0
+
+        # Atomic check-and-deduct: only deduct if user has enough credits
+        await self.db.execute(
+            text(
+                "UPDATE users SET credits = credits - :cost "
+                "WHERE id = :uid AND credits >= :cost"
+            ),
+            {"cost": credit_cost, "uid": user.id},
+        )
+        await self.db.flush()
+        check_result = await self.db.execute(
+            select(User.credits).where(User.id == user.id)
+        )
+        current_credits = check_result.scalar_one()
+        if current_credits == user.credits:
+            raise HTTPException(
+                status_code=402,
+                detail=f"Insufficient credits. Need {credit_cost}, have {user.credits}.",
+            )
+
         job = ScanJob(
             id=uuid.uuid4(),
             scan_type=scan_type,
             target=target,
             status="pending",
             progress=0,
+            user_id=user.id,
+            credit_cost=credit_cost,
         )
         self.db.add(job)
-        await self.db.commit()
-        await self.db.refresh(job)
+        await self.db.flush()
 
-        task = self._dispatch_task(str(job.id), scan_type, target, ports, platform, file_path)
+        credit_log = CreditLog(
+            user_id=user.id,
+            amount=credit_cost,
+            type="deduct",
+            description=f"Scan: {scan_type} on {target}",
+            reference_id=job.id,
+        )
+        self.db.add(credit_log)
+        await self.db.flush()
+
+        try:
+            task = self._dispatch_task(str(job.id), scan_type, target, ports, platform, file_path)
+        except Exception:
+            # Rollback credit deduction and job creation
+            await self.db.execute(
+                text("UPDATE users SET credits = credits + :cost WHERE id = :uid"),
+                {"cost": credit_cost, "uid": user.id},
+            )
+            refund_log = CreditLog(
+                user_id=user.id,
+                amount=credit_cost,
+                type="refund",
+                description=f"Refund: failed to dispatch {scan_type} scan on {target}",
+                reference_id=job.id,
+            )
+            self.db.add(refund_log)
+            await self.db.commit()
+            raise HTTPException(status_code=500, detail="Failed to dispatch scan task")
+
         job.celery_task_id = task.id
         self.db.add(job)
         await self.db.commit()
@@ -81,7 +148,6 @@ class ScannerService:
         raise ValueError(f"Unknown scan type: {scan_type}")
 
     async def get_job(self, job_id: str) -> ScanJobDetailResponse | None:
-        """Retrieve a scan job by ID with all associated findings."""
         result = await self.db.execute(
             select(ScanJob).where(ScanJob.id == job_id)
         )
@@ -99,7 +165,6 @@ class ScannerService:
         return detail
 
     async def get_findings(self, job_id: str) -> list[ScanFindingResponse]:
-        """Retrieve only the findings for a scan job, without job metadata."""
         result = await self.db.execute(
             select(ScanFinding).where(ScanFinding.job_id == job_id)
         )
@@ -107,7 +172,6 @@ class ScannerService:
         return [ScanFindingResponse.model_validate(f) for f in findings]
 
     async def get_history(self, page: int = 1, limit: int = 20, scan_type: str | None = None) -> PaginatedResponse:
-        """List scan jobs with pagination, optionally filtered by scan type."""
         query = select(ScanJob)
         count_query = select(func.count(ScanJob.id))
 

@@ -41,6 +41,14 @@ class Settings(BaseSettings):
     smtp_from: str = "VulnScanner <noreply@vs.appmedia.id>"
     frontend_url: str = "https://vs.appmedia.id"
 
+    admin_email: str = ""
+    admin_password: str = ""
+    default_register_credits: int = 30
+    ip_scan_credit_cost: int = 1
+    domain_scan_credit_cost: int = 2
+    apk_scan_credit_cost: int = 3
+    ipa_scan_credit_cost: int = 3
+
 
 settings = Settings()
 

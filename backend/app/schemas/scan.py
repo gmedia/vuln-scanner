@@ -44,6 +44,8 @@ class ScanJobResponse(BaseModel):
     progress: int
     result_summary: dict[str, object] | None
     celery_task_id: str | None
+    user_id: uuid.UUID
+    credit_cost: int
     started_at: datetime | None
     completed_at: datetime | None
     created_at: datetime
