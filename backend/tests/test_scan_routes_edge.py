@@ -6,12 +6,13 @@ import pytest
 from app.config import settings
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
+from app.models.user import User
 
 HEADERS = {"X-API-Key": settings.api_key}
 
 
 @pytest.mark.asyncio
-async def test_export_json(client, db_session):
+async def test_export_json(client, db_session, sample_user):
     """GET /api/scan/{id}/export?format=json → 200, verify JSON keys."""
     now = datetime.now(UTC)
     job = ScanJob(
@@ -21,6 +22,7 @@ async def test_export_json(client, db_session):
         status="completed",
         progress=100,
         result_summary={"total_findings": 1, "high": 1},
+        user_id=sample_user.id,
         started_at=now,
         completed_at=now,
     )
@@ -51,7 +53,7 @@ async def test_export_json(client, db_session):
 
 
 @pytest.mark.asyncio
-async def test_export_html(client, db_session):
+async def test_export_html(client, db_session, sample_user):
     """GET /api/scan/{id}/export?format=html → 200, check DOCTYPE."""
     now = datetime.now(UTC)
     job = ScanJob(
@@ -61,6 +63,7 @@ async def test_export_html(client, db_session):
         status="completed",
         progress=100,
         result_summary={"total_findings": 0},
+        user_id=sample_user.id,
         started_at=now,
         completed_at=now,
     )
@@ -85,7 +88,7 @@ def test_start_mobile_scan_no_filename(client):
 
 
 @pytest.mark.asyncio
-async def test_get_scan_detail_with_findings_and_export(client, db_session):
+async def test_get_scan_detail_with_findings_and_export(client, db_session, sample_user):
     """Create job + findings, verify export JSON includes them."""
     now = datetime.now(UTC)
     job = ScanJob(
@@ -95,6 +98,7 @@ async def test_get_scan_detail_with_findings_and_export(client, db_session):
         status="completed",
         progress=100,
         result_summary={"total_findings": 2, "high": 1, "medium": 1},
+        user_id=sample_user.id,
         started_at=now,
         completed_at=now,
     )
@@ -146,7 +150,7 @@ def test_get_scan_history_empty(client):
 
 
 @pytest.mark.asyncio
-async def test_export_html_with_findings(client, db_session):
+async def test_export_html_with_findings(client, db_session, sample_user):
     """GET /api/scan/{id}/export?format=html with findings → 200, verify badges and CVE."""
     now = datetime.now(UTC)
     job = ScanJob(
@@ -156,6 +160,7 @@ async def test_export_html_with_findings(client, db_session):
         status="completed",
         progress=100,
         result_summary={"total_findings": 2, "high": 1, "medium": 1},
+        user_id=sample_user.id,
         started_at=now,
         completed_at=now,
     )

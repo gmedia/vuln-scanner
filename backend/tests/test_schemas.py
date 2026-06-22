@@ -53,6 +53,8 @@ class TestPaginatedResponse:
             progress=100,
             result_summary=None,
             celery_task_id=None,
+            user_id=uuid.uuid4(),
+            credit_cost=0,
             started_at=None,
             completed_at=None,
             created_at=datetime.now(UTC),

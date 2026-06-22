@@ -24,6 +24,7 @@ from app.database import Base
 from app.models.api_key import ApiKey  # noqa: F401
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
+from app.models.user import User
 
 # Counter-based incr so rate limiting tests work correctly
 _incr_counters: dict[str, int] = {}
@@ -138,13 +139,29 @@ def mock_celery(monkeypatch):
 
 
 @pytest_asyncio.fixture
-async def sample_job(db_session):
+async def sample_user(db_session):
+    user = User(
+        id=uuid.uuid4(),
+        email="test@example.com",
+        password_hash="fake-hash",
+        is_verified=True,
+        credits=100,
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest_asyncio.fixture
+async def sample_job(db_session, sample_user):
     job = ScanJob(
         id=uuid.uuid4(),
         scan_type="ip",
         target="192.168.1.1",
         status="completed",
         progress=100,
+        user_id=sample_user.id,
     )
     db_session.add(job)
     await db_session.commit()
