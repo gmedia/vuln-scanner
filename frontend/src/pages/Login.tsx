@@ -8,9 +8,10 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 
 function Login() {
   const navigate = useNavigate();
-  const { login, isLoading, error, isAuthenticated, clearError } = useAuthStore();
+  const { login, error, isAuthenticated, clearError } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -26,9 +27,12 @@ function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     const success = await login(email, password);
     if (success) {
       navigate("/dashboard");
+    } else {
+      setIsSubmitting(false);
     }
   };
 
@@ -61,7 +65,7 @@ function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                disabled={isLoading}
+                disabled={isSubmitting}
               />
             </div>
             <div className="space-y-2">
@@ -75,11 +79,11 @@ function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                disabled={isLoading}
+                disabled={isSubmitting}
               />
             </div>
-            <Button type="submit" className="w-full font-mono text-sm" disabled={isLoading}>
-              {isLoading ? (
+            <Button type="submit" className="w-full font-mono text-sm" disabled={isSubmitting}>
+              {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Signing in...

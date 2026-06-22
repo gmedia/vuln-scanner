@@ -8,12 +8,13 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 
 function Register() {
   const navigate = useNavigate();
-  const { register, isLoading, error, isAuthenticated, clearError } = useAuthStore();
+  const { register, error, isAuthenticated, clearError } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -40,9 +41,12 @@ function Register() {
       return;
     }
 
+    setIsSubmitting(true);
     const success = await register(email, password, confirmPassword);
     if (success) {
       setSuccess(true);
+    } else {
+      setIsSubmitting(false);
     }
   };
 
@@ -98,7 +102,7 @@ function Register() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                disabled={isLoading}
+                disabled={isSubmitting}
               />
             </div>
             <div className="space-y-2">
@@ -112,7 +116,7 @@ function Register() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                disabled={isLoading}
+                disabled={isSubmitting}
               />
             </div>
             <div className="space-y-2">
@@ -126,11 +130,11 @@ function Register() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                disabled={isLoading}
+                disabled={isSubmitting}
               />
             </div>
-            <Button type="submit" className="w-full font-mono text-sm" disabled={isLoading}>
-              {isLoading ? (
+            <Button type="submit" className="w-full font-mono text-sm" disabled={isSubmitting}>
+              {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Creating account...
