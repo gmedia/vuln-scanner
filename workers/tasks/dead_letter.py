@@ -32,20 +32,22 @@ def dead_letter_handler(self, task_name: str, args: list, kwargs: dict, exceptio
         exc=exception_info,
     )
 
+    timestamp = time.time()
     entry = {
         "task_name": task_name,
         "args": args,
         "kwargs": kwargs,
         "exception_info": exception_info,
-        "timestamp": time.time(),
+        "timestamp": timestamp,
     }
 
     try:
         r = redis.Redis.from_url(REDIS_URL)
-        r.zadd("dead_letter:log", {json.dumps(entry): entry["timestamp"]})
+        r.zadd("dead_letter:log", {json.dumps(entry): timestamp})
 
         # Trim to keep only the most recent DEAD_LETTER_MAX entries
         count = r.zcard("dead_letter:log")
+        assert isinstance(count, int)
         if count > DEAD_LETTER_MAX:
             r.zremrangebyrank("dead_letter:log", 0, count - DEAD_LETTER_MAX - 1)
 

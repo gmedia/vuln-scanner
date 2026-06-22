@@ -72,7 +72,7 @@ async def resolve_dns(domain: str) -> tuple[list[str], list[DnsRecord]]:
         result = socket.getaddrinfo(domain, None)
         seen = set()
         for _, _, _, _, sockaddr in result:
-            addr = sockaddr[0]
+            addr = str(sockaddr[0])
             if addr not in seen:
                 seen.add(addr)
                 ips.append(addr)
@@ -206,8 +206,8 @@ async def check_ssl(domain: str) -> SslInfo:
         cert = writer.get_extra_info("ssl_object")
         if cert:
             cert_dict = cert.getpeercert()
-            info.subject = dict(x[0] for x in cert_dict.get("subject", [])) if cert_dict else ""
-            info.issuer = dict(x[0] for x in cert_dict.get("issuer", [])) if cert_dict else ""
+            info.subject = str(dict(x[0] for x in cert_dict.get("subject", []))) if cert_dict else ""
+            info.issuer = str(dict(x[0] for x in cert_dict.get("issuer", []))) if cert_dict else ""
 
             not_after = cert_dict.get("notAfter", "") if cert_dict else ""
             info.not_after = not_after

@@ -1,7 +1,7 @@
 import hashlib
 import json
 import os
-from typing import Any
+from typing import Any, cast
 
 import httpx
 import redis
@@ -22,9 +22,10 @@ def _get_cached_vulns(package_name: str, ecosystem: str, version: str) -> list[d
         r = redis.Redis.from_url(REDIS_URL)
         key = _cache_key(package_name, ecosystem, version)
         data = r.get(key)
-        if data:
+        if data is not None:
+            assert isinstance(data, (str, bytes, bytearray))
             logger.info("CVE cache HIT for {ecosystem}:{pkg}@{ver}", ecosystem=ecosystem, pkg=package_name, ver=version)
-            return json.loads(data)
+            return cast(list[dict], json.loads(data))
         logger.debug("CVE cache MISS for {ecosystem}:{pkg}@{ver}", ecosystem=ecosystem, pkg=package_name, ver=version)
     except Exception as e:
         logger.warning("CVE cache read error for {ecosystem}:{pkg}@{ver}: {error}",
@@ -53,7 +54,7 @@ async def _query_ecosystem(package_name: str, ecosystem: str, version: str) -> l
         async with httpx.AsyncClient(timeout=10) as client:
             resp = await client.post(f"{OSV_BASE_URL}/query", json=payload)
             if resp.status_code == 200:
-                vulns = resp.json().get("vulns", [])
+                vulns: list[dict[str, Any]] = resp.json().get("vulns", [])
                 _set_cached_vulns(package_name, ecosystem, version, vulns)
                 return vulns
             logger.warning("OSV query returned status {status} for {ecosystem}:{pkg}@{ver}",

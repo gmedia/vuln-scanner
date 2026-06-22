@@ -135,7 +135,7 @@ def analyze_ipa(file_path: str) -> tuple[IpaInfo, list[dict], list[str]]:
 
     findings = _build_ios_findings(info)
     libraries = _extract_library_names([], lib_files)
-    secret_findings = _scan_secrets([])
+    secret_findings = _scan_secrets("")
 
     return info, findings + secret_findings, libraries
 

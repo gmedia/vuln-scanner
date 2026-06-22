@@ -1,16 +1,20 @@
+import json
 import os
 import sys
+import uuid
+from unittest.mock import MagicMock
 
 os.environ.setdefault("API_KEY", "dev-api-key-change-me")
 
 sys.path.insert(0, "/home/ubuntu/vuln-scanner/backend")
 
-import json
-import uuid
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock as _AsyncMock
 
 import pytest
 import pytest_asyncio
+
+# Patch Redis before app.main is imported — middleware's _get_redis uses Redis.from_url()
+import redis.asyncio as _aioredis
 from fastapi.testclient import TestClient
 from sqlalchemy import String, Text, TypeDecorator
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -20,10 +24,6 @@ from app.database import Base
 from app.models.api_key import ApiKey  # noqa: F401
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
-
-# Patch Redis before app.main is imported — middleware's _get_redis uses Redis.from_url()
-import redis.asyncio as _aioredis
-from unittest.mock import AsyncMock as _AsyncMock
 
 # Counter-based incr so rate limiting tests work correctly
 _incr_counters: dict[str, int] = {}
