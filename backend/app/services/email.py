@@ -50,6 +50,7 @@ async def send_verification_email(email_to: str, token: str) -> bool:
             hostname=SMTP_HOST,
             port=SMTP_PORT,
             use_tls=use_tls,
+            timeout=5,
         )
         await smtp.connect()
 
