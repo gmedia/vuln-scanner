@@ -21,7 +21,7 @@ test.describe("Scan Lifecycle", () => {
       const scanId = body.id;
 
       // Wait for the scan to appear in history
-      await page.goto("/");
+      await page.goto("/dashboard");
       await expect(page.locator(`a[href='/scan/${scanId}']`)).toBeVisible({
         timeout: 15_000,
       });
@@ -57,7 +57,7 @@ test.describe("Scan Lifecycle", () => {
       });
 
       // Scan should be reflected in dashboard history
-      await page.goto("/");
+      await page.goto("/dashboard");
       await expect(page.locator(`a[href='/scan/${scanId}']`)).toBeVisible({
         timeout: 15_000,
       });

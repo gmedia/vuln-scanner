@@ -18,7 +18,7 @@ function NotFound() {
         The target you&apos;re looking for is out of scan range. Return to base and try again.
       </p>
       <Button asChild size="lg">
-        <Link to="/">
+        <Link to="/dashboard">
           <Crosshair className="mr-2 h-4 w-4" />
           Return to Dashboard
         </Link>

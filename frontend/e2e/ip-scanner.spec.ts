@@ -61,7 +61,7 @@ test.describe("IP Scanner", () => {
 
   test("back arrow navigates to dashboard", async ({ page }) => {
     await page.goto("/scan/ip");
-    await page.locator("a[href='/']").first().click();
-    await expect(page).toHaveURL("/");
+    await page.locator("a[href='/dashboard']").first().click();
+    await expect(page).toHaveURL("/dashboard");
   });
 });

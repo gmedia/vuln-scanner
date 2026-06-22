@@ -19,7 +19,7 @@ function MobileScanner() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center gap-3">
-        <Link to="/" className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
+        <Link to="/dashboard" className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <Smartphone className="h-6 w-6 text-primary" />

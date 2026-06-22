@@ -39,7 +39,7 @@ function ScanDetail() {
             The scan you&apos;re looking for doesn&apos;t exist or failed to load.
           </p>
           <Button variant="outline" asChild>
-            <Link to="/">
+            <Link to="/dashboard">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Dashboard
             </Link>
@@ -66,7 +66,7 @@ function ScanDetail() {
     <div className="mx-auto max-w-4xl space-y-6">
       <div className="flex items-center gap-3">
         <Link
-          to="/"
+          to="/dashboard"
           className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-5 w-5" />
