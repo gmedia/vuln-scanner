@@ -42,7 +42,7 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     if body.password != body.confirm_password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Passwords do not match",
+            detail="Kata sandi tidak cocok",
         )
 
     result = await db.execute(select(User).where(User.email == body.email))
@@ -50,7 +50,7 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     if existing is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="A user with this email already exists",
+            detail="Email sudah terdaftar",
         )
 
     user = User(
@@ -75,7 +75,7 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     except Exception:
         logger.exception("Failed to send verification email to %s", user.email)
 
-    return MessageResponse(message="Registration successful. Check your email to verify.")
+    return MessageResponse(message="Registrasi berhasil. Periksa email Anda untuk verifikasi.")
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -85,13 +85,13 @@ async def login(body: LoginRequest, response: Response, db: AsyncSession = Depen
     if user is None or not verify_password(body.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
+            detail="Email atau kata sandi salah",
         )
 
     if user.is_verified is False:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Email not verified",
+            detail="Email belum diverifikasi",
         )
 
     user_id_str = str(user.id)
@@ -125,13 +125,13 @@ async def verify_email(body: VerifyEmailRequest, db: AsyncSession = Depends(get_
     if verification_token is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired verification token",
+            detail="Token verifikasi tidak valid atau kadaluarsa",
         )
 
     if verification_token.expires_at < datetime.now(UTC):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired verification token",
+            detail="Token verifikasi tidak valid atau kadaluarsa",
         )
 
     user_result = await db.execute(select(User).where(User.id == verification_token.user_id))
@@ -139,7 +139,7 @@ async def verify_email(body: VerifyEmailRequest, db: AsyncSession = Depends(get_
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User not found",
+            detail="Pengguna tidak ditemukan",
         )
 
     user.is_verified = True
@@ -147,7 +147,7 @@ async def verify_email(body: VerifyEmailRequest, db: AsyncSession = Depends(get_
     await db.delete(verification_token)
     await db.commit()
 
-    return MessageResponse(message="Email verified successfully")
+    return MessageResponse(message="Email berhasil diverifikasi")
 
 
 @router.post("/refresh", response_model=None)
@@ -167,7 +167,7 @@ async def refresh(
     if refresh_token_str is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Refresh token is required",
+            detail="Refresh token diperlukan",
         )
 
     try:
@@ -175,20 +175,20 @@ async def refresh(
     except JWTError as err:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired refresh token",
+            detail="Refresh token tidak valid atau kadaluarsa",
         ) from err
 
     if payload.get("type") != "refresh":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token type",
+            detail="Tipe token tidak valid",
         )
 
     user_id_str = cast(str | None, payload.get("sub"))
     if not user_id_str:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token missing subject",
+            detail="Token tidak memiliki subject",
         )
 
     try:
@@ -196,7 +196,7 @@ async def refresh(
     except ValueError as err:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid user identifier in token",
+            detail="Identifier pengguna dalam token tidak valid",
         ) from err
 
     user_result = await db.execute(select(User).where(User.id == uid))
@@ -204,7 +204,7 @@ async def refresh(
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
+            detail="Pengguna tidak ditemukan",
         )
 
     new_access_token = create_access_token(user_id=user_id_str, email=user.email)

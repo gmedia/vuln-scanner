@@ -1,5 +1,13 @@
 import { create } from "zustand";
 import * as authApi from "../api/auth";
+import { isAxiosError } from "axios";
+
+function extractError(err: unknown, fallback: string): string {
+  if (isAxiosError(err) && err.response?.data?.detail) {
+    return err.response.data.detail;
+  }
+  return err instanceof Error ? err.message : fallback;
+}
 
 interface User {
   id: string;
@@ -46,7 +54,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       });
       return true;
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Login failed";
+      const message = extractError(err, "Login gagal");
       set({ error: message, isLoading: false });
       return false;
     }
@@ -59,7 +67,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ isLoading: false });
       return true;
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Registration failed";
+      const message = extractError(err, "Registrasi gagal");
       set({ error: message, isLoading: false });
       return false;
     }
@@ -90,7 +98,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       }
       return true;
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Email verification failed";
+      const message = extractError(err, "Verifikasi email gagal");
       set({ error: message, isLoading: false });
       return false;
     }

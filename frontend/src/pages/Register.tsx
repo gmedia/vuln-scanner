@@ -33,11 +33,11 @@ function Register() {
     setValidationError(null);
 
     if (password.length < 8) {
-      setValidationError("Password must be at least 8 characters");
+      setValidationError("Kata sandi minimal 8 karakter");
       return;
     }
     if (password !== confirmPassword) {
-      setValidationError("Passwords do not match");
+      setValidationError("Kata sandi tidak cocok");
       return;
     }
 
