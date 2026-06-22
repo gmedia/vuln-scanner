@@ -27,7 +27,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
   accessToken: null,
   isAuthenticated: false,
-  isLoading: true,
+  isLoading: false,
   error: null,
 
   setAccessToken: (token) => set({ accessToken: token }),
@@ -117,6 +117,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   clearError: () => set({ error: null }),
 
   initialize: async () => {
+    set({ isLoading: true });
     await get().refreshAuth();
     set({ isLoading: false });
   },
