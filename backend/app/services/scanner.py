@@ -52,23 +52,24 @@ class ScannerService:
             credit_cost = getattr(settings, config_attr, 0) if config_attr else 0
 
         # Atomic check-and-deduct: only deduct if user has enough credits
-        await self.db.execute(
-            text(
-                "UPDATE users SET credits = credits - :cost "
-                "WHERE id = :uid AND credits >= :cost"
-            ),
-            {"cost": credit_cost, "uid": user.id},
-        )
-        await self.db.flush()
-        check_result = await self.db.execute(
-            select(User.credits).where(User.id == user.id)
-        )
-        current_credits = check_result.scalar_one()
-        if current_credits == user.credits:
-            raise HTTPException(
-                status_code=402,
-                detail=f"Insufficient credits. Need {credit_cost}, have {user.credits}.",
+        if credit_cost > 0:
+            await self.db.execute(
+                text(
+                    "UPDATE users SET credits = credits - :cost "
+                    "WHERE id = :uid AND credits >= :cost"
+                ),
+                {"cost": credit_cost, "uid": user.id.hex},
             )
+            await self.db.flush()
+            check_result = await self.db.execute(
+                select(User.credits).where(User.id == user.id)
+            )
+            current_credits = check_result.scalar_one()
+            if current_credits == user.credits:
+                raise HTTPException(
+                    status_code=402,
+                    detail=f"Insufficient credits. Need {credit_cost}, have {user.credits}.",
+                )
 
         job = ScanJob(
             id=uuid.uuid4(),
@@ -98,7 +99,7 @@ class ScannerService:
             # Rollback credit deduction and job creation
             await self.db.execute(
                 text("UPDATE users SET credits = credits + :cost WHERE id = :uid"),
-                {"cost": credit_cost, "uid": user.id},
+                {"cost": credit_cost, "uid": user.id.hex},
             )
             refund_log = CreditLog(
                 user_id=user.id,
@@ -109,7 +110,7 @@ class ScannerService:
             )
             self.db.add(refund_log)
             await self.db.commit()
-            raise HTTPException(status_code=500, detail="Failed to dispatch scan task")
+            raise HTTPException(status_code=500, detail="Failed to dispatch scan task") from None
 
         job.celery_task_id = task.id
         self.db.add(job)

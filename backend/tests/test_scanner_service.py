@@ -11,9 +11,9 @@ from app.services.scanner import ScannerService
 
 
 @pytest.mark.asyncio
-async def test_start_scan_ip(db_session, mock_celery):
+async def test_start_scan_ip(db_session, sample_user, mock_celery):
     svc = ScannerService(db_session)
-    job = await svc.start_scan(scan_type="ip", target="10.0.0.1", ports="22-80")
+    job = await svc.start_scan(user=sample_user, scan_type="ip", target="10.0.0.1", ports="22-80")
 
     assert job.status == "pending"
     assert job.scan_type == "ip"
@@ -28,9 +28,9 @@ async def test_start_scan_ip(db_session, mock_celery):
 
 
 @pytest.mark.asyncio
-async def test_start_scan_domain(db_session, mock_celery):
+async def test_start_scan_domain(db_session, sample_user, mock_celery):
     svc = ScannerService(db_session)
-    job = await svc.start_scan(scan_type="domain", target="example.com")
+    job = await svc.start_scan(user=sample_user, scan_type="domain", target="example.com")
 
     assert job.status == "pending"
     assert job.scan_type == "domain"
@@ -44,10 +44,10 @@ async def test_start_scan_domain(db_session, mock_celery):
 
 
 @pytest.mark.asyncio
-async def test_start_scan_mobile_apk(db_session, mock_celery):
+async def test_start_scan_mobile_apk(db_session, sample_user, mock_celery):
     svc = ScannerService(db_session)
     job = await svc.start_scan(
-        scan_type="apk", target="app.apk", platform="android", file_path="/tmp/scans/test.apk"
+        user=sample_user, scan_type="apk", target="app.apk", platform="android", file_path="/tmp/scans/test.apk"
     )
 
     assert job.status == "pending"
@@ -62,11 +62,11 @@ async def test_start_scan_mobile_apk(db_session, mock_celery):
 
 
 @pytest.mark.asyncio
-async def test_start_scan_invalid_type(db_session, mock_celery):
+async def test_start_scan_invalid_type(db_session, sample_user, mock_celery):
     from sqlalchemy.exc import IntegrityError
     svc = ScannerService(db_session)
     with pytest.raises((ValueError, IntegrityError)):
-        await svc.start_scan(scan_type="invalid_type", target="something")
+        await svc.start_scan(user=sample_user, scan_type="invalid_type", target="something")
 
 
 @pytest.mark.asyncio
