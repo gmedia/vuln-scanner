@@ -7,20 +7,6 @@ async function globalSetup(config: FullConfig) {
   const browser = await chromium.launch();
   const page = await browser.newPage();
 
-  const registerRes = await page.request.post(`${baseURL}/api/auth/register`, {
-    data: {
-      email: "e2e@vulnscan.dev",
-      password: "E2eTestPass123!",
-      confirm_password: "E2eTestPass123!",
-    },
-  });
-
-  if (registerRes.status() !== 201 && registerRes.status() !== 409) {
-    console.error(`Register failed: ${registerRes.status()} ${await registerRes.text()}`);
-    await browser.close();
-    process.exit(1);
-  }
-
   const loginRes = await page.request.post(`${baseURL}/api/auth/login`, {
     data: {
       email: "e2e@vulnscan.dev",
