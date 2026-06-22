@@ -24,7 +24,7 @@ async def send_verification_email(email_to: str, token: str) -> bool:
   <h2>Verify Your Email</h2>
   <p>Click the link below to verify your VulnScanner account:</p>
   <p>
-    <a href="{verification_link}" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 6px;">
+    <a href="{verification_link}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px">
       Verify Email
     </a>
   </p>
