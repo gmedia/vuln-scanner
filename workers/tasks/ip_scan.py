@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 
 import redis
 from celery import shared_task
+from celery.exceptions import Retry
 from loguru import logger
 from sqlalchemy import update
 
@@ -55,6 +56,8 @@ def run_ip_scan(self, job_id: str, target: str, ports: str = "1-1000"):
 
         try:
             nmap_result = _run_async(run_nmap(target, ports))
+        except Retry:
+            raise
         except Exception as e:
             _update_status(session, job_id, "failed")
             _refund_credits(session, job_id, "ip")
@@ -130,6 +133,8 @@ def run_ip_scan(self, job_id: str, target: str, ports: str = "1-1000"):
             logger.warning("Failed to update Redis health timestamp for job {job_id}: {error}", job_id=job_id, error=e)
 
         return {"job_id": job_id, "summary": summary}
+    except Retry:
+        raise
     except Exception as e:
         try:
             _update_status(session, job_id, "failed")

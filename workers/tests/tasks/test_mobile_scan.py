@@ -175,6 +175,7 @@ class TestMobileScanFileNotFound:
             patch("tasks.mobile_scan.publish_progress") as mock_progress,
             patch("tasks.mobile_scan._update_status") as mock_update_status,
             patch("tasks.mobile_scan.os.path.exists") as mock_exists,
+            patch("tasks.mobile_scan._refund_credits") as mock_refund_credits,
         ):
             mock_exists.return_value = False
             mock_session.return_value = MagicMock()
@@ -182,6 +183,7 @@ class TestMobileScanFileNotFound:
             self.mock_session = mock_session
             self.mock_progress = mock_progress
             self.mock_update_status = mock_update_status
+            self.mock_refund_credits = mock_refund_credits
             yield
 
     def _call_task(self, file_path="/nonexistent/file.apk", platform="android"):

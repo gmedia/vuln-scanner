@@ -135,6 +135,7 @@ class TestIpScanNmapFailure:
             patch("tasks.ip_scan.publish_progress") as mock_progress,
             patch("tasks.ip_scan._update_status") as mock_update_status,
             patch("tasks.ip_scan.redis.Redis.from_url") as mock_redis,
+            patch("tasks.ip_scan._refund_credits") as mock_refund_credits,
         ):
             mock_nmap.side_effect = Exception("nmap binary not found")
             mock_session.return_value = MagicMock()
@@ -145,6 +146,7 @@ class TestIpScanNmapFailure:
             self.mock_progress = mock_progress
             self.mock_update_status = mock_update_status
             self.mock_redis = mock_redis
+            self.mock_refund_credits = mock_refund_credits
             yield
 
     def _call_task(self):
