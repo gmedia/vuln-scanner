@@ -242,9 +242,11 @@ jobs:
     if: github.event_name == 'push' && github.ref_name == 'main'
     needs: [python-tests, frontend-typecheck, frontend-unit-tests, frontend-build, python-lint, python-typecheck, frontend-lint, e2e-tests]
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy to production
+
+      - name: Write .env on server
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -253,7 +255,46 @@ jobs:
           port: ${{ secrets.DEPLOY_PORT || 22 }}
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
+            cat > .env << 'ENVEOF'
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            DATABASE_URL_SYNC=${{ secrets.DATABASE_URL_SYNC }}
+            REDIS_URL=${{ secrets.REDIS_URL }}
+            CELERY_BROKER_URL=${{ secrets.CELERY_BROKER_URL }}
+            CELERY_RESULT_BACKEND=${{ secrets.CELERY_RESULT_BACKEND }}
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+            API_KEY=${{ secrets.API_KEY }}
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            SMTP_HOST=${{ secrets.SMTP_HOST }}
+            SMTP_PORT=${{ secrets.SMTP_PORT }}
+            SMTP_USER=${{ secrets.SMTP_USER }}
+            SMTP_PASS=${{ secrets.SMTP_PASS }}
+            SMTP_FROM=${{ secrets.SMTP_FROM }}
+            ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
+            ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
+            DEFAULT_REGISTER_CREDITS=${{ secrets.DEFAULT_REGISTER_CREDITS }}
+            IP_SCAN_CREDIT_COST=${{ secrets.IP_SCAN_CREDIT_COST }}
+            DOMAIN_SCAN_CREDIT_COST=${{ secrets.DOMAIN_SCAN_CREDIT_COST }}
+            APK_SCAN_CREDIT_COST=${{ secrets.APK_SCAN_CREDIT_COST }}
+            IPA_SCAN_CREDIT_COST=${{ secrets.IPA_SCAN_CREDIT_COST }}
+            NVD_API_KEY=${{ secrets.NVD_API_KEY }}
+            ENVEOF
+            echo ".env written from GitHub Secrets"
+
+      - name: Deploy to production
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          script: |
+            set -e
+            cd ${{ secrets.DEPLOY_PATH }}
             git pull origin main
-            docker compose -f docker-compose.prod.yml down
-            docker compose -f docker-compose.prod.yml up -d --build --wait
-            echo "Deploy completed successfully"
+            docker compose -f docker-compose.prod.yml build --no-cache
+            docker compose -f docker-compose.prod.yml up -d --wait
+            docker exec vuln-backend alembic upgrade head
+            echo "Deploy completed — migration at $(docker exec vuln-backend alembic current 2>/dev/null | tail -1)"
