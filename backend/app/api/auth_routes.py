@@ -73,7 +73,7 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     try:
         await send_verification_email(email_to=user.email, token=token_str)
     except Exception:
-        logger.warning("Failed to send verification email to %s", user.email)
+        logger.exception("Failed to send verification email to %s", user.email)
 
     return MessageResponse(message="Registration successful. Check your email to verify.")
 

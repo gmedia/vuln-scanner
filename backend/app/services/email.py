@@ -46,12 +46,15 @@ async def send_verification_email(email_to: str, token: str) -> bool:
     msg.attach(MIMEText(html_body, "html", "utf-8"))
 
     try:
-        use_tls = SMTP_PORT == 587
+        # Port 465 = implicit TLS (SMTPS), port 587 = STARTTLS
+        use_tls = SMTP_PORT == 465
+        start_tls = SMTP_PORT == 587
         smtp = aiosmtplib.SMTP(
             hostname=SMTP_HOST,
             port=SMTP_PORT,
             use_tls=use_tls,
-            timeout=5,
+            start_tls=start_tls,
+            timeout=10,
         )
         await smtp.connect()
 
