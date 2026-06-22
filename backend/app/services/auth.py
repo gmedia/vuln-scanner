@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from typing import Any, cast
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, status
@@ -48,8 +49,8 @@ def create_refresh_token(user_id: str) -> str:
     return str(jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM))
 
 
-def decode_token(token: str) -> dict[str, object]:
-    return dict(jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM]))
+def decode_token(token: str) -> dict[str, Any]:
+    return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])  # type: ignore[no-any-return]
 
 
 async def get_current_user(
@@ -78,7 +79,7 @@ async def get_current_user(
             detail="Invalid or expired token",
         )
 
-    user_id: str | None = payload.get("sub")
+    user_id: str | None = cast(str | None, payload.get("sub"))
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

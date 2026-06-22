@@ -1,4 +1,5 @@
 import logging
+from typing import cast
 import secrets
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
@@ -183,7 +184,7 @@ async def refresh(
             detail="Invalid token type",
         )
 
-    user_id_str = payload.get("sub")
+    user_id_str = cast(str | None, payload.get("sub"))
     if not user_id_str:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
