@@ -2,8 +2,13 @@ import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import { ErrorBoundary } from "react-error-boundary";
 import AppShell from "@/components/layout/AppShell";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { ErrorBoundaryFallback } from "@/components/ErrorBoundaryFallback";
 
+const Landing = lazy(() => import("@/pages/Landing"));
+const Login = lazy(() => import("@/pages/Login"));
+const Register = lazy(() => import("@/pages/Register"));
+const VerifyEmail = lazy(() => import("@/pages/VerifyEmail"));
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const IpScanner = lazy(() => import("@/pages/IpScanner"));
 const DomainScanner = lazy(() => import("@/pages/DomainScanner"));
@@ -16,13 +21,23 @@ function App() {
     <ErrorBoundary FallbackComponent={ErrorBoundaryFallback}>
       <Suspense fallback={<div>Loading...</div>}>
         <Routes>
-          <Route element={<AppShell />}>
-            <Route index element={<Dashboard />} />
-            <Route path="scan/ip" element={<IpScanner />} />
-            <Route path="scan/domain" element={<DomainScanner />} />
-            <Route path="scan/mobile" element={<MobileScanner />} />
-            <Route path="scan/:id" element={<ScanDetail />} />
+          {/* Public routes — no AppShell wrapper */}
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+
+          {/* Protected routes — wrapped in AppShell */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<AppShell />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/scan/ip" element={<IpScanner />} />
+              <Route path="/scan/domain" element={<DomainScanner />} />
+              <Route path="/scan/mobile" element={<MobileScanner />} />
+              <Route path="/scan/:id" element={<ScanDetail />} />
+            </Route>
           </Route>
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

@@ -28,6 +28,18 @@ class Settings(BaseSettings):
     max_upload_size_mb: int = 500
     cors_origins: str = "http://localhost:5173,http://localhost,http://localhost:8000"
 
+    jwt_secret: str = ""
+    jwt_algorithm: str = "HS256"
+    jwt_access_expire_minutes: int = 30
+    jwt_refresh_expire_days: int = 7
+
+    smtp_host: str = "localhost"
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_pass: str = ""
+    smtp_from: str = "VulnScanner <noreply@vs.appmedia.id>"
+    frontend_url: str = "https://vs.appmedia.id"
+
 
 settings = Settings()
 

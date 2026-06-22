@@ -14,7 +14,18 @@ from app.models.api_key import ApiKey
 
 logger = logging.getLogger(__name__)
 
-EXCLUDED_PATHS = ["/health", "/api/health", "/docs", "/openapi.json", "/redoc"]
+EXCLUDED_PATHS = [
+    "/health",
+    "/api/health",
+    "/docs",
+    "/openapi.json",
+    "/redoc",
+    "/api/auth/register",
+    "/api/auth/login",
+    "/api/auth/verify-email",
+    "/api/auth/refresh",
+    "/api/auth/me",
+]
 
 MASTER_KEY_ID = "__master__"
 IP_LIMIT = 300

@@ -11,7 +11,7 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/scan/ip", label: "IP Scanner", icon: Radar },
   { to: "/scan/domain", label: "Domain Scanner", icon: Globe },
   { to: "/scan/mobile", label: "Mobile Scanner", icon: Smartphone },
@@ -47,7 +47,7 @@ function Sidebar({ open, onClose }: SidebarProps) {
           <NavLink
             key={item.to}
             to={item.to}
-            end={item.to === "/"}
+            end={item.to === "/dashboard"}
             onClick={onClose}
             className={({ isActive }) =>
               cn(
