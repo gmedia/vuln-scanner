@@ -46,7 +46,8 @@ def _seed_admin_user() -> None:
     op.execute(
         sa.text(
             """
-        INSERT INTO users (id, email, password_hash, is_verified, is_admin, credits, verified_at, created_at, updated_at)
+        INSERT INTO users (id, email, password_hash, is_verified, is_admin,
+                          credits, verified_at, created_at, updated_at)
         VALUES (
           gen_random_uuid(),
           :email,

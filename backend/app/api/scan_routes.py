@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.models.user import User
 from app.schemas.scan import (
     DomainScanRequest,
     PaginatedResponse,
@@ -16,7 +17,6 @@ from app.schemas.scan import (
     ScanJobResponse,
     ScanRequest,
 )
-from app.models.user import User
 from app.services.auth import get_current_user
 from app.services.scanner import ScannerService
 
@@ -183,7 +183,13 @@ async def start_mobile_scan(
     try:
         scan_type = "apk" if platform == "android" else "ipa"
         svc = ScannerService(db)
-        job = await svc.start_scan(user=current_user, scan_type=scan_type, target=file.filename, platform=platform, file_path=file_path)
+        job = await svc.start_scan(
+            user=current_user,
+            scan_type=scan_type,
+            target=file.filename,
+            platform=platform,
+            file_path=file_path,
+        )
         return job
     except Exception:
         with contextlib.suppress(Exception):
