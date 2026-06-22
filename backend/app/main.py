@@ -35,6 +35,7 @@ app.include_router(api_router, prefix="/api")
 
 
 @app.get("/health")
+@app.get("/api/health")
 async def health_check():
     """Check database and Redis connectivity. Returns 200 if both are reachable, 503 if degraded."""
     import redis.asyncio as aioredis
