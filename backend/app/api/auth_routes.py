@@ -149,13 +149,13 @@ async def verify_email(body: VerifyEmailRequest, db: AsyncSession = Depends(get_
     return MessageResponse(message="Email verified successfully")
 
 
-@router.post("/refresh", response_model=TokenResponse)
+@router.post("/refresh", response_model=None)
 async def refresh(
     request: Request,
     body: RefreshRequest | None = None,
-    response: Response | None = None,
+    response: Response = None,
     db: AsyncSession = Depends(get_db),
-):
+) -> TokenResponse:
     refresh_token_str: str | None = None
 
     if body is not None and body.refresh_token:
