@@ -20,11 +20,11 @@ REFRESH_EXPIRE = settings.jwt_refresh_expire_days
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return str(pwd_context.hash(password))
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    return bool(pwd_context.verify(plain, hashed))
 
 
 def create_access_token(user_id: str, email: str) -> str:
@@ -35,7 +35,7 @@ def create_access_token(user_id: str, email: str) -> str:
         "type": "access",
         "exp": expire,
     }
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    return str(jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM))
 
 
 def create_refresh_token(user_id: str) -> str:
@@ -45,11 +45,11 @@ def create_refresh_token(user_id: str) -> str:
         "type": "refresh",
         "exp": expire,
     }
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    return str(jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM))
 
 
-def decode_token(token: str) -> dict:
-    return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+def decode_token(token: str) -> dict[str, object]:
+    return dict(jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM]))
 
 
 async def get_current_user(

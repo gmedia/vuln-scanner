@@ -153,7 +153,7 @@ async def verify_email(body: VerifyEmailRequest, db: AsyncSession = Depends(get_
 async def refresh(
     request: Request,
     body: RefreshRequest | None = None,
-    response: Response = None,
+    response: Response | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> TokenResponse:
     refresh_token_str: str | None = None
