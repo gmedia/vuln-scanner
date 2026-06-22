@@ -66,20 +66,20 @@ def run_mobile_scan(self, job_id: str, file_path: str, platform: str):
         if platform == "android":
             publish_progress(job_id, "manifest", 15, "Parsing AndroidManifest.xml...")
             try:
-                info, findings, libraries = analyze_apk(file_path)
+                apk_info, findings, libraries = analyze_apk(file_path)
                 all_findings.extend(findings)
                 publish_progress(job_id, "manifest_done", 30,
-                               f"Package: {info.package_name}, {len(info.permissions)} permissions")
+                               f"Package: {apk_info.package_name}, {len(apk_info.permissions)} permissions")
             except Exception as e:
                 publish_progress(job_id, "manifest_error", 25, f"APK analysis warning: {str(e)[:100]}")
 
         elif platform == "ios":
             publish_progress(job_id, "plist", 15, "Parsing Info.plist...")
             try:
-                info, findings, libraries = analyze_ipa(file_path)
+                ipa_info, findings, libraries = analyze_ipa(file_path)
                 all_findings.extend(findings)
                 publish_progress(job_id, "plist_done", 30,
-                               f"Bundle: {info.bundle_id}, {len(info.ats_exceptions)} ATS exemptions")
+                               f"Bundle: {ipa_info.bundle_id}, {len(ipa_info.ats_exceptions)} ATS exemptions")
             except Exception as e:
                 publish_progress(job_id, "plist_error", 25, f"IPA analysis warning: {str(e)[:100]}")
 
