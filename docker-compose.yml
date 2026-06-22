@@ -53,6 +53,11 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost,http://localhost:8000}
       API_KEY: ${API_KEY}
       SECRET_KEY: ${SECRET_KEY}
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_production}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_ACCESS_EXPIRE_MINUTES: ${JWT_ACCESS_EXPIRE_MINUTES:-30}
+      JWT_REFRESH_EXPIRE_DAYS: ${JWT_REFRESH_EXPIRE_DAYS:-7}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
       MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-500}
     ports:
