@@ -5,7 +5,6 @@ import pytest
 from app.config import settings
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
-from app.models.user import User
 
 HEADERS = {"X-API-Key": settings.api_key}
 
