@@ -86,6 +86,7 @@ for table in Base.metadata.tables.values():
 # Now safe to import the rest of the app
 from app.database import get_db  # noqa: E402
 from app.main import app  # noqa: E402
+from app.services.auth import get_current_user  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
@@ -119,7 +120,27 @@ async def db_session(engine):
 def client(db_session):
     async def override_get_db():
         yield db_session
+
+    async def override_get_current_user():
+        # Create or fetch a test user — sidesteps Bearer auth for scan route tests
+        from sqlalchemy import select as _sel
+        result = await db_session.execute(_sel(User).limit(1))
+        user = result.scalar_one_or_none()
+        if user is None:
+            user = User(
+                id=uuid.uuid4(),
+                email="test@example.com",
+                password_hash="fake-hash",
+                is_verified=True,
+                credits=100,
+            )
+            db_session.add(user)
+            await db_session.commit()
+            await db_session.refresh(user)
+        return user
+
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = override_get_current_user
     app.middleware_stack = None
 
     with TestClient(app) as c:
