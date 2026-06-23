@@ -107,10 +107,20 @@ async def seed():
                 password_hash=hash_password("E2eTestPass123!"),
                 is_verified=True,
                 verified_at=datetime.now(UTC),
+                credits=100,
             )
             session.add(e2e_user)
             await session.flush()
             print(f"Created verified E2E test user: {e2e_email}")
+
+        # Ensure E2E user always has enough credits for scan tests
+        if e2e_user.credits < 100:
+            await session.execute(
+                text("UPDATE users SET credits = 100 WHERE id = :uid"),
+                {"uid": e2e_user.id},
+            )
+            await session.flush()
+            print(f"Topped up E2E user credits to 100 (was {e2e_user.credits})")
 
         result = await session.execute(text("SELECT COUNT(*) FROM scan_jobs"))
         count = result.scalar()
