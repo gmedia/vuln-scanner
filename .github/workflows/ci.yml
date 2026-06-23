@@ -296,6 +296,7 @@ jobs:
             git pull origin main
             docker compose -f docker-compose.prod.yml build --no-cache
             docker compose -f docker-compose.prod.yml down
+            docker volume rm vuln-scanner_postgres_data || true
             docker compose -f docker-compose.prod.yml up -d --wait
             docker exec vuln-backend alembic upgrade head
             echo "Deploy completed — migration at $(docker exec vuln-backend alembic current 2>/dev/null | tail -1)"
