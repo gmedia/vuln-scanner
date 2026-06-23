@@ -100,8 +100,8 @@ async def seed():
     async with async_session() as session:
         e2e_email = "e2e@vulnscan.dev"
         result = await session.execute(select(User).where(User.email == e2e_email))
-        existing = result.scalar_one_or_none()
-        if not existing:
+        e2e_user = result.scalar_one_or_none()
+        if not e2e_user:
             e2e_user = User(
                 email=e2e_email,
                 password_hash=hash_password("E2eTestPass123!"),
@@ -129,6 +129,7 @@ async def seed():
 
             job = ScanJob(
                 id=job_id,
+                user_id=e2e_user.id,
                 scan_type=item["scan_type"],
                 target=item["target"],
                 status=item["status"],
