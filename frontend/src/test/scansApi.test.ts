@@ -1,11 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+vi.mock("@/store/authStore", () => ({
+  useAuthStore: {
+    getState: vi.fn(() => ({ accessToken: null })),
+  },
+}));
+
 vi.mock("axios", () => {
   const mockAxios = {
     create: vi.fn(() => mockAxios),
     get: vi.fn(),
     post: vi.fn(),
     defaults: {},
+    interceptors: {
+      request: { use: vi.fn() },
+    },
   };
   return {
     default: mockAxios,
