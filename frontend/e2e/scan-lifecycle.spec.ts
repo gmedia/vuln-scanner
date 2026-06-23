@@ -3,13 +3,26 @@ import { test, expect } from "@playwright/test";
 const API_KEY = process.env.API_KEY || "dev-api-key-change-me";
 const BASE_URL = "http://localhost:8000";
 
+let authToken: string;
+
 test.describe("Scan Lifecycle", () => {
+  test.beforeAll(async ({ request }) => {
+    const loginRes = await request.post(`${BASE_URL}/api/auth/login`, {
+      headers: { "Content-Type": "application/json" },
+      data: { email: "e2e@vulnscan.dev", password: "E2eTestPass123!" },
+    });
+    expect(loginRes.status()).toBe(200);
+    const body = await loginRes.json();
+    authToken = body.access_token;
+  });
+
   test.describe("Domain scan — full lifecycle via API + UI", () => {
     test("triggers a domain scan and shows its detail page", async ({ page, request }) => {
       const resp = await request.post(`${BASE_URL}/api/scan/domain`, {
         headers: {
           "Content-Type": "application/json",
           "X-API-Key": API_KEY,
+          "Authorization": `Bearer ${authToken}`,
         },
         data: { domain: "example.com" },
       });
@@ -41,6 +54,7 @@ test.describe("Scan Lifecycle", () => {
         headers: {
           "Content-Type": "application/json",
           "X-API-Key": API_KEY,
+          "Authorization": `Bearer ${authToken}`,
         },
         data: { target: "127.0.0.1", ports: "1-100" },
       });
@@ -71,6 +85,7 @@ test.describe("Scan Lifecycle", () => {
         headers: {
           "Content-Type": "application/json",
           "X-API-Key": API_KEY,
+          "Authorization": `Bearer ${authToken}`,
         },
         data: { target: "127.0.0.1", ports: "1-50" },
       });
@@ -79,7 +94,7 @@ test.describe("Scan Lifecycle", () => {
 
       // Fetch status
       const getResp = await request.get(`${BASE_URL}/api/scan/${id}`, {
-        headers: { "X-API-Key": API_KEY },
+        headers: { "X-API-Key": API_KEY, "Authorization": `Bearer ${authToken}` },
       });
       expect(getResp.status()).toBe(200);
       const job = await getResp.json();
@@ -88,7 +103,7 @@ test.describe("Scan Lifecycle", () => {
 
       // History includes it
       const historyResp = await request.get(`${BASE_URL}/api/scan/history`, {
-        headers: { "X-API-Key": API_KEY },
+        headers: { "X-API-Key": API_KEY, "Authorization": `Bearer ${authToken}` },
       });
       expect(historyResp.status()).toBe(200);
       const history = await historyResp.json();
