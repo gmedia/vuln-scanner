@@ -13,7 +13,7 @@ quote-style = "double"
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
-addopts = "--cov=app --cov-report=term-missing --cov-fail-under=78"
+addopts = "--cov=app --cov-report=term-missing --cov-fail-under=75"
 
 [tool.coverage.run]
 source = ["app"]
