@@ -1,4 +1,5 @@
 import axios from "axios";
+import { useAuthStore } from "@/store/authStore";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 const API_KEY = import.meta.env.VITE_API_KEY || "";
@@ -9,6 +10,14 @@ const api = axios.create({
     "Content-Type": "application/json",
     ...(API_KEY ? { "X-API-Key": API_KEY } : {}),
   },
+});
+
+api.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().accessToken;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 export default api;
