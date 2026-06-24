@@ -51,8 +51,8 @@ else
 fi
 
 # --- Wait for PostgreSQL ---
-DB_HOST=$(echo "$DATABASE_URL_SYNC" | sed 's/.*@//' | sed 's/:.*//')
-DB_PORT=$(echo "$DATABASE_URL_SYNC" | sed 's/.*://' | sed 's/\/.*//')
+DB_HOST=$(echo "$DATABASE_URL_SYNC" | sed 's|.*@||' | sed 's|:.*||')
+DB_PORT=$(echo "$DATABASE_URL_SYNC" | sed 's|.*:||' | sed 's|/.*||')
 echo "Waiting for PostgreSQL at $DB_HOST:$DB_PORT ..."
 for i in $(seq 1 30); do
   if python -c "
@@ -75,8 +75,8 @@ except Exception as e:
 done
 
 # --- Wait for Redis ---
-REDIS_HOST=$(echo "$REDIS_URL" | sed 's/.*:\/\///' | sed 's/:.*//')
-REDIS_PORT=$(echo "$REDIS_URL" | sed 's/.*:/:' | sed 's/.*://' | sed 's/\/.*//')
+REDIS_HOST=$(echo "$REDIS_URL" | sed 's|.*://||' | sed 's|:.*||')
+REDIS_PORT=$(echo "$REDIS_URL" | sed 's|.*:||' | sed 's|/.*||')
 [ -z "$REDIS_PORT" ] && REDIS_PORT=6379
 echo "Waiting for Redis at $REDIS_HOST:$REDIS_PORT ..."
 for i in $(seq 1 30); do

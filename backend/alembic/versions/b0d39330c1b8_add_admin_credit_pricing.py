@@ -64,8 +64,7 @@ def _seed_admin_user() -> None:
           credits = 999999,
           updated_at = now()
         """
-        ),
-        {"email": admin_email, "password_hash": password_hash},
+        ).bindparams(email=admin_email, password_hash=password_hash),
     )
 
 
