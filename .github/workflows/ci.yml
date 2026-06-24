@@ -285,9 +285,13 @@ jobs:
 
             # Validate: extract password from DATABASE_URL_SYNC and compare with POSTGRES_PASSWORD
             URL_PASS=$(echo "$DATABASE_URL_SYNC" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
+            URL_PREFIX=$(echo "$DATABASE_URL_SYNC" | sed 's|://.*|://***|')
             if [ -z "$URL_PASS" ]; then
               echo "ERROR: Could not extract password from DATABASE_URL_SYNC"
-              echo "DATABASE_URL_SYNC format should be: postgresql://user:password@host:port/db"
+              echo "  URL starts with: $URL_PREFIX"
+              echo "  URL total length: ${#DATABASE_URL_SYNC}"
+              echo "Expected format: postgresql://user:password@host:port/db"
+              echo "Common mistakes: missing ://, @ in password, or no password at all"
               exit 1
             fi
             if [ "$URL_PASS" != "$POSTGRES_PASSWORD" ]; then
@@ -300,6 +304,14 @@ jobs:
 
             # Also validate DATABASE_URL
             URL2_PASS=$(echo "$DATABASE_URL" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
+            URL2_PREFIX=$(echo "$DATABASE_URL" | sed 's|://.*|://***|')
+            if [ -z "$URL2_PASS" ]; then
+              echo "ERROR: Could not extract password from DATABASE_URL"
+              echo "  URL starts with: $URL2_PREFIX"
+              echo "  URL total length: ${#DATABASE_URL}"
+              echo "Expected format: postgresql+asyncpg://user:password@host:port/db"
+              exit 1
+            fi
             if [ "$URL2_PASS" != "$POSTGRES_PASSWORD" ]; then
               echo "ERROR: Password in DATABASE_URL does not match POSTGRES_PASSWORD"
               echo "  URL password length: ${#URL2_PASS}"
