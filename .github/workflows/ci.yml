@@ -283,6 +283,31 @@ jobs:
             ENVEOF
             echo ".env written from GitHub Secrets"
 
+            # Validate: extract password from DATABASE_URL_SYNC and compare with POSTGRES_PASSWORD
+            URL_PASS=$(echo "$DATABASE_URL_SYNC" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
+            if [ -z "$URL_PASS" ]; then
+              echo "ERROR: Could not extract password from DATABASE_URL_SYNC"
+              echo "DATABASE_URL_SYNC format should be: postgresql://user:password@host:port/db"
+              exit 1
+            fi
+            if [ "$URL_PASS" != "$POSTGRES_PASSWORD" ]; then
+              echo "ERROR: Password in DATABASE_URL_SYNC does not match POSTGRES_PASSWORD"
+              echo "  URL password length: ${#URL_PASS}"
+              echo "  POSTGRES_PASSWORD length: ${#POSTGRES_PASSWORD}"
+              exit 1
+            fi
+            echo "[OK] DATABASE_URL_SYNC password matches POSTGRES_PASSWORD (length: ${#URL_PASS})"
+
+            # Also validate DATABASE_URL
+            URL2_PASS=$(echo "$DATABASE_URL" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
+            if [ "$URL2_PASS" != "$POSTGRES_PASSWORD" ]; then
+              echo "ERROR: Password in DATABASE_URL does not match POSTGRES_PASSWORD"
+              echo "  URL password length: ${#URL2_PASS}"
+              echo "  POSTGRES_PASSWORD length: ${#POSTGRES_PASSWORD}"
+              exit 1
+            fi
+            echo "[OK] DATABASE_URL password matches POSTGRES_PASSWORD (length: ${#URL2_PASS})"
+
       - name: Deploy to production
         run: |
           mkdir -p ~/.ssh
