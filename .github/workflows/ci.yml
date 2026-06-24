@@ -305,9 +305,12 @@ jobs:
             docker volume ls --format '{{.Name}}' | grep postgres || true
 
             echo "=== Starting services ==="
-            docker compose -f docker-compose.prod.yml up -d --wait
-            echo "=== Postgres logs (if failed) ==="
-            docker logs vuln-postgres --tail=50 2>&1 || true
+            if ! docker compose -f docker-compose.prod.yml up -d --wait; then
+              echo "=== FAILED — dumping logs ==="
+              docker logs vuln-postgres --tail=100 2>&1 || true
+              docker compose -f docker-compose.prod.yml logs --tail=100 2>&1 || true
+              exit 1
+            fi
 
             docker exec vuln-backend alembic upgrade head
             echo "Deploy completed — migration at $(docker exec vuln-backend alembic current 2>/dev/null | tail -1)"
