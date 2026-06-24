@@ -295,8 +295,19 @@ jobs:
             cd ${{ secrets.DEPLOY_PATH }}
             git pull origin main
             docker compose -f docker-compose.prod.yml build --no-cache
-            docker compose -f docker-compose.prod.yml down
-            docker volume rm vuln-scanner_postgres_data || true
+
+            echo "=== Pre-deploy diagnostics ==="
+            docker ps -a --format '{{.Names}} {{.Status}}' || true
+            docker volume ls --format '{{.Name}}' | grep postgres || true
+            echo "=== Bringing services down ==="
+            docker compose -f docker-compose.prod.yml down --volumes
+            echo "=== Remaining volumes ==="
+            docker volume ls --format '{{.Name}}' | grep postgres || true
+
+            echo "=== Starting services ==="
             docker compose -f docker-compose.prod.yml up -d --wait
+            echo "=== Postgres logs (if failed) ==="
+            docker logs vuln-postgres --tail=50 2>&1 || true
+
             docker exec vuln-backend alembic upgrade head
             echo "Deploy completed — migration at $(docker exec vuln-backend alembic current 2>/dev/null | tail -1)"
