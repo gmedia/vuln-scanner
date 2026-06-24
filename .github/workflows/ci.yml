@@ -256,9 +256,9 @@ jobs:
           port: ${{ secrets.DEPLOY_PORT || 22 }}
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
-            cat > .env << 'ENVEOF'
-            DATABASE_URL=${{ secrets.DATABASE_URL }}
-            DATABASE_URL_SYNC=${{ secrets.DATABASE_URL_SYNC }}
+            cat > .env << ENVEOF
+            DATABASE_URL=postgresql+asyncpg://${{ secrets.POSTGRES_USER || 'vuln_scanner' }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/${{ secrets.POSTGRES_DB || 'vuln_scanner' }}
+            DATABASE_URL_SYNC=postgresql://${{ secrets.POSTGRES_USER || 'vuln_scanner' }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/${{ secrets.POSTGRES_DB || 'vuln_scanner' }}
             REDIS_URL=${{ secrets.REDIS_URL }}
             CELERY_BROKER_URL=${{ secrets.CELERY_BROKER_URL }}
             CELERY_RESULT_BACKEND=${{ secrets.CELERY_RESULT_BACKEND }}
@@ -283,43 +283,6 @@ jobs:
             NVD_API_KEY=${{ secrets.NVD_API_KEY }}
             ENVEOF
             echo ".env written from GitHub Secrets"
-
-            # Validate: extract password from DATABASE_URL_SYNC and compare with POSTGRES_PASSWORD
-            URL_PASS=$(echo "$DATABASE_URL_SYNC" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
-            URL_PREFIX=$(echo "$DATABASE_URL_SYNC" | sed 's|://.*|://***|')
-            if [ -z "$URL_PASS" ]; then
-              echo "ERROR: Could not extract password from DATABASE_URL_SYNC"
-              echo "  URL starts with: $URL_PREFIX"
-              echo "  URL total length: ${#DATABASE_URL_SYNC}"
-              echo "Expected format: postgresql://user:password@host:port/db"
-              echo "Common mistakes: missing ://, @ in password, or no password at all"
-              exit 1
-            fi
-            if [ "$URL_PASS" != "$POSTGRES_PASSWORD" ]; then
-              echo "ERROR: Password in DATABASE_URL_SYNC does not match POSTGRES_PASSWORD"
-              echo "  URL password length: ${#URL_PASS}"
-              echo "  POSTGRES_PASSWORD length: ${#POSTGRES_PASSWORD}"
-              exit 1
-            fi
-            echo "[OK] DATABASE_URL_SYNC password matches POSTGRES_PASSWORD (length: ${#URL_PASS})"
-
-            # Also validate DATABASE_URL
-            URL2_PASS=$(echo "$DATABASE_URL" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
-            URL2_PREFIX=$(echo "$DATABASE_URL" | sed 's|://.*|://***|')
-            if [ -z "$URL2_PASS" ]; then
-              echo "ERROR: Could not extract password from DATABASE_URL"
-              echo "  URL starts with: $URL2_PREFIX"
-              echo "  URL total length: ${#DATABASE_URL}"
-              echo "Expected format: postgresql+asyncpg://user:password@host:port/db"
-              exit 1
-            fi
-            if [ "$URL2_PASS" != "$POSTGRES_PASSWORD" ]; then
-              echo "ERROR: Password in DATABASE_URL does not match POSTGRES_PASSWORD"
-              echo "  URL password length: ${#URL2_PASS}"
-              echo "  POSTGRES_PASSWORD length: ${#POSTGRES_PASSWORD}"
-              exit 1
-            fi
-            echo "[OK] DATABASE_URL password matches POSTGRES_PASSWORD (length: ${#URL2_PASS})"
 
       - name: Deploy to production
         run: |
