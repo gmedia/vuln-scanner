@@ -56,9 +56,10 @@ import psycopg2, sys, os
 try:
     psycopg2.connect(os.environ['DATABASE_URL_SYNC'])
     sys.exit(0)
-except Exception:
+except Exception as e:
+    print(f'[psycopg2] {e}', file=sys.stderr)
     sys.exit(1)
-" 2>/dev/null; then
+" ; then
     echo "[OK] PostgreSQL is ready"
     break
   fi
