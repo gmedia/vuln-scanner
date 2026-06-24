@@ -284,25 +284,27 @@ jobs:
             echo ".env written from GitHub Secrets"
 
       - name: Deploy to production
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          port: ${{ secrets.DEPLOY_PORT || 22 }}
-          script: |
-            set -e
-            cd ${{ secrets.DEPLOY_PATH }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -p ${{ secrets.DEPLOY_PORT || 22 }} \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            'set -e
+            cd '"${{ secrets.DEPLOY_PATH }}"'
             git pull origin main
             docker compose -f docker-compose.prod.yml build --no-cache
 
             echo "=== Pre-deploy diagnostics ==="
-            docker ps -a --format '{{.Names}} {{.Status}}' || true
-            docker volume ls --format '{{.Name}}' | grep postgres || true
+            docker ps -a --format "{{.Names}} {{.Status}}" || true
+            docker volume ls --format "{{.Name}}" | grep postgres || true
             echo "=== Bringing services down ==="
             docker compose -f docker-compose.prod.yml down --volumes
             echo "=== Remaining volumes ==="
-            docker volume ls --format '{{.Name}}' | grep postgres || true
+            docker volume ls --format "{{.Name}}" | grep postgres || true
 
             echo "=== Starting services ==="
             if ! docker compose -f docker-compose.prod.yml up -d --wait; then
@@ -313,4 +315,5 @@ jobs:
             fi
 
             docker exec vuln-backend alembic upgrade head
-            echo "Deploy completed — migration at $(docker exec vuln-backend alembic current 2>/dev/null | tail -1)"
+            echo "Deploy completed — migration at $(docker exec vuln-backend alembic current 2>/dev/null | tail -1)"'
+          rm -f ~/.ssh/deploy_key
