@@ -255,8 +255,6 @@ jobs:
           port: ${{ secrets.DEPLOY_PORT || 22 }}
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
-            # Extract password from DATABASE_URL_SYNC so POSTGRES_PASSWORD always matches
-            PG_PASS=$(echo "${{ secrets.DATABASE_URL_SYNC }}" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
             cat > .env << 'ENVEOF'
             DATABASE_URL=${{ secrets.DATABASE_URL }}
             DATABASE_URL_SYNC=${{ secrets.DATABASE_URL_SYNC }}
@@ -265,6 +263,7 @@ jobs:
             CELERY_RESULT_BACKEND=${{ secrets.CELERY_RESULT_BACKEND }}
             POSTGRES_USER=${{ secrets.POSTGRES_USER || 'vuln_scanner' }}
             POSTGRES_DB=${{ secrets.POSTGRES_DB || 'vuln_scanner' }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             API_KEY=${{ secrets.API_KEY }}
             SECRET_KEY=${{ secrets.SECRET_KEY }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
@@ -282,7 +281,6 @@ jobs:
             IPA_SCAN_CREDIT_COST=${{ secrets.IPA_SCAN_CREDIT_COST }}
             NVD_API_KEY=${{ secrets.NVD_API_KEY }}
             ENVEOF
-            echo "POSTGRES_PASSWORD=${PG_PASS}" >> .env
             echo ".env written from GitHub Secrets"
 
       - name: Deploy to production
