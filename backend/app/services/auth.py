@@ -7,6 +7,7 @@ from uuid import UUID
 from fastapi import Depends, HTTPException, Request, status
 import jwt
 from passlib.context import CryptContext
+import redis as sync_redis
 import redis.asyncio as redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +22,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # Redis connection (lazy, shared across module)
 # ---------------------------------------------------------------------------
 _redis: redis.Redis | None = None
+_sync_redis: sync_redis.Redis | None = None
 
 # TTL for revoked keys: max(access_token, refresh_token) in seconds
 _REVOKE_TTL = max(settings.jwt_access_expire_minutes * 60, settings.jwt_refresh_expire_days * 86400)
@@ -32,6 +34,19 @@ async def _get_redis() -> redis.Redis:
     if _redis is None:
         _redis = redis.Redis.from_url(settings.redis_url, decode_responses=True)
     return _redis
+
+
+def _get_sync_redis() -> sync_redis.Redis:
+    """Lazy synchronous Redis connection for revocation checks.
+
+    Uses the blocking redis.Redis client (not redis.asyncio.Redis) so that
+    _check_redis_revocation_sync() can call .get() directly without nesting
+    event loops via asyncio.run().
+    """
+    global _sync_redis
+    if _sync_redis is None:
+        _sync_redis = sync_redis.Redis.from_url(settings.redis_url, decode_responses=True)
+    return _sync_redis
 
 
 # ---------------------------------------------------------------------------
@@ -98,27 +113,23 @@ def decode_token(token: str) -> dict[str, Any]:
 def _check_redis_revocation_sync(jti: str | None, sub: str | None) -> None:
     """Synchronous Redis check for revoked tokens/users — best-effort.
 
-    Uses a blocking Redis call via asyncio.run() so decode_token() stays sync.
+    Uses the blocking sync Redis client so decode_token() stays sync without
+    nesting event loops (which causes RuntimeWarning in async contexts).
     On Redis miss, caches the negative result in the in-memory structures.
     On Redis hit, raises jwt.PyJWTError.
     """
-    import asyncio
-
-    async def _check() -> None:
-        r = await _get_redis()
+    try:
+        r = _get_sync_redis()
         if jti is not None:
-            user_id = await r.get(f"revoked_tokens:{jti}")
+            user_id = r.get(f"revoked_tokens:{jti}")
             if user_id is not None:
                 _revoked_tokens[jti] = user_id
                 raise jwt.PyJWTError("Token has been revoked")
         if sub is not None:
-            found = await r.get(f"revoked_users:{sub}")
+            found = r.get(f"revoked_users:{sub}")
             if found is not None:
                 _revoked_users.add(sub)
                 raise jwt.PyJWTError("Token has been revoked (user logged out)")
-
-    try:
-        asyncio.run(_check())
     except jwt.PyJWTError:
         raise
     except Exception:
