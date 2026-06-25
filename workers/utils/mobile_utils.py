@@ -99,10 +99,9 @@ def analyze_apk(file_path: str) -> tuple[AndroidManifestInfo, list[dict], list[s
             logger.info("APK extracted: {n} files, {dex} dex, {lib} libs",
                         n=len(all_files), dex=len(classes_dex), lib=len(lib_files))
 
-            if "AndroidManifest.xml" in all_files:
-                if _safe_extract(zf, "AndroidManifest.xml", extracts_dir):
-                    manifest_path = os.path.join(extracts_dir, "AndroidManifest.xml")
-                    info = _parse_android_manifest(manifest_path)
+            if "AndroidManifest.xml" in all_files and _safe_extract(zf, "AndroidManifest.xml", extracts_dir):
+                manifest_path = os.path.join(extracts_dir, "AndroidManifest.xml")
+                info = _parse_android_manifest(manifest_path)
 
             strings_content = _extract_text_from_zip(zf, all_files)
             secret_findings = _scan_secrets(strings_content)
