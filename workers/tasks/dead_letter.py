@@ -6,7 +6,8 @@ import redis
 from celery import shared_task
 from loguru import logger
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+REDIS_URL = os.getenv("REDIS_URL", f"redis://:{os.getenv('REDIS_PASSWORD', '')}@redis:6379/0")
+_redis_pool = redis.ConnectionPool.from_url(REDIS_URL)
 DEAD_LETTER_MAX = 1000
 
 
@@ -42,7 +43,7 @@ def dead_letter_handler(self, task_name: str, args: list, kwargs: dict, exceptio
     }
 
     try:
-        r = redis.Redis.from_url(REDIS_URL)
+        r = redis.Redis(connection_pool=_redis_pool)
         r.zadd("dead_letter:log", {json.dumps(entry): timestamp})
 
         # Trim to keep only the most recent DEAD_LETTER_MAX entries

@@ -300,7 +300,7 @@ async def revoke(
             detail="Token tidak memiliki JTI",
         )
 
-    revoke_token(jti, str(current_user.id))
+    await revoke_token(jti, str(current_user.id))
     return MessageResponse(message="Token berhasil dicabut")
 
 
@@ -308,7 +308,7 @@ async def revoke(
 async def logout_all_endpoint(
     current_user: User = Depends(get_current_user),
 ):
-    count = logout_all(str(current_user.id))
+    count = await logout_all(str(current_user.id))
     return LogoutAllResponse(
         message="Semua token telah dicabut",
         revoked_count=count,

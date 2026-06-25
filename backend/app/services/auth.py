@@ -1,3 +1,4 @@
+import logging
 import uuid as _uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any, cast
@@ -6,6 +7,7 @@ from uuid import UUID
 from fastapi import Depends, HTTPException, Request, status
 import jwt
 from passlib.context import CryptContext
+import redis.asyncio as redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,11 +18,27 @@ from app.models.user import User
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # ---------------------------------------------------------------------------
-# Token revocation store (in-memory only — does NOT survive restarts).
-# TODO: persist revoked JTI set in Redis for durability across restarts.
+# Redis connection (lazy, shared across module)
 # ---------------------------------------------------------------------------
-_revoked_tokens: dict[str, str] = {}  # jti -> user_id
-_revoked_users: set[str] = set()  # user_ids that have been logged out globally
+_redis: redis.Redis | None = None
+
+# TTL for revoked keys: max(access_token, refresh_token) in seconds
+_REVOKE_TTL = max(settings.jwt_access_expire_minutes * 60, settings.jwt_refresh_expire_days * 86400)
+
+
+async def _get_redis() -> redis.Redis:
+    """Lazy Redis connection using settings.redis_url."""
+    global _redis
+    if _redis is None:
+        _redis = redis.Redis.from_url(settings.redis_url, decode_responses=True)
+    return _redis
+
+
+# ---------------------------------------------------------------------------
+# Token revocation store (in-memory cache + Redis persistence)
+# ---------------------------------------------------------------------------
+_revoked_tokens: dict[str, str] = {}  # jti -> user_id (in-memory cache)
+_revoked_users: set[str] = set()  # user_ids that have been logged out globally (in-memory cache)
 
 JWT_SECRET = settings.jwt_secret or settings.secret_key
 JWT_ALGORITHM = settings.jwt_algorithm
@@ -68,12 +86,54 @@ def decode_token(token: str) -> dict[str, Any]:
     sub = payload.get("sub")
     if sub is not None and sub in _revoked_users:
         raise jwt.PyJWTError("Token has been revoked (user logged out)")
+    # Best-effort Redis check: populate caches on miss, detect revocations that
+    # happened on another server instance (or before a restart).
+    try:
+        _check_redis_revocation_sync(jti, sub)
+    except Exception:
+        pass
     return payload
 
 
-def revoke_token(jti: str, user_id: str) -> None:
+def _check_redis_revocation_sync(jti: str | None, sub: str | None) -> None:
+    """Synchronous Redis check for revoked tokens/users — best-effort.
+
+    Uses a blocking Redis call via asyncio.run() so decode_token() stays sync.
+    On Redis miss, caches the negative result in the in-memory structures.
+    On Redis hit, raises jwt.PyJWTError.
+    """
+    import asyncio
+
+    async def _check() -> None:
+        r = await _get_redis()
+        if jti is not None:
+            user_id = await r.get(f"revoked_tokens:{jti}")
+            if user_id is not None:
+                _revoked_tokens[jti] = user_id
+                raise jwt.PyJWTError("Token has been revoked")
+        if sub is not None:
+            found = await r.get(f"revoked_users:{sub}")
+            if found is not None:
+                _revoked_users.add(sub)
+                raise jwt.PyJWTError("Token has been revoked (user logged out)")
+
+    try:
+        asyncio.run(_check())
+    except jwt.PyJWTError:
+        raise
+    except Exception:
+        pass
+
+
+async def revoke_token(jti: str, user_id: str) -> None:
     """Record a token JTI as revoked so it can no longer be used."""
     _revoked_tokens[jti] = user_id
+    try:
+        r = await _get_redis()
+        await r.set(f"revoked_tokens:{jti}", user_id, ex=_REVOKE_TTL)
+    except redis.RedisError:
+        logger = logging.getLogger(__name__)
+        logger.warning("Failed to persist revoked token JTI to Redis: %s", jti)
 
 
 def is_token_revoked(jti: str) -> bool:
@@ -81,10 +141,16 @@ def is_token_revoked(jti: str) -> bool:
     return jti in _revoked_tokens
 
 
-def logout_all(user_id: str) -> int:
+async def logout_all(user_id: str) -> int:
     """Revoke all tokens belonging to a user. Returns count of previously revoked tokens."""
     count = sum(1 for uid in _revoked_tokens.values() if uid == user_id)
     _revoked_users.add(user_id)
+    try:
+        r = await _get_redis()
+        await r.set(f"revoked_users:{user_id}", "1", ex=_REVOKE_TTL)
+    except redis.RedisError:
+        logger = logging.getLogger(__name__)
+        logger.warning("Failed to persist revoked user to Redis: %s", user_id)
     return count
 
 

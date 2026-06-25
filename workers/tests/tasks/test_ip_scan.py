@@ -24,7 +24,8 @@ class TestIpScanSuccessfulFlow:
             patch("tasks.ip_scan.publish_progress") as mock_progress,
             patch("tasks.ip_scan._update_status") as mock_update_status,
             patch("tasks.ip_scan._save_findings") as mock_save_findings,
-            patch("tasks.ip_scan.redis.Redis.from_url") as mock_redis,
+            patch("tasks.ip_scan.redis.ConnectionPool.from_url") as mock_pool,
+            patch("tasks.ip_scan.redis.Redis") as mock_redis,
         ):
             mock_nmap.return_value = sample_nmap_result
             mock_cve.return_value = sample_vulns
@@ -116,7 +117,8 @@ class TestIpScanSuccessfulFlow:
 class TestPublishProgress:
     def test_publish_progress_handles_redis_error_gracefully(self):
         from tasks.ip_scan import publish_progress
-        with patch("tasks.ip_scan.redis.Redis.from_url") as mock_redis:
+        with patch("tasks.ip_scan.redis.ConnectionPool.from_url") as mock_pool, \
+             patch("tasks.ip_scan.redis.Redis") as mock_redis:
             mock_instance = MagicMock()
             mock_instance.publish.side_effect = Exception("Redis error")
             mock_redis.return_value = mock_instance
@@ -134,7 +136,8 @@ class TestIpScanNmapFailure:
             patch("tasks.ip_scan.run_nmap", new_callable=AsyncMock) as mock_nmap,
             patch("tasks.ip_scan.publish_progress") as mock_progress,
             patch("tasks.ip_scan._update_status") as mock_update_status,
-            patch("tasks.ip_scan.redis.Redis.from_url") as mock_redis,
+            patch("tasks.ip_scan.redis.ConnectionPool.from_url") as mock_pool,
+            patch("tasks.ip_scan.redis.Redis") as mock_redis,
             patch("tasks.ip_scan._refund_credits") as mock_refund_credits,
         ):
             mock_nmap.side_effect = Exception("nmap binary not found")
@@ -231,7 +234,8 @@ class TestIpScanEmptyResults:
             patch("tasks.ip_scan.publish_progress") as mock_progress,
             patch("tasks.ip_scan._update_status") as mock_update_status,
             patch("tasks.ip_scan._save_findings") as mock_save_findings,
-            patch("tasks.ip_scan.redis.Redis.from_url") as mock_redis,
+            patch("tasks.ip_scan.redis.ConnectionPool.from_url") as mock_pool,
+            patch("tasks.ip_scan.redis.Redis") as mock_redis,
         ):
             mock_nmap.return_value = sample_nmap_result_no_hosts
             mock_session.return_value = MagicMock()

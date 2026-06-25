@@ -1,8 +1,11 @@
 """Shared fixtures for workers tasks tests."""
 
+import os
 import sys
 
 sys.path.insert(0, "/home/ubuntu/vuln-scanner/workers")
+
+os.environ.setdefault("DATABASE_URL_SYNC", "postgresql://test:test@localhost:5432/test")
 
 from unittest.mock import MagicMock
 

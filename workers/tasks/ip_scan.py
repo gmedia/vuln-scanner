@@ -16,13 +16,14 @@ from utils.database import get_sync_session
 from utils.nmap_runner import findings_from_nmap, run_nmap
 from utils.severity import compute_severity_summary, sort_findings_by_severity
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+REDIS_URL = os.getenv("REDIS_URL", f"redis://:{os.getenv('REDIS_PASSWORD', '')}@redis:6379/0")
+_redis_pool = redis.ConnectionPool.from_url(REDIS_URL)
 
 
 def publish_progress(job_id: str, step: str, progress: int, message: str):
     """Publish a progress update to the scan's Redis pubsub channel."""
     try:
-        r = redis.Redis.from_url(REDIS_URL)
+        r = redis.Redis(connection_pool=_redis_pool)
         r.publish(
             f"scan_progress:{job_id}",
             json.dumps({"type": "progress", "step": step, "progress": progress, "message": message}),
@@ -127,7 +128,7 @@ def run_ip_scan(self, job_id: str, target: str, ports: str = "1-1000"):
                        f"({summary['critical']}C/{summary['high']}H/{summary['medium']}M/{summary['low']}L)")
 
         try:
-            r = redis.Redis.from_url(REDIS_URL)
+            r = redis.Redis(connection_pool=_redis_pool)
             r.set("health:last_task_completed", time.time())
         except Exception as e:
             logger.warning("Failed to update Redis health timestamp for job {job_id}: {error}", job_id=job_id, error=e)

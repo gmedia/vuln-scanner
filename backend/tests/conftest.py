@@ -5,6 +5,8 @@ import uuid
 from unittest.mock import MagicMock
 
 os.environ.setdefault("API_KEY", "dev-api-key-change-me")
+os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5432/test")
+os.environ.setdefault("DATABASE_URL_SYNC", "postgresql://test:test@localhost:5432/test")
 
 sys.path.insert(0, "/home/ubuntu/vuln-scanner/backend")
 

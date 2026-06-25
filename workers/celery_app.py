@@ -6,10 +6,14 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
 
 from celery import Celery
 
+_redis_password = os.getenv("REDIS_PASSWORD", "")
+_redis_auth = f":{_redis_password}@" if _redis_password else ""
+_default_redis_url = f"redis://{_redis_auth}redis:6379/0"
+
 celery_app = Celery(
     "vuln_scanner",
-    broker=os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0"),
-    backend=os.getenv("CELERY_RESULT_BACKEND", "redis://redis:6379/0"),
+    broker=os.getenv("CELERY_BROKER_URL", _default_redis_url),
+    backend=os.getenv("CELERY_RESULT_BACKEND", _default_redis_url),
 )
 
 celery_app.conf.update(
@@ -35,6 +39,7 @@ celery_app.conf.update(
     task_annotations={
         "ip_scan.run": {"rate_limit": "10/m"},
         "domain_scan.run": {"rate_limit": "10/m"},
+        "mobile_scan.run": {"rate_limit": "10/m"},
     },
 )
 

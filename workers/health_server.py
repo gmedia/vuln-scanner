@@ -5,14 +5,16 @@ import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import redis
+from loguru import logger
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+REDIS_URL = os.getenv("REDIS_URL", f"redis://:{os.getenv('REDIS_PASSWORD', '')}@redis:6379/0")
+_redis_pool = redis.ConnectionPool.from_url(REDIS_URL, socket_connect_timeout=3, socket_timeout=3)
 CELERY_QUEUES = ["ip_scan", "domain_scan", "mobile_scan"]
 _start_time = time.monotonic()
 
 
 def _get_redis():
-    return redis.Redis.from_url(REDIS_URL, socket_connect_timeout=3, socket_timeout=3)
+    return redis.Redis(connection_pool=_redis_pool)
 
 
 def _queue_depth(r):
@@ -20,7 +22,8 @@ def _queue_depth(r):
     for q in CELERY_QUEUES:
         try:
             depths[q] = r.llen(q)
-        except Exception:
+        except Exception as e:
+            logger.warning("Failed to get queue depth for {}: {}", q, e)
             depths[q] = "unavailable"
     return depths
 
@@ -28,14 +31,16 @@ def _queue_depth(r):
 def _dead_letter_count(r):
     try:
         return r.zcard("dead_letter:log")
-    except Exception:
+    except Exception as e:
+        logger.warning("Failed to check dead letter queue: {}", e)
         return "unavailable"
 
 
 def _celery_broker_ok(r):
     try:
         return r.ping() is True
-    except Exception:
+    except Exception as e:
+        logger.warning("Failed to check broker: {}", e)
         return False
 
 
@@ -73,7 +78,8 @@ class HealthHandler(BaseHTTPRequestHandler):
                 payload["last_task_seconds_ago"] = seconds_ago
             else:
                 payload["last_task_seconds_ago"] = None
-        except Exception:
+        except Exception as e:
+            logger.error("Health check failed: {}", e)
             payload["last_task_seconds_ago"] = "unavailable"
 
         self._json_response(200, payload)
@@ -86,7 +92,7 @@ class HealthHandler(BaseHTTPRequestHandler):
             self._json_response(503, {"ready": False, "reason": "redis unreachable"})
 
     def log_message(self, format, *args):
-        pass
+        logger.debug(format % args)
 
 
 if __name__ == "__main__":

@@ -31,7 +31,8 @@ class TestDomainScanSuccessfulFlow:
             patch("tasks.domain_scan.publish_progress") as mock_progress,
             patch("tasks.domain_scan._update_status") as mock_update_status,
             patch("tasks.domain_scan._save_findings") as mock_save_findings,
-            patch("tasks.domain_scan.redis.Redis.from_url") as mock_redis,
+            patch("tasks.domain_scan.redis.ConnectionPool.from_url") as mock_pool,
+            patch("tasks.domain_scan.redis.Redis") as mock_redis,
         ):
             mock_dns.return_value = (["93.184.216.34"], [])
             mock_sub.return_value = ["www.example.com", "mail.example.com"]
@@ -156,7 +157,8 @@ class TestDomainScanFailure:
             patch("tasks.domain_scan.resolve_dns", new_callable=AsyncMock) as mock_dns,
             patch("tasks.domain_scan.publish_progress") as mock_progress,
             patch("tasks.domain_scan._update_status") as mock_update_status,
-            patch("tasks.domain_scan.redis.Redis.from_url") as mock_redis,
+            patch("tasks.domain_scan.redis.ConnectionPool.from_url") as mock_pool,
+            patch("tasks.domain_scan.redis.Redis") as mock_redis,
         ):
             mock_dns.side_effect = Exception("DNS resolution failed")
             mock_session.return_value = MagicMock()
@@ -231,7 +233,8 @@ class TestDomainScanNmapFailure:
             patch("tasks.domain_scan.publish_progress") as mock_progress,
             patch("tasks.domain_scan._update_status") as mock_update_status,
             patch("tasks.domain_scan._save_findings") as mock_save_findings,
-            patch("tasks.domain_scan.redis.Redis.from_url") as mock_redis,
+            patch("tasks.domain_scan.redis.ConnectionPool.from_url") as mock_pool,
+            patch("tasks.domain_scan.redis.Redis") as mock_redis,
         ):
             mock_dns.return_value = (["93.184.216.34"], [])
             mock_sub.return_value = []
@@ -322,7 +325,8 @@ class TestDomainScanNestedStatusUpdateFailure:
             patch("tasks.domain_scan.resolve_dns", new_callable=AsyncMock) as mock_dns,
             patch("tasks.domain_scan.publish_progress") as mock_progress,
             patch("tasks.domain_scan._update_status") as mock_update_status,
-            patch("tasks.domain_scan.redis.Redis.from_url") as mock_redis,
+            patch("tasks.domain_scan.redis.ConnectionPool.from_url") as mock_pool,
+            patch("tasks.domain_scan.redis.Redis") as mock_redis,
         ):
             mock_dns.side_effect = Exception("DNS resolution failed")
             mock_session.return_value = MagicMock()

@@ -1,4 +1,5 @@
 import logging
+import os
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -11,16 +12,24 @@ RECOMMENDED_STRENGTH = 32
 _SENTINEL = "__UNSET__"
 
 
+def _build_redis_url() -> str:
+    """Build a Redis URL, including password if REDIS_PASSWORD is set."""
+    password = __import__("os").environ.get("REDIS_PASSWORD", "")
+    if password:
+        return f"redis://:{password}@redis:6379/0"
+    return "redis://redis:6379/0"
+
+
 class Settings(BaseSettings):
     """Application settings loaded from environment and .env file."""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    database_url: str = "postgresql+asyncpg://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner"
-    database_url_sync: str = "postgresql://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner"
-    redis_url: str = "redis://redis:6379/0"
-    celery_broker_url: str = "redis://redis:6379/0"
-    celery_result_backend: str = "redis://redis:6379/0"
+    database_url: str = os.environ["DATABASE_URL"]
+    database_url_sync: str = os.environ["DATABASE_URL_SYNC"]
+    redis_url: str = _build_redis_url()
+    celery_broker_url: str = _build_redis_url()
+    celery_result_backend: str = _build_redis_url()
 
     api_key: str = _SENTINEL
     secret_key: str = _SENTINEL

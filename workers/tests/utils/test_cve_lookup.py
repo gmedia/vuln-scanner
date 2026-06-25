@@ -38,37 +38,43 @@ class TestCacheKey:
 
 class TestGetCachedVulns:
     def test_cache_hit_returns_data(self, mock_redis_hit):
-        with patch("utils.cve_lookup.redis.Redis.from_url", return_value=mock_redis_hit):
+        with patch("utils.cve_lookup.redis.ConnectionPool.from_url"), \
+             patch("utils.cve_lookup.redis.Redis", return_value=mock_redis_hit):
             result = _get_cached_vulns("pkg", "PyPI", "1.0")
             assert result is not None
             assert len(result) == 2
             assert result[0]["id"] == "GHSA-xxxx-xxxx-xxxx"
 
     def test_cache_miss_returns_none(self, mock_redis):
-        with patch("utils.cve_lookup.redis.Redis.from_url", return_value=mock_redis):
+        with patch("utils.cve_lookup.redis.ConnectionPool.from_url"), \
+             patch("utils.cve_lookup.redis.Redis", return_value=mock_redis):
             result = _get_cached_vulns("pkg", "PyPI", "1.0")
             assert result is None
 
     def test_cache_exception_returns_none(self):
         mock = MagicMock()
         mock.get.side_effect = Exception("Redis down")
-        with patch("utils.cve_lookup.redis.Redis.from_url", return_value=mock):
+        with patch("utils.cve_lookup.redis.ConnectionPool.from_url"), \
+             patch("utils.cve_lookup.redis.Redis", return_value=mock):
             result = _get_cached_vulns("pkg", "PyPI", "1.0")
             assert result is None
 
-    def test_calls_redis_from_url(self):
+    def test_calls_redis_pool(self):
+        import utils.cve_lookup as cve_mod
+        cve_mod._redis_pool = None
         mock = MagicMock()
         mock.get.return_value = None
-        with patch("utils.cve_lookup.redis.Redis.from_url") as from_url:
-            from_url.return_value = mock
+        with patch("utils.cve_lookup.redis.ConnectionPool.from_url") as pool_from_url, \
+             patch("utils.cve_lookup.redis.Redis", return_value=mock):
             _get_cached_vulns("pkg", "PyPI", "1.0")
-            from_url.assert_called_once()
+            pool_from_url.assert_called_once()
 
 
 class TestSetCachedVulns:
     def test_sets_cache_with_ttl(self, mock_redis):
         vulns = [{"id": "CVE-2024-1234"}]
-        with patch("utils.cve_lookup.redis.Redis.from_url", return_value=mock_redis):
+        with patch("utils.cve_lookup.redis.ConnectionPool.from_url"), \
+             patch("utils.cve_lookup.redis.Redis", return_value=mock_redis):
             _set_cached_vulns("pkg", "PyPI", "1.0", vulns)
             mock_redis.setex.assert_called_once()
             args = mock_redis.setex.call_args
@@ -78,7 +84,8 @@ class TestSetCachedVulns:
     def test_exception_silently_handled(self):
         mock = MagicMock()
         mock.setex.side_effect = Exception("Write error")
-        with patch("utils.cve_lookup.redis.Redis.from_url", return_value=mock):
+        with patch("utils.cve_lookup.redis.ConnectionPool.from_url"), \
+             patch("utils.cve_lookup.redis.Redis", return_value=mock):
             _set_cached_vulns("pkg", "PyPI", "1.0", [])
             # should not raise
 

@@ -9,6 +9,14 @@ from loguru import logger
 
 OSV_BASE_URL = os.getenv("OSV_BASE_URL", "https://api.osv.dev/v1")
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+_redis_pool: redis.ConnectionPool | None = None
+
+
+def _get_redis_pool() -> redis.ConnectionPool:
+    global _redis_pool
+    if _redis_pool is None:
+        _redis_pool = redis.ConnectionPool.from_url(REDIS_URL)
+    return _redis_pool
 CVE_CACHE_TTL = int(os.getenv("CVE_CACHE_TTL", "3600"))
 
 
@@ -19,7 +27,7 @@ def _cache_key(package_name: str, ecosystem: str, version: str) -> str:
 
 def _get_cached_vulns(package_name: str, ecosystem: str, version: str) -> list[dict] | None:
     try:
-        r = redis.Redis.from_url(REDIS_URL)
+        r = redis.Redis(connection_pool=_get_redis_pool())
         key = _cache_key(package_name, ecosystem, version)
         data = r.get(key)
         if data is not None:
@@ -35,7 +43,7 @@ def _get_cached_vulns(package_name: str, ecosystem: str, version: str) -> list[d
 
 def _set_cached_vulns(package_name: str, ecosystem: str, version: str, vulns: list[dict]) -> None:
     try:
-        r = redis.Redis.from_url(REDIS_URL)
+        r = redis.Redis(connection_pool=_get_redis_pool())
         r.setex(_cache_key(package_name, ecosystem, version), CVE_CACHE_TTL, json.dumps(vulns))
     except Exception as e:
         logger.warning("CVE cache write error for {ecosystem}:{pkg}@{ver}: {error}",
