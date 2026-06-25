@@ -1,5 +1,6 @@
 import math
 import uuid
+from uuid import UUID
 
 from celery import Celery
 from fastapi import HTTPException
@@ -148,10 +149,11 @@ class ScannerService:
             )
         raise ValueError(f"Unknown scan type: {scan_type}")
 
-    async def get_job(self, job_id: str) -> ScanJobDetailResponse | None:
-        result = await self.db.execute(
-            select(ScanJob).where(ScanJob.id == job_id)
-        )
+    async def get_job(self, job_id: str, user_id: UUID | None = None) -> ScanJobDetailResponse | None:
+        query = select(ScanJob).where(ScanJob.id == job_id)
+        if user_id is not None:
+            query = query.where(ScanJob.user_id == user_id)
+        result = await self.db.execute(query)
         job = result.scalar_one_or_none()
         if not job:
             return None
@@ -165,20 +167,31 @@ class ScannerService:
         detail.findings = [ScanFindingResponse.model_validate(f) for f in findings]
         return detail
 
-    async def get_findings(self, job_id: str) -> list[ScanFindingResponse]:
+    async def get_findings(self, job_id: str, user_id: UUID | None = None) -> list[ScanFindingResponse]:
+        # Verify job exists and belongs to user before returning findings
+        if user_id is not None:
+            job_result = await self.db.execute(
+                select(ScanJob.id).where(ScanJob.id == job_id, ScanJob.user_id == user_id)
+            )
+            if not job_result.scalar_one_or_none():
+                return []
         result = await self.db.execute(
             select(ScanFinding).where(ScanFinding.job_id == job_id)
         )
         findings = result.scalars().all()
         return [ScanFindingResponse.model_validate(f) for f in findings]
 
-    async def get_history(self, page: int = 1, limit: int = 20, scan_type: str | None = None) -> PaginatedResponse:
+    async def get_history(self, page: int = 1, limit: int = 20, scan_type: str | None = None, user_id: UUID | None = None) -> PaginatedResponse:
         query = select(ScanJob)
         count_query = select(func.count(ScanJob.id))
 
         if scan_type:
             query = query.where(ScanJob.scan_type == scan_type)
             count_query = count_query.where(ScanJob.scan_type == scan_type)
+
+        if user_id is not None:
+            query = query.where(ScanJob.user_id == user_id)
+            count_query = count_query.where(ScanJob.user_id == user_id)
 
         total_result = await self.db.execute(count_query)
         total = total_result.scalar() or 0
