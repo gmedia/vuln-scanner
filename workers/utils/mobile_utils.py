@@ -3,6 +3,7 @@ import plistlib
 import re
 import shutil
 import tempfile
+import unicodedata
 import zipfile
 from dataclasses import dataclass, field
 
@@ -73,13 +74,27 @@ def _safe_extract(zf: zipfile.ZipFile, member: str, dest_dir: str) -> bool:
 
     Returns True on success, False if the member was skipped due to path traversal risk.
     """
-    target_path = os.path.realpath(os.path.join(dest_dir, member))
+    # Normalize Unicode to prevent NFC/NFD bypass attacks (e.g. cafe\u0301 vs café)
+    normalized_member = unicodedata.normalize('NFC', member)
+    target_path = os.path.realpath(os.path.join(dest_dir, normalized_member))
     dest_real = os.path.realpath(dest_dir)
     if not target_path.startswith(dest_real + os.sep) and target_path != dest_real:
         logger.warning("Skipping zip member with unsafe path: {member}", member=member)
         return False
+
+    try:
+        info = zf.getinfo(member)
+        if info.is_dir():
+            os.makedirs(target_path, exist_ok=True)
+            return True
+    except KeyError:
+        pass
+
     os.makedirs(os.path.dirname(target_path), exist_ok=True)
-    zf.extract(member, dest_dir)
+    # Use zf.open() + direct write to eliminate TOCTOU: we write directly to the
+    # already-validated target_path instead of letting zf.extract() re-resolve.
+    with zf.open(member) as src, open(target_path, 'wb') as dst:
+        shutil.copyfileobj(src, dst)
     return True
 
 

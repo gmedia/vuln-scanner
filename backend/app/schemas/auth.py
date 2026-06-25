@@ -69,3 +69,12 @@ class RefreshRequest(BaseModel):
 
 class MessageResponse(BaseModel):
     message: str
+
+
+class RevokeRequest(BaseModel):
+    token: str
+
+
+class LogoutAllResponse(BaseModel):
+    message: str
+    revoked_count: int

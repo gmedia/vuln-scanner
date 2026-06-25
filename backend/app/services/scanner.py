@@ -149,10 +149,8 @@ class ScannerService:
             )
         raise ValueError(f"Unknown scan type: {scan_type}")
 
-    async def get_job(self, job_id: str, user_id: UUID | None = None) -> ScanJobDetailResponse | None:
-        query = select(ScanJob).where(ScanJob.id == job_id)
-        if user_id is not None:
-            query = query.where(ScanJob.user_id == user_id)
+    async def get_job(self, job_id: str, user_id: UUID) -> ScanJobDetailResponse | None:
+        query = select(ScanJob).where(ScanJob.id == job_id, ScanJob.user_id == user_id)
         result = await self.db.execute(query)
         job = result.scalar_one_or_none()
         if not job:
@@ -167,14 +165,13 @@ class ScannerService:
         detail.findings = [ScanFindingResponse.model_validate(f) for f in findings]
         return detail
 
-    async def get_findings(self, job_id: str, user_id: UUID | None = None) -> list[ScanFindingResponse]:
+    async def get_findings(self, job_id: str, user_id: UUID) -> list[ScanFindingResponse]:
         # Verify job exists and belongs to user before returning findings
-        if user_id is not None:
-            job_result = await self.db.execute(
-                select(ScanJob.id).where(ScanJob.id == job_id, ScanJob.user_id == user_id)
-            )
-            if not job_result.scalar_one_or_none():
-                return []
+        job_result = await self.db.execute(
+            select(ScanJob.id).where(ScanJob.id == job_id, ScanJob.user_id == user_id)
+        )
+        if not job_result.scalar_one_or_none():
+            return []
         result = await self.db.execute(
             select(ScanFinding).where(ScanFinding.job_id == job_id)
         )

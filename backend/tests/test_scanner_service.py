@@ -70,10 +70,10 @@ async def test_start_scan_invalid_type(db_session, sample_user, mock_celery):
 
 
 @pytest.mark.asyncio
-async def test_get_job_found(db_session, sample_job, sample_finding):
+async def test_get_job_found(db_session, sample_job, sample_finding, sample_user):
     svc = ScannerService(db_session)
     job_id_str = str(sample_job.id)
-    result = await svc.get_job(job_id_str)
+    result = await svc.get_job(job_id_str, user_id=sample_user.id)
 
     assert result is not None
     assert isinstance(result, ScanJobDetailResponse)
@@ -87,16 +87,16 @@ async def test_get_job_found(db_session, sample_job, sample_finding):
 
 
 @pytest.mark.asyncio
-async def test_get_job_not_found(db_session):
+async def test_get_job_not_found(db_session, sample_user):
     svc = ScannerService(db_session)
-    result = await svc.get_job(str(uuid.uuid4()))
+    result = await svc.get_job(str(uuid.uuid4()), user_id=sample_user.id)
     assert result is None
 
 
 @pytest.mark.asyncio
-async def test_get_findings(db_session, sample_job, sample_finding):
+async def test_get_findings(db_session, sample_job, sample_finding, sample_user):
     svc = ScannerService(db_session)
-    findings = await svc.get_findings(str(sample_job.id))
+    findings = await svc.get_findings(str(sample_job.id), user_id=sample_user.id)
 
     assert len(findings) == 1
     assert isinstance(findings[0], ScanFindingResponse)

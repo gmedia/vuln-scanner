@@ -8,6 +8,7 @@ from sqlalchemy import select
 from app.config import settings
 from app.database import async_session
 from app.models.api_key import ApiKey
+from app.models.scan_job import ScanJob
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,17 @@ async def scan_progress(
     if not await validate_api_key(api_key):
         await websocket.close(code=4001, reason="Unauthorized: invalid or missing API key")
         return
+
+    # Defense-in-depth: verify the job exists (non-master keys must have valid job)
+    is_master_key = api_key == settings.api_key
+    if not is_master_key:
+        async with async_session() as session:
+            job_result = await session.execute(
+                select(ScanJob.id).where(ScanJob.id == job_id)
+            )
+            if not job_result.scalar_one_or_none():
+                await websocket.close(code=4004, reason="Job not found")
+                return
 
     await websocket.accept()
     r = await get_redis()

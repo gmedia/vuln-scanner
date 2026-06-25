@@ -18,9 +18,11 @@ from app.models.user import User
 from app.schemas.auth import (
     LoginRequest,
     LoginResponse,
+    LogoutAllResponse,
     MessageResponse,
     RefreshRequest,
     RegisterRequest,
+    RevokeRequest,
     TokenResponse,
     UserResponse,
     VerifyEmailRequest,
@@ -31,6 +33,8 @@ from app.services.auth import (
     decode_token,
     get_current_user,
     hash_password,
+    logout_all,
+    revoke_token,
     verify_password,
 )
 from app.services.email import send_verification_email
@@ -277,3 +281,38 @@ async def refresh(
 @router.get("/me", response_model=UserResponse)
 async def me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.post("/revoke", response_model=MessageResponse)
+async def revoke(
+    body: RevokeRequest,
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        payload = decode_token(body.token)
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token tidak valid atau kadaluarsa",
+        )
+
+    jti = payload.get("jti")
+    if jti is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token tidak memiliki JTI",
+        )
+
+    revoke_token(jti, str(current_user.id))
+    return MessageResponse(message="Token berhasil dicabut")
+
+
+@router.post("/logout-all", response_model=LogoutAllResponse)
+async def logout_all_endpoint(
+    current_user: User = Depends(get_current_user),
+):
+    count = logout_all(str(current_user.id))
+    return LogoutAllResponse(
+        message="Semua token telah dicabut",
+        revoked_count=count,
+    )

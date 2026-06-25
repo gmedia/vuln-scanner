@@ -1,3 +1,4 @@
+import uuid as _uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 from uuid import UUID
@@ -13,6 +14,13 @@ from app.database import get_db
 from app.models.user import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# ---------------------------------------------------------------------------
+# Token revocation store (in-memory only — does NOT survive restarts).
+# TODO: persist revoked JTI set in Redis for durability across restarts.
+# ---------------------------------------------------------------------------
+_revoked_tokens: dict[str, str] = {}  # jti -> user_id
+_revoked_users: set[str] = set()  # user_ids that have been logged out globally
 
 JWT_SECRET = settings.jwt_secret or settings.secret_key
 JWT_ALGORITHM = settings.jwt_algorithm
@@ -36,6 +44,7 @@ def create_access_token(user_id: str, email: str, is_admin: bool = False) -> str
         "is_admin": is_admin,
         "type": "access",
         "exp": expire,
+        "jti": _uuid.uuid4().hex,
     }
     return str(jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM))
 
@@ -46,12 +55,37 @@ def create_refresh_token(user_id: str) -> str:
         "sub": user_id,
         "type": "refresh",
         "exp": expire,
+        "jti": _uuid.uuid4().hex,
     }
     return str(jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM))
 
 
 def decode_token(token: str) -> dict[str, Any]:
-    return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])  # type: ignore[no-any-return]
+    payload: dict[str, Any] = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])  # type: ignore[no-any-return]
+    jti = payload.get("jti")
+    if jti is not None and jti in _revoked_tokens:
+        raise JWTError("Token has been revoked")
+    sub = payload.get("sub")
+    if sub is not None and sub in _revoked_users:
+        raise JWTError("Token has been revoked (user logged out)")
+    return payload
+
+
+def revoke_token(jti: str, user_id: str) -> None:
+    """Record a token JTI as revoked so it can no longer be used."""
+    _revoked_tokens[jti] = user_id
+
+
+def is_token_revoked(jti: str) -> bool:
+    """Check whether a token JTI has been revoked."""
+    return jti in _revoked_tokens
+
+
+def logout_all(user_id: str) -> int:
+    """Revoke all tokens belonging to a user. Returns count of previously revoked tokens."""
+    count = sum(1 for uid in _revoked_tokens.values() if uid == user_id)
+    _revoked_users.add(user_id)
+    return count
 
 
 async def get_current_user(
