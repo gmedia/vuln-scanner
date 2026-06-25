@@ -1,6 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
 
+import sentry_sdk
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -13,10 +14,27 @@ from app.utils.log_sanitizer import sanitize_for_log
 logger = logging.getLogger(__name__)
 
 
+def _init_sentry() -> None:
+    """Initialise Sentry SDK if a DSN is configured."""
+    dsn = settings.sentry_dsn
+    if dsn:
+        sentry_sdk.init(
+            dsn=dsn,
+            enable_tracing=True,
+            traces_sample_rate=0.1,
+            profiles_sample_rate=0.1,
+            send_default_pii=False,
+        )
+        logger.info("Sentry SDK initialised (DSN configured)")
+    else:
+        logger.info("Sentry DSN not set — error tracking disabled")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Verify settings on startup and clean up on shutdown."""
     check_settings()
+    _init_sentry()
     yield
 
 
@@ -35,6 +53,12 @@ app.add_middleware(
 )
 
 app.add_middleware(SecurityHeadersMiddleware)
+
+# Prometheus metrics — registered before ApiKeyMiddleware so /metrics is open
+from prometheus_fastapi_instrumentator import Instrumentator  # noqa: E402
+
+instrumentator = Instrumentator().instrument(app)
+instrumentator.expose(app, endpoint="/metrics", include_in_schema=True)
 
 app.add_middleware(ApiKeyMiddleware)
 
