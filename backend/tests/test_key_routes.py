@@ -450,9 +450,7 @@ def test_generate_key_very_long_name(client):
         headers={"X-API-Key": API_KEY},
         json={"name": long_name, "rate_limit": 10},
     )
-    assert resp.status_code == 201
-    data = resp.json()
-    assert data["name"] == long_name
+    assert resp.status_code == 422
 
 
 def test_generate_key_invalid_rate_limit_type(client):

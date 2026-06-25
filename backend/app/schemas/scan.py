@@ -13,7 +13,12 @@ TARGET_PATTERN = re.compile(
 class ScanRequest(BaseModel):
     """Request body for starting an IP scan with target address and optional port range."""
 
-    target: str = Field(..., min_length=1, max_length=500)
+    target: str = Field(
+        ...,
+        min_length=1,
+        max_length=512,
+        pattern=r'^[a-zA-Z0-9._\-:/@]+$',
+    )
     ports: str | None = Field(default="1-1000", pattern=r"^\d+(-\d+)?(,\d+(-\d+)?)*$")
 
     @field_validator("target")
@@ -29,7 +34,12 @@ class ScanRequest(BaseModel):
 class DomainScanRequest(BaseModel):
     """Request body for starting a domain scan with the target domain name."""
 
-    domain: str = Field(..., min_length=3, max_length=253)
+    domain: str = Field(
+        ...,
+        min_length=3,
+        max_length=253,
+        pattern=r'^[a-zA-Z0-9._\-]+$',
+    )
 
 
 class ScanJobResponse(BaseModel):
@@ -80,7 +90,7 @@ class ScanHistoryParams(BaseModel):
 
     page: int = Field(default=1, ge=1)
     limit: int = Field(default=20, ge=1, le=100)
-    scan_type: str | None = None
+    scan_type: str | None = Field(default=None, max_length=20)
 
 
 class PaginatedResponse(BaseModel):

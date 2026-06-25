@@ -25,5 +25,10 @@ COPY --from=builder /install /usr/local
 COPY . .
 RUN chmod +x /app/entrypoint.sh /app/prestart.sh
 
+RUN groupadd -r appuser && useradd -r -g appuser -d /app appuser && \
+    chown -R appuser:appuser /app
+
+USER appuser
+
 ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

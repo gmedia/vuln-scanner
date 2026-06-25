@@ -85,3 +85,6 @@ def check_settings() -> None:
 
     if settings.cors_origins == "*":
         logger.warning("[SECURITY] CORS_ORIGINS is set to wildcard (*).  Restrict to specific origins.")
+
+    if not settings.cors_origins.strip():
+        logger.warning("[SECURITY] CORS_ORIGINS is empty. No origins will be allowed.")

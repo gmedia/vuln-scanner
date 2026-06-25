@@ -7,14 +7,14 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 class RegisterRequest(BaseModel):
-    email: EmailStr
+    email: EmailStr = Field(..., max_length=254, description="Email address (RFC 5321 max 254 chars)")
     password: str = Field(
         ...,
         min_length=8,
         max_length=128,
         description="Password must be at least 8 characters with uppercase, lowercase, and digit"
     )
-    confirm_password: str
+    confirm_password: str = Field(..., max_length=128, description="Confirm password")
 
     @field_validator("password")
     @classmethod
@@ -29,8 +29,8 @@ class RegisterRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str = Field(..., min_length=8, description="Password (min 8 characters)")
+    email: EmailStr = Field(..., max_length=254, description="Email address")
+    password: str = Field(..., min_length=8, max_length=128, description="Password (min 8 characters)")
 
 
 class TokenResponse(BaseModel):
@@ -60,11 +60,11 @@ class LoginResponse(BaseModel):
 
 
 class VerifyEmailRequest(BaseModel):
-    token: str
+    token: str = Field(..., max_length=500, description="Email verification token")
 
 
 class RefreshRequest(BaseModel):
-    refresh_token: str | None = None
+    refresh_token: str | None = Field(default=None, max_length=500, description="Refresh token")
 
 
 class MessageResponse(BaseModel):
@@ -72,7 +72,7 @@ class MessageResponse(BaseModel):
 
 
 class RevokeRequest(BaseModel):
-    token: str
+    token: str = Field(..., max_length=500, description="Token to revoke")
 
 
 class LogoutAllResponse(BaseModel):

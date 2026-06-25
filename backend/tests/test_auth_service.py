@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
 import pytest
-from jose import JWTError, jwt
+import jwt
 
 from app.services.auth import (
     create_access_token,
@@ -130,7 +130,7 @@ class TestDecodeToken:
         assert payload["sub"] == "user-1"
 
     def test_tampered_payload_raises(self):
-        """A token signed with a different payload should raise JWTError."""
+        """A token signed with a different payload should raise jwt.PyJWTError."""
         from app.config import settings
 
         fake_payload = {
@@ -143,7 +143,7 @@ class TestDecodeToken:
         secret = settings.jwt_secret or settings.secret_key
         algorithm = settings.jwt_algorithm
         tampered = jwt.encode(fake_payload, "wrong-secret-key-12345", algorithm=algorithm)
-        with pytest.raises(JWTError):
+        with pytest.raises(jwt.PyJWTError):
             decode_token(tampered)
 
     def test_wrong_secret_raises(self):
@@ -159,11 +159,11 @@ class TestDecodeToken:
         }
         algorithm = settings.jwt_algorithm
         tampered = jwt.encode(fake_payload, "completely-different-secret", algorithm=algorithm)
-        with pytest.raises(JWTError):
+        with pytest.raises(jwt.PyJWTError):
             decode_token(tampered)
 
     def test_expired_token_raises(self):
-        """Token with past expiry should raise JWTError."""
+        """Token with past expiry should raise jwt.PyJWTError."""
         from app.config import settings
 
         expired_payload = {
@@ -176,7 +176,7 @@ class TestDecodeToken:
         secret = settings.jwt_secret or settings.secret_key
         algorithm = settings.jwt_algorithm
         expired_token = jwt.encode(expired_payload, secret, algorithm=algorithm)
-        with pytest.raises(JWTError):
+        with pytest.raises(jwt.PyJWTError):
             decode_token(expired_token)
 
     def test_nearly_expired_token_still_valid(self):
@@ -213,15 +213,15 @@ class TestDecodeToken:
         assert "sub" not in result
 
     def test_malformed_token_raises(self):
-        with pytest.raises(JWTError):
+        with pytest.raises(jwt.PyJWTError):
             decode_token("this.is.not.a.valid.jwt")
 
     def test_empty_token_raises(self):
-        with pytest.raises(JWTError):
+        with pytest.raises(jwt.PyJWTError):
             decode_token("")
 
     def test_none_token_raises(self):
-        with pytest.raises((JWTError, TypeError, AttributeError)):
+        with pytest.raises((jwt.PyJWTError, TypeError, AttributeError)):
             decode_token(None)  # type: ignore[arg-type]
 
     def test_token_with_bad_algorithm_raises(self):
@@ -236,7 +236,7 @@ class TestDecodeToken:
         }
         secret = settings.jwt_secret or settings.secret_key
         token = jwt.encode(payload, secret, algorithm="HS384")
-        with pytest.raises(JWTError):
+        with pytest.raises(jwt.PyJWTError):
             decode_token(token)
 
     def test_access_token_does_not_have_refresh_type(self):
@@ -277,5 +277,5 @@ class TestTokenExpiryWithSleep:
         # Wait for expiry
         time.sleep(2)
 
-        with pytest.raises(JWTError):
+        with pytest.raises(jwt.PyJWTError):
             decode_token(token)

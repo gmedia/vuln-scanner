@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class CreditInfo(BaseModel):
@@ -15,7 +15,7 @@ class CreditLogItem(BaseModel):
     id: uuid.UUID
     amount: int
     type: str
-    description: str | None
+    description: str | None = Field(default=None, max_length=2000)
     reference_id: uuid.UUID | None
     created_at: datetime
 
@@ -29,4 +29,4 @@ class ScanEligibility(BaseModel):
     eligible: bool
     required_credits: int
     current_credits: int
-    scan_type: str
+    scan_type: str = Field(..., max_length=20)

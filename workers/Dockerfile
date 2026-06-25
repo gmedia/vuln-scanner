@@ -18,11 +18,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     nmap \
     openssl \
+    sudo \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /install /usr/local
 
 COPY . .
 RUN chmod +x /app/entrypoint.sh
+
+RUN groupadd -r appuser && useradd -r -g appuser -G sudo -d /app appuser && \
+    echo "appuser ALL=(root) NOPASSWD: /usr/bin/nmap" >> /etc/sudoers.d/appuser && \
+    chown -R appuser:appuser /app
+
+USER appuser
 
 ENTRYPOINT ["/app/entrypoint.sh"]

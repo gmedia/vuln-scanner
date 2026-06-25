@@ -31,14 +31,14 @@ class AdminUserList(BaseModel):
 
 class CreditUpdateRequest(BaseModel):
     amount: int = Field(..., description="Positive=credit, negative=deduct")
-    description: str = Field(default="Admin adjustment")
+    description: str = Field(default="Admin adjustment", max_length=2000)
 
 
 class PricingItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
-    scan_type: str
+    scan_type: str = Field(..., max_length=20)
     credit_cost: int
     updated_at: datetime
 

@@ -1,11 +1,16 @@
+import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
 from app.config import check_settings, settings
 from app.middleware.auth import ApiKeyMiddleware
+from app.middleware.security_headers import SecurityHeadersMiddleware
+from app.utils.log_sanitizer import sanitize_for_log
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -29,7 +34,27 @@ app.add_middleware(
     allow_headers=["X-API-Key", "Content-Type", "Authorization", "Accept"],
 )
 
+app.add_middleware(SecurityHeadersMiddleware)
+
 app.add_middleware(ApiKeyMiddleware)
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(
+        "Unhandled exception: %s | path=%s method=%s",
+        sanitize_for_log(str(exc)),
+        request.url.path,
+        request.method,
+        exc_info=True,
+    )
+    from starlette.responses import JSONResponse
+
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
+
 
 app.include_router(api_router, prefix="/api")
 

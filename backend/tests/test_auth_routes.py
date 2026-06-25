@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
-from jose import jwt
+import jwt
 from sqlalchemy import select
 
 from app.config import settings

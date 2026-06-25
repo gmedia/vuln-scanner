@@ -4,7 +4,7 @@ from typing import Any, cast
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, status
-from jose import JWTError, jwt
+import jwt
 from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -64,10 +64,10 @@ def decode_token(token: str) -> dict[str, Any]:
     payload: dict[str, Any] = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])  # type: ignore[no-any-return]
     jti = payload.get("jti")
     if jti is not None and jti in _revoked_tokens:
-        raise JWTError("Token has been revoked")
+        raise jwt.PyJWTError("Token has been revoked")
     sub = payload.get("sub")
     if sub is not None and sub in _revoked_users:
-        raise JWTError("Token has been revoked (user logged out)")
+        raise jwt.PyJWTError("Token has been revoked (user logged out)")
     return payload
 
 
@@ -108,7 +108,7 @@ async def get_current_user(
 
     try:
         payload = decode_token(token)
-    except JWTError as err:
+    except jwt.PyJWTError as err:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",

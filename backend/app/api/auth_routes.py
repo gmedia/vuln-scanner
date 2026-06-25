@@ -6,12 +6,13 @@ from uuid import UUID
 
 import redis.asyncio as redis
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from jose import JWTError
+import jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
+from app.middleware.rate_limit import RateLimiter
 from app.models.credit_log import CreditLog
 from app.models.email_verification import EmailVerificationToken
 from app.models.user import User
@@ -38,39 +39,23 @@ from app.services.auth import (
     verify_password,
 )
 from app.services.email import send_verification_email
+from app.utils.log_sanitizer import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-LOGIN_RATE_LIMIT = 5
-LOGIN_RATE_WINDOW = 60
-
-
-async def login_rate_limit(request: Request):
-    """Enforce 5 login attempts per IP per minute."""
-    client_ip = request.client.host if request.client else "unknown"
-    key = f"ratelimit:login:{client_ip}"
-    try:
-        r = redis.Redis.from_url(settings.redis_url, decode_responses=True)
-        count = await r.incr(key)
-        if count == 1:
-            await r.expire(key, LOGIN_RATE_WINDOW)
-        if count > LOGIN_RATE_LIMIT:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Too many login attempts. Please try again later.",
-            )
-    except redis.RedisError:
-        logger.critical("Login rate limit unavailable: Redis down")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Service temporarily unavailable.",
-        )
-
+login_limiter = RateLimiter(max_requests=5, window_seconds=60, prefix="ratelimit:login")
+register_limiter = RateLimiter(max_requests=3, window_seconds=60, prefix="ratelimit:register")
+refresh_limiter = RateLimiter(max_requests=10, window_seconds=60, prefix="ratelimit:refresh")
+verify_email_limiter = RateLimiter(max_requests=5, window_seconds=60, prefix="ratelimit:verify_email")
 
 @router.post("/register", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
-async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+async def register(request: Request, body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+    limit_response = await register_limiter(request)
+    if limit_response:
+        return limit_response
+
     if body.password != body.confirm_password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -125,11 +110,15 @@ async def login(
     request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
-    _rate_limit: None = Depends(login_rate_limit),
 ):
+    limit_response = await login_limiter(request)
+    if limit_response:
+        return limit_response
+
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
     if user is None or not verify_password(body.password, user.password_hash):
+        logger.warning("Login failed for user")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email atau kata sandi salah",
@@ -165,7 +154,11 @@ async def login(
 
 
 @router.post("/verify-email", response_model=MessageResponse)
-async def verify_email(body: VerifyEmailRequest, db: AsyncSession = Depends(get_db)):
+async def verify_email(request: Request, body: VerifyEmailRequest, db: AsyncSession = Depends(get_db)):
+    limit_response = await verify_email_limiter(request)
+    if limit_response:
+        return limit_response
+
     result = await db.execute(
         select(EmailVerificationToken).where(EmailVerificationToken.token == body.token)
     )
@@ -205,6 +198,10 @@ async def refresh(
     response: Response = None,  # type: ignore[assignment]
     db: AsyncSession = Depends(get_db),
 ) -> TokenResponse:
+    limit_response = await refresh_limiter(request)
+    if limit_response:
+        return limit_response
+
     refresh_token_str: str | None = None
 
     if body is not None and body.refresh_token:
@@ -220,7 +217,7 @@ async def refresh(
 
     try:
         payload = decode_token(refresh_token_str)
-    except JWTError as err:
+    except jwt.PyJWTError as err:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh token tidak valid atau kadaluarsa",
@@ -290,7 +287,7 @@ async def revoke(
 ):
     try:
         payload = decode_token(body.token)
-    except JWTError:
+    except jwt.PyJWTError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Token tidak valid atau kadaluarsa",
