@@ -241,7 +241,10 @@ async def export_scan(job_id: str, format: str = Query(default="json"), current_
         result = _export_json(job)
         return JSONResponse(
             content=result,
-            headers={"Content-Disposition": f'attachment; filename="scan_{job_id}.json"'},
+            headers={
+                "Content-Disposition": f'attachment; filename="scan_{job_id}.json"',
+                "Content-Type": "application/octet-stream",
+            },
         )
 
     if format == "html":
