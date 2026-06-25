@@ -86,7 +86,7 @@ for table in Base.metadata.tables.values():
 # Now safe to import the rest of the app
 from app.database import get_db  # noqa: E402
 from app.main import app  # noqa: E402
-from app.services.auth import get_current_user  # noqa: E402
+from app.services.auth import get_current_admin, get_current_user  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
@@ -139,8 +139,12 @@ def client(db_session):
             await db_session.refresh(user)
         return user
 
+    async def override_get_current_admin():
+        return await override_get_current_user()
+
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = override_get_current_user
+    app.dependency_overrides[get_current_admin] = override_get_current_admin
     app.middleware_stack = None
 
     with TestClient(app) as c:

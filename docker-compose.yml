@@ -176,7 +176,6 @@ services:
     environment:
       VITE_API_URL: ""
       VITE_WS_URL: ""
-      VITE_API_KEY: ${API_KEY}
     ports:
       - "5173:5173"
     volumes:
@@ -202,6 +201,7 @@ services:
     environment:
       DOMAIN: ${DOMAIN:-localhost}
       MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-500}
+      API_KEY: ${API_KEY}
     volumes:
       - ./certbot/www:/var/www/certbot
       - ./certbot/conf:/etc/letsencrypt

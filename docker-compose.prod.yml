@@ -6,6 +6,13 @@ services:
     image: postgres:16-alpine
     container_name: vuln-postgres
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-vuln_scanner}
       POSTGRES_USER: ${POSTGRES_USER:-vuln_scanner}
@@ -25,7 +32,16 @@ services:
     image: redis:8-alpine
     container_name: vuln-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
     volumes:
       - redis_data:/data
     healthcheck:
@@ -42,6 +58,15 @@ services:
       dockerfile: Dockerfile
     container_name: vuln-backend
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
     depends_on:
       postgres:
         condition: service_healthy
@@ -51,11 +76,9 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       DATABASE_URL_SYNC: ${DATABASE_URL_SYNC}
       REDIS_URL: ${REDIS_URL}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       CELERY_BROKER_URL: ${CELERY_BROKER_URL}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
-      CORS_ORIGINS: ${CORS_ORIGINS:-https://vs.appmedia.id}
-      API_KEY: ${API_KEY}
-      SECRET_KEY: ${SECRET_KEY}
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
       MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-500}
       JWT_SECRET: ${JWT_SECRET:-}
@@ -95,6 +118,16 @@ services:
       dockerfile: Dockerfile
     container_name: vuln-worker-ip
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
     depends_on:
       postgres:
         condition: service_healthy
@@ -105,6 +138,7 @@ services:
       DATABASE_URL_SYNC: ${DATABASE_URL_SYNC}
       CELERY_BROKER_URL: ${CELERY_BROKER_URL}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
       NVD_API_KEY: ${NVD_API_KEY:-}
       CELERY_QUEUE: ip_scan
@@ -126,6 +160,13 @@ services:
       dockerfile: Dockerfile
     container_name: vuln-worker-domain
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     depends_on:
       postgres:
         condition: service_healthy
@@ -136,6 +177,7 @@ services:
       DATABASE_URL_SYNC: ${DATABASE_URL_SYNC}
       CELERY_BROKER_URL: ${CELERY_BROKER_URL}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
       CELERY_QUEUE: domain_scan
       CELERY_CONCURRENCY: 2
@@ -154,6 +196,13 @@ services:
       dockerfile: Dockerfile
     container_name: vuln-worker-mobile
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     depends_on:
       postgres:
         condition: service_healthy
@@ -164,6 +213,7 @@ services:
       DATABASE_URL_SYNC: ${DATABASE_URL_SYNC}
       CELERY_BROKER_URL: ${CELERY_BROKER_URL}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
       CELERY_QUEUE: mobile_scan
       CELERY_CONCURRENCY: 1
@@ -185,6 +235,13 @@ services:
       target: production
     container_name: vuln-frontend
     restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
     depends_on:
       - backend
     environment:
