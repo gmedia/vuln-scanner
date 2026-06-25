@@ -3,9 +3,11 @@ set -e
 
 DOMAIN="${DOMAIN:-localhost}"
 MAX_UPLOAD="${MAX_UPLOAD_SIZE_MB:-500}M"
+API_KEY="${API_KEY:-}"
 
 sed -i "s/__DOMAIN__/$DOMAIN/g" /etc/nginx/conf.d/default.conf
 sed -i "s/__MAX_UPLOAD_SIZE__/$MAX_UPLOAD/g" /etc/nginx/conf.d/default.conf
+sed -i "s/__API_KEY__/$API_KEY/g" /etc/nginx/conf.d/default.conf
 
 LETSENCRYPT_DIR="/etc/letsencrypt/live/$DOMAIN"
 if [ ! -f "$LETSENCRYPT_DIR/fullchain.pem" ]; then
