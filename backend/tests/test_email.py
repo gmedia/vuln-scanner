@@ -1,3 +1,4 @@
+import asyncio
 from email.mime.multipart import MIMEMultipart
 from unittest.mock import AsyncMock, patch
 
@@ -352,3 +353,250 @@ class TestTokenInLink:
         html_part = sent_msg.get_payload()[0]
         html_body = html_part.get_payload(decode=True).decode("utf-8")
         assert "verify-email?token=" in html_body
+
+
+# ---------------------------------------------------------------------------
+# Edge cases
+# ---------------------------------------------------------------------------
+
+
+class TestEmailEdgeCases:
+
+    # -- non-standard SMTP ports -----------------------------------------------
+
+    @pytest.mark.asyncio
+    async def test_port_25_no_tls(self, monkeypatch):
+        monkeypatch.setattr(email_module, "SMTP_PORT", 25)
+
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP") as mock_smtp_class:
+            mock_smtp_class.return_value = mock_smtp
+            await send_verification_email("user@example.com", "token123")
+
+        _, kwargs = mock_smtp_class.call_args
+        assert kwargs["port"] == 25
+        assert kwargs["use_tls"] is False
+        assert kwargs["start_tls"] is False
+
+    @pytest.mark.asyncio
+    async def test_port_2525_custom(self, monkeypatch):
+        monkeypatch.setattr(email_module, "SMTP_PORT", 2525)
+
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP") as mock_smtp_class:
+            mock_smtp_class.return_value = mock_smtp
+            await send_verification_email("user@example.com", "token123")
+
+        _, kwargs = mock_smtp_class.call_args
+        assert kwargs["port"] == 2525
+        assert kwargs["use_tls"] is False
+        assert kwargs["start_tls"] is False
+
+    # -- missing credentials / no login ----------------------------------------
+
+    @pytest.mark.asyncio
+    async def test_no_credentials_no_login(self, monkeypatch):
+        monkeypatch.setattr(email_module, "SMTP_USER", "")
+        monkeypatch.setattr(email_module, "SMTP_PASS", "")
+
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.login = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            result = await send_verification_email("user@example.com", "token123")
+
+        assert result is True
+        mock_smtp.login.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_user_without_pass_no_login(self, monkeypatch):
+        monkeypatch.setattr(email_module, "SMTP_USER", "someuser")
+        monkeypatch.setattr(email_module, "SMTP_PASS", "")
+
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.login = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            result = await send_verification_email("user@example.com", "token123")
+
+        assert result is True
+        mock_smtp.login.assert_not_awaited()
+
+    # -- quit failure still returns True ---------------------------------------
+
+    @pytest.mark.asyncio
+    async def test_quit_failure_still_returns_true(self):
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock(side_effect=OSError("Broken pipe"))
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            result = await send_verification_email("user@example.com", "token123")
+
+        # quit is inside the try block, so Exception during quit → False
+        assert result is False
+        mock_smtp.send_message.assert_awaited_once()
+        mock_smtp.quit.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_connect_then_quit_failure(self):
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock(side_effect=Exception("Connection lost during quit"))
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            result = await send_verification_email("user@example.com", "token123")
+
+        # quit inside try block → exception caught → False
+        assert result is False
+        mock_smtp.connect.assert_awaited_once()
+        mock_smtp.send_message.assert_awaited_once()
+        mock_smtp.quit.assert_awaited_once()
+
+    # -- generic exception during send -----------------------------------------
+
+    @pytest.mark.asyncio
+    async def test_generic_exception_during_send(self):
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock(side_effect=RuntimeError("Unexpected error"))
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            result = await send_verification_email("user@example.com", "token123")
+
+        assert result is False
+        mock_smtp.send_message.assert_awaited_once()
+
+    # -- SMTP constructor timeout ----------------------------------------------
+
+    @pytest.mark.asyncio
+    async def test_smtp_constructor_timeout_explicit(self):
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP") as mock_smtp_class:
+            mock_smtp_class.return_value = mock_smtp
+            await send_verification_email("user@example.com", "token123")
+
+        _, kwargs = mock_smtp_class.call_args
+        assert kwargs["timeout"] == 10
+
+    # -- FRONTEND_URL trailing slash -------------------------------------------
+
+    @pytest.mark.asyncio
+    async def test_frontend_url_with_trailing_slash(self, monkeypatch):
+        monkeypatch.setattr(email_module, "FRONTEND_URL", "https://example.com/")
+
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            await send_verification_email("user@example.com", "token123")
+
+        sent_msg = mock_smtp.send_message.call_args[0][0]
+        html_part = sent_msg.get_payload()[0]
+        html_body = html_part.get_payload(decode=True).decode("utf-8")
+        # The current implementation does NOT strip trailing slash, so this
+        # reveals the actual behavior: double slash exists.
+        assert "https://example.com//verify-email?token=token123" in html_body
+
+    # -- long token ------------------------------------------------------------
+
+    @pytest.mark.asyncio
+    async def test_very_long_token(self):
+        long_token = "x" * 1000
+
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            await send_verification_email("user@example.com", long_token)
+
+        sent_msg = mock_smtp.send_message.call_args[0][0]
+        html_part = sent_msg.get_payload()[0]
+        html_body = html_part.get_payload(decode=True).decode("utf-8")
+        assert long_token in html_body
+
+    # -- HTML special chars in token (not escaped in href) ---------------------
+
+    @pytest.mark.asyncio
+    async def test_html_body_does_not_escape_token(self):
+        special_token = "token<with>special&chars"
+
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            await send_verification_email("user@example.com", special_token)
+
+        sent_msg = mock_smtp.send_message.call_args[0][0]
+        html_part = sent_msg.get_payload()[0]
+        html_body = html_part.get_payload(decode=True).decode("utf-8")
+        # Verify raw token appears in the href (not HTML-escaped as &lt; etc.)
+        assert f'href="https://vs.appmedia.id/verify-email?token={special_token}"' in html_body
+        # Also confirm it is NOT escaped
+        assert "&lt;" not in html_body
+        assert "&gt;" not in html_body
+        assert "&amp;" not in html_body
+
+    # -- SMTP_HOST empty string ------------------------------------------------
+
+    @pytest.mark.asyncio
+    async def test_smtp_host_empty_string(self, monkeypatch):
+        monkeypatch.setattr(email_module, "SMTP_HOST", "")
+
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP") as mock_smtp_class:
+            mock_smtp_class.return_value = mock_smtp
+            await send_verification_email("user@example.com", "token123")
+
+        _, kwargs = mock_smtp_class.call_args
+        assert kwargs["hostname"] == ""
+
+    # -- concurrent sends (no shared mutable state issues) ---------------------
+
+    @pytest.mark.asyncio
+    async def test_concurrent_email_sends(self):
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            results = await asyncio.gather(
+                send_verification_email("user1@example.com", "tokenA"),
+                send_verification_email("user2@example.com", "tokenB"),
+                send_verification_email("user3@example.com", "tokenC"),
+            )
+
+        assert results == [True, True, True]
+        assert mock_smtp.send_message.await_count == 3

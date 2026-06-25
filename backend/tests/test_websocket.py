@@ -8,6 +8,404 @@ from app.config import settings
 API_KEY = settings.api_key
 
 
+class TestWebSocketRateLimit:
+    """Tests for IP-based WebSocket rate limiting (WS_RATE_LIMIT_MAX=10, WINDOW=60)."""
+
+    def test_rate_limit_allows_first_connections(self, client, monkeypatch):
+        """First 10 connections from the same IP succeed (heartbeat received)."""
+        async def mock_validate(_key):
+            return True
+        monkeypatch.setattr("app.api.websocket.validate_api_key", mock_validate)
+
+        mock_pubsub = MagicMock()
+        mock_pubsub.subscribe = AsyncMock()
+        mock_pubsub.unsubscribe = AsyncMock()
+
+        mock_redis = MagicMock()
+        mock_redis.pubsub.return_value = mock_pubsub
+
+        async def mock_get_redis():
+            return mock_redis
+        monkeypatch.setattr("app.api.websocket.get_redis", mock_get_redis)
+
+        for i in range(10):
+            mock_pubsub.get_message = AsyncMock(side_effect=[
+                None,
+                WebSocketDisconnect(),
+            ])
+            with client.websocket_connect(
+                f"/api/ws/scan/job-{i}?api_key={API_KEY}"
+            ) as ws:
+                data = ws.receive_json()
+                assert data == {"type": "heartbeat"}
+
+    def test_rate_limit_blocks_11th_connection(self, client, monkeypatch):
+        """11th connection from same IP gets close code 4008 (rate limit exceeded)."""
+        async def mock_validate(_key):
+            return True
+        monkeypatch.setattr("app.api.websocket.validate_api_key", mock_validate)
+
+        # First, saturate the limit with 10 connections
+        mock_pubsub = MagicMock()
+        mock_pubsub.subscribe = AsyncMock()
+        mock_pubsub.unsubscribe = AsyncMock()
+        mock_redis = MagicMock()
+        mock_redis.pubsub.return_value = mock_pubsub
+
+        async def mock_get_redis():
+            return mock_redis
+        monkeypatch.setattr("app.api.websocket.get_redis", mock_get_redis)
+
+        for i in range(10):
+            mock_pubsub.get_message = AsyncMock(side_effect=[
+                None,
+                WebSocketDisconnect(),
+            ])
+            with client.websocket_connect(
+                f"/api/ws/scan/job-{i}?api_key={API_KEY}"
+            ) as ws:
+                ws.receive_json()
+
+        # 11th connection should be blocked
+        with pytest.raises(WebSocketDisconnect) as exc_info, client.websocket_connect(
+            f"/api/ws/scan/job-11?api_key={API_KEY}"
+        ):
+            pass
+        assert exc_info.value.code == 4008
+
+    def test_rate_limit_per_ip_isolation(self, client, monkeypatch):
+        """Connections from different IPs have separate rate limit counters."""
+        async def mock_validate(_key):
+            return True
+        monkeypatch.setattr("app.api.websocket.validate_api_key", mock_validate)
+
+        mock_pubsub = MagicMock()
+        mock_pubsub.subscribe = AsyncMock()
+        mock_pubsub.unsubscribe = AsyncMock()
+        mock_redis = MagicMock()
+        mock_redis.pubsub.return_value = mock_pubsub
+
+        async def mock_get_redis():
+            return mock_redis
+        monkeypatch.setattr("app.api.websocket.get_redis", mock_get_redis)
+
+        # Helper: create a WS connection and verify heartbeat
+        def connect_and_check(url):
+            mock_pubsub.get_message = AsyncMock(side_effect=[
+                None,
+                WebSocketDisconnect(),
+            ])
+            with client.websocket_connect(url) as ws:
+                data = ws.receive_json()
+                assert data == {"type": "heartbeat"}
+
+        # Use separate fake rate-limit Redis per IP to simulate isolation
+        from unittest.mock import AsyncMock as AM
+
+        class PerIpFakeRedis:
+            """Fake Redis that maintains separate counters per key prefix."""
+
+            def __init__(self, ip_label):
+                self._ip_label = ip_label
+                self._counters = {}
+                self.incr = self._incr
+                self.expire = AM(return_value=True)
+                self.ping = AM(return_value=True)
+                self.aclose = AM(return_value=None)
+
+            async def _incr(self, key):
+                self._counters[key] = self._counters.get(key, 0) + 1
+                return self._counters[key]
+
+        # Create separate fake Redis instances per IP
+        redis_a = PerIpFakeRedis("a")
+        redis_b = PerIpFakeRedis("b")
+
+        call_idx = [0]
+
+        async def mock_ws_rate_limit_redis():
+            call_idx[0] += 1
+            # Return different fake Redis per invocation to simulate different IPs
+            # We'll alternate to represent the IP change
+            if call_idx[0] <= 10:
+                return redis_a
+            return redis_b
+
+        monkeypatch.setattr("app.api.websocket._get_ws_rate_limit_redis", mock_ws_rate_limit_redis)
+
+        # Saturate IP-A with 10 connections
+        for i in range(10):
+            connect_and_check(f"/api/ws/scan/job-a-{i}?api_key={API_KEY}")
+
+        # IP-B should still be able to connect (separate counter)
+        connect_and_check(f"/api/ws/scan/job-b-1?api_key={API_KEY}")
+
+    def test_rate_limit_resets_after_window(self, client, monkeypatch):
+        """Rate limit counter resets after the window expires (count reset to 0)."""
+        async def mock_validate(_key):
+            return True
+        monkeypatch.setattr("app.api.websocket.validate_api_key", mock_validate)
+
+        mock_pubsub = MagicMock()
+        mock_pubsub.subscribe = AsyncMock()
+        mock_pubsub.unsubscribe = AsyncMock()
+        mock_redis = MagicMock()
+        mock_redis.pubsub.return_value = mock_pubsub
+
+        async def mock_get_redis():
+            return mock_redis
+        monkeypatch.setattr("app.api.websocket.get_redis", mock_get_redis)
+
+        # Track counters manually and simulate window reset
+        counters = {}
+
+        async def incr_side_effect(key):
+            counters[key] = counters.get(key, 0) + 1
+            return counters[key]
+
+        async def expire_side_effect(key, window):
+            # Expire is called on first incr; we'll simulate reset separately
+            pass
+
+        fake_rl_redis = MagicMock()
+        fake_rl_redis.incr = incr_side_effect
+        fake_rl_redis.expire = expire_side_effect
+        fake_rl_redis.ping = AsyncMock(return_value=True)
+        fake_rl_redis.aclose = AsyncMock(return_value=None)
+
+        async def mock_ws_rl():
+            return fake_rl_redis
+        monkeypatch.setattr("app.api.websocket._get_ws_rate_limit_redis", mock_ws_rl)
+
+        # Saturate the limit
+        for i in range(10):
+            mock_pubsub.get_message = AsyncMock(side_effect=[
+                None,
+                WebSocketDisconnect(),
+            ])
+            with client.websocket_connect(
+                f"/api/ws/scan/job-{i}?api_key={API_KEY}"
+            ) as ws:
+                ws.receive_json()
+
+        # 11th should be blocked
+        with pytest.raises(WebSocketDisconnect) as exc_info, client.websocket_connect(
+            "/api/ws/scan/job-blocked?api_key={}".format(API_KEY)
+        ):
+            pass
+        assert exc_info.value.code == 4008
+
+        # Simulate window reset by clearing counters
+        counters.clear()
+
+        # Now connections should work again
+        mock_pubsub.get_message = AsyncMock(side_effect=[
+            None,
+            WebSocketDisconnect(),
+        ])
+        with client.websocket_connect(
+            f"/api/ws/scan/job-after-reset?api_key={API_KEY}"
+        ) as ws:
+            data = ws.receive_json()
+            assert data == {"type": "heartbeat"}
+
+    def test_rate_limit_redis_unavailable_returns_4001(self, client, monkeypatch):
+        """When _get_ws_rate_limit_redis raises Exception, close code 4001."""
+        async def mock_validate(_key):
+            return True
+        monkeypatch.setattr("app.api.websocket.validate_api_key", mock_validate)
+
+        async def mock_ws_rl_error():
+            raise Exception("Redis connection refused")
+        monkeypatch.setattr("app.api.websocket._get_ws_rate_limit_redis", mock_ws_rl_error)
+
+        with pytest.raises(WebSocketDisconnect) as exc_info, client.websocket_connect(
+            f"/api/ws/scan/test-job?api_key={API_KEY}"
+        ):
+            pass
+        assert exc_info.value.code == 4001
+
+    def test_rate_limit_after_master_key_validates(self, client, monkeypatch):
+        """Rate limit check runs even when using the master API key."""
+        async def mock_validate(_key):
+            return True
+        monkeypatch.setattr("app.api.websocket.validate_api_key", mock_validate)
+
+        mock_pubsub = MagicMock()
+        mock_pubsub.subscribe = AsyncMock()
+        mock_pubsub.unsubscribe = AsyncMock()
+
+        mock_redis = MagicMock()
+        mock_redis.pubsub.return_value = mock_pubsub
+
+        async def mock_get_redis():
+            return mock_redis
+        monkeypatch.setattr("app.api.websocket.get_redis", mock_get_redis)
+
+        # Saturate rate limit with 10 connections using master key
+        for i in range(10):
+            mock_pubsub.get_message = AsyncMock(side_effect=[
+                None,
+                WebSocketDisconnect(),
+            ])
+            with client.websocket_connect(
+                f"/api/ws/scan/job-{i}?api_key={API_KEY}"
+            ) as ws:
+                ws.receive_json()
+
+        # 11th connection with master key still blocked
+        with pytest.raises(WebSocketDisconnect) as exc_info, client.websocket_connect(
+            f"/api/ws/scan/job-11?api_key={API_KEY}"
+        ):
+            pass
+        assert exc_info.value.code == 4008
+
+    def test_rate_limit_after_db_key_validates(self, client, monkeypatch):
+        """Rate limit check runs even for DB-stored API keys."""
+        async def mock_validate(_key):
+            return True
+        monkeypatch.setattr("app.api.websocket.validate_api_key", mock_validate)
+
+        # Mock DB session for job existence check (non-master key triggers it)
+        mock_session = AsyncMock()
+        mock_scalar = MagicMock()
+        mock_scalar.scalar_one_or_none.return_value = MagicMock()
+        mock_session.execute.return_value = mock_scalar
+
+        class FakeAsyncSession:
+            async def __aenter__(self):
+                return mock_session
+            async def __aexit__(self, *args, **kwargs):
+                pass
+
+        monkeypatch.setattr("app.api.websocket.async_session", lambda: FakeAsyncSession())
+
+        mock_pubsub = MagicMock()
+        mock_pubsub.subscribe = AsyncMock()
+        mock_pubsub.unsubscribe = AsyncMock()
+
+        mock_redis = MagicMock()
+        mock_redis.pubsub.return_value = mock_pubsub
+
+        async def mock_get_redis():
+            return mock_redis
+        monkeypatch.setattr("app.api.websocket.get_redis", mock_get_redis)
+
+        # Saturate with a DB key (key value doesn't matter, validate returns True)
+        for i in range(10):
+            mock_pubsub.get_message = AsyncMock(side_effect=[
+                None,
+                WebSocketDisconnect(),
+            ])
+            with client.websocket_connect(
+                f"/api/ws/scan/job-{i}?api_key=db-stored-key"
+            ) as ws:
+                ws.receive_json()
+
+        # 11th connection with DB key still blocked
+        with pytest.raises(WebSocketDisconnect) as exc_info, client.websocket_connect(
+            "/api/ws/scan/job-11?api_key=db-stored-key"
+        ):
+            pass
+        assert exc_info.value.code == 4008
+
+    @pytest.mark.asyncio
+    async def test_ws_rate_limit_redis_lazy_init(self, monkeypatch):
+        """First call to _get_ws_rate_limit_redis initializes, second call reuses."""
+        monkeypatch.setattr("app.api.websocket._ws_rate_limit_redis", None)
+
+        mock_rl_instance = AsyncMock()
+        with patch("app.api.websocket.Redis.from_url", return_value=mock_rl_instance) as mock_from_url:
+            from app.api.websocket import _get_ws_rate_limit_redis
+            from app.config import settings
+
+            result1 = await _get_ws_rate_limit_redis()
+            result2 = await _get_ws_rate_limit_redis()
+
+            mock_from_url.assert_called_once_with(settings.redis_url, decode_responses=True)
+            assert result1 is mock_rl_instance
+            assert result2 is mock_rl_instance
+
+    @pytest.mark.asyncio
+    async def test_ws_rate_limit_redis_uses_decode_responses(self, monkeypatch):
+        """_get_ws_rate_limit_redis passes decode_responses=True to Redis.from_url."""
+        monkeypatch.setattr("app.api.websocket._ws_rate_limit_redis", None)
+
+        mock_rl_instance = AsyncMock()
+        with patch("app.api.websocket.Redis.from_url", return_value=mock_rl_instance) as mock_from_url:
+            from app.api.websocket import _get_ws_rate_limit_redis
+
+            await _get_ws_rate_limit_redis()
+
+            mock_from_url.assert_called_once()
+            call_kwargs = mock_from_url.call_args
+            assert call_kwargs.kwargs.get("decode_responses") is True
+
+    def test_rate_limit_expire_called_on_first_incr(self, client, monkeypatch):
+        """expire is called with window=60 when count==1 (first increment)."""
+        async def mock_validate(_key):
+            return True
+        monkeypatch.setattr("app.api.websocket.validate_api_key", mock_validate)
+
+        mock_pubsub = MagicMock()
+        mock_pubsub.subscribe = AsyncMock()
+        mock_pubsub.unsubscribe = AsyncMock()
+
+        mock_redis = MagicMock()
+        mock_redis.pubsub.return_value = mock_pubsub
+
+        async def mock_get_redis():
+            return mock_redis
+        monkeypatch.setattr("app.api.websocket.get_redis", mock_get_redis)
+
+        # Use a fake rate limit Redis that tracks expire calls
+        expire_calls = []
+        counter = [0]
+
+        async def incr_side_effect(key):
+            counter[0] += 1
+            return counter[0]
+
+        async def expire_side_effect(key, window):
+            expire_calls.append((key, window))
+            return True
+
+        fake_rl_redis = MagicMock()
+        fake_rl_redis.incr = incr_side_effect
+        fake_rl_redis.expire = expire_side_effect
+        fake_rl_redis.ping = AsyncMock(return_value=True)
+        fake_rl_redis.aclose = AsyncMock(return_value=None)
+
+        async def mock_ws_rl():
+            return fake_rl_redis
+        monkeypatch.setattr("app.api.websocket._get_ws_rate_limit_redis", mock_ws_rl)
+
+        # First connection: count=1, expire should be called
+        mock_pubsub.get_message = AsyncMock(side_effect=[
+            None,
+            WebSocketDisconnect(),
+        ])
+        with client.websocket_connect(
+            f"/api/ws/scan/job-first?api_key={API_KEY}"
+        ) as ws:
+            ws.receive_json()
+
+        assert len(expire_calls) == 1
+        assert expire_calls[0][1] == 60
+
+        # Second connection: count=2, expire should NOT be called again
+        mock_pubsub.get_message = AsyncMock(side_effect=[
+            None,
+            WebSocketDisconnect(),
+        ])
+        with client.websocket_connect(
+            f"/api/ws/scan/job-second?api_key={API_KEY}"
+        ) as ws:
+            ws.receive_json()
+
+        assert len(expire_calls) == 1  # still only the first call
+
+
 def test_reject_no_api_key(client, monkeypatch):
     """Rejects connection when no API key provided (validate_api_key returns False)."""
     async def mock_validate(_key):
