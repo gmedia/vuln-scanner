@@ -14,7 +14,7 @@ alembic==1.14.1
 pydantic==2.10.3
 pydantic-settings==2.7.0
 celery[redis]==5.4.0
-redis==5.2.1
+redis==8.0.1
 python-multipart==0.0.31
 websockets==15.0.1
 pyjwt[crypto]==2.13.0
