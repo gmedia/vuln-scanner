@@ -68,6 +68,21 @@ DANGEROUS_PERMISSIONS = {
 }
 
 
+def _safe_extract(zf: zipfile.ZipFile, member: str, dest_dir: str) -> bool:
+    """Extract a single zip member to dest_dir, validating that the resolved path stays within dest_dir.
+
+    Returns True on success, False if the member was skipped due to path traversal risk.
+    """
+    target_path = os.path.realpath(os.path.join(dest_dir, member))
+    dest_real = os.path.realpath(dest_dir)
+    if not target_path.startswith(dest_real + os.sep) and target_path != dest_real:
+        logger.warning("Skipping zip member with unsafe path: {member}", member=member)
+        return False
+    os.makedirs(os.path.dirname(target_path), exist_ok=True)
+    zf.extract(member, dest_dir)
+    return True
+
+
 def analyze_apk(file_path: str) -> tuple[AndroidManifestInfo, list[dict], list[str]]:
     """Analyze an APK file: parse manifest, scan for secrets, and extract library names."""
     info = AndroidManifestInfo()
@@ -85,9 +100,9 @@ def analyze_apk(file_path: str) -> tuple[AndroidManifestInfo, list[dict], list[s
                         n=len(all_files), dex=len(classes_dex), lib=len(lib_files))
 
             if "AndroidManifest.xml" in all_files:
-                zf.extract("AndroidManifest.xml", extracts_dir)
-                manifest_path = os.path.join(extracts_dir, "AndroidManifest.xml")
-                info = _parse_android_manifest(manifest_path)
+                if _safe_extract(zf, "AndroidManifest.xml", extracts_dir):
+                    manifest_path = os.path.join(extracts_dir, "AndroidManifest.xml")
+                    info = _parse_android_manifest(manifest_path)
 
             strings_content = _extract_text_from_zip(zf, all_files)
             secret_findings = _scan_secrets(strings_content)
@@ -117,7 +132,8 @@ def analyze_ipa(file_path: str) -> tuple[IpaInfo, list[dict], list[str]]:
             plist_candidates = [f for f in all_files if f.endswith(".app/Info.plist") or "Info.plist" in f]
             for plist_path in plist_candidates:
                 try:
-                    zf.extract(plist_path, extracts_dir)
+                    if not _safe_extract(zf, plist_path, extracts_dir):
+                        continue
                     extracted_path = os.path.join(extracts_dir, plist_path)
                     with open(extracted_path, "rb") as pf:
                         plist_data = plistlib.load(pf)
