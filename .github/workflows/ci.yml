@@ -39,6 +39,8 @@ jobs:
     strategy:
       matrix:
         dir: [backend, workers]
+    env:
+      SENTRY_DSN: ""
     defaults:
       run:
         working-directory: ${{ matrix.dir }}
@@ -291,6 +293,7 @@ jobs:
             POSTGRES_DB=${{ secrets.POSTGRES_DB || 'vuln_scanner' }}
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             API_KEY=${{ secrets.API_KEY }}
+            SENTRY_DSN=${{ secrets.SENTRY_DSN }}
             SECRET_KEY=${{ secrets.SECRET_KEY }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             SMTP_HOST=${{ secrets.SMTP_HOST }}
