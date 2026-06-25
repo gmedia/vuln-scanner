@@ -41,6 +41,8 @@ class Settings(BaseSettings):
     smtp_from: str = "VulnScanner <noreply@vs.appmedia.id>"
     frontend_url: str = "https://vs.appmedia.id"
 
+    sentry_dsn: str = ""
+
     admin_email: str = ""
     admin_password: str = ""
     default_register_credits: int = 30
