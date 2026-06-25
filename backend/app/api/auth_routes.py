@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 from typing import cast
 from uuid import UUID
 
+import redis.asyncio as redis
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from jose import JWTError
 from sqlalchemy import select
@@ -37,6 +38,31 @@ from app.services.email import send_verification_email
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+LOGIN_RATE_LIMIT = 5
+LOGIN_RATE_WINDOW = 60
+
+
+async def login_rate_limit(request: Request):
+    """Enforce 5 login attempts per IP per minute."""
+    client_ip = request.client.host if request.client else "unknown"
+    key = f"ratelimit:login:{client_ip}"
+    try:
+        r = redis.Redis.from_url(settings.redis_url, decode_responses=True)
+        count = await r.incr(key)
+        if count == 1:
+            await r.expire(key, LOGIN_RATE_WINDOW)
+        if count > LOGIN_RATE_LIMIT:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many login attempts. Please try again later.",
+            )
+    except redis.RedisError:
+        logger.critical("Login rate limit unavailable: Redis down")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Service temporarily unavailable.",
+        )
 
 
 @router.post("/register", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
@@ -90,7 +116,13 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/login", response_model=LoginResponse)
-async def login(body: LoginRequest, response: Response, db: AsyncSession = Depends(get_db)):
+async def login(
+    body: LoginRequest,
+    request: Request,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+    _rate_limit: None = Depends(login_rate_limit),
+):
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
     if user is None or not verify_password(body.password, user.password_hash):
