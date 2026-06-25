@@ -186,6 +186,8 @@ class ScannerService:
         count_query = select(func.count(ScanJob.id))
 
         if scan_type:
+            if scan_type not in ("ip", "domain", "apk", "ipa"):
+                raise HTTPException(status_code=400, detail="Invalid scan type")
             query = query.where(ScanJob.scan_type == scan_type)
             count_query = count_query.where(ScanJob.scan_type == scan_type)
 
