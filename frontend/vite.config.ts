@@ -15,14 +15,16 @@ export default defineConfig(({ mode }) => {
     server: {
       host: "0.0.0.0",
       port: 5173,
+      allowedHosts: ["localhost", "nginx", ".localhost"],
       proxy: {
         "/api": {
           target: "http://backend:8000",
           changeOrigin: true,
           configure: (proxy) => {
             proxy.on("proxyReq", (proxyReq) => {
-              if (env.API_KEY) {
-                proxyReq.setHeader("X-API-Key", env.API_KEY);
+              const apiKey = env.API_KEY || process.env.API_KEY;
+              if (apiKey) {
+                proxyReq.setHeader("X-API-Key", apiKey);
               }
             });
           },
