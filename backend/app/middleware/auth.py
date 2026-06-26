@@ -74,9 +74,22 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
             )
 
         if api_key_header == settings.api_key:
+            logger.debug(
+                "Master API key accepted for %s %s (ip=%s)",
+                request.method, request.url.path, client_ip,
+            )
             return await self._check_rate_and_forward(
                 request, call_next, MASTER_KEY_ID, 1000
             )
+
+        # Master key didn't match — log both values (truncated) for debugging
+        logger.warning(
+            "API key mismatch for %s %s (ip=%s): "
+            "received=%r, expected=%r",
+            request.method, request.url.path, client_ip,
+            api_key_header[:8] + "..." if len(api_key_header) > 8 else api_key_header,
+            settings.api_key[:8] + "..." if len(settings.api_key) > 8 else settings.api_key,
+        )
 
         key_hash = hashlib.sha256(api_key_header.encode()).hexdigest()
         get_db_fn = request.app.dependency_overrides.get(_get_db, _get_db)

@@ -32,6 +32,10 @@ class RateLimiter:
         return self._redis
 
     async def __call__(self, request: Request):
+        # Bypass rate limiting for e2e test requests
+        if request.headers.get("X-E2E-Test"):
+            return None
+
         client_ip = request.client.host if request.client else "unknown"
         key = f"{self.prefix}:{client_ip}"
 

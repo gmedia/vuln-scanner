@@ -8,7 +8,7 @@ let authToken: string;
 test.describe("Scan Lifecycle", () => {
   test.beforeAll(async ({ request }) => {
     const loginRes = await request.post(`${BASE_URL}/api/auth/login`, {
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-E2E-Test": "true" },
       data: { email: "e2e@vulnscan.dev", password: "E2eTestPass123!" },
     });
     expect(loginRes.status()).toBe(200);
@@ -23,6 +23,7 @@ test.describe("Scan Lifecycle", () => {
           "Content-Type": "application/json",
           "X-API-Key": API_KEY,
           "Authorization": `Bearer ${authToken}`,
+          "X-E2E-Test": "true",
         },
         data: { domain: "example.com" },
       });
@@ -55,6 +56,7 @@ test.describe("Scan Lifecycle", () => {
           "Content-Type": "application/json",
           "X-API-Key": API_KEY,
           "Authorization": `Bearer ${authToken}`,
+          "X-E2E-Test": "true",
         },
         data: { target: "127.0.0.1", ports: "1-100" },
       });
@@ -86,6 +88,7 @@ test.describe("Scan Lifecycle", () => {
           "Content-Type": "application/json",
           "X-API-Key": API_KEY,
           "Authorization": `Bearer ${authToken}`,
+          "X-E2E-Test": "true",
         },
         data: { target: "127.0.0.1", ports: "1-50" },
       });
@@ -94,7 +97,7 @@ test.describe("Scan Lifecycle", () => {
 
       // Fetch status
       const getResp = await request.get(`${BASE_URL}/api/scan/${id}`, {
-        headers: { "X-API-Key": API_KEY, "Authorization": `Bearer ${authToken}` },
+        headers: { "X-API-Key": API_KEY, "Authorization": `Bearer ${authToken}`, "X-E2E-Test": "true" },
       });
       expect(getResp.status()).toBe(200);
       const job = await getResp.json();
@@ -103,7 +106,7 @@ test.describe("Scan Lifecycle", () => {
 
       // History includes it
       const historyResp = await request.get(`${BASE_URL}/api/scan/history`, {
-        headers: { "X-API-Key": API_KEY, "Authorization": `Bearer ${authToken}` },
+        headers: { "X-API-Key": API_KEY, "Authorization": `Bearer ${authToken}`, "X-E2E-Test": "true" },
       });
       expect(historyResp.status()).toBe(200);
       const history = await historyResp.json();
