@@ -188,7 +188,13 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Create .env from example
-        run: cp .env.example .env
+        run: |
+          cp .env.example .env
+          # Override placeholder passwords with values that work for Docker Compose variable interpolation
+          sed -i 's/REDIS_PASSWORD=<your-redis-password>/REDIS_PASSWORD=e2e-test-password/' .env
+          sed -i 's/POSTGRES_PASSWORD=<your-postgres-password>/POSTGRES_PASSWORD=e2e-test-password/' .env
+          sed -i 's|DATABASE_URL=postgresql+asyncpg://vuln_scanner:<your-postgres-password>@postgres:5432/vuln_scanner|DATABASE_URL=postgresql+asyncpg://vuln_scanner:e2e-test-password@postgres:5432/vuln_scanner|' .env
+          sed -i 's|DATABASE_URL_SYNC=postgresql://vuln_scanner:<your-postgres-password>@postgres:5432/vuln_scanner|DATABASE_URL_SYNC=postgresql://vuln_scanner:e2e-test-password@postgres:5432/vuln_scanner|' .env
 
       - name: Install frontend dependencies (pre-Docker — avoid root-owned node_modules)
         run: npm ci
