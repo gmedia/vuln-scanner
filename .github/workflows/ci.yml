@@ -207,6 +207,19 @@ jobs:
       - name: Seed E2E test data
         run: docker compose -f docker-compose.yml exec -T backend python -m scripts.seed_e2e
 
+      - name: Warm up Vite dev server
+        run: |
+          echo "Warming up Vite dev server..."
+          for i in $(seq 1 20); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5173) || true
+            echo "  Attempt $i: HTTP $STATUS"
+            if [ "$STATUS" = "200" ]; then
+              echo "  Vite ready after $i attempt(s)"
+              break
+            fi
+            sleep 3
+          done
+
       - name: Install Playwright with Chromium
         run: npx playwright install --with-deps chromium
         working-directory: frontend
