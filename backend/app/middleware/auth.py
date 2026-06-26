@@ -21,6 +21,7 @@ EXCLUDED_PATHS = [
     "/openapi.json",
     "/redoc",
     "/api/auth/register",
+    "/api/auth/login",
     "/api/auth/verify-email",
     "/api/auth/refresh",
     "/api/auth/me",

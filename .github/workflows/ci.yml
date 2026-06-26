@@ -195,6 +195,7 @@ jobs:
           sed -i 's/POSTGRES_PASSWORD=<your-postgres-password>/POSTGRES_PASSWORD=e2e-test-password/' .env
           sed -i 's|DATABASE_URL=postgresql+asyncpg://vuln_scanner:<your-postgres-password>@postgres:5432/vuln_scanner|DATABASE_URL=postgresql+asyncpg://vuln_scanner:e2e-test-password@postgres:5432/vuln_scanner|' .env
           sed -i 's|DATABASE_URL_SYNC=postgresql://vuln_scanner:<your-postgres-password>@postgres:5432/vuln_scanner|DATABASE_URL_SYNC=postgresql://vuln_scanner:e2e-test-password@postgres:5432/vuln_scanner|' .env
+          sed -i 's/API_KEY=<your-api-key-here>/API_KEY=e2e-test-api-key/' .env
 
       - name: Install frontend dependencies (pre-Docker — avoid root-owned node_modules)
         run: npm ci
@@ -216,6 +217,7 @@ jobs:
         env:
           CI: "true"
           BASE_URL: "http://localhost:5173"
+          API_KEY: "e2e-test-api-key"
 
       - name: Upload Playwright HTML report (on failure)
         if: failure()
