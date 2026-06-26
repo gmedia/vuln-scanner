@@ -734,3 +734,46 @@ async def test_get_redis_reuses_instance(monkeypatch):
         mock_from_url.assert_called_once_with(settings.redis_url)
         assert result1 is mock_redis_instance
         assert result2 is mock_redis_instance
+
+
+def test_non_master_key_job_not_found(client, monkeypatch):
+    """Non-master API key + non-existent job_id → close code 4004 (lines 79-80)."""
+    async def mock_validate(_key):
+        return True
+    monkeypatch.setattr("app.api.websocket.validate_api_key", mock_validate)
+
+    # Mock DB session: job not found (scalar_one_or_none returns None)
+    mock_session = AsyncMock()
+    mock_scalar = MagicMock()
+    mock_scalar.scalar_one_or_none.return_value = None
+    mock_session.execute.return_value = mock_scalar
+
+    class FakeAsyncSession:
+        async def __aenter__(self):
+            return mock_session
+        async def __aexit__(self, *args, **kwargs):
+            pass
+
+    monkeypatch.setattr("app.api.websocket.async_session", lambda: FakeAsyncSession())
+
+    # Ensure rate-limit Redis mock is in place so we don't hit real Redis
+    from unittest.mock import AsyncMock as AM
+
+    fake_rl_redis = MagicMock()
+    fake_rl_redis.incr = AM(return_value=1)
+    fake_rl_redis.expire = AM(return_value=True)
+    fake_rl_redis.ping = AM(return_value=True)
+    fake_rl_redis.aclose = AM(return_value=None)
+
+    async def mock_ws_rl():
+        return fake_rl_redis
+    monkeypatch.setattr("app.api.websocket._get_ws_rate_limit_redis", mock_ws_rl)
+
+    import uuid
+    nonexistent_id = str(uuid.uuid4())
+
+    with pytest.raises(WebSocketDisconnect) as exc_info, client.websocket_connect(
+        f"/api/ws/scan/{nonexistent_id}?api_key=non-master-key"
+    ):
+        pass
+    assert exc_info.value.code == 4004

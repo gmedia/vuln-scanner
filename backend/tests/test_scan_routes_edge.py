@@ -86,6 +86,43 @@ def test_start_mobile_scan_no_filename(client):
     assert resp.status_code in (400, 422)
 
 
+def test_start_mobile_scan_empty_filename_in_multipart(client):
+    """POST /api/scan/mobile with filename=\"\" in raw multipart → 400 (line 174).
+
+    httpx treats files={'file': ('', ...)} as a form field (no filename),
+    so FastAPI validation rejects it as 422 before reaching the handler.
+    To actually trigger the ``not file.filename`` branch at line 174, we
+    send a raw multipart body where the Content-Disposition header includes
+    ``filename=\"\"``.  Starlette parses that as an UploadFile with an empty
+    string filename, which is falsy in Python.
+    """
+    boundary = "boundary-no-filename-174"
+    body = b"\r\n".join(
+        [
+            f"--{boundary}".encode(),
+            b'Content-Disposition: form-data; name="file"; filename=""',
+            b"Content-Type: application/octet-stream",
+            b"",
+            b"fake-apk-content",
+            f"--{boundary}".encode(),
+            b'Content-Disposition: form-data; name="platform"',
+            b"",
+            b"android",
+            f"--{boundary}--".encode(),
+        ]
+    )
+    resp = client.post(
+        "/api/scan/mobile",
+        content=body,
+        headers={
+            "Content-Type": f"multipart/form-data; boundary={boundary}",
+            **HEADERS,
+        },
+    )
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "File must have a filename"
+
+
 @pytest.mark.asyncio
 async def test_get_scan_detail_with_findings_and_export(client, db_session, sample_user):
     """Create job + findings, verify export JSON includes them."""
