@@ -26,7 +26,8 @@ COPY . .
 RUN chmod +x /app/entrypoint.sh /app/prestart.sh
 
 RUN groupadd -r appuser && useradd -r -g appuser -d /app appuser && \
-    chown -R appuser:appuser /app
+    chown -R appuser:appuser /app && \
+    mkdir -p /tmp/scans && chown appuser:appuser /tmp/scans
 
 USER appuser
 
