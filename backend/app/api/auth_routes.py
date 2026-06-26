@@ -198,7 +198,7 @@ async def refresh(
 ) -> TokenResponse:
     limit_response = await refresh_limiter(request)
     if limit_response:
-        return limit_response
+        return limit_response  # type: ignore[no-any-return]
 
     refresh_token_str: str | None = None
 

@@ -120,7 +120,7 @@ def _check_redis_revocation_sync(jti: str | None, sub: str | None) -> None:
     try:
         r = _get_sync_redis()
         if jti is not None:
-            user_id = r.get(f"revoked_tokens:{jti}")
+            user_id: str | None = r.get(f"revoked_tokens:{jti}")  # type: ignore[assignment]
             if user_id is not None:
                 _revoked_tokens[jti] = user_id
                 raise jwt.PyJWTError("Token has been revoked")
