@@ -20,6 +20,7 @@ async def test_rate_limiter_redis_error_returns_503(monkeypatch):
 
     mock_request = MagicMock()
     mock_request.client.host = "127.0.0.1"
+    mock_request.headers.get.return_value = None  # ensure e2e bypass not triggered
 
     response = await limiter(mock_request)
 
@@ -48,6 +49,7 @@ async def test_rate_limiter_redis_from_url_error_returns_503(monkeypatch):
 
     mock_request = MagicMock()
     mock_request.client.host = "192.168.1.1"
+    mock_request.headers.get.return_value = None
 
     response = await limiter(mock_request)
 
@@ -74,6 +76,7 @@ async def test_rate_limiter_incr_error_returns_503(monkeypatch):
 
     mock_request = MagicMock()
     mock_request.client.host = "10.0.0.1"
+    mock_request.headers.get.return_value = None
 
     response = await limiter(mock_request)
 
@@ -107,6 +110,7 @@ async def test_rate_limiter_unknown_client_ip(monkeypatch):
 
     mock_request = MagicMock()
     mock_request.client = None
+    mock_request.headers.get.return_value = None
 
     response = await limiter(mock_request)
 
