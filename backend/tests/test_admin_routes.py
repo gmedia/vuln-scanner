@@ -1,7 +1,6 @@
 import asyncio
 import types
 import uuid
-from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy import select
@@ -15,9 +14,9 @@ from app.models.pricing import PricingConfig
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.user import User
+from app.services.auth import create_access_token, hash_password
 from app.services.auth import get_current_admin as _get_current_admin
 from app.services.auth import get_current_user as _get_current_user
-from app.services.auth import create_access_token, hash_password
 
 API_HEADERS = {"X-API-Key": settings.api_key}
 

@@ -4,8 +4,8 @@ import time
 from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 import jwt
+import pytest
 
 from app.services.auth import (
     _check_redis_revocation_sync,
@@ -21,7 +21,6 @@ from app.services.auth import (
     revoke_token,
     verify_password,
 )
-
 
 # ---------------------------------------------------------------------------
 # hash_password / verify_password
@@ -149,7 +148,6 @@ class TestDecodeToken:
             "type": "access",
             "exp": datetime.now(UTC) + timedelta(minutes=30),
         }
-        secret = settings.jwt_secret or settings.secret_key
         algorithm = settings.jwt_algorithm
         tampered = jwt.encode(fake_payload, "wrong-secret-key-12345", algorithm=algorithm)
         with pytest.raises(jwt.PyJWTError):
@@ -488,9 +486,8 @@ class TestRevokeToken:
 
         mock_redis = AsyncMock()
         mock_redis.set.side_effect = __import__("redis").exceptions.RedisError("Boom")
-        with patch("app.services.auth._get_redis", return_value=mock_redis):
-            with caplog.at_level(logging.WARNING):
-                asyncio.run(revoke_token(jti, user_id))
+        with patch("app.services.auth._get_redis", return_value=mock_redis), caplog.at_level(logging.WARNING):
+            asyncio.run(revoke_token(jti, user_id))
 
         # Token is still added to in-memory dict
         assert _revoked_tokens[jti] == user_id
@@ -511,7 +508,7 @@ class TestLogoutAll:
         user_id = "user-logout-1"
 
         with patch("app.services.auth._get_redis", new_callable=AsyncMock):
-            count = asyncio.run(logout_all(user_id))
+            asyncio.run(logout_all(user_id))
 
         assert user_id in _revoked_users
         # Clean up
@@ -553,9 +550,8 @@ class TestLogoutAll:
 
         mock_redis = AsyncMock()
         mock_redis.set.side_effect = __import__("redis").exceptions.RedisError("Boom")
-        with patch("app.services.auth._get_redis", return_value=mock_redis):
-            with caplog.at_level(logging.WARNING):
-                count = asyncio.run(logout_all(user_id))
+        with patch("app.services.auth._get_redis", return_value=mock_redis), caplog.at_level(logging.WARNING):
+            asyncio.run(logout_all(user_id))
 
         assert user_id in _revoked_users
         assert "Failed to persist" in caplog.text
@@ -710,10 +706,10 @@ class TestGetCurrentUser:
 
     def test_missing_sub_claim_returns_401(self):
         """Token without 'sub' claim raises 401."""
-        from app.config import settings
         from fastapi import HTTPException
 
         import app.services.auth as auth_mod
+        from app.config import settings
 
         payload = {
             "email": "no-sub@test.com",
@@ -732,10 +728,10 @@ class TestGetCurrentUser:
 
     def test_invalid_uuid_sub_returns_401(self):
         """Token with non-UUID 'sub' raises 401."""
-        from app.config import settings
         from fastapi import HTTPException
 
         import app.services.auth as auth_mod
+        from app.config import settings
 
         payload = {
             "sub": "not-a-valid-uuid",
@@ -771,9 +767,8 @@ class TestGetCurrentUser:
 
     def test_valid_token_returns_user(self):
         """Valid token with existing user returns the User object."""
-        from app.models.user import User
-
         import app.services.auth as auth_mod
+        from app.models.user import User
 
         user = User(
             id="550e8400-e29b-41d4-a716-446655440000",
@@ -793,10 +788,10 @@ class TestGetCurrentUser:
 class TestGetCurrentAdmin:
     def test_non_admin_user_returns_403(self):
         """Non-admin user raises 403 Forbidden."""
-        from app.models.user import User
         from fastapi import HTTPException
 
         import app.services.auth as auth_mod
+        from app.models.user import User
 
         user = User(
             id="550e8400-e29b-41d4-a716-446655440000",
@@ -811,9 +806,8 @@ class TestGetCurrentAdmin:
 
     def test_admin_user_returns_user(self):
         """Admin user passes through and returns the user."""
-        from app.models.user import User
-
         import app.services.auth as auth_mod
+        from app.models.user import User
 
         user = User(
             id="550e8400-e29b-41d4-a716-446655440000",

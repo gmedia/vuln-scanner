@@ -2,9 +2,9 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, patch
 
+import jwt
 import pytest
 from fastapi.testclient import TestClient
-import jwt
 from sqlalchemy import select
 
 from app.config import settings
@@ -17,10 +17,11 @@ from app.services.auth import (
     create_access_token,
     create_refresh_token,
     decode_token,
-    get_current_user as _get_current_user,
     hash_password,
-    logout_all,
     revoke_token,
+)
+from app.services.auth import (
+    get_current_user as _get_current_user,
 )
 from tests.conftest import _fake_redis, _incr_counters
 
