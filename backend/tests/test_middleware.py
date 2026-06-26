@@ -257,10 +257,7 @@ def test_excluded_paths_all_skip_auth(client):
 
     for path in EXCLUDED_PATHS:
         method = "POST" if path.startswith("/api/auth/") else "GET"
-        if method == "POST":
-            resp = client.post(path)
-        else:
-            resp = client.get(path)
+        resp = client.post(path) if method == "POST" else client.get(path)
         if resp.status_code == 401:
             detail = resp.json().get("detail", "")
             assert "Missing API key" not in detail, f"{path} was blocked by middleware"

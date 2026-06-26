@@ -7,7 +7,6 @@ import pytest
 import app.services.email as email_module
 from app.services.email import send_verification_email
 
-
 # ---------------------------------------------------------------------------
 # Successful sends
 # ---------------------------------------------------------------------------

@@ -2,20 +2,17 @@
 
 import logging
 
-import pytest
-
 from app.config import (
+    _SENTINEL,
     DEV_API_KEY_PREFIXES,
     DEV_SECRET_PREFIXES,
     RECOMMENDED_STRENGTH,
-    _SENTINEL,
     _build_redis_url,
     _is_dev_value,
     _warn_dev_value,
     check_settings,
     settings,
 )
-
 
 # ── _build_redis_url ──────────────────────────────────────────────────────
 

@@ -100,7 +100,6 @@ class TestWebSocketRateLimit:
                 assert data == {"type": "heartbeat"}
 
         # Use separate fake rate-limit Redis per IP to simulate isolation
-        from unittest.mock import AsyncMock as AM
 
         class PerIpFakeRedis:
             """Fake Redis that maintains separate counters per key prefix."""
@@ -109,9 +108,9 @@ class TestWebSocketRateLimit:
                 self._ip_label = ip_label
                 self._counters = {}
                 self.incr = self._incr
-                self.expire = AM(return_value=True)
-                self.ping = AM(return_value=True)
-                self.aclose = AM(return_value=None)
+                self.expire = AsyncMock(return_value=True)
+                self.ping = AsyncMock(return_value=True)
+                self.aclose = AsyncMock(return_value=None)
 
             async def _incr(self, key):
                 self._counters[key] = self._counters.get(key, 0) + 1
@@ -190,7 +189,7 @@ class TestWebSocketRateLimit:
 
         # 11th should be blocked
         with pytest.raises(WebSocketDisconnect) as exc_info, client.websocket_connect(
-            "/api/ws/scan/job-blocked?api_key={}".format(API_KEY)
+            f"/api/ws/scan/job-blocked?api_key={API_KEY}"
         ):
             pass
         assert exc_info.value.code == 4008
@@ -757,13 +756,12 @@ def test_non_master_key_job_not_found(client, monkeypatch):
     monkeypatch.setattr("app.api.websocket.async_session", lambda: FakeAsyncSession())
 
     # Ensure rate-limit Redis mock is in place so we don't hit real Redis
-    from unittest.mock import AsyncMock as AM
 
     fake_rl_redis = MagicMock()
-    fake_rl_redis.incr = AM(return_value=1)
-    fake_rl_redis.expire = AM(return_value=True)
-    fake_rl_redis.ping = AM(return_value=True)
-    fake_rl_redis.aclose = AM(return_value=None)
+    fake_rl_redis.incr = AsyncMock(return_value=1)
+    fake_rl_redis.expire = AsyncMock(return_value=True)
+    fake_rl_redis.ping = AsyncMock(return_value=True)
+    fake_rl_redis.aclose = AsyncMock(return_value=None)
 
     async def mock_ws_rl():
         return fake_rl_redis
