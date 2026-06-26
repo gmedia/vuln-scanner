@@ -30,7 +30,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  API_KEY: dev-api-key-change-me
+  API_KEY: e2e-test-api-key
 
 jobs:
   python-tests:
