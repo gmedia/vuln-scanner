@@ -207,7 +207,7 @@ jobs:
       - name: Seed E2E test data
         run: docker compose -f docker-compose.yml exec -T backend python -m scripts.seed_e2e
 
-      - name: Warm up Vite dev server
+      - name: Warm up Vite dev server (all routes)
         run: |
           echo "Warming up Vite dev server..."
           for i in $(seq 1 20); do
@@ -218,6 +218,11 @@ jobs:
               break
             fi
             sleep 3
+          done
+          # Pre-compile all routes E2E tests visit (Vite on-demand = cold start per route)
+          for route in /dashboard /scan/ip /scan/domain /scan/mobile; do
+            echo "  Warming route: $route"
+            curl -s -o /dev/null -w "  → HTTP %{http_code}\n" "http://localhost:5173$route" || true
           done
 
       - name: Install Playwright with Chromium
