@@ -1,14 +1,15 @@
+import contextlib
 import logging
 import uuid as _uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, Request, status
 import jwt
-from passlib.context import CryptContext
 import redis as sync_redis
 import redis.asyncio as redis
+from fastapi import Depends, HTTPException, Request, status
+from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -103,10 +104,8 @@ def decode_token(token: str) -> dict[str, Any]:
         raise jwt.PyJWTError("Token has been revoked (user logged out)")
     # Best-effort Redis check: populate caches on miss, detect revocations that
     # happened on another server instance (or before a restart).
-    try:
+    with contextlib.suppress(Exception):
         _check_redis_revocation_sync(jti, sub)
-    except Exception:
-        pass
     return payload
 
 

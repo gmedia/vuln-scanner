@@ -178,7 +178,13 @@ class ScannerService:
         findings = result.scalars().all()
         return [ScanFindingResponse.model_validate(f) for f in findings]
 
-    async def get_history(self, page: int = 1, limit: int = 20, scan_type: str | None = None, user_id: UUID | None = None) -> PaginatedResponse:
+    async def get_history(
+        self,
+        page: int = 1,
+        limit: int = 20,
+        scan_type: str | None = None,
+        user_id: UUID | None = None,
+    ) -> PaginatedResponse:
         query = select(ScanJob)
         count_query = select(func.count(ScanJob.id))
 

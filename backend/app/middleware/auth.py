@@ -66,7 +66,7 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
                     content={"detail": "IP rate limit exceeded. Max 300 requests/hour."},
                 )
         except redis.RedisError:
-            logger.critical(f"Rate limit infrastructure unavailable: Redis unavailable for IP rate limit check")
+            logger.critical("Rate limit infrastructure unavailable: Redis unavailable for IP rate limit check")
             return JSONResponse(
                 status_code=503,
                 content={"detail": "Service temporarily unavailable. Rate limit infrastructure down."}
@@ -119,7 +119,7 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
                     content={"detail": f"Rate limit exceeded. Max {rate_limit} requests/hour."},
                 )
         except redis.RedisError:
-            logger.critical(f"Rate limit infrastructure unavailable: Redis unavailable for key rate limit check")
+            logger.critical("Rate limit infrastructure unavailable: Redis unavailable for key rate limit check")
             return JSONResponse(
                 status_code=503,
                 content={"detail": "Service temporarily unavailable. Rate limit infrastructure down."}
