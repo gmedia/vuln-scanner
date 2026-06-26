@@ -18,8 +18,7 @@ EXCEPTION_INFO = "Some error"
 class TestDeadLetterSuccess:
     @pytest.fixture(autouse=True)
     def _setup_patches(self):
-        with patch("tasks.dead_letter.redis.ConnectionPool.from_url") as mock_pool, \
-             patch("tasks.dead_letter.redis.Redis") as mock_redis_from_url:
+        with patch("tasks.dead_letter.redis.Redis") as mock_redis_from_url:
             mock_redis_instance = MagicMock()
             mock_redis_from_url.return_value = mock_redis_instance
             self.mock_redis_from_url = mock_redis_from_url
@@ -69,8 +68,7 @@ class TestDeadLetterSuccess:
 class TestDeadLetterTrim:
     @pytest.fixture(autouse=True)
     def _setup_patches(self):
-        with patch("tasks.dead_letter.redis.ConnectionPool.from_url") as mock_pool, \
-             patch("tasks.dead_letter.redis.Redis") as mock_redis_from_url:
+        with patch("tasks.dead_letter.redis.Redis") as mock_redis_from_url:
             mock_redis_instance = MagicMock()
             mock_redis_from_url.return_value = mock_redis_instance
             self.mock_redis_from_url = mock_redis_from_url
@@ -101,8 +99,7 @@ class TestDeadLetterTrim:
 class TestDeadLetterRedisFailure:
     @pytest.fixture(autouse=True)
     def _setup_patches(self):
-        with patch("tasks.dead_letter.redis.ConnectionPool.from_url") as mock_pool, \
-             patch("tasks.dead_letter.redis.Redis") as mock_redis_from_url:
+        with patch("tasks.dead_letter.redis.Redis") as mock_redis_from_url:
             mock_redis_instance = MagicMock()
             mock_redis_from_url.return_value = mock_redis_instance
             self.mock_redis_from_url = mock_redis_from_url
