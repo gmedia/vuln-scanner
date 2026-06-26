@@ -222,7 +222,9 @@ async def get_scan(job_id: str, current_user: User = Depends(get_current_user), 
 
 
 @router.get("/scan/{job_id}/findings", response_model=list[ScanFindingResponse])
-async def get_scan_findings(job_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def get_scan_findings(
+    job_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
     """Retrieve only the findings for a scan job."""
     svc = ScannerService(db)
     findings = await svc.get_findings(job_id, user_id=current_user.id)
@@ -230,7 +232,12 @@ async def get_scan_findings(job_id: str, current_user: User = Depends(get_curren
 
 
 @router.get("/scan/{job_id}/export")
-async def export_scan(job_id: str, format: str = Query(default="json"), current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def export_scan(
+    job_id: str,
+    format: str = Query(default="json"),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     """Export scan results as JSON or HTML. Returns file download or rendered page."""
     svc = ScannerService(db)
     job = await svc.get_job(job_id, user_id=current_user.id)

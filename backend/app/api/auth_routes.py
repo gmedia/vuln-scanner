@@ -4,9 +4,8 @@ from datetime import UTC, datetime, timedelta
 from typing import cast
 from uuid import UUID
 
-import redis.asyncio as redis
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 import jwt
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -39,7 +38,6 @@ from app.services.auth import (
     verify_password,
 )
 from app.services.email import send_verification_email
-from app.utils.log_sanitizer import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 
@@ -291,7 +289,7 @@ async def revoke(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Token tidak valid atau kadaluarsa",
-        )
+        ) from None
 
     jti = payload.get("jti")
     if jti is None:
