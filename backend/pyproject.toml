@@ -16,6 +16,7 @@ asyncio_default_fixture_loop_scope = "function"
 addopts = "--cov=app --cov-branch --cov-report=term-missing --cov-fail-under=75"
 
 [tool.coverage.run]
+concurrency = ["thread", "greenlet"]
 source = ["app"]
 
 [tool.coverage.report]

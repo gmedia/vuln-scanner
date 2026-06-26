@@ -1,3 +1,5 @@
+import asyncio
+import types
 import uuid
 from datetime import UTC, datetime
 
@@ -18,6 +20,44 @@ from app.services.auth import get_current_user as _get_current_user
 from app.services.auth import create_access_token, hash_password
 
 API_HEADERS = {"X-API-Key": settings.api_key}
+
+
+# ---------------------------------------------------------------------------
+# Helper: monkeypatch db_session.execute to convert UUID params to hex
+# so that text() SQL works on SQLite (which doesn't support UUID binding).
+# This is needed because admin_routes.py:147-150 uses raw text() with UUID.
+# ---------------------------------------------------------------------------
+
+
+def _patch_db_for_uuid(db_session):
+    """Monkeypatch db_session.execute to convert UUID values to hex strings.
+
+    SQLite's DBAPI does not support UUID objects as bind parameters.
+    The source code at admin_routes.py:147-150 passes a uuid.UUID to
+    text() SQL which fails on SQLite.  This patch intercepts execute()
+    calls and converts UUID values to their hex representation (32 chars,
+    no dashes) which matches the UUIDType column storage format.
+    """
+    _original_execute = db_session.execute
+
+    async def _patched_execute(self, statement, params=None, **kwargs):
+        if isinstance(params, dict):
+            params = {
+                k: v.hex if isinstance(v, uuid.UUID) else v
+                for k, v in params.items()
+            }
+        elif isinstance(params, list):
+            params = [
+                {
+                    k: v.hex if isinstance(v, uuid.UUID) else v
+                    for k, v in p.items()
+                }
+                if isinstance(p, dict) else p
+                for p in params
+            ]
+        return await _original_execute(statement, params, **kwargs)
+
+    db_session.execute = types.MethodType(_patched_execute, db_session)
 
 
 # ---------------------------------------------------------------------------
@@ -332,8 +372,8 @@ class TestAdminUserDetail:
 
 
 class TestAdminCredits:
-    @pytest.mark.xfail(reason="SQLite does not support UUID binding in raw text() SQL")
     def test_credit_user_success(self, client, db_session, sample_user):
+        _patch_db_for_uuid(db_session)
         old_credits = sample_user.credits
         resp = client.post(
             f"/api/admin/users/{sample_user.id}/credits",
@@ -342,9 +382,11 @@ class TestAdminCredits:
         data = resp.json()
         assert data["credits"] == old_credits + 25
         assert data["id"] == str(sample_user.id)
+        assert "email" in data
+        assert "scan_count" in data
 
-    @pytest.mark.xfail(reason="SQLite does not support UUID binding in raw text() SQL")
     def test_deduct_user_success(self, client, db_session, sample_user):
+        _patch_db_for_uuid(db_session)
         old_credits = sample_user.credits
         resp = client.post(
             f"/api/admin/users/{sample_user.id}/credits",
@@ -362,7 +404,6 @@ class TestAdminCredits:
 
     def test_deduct_exceeds_balance_returns_400(self, client, db_session, sample_user):
         sample_user.credits = 10
-        import asyncio
         asyncio.get_event_loop().run_until_complete(db_session.commit())
 
         resp = client.post(
@@ -383,9 +424,9 @@ class TestAdminCredits:
             json={"amount": "not-a-number", "description": "Bad input"}, headers=API_HEADERS)
         assert resp.status_code == 422
 
-    @pytest.mark.xfail(reason="SQLite does not support UUID binding in raw text() SQL")
     @pytest.mark.asyncio
     async def test_creates_credit_log_on_grant(self, client, db_session, sample_user):
+        _patch_db_for_uuid(db_session)
         resp = client.post(
             f"/api/admin/users/{sample_user.id}/credits",
             json={"amount": 42, "description": "Test grant"}, headers=API_HEADERS)
@@ -400,9 +441,9 @@ class TestAdminCredits:
         assert logs[0].type == "credit"
         assert logs[0].description == "Test grant"
 
-    @pytest.mark.xfail(reason="SQLite does not support UUID binding in raw text() SQL")
     @pytest.mark.asyncio
     async def test_creates_credit_log_on_deduction(self, client, db_session, sample_user):
+        _patch_db_for_uuid(db_session)
         resp = client.post(
             f"/api/admin/users/{sample_user.id}/credits",
             json={"amount": -15, "description": "Test deduction"}, headers=API_HEADERS)
@@ -417,16 +458,42 @@ class TestAdminCredits:
         assert logs[0].type == "deduct"
         assert logs[0].description == "Test deduction"
 
-    @pytest.mark.xfail(reason="SQLite does not support UUID binding in raw text() SQL")
-    def test_default_description(self, client, sample_user):
+    def test_default_description(self, client, db_session, sample_user):
+        _patch_db_for_uuid(db_session)
+        old_credits = sample_user.credits
         resp = client.post(
             f"/api/admin/users/{sample_user.id}/credits",
             json={"amount": 5}, headers=API_HEADERS)
         assert resp.status_code == 200
+        data = resp.json()
+        assert data["credits"] == old_credits + 5
+
+    def test_credit_with_zero_amount(self, client, db_session, sample_user):
+        _patch_db_for_uuid(db_session)
+        old_credits = sample_user.credits
+        resp = client.post(
+            f"/api/admin/users/{sample_user.id}/credits",
+            json={"amount": 0, "description": "Zero adjustment"}, headers=API_HEADERS)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["credits"] == old_credits
+
+    @pytest.mark.asyncio
+    async def test_credit_log_description_stored(self, client, db_session, sample_user):
+        _patch_db_for_uuid(db_session)
+        resp = client.post(
+            f"/api/admin/users/{sample_user.id}/credits",
+            json={"amount": 77, "description": "Custom description here"}, headers=API_HEADERS)
+        assert resp.status_code == 200
+
+        result = await db_session.execute(
+            select(CreditLog).where(CreditLog.user_id == sample_user.id)
+        )
+        logs = result.scalars().all()
+        assert len(logs) == 1
+        assert logs[0].description == "Custom description here"
 
     def test_unauthorized_non_admin_returns_403(self, admin_auth_client, db_session, sample_user):
-        import asyncio
-
         user, token = asyncio.get_event_loop().run_until_complete(
             _create_user_with_token(db_session, "regular4@example.com", is_admin=False)
         )

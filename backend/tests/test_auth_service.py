@@ -1,15 +1,24 @@
+import asyncio
+import logging
 import time
 from datetime import UTC, datetime, timedelta
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import jwt
 
 from app.services.auth import (
+    _check_redis_revocation_sync,
+    _get_sync_redis,
+    _revoked_tokens,
+    _revoked_users,
     create_access_token,
     create_refresh_token,
     decode_token,
     hash_password,
+    is_token_revoked,
+    logout_all,
+    revoke_token,
     verify_password,
 )
 
@@ -279,3 +288,539 @@ class TestTokenExpiryWithSleep:
 
         with pytest.raises(jwt.PyJWTError):
             decode_token(token)
+
+
+# ---------------------------------------------------------------------------
+# _get_sync_redis
+# ---------------------------------------------------------------------------
+
+
+class TestGetSyncRedis:
+    def test_returns_redis_instance(self):
+        """_get_sync_redis() returns a sync Redis instance (mocked)."""
+        import app.services.auth as auth_mod
+
+        mock_redis = MagicMock()
+        with patch.object(auth_mod, "_sync_redis", None), \
+             patch.object(auth_mod.sync_redis.Redis, "from_url", return_value=mock_redis):
+            result = _get_sync_redis()
+            assert result is mock_redis
+
+    def test_singleton_returns_same_instance(self):
+        """Calling _get_sync_redis() twice returns the same instance."""
+        # Reset module-level singleton to force fresh creation
+        import app.services.auth as auth_mod
+
+        with patch.object(auth_mod, "_sync_redis", None), \
+             patch.object(auth_mod.sync_redis.Redis, "from_url") as mock_from_url:
+            mock_redis = MagicMock()
+            mock_from_url.return_value = mock_redis
+            r1 = _get_sync_redis()
+            r2 = _get_sync_redis()
+            assert r1 is r2
+            assert mock_from_url.call_count == 1  # only called once for singleton
+
+    def test_can_call_get_method(self):
+        """_get_sync_redis().get() can be called (mocked)."""
+        import app.services.auth as auth_mod
+
+        mock_redis = MagicMock()
+        mock_redis.get.return_value = None
+        with patch.object(auth_mod, "_sync_redis", None), \
+             patch.object(auth_mod.sync_redis.Redis, "from_url", return_value=mock_redis):
+            r = _get_sync_redis()
+            result = r.get("some_key")
+            assert result is None
+            mock_redis.get.assert_called_once_with("some_key")
+
+
+# ---------------------------------------------------------------------------
+# decode_token — revocation edge cases
+# ---------------------------------------------------------------------------
+
+
+class TestDecodeTokenRevocation:
+    def test_revoked_jti_raises(self):
+        """decode_token raises PyJWTError when jti is in _revoked_tokens."""
+        token = create_access_token("user-revoked", "revoked@test.com")
+        payload_before = decode_token(token)
+        jti = payload_before["jti"]
+
+        # Manually add to in-memory revoked tokens (simulate revoke_token)
+        _revoked_tokens[jti] = "user-revoked"
+
+        try:
+            with pytest.raises(jwt.PyJWTError, match="revoked"):
+                decode_token(token)
+        finally:
+            _revoked_tokens.pop(jti, None)
+
+    def test_revoked_user_raises(self):
+        """decode_token raises PyJWTError when sub is in _revoked_users."""
+        token = create_access_token("user-logged-out", "loggedout@test.com")
+        payload_before = decode_token(token)
+        sub = payload_before["sub"]
+
+        _revoked_users.add(sub)
+
+        try:
+            with pytest.raises(jwt.PyJWTError, match="revoked"):
+                decode_token(token)
+        finally:
+            _revoked_users.discard(sub)
+
+    def test_invalid_signature_raises(self):
+        """Modifying one character in a valid token raises PyJWTError."""
+        token = create_access_token("user-sig", "sig@test.com")
+        # Change the last character of the signature part
+        parts = token.split(".")
+        parts[2] = parts[2][:-1] + ("A" if parts[2][-1] != "A" else "B")
+        tampered = ".".join(parts)
+        with pytest.raises(jwt.PyJWTError):
+            decode_token(tampered)
+
+    def test_none_jti_and_sub_no_redis_check_crash(self):
+        """Token with no jti and no sub still decodes (Redis check skipped)."""
+        from app.config import settings
+
+        payload = {
+            "type": "access",
+            "exp": datetime.now(UTC) + timedelta(minutes=30),
+        }
+        secret = settings.jwt_secret or settings.secret_key
+        algorithm = settings.jwt_algorithm
+        token = jwt.encode(payload, secret, algorithm=algorithm)
+
+        # Should decode without crashing (jti=None, sub=None → Redis check
+        # called but passes through safely)
+        with patch("app.services.auth._check_redis_revocation_sync") as mock_check:
+            result = decode_token(token)
+            assert result["type"] == "access"
+            mock_check.assert_called_once_with(None, None)
+
+
+# ---------------------------------------------------------------------------
+# _check_redis_revocation_sync
+# ---------------------------------------------------------------------------
+
+
+class TestCheckRedisRevocationSync:
+    def test_redis_jti_hit_populates_cache_and_raises(self):
+        """When Redis has a revoked JTI, it populates _revoked_tokens and raises."""
+        mock_redis = MagicMock()
+        mock_redis.get.side_effect = lambda key: (
+            "user-redis-jti" if key == "revoked_tokens:test-jti-redis" else None
+        )
+        with patch("app.services.auth._get_sync_redis", return_value=mock_redis):
+            with pytest.raises(jwt.PyJWTError, match="revoked"):
+                _check_redis_revocation_sync("test-jti-redis", None)
+            # Cache should be populated
+            assert _revoked_tokens.get("test-jti-redis") == "user-redis-jti"
+
+        # Clean up
+        _revoked_tokens.pop("test-jti-redis", None)
+
+    def test_redis_user_hit_populates_set_and_raises(self):
+        """When Redis has a revoked user, it populates _revoked_users and raises."""
+        mock_redis = MagicMock()
+        mock_redis.get.side_effect = lambda key: (
+            "1" if key == "revoked_users:user-redis-set" else None
+        )
+        with patch("app.services.auth._get_sync_redis", return_value=mock_redis):
+            with pytest.raises(jwt.PyJWTError, match="revoked"):
+                _check_redis_revocation_sync(None, "user-redis-set")
+            assert "user-redis-set" in _revoked_users
+
+        # Clean up
+        _revoked_users.discard("user-redis-set")
+
+    def test_redis_connection_error_no_crash(self):
+        """When Redis connection fails, _check_redis_revocation_sync does not crash."""
+        mock_redis = MagicMock()
+        mock_redis.get.side_effect = Exception("Connection refused")
+        with patch("app.services.auth._get_sync_redis", return_value=mock_redis):
+            # Should not raise
+            _check_redis_revocation_sync("some-jti", "some-sub")
+
+    def test_redis_miss_no_error(self):
+        """When Redis returns None for both keys, no error is raised."""
+        mock_redis = MagicMock()
+        mock_redis.get.return_value = None
+        with patch("app.services.auth._get_sync_redis", return_value=mock_redis):
+            # Should not raise
+            _check_redis_revocation_sync("unknown-jti", "unknown-sub")
+
+
+# ---------------------------------------------------------------------------
+# revoke_token
+# ---------------------------------------------------------------------------
+
+
+class TestRevokeToken:
+    def test_adds_jti_to_revoked_tokens(self):
+        """revoke_token adds the jti → user_id mapping to _revoked_tokens."""
+        jti = "test-jti-revoke-1"
+        user_id = "user-revoke-1"
+
+        with patch("app.services.auth._get_redis", new_callable=AsyncMock):
+            asyncio.run(revoke_token(jti, user_id))
+
+        assert _revoked_tokens[jti] == user_id
+        # Clean up
+        del _revoked_tokens[jti]
+
+    def test_is_token_revoked_returns_true_after_revoke(self):
+        """After revoke_token, is_token_revoked returns True."""
+        jti = "test-jti-revoke-2"
+        user_id = "user-revoke-2"
+
+        with patch("app.services.auth._get_redis", new_callable=AsyncMock):
+            asyncio.run(revoke_token(jti, user_id))
+
+        assert is_token_revoked(jti) is True
+        # Clean up
+        del _revoked_tokens[jti]
+
+    def test_redis_error_does_not_crash(self, caplog):
+        """When Redis raises RedisError, revoke_token logs a warning and doesn't crash."""
+        jti = "test-jti-redis-err"
+        user_id = "user-redis-err"
+
+        mock_redis = AsyncMock()
+        mock_redis.set.side_effect = __import__("redis").exceptions.RedisError("Boom")
+        with patch("app.services.auth._get_redis", return_value=mock_redis):
+            with caplog.at_level(logging.WARNING):
+                asyncio.run(revoke_token(jti, user_id))
+
+        # Token is still added to in-memory dict
+        assert _revoked_tokens[jti] == user_id
+        # Warning was logged
+        assert "Failed to persist" in caplog.text
+        # Clean up
+        del _revoked_tokens[jti]
+
+
+# ---------------------------------------------------------------------------
+# logout_all
+# ---------------------------------------------------------------------------
+
+
+class TestLogoutAll:
+    def test_adds_user_to_revoked_users(self):
+        """logout_all adds the user_id to _revoked_users set."""
+        user_id = "user-logout-1"
+
+        with patch("app.services.auth._get_redis", new_callable=AsyncMock):
+            count = asyncio.run(logout_all(user_id))
+
+        assert user_id in _revoked_users
+        # Clean up
+        _revoked_users.discard(user_id)
+
+    def test_returns_zero_for_user_with_no_tokens(self):
+        """logout_all returns 0 when the user has no previously revoked tokens."""
+        user_id = "user-logout-2"
+
+        with patch("app.services.auth._get_redis", new_callable=AsyncMock):
+            count = asyncio.run(logout_all(user_id))
+
+        assert count == 0
+        # Clean up
+        _revoked_users.discard(user_id)
+
+    def test_returns_correct_count(self):
+        """logout_all returns the count of previously revoked tokens for the user."""
+        user_id = "user-logout-3"
+        # Pre-populate with some revoked tokens
+        _revoked_tokens["jti-a"] = user_id
+        _revoked_tokens["jti-b"] = user_id
+        _revoked_tokens["jti-c"] = "other-user"
+
+        try:
+            with patch("app.services.auth._get_redis", new_callable=AsyncMock):
+                count = asyncio.run(logout_all(user_id))
+
+            assert count == 2  # jti-a + jti-b
+        finally:
+            _revoked_tokens.pop("jti-a", None)
+            _revoked_tokens.pop("jti-b", None)
+            _revoked_tokens.pop("jti-c", None)
+            _revoked_users.discard(user_id)
+
+    def test_redis_error_does_not_crash(self, caplog):
+        """When Redis raises RedisError, logout_all logs a warning and doesn't crash."""
+        user_id = "user-logout-redis-err"
+
+        mock_redis = AsyncMock()
+        mock_redis.set.side_effect = __import__("redis").exceptions.RedisError("Boom")
+        with patch("app.services.auth._get_redis", return_value=mock_redis):
+            with caplog.at_level(logging.WARNING):
+                count = asyncio.run(logout_all(user_id))
+
+        assert user_id in _revoked_users
+        assert "Failed to persist" in caplog.text
+        # Clean up
+        _revoked_users.discard(user_id)
+
+
+# ---------------------------------------------------------------------------
+# is_token_revoked
+# ---------------------------------------------------------------------------
+
+
+class TestIsTokenRevoked:
+    def test_returns_false_for_unknown_jti(self):
+        """is_token_revoked returns False for a jti not in _revoked_tokens."""
+        assert is_token_revoked("nonexistent-jti-12345") is False
+
+    def test_returns_true_after_revoke(self):
+        """is_token_revoked returns True after revoke_token."""
+        jti = "test-jti-is-revoked"
+        user_id = "user-is-revoked"
+
+        with patch("app.services.auth._get_redis", new_callable=AsyncMock):
+            asyncio.run(revoke_token(jti, user_id))
+
+        assert is_token_revoked(jti) is True
+        # Clean up
+        del _revoked_tokens[jti]
+
+
+# ---------------------------------------------------------------------------
+# _get_redis (async Redis)
+# ---------------------------------------------------------------------------
+
+
+class TestGetRedis:
+    def test_returns_async_redis_instance(self):
+        """_get_redis() returns an async Redis instance (mocked)."""
+        import app.services.auth as auth_mod
+
+        mock_redis = AsyncMock()
+        with patch.object(auth_mod, "_redis", None), \
+             patch.object(auth_mod.redis.Redis, "from_url", return_value=mock_redis):
+            result = asyncio.run(auth_mod._get_redis())
+            assert result is mock_redis
+
+    def test_async_singleton_returns_same_instance(self):
+        """Calling _get_redis() twice returns the same instance."""
+        import app.services.auth as auth_mod
+
+        mock_redis = AsyncMock()
+        with patch.object(auth_mod, "_redis", None), \
+             patch.object(auth_mod.redis.Redis, "from_url", return_value=mock_redis):
+            r1 = asyncio.run(auth_mod._get_redis())
+            r2 = asyncio.run(auth_mod._get_redis())
+            assert r1 is r2
+
+
+# ---------------------------------------------------------------------------
+# decode_token — Redis check exception pass-through
+# ---------------------------------------------------------------------------
+
+
+class TestDecodeTokenRedisPassThrough:
+    def test_redis_check_exception_is_caught(self):
+        """decode_token catches non-PyJWTError exceptions from Redis check."""
+        token = create_access_token("user-redis-err", "redis-err@test.com")
+
+        def raise_connection_error(jti, sub):
+            raise ConnectionError("Redis unavailable")
+
+        with patch("app.services.auth._check_redis_revocation_sync",
+                   side_effect=raise_connection_error):
+            result = decode_token(token)
+            assert result["sub"] == "user-redis-err"
+
+
+# ---------------------------------------------------------------------------
+# get_current_user / get_current_admin
+# ---------------------------------------------------------------------------
+
+
+class TestGetCurrentUser:
+    @pytest.fixture(autouse=True)
+    def _setup_mocks(self):
+        import app.services.auth as auth_mod
+
+        self.mock_request = MagicMock()
+        self.mock_db = AsyncMock()
+
+        # Default: valid bearer token
+        token = create_access_token(
+            "550e8400-e29b-41d4-a716-446655440000",
+            "test@example.com",
+        )
+        self.valid_token = token
+        self.mock_request.headers = {"Authorization": f"Bearer {token}"}
+
+        # Mock get_db dependency
+        self._get_db_patch = patch.object(auth_mod, "get_db", return_value=self.mock_db)
+        self._get_db_patch.start()
+        yield
+        self._get_db_patch.stop()
+
+    def test_missing_authorization_header_returns_401(self):
+        """Missing Authorization header raises 401."""
+        from fastapi import HTTPException
+
+        import app.services.auth as auth_mod
+
+        self.mock_request.headers = {}
+        with pytest.raises(HTTPException) as exc_info:
+            asyncio.run(auth_mod.get_current_user(self.mock_request, self.mock_db))
+        assert exc_info.value.status_code == 401
+        assert "Missing Authorization" in exc_info.value.detail
+
+    def test_wrong_scheme_returns_401(self):
+        """Authorization header with 'Basic' scheme raises 401."""
+        from fastapi import HTTPException
+
+        import app.services.auth as auth_mod
+
+        self.mock_request.headers = {"Authorization": f"Basic {self.valid_token}"}
+        with pytest.raises(HTTPException) as exc_info:
+            asyncio.run(auth_mod.get_current_user(self.mock_request, self.mock_db))
+        assert exc_info.value.status_code == 401
+        assert "Invalid Authorization header" in exc_info.value.detail
+
+    def test_empty_token_returns_401(self):
+        """Authorization header with 'Bearer ' but no token raises 401."""
+        from fastapi import HTTPException
+
+        import app.services.auth as auth_mod
+
+        self.mock_request.headers = {"Authorization": "Bearer "}
+        with pytest.raises(HTTPException) as exc_info:
+            asyncio.run(auth_mod.get_current_user(self.mock_request, self.mock_db))
+        assert exc_info.value.status_code == 401
+        assert "Invalid Authorization header" in exc_info.value.detail
+
+    def test_invalid_token_returns_401(self):
+        """An invalid/expired token raises 401."""
+        from fastapi import HTTPException
+
+        import app.services.auth as auth_mod
+
+        self.mock_request.headers = {"Authorization": "Bearer invalid.token.here"}
+        with pytest.raises(HTTPException) as exc_info:
+            asyncio.run(auth_mod.get_current_user(self.mock_request, self.mock_db))
+        assert exc_info.value.status_code == 401
+        assert "Invalid or expired" in exc_info.value.detail
+
+    def test_missing_sub_claim_returns_401(self):
+        """Token without 'sub' claim raises 401."""
+        from app.config import settings
+        from fastapi import HTTPException
+
+        import app.services.auth as auth_mod
+
+        payload = {
+            "email": "no-sub@test.com",
+            "type": "access",
+            "exp": datetime.now(UTC) + timedelta(minutes=30),
+        }
+        secret = settings.jwt_secret or settings.secret_key
+        algorithm = settings.jwt_algorithm
+        token = jwt.encode(payload, secret, algorithm=algorithm)
+
+        self.mock_request.headers = {"Authorization": f"Bearer {token}"}
+        with pytest.raises(HTTPException) as exc_info:
+            asyncio.run(auth_mod.get_current_user(self.mock_request, self.mock_db))
+        assert exc_info.value.status_code == 401
+        assert "missing subject" in exc_info.value.detail.lower()
+
+    def test_invalid_uuid_sub_returns_401(self):
+        """Token with non-UUID 'sub' raises 401."""
+        from app.config import settings
+        from fastapi import HTTPException
+
+        import app.services.auth as auth_mod
+
+        payload = {
+            "sub": "not-a-valid-uuid",
+            "email": "bad-uuid@test.com",
+            "type": "access",
+            "exp": datetime.now(UTC) + timedelta(minutes=30),
+        }
+        secret = settings.jwt_secret or settings.secret_key
+        algorithm = settings.jwt_algorithm
+        token = jwt.encode(payload, secret, algorithm=algorithm)
+
+        self.mock_request.headers = {"Authorization": f"Bearer {token}"}
+        with pytest.raises(HTTPException) as exc_info:
+            asyncio.run(auth_mod.get_current_user(self.mock_request, self.mock_db))
+        assert exc_info.value.status_code == 401
+        assert "Invalid user identifier" in exc_info.value.detail
+
+    def test_user_not_found_in_db_returns_401(self):
+        """Valid token but user not in DB raises 401."""
+        from fastapi import HTTPException
+
+        import app.services.auth as auth_mod
+
+        # Mock DB to return no user
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        self.mock_db.execute.return_value = mock_result
+
+        with pytest.raises(HTTPException) as exc_info:
+            asyncio.run(auth_mod.get_current_user(self.mock_request, self.mock_db))
+        assert exc_info.value.status_code == 401
+        assert "User not found" in exc_info.value.detail
+
+    def test_valid_token_returns_user(self):
+        """Valid token with existing user returns the User object."""
+        from app.models.user import User
+
+        import app.services.auth as auth_mod
+
+        user = User(
+            id="550e8400-e29b-41d4-a716-446655440000",
+            email="test@example.com",
+            password_hash="...",
+            is_admin=False,
+        )
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = user
+        self.mock_db.execute.return_value = mock_result
+
+        result = asyncio.run(auth_mod.get_current_user(self.mock_request, self.mock_db))
+        assert result is user
+        assert result.email == "test@example.com"
+
+
+class TestGetCurrentAdmin:
+    def test_non_admin_user_returns_403(self):
+        """Non-admin user raises 403 Forbidden."""
+        from app.models.user import User
+        from fastapi import HTTPException
+
+        import app.services.auth as auth_mod
+
+        user = User(
+            id="550e8400-e29b-41d4-a716-446655440000",
+            email="normal@test.com",
+            password_hash="...",
+            is_admin=False,
+        )
+        with pytest.raises(HTTPException) as exc_info:
+            asyncio.run(auth_mod.get_current_admin(user))
+        assert exc_info.value.status_code == 403
+        assert "Admin access required" in exc_info.value.detail
+
+    def test_admin_user_returns_user(self):
+        """Admin user passes through and returns the user."""
+        from app.models.user import User
+
+        import app.services.auth as auth_mod
+
+        user = User(
+            id="550e8400-e29b-41d4-a716-446655440000",
+            email="admin@test.com",
+            password_hash="...",
+            is_admin=True,
+        )
+        result = asyncio.run(auth_mod.get_current_admin(user))
+        assert result is user
+        assert result.is_admin is True
