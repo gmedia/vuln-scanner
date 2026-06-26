@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
-const API_KEY = process.env.API_KEY || "dev-api-key-change-me";
-const BASE_URL = "http://localhost:8000";
+const API_KEY = process.env.API_KEY || "e2e-test-api-key";
+const BASE_URL = process.env.BASE_URL || "http://localhost:8000";
 
 let authToken: string;
 
