@@ -41,7 +41,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   isLoading: true,
   error: null,
 
-  setAccessToken: (token) => set({ accessToken: token }),
+  setAccessToken: (token) => {
+    if (token) {
+      localStorage.setItem("accessToken", token);
+    } else {
+      localStorage.removeItem("accessToken");
+    }
+    set({ accessToken: token });
+  },
 
   setCredits: (credits) => {
     const currentUser = get().user;
@@ -55,6 +62,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       const loginRes = await authApi.login(email, password);
       set({ accessToken: loginRes.access_token });
+      localStorage.setItem("accessToken", loginRes.access_token);
       authApi.authApi.defaults.headers.common["Authorization"] = `Bearer ${loginRes.access_token}`;
       const user = await authApi.getMe();
       set({
@@ -94,6 +102,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       await authApi.refreshToken();
     } catch { /* refresh token cleanup — ignore failures */ }
     delete authApi.authApi.defaults.headers.common["Authorization"];
+    localStorage.removeItem("accessToken");
     set({
       user: null,
       accessToken: null,
@@ -124,6 +133,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       const refreshRes = await authApi.refreshToken();
       set({ accessToken: refreshRes.access_token });
+      localStorage.setItem("accessToken", refreshRes.access_token);
       authApi.authApi.defaults.headers.common["Authorization"] = `Bearer ${refreshRes.access_token}`;
       const user = await authApi.getMe();
       set({
@@ -148,6 +158,34 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   initialize: async () => {
     set({ isLoading: true });
+
+    // If globalSetup stored a token in localStorage, use it directly
+    // to avoid calling refreshAuth() (which hits rate limits in CI).
+    const storedToken = localStorage.getItem("accessToken");
+    if (storedToken) {
+      set({ accessToken: storedToken });
+      authApi.authApi.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+      try {
+        const user = await authApi.getMe();
+        set({
+          user: {
+            id: user.id,
+            email: user.email,
+            is_verified: user.is_verified,
+            is_admin: (user as { is_admin?: boolean }).is_admin ?? false,
+            credits: (user as { credits?: number }).credits ?? 0,
+          },
+          isAuthenticated: true,
+          isLoading: false,
+        });
+        return;
+      } catch {
+        // Token expired or invalid — remove it and fall through to refreshAuth
+        localStorage.removeItem("accessToken");
+        set({ accessToken: null });
+      }
+    }
+
     await get().refreshAuth();
     set({ isLoading: false });
   },
