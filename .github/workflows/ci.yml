@@ -351,6 +351,7 @@ jobs:
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
             'set -e
             cd '"${{ secrets.DEPLOY_PATH }}"'
+            export COMPOSE_PROJECT_NAME=vuln
             git pull origin main
             # Tag existing images for rollback
             docker tag vuln-backend:latest vuln-backend:previous 2>/dev/null || true
