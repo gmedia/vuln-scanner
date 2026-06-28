@@ -356,16 +356,16 @@ jobs:
             # Tag existing images for rollback
             docker tag vuln-backend:latest vuln-backend:previous 2>/dev/null || true
             docker tag vuln-frontend:latest vuln-frontend:previous 2>/dev/null || true
-            docker tag vuln-worker-ip:latest vuln-worker-ip:previous 2>/dev/null || true
-            docker tag vuln-worker-domain:latest vuln-worker-domain:previous 2>/dev/null || true
-            docker tag vuln-worker-mobile:latest vuln-worker-mobile:previous 2>/dev/null || true
+            docker tag vuln-worker_ip:latest vuln-worker_ip:previous 2>/dev/null || true
+            docker tag vuln-worker_domain:latest vuln-worker_domain:previous 2>/dev/null || true
+            docker tag vuln-worker_mobile:latest vuln-worker_mobile:previous 2>/dev/null || true
             docker compose -f docker-compose.prod.yml build --no-cache
             SHA=$(git rev-parse --short HEAD)
             docker tag vuln-backend:latest vuln-backend:$SHA
             docker tag vuln-frontend:latest vuln-frontend:$SHA
-            docker tag vuln-worker-ip:latest vuln-worker-ip:$SHA
-            docker tag vuln-worker-domain:latest vuln-worker-domain:$SHA
-            docker tag vuln-worker-mobile:latest vuln-worker-mobile:$SHA
+            docker tag vuln-worker_ip:latest vuln-worker_ip:$SHA
+            docker tag vuln-worker_domain:latest vuln-worker_domain:$SHA
+            docker tag vuln-worker_mobile:latest vuln-worker_mobile:$SHA
             echo "Deploying commit: $SHA"
 
             echo "=== Pre-deploy diagnostics ==="
