@@ -76,11 +76,20 @@ done
 
 if ! docker compose -f docker-compose.prod.yml ps --status running | grep -q backend; then
   echo "=== FAILED — dumping logs ==="
+  docker logs vuln-backend --tail=100 2>&1 || true
   docker logs vuln-postgres --tail=100 2>&1 || true
   docker logs vuln-redis --tail=100 2>&1 || true
   docker compose -f docker-compose.prod.yml logs --tail=100 2>&1 || true
   exit 1
 fi
 
-docker exec vuln-backend alembic upgrade head
+docker exec vuln-backend alembic upgrade head || {
+  rc=$?
+  echo "=== FAILED — alembic exited $rc, dumping logs ==="
+  docker logs vuln-backend --tail=100 2>&1 || true
+  docker logs vuln-postgres --tail=100 2>&1 || true
+  docker logs vuln-redis --tail=100 2>&1 || true
+  docker compose -f docker-compose.prod.yml logs --tail=100 2>&1 || true
+  exit $rc
+}
 echo "Deploy completed — migration at $(docker exec vuln-backend alembic current 2>/dev/null | tail -1)"
