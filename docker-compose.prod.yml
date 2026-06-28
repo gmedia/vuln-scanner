@@ -31,6 +31,8 @@ services:
     restart: unless-stopped
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     read_only: true
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64M
     security_opt:
@@ -42,7 +44,7 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping | grep -q PONG"]
       interval: 5s
       timeout: 5s
       retries: 5

@@ -57,7 +57,7 @@ done
 
 echo "Waiting for redis..."
 for i in $(seq 1 15); do
-  if docker compose -f docker-compose.prod.yml exec -T redis redis-cli ping 2>/dev/null | grep -q PONG; then
+  if docker compose -f docker-compose.prod.yml exec -T redis redis-cli -a "$REDIS_PASSWORD" ping 2>/dev/null | grep -q PONG; then
     echo "redis ready"
     break
   fi
