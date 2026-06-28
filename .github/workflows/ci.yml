@@ -354,7 +354,7 @@ jobs:
             echo ".env written from GitHub Secrets"
             chmod 600 .env
 
-       - name: Deploy to production
+      - name: Deploy to production
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
