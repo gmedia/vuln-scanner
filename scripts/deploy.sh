@@ -43,7 +43,13 @@ echo "=== Remaining volumes ==="
 docker volume ls --format "{{.Name}}" | grep postgres || true
 
 echo "=== Starting services ==="
-docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d || {
+  echo "=== docker compose up -d FAILED — dumping logs ==="
+  docker logs vuln-postgres --tail=100 2>&1 || true
+  docker logs vuln-redis --tail=100 2>&1 || true
+  docker compose -f docker-compose.prod.yml logs --tail=100 2>&1 || true
+  exit 1
+}
 
 echo "Waiting for postgres..."
 for i in $(seq 1 30); do
