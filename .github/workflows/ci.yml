@@ -374,7 +374,8 @@ jobs:
             echo "=== Bringing services down ==="
             docker compose -f docker-compose.prod.yml down --volumes --remove-orphans
             # Force-remove any leftover containers from failed prior deploys
-            docker rm -f vuln-redis vuln-postgres 2>/dev/null || true
+            docker rm -f vuln-backend vuln-frontend vuln-redis vuln-postgres \
+              vuln-worker-ip vuln-worker-domain vuln-worker-mobile 2>/dev/null || true
             echo "=== Remaining volumes ==="
             docker volume ls --format "{{.Name}}" | grep postgres || true
 
