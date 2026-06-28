@@ -32,12 +32,7 @@ services:
     image: redis:8-alpine
     container_name: vuln-redis
     restart: unless-stopped
-    command: >
-      sh -c 'if [ -n "$${REDIS_PASSWORD}" ]; then
-        exec redis-server --appendonly yes --requirepass "$${REDIS_PASSWORD}";
-      else
-        exec redis-server --appendonly yes;
-      fi'
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64M
