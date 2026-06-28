@@ -387,10 +387,14 @@ jobs:
             docker ps -a --format "{{.Names}} {{.Status}}" || true
             docker volume ls --format "{{.Name}}" | grep postgres || true
             echo "=== Bringing services down ==="
+            # Also bring down the old project name (vuln-scanner) from before COMPOSE_PROJECT_NAME was set
+            docker compose -f docker-compose.prod.yml --project-name vuln-scanner down --volumes --remove-orphans 2>/dev/null || true
             docker compose -f docker-compose.prod.yml down --volumes --remove-orphans
             # Force-remove any leftover containers from failed prior deploys
             docker rm -f vuln-backend vuln-frontend vuln-redis vuln-postgres \
               vuln-worker-ip vuln-worker-domain vuln-worker-mobile 2>/dev/null || true
+            # Remove any lingering volumes from old project names
+            docker volume rm -f vuln-scanner_postgres_data vuln-scanner_redis_data vuln-scanner_scan_data 2>/dev/null || true
             echo "=== Remaining volumes ==="
             docker volume ls --format "{{.Name}}" | grep postgres || true
 
