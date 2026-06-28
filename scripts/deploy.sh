@@ -61,6 +61,9 @@ for i in $(seq 1 30); do
   sleep 2
 done
 
+# Source .env so REDIS_PASSWORD is available for redis-cli polling below
+set -a; source .env; set +a
+
 echo "Waiting for redis..."
 for i in $(seq 1 15); do
   if docker compose -f docker-compose.prod.yml exec -T redis redis-cli -a "$REDIS_PASSWORD" ping 2>/dev/null | grep -q PONG; then
