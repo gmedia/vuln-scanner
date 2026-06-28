@@ -2,7 +2,7 @@
 # Services expose internal ports only. Host nginx proxies to frontend:80 and backend:8000.
 
 services:
-   postgres:
+  postgres:
     image: postgres:16-alpine
     container_name: vuln-postgres
     restart: unless-stopped
