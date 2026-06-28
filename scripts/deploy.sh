@@ -32,7 +32,7 @@ docker volume ls --format "{{.Name}}" | grep postgres || true
 echo "=== Bringing services down ==="
 # Also bring down the old project name (vuln-scanner) from before COMPOSE_PROJECT_NAME was set
 docker compose -f docker-compose.prod.yml --project-name vuln-scanner down --volumes --remove-orphans 2>/dev/null || true
-docker compose -f docker-compose.prod.yml down --volumes --remove-orphans
+docker compose -f docker-compose.prod.yml down --remove-orphans
 # Force-remove any leftover containers from failed prior deploys
 docker rm -f vuln-backend vuln-frontend vuln-redis vuln-postgres \
   vuln-worker-ip vuln-worker-domain vuln-worker-mobile 2>/dev/null || true

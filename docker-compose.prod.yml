@@ -85,6 +85,8 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       CELERY_BROKER_URL: ${CELERY_BROKER_URL}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+      API_KEY: ${API_KEY}
+      SECRET_KEY: ${SECRET_KEY}
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
       MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-500}
       JWT_SECRET: ${JWT_SECRET:-}
@@ -242,6 +244,10 @@ services:
     container_name: vuln-frontend
     restart: unless-stopped
     read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64M
+      - /var/cache/nginx:rw,noexec,nosuid,size=128M
+      - /var/run:rw,noexec,nosuid,size=16M
     security_opt:
       - no-new-privileges:true
     cap_drop:
