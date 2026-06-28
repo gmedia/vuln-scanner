@@ -35,7 +35,7 @@ services:
     container_name: vuln-redis
     restart: unless-stopped
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
-    read_only: true
+    # read_only removed — Redis 8 requires writable filesystem for appendonlydir
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     tmpfs:
