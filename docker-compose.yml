@@ -108,7 +108,7 @@ services:
       - scan_data:/tmp/scans
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/ready')"]
-      interval: 15s
+      interval: 5s
       timeout: 5s
       retries: 5
       start_period: 15s
@@ -139,7 +139,7 @@ services:
       - ./backend:/backend
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/ready')"]
-      interval: 15s
+      interval: 5s
       timeout: 5s
       retries: 5
       start_period: 15s
@@ -171,7 +171,7 @@ services:
       - scan_data:/tmp/scans
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/ready')"]
-      interval: 15s
+      interval: 5s
       timeout: 5s
       retries: 5
       start_period: 15s
@@ -197,7 +197,7 @@ services:
     command: sh -c "test -d node_modules || npm install; npm run dev -- --host 0.0.0.0"
     healthcheck:
       test: ["CMD-SHELL", "pgrep -f 'vite' > /dev/null 2>&1 || exit 1"]
-      interval: 15s
+      interval: 5s
       timeout: 5s
       retries: 10
       start_period: 30s

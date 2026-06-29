@@ -158,7 +158,7 @@ services:
       - scan_data:/tmp/scans
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/ready')"]
-      interval: 15s
+      interval: 5s
       timeout: 5s
       retries: 5
       start_period: 15s
@@ -194,7 +194,7 @@ services:
       CELERY_CONCURRENCY: 2
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/ready')"]
-      interval: 15s
+      interval: 5s
       timeout: 5s
       retries: 5
       start_period: 15s
@@ -232,7 +232,7 @@ services:
       - scan_data:/tmp/scans
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/ready')"]
-      interval: 15s
+      interval: 5s
       timeout: 5s
       retries: 5
       start_period: 15s
@@ -265,7 +265,7 @@ services:
       VITE_API_KEY: ${API_KEY}
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O- http://localhost:80 || exit 1"]
-      interval: 15s
+      interval: 5s
       timeout: 5s
       retries: 10
       start_period: 10s
