@@ -20,7 +20,7 @@ class ScanJob(Base):
     target: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="pending")
     progress: Mapped[int] = mapped_column(Integer, default=0)
-    result_summary: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    result_summary: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True)
     celery_task_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     credit_cost: Mapped[int] = mapped_column(Integer, default=0)
