@@ -6,10 +6,12 @@ import plistlib
 import tempfile
 import unicodedata
 import zipfile
+from unittest import mock
 
 from utils.mobile_utils import (
     AndroidManifestInfo,
     IpaInfo,
+    SECRET_PATTERNS,
     _build_android_findings,
     _build_ios_findings,
     _extract_library_names,
@@ -407,6 +409,21 @@ class TestScanSecrets:
         assert any("aws_access_key" in t for t in types)
         assert any("private_key" in t for t in types)
 
+    def test_tuple_match_extraction(self):
+        """When a regex pattern has multiple capture groups, re.findall returns
+        tuples and the code extracts match[0] (line 368)."""
+        text = 'auth = "secret12345" pass = "password1"'
+        with mock.patch(
+            "utils.mobile_utils.SECRET_PATTERNS",
+            [
+                (r'(?i)(auth|pass)\s*[=:]\s*[\'"](\S{8,})[\'"]', "dual_group_test"),
+            ],
+        ):
+            findings = _scan_secrets(text)
+        assert len(findings) == 2
+        assert all(f["category"] == "hardcoded_secret" for f in findings)
+        assert findings[0]["title"] == "Potential dual_group_test detected"
+
 
 class TestExtractLibraryNames:
     def test_dex_files_extracted(self):
@@ -566,6 +583,20 @@ class TestAnalyzeIpa:
         except UnboundLocalError:
             pass
 
+    def test_analyze_ipa_plist_extract_fails_and_parse_fails(self, tmp_path):
+        """Covers _safe_extract returning False for a plist (line 151)
+        and plistlib.load raising for a corrupt plist (lines 157-159)."""
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("../Info.plist", b"skip me")
+            zf.writestr("Payload/App.app/Info.plist", b"not a valid plist \x00\xFF")
+        buf.seek(0)
+        ipa_path = tmp_path / "test_plist_fail.ipa"
+        ipa_path.write_bytes(buf.getvalue())
+        info, findings, libraries = analyze_ipa(str(ipa_path))
+        assert isinstance(info, IpaInfo)
+        assert info.bundle_id == ""
+
 
 class TestSafeExtract:
 
@@ -638,6 +669,25 @@ class TestSafeExtract:
         assert extracted.exists()
         assert extracted.read_bytes() == b"\x00\x01\x02"
 
+    def test_directory_member_keyerror_falls_through(self, tmp_path):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("adir/", "")
+        buf.seek(0)
+        with zipfile.ZipFile(buf, "r") as zf:
+            call_count = 0
+            real_getinfo = zf.getinfo
+            def _getinfo_raising(name):
+                nonlocal call_count
+                call_count += 1
+                if call_count == 1 and name == "adir/":
+                    raise KeyError(name)
+                return real_getinfo(name)
+            zf.getinfo = _getinfo_raising
+            result = _safe_extract(zf, "adir/", str(tmp_path))
+        assert result is True
+        assert (tmp_path / "adir").exists()
+
 
 class TestExtractTextFromZip:
 
@@ -704,3 +754,24 @@ class TestExtractTextFromZip:
         with zipfile.ZipFile(buf, "r") as zf:
             result = _extract_text_from_zip(zf, [])
         assert result == ""
+
+    def test_decode_exception_falls_back_to_latin1(self):
+        buf = io.BytesIO()
+        raw = b"\x80\x81hello"
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("bad.txt", raw)
+        buf.seek(0)
+
+        class _DecodingBytes(bytes):
+            def decode(self, encoding="utf-8", errors="replace"):
+                if encoding == "utf-8":
+                    raise UnicodeDecodeError("utf-8", b"", 0, 1, "mock error")
+                return super().decode(encoding, errors)
+
+        with zipfile.ZipFile(buf, "r") as zf:
+            mock_fh = mock.MagicMock()
+            mock_fh.read.return_value = _DecodingBytes(b"\x80\x81hello")
+            mock_fh.__enter__.return_value = mock_fh
+            with mock.patch.object(zf, "open", return_value=mock_fh):
+                result = _extract_text_from_zip(zf, ["bad.txt"])
+        assert len(result) > 0
