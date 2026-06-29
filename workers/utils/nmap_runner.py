@@ -1,6 +1,7 @@
 import asyncio
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
+from typing import Any
 
 from loguru import logger
 
@@ -156,7 +157,7 @@ async def run_nmap(target: str, ports: str = "1-1000") -> NmapResult:
     return parse_nmap_xml(xml_output)
 
 
-def findings_from_nmap(result: NmapResult) -> list[dict]:
+def findings_from_nmap(result: NmapResult) -> list[dict[str, Any]]:
     """Convert nmap results into a list of finding dicts for database persistence."""
     findings = []
 

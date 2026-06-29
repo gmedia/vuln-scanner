@@ -3,6 +3,7 @@ import re
 import socket
 import ssl
 from dataclasses import dataclass, field
+from typing import Any
 
 from loguru import logger
 
@@ -353,7 +354,7 @@ def detect_tech_stack(domain: str, headers: dict[str, str]) -> list[TechInfo]:
     return detected
 
 
-def findings_from_domain(result: DomainResult) -> list[dict]:
+def findings_from_domain(result: DomainResult) -> list[dict[str, Any]]:
     """Convert a DomainResult into a list of finding dicts for database persistence."""
     findings = []
 

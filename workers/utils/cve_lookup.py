@@ -15,7 +15,7 @@ _redis_pool: redis.ConnectionPool | None = None
 def _get_redis_pool() -> redis.ConnectionPool:
     global _redis_pool
     if _redis_pool is None:
-        _redis_pool = redis.ConnectionPool.from_url(REDIS_URL)
+        _redis_pool = redis.ConnectionPool.from_url(REDIS_URL)  # type: ignore[no-untyped-call]
     return _redis_pool
 CVE_CACHE_TTL = int(os.getenv("CVE_CACHE_TTL", "3600"))
 
@@ -25,7 +25,7 @@ def _cache_key(package_name: str, ecosystem: str, version: str) -> str:
     return f"cve_cache:{hashlib.sha256(raw.encode()).hexdigest()}"
 
 
-def _get_cached_vulns(package_name: str, ecosystem: str, version: str) -> list[dict] | None:
+def _get_cached_vulns(package_name: str, ecosystem: str, version: str) -> list[dict[str, Any]] | None:
     try:
         r = redis.Redis(connection_pool=_get_redis_pool())
         key = _cache_key(package_name, ecosystem, version)
@@ -33,7 +33,7 @@ def _get_cached_vulns(package_name: str, ecosystem: str, version: str) -> list[d
         if data is not None:
             assert isinstance(data, (str, bytes, bytearray))
             logger.info("CVE cache HIT for {ecosystem}:{pkg}@{ver}", ecosystem=ecosystem, pkg=package_name, ver=version)
-            return cast(list[dict], json.loads(data))
+            return cast(list[dict[str, Any]], json.loads(data))
         logger.debug("CVE cache MISS for {ecosystem}:{pkg}@{ver}", ecosystem=ecosystem, pkg=package_name, ver=version)
     except Exception as e:
         logger.warning("CVE cache read error for {ecosystem}:{pkg}@{ver}: {error}",
@@ -41,7 +41,7 @@ def _get_cached_vulns(package_name: str, ecosystem: str, version: str) -> list[d
     return None
 
 
-def _set_cached_vulns(package_name: str, ecosystem: str, version: str, vulns: list[dict]) -> None:
+def _set_cached_vulns(package_name: str, ecosystem: str, version: str, vulns: list[dict[str, Any]]) -> None:
     try:
         r = redis.Redis(connection_pool=_get_redis_pool())
         r.setex(_cache_key(package_name, ecosystem, version), CVE_CACHE_TTL, json.dumps(vulns))
@@ -136,7 +136,7 @@ def _extract_remediation(vuln: dict[str, Any]) -> str | None:
     return "\n".join(parts) if parts else None
 
 
-def format_vuln_finding(vuln: dict[str, Any], cvss_score: float | None) -> dict:
+def format_vuln_finding(vuln: dict[str, Any], cvss_score: float | None) -> dict[str, Any]:
     """Format an OSV vulnerability into a standardized finding dict with severity and remediation."""
     aliases = vuln.get("aliases", [])
     cve_id = ""
