@@ -31,7 +31,7 @@ class RateLimiter:
             self._redis = redis.Redis.from_url(settings.redis_url, decode_responses=True)
         return self._redis
 
-    async def __call__(self, request: Request):
+    async def __call__(self, request: Request) -> JSONResponse | None:
         # Bypass rate limiting for e2e test requests
         if request.headers.get("X-E2E-Test"):
             return None

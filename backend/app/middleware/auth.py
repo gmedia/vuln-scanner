@@ -7,6 +7,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp
 
 from app.config import settings
 from app.database import get_db as _get_db
@@ -33,17 +34,18 @@ IP_LIMIT = 300
 
 class ApiKeyMiddleware(BaseHTTPMiddleware):
     """FastAPI middleware that validates API keys and enforces rate limiting."""
-    def __init__(self, app):
+    def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
-        self._redis = None
+        self._redis: redis.Redis | None = None
 
-    async def _get_redis(self):
+    async def _get_redis(self) -> redis.Redis:
         """Lazy Redis connection — avoids hanging at startup when Redis is unavailable."""
         if self._redis is None:
             self._redis = redis.Redis.from_url(settings.redis_url, decode_responses=True)
+        assert self._redis is not None
         return self._redis
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next):  # type: ignore[no-untyped-def]
         """Authenticate request via X-API-Key header and enforce IP and key rate limits."""
         if request.url.path in EXCLUDED_PATHS or request.url.path.startswith("/ws/"):
             return await call_next(request)
@@ -117,7 +119,7 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
             request, call_next, str(api_key.id), api_key.rate_limit
         )
 
-    async def _check_rate_and_forward(
+    async def _check_rate_and_forward(  # type: ignore[no-untyped-def]
         self,
         request: Request,
         call_next,

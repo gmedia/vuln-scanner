@@ -15,7 +15,7 @@ STS_MAX_AGE = 31536000
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Add security-focused response headers to every response."""
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next):  # type: ignore[no-untyped-def]
         response = await call_next(request)
 
         headers = response.headers
