@@ -49,10 +49,10 @@ refresh_limiter = RateLimiter(max_requests=10, window_seconds=60, prefix="rateli
 verify_email_limiter = RateLimiter(max_requests=5, window_seconds=60, prefix="ratelimit:verify_email")
 
 @router.post("/register", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
-async def register(request: Request, body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+async def register(request: Request, body: RegisterRequest, db: AsyncSession = Depends(get_db)) -> MessageResponse:
     limit_response = await register_limiter(request)
     if limit_response:
-        return limit_response
+        return limit_response  # type: ignore[return-value]
 
     if body.password != body.confirm_password:
         raise HTTPException(
@@ -108,10 +108,10 @@ async def login(
     request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
-):
+) -> LoginResponse:
     limit_response = await login_limiter(request)
     if limit_response:
-        return limit_response
+        return limit_response  # type: ignore[return-value]
 
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
@@ -152,10 +152,10 @@ async def login(
 
 
 @router.post("/verify-email", response_model=MessageResponse)
-async def verify_email(request: Request, body: VerifyEmailRequest, db: AsyncSession = Depends(get_db)):
+async def verify_email(request: Request, body: VerifyEmailRequest, db: AsyncSession = Depends(get_db)) -> MessageResponse:
     limit_response = await verify_email_limiter(request)
     if limit_response:
-        return limit_response
+        return limit_response  # type: ignore[return-value]
 
     result = await db.execute(
         select(EmailVerificationToken).where(EmailVerificationToken.token == body.token)
@@ -198,7 +198,7 @@ async def refresh(
 ) -> TokenResponse:
     limit_response = await refresh_limiter(request)
     if limit_response:
-        return limit_response  # type: ignore[no-any-return]
+        return limit_response  # type: ignore[return-value]
 
     refresh_token_str: str | None = None
 
@@ -274,7 +274,7 @@ async def refresh(
 
 
 @router.get("/me", response_model=UserResponse)
-async def me(current_user: User = Depends(get_current_user)):
+async def me(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
 
@@ -282,7 +282,7 @@ async def me(current_user: User = Depends(get_current_user)):
 async def revoke(
     body: RevokeRequest,
     current_user: User = Depends(get_current_user),
-):
+) -> MessageResponse:
     try:
         payload = decode_token(body.token)
     except jwt.PyJWTError:
@@ -305,7 +305,7 @@ async def revoke(
 @router.post("/logout-all", response_model=LogoutAllResponse)
 async def logout_all_endpoint(
     current_user: User = Depends(get_current_user),
-):
+) -> LogoutAllResponse:
     count = await logout_all(str(current_user.id))
     return LogoutAllResponse(
         message="Semua token telah dicabut",

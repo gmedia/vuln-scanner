@@ -29,7 +29,7 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 async def get_stats(
     current_admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> AdminStats:
     total_users_result = await db.execute(select(func.count(User.id)))
     total_users = total_users_result.scalar() or 0
 
@@ -65,7 +65,7 @@ async def get_users(
     search: str = Query(default=""),
     current_admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> AdminUserList:
     count_query = select(func.count(User.id))
     if search:
         count_query = count_query.where(User.email.ilike(f"%{search}%"))
@@ -107,7 +107,7 @@ async def get_user_detail(
     user_id: uuid.UUID,
     current_admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> AdminUserItem:
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
@@ -135,7 +135,7 @@ async def adjust_user_credits(
     body: CreditUpdateRequest,
     current_admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> AdminUserItem:
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
@@ -181,7 +181,7 @@ async def adjust_user_credits(
 async def get_pricing(
     current_admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> PricingListResponse:
     result = await db.execute(select(PricingConfig).order_by(PricingConfig.scan_type))
     items = result.scalars().all()
     return PricingListResponse(items=[PricingItem.model_validate(item) for item in items])
@@ -193,7 +193,7 @@ async def update_pricing(
     body: PricingUpdateRequest,
     current_admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> PricingItem:
     if scan_type not in ("ip", "domain", "apk", "ipa"):
         raise HTTPException(status_code=400, detail="Invalid scan type")
 

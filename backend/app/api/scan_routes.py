@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.models.scan_job import ScanJob
 from app.models.user import User
 from app.schemas.scan import (
     DomainScanRequest,
@@ -25,7 +26,7 @@ router = APIRouter(tags=["scans"])
 UPLOAD_DIR = "/tmp/scans"
 
 
-def _export_json(job: ScanJobDetailResponse) -> dict:
+def _export_json(job: ScanJobDetailResponse) -> dict[str, object]:
     return {
         "scan_id": str(job.id),
         "scan_type": job.scan_type,
@@ -144,7 +145,7 @@ async def start_ip_scan(
     req: ScanRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> ScanJob:
     svc = ScannerService(db)
     job = await svc.start_scan(user=current_user, scan_type="ip", target=req.target, ports=req.ports)
     return job
@@ -155,7 +156,7 @@ async def start_domain_scan(
     req: DomainScanRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> ScanJob:
     svc = ScannerService(db)
     job = await svc.start_scan(user=current_user, scan_type="domain", target=req.domain)
     return job
@@ -167,7 +168,7 @@ async def start_mobile_scan(
     platform: str = Form(...),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> ScanJob:
     if platform not in ("android", "ios"):
         raise HTTPException(status_code=400, detail="platform must be 'android' or 'ios'")
     if not file.filename:
@@ -205,14 +206,14 @@ async def get_scan_history(
     scan_type: str | None = None,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> PaginatedResponse:
     """List scan jobs with pagination. Optionally filter by scan type."""
     svc = ScannerService(db)
     return await svc.get_history(page=page, limit=limit, scan_type=scan_type, user_id=current_user.id)
 
 
 @router.get("/scan/{job_id}", response_model=ScanJobDetailResponse)
-async def get_scan(job_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def get_scan(job_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)) -> ScanJobDetailResponse:
     """Retrieve a single scan job with all findings by job ID."""
     svc = ScannerService(db)
     job = await svc.get_job(job_id, user_id=current_user.id)
@@ -224,7 +225,7 @@ async def get_scan(job_id: str, current_user: User = Depends(get_current_user), 
 @router.get("/scan/{job_id}/findings", response_model=list[ScanFindingResponse])
 async def get_scan_findings(
     job_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
-):
+) -> list[ScanFindingResponse]:
     """Retrieve only the findings for a scan job."""
     svc = ScannerService(db)
     findings = await svc.get_findings(job_id, user_id=current_user.id)
@@ -237,7 +238,7 @@ async def export_scan(
     format: str = Query(default="json"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse | HTMLResponse:
     """Export scan results as JSON or HTML. Returns file download or rendered page."""
     svc = ScannerService(db)
     job = await svc.get_job(job_id, user_id=current_user.id)

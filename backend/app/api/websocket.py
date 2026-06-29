@@ -22,7 +22,7 @@ WS_RATE_LIMIT_WINDOW = 60
 WS_RATE_LIMIT_PREFIX = "ratelimit:ws"
 
 
-async def get_redis():
+async def get_redis() -> Redis:
     """Return a shared Redis connection, creating it lazily on first call."""
     global redis
     if redis is None:
@@ -30,7 +30,7 @@ async def get_redis():
     return redis
 
 
-async def _get_ws_rate_limit_redis():
+async def _get_ws_rate_limit_redis() -> Redis:
     """Return a Redis connection for WebSocket rate limiting (decode_responses=True)."""
     global _ws_rate_limit_redis
     if _ws_rate_limit_redis is None:
@@ -61,7 +61,7 @@ async def scan_progress(
     websocket: WebSocket,
     job_id: str,
     api_key: str | None = Query(None, alias="api_key"),
-):
+) -> None:
     """WebSocket endpoint that streams scan progress updates for a given job ID."""
     # Validate API key before accepting the connection
     if not await validate_api_key(api_key):

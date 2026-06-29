@@ -19,7 +19,7 @@ router = APIRouter(prefix="/credits", tags=["credits"])
 
 
 @router.get("/balance", response_model=CreditInfo)
-async def get_balance(current_user: User = Depends(get_current_user)):
+async def get_balance(current_user: User = Depends(get_current_user)) -> CreditInfo:
     """Return current user's credit balance and admin status."""
     return CreditInfo(credits=current_user.credits, is_admin=current_user.is_admin)
 
@@ -30,7 +30,7 @@ async def get_history(
     page_size: int = Query(default=20, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> CreditHistoryResponse:
     """Return paginated credit transaction history for the current user."""
     count_query = select(func.count(CreditLog.id)).where(CreditLog.user_id == current_user.id)
     total_result = await db.execute(count_query)
@@ -65,7 +65,7 @@ async def get_scan_eligibility(
     scan_type: str,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> ScanEligibility:
     """Check whether the current user has enough credits for a given scan type."""
     if scan_type not in SCAN_TYPE_PRICING_MAP:
         raise HTTPException(status_code=400, detail=f"Invalid scan type: {scan_type}")
