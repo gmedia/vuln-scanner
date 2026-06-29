@@ -1,13 +1,14 @@
 import json
 import os
 import time
+from typing import Any
 
 import redis
 from celery import shared_task
 from loguru import logger
 
 REDIS_URL = os.getenv("REDIS_URL", f"redis://:{os.getenv('REDIS_PASSWORD', '')}@redis:6379/0")
-_redis_pool = redis.ConnectionPool.from_url(REDIS_URL)
+_redis_pool = redis.ConnectionPool.from_url(REDIS_URL)  # type: ignore[no-untyped-call]
 DEAD_LETTER_MAX = 1000
 
 
@@ -17,8 +18,8 @@ DEAD_LETTER_MAX = 1000
     acks_late=True,
     max_retries=1,
     default_retry_delay=30,
-)
-def dead_letter_handler(self, task_name: str, args: list, kwargs: dict, exception_info: str):
+)  # type: ignore[untyped-decorator]
+def dead_letter_handler(self: Any, task_name: str, args: list[Any], kwargs: dict[str, Any], exception_info: str) -> None:
     """Handle a task that exhausted all retries.
 
     Logs the failure with full context and stores it in a Redis sorted set
