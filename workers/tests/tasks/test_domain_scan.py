@@ -156,6 +156,7 @@ class TestDomainScanFailure:
             patch("tasks.domain_scan.resolve_dns", new_callable=AsyncMock) as mock_dns,
             patch("tasks.domain_scan.publish_progress") as mock_progress,
             patch("tasks.domain_scan._update_status") as mock_update_status,
+            patch("tasks.domain_scan._refund_credits") as mock_refund,
             patch("tasks.domain_scan.redis.Redis") as mock_redis,
         ):
             mock_dns.side_effect = Exception("DNS resolution failed")
@@ -166,6 +167,7 @@ class TestDomainScanFailure:
             self.mock_dns = mock_dns
             self.mock_progress = mock_progress
             self.mock_update_status = mock_update_status
+            self.mock_refund = mock_refund
             self.mock_redis = mock_redis
             yield
 
@@ -200,6 +202,20 @@ class TestDomainScanFailure:
         with pytest.raises(Retry):
             self._call_task()
         self.mock_dead_letter.delay.assert_not_called()
+
+    def test_dns_failure_calls_refund_credits(self):
+        with pytest.raises(Retry):
+            self._call_task()
+        self.mock_refund.assert_called_once_with(
+            self.mock_session.return_value, JOB_ID, "domain",
+        )
+
+    def test_dns_failure_commits_and_closes_session(self):
+        with pytest.raises(Retry):
+            self._call_task()
+        mock_sess = self.mock_session.return_value
+        mock_sess.commit.assert_called()
+        mock_sess.close.assert_called()
 
 
 class TestDomainScanFinalRetry(TestDomainScanFailure):
@@ -322,6 +338,7 @@ class TestDomainScanNestedStatusUpdateFailure:
             patch("tasks.domain_scan.resolve_dns", new_callable=AsyncMock) as mock_dns,
             patch("tasks.domain_scan.publish_progress") as mock_progress,
             patch("tasks.domain_scan._update_status") as mock_update_status,
+            patch("tasks.domain_scan._refund_credits") as mock_refund,
             patch("tasks.domain_scan.redis.Redis") as mock_redis,
         ):
             mock_dns.side_effect = Exception("DNS resolution failed")
@@ -332,6 +349,7 @@ class TestDomainScanNestedStatusUpdateFailure:
             self.mock_dns = mock_dns
             self.mock_progress = mock_progress
             self.mock_update_status = mock_update_status
+            self.mock_refund = mock_refund
             self.mock_redis = mock_redis
             yield
 
@@ -364,4 +382,280 @@ class TestDomainScanNestedStatusUpdateFailure:
         with pytest.raises(Retry):
             self._call_task()
         self.mock_retry.assert_called_once()
+
+
+class TestPublishProgress:
+    """Test the module-level publish_progress function (covers lines 34-36, 40-41)."""
+
+    def test_publish_progress_handles_redis_error_gracefully(self):
+        """When redis.Redis() returns an instance whose publish raises, logs warning."""
+        from tasks.domain_scan import publish_progress
+        with patch("tasks.domain_scan.redis.Redis") as mock_redis:
+            mock_instance = MagicMock()
+            mock_instance.publish.side_effect = Exception("Redis connection lost")
+            mock_redis.return_value = mock_instance
+            publish_progress("test-job", "nmap_scan", 50, "scanning")
+        mock_instance.publish.assert_called_once()
+
+    def test_publish_progress_handles_redis_constructor_error(self):
+        """When redis.Redis() constructor itself raises, publish_progress logs warning."""
+        from tasks.domain_scan import publish_progress
+        with patch("tasks.domain_scan.redis.Redis") as mock_redis:
+            mock_redis.side_effect = Exception("Cannot connect to Redis")
+            publish_progress("test-job", "nmap_scan", 50, "scanning")
+        # Should not raise — just log warning
+
+
+class TestRunAsync:
+    """Test the module-level _run_async helper (covers lines 48-50)."""
+
+    def test_run_async_creates_new_event_loop_on_runtime_error(self):
+        """When get_event_loop raises RuntimeError, _run_async creates new loop."""
+        from tasks.domain_scan import _run_async
+
+        async def dummy():
+            return "ok"
+
+        with patch("asyncio.get_event_loop", side_effect=RuntimeError("No event loop")):
+            with patch("asyncio.new_event_loop") as mock_new:
+                with patch("asyncio.set_event_loop") as mock_set:
+                    mock_loop = MagicMock()
+                    mock_loop.run_until_complete.return_value = "ok"
+                    mock_new.return_value = mock_loop
+                    result = _run_async(dummy())
+                    assert result == "ok"
+                    mock_new.assert_called_once()
+                    mock_set.assert_called_once_with(mock_loop)
+                    mock_loop.run_until_complete.assert_called_once()
+
+
+class TestUpdateStatus:
+    """Test _update_status helper (covers lines 186-188)."""
+
+    @pytest.fixture(autouse=True)
+    def _setup_app_models(self):
+        import sys
+        import types
+
+        fake_scan_job = types.ModuleType("app.models.scan_job")
+        fake_scan_job.ScanJob = MagicMock()
+
+        saved = {}
+        if "app.models.scan_job" in sys.modules:
+            saved["app.models.scan_job"] = sys.modules["app.models.scan_job"]
+        sys.modules["app.models.scan_job"] = fake_scan_job
+
+        with patch("tasks.domain_scan.update") as mock_update:
+            self.mock_update = mock_update
+            yield
+
+        if "app.models.scan_job" in saved:
+            sys.modules["app.models.scan_job"] = saved["app.models.scan_job"]
+        else:
+            sys.modules.pop("app.models.scan_job", None)
+
+    def test_update_status_executes_update_with_status(self):
+        from tasks.domain_scan import _update_status
+
+        session = MagicMock()
+        _update_status(session, "job-123", "completed")
+        session.execute.assert_called()
+        session.commit.assert_not_called()  # commit handled by caller
+
+    def test_update_status_passes_extra_kwargs(self):
+        from tasks.domain_scan import _update_status
+
+        session = MagicMock()
+        _update_status(session, "job-xyz", "running", started_at="2024-01-01T00:00:00Z")
+        session.execute.assert_called_once()
+
+
+class TestSaveFindings:
+    """Test _save_findings helper (covers lines 192-194, 206)."""
+
+    @pytest.fixture(autouse=True)
+    def _setup_app_models(self):
+        import sys
+        import types
+
+        fake_scan_finding = types.ModuleType("app.models.scan_finding")
+        fake_scan_finding.ScanFinding = MagicMock
+
+        saved = {}
+        if "app.models.scan_finding" in sys.modules:
+            saved["app.models.scan_finding"] = sys.modules["app.models.scan_finding"]
+        sys.modules["app.models.scan_finding"] = fake_scan_finding
+
+        yield
+
+        if "app.models.scan_finding" in saved:
+            sys.modules["app.models.scan_finding"] = saved["app.models.scan_finding"]
+        else:
+            sys.modules.pop("app.models.scan_finding", None)
+
+    def test_save_findings_empty_list_does_not_crash(self):
+        from tasks.domain_scan import _save_findings
+
+        session = MagicMock()
+        _save_findings(session, "job-123", [])
+        session.add.assert_not_called()
+
+    def test_save_findings_populates_scan_finding_fields(self):
+        from tasks.domain_scan import _save_findings
+
+        session = MagicMock()
+        findings = [
+            {
+                "severity": "critical",
+                "category": "rce",
+                "title": "RCE in foo",
+                "description": "Remote code execution vulnerability",
+                "cve_id": "CVE-2024-0001",
+                "cvss_score": 9.8,
+                "remediation": "Upgrade to patched version",
+                "raw_data": {"key": "value"},
+            },
+            {
+                "severity": "info",
+                "category": "ssl",
+                "title": "SSL Info",
+                "description": "TLS 1.3",
+                "cve_id": None,
+                "cvss_score": None,
+                "remediation": None,
+                "raw_data": None,
+            },
+        ]
+        _save_findings(session, "job-456", findings)
+        assert session.add.call_count == 2
+        first_added = session.add.call_args_list[0][0][0]
+        assert first_added.job_id == "job-456"
+        assert first_added.severity == "critical"
+        assert first_added.cve_id == "CVE-2024-0001"
+        assert first_added.cvss_score == 9.8
+        second_added = session.add.call_args_list[1][0][0]
+        assert second_added.cve_id is None
+
+
+class TestRefundCredits:
+    """Test _refund_credits helper (covers lines 211-230)."""
+
+    JOB_ID_STR = "refund-job-uuid"
+    USER_ID_STR = "user-uuid-1234"
+    CREDIT_COST = 10
+
+    @pytest.fixture(autouse=True)
+    def _setup_app_models(self):
+        import sys
+        import types
+
+        fake_scan_job = types.ModuleType("app.models.scan_job")
+        fake_scan_job.ScanJob = self._make_mock_model(["id", "user_id", "credit_cost"])
+        fake_user = types.ModuleType("app.models.user")
+        fake_user.User = self._make_mock_model(["id", "credits"])
+        fake_credit_log = types.ModuleType("app.models.credit_log")
+        fake_credit_log.CreditLog = self._make_record_class(["user_id", "amount", "type", "description", "reference_id"])
+
+        saved = {}
+        for name in ("app.models.scan_job", "app.models.user", "app.models.credit_log"):
+            if name in sys.modules:
+                saved[name] = sys.modules[name]
+            sys.modules[name] = (
+                fake_scan_job if "scan_job" in name
+                else (fake_user if "user" in name else fake_credit_log)
+            )
+
+        yield
+
+        for name in ("app.models.scan_job", "app.models.user", "app.models.credit_log"):
+            if name in saved:
+                sys.modules[name] = saved[name]
+            else:
+                sys.modules.pop(name, None)
+
+    @staticmethod
+    def _make_mock_model(attrs):
+        mock_cls = MagicMock()
+        for attr in attrs:
+            setattr(mock_cls, attr, MagicMock())
+        return mock_cls
+
+    @staticmethod
+    def _make_record_class(attrs):
+        class Record:
+            def __init__(self, **kwargs):
+                for k, v in kwargs.items():
+                    object.__setattr__(self, k, v)
+        return Record
+
+    def _mock_job(self, user_id=None, credit_cost=None):
+        job = MagicMock()
+        job.id = self.JOB_ID_STR
+        job.user_id = user_id
+        job.credit_cost = credit_cost
+        return job
+
+    def _mock_user(self, credits=50):
+        user = MagicMock()
+        user.id = self.USER_ID_STR
+        user.credits = credits
+        return user
+
+    def test_refund_credits_increments_user_credits_and_creates_credit_log(self):
+        session = MagicMock()
+        job = self._mock_job(user_id=self.USER_ID_STR, credit_cost=self.CREDIT_COST)
+        user = self._mock_user(credits=50)
+
+        session.query.return_value.where.return_value.one_or_none.side_effect = [job, user]
+
+        from tasks.domain_scan import _refund_credits
+        _refund_credits(session, self.JOB_ID_STR, "domain")
+
+        assert user.credits == 60
+        session.add.assert_called_once()
+        added_log = session.add.call_args[0][0]
+        assert added_log.user_id == self.USER_ID_STR
+        assert added_log.amount == self.CREDIT_COST
+        assert added_log.type == "refund"
+        assert added_log.description == "Refund: domain scan failed"
+        assert added_log.reference_id == self.JOB_ID_STR
+
+    def test_refund_credits_no_job_returns_early(self):
+        session = MagicMock()
+        session.query.return_value.where.return_value.one_or_none.return_value = None
+
+        from tasks.domain_scan import _refund_credits
+        _refund_credits(session, "nonexistent-job", "domain")
+
+        session.add.assert_not_called()
+
+    def test_refund_credits_no_user_id_returns_early(self):
+        session = MagicMock()
+        job = self._mock_job(user_id=None, credit_cost=self.CREDIT_COST)
+        session.query.return_value.where.return_value.one_or_none.return_value = job
+
+        from tasks.domain_scan import _refund_credits
+        _refund_credits(session, self.JOB_ID_STR, "domain")
+
+        session.add.assert_not_called()
+
+    def test_refund_credits_no_credit_cost_returns_early(self):
+        session = MagicMock()
+        job = self._mock_job(user_id=self.USER_ID_STR, credit_cost=0)
+        session.query.return_value.where.return_value.one_or_none.return_value = job
+
+        from tasks.domain_scan import _refund_credits
+        _refund_credits(session, self.JOB_ID_STR, "domain")
+
+        session.add.assert_not_called()
+
+    def test_refund_credits_user_not_found_returns_early(self):
+        session = MagicMock()
+        job = self._mock_job(user_id=self.USER_ID_STR, credit_cost=self.CREDIT_COST)
+        session.query.return_value.where.return_value.one_or_none.side_effect = [job, None]
+
+        from tasks.domain_scan import _refund_credits
+        _refund_credits(session, self.JOB_ID_STR, "domain")
+
+        session.add.assert_not_called()
 
