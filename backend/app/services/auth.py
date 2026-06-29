@@ -95,7 +95,7 @@ def create_refresh_token(user_id: str) -> str:
 
 
 def decode_token(token: str) -> dict[str, Any]:
-    payload: dict[str, Any] = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])  # type: ignore[no-any-return]
+    payload: dict[str, Any] = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
     jti = payload.get("jti")
     if jti is not None and jti in _revoked_tokens:
         raise jwt.PyJWTError("Token has been revoked")

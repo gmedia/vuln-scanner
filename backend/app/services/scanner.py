@@ -3,6 +3,7 @@ import uuid
 from uuid import UUID
 
 from celery import Celery
+from celery.result import AsyncResult
 from fastapi import HTTPException
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -128,7 +129,7 @@ class ScannerService:
         ports: str | None,
         platform: str | None,
         file_path: str | None = None,
-    ):
+    ) -> AsyncResult:
         if scan_type == "ip":
             return celery_app.send_task(
                 "ip_scan.run",

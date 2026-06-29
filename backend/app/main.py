@@ -1,9 +1,11 @@
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 import sentry_sdk
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.responses import JSONResponse
 
 from app.api.router import api_router
 from app.config import check_settings, settings
@@ -31,7 +33,7 @@ def _init_sentry() -> None:
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Verify settings on startup and clean up on shutdown."""
     check_settings()
     _init_sentry()
@@ -64,7 +66,7 @@ app.add_middleware(ApiKeyMiddleware)
 
 
 @app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
+async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.error(
         "Unhandled exception: %s | path=%s method=%s",
         sanitize_for_log(str(exc)),
@@ -72,8 +74,6 @@ async def global_exception_handler(request: Request, exc: Exception):
         request.method,
         exc_info=True,
     )
-    from starlette.responses import JSONResponse
-
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal server error"},
@@ -85,11 +85,11 @@ app.include_router(api_router, prefix="/api")
 
 @app.get("/health")
 @app.get("/api/health")
-async def health_check():
+async def health_check() -> JSONResponse:
     """Check database and Redis connectivity. Returns 200 if both are reachable, 503 if degraded."""
     import redis.asyncio as aioredis
 
-    checks = {"status": "ok"}
+    checks: dict[str, str] = {"status": "ok"}
 
     try:
         from sqlalchemy import text
@@ -104,7 +104,7 @@ async def health_check():
         checks["status"] = "degraded"
 
     try:
-        r = aioredis.from_url(settings.redis_url, socket_connect_timeout=3)
+        r = aioredis.from_url(settings.redis_url, socket_connect_timeout=3)  # type: ignore[no-untyped-call]
         await r.ping()
         await r.aclose()
         checks["redis"] = "connected"
@@ -113,6 +113,4 @@ async def health_check():
         checks["status"] = "degraded"
 
     status_code = 200 if checks["status"] == "ok" else 503
-    from starlette.responses import JSONResponse
-
     return JSONResponse(checks, status_code=status_code)

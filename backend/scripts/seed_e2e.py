@@ -6,6 +6,7 @@ Inserts sample scan jobs + findings so frontend E2E tests have data to work with
 import asyncio
 import uuid
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -17,7 +18,8 @@ from app.models.scan_job import ScanJob
 from app.models.user import User
 from app.services.auth import hash_password
 
-SEED_DATA = [
+
+SEED_DATA: list[dict[str, Any]] = [
     {
         "scan_type": "ip",
         "target": "8.8.8.8",
@@ -90,7 +92,7 @@ SEED_DATA = [
 ]
 
 
-async def seed():
+async def seed() -> None:
     engine = create_async_engine(settings.database_url, echo=False)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -123,8 +125,8 @@ async def seed():
             print(f"Topped up E2E user credits to 100 (was {e2e_user.credits})")
 
         result = await session.execute(text("SELECT COUNT(*) FROM scan_jobs"))
-        count = result.scalar()
-        if count and count > 0:
+        count: int = result.scalar_one()  # type: ignore[assignment]
+        if count > 0:
             print(f"Database already has {count} scan jobs — skipping seed.")
             await session.close()
             await engine.dispose()
