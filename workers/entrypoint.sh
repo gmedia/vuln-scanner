@@ -24,9 +24,18 @@ fi
 echo "[OK] Required env vars are set ($CELERY_QUEUE)"
 
 # --- Wait for Redis ---
-REDIS_HOST=$(echo "$CELERY_BROKER_URL" | sed 's/.*:\/\///' | sed 's/:.*//')
-REDIS_PORT=$(echo "$CELERY_BROKER_URL" | sed 's/.*:/:' | sed 's/.*://' | sed 's/\/.*//')
-[ -z "$REDIS_PORT" ] && REDIS_PORT=6379
+REDIS_HOST=$(python -c "
+from urllib.parse import urlparse
+import os
+url = urlparse(os.environ['CELERY_BROKER_URL'])
+print(url.hostname or 'redis')
+")
+REDIS_PORT=$(python -c "
+from urllib.parse import urlparse
+import os
+url = urlparse(os.environ['CELERY_BROKER_URL'])
+print(url.port or 6379)
+")
 echo "Waiting for Redis at $REDIS_HOST:$REDIS_PORT ..."
 for i in $(seq 1 30); do
   if python -c "
