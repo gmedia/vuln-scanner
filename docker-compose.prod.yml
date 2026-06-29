@@ -19,6 +19,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-vuln_scanner}
       POSTGRES_USER: ${POSTGRES_USER:-vuln_scanner}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -99,6 +101,7 @@ services:
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-VulnScanner <noreply@vs.appmedia.id>}
       FRONTEND_URL: ${FRONTEND_URL:-https://vs.appmedia.id}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://vs.appmedia.id}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       DEFAULT_REGISTER_CREDITS: ${DEFAULT_REGISTER_CREDITS:-30}
@@ -111,10 +114,10 @@ services:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
-      interval: 10s
+      interval: 5s
       timeout: 10s
-      retries: 12
-      start_period: 15s
+      retries: 5
+      start_period: 10s
     ports:
       - "127.0.0.1:8000:8000"
     networks:

@@ -7,6 +7,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-vuln_scanner}
       POSTGRES_USER: ${POSTGRES_USER:-vuln_scanner}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
