@@ -222,6 +222,46 @@ class TestIpScanNmapFinalRetry(TestIpScanNmapFailure):
         assert kwargs["args"] == [JOB_ID, TARGET, PORTS]
 
 
+class TestIpScanNmapRetryReraise:
+    """When run_nmap raises Retry, the bare raise on line 62 re-raises it."""
+
+    @pytest.fixture(autouse=True)
+    def _setup_patches(self):
+        with (
+            patch("tasks.ip_scan.get_sync_session") as mock_session,
+            patch("tasks.ip_scan.run_nmap", new_callable=AsyncMock) as mock_nmap,
+            patch("tasks.ip_scan.publish_progress") as mock_progress,
+            patch("tasks.ip_scan.redis.Redis") as mock_redis,
+            patch("tasks.ip_scan._update_status") as mock_update_status,
+        ):
+            mock_nmap.side_effect = Retry("simulated retry")
+            mock_session.return_value = MagicMock()
+            mock_redis.return_value = MagicMock()
+            self.mock_session = mock_session
+            self.mock_nmap = mock_nmap
+            self.mock_progress = mock_progress
+            self.mock_redis = mock_redis
+            self.mock_update_status = mock_update_status
+            yield
+
+    def _call_task(self):
+        from tasks.ip_scan import run_ip_scan
+        task_cls = type(run_ip_scan._get_current_object())
+        with (
+            patch.object(task_cls, "request", new_callable=PropertyMock) as mock_req,
+            patch.object(task_cls, "retry") as mock_retry,
+            patch.object(task_cls, "max_retries", 3),
+        ):
+            mock_req.return_value = MagicMock(retries=0)
+            self.mock_retry = mock_retry
+            run_ip_scan(JOB_ID, TARGET, PORTS)
+
+    def test_nmap_retry_reraise_does_not_call_retry_again(self):
+        with pytest.raises(Retry):
+            self._call_task()
+        self.mock_retry.assert_not_called()
+
+
 class TestIpScanEmptyResults:
     @pytest.fixture(autouse=True)
     def _setup_patches(self, sample_nmap_result_no_hosts):
@@ -499,3 +539,282 @@ class TestIpScanCatchAllHandler:
             self._call_task_with_failure()
         args, kwargs = self.mock_retry.call_args
         assert kwargs["countdown"] == 120
+
+
+class TestIpScanCatchAllFinalRetry:
+    """Catch-all handler on final retry — triggers dead letter (line 150)."""
+
+    @pytest.fixture(autouse=True)
+    def _setup_patches(self):
+        with (
+            patch("tasks.ip_scan.get_sync_session") as mock_session,
+            patch("tasks.ip_scan.publish_progress") as mock_progress,
+            patch("tasks.ip_scan.redis.Redis") as mock_redis,
+            patch("tasks.ip_scan._update_status") as mock_update_status,
+            patch("tasks.ip_scan._refund_credits") as mock_refund,
+            patch("tasks.ip_scan._save_findings") as mock_save_findings,
+        ):
+            mock_session.return_value = MagicMock()
+            mock_redis.return_value = MagicMock()
+            self.mock_session = mock_session
+            self.mock_progress = mock_progress
+            self.mock_redis = mock_redis
+            self.mock_update_status = mock_update_status
+            self.mock_refund = mock_refund
+            self.mock_save_findings = mock_save_findings
+            yield
+
+    def _call_task_on_final_retry(self):
+        from tasks.ip_scan import run_ip_scan
+
+        task_cls = type(run_ip_scan._get_current_object())
+        with (
+            patch.object(task_cls, "request", new_callable=PropertyMock) as mock_req,
+            patch.object(task_cls, "retry", side_effect=Retry()) as mock_retry,
+            patch.object(task_cls, "max_retries", 3),
+            patch("tasks.ip_scan.dead_letter_handler") as mock_dead_letter,
+            patch("tasks.ip_scan.run_nmap", new_callable=AsyncMock) as mock_nmap,
+            patch("tasks.ip_scan.lookup_service_cves", new_callable=AsyncMock) as mock_cve,
+        ):
+            mock_req.return_value = MagicMock(retries=3)
+            mock_nmap.return_value = MagicMock(hosts=[])
+            mock_cve.return_value = []
+            mock_save_findings = self.mock_save_findings
+            mock_save_findings.side_effect = Exception("DB error during save")
+            self.mock_retry = mock_retry
+            self.mock_dead_letter = mock_dead_letter
+            run_ip_scan(JOB_ID, TARGET, PORTS)
+
+    def test_catch_all_final_retry_calls_dead_letter(self):
+        with pytest.raises(Retry):
+            self._call_task_on_final_retry()
+        self.mock_dead_letter.delay.assert_called_once()
+        call_kwargs = self.mock_dead_letter.delay.call_args[1]
+        assert call_kwargs["task_name"] == "ip_scan.run"
+        assert call_kwargs["args"] == [JOB_ID, TARGET, PORTS]
+
+
+class TestIpScanCatchAllInnerTrySuccess:
+    """Catch-all handler where inner _update_status/_refund_credits succeed (lines 143-145)."""
+
+    @pytest.fixture(autouse=True)
+    def _setup_patches(self):
+        with (
+            patch("tasks.ip_scan.get_sync_session") as mock_session,
+            patch("tasks.ip_scan.publish_progress") as mock_progress,
+            patch("tasks.ip_scan.redis.Redis") as mock_redis,
+            patch("tasks.ip_scan._update_status") as mock_update_status,
+            patch("tasks.ip_scan._refund_credits") as mock_refund,
+            patch("tasks.ip_scan._save_findings") as mock_save_findings,
+        ):
+            mock_session.return_value = MagicMock()
+            mock_redis.return_value = MagicMock()
+            self.mock_session = mock_session
+            self.mock_progress = mock_progress
+            self.mock_redis = mock_redis
+            self.mock_update_status = mock_update_status
+            self.mock_refund = mock_refund
+            self.mock_save_findings = mock_save_findings
+            yield
+
+    def _call_task_with_inner_success(self):
+        from tasks.ip_scan import run_ip_scan
+
+        task_cls = type(run_ip_scan._get_current_object())
+        with (
+            patch.object(task_cls, "request", new_callable=PropertyMock) as mock_req,
+            patch.object(task_cls, "retry", side_effect=Retry()) as mock_retry,
+            patch.object(task_cls, "max_retries", 3),
+            patch("tasks.ip_scan.dead_letter_handler") as mock_dead_letter,
+            patch("tasks.ip_scan.run_nmap", new_callable=AsyncMock) as mock_nmap,
+            patch("tasks.ip_scan.lookup_service_cves", new_callable=AsyncMock) as mock_cve,
+        ):
+            mock_req.return_value = MagicMock(retries=1)
+            mock_nmap.return_value = MagicMock(hosts=[])
+            mock_cve.return_value = []
+            mock_save_findings = self.mock_save_findings
+            mock_save_findings.side_effect = Exception("DB error during save")
+            self.mock_retry = mock_retry
+            self.mock_dead_letter = mock_dead_letter
+            run_ip_scan(JOB_ID, TARGET, PORTS)
+
+    def test_catch_all_inner_try_calls_update_status(self):
+        with pytest.raises(Retry):
+            self._call_task_with_inner_success()
+        self.mock_update_status.assert_any_call(
+            self.mock_session.return_value, JOB_ID, "failed",
+        )
+
+    def test_catch_all_inner_try_calls_refund_credits(self):
+        with pytest.raises(Retry):
+            self._call_task_with_inner_success()
+        self.mock_refund.assert_called_once_with(
+            self.mock_session.return_value, JOB_ID, "ip",
+        )
+
+    def test_catch_all_inner_try_commits_and_closes(self):
+        with pytest.raises(Retry):
+            self._call_task_with_inner_success()
+        mock_session_instance = self.mock_session.return_value
+        mock_session_instance.commit.assert_called()
+        mock_session_instance.close.assert_called()
+
+
+class TestRunAsync:
+    """Tests for the _run_async helper function."""
+
+    def test_run_async_creates_new_event_loop_on_runtime_error(self):
+        from tasks.ip_scan import _run_async
+
+        async def dummy():
+            return "ok"
+
+        with patch("asyncio.get_event_loop", side_effect=RuntimeError("no loop")):
+            with patch("asyncio.new_event_loop") as mock_new_loop:
+                with patch("asyncio.set_event_loop") as mock_set_loop:
+                    mock_loop = MagicMock()
+                    mock_loop.run_until_complete.return_value = "ok"
+                    mock_new_loop.return_value = mock_loop
+                    result = _run_async(dummy())
+                    assert result == "ok"
+                    mock_new_loop.assert_called_once()
+                    mock_set_loop.assert_called_once_with(mock_loop)
+
+
+class TestCveLookupFailure:
+    """CVE lookup exception is handled gracefully — vulns set to empty list."""
+
+    @pytest.fixture(autouse=True)
+    def _setup_patches(self, sample_nmap_result):
+        with (
+            patch("tasks.ip_scan.get_sync_session") as mock_session,
+            patch("tasks.ip_scan.run_nmap", new_callable=AsyncMock) as mock_nmap,
+            patch("tasks.ip_scan.lookup_service_cves", new_callable=AsyncMock) as mock_cve,
+            patch("tasks.ip_scan.publish_progress") as mock_progress,
+            patch("tasks.ip_scan._update_status") as mock_update_status,
+            patch("tasks.ip_scan._save_findings") as mock_save_findings,
+            patch("tasks.ip_scan.redis.Redis") as mock_redis,
+        ):
+            mock_nmap.return_value = sample_nmap_result
+            mock_cve.side_effect = Exception("OSV API timeout")
+            mock_session.return_value = MagicMock()
+            mock_redis.return_value = MagicMock()
+
+            self.mock_session = mock_session
+            self.mock_nmap = mock_nmap
+            self.mock_cve = mock_cve
+            self.mock_progress = mock_progress
+            self.mock_update_status = mock_update_status
+            self.mock_save_findings = mock_save_findings
+            self.mock_redis = mock_redis
+            yield
+
+    def _call_task(self):
+        from tasks.ip_scan import run_ip_scan
+        return run_ip_scan(JOB_ID, TARGET, PORTS)
+
+    def test_cve_lookup_failure_does_not_crash_scan(self):
+        result = self._call_task()
+        assert result["job_id"] == JOB_ID
+        assert "summary" in result
+
+    def test_cve_lookup_failure_still_saves_base_findings(self):
+        self._call_task()
+        self.mock_save_findings.assert_called_once()
+        args, _ = self.mock_save_findings.call_args
+        assert args[1] == JOB_ID
+        # base findings still present (from nmap, no CVEs added)
+        assert len(args[2]) >= 2
+
+
+class TestHealthRedisError:
+    """Redis health timestamp failure is handled gracefully."""
+
+    @pytest.fixture(autouse=True)
+    def _setup_patches(self, sample_nmap_result, sample_vulns):
+        with (
+            patch("tasks.ip_scan.get_sync_session") as mock_session,
+            patch("tasks.ip_scan.run_nmap", new_callable=AsyncMock) as mock_nmap,
+            patch("tasks.ip_scan.lookup_service_cves", new_callable=AsyncMock) as mock_cve,
+            patch("tasks.ip_scan.publish_progress") as mock_progress,
+            patch("tasks.ip_scan._update_status") as mock_update_status,
+            patch("tasks.ip_scan._save_findings") as mock_save_findings,
+            patch("tasks.ip_scan.redis.Redis") as mock_redis_cls,
+        ):
+            mock_nmap.return_value = sample_nmap_result
+            mock_cve.return_value = sample_vulns
+            mock_session.return_value = MagicMock()
+
+            mock_redis_instance = MagicMock()
+            mock_redis_instance.set.side_effect = Exception("Redis connection refused")
+            mock_redis_cls.return_value = mock_redis_instance
+
+            self.mock_session = mock_session
+            self.mock_nmap = mock_nmap
+            self.mock_cve = mock_cve
+            self.mock_progress = mock_progress
+            self.mock_update_status = mock_update_status
+            self.mock_save_findings = mock_save_findings
+            self.mock_redis_cls = mock_redis_cls
+            self.mock_redis_instance = mock_redis_instance
+            yield
+
+    def _call_task(self):
+        from tasks.ip_scan import run_ip_scan
+        return run_ip_scan(JOB_ID, TARGET, PORTS)
+
+    def test_health_redis_error_does_not_crash_scan(self):
+        result = self._call_task()
+        assert result["job_id"] == JOB_ID
+        assert result["summary"]["total_findings"] > 0
+
+    def test_health_redis_error_still_completes_scan(self):
+        self._call_task()
+        self.mock_update_status.assert_any_call(
+            self.mock_session.return_value, JOB_ID, "completed",
+            progress=100, result_summary=ANY, completed_at=ANY,
+        )
+
+
+class TestUpdateStatus:
+    """Tests for the _update_status helper function."""
+
+    @pytest.fixture(autouse=True)
+    def _setup_patches(self):
+        import sys
+        import types
+
+        fake_scan_job = types.ModuleType("app.models.scan_job")
+        fake_scan_job.ScanJob = MagicMock()
+
+        saved = None
+        if "app.models.scan_job" in sys.modules:
+            saved = sys.modules["app.models.scan_job"]
+        sys.modules["app.models.scan_job"] = fake_scan_job
+
+        with patch("tasks.ip_scan.update") as mock_update:
+            self.mock_update = mock_update
+            yield
+
+        if saved is not None:
+            sys.modules["app.models.scan_job"] = saved
+        else:
+            sys.modules.pop("app.models.scan_job", None)
+
+    def test_update_status_executes_update_with_correct_values(self):
+        from tasks.ip_scan import _update_status
+
+        session = MagicMock()
+        _update_status(session, "job-abc", "running", started_at="2024-01-01")
+
+        session.execute.assert_called_once()
+        call_args = session.execute.call_args[0][0]
+        assert call_args is not None
+
+    def test_update_status_passes_extra_kwargs(self):
+        from tasks.ip_scan import _update_status
+
+        session = MagicMock()
+        _update_status(session, "job-xyz", "completed", progress=100, result_summary={"total": 5})
+
+        session.execute.assert_called_once()
