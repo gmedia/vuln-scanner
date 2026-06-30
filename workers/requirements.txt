@@ -4,15 +4,15 @@ redis==5.2.1
 sqlalchemy[asyncio]==2.0.51
 asyncpg==0.31.0
 psycopg2-binary==2.9.12
-pydantic==2.10.3
+pydantic==2.13.4
 pydantic-settings==2.14.2
 httpx==0.28.1
 python-dotenv==1.2.2
 loguru==0.7.3
 pytest==9.1.1
 pytest-asyncio==1.4.0
-pytest-cov==6.0.0
+pytest-cov==7.1.0
 
 # Transitive dependency pins for CVE fixes
 langgraph-checkpoint==4.1.1
-langgraph-sdk==0.3.15
+langgraph-sdk==0.4.2
