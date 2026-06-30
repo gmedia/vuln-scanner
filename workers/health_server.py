@@ -9,7 +9,7 @@ import redis
 from loguru import logger
 
 REDIS_URL = os.getenv("REDIS_URL", f"redis://:{os.getenv('REDIS_PASSWORD', '')}@redis:6379/0")
-_redis_pool = redis.ConnectionPool.from_url(REDIS_URL, socket_connect_timeout=3, socket_timeout=3)  # type: ignore[no-untyped-call]
+_redis_pool = redis.ConnectionPool.from_url(REDIS_URL, socket_connect_timeout=3, socket_timeout=3)
 CELERY_QUEUES = ["ip_scan", "domain_scan", "mobile_scan"]
 _start_time = time.monotonic()
 

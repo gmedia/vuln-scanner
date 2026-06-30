@@ -8,7 +8,7 @@ from celery import shared_task
 from loguru import logger
 
 REDIS_URL = os.getenv("REDIS_URL", f"redis://:{os.getenv('REDIS_PASSWORD', '')}@redis:6379/0")
-_redis_pool = redis.ConnectionPool.from_url(REDIS_URL)  # type: ignore[no-untyped-call]
+_redis_pool = redis.ConnectionPool.from_url(REDIS_URL)
 DEAD_LETTER_MAX = 1000
 
 

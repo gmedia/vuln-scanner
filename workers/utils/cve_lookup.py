@@ -15,7 +15,7 @@ _redis_pool: redis.ConnectionPool | None = None
 def _get_redis_pool() -> redis.ConnectionPool:
     global _redis_pool
     if _redis_pool is None:
-        _redis_pool = redis.ConnectionPool.from_url(REDIS_URL)  # type: ignore[no-untyped-call]
+        _redis_pool = redis.ConnectionPool.from_url(REDIS_URL)
     return _redis_pool
 CVE_CACHE_TTL = int(os.getenv("CVE_CACHE_TTL", "3600"))
 
