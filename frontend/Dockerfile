@@ -26,5 +26,8 @@ FROM nginxinc/nginx-unprivileged:1.27-alpine@sha256:65e3e85dbaed8ba248841d9d58a8
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 EXPOSE 8080
-CMD ["nginx", "-g", "daemon off;"]
+USER root
+ENTRYPOINT ["/docker-entrypoint.sh"]
