@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { History, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { creditApi, type CreditLogItem } from "@/api/credits";
 

@@ -10,7 +10,7 @@ interface CreditStore {
   checkEligibility: (scanType: string) => Promise<ScanEligibility | null>;
 }
 
-export const useCreditStore = create<CreditStore>((set, get) => ({
+export const useCreditStore = create<CreditStore>((set, _get) => ({
   credits: 0,
   isAdmin: false,
   isLoading: false,
