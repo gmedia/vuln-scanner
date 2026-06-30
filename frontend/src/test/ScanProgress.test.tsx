@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import ScanProgress from "@/components/scan/ScanProgress";
 
 const mockNavigate = vi.fn();
@@ -26,7 +26,7 @@ vi.mock("@/hooks/useWebSocket", () => ({
 }));
 
 vi.mock("@/store/scanStore", () => ({
-  useScanStore: vi.fn((selector: any) => {
+  useScanStore: vi.fn((_selector: (_state: unknown) => unknown) => {
     const state = {
       activeJobId: mockStoreState.activeJobId,
       progress: mockStoreState.progress,

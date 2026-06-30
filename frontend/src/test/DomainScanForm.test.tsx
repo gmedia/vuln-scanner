@@ -2,12 +2,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import DomainScanForm from "@/components/scan/DomainScanForm";
 
-const mockMutate = vi.fn();
-const mockNavigate = vi.fn();
-const mockSetActiveScan = vi.fn();
-const mockFetchBalance = vi.fn();
-const mockCheckEligibility = vi.fn();
-
 vi.mock("@/hooks/useScan", () => ({
   useStartIpScan: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useStartDomainScan: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
