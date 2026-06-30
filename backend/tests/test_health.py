@@ -9,8 +9,12 @@ class TestHealthEndpoint:
         connect_cm.__aenter__.return_value = mock_conn
         mock_engine = MagicMock()
         mock_engine.connect.return_value = connect_cm
+        mock_bad_redis = AsyncMock()
+        mock_bad_redis.ping.side_effect = ConnectionError("mock Redis unavailable")
 
-        with patch("app.database.engine", mock_engine):
+        with patch("app.database.engine", mock_engine), patch(
+            "redis.asyncio.from_url", return_value=mock_bad_redis
+        ):
             resp = client.get("/health")
 
         assert resp.status_code == 503

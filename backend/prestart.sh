@@ -11,7 +11,7 @@ set -e
 echo "=== Prestart: validating environment ==="
 
 # --- Env var validation ---
-REQUIRED_VARS="API_KEY DATABASE_URL DATABASE_URL_SYNC REDIS_URL SECRET_KEY"
+REQUIRED_VARS="API_KEY DATABASE_URL DATABASE_URL_SYNC REDIS_URL SECRET_KEY JWT_SECRET"
 MISSING=""
 for var in $REQUIRED_VARS; do
   eval "val=\"\$$var\""
@@ -39,9 +39,20 @@ if echo "$CORS_ORIGINS" | grep -qE '^\*$'; then
   echo "[WARN] CORS_ORIGINS is set to wildcard (*). Restrict to specific origins."
 fi
 
+# --- Warn about default admin credentials ---
+if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASSWORD" ]; then
+  case "$ADMIN_PASSWORD" in
+    change_me*|changeme*|admin|password|123456*)
+      echo "[WARN] ADMIN_PASSWORD appears weak or is a placeholder. Change it."
+      ;;
+  esac
+else
+  echo "[WARN] ADMIN_EMAIL or ADMIN_PASSWORD not set. Admin user will not be seeded."
+fi
+
 # --- Wait for PostgreSQL ---
-DB_HOST=$(echo "$DATABASE_URL_SYNC" | sed 's/.*@//' | sed 's/:.*//')
-DB_PORT=$(echo "$DATABASE_URL_SYNC" | sed 's/.*://' | sed 's/\/.*//')
+DB_HOST=$(echo "$DATABASE_URL_SYNC" | sed 's|.*@||' | sed 's|:.*||')
+DB_PORT=$(echo "$DATABASE_URL_SYNC" | sed 's|.*:||' | sed 's|/.*||')
 echo "Waiting for PostgreSQL at $DB_HOST:$DB_PORT ..."
 for i in $(seq 1 30); do
   if python -c "
@@ -49,9 +60,10 @@ import psycopg2, sys, os
 try:
     psycopg2.connect(os.environ['DATABASE_URL_SYNC'])
     sys.exit(0)
-except Exception:
+except Exception as e:
+    print(f'[psycopg2] {e}', file=sys.stderr)
     sys.exit(1)
-" 2>/dev/null; then
+" ; then
     echo "[OK] PostgreSQL is ready"
     break
   fi
@@ -63,8 +75,8 @@ except Exception:
 done
 
 # --- Wait for Redis ---
-REDIS_HOST=$(echo "$REDIS_URL" | sed 's/.*:\/\///' | sed 's/:.*//')
-REDIS_PORT=$(echo "$REDIS_URL" | sed 's/.*:/:' | sed 's/.*://' | sed 's/\/.*//')
+REDIS_HOST=$(echo "$REDIS_URL" | sed 's|.*://||' | sed 's|:.*||')
+REDIS_PORT=$(echo "$REDIS_URL" | sed 's|.*:||' | sed 's|/.*||')
 [ -z "$REDIS_PORT" ] && REDIS_PORT=6379
 echo "Waiting for Redis at $REDIS_HOST:$REDIS_PORT ..."
 for i in $(seq 1 30); do

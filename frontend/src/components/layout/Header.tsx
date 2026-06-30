@@ -1,6 +1,11 @@
 import type { ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { User, LogOut, ChevronDown } from "lucide-react";
 import { useScanStore } from "@/store/scanStore";
+import { useAuthStore } from "@/store/authStore";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { SCAN_TYPE_LABELS } from "@/lib/constants";
 
 interface HeaderProps {
@@ -8,9 +13,32 @@ interface HeaderProps {
 }
 
 function Header({ children }: HeaderProps) {
+  const navigate = useNavigate();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const activeJobId = useScanStore((s) => s.activeJobId);
   const scanType = useScanStore((s) => s.scanType);
   const progress = useScanStore((s) => s.progress);
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const logout = useAuthStore((s) => s.logout);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  async function handleSignOut() {
+    setDropdownOpen(false);
+    await logout();
+    navigate("/login");
+  }
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border bg-card/50 px-4 backdrop-blur-sm">
@@ -31,6 +59,35 @@ function Header({ children }: HeaderProps) {
           </div>
         )}
       </div>
+
+      {isAuthenticated && user && (
+        <div ref={dropdownRef} className="relative">
+          <button
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          >
+            <User className="h-4 w-4" />
+            <span className="hidden font-mono text-xs sm:inline">{user.email}</span>
+            <ChevronDown className="h-3 w-3" />
+          </button>
+
+          {dropdownOpen && (
+            <div className="absolute right-0 top-full mt-1 w-56 border border-border bg-card p-1 rounded-md shadow-lg">
+              <div className="px-3 py-2 text-xs font-mono text-muted-foreground">
+                Signed in as <span className="text-foreground">{user.email}</span>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={handleSignOut}
+                className="w-full justify-start px-3 py-2 text-xs font-mono text-red-400 hover:bg-red-400/10"
+              >
+                <LogOut className="mr-2 h-3 w-3" />
+                Sign Out
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
     </header>
   );
 }

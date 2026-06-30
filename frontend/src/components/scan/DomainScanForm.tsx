@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Globe, Loader2 } from "lucide-react";
+import { Globe, Loader2, Coins } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useStartDomainScan } from "@/hooks/useScan";
 import { useScanStore } from "@/store/scanStore";
+import { useCreditStore } from "@/store/creditStore";
 
 function DomainScanForm() {
   const [domain, setDomain] = useState("");
@@ -12,11 +13,16 @@ function DomainScanForm() {
   const navigate = useNavigate();
   const startDomainScan = useStartDomainScan();
   const setActiveScan = useScanStore((s) => s.setActiveScan);
+  const { credits, fetchBalance, checkEligibility } = useCreditStore();
+
+  useEffect(() => {
+    fetchBalance();
+  }, [fetchBalance]);
 
   const isValidDomain = (d: string) =>
     /^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/.test(d);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError("");
     const trimmed = domain.trim();
     if (!trimmed) {
@@ -28,11 +34,22 @@ function DomainScanForm() {
       return;
     }
 
+    const eligibility = await checkEligibility("domain");
+    if (!eligibility) {
+      setError("Failed to check credit eligibility.");
+      return;
+    }
+    if (!eligibility.eligible) {
+      setError(`Insufficient credits. Required: ${eligibility.required_credits}, Available: ${eligibility.current_credits}`);
+      return;
+    }
+
     startDomainScan.mutate(
       { domain: trimmed },
       {
         onSuccess: (data) => {
           setActiveScan(data.id, "domain");
+          fetchBalance();
           navigate(`/scan/${data.id}`);
         },
         onError: () => {
@@ -44,6 +61,14 @@ function DomainScanForm() {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2">
+        <span className="font-mono text-xs text-muted-foreground">Available Credits</span>
+        <span className="flex items-center gap-1 font-mono text-sm font-bold text-primary">
+          <Coins className="h-3.5 w-3.5" />
+          {credits}
+        </span>
+      </div>
+
       <div>
         <label className="mb-1.5 block font-mono text-xs font-medium text-muted-foreground">
           TARGET DOMAIN

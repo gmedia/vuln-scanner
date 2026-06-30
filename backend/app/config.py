@@ -1,4 +1,5 @@
 import logging
+import os
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -11,22 +12,53 @@ RECOMMENDED_STRENGTH = 32
 _SENTINEL = "__UNSET__"
 
 
+def _build_redis_url() -> str:
+    """Build a Redis URL, including password if REDIS_PASSWORD is set."""
+    password = __import__("os").environ.get("REDIS_PASSWORD", "")
+    if password:
+        return f"redis://:{password}@redis:6379/0"
+    return "redis://redis:6379/0"
+
+
 class Settings(BaseSettings):
     """Application settings loaded from environment and .env file."""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    database_url: str = "postgresql+asyncpg://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner"
-    database_url_sync: str = "postgresql://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner"
-    redis_url: str = "redis://redis:6379/0"
-    celery_broker_url: str = "redis://redis:6379/0"
-    celery_result_backend: str = "redis://redis:6379/0"
+    database_url: str = os.environ["DATABASE_URL"]
+    database_url_sync: str = os.environ["DATABASE_URL_SYNC"]
+    redis_url: str = _build_redis_url()
+    celery_broker_url: str = _build_redis_url()
+    celery_result_backend: str = _build_redis_url()
 
     api_key: str = _SENTINEL
     secret_key: str = _SENTINEL
     osv_base_url: str = "https://api.osv.dev/v1"
     max_upload_size_mb: int = 500
     cors_origins: str = "http://localhost:5173,http://localhost,http://localhost:8000"
+
+    jwt_secret: str = ""
+    jwt_algorithm: str = "HS256"
+    jwt_access_expire_minutes: int = 30
+    jwt_refresh_expire_days: int = 7
+    cookie_secure: bool = True
+
+    smtp_host: str = "localhost"
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_pass: str = ""
+    smtp_from: str = "VulnScanner <noreply@vs.appmedia.id>"
+    frontend_url: str = "https://vs.appmedia.id"
+
+    sentry_dsn: str = ""
+
+    admin_email: str = ""
+    admin_password: str = ""
+    default_register_credits: int = 30
+    ip_scan_credit_cost: int = 1
+    domain_scan_credit_cost: int = 2
+    apk_scan_credit_cost: int = 3
+    ipa_scan_credit_cost: int = 3
 
 
 settings = Settings()
@@ -64,3 +96,6 @@ def check_settings() -> None:
 
     if settings.cors_origins == "*":
         logger.warning("[SECURITY] CORS_ORIGINS is set to wildcard (*).  Restrict to specific origins.")
+
+    if not settings.cors_origins.strip():
+        logger.warning("[SECURITY] CORS_ORIGINS is empty. No origins will be allowed.")

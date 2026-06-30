@@ -1,7 +1,7 @@
 import hashlib
 import json
 import os
-from typing import Any
+from typing import Any, cast
 
 import httpx
 import redis
@@ -9,6 +9,14 @@ from loguru import logger
 
 OSV_BASE_URL = os.getenv("OSV_BASE_URL", "https://api.osv.dev/v1")
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+_redis_pool: redis.ConnectionPool | None = None
+
+
+def _get_redis_pool() -> redis.ConnectionPool:
+    global _redis_pool
+    if _redis_pool is None:
+        _redis_pool = redis.ConnectionPool.from_url(REDIS_URL)  # type: ignore[no-untyped-call]
+    return _redis_pool
 CVE_CACHE_TTL = int(os.getenv("CVE_CACHE_TTL", "3600"))
 
 
@@ -17,14 +25,15 @@ def _cache_key(package_name: str, ecosystem: str, version: str) -> str:
     return f"cve_cache:{hashlib.sha256(raw.encode()).hexdigest()}"
 
 
-def _get_cached_vulns(package_name: str, ecosystem: str, version: str) -> list[dict] | None:
+def _get_cached_vulns(package_name: str, ecosystem: str, version: str) -> list[dict[str, Any]] | None:
     try:
-        r = redis.Redis.from_url(REDIS_URL)
+        r = redis.Redis(connection_pool=_get_redis_pool())
         key = _cache_key(package_name, ecosystem, version)
         data = r.get(key)
-        if data:
+        if data is not None:
+            assert isinstance(data, (str, bytes, bytearray))
             logger.info("CVE cache HIT for {ecosystem}:{pkg}@{ver}", ecosystem=ecosystem, pkg=package_name, ver=version)
-            return json.loads(data)
+            return cast(list[dict[str, Any]], json.loads(data))
         logger.debug("CVE cache MISS for {ecosystem}:{pkg}@{ver}", ecosystem=ecosystem, pkg=package_name, ver=version)
     except Exception as e:
         logger.warning("CVE cache read error for {ecosystem}:{pkg}@{ver}: {error}",
@@ -32,9 +41,9 @@ def _get_cached_vulns(package_name: str, ecosystem: str, version: str) -> list[d
     return None
 
 
-def _set_cached_vulns(package_name: str, ecosystem: str, version: str, vulns: list[dict]) -> None:
+def _set_cached_vulns(package_name: str, ecosystem: str, version: str, vulns: list[dict[str, Any]]) -> None:
     try:
-        r = redis.Redis.from_url(REDIS_URL)
+        r = redis.Redis(connection_pool=_get_redis_pool())
         r.setex(_cache_key(package_name, ecosystem, version), CVE_CACHE_TTL, json.dumps(vulns))
     except Exception as e:
         logger.warning("CVE cache write error for {ecosystem}:{pkg}@{ver}: {error}",
@@ -53,7 +62,7 @@ async def _query_ecosystem(package_name: str, ecosystem: str, version: str) -> l
         async with httpx.AsyncClient(timeout=10) as client:
             resp = await client.post(f"{OSV_BASE_URL}/query", json=payload)
             if resp.status_code == 200:
-                vulns = resp.json().get("vulns", [])
+                vulns: list[dict[str, Any]] = resp.json().get("vulns", [])
                 _set_cached_vulns(package_name, ecosystem, version, vulns)
                 return vulns
             logger.warning("OSV query returned status {status} for {ecosystem}:{pkg}@{ver}",
@@ -127,7 +136,7 @@ def _extract_remediation(vuln: dict[str, Any]) -> str | None:
     return "\n".join(parts) if parts else None
 
 
-def format_vuln_finding(vuln: dict[str, Any], cvss_score: float | None) -> dict:
+def format_vuln_finding(vuln: dict[str, Any], cvss_score: float | None) -> dict[str, Any]:
     """Format an OSV vulnerability into a standardized finding dict with severity and remediation."""
     aliases = vuln.get("aliases", [])
     cve_id = ""

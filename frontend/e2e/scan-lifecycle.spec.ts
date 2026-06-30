@@ -1,15 +1,29 @@
 import { test, expect } from "@playwright/test";
 
-const API_KEY = process.env.API_KEY || "dev-api-key-change-me";
-const BASE_URL = "http://localhost:8000";
+const API_KEY = process.env.API_KEY || "e2e-test-api-key";
+const BASE_URL = process.env.BASE_URL || "http://localhost:8000";
+
+let authToken: string;
 
 test.describe("Scan Lifecycle", () => {
+  test.beforeAll(async ({ request }) => {
+    const loginRes = await request.post(`${BASE_URL}/api/auth/login`, {
+      headers: { "Content-Type": "application/json", "X-E2E-Test": "true" },
+      data: { email: "e2e@vulnscan.dev", password: "E2eTestPass123!" },
+    });
+    expect(loginRes.status()).toBe(200);
+    const body = await loginRes.json();
+    authToken = body.access_token;
+  });
+
   test.describe("Domain scan — full lifecycle via API + UI", () => {
     test("triggers a domain scan and shows its detail page", async ({ page, request }) => {
       const resp = await request.post(`${BASE_URL}/api/scan/domain`, {
         headers: {
           "Content-Type": "application/json",
           "X-API-Key": API_KEY,
+          "Authorization": `Bearer ${authToken}`,
+          "X-E2E-Test": "true",
         },
         data: { domain: "example.com" },
       });
@@ -21,7 +35,7 @@ test.describe("Scan Lifecycle", () => {
       const scanId = body.id;
 
       // Wait for the scan to appear in history
-      await page.goto("/");
+      await page.goto("/dashboard");
       await expect(page.locator(`a[href='/scan/${scanId}']`)).toBeVisible({
         timeout: 15_000,
       });
@@ -41,6 +55,8 @@ test.describe("Scan Lifecycle", () => {
         headers: {
           "Content-Type": "application/json",
           "X-API-Key": API_KEY,
+          "Authorization": `Bearer ${authToken}`,
+          "X-E2E-Test": "true",
         },
         data: { target: "127.0.0.1", ports: "1-100" },
       });
@@ -57,7 +73,7 @@ test.describe("Scan Lifecycle", () => {
       });
 
       // Scan should be reflected in dashboard history
-      await page.goto("/");
+      await page.goto("/dashboard");
       await expect(page.locator(`a[href='/scan/${scanId}']`)).toBeVisible({
         timeout: 15_000,
       });
@@ -71,6 +87,8 @@ test.describe("Scan Lifecycle", () => {
         headers: {
           "Content-Type": "application/json",
           "X-API-Key": API_KEY,
+          "Authorization": `Bearer ${authToken}`,
+          "X-E2E-Test": "true",
         },
         data: { target: "127.0.0.1", ports: "1-50" },
       });
@@ -79,7 +97,7 @@ test.describe("Scan Lifecycle", () => {
 
       // Fetch status
       const getResp = await request.get(`${BASE_URL}/api/scan/${id}`, {
-        headers: { "X-API-Key": API_KEY },
+        headers: { "X-API-Key": API_KEY, "Authorization": `Bearer ${authToken}`, "X-E2E-Test": "true" },
       });
       expect(getResp.status()).toBe(200);
       const job = await getResp.json();
@@ -88,7 +106,7 @@ test.describe("Scan Lifecycle", () => {
 
       // History includes it
       const historyResp = await request.get(`${BASE_URL}/api/scan/history`, {
-        headers: { "X-API-Key": API_KEY },
+        headers: { "X-API-Key": API_KEY, "Authorization": `Bearer ${authToken}`, "X-E2E-Test": "true" },
       });
       expect(historyResp.status()).toBe(200);
       const history = await historyResp.json();

@@ -1,7 +1,8 @@
 import { Link, NavLink } from "react-router-dom";
-import { X, LayoutDashboard, Radar, Globe, Smartphone, Crosshair } from "lucide-react";
+import { X, LayoutDashboard, Radar, Globe, Smartphone, Crosshair, Shield, Users, DollarSign, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useScanStore } from "@/store/scanStore";
+import { useAuthStore } from "@/store/authStore";
 import { Separator } from "@/components/ui/Separator";
 import { Badge } from "@/components/ui/Badge";
 
@@ -11,7 +12,7 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/scan/ip", label: "IP Scanner", icon: Radar },
   { to: "/scan/domain", label: "Domain Scanner", icon: Globe },
   { to: "/scan/mobile", label: "Mobile Scanner", icon: Smartphone },
@@ -19,6 +20,7 @@ const navItems = [
 
 function Sidebar({ open, onClose }: SidebarProps) {
   const activeJobId = useScanStore((s) => s.activeJobId);
+  const isAdmin = useAuthStore((s) => s.user?.is_admin ?? false);
 
   return (
     <aside
@@ -47,7 +49,7 @@ function Sidebar({ open, onClose }: SidebarProps) {
           <NavLink
             key={item.to}
             to={item.to}
-            end={item.to === "/"}
+            end={item.to === "/dashboard"}
             onClick={onClose}
             className={({ isActive }) =>
               cn(
@@ -62,6 +64,77 @@ function Sidebar({ open, onClose }: SidebarProps) {
             {item.label}
           </NavLink>
         ))}
+
+        <NavLink
+          to="/credit-history"
+          onClick={onClose}
+          className={({ isActive }) =>
+            cn(
+              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
+              isActive
+                ? "bg-primary/10 text-primary [&>svg]:text-primary"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground",
+            )
+          }
+        >
+          <History className="h-4 w-4 shrink-0" />
+          Credit History
+        </NavLink>
+
+        {isAdmin && (
+          <>
+            <Separator className="my-2" />
+            <p className="px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              Admin
+            </p>
+            <NavLink
+              to="/admin"
+              end
+              onClick={onClose}
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
+                  isActive
+                    ? "bg-primary/10 text-primary [&>svg]:text-primary"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                )
+              }
+            >
+              <Shield className="h-4 w-4 shrink-0" />
+              Dashboard
+            </NavLink>
+            <NavLink
+              to="/admin/users"
+              onClick={onClose}
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
+                  isActive
+                    ? "bg-primary/10 text-primary [&>svg]:text-primary"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                )
+              }
+            >
+              <Users className="h-4 w-4 shrink-0" />
+              Users
+            </NavLink>
+            <NavLink
+              to="/admin/pricing"
+              onClick={onClose}
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
+                  isActive
+                    ? "bg-primary/10 text-primary [&>svg]:text-primary"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                )
+              }
+            >
+              <DollarSign className="h-4 w-4 shrink-0" />
+              Pricing
+            </NavLink>
+          </>
+        )}
       </nav>
 
       {activeJobId && (

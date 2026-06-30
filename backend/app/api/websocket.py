@@ -8,20 +8,34 @@ from sqlalchemy import select
 from app.config import settings
 from app.database import async_session
 from app.models.api_key import ApiKey
+from app.models.scan_job import ScanJob
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["websocket"])
 
 redis: Redis | None = None
+_ws_rate_limit_redis: Redis | None = None
+
+WS_RATE_LIMIT_MAX = 10
+WS_RATE_LIMIT_WINDOW = 60
+WS_RATE_LIMIT_PREFIX = "ratelimit:ws"
 
 
-async def get_redis():
+async def get_redis() -> Redis:
     """Return a shared Redis connection, creating it lazily on first call."""
     global redis
     if redis is None:
         redis = Redis.from_url(settings.redis_url)
     return redis
+
+
+async def _get_ws_rate_limit_redis() -> Redis:
+    """Return a Redis connection for WebSocket rate limiting (decode_responses=True)."""
+    global _ws_rate_limit_redis
+    if _ws_rate_limit_redis is None:
+        _ws_rate_limit_redis = Redis.from_url(settings.redis_url, decode_responses=True)
+    return _ws_rate_limit_redis
 
 
 async def validate_api_key(api_key: str | None) -> bool:
@@ -47,11 +61,45 @@ async def scan_progress(
     websocket: WebSocket,
     job_id: str,
     api_key: str | None = Query(None, alias="api_key"),
-):
+) -> None:
     """WebSocket endpoint that streams scan progress updates for a given job ID."""
     # Validate API key before accepting the connection
     if not await validate_api_key(api_key):
         await websocket.close(code=4001, reason="Unauthorized: invalid or missing API key")
+        return
+
+    # Defense-in-depth: verify the job exists (non-master keys must have valid job)
+    is_master_key = api_key == settings.api_key
+    if not is_master_key:
+        async with async_session() as session:
+            job_result = await session.execute(
+                select(ScanJob.id).where(ScanJob.id == job_id)
+            )
+            if not job_result.scalar_one_or_none():
+                await websocket.close(code=4004, reason="Job not found")
+                return
+
+    # IP-based rate limiting
+    client_ip = websocket.client.host if websocket.client else "unknown"
+    key = f"{WS_RATE_LIMIT_PREFIX}:{client_ip}"
+    try:
+        rl = await _get_ws_rate_limit_redis()
+        count = await rl.incr(key)
+        if count == 1:
+            await rl.expire(key, WS_RATE_LIMIT_WINDOW)
+        if count > WS_RATE_LIMIT_MAX:
+            logger.warning(
+                "WebSocket rate limit hit: ip=%s count=%d/%d window=%ds",
+                client_ip,
+                count,
+                WS_RATE_LIMIT_MAX,
+                WS_RATE_LIMIT_WINDOW,
+            )
+            await websocket.close(code=4008, reason="Rate limit exceeded: max 10 WebSocket connections per minute")
+            return
+    except Exception:
+        logger.critical("Rate limit infrastructure unavailable for WebSocket (Redis down)")
+        await websocket.close(code=4001, reason="Service temporarily unavailable")
         return
 
     await websocket.accept()

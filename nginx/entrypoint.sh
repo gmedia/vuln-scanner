@@ -3,15 +3,19 @@ set -e
 
 DOMAIN="${DOMAIN:-localhost}"
 MAX_UPLOAD="${MAX_UPLOAD_SIZE_MB:-500}M"
+API_KEY="${API_KEY:-}"
+RATE_LIMIT="${RATE_LIMIT:-30r/m}"
 
 sed -i "s/__DOMAIN__/$DOMAIN/g" /etc/nginx/conf.d/default.conf
 sed -i "s/__MAX_UPLOAD_SIZE__/$MAX_UPLOAD/g" /etc/nginx/conf.d/default.conf
+sed -i "s/__API_KEY__/$API_KEY/g" /etc/nginx/conf.d/default.conf
+sed -i "s|__RATE_LIMIT__|$RATE_LIMIT|g" /etc/nginx/conf.d/default.conf
 
 LETSENCRYPT_DIR="/etc/letsencrypt/live/$DOMAIN"
 if [ ! -f "$LETSENCRYPT_DIR/fullchain.pem" ]; then
     echo "No Let's Encrypt certificates found for $DOMAIN — generating self-signed cert for development"
     mkdir -p "$LETSENCRYPT_DIR"
-    openssl req -x509 -nodes -newkey rsa:4096 -days 365 \
+    openssl req -x509 -nodes -newkey rsa:4096 -sha256 -days 365 \
         -keyout "$LETSENCRYPT_DIR/privkey.pem" \
         -out "$LETSENCRYPT_DIR/fullchain.pem" \
         -subj "/CN=$DOMAIN" 2>/dev/null

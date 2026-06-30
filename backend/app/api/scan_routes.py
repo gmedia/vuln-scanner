@@ -1,4 +1,5 @@
 import contextlib
+import html
 import os
 import shutil
 from datetime import UTC, datetime
@@ -8,6 +9,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.models.scan_job import ScanJob
+from app.models.user import User
 from app.schemas.scan import (
     DomainScanRequest,
     PaginatedResponse,
@@ -16,13 +19,14 @@ from app.schemas.scan import (
     ScanJobResponse,
     ScanRequest,
 )
+from app.services.auth import get_current_user
 from app.services.scanner import ScannerService
 
 router = APIRouter(tags=["scans"])
 UPLOAD_DIR = "/tmp/scans"
 
 
-def _export_json(job: ScanJobDetailResponse) -> dict:
+def _export_json(job: ScanJobDetailResponse) -> dict[str, object]:
     return {
         "scan_id": str(job.id),
         "scan_type": job.scan_type,
@@ -111,44 +115,50 @@ def _render_pdf_html(job: ScanJobDetailResponse) -> str:
         sev_class = f"sev-{f.severity}" if f.severity in ("critical", "high", "medium", "low", "info") else ""
         findings_rows += f"""
 <tr class="{sev_class}">
-  <td><span class="badge badge-{f.severity}">{f.severity.upper()}</span></td>
-  <td>{f.category or ''}</td>
-  <td>{f.title[:100]}</td>
-  <td>{f.cve_id or ''}</td>
-  <td>{f.cvss_score or ''}</td>
+  <td><span class="badge badge-{f.severity}">{html.escape(f.severity.upper() if f.severity else "")}</span></td>
+  <td>{html.escape(f.category or "")}</td>
+  <td>{html.escape((f.title or "")[:100])}</td>
+  <td>{html.escape(f.cve_id or "")}</td>
+  <td>{html.escape(str(f.cvss_score) if f.cvss_score is not None else "")}</td>
 </tr>"""
 
     return PDF_TEMPLATE.format(
-        target=job.target,
-        scan_type=job.scan_type,
-        status=job.status,
+        target=html.escape(job.target or ""),
+        scan_type=html.escape(job.scan_type or ""),
+        status=html.escape(job.status or ""),
         duration=f"{(job.completed_at - job.started_at).total_seconds():.0f}s"
         if job.started_at and job.completed_at
         else "N/A",
-        total_findings=summary.get("total_findings", 0),
-        critical=summary.get("critical", 0),
-        high=summary.get("high", 0),
-        medium=summary.get("medium", 0),
-        low=summary.get("low", 0),
-        info=summary.get("info", 0),
+        total_findings=html.escape(str(summary.get("total_findings", 0))),
+        critical=html.escape(str(summary.get("critical", 0))),
+        high=html.escape(str(summary.get("high", 0))),
+        medium=html.escape(str(summary.get("medium", 0))),
+        low=html.escape(str(summary.get("low", 0))),
+        info=html.escape(str(summary.get("info", 0))),
         exported_at=datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC"),
         findings_rows=findings_rows,
     )
 
 
 @router.post("/scan/ip", response_model=ScanJobResponse, status_code=202)
-async def start_ip_scan(req: ScanRequest, db: AsyncSession = Depends(get_db)):
-    """Submit a new IP/port scan job. Returns the created scan job with pending status."""
+async def start_ip_scan(
+    req: ScanRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ScanJob:
     svc = ScannerService(db)
-    job = await svc.start_scan(scan_type="ip", target=req.target, ports=req.ports)
+    job = await svc.start_scan(user=current_user, scan_type="ip", target=req.target, ports=req.ports)
     return job
 
 
 @router.post("/scan/domain", response_model=ScanJobResponse, status_code=202)
-async def start_domain_scan(req: DomainScanRequest, db: AsyncSession = Depends(get_db)):
-    """Submit a new domain scan job. Returns the created scan job with pending status."""
+async def start_domain_scan(
+    req: DomainScanRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ScanJob:
     svc = ScannerService(db)
-    job = await svc.start_scan(scan_type="domain", target=req.domain)
+    job = await svc.start_scan(user=current_user, scan_type="domain", target=req.domain)
     return job
 
 
@@ -156,9 +166,9 @@ async def start_domain_scan(req: DomainScanRequest, db: AsyncSession = Depends(g
 async def start_mobile_scan(
     file: UploadFile = File(...),
     platform: str = Form(...),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
-    """Submit a new mobile (APK/IPA) scan job. Accepts file upload and platform type."""
+) -> ScanJob:
     if platform not in ("android", "ios"):
         raise HTTPException(status_code=400, detail="platform must be 'android' or 'ios'")
     if not file.filename:
@@ -175,7 +185,13 @@ async def start_mobile_scan(
     try:
         scan_type = "apk" if platform == "android" else "ipa"
         svc = ScannerService(db)
-        job = await svc.start_scan(scan_type=scan_type, target=file.filename, platform=platform, file_path=file_path)
+        job = await svc.start_scan(
+            user=current_user,
+            scan_type=scan_type,
+            target=file.filename,
+            platform=platform,
+            file_path=file_path,
+        )
         return job
     except Exception:
         with contextlib.suppress(Exception):
@@ -188,36 +204,48 @@ async def get_scan_history(
     page: int = 1,
     limit: int = 20,
     scan_type: str | None = None,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> PaginatedResponse:
     """List scan jobs with pagination. Optionally filter by scan type."""
     svc = ScannerService(db)
-    return await svc.get_history(page=page, limit=limit, scan_type=scan_type)
+    return await svc.get_history(page=page, limit=limit, scan_type=scan_type, user_id=current_user.id)
 
 
 @router.get("/scan/{job_id}", response_model=ScanJobDetailResponse)
-async def get_scan(job_id: str, db: AsyncSession = Depends(get_db)):
+async def get_scan(
+    job_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ScanJobDetailResponse:
     """Retrieve a single scan job with all findings by job ID."""
     svc = ScannerService(db)
-    job = await svc.get_job(job_id)
+    job = await svc.get_job(job_id, user_id=current_user.id)
     if not job:
         raise HTTPException(status_code=404, detail="Scan job not found")
     return job
 
 
 @router.get("/scan/{job_id}/findings", response_model=list[ScanFindingResponse])
-async def get_scan_findings(job_id: str, db: AsyncSession = Depends(get_db)):
+async def get_scan_findings(
+    job_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+) -> list[ScanFindingResponse]:
     """Retrieve only the findings for a scan job."""
     svc = ScannerService(db)
-    findings = await svc.get_findings(job_id)
+    findings = await svc.get_findings(job_id, user_id=current_user.id)
     return findings
 
 
-@router.get("/scan/{job_id}/export")
-async def export_scan(job_id: str, format: str = Query(default="json"), db: AsyncSession = Depends(get_db)):
+@router.get("/scan/{job_id}/export", response_model=None)
+async def export_scan(
+    job_id: str,
+    format: str = Query(default="json"),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse | HTMLResponse:
     """Export scan results as JSON or HTML. Returns file download or rendered page."""
     svc = ScannerService(db)
-    job = await svc.get_job(job_id)
+    job = await svc.get_job(job_id, user_id=current_user.id)
     if not job:
         raise HTTPException(status_code=404, detail="Scan job not found")
 
@@ -225,7 +253,10 @@ async def export_scan(job_id: str, format: str = Query(default="json"), db: Asyn
         result = _export_json(job)
         return JSONResponse(
             content=result,
-            headers={"Content-Disposition": f'attachment; filename="scan_{job_id}.json"'},
+            headers={
+                "Content-Disposition": f'attachment; filename="scan_{job_id}.json"',
+                "Content-Type": "application/octet-stream",
+            },
         )
 
     if format == "html":

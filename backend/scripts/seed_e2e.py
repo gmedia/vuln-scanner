@@ -6,16 +6,19 @@ Inserts sample scan jobs + findings so frontend E2E tests have data to work with
 import asyncio
 import uuid
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
-from sqlalchemy import text
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.config import settings
 from app.database import Base
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
+from app.models.user import User
+from app.services.auth import hash_password
 
-SEED_DATA = [
+SEED_DATA: list[dict[str, Any]] = [
     {
         "scan_type": "ip",
         "target": "8.8.8.8",
@@ -88,7 +91,7 @@ SEED_DATA = [
 ]
 
 
-async def seed():
+async def seed() -> None:
     engine = create_async_engine(settings.database_url, echo=False)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -96,9 +99,33 @@ async def seed():
     async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     async with async_session() as session:
+        e2e_email = "e2e@vulnscan.dev"
+        result = await session.execute(select(User).where(User.email == e2e_email))
+        e2e_user = result.scalar_one_or_none()
+        if not e2e_user:
+            e2e_user = User(
+                email=e2e_email,
+                password_hash=hash_password("E2eTestPass123!"),
+                is_verified=True,
+                verified_at=datetime.now(UTC),
+                credits=100,
+            )
+            session.add(e2e_user)
+            await session.flush()
+            print(f"Created verified E2E test user: {e2e_email}")
+
+        # Ensure E2E user always has enough credits for scan tests
+        if e2e_user.credits < 100:
+            await session.execute(
+                text("UPDATE users SET credits = 100 WHERE id = :uid"),
+                {"uid": e2e_user.id},
+            )
+            await session.flush()
+            print(f"Topped up E2E user credits to 100 (was {e2e_user.credits})")
+
         result = await session.execute(text("SELECT COUNT(*) FROM scan_jobs"))
-        count = result.scalar()
-        if count and count > 0:
+        count: int = result.scalar_one()  # type: ignore[assignment]
+        if count > 0:
             print(f"Database already has {count} scan jobs — skipping seed.")
             await session.close()
             await engine.dispose()
@@ -113,6 +140,7 @@ async def seed():
 
             job = ScanJob(
                 id=job_id,
+                user_id=e2e_user.id,
                 scan_type=item["scan_type"],
                 target=item["target"],
                 status=item["status"],

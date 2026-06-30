@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import { useScanStore } from "@/store/scanStore";
+
+function renderWithRouter(ui: React.ReactElement) {
+  return render(<MemoryRouter>{ui}</MemoryRouter>);
+}
 
 describe("Header", () => {
   beforeEach(() => {
@@ -14,13 +19,13 @@ describe("Header", () => {
   });
 
   it("renders brand name VULNSCAN", () => {
-    render(<Header />);
+    renderWithRouter(<Header />);
     expect(screen.getByText("VULN")).toBeInTheDocument();
     expect(screen.getByText("SCAN")).toBeInTheDocument();
   });
 
   it("renders children", () => {
-    render(
+    renderWithRouter(
       <Header>
         <button>Test Child</button>
       </Header>,
@@ -34,13 +39,13 @@ describe("Header", () => {
       scanType: "ip",
       progress: 45,
     });
-    render(<Header />);
+    renderWithRouter(<Header />);
     expect(screen.getByText("IP Address")).toBeInTheDocument();
     expect(screen.getByText("45%")).toBeInTheDocument();
   });
 
   it("hides progress when no active scan", () => {
-    render(<Header />);
+    renderWithRouter(<Header />);
     expect(screen.queryByText("%")).toBeNull();
   });
 
@@ -50,7 +55,7 @@ describe("Header", () => {
       scanType: "domain",
       progress: 80,
     });
-    render(<Header />);
+    renderWithRouter(<Header />);
     expect(screen.getByText("Domain")).toBeInTheDocument();
     expect(screen.getByText("80%")).toBeInTheDocument();
   });
@@ -61,7 +66,7 @@ describe("Header", () => {
       scanType: "unknown_type",
       progress: 10,
     });
-    render(<Header />);
+    renderWithRouter(<Header />);
     expect(screen.getByText("unknown_type")).toBeInTheDocument();
     expect(screen.getByText("10%")).toBeInTheDocument();
   });

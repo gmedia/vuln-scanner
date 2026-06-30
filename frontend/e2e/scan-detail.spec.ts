@@ -11,11 +11,11 @@ test.describe("Scan Detail Page", () => {
     await page.goto("/scan/non-existent-id");
     await expect(page.locator("h2:has-text('SCAN NOT FOUND')")).toBeVisible({ timeout: 10_000 });
     await page.locator("a:has-text('Back to Dashboard')").click();
-    await expect(page).toHaveURL("/");
+    await expect(page).toHaveURL("/dashboard");
   });
 
   async function getFirstCompletedScanHref(page: any): Promise<string | null> {
-    await page.goto("/");
+    await page.goto("/dashboard");
     try {
       await page.waitForSelector("a[href^='/scan/']", { timeout: 15_000 });
     } catch {
@@ -62,7 +62,7 @@ test.describe("Scan Detail Page", () => {
     test.skip(!href, "No completed scans found — run seed_e2e first");
     await page.goto(href!);
     await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({ timeout: 15_000 });
-    await page.locator("a[href='/']").first().click();
-    await expect(page).toHaveURL("/");
+    await page.locator("a[href='/dashboard']").first().click();
+    await expect(page).toHaveURL("/dashboard");
   });
 });

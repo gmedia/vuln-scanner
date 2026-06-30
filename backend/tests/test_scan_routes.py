@@ -70,13 +70,14 @@ def test_start_mobile_scan_invalid_platform(client):
 # ── GET /api/scan/{id} ─────────────────────────────────────────────────────
 
 @pytest.mark.asyncio
-async def test_get_scan_detail_found(client, db_session):
+async def test_get_scan_detail_found(client, db_session, sample_user):
     job = ScanJob(
         id=uuid.uuid4(),
         scan_type="domain",
         target="example.com",
         status="completed",
         progress=100,
+        user_id=sample_user.id,
     )
     db_session.add(job)
     await db_session.commit()
@@ -98,13 +99,14 @@ def test_get_scan_detail_not_found(client):
 # ── GET /api/scan/{id}/findings ────────────────────────────────────────────
 
 @pytest.mark.asyncio
-async def test_get_scan_findings(client, db_session):
+async def test_get_scan_findings(client, db_session, sample_user):
     job = ScanJob(
         id=uuid.uuid4(),
         scan_type="ip",
         target="10.0.0.1",
         status="completed",
         progress=100,
+        user_id=sample_user.id,
     )
     db_session.add(job)
     await db_session.commit()
@@ -132,13 +134,14 @@ async def test_get_scan_findings(client, db_session):
 # ── GET /api/scan/history ──────────────────────────────────────────────────
 
 @pytest.mark.asyncio
-async def test_export_invalid_format(client, db_session):
+async def test_export_invalid_format(client, db_session, sample_user):
     job = ScanJob(
         id=uuid.uuid4(),
         scan_type="ip",
         target="10.0.0.1",
         status="completed",
         progress=100,
+        user_id=sample_user.id,
     )
     db_session.add(job)
     await db_session.commit()

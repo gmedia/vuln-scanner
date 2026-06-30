@@ -1,9 +1,10 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload, Smartphone, FileWarning, Loader2, X, File } from "lucide-react";
+import { Upload, Smartphone, FileWarning, Loader2, X, File, Coins } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useStartMobileScan } from "@/hooks/useScan";
 import { useScanStore } from "@/store/scanStore";
+import { useCreditStore } from "@/store/creditStore";
 
 const MAX_FILE_SIZE = 500 * 1024 * 1024;
 
@@ -16,6 +17,11 @@ function MobileUpload() {
   const navigate = useNavigate();
   const startMobileScan = useStartMobileScan();
   const setActiveScan = useScanStore((s) => s.setActiveScan);
+  const { credits, fetchBalance, checkEligibility } = useCreditStore();
+
+  useEffect(() => {
+    fetchBalance();
+  }, [fetchBalance]);
 
   const validateFile = useCallback((f: File): string | null => {
     const ext = f.name.split(".").pop()?.toLowerCase();
@@ -63,9 +69,20 @@ function MobileUpload() {
     setFile(f);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!file) {
       setError("Please select a file to scan.");
+      return;
+    }
+
+    const scanType = platform === "android" ? "apk" : "ipa";
+    const eligibility = await checkEligibility(scanType);
+    if (!eligibility) {
+      setError("Failed to check credit eligibility.");
+      return;
+    }
+    if (!eligibility.eligible) {
+      setError(`Insufficient credits. Required: ${eligibility.required_credits}, Available: ${eligibility.current_credits}`);
       return;
     }
 
@@ -73,7 +90,8 @@ function MobileUpload() {
       { file, platform },
       {
         onSuccess: (data) => {
-          setActiveScan(data.id, platform === "android" ? "apk" : "ipa");
+          setActiveScan(data.id, scanType);
+          fetchBalance();
           navigate(`/scan/${data.id}`);
         },
         onError: () => {
@@ -97,6 +115,14 @@ function MobileUpload() {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2">
+        <span className="font-mono text-xs text-muted-foreground">Available Credits</span>
+        <span className="flex items-center gap-1 font-mono text-sm font-bold text-primary">
+          <Coins className="h-3.5 w-3.5" />
+          {credits}
+        </span>
+      </div>
+
       <div>
         <label className="mb-1.5 block font-mono text-xs font-medium text-muted-foreground">
           PLATFORM

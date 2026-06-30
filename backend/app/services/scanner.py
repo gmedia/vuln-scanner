@@ -1,13 +1,19 @@
 import math
 import uuid
+from uuid import UUID
 
 from celery import Celery
-from sqlalchemy import func, select
+from celery.result import AsyncResult
+from fastapi import HTTPException
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.models.credit_log import CreditLog
+from app.models.pricing import PricingConfig
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
+from app.models.user import User
 from app.schemas.scan import PaginatedResponse, ScanFindingResponse, ScanJobDetailResponse, ScanJobResponse
 
 celery_app = Celery(
@@ -16,34 +22,98 @@ celery_app = Celery(
     backend=settings.celery_result_backend,
 )
 
+SCAN_TYPE_PRICING_MAP = {
+    "ip": "ip_scan_credit_cost",
+    "domain": "domain_scan_credit_cost",
+    "apk": "apk_scan_credit_cost",
+    "ipa": "ipa_scan_credit_cost",
+}
+
 
 class ScannerService:
-    """Service layer for creating, querying, and listing scan jobs and findings."""
-
     def __init__(self, db: AsyncSession):
         self.db = db
 
     async def start_scan(
         self,
+        user: User,
         scan_type: str,
         target: str,
         ports: str | None = None,
         platform: str | None = None,
         file_path: str | None = None,
     ) -> ScanJob:
-        """Create a new scan job, persist it, and dispatch a Celery task to the appropriate queue."""
+        result = await self.db.execute(
+            select(PricingConfig).where(PricingConfig.scan_type == scan_type)
+        )
+        pricing = result.scalar_one_or_none()
+        if pricing:
+            credit_cost = pricing.credit_cost
+        else:
+            config_attr = SCAN_TYPE_PRICING_MAP.get(scan_type, "")
+            credit_cost = getattr(settings, config_attr, 0) if config_attr else 0
+
+        # Atomic check-and-deduct: only deduct if user has enough credits
+        if credit_cost > 0:
+            await self.db.execute(
+                text(
+                    "UPDATE users SET credits = credits - :cost "
+                    "WHERE id = :uid AND credits >= :cost"
+                ),
+                {"cost": credit_cost, "uid": user.id.hex},
+            )
+            await self.db.flush()
+            check_result = await self.db.execute(
+                select(User.credits).where(User.id == user.id)
+            )
+            current_credits = check_result.scalar_one()
+            if current_credits == user.credits:
+                raise HTTPException(
+                    status_code=402,
+                    detail=f"Insufficient credits. Need {credit_cost}, have {user.credits}.",
+                )
+
         job = ScanJob(
             id=uuid.uuid4(),
             scan_type=scan_type,
             target=target,
             status="pending",
             progress=0,
+            user_id=user.id,
+            credit_cost=credit_cost,
         )
         self.db.add(job)
-        await self.db.commit()
-        await self.db.refresh(job)
+        await self.db.flush()
 
-        task = self._dispatch_task(str(job.id), scan_type, target, ports, platform, file_path)
+        credit_log = CreditLog(
+            user_id=user.id,
+            amount=credit_cost,
+            type="deduct",
+            description=f"Scan: {scan_type} on {target}",
+            reference_id=job.id,
+        )
+        self.db.add(credit_log)
+        await self.db.flush()
+
+        try:
+            task = self._dispatch_task(str(job.id), scan_type, target, ports, platform, file_path)
+        except Exception:
+            # Rollback credit deduction and job creation
+            await self.db.execute(
+                text("UPDATE users SET credits = credits + :cost WHERE id = :uid"),
+                {"cost": credit_cost, "uid": user.id.hex},
+            )
+            refund_log = CreditLog(
+                user_id=user.id,
+                amount=credit_cost,
+                type="refund",
+                description=f"Refund: failed to dispatch {scan_type} scan on {target}",
+                reference_id=job.id,
+            )
+            self.db.add(refund_log)
+            await self.db.commit()
+            raise HTTPException(status_code=500, detail="Failed to dispatch scan task") from None
+
         job.celery_task_id = task.id
         self.db.add(job)
         await self.db.commit()
@@ -59,7 +129,7 @@ class ScannerService:
         ports: str | None,
         platform: str | None,
         file_path: str | None = None,
-    ):
+    ) -> AsyncResult:
         if scan_type == "ip":
             return celery_app.send_task(
                 "ip_scan.run",
@@ -80,11 +150,9 @@ class ScannerService:
             )
         raise ValueError(f"Unknown scan type: {scan_type}")
 
-    async def get_job(self, job_id: str) -> ScanJobDetailResponse | None:
-        """Retrieve a scan job by ID with all associated findings."""
-        result = await self.db.execute(
-            select(ScanJob).where(ScanJob.id == job_id)
-        )
+    async def get_job(self, job_id: str, user_id: UUID) -> ScanJobDetailResponse | None:
+        query = select(ScanJob).where(ScanJob.id == job_id, ScanJob.user_id == user_id)
+        result = await self.db.execute(query)
         job = result.scalar_one_or_none()
         if not job:
             return None
@@ -98,22 +166,38 @@ class ScannerService:
         detail.findings = [ScanFindingResponse.model_validate(f) for f in findings]
         return detail
 
-    async def get_findings(self, job_id: str) -> list[ScanFindingResponse]:
-        """Retrieve only the findings for a scan job, without job metadata."""
+    async def get_findings(self, job_id: str, user_id: UUID) -> list[ScanFindingResponse]:
+        # Verify job exists and belongs to user before returning findings
+        job_result = await self.db.execute(
+            select(ScanJob.id).where(ScanJob.id == job_id, ScanJob.user_id == user_id)
+        )
+        if not job_result.scalar_one_or_none():
+            return []
         result = await self.db.execute(
             select(ScanFinding).where(ScanFinding.job_id == job_id)
         )
         findings = result.scalars().all()
         return [ScanFindingResponse.model_validate(f) for f in findings]
 
-    async def get_history(self, page: int = 1, limit: int = 20, scan_type: str | None = None) -> PaginatedResponse:
-        """List scan jobs with pagination, optionally filtered by scan type."""
+    async def get_history(
+        self,
+        page: int = 1,
+        limit: int = 20,
+        scan_type: str | None = None,
+        user_id: UUID | None = None,
+    ) -> PaginatedResponse:
         query = select(ScanJob)
         count_query = select(func.count(ScanJob.id))
 
         if scan_type:
+            if scan_type not in ("ip", "domain", "apk", "ipa"):
+                raise HTTPException(status_code=400, detail="Invalid scan type")
             query = query.where(ScanJob.scan_type == scan_type)
             count_query = count_query.where(ScanJob.scan_type == scan_type)
+
+        if user_id is not None:
+            query = query.where(ScanJob.user_id == user_id)
+            count_query = count_query.where(ScanJob.user_id == user_id)
 
         total_result = await self.db.execute(count_query)
         total = total_result.scalar() or 0

@@ -105,11 +105,12 @@ class TestCveCache:
 class TestScanJob:
     @pytest.mark.asyncio
     @pytest.mark.parametrize("scan_type", ["ip", "domain", "apk", "ipa"])
-    async def test_create_with_scan_types(self, db_session, scan_type):
+    async def test_create_with_scan_types(self, db_session, sample_user, scan_type):
         job = ScanJob(
             id=uuid.uuid4(),
             scan_type=scan_type,
             target="example.com",
+            user_id=sample_user.id,
         )
         db_session.add(job)
         await db_session.commit()
@@ -122,12 +123,13 @@ class TestScanJob:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("status", ["pending", "running", "completed", "failed"])
-    async def test_create_with_statuses(self, db_session, status):
+    async def test_create_with_statuses(self, db_session, sample_user, status):
         job = ScanJob(
             id=uuid.uuid4(),
             scan_type="ip",
             target="192.168.1.1",
             status=status,
+            user_id=sample_user.id,
         )
         db_session.add(job)
         await db_session.commit()
@@ -137,7 +139,7 @@ class TestScanJob:
         assert job.scan_type == "ip"
 
     @pytest.mark.asyncio
-    async def test_create_with_all_optional_fields(self, db_session):
+    async def test_create_with_all_optional_fields(self, db_session, sample_user):
         now = datetime.now(UTC)
         job_id = uuid.uuid4()
         job = ScanJob(
@@ -148,6 +150,7 @@ class TestScanJob:
             progress=100,
             result_summary={"ports": [80, 443]},
             celery_task_id="celery-task-001",
+            user_id=sample_user.id,
             started_at=now,
             completed_at=now,
         )
@@ -166,12 +169,13 @@ class TestScanJob:
         assert job.completed_at is not None
 
     @pytest.mark.asyncio
-    async def test_very_long_target(self, db_session):
+    async def test_very_long_target(self, db_session, sample_user):
         long_target = "a" * 5000
         job = ScanJob(
             id=uuid.uuid4(),
             scan_type="domain",
             target=long_target,
+            user_id=sample_user.id,
         )
         db_session.add(job)
         await db_session.commit()

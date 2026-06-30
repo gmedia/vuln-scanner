@@ -22,7 +22,7 @@ class ScanFinding(Base):
     cve_id: Mapped[str | None] = mapped_column(String(20), nullable=True)
     cvss_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     remediation: Mapped[str | None] = mapped_column(Text, nullable=True)
-    raw_data: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    raw_data: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True)
     found_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     __table_args__ = (

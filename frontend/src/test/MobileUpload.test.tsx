@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import MobileUpload from "@/components/scan/MobileUpload";
 
 vi.mock("@/hooks/useScan", () => ({
@@ -17,6 +18,23 @@ vi.mock("@/store/scanStore", () => ({
       setActiveScan: vi.fn(),
       setProgress: vi.fn(),
       clearActiveScan: vi.fn(),
+    };
+    return selector ? selector(state) : state;
+  }),
+}));
+vi.mock("@/store/creditStore", () => ({
+  useCreditStore: vi.fn((selector) => {
+    const state = {
+      credits: 100,
+      isAdmin: false,
+      isLoading: false,
+      error: null,
+      fetchBalance: vi.fn(),
+      checkEligibility: vi.fn().mockResolvedValue({
+        eligible: true,
+        required_credits: 10,
+        current_credits: 100,
+      }),
     };
     return selector ? selector(state) : state;
   }),
@@ -79,5 +97,258 @@ describe("MobileUpload", () => {
     expect(
       screen.getByRole("button", { name: /start mobile scan/i }),
     ).toBeInTheDocument();
+  });
+
+  it("displays available credits", () => {
+    render(<MobileUpload />);
+    expect(screen.getByText("Available Credits")).toBeInTheDocument();
+    expect(screen.getByText("100")).toBeInTheDocument();
+  });
+
+  it("switches to iOS platform when iOS button is clicked", async () => {
+    const user = userEvent.setup();
+    render(<MobileUpload />);
+    const iosBtn = screen.getByRole("button", { name: /ios \(\.ipa\)/i });
+    await user.click(iosBtn);
+    expect(screen.getByText(/drop \.ipa file here/i)).toBeInTheDocument();
+  });
+
+  it("shows error for wrong file type on Android platform", async () => {
+    render(<MobileUpload />);
+    const file = new File(["test"], "test.ipa", { type: "application/octet-stream" });
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    expect(screen.getByText("Invalid file type. Expected .apk for Android.")).toBeInTheDocument();
+  });
+
+  it("shows error for wrong file type on iOS platform", async () => {
+    const user = userEvent.setup();
+    render(<MobileUpload />);
+    const iosBtn = screen.getByRole("button", { name: /ios \(\.ipa\)/i });
+    await user.click(iosBtn);
+    const file = new File(["test"], "test.apk", { type: "application/vnd.android.package-archive" });
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    expect(screen.getByText("Invalid file type. Expected .ipa for iOS.")).toBeInTheDocument();
+  });
+
+  it("shows error for file exceeding max size", async () => {
+    render(<MobileUpload />);
+    const largeFile = new File([""], "test.apk", { type: "application/vnd.android.package-archive" });
+    Object.defineProperty(largeFile, "size", { value: 501 * 1024 * 1024 });
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [largeFile] } });
+    expect(screen.getByText("File too large. Maximum size is 500MB.")).toBeInTheDocument();
+  });
+
+  it("displays selected file info", async () => {
+    render(<MobileUpload />);
+    const file = new File(["test content"], "my-app.apk", { type: "application/vnd.android.package-archive" });
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(screen.getByText("my-app.apk")).toBeInTheDocument();
+    });
+  });
+
+  it("clears file when clear button is clicked", async () => {
+    const user = userEvent.setup();
+    render(<MobileUpload />);
+    const file = new File(["test"], "test.apk", { type: "application/vnd.android.package-archive" });
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(screen.getByText("test.apk")).toBeInTheDocument();
+    });
+    const clearBtn = screen.getByRole("button", { name: "" });
+    await user.click(clearBtn);
+    await waitFor(() => {
+      expect(screen.queryByText("test.apk")).not.toBeInTheDocument();
+      expect(screen.getByText(/drop \.apk file here/i)).toBeInTheDocument();
+    });
+  });
+
+  it("clears file when switching platform", async () => {
+    const user = userEvent.setup();
+    render(<MobileUpload />);
+    const file = new File(["test"], "test.apk", { type: "application/vnd.android.package-archive" });
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(screen.getByText("test.apk")).toBeInTheDocument();
+    });
+    const iosBtn = screen.getByRole("button", { name: /ios \(\.ipa\)/i });
+    await user.click(iosBtn);
+    await waitFor(() => {
+      expect(screen.queryByText("test.apk")).not.toBeInTheDocument();
+      expect(screen.getByText(/drop \.ipa file here/i)).toBeInTheDocument();
+    });
+  });
+
+  it("enables submit button when valid file is selected", async () => {
+    render(<MobileUpload />);
+    const file = new File(["test"], "app.apk", { type: "application/vnd.android.package-archive" });
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /start mobile scan/i })).not.toBeDisabled();
+    });
+  });
+
+
+
+  it("handles drag and drop", async () => {
+    render(<MobileUpload />);
+    const dropZone = screen.getByText(/drop \.apk file here/i).parentElement as HTMLElement;
+    const file = new File(["test"], "app.apk", { type: "application/vnd.android.package-archive" });
+    const dataTransfer = { files: [file] };
+    fireEvent.dragOver(dropZone);
+    expect(dropZone).toHaveClass("border-primary");
+    fireEvent.drop(dropZone, { dataTransfer });
+    await waitFor(() => {
+      expect(screen.getByText("app.apk")).toBeInTheDocument();
+    });
+  });
+
+  it("shows error when dropping invalid file", async () => {
+    render(<MobileUpload />);
+    const dropZone = screen.getByText(/drop \.apk file here/i).parentElement as HTMLElement;
+    const file = new File(["test"], "test.txt", { type: "text/plain" });
+    const dataTransfer = { files: [file] };
+    fireEvent.drop(dropZone, { dataTransfer });
+    expect(screen.getByText("Invalid file type. Expected .apk for Android.")).toBeInTheDocument();
+  });
+
+  it("handles drag leave", async () => {
+    render(<MobileUpload />);
+    const dropZone = screen.getByText(/drop \.apk file here/i).parentElement as HTMLElement;
+    fireEvent.dragOver(dropZone);
+    expect(dropZone).toHaveClass("border-primary");
+    fireEvent.dragLeave(dropZone);
+    expect(dropZone).not.toHaveClass("border-primary");
+  });
+
+  it("clicking drop zone triggers file input", async () => {
+    const user = userEvent.setup();
+    render(<MobileUpload />);
+    const dropZone = screen.getByText(/drop \.apk file here/i).parentElement as HTMLElement;
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const clickSpy = vi.spyOn(fileInput, "click");
+    await user.click(dropZone);
+    expect(clickSpy).toHaveBeenCalled();
+  });
+
+  it("formats file size correctly for bytes", async () => {
+    render(<MobileUpload />);
+    const file = new File(["x"], "test.apk", { type: "application/vnd.android.package-archive" });
+    Object.defineProperty(file, "size", { value: 500 });
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(screen.getByText(/500 B/)).toBeInTheDocument();
+    });
+  });
+
+  it("formats file size correctly for kilobytes", async () => {
+    render(<MobileUpload />);
+    const file = new File(["x"], "test.apk", { type: "application/vnd.android.package-archive" });
+    Object.defineProperty(file, "size", { value: 2048 });
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(screen.getByText(/2\.0 KB/)).toBeInTheDocument();
+    });
+  });
+
+  it("formats file size correctly for megabytes", async () => {
+    render(<MobileUpload />);
+    const file = new File(["x"], "test.apk", { type: "application/vnd.android.package-archive" });
+    Object.defineProperty(file, "size", { value: 2 * 1024 * 1024 });
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(screen.getByText(/2\.0 MB/)).toBeInTheDocument();
+    });
+  });
+
+  it("handles file selection cancel gracefully", async () => {
+    render(<MobileUpload />);
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [] } });
+    expect(screen.getByText(/drop \.apk file here/i)).toBeInTheDocument();
+  });
+
+  it("shows correct accept attribute for Android", () => {
+    render(<MobileUpload />);
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(fileInput).toHaveAttribute("accept", ".apk");
+  });
+
+  it("shows correct accept attribute for iOS", async () => {
+    const user = userEvent.setup();
+    render(<MobileUpload />);
+    const iosBtn = screen.getByRole("button", { name: /ios \(\.ipa\)/i });
+    await user.click(iosBtn);
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(fileInput).toHaveAttribute("accept", ".ipa");
+  });
+
+  it("drop zone has correct styling when dragging", () => {
+    render(<MobileUpload />);
+    const dropZone = screen.getByText(/drop \.apk file here/i).parentElement as HTMLElement;
+    fireEvent.dragOver(dropZone);
+    expect(dropZone.className).toContain("border-primary");
+    expect(dropZone.className).toContain("bg-primary/5");
+  });
+
+  it("drop zone has correct styling when not dragging", () => {
+    render(<MobileUpload />);
+    const dropZone = screen.getByText(/drop \.apk file here/i).parentElement as HTMLElement;
+    expect(dropZone.className).toContain("border-border");
+  });
+
+  it("shows upload icon in drop zone", () => {
+    render(<MobileUpload />);
+    const uploadIcon = document.querySelector(".lucide-upload");
+    expect(uploadIcon).toBeInTheDocument();
+  });
+
+  it("shows smartphone icon in platform buttons", () => {
+    render(<MobileUpload />);
+    const smartphoneIcons = document.querySelectorAll(".lucide-smartphone");
+    expect(smartphoneIcons.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("shows file icon when file is selected", async () => {
+    render(<MobileUpload />);
+    const file = new File(["test"], "test.apk", { type: "application/vnd.android.package-archive" });
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    await waitFor(() => {
+      const fileIcon = document.querySelector(".lucide-file");
+      expect(fileIcon).toBeInTheDocument();
+    });
+  });
+
+  it("shows x icon for clear button when file is selected", async () => {
+    render(<MobileUpload />);
+    const file = new File(["test"], "test.apk", { type: "application/vnd.android.package-archive" });
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    await waitFor(() => {
+      const xIcon = document.querySelector(".lucide-x");
+      expect(xIcon).toBeInTheDocument();
+    });
+  });
+
+  it("shows file warning icon when error is displayed", async () => {
+    render(<MobileUpload />);
+    const file = new File(["test"], "test.ipa", { type: "application/octet-stream" });
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    await waitFor(() => {
+      const fileWarningIcon = document.querySelector(".lucide-file-warning");
+      expect(fileWarningIcon).toBeInTheDocument();
+    });
   });
 });

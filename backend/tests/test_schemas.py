@@ -32,6 +32,21 @@ class TestScanRequest:
         with pytest.raises(ValidationError):
             ScanRequest(target="10.0.0.1", ports="abc")
 
+    @pytest.mark.parametrize(
+        "target",
+        [
+            "invalid",
+            "http://example.com",
+            "not-a-valid-target",
+        ],
+    )
+    def test_validate_target_rejects_invalid_input(self, target):
+        with pytest.raises(ValidationError) as exc_info:
+            ScanRequest(target=target)
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "target must be a valid IPv4 address or fully-qualified domain name" in errors[0]["msg"]
+
 
 class TestDomainScanRequest:
     def test_valid(self):
@@ -53,6 +68,8 @@ class TestPaginatedResponse:
             progress=100,
             result_summary=None,
             celery_task_id=None,
+            user_id=uuid.uuid4(),
+            credit_cost=0,
             started_at=None,
             completed_at=None,
             created_at=datetime.now(UTC),

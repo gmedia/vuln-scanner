@@ -3,6 +3,7 @@ import os
 import time
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 
 import redis
 from celery import shared_task
@@ -24,13 +25,14 @@ from utils.domain_utils import (
 from utils.nmap_runner import findings_from_nmap, run_nmap
 from utils.severity import compute_severity_summary, sort_findings_by_severity
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+REDIS_URL = os.getenv("REDIS_URL", f"redis://:{os.getenv('REDIS_PASSWORD', '')}@redis:6379/0")
+_redis_pool = redis.ConnectionPool.from_url(REDIS_URL)  # type: ignore[no-untyped-call]
 
 
-def publish_progress(job_id: str, step: str, progress: int, message: str):
+def publish_progress(job_id: str, step: str, progress: int, message: str) -> None:
     """Publish a progress update to the scan's Redis pubsub channel."""
     try:
-        r = redis.Redis.from_url(REDIS_URL)
+        r = redis.Redis(connection_pool=_redis_pool)
         r.publish(
             f"scan_progress:{job_id}",
             json.dumps({"type": "progress", "step": step, "progress": progress, "message": message}),
@@ -39,7 +41,7 @@ def publish_progress(job_id: str, step: str, progress: int, message: str):
         logger.warning("Redis publish failed for job {job_id} step {step}: {error}", job_id=job_id, step=step, error=e)
 
 
-def _run_async(coro):
+def _run_async(coro: Any) -> Any:
     import asyncio
     try:
         loop = asyncio.get_event_loop()
@@ -49,8 +51,8 @@ def _run_async(coro):
     return loop.run_until_complete(coro)
 
 
-@shared_task(bind=True, name="domain_scan.run", max_retries=3)
-def run_domain_scan(self, job_id: str, domain: str):
+@shared_task(bind=True, name="domain_scan.run", max_retries=3)  # type: ignore
+def run_domain_scan(self: Any, job_id: str, domain: str) -> dict[str, Any]:
     """Execute a full domain scan: DNS, subdomains, HTTP, SSL, headers, tech stack, nmap, and CVEs."""
     logger.info("Domain scan started: job={job_id} domain={domain}", job_id=job_id, domain=domain)
     domain = domain.lower().strip()
@@ -155,7 +157,7 @@ def run_domain_scan(self, job_id: str, domain: str):
                        f"({summary['critical']}C/{summary['high']}H/{summary['medium']}M/{summary['low']}L)")
 
         try:
-            r = redis.Redis.from_url(REDIS_URL)
+            r = redis.Redis(connection_pool=_redis_pool)
             r.set("health:last_task_completed", time.time())
         except Exception as e:
             logger.warning("Failed to update Redis health timestamp for job {job_id}: {error}", job_id=job_id, error=e)
@@ -164,6 +166,7 @@ def run_domain_scan(self, job_id: str, domain: str):
     except Exception as e:
         try:
             _update_status(session, job_id, "failed")
+            _refund_credits(session, job_id, "domain")
             session.commit()
             session.close()
         except Exception as e2:
@@ -179,13 +182,13 @@ def run_domain_scan(self, job_id: str, domain: str):
         raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries)) from e
 
 
-def _update_status(session, job_id: str, status: str, **kwargs):
+def _update_status(session: Any, job_id: str, status: str, **kwargs: Any) -> None:
     from app.models.scan_job import ScanJob
     values = {"status": status, **kwargs}
     session.execute(update(ScanJob).where(ScanJob.id == job_id).values(**values))
 
 
-def _save_findings(session, job_id: str, findings: list[dict]):
+def _save_findings(session: Any, job_id: str, findings: list[dict[str, Any]]) -> None:
     from app.models.scan_finding import ScanFinding
     for f in findings:
         finding = ScanFinding(
@@ -201,3 +204,27 @@ def _save_findings(session, job_id: str, findings: list[dict]):
             raw_data=f.get("raw_data"),
         )
         session.add(finding)
+
+
+def _refund_credits(session: Any, job_id: str, scan_type: str) -> None:
+    from app.models.credit_log import CreditLog
+    from app.models.scan_job import ScanJob
+    from app.models.user import User
+
+    job = session.query(ScanJob).where(ScanJob.id == job_id).one_or_none()
+    if not job or not job.user_id or not job.credit_cost:
+        return
+
+    user = session.query(User).where(User.id == job.user_id).one_or_none()
+    if not user:
+        return
+
+    user.credits += job.credit_cost
+    refund_log = CreditLog(
+        user_id=user.id,
+        amount=job.credit_cost,
+        type="refund",
+        description=f"Refund: {scan_type} scan failed",
+        reference_id=job.id,
+    )
+    session.add(refund_log)

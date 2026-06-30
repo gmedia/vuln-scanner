@@ -1,11 +1,11 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class KeyCreateRequest(BaseModel):
-    name: str
+    name: str = Field(..., max_length=100, description="API key name (max 100 chars)")
     rate_limit: int = 60
 
 

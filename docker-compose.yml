@@ -7,6 +7,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-vuln_scanner}
       POSTGRES_USER: ${POSTGRES_USER:-vuln_scanner}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -16,22 +18,26 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
   redis:
     image: redis:8-alpine
     container_name: vuln-redis
     restart: unless-stopped
-    command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD:-redis_dev_password}
+    command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD} --appendonly yes
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     volumes:
       - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
       - redis_data:/data
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
   backend:
     build:
@@ -48,11 +54,17 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       DATABASE_URL_SYNC: ${DATABASE_URL_SYNC}
       REDIS_URL: ${REDIS_URL}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       CELERY_BROKER_URL: ${CELERY_BROKER_URL}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost,http://localhost:8000}
       API_KEY: ${API_KEY}
       SECRET_KEY: ${SECRET_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_ACCESS_EXPIRE_MINUTES: ${JWT_ACCESS_EXPIRE_MINUTES:-30}
+      JWT_REFRESH_EXPIRE_DAYS: ${JWT_REFRESH_EXPIRE_DAYS:-7}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
       MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-500}
     ports:
@@ -82,6 +94,8 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       DATABASE_URL_SYNC: ${DATABASE_URL_SYNC}
+      REDIS_URL: ${REDIS_URL}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       CELERY_BROKER_URL: ${CELERY_BROKER_URL}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
@@ -94,7 +108,7 @@ services:
       - scan_data:/tmp/scans
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/ready')"]
-      interval: 15s
+      interval: 5s
       timeout: 5s
       retries: 5
       start_period: 15s
@@ -113,6 +127,8 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       DATABASE_URL_SYNC: ${DATABASE_URL_SYNC}
+      REDIS_URL: ${REDIS_URL}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       CELERY_BROKER_URL: ${CELERY_BROKER_URL}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
@@ -123,7 +139,7 @@ services:
       - ./backend:/backend
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/ready')"]
-      interval: 15s
+      interval: 5s
       timeout: 5s
       retries: 5
       start_period: 15s
@@ -142,6 +158,8 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       DATABASE_URL_SYNC: ${DATABASE_URL_SYNC}
+      REDIS_URL: ${REDIS_URL}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       CELERY_BROKER_URL: ${CELERY_BROKER_URL}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
@@ -153,7 +171,7 @@ services:
       - scan_data:/tmp/scans
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/ready')"]
-      interval: 15s
+      interval: 5s
       timeout: 5s
       retries: 5
       start_period: 15s
@@ -170,7 +188,7 @@ services:
     environment:
       VITE_API_URL: ""
       VITE_WS_URL: ""
-      VITE_API_KEY: ${API_KEY}
+      API_KEY: ${API_KEY}
     ports:
       - "5173:5173"
     volumes:
@@ -179,7 +197,7 @@ services:
     command: sh -c "test -d node_modules || npm install; npm run dev -- --host 0.0.0.0"
     healthcheck:
       test: ["CMD-SHELL", "pgrep -f 'vite' > /dev/null 2>&1 || exit 1"]
-      interval: 15s
+      interval: 5s
       timeout: 5s
       retries: 10
       start_period: 30s
@@ -196,6 +214,7 @@ services:
     environment:
       DOMAIN: ${DOMAIN:-localhost}
       MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-500}
+      API_KEY: ${API_KEY}
     volumes:
       - ./certbot/www:/var/www/certbot
       - ./certbot/conf:/etc/letsencrypt

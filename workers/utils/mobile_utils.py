@@ -3,8 +3,10 @@ import plistlib
 import re
 import shutil
 import tempfile
+import unicodedata
 import zipfile
 from dataclasses import dataclass, field
+from typing import Any
 
 from loguru import logger
 
@@ -34,7 +36,7 @@ class IpaInfo:
     platform: str = ""
     ats_exceptions: list[str] = field(default_factory=list)
     custom_url_schemes: list[str] = field(default_factory=list)
-    app_transport_security: dict | None = None
+    app_transport_security: dict[str, Any] | None = None
 
 
 SECRET_PATTERNS = [
@@ -68,11 +70,40 @@ DANGEROUS_PERMISSIONS = {
 }
 
 
-def analyze_apk(file_path: str) -> tuple[AndroidManifestInfo, list[dict], list[str]]:
+def _safe_extract(zf: zipfile.ZipFile, member: str, dest_dir: str) -> bool:
+    """Extract a single zip member to dest_dir, validating that the resolved path stays within dest_dir.
+
+    Returns True on success, False if the member was skipped due to path traversal risk.
+    """
+    # Normalize Unicode to prevent NFC/NFD bypass attacks (e.g. cafe\u0301 vs café)
+    normalized_member = unicodedata.normalize('NFC', member)
+    target_path = os.path.realpath(os.path.join(dest_dir, normalized_member))
+    dest_real = os.path.realpath(dest_dir)
+    if not target_path.startswith(dest_real + os.sep) and target_path != dest_real:
+        logger.warning("Skipping zip member with unsafe path: {member}", member=member)
+        return False
+
+    try:
+        info = zf.getinfo(member)
+        if info.is_dir():
+            os.makedirs(target_path, exist_ok=True)
+            return True
+    except KeyError:
+        pass
+
+    os.makedirs(os.path.dirname(target_path), exist_ok=True)
+    # Use zf.open() + direct write to eliminate TOCTOU: we write directly to the
+    # already-validated target_path instead of letting zf.extract() re-resolve.
+    with zf.open(member) as src, open(target_path, 'wb') as dst:
+        shutil.copyfileobj(src, dst)
+    return True
+
+
+def analyze_apk(file_path: str) -> tuple[AndroidManifestInfo, list[dict[str, Any]], list[str]]:
     """Analyze an APK file: parse manifest, scan for secrets, and extract library names."""
     info = AndroidManifestInfo()
     extracts_dir = tempfile.mkdtemp(prefix="apk_")
-    secret_findings: list[dict] = []
+    secret_findings: list[dict[str, Any]] = []
     classes_dex: list[str] = []
     lib_files: list[str] = []
 
@@ -84,8 +115,7 @@ def analyze_apk(file_path: str) -> tuple[AndroidManifestInfo, list[dict], list[s
             logger.info("APK extracted: {n} files, {dex} dex, {lib} libs",
                         n=len(all_files), dex=len(classes_dex), lib=len(lib_files))
 
-            if "AndroidManifest.xml" in all_files:
-                zf.extract("AndroidManifest.xml", extracts_dir)
+            if "AndroidManifest.xml" in all_files and _safe_extract(zf, "AndroidManifest.xml", extracts_dir):
                 manifest_path = os.path.join(extracts_dir, "AndroidManifest.xml")
                 info = _parse_android_manifest(manifest_path)
 
@@ -104,7 +134,7 @@ def analyze_apk(file_path: str) -> tuple[AndroidManifestInfo, list[dict], list[s
     return info, findings, libraries
 
 
-def analyze_ipa(file_path: str) -> tuple[IpaInfo, list[dict], list[str]]:
+def analyze_ipa(file_path: str) -> tuple[IpaInfo, list[dict[str, Any]], list[str]]:
     """Analyze an IPA file: parse Info.plist, scan for secrets, and extract library names."""
     info = IpaInfo()
     extracts_dir = tempfile.mkdtemp(prefix="ipa_")
@@ -117,7 +147,8 @@ def analyze_ipa(file_path: str) -> tuple[IpaInfo, list[dict], list[str]]:
             plist_candidates = [f for f in all_files if f.endswith(".app/Info.plist") or "Info.plist" in f]
             for plist_path in plist_candidates:
                 try:
-                    zf.extract(plist_path, extracts_dir)
+                    if not _safe_extract(zf, plist_path, extracts_dir):
+                        continue
                     extracted_path = os.path.join(extracts_dir, plist_path)
                     with open(extracted_path, "rb") as pf:
                         plist_data = plistlib.load(pf)
@@ -135,7 +166,7 @@ def analyze_ipa(file_path: str) -> tuple[IpaInfo, list[dict], list[str]]:
 
     findings = _build_ios_findings(info)
     libraries = _extract_library_names([], lib_files)
-    secret_findings = _scan_secrets([])
+    secret_findings = _scan_secrets("")
 
     return info, findings + secret_findings, libraries
 
@@ -196,7 +227,7 @@ def _sdk_to_android_version(sdk: int) -> str:
     return versions.get(sdk, str(sdk))
 
 
-def _parse_ios_plist(plist_data: dict) -> IpaInfo:
+def _parse_ios_plist(plist_data: dict[str, Any]) -> IpaInfo:
     info = IpaInfo()
     info.bundle_id = plist_data.get("CFBundleIdentifier", "")
     info.version = plist_data.get("CFBundleShortVersionString", "")
@@ -220,7 +251,7 @@ def _parse_ios_plist(plist_data: dict) -> IpaInfo:
     return info
 
 
-def _build_android_findings(info: AndroidManifestInfo) -> list[dict]:
+def _build_android_findings(info: AndroidManifestInfo) -> list[dict[str, Any]]:
     findings = []
 
     if info.package_name:
@@ -290,7 +321,7 @@ def _build_android_findings(info: AndroidManifestInfo) -> list[dict]:
     return findings
 
 
-def _build_ios_findings(info: IpaInfo) -> list[dict]:
+def _build_ios_findings(info: IpaInfo) -> list[dict[str, Any]]:
     findings = []
 
     if info.bundle_id:
@@ -328,7 +359,7 @@ def _build_ios_findings(info: IpaInfo) -> list[dict]:
     return findings
 
 
-def _scan_secrets(text_content: str) -> list[dict]:
+def _scan_secrets(text_content: str) -> list[dict[str, Any]]:
     findings = []
     for pattern, secret_type in SECRET_PATTERNS:
         matches = re.findall(pattern, text_content)

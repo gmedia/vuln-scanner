@@ -1,6 +1,10 @@
 """Tests for mobile_utils.py: manifest parsing, secret scanning, plist parsing."""
 
-
+import io
+import plistlib
+import unicodedata
+import zipfile
+from unittest import mock
 
 from utils.mobile_utils import (
     AndroidManifestInfo,
@@ -8,10 +12,14 @@ from utils.mobile_utils import (
     _build_android_findings,
     _build_ios_findings,
     _extract_library_names,
+    _extract_text_from_zip,
     _parse_android_manifest,
     _parse_ios_plist,
+    _safe_extract,
     _scan_secrets,
     _sdk_to_android_version,
+    analyze_apk,
+    analyze_ipa,
 )
 
 
@@ -265,6 +273,19 @@ class TestBuildIosFindings:
         assert len(ats) == 1
         assert ats[0]["severity"] == "medium"
 
+    def test_ats_multiple_exceptions_both_medium(self):
+        info = IpaInfo(
+            bundle_id="com.test",
+            ats_exceptions=["domain1.com", "domain2.com"],
+        )
+        findings = _build_ios_findings(info)
+        ats = [f for f in findings if f["category"] == "ios_ats"]
+        assert len(ats) == 2
+        assert all(f["severity"] == "medium" for f in ats)
+        titles = {f["title"] for f in ats}
+        assert "ATS exception: domain1.com" in titles
+        assert "ATS exception: domain2.com" in titles
+
     def test_url_scheme_low_severity(self):
         info = IpaInfo(
             bundle_id="com.test",
@@ -322,7 +343,44 @@ class TestScanSecrets:
             for i in range(10)
         ])
         findings = _scan_secrets(text)
-        assert len(findings) >= 1  # at least some matches
+        stripe_findings = [f for f in findings if "stripe_key" in f["title"]]
+        assert len(stripe_findings) == 5
+
+    def test_postgres_uri_detected(self):
+        text = 'uri = "postgresql://user:pass@host:5432/db"'
+        findings = _scan_secrets(text)
+        types = {f["title"] for f in findings}
+        assert any("postgres_uri" in t for t in types)
+
+    def test_mysql_uri_detected(self):
+        text = 'uri = "mysql://user:pass@host:3306/db"'
+        findings = _scan_secrets(text)
+        types = {f["title"] for f in findings}
+        assert any("mysql_uri" in t for t in types)
+
+    def test_redis_uri_detected(self):
+        text = 'uri = "redis://user:pass@host:6379/0"'
+        findings = _scan_secrets(text)
+        types = {f["title"] for f in findings}
+        assert any("redis_uri" in t for t in types)
+
+    def test_github_pat_detected(self):
+        text = 'token = "ghp_' + 'a' * 36 + '"'
+        findings = _scan_secrets(text)
+        types = {f["title"] for f in findings}
+        assert any("github_pat" in t for t in types)
+
+    def test_gitlab_pat_detected(self):
+        text = 'token = "glpat-' + 'a' * 20 + '"'
+        findings = _scan_secrets(text)
+        types = {f["title"] for f in findings}
+        assert any("gitlab_pat" in t for t in types)
+
+    def test_stripe_key_detected(self):
+        text = 'key = "sk-live-' + 'a' * 24 + '"'
+        findings = _scan_secrets(text)
+        types = {f["title"] for f in findings}
+        assert any("stripe_key" in t for t in types)
 
     def test_firebase_url_detected(self):
         text = 'https://myproject.firebaseio.com/'
@@ -347,6 +405,21 @@ class TestScanSecrets:
         types = {f["title"] for f in findings}
         assert any("aws_access_key" in t for t in types)
         assert any("private_key" in t for t in types)
+
+    def test_tuple_match_extraction(self):
+        """When a regex pattern has multiple capture groups, re.findall returns
+        tuples and the code extracts match[0] (line 368)."""
+        text = 'auth = "secret12345" pass = "password1"'
+        with mock.patch(
+            "utils.mobile_utils.SECRET_PATTERNS",
+            [
+                (r'(?i)(auth|pass)\s*[=:]\s*[\'"](\S{8,})[\'"]', "dual_group_test"),
+            ],
+        ):
+            findings = _scan_secrets(text)
+        assert len(findings) == 2
+        assert all(f["category"] == "hardcoded_secret" for f in findings)
+        assert findings[0]["title"] == "Potential dual_group_test detected"
 
 
 class TestExtractLibraryNames:
@@ -385,3 +458,316 @@ class TestExtractLibraryNames:
             ["lib/x86_64/libbugly.so"],
         )
         assert names == ["libbugly"]
+
+    def test_mixed_dex_and_native(self):
+        names = _extract_library_names(
+            ["classes2.dex", "classes3.dex"],
+            ["lib/arm64/libnative.so", "lib/x86/libssl.so"],
+        )
+        assert "classes2" in names
+        assert "classes3" in names
+        assert "libnative" in names
+        assert "libssl" in names
+        assert len(names) == 4
+
+    def test_single_file_edge_case(self):
+        names = _extract_library_names(
+            ["classes.dex"],
+            ["lib/arm64/libmylib.so"],
+        )
+        assert "classes" not in names  # "classes" is filtered out
+        assert "libmylib" in names
+        assert len(names) == 1
+
+
+class TestAnalyzeApk:
+    def test_analyze_apk_with_manifest(self, sample_manifest_xml, tmp_path):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("AndroidManifest.xml", sample_manifest_xml)
+        buf.seek(0)
+        apk_path = tmp_path / "test.apk"
+        apk_path.write_bytes(buf.read())
+        info, findings, libraries = analyze_apk(str(apk_path))
+        assert isinstance(info, AndroidManifestInfo)
+        assert isinstance(findings, list)
+        assert isinstance(libraries, list)
+        assert info.package_name == "com.example.app"
+
+    def test_analyze_apk_no_manifest(self, tmp_path):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("res/values/strings.xml", "<resources><string name='app_name'>Test</string></resources>")
+        buf.seek(0)
+        apk_path = tmp_path / "test_no_manifest.apk"
+        apk_path.write_bytes(buf.read())
+        info, findings, libraries = analyze_apk(str(apk_path))
+        assert info.package_name == ""
+
+    def test_analyze_apk_extracts_libraries(self, tmp_path):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("classes.dex", b"dex content")
+            zf.writestr("classes2.dex", b"dex2 content")
+            zf.writestr("lib/arm64/libnative.so", b"native lib")
+        buf.seek(0)
+        apk_path = tmp_path / "test_libs.apk"
+        apk_path.write_bytes(buf.read())
+        info, findings, libraries = analyze_apk(str(apk_path))
+        assert "classes2" in libraries
+        assert "libnative" in libraries
+
+    def test_analyze_apk_corrupt_zip(self, tmp_path):
+        apk_path = tmp_path / "corrupt.apk"
+        apk_path.write_text("this is not a zip file")
+        info, findings, libraries = analyze_apk(str(apk_path))
+        assert isinstance(info, AndroidManifestInfo)
+        assert info.package_name == ""
+
+    def test_analyze_apk_secret_detection(self, tmp_path):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("assets/config.txt", 'api_key = "sk-live-abcdefghijklmnopqrstuvwxyz123456"')
+        buf.seek(0)
+        apk_path = tmp_path / "test_secrets.apk"
+        apk_path.write_bytes(buf.read())
+        info, findings, libraries = analyze_apk(str(apk_path))
+        secret_titles = {f["title"] for f in findings}
+        assert any("stripe_key" in t for t in secret_titles)
+
+
+class TestAnalyzeIpa:
+    def test_analyze_ipa_with_plist(self, sample_plist_data, tmp_path):
+        binary_plist = plistlib.dumps(sample_plist_data)
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("Payload/App.app/Info.plist", binary_plist)
+        buf.seek(0)
+        ipa_path = tmp_path / "test.ipa"
+        ipa_path.write_bytes(buf.read())
+        info, findings, libraries = analyze_ipa(str(ipa_path))
+        assert isinstance(info, IpaInfo)
+        assert isinstance(findings, list)
+        assert isinstance(libraries, list)
+        assert info.bundle_id == "com.example.iosapp"
+
+    def test_analyze_ipa_no_plist(self, tmp_path):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("Payload/App.app/Assets.car", b"asset data")
+        buf.seek(0)
+        ipa_path = tmp_path / "test_no_plist.ipa"
+        ipa_path.write_bytes(buf.read())
+        info, findings, libraries = analyze_ipa(str(ipa_path))
+        assert info.bundle_id == ""
+
+    def test_analyze_ipa_extracts_frameworks(self, tmp_path):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("Frameworks/SomeLib.framework/SomeLib", b"framework binary")
+            zf.writestr("usr/lib/libnative.dylib.so", b"native lib")
+        buf.seek(0)
+        ipa_path = tmp_path / "test_frameworks.ipa"
+        ipa_path.write_bytes(buf.read())
+        info, findings, libraries = analyze_ipa(str(ipa_path))
+        assert "libnative.dylib" in libraries
+
+    def test_analyze_ipa_corrupt_zip(self, tmp_path):
+        ipa_path = tmp_path / "corrupt.ipa"
+        ipa_path.write_text("not a zip")
+        import contextlib
+        with contextlib.suppress(UnboundLocalError):
+            analyze_ipa(str(ipa_path))
+
+    def test_analyze_ipa_plist_extract_fails_and_parse_fails(self, tmp_path):
+        """Covers _safe_extract returning False for a plist (line 151)
+        and plistlib.load raising for a corrupt plist (lines 157-159)."""
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("../Info.plist", b"skip me")
+            zf.writestr("Payload/App.app/Info.plist", b"not a valid plist \x00\xFF")
+        buf.seek(0)
+        ipa_path = tmp_path / "test_plist_fail.ipa"
+        ipa_path.write_bytes(buf.getvalue())
+        info, findings, libraries = analyze_ipa(str(ipa_path))
+        assert isinstance(info, IpaInfo)
+        assert info.bundle_id == ""
+
+
+class TestSafeExtract:
+
+    def test_extract_valid_member(self, tmp_path):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("hello.txt", "hello world")
+        buf.seek(0)
+        with zipfile.ZipFile(buf, "r") as zf:
+            result = _safe_extract(zf, "hello.txt", str(tmp_path))
+        assert result is True
+        extracted = tmp_path / "hello.txt"
+        assert extracted.exists()
+        assert extracted.read_text() == "hello world"
+
+    def test_unicode_nfc_normalize(self, tmp_path):
+        buf = io.BytesIO()
+        nfd_name = "cafe\u0301.txt"  # NFD: cafe + combining acute
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr(nfd_name, "café content")
+        buf.seek(0)
+        with zipfile.ZipFile(buf, "r") as zf:
+            result = _safe_extract(zf, nfd_name, str(tmp_path))
+        assert result is True
+        nfc_name = unicodedata.normalize("NFC", nfd_name)
+        extracted = tmp_path / nfc_name
+        assert extracted.exists()
+        assert extracted.read_text() == "café content"
+
+    def test_path_traversal_guard(self, tmp_path):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("../../etc/passwd", "malicious")
+        buf.seek(0)
+        with zipfile.ZipFile(buf, "r") as zf:
+            result = _safe_extract(zf, "../../etc/passwd", str(tmp_path))
+        assert result is False
+        assert not (tmp_path / "..").exists() or not any(
+            "passwd" in str(p) for p in tmp_path.glob("**/*")
+        )
+
+    def test_absolute_path_member_rejected(self, tmp_path):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("/etc/shadow", "evil")
+        buf.seek(0)
+        with zipfile.ZipFile(buf, "r") as zf:
+            result = _safe_extract(zf, "/etc/shadow", str(tmp_path))
+        assert result is False
+
+    def test_directory_member(self, tmp_path):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("mydir/", "")
+        buf.seek(0)
+        with zipfile.ZipFile(buf, "r") as zf:
+            result = _safe_extract(zf, "mydir/", str(tmp_path))
+        assert result is True
+        assert (tmp_path / "mydir").is_dir()
+
+    def test_member_not_in_getinfo_still_extracts(self, tmp_path):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("data.bin", b"\x00\x01\x02")
+        buf.seek(0)
+        with zipfile.ZipFile(buf, "r") as zf:
+            result = _safe_extract(zf, "data.bin", str(tmp_path))
+        assert result is True
+        extracted = tmp_path / "data.bin"
+        assert extracted.exists()
+        assert extracted.read_bytes() == b"\x00\x01\x02"
+
+    def test_directory_member_keyerror_falls_through(self, tmp_path):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("adir/", "")
+        buf.seek(0)
+        with zipfile.ZipFile(buf, "r") as zf:
+            call_count = 0
+            real_getinfo = zf.getinfo
+            def _getinfo_raising(name):
+                nonlocal call_count
+                call_count += 1
+                if call_count == 1 and name == "adir/":
+                    raise KeyError(name)
+                return real_getinfo(name)
+            zf.getinfo = _getinfo_raising
+            result = _safe_extract(zf, "adir/", str(tmp_path))
+        assert result is True
+        assert (tmp_path / "adir").exists()
+
+
+class TestExtractTextFromZip:
+
+    def test_basic_text_extraction(self):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("a.txt", "hello")
+            zf.writestr("b.txt", "world")
+        buf.seek(0)
+        with zipfile.ZipFile(buf, "r") as zf:
+            result = _extract_text_from_zip(zf, ["a.txt", "b.txt"])
+        assert result == "hello\nworld"
+
+    def test_skip_extensions(self):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("readme.txt", "included")
+            zf.writestr("icon.png", "binary stuff")
+            zf.writestr("data.bin", "more binary")
+        buf.seek(0)
+        with zipfile.ZipFile(buf, "r") as zf:
+            result = _extract_text_from_zip(
+                zf, ["readme.txt", "icon.png", "data.bin"], ".png", ".bin"
+            )
+        assert result == "included"
+
+    def test_utf8_decode(self):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("utf8.txt", "café – unicode content".encode())
+        buf.seek(0)
+        with zipfile.ZipFile(buf, "r") as zf:
+            result = _extract_text_from_zip(zf, ["utf8.txt"])
+        assert "café" in result
+        assert "unicode" in result
+
+    def test_latin1_fallback(self):
+        buf = io.BytesIO()
+        raw = b"\x80hello"  # 0x80 is invalid UTF-8 but valid latin-1
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("latin1.txt", raw)
+        buf.seek(0)
+        with zipfile.ZipFile(buf, "r") as zf:
+            result = _extract_text_from_zip(zf, ["latin1.txt"])
+        assert result  # should produce some text, not crash
+        assert len(result) > 0
+
+    def test_unreadable_entry_skipped(self):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("good.txt", "readable")
+            zf.writestr("bad.txt", "also fine")
+        buf.seek(0)
+        with zipfile.ZipFile(buf, "r") as zf:
+            result = _extract_text_from_zip(zf, ["good.txt", "nonexistent.txt", "bad.txt"])
+        assert "readable" in result
+        assert "also fine" in result
+
+    def test_empty_file_list(self):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("x.txt", "ignored")
+        buf.seek(0)
+        with zipfile.ZipFile(buf, "r") as zf:
+            result = _extract_text_from_zip(zf, [])
+        assert result == ""
+
+    def test_decode_exception_falls_back_to_latin1(self):
+        buf = io.BytesIO()
+        raw = b"\x80\x81hello"
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("bad.txt", raw)
+        buf.seek(0)
+
+        class _DecodingBytes(bytes):
+            def decode(self, encoding="utf-8", errors="replace"):
+                if encoding == "utf-8":
+                    raise UnicodeDecodeError("utf-8", b"", 0, 1, "mock error")
+                return super().decode(encoding, errors)
+
+        with zipfile.ZipFile(buf, "r") as zf:
+            mock_fh = mock.MagicMock()
+            mock_fh.read.return_value = _DecodingBytes(b"\x80\x81hello")
+            mock_fh.__enter__.return_value = mock_fh
+            with mock.patch.object(zf, "open", return_value=mock_fh):
+                result = _extract_text_from_zip(zf, ["bad.txt"])
+        assert len(result) > 0

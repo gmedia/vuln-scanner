@@ -16,18 +16,21 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
   redis:
     image: redis:8-alpine
     container_name: vuln-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -46,11 +49,12 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
       DATABASE_URL_SYNC: postgresql://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
-      REDIS_URL: redis://redis:6379/0
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/0
       API_KEY: e2e-test-key
-      SECRET_KEY: dev-secret-key
+      SECRET_KEY: ${SECRET_KEY:-e2e-secret-key}
+      JWT_SECRET: ${JWT_SECRET:-e2e-jwt-secret}
       OSV_BASE_URL: https://api.osv.dev/v1
       MAX_UPLOAD_SIZE_MB: 500
     ports:
@@ -80,14 +84,10 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
       DATABASE_URL_SYNC: postgresql://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/0
+      CELERY_QUEUE: ip_scan
       OSV_BASE_URL: https://api.osv.dev/v1
-    volumes:
-      - ./workers:/app
-      - ./backend:/backend
-      - scan_data:/tmp/scans
-    command: celery -A celery_app worker -Q ip_scan --concurrency=2 --loglevel=info
 
   worker_domain:
     build:
@@ -103,8 +103,9 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
       DATABASE_URL_SYNC: postgresql://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/0
+      CELERY_QUEUE: domain_scan
       OSV_BASE_URL: https://api.osv.dev/v1
     volumes:
       - ./workers:/app
@@ -125,8 +126,9 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
       DATABASE_URL_SYNC: postgresql://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/0
+      CELERY_QUEUE: mobile_scan
       OSV_BASE_URL: https://api.osv.dev/v1
     volumes:
       - ./workers:/app
@@ -159,6 +161,10 @@ services:
       dockerfile: Dockerfile
     container_name: vuln-nginx-e2e
     restart: unless-stopped
+    environment:
+      DOMAIN: localhost
+      API_KEY: e2e-test-key
+      RATE_LIMIT: 1000r/s
     ports:
       - "80:80"
     depends_on:
@@ -176,6 +182,10 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
       DATABASE_URL_SYNC: postgresql://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      API_KEY: e2e-test-key
+      SECRET_KEY: ${SECRET_KEY:-e2e-secret-key}
+      JWT_SECRET: ${JWT_SECRET:-e2e-jwt-secret}
     volumes:
       - ./backend:/app
     command: python -m scripts.seed_e2e
@@ -191,6 +201,7 @@ services:
         condition: service_started
     environment:
       CI: "true"
+      BASE_URL: http://nginx
       PLAYWRIGHT_HTML_REPORT: /e2e/playwright-report
     volumes:
       - ./frontend/e2e:/e2e/e2e

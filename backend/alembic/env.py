@@ -12,6 +12,9 @@ from app.database import Base
 
 config = context.config
 
+# Override sqlalchemy.url from environment variable
+config.set_main_option("sqlalchemy.url", os.environ["DATABASE_URL_SYNC"])
+
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 

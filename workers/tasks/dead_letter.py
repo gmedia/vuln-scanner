@@ -1,12 +1,14 @@
 import json
 import os
 import time
+from typing import Any
 
 import redis
 from celery import shared_task
 from loguru import logger
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+REDIS_URL = os.getenv("REDIS_URL", f"redis://:{os.getenv('REDIS_PASSWORD', '')}@redis:6379/0")
+_redis_pool = redis.ConnectionPool.from_url(REDIS_URL)  # type: ignore[no-untyped-call]
 DEAD_LETTER_MAX = 1000
 
 
@@ -16,8 +18,14 @@ DEAD_LETTER_MAX = 1000
     acks_late=True,
     max_retries=1,
     default_retry_delay=30,
-)
-def dead_letter_handler(self, task_name: str, args: list, kwargs: dict, exception_info: str):
+)  # type: ignore
+def dead_letter_handler(
+    self: Any,
+    task_name: str,
+    args: list[Any],
+    kwargs: dict[str, Any],
+    exception_info: str,
+) -> None:
     """Handle a task that exhausted all retries.
 
     Logs the failure with full context and stores it in a Redis sorted set
@@ -32,20 +40,22 @@ def dead_letter_handler(self, task_name: str, args: list, kwargs: dict, exceptio
         exc=exception_info,
     )
 
+    timestamp = time.time()
     entry = {
         "task_name": task_name,
         "args": args,
         "kwargs": kwargs,
         "exception_info": exception_info,
-        "timestamp": time.time(),
+        "timestamp": timestamp,
     }
 
     try:
-        r = redis.Redis.from_url(REDIS_URL)
-        r.zadd("dead_letter:log", {json.dumps(entry): entry["timestamp"]})
+        r = redis.Redis(connection_pool=_redis_pool)
+        r.zadd("dead_letter:log", {json.dumps(entry): timestamp})
 
         # Trim to keep only the most recent DEAD_LETTER_MAX entries
         count = r.zcard("dead_letter:log")
+        assert isinstance(count, int)
         if count > DEAD_LETTER_MAX:
             r.zremrangebyrank("dead_letter:log", 0, count - DEAD_LETTER_MAX - 1)
 

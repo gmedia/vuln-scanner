@@ -11,7 +11,7 @@ HEADERS = {"X-API-Key": settings.api_key}
 
 
 @pytest.mark.asyncio
-async def test_export_json(client, db_session):
+async def test_export_json(client, db_session, sample_user):
     """GET /api/scan/{id}/export?format=json → 200, verify JSON keys."""
     now = datetime.now(UTC)
     job = ScanJob(
@@ -21,6 +21,7 @@ async def test_export_json(client, db_session):
         status="completed",
         progress=100,
         result_summary={"total_findings": 1, "high": 1},
+        user_id=sample_user.id,
         started_at=now,
         completed_at=now,
     )
@@ -51,7 +52,7 @@ async def test_export_json(client, db_session):
 
 
 @pytest.mark.asyncio
-async def test_export_html(client, db_session):
+async def test_export_html(client, db_session, sample_user):
     """GET /api/scan/{id}/export?format=html → 200, check DOCTYPE."""
     now = datetime.now(UTC)
     job = ScanJob(
@@ -61,6 +62,7 @@ async def test_export_html(client, db_session):
         status="completed",
         progress=100,
         result_summary={"total_findings": 0},
+        user_id=sample_user.id,
         started_at=now,
         completed_at=now,
     )
@@ -84,8 +86,45 @@ def test_start_mobile_scan_no_filename(client):
     assert resp.status_code in (400, 422)
 
 
+def test_start_mobile_scan_empty_filename_in_multipart(client):
+    """POST /api/scan/mobile with filename=\"\" in raw multipart → 400 (line 174).
+
+    httpx treats files={'file': ('', ...)} as a form field (no filename),
+    so FastAPI validation rejects it as 422 before reaching the handler.
+    To actually trigger the ``not file.filename`` branch at line 174, we
+    send a raw multipart body where the Content-Disposition header includes
+    ``filename=\"\"``.  Starlette parses that as an UploadFile with an empty
+    string filename, which is falsy in Python.
+    """
+    boundary = "boundary-no-filename-174"
+    body = b"\r\n".join(
+        [
+            f"--{boundary}".encode(),
+            b'Content-Disposition: form-data; name="file"; filename=""',
+            b"Content-Type: application/octet-stream",
+            b"",
+            b"fake-apk-content",
+            f"--{boundary}".encode(),
+            b'Content-Disposition: form-data; name="platform"',
+            b"",
+            b"android",
+            f"--{boundary}--".encode(),
+        ]
+    )
+    resp = client.post(
+        "/api/scan/mobile",
+        content=body,
+        headers={
+            "Content-Type": f"multipart/form-data; boundary={boundary}",
+            **HEADERS,
+        },
+    )
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "File must have a filename"
+
+
 @pytest.mark.asyncio
-async def test_get_scan_detail_with_findings_and_export(client, db_session):
+async def test_get_scan_detail_with_findings_and_export(client, db_session, sample_user):
     """Create job + findings, verify export JSON includes them."""
     now = datetime.now(UTC)
     job = ScanJob(
@@ -95,6 +134,7 @@ async def test_get_scan_detail_with_findings_and_export(client, db_session):
         status="completed",
         progress=100,
         result_summary={"total_findings": 2, "high": 1, "medium": 1},
+        user_id=sample_user.id,
         started_at=now,
         completed_at=now,
     )
@@ -146,7 +186,7 @@ def test_get_scan_history_empty(client):
 
 
 @pytest.mark.asyncio
-async def test_export_html_with_findings(client, db_session):
+async def test_export_html_with_findings(client, db_session, sample_user):
     """GET /api/scan/{id}/export?format=html with findings → 200, verify badges and CVE."""
     now = datetime.now(UTC)
     job = ScanJob(
@@ -156,6 +196,7 @@ async def test_export_html_with_findings(client, db_session):
         status="completed",
         progress=100,
         result_summary={"total_findings": 2, "high": 1, "medium": 1},
+        user_id=sample_user.id,
         started_at=now,
         completed_at=now,
     )

@@ -1,16 +1,22 @@
+import json
 import os
 import sys
-
-os.environ.setdefault("API_KEY", "dev-api-key-change-me")
-
-sys.path.insert(0, "/home/ubuntu/vuln-scanner/backend")
-
-import json
 import uuid
 from unittest.mock import MagicMock
 
+os.environ.setdefault("API_KEY", "dev-api-key-change-me")
+os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5432/test")
+os.environ.setdefault("DATABASE_URL_SYNC", "postgresql://test:test@localhost:5432/test")
+
+sys.path.insert(0, "/home/ubuntu/vuln-scanner/backend")
+
+from unittest.mock import AsyncMock as _AsyncMock
+
 import pytest
 import pytest_asyncio
+
+# Patch Redis before app.main is imported — middleware's _get_redis uses Redis.from_url()
+import redis.asyncio as _aioredis
 from fastapi.testclient import TestClient
 from sqlalchemy import String, Text, TypeDecorator
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -20,6 +26,21 @@ from app.database import Base
 from app.models.api_key import ApiKey  # noqa: F401
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
+from app.models.user import User
+
+# Counter-based incr so rate limiting tests work correctly
+_incr_counters: dict[str, int] = {}
+
+async def _incr_side_effect(key: str) -> int:
+    _incr_counters[key] = _incr_counters.get(key, 0) + 1
+    return _incr_counters[key]
+
+_fake_redis = _AsyncMock(spec=_aioredis.Redis)
+_fake_redis.incr = _incr_side_effect
+_fake_redis.expire = _AsyncMock(return_value=True)
+_fake_redis.ping = _AsyncMock(return_value=True)
+_fake_redis.aclose = _AsyncMock(return_value=None)
+_aioredis.Redis.from_url = staticmethod(lambda *a, **kw: _fake_redis)
 
 
 # Build SQLite-safe type decorators
@@ -67,6 +88,12 @@ for table in Base.metadata.tables.values():
 # Now safe to import the rest of the app
 from app.database import get_db  # noqa: E402
 from app.main import app  # noqa: E402
+from app.services.auth import get_current_admin, get_current_user  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _reset_redis_counters():
+    _incr_counters.clear()
 
 
 @pytest_asyncio.fixture
@@ -95,8 +122,33 @@ async def db_session(engine):
 def client(db_session):
     async def override_get_db():
         yield db_session
+
+    async def override_get_current_user():
+        # Create or fetch a test user — sidesteps Bearer auth for scan route tests
+        from sqlalchemy import select as _sel
+        result = await db_session.execute(_sel(User).limit(1))
+        user = result.scalar_one_or_none()
+        if user is None:
+            user = User(
+                id=uuid.uuid4(),
+                email="test@example.com",
+                password_hash="fake-hash",
+                is_verified=True,
+                credits=100,
+            )
+            db_session.add(user)
+            await db_session.commit()
+            await db_session.refresh(user)
+        return user
+
+    async def override_get_current_admin():
+        return await override_get_current_user()
+
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = override_get_current_user
+    app.dependency_overrides[get_current_admin] = override_get_current_admin
     app.middleware_stack = None
+
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
@@ -114,13 +166,29 @@ def mock_celery(monkeypatch):
 
 
 @pytest_asyncio.fixture
-async def sample_job(db_session):
+async def sample_user(db_session):
+    user = User(
+        id=uuid.uuid4(),
+        email="test@example.com",
+        password_hash="fake-hash",
+        is_verified=True,
+        credits=100,
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest_asyncio.fixture
+async def sample_job(db_session, sample_user):
     job = ScanJob(
         id=uuid.uuid4(),
         scan_type="ip",
         target="192.168.1.1",
         status="completed",
         progress=100,
+        user_id=sample_user.id,
     )
     db_session.add(job)
     await db_session.commit()

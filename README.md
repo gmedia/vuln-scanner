@@ -143,7 +143,7 @@ curl http://localhost/api/scan/{id}/export?format=html \
 |----------|---------|-------------|
 | `API_KEY` | `dev-api-key-change-me` | API authentication key |
 | `DATABASE_URL` | `postgresql+asyncpg://...` | PostgreSQL connection string |
-| `REDIS_URL` | `redis://redis:6379/0` | Redis connection string |
+| `REDIS_URL` | `redis://:${REDIS_PASSWORD}@redis:6379/0` | Redis connection string |
 
 ## Services
 

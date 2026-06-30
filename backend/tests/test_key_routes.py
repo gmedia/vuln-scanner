@@ -348,3 +348,195 @@ def test_list_keys_has_correct_shape(client):
         assert "is_active" in key
         assert "rate_limit" in key
         assert "created_at" in key
+
+
+# ---------------------------------------------------------------------------
+# Direct unit tests for helper functions
+# ---------------------------------------------------------------------------
+
+
+def test_hash_key_deterministic():
+    from app.api.key_routes import _hash_key
+
+    result1 = _hash_key("my-secret-key")
+    result2 = _hash_key("my-secret-key")
+    assert result1 == result2
+
+
+def test_hash_key_different_inputs():
+    from app.api.key_routes import _hash_key
+
+    h1 = _hash_key("key-one")
+    h2 = _hash_key("key-two")
+    assert h1 != h2
+
+
+def test_hash_key_output_format():
+    from app.api.key_routes import _hash_key
+
+    result = _hash_key("some-key")
+    assert isinstance(result, str)
+    assert len(result) == 64
+    assert all(c in "0123456789abcdef" for c in result)
+
+
+def test_hash_key_empty_string():
+    from app.api.key_routes import _hash_key
+
+    result = _hash_key("")
+    assert len(result) == 64
+
+
+def test_generate_key_prefix():
+    from app.api.key_routes import _generate_key
+
+    key = _generate_key()
+    assert key.startswith("sk_")
+
+
+def test_generate_key_length():
+    from app.api.key_routes import _generate_key
+
+    key = _generate_key()
+    assert len(key) == 3 + 64  # "sk_" + 32 bytes hex = 64 chars
+
+
+def test_generate_key_hex_body():
+    from app.api.key_routes import _generate_key
+
+    key = _generate_key()
+    hex_part = key[3:]
+    assert len(hex_part) == 64
+    assert all(c in "0123456789abcdef" for c in hex_part)
+
+
+def test_generate_key_unique():
+    from app.api.key_routes import _generate_key
+
+    keys = {_generate_key() for _ in range(100)}
+    assert len(keys) == 100
+
+
+# ---------------------------------------------------------------------------
+# generate_key endpoint edge cases
+# ---------------------------------------------------------------------------
+
+
+def test_generate_key_missing_name(client):
+    resp = client.post(
+        "/api/keys/generate",
+        headers={"X-API-Key": API_KEY},
+        json={"rate_limit": 10},
+    )
+    assert resp.status_code == 422
+
+
+def test_generate_key_extra_fields(client):
+    resp = client.post(
+        "/api/keys/generate",
+        headers={"X-API-Key": API_KEY},
+        json={"name": "extra-fields", "rate_limit": 5, "spam": "should-be-ignored"},
+    )
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["name"] == "extra-fields"
+    assert data["rate_limit"] == 5
+
+
+def test_generate_key_very_long_name(client):
+    long_name = "a" * 1000
+    resp = client.post(
+        "/api/keys/generate",
+        headers={"X-API-Key": API_KEY},
+        json={"name": long_name, "rate_limit": 10},
+    )
+    assert resp.status_code == 422
+
+
+def test_generate_key_invalid_rate_limit_type(client):
+    resp = client.post(
+        "/api/keys/generate",
+        headers={"X-API-Key": API_KEY},
+        json={"name": "bad-rate", "rate_limit": "not-a-number"},
+    )
+    assert resp.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# revoke_key endpoint edge cases
+# ---------------------------------------------------------------------------
+
+
+def test_revoke_key_invalid_uuid(client):
+    resp = client.post(
+        "/api/keys/revoke/not-a-uuid",
+        headers={"X-API-Key": API_KEY},
+    )
+    assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# delete_key endpoint edge cases
+# ---------------------------------------------------------------------------
+
+
+def test_delete_key_invalid_uuid(client):
+    resp = client.delete(
+        "/api/keys/not-a-uuid",
+        headers={"X-API-Key": API_KEY},
+    )
+    assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# list_keys endpoint edge cases
+# ---------------------------------------------------------------------------
+
+
+def test_list_keys_empty(client):
+    """List keys when no keys exist in database."""
+    resp = client.get("/api/keys", headers={"X-API-Key": API_KEY})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "keys" in data
+    assert data["keys"] == []
+
+
+def test_list_keys_ordering_newest_first(client):
+    """Keys should be ordered by created_at descending."""
+    # Create keys in order: A, B, C
+    client.post(
+        "/api/keys/generate",
+        headers={"X-API-Key": API_KEY},
+        json={"name": "first", "rate_limit": 10},
+    )
+    client.post(
+        "/api/keys/generate",
+        headers={"X-API-Key": API_KEY},
+        json={"name": "second", "rate_limit": 10},
+    )
+    client.post(
+        "/api/keys/generate",
+        headers={"X-API-Key": API_KEY},
+        json={"name": "third", "rate_limit": 10},
+    )
+
+    resp = client.get("/api/keys", headers={"X-API-Key": API_KEY})
+    assert resp.status_code == 200
+    keys = resp.json()["keys"]
+    names = [k["name"] for k in keys]
+    assert names == ["third", "second", "first"]
+
+
+def test_list_keys_with_multiple_keys(client):
+    """List keys when multiple exist."""
+    for i in range(5):
+        client.post(
+            "/api/keys/generate",
+            headers={"X-API-Key": API_KEY},
+            json={"name": f"multi-key-{i}", "rate_limit": 10},
+        )
+    resp = client.get("/api/keys", headers={"X-API-Key": API_KEY})
+    assert resp.status_code == 200
+    keys = resp.json()["keys"]
+    assert len(keys) == 5
