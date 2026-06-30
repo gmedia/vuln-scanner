@@ -36,7 +36,7 @@ vi.mock("@/store/scanStore", () => ({
       setProgress: mockSetProgress,
       clearActiveScan: mockClearActiveScan,
     };
-    return selector ? selector(state) : state;
+    return _selector ? _selector(state) : state;
   }),
 }));
 
