@@ -416,17 +416,17 @@ class TestRunAsync:
         async def dummy():
             return "ok"
 
-        with patch("asyncio.get_event_loop", side_effect=RuntimeError("No event loop")):
-            with patch("asyncio.new_event_loop") as mock_new:
-                with patch("asyncio.set_event_loop") as mock_set:
-                    mock_loop = MagicMock()
-                    mock_loop.run_until_complete.return_value = "ok"
-                    mock_new.return_value = mock_loop
-                    result = _run_async(dummy())
-                    assert result == "ok"
-                    mock_new.assert_called_once()
-                    mock_set.assert_called_once_with(mock_loop)
-                    mock_loop.run_until_complete.assert_called_once()
+        with patch("asyncio.get_event_loop", side_effect=RuntimeError("No event loop")), \
+                patch("asyncio.new_event_loop") as mock_new, \
+                patch("asyncio.set_event_loop") as mock_set:
+            mock_loop = MagicMock()
+            mock_loop.run_until_complete.return_value = "ok"
+            mock_new.return_value = mock_loop
+            result = _run_async(dummy())
+            assert result == "ok"
+            mock_new.assert_called_once()
+            mock_set.assert_called_once_with(mock_loop)
+            mock_loop.run_until_complete.assert_called_once()
 
 
 class TestUpdateStatus:
@@ -554,7 +554,8 @@ class TestRefundCredits:
         fake_user = types.ModuleType("app.models.user")
         fake_user.User = self._make_mock_model(["id", "credits"])
         fake_credit_log = types.ModuleType("app.models.credit_log")
-        fake_credit_log.CreditLog = self._make_record_class(["user_id", "amount", "type", "description", "reference_id"])
+        credit_cols = ["user_id", "amount", "type", "description", "reference_id"]
+        fake_credit_log.CreditLog = self._make_record_class(credit_cols)
 
         saved = {}
         for name in ("app.models.scan_job", "app.models.user", "app.models.credit_log"):

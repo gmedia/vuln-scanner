@@ -603,12 +603,9 @@ class TestMobileScanFileSizeProgress:
             patch("utils.mobile_utils._scan_secrets") as mock_secrets,
             patch("tasks.mobile_scan.lookup_service_cves") as mock_cve,
             patch("tasks.mobile_scan.publish_progress") as mock_progress,
-            patch("tasks.mobile_scan._update_status") as mock_update_status,
-            patch("tasks.mobile_scan._save_findings") as mock_save_findings,
             patch("tasks.mobile_scan.redis.Redis") as mock_redis,
             patch("tasks.mobile_scan.os.path.exists") as mock_exists,
             patch("tasks.mobile_scan.os.path.getsize") as mock_size,
-            patch("tasks.mobile_scan.os.remove") as mock_remove,
             patch("builtins.open", mock_open(read_data=b"test data")),
         ):
             from utils.mobile_utils import AndroidManifestInfo
@@ -762,6 +759,7 @@ class TestMobileScanHelpers:
 
     def test_run_async_with_existing_event_loop(self):
         import asyncio
+
         from tasks.mobile_scan import _run_async
 
         async def dummy():
@@ -776,23 +774,22 @@ class TestMobileScanHelpers:
             loop.close()
 
     def test_run_async_creates_new_loop_when_none_exists(self):
-        import asyncio
         from tasks.mobile_scan import _run_async
 
         async def dummy():
             return "new_loop_result"
 
-        with patch("asyncio.get_event_loop", side_effect=RuntimeError("no event loop")):
-            with patch("asyncio.new_event_loop") as mock_new_loop:
-                with patch("asyncio.set_event_loop") as mock_set_loop:
-                    mock_loop = MagicMock()
-                    mock_loop.run_until_complete.return_value = "new_loop_result"
-                    mock_new_loop.return_value = mock_loop
-                    result = _run_async(dummy())
-                    assert result == "new_loop_result"
-                    mock_new_loop.assert_called_once()
-                    mock_set_loop.assert_called_once_with(mock_loop)
-                    mock_loop.run_until_complete.assert_called_once()
+        with patch("asyncio.get_event_loop", side_effect=RuntimeError("no event loop")), \
+                patch("asyncio.new_event_loop") as mock_new_loop, \
+                patch("asyncio.set_event_loop") as mock_set_loop:
+            mock_loop = MagicMock()
+            mock_loop.run_until_complete.return_value = "new_loop_result"
+            mock_new_loop.return_value = mock_loop
+            result = _run_async(dummy())
+            assert result == "new_loop_result"
+            mock_new_loop.assert_called_once()
+            mock_set_loop.assert_called_once_with(mock_loop)
+            mock_loop.run_until_complete.assert_called_once()
 
     def test_update_status_executes_sql(self):
         from tasks.mobile_scan import _update_status
@@ -848,6 +845,7 @@ class TestMobileScanHelpers:
 
     def test_refund_credits_increments_user_credits(self):
         import uuid as uuid_mod
+
         from tasks.mobile_scan import _refund_credits
 
         user_id = uuid_mod.uuid4()

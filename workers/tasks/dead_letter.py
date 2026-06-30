@@ -19,7 +19,13 @@ DEAD_LETTER_MAX = 1000
     max_retries=1,
     default_retry_delay=30,
 )  # type: ignore
-def dead_letter_handler(self: Any, task_name: str, args: list[Any], kwargs: dict[str, Any], exception_info: str) -> None:
+def dead_letter_handler(
+    self: Any,
+    task_name: str,
+    args: list[Any],
+    kwargs: dict[str, Any],
+    exception_info: str,
+) -> None:
     """Handle a task that exhausted all retries.
 
     Logs the failure with full context and stores it in a Redis sorted set

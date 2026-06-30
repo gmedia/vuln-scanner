@@ -322,13 +322,20 @@ class TestRefundCredits:
         fake_user = types.ModuleType("app.models.user")
         fake_user.User = self._make_mock_model(["id", "credits"])
         fake_credit_log = types.ModuleType("app.models.credit_log")
-        fake_credit_log.CreditLog = self._make_record_class(["user_id", "amount", "type", "description", "reference_id"])
+        credit_cols = ["user_id", "amount", "type", "description", "reference_id"]
+        fake_credit_log.CreditLog = self._make_record_class(credit_cols)
 
         saved = {}
         for name in ("app.models.scan_job", "app.models.user", "app.models.credit_log"):
             if name in sys.modules:
                 saved[name] = sys.modules[name]
-            sys.modules[name] = fake_scan_job if "scan_job" in name else (fake_user if "user" in name else fake_credit_log)
+            if "scan_job" in name:
+                module = fake_scan_job
+            elif "user" in name:
+                module = fake_user
+            else:
+                module = fake_credit_log
+            sys.modules[name] = module
 
         yield
 
@@ -669,16 +676,16 @@ class TestRunAsync:
         async def dummy():
             return "ok"
 
-        with patch("asyncio.get_event_loop", side_effect=RuntimeError("no loop")):
-            with patch("asyncio.new_event_loop") as mock_new_loop:
-                with patch("asyncio.set_event_loop") as mock_set_loop:
-                    mock_loop = MagicMock()
-                    mock_loop.run_until_complete.return_value = "ok"
-                    mock_new_loop.return_value = mock_loop
-                    result = _run_async(dummy())
-                    assert result == "ok"
-                    mock_new_loop.assert_called_once()
-                    mock_set_loop.assert_called_once_with(mock_loop)
+        with patch("asyncio.get_event_loop", side_effect=RuntimeError("no loop")), \
+                patch("asyncio.new_event_loop") as mock_new_loop, \
+                patch("asyncio.set_event_loop") as mock_set_loop:
+            mock_loop = MagicMock()
+            mock_loop.run_until_complete.return_value = "ok"
+            mock_new_loop.return_value = mock_loop
+            result = _run_async(dummy())
+            assert result == "ok"
+            mock_new_loop.assert_called_once()
+            mock_set_loop.assert_called_once_with(mock_loop)
 
 
 class TestCveLookupFailure:
