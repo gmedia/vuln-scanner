@@ -42,7 +42,7 @@ def _run_async(coro: Any) -> Any:
     return loop.run_until_complete(coro)
 
 
-@shared_task(bind=True, name="mobile_scan.run", max_retries=3)  # type: ignore[untyped-decorator]
+@shared_task(bind=True, name="mobile_scan.run", max_retries=3)  # type: ignore
 def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> dict[str, Any]:
     """Execute a full mobile scan: APK/IPA analysis, secret scanning, CVE lookup for embedded libraries."""
     logger.info("Mobile scan started: job={job_id} platform={platform} path={path}",

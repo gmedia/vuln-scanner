@@ -51,7 +51,7 @@ def _run_async(coro: Any) -> Any:
     return loop.run_until_complete(coro)
 
 
-@shared_task(bind=True, name="domain_scan.run", max_retries=3)  # type: ignore[untyped-decorator]
+@shared_task(bind=True, name="domain_scan.run", max_retries=3)  # type: ignore
 def run_domain_scan(self: Any, job_id: str, domain: str) -> dict[str, Any]:
     """Execute a full domain scan: DNS, subdomains, HTTP, SSL, headers, tech stack, nmap, and CVEs."""
     logger.info("Domain scan started: job={job_id} domain={domain}", job_id=job_id, domain=domain)

@@ -18,7 +18,7 @@ DEAD_LETTER_MAX = 1000
     acks_late=True,
     max_retries=1,
     default_retry_delay=30,
-)  # type: ignore[untyped-decorator]
+)  # type: ignore
 def dead_letter_handler(self: Any, task_name: str, args: list[Any], kwargs: dict[str, Any], exception_info: str) -> None:
     """Handle a task that exhausted all retries.
 
