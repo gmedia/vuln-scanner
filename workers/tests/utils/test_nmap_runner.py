@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from utils.nmap_runner import NmapResult, HostInfo, findings_from_nmap, parse_nmap_xml, run_nmap
+from utils.nmap_runner import HostInfo, NmapResult, findings_from_nmap, parse_nmap_xml, run_nmap
 
 
 class TestParseNmapXml:

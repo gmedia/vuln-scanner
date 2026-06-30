@@ -1,9 +1,7 @@
 """Tests for mobile_utils.py: manifest parsing, secret scanning, plist parsing."""
 
 import io
-import os
 import plistlib
-import tempfile
 import unicodedata
 import zipfile
 from unittest import mock
@@ -11,7 +9,6 @@ from unittest import mock
 from utils.mobile_utils import (
     AndroidManifestInfo,
     IpaInfo,
-    SECRET_PATTERNS,
     _build_android_findings,
     _build_ios_findings,
     _extract_library_names,
@@ -578,10 +575,9 @@ class TestAnalyzeIpa:
     def test_analyze_ipa_corrupt_zip(self, tmp_path):
         ipa_path = tmp_path / "corrupt.ipa"
         ipa_path.write_text("not a zip")
-        try:
+        import contextlib
+        with contextlib.suppress(UnboundLocalError):
             analyze_ipa(str(ipa_path))
-        except UnboundLocalError:
-            pass
 
     def test_analyze_ipa_plist_extract_fails_and_parse_fails(self, tmp_path):
         """Covers _safe_extract returning False for a plist (line 151)
@@ -717,7 +713,7 @@ class TestExtractTextFromZip:
     def test_utf8_decode(self):
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as zf:
-            zf.writestr("utf8.txt", "café – unicode content".encode("utf-8"))
+            zf.writestr("utf8.txt", "café – unicode content".encode())
         buf.seek(0)
         with zipfile.ZipFile(buf, "r") as zf:
             result = _extract_text_from_zip(zf, ["utf8.txt"])
