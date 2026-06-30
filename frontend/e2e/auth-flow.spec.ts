@@ -5,7 +5,7 @@ test.describe("Auth — Login", () => {
 
   test("login page renders correctly", async ({ page }) => {
     await page.goto("/login")
-    await expect(page.locator("h2")).toContainText("Sign In")
+    await expect(page.locator("h3")).toContainText("Sign In")
     await expect(page.locator("input#email")).toBeVisible()
     await expect(page.locator("input#password")).toBeVisible()
     await expect(page.locator("button[type='submit']")).toBeVisible()
@@ -45,7 +45,7 @@ test.describe("Auth — Register", () => {
 
   test("register page renders correctly", async ({ page }) => {
     await page.goto("/register")
-    await expect(page.locator("h2")).toContainText("Create Account")
+    await expect(page.locator("h3")).toContainText("Create Account")
     await expect(page.locator("input#email")).toBeVisible()
     await expect(page.locator("input#password")).toBeVisible()
     await expect(page.locator("input#confirmPassword")).toBeVisible()
@@ -87,7 +87,7 @@ test.describe("Auth — Logout", () => {
       await expect(signOutBtn).toBeVisible()
       await signOutBtn.click()
       await page.waitForURL("/login", { timeout: 10_000 })
-      await expect(page.locator("h2")).toContainText("Sign In")
+    await expect(page.locator("h3")).toContainText("Sign In")
     }
   })
 
@@ -99,7 +99,7 @@ test.describe("Auth — Logout", () => {
     const freshPage = await freshContext.newPage()
     await freshPage.goto("/dashboard")
     await freshPage.waitForURL("/login", { timeout: 10_000 })
-    await expect(freshPage.locator("h2")).toContainText("Sign In")
+    await expect(freshPage.locator("h3")).toContainText("Sign In")
     await freshContext.close()
   })
 })
