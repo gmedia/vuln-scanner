@@ -294,10 +294,6 @@ def test_options_bypass_on_root_path(client):
 
 def test_e2e_test_header_bypasses_rate_limit(client, mock_celery):
     """X-E2E-Test header bypasses both IP and key rate limiting (auth.py:132-136)."""
-    # Saturate master key rate limit first
-    from app.middleware import auth as auth_module
-    import redis.asyncio as redis
-
     # Use a key with rate_limit=1 — second request should 429, but E2E bypass skips it
     create_resp = client.post(
         "/api/keys/generate",
@@ -323,9 +319,6 @@ def test_e2e_test_header_bypasses_rate_limit(client, mock_celery):
 
 def test_e2e_test_bypasses_ip_rate_limit(client, mock_celery):
     """X-E2E-Test header bypasses IP rate limiting even after exceeding IP_LIMIT."""
-    from app.middleware import auth as auth_module
-    import redis.asyncio as redis
-
     # Saturate IP rate limit
     for _ in range(300):
         resp = client.get(

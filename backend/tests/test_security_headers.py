@@ -22,7 +22,7 @@ class TestServerHeaderDeletion:
     def test_server_header_is_deleted_when_present(self):
         """When response has a 'server' header, SecurityHeadersMiddleware deletes it (line 38)."""
         import asyncio
-        from unittest.mock import AsyncMock, MagicMock
+        from unittest.mock import MagicMock
 
         from starlette.responses import Response as StarletteResponse
 

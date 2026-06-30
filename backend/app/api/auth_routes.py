@@ -152,7 +152,9 @@ async def login(
 
 
 @router.post("/verify-email", response_model=MessageResponse)
-async def verify_email(request: Request, body: VerifyEmailRequest, db: AsyncSession = Depends(get_db)) -> MessageResponse:
+async def verify_email(
+    request: Request, body: VerifyEmailRequest, db: AsyncSession = Depends(get_db)
+) -> MessageResponse:
     limit_response = await verify_email_limiter(request)
     if limit_response:
         return limit_response  # type: ignore[return-value]

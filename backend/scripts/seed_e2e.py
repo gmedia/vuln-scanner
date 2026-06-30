@@ -18,7 +18,6 @@ from app.models.scan_job import ScanJob
 from app.models.user import User
 from app.services.auth import hash_password
 
-
 SEED_DATA: list[dict[str, Any]] = [
     {
         "scan_type": "ip",

@@ -213,7 +213,11 @@ async def get_scan_history(
 
 
 @router.get("/scan/{job_id}", response_model=ScanJobDetailResponse)
-async def get_scan(job_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)) -> ScanJobDetailResponse:
+async def get_scan(
+    job_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ScanJobDetailResponse:
     """Retrieve a single scan job with all findings by job ID."""
     svc = ScannerService(db)
     job = await svc.get_job(job_id, user_id=current_user.id)
