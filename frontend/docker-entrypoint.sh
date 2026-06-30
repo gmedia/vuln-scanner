@@ -12,5 +12,6 @@ for dir in /var/cache/nginx /var/log/nginx /tmp /var/run; do
     chown -R 101:101 "$dir" 2>/dev/null || true
 done
 
-# Drop to nginx user and run the standard entrypoint
-exec su -s /bin/sh nginx -c '/docker-entrypoint.sh nginx -g "daemon off;"'
+# Drop to nginx user and run the standard entrypoint.
+# su-exec is simpler than su and does not require SETGID capability.
+exec su-exec nginx /docker-entrypoint.sh nginx -g "daemon off;"
