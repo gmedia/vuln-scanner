@@ -232,7 +232,7 @@ async def get_scan_findings(
     return findings
 
 
-@router.get("/scan/{job_id}/export")
+@router.get("/scan/{job_id}/export", response_model=None)
 async def export_scan(
     job_id: str,
     format: str = Query(default="json"),

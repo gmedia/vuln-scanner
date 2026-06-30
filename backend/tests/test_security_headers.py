@@ -20,12 +20,25 @@ def _make_app() -> FastAPI:
 
 class TestServerHeaderDeletion:
     def test_server_header_is_deleted_when_present(self):
-        """When response has a 'server' header, SecurityHeadersMiddleware deletes it."""
-        app = _make_app()
-        client = TestClient(app)
+        """When response has a 'server' header, SecurityHeadersMiddleware deletes it (line 38)."""
+        import asyncio
+        from unittest.mock import AsyncMock, MagicMock
 
-        resp = client.get("/test")
-        assert "server" not in resp.headers
+        from starlette.responses import Response as StarletteResponse
+
+        middleware = SecurityHeadersMiddleware(MagicMock())
+        request = MagicMock()
+        request.url.path = "/test"
+
+        # Build a response that HAS a 'server' header
+        response = StarletteResponse()
+        response.headers["server"] = "uvicorn"
+
+        async def call_next(req):
+            return response
+
+        result = asyncio.run(middleware.dispatch(request, call_next))
+        assert "server" not in result.headers
 
     def test_no_error_when_server_header_absent(self):
         """When response does NOT have 'server' header, no error occurs."""

@@ -290,3 +290,104 @@ def test_options_bypass_on_root_path(client):
     """OPTIONS on root returns 200."""
     resp = client.options("/")
     assert resp.status_code not in (401, 429)
+
+
+def test_e2e_test_header_bypasses_rate_limit(client, mock_celery):
+    """X-E2E-Test header bypasses both IP and key rate limiting (auth.py:132-136)."""
+    # Saturate master key rate limit first
+    from app.middleware import auth as auth_module
+    import redis.asyncio as redis
+
+    # Use a key with rate_limit=1 — second request should 429, but E2E bypass skips it
+    create_resp = client.post(
+        "/api/keys/generate",
+        headers={"X-API-Key": API_KEY},
+        json={"name": "e2e-test-key", "rate_limit": 1},
+    )
+    assert create_resp.status_code == 201
+    plain_key = create_resp.json()["key"]
+
+    # First request — should succeed (count=1, limit=1)
+    resp = client.get("/api/scan/history", headers={"X-API-Key": plain_key})
+    assert resp.status_code == 200
+
+    # Second request with E2E bypass — should still succeed (bypasses rate limit)
+    resp = client.get(
+        "/api/scan/history",
+        headers={"X-API-Key": plain_key, "X-E2E-Test": "true"},
+    )
+    assert resp.status_code == 200
+    # E2E bypass still sets rate limit headers
+    assert "X-RateLimit-Limit" in resp.headers
+
+
+def test_e2e_test_bypasses_ip_rate_limit(client, mock_celery):
+    """X-E2E-Test header bypasses IP rate limiting even after exceeding IP_LIMIT."""
+    from app.middleware import auth as auth_module
+    import redis.asyncio as redis
+
+    # Saturate IP rate limit
+    for _ in range(300):
+        resp = client.get(
+            "/api/scan/history",
+            headers={"X-API-Key": API_KEY},
+        )
+        assert resp.status_code == 200, f"Expected 200, got {resp.status_code} at iteration {_}"
+
+    # Next request without E2E bypass → 429
+    resp = client.get("/api/scan/history", headers={"X-API-Key": API_KEY})
+    assert resp.status_code == 429
+
+    # Same request with E2E bypass → 200 (bypasses IP rate limit)
+    resp = client.get(
+        "/api/scan/history",
+        headers={"X-API-Key": API_KEY, "X-E2E-Test": "true"},
+    )
+    assert resp.status_code == 200
+
+
+def test_e2e_test_bypasses_dedicated_rate_limiter(client, mock_celery):
+    """X-E2E-Test bypasses RateLimiter.__call__ (rate_limit.py:37)."""
+    # Create key with rate_limit=1, exhaust it
+    create_resp = client.post(
+        "/api/keys/generate",
+        headers={"X-API-Key": API_KEY},
+        json={"name": "e2e-dedicated", "rate_limit": 1},
+    )
+    assert create_resp.status_code == 201
+    plain_key = create_resp.json()["key"]
+
+    resp = client.get("/api/scan/history", headers={"X-API-Key": plain_key})
+    assert resp.status_code == 200
+
+    # Without E2E bypass → 429
+    resp = client.get("/api/scan/history", headers={"X-API-Key": plain_key})
+    assert resp.status_code == 429
+
+    # With E2E bypass → 200
+    resp = client.get(
+        "/api/scan/history",
+        headers={"X-API-Key": plain_key, "X-E2E-Test": "true"},
+    )
+    assert resp.status_code == 200
+
+
+def test_security_headers_removes_server_header(client, mock_celery):
+    """SecurityHeadersMiddleware strips the 'server' header from responses (security_headers.py:38)."""
+    resp = client.get("/api/scan/history", headers={"X-API-Key": API_KEY})
+    assert "server" not in resp.headers
+    assert resp.headers.get("X-Content-Type-Options") == "nosniff"
+
+
+def test_rate_limiter_e2e_bypass_via_login_route(client):
+    """RateLimiter.__call__ returns None when X-E2E-Test is set (rate_limit.py:37).
+    Hits the login route which uses login_limiter — without E2E bypass,
+    this route would still work but the limiter's bypass path wouldn't be covered.
+    With the header, the limiter returns None immediately."""
+    resp = client.post(
+        "/api/auth/login",
+        json={"email": "nonexistent@example.com", "password": "wrong-password"},
+        headers={"X-E2E-Test": "true"},
+    )
+    assert resp.status_code != 429
+    assert resp.status_code in (401, 403)
