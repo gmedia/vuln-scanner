@@ -604,6 +604,7 @@ class TestMobileScanFileSizeProgress:
             patch("tasks.mobile_scan.lookup_service_cves") as mock_cve,
             patch("tasks.mobile_scan.publish_progress") as mock_progress,
             patch("tasks.mobile_scan._update_status") as _mock_update_status,
+            patch("tasks.mobile_scan._save_findings") as _mock_save_findings,
             patch("tasks.mobile_scan.redis.Redis") as mock_redis,
             patch("tasks.mobile_scan.os.path.exists") as mock_exists,
             patch("tasks.mobile_scan.os.path.getsize") as mock_size,
