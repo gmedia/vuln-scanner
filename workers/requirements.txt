@@ -1,7 +1,7 @@
 # Workers requirements
 celery[redis]==5.4.0
 redis==5.2.1
-sqlalchemy[asyncio]==2.0.36
+sqlalchemy[asyncio]==2.0.51
 asyncpg==0.30.0
 psycopg2-binary==2.9.12
 pydantic==2.10.3
