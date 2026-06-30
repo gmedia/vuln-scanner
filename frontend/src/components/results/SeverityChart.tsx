@@ -89,8 +89,8 @@ function SeverityChart({ summary, className }: SeverityChartProps) {
               fontFamily: "JetBrains Mono, monospace",
               fontSize: "0.75rem",
             }}
-            formatter={(value: number) => [
-              `${value} finding${value !== 1 ? "s" : ""}`,
+            formatter={(_value: number | undefined, _name: string | undefined) => [
+              `${_value} finding${_value !== 1 ? "s" : ""}`,
               "",
             ]}
           />
