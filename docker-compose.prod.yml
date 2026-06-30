@@ -264,13 +264,13 @@ services:
       VITE_WS_URL: ""
       VITE_API_KEY: ${API_KEY}
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O- http://localhost:80 || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O- http://localhost:8080 || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 10
       start_period: 10s
     ports:
-      - "127.0.0.1:5174:80"
+      - "127.0.0.1:5174:8080"
     networks:
       - vuln-net
 
