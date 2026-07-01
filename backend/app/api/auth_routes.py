@@ -49,10 +49,12 @@ refresh_limiter = RateLimiter(max_requests=10, window_seconds=60, prefix="rateli
 verify_email_limiter = RateLimiter(max_requests=5, window_seconds=60, prefix="ratelimit:verify_email")
 
 @router.post("/register", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
-async def register(request: Request, body: RegisterRequest, db: AsyncSession = Depends(get_db)) -> MessageResponse:
+async def register(
+    request: Request, body: RegisterRequest, db: AsyncSession = Depends(get_db)
+) -> MessageResponse | Response:
     limit_response = await register_limiter(request)
     if limit_response:
-        return limit_response  # type: ignore[return-value]
+        return limit_response
 
     if body.password != body.confirm_password:
         raise HTTPException(
@@ -108,10 +110,10 @@ async def login(
     request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
-) -> LoginResponse:
+) -> LoginResponse | Response:
     limit_response = await login_limiter(request)
     if limit_response:
-        return limit_response  # type: ignore[return-value]
+        return limit_response
 
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
@@ -154,10 +156,10 @@ async def login(
 @router.post("/verify-email", response_model=MessageResponse)
 async def verify_email(
     request: Request, body: VerifyEmailRequest, db: AsyncSession = Depends(get_db)
-) -> MessageResponse:
+) -> MessageResponse | Response:
     limit_response = await verify_email_limiter(request)
     if limit_response:
-        return limit_response  # type: ignore[return-value]
+        return limit_response
 
     result = await db.execute(
         select(EmailVerificationToken).where(EmailVerificationToken.token == body.token)
@@ -195,12 +197,12 @@ async def verify_email(
 async def refresh(
     request: Request,
     body: RefreshRequest | None = None,
-    response: Response = None,  # type: ignore[assignment]
+    response: Response = None,  # type: ignore[assignment]  # FastAPI injects Response, not a body field
     db: AsyncSession = Depends(get_db),
-) -> TokenResponse:
+) -> TokenResponse | Response:
     limit_response = await refresh_limiter(request)
     if limit_response:
-        return limit_response  # type: ignore[return-value]
+        return limit_response
 
     refresh_token_str: str | None = None
 

@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import time
+from collections.abc import Awaitable, Callable
 
 import redis.asyncio as redis
 from fastapi import Request
@@ -119,13 +120,13 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
             request, call_next, str(api_key.id), api_key.rate_limit
         )
 
-    async def _check_rate_and_forward(  # type: ignore[no-untyped-def]
+    async def _check_rate_and_forward(
         self,
         request: Request,
-        call_next,
+        call_next: Callable[[Request], Awaitable[JSONResponse]],
         key_id: str,
         rate_limit: int,
-    ):
+    ) -> JSONResponse:
         """Check per-key rate limit, forward request, and attach rate-limit headers."""
         # Bypass rate limiting for e2e test requests
         if request.headers.get("X-E2E-Test"):

@@ -1,4 +1,5 @@
 import asyncio
+import json
 import re
 import socket
 import ssl
@@ -117,7 +118,6 @@ async def enumerate_subdomains(domain: str) -> list[str]:
         text = data.decode("utf-8", errors="replace")
         body = text.split("\r\n\r\n", 1)[-1] if "\r\n\r\n" in text else ""
 
-        import json
         try:
             entries = json.loads(body)
             seen = set()
