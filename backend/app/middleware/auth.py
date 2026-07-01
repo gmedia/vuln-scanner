@@ -1,7 +1,7 @@
 import hashlib
 import logging
 import time
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 
 import redis.asyncio as redis
 from fastapi import Request
