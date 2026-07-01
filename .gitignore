@@ -19,3 +19,5 @@ test-results/
 playwright-report/
 certbot/www/*
 certbot/conf/*
+backend/coverage.json
+workers/.coverage-report.json
