@@ -35,6 +35,13 @@ docker compose up -d
 
 Prerequisites: Node.js 20+, Python 3.12+, Docker (PostgreSQL & Redis).
 
+### Quick Start (Makefile)
+
+```bash
+make install-dev  # Install dependencies + pre-commit hooks
+make dev          # Start PostgreSQL + Redis
+```
+
 ### 1. Infrastructure (PostgreSQL + Redis)
 
 ```bash

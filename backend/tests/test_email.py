@@ -360,7 +360,6 @@ class TestTokenInLink:
 
 
 class TestEmailEdgeCases:
-
     # -- non-standard SMTP ports -----------------------------------------------
 
     @pytest.mark.asyncio

@@ -12,7 +12,7 @@ class RegisterRequest(BaseModel):
         ...,
         min_length=8,
         max_length=128,
-        description="Password must be at least 8 characters with uppercase, lowercase, and digit"
+        description="Password must be at least 8 characters with uppercase, lowercase, and digit",
     )
     confirm_password: str = Field(..., max_length=128, description="Confirm password")
 

@@ -83,9 +83,7 @@ async def get_users(
 
     user_items = []
     for user in users:
-        scan_count_result = await db.execute(
-            select(func.count(ScanJob.id)).where(ScanJob.user_id == user.id)
-        )
+        scan_count_result = await db.execute(select(func.count(ScanJob.id)).where(ScanJob.user_id == user.id))
         scan_count = scan_count_result.scalar() or 0
         user_items.append(
             AdminUserItem(
@@ -113,9 +111,7 @@ async def get_user_detail(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    scan_count_result = await db.execute(
-        select(func.count(ScanJob.id)).where(ScanJob.user_id == user.id)
-    )
+    scan_count_result = await db.execute(select(func.count(ScanJob.id)).where(ScanJob.user_id == user.id))
     scan_count = scan_count_result.scalar() or 0
 
     return AdminUserItem(
@@ -161,9 +157,7 @@ async def adjust_user_credits(
 
     await db.refresh(user)
 
-    scan_count_result = await db.execute(
-        select(func.count(ScanJob.id)).where(ScanJob.user_id == user.id)
-    )
+    scan_count_result = await db.execute(select(func.count(ScanJob.id)).where(ScanJob.user_id == user.id))
     scan_count = scan_count_result.scalar() or 0
 
     return AdminUserItem(
@@ -197,9 +191,7 @@ async def update_pricing(
     if scan_type not in ("ip", "domain", "apk", "ipa"):
         raise HTTPException(status_code=400, detail="Invalid scan type")
 
-    result = await db.execute(
-        select(PricingConfig).where(PricingConfig.scan_type == scan_type)
-    )
+    result = await db.execute(select(PricingConfig).where(PricingConfig.scan_type == scan_type))
     pricing = result.scalar_one_or_none()
 
     if pricing:

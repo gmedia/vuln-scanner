@@ -31,9 +31,11 @@ from app.models.user import User
 # Counter-based incr so rate limiting tests work correctly
 _incr_counters: dict[str, int] = {}
 
+
 async def _incr_side_effect(key: str) -> int:
     _incr_counters[key] = _incr_counters.get(key, 0) + 1
     return _incr_counters[key]
+
 
 _fake_redis = _AsyncMock(spec=_aioredis.Redis)
 _fake_redis.incr = _incr_side_effect
@@ -47,12 +49,14 @@ _aioredis.Redis.from_url = staticmethod(lambda *a, **kw: _fake_redis)
 class UUIDType(TypeDecorator):
     impl = String(32)
     cache_ok = True
+
     def process_bind_param(self, value, dialect):
         if value is None:
             return None
         if isinstance(value, uuid.UUID):
             return value.hex
-        return str(value).replace('-', '')
+        return str(value).replace("-", "")
+
     def process_result_value(self, value, dialect):
         if value is None:
             return None
@@ -60,19 +64,23 @@ class UUIDType(TypeDecorator):
             return value
         return uuid.UUID(value)
 
+
 class JSONBType(TypeDecorator):
     impl = Text
     cache_ok = True
+
     def process_bind_param(self, value, dialect):
         if value is None:
             return None
         return json.dumps(value)
+
     def process_result_value(self, value, dialect):
         if value is None:
             return None
         if isinstance(value, str):
             return json.loads(value)
         return value
+
 
 # Replace PostgreSQL types on metadata with SQLite-safe decorators
 from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB  # noqa: E402
@@ -98,9 +106,7 @@ def _reset_redis_counters():
 
 @pytest_asyncio.fixture
 async def engine():
-    test_engine = create_async_engine(
-        "sqlite+aiosqlite:///:memory:", echo=False
-    )
+    test_engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
     yield test_engine
     await test_engine.dispose()
 
@@ -109,9 +115,7 @@ async def engine():
 async def db_session(engine):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    async_session_local = async_sessionmaker(
-        engine, expire_on_commit=False
-    )
+    async_session_local = async_sessionmaker(engine, expire_on_commit=False)
     async with async_session_local() as session:
         yield session
     async with engine.begin() as conn:
@@ -126,6 +130,7 @@ def client(db_session):
     async def override_get_current_user():
         # Create or fetch a test user — sidesteps Bearer auth for scan route tests
         from sqlalchemy import select as _sel
+
         result = await db_session.execute(_sel(User).limit(1))
         user = result.scalar_one_or_none()
         if user is None:
@@ -159,9 +164,7 @@ def mock_celery(monkeypatch):
     mock_async_result = MagicMock()
     mock_async_result.id = "mock-task-id-456"
     mock_send_task = MagicMock(return_value=mock_async_result)
-    monkeypatch.setattr(
-        "app.services.scanner.celery_app.send_task", mock_send_task
-    )
+    monkeypatch.setattr("app.services.scanner.celery_app.send_task", mock_send_task)
     return mock_send_task
 
 

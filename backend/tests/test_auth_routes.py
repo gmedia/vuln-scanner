@@ -238,9 +238,7 @@ class TestRegister:
         import asyncio
 
         async def check():
-            result = await db_session.execute(
-                select(User).where(User.email == "dbcheck@example.com")
-            )
+            result = await db_session.execute(select(User).where(User.email == "dbcheck@example.com"))
             return result.scalar_one_or_none()
 
         user = asyncio.get_event_loop().run_until_complete(check())
@@ -262,14 +260,10 @@ class TestRegister:
         import asyncio
 
         async def check():
-            user_result = await db_session.execute(
-                select(User).where(User.email == "verifytoken@example.com")
-            )
+            user_result = await db_session.execute(select(User).where(User.email == "verifytoken@example.com"))
             user = user_result.scalar_one_or_none()
             token_result = await db_session.execute(
-                select(EmailVerificationToken).where(
-                    EmailVerificationToken.user_id == user.id
-                )
+                select(EmailVerificationToken).where(EmailVerificationToken.user_id == user.id)
             )
             return token_result.scalar_one_or_none()
 
@@ -290,9 +284,7 @@ class TestLogin:
     def test_success_returns_200_with_tokens(self, auth_client, db_session):
         import asyncio
 
-        asyncio.get_event_loop().run_until_complete(
-            _create_verified_user(db_session)
-        )
+        asyncio.get_event_loop().run_until_complete(_create_verified_user(db_session))
 
         resp = auth_client.post(
             "/api/auth/login",
@@ -310,9 +302,7 @@ class TestLogin:
     def test_wrong_password_returns_401(self, auth_client, db_session):
         import asyncio
 
-        asyncio.get_event_loop().run_until_complete(
-            _create_verified_user(db_session)
-        )
+        asyncio.get_event_loop().run_until_complete(_create_verified_user(db_session))
 
         resp = auth_client.post(
             "/api/auth/login",
@@ -344,9 +334,7 @@ class TestLogin:
     def test_unverified_user_returns_403(self, auth_client, db_session):
         import asyncio
 
-        asyncio.get_event_loop().run_until_complete(
-            _create_unverified_user(db_session)
-        )
+        asyncio.get_event_loop().run_until_complete(_create_unverified_user(db_session))
 
         resp = auth_client.post(
             "/api/auth/login",
@@ -357,9 +345,7 @@ class TestLogin:
     def test_login_sets_refresh_cookie(self, auth_client, db_session):
         import asyncio
 
-        asyncio.get_event_loop().run_until_complete(
-            _create_verified_user(db_session)
-        )
+        asyncio.get_event_loop().run_until_complete(_create_verified_user(db_session))
 
         resp = auth_client.post(
             "/api/auth/login",
@@ -380,9 +366,7 @@ class TestMe:
         user = await _create_verified_user(db_session)
         from app.services.auth import create_access_token
 
-        return create_access_token(
-            user_id=str(user.id), email=user.email, is_admin=user.is_admin
-        )
+        return create_access_token(user_id=str(user.id), email=user.email, is_admin=user.is_admin)
 
     def test_with_valid_token_returns_200(self, auth_client, db_session):
         import asyncio
@@ -427,9 +411,7 @@ class TestMe:
     def test_with_expired_token_returns_401(self, auth_client, db_session):
         import asyncio
 
-        user = asyncio.get_event_loop().run_until_complete(
-            _create_verified_user(db_session)
-        )
+        user = asyncio.get_event_loop().run_until_complete(_create_verified_user(db_session))
 
         secret = settings.jwt_secret or settings.secret_key
         algorithm = settings.jwt_algorithm
@@ -451,9 +433,7 @@ class TestMe:
     def test_with_tampered_token_returns_401(self, auth_client, db_session):
         import asyncio
 
-        user = asyncio.get_event_loop().run_until_complete(
-            _create_verified_user(db_session)
-        )
+        user = asyncio.get_event_loop().run_until_complete(_create_verified_user(db_session))
 
         algorithm = settings.jwt_algorithm
         tampered_payload = {
@@ -537,9 +517,7 @@ class TestRefresh:
 
         return {
             "user": user,
-            "access": create_access_token(
-                user_id=str(user.id), email=user.email, is_admin=user.is_admin
-            ),
+            "access": create_access_token(user_id=str(user.id), email=user.email, is_admin=user.is_admin),
             "refresh": create_refresh_token(user_id=str(user.id)),
         }
 
@@ -591,9 +569,7 @@ class TestRefresh:
     def test_with_expired_refresh_token_returns_401(self, auth_client, db_session):
         import asyncio
 
-        user = asyncio.get_event_loop().run_until_complete(
-            _create_verified_user(db_session)
-        )
+        user = asyncio.get_event_loop().run_until_complete(_create_verified_user(db_session))
 
         secret = settings.jwt_secret or settings.secret_key
         algorithm = settings.jwt_algorithm
@@ -663,9 +639,7 @@ class TestRefresh:
         """Refresh token can come from cookie set by login endpoint."""
         import asyncio
 
-        user = asyncio.get_event_loop().run_until_complete(
-            _create_verified_user(db_session)
-        )
+        user = asyncio.get_event_loop().run_until_complete(_create_verified_user(db_session))
         from app.services.auth import create_refresh_token
 
         refresh_token = create_refresh_token(user_id=str(user.id))
@@ -712,9 +686,7 @@ class TestVerifyEmail:
     def test_success_verifies_user(self, auth_client, db_session):
         import asyncio
 
-        user, token_str = asyncio.get_event_loop().run_until_complete(
-            self._setup(db_session)
-        )
+        user, token_str = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
 
         # SQLite strips timezone from DateTime(timezone=True), making expires_at naive.
         # The source code compares with datetime.now(UTC) (aware), which raises TypeError.
@@ -731,6 +703,7 @@ class TestVerifyEmail:
 
         async def check():
             from sqlalchemy import select
+
             result = await db_session.execute(select(User).where(User.id == user.id))
             return result.scalar_one()
 
@@ -743,9 +716,8 @@ class TestVerifyEmail:
         import asyncio
 
         # Create a verified user with a verification token
-        user, token_str = asyncio.get_event_loop().run_until_complete(
-            self._setup(db_session)
-        )
+        user, token_str = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+
         # Manually verify the user first
         async def verify():
             u = await db_session.get(User, user.id)
@@ -767,9 +739,7 @@ class TestVerifyEmail:
         # Token should be deleted after verification
         async def check_token():
             result = await db_session.execute(
-                select(EmailVerificationToken).where(
-                    EmailVerificationToken.token == token_str
-                )
+                select(EmailVerificationToken).where(EmailVerificationToken.token == token_str)
             )
             return result.scalar_one_or_none()
 
@@ -780,9 +750,7 @@ class TestVerifyEmail:
         """Verification token is deleted from DB after successful verify."""
         import asyncio
 
-        user, token_str = asyncio.get_event_loop().run_until_complete(
-            self._setup(db_session)
-        )
+        user, token_str = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
 
         with patch("app.api.auth_routes.datetime") as mock_dt:
             mock_dt.now.return_value = datetime.now(UTC).replace(tzinfo=None)
@@ -795,9 +763,7 @@ class TestVerifyEmail:
         # Verify token was deleted
         async def check_deleted():
             result = await db_session.execute(
-                select(EmailVerificationToken).where(
-                    EmailVerificationToken.token == token_str
-                )
+                select(EmailVerificationToken).where(EmailVerificationToken.token == token_str)
             )
             return result.scalar_one_or_none()
 
@@ -819,9 +785,7 @@ class TestRevoke:
     def test_valid_revoke_returns_200(self, auth_client, db_session):
         import asyncio
 
-        user, refresh_token = asyncio.get_event_loop().run_until_complete(
-            self._setup(db_session)
-        )
+        user, refresh_token = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
 
         # First login to get an access token for auth header
         resp = auth_client.post(
@@ -843,9 +807,7 @@ class TestRevoke:
     def test_revoke_invalid_token_returns_400(self, auth_client, db_session):
         import asyncio
 
-        asyncio.get_event_loop().run_until_complete(
-            _create_verified_user(db_session)
-        )
+        asyncio.get_event_loop().run_until_complete(_create_verified_user(db_session))
 
         resp = auth_client.post(
             "/api/auth/login",
@@ -863,9 +825,7 @@ class TestRevoke:
     def test_revoke_tampered_token_returns_400(self, auth_client, db_session):
         import asyncio
 
-        asyncio.get_event_loop().run_until_complete(
-            _create_verified_user(db_session)
-        )
+        asyncio.get_event_loop().run_until_complete(_create_verified_user(db_session))
 
         resp = auth_client.post(
             "/api/auth/login",
@@ -889,9 +849,7 @@ class TestRevoke:
     def test_revoke_token_missing_jti_returns_400(self, auth_client, db_session):
         import asyncio
 
-        asyncio.get_event_loop().run_until_complete(
-            _create_verified_user(db_session)
-        )
+        asyncio.get_event_loop().run_until_complete(_create_verified_user(db_session))
 
         resp = auth_client.post(
             "/api/auth/login",
@@ -928,17 +886,13 @@ class TestRevoke:
 class TestLogoutAll:
     async def _setup(self, db_session):
         user = await _create_verified_user(db_session)
-        access_token = create_access_token(
-            user_id=str(user.id), email=user.email, is_admin=user.is_admin
-        )
+        access_token = create_access_token(user_id=str(user.id), email=user.email, is_admin=user.is_admin)
         return user, access_token
 
     def test_successful_logout_returns_200(self, auth_client, db_session):
         import asyncio
 
-        user, access_token = asyncio.get_event_loop().run_until_complete(
-            self._setup(db_session)
-        )
+        user, access_token = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
 
         resp = auth_client.post(
             "/api/auth/logout-all",
@@ -953,15 +907,11 @@ class TestLogoutAll:
     def test_logout_all_revoked_count_increments(self, auth_client, db_session):
         import asyncio
 
-        user, access_token = asyncio.get_event_loop().run_until_complete(
-            self._setup(db_session)
-        )
+        user, access_token = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
 
         # First, revoke one token to increment the count
         refresh_token = create_refresh_token(user_id=str(user.id))
-        asyncio.get_event_loop().run_until_complete(
-            revoke_token(decode_token(refresh_token)["jti"], str(user.id))
-        )
+        asyncio.get_event_loop().run_until_complete(revoke_token(decode_token(refresh_token)["jti"], str(user.id)))
 
         resp = auth_client.post(
             "/api/auth/logout-all",
@@ -974,9 +924,7 @@ class TestLogoutAll:
     def test_subsequent_token_fails_after_logout_all(self, auth_client, db_session):
         import asyncio
 
-        user, access_token = asyncio.get_event_loop().run_until_complete(
-            self._setup(db_session)
-        )
+        user, access_token = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
 
         # Logout all first
         resp = auth_client.post(
@@ -1002,9 +950,7 @@ class TestLoginExtra:
     def test_login_sets_correct_cookie_attributes(self, auth_client, db_session):
         import asyncio
 
-        asyncio.get_event_loop().run_until_complete(
-            _create_verified_user(db_session)
-        )
+        asyncio.get_event_loop().run_until_complete(_create_verified_user(db_session))
 
         resp = auth_client.post(
             "/api/auth/login",
@@ -1026,9 +972,7 @@ class TestLoginExtra:
 
 
 class TestRegisterExtra:
-    def test_register_with_email_sending_failure_still_returns_201(
-        self, auth_client, db_session
-    ):
+    def test_register_with_email_sending_failure_still_returns_201(self, auth_client, db_session):
         with patch("app.api.auth_routes.send_verification_email") as mock_send:
             mock_send.side_effect = Exception("SMTP connection failed")
 
@@ -1057,14 +1001,10 @@ class TestRegisterExtra:
         )
 
         async def check():
-            user_result = await db_session.execute(
-                select(User).where(User.email == "creditlog@example.com")
-            )
+            user_result = await db_session.execute(select(User).where(User.email == "creditlog@example.com"))
             user = user_result.scalar_one_or_none()
             assert user is not None
-            log_result = await db_session.execute(
-                select(CreditLog).where(CreditLog.user_id == user.id)
-            )
+            log_result = await db_session.execute(select(CreditLog).where(CreditLog.user_id == user.id))
             log = log_result.scalar_one_or_none()
             return log
 
@@ -1074,9 +1014,7 @@ class TestRegisterExtra:
         assert log.type == "credit"
         assert log.description == "Welcome bonus"
 
-    def test_register_password_missing_lowercase_returns_422(
-        self, auth_client, db_session
-    ):
+    def test_register_password_missing_lowercase_returns_422(self, auth_client, db_session):
         resp = auth_client.post(
             "/api/auth/register",
             json={
@@ -1105,9 +1043,7 @@ class TestRefreshExtra:
 
         refresh_token = create_refresh_token(user_id=str(user.id))
         jti = decode_token(refresh_token)["jti"]
-        asyncio.get_event_loop().run_until_complete(
-            revoke_token(jti, str(user.id))
-        )
+        asyncio.get_event_loop().run_until_complete(revoke_token(jti, str(user.id)))
 
         resp = auth_client.post(
             "/api/auth/refresh",
@@ -1115,9 +1051,7 @@ class TestRefreshExtra:
         )
         assert resp.status_code == 401
 
-    def test_refresh_with_nonexistent_user_in_token_returns_401(
-        self, auth_client, db_session
-    ):
+    def test_refresh_with_nonexistent_user_in_token_returns_401(self, auth_client, db_session):
         secret = settings.jwt_secret or settings.secret_key
         algorithm = settings.jwt_algorithm
         payload = {
@@ -1134,9 +1068,7 @@ class TestRefreshExtra:
         )
         assert resp.status_code == 401
 
-    def test_refresh_with_invalid_uuid_sub_returns_401(
-        self, auth_client, db_session
-    ):
+    def test_refresh_with_invalid_uuid_sub_returns_401(self, auth_client, db_session):
         secret = settings.jwt_secret or settings.secret_key
         algorithm = settings.jwt_algorithm
         payload = {
@@ -1153,9 +1085,7 @@ class TestRefreshExtra:
         )
         assert resp.status_code == 401
 
-    def test_refresh_with_token_missing_sub_returns_401(
-        self, auth_client, db_session
-    ):
+    def test_refresh_with_token_missing_sub_returns_401(self, auth_client, db_session):
         secret = settings.jwt_secret or settings.secret_key
         algorithm = settings.jwt_algorithm
         payload = {
@@ -1179,20 +1109,14 @@ class TestRefreshExtra:
 
 class TestMeExtra:
     async def _setup(self, db_session, is_admin=False):
-        user = await _create_verified_user(
-            db_session, email="me@example.com", is_admin=is_admin
-        )
-        access_token = create_access_token(
-            user_id=str(user.id), email=user.email, is_admin=user.is_admin
-        )
+        user = await _create_verified_user(db_session, email="me@example.com", is_admin=is_admin)
+        access_token = create_access_token(user_id=str(user.id), email=user.email, is_admin=user.is_admin)
         return user, access_token
 
     def test_me_returns_correct_user_shape(self, auth_client, db_session):
         import asyncio
 
-        user, access_token = asyncio.get_event_loop().run_until_complete(
-            self._setup(db_session)
-        )
+        user, access_token = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
 
         resp = auth_client.get(
             "/api/auth/me",
@@ -1212,9 +1136,7 @@ class TestMeExtra:
     def test_me_with_admin_token(self, auth_client, db_session):
         import asyncio
 
-        user, access_token = asyncio.get_event_loop().run_until_complete(
-            self._setup(db_session, is_admin=True)
-        )
+        user, access_token = asyncio.get_event_loop().run_until_complete(self._setup(db_session, is_admin=True))
 
         resp = auth_client.get(
             "/api/auth/me",
@@ -1235,9 +1157,7 @@ class TestRateLimit:
     def test_login_rate_limit_returns_429(self, auth_client, db_session):
         import asyncio
 
-        asyncio.get_event_loop().run_until_complete(
-            _create_verified_user(db_session)
-        )
+        asyncio.get_event_loop().run_until_complete(_create_verified_user(db_session))
 
         # Simulate exceeding the login rate limit (max_requests=5)
         # TestClient uses "testclient" as client host
@@ -1286,9 +1206,7 @@ class TestRateLimit:
     def test_rate_limit_not_triggered_below_threshold(self, auth_client, db_session):
         import asyncio
 
-        asyncio.get_event_loop().run_until_complete(
-            _create_verified_user(db_session)
-        )
+        asyncio.get_event_loop().run_until_complete(_create_verified_user(db_session))
 
         # Below threshold — should work fine
         _incr_counters["ratelimit:login:testclient"] = 3
@@ -1302,9 +1220,7 @@ class TestRateLimit:
     def test_expired_token_returns_400(self, auth_client, db_session):
         import asyncio
 
-        user = asyncio.get_event_loop().run_until_complete(
-            _create_unverified_user(db_session)
-        )
+        user = asyncio.get_event_loop().run_until_complete(_create_unverified_user(db_session))
         token_str = "expired-token-32-bytes-long!!"
         verification_token = EmailVerificationToken(
             user_id=user.id,

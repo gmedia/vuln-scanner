@@ -2,7 +2,13 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Navigation", () => {
   test("all routes render without crashing", async ({ page }) => {
-    const routes = ["/dashboard", "/scan/ip", "/scan/domain", "/scan/mobile", "/nonexistent"];
+    const routes = [
+      "/dashboard",
+      "/scan/ip",
+      "/scan/domain",
+      "/scan/mobile",
+      "/nonexistent",
+    ];
     for (const route of routes) {
       await page.goto(route);
       await page.waitForLoadState("networkidle");

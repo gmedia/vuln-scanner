@@ -5,8 +5,12 @@ test.describe("Domain Scanner", () => {
     await page.goto("/scan/domain");
     await expect(page.locator("h2:has-text('DOMAIN SCANNER')")).toBeVisible();
     await expect(page.locator("text=SCAN TARGET")).toBeVisible();
-    await expect(page.locator('input[placeholder="example.com"]')).toBeVisible();
-    await expect(page.locator('button:has-text("START DOMAIN SCAN")')).toBeVisible();
+    await expect(
+      page.locator('input[placeholder="example.com"]'),
+    ).toBeVisible();
+    await expect(
+      page.locator('button:has-text("START DOMAIN SCAN")'),
+    ).toBeVisible();
   });
 
   test("shows validation error for empty domain", async ({ page }) => {
@@ -26,16 +30,24 @@ test.describe("Domain Scanner", () => {
     await page.goto("/scan/domain");
     await page.locator('input[placeholder="example.com"]').fill("example.com");
     await page.locator('button:has-text("START DOMAIN SCAN")').click();
-    await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, { timeout: 15_000 });
-    await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, {
+      timeout: 15_000,
+    });
+    await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({
+      timeout: 15_000,
+    });
   });
 
   test("Enter key submits the form", async ({ page }) => {
     await page.goto("/scan/domain");
     await page.locator('input[placeholder="example.com"]').fill("example.com");
     await page.locator('input[placeholder="example.com"]').press("Enter");
-    await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, { timeout: 15_000 });
-    await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, {
+      timeout: 15_000,
+    });
+    await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({
+      timeout: 15_000,
+    });
   });
 
   test("back arrow navigates to dashboard", async ({ page }) => {

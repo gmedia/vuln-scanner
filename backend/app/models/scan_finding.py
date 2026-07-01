@@ -25,6 +25,4 @@ class ScanFinding(Base):
     raw_data: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True)
     found_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
-    __table_args__ = (
-        CheckConstraint("severity IN ('critical', 'high', 'medium', 'low', 'info')", name="ck_severity"),
-    )
+    __table_args__ = (CheckConstraint("severity IN ('critical', 'high', 'medium', 'low', 'info')", name="ck_severity"),)

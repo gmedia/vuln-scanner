@@ -42,6 +42,7 @@ class TestIpScanSuccessfulFlow:
 
     def _call_task(self):
         from tasks.ip_scan import run_ip_scan
+
         return run_ip_scan(JOB_ID, TARGET, PORTS)
 
     def test_successful_scan_completes(self):
@@ -53,14 +54,21 @@ class TestIpScanSuccessfulFlow:
     def test_successful_scan_updates_status_running(self):
         self._call_task()
         self.mock_update_status.assert_any_call(
-            self.mock_session.return_value, JOB_ID, "running", started_at=ANY,
+            self.mock_session.return_value,
+            JOB_ID,
+            "running",
+            started_at=ANY,
         )
 
     def test_successful_scan_updates_status_completed(self):
         self._call_task()
         self.mock_update_status.assert_any_call(
-            self.mock_session.return_value, JOB_ID, "completed",
-            progress=100, result_summary=ANY, completed_at=ANY,
+            self.mock_session.return_value,
+            JOB_ID,
+            "completed",
+            progress=100,
+            result_summary=ANY,
+            completed_at=ANY,
         )
 
     def test_successful_scan_calls_nmap(self):
@@ -80,9 +88,7 @@ class TestIpScanSuccessfulFlow:
 
     def test_progress_milestones(self):
         self._call_task()
-        progress_messages = [
-            c for c in self.mock_progress.call_args_list if c[0][0] == JOB_ID
-        ]
+        progress_messages = [c for c in self.mock_progress.call_args_list if c[0][0] == JOB_ID]
         percentages = [call[0][2] for call in progress_messages]
         assert 5 in percentages
         assert 30 in percentages
@@ -116,6 +122,7 @@ class TestIpScanSuccessfulFlow:
 class TestPublishProgress:
     def test_publish_progress_handles_redis_error_gracefully(self):
         from tasks.ip_scan import publish_progress
+
         with patch("tasks.ip_scan.redis.Redis") as mock_redis:
             mock_instance = MagicMock()
             mock_instance.publish.side_effect = Exception("Redis error")
@@ -151,6 +158,7 @@ class TestIpScanNmapFailure:
 
     def _call_task(self):
         from tasks.ip_scan import run_ip_scan
+
         task_cls = type(run_ip_scan._get_current_object())
         with (
             patch.object(task_cls, "request", new_callable=PropertyMock) as mock_req,
@@ -172,7 +180,9 @@ class TestIpScanNmapFailure:
         with pytest.raises(Retry):
             self._call_task()
         self.mock_update_status.assert_any_call(
-            self.mock_session.return_value, JOB_ID, "failed",
+            self.mock_session.return_value,
+            JOB_ID,
+            "failed",
         )
 
     def test_nmap_failure_publishes_failure_progress(self):
@@ -246,6 +256,7 @@ class TestIpScanNmapRetryReraise:
 
     def _call_task(self):
         from tasks.ip_scan import run_ip_scan
+
         task_cls = type(run_ip_scan._get_current_object())
         with (
             patch.object(task_cls, "request", new_callable=PropertyMock) as mock_req,
@@ -287,6 +298,7 @@ class TestIpScanEmptyResults:
 
     def _call_task(self):
         from tasks.ip_scan import run_ip_scan
+
         return run_ip_scan(JOB_ID, TARGET, PORTS)
 
     def test_empty_results_completes_gracefully(self):
@@ -307,7 +319,6 @@ class TestIpScanEmptyResults:
 
 
 class TestRefundCredits:
-
     JOB_ID_STR = "refund-job-uuid"
     USER_ID_STR = "user-uuid-1234"
     CREDIT_COST = 10
@@ -358,6 +369,7 @@ class TestRefundCredits:
             def __init__(self, **kwargs):
                 for k, v in kwargs.items():
                     object.__setattr__(self, k, v)
+
         return Record
 
     def _mock_job(self, user_id=None, credit_cost=None):
@@ -381,6 +393,7 @@ class TestRefundCredits:
         session.query.return_value.where.return_value.one_or_none.side_effect = [job, user]
 
         from tasks.ip_scan import _refund_credits
+
         _refund_credits(session, self.JOB_ID_STR, "ip")
 
         assert user.credits == 60
@@ -397,6 +410,7 @@ class TestRefundCredits:
         session.query.return_value.where.return_value.one_or_none.return_value = None
 
         from tasks.ip_scan import _refund_credits
+
         _refund_credits(session, "nonexistent-job", "ip")
 
         session.add.assert_not_called()
@@ -407,6 +421,7 @@ class TestRefundCredits:
         session.query.return_value.where.return_value.one_or_none.return_value = job
 
         from tasks.ip_scan import _refund_credits
+
         _refund_credits(session, self.JOB_ID_STR, "ip")
 
         session.add.assert_not_called()
@@ -417,6 +432,7 @@ class TestRefundCredits:
         session.query.return_value.where.return_value.one_or_none.return_value = job
 
         from tasks.ip_scan import _refund_credits
+
         _refund_credits(session, self.JOB_ID_STR, "ip")
 
         session.add.assert_not_called()
@@ -427,13 +443,13 @@ class TestRefundCredits:
         session.query.return_value.where.return_value.one_or_none.side_effect = [job, None]
 
         from tasks.ip_scan import _refund_credits
+
         _refund_credits(session, self.JOB_ID_STR, "ip")
 
         session.add.assert_not_called()
 
 
 class TestSaveFindingsEmpty:
-
     @pytest.fixture(autouse=True)
     def _setup_app_models(self):
         import sys
@@ -487,7 +503,6 @@ class TestSaveFindingsEmpty:
 
 
 class TestIpScanCatchAllHandler:
-
     @pytest.fixture(autouse=True)
     def _setup_patches(self):
         with (
@@ -649,14 +664,18 @@ class TestIpScanCatchAllInnerTrySuccess:
         with pytest.raises(Retry):
             self._call_task_with_inner_success()
         self.mock_update_status.assert_any_call(
-            self.mock_session.return_value, JOB_ID, "failed",
+            self.mock_session.return_value,
+            JOB_ID,
+            "failed",
         )
 
     def test_catch_all_inner_try_calls_refund_credits(self):
         with pytest.raises(Retry):
             self._call_task_with_inner_success()
         self.mock_refund.assert_called_once_with(
-            self.mock_session.return_value, JOB_ID, "ip",
+            self.mock_session.return_value,
+            JOB_ID,
+            "ip",
         )
 
     def test_catch_all_inner_try_commits_and_closes(self):
@@ -676,9 +695,11 @@ class TestRunAsync:
         async def dummy():
             return "ok"
 
-        with patch("asyncio.get_event_loop", side_effect=RuntimeError("no loop")), \
-                patch("asyncio.new_event_loop") as mock_new_loop, \
-                patch("asyncio.set_event_loop") as mock_set_loop:
+        with (
+            patch("asyncio.get_event_loop", side_effect=RuntimeError("no loop")),
+            patch("asyncio.new_event_loop") as mock_new_loop,
+            patch("asyncio.set_event_loop") as mock_set_loop,
+        ):
             mock_loop = MagicMock()
             mock_loop.run_until_complete.return_value = "ok"
             mock_new_loop.return_value = mock_loop
@@ -718,6 +739,7 @@ class TestCveLookupFailure:
 
     def _call_task(self):
         from tasks.ip_scan import run_ip_scan
+
         return run_ip_scan(JOB_ID, TARGET, PORTS)
 
     def test_cve_lookup_failure_does_not_crash_scan(self):
@@ -768,6 +790,7 @@ class TestHealthRedisError:
 
     def _call_task(self):
         from tasks.ip_scan import run_ip_scan
+
         return run_ip_scan(JOB_ID, TARGET, PORTS)
 
     def test_health_redis_error_does_not_crash_scan(self):
@@ -778,8 +801,12 @@ class TestHealthRedisError:
     def test_health_redis_error_still_completes_scan(self):
         self._call_task()
         self.mock_update_status.assert_any_call(
-            self.mock_session.return_value, JOB_ID, "completed",
-            progress=100, result_summary=ANY, completed_at=ANY,
+            self.mock_session.return_value,
+            JOB_ID,
+            "completed",
+            progress=100,
+            result_summary=ANY,
+            completed_at=ANY,
         )
 
 

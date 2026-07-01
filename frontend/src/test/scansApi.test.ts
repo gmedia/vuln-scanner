@@ -112,7 +112,9 @@ describe("scans API", () => {
 
   describe("startMobileScan", () => {
     it("posts to /api/scan/mobile with FormData", async () => {
-      const file = new File(["binary"], "test.apk", { type: "application/octet-stream" });
+      const file = new File(["binary"], "test.apk", {
+        type: "application/octet-stream",
+      });
       mockAxios.post.mockResolvedValueOnce({ data: {} });
 
       await startMobileScan(file, "android");
@@ -120,7 +122,9 @@ describe("scans API", () => {
       const call = mockAxios.post.mock.calls[0];
       expect(call[0]).toBe("/api/scan/mobile");
       expect(call[1]).toBeInstanceOf(FormData);
-      expect(call[2]?.headers).toEqual({ "Content-Type": "multipart/form-data" });
+      expect(call[2]?.headers).toEqual({
+        "Content-Type": "multipart/form-data",
+      });
     });
   });
 

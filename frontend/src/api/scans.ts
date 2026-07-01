@@ -66,8 +66,14 @@ export interface PaginatedResponse<T> {
   pages: number;
 }
 
-export async function startIpScan(target: string, ports?: string): Promise<ScanJob> {
-  const { data } = await api.post<ScanJob>("/api/scan/ip", { target, ports: ports || "1-1000" });
+export async function startIpScan(
+  target: string,
+  ports?: string,
+): Promise<ScanJob> {
+  const { data } = await api.post<ScanJob>("/api/scan/ip", {
+    target,
+    ports: ports || "1-1000",
+  });
   return data;
 }
 
@@ -76,7 +82,10 @@ export async function startDomainScan(domain: string): Promise<ScanJob> {
   return data;
 }
 
-export async function startMobileScan(file: File, platform: "android" | "ios"): Promise<ScanJob> {
+export async function startMobileScan(
+  file: File,
+  platform: "android" | "ios",
+): Promise<ScanJob> {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("platform", platform);
@@ -99,11 +108,14 @@ export async function getScanFindings(jobId: string): Promise<ScanFinding[]> {
 export async function getScanHistory(
   page = 1,
   limit = 20,
-  scanType?: string
+  scanType?: string,
 ): Promise<PaginatedResponse<ScanJob>> {
   const params: Record<string, string | number> = { page, limit };
   if (scanType) params.scan_type = scanType;
-  const { data } = await api.get<PaginatedResponse<ScanJob>>("/api/scan/history", { params });
+  const { data } = await api.get<PaginatedResponse<ScanJob>>(
+    "/api/scan/history",
+    { params },
+  );
   return data;
 }
 

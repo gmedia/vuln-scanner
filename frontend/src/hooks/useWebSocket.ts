@@ -10,7 +10,7 @@ interface ProgressMessage {
 
 export function useWebSocket(
   jobId: string | null,
-  onProgress: (msg: ProgressMessage) => void
+  onProgress: (msg: ProgressMessage) => void,
 ) {
   const wsRef = useRef<WebSocket | null>(null);
 

@@ -28,13 +28,18 @@ def _get_cached_vulns(package_name: str, ecosystem: str, version: str) -> list[d
         key = _cache_key(package_name, ecosystem, version)
         data = r.get(key)
         if data is not None:
-            assert isinstance(data, (str, bytes, bytearray))
+            assert isinstance(data, str | bytes | bytearray)
             logger.info("CVE cache HIT for {ecosystem}:{pkg}@{ver}", ecosystem=ecosystem, pkg=package_name, ver=version)
             return cast(list[dict[str, Any]], json.loads(data))
         logger.debug("CVE cache MISS for {ecosystem}:{pkg}@{ver}", ecosystem=ecosystem, pkg=package_name, ver=version)
     except Exception as e:
-        logger.warning("CVE cache read error for {ecosystem}:{pkg}@{ver}: {error}",
-                       ecosystem=ecosystem, pkg=package_name, ver=version, error=e)
+        logger.warning(
+            "CVE cache read error for {ecosystem}:{pkg}@{ver}: {error}",
+            ecosystem=ecosystem,
+            pkg=package_name,
+            ver=version,
+            error=e,
+        )
     return None
 
 
@@ -43,8 +48,13 @@ def _set_cached_vulns(package_name: str, ecosystem: str, version: str, vulns: li
         r = redis.Redis(connection_pool=_get_redis_pool())
         r.setex(_cache_key(package_name, ecosystem, version), CVE_CACHE_TTL, json.dumps(vulns))
     except Exception as e:
-        logger.warning("CVE cache write error for {ecosystem}:{pkg}@{ver}: {error}",
-                       ecosystem=ecosystem, pkg=package_name, ver=version, error=e)
+        logger.warning(
+            "CVE cache write error for {ecosystem}:{pkg}@{ver}: {error}",
+            ecosystem=ecosystem,
+            pkg=package_name,
+            ver=version,
+            error=e,
+        )
 
 
 async def _query_ecosystem(package_name: str, ecosystem: str, version: str) -> list[dict[str, Any]]:
@@ -62,12 +72,22 @@ async def _query_ecosystem(package_name: str, ecosystem: str, version: str) -> l
                 vulns: list[dict[str, Any]] = resp.json().get("vulns", [])
                 _set_cached_vulns(package_name, ecosystem, version, vulns)
                 return vulns
-            logger.warning("OSV query returned status {status} for {ecosystem}:{pkg}@{ver}",
-                           status=resp.status_code, ecosystem=ecosystem, pkg=package_name, ver=version)
+            logger.warning(
+                "OSV query returned status {status} for {ecosystem}:{pkg}@{ver}",
+                status=resp.status_code,
+                ecosystem=ecosystem,
+                pkg=package_name,
+                ver=version,
+            )
             return []
     except Exception as e:
-        logger.error("OSV query failed for {ecosystem}:{pkg}@{ver}: {error}",
-                     ecosystem=ecosystem, pkg=package_name, ver=version, error=e)
+        logger.error(
+            "OSV query failed for {ecosystem}:{pkg}@{ver}: {error}",
+            ecosystem=ecosystem,
+            pkg=package_name,
+            ver=version,
+            error=e,
+        )
         return []
 
 
@@ -107,11 +127,11 @@ def extract_cvss(vuln: dict[str, Any]) -> float | None:
     for sev in severity_list:
         if sev.get("type") == "CVSS_V3":
             score = sev.get("score")
-            if isinstance(score, (int, float)):
+            if isinstance(score, int | float):
                 return float(score)
     for sev in severity_list:
         score = sev.get("score")
-        if isinstance(score, (int, float)):
+        if isinstance(score, int | float):
             return float(score)
     return None
 

@@ -4,6 +4,7 @@ Revision ID: b0d39330c1b8
 Revises: add_users_auth
 Create Date: 2026-06-22 13:25:02.477918
 """
+
 import os
 from collections.abc import Sequence
 

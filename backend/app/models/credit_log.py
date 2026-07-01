@@ -25,6 +25,4 @@ class CreditLog(Base):
 
     user: Mapped["User"] = relationship(back_populates="credit_logs")
 
-    __table_args__ = (
-        CheckConstraint("type IN ('credit', 'deduct', 'refund')", name="ck_credit_log_type"),
-    )
+    __table_args__ = (CheckConstraint("type IN ('credit', 'deduct', 'refund')", name="ck_credit_log_type"),)

@@ -55,8 +55,13 @@ export function useStartDomainScan() {
 export function useStartMobileScan() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ file, platform }: { file: File; platform: "android" | "ios" }) =>
-      startMobileScan(file, platform),
+    mutationFn: ({
+      file,
+      platform,
+    }: {
+      file: File;
+      platform: "android" | "ios";
+    }) => startMobileScan(file, platform),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["scan-history"] });
     },

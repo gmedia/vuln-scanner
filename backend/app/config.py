@@ -63,6 +63,7 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
+
 def _is_dev_value(val: str, prefixes: tuple[str, ...]) -> bool:
     return val.startswith(prefixes)
 
@@ -70,7 +71,7 @@ def _is_dev_value(val: str, prefixes: tuple[str, ...]) -> bool:
 def _warn_dev_value(name: str, val: str) -> None:
     logger.warning(
         "[SECURITY] %s is set to a development placeholder (%s…). "
-        "Generate a strong key: python3 -c \"import secrets; print(secrets.token_hex(%d))\"",
+        'Generate a strong key: python3 -c "import secrets; print(secrets.token_hex(%d))"',
         name,
         val[:16],
         RECOMMENDED_STRENGTH,
@@ -81,16 +82,13 @@ def check_settings() -> None:
     """Validate security-critical settings and warn on insecure defaults."""
     if settings.api_key == _SENTINEL:
         logger.warning(
-            "[SECURITY] API_KEY is not set.  All API requests will be rejected. "
-            "Set the API_KEY environment variable."
+            "[SECURITY] API_KEY is not set.  All API requests will be rejected. Set the API_KEY environment variable."
         )
     elif _is_dev_value(settings.api_key, DEV_API_KEY_PREFIXES):
         _warn_dev_value("API_KEY", settings.api_key)
 
     if settings.secret_key == _SENTINEL:
-        logger.warning(
-            "[SECURITY] SECRET_KEY is not set.  Set the SECRET_KEY environment variable."
-        )
+        logger.warning("[SECURITY] SECRET_KEY is not set.  Set the SECRET_KEY environment variable.")
     elif _is_dev_value(settings.secret_key, DEV_SECRET_PREFIXES):
         _warn_dev_value("SECRET_KEY", settings.secret_key)
 

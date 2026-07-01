@@ -118,10 +118,13 @@ class TestDetectTechStack:
         assert nginx_count == 1
 
     def test_header_key_missing_fallback_to_body_search(self):
-        with patch("utils.domain_utils.TECH_SIGNATURES", new=[
-            ("React", "framework", "", ["react"]),
-            ("Bootstrap", "css-framework", "", ["bootstrap"]),
-        ]):
+        with patch(
+            "utils.domain_utils.TECH_SIGNATURES",
+            new=[
+                ("React", "framework", "", ["react"]),
+                ("Bootstrap", "css-framework", "", ["bootstrap"]),
+            ],
+        ):
             headers = {"content-type": "text/html; react"}
             techs = detect_tech_stack("example.com", headers)
             react = next((t for t in techs if t.name == "React"), None)
@@ -130,11 +133,14 @@ class TestDetectTechStack:
 
     def test_duplicate_tech_name_in_signatures_skipped(self):
         """Two signatures with same name → second is skipped via 'continue'."""
-        with patch("utils.domain_utils.TECH_SIGNATURES", new=[
-            ("nginx", "reverse-proxy", "server", ["nginx"]),
-            ("nginx", "other-category", "x-powered-by", ["nginx"]),
-            ("PHP", "language", "x-powered-by", ["php"]),
-        ]):
+        with patch(
+            "utils.domain_utils.TECH_SIGNATURES",
+            new=[
+                ("nginx", "reverse-proxy", "server", ["nginx"]),
+                ("nginx", "other-category", "x-powered-by", ["nginx"]),
+                ("PHP", "language", "x-powered-by", ["php"]),
+            ],
+        ):
             headers = {"server": "nginx", "x-powered-by": "php"}
             techs = detect_tech_stack("example.com", headers)
         nginx_count = sum(1 for t in techs if t.name == "nginx")
@@ -260,10 +266,7 @@ class TestFindingsFromDomain:
         findings = findings_from_domain(result)
         assert len(findings) == 6
         categories = {f["category"] for f in findings}
-        assert categories == {
-            "ip_address", "subdomain", "ssl_issue",
-            "ssl_cipher", "missing_header", "tech_detected"
-        }
+        assert categories == {"ip_address", "subdomain", "ssl_issue", "ssl_cipher", "missing_header", "tech_detected"}
 
 
 # ---------------------------------------------------------------------------
@@ -324,13 +327,7 @@ class TestResolveDns:
 
 def _crt_sh_reader_writer(response_body: str):
     """Return (reader, writer) mocks simulating crt.sh HTTPS response."""
-    full_response = (
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Type: application/json\r\n"
-        "Connection: close\r\n"
-        "\r\n"
-        f"{response_body}"
-    )
+    full_response = f"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n{response_body}"
     reader = AsyncMock()
     reader.read.side_effect = [
         full_response.encode(),
@@ -541,11 +538,14 @@ class TestCheckHttp:
     @pytest.mark.asyncio
     async def test_headers_parsed_correctly(self):
         """Response headers become lowercase-keyed dict."""
-        resp = _http_response("HTTP/1.1 200 OK", {
-            "Server": "Apache/2.4",
-            "Content-Type": "text/html",
-            "X-Custom": "value",
-        })
+        resp = _http_response(
+            "HTTP/1.1 200 OK",
+            {
+                "Server": "Apache/2.4",
+                "Content-Type": "text/html",
+                "X-Custom": "value",
+            },
+        )
         reader = AsyncMock()
         reader.read.side_effect = [resp.encode(), b""]
         writer = MagicMock()
@@ -583,9 +583,9 @@ class TestCheckSsl:
     @pytest.mark.asyncio
     async def test_valid_cert_populates_fields(self):
         """Normal cert → subject, issuer, not_after, cipher, supported_versions."""
-        future_date = (
-            datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=365)
-        ).strftime("%b %d %H:%M:%S %Y %Z")
+        future_date = (datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=365)).strftime(
+            "%b %d %H:%M:%S %Y %Z"
+        )
         ssl_obj = _fake_ssl_object("example.com", "Let's Encrypt", future_date)
 
         reader = AsyncMock()
@@ -610,9 +610,7 @@ class TestCheckSsl:
     @pytest.mark.asyncio
     async def test_expiring_within_30_days_adds_issue(self):
         """Certificate expires in 15 days → issues list populated."""
-        near_date = (
-            datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=15)
-        ).strftime("%b %d %H:%M:%S %Y %Z")
+        near_date = (datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=15)).strftime("%b %d %H:%M:%S %Y %Z")
         ssl_obj = _fake_ssl_object("example.com", "CA", near_date)
 
         reader = AsyncMock()
@@ -632,9 +630,7 @@ class TestCheckSsl:
     @pytest.mark.asyncio
     async def test_expiring_exactly_30_days_adds_issue(self):
         """30 days remaining → still adds issue (<= 30)."""
-        near_date = (
-            datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=30)
-        ).strftime("%b %d %H:%M:%S %Y %Z")
+        near_date = (datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=30)).strftime("%b %d %H:%M:%S %Y %Z")
         ssl_obj = _fake_ssl_object("example.com", "CA", near_date)
 
         reader = AsyncMock()
@@ -653,9 +649,7 @@ class TestCheckSsl:
     @pytest.mark.asyncio
     async def test_not_expiring_adds_no_issue(self):
         """Certificate expires far in future → issues list empty (supported_versions still set)."""
-        far_date = (
-            datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=365)
-        ).strftime("%b %d %H:%M:%S %Y %Z")
+        far_date = (datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=365)).strftime("%b %d %H:%M:%S %Y %Z")
         ssl_obj = _fake_ssl_object("example.com", "CA", far_date)
 
         reader = AsyncMock()
@@ -719,9 +713,7 @@ class TestCheckSsl:
     @pytest.mark.asyncio
     async def test_expired_cert_days_remaining_negative(self):
         """Certificate expired 30 days ago → days_remaining is negative."""
-        past_date = (
-            datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=30)
-        ).strftime("%b %d %H:%M:%S %Y %Z")
+        past_date = (datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=30)).strftime("%b %d %H:%M:%S %Y %Z")
         ssl_obj = _fake_ssl_object("example.com", "CA", past_date)
 
         reader = AsyncMock()

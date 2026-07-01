@@ -22,7 +22,10 @@ describe("useWebSocket", () => {
 
   beforeEach(() => {
     allWs = [];
-    const MockWebSocket = vi.fn().mockImplementation(function (this: WsLike, _url: string) {
+    const MockWebSocket = vi.fn().mockImplementation(function (
+      this: WsLike,
+      _url: string,
+    ) {
       this.onopen = null;
       this.onmessage = null;
       this.onerror = null;
@@ -67,9 +70,11 @@ describe("useWebSocket", () => {
     };
 
     act(() => {
-      lastWs.onmessage?.(new MessageEvent("message", {
-        data: JSON.stringify(message),
-      }));
+      lastWs.onmessage?.(
+        new MessageEvent("message", {
+          data: JSON.stringify(message),
+        }),
+      );
     });
 
     expect(onProgress).toHaveBeenCalledWith(message);
@@ -80,9 +85,11 @@ describe("useWebSocket", () => {
     renderHook(() => useWebSocket("job-42", onProgress));
 
     act(() => {
-      lastWs.onmessage?.(new MessageEvent("message", {
-        data: JSON.stringify({ type: "other", data: "something" }),
-      }));
+      lastWs.onmessage?.(
+        new MessageEvent("message", {
+          data: JSON.stringify({ type: "other", data: "something" }),
+        }),
+      );
     });
 
     expect(onProgress).not.toHaveBeenCalled();
@@ -93,9 +100,11 @@ describe("useWebSocket", () => {
     renderHook(() => useWebSocket("job-42", onProgress));
 
     act(() => {
-      lastWs.onmessage?.(new MessageEvent("message", {
-        data: "not json",
-      }));
+      lastWs.onmessage?.(
+        new MessageEvent("message", {
+          data: "not json",
+        }),
+      );
     });
 
     expect(onProgress).not.toHaveBeenCalled();

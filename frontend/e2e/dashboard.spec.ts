@@ -46,7 +46,9 @@ test.describe("Dashboard", () => {
     expect(scanCount).toBeGreaterThan(0);
   });
 
-  test("clicking a scan history item navigates to scan detail", async ({ page }) => {
+  test("clicking a scan history item navigates to scan detail", async ({
+    page,
+  }) => {
     await page.goto("/dashboard");
     await page.waitForSelector("a[href^='/scan/']", { timeout: 15_000 });
     const firstScan = page.locator("a[href^='/scan/']").first();
@@ -58,10 +60,18 @@ test.describe("Dashboard", () => {
   test("sidebar navigation shows all links", async ({ page }) => {
     await page.goto("/dashboard");
     await expect(page.locator("aside")).toBeVisible();
-    await expect(page.locator("aside").locator("a:has-text('Dashboard')")).toBeVisible();
-    await expect(page.locator("aside").locator("a:has-text('IP Scanner')")).toBeVisible();
-    await expect(page.locator("aside").locator("a:has-text('Domain Scanner')")).toBeVisible();
-    await expect(page.locator("aside").locator("a:has-text('Mobile Scanner')")).toBeVisible();
+    await expect(
+      page.locator("aside").locator("a:has-text('Dashboard')"),
+    ).toBeVisible();
+    await expect(
+      page.locator("aside").locator("a:has-text('IP Scanner')"),
+    ).toBeVisible();
+    await expect(
+      page.locator("aside").locator("a:has-text('Domain Scanner')"),
+    ).toBeVisible();
+    await expect(
+      page.locator("aside").locator("a:has-text('Mobile Scanner')"),
+    ).toBeVisible();
   });
 
   test("sidebar nav items navigate to correct pages", async ({ page }) => {

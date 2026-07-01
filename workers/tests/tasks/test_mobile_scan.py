@@ -96,6 +96,7 @@ class TestMobileAndroidSuccessfulFlow:
 
     def _call_task(self, file_path=FILE_PATH, platform=PLATFORM):
         from tasks.mobile_scan import run_mobile_scan
+
         return run_mobile_scan(JOB_ID, file_path, platform)
 
     def test_successful_android_scan_completes(self):
@@ -120,8 +121,12 @@ class TestMobileAndroidSuccessfulFlow:
     def test_android_scan_status_completed(self):
         self._call_task()
         self.mock_update_status.assert_any_call(
-            self.mock_session.return_value, JOB_ID, "completed",
-            progress=100, result_summary=ANY, completed_at=ANY,
+            self.mock_session.return_value,
+            JOB_ID,
+            "completed",
+            progress=100,
+            result_summary=ANY,
+            completed_at=ANY,
         )
 
     def test_android_scan_removes_file(self):
@@ -144,8 +149,12 @@ class TestMobileAndroidSuccessfulFlow:
         assert result["job_id"] == JOB_ID
         assert "summary" in result
         self.mock_update_status.assert_any_call(
-            self.mock_session.return_value, JOB_ID, "completed",
-            progress=100, result_summary=ANY, completed_at=ANY,
+            self.mock_session.return_value,
+            JOB_ID,
+            "completed",
+            progress=100,
+            result_summary=ANY,
+            completed_at=ANY,
         )
         self.mock_save_findings.assert_called_once()
 
@@ -155,8 +164,12 @@ class TestMobileAndroidSuccessfulFlow:
         assert result["job_id"] == JOB_ID
         assert "summary" in result
         self.mock_update_status.assert_any_call(
-            self.mock_session.return_value, JOB_ID, "completed",
-            progress=100, result_summary=ANY, completed_at=ANY,
+            self.mock_session.return_value,
+            JOB_ID,
+            "completed",
+            progress=100,
+            result_summary=ANY,
+            completed_at=ANY,
         )
         self.mock_save_findings.assert_called_once()
 
@@ -166,8 +179,12 @@ class TestMobileAndroidSuccessfulFlow:
         assert result["job_id"] == JOB_ID
         assert "summary" in result
         self.mock_update_status.assert_any_call(
-            self.mock_session.return_value, JOB_ID, "completed",
-            progress=100, result_summary=ANY, completed_at=ANY,
+            self.mock_session.return_value,
+            JOB_ID,
+            "completed",
+            progress=100,
+            result_summary=ANY,
+            completed_at=ANY,
         )
 
     def test_redis_health_failure_does_not_crash(self):
@@ -176,8 +193,12 @@ class TestMobileAndroidSuccessfulFlow:
         assert result["job_id"] == JOB_ID
         assert "summary" in result
         self.mock_update_status.assert_any_call(
-            self.mock_session.return_value, JOB_ID, "completed",
-            progress=100, result_summary=ANY, completed_at=ANY,
+            self.mock_session.return_value,
+            JOB_ID,
+            "completed",
+            progress=100,
+            result_summary=ANY,
+            completed_at=ANY,
         )
 
     def test_duplicate_library_skipped_in_cve_lookup(self):
@@ -222,6 +243,7 @@ class TestMobileScanFileNotFound:
 
     def _call_task(self, file_path="/nonexistent/file.apk", platform="android"):
         from tasks.mobile_scan import run_mobile_scan
+
         return run_mobile_scan(JOB_ID, file_path, platform)
 
     def test_file_not_found_returns_early(self):
@@ -232,13 +254,18 @@ class TestMobileScanFileNotFound:
     def test_file_not_found_sets_status_failed(self):
         self._call_task()
         self.mock_update_status.assert_called_with(
-            self.mock_session.return_value, JOB_ID, "failed",
+            self.mock_session.return_value,
+            JOB_ID,
+            "failed",
         )
 
     def test_file_not_found_publishes_failure(self):
         self._call_task()
         self.mock_progress.assert_called_with(
-            JOB_ID, "failed", 100, ANY,
+            JOB_ID,
+            "failed",
+            100,
+            ANY,
         )
 
 
@@ -271,6 +298,7 @@ class TestMobileScanFailureAndRetry:
 
     def _call_task(self):
         from tasks.mobile_scan import run_mobile_scan
+
         task_cls = type(run_mobile_scan._get_current_object())
         with (
             patch.object(task_cls, "request", new_callable=PropertyMock) as mock_req,
@@ -292,7 +320,9 @@ class TestMobileScanFailureAndRetry:
         with pytest.raises(Retry):
             self._call_task()
         self.mock_update_status.assert_any_call(
-            self.mock_session.return_value, JOB_ID, "failed",
+            self.mock_session.return_value,
+            JOB_ID,
+            "failed",
         )
 
     def test_apk_failure_not_dead_letter_first_retry(self):
@@ -370,7 +400,10 @@ class TestMobileScanNestedStatusUpdateFailure:
         with pytest.raises(Retry):
             self._call_task()
         self.mock_progress.assert_called_with(
-            JOB_ID, "failed", 100, ANY,
+            JOB_ID,
+            "failed",
+            100,
+            ANY,
         )
 
 
@@ -406,6 +439,7 @@ class TestMobileScanIos:
 
     def _call_task(self):
         from tasks.mobile_scan import run_mobile_scan
+
         return run_mobile_scan(JOB_ID, "/tmp/test.ipa", "ios")
 
     def test_ios_scan_calls_ipa_analyzer(self):
@@ -417,8 +451,12 @@ class TestMobileScanIos:
         result = self._call_task()
         assert result["job_id"] == JOB_ID
         self.mock_update_status.assert_any_call(
-            ANY, JOB_ID, "completed", progress=100,
-            result_summary=ANY, completed_at=ANY,
+            ANY,
+            JOB_ID,
+            "completed",
+            progress=100,
+            result_summary=ANY,
+            completed_at=ANY,
         )
         self.mock_save_findings.assert_called_once()
 
@@ -481,7 +519,9 @@ class TestMobileScanIosFailureAndRetry:
         with pytest.raises(Retry):
             self._call_task()
         self.mock_update_status.assert_any_call(
-            self.mock_session.return_value, JOB_ID, "failed",
+            self.mock_session.return_value,
+            JOB_ID,
+            "failed",
         )
 
     def test_ios_analysis_failure_not_dead_letter_first_retry(self):
@@ -569,6 +609,7 @@ class TestMobileScanIosCveLookup:
 
     def _call_task(self):
         from tasks.mobile_scan import run_mobile_scan
+
         return run_mobile_scan(JOB_ID, "/tmp/test.ipa", "ios")
 
     def test_ios_cve_lookup_called_for_libraries(self):
@@ -641,16 +682,14 @@ class TestMobileScanFileSizeProgress:
 
     def _call_task(self):
         from tasks.mobile_scan import run_mobile_scan
+
         return run_mobile_scan(JOB_ID, FILE_PATH, PLATFORM)
 
     def test_progress_message_includes_file_size(self):
         self._call_task()
         # The first progress call should be the "Analyzing file" message
         progress_calls = self.mock_progress.call_args_list
-        extracting_calls = [
-            c for c in progress_calls
-            if c[0][1] == "extracting"
-        ]
+        extracting_calls = [c for c in progress_calls if c[0][1] == "extracting"]
         assert len(extracting_calls) >= 1
         msg = extracting_calls[0][0][3]
         assert "15.5MB" in msg
@@ -660,10 +699,7 @@ class TestMobileScanFileSizeProgress:
         self._call_task()
         expected_mb = self.mock_size.return_value / (1024 * 1024)
         progress_calls = self.mock_progress.call_args_list
-        extracting_calls = [
-            c for c in progress_calls
-            if c[0][1] == "extracting"
-        ]
+        extracting_calls = [c for c in progress_calls if c[0][1] == "extracting"]
         assert len(extracting_calls) >= 1
         msg = extracting_calls[0][0][3]
         assert f"{expected_mb:.1f}MB" in msg
@@ -732,7 +768,10 @@ class TestMobileScanOuterCatchAll:
         with pytest.raises(Retry):
             self._call_task()
         self.mock_progress.assert_called_with(
-            JOB_ID, "failed", 100, ANY,
+            JOB_ID,
+            "failed",
+            100,
+            ANY,
         )
 
     def test_outer_catch_all_not_dead_letter_first_retry(self):
@@ -752,7 +791,9 @@ class TestMobileScanOuterCatchAll:
         with pytest.raises(Retry):
             self._call_task()
         self.mock_refund_credits.assert_called_once_with(
-            self.mock_session.return_value, JOB_ID, PLATFORM,
+            self.mock_session.return_value,
+            JOB_ID,
+            PLATFORM,
         )
 
 
@@ -781,9 +822,11 @@ class TestMobileScanHelpers:
         async def dummy():
             return "new_loop_result"
 
-        with patch("asyncio.get_event_loop", side_effect=RuntimeError("no event loop")), \
-                patch("asyncio.new_event_loop") as mock_new_loop, \
-                patch("asyncio.set_event_loop") as mock_set_loop:
+        with (
+            patch("asyncio.get_event_loop", side_effect=RuntimeError("no event loop")),
+            patch("asyncio.new_event_loop") as mock_new_loop,
+            patch("asyncio.set_event_loop") as mock_set_loop,
+        ):
             mock_loop = MagicMock()
             mock_loop.run_until_complete.return_value = "new_loop_result"
             mock_new_loop.return_value = mock_loop
@@ -864,11 +907,14 @@ class TestMobileScanHelpers:
         mock_user_cls = MagicMock()
         mock_credit_log = MagicMock()
         mock_credit_log.return_value = MagicMock()
-        with patch.dict("sys.modules", {
-            "app.models.scan_job": MagicMock(ScanJob=mock_scan_job),
-            "app.models.user": MagicMock(User=mock_user_cls),
-            "app.models.credit_log": MagicMock(CreditLog=mock_credit_log),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "app.models.scan_job": MagicMock(ScanJob=mock_scan_job),
+                "app.models.user": MagicMock(User=mock_user_cls),
+                "app.models.credit_log": MagicMock(CreditLog=mock_credit_log),
+            },
+        ):
             mock_session = MagicMock()
 
             def query_side_effect(model):
@@ -890,11 +936,14 @@ class TestMobileScanHelpers:
         mock_scan_job = MagicMock()
         mock_user_cls = MagicMock()
         mock_credit_log = MagicMock()
-        with patch.dict("sys.modules", {
-            "app.models.scan_job": MagicMock(ScanJob=mock_scan_job),
-            "app.models.user": MagicMock(User=mock_user_cls),
-            "app.models.credit_log": MagicMock(CreditLog=mock_credit_log),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "app.models.scan_job": MagicMock(ScanJob=mock_scan_job),
+                "app.models.user": MagicMock(User=mock_user_cls),
+                "app.models.credit_log": MagicMock(CreditLog=mock_credit_log),
+            },
+        ):
             mock_session = MagicMock()
             mock_session.query.return_value.where.return_value.one_or_none.return_value = None
             _refund_credits(mock_session, JOB_ID, "android")
@@ -906,11 +955,14 @@ class TestMobileScanHelpers:
         mock_scan_job = MagicMock()
         mock_user_cls = MagicMock()
         mock_credit_log = MagicMock()
-        with patch.dict("sys.modules", {
-            "app.models.scan_job": MagicMock(ScanJob=mock_scan_job),
-            "app.models.user": MagicMock(User=mock_user_cls),
-            "app.models.credit_log": MagicMock(CreditLog=mock_credit_log),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "app.models.scan_job": MagicMock(ScanJob=mock_scan_job),
+                "app.models.user": MagicMock(User=mock_user_cls),
+                "app.models.credit_log": MagicMock(CreditLog=mock_credit_log),
+            },
+        ):
             mock_session = MagicMock()
             mock_job = MagicMock()
             mock_job.user_id = None
@@ -925,11 +977,14 @@ class TestMobileScanHelpers:
         mock_scan_job = MagicMock()
         mock_user_cls = MagicMock()
         mock_credit_log = MagicMock()
-        with patch.dict("sys.modules", {
-            "app.models.scan_job": MagicMock(ScanJob=mock_scan_job),
-            "app.models.user": MagicMock(User=mock_user_cls),
-            "app.models.credit_log": MagicMock(CreditLog=mock_credit_log),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "app.models.scan_job": MagicMock(ScanJob=mock_scan_job),
+                "app.models.user": MagicMock(User=mock_user_cls),
+                "app.models.credit_log": MagicMock(CreditLog=mock_credit_log),
+            },
+        ):
             mock_session = MagicMock()
             mock_job = MagicMock()
             mock_job.user_id = "some-user-id"

@@ -55,6 +55,7 @@ def run_domain_scan(self: Any, job_id: str, domain: str) -> dict[str, Any]:
     domain = domain.lower().strip()
     if domain.startswith("http://") or domain.startswith("https://"):
         from urllib.parse import urlparse
+
         domain = urlparse(domain).hostname or domain
 
     try:
@@ -73,8 +74,12 @@ def run_domain_scan(self: Any, job_id: str, domain: str) -> dict[str, Any]:
 
         publish_progress(job_id, "http_check", 30, f"Checking HTTP/HTTPS connectivity for {domain}...")
         http_ok, https_ok, status, headers = _run_async(check_http(domain))
-        publish_progress(job_id, "http_done", 40,
-                         f"{'HTTPS' if https_ok else 'HTTP' if http_ok else 'No HTTP'} reachable (status {status})")
+        publish_progress(
+            job_id,
+            "http_done",
+            40,
+            f"{'HTTPS' if https_ok else 'HTTP' if http_ok else 'No HTTP'} reachable (status {status})",
+        )
 
         ssl_info = None
         if https_ok:
@@ -87,22 +92,35 @@ def run_domain_scan(self: Any, job_id: str, domain: str) -> dict[str, Any]:
         publish_progress(job_id, "tech_detect", 65, "Detecting technology stack...")
         tech_stack = detect_tech_stack(domain, headers)
 
-        domain_result = type("DomainResult", (), {
-            "domain": domain,
-            "ip_addresses": ips,
-            "dns_records": records,
-            "subdomains": subdomains,
-            "http_reachable": http_ok,
-            "https_reachable": https_ok,
-            "status_code": status,
-            "response_headers": headers,
-            "ssl_info": ssl_info or type("obj", (), {
-                "issues": [], "cipher": "", "subject": "", "issuer": "",
-                "not_after": "", "days_remaining": 0,
-            }),
-            "tech_stack": tech_stack,
-            "header_checks": header_checks,
-        })()
+        domain_result = type(
+            "DomainResult",
+            (),
+            {
+                "domain": domain,
+                "ip_addresses": ips,
+                "dns_records": records,
+                "subdomains": subdomains,
+                "http_reachable": http_ok,
+                "https_reachable": https_ok,
+                "status_code": status,
+                "response_headers": headers,
+                "ssl_info": ssl_info
+                or type(
+                    "obj",
+                    (),
+                    {
+                        "issues": [],
+                        "cipher": "",
+                        "subject": "",
+                        "issuer": "",
+                        "not_after": "",
+                        "days_remaining": 0,
+                    },
+                ),
+                "tech_stack": tech_stack,
+                "header_checks": header_checks,
+            },
+        )()
 
         all_findings = findings_from_domain(domain_result)
 
@@ -121,15 +139,15 @@ def run_domain_scan(self: Any, job_id: str, domain: str) -> dict[str, Any]:
                 try:
                     vulns = _run_async(lookup_service_cves(tech.name, tech.name, tech.version or ""))
                 except Exception as e:
-                    logger.warning("CVE lookup failed for {tech} {ver}: {error}",
-                                   tech=tech.name, ver=tech.version or "", error=e)
+                    logger.warning(
+                        "CVE lookup failed for {tech} {ver}: {error}", tech=tech.name, ver=tech.version or "", error=e
+                    )
                     vulns = []
                 for vuln in vulns:
                     cvss = extract_cvss(vuln)
                     finding = format_vuln_finding(vuln, cvss)
-                    finding["description"] = (
-                        f"[{domain}] {tech.name} ({tech.category})\n"
-                        + (finding.get("description") or "")
+                    finding["description"] = f"[{domain}] {tech.name} ({tech.category})\n" + (
+                        finding.get("description") or ""
                     )
                     all_findings.append(finding)
                     total_vuln += 1
@@ -140,18 +158,30 @@ def run_domain_scan(self: Any, job_id: str, domain: str) -> dict[str, Any]:
         publish_progress(job_id, "saving", 90, "Saving results...")
         _save_findings(session, job_id, all_findings)
 
-        _update_status(session, job_id, "completed", progress=100,
-                       result_summary=summary, completed_at=datetime.now(UTC))
+        _update_status(
+            session, job_id, "completed", progress=100, result_summary=summary, completed_at=datetime.now(UTC)
+        )
         session.commit()
         session.close()
 
-        logger.info("Domain scan complete: job={job_id} domain={domain} findings={total} "
-                    "critical={c} high={h} medium={m} low={l}",
-                    job_id=job_id, domain=domain, total=summary['total_findings'], c=summary['critical'],
-                    h=summary['high'], m=summary['medium'], l=summary['low'])
-        publish_progress(job_id, "completed", 100,
-                       f"Done: {summary['total_findings']} findings "
-                       f"({summary['critical']}C/{summary['high']}H/{summary['medium']}M/{summary['low']}L)")
+        logger.info(
+            "Domain scan complete: job={job_id} domain={domain} findings={total} "
+            "critical={c} high={h} medium={m} low={l}",
+            job_id=job_id,
+            domain=domain,
+            total=summary["total_findings"],
+            c=summary["critical"],
+            h=summary["high"],
+            m=summary["medium"],
+            l=summary["low"],
+        )
+        publish_progress(
+            job_id,
+            "completed",
+            100,
+            f"Done: {summary['total_findings']} findings "
+            f"({summary['critical']}C/{summary['high']}H/{summary['medium']}M/{summary['low']}L)",
+        )
 
         try:
             r = redis.Redis(connection_pool=get_redis_pool())
@@ -176,17 +206,19 @@ def run_domain_scan(self: Any, job_id: str, domain: str) -> dict[str, Any]:
                 kwargs={},
                 exception_info=str(e),
             )
-        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries)) from e
+        raise self.retry(exc=e, countdown=60 * (2**self.request.retries)) from e
 
 
 def _update_status(session: Any, job_id: str, status: str, **kwargs: Any) -> None:
     from app.models.scan_job import ScanJob
+
     values = {"status": status, **kwargs}
     session.execute(update(ScanJob).where(ScanJob.id == job_id).values(**values))
 
 
 def _save_findings(session: Any, job_id: str, findings: list[dict[str, Any]]) -> None:
     from app.models.scan_finding import ScanFinding
+
     for f in findings:
         finding = ScanFinding(
             id=uuid.uuid4(),

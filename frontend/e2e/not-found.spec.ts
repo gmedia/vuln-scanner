@@ -10,7 +10,9 @@ test.describe("404 Page", () => {
   test("404 page has return button", async ({ page }) => {
     await page.goto("/random-unknown-path");
     await expect(page.locator("text=404")).toBeVisible();
-    await expect(page.locator('a[href="/dashboard"]:has-text("Dashboard")')).toBeVisible();
+    await expect(
+      page.locator('a[href="/dashboard"]:has-text("Dashboard")'),
+    ).toBeVisible();
   });
 
   test("return button navigates to dashboard", async ({ page }) => {

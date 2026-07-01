@@ -70,6 +70,7 @@ async def test_start_scan_mobile_apk(db_session, sample_user, mock_celery):
 @pytest.mark.asyncio
 async def test_start_scan_invalid_type(db_session, sample_user, mock_celery):
     from sqlalchemy.exc import IntegrityError
+
     svc = ScannerService(db_session)
     with pytest.raises((ValueError, IntegrityError)):
         await svc.start_scan(user=sample_user, scan_type="invalid_type", target="something")
@@ -152,6 +153,7 @@ async def test_get_history_filtered_by_type(db_session, sample_job):
 
 # --- New tests: DB pricing override ---
 
+
 @pytest.mark.asyncio
 async def test_start_scan_with_db_pricing(db_session, sample_user, mock_celery):
     """When a PricingConfig row exists for the scan type, use its credit_cost instead of settings."""
@@ -174,6 +176,7 @@ async def test_start_scan_with_db_pricing(db_session, sample_user, mock_celery):
 
 # --- New tests: insufficient credits ---
 
+
 @pytest.mark.asyncio
 async def test_start_scan_insufficient_credits(db_session, sample_user, mock_celery):
     """When user has 0 credits and scan costs > 0, raise 402."""
@@ -188,6 +191,7 @@ async def test_start_scan_insufficient_credits(db_session, sample_user, mock_cel
 
 
 # --- New tests: dispatch failure rollback ---
+
 
 @pytest.mark.asyncio
 async def test_start_scan_dispatch_failure_rollback(db_session, sample_user, mock_celery):
@@ -208,9 +212,7 @@ async def test_start_scan_dispatch_failure_rollback(db_session, sample_user, moc
     assert sample_user.credits == original_credits
 
     # Refund CreditLog should exist
-    refund_result = await db_session.execute(
-        select(CreditLog).where(CreditLog.type == "refund")
-    )
+    refund_result = await db_session.execute(select(CreditLog).where(CreditLog.type == "refund"))
     refund_logs = refund_result.scalars().all()
     assert len(refund_logs) == 1
     assert refund_logs[0].amount == 1  # ip scan default cost
@@ -218,6 +220,7 @@ async def test_start_scan_dispatch_failure_rollback(db_session, sample_user, moc
 
 
 # --- New tests: get_job IDOR protection ---
+
 
 @pytest.mark.asyncio
 async def test_get_job_idor_different_user(db_session, sample_job):
@@ -238,6 +241,7 @@ async def test_get_job_idor_different_user(db_session, sample_job):
 
 
 # --- New tests: get_findings empty and IDOR ---
+
 
 @pytest.mark.asyncio
 async def test_get_findings_empty(db_session, sample_user):
@@ -277,6 +281,7 @@ async def test_get_findings_idor(db_session, sample_job, sample_finding):
 
 
 # --- New tests: get_history pagination ---
+
 
 @pytest.mark.asyncio
 async def test_get_history_pagination_page_2(db_session, sample_user):
@@ -332,6 +337,7 @@ async def test_get_history_pagination_custom_limit(db_session, sample_user):
 
 # --- New tests: get_history filtered by user_id ---
 
+
 @pytest.mark.asyncio
 async def test_get_history_filtered_by_user_id(db_session, sample_user, sample_job):
     """get_history with user_id filter returns only that user's jobs."""
@@ -364,6 +370,7 @@ async def test_get_history_filtered_by_user_id(db_session, sample_user, sample_j
 
 # --- New tests: get_history invalid scan_type ---
 
+
 @pytest.mark.asyncio
 async def test_get_history_invalid_scan_type(db_session):
     """get_history with invalid scan_type raises HTTPException 400."""
@@ -375,6 +382,7 @@ async def test_get_history_invalid_scan_type(db_session):
 
 
 # --- New tests: combined filters ---
+
 
 @pytest.mark.asyncio
 async def test_get_history_user_id_and_scan_type_combined(db_session, sample_user):
@@ -408,6 +416,7 @@ async def test_get_history_user_id_and_scan_type_combined(db_session, sample_use
 
 # --- New tests: _dispatch_task unknown scan type ---
 
+
 def test_dispatch_unknown_scan_type(db_session):
     """_dispatch_task with unknown scan type raises ValueError."""
     svc = ScannerService(db_session)
@@ -417,15 +426,14 @@ def test_dispatch_unknown_scan_type(db_session):
 
 # --- New tests: CreditLog creation ---
 
+
 @pytest.mark.asyncio
 async def test_start_scan_creates_credit_log(db_session, sample_user, mock_celery):
     """start_scan creates a CreditLog with correct amount, type, and description."""
     svc = ScannerService(db_session)
     job = await svc.start_scan(user=sample_user, scan_type="ip", target="10.0.0.1")
 
-    log_result = await db_session.execute(
-        select(CreditLog).where(CreditLog.reference_id == job.id)
-    )
+    log_result = await db_session.execute(select(CreditLog).where(CreditLog.reference_id == job.id))
     logs = log_result.scalars().all()
     assert len(logs) == 1
     log = logs[0]
@@ -436,6 +444,7 @@ async def test_start_scan_creates_credit_log(db_session, sample_user, mock_celer
 
 
 # --- New tests: ipa scan type ---
+
 
 @pytest.mark.asyncio
 async def test_start_scan_ipa(db_session, sample_user, mock_celery):
@@ -459,6 +468,7 @@ async def test_start_scan_ipa(db_session, sample_user, mock_celery):
 
 
 # --- New tests: just enough credits ---
+
 
 @pytest.mark.asyncio
 async def test_start_scan_just_enough_credits(db_session, sample_user, mock_celery):

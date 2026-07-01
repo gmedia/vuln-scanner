@@ -250,12 +250,11 @@ def test_export_not_found(client):
 
 def test_start_mobile_scan_cleanup_error(client, monkeypatch):
     """POST /api/scan/mobile: start_scan raises → 500 after file cleanup."""
+
     async def _raise(*args, **kwargs):
         raise Exception("simulated failure")
 
-    monkeypatch.setattr(
-        "app.api.scan_routes.ScannerService.start_scan", _raise
-    )
+    monkeypatch.setattr("app.api.scan_routes.ScannerService.start_scan", _raise)
 
     # ServerErrorMiddleware re-raises after generating the 500 response.
     # Disable raise_server_exceptions on the transport to capture it.
@@ -271,12 +270,11 @@ def test_start_mobile_scan_cleanup_error(client, monkeypatch):
 
 def test_start_mobile_scan_cleanup_remove_fails(client, monkeypatch):
     """POST /api/scan/mobile: os.remove fails during cleanup → covered (lines 167-168)."""
+
     async def _raise(*args, **kwargs):
         raise Exception("simulated failure")
 
-    monkeypatch.setattr(
-        "app.api.scan_routes.ScannerService.start_scan", _raise
-    )
+    monkeypatch.setattr("app.api.scan_routes.ScannerService.start_scan", _raise)
     monkeypatch.setattr("app.api.scan_routes.os.remove", lambda p: (_ for _ in ()).throw(Exception("remove failed")))
 
     client._transport.raise_server_exceptions = False

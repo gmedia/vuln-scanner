@@ -26,6 +26,7 @@ from app.services.auth import (
 # hash_password / verify_password
 # ---------------------------------------------------------------------------
 
+
 class TestHashPassword:
     def test_returns_string(self):
         result = hash_password("mysecret")
@@ -75,6 +76,7 @@ class TestVerifyPassword:
 # ---------------------------------------------------------------------------
 # create_access_token / create_refresh_token / decode_token
 # ---------------------------------------------------------------------------
+
 
 class TestCreateAccessToken:
     def test_returns_string(self):
@@ -261,6 +263,7 @@ class TestDecodeToken:
 # Token expiry with real time (sleep-based)
 # ---------------------------------------------------------------------------
 
+
 class TestTokenExpiryWithSleep:
     def test_token_expires_after_short_ttl(self):
         """Create a token that expires in 1 second, wait 2 seconds, verify it raises."""
@@ -299,8 +302,10 @@ class TestGetSyncRedis:
         import app.services.auth as auth_mod
 
         mock_redis = MagicMock()
-        with patch.object(auth_mod, "_sync_redis", None), \
-             patch.object(auth_mod.sync_redis.Redis, "from_url", return_value=mock_redis):
+        with (
+            patch.object(auth_mod, "_sync_redis", None),
+            patch.object(auth_mod.sync_redis.Redis, "from_url", return_value=mock_redis),
+        ):
             result = _get_sync_redis()
             assert result is mock_redis
 
@@ -309,8 +314,10 @@ class TestGetSyncRedis:
         # Reset module-level singleton to force fresh creation
         import app.services.auth as auth_mod
 
-        with patch.object(auth_mod, "_sync_redis", None), \
-             patch.object(auth_mod.sync_redis.Redis, "from_url") as mock_from_url:
+        with (
+            patch.object(auth_mod, "_sync_redis", None),
+            patch.object(auth_mod.sync_redis.Redis, "from_url") as mock_from_url,
+        ):
             mock_redis = MagicMock()
             mock_from_url.return_value = mock_redis
             r1 = _get_sync_redis()
@@ -324,8 +331,10 @@ class TestGetSyncRedis:
 
         mock_redis = MagicMock()
         mock_redis.get.return_value = None
-        with patch.object(auth_mod, "_sync_redis", None), \
-             patch.object(auth_mod.sync_redis.Redis, "from_url", return_value=mock_redis):
+        with (
+            patch.object(auth_mod, "_sync_redis", None),
+            patch.object(auth_mod.sync_redis.Redis, "from_url", return_value=mock_redis),
+        ):
             r = _get_sync_redis()
             result = r.get("some_key")
             assert result is None
@@ -406,9 +415,7 @@ class TestCheckRedisRevocationSync:
     def test_redis_jti_hit_populates_cache_and_raises(self):
         """When Redis has a revoked JTI, it populates _revoked_tokens and raises."""
         mock_redis = MagicMock()
-        mock_redis.get.side_effect = lambda key: (
-            "user-redis-jti" if key == "revoked_tokens:test-jti-redis" else None
-        )
+        mock_redis.get.side_effect = lambda key: ("user-redis-jti" if key == "revoked_tokens:test-jti-redis" else None)
         with patch("app.services.auth._get_sync_redis", return_value=mock_redis):
             with pytest.raises(jwt.PyJWTError, match="revoked"):
                 _check_redis_revocation_sync("test-jti-redis", None)
@@ -421,9 +428,7 @@ class TestCheckRedisRevocationSync:
     def test_redis_user_hit_populates_set_and_raises(self):
         """When Redis has a revoked user, it populates _revoked_users and raises."""
         mock_redis = MagicMock()
-        mock_redis.get.side_effect = lambda key: (
-            "1" if key == "revoked_users:user-redis-set" else None
-        )
+        mock_redis.get.side_effect = lambda key: ("1" if key == "revoked_users:user-redis-set" else None)
         with patch("app.services.auth._get_sync_redis", return_value=mock_redis):
             with pytest.raises(jwt.PyJWTError, match="revoked"):
                 _check_redis_revocation_sync(None, "user-redis-set")
@@ -593,8 +598,10 @@ class TestGetRedis:
         import app.services.auth as auth_mod
 
         mock_redis = AsyncMock()
-        with patch.object(auth_mod, "_redis", None), \
-             patch.object(auth_mod.redis.Redis, "from_url", return_value=mock_redis):
+        with (
+            patch.object(auth_mod, "_redis", None),
+            patch.object(auth_mod.redis.Redis, "from_url", return_value=mock_redis),
+        ):
             result = asyncio.run(auth_mod._get_redis())
             assert result is mock_redis
 
@@ -603,8 +610,10 @@ class TestGetRedis:
         import app.services.auth as auth_mod
 
         mock_redis = AsyncMock()
-        with patch.object(auth_mod, "_redis", None), \
-             patch.object(auth_mod.redis.Redis, "from_url", return_value=mock_redis):
+        with (
+            patch.object(auth_mod, "_redis", None),
+            patch.object(auth_mod.redis.Redis, "from_url", return_value=mock_redis),
+        ):
             r1 = asyncio.run(auth_mod._get_redis())
             r2 = asyncio.run(auth_mod._get_redis())
             assert r1 is r2
@@ -623,8 +632,7 @@ class TestDecodeTokenRedisPassThrough:
         def raise_connection_error(jti, sub):
             raise ConnectionError("Redis unavailable")
 
-        with patch("app.services.auth._check_redis_revocation_sync",
-                   side_effect=raise_connection_error):
+        with patch("app.services.auth._check_redis_revocation_sync", side_effect=raise_connection_error):
             result = decode_token(token)
             assert result["sub"] == "user-redis-err"
 

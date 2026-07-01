@@ -52,12 +52,20 @@ def sample_nmap_result():
     )
     host.ports = [
         PortInfo(
-            port=22, protocol="tcp", state="open", service="ssh",
-            product="OpenSSH", version="8.9p1",
+            port=22,
+            protocol="tcp",
+            state="open",
+            service="ssh",
+            product="OpenSSH",
+            version="8.9p1",
         ),
         PortInfo(
-            port=80, protocol="tcp", state="open", service="http",
-            product="nginx", version="1.24.0",
+            port=80,
+            protocol="tcp",
+            state="open",
+            service="http",
+            product="nginx",
+            version="1.24.0",
         ),
     ]
     return NmapResult(hosts=[host])
@@ -66,12 +74,14 @@ def sample_nmap_result():
 @pytest.fixture
 def sample_nmap_result_no_hosts():
     from utils.nmap_runner import NmapResult
+
     return NmapResult(hosts=[])
 
 
 @pytest.fixture
 def sample_nmap_result_host_down():
     from utils.nmap_runner import HostInfo, NmapResult
+
     host = HostInfo(ip="10.0.0.1", status="down")
     return NmapResult(hosts=[host])
 
@@ -79,11 +89,16 @@ def sample_nmap_result_host_down():
 @pytest.fixture
 def sample_nmap_result_no_product():
     from utils.nmap_runner import HostInfo, NmapResult, PortInfo
+
     host = HostInfo(ip="10.0.0.1", status="up")
     host.ports = [
         PortInfo(
-            port=8080, protocol="tcp", state="open", service="http-proxy",
-            product="", version="",
+            port=8080,
+            protocol="tcp",
+            state="open",
+            service="http-proxy",
+            product="",
+            version="",
         ),
     ]
     return NmapResult(hosts=[host])

@@ -23,6 +23,7 @@ HEADERS = {"X-API-Key": settings.api_key}
 # 1. IDOR — get_scan must return 404 for another user's job
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_get_scan_idor_returns_404(client, db_session, sample_user):
     """A user requesting another user's scan job must receive 404."""
@@ -59,6 +60,7 @@ async def test_get_scan_idor_returns_404(client, db_session, sample_user):
 # ---------------------------------------------------------------------------
 # 2. IDOR — get_findings must return empty list for another user's job
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_get_findings_idor_returns_empty(client, db_session, sample_user):
@@ -110,6 +112,7 @@ async def test_get_findings_idor_returns_empty(client, db_session, sample_user):
 # 3. Admin auth — POST /api/keys/generate must reject non-admin users
 # ---------------------------------------------------------------------------
 
+
 def test_key_generate_rejects_non_admin(client):
     """Non-admin users must receive 403 when generating API keys."""
     from app.services.auth import get_current_admin as _real_admin
@@ -142,6 +145,7 @@ def test_key_generate_rejects_non_admin(client):
 # 4. Admin auth — POST /api/keys/revoke/{id} must reject non-admin users
 # ---------------------------------------------------------------------------
 
+
 def test_key_revoke_rejects_non_admin(client):
     """Non-admin users must receive 403 when revoking API keys."""
     from app.services.auth import get_current_admin as _real_admin
@@ -169,6 +173,7 @@ def test_key_revoke_rejects_non_admin(client):
 # ---------------------------------------------------------------------------
 # 5. Admin auth — DELETE /api/keys/{id} must reject non-admin users
 # ---------------------------------------------------------------------------
+
 
 def test_key_delete_rejects_non_admin(client):
     """Non-admin users must receive 403 when deleting API keys."""
@@ -198,6 +203,7 @@ def test_key_delete_rejects_non_admin(client):
 # 6. XSS — HTML export must escape script tags in scan target
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_export_html_escapes_xss_in_target(client, db_session, sample_user):
     """HTML export must HTML-escape <script> tags in the scan target field."""
@@ -226,6 +232,7 @@ async def test_export_html_escapes_xss_in_target(client, db_session, sample_user
 # ---------------------------------------------------------------------------
 # 7. XSS — HTML export must escape script tags in finding titles
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_export_html_escapes_xss_in_finding_title(client, db_session, sample_user):
@@ -265,6 +272,7 @@ async def test_export_html_escapes_xss_in_finding_title(client, db_session, samp
 # 8. XSS — JSON export must return application/octet-stream content type
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_export_json_content_type_is_octet_stream(client, db_session, sample_user):
     """JSON export must return Content-Type: application/octet-stream (not text/html)."""
@@ -288,6 +296,7 @@ async def test_export_json_content_type_is_octet_stream(client, db_session, samp
 # ---------------------------------------------------------------------------
 # 9. ZIP slip — path traversal in mobile scan filename is neutralized
 # ---------------------------------------------------------------------------
+
 
 def test_mobile_scan_neutralizes_path_traversal(client, mock_celery):
     """Mobile scan must use os.path.basename to strip directory traversal from filename."""

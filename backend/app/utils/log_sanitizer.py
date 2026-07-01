@@ -73,9 +73,7 @@ def sanitize_for_log(obj: Any, max_string_length: int = _MAX_STRING_LENGTH) -> A
     Returns a new object; the original is never mutated.
     """
     if isinstance(obj, dict):
-        return {
-            key: _sanitize_value(key, value, max_string_length) for key, value in obj.items()
-        }
+        return {key: _sanitize_value(key, value, max_string_length) for key, value in obj.items()}
     if isinstance(obj, list):
         return [sanitize_for_log(item, max_string_length) for item in obj]
     if isinstance(obj, str):
@@ -86,7 +84,7 @@ def sanitize_for_log(obj: Any, max_string_length: int = _MAX_STRING_LENGTH) -> A
 def _sanitize_value(key: str, value: Any, max_string_length: int) -> Any:
     """Sanitize a single key-value pair."""
     if _key_is_sensitive(key):
-        if isinstance(value, (dict, list)):
+        if isinstance(value, dict | list):
             return _redact_all(value)
         return _REDACTED_VALUE
     return sanitize_for_log(value, max_string_length)

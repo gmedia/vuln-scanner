@@ -6,7 +6,6 @@ from app.services.scanner import ScannerService
 
 
 class TestDispatchTask:
-
     def setup_service(self):
         db_mock = MagicMock()
         return ScannerService(db_mock)

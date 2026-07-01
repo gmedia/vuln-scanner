@@ -5,9 +5,13 @@ test.describe("IP Scanner", () => {
     await page.goto("/scan/ip");
     await expect(page.locator("h2:has-text('IP SCANNER')")).toBeVisible();
     await expect(page.locator("text=SCAN TARGET")).toBeVisible();
-    await expect(page.locator('input[placeholder="192.168.1.1"]')).toBeVisible();
+    await expect(
+      page.locator('input[placeholder="192.168.1.1"]'),
+    ).toBeVisible();
     await expect(page.locator('input[placeholder="1-1000"]')).toBeVisible();
-    await expect(page.locator('button:has-text("START IP SCAN")')).toBeVisible();
+    await expect(
+      page.locator('button:has-text("START IP SCAN")'),
+    ).toBeVisible();
   });
 
   test("shows validation error for empty IP", async ({ page }) => {
@@ -36,8 +40,12 @@ test.describe("IP Scanner", () => {
     await page.locator('input[placeholder="1-1000"]').fill("1-100");
     await page.locator('button:has-text("START IP SCAN")').click();
     // Navigates to scan detail page
-    await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, { timeout: 15_000 });
-    await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, {
+      timeout: 15_000,
+    });
+    await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({
+      timeout: 15_000,
+    });
   });
 
   test("scan progress shows after submission", async ({ page }) => {
@@ -46,17 +54,27 @@ test.describe("IP Scanner", () => {
     await page.locator('input[placeholder="1-1000"]').fill("1-100");
     await page.locator('button:has-text("START IP SCAN")').click();
 
-    await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, { timeout: 15_000 });
-    await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({ timeout: 15_000 });
-    await expect(page.locator("text=Target").first()).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, {
+      timeout: 15_000,
+    });
+    await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.locator("text=Target").first()).toBeVisible({
+      timeout: 15_000,
+    });
   });
 
   test("Enter key submits the form", async ({ page }) => {
     await page.goto("/scan/ip");
     await page.locator('input[placeholder="192.168.1.1"]').fill("127.0.0.1");
     await page.locator('input[placeholder="192.168.1.1"]').press("Enter");
-    await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, { timeout: 15_000 });
-    await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, {
+      timeout: 15_000,
+    });
+    await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({
+      timeout: 15_000,
+    });
   });
 
   test("back arrow navigates to dashboard", async ({ page }) => {

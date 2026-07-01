@@ -253,9 +253,7 @@ def test_list_keys_excludes_revoked_keys_from_active_usage(client):
 
     list_resp = client.get("/api/keys", headers={"X-API-Key": API_KEY})
     assert list_resp.status_code == 200
-    before_key = next(
-        (k for k in list_resp.json()["keys"] if k["id"] == key_id), None
-    )
+    before_key = next((k for k in list_resp.json()["keys"] if k["id"] == key_id), None)
     assert before_key is not None
     assert before_key["is_active"] is True
 
@@ -266,9 +264,7 @@ def test_list_keys_excludes_revoked_keys_from_active_usage(client):
 
     list_resp2 = client.get("/api/keys", headers={"X-API-Key": API_KEY})
     assert list_resp2.status_code == 200
-    after_key = next(
-        (k for k in list_resp2.json()["keys"] if k["id"] == key_id), None
-    )
+    after_key = next((k for k in list_resp2.json()["keys"] if k["id"] == key_id), None)
     assert after_key is not None
     assert after_key["is_active"] is False
 

@@ -227,7 +227,7 @@ body {
 }
 
 @utility slide-in-from-top-48\% {
-  animation: slide-in-from-top-48\% 200ms ease-out;
+  animation: slide-in-from-top-48\%200ms ease-out;
 }
 
 @utility slide-out-to-left-1\/2 {
@@ -235,5 +235,5 @@ body {
 }
 
 @utility slide-out-to-top-48\% {
-  animation: slide-out-to-top-48\% 200ms ease-out;
+  animation: slide-out-to-top-48\%200ms ease-out;
 }
