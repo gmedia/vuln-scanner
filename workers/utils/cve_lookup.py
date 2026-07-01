@@ -7,17 +7,14 @@ import httpx
 import redis
 from loguru import logger
 
+from utils.redis_helpers import get_redis_pool
+
 OSV_BASE_URL = os.getenv("OSV_BASE_URL", "https://api.osv.dev/v1")
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
-_redis_pool: redis.ConnectionPool | None = None
+CVE_CACHE_TTL = int(os.getenv("CVE_CACHE_TTL", "3600"))
 
 
 def _get_redis_pool() -> redis.ConnectionPool:
-    global _redis_pool
-    if _redis_pool is None:
-        _redis_pool = redis.ConnectionPool.from_url(REDIS_URL)
-    return _redis_pool
-CVE_CACHE_TTL = int(os.getenv("CVE_CACHE_TTL", "3600"))
+    return get_redis_pool()
 
 
 def _cache_key(package_name: str, ecosystem: str, version: str) -> str:

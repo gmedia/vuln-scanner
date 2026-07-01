@@ -44,6 +44,8 @@ export interface UserResponse {
   id: string;
   email: string;
   is_verified: boolean;
+  is_admin?: boolean;
+  credits?: number;
   created_at: string;
 }
 

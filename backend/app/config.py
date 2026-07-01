@@ -14,7 +14,7 @@ _SENTINEL = "__UNSET__"
 
 def _build_redis_url() -> str:
     """Build a Redis URL, including password if REDIS_PASSWORD is set."""
-    password = __import__("os").environ.get("REDIS_PASSWORD", "")
+    password = os.environ.get("REDIS_PASSWORD", "")
     if password:
         return f"redis://:{password}@redis:6379/0"
     return "redis://redis:6379/0"

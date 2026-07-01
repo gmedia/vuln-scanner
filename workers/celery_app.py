@@ -6,9 +6,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
 
 from celery import Celery
 
-_redis_password = os.getenv("REDIS_PASSWORD", "")
-_redis_auth = f":{_redis_password}@" if _redis_password else ""
-_default_redis_url = f"redis://{_redis_auth}redis:6379/0"
+from utils.redis_helpers import build_redis_url
+
+_default_redis_url = build_redis_url()
 
 celery_app = Celery(
     "vuln_scanner",

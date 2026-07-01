@@ -1,6 +1,7 @@
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import Any, cast
 
 import sentry_sdk
 from fastapi import FastAPI, Request
@@ -104,7 +105,7 @@ async def health_check() -> JSONResponse:
         checks["status"] = "degraded"
 
     try:
-        r = aioredis.from_url(settings.redis_url, socket_connect_timeout=3)  # type: ignore[no-untyped-call]
+        r = cast(Any, aioredis).from_url(settings.redis_url, socket_connect_timeout=3)
         await r.ping()
         await r.aclose()
         checks["redis"] = "connected"

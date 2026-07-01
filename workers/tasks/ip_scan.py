@@ -1,5 +1,5 @@
+import asyncio
 import json
-import os
 import time
 import uuid
 from datetime import UTC, datetime
@@ -15,16 +15,14 @@ from tasks.dead_letter import dead_letter_handler
 from utils.cve_lookup import extract_cvss, format_vuln_finding, lookup_service_cves
 from utils.database import get_sync_session
 from utils.nmap_runner import findings_from_nmap, run_nmap
+from utils.redis_helpers import get_redis_pool
 from utils.severity import compute_severity_summary, sort_findings_by_severity
-
-REDIS_URL = os.getenv("REDIS_URL", f"redis://:{os.getenv('REDIS_PASSWORD', '')}@redis:6379/0")
-_redis_pool = redis.ConnectionPool.from_url(REDIS_URL)
 
 
 def publish_progress(job_id: str, step: str, progress: int, message: str) -> None:
     """Publish a progress update to the scan's Redis pubsub channel."""
     try:
-        r = redis.Redis(connection_pool=_redis_pool)
+        r = redis.Redis(connection_pool=get_redis_pool())
         r.publish(
             f"scan_progress:{job_id}",
             json.dumps({"type": "progress", "step": step, "progress": progress, "message": message}),
@@ -34,7 +32,6 @@ def publish_progress(job_id: str, step: str, progress: int, message: str) -> Non
 
 
 def _run_async(coro: Any) -> Any:
-    import asyncio
     try:
         loop = asyncio.get_event_loop()
     except RuntimeError:
@@ -43,7 +40,7 @@ def _run_async(coro: Any) -> Any:
     return loop.run_until_complete(coro)
 
 
-@shared_task(bind=True, name="ip_scan.run", max_retries=3)  # type: ignore
+@shared_task(bind=True, name="ip_scan.run", max_retries=3)
 def run_ip_scan(self: Any, job_id: str, target: str, ports: str = "1-1000") -> dict[str, Any]:
     """Execute a full IP scan: nmap, CVE lookup, and persist findings to the database."""
     logger.info("IP scan started: job={job_id} target={target} ports={ports}",
@@ -129,7 +126,7 @@ def run_ip_scan(self: Any, job_id: str, target: str, ports: str = "1-1000") -> d
                        f"({summary['critical']}C/{summary['high']}H/{summary['medium']}M/{summary['low']}L)")
 
         try:
-            r = redis.Redis(connection_pool=_redis_pool)
+            r = redis.Redis(connection_pool=get_redis_pool())
             r.set("health:last_task_completed", time.time())
         except Exception as e:
             logger.warning("Failed to update Redis health timestamp for job {job_id}: {error}", job_id=job_id, error=e)
