@@ -40,7 +40,7 @@ def _run_async(coro: Any) -> Any:
     return loop.run_until_complete(coro)
 
 
-@shared_task(bind=True, name="ip_scan.run", max_retries=3)  # type: ignore[untyped-decorator]
+@shared_task(bind=True, name="ip_scan.run", max_retries=3)  # type: ignore
 def run_ip_scan(self: Any, job_id: str, target: str, ports: str = "1-1000") -> dict[str, Any]:
     """Execute a full IP scan: nmap, CVE lookup, and persist findings to the database."""
     logger.info("IP scan started: job={job_id} target={target} ports={ports}",
