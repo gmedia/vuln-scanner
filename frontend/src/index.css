@@ -1,28 +1,46 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer base {
-  :root {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 93%;
-    --card: 0 0% 9%;
-    --card-foreground: 0 0% 93%;
-    --primary: 142 71% 45%;
-    --primary-foreground: 0 0% 4%;
-    --secondary: 0 0% 13%;
-    --secondary-foreground: 0 0% 93%;
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 0 0% 15%;
-    --accent-foreground: 0 0% 93%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 93%;
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
-    --ring: 142 71% 45%;
-    --radius: 0.5rem;
-  }
+:root {
+  --background: hsl(0 0% 4%);
+  --foreground: hsl(0 0% 93%);
+  --card: hsl(0 0% 9%);
+  --card-foreground: hsl(0 0% 93%);
+  --primary: hsl(142 71% 45%);
+  --primary-foreground: hsl(0 0% 4%);
+  --secondary: hsl(0 0% 13%);
+  --secondary-foreground: hsl(0 0% 93%);
+  --muted: hsl(0 0% 15%);
+  --muted-foreground: hsl(0 0% 60%);
+  --accent: hsl(0 0% 15%);
+  --accent-foreground: hsl(0 0% 93%);
+  --destructive: hsl(0 84% 60%);
+  --destructive-foreground: hsl(0 0% 93%);
+  --border: hsl(0 0% 18%);
+  --input: hsl(0 0% 18%);
+  --ring: hsl(142 71% 45%);
+  --radius: 0.5rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius: var(--radius);
+  --font-family-mono: "JetBrains Mono", "Fira Code", "monospace";
 }
 
 @layer base {

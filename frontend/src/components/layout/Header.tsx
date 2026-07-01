@@ -41,7 +41,7 @@ function Header({ children }: HeaderProps) {
   }
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border bg-card/50 px-4 backdrop-blur-sm">
+    <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border bg-card/50 px-4 backdrop-blur-xs">
       {children}
       <div className="flex flex-1 items-center justify-between">
         <h1 className="font-mono text-sm font-bold tracking-wider text-foreground">

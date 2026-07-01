@@ -12,7 +12,7 @@ function FindingDetail({ finding }: FindingDetailProps) {
   const [showRaw, setShowRaw] = useState(false);
 
   return (
-    <div className="rounded-lg border border-border bg-card/50 p-4 shadow-sm animate-in fade-in-0 slide-in-from-top-2">
+    <div className="rounded-lg border border-border bg-card/50 p-4 shadow-xs animate-in fade-in-0 slide-in-from-top-2">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Badge
           variant={
