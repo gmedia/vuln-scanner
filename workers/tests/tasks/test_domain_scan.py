@@ -37,9 +37,12 @@ class TestDomainScanSuccessfulFlow:
             mock_sub.return_value = ["www.example.com", "mail.example.com"]
             mock_http.return_value = (True, True, 200, {"Server": "nginx/1.24.0"})
             mock_ssl.return_value = MagicMock(
-                issues=[], cipher="TLS_AES_256_GCM_SHA384",
-                subject="CN=example.com", issuer="CN=CA",
-                not_after="2026-01-01", days_remaining=365,
+                issues=[],
+                cipher="TLS_AES_256_GCM_SHA384",
+                subject="CN=example.com",
+                issuer="CN=CA",
+                not_after="2026-01-01",
+                days_remaining=365,
             )
             mock_headers.return_value = []
             mock_tech.return_value = [
@@ -68,6 +71,7 @@ class TestDomainScanSuccessfulFlow:
 
     def _call_task(self, domain=DOMAIN):
         from tasks.domain_scan import run_domain_scan
+
         return run_domain_scan(JOB_ID, domain)
 
     def test_successful_domain_scan_completes(self):
@@ -123,8 +127,12 @@ class TestDomainScanSuccessfulFlow:
     def test_status_completed(self):
         self._call_task()
         self.mock_update_status.assert_any_call(
-            self.mock_session.return_value, JOB_ID, "completed",
-            progress=100, result_summary=ANY, completed_at=ANY,
+            self.mock_session.return_value,
+            JOB_ID,
+            "completed",
+            progress=100,
+            result_summary=ANY,
+            completed_at=ANY,
         )
 
     def test_health_last_task_completed_set(self):
@@ -135,9 +143,7 @@ class TestDomainScanSuccessfulFlow:
 
     def test_progress_published(self):
         self._call_task()
-        progress_calls = [
-            c for c in self.mock_progress.call_args_list if c[0][0] == JOB_ID
-        ]
+        progress_calls = [c for c in self.mock_progress.call_args_list if c[0][0] == JOB_ID]
         assert len(progress_calls) > 5
 
     def test_ssl_not_checked_when_no_https(self):
@@ -173,6 +179,7 @@ class TestDomainScanFailure:
 
     def _call_task(self):
         from tasks.domain_scan import run_domain_scan
+
         task_cls = type(run_domain_scan._get_current_object())
         with (
             patch.object(task_cls, "request", new_callable=PropertyMock) as mock_req,
@@ -194,7 +201,9 @@ class TestDomainScanFailure:
         with pytest.raises(Retry):
             self._call_task()
         self.mock_update_status.assert_any_call(
-            self.mock_session.return_value, JOB_ID, "failed",
+            self.mock_session.return_value,
+            JOB_ID,
+            "failed",
         )
 
     def test_dns_failure_not_dead_letter_on_first_retry(self):
@@ -207,7 +216,9 @@ class TestDomainScanFailure:
         with pytest.raises(Retry):
             self._call_task()
         self.mock_refund.assert_called_once_with(
-            self.mock_session.return_value, JOB_ID, "domain",
+            self.mock_session.return_value,
+            JOB_ID,
+            "domain",
         )
 
     def test_dns_failure_commits_and_closes_session(self):
@@ -270,60 +281,84 @@ class TestDomainScanNmapFailure:
 
     def _call_task(self):
         from tasks.domain_scan import run_domain_scan
+
         return run_domain_scan(JOB_ID, DOMAIN)
 
     def test_nmap_failure_does_not_crash_domain_scan(self):
         self._call_task()
         self.mock_save_findings.assert_called_once()
         self.mock_update_status.assert_any_call(
-            ANY, JOB_ID, "completed", progress=100,
-            result_summary=ANY, completed_at=ANY,
+            ANY,
+            JOB_ID,
+            "completed",
+            progress=100,
+            result_summary=ANY,
+            completed_at=ANY,
         )
 
     @patch("tasks.domain_scan.lookup_service_cves", new_callable=AsyncMock)
     @patch("tasks.domain_scan.check_ssl", new_callable=AsyncMock)
     def test_cve_lookup_failure_does_not_crash(self, mock_ssl, mock_cve):
         mock_ssl.return_value = MagicMock(
-            issues=[], cipher="TLS_AES_256_GCM_SHA384",
-            subject="CN=example.com", issuer="CN=CA",
-            not_after="2026-01-01", days_remaining=365,
+            issues=[],
+            cipher="TLS_AES_256_GCM_SHA384",
+            subject="CN=example.com",
+            issuer="CN=CA",
+            not_after="2026-01-01",
+            days_remaining=365,
         )
         mock_cve.side_effect = Exception("CVE lookup failed")
         result = self._call_task()
         self.mock_save_findings.assert_called_once()
         self.mock_update_status.assert_any_call(
-            ANY, JOB_ID, "completed", progress=100,
-            result_summary=ANY, completed_at=ANY,
+            ANY,
+            JOB_ID,
+            "completed",
+            progress=100,
+            result_summary=ANY,
+            completed_at=ANY,
         )
         assert result["job_id"] == JOB_ID
 
     @patch("tasks.domain_scan.check_ssl", new_callable=AsyncMock)
     def test_redis_health_failure_does_not_crash(self, mock_ssl):
         mock_ssl.return_value = MagicMock(
-            issues=[], cipher="TLS_AES_256_GCM_SHA384",
-            subject="CN=example.com", issuer="CN=CA",
-            not_after="2026-01-01", days_remaining=365,
+            issues=[],
+            cipher="TLS_AES_256_GCM_SHA384",
+            subject="CN=example.com",
+            issuer="CN=CA",
+            not_after="2026-01-01",
+            days_remaining=365,
         )
         self.mock_redis.side_effect = Exception("Redis connection failed")
         result = self._call_task()
         self.mock_save_findings.assert_called_once()
         self.mock_update_status.assert_any_call(
-            ANY, JOB_ID, "completed", progress=100,
-            result_summary=ANY, completed_at=ANY,
+            ANY,
+            JOB_ID,
+            "completed",
+            progress=100,
+            result_summary=ANY,
+            completed_at=ANY,
         )
         assert result["job_id"] == JOB_ID
 
     @patch("tasks.domain_scan.check_ssl", new_callable=AsyncMock)
     def test_publish_progress_failure_does_not_crash(self, mock_ssl):
         mock_ssl.return_value = MagicMock(
-            issues=[], cipher="TLS_AES_256_GCM_SHA384",
-            subject="CN=example.com", issuer="CN=CA",
-            not_after="2026-01-01", days_remaining=365,
+            issues=[],
+            cipher="TLS_AES_256_GCM_SHA384",
+            subject="CN=example.com",
+            issuer="CN=CA",
+            not_after="2026-01-01",
+            days_remaining=365,
         )
+
         def publish_side_effect(job_id, step, progress, message):
             if step == "completed":
                 raise Exception("Publish failed")
             return None
+
         self.mock_progress.side_effect = publish_side_effect
         with pytest.raises(Exception, match="Publish failed"):
             self._call_task()
@@ -355,6 +390,7 @@ class TestDomainScanNestedStatusUpdateFailure:
 
     def _call_task(self):
         from tasks.domain_scan import run_domain_scan
+
         task_cls = type(run_domain_scan._get_current_object())
         with (
             patch.object(task_cls, "request", new_callable=PropertyMock) as mock_req,
@@ -390,6 +426,7 @@ class TestPublishProgress:
     def test_publish_progress_handles_redis_error_gracefully(self):
         """When redis.Redis() returns an instance whose publish raises, logs warning."""
         from tasks.domain_scan import publish_progress
+
         with patch("tasks.domain_scan.redis.Redis") as mock_redis:
             mock_instance = MagicMock()
             mock_instance.publish.side_effect = Exception("Redis connection lost")
@@ -400,6 +437,7 @@ class TestPublishProgress:
     def test_publish_progress_handles_redis_constructor_error(self):
         """When redis.Redis() constructor itself raises, publish_progress logs warning."""
         from tasks.domain_scan import publish_progress
+
         with patch("tasks.domain_scan.redis.Redis") as mock_redis:
             mock_redis.side_effect = Exception("Cannot connect to Redis")
             publish_progress("test-job", "nmap_scan", 50, "scanning")
@@ -416,9 +454,11 @@ class TestRunAsync:
         async def dummy():
             return "ok"
 
-        with patch("asyncio.get_event_loop", side_effect=RuntimeError("No event loop")), \
-                patch("asyncio.new_event_loop") as mock_new, \
-                patch("asyncio.set_event_loop") as mock_set:
+        with (
+            patch("asyncio.get_event_loop", side_effect=RuntimeError("No event loop")),
+            patch("asyncio.new_event_loop") as mock_new,
+            patch("asyncio.set_event_loop") as mock_set,
+        ):
             mock_loop = MagicMock()
             mock_loop.run_until_complete.return_value = "ok"
             mock_new.return_value = mock_loop
@@ -562,8 +602,7 @@ class TestRefundCredits:
             if name in sys.modules:
                 saved[name] = sys.modules[name]
             sys.modules[name] = (
-                fake_scan_job if "scan_job" in name
-                else (fake_user if "user" in name else fake_credit_log)
+                fake_scan_job if "scan_job" in name else (fake_user if "user" in name else fake_credit_log)
             )
 
         yield
@@ -587,6 +626,7 @@ class TestRefundCredits:
             def __init__(self, **kwargs):
                 for k, v in kwargs.items():
                     object.__setattr__(self, k, v)
+
         return Record
 
     def _mock_job(self, user_id=None, credit_cost=None):
@@ -610,6 +650,7 @@ class TestRefundCredits:
         session.query.return_value.where.return_value.one_or_none.side_effect = [job, user]
 
         from tasks.domain_scan import _refund_credits
+
         _refund_credits(session, self.JOB_ID_STR, "domain")
 
         assert user.credits == 60
@@ -626,6 +667,7 @@ class TestRefundCredits:
         session.query.return_value.where.return_value.one_or_none.return_value = None
 
         from tasks.domain_scan import _refund_credits
+
         _refund_credits(session, "nonexistent-job", "domain")
 
         session.add.assert_not_called()
@@ -636,6 +678,7 @@ class TestRefundCredits:
         session.query.return_value.where.return_value.one_or_none.return_value = job
 
         from tasks.domain_scan import _refund_credits
+
         _refund_credits(session, self.JOB_ID_STR, "domain")
 
         session.add.assert_not_called()
@@ -646,6 +689,7 @@ class TestRefundCredits:
         session.query.return_value.where.return_value.one_or_none.return_value = job
 
         from tasks.domain_scan import _refund_credits
+
         _refund_credits(session, self.JOB_ID_STR, "domain")
 
         session.add.assert_not_called()
@@ -656,7 +700,7 @@ class TestRefundCredits:
         session.query.return_value.where.return_value.one_or_none.side_effect = [job, None]
 
         from tasks.domain_scan import _refund_credits
+
         _refund_credits(session, self.JOB_ID_STR, "domain")
 
         session.add.assert_not_called()
-

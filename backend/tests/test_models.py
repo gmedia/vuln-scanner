@@ -19,12 +19,14 @@ from app.models.scan_job import ScanJob
 class _UUIDType(TypeDecorator):
     impl = String(32)
     cache_ok = True
+
     def process_bind_param(self, value, dialect):
         if value is None:
             return None
         if isinstance(value, uuid.UUID):
             return value.hex
         return str(value).replace("-", "")
+
     def process_result_value(self, value, dialect):
         if value is None:
             return None
@@ -36,10 +38,12 @@ class _UUIDType(TypeDecorator):
 class _JSONBType(TypeDecorator):
     impl = Text
     cache_ok = True
+
     def process_bind_param(self, value, dialect):
         if value is None:
             return None
         return json.dumps(value)
+
     def process_result_value(self, value, dialect):
         if value is None:
             return None

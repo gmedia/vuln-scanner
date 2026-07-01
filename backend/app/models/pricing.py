@@ -16,6 +16,4 @@ class PricingConfig(Base):
     credit_cost: Mapped[int] = mapped_column(Integer, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
-    __table_args__ = (
-        CheckConstraint("credit_cost >= 0", name="ck_pricing_credit_cost_non_negative"),
-    )
+    __table_args__ = (CheckConstraint("credit_cost >= 0", name="ck_pricing_credit_cost_non_negative"),)

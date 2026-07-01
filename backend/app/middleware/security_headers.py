@@ -23,9 +23,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         headers = response.headers
 
         if settings.cookie_secure:
-            headers["Strict-Transport-Security"] = (
-                f"max-age={STS_MAX_AGE}; includeSubDomains"
-            )
+            headers["Strict-Transport-Security"] = f"max-age={STS_MAX_AGE}; includeSubDomains"
 
         headers["X-Content-Type-Options"] = "nosniff"
         headers["X-Frame-Options"] = "DENY"

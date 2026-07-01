@@ -3,6 +3,7 @@ E2E test data seeder.
 Run after migrations: python -m scripts.seed_e2e
 Inserts sample scan jobs + findings so frontend E2E tests have data to work with.
 """
+
 import asyncio
 import uuid
 from datetime import UTC, datetime, timedelta

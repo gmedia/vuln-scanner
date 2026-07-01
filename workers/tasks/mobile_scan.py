@@ -43,8 +43,12 @@ def _run_async(coro: Any) -> Any:
 @shared_task(bind=True, name="mobile_scan.run", max_retries=3)  # type: ignore
 def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> dict[str, Any]:
     """Execute a full mobile scan: APK/IPA analysis, secret scanning, CVE lookup for embedded libraries."""
-    logger.info("Mobile scan started: job={job_id} platform={platform} path={path}",
-                job_id=job_id, platform=platform, path=file_path)
+    logger.info(
+        "Mobile scan started: job={job_id} platform={platform} path={path}",
+        job_id=job_id,
+        platform=platform,
+        path=file_path,
+    )
     session = get_sync_session()
 
     _update_status(session, job_id, "running", started_at=datetime.now(UTC))
@@ -69,8 +73,12 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> di
             try:
                 apk_info, findings, libraries = analyze_apk(file_path)
                 all_findings.extend(findings)
-                publish_progress(job_id, "manifest_done", 30,
-                               f"Package: {apk_info.package_name}, {len(apk_info.permissions)} permissions")
+                publish_progress(
+                    job_id,
+                    "manifest_done",
+                    30,
+                    f"Package: {apk_info.package_name}, {len(apk_info.permissions)} permissions",
+                )
             except Exception as e:
                 publish_progress(job_id, "manifest_error", 25, f"APK analysis warning: {str(e)[:100]}")
 
@@ -79,8 +87,12 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> di
             try:
                 ipa_info, findings, libraries = analyze_ipa(file_path)
                 all_findings.extend(findings)
-                publish_progress(job_id, "plist_done", 30,
-                               f"Bundle: {ipa_info.bundle_id}, {len(ipa_info.ats_exceptions)} ATS exemptions")
+                publish_progress(
+                    job_id,
+                    "plist_done",
+                    30,
+                    f"Bundle: {ipa_info.bundle_id}, {len(ipa_info.ats_exceptions)} ATS exemptions",
+                )
             except Exception as e:
                 publish_progress(job_id, "plist_error", 25, f"IPA analysis warning: {str(e)[:100]}")
 
@@ -90,6 +102,7 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> di
                 raw = f.read(5 * 1024 * 1024)
             text = raw.decode("utf-8", errors="replace")
             from utils.mobile_utils import _scan_secrets
+
             secret_findings = _scan_secrets(text)
             for sf in secret_findings:
                 if sf not in all_findings:
@@ -115,10 +128,7 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> di
             for vuln in vulns:
                 cvss = extract_cvss(vuln)
                 finding = format_vuln_finding(vuln, cvss)
-                finding["description"] = (
-                    f"[{platform}] Library: {lib}\n"
-                    + (finding.get("description") or "")
-                )
+                finding["description"] = f"[{platform}] Library: {lib}\n" + (finding.get("description") or "")
                 all_findings.append(finding)
                 total_vuln += 1
 
@@ -128,18 +138,30 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> di
         publish_progress(job_id, "saving", 90, "Saving results...")
         _save_findings(session, job_id, all_findings)
 
-        _update_status(session, job_id, "completed", progress=100,
-                       result_summary=summary, completed_at=datetime.now(UTC))
+        _update_status(
+            session, job_id, "completed", progress=100, result_summary=summary, completed_at=datetime.now(UTC)
+        )
         session.commit()
         session.close()
 
-        logger.info("Mobile scan complete: job={job_id} platform={platform} findings={total} "
-                    "critical={c} high={h} medium={m} low={l}",
-                    job_id=job_id, platform=platform, total=summary['total_findings'], c=summary['critical'],
-                    h=summary['high'], m=summary['medium'], l=summary['low'])
-        publish_progress(job_id, "completed", 100,
-                       f"Done: {summary['total_findings']} findings "
-                       f"({summary['critical']}C/{summary['high']}H/{summary['medium']}M/{summary['low']}L)")
+        logger.info(
+            "Mobile scan complete: job={job_id} platform={platform} findings={total} "
+            "critical={c} high={h} medium={m} low={l}",
+            job_id=job_id,
+            platform=platform,
+            total=summary["total_findings"],
+            c=summary["critical"],
+            h=summary["high"],
+            m=summary["medium"],
+            l=summary["low"],
+        )
+        publish_progress(
+            job_id,
+            "completed",
+            100,
+            f"Done: {summary['total_findings']} findings "
+            f"({summary['critical']}C/{summary['high']}H/{summary['medium']}M/{summary['low']}L)",
+        )
 
         try:
             os.remove(file_path)
@@ -169,17 +191,19 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> di
                 kwargs={},
                 exception_info=str(e),
             )
-        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries)) from e
+        raise self.retry(exc=e, countdown=60 * (2**self.request.retries)) from e
 
 
 def _update_status(session: Any, job_id: str, status: str, **kwargs: Any) -> None:
     from app.models.scan_job import ScanJob
+
     values = {"status": status, **kwargs}
     session.execute(update(ScanJob).where(ScanJob.id == job_id).values(**values))
 
 
 def _save_findings(session: Any, job_id: str, findings: list[dict[str, Any]]) -> None:
     from app.models.scan_finding import ScanFinding
+
     for f in findings:
         finding = ScanFinding(
             id=uuid.uuid4(),

@@ -43,9 +43,7 @@ class ScannerService:
         platform: str | None = None,
         file_path: str | None = None,
     ) -> ScanJob:
-        result = await self.db.execute(
-            select(PricingConfig).where(PricingConfig.scan_type == scan_type)
-        )
+        result = await self.db.execute(select(PricingConfig).where(PricingConfig.scan_type == scan_type))
         pricing = result.scalar_one_or_none()
         if pricing:
             credit_cost = pricing.credit_cost
@@ -56,16 +54,11 @@ class ScannerService:
         # Atomic check-and-deduct: only deduct if user has enough credits
         if credit_cost > 0:
             await self.db.execute(
-                text(
-                    "UPDATE users SET credits = credits - :cost "
-                    "WHERE id = :uid AND credits >= :cost"
-                ),
+                text("UPDATE users SET credits = credits - :cost WHERE id = :uid AND credits >= :cost"),
                 {"cost": credit_cost, "uid": user.id.hex},
             )
             await self.db.flush()
-            check_result = await self.db.execute(
-                select(User.credits).where(User.id == user.id)
-            )
+            check_result = await self.db.execute(select(User.credits).where(User.id == user.id))
             current_credits = check_result.scalar_one()
             if current_credits == user.credits:
                 raise HTTPException(
@@ -157,9 +150,7 @@ class ScannerService:
         if not job:
             return None
 
-        findings_result = await self.db.execute(
-            select(ScanFinding).where(ScanFinding.job_id == job_id)
-        )
+        findings_result = await self.db.execute(select(ScanFinding).where(ScanFinding.job_id == job_id))
         findings = findings_result.scalars().all()
 
         detail = ScanJobDetailResponse.model_validate(job)
@@ -168,14 +159,10 @@ class ScannerService:
 
     async def get_findings(self, job_id: str, user_id: UUID) -> list[ScanFindingResponse]:
         # Verify job exists and belongs to user before returning findings
-        job_result = await self.db.execute(
-            select(ScanJob.id).where(ScanJob.id == job_id, ScanJob.user_id == user_id)
-        )
+        job_result = await self.db.execute(select(ScanJob.id).where(ScanJob.id == job_id, ScanJob.user_id == user_id))
         if not job_result.scalar_one_or_none():
             return []
-        result = await self.db.execute(
-            select(ScanFinding).where(ScanFinding.job_id == job_id)
-        )
+        result = await self.db.execute(select(ScanFinding).where(ScanFinding.job_id == job_id))
         findings = result.scalars().all()
         return [ScanFindingResponse.model_validate(f) for f in findings]
 

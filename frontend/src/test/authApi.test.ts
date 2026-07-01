@@ -18,8 +18,9 @@ vi.mock("axios", () => {
   };
   return {
     default: mockAxios,
-    isAxiosError: vi.fn((err: unknown) =>
-      err !== null && typeof err === "object" && "isAxiosError" in err
+    isAxiosError: vi.fn(
+      (err: unknown) =>
+        err !== null && typeof err === "object" && "isAxiosError" in err,
     ),
   };
 });
@@ -42,11 +43,7 @@ import {
   refreshToken,
   getMe,
 } from "@/api/auth";
-import type {
-  MessageResponse,
-  LoginResponse,
-  UserResponse,
-} from "@/api/auth";
+import type { MessageResponse, LoginResponse, UserResponse } from "@/api/auth";
 
 const mockAxios = axios as unknown as ReturnType<typeof vi.fn> & {
   get: ReturnType<typeof vi.fn>;
@@ -71,7 +68,11 @@ describe("auth API", () => {
       };
       mockAxios.post.mockResolvedValueOnce({ data: mockResponse });
 
-      const result = await register("user@example.com", "password123", "password123");
+      const result = await register(
+        "user@example.com",
+        "password123",
+        "password123",
+      );
       expect(mockAxios.post).toHaveBeenCalledWith("/api/auth/register", {
         email: "user@example.com",
         password: "password123",

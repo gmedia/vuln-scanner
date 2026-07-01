@@ -149,24 +149,30 @@ class TestParseIosPlist:
         assert info.custom_url_schemes == []
 
     def test_no_url_schemes(self):
-        info = _parse_ios_plist({
-            "CFBundleIdentifier": "com.test",
-        })
+        info = _parse_ios_plist(
+            {
+                "CFBundleIdentifier": "com.test",
+            }
+        )
         assert info.custom_url_schemes == []
 
     def test_no_ats(self):
-        info = _parse_ios_plist({
-            "CFBundleIdentifier": "com.test",
-            "CFBundleShortVersionString": "1.0",
-        })
+        info = _parse_ios_plist(
+            {
+                "CFBundleIdentifier": "com.test",
+                "CFBundleShortVersionString": "1.0",
+            }
+        )
         assert info.ats_exceptions == []
         assert info.app_transport_security is None
 
     def test_invalid_url_types_format(self):
-        info = _parse_ios_plist({
-            "CFBundleIdentifier": "com.test",
-            "CFBundleURLTypes": "invalid",
-        })
+        info = _parse_ios_plist(
+            {
+                "CFBundleIdentifier": "com.test",
+                "CFBundleURLTypes": "invalid",
+            }
+        )
         assert info.custom_url_schemes == []
 
 
@@ -195,7 +201,7 @@ class TestBuildAndroidFindings:
         assert "android_manifest" in categories
         assert "android_sdk" in categories
         assert "dangerous_permission" in categories  # CAMERA
-        assert "android_permission" in categories    # INTERNET
+        assert "android_permission" in categories  # INTERNET
         assert "android_debug" in categories
         assert "exported_component" in categories
         assert "android_cleartext" in categories
@@ -338,10 +344,7 @@ class TestScanSecrets:
         assert findings == []
 
     def test_max_5_matches_per_pattern(self):
-        text = '\n'.join([
-            f'api_key = "sk-live-abcdefghijklmnopqrstuvwxyz12345{i}"'
-            for i in range(10)
-        ])
+        text = "\n".join([f'api_key = "sk-live-abcdefghijklmnopqrstuvwxyz12345{i}"' for i in range(10)])
         findings = _scan_secrets(text)
         stripe_findings = [f for f in findings if "stripe_key" in f["title"]]
         assert len(stripe_findings) == 5
@@ -365,31 +368,31 @@ class TestScanSecrets:
         assert any("redis_uri" in t for t in types)
 
     def test_github_pat_detected(self):
-        text = 'token = "ghp_' + 'a' * 36 + '"'
+        text = 'token = "ghp_' + "a" * 36 + '"'
         findings = _scan_secrets(text)
         types = {f["title"] for f in findings}
         assert any("github_pat" in t for t in types)
 
     def test_gitlab_pat_detected(self):
-        text = 'token = "glpat-' + 'a' * 20 + '"'
+        text = 'token = "glpat-' + "a" * 20 + '"'
         findings = _scan_secrets(text)
         types = {f["title"] for f in findings}
         assert any("gitlab_pat" in t for t in types)
 
     def test_stripe_key_detected(self):
-        text = 'key = "sk-live-' + 'a' * 24 + '"'
+        text = 'key = "sk-live-' + "a" * 24 + '"'
         findings = _scan_secrets(text)
         types = {f["title"] for f in findings}
         assert any("stripe_key" in t for t in types)
 
     def test_firebase_url_detected(self):
-        text = 'https://myproject.firebaseio.com/'
+        text = "https://myproject.firebaseio.com/"
         findings = _scan_secrets(text)
         types = {f["title"] for f in findings}
         assert any("firebase_url" in t for t in types)
 
     def test_finding_description_truncated(self):
-        text = 'secret = "' + 'A' * 200 + '"'
+        text = 'secret = "' + "A" * 200 + '"'
         findings = _scan_secrets(text)
         assert len(findings) >= 1
         assert "..." in findings[0]["description"]
@@ -576,6 +579,7 @@ class TestAnalyzeIpa:
         ipa_path = tmp_path / "corrupt.ipa"
         ipa_path.write_text("not a zip")
         import contextlib
+
         with contextlib.suppress(UnboundLocalError):
             analyze_ipa(str(ipa_path))
 
@@ -585,7 +589,7 @@ class TestAnalyzeIpa:
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as zf:
             zf.writestr("../Info.plist", b"skip me")
-            zf.writestr("Payload/App.app/Info.plist", b"not a valid plist \x00\xFF")
+            zf.writestr("Payload/App.app/Info.plist", b"not a valid plist \x00\xff")
         buf.seek(0)
         ipa_path = tmp_path / "test_plist_fail.ipa"
         ipa_path.write_bytes(buf.getvalue())
@@ -595,7 +599,6 @@ class TestAnalyzeIpa:
 
 
 class TestSafeExtract:
-
     def test_extract_valid_member(self, tmp_path):
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as zf:
@@ -630,9 +633,7 @@ class TestSafeExtract:
         with zipfile.ZipFile(buf, "r") as zf:
             result = _safe_extract(zf, "../../etc/passwd", str(tmp_path))
         assert result is False
-        assert not (tmp_path / "..").exists() or not any(
-            "passwd" in str(p) for p in tmp_path.glob("**/*")
-        )
+        assert not (tmp_path / "..").exists() or not any("passwd" in str(p) for p in tmp_path.glob("**/*"))
 
     def test_absolute_path_member_rejected(self, tmp_path):
         buf = io.BytesIO()
@@ -673,12 +674,14 @@ class TestSafeExtract:
         with zipfile.ZipFile(buf, "r") as zf:
             call_count = 0
             real_getinfo = zf.getinfo
+
             def _getinfo_raising(name):
                 nonlocal call_count
                 call_count += 1
                 if call_count == 1 and name == "adir/":
                     raise KeyError(name)
                 return real_getinfo(name)
+
             zf.getinfo = _getinfo_raising
             result = _safe_extract(zf, "adir/", str(tmp_path))
         assert result is True
@@ -686,7 +689,6 @@ class TestSafeExtract:
 
 
 class TestExtractTextFromZip:
-
     def test_basic_text_extraction(self):
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as zf:
@@ -705,9 +707,7 @@ class TestExtractTextFromZip:
             zf.writestr("data.bin", "more binary")
         buf.seek(0)
         with zipfile.ZipFile(buf, "r") as zf:
-            result = _extract_text_from_zip(
-                zf, ["readme.txt", "icon.png", "data.bin"], ".png", ".bin"
-            )
+            result = _extract_text_from_zip(zf, ["readme.txt", "icon.png", "data.bin"], ".png", ".bin")
         assert result == "included"
 
     def test_utf8_decode(self):

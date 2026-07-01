@@ -47,13 +47,14 @@ def _celery_broker_ok(r: redis.Redis) -> bool:
 
 class HealthHandler(BaseHTTPRequestHandler):
     """HTTP handler serving /health and /ready endpoints for worker monitoring."""
+
     def _json_response(self, code: int, data: dict[str, Any]) -> None:
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
         self.wfile.write(json.dumps(data).encode())
 
-    def do_GET(self) -> None:
+    def do_GET(self) -> None:  # noqa: N802
         if self.path == "/health":
             self._handle_health()
         elif self.path == "/ready":
@@ -74,7 +75,7 @@ class HealthHandler(BaseHTTPRequestHandler):
         try:
             last_task = r.get("health:last_task_completed")
             if last_task is not None:
-                last_ts = float(last_task)  # type: ignore[arg-type]
+                last_ts = float(last_task)
                 seconds_ago = int(time.time() - last_ts)
                 payload["last_task_seconds_ago"] = seconds_ago
             else:

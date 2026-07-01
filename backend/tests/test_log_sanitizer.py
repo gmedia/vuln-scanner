@@ -101,11 +101,7 @@ class TestLooksLikeJwt:
 
     def test_standard_jwt(self):
         # Typical JWT: header.payload.signature — all base64url
-        jwt_str = (
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
-            "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0."
-            "dqw4w9WgXcQ"
-        )
+        jwt_str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0.dqw4w9WgXcQ"
         assert _looks_like_jwt(jwt_str) is True
 
     def test_jwt_without_signature(self):
@@ -303,11 +299,7 @@ class TestSanitizeNested:
 
 class TestSanitizeStrings:
     def test_jwt_redacted(self):
-        jwt_str = (
-            "eyJhbGciOiJIUzI1NiJ9."
-            "eyJzdWIiOiIxMjM0NTY3ODkwIn0."
-            "abc123def456"
-        )
+        jwt_str = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abc123def456"
         result = sanitize_for_log(jwt_str)
         assert result == "[REDACTED_JWT]"
 

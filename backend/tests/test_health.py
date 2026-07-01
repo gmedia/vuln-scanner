@@ -2,7 +2,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 
 class TestHealthEndpoint:
-
     def test_health_database_connected(self, client):
         mock_conn = AsyncMock()
         connect_cm = AsyncMock()
@@ -12,9 +11,7 @@ class TestHealthEndpoint:
         mock_bad_redis = AsyncMock()
         mock_bad_redis.ping.side_effect = ConnectionError("mock Redis unavailable")
 
-        with patch("app.database.engine", mock_engine), patch(
-            "redis.asyncio.from_url", return_value=mock_bad_redis
-        ):
+        with patch("app.database.engine", mock_engine), patch("redis.asyncio.from_url", return_value=mock_bad_redis):
             resp = client.get("/health")
 
         assert resp.status_code == 503
@@ -43,9 +40,7 @@ class TestHealthEndpoint:
         mock_engine.connect.return_value = connect_cm
         mock_redis = AsyncMock()
 
-        with patch("app.database.engine", mock_engine), patch(
-            "redis.asyncio.from_url", return_value=mock_redis
-        ):
+        with patch("app.database.engine", mock_engine), patch("redis.asyncio.from_url", return_value=mock_redis):
             resp = client.get("/health")
 
         assert resp.status_code == 200

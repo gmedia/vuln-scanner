@@ -206,6 +206,7 @@ def test_redis_down_key_rate_limit_503(client, mock_celery, monkeypatch):
         if call_count >= 2:
             raise redis.RedisError("Connection refused")
         from tests.conftest import _fake_redis
+
         return _fake_redis
 
     middleware_instance = client.app.middleware_stack.app

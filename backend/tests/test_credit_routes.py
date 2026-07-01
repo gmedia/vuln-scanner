@@ -289,6 +289,7 @@ class TestScanEligibility:
         """User with insufficient credits is not eligible."""
         sample_user.credits = 0
         import asyncio
+
         asyncio.get_event_loop().run_until_complete(db_session.commit())
 
         resp = client.get("/api/credits/eligibility/apk", headers=HEADERS)
@@ -302,6 +303,7 @@ class TestScanEligibility:
         """User with exactly the required credits is eligible."""
         sample_user.credits = 3
         import asyncio
+
         asyncio.get_event_loop().run_until_complete(db_session.commit())
 
         resp = client.get("/api/credits/eligibility/apk", headers=HEADERS)

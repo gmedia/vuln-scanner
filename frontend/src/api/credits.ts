@@ -31,15 +31,23 @@ export async function getCreditBalance(): Promise<CreditInfo> {
   return data;
 }
 
-export async function getCreditHistory(
-  params: { page?: number; page_size?: number }
-): Promise<CreditHistoryResponse> {
-  const { data } = await api.get<CreditHistoryResponse>("/api/credits/history", { params });
+export async function getCreditHistory(params: {
+  page?: number;
+  page_size?: number;
+}): Promise<CreditHistoryResponse> {
+  const { data } = await api.get<CreditHistoryResponse>(
+    "/api/credits/history",
+    { params },
+  );
   return data;
 }
 
-export async function checkScanEligibility(scanType: string): Promise<ScanEligibility> {
-  const { data } = await api.get<ScanEligibility>(`/api/credits/eligibility/${scanType}`);
+export async function checkScanEligibility(
+  scanType: string,
+): Promise<ScanEligibility> {
+  const { data } = await api.get<ScanEligibility>(
+    `/api/credits/eligibility/${scanType}`,
+  );
   return data;
 }
 

@@ -35,6 +35,7 @@ IP_LIMIT = 300
 
 class ApiKeyMiddleware(BaseHTTPMiddleware):
     """FastAPI middleware that validates API keys and enforces rate limiting."""
+
     def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
         self._redis: redis.Redis | None = None
@@ -76,23 +77,24 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
                 logger.critical("Rate limit infrastructure unavailable: Redis unavailable for IP rate limit check")
                 return JSONResponse(
                     status_code=503,
-                    content={"detail": "Service temporarily unavailable. Rate limit infrastructure down."}
+                    content={"detail": "Service temporarily unavailable. Rate limit infrastructure down."},
                 )
 
         if api_key_header == settings.api_key:
             logger.debug(
                 "Master API key accepted for %s %s (ip=%s)",
-                request.method, request.url.path, client_ip,
+                request.method,
+                request.url.path,
+                client_ip,
             )
-            return await self._check_rate_and_forward(
-                request, call_next, MASTER_KEY_ID, 1000
-            )
+            return await self._check_rate_and_forward(request, call_next, MASTER_KEY_ID, 1000)
 
         # Master key didn't match — log both values (truncated) for debugging
         logger.warning(
-            "API key mismatch for %s %s (ip=%s): "
-            "received=%r, expected=%r",
-            request.method, request.url.path, client_ip,
+            "API key mismatch for %s %s (ip=%s): received=%r, expected=%r",
+            request.method,
+            request.url.path,
+            client_ip,
             api_key_header[:8] + "..." if len(api_key_header) > 8 else api_key_header,
             settings.api_key[:8] + "..." if len(settings.api_key) > 8 else settings.api_key,
         )
@@ -102,9 +104,7 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
         gen = get_db_fn()
         session = await gen.__anext__()
         try:
-            result = await session.execute(
-                select(ApiKey).where(ApiKey.key_hash == key_hash)
-            )
+            result = await session.execute(select(ApiKey).where(ApiKey.key_hash == key_hash))
             api_key = result.scalar_one_or_none()
         except Exception:
             return JSONResponse(status_code=401, content={"detail": "Invalid API key"})
@@ -116,9 +116,7 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
         if not api_key.is_active:
             return JSONResponse(status_code=401, content={"detail": "API key is revoked"})
 
-        return await self._check_rate_and_forward(
-            request, call_next, str(api_key.id), api_key.rate_limit
-        )
+        return await self._check_rate_and_forward(request, call_next, str(api_key.id), api_key.rate_limit)
 
     async def _check_rate_and_forward(
         self,
@@ -149,8 +147,7 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
         except redis.RedisError:
             logger.critical("Rate limit infrastructure unavailable: Redis unavailable for key rate limit check")
             return JSONResponse(
-                status_code=503,
-                content={"detail": "Service temporarily unavailable. Rate limit infrastructure down."}
+                status_code=503, content={"detail": "Service temporarily unavailable. Rate limit infrastructure down."}
             )
 
         response = await call_next(request)

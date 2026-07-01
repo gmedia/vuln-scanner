@@ -117,9 +117,14 @@ describe("authStore", () => {
       mockedAuthApi.login.mockResolvedValueOnce(mockLoginResponse);
       mockedAuthApi.getMe.mockResolvedValueOnce(mockUserResponse);
 
-      const result = await useAuthStore.getState().login("test@example.com", "pass123");
+      const result = await useAuthStore
+        .getState()
+        .login("test@example.com", "pass123");
 
-      expect(mockedAuthApi.login).toHaveBeenCalledWith("test@example.com", "pass123");
+      expect(mockedAuthApi.login).toHaveBeenCalledWith(
+        "test@example.com",
+        "pass123",
+      );
       expect(mockedAuthApi.getMe).toHaveBeenCalled();
       expect(result).toBe(true);
 
@@ -140,16 +145,18 @@ describe("authStore", () => {
 
       await useAuthStore.getState().login("test@example.com", "pass123");
 
-      expect(mockedAuthApi.authApi.defaults.headers.common["Authorization"]).toBe(
-        "Bearer access-xyz"
-      );
+      expect(
+        mockedAuthApi.authApi.defaults.headers.common["Authorization"],
+      ).toBe("Bearer access-xyz");
     });
 
     it("returns false and sets error on login failure", async () => {
       const axiosError = new Error("Invalid credentials");
       mockedAuthApi.login.mockRejectedValueOnce(axiosError);
 
-      const result = await useAuthStore.getState().login("bad@example.com", "wrong");
+      const result = await useAuthStore
+        .getState()
+        .login("bad@example.com", "wrong");
 
       expect(result).toBe(false);
       const state = useAuthStore.getState();
@@ -162,7 +169,9 @@ describe("authStore", () => {
       mockedAuthApi.login.mockResolvedValueOnce(mockLoginResponse);
       mockedAuthApi.getMe.mockRejectedValueOnce(new Error("Server error"));
 
-      const result = await useAuthStore.getState().login("test@example.com", "pass123");
+      const result = await useAuthStore
+        .getState()
+        .login("test@example.com", "pass123");
 
       expect(result).toBe(false);
       expect(useAuthStore.getState().error).toBe("Server error");
@@ -220,7 +229,7 @@ describe("authStore", () => {
       expect(mockedAuthApi.register).toHaveBeenCalledWith(
         "new@example.com",
         "password123",
-        "password123"
+        "password123",
       );
       expect(result).toBe(true);
       expect(useAuthStore.getState().isLoading).toBe(false);
@@ -228,7 +237,9 @@ describe("authStore", () => {
     });
 
     it("returns false and sets error on register failure", async () => {
-      mockedAuthApi.register.mockRejectedValueOnce(new Error("Email already taken"));
+      mockedAuthApi.register.mockRejectedValueOnce(
+        new Error("Email already taken"),
+      );
 
       const result = await useAuthStore
         .getState()
@@ -243,9 +254,16 @@ describe("authStore", () => {
   describe("logout", () => {
     it("clears user, tokens, auth state and localStorage", async () => {
       localStorage.setItem("accessToken", "existing");
-      mockedAuthApi.authApi.defaults.headers.common["Authorization"] = "Bearer existing";
+      mockedAuthApi.authApi.defaults.headers.common["Authorization"] =
+        "Bearer existing";
       useAuthStore.setState({
-        user: { id: "u1", email: "a@b.com", is_verified: true, is_admin: false, credits: 5 },
+        user: {
+          id: "u1",
+          email: "a@b.com",
+          is_verified: true,
+          is_admin: false,
+          credits: 5,
+        },
         accessToken: "existing",
         isAuthenticated: true,
         error: "some error",
@@ -260,7 +278,7 @@ describe("authStore", () => {
       expect(state.error).toBeNull();
       expect(localStorage.getItem("accessToken")).toBeNull();
       expect(
-        mockedAuthApi.authApi.defaults.headers.common["Authorization"]
+        mockedAuthApi.authApi.defaults.headers.common["Authorization"],
       ).toBeUndefined();
     });
 
@@ -273,7 +291,9 @@ describe("authStore", () => {
     });
 
     it("handles refreshToken failure during logout gracefully", async () => {
-      mockedAuthApi.refreshToken.mockRejectedValueOnce(new Error("Network error"));
+      mockedAuthApi.refreshToken.mockRejectedValueOnce(
+        new Error("Network error"),
+      );
 
       await useAuthStore.getState().logout();
 
@@ -315,7 +335,9 @@ describe("authStore", () => {
     });
 
     it("returns false and sets error on failure", async () => {
-      mockedAuthApi.verifyEmail.mockRejectedValueOnce(new Error("Invalid token"));
+      mockedAuthApi.verifyEmail.mockRejectedValueOnce(
+        new Error("Invalid token"),
+      );
 
       const result = await useAuthStore.getState().verifyEmail("bad-token");
 
@@ -355,20 +377,29 @@ describe("authStore", () => {
       expect(state.user?.id).toBe("user-refreshed");
       expect(state.isAuthenticated).toBe(true);
       expect(localStorage.getItem("accessToken")).toBe("refreshed-access");
-      expect(mockedAuthApi.authApi.defaults.headers.common["Authorization"]).toBe(
-        "Bearer refreshed-access"
-      );
+      expect(
+        mockedAuthApi.authApi.defaults.headers.common["Authorization"],
+      ).toBe("Bearer refreshed-access");
     });
 
     it("clears auth state on refresh failure", async () => {
       localStorage.setItem("accessToken", "old-token");
-      mockedAuthApi.authApi.defaults.headers.common["Authorization"] = "Bearer old-token";
+      mockedAuthApi.authApi.defaults.headers.common["Authorization"] =
+        "Bearer old-token";
       useAuthStore.setState({
-        user: { id: "u1", email: "a@b.com", is_verified: true, is_admin: false, credits: 5 },
+        user: {
+          id: "u1",
+          email: "a@b.com",
+          is_verified: true,
+          is_admin: false,
+          credits: 5,
+        },
         accessToken: "old-token",
         isAuthenticated: true,
       });
-      mockedAuthApi.refreshToken.mockRejectedValueOnce(new Error("Refresh failed"));
+      mockedAuthApi.refreshToken.mockRejectedValueOnce(
+        new Error("Refresh failed"),
+      );
 
       const result = await useAuthStore.getState().refreshAuth();
 
@@ -378,7 +409,7 @@ describe("authStore", () => {
       expect(state.accessToken).toBeNull();
       expect(state.isAuthenticated).toBe(false);
       expect(
-        mockedAuthApi.authApi.defaults.headers.common["Authorization"]
+        mockedAuthApi.authApi.defaults.headers.common["Authorization"],
       ).toBeUndefined();
     });
   });
@@ -426,9 +457,9 @@ describe("authStore", () => {
 
       await useAuthStore.getState().initialize();
 
-      expect(mockedAuthApi.authApi.defaults.headers.common["Authorization"]).toBe(
-        "Bearer stored-header-token"
-      );
+      expect(
+        mockedAuthApi.authApi.defaults.headers.common["Authorization"],
+      ).toBe("Bearer stored-header-token");
     });
 
     it("falls through to refreshAuth when stored token getMe fails", async () => {
@@ -467,7 +498,9 @@ describe("authStore", () => {
     });
 
     it("sets isLoading to false even when refreshAuth fails", async () => {
-      mockedAuthApi.refreshToken.mockRejectedValueOnce(new Error("Network down"));
+      mockedAuthApi.refreshToken.mockRejectedValueOnce(
+        new Error("Network down"),
+      );
 
       await useAuthStore.getState().initialize();
 

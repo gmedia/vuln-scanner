@@ -20,7 +20,9 @@ async function globalSetup(config: FullConfig) {
   });
 
   if (loginRes.status() !== 200) {
-    console.error(`Login failed: ${loginRes.status()} ${await loginRes.text()}`);
+    console.error(
+      `Login failed: ${loginRes.status()} ${await loginRes.text()}`,
+    );
     await browser.close();
     process.exit(1);
   }

@@ -11,6 +11,7 @@ HEADERS = {"X-API-Key": settings.api_key}
 
 # ── POST /api/scan/ip ──────────────────────────────────────────────────────
 
+
 def test_start_ip_scan(client, mock_celery):
     payload = {"target": "10.0.0.1", "ports": "22-80"}
     resp = client.post("/api/scan/ip", json=payload, headers=HEADERS)
@@ -29,6 +30,7 @@ def test_start_ip_scan_missing_target(client):
 
 # ── POST /api/scan/domain ──────────────────────────────────────────────────
 
+
 def test_start_domain_scan(client, mock_celery):
     payload = {"domain": "example.com"}
     resp = client.post("/api/scan/domain", json=payload, headers=HEADERS)
@@ -40,6 +42,7 @@ def test_start_domain_scan(client, mock_celery):
 
 
 # ── POST /api/scan/mobile ──────────────────────────────────────────────────
+
 
 def test_start_mobile_scan(client, mock_celery):
     url = "/api/scan/mobile"
@@ -69,6 +72,7 @@ def test_start_mobile_scan_invalid_platform(client):
 
 # ── GET /api/scan/{id} ─────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_get_scan_detail_found(client, db_session, sample_user):
     job = ScanJob(
@@ -97,6 +101,7 @@ def test_get_scan_detail_not_found(client):
 
 
 # ── GET /api/scan/{id}/findings ────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_get_scan_findings(client, db_session, sample_user):
@@ -133,6 +138,7 @@ async def test_get_scan_findings(client, db_session, sample_user):
 
 # ── GET /api/scan/history ──────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_export_invalid_format(client, db_session, sample_user):
     job = ScanJob(
@@ -151,6 +157,7 @@ async def test_export_invalid_format(client, db_session, sample_user):
 
 
 # ── GET /health ────────────────────────────────────────────────────────────
+
 
 def test_health_endpoint(client):
     resp = client.get("/health")

@@ -22,7 +22,8 @@ export const useCreditStore = create<CreditStore>((set, _get) => ({
       const data = await creditApi.getBalance();
       set({ credits: data.credits, isAdmin: data.is_admin, isLoading: false });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to fetch credits";
+      const message =
+        err instanceof Error ? err.message : "Failed to fetch credits";
       set({ error: message, isLoading: false });
     }
   },
@@ -33,7 +34,8 @@ export const useCreditStore = create<CreditStore>((set, _get) => ({
       set({ credits: data.current_credits });
       return data;
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to check eligibility";
+      const message =
+        err instanceof Error ? err.message : "Failed to check eligibility";
       set({ error: message });
       return null;
     }

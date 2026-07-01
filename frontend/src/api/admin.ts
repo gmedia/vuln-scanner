@@ -35,23 +35,30 @@ export async function getAdminStats(): Promise<AdminStats> {
   return data;
 }
 
-export async function getAdminUsers(
-  params: { page?: number; page_size?: number; search?: string }
-): Promise<AdminUserList> {
+export async function getAdminUsers(params: {
+  page?: number;
+  page_size?: number;
+  search?: string;
+}): Promise<AdminUserList> {
   const { data } = await api.get<AdminUserList>("/api/admin/users", { params });
   return data;
 }
 
-export async function getAdminUserDetail(userId: string): Promise<AdminUserItem> {
+export async function getAdminUserDetail(
+  userId: string,
+): Promise<AdminUserItem> {
   const { data } = await api.get<AdminUserItem>(`/api/admin/users/${userId}`);
   return data;
 }
 
 export async function updateUserCredits(
   userId: string,
-  data: { amount: number; description: string }
+  data: { amount: number; description: string },
 ): Promise<{ message: string }> {
-  const { data: res } = await api.post<{ message: string }>(`/api/admin/users/${userId}/credits`, data);
+  const { data: res } = await api.post<{ message: string }>(
+    `/api/admin/users/${userId}/credits`,
+    data,
+  );
   return res;
 }
 
@@ -62,9 +69,12 @@ export async function getPricing(): Promise<PricingItem[]> {
 
 export async function updatePricing(
   scanType: string,
-  data: { credit_cost: number }
+  data: { credit_cost: number },
 ): Promise<PricingItem> {
-  const { data: res } = await api.put<PricingItem>(`/api/admin/pricing/${scanType}`, data);
+  const { data: res } = await api.put<PricingItem>(
+    `/api/admin/pricing/${scanType}`,
+    data,
+  );
   return res;
 }
 

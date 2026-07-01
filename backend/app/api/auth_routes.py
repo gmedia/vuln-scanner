@@ -48,6 +48,7 @@ register_limiter = RateLimiter(max_requests=3, window_seconds=60, prefix="rateli
 refresh_limiter = RateLimiter(max_requests=10, window_seconds=60, prefix="ratelimit:refresh")
 verify_email_limiter = RateLimiter(max_requests=5, window_seconds=60, prefix="ratelimit:verify_email")
 
+
 @router.post("/register", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 async def register(
     request: Request, body: RegisterRequest, db: AsyncSession = Depends(get_db)
@@ -161,9 +162,7 @@ async def verify_email(
     if limit_response:
         return limit_response
 
-    result = await db.execute(
-        select(EmailVerificationToken).where(EmailVerificationToken.token == body.token)
-    )
+    result = await db.execute(select(EmailVerificationToken).where(EmailVerificationToken.token == body.token))
     verification_token = result.scalar_one_or_none()
     if verification_token is None:
         raise HTTPException(

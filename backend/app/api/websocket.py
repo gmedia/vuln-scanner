@@ -50,9 +50,7 @@ async def validate_api_key(api_key: str | None) -> bool:
     # Check against DB-stored keys
     key_hash = hashlib.sha256(api_key.encode()).hexdigest()
     async with async_session() as session:
-        result = await session.execute(
-            select(ApiKey).where(ApiKey.key_hash == key_hash, ApiKey.is_active.is_(True))
-        )
+        result = await session.execute(select(ApiKey).where(ApiKey.key_hash == key_hash, ApiKey.is_active.is_(True)))
         return result.scalar_one_or_none() is not None
 
 
@@ -72,9 +70,7 @@ async def scan_progress(
     is_master_key = api_key == settings.api_key
     if not is_master_key:
         async with async_session() as session:
-            job_result = await session.execute(
-                select(ScanJob.id).where(ScanJob.id == job_id)
-            )
+            job_result = await session.execute(select(ScanJob.id).where(ScanJob.id == job_id))
             if not job_result.scalar_one_or_none():
                 await websocket.close(code=4004, reason="Job not found")
                 return

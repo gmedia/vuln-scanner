@@ -12,6 +12,7 @@ from loguru import logger
 @dataclass
 class DnsRecord:
     """DNS record: type (A, AAAA, MX, etc.) and value."""
+
     record_type: str
     value: str
 
@@ -19,6 +20,7 @@ class DnsRecord:
 @dataclass
 class SslInfo:
     """SSL/TLS certificate details: subject, issuer, validity, cipher, and issues found."""
+
     subject: str = ""
     issuer: str = ""
     not_before: str = ""
@@ -33,6 +35,7 @@ class SslInfo:
 @dataclass
 class HeaderCheck:
     """Security header check result: name, presence, value, severity, and recommendation."""
+
     name: str
     present: bool
     value: str = ""
@@ -43,6 +46,7 @@ class HeaderCheck:
 @dataclass
 class TechInfo:
     """Detected technology: name, category, version, and confidence percentage."""
+
     name: str
     category: str = ""
     version: str = ""
@@ -52,6 +56,7 @@ class TechInfo:
 @dataclass
 class DomainResult:
     """Aggregated domain scan results: DNS, HTTP, SSL, headers, tech stack, and subdomains."""
+
     domain: str
     ip_addresses: list[str] = field(default_factory=list)
     dns_records: list[DnsRecord] = field(default_factory=list)
@@ -161,8 +166,9 @@ async def check_http(domain: str) -> tuple[bool, bool, int, dict[str, str]]:
                         break
                     response += chunk
             except Exception as e:
-                logger.warning("Error reading HTTP response for {domain}:{port}: {error}",
-                               domain=domain, port=port, error=e)
+                logger.warning(
+                    "Error reading HTTP response for {domain}:{port}: {error}", domain=domain, port=port, error=e
+                )
 
             writer.close()
             await writer.wait_closed()
@@ -216,11 +222,13 @@ async def check_ssl(domain: str) -> SslInfo:
 
             try:
                 import datetime
+
                 not_after_dt = datetime.datetime.strptime(not_after, "%b %d %H:%M:%S %Y %Z")
                 info.days_remaining = (not_after_dt - datetime.datetime.utcnow()).days
             except Exception as e:
-                logger.trace("Failed to parse cert date {date} for {domain}: {error}",
-                             date=not_after, domain=domain, error=e)
+                logger.trace(
+                    "Failed to parse cert date {date} for {domain}: {error}", date=not_after, domain=domain, error=e
+                )
                 info.days_remaining = -1
 
             cipher_info = cert.cipher() if hasattr(cert, "cipher") else ("", "", 0)
@@ -284,13 +292,15 @@ def check_security_headers(response_headers: dict[str, str]) -> list[HeaderCheck
     checks = []
     for header_key, config in SECURITY_HEADERS.items():
         header_value = response_headers.get(header_key, "")
-        checks.append(HeaderCheck(
-            name=config["name"],
-            present=bool(header_value),
-            value=header_value,
-            severity=config["severity"] if not header_value else "info",
-            recommendation="" if header_value else config["recommendation"],
-        ))
+        checks.append(
+            HeaderCheck(
+                name=config["name"],
+                present=bool(header_value),
+                value=header_value,
+                severity=config["severity"] if not header_value else "info",
+                recommendation="" if header_value else config["recommendation"],
+            )
+        )
     return checks
 
 
@@ -359,58 +369,69 @@ def findings_from_domain(result: DomainResult) -> list[dict[str, Any]]:
     findings = []
 
     for ip in result.ip_addresses:
-        findings.append({
-            "severity": "info",
-            "category": "ip_address",
-            "title": f"IP Address: {ip}",
-            "description": f"Resolved IP for {result.domain}",
-        })
+        findings.append(
+            {
+                "severity": "info",
+                "category": "ip_address",
+                "title": f"IP Address: {ip}",
+                "description": f"Resolved IP for {result.domain}",
+            }
+        )
 
     for sub in result.subdomains[:20]:
-        findings.append({
-            "severity": "info",
-            "category": "subdomain",
-            "title": f"Subdomain: {sub}",
-            "description": "Found via certificate transparency logs",
-        })
+        findings.append(
+            {
+                "severity": "info",
+                "category": "subdomain",
+                "title": f"Subdomain: {sub}",
+                "description": "Found via certificate transparency logs",
+            }
+        )
 
     if result.ssl_info.issues:
         for issue in result.ssl_info.issues:
-            findings.append({
-                "severity": "medium",
-                "category": "ssl_issue",
-                "title": f"SSL Issue: {issue}",
-                "description": f"Subject: {result.ssl_info.subject}, Issuer: {result.ssl_info.issuer}",
-            })
+            findings.append(
+                {
+                    "severity": "medium",
+                    "category": "ssl_issue",
+                    "title": f"SSL Issue: {issue}",
+                    "description": f"Subject: {result.ssl_info.subject}, Issuer: {result.ssl_info.issuer}",
+                }
+            )
 
     if result.ssl_info.cipher:
-        findings.append({
-            "severity": "info",
-            "category": "ssl_cipher",
-            "title": f"SSL Cipher: {result.ssl_info.cipher}",
-            "description": (
-                f"Certificate expires on {result.ssl_info.not_after} "
-                f"({result.ssl_info.days_remaining} days)"
-            ),
-        })
+        findings.append(
+            {
+                "severity": "info",
+                "category": "ssl_cipher",
+                "title": f"SSL Cipher: {result.ssl_info.cipher}",
+                "description": (
+                    f"Certificate expires on {result.ssl_info.not_after} ({result.ssl_info.days_remaining} days)"
+                ),
+            }
+        )
 
     for check in result.header_checks:
         if not check.present:
-            findings.append({
-                "severity": check.severity,
-                "category": "missing_header",
-                "title": f"Missing header: {check.name}",
-                "description": check.recommendation,
-            })
+            findings.append(
+                {
+                    "severity": check.severity,
+                    "category": "missing_header",
+                    "title": f"Missing header: {check.name}",
+                    "description": check.recommendation,
+                }
+            )
 
     for tech in result.tech_stack:
-        findings.append({
-            "severity": "info",
-            "category": "tech_detected",
-            "title": f"{tech.name} ({tech.category})",
-            "description": f"Confidence: {tech.confidence}%",
-            "product": tech.name,
-            "version": tech.version,
-        })
+        findings.append(
+            {
+                "severity": "info",
+                "category": "tech_detected",
+                "title": f"{tech.name} ({tech.category})",
+                "description": f"Confidence: {tech.confidence}%",
+                "product": tech.name,
+                "version": tech.version,
+            }
+        )
 
     return findings

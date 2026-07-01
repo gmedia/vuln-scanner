@@ -24,7 +24,11 @@ interface AuthStore {
   isLoading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, password: string, confirmPassword: string) => Promise<boolean>;
+  register: (
+    email: string,
+    password: string,
+    confirmPassword: string,
+  ) => Promise<boolean>;
   logout: () => Promise<void>;
   verifyEmail: (token: string) => Promise<boolean>;
   refreshAuth: () => Promise<boolean>;
@@ -63,7 +67,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const loginRes = await authApi.login(email, password);
       set({ accessToken: loginRes.access_token });
       localStorage.setItem("accessToken", loginRes.access_token);
-      authApi.authApi.defaults.headers.common["Authorization"] = `Bearer ${loginRes.access_token}`;
+      authApi.authApi.defaults.headers.common["Authorization"] =
+        `Bearer ${loginRes.access_token}`;
       const user = await authApi.getMe();
       set({
         user: {
@@ -100,7 +105,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   logout: async () => {
     try {
       await authApi.refreshToken();
-    } catch { /* refresh token cleanup — ignore failures */ }
+    } catch {
+      /* refresh token cleanup — ignore failures */
+    }
     delete authApi.authApi.defaults.headers.common["Authorization"];
     localStorage.removeItem("accessToken");
     set({
@@ -134,7 +141,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const refreshRes = await authApi.refreshToken();
       set({ accessToken: refreshRes.access_token });
       localStorage.setItem("accessToken", refreshRes.access_token);
-      authApi.authApi.defaults.headers.common["Authorization"] = `Bearer ${refreshRes.access_token}`;
+      authApi.authApi.defaults.headers.common["Authorization"] =
+        `Bearer ${refreshRes.access_token}`;
       const user = await authApi.getMe();
       set({
         user: {
@@ -164,7 +172,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     const storedToken = localStorage.getItem("accessToken");
     if (storedToken) {
       set({ accessToken: storedToken });
-      authApi.authApi.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+      authApi.authApi.defaults.headers.common["Authorization"] =
+        `Bearer ${storedToken}`;
       try {
         const user = await authApi.getMe();
         set({

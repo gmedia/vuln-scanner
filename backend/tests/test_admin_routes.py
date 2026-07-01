@@ -41,17 +41,10 @@ def _patch_db_for_uuid(db_session):
 
     async def _patched_execute(self, statement, params=None, **kwargs):
         if isinstance(params, dict):
-            params = {
-                k: v.hex if isinstance(v, uuid.UUID) else v
-                for k, v in params.items()
-            }
+            params = {k: v.hex if isinstance(v, uuid.UUID) else v for k, v in params.items()}
         elif isinstance(params, list):
             params = [
-                {
-                    k: v.hex if isinstance(v, uuid.UUID) else v
-                    for k, v in p.items()
-                }
-                if isinstance(p, dict) else p
+                {k: v.hex if isinstance(v, uuid.UUID) else v for k, v in p.items()} if isinstance(p, dict) else p
                 for p in params
             ]
         return await _original_execute(statement, params, **kwargs)
@@ -64,7 +57,6 @@ def _patch_db_for_uuid(db_session):
 # The `client` fixture bypasses get_current_admin via dependency override,
 # but the ApiKeyMiddleware still checks for X-API-Key.
 # ---------------------------------------------------------------------------
-
 
 
 # ---------------------------------------------------------------------------
@@ -129,9 +121,7 @@ async def _create_user_with_token(db_session, email, is_admin=False, credits=100
     await db_session.commit()
     await db_session.refresh(user)
 
-    token = create_access_token(
-        user_id=str(user.id), email=user.email, is_admin=user.is_admin
-    )
+    token = create_access_token(user_id=str(user.id), email=user.email, is_admin=user.is_admin)
     return user, token
 
 
@@ -376,7 +366,9 @@ class TestAdminCredits:
         old_credits = sample_user.credits
         resp = client.post(
             f"/api/admin/users/{sample_user.id}/credits",
-            json={"amount": 25, "description": "Bonus credits"}, headers=API_HEADERS)
+            json={"amount": 25, "description": "Bonus credits"},
+            headers=API_HEADERS,
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["credits"] == old_credits + 25
@@ -389,7 +381,9 @@ class TestAdminCredits:
         old_credits = sample_user.credits
         resp = client.post(
             f"/api/admin/users/{sample_user.id}/credits",
-            json={"amount": -30, "description": "Manual deduction"}, headers=API_HEADERS)
+            json={"amount": -30, "description": "Manual deduction"},
+            headers=API_HEADERS,
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["credits"] == old_credits - 30
@@ -397,8 +391,8 @@ class TestAdminCredits:
     def test_user_not_found_returns_404(self, client):
         fake_id = uuid.uuid4()
         resp = client.post(
-            f"/api/admin/users/{fake_id}/credits",
-            json={"amount": 10, "description": "Grant"}, headers=API_HEADERS)
+            f"/api/admin/users/{fake_id}/credits", json={"amount": 10, "description": "Grant"}, headers=API_HEADERS
+        )
         assert resp.status_code == 404
 
     def test_deduct_exceeds_balance_returns_400(self, client, db_session, sample_user):
@@ -407,20 +401,24 @@ class TestAdminCredits:
 
         resp = client.post(
             f"/api/admin/users/{sample_user.id}/credits",
-            json={"amount": -50, "description": "Overdraft attempt"}, headers=API_HEADERS)
+            json={"amount": -50, "description": "Overdraft attempt"},
+            headers=API_HEADERS,
+        )
         assert resp.status_code == 400
         assert "insufficient" in resp.json()["detail"].lower()
 
     def test_missing_amount_returns_422(self, client, sample_user):
         resp = client.post(
-            f"/api/admin/users/{sample_user.id}/credits",
-            json={"description": "No amount"}, headers=API_HEADERS)
+            f"/api/admin/users/{sample_user.id}/credits", json={"description": "No amount"}, headers=API_HEADERS
+        )
         assert resp.status_code == 422
 
     def test_invalid_amount_type_returns_422(self, client, sample_user):
         resp = client.post(
             f"/api/admin/users/{sample_user.id}/credits",
-            json={"amount": "not-a-number", "description": "Bad input"}, headers=API_HEADERS)
+            json={"amount": "not-a-number", "description": "Bad input"},
+            headers=API_HEADERS,
+        )
         assert resp.status_code == 422
 
     @pytest.mark.asyncio
@@ -428,12 +426,12 @@ class TestAdminCredits:
         _patch_db_for_uuid(db_session)
         resp = client.post(
             f"/api/admin/users/{sample_user.id}/credits",
-            json={"amount": 42, "description": "Test grant"}, headers=API_HEADERS)
+            json={"amount": 42, "description": "Test grant"},
+            headers=API_HEADERS,
+        )
         assert resp.status_code == 200
 
-        result = await db_session.execute(
-            select(CreditLog).where(CreditLog.user_id == sample_user.id)
-        )
+        result = await db_session.execute(select(CreditLog).where(CreditLog.user_id == sample_user.id))
         logs = result.scalars().all()
         assert len(logs) == 1
         assert logs[0].amount == 42
@@ -445,12 +443,12 @@ class TestAdminCredits:
         _patch_db_for_uuid(db_session)
         resp = client.post(
             f"/api/admin/users/{sample_user.id}/credits",
-            json={"amount": -15, "description": "Test deduction"}, headers=API_HEADERS)
+            json={"amount": -15, "description": "Test deduction"},
+            headers=API_HEADERS,
+        )
         assert resp.status_code == 200
 
-        result = await db_session.execute(
-            select(CreditLog).where(CreditLog.user_id == sample_user.id)
-        )
+        result = await db_session.execute(select(CreditLog).where(CreditLog.user_id == sample_user.id))
         logs = result.scalars().all()
         assert len(logs) == 1
         assert logs[0].amount == 15  # abs value stored
@@ -460,9 +458,7 @@ class TestAdminCredits:
     def test_default_description(self, client, db_session, sample_user):
         _patch_db_for_uuid(db_session)
         old_credits = sample_user.credits
-        resp = client.post(
-            f"/api/admin/users/{sample_user.id}/credits",
-            json={"amount": 5}, headers=API_HEADERS)
+        resp = client.post(f"/api/admin/users/{sample_user.id}/credits", json={"amount": 5}, headers=API_HEADERS)
         assert resp.status_code == 200
         data = resp.json()
         assert data["credits"] == old_credits + 5
@@ -472,7 +468,9 @@ class TestAdminCredits:
         old_credits = sample_user.credits
         resp = client.post(
             f"/api/admin/users/{sample_user.id}/credits",
-            json={"amount": 0, "description": "Zero adjustment"}, headers=API_HEADERS)
+            json={"amount": 0, "description": "Zero adjustment"},
+            headers=API_HEADERS,
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["credits"] == old_credits
@@ -482,12 +480,12 @@ class TestAdminCredits:
         _patch_db_for_uuid(db_session)
         resp = client.post(
             f"/api/admin/users/{sample_user.id}/credits",
-            json={"amount": 77, "description": "Custom description here"}, headers=API_HEADERS)
+            json={"amount": 77, "description": "Custom description here"},
+            headers=API_HEADERS,
+        )
         assert resp.status_code == 200
 
-        result = await db_session.execute(
-            select(CreditLog).where(CreditLog.user_id == sample_user.id)
-        )
+        result = await db_session.execute(select(CreditLog).where(CreditLog.user_id == sample_user.id))
         logs = result.scalars().all()
         assert len(logs) == 1
         assert logs[0].description == "Custom description here"
@@ -590,40 +588,30 @@ class TestAdminUpdatePricing:
 
         asyncio.get_event_loop().run_until_complete(setup())
 
-        resp = client.put(
-            "/api/admin/pricing/ip",
-            json={"credit_cost": 15}, headers=API_HEADERS)
+        resp = client.put("/api/admin/pricing/ip", json={"credit_cost": 15}, headers=API_HEADERS)
         assert resp.status_code == 200
         data = resp.json()
         assert data["scan_type"] == "ip"
         assert data["credit_cost"] == 15
 
     def test_create_new_pricing(self, client):
-        resp = client.put(
-            "/api/admin/pricing/apk",
-            json={"credit_cost": 8}, headers=API_HEADERS)
+        resp = client.put("/api/admin/pricing/apk", json={"credit_cost": 8}, headers=API_HEADERS)
         assert resp.status_code == 200
         data = resp.json()
         assert data["scan_type"] == "apk"
         assert data["credit_cost"] == 8
 
     def test_invalid_scan_type_returns_400(self, client):
-        resp = client.put(
-            "/api/admin/pricing/invalid_type",
-            json={"credit_cost": 5}, headers=API_HEADERS)
+        resp = client.put("/api/admin/pricing/invalid_type", json={"credit_cost": 5}, headers=API_HEADERS)
         assert resp.status_code == 400
         assert "invalid scan type" in resp.json()["detail"].lower()
 
     def test_negative_cost_returns_422(self, client):
-        resp = client.put(
-            "/api/admin/pricing/ip",
-            json={"credit_cost": -1}, headers=API_HEADERS)
+        resp = client.put("/api/admin/pricing/ip", json={"credit_cost": -1}, headers=API_HEADERS)
         assert resp.status_code == 422
 
     def test_missing_cost_returns_422(self, client):
-        resp = client.put(
-            "/api/admin/pricing/ip",
-            json={}, headers=API_HEADERS)
+        resp = client.put("/api/admin/pricing/ip", json={}, headers=API_HEADERS)
         assert resp.status_code == 422
 
     def test_unauthorized_non_admin_returns_403(self, admin_auth_client, db_session):
@@ -655,10 +643,7 @@ class TestAdminListKeys:
 
     def test_key_item_shape(self, client):
         # Generate a key so there's something to list
-        client.post(
-            "/api/keys/generate",
-            json={"name": "shape-test", "rate_limit": 10},
-            headers=API_HEADERS)
+        client.post("/api/keys/generate", json={"name": "shape-test", "rate_limit": 10}, headers=API_HEADERS)
         resp = client.get("/api/keys", headers=API_HEADERS)
         assert resp.status_code == 200
         data = resp.json()

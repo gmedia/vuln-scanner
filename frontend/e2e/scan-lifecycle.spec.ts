@@ -17,12 +17,15 @@ test.describe("Scan Lifecycle", () => {
   });
 
   test.describe("Domain scan — full lifecycle via API + UI", () => {
-    test("triggers a domain scan and shows its detail page", async ({ page, request }) => {
+    test("triggers a domain scan and shows its detail page", async ({
+      page,
+      request,
+    }) => {
       const resp = await request.post(`${BASE_URL}/api/scan/domain`, {
         headers: {
           "Content-Type": "application/json",
           "X-API-Key": API_KEY,
-          "Authorization": `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
           "X-E2E-Test": "true",
         },
         data: { domain: "example.com" },
@@ -50,12 +53,15 @@ test.describe("Scan Lifecycle", () => {
   });
 
   test.describe("IP scan — full lifecycle via API + UI", () => {
-    test("triggers an IP scan on localhost, validates UI reflects it", async ({ page, request }) => {
+    test("triggers an IP scan on localhost, validates UI reflects it", async ({
+      page,
+      request,
+    }) => {
       const resp = await request.post(`${BASE_URL}/api/scan/ip`, {
         headers: {
           "Content-Type": "application/json",
           "X-API-Key": API_KEY,
-          "Authorization": `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
           "X-E2E-Test": "true",
         },
         data: { target: "127.0.0.1", ports: "1-100" },
@@ -87,7 +93,7 @@ test.describe("Scan Lifecycle", () => {
         headers: {
           "Content-Type": "application/json",
           "X-API-Key": API_KEY,
-          "Authorization": `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
           "X-E2E-Test": "true",
         },
         data: { target: "127.0.0.1", ports: "1-50" },
@@ -97,16 +103,26 @@ test.describe("Scan Lifecycle", () => {
 
       // Fetch status
       const getResp = await request.get(`${BASE_URL}/api/scan/${id}`, {
-        headers: { "X-API-Key": API_KEY, "Authorization": `Bearer ${authToken}`, "X-E2E-Test": "true" },
+        headers: {
+          "X-API-Key": API_KEY,
+          Authorization: `Bearer ${authToken}`,
+          "X-E2E-Test": "true",
+        },
       });
       expect(getResp.status()).toBe(200);
       const job = await getResp.json();
       expect(job.id).toBe(id);
-      expect(["pending", "running", "completed", "failed"]).toContain(job.status);
+      expect(["pending", "running", "completed", "failed"]).toContain(
+        job.status,
+      );
 
       // History includes it
       const historyResp = await request.get(`${BASE_URL}/api/scan/history`, {
-        headers: { "X-API-Key": API_KEY, "Authorization": `Bearer ${authToken}`, "X-E2E-Test": "true" },
+        headers: {
+          "X-API-Key": API_KEY,
+          Authorization: `Bearer ${authToken}`,
+          "X-E2E-Test": "true",
+        },
       });
       expect(historyResp.status()).toBe(200);
       const history = await historyResp.json();

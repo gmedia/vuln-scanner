@@ -5,7 +5,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 TARGET_PATTERN = re.compile(
-    r"^(\d{1,3}\.){3}\d{1,3}$"            # IPv4
+    r"^(\d{1,3}\.){3}\d{1,3}$"  # IPv4
     r"|^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$"  # domain
 )
 
@@ -17,7 +17,7 @@ class ScanRequest(BaseModel):
         ...,
         min_length=1,
         max_length=512,
-        pattern=r'^[a-zA-Z0-9._\-:/@]+$',
+        pattern=r"^[a-zA-Z0-9._\-:/@]+$",
     )
     ports: str | None = Field(default="1-1000", pattern=r"^\d+(-\d+)?(,\d+(-\d+)?)*$")
 
@@ -25,9 +25,7 @@ class ScanRequest(BaseModel):
     @classmethod
     def validate_target(cls, v: str) -> str:
         if not TARGET_PATTERN.match(v):
-            raise ValueError(
-                "target must be a valid IPv4 address or fully-qualified domain name"
-            )
+            raise ValueError("target must be a valid IPv4 address or fully-qualified domain name")
         return v
 
 
@@ -38,7 +36,7 @@ class DomainScanRequest(BaseModel):
         ...,
         min_length=3,
         max_length=253,
-        pattern=r'^[a-zA-Z0-9._\-]+$',
+        pattern=r"^[a-zA-Z0-9._\-]+$",
     )
 
 

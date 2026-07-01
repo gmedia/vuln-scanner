@@ -52,7 +52,7 @@ export interface UserResponse {
 export async function register(
   email: string,
   password: string,
-  confirmPassword: string
+  confirmPassword: string,
 ): Promise<MessageResponse> {
   const { data } = await authApi.post<MessageResponse>("/api/auth/register", {
     email,
@@ -64,7 +64,7 @@ export async function register(
 
 export async function login(
   email: string,
-  password: string
+  password: string,
 ): Promise<LoginResponse> {
   const { data } = await authApi.post<LoginResponse>("/api/auth/login", {
     email,
@@ -74,16 +74,21 @@ export async function login(
 }
 
 export async function verifyEmail(token: string): Promise<MessageResponse> {
-  const { data } = await authApi.post<MessageResponse>("/api/auth/verify-email", {
-    token,
-  });
+  const { data } = await authApi.post<MessageResponse>(
+    "/api/auth/verify-email",
+    {
+      token,
+    },
+  );
   return data;
 }
 
 export async function refreshToken(
-  refreshToken?: string
+  refreshToken?: string,
 ): Promise<LoginResponse> {
-  const body: RefreshTokenRequest = refreshToken ? { refresh_token: refreshToken } : {};
+  const body: RefreshTokenRequest = refreshToken
+    ? { refresh_token: refreshToken }
+    : {};
   const { data } = await authApi.post<LoginResponse>("/api/auth/refresh", body);
   return data;
 }

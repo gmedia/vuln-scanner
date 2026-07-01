@@ -9,6 +9,7 @@ from loguru import logger
 @dataclass
 class PortInfo:
     """Open port details: port number, protocol, service name, and product version."""
+
     port: int
     protocol: str
     state: str
@@ -21,6 +22,7 @@ class PortInfo:
 @dataclass
 class HostInfo:
     """Host scan results: IP, hostname(s), OS guess, open ports, and scan time."""
+
     ip: str
     hostname: str = ""
     status: str = "unknown"
@@ -33,6 +35,7 @@ class HostInfo:
 @dataclass
 class NmapResult:
     """Aggregated nmap scan result: list of hosts, command line, and raw XML."""
+
     hosts: list[HostInfo] = field(default_factory=list)
     raw_xml: str = ""
 
@@ -118,9 +121,12 @@ async def run_nmap(target: str, ports: str = "1-1000") -> NmapResult:
         "-sC",
         "-O",
         "--osscan-guess",
-        "-p", ports,
-        "--", target,
-        "-oX", "-",
+        "-p",
+        ports,
+        "--",
+        target,
+        "-oX",
+        "-",
     ]
 
     proc = await asyncio.create_subprocess_exec(
@@ -134,17 +140,24 @@ async def run_nmap(target: str, ports: str = "1-1000") -> NmapResult:
 
     if proc.returncode != 0:
         stderr_text = stderr.decode("utf-8", errors="replace")
-        logger.warning("nmap exited with code {code} for {target}: {stderr}",
-                       code=proc.returncode, target=target, stderr=stderr_text[:200])
+        logger.warning(
+            "nmap exited with code {code} for {target}: {stderr}",
+            code=proc.returncode,
+            target=target,
+            stderr=stderr_text[:200],
+        )
         if "Failed to open" in stderr_text or "Permission denied" in stderr_text:
             logger.info("Retrying nmap without OS detection for {target}", target=target)
             cmd_fallback = [
                 "nmap",
                 "-sV",
                 "-sC",
-                "-p", ports,
-                "--", target,
-                "-oX", "-",
+                "-p",
+                ports,
+                "--",
+                target,
+                "-oX",
+                "-",
             ]
             proc = await asyncio.create_subprocess_exec(
                 *cmd_fallback,
@@ -166,21 +179,25 @@ def findings_from_nmap(result: NmapResult) -> list[dict[str, Any]]:
             continue
 
         if host.os_match:
-            findings.append({
-                "severity": "info",
-                "category": "os_detection",
-                "title": f"Operating System: {host.os_match}",
-                "description": f"Detected OS: {host.os_match} on {host.ip}",
-            })
+            findings.append(
+                {
+                    "severity": "info",
+                    "category": "os_detection",
+                    "title": f"Operating System: {host.os_match}",
+                    "description": f"Detected OS: {host.os_match} on {host.ip}",
+                }
+            )
 
         for port in host.ports:
-            findings.append({
-                "severity": "info",
-                "category": "open_port",
-                "title": f"Open port: {port.port}/{port.protocol} ({port.service})",
-                "description": f"Service: {port.service} {port.product} {port.version}".strip(),
-                "product": port.product,
-                "version": port.version,
-            })
+            findings.append(
+                {
+                    "severity": "info",
+                    "category": "open_port",
+                    "title": f"Open port: {port.port}/{port.protocol} ({port.service})",
+                    "description": f"Service: {port.service} {port.product} {port.version}".strip(),
+                    "product": port.product,
+                    "version": port.version,
+                }
+            )
 
     return findings
