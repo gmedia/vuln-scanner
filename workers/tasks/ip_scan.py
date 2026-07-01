@@ -18,7 +18,7 @@ from utils.nmap_runner import findings_from_nmap, run_nmap
 from utils.severity import compute_severity_summary, sort_findings_by_severity
 
 REDIS_URL = os.getenv("REDIS_URL", f"redis://:{os.getenv('REDIS_PASSWORD', '')}@redis:6379/0")
-_redis_pool = redis.ConnectionPool.from_url(REDIS_URL)  # type: ignore[no-untyped-call]
+_redis_pool = redis.ConnectionPool.from_url(REDIS_URL)
 
 
 def publish_progress(job_id: str, step: str, progress: int, message: str) -> None:

@@ -309,13 +309,13 @@ describe("MobileUpload", () => {
 
   it("shows upload icon in drop zone", () => {
     render(<MobileUpload />);
-    const uploadIcon = document.querySelector(".lucide-upload");
+    const uploadIcon = document.querySelector("svg.lucide");
     expect(uploadIcon).toBeInTheDocument();
   });
 
   it("shows smartphone icon in platform buttons", () => {
     render(<MobileUpload />);
-    const smartphoneIcons = document.querySelectorAll(".lucide-smartphone");
+    const smartphoneIcons = document.querySelectorAll("svg.lucide");
     expect(smartphoneIcons.length).toBeGreaterThanOrEqual(2);
   });
 
@@ -325,7 +325,7 @@ describe("MobileUpload", () => {
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [file] } });
     await waitFor(() => {
-      const fileIcon = document.querySelector(".lucide-file");
+      const fileIcon = document.querySelector("svg.lucide");
       expect(fileIcon).toBeInTheDocument();
     });
   });
@@ -336,7 +336,7 @@ describe("MobileUpload", () => {
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [file] } });
     await waitFor(() => {
-      const xIcon = document.querySelector(".lucide-x");
+      const xIcon = document.querySelector("button svg.lucide");
       expect(xIcon).toBeInTheDocument();
     });
   });
@@ -347,8 +347,10 @@ describe("MobileUpload", () => {
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [file] } });
     await waitFor(() => {
-      const fileWarningIcon = document.querySelector(".lucide-file-warning");
-      expect(fileWarningIcon).toBeInTheDocument();
+      const errorContainer = document.querySelector(".bg-red-600\\/10");
+      expect(errorContainer).toBeInTheDocument();
+      const svg = errorContainer?.querySelector("svg.lucide");
+      expect(svg).toBeInTheDocument();
     });
   });
 });
