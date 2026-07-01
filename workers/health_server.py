@@ -75,7 +75,7 @@ class HealthHandler(BaseHTTPRequestHandler):
         try:
             last_task = r.get("health:last_task_completed")
             if last_task is not None:
-                last_ts = float(last_task)
+                last_ts = float(last_task)  # type: ignore[arg-type,unused-ignore]
                 seconds_ago = int(time.time() - last_ts)
                 payload["last_task_seconds_ago"] = seconds_ago
             else:
