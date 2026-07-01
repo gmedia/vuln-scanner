@@ -61,7 +61,8 @@ class TestGetCachedVulns:
 
     def test_calls_redis_pool(self):
         import utils.cve_lookup as cve_mod
-        cve_mod._redis_pool = None
+        import utils.redis_helpers
+        utils.redis_helpers._redis_pool = None
         mock = MagicMock()
         mock.get.return_value = None
         with patch("utils.redis_helpers.redis.ConnectionPool.from_url") as pool_from_url, \

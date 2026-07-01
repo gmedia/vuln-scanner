@@ -46,7 +46,7 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
         assert self._redis is not None
         return self._redis
 
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[JSONResponse]]) -> JSONResponse:
+    async def dispatch(self, request: Request, call_next):  # type: ignore[no-untyped-def]
         """Authenticate request via X-API-Key header and enforce IP and key rate limits."""
         if request.url.path in EXCLUDED_PATHS or request.url.path.startswith("/ws/"):
             return await call_next(request)
