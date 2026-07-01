@@ -60,7 +60,6 @@ class TestGetCachedVulns:
             assert result is None
 
     def test_calls_redis_pool(self):
-        import utils.cve_lookup as cve_mod
         import utils.redis_helpers
         utils.redis_helpers._redis_pool = None
         mock = MagicMock()
