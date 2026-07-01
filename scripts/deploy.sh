@@ -7,6 +7,13 @@ export COMPOSE_PROJECT_NAME=vuln
 
 git pull origin main
 
+# Free disk space before building new images
+echo "=== Disk before cleanup ==="
+df -h / || true
+docker system prune -af --volumes || true
+echo "=== Disk after cleanup ==="
+df -h / || true
+
 # Tag existing images for rollback
 docker tag vuln-backend:latest vuln-backend:previous 2>/dev/null || true
 docker tag vuln-frontend:latest vuln-frontend:previous 2>/dev/null || true
