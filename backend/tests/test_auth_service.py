@@ -370,9 +370,9 @@ class TestDecodeTokenRevocation:
     def test_invalid_signature_raises(self):
         """Modifying one character in a valid token raises PyJWTError."""
         token = create_access_token("user-sig", "sig@test.com")
-        # Change the last character of the signature part
+        # base64url of "invalid" — guaranteed to fail signature verification
         parts = token.split(".")
-        parts[2] = parts[2][:-1] + ("A" if parts[2][-1] != "A" else "B")
+        parts[2] = "aW52YWxpZA"
         tampered = ".".join(parts)
         with pytest.raises(jwt.PyJWTError):
             decode_token(tampered)
