@@ -4,12 +4,13 @@ import json
 import os
 import sys
 import uuid
+from pathlib import Path
 
 os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5432/test")
 os.environ.setdefault("DATABASE_URL_SYNC", "postgresql://test:test@localhost:5432/test")
 
-sys.path.insert(0, "/home/ubuntu/vuln-scanner/workers")
-sys.path.insert(0, "/home/ubuntu/vuln-scanner/backend")
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "workers"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "backend"))
 
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
