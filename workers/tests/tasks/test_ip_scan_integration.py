@@ -73,13 +73,22 @@ def _patch_model_types() -> None:
     import app.models  # noqa: F401 — registers User, ScanJob, CreditLog, etc.
     from app.database import Base
     from app.models.scan_finding import ScanFinding  # noqa: F401 — registers ScanFinding
+    from app.models.scan_job import ScanJob
+
+    # DEBUG: print before-patch state
+    id_col = ScanJob.__table__.columns["id"]
+    print(f"[DEBUG] BEFORE: ScanJob.id.type = {type(id_col.type).__name__}", flush=True)
 
     for table in Base.metadata.tables.values():
         for column in table.columns:
             if isinstance(column.type, PG_UUID):
+                print(f"[DEBUG] PATCH {table.name}.{column.name}", flush=True)
                 column.type = UUIDType(32)
             elif isinstance(column.type, PG_JSONB):
                 column.type = JSONBType()
+
+    id_col = ScanJob.__table__.columns["id"]
+    print(f"[DEBUG] AFTER: ScanJob.id.type = {type(id_col.type).__name__}", flush=True)
 
 
 def _build_sync_engine():

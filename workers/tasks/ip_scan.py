@@ -178,6 +178,10 @@ def run_ip_scan(self: Any, job_id: str, target: str, ports: str = "1-1000") -> d
 def _update_status(session: Any, job_id: str, status: str, **kwargs: Any) -> None:
     from app.models.scan_job import ScanJob
 
+    # DEBUG: check column type at runtime
+    id_col = ScanJob.__table__.columns["id"]
+    print(f"[DEBUG] _update_status: ScanJob.id.type = {type(id_col.type).__name__}", flush=True)
+
     values = {"status": status, **kwargs}
     session.execute(update(ScanJob).where(ScanJob.id == job_id).values(**values))
 
