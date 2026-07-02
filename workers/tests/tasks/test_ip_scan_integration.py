@@ -67,28 +67,53 @@ class JSONBType(TypeDecorator):
         return value
 
 
+# Monkey-patch PG_UUID with string-compatible bind/result processors BEFORE
+# importing models (mapper caches __clause_element__, so replacing column.type
+# after import doesn't affect the ORM attribute's BindParameter type).
+def _pg_uuid_bind_processor(self, dialect):
+    """Bind processor that converts UUIDs to strings (SQLite-compatible)."""
+
+    def process(value):
+        if value is None:
+            return None
+        if isinstance(value, uuid.UUID):
+            return str(value)
+        if isinstance(value, str):
+            return value
+        return str(value)
+
+    return process
+
+
+def _pg_uuid_result_processor(self, dialect, coltype):
+    """Result processor that converts strings to UUIDs."""
+
+    def process(value):
+        if value is None:
+            return None
+        return uuid.UUID(value) if isinstance(value, str) else value
+
+    return process
+
+
+PG_UUID.bind_processor = _pg_uuid_bind_processor
+PG_UUID.result_processor = _pg_uuid_result_processor
+
+
 def _patch_model_types() -> None:
     """Replace PG UUID/JSONB types with SQLite-compatible types on all model columns."""
     # Import all models FIRST to register tables on Base.metadata
     import app.models  # noqa: F401 — registers User, ScanJob, CreditLog, etc.
     from app.database import Base
     from app.models.scan_finding import ScanFinding  # noqa: F401 — registers ScanFinding
-    from app.models.scan_job import ScanJob
-
-    # DEBUG: print before-patch state
-    id_col = ScanJob.__table__.columns["id"]
-    print(f"[DEBUG] BEFORE: ScanJob.id.type = {type(id_col.type).__name__}", flush=True)
+    from app.models.scan_job import ScanJob  # noqa: F401
 
     for table in Base.metadata.tables.values():
         for column in table.columns:
             if isinstance(column.type, PG_UUID):
-                print(f"[DEBUG] PATCH {table.name}.{column.name}", flush=True)
                 column.type = UUIDType(32)
             elif isinstance(column.type, PG_JSONB):
                 column.type = JSONBType()
-
-    id_col = ScanJob.__table__.columns["id"]
-    print(f"[DEBUG] AFTER: ScanJob.id.type = {type(id_col.type).__name__}", flush=True)
 
 
 def _build_sync_engine():

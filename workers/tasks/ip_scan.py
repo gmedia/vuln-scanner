@@ -178,35 +178,8 @@ def run_ip_scan(self: Any, job_id: str, target: str, ports: str = "1-1000") -> d
 def _update_status(session: Any, job_id: str, status: str, **kwargs: Any) -> None:
     from app.models.scan_job import ScanJob
 
-    # DEBUG: check column type at runtime
-    id_col = ScanJob.__table__.columns["id"]
-    print(f"[DEBUG] _update_status: ScanJob.id.type = {type(id_col.type).__name__}", flush=True)
-    # Check InstrumentedAttribute internals
-    attr = ScanJob.id
-    print(f"[DEBUG] _update_status: attr type = {type(attr)}", flush=True)
-    print(f"[DEBUG] _update_status: attr.property type = {type(attr.property)}", flush=True)
-    print(f"[DEBUG] _update_status: attr.property.columns = {attr.property.columns}", flush=True)
-    for c in attr.property.columns:
-        print(f"[DEBUG] _update_status:   col {c.name}: type = {type(c.type).__name__} id={id(c.type)}", flush=True)
-    print(f"[DEBUG] _update_status: id_col type id = {id(id_col.type)}", flush=True)
-
     values = {"status": status, **kwargs}
     stmt = update(ScanJob).where(ScanJob.id == job_id).values(**values)
-    compiled = stmt.compile(compile_kwargs={"literal_binds": False})
-    print(f"[DEBUG] _update_status: compiled.params = {compiled.params}", flush=True)
-    print(f"[DEBUG] _update_status: compiled.bind_names = {compiled.bind_names}", flush=True)
-    # Check the bind processor registered for the id column
-    from sqlalchemy.dialects import sqlite as sqlite_dialect_module
-
-    sqlite_dialect = sqlite_dialect_module.dialect()  # type: ignore[no-untyped-call]
-    bp = id_col.type.bind_processor(sqlite_dialect)
-    print(f"[DEBUG] _update_status: bind_processor(sqlite) = {bp}", flush=True)
-    if bp:
-        try:
-            result = bp(job_id)
-            print(f"[DEBUG] _update_status: bp(job_id) = {result}", flush=True)
-        except Exception as e:
-            print(f"[DEBUG] _update_status: bp(job_id) ERROR: {e}", flush=True)
     session.execute(stmt)
 
 
