@@ -179,7 +179,8 @@ def _update_status(session: Any, job_id: str, status: str, **kwargs: Any) -> Non
     from app.models.scan_job import ScanJob
 
     values = {"status": status, **kwargs}
-    session.execute(update(ScanJob).where(ScanJob.id == job_id).values(**values))
+    stmt = update(ScanJob).where(ScanJob.id == job_id).values(**values)
+    session.execute(stmt)
 
 
 def _save_findings(session: Any, job_id: str, findings: list[dict[str, Any]]) -> None:
