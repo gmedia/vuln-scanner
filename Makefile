@@ -58,6 +58,31 @@ pre-commit: ## Run pre-commit on all files
 pre-commit-staged: ## Run pre-commit on staged files only
 	pre-commit run
 
+# ── Coverage ──────────────────────────────────────────────────────────
+
+coverage: ## Run all tests with coverage
+	cd backend && python -m pytest tests/ -v --tb=short
+	cd workers && python -m pytest tests/ -v --tb=short
+	cd frontend && npx vitest run --coverage
+
+coverage-backend: ## Run backend tests with coverage
+	cd backend && python -m pytest tests/ -v --tb=short
+
+coverage-workers: ## Run workers tests with coverage
+	cd workers && python -m pytest tests/ -v --tb=short
+
+coverage-frontend: ## Run frontend tests with coverage
+	cd frontend && npx vitest run --coverage
+
+coverage-html: coverage ## Generate HTML coverage reports (backend, workers, frontend)
+	@echo ""
+	@echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+	@echo "┃  HTML Coverage Reports                          ┃"
+	@echo "┃  Backend:  backend/htmlcov/index.html           ┃"
+	@echo "┃  Workers:  workers/coverage/index.html          ┃"
+	@echo "┃  Frontend: frontend/coverage/index.html         ┃"
+	@echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+
 # ── Clean ────────────────────────────────────────────────────────────
 
 clean: ## Remove build artifacts, caches, venvs
@@ -66,6 +91,11 @@ clean: ## Remove build artifacts, caches, venvs
 	find . -type d -name .ruff_cache -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name node_modules -not -path "*/node_modules/*" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name htmlcov -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name coverage -not -path "*/node_modules/*" -exec rm -rf {} + 2>/dev/null || true
+	find . -name .coverage -exec rm -f {} + 2>/dev/null || true
+	find . -name coverage.json -exec rm -f {} + 2>/dev/null || true
+	find . -name coverage-report.json -exec rm -f {} + 2>/dev/null || true
 	rm -rf frontend/dist 2>/dev/null || true
 
 # ── Dev ──────────────────────────────────────────────────────────────
