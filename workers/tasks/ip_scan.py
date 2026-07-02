@@ -181,6 +181,14 @@ def _update_status(session: Any, job_id: str, status: str, **kwargs: Any) -> Non
     # DEBUG: check column type at runtime
     id_col = ScanJob.__table__.columns["id"]
     print(f"[DEBUG] _update_status: ScanJob.id.type = {type(id_col.type).__name__}", flush=True)
+    # Check InstrumentedAttribute internals
+    attr = ScanJob.id
+    print(f"[DEBUG] _update_status: attr type = {type(attr)}", flush=True)
+    print(f"[DEBUG] _update_status: attr.property type = {type(attr.property)}", flush=True)
+    print(f"[DEBUG] _update_status: attr.property.columns = {attr.property.columns}", flush=True)
+    for c in attr.property.columns:
+        print(f"[DEBUG] _update_status:   col {c.name}: type = {type(c.type).__name__} id={id(c.type)}", flush=True)
+    print(f"[DEBUG] _update_status: id_col type id = {id(id_col.type)}", flush=True)
 
     values = {"status": status, **kwargs}
     stmt = update(ScanJob).where(ScanJob.id == job_id).values(**values)
