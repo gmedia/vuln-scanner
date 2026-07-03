@@ -21,8 +21,14 @@ class CreditLog(Base):
     type: Mapped[str] = mapped_column(String(20), nullable=False)
     description: Mapped[str | None] = mapped_column(String(255), nullable=True)
     reference_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    performed_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
-    user: Mapped["User"] = relationship(back_populates="credit_logs")
+    user: Mapped["User"] = relationship(back_populates="credit_logs", foreign_keys=[user_id])
+    performer: Mapped["User | None"] = relationship(foreign_keys=[performed_by])
 
     __table_args__ = (CheckConstraint("type IN ('credit', 'deduct', 'refund')", name="ck_credit_log_type"),)
