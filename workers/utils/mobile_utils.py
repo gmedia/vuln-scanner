@@ -284,7 +284,7 @@ def _parse_ios_plist(plist_data: dict[str, object]) -> IpaInfo:
 
 
 def _build_android_findings(info: AndroidManifestInfo) -> list[ScanFinding]:
-    findings = []
+    findings: list[ScanFinding] = []
 
     if info.package_name:
         findings.append(
@@ -372,7 +372,7 @@ def _build_android_findings(info: AndroidManifestInfo) -> list[ScanFinding]:
 
 
 def _build_ios_findings(info: IpaInfo) -> list[ScanFinding]:
-    findings = []
+    findings: list[ScanFinding] = []
 
     if info.bundle_id:
         findings.append(
@@ -419,7 +419,7 @@ def _build_ios_findings(info: IpaInfo) -> list[ScanFinding]:
 
 
 def _scan_secrets(text_content: str) -> list[ScanFinding]:
-    findings = []
+    findings: list[ScanFinding] = []
     for pattern, secret_type in SECRET_PATTERNS:
         matches = re.findall(pattern, text_content)
         for match in matches[:5]:

@@ -22,7 +22,7 @@ def _queue_depth(r: redis.Redis) -> dict[str, int | str]:
     depths: dict[str, int | str] = {}
     for q in CELERY_QUEUES:
         try:
-            depths[q] = int(r.llen(q))
+            depths[q] = int(r.llen(q))  # type: ignore[arg-type]
         except Exception as e:
             logger.warning("Failed to get queue depth for {}: {}", q, e)
             depths[q] = "unavailable"
@@ -31,7 +31,7 @@ def _queue_depth(r: redis.Redis) -> dict[str, int | str]:
 
 def _dead_letter_count(r: redis.Redis) -> int | str:
     try:
-        return int(r.zcard("dead_letter:log"))
+        return int(r.zcard("dead_letter:log"))  # type: ignore[arg-type]
     except Exception as e:
         logger.warning("Failed to check dead letter queue: {}", e)
         return "unavailable"
@@ -75,7 +75,7 @@ class HealthHandler(BaseHTTPRequestHandler):
         try:
             last_task = r.get("health:last_task_completed")
             if last_task is not None:
-                last_ts = float(last_task)
+                last_ts = float(last_task)  # type: ignore[arg-type]
                 seconds_ago = int(time.time() - last_ts)
                 payload["last_task_seconds_ago"] = seconds_ago
             else:

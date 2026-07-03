@@ -173,7 +173,7 @@ async def run_nmap(target: str, ports: str = "1-1000") -> NmapResult:
 
 def findings_from_nmap(result: NmapResult) -> list[ScanFinding]:
     """Convert nmap results into a list of finding dicts for database persistence."""
-    findings = []
+    findings: list[ScanFinding] = []
 
     for host in result.hosts:
         if host.status != "up":

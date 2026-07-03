@@ -188,6 +188,7 @@ def _save_findings(session: Any, job_id: str, findings: list[ScanFinding]) -> No
     from app.models.scan_finding import ScanFinding
 
     for f in findings:
+        cve_id_raw = f.get("cve_id", "")
         finding = ScanFinding(
             id=uuid.uuid4(),
             job_id=job_id,
@@ -195,7 +196,7 @@ def _save_findings(session: Any, job_id: str, findings: list[ScanFinding]) -> No
             category=f.get("category", ""),
             title=f.get("title", "")[:500],
             description=f.get("description", "")[:2000],
-            cve_id=f.get("cve_id", "")[:20] if f.get("cve_id") else None,
+            cve_id=cve_id_raw[:20] if cve_id_raw else None,
             cvss_score=f.get("cvss_score"),
             remediation=f.get("remediation"),
             raw_data=f.get("raw_data"),

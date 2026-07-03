@@ -61,7 +61,18 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
         session.commit()
         session.close()
         publish_progress(job_id, "failed", 100, f"File not found: {file_path}")
-        return {"job_id": job_id, "error": "file not found"}
+        return {
+            "job_id": job_id,
+            "summary": {
+                "total_findings": 0,
+                "critical": 0,
+                "high": 0,
+                "medium": 0,
+                "low": 0,
+                "info": 0,
+            },
+            "error": "file not found",
+        }
 
     try:
         file_size_mb = os.path.getsize(file_path) / (1024 * 1024)
@@ -206,6 +217,7 @@ def _save_findings(session: Any, job_id: str, findings: list[ScanFinding]) -> No
     from app.models.scan_finding import ScanFinding
 
     for f in findings:
+        cve_id_raw = f.get("cve_id", "")
         finding = ScanFinding(
             id=uuid.uuid4(),
             job_id=job_id,
@@ -213,7 +225,7 @@ def _save_findings(session: Any, job_id: str, findings: list[ScanFinding]) -> No
             category=f.get("category", ""),
             title=f.get("title", "")[:500],
             description=f.get("description", "")[:2000],
-            cve_id=f.get("cve_id", "")[:20] if f.get("cve_id") else None,
+            cve_id=cve_id_raw[:20] if cve_id_raw else None,
             cvss_score=f.get("cvss_score"),
             remediation=f.get("remediation"),
             raw_data=f.get("raw_data"),
