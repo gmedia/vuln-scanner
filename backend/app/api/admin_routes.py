@@ -151,6 +151,7 @@ async def adjust_user_credits(
         amount=abs(body.amount),
         type=log_type,
         description=body.description,
+        performed_by=current_admin.id,
     )
     db.add(log)
     await db.commit()

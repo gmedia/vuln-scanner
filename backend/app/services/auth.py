@@ -190,6 +190,13 @@ async def get_current_user(
             detail="Invalid or expired token",
         ) from err
 
+    token_type: str | None = cast(str | None, payload.get("type"))
+    if token_type != "access":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token type: access token required",
+        )
+
     user_id: str | None = cast(str | None, payload.get("sub"))
     if not user_id:
         raise HTTPException(
