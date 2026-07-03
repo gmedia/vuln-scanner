@@ -1,13 +1,14 @@
 import hashlib
 import json
 import os
-from typing import Any, cast
+from typing import cast
 
 import httpx
 import redis
 from loguru import logger
 
 from utils.redis_helpers import get_redis_pool
+from utils.scan_types import CveVuln, ScanFinding
 
 OSV_BASE_URL = os.getenv("OSV_BASE_URL", "https://api.osv.dev/v1")
 CVE_CACHE_TTL = int(os.getenv("CVE_CACHE_TTL", "3600"))
@@ -22,7 +23,7 @@ def _cache_key(package_name: str, ecosystem: str, version: str) -> str:
     return f"cve_cache:{hashlib.sha256(raw.encode()).hexdigest()}"
 
 
-def _get_cached_vulns(package_name: str, ecosystem: str, version: str) -> list[dict[str, Any]] | None:
+def _get_cached_vulns(package_name: str, ecosystem: str, version: str) -> list[CveVuln] | None:
     try:
         r = redis.Redis(connection_pool=_get_redis_pool())
         key = _cache_key(package_name, ecosystem, version)
@@ -30,7 +31,7 @@ def _get_cached_vulns(package_name: str, ecosystem: str, version: str) -> list[d
         if data is not None:
             assert isinstance(data, str | bytes | bytearray)
             logger.info("CVE cache HIT for {ecosystem}:{pkg}@{ver}", ecosystem=ecosystem, pkg=package_name, ver=version)
-            return cast(list[dict[str, Any]], json.loads(data))
+            return cast(list[CveVuln], json.loads(data))
         logger.debug("CVE cache MISS for {ecosystem}:{pkg}@{ver}", ecosystem=ecosystem, pkg=package_name, ver=version)
     except Exception as e:
         logger.warning(
@@ -43,7 +44,7 @@ def _get_cached_vulns(package_name: str, ecosystem: str, version: str) -> list[d
     return None
 
 
-def _set_cached_vulns(package_name: str, ecosystem: str, version: str, vulns: list[dict[str, Any]]) -> None:
+def _set_cached_vulns(package_name: str, ecosystem: str, version: str, vulns: list[CveVuln]) -> None:
     try:
         r = redis.Redis(connection_pool=_get_redis_pool())
         r.setex(_cache_key(package_name, ecosystem, version), CVE_CACHE_TTL, json.dumps(vulns))
@@ -57,7 +58,7 @@ def _set_cached_vulns(package_name: str, ecosystem: str, version: str, vulns: li
         )
 
 
-async def _query_ecosystem(package_name: str, ecosystem: str, version: str) -> list[dict[str, Any]]:
+async def _query_ecosystem(package_name: str, ecosystem: str, version: str) -> list[CveVuln]:
     cached = _get_cached_vulns(package_name, ecosystem, version)
     if cached is not None:
         return cached
@@ -69,7 +70,7 @@ async def _query_ecosystem(package_name: str, ecosystem: str, version: str) -> l
         async with httpx.AsyncClient(timeout=10) as client:
             resp = await client.post(f"{OSV_BASE_URL}/query", json=payload)
             if resp.status_code == 200:
-                vulns: list[dict[str, Any]] = resp.json().get("vulns", [])
+                vulns: list[CveVuln] = resp.json().get("vulns", [])
                 _set_cached_vulns(package_name, ecosystem, version, vulns)
                 return vulns
             logger.warning(
@@ -91,7 +92,7 @@ async def _query_ecosystem(package_name: str, ecosystem: str, version: str) -> l
         return []
 
 
-async def query_osv_ecosystems(package_name: str, version: str) -> list[dict[str, Any]]:
+async def query_osv_ecosystems(package_name: str, version: str) -> list[CveVuln]:
     """Query the OSV.dev API across multiple ecosystems for known vulnerabilities."""
     ecosystems = ["Debian", "Alpine", "Ubuntu", "PyPI", "npm", "Maven", "Go"]
     all_vulns = []
@@ -103,7 +104,7 @@ async def query_osv_ecosystems(package_name: str, version: str) -> list[dict[str
     return all_vulns
 
 
-async def lookup_service_cves(service_name: str, product: str, version: str) -> list[dict[str, Any]]:
+async def lookup_service_cves(service_name: str, product: str, version: str) -> list[CveVuln]:
     """Look up CVEs for a service by name, product, and version using OSV.dev."""
     all_vulns = await query_osv_ecosystems(service_name, version)
     if product and product != service_name:
@@ -121,7 +122,7 @@ async def lookup_service_cves(service_name: str, product: str, version: str) -> 
     return unique
 
 
-def extract_cvss(vuln: dict[str, Any]) -> float | None:
+def extract_cvss(vuln: CveVuln) -> float | None:
     """Extract the CVSS v3 score from an OSV vulnerability entry, falling back to any score."""
     severity_list = vuln.get("severity", [])
     for sev in severity_list:
@@ -136,7 +137,7 @@ def extract_cvss(vuln: dict[str, Any]) -> float | None:
     return None
 
 
-def _extract_remediation(vuln: dict[str, Any]) -> str | None:
+def _extract_remediation(vuln: CveVuln) -> str | None:
     parts = []
     db_specific = vuln.get("database_specific") or {}
     fixed = db_specific.get("fixed_version") or db_specific.get("fixed")
@@ -153,7 +154,7 @@ def _extract_remediation(vuln: dict[str, Any]) -> str | None:
     return "\n".join(parts) if parts else None
 
 
-def format_vuln_finding(vuln: dict[str, Any], cvss_score: float | None) -> dict[str, Any]:
+def format_vuln_finding(vuln: CveVuln, cvss_score: float | None) -> ScanFinding:
     """Format an OSV vulnerability into a standardized finding dict with severity and remediation."""
     aliases = vuln.get("aliases", [])
     cve_id = ""

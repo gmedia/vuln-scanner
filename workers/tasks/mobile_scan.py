@@ -16,6 +16,7 @@ from utils.cve_lookup import extract_cvss, format_vuln_finding, lookup_service_c
 from utils.database import get_sync_session
 from utils.mobile_utils import analyze_apk, analyze_ipa
 from utils.redis_helpers import get_redis_pool
+from utils.scan_types import ScanFinding, TaskResult
 from utils.severity import compute_severity_summary, sort_findings_by_severity
 
 
@@ -41,7 +42,7 @@ def _run_async(coro: Any) -> Any:
 
 
 @shared_task(bind=True, name="mobile_scan.run", max_retries=3)  # type: ignore
-def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> dict[str, Any]:
+def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> TaskResult:
     """Execute a full mobile scan: APK/IPA analysis, secret scanning, CVE lookup for embedded libraries."""
     logger.info(
         "Mobile scan started: job={job_id} platform={platform} path={path}",
@@ -194,14 +195,14 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> di
         raise self.retry(exc=e, countdown=60 * (2**self.request.retries)) from e
 
 
-def _update_status(session: Any, job_id: str, status: str, **kwargs: Any) -> None:
+def _update_status(session: Any, job_id: str, status: str, **kwargs: object) -> None:
     from app.models.scan_job import ScanJob
 
     values = {"status": status, **kwargs}
     session.execute(update(ScanJob).where(ScanJob.id == job_id).values(**values))
 
 
-def _save_findings(session: Any, job_id: str, findings: list[dict[str, Any]]) -> None:
+def _save_findings(session: Any, job_id: str, findings: list[ScanFinding]) -> None:
     from app.models.scan_finding import ScanFinding
 
     for f in findings:

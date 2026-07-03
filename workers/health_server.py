@@ -18,20 +18,20 @@ def _get_redis() -> redis.Redis:
     return redis.Redis(connection_pool=_redis_pool)
 
 
-def _queue_depth(r: redis.Redis) -> dict[str, Any]:
-    depths: dict[str, Any] = {}
+def _queue_depth(r: redis.Redis) -> dict[str, int | str]:
+    depths: dict[str, int | str] = {}
     for q in CELERY_QUEUES:
         try:
-            depths[q] = r.llen(q)
+            depths[q] = int(r.llen(q))
         except Exception as e:
             logger.warning("Failed to get queue depth for {}: {}", q, e)
             depths[q] = "unavailable"
     return depths
 
 
-def _dead_letter_count(r: redis.Redis) -> Any:
+def _dead_letter_count(r: redis.Redis) -> int | str:
     try:
-        return r.zcard("dead_letter:log")
+        return int(r.zcard("dead_letter:log"))
     except Exception as e:
         logger.warning("Failed to check dead letter queue: {}", e)
         return "unavailable"
@@ -48,7 +48,7 @@ def _celery_broker_ok(r: redis.Redis) -> bool:
 class HealthHandler(BaseHTTPRequestHandler):
     """HTTP handler serving /health and /ready endpoints for worker monitoring."""
 
-    def _json_response(self, code: int, data: dict[str, Any]) -> None:
+    def _json_response(self, code: int, data: dict[str, object]) -> None:
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
@@ -65,7 +65,7 @@ class HealthHandler(BaseHTTPRequestHandler):
     def _handle_health(self) -> None:
         r = _get_redis()
         broker_ok = _celery_broker_ok(r)
-        payload = {
+        payload: dict[str, object] = {
             "worker_status": "running",
             "celery_broker": "connected" if broker_ok else "unavailable",
             "queue_depth": _queue_depth(r) if broker_ok else {q: "unavailable" for q in CELERY_QUEUES},
@@ -75,7 +75,7 @@ class HealthHandler(BaseHTTPRequestHandler):
         try:
             last_task = r.get("health:last_task_completed")
             if last_task is not None:
-                last_ts = float(last_task)  # type: ignore[arg-type,unused-ignore]
+                last_ts = float(last_task)
                 seconds_ago = int(time.time() - last_ts)
                 payload["last_task_seconds_ago"] = seconds_ago
             else:

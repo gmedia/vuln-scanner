@@ -6,9 +6,10 @@ import tempfile
 import unicodedata
 import zipfile
 from dataclasses import dataclass, field
-from typing import Any
 
 from loguru import logger
+
+from utils.scan_types import ScanFinding
 
 
 @dataclass
@@ -38,7 +39,7 @@ class IpaInfo:
     platform: str = ""
     ats_exceptions: list[str] = field(default_factory=list)
     custom_url_schemes: list[str] = field(default_factory=list)
-    app_transport_security: dict[str, Any] | None = None
+    app_transport_security: dict[str, object] | None = None
 
 
 SECRET_PATTERNS = [
@@ -111,11 +112,11 @@ def _safe_extract(zf: zipfile.ZipFile, member: str, dest_dir: str) -> bool:
     return True
 
 
-def analyze_apk(file_path: str) -> tuple[AndroidManifestInfo, list[dict[str, Any]], list[str]]:
+def analyze_apk(file_path: str) -> tuple[AndroidManifestInfo, list[ScanFinding], list[str]]:
     """Analyze an APK file: parse manifest, scan for secrets, and extract library names."""
     info = AndroidManifestInfo()
     extracts_dir = tempfile.mkdtemp(prefix="apk_")
-    secret_findings: list[dict[str, Any]] = []
+    secret_findings: list[ScanFinding] = []
     classes_dex: list[str] = []
     lib_files: list[str] = []
 
@@ -150,7 +151,7 @@ def analyze_apk(file_path: str) -> tuple[AndroidManifestInfo, list[dict[str, Any
     return info, findings, libraries
 
 
-def analyze_ipa(file_path: str) -> tuple[IpaInfo, list[dict[str, Any]], list[str]]:
+def analyze_ipa(file_path: str) -> tuple[IpaInfo, list[ScanFinding], list[str]]:
     """Analyze an IPA file: parse Info.plist, scan for secrets, and extract library names."""
     info = IpaInfo()
     extracts_dir = tempfile.mkdtemp(prefix="ipa_")
@@ -254,15 +255,16 @@ def _sdk_to_android_version(sdk: int) -> str:
     return versions.get(sdk, str(sdk))
 
 
-def _parse_ios_plist(plist_data: dict[str, Any]) -> IpaInfo:
+def _parse_ios_plist(plist_data: dict[str, object]) -> IpaInfo:
     info = IpaInfo()
-    info.bundle_id = plist_data.get("CFBundleIdentifier", "")
-    info.version = plist_data.get("CFBundleShortVersionString", "")
-    info.build = plist_data.get("CFBundleVersion", "")
-    info.min_ios = plist_data.get("MinimumOSVersion", "")
-    info.platform = plist_data.get("DTPlatformName", "")
+    info.bundle_id = str(plist_data.get("CFBundleIdentifier", "") or "")
+    info.version = str(plist_data.get("CFBundleShortVersionString", "") or "")
+    info.build = str(plist_data.get("CFBundleVersion", "") or "")
+    info.min_ios = str(plist_data.get("MinimumOSVersion", "") or "")
+    info.platform = str(plist_data.get("DTPlatformName", "") or "")
 
-    info.app_transport_security = plist_data.get("NSAppTransportSecurity")
+    raw_ats = plist_data.get("NSAppTransportSecurity")
+    info.app_transport_security = raw_ats if isinstance(raw_ats, dict) else None
     if isinstance(info.app_transport_security, dict):
         domains = info.app_transport_security.get("NSExceptionDomains", {})
         info.ats_exceptions = list(domains.keys()) if isinstance(domains, dict) else []
@@ -270,15 +272,18 @@ def _parse_ios_plist(plist_data: dict[str, Any]) -> IpaInfo:
             info.ats_exceptions.append("* (all domains)")
 
     url_types = plist_data.get("CFBundleURLTypes", [])
-    for url_type in url_types:
-        if isinstance(url_type, dict):
-            for scheme in url_type.get("CFBundleURLSchemes", []):
-                info.custom_url_schemes.append(scheme)
-
+    if isinstance(url_types, list):
+        for url_type in url_types:
+            if isinstance(url_type, dict):
+                schemes = url_type.get("CFBundleURLSchemes", [])
+                if isinstance(schemes, list):
+                    for scheme in schemes:
+                        if isinstance(scheme, str):
+                            info.custom_url_schemes.append(scheme)
     return info
 
 
-def _build_android_findings(info: AndroidManifestInfo) -> list[dict[str, Any]]:
+def _build_android_findings(info: AndroidManifestInfo) -> list[ScanFinding]:
     findings = []
 
     if info.package_name:
@@ -366,7 +371,7 @@ def _build_android_findings(info: AndroidManifestInfo) -> list[dict[str, Any]]:
     return findings
 
 
-def _build_ios_findings(info: IpaInfo) -> list[dict[str, Any]]:
+def _build_ios_findings(info: IpaInfo) -> list[ScanFinding]:
     findings = []
 
     if info.bundle_id:
@@ -413,7 +418,7 @@ def _build_ios_findings(info: IpaInfo) -> list[dict[str, Any]]:
     return findings
 
 
-def _scan_secrets(text_content: str) -> list[dict[str, Any]]:
+def _scan_secrets(text_content: str) -> list[ScanFinding]:
     findings = []
     for pattern, secret_type in SECRET_PATTERNS:
         matches = re.findall(pattern, text_content)
