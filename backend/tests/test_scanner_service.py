@@ -485,3 +485,66 @@ async def test_start_scan_just_enough_credits(db_session, sample_user, mock_cele
 
     await db_session.refresh(sample_user)
     assert sample_user.credits == 0
+
+
+# --- New tests: fallback pricing (no DB PricingConfig row) ---
+
+
+@pytest.mark.asyncio
+async def test_start_scan_fallback_pricing_uses_settings_default(db_session, sample_user, mock_celery):
+    """When no PricingConfig row exists, use settings default from SCAN_TYPE_PRICING_MAP."""
+    # Domain scan has no PricingConfig row (we didn't create one), so it falls back
+    # to settings.domain_scan_credit_cost which is 2.
+    svc = ScannerService(db_session)
+    job = await svc.start_scan(user=sample_user, scan_type="domain", target="example.com")
+
+    assert job.credit_cost == 2
+    await db_session.refresh(sample_user)
+    assert sample_user.credits == 98
+
+
+# --- New tests: 0-cost scans ---
+
+
+@pytest.mark.asyncio
+async def test_start_scan_zero_cost_skips_deduction(db_session, sample_user, mock_celery):
+    """When credit_cost is 0, no credit deduction should occur."""
+    # Use a PricingConfig with cost=0
+    pricing = PricingConfig(
+        id=uuid.uuid4(),
+        scan_type="ip",
+        credit_cost=0,
+    )
+    db_session.add(pricing)
+    await db_session.commit()
+
+    original_credits = sample_user.credits
+    svc = ScannerService(db_session)
+    job = await svc.start_scan(user=sample_user, scan_type="ip", target="10.0.0.1")
+
+    assert job.credit_cost == 0
+    await db_session.refresh(sample_user)
+    assert sample_user.credits == original_credits  # unchanged
+
+
+@pytest.mark.asyncio
+async def test_start_scan_zero_cost_user_has_zero_credits(db_session, sample_user, mock_celery):
+    """When credit_cost is 0, scan succeeds even if user has 0 credits."""
+    sample_user.credits = 0
+    await db_session.commit()
+
+    pricing = PricingConfig(
+        id=uuid.uuid4(),
+        scan_type="ip",
+        credit_cost=0,
+    )
+    db_session.add(pricing)
+    await db_session.commit()
+
+    svc = ScannerService(db_session)
+    job = await svc.start_scan(user=sample_user, scan_type="ip", target="10.0.0.1")
+
+    assert job.status == "pending"
+    assert job.credit_cost == 0
+    await db_session.refresh(sample_user)
+    assert sample_user.credits == 0  # still 0
