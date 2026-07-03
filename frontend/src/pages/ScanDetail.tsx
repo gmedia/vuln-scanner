@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Clock, Crosshair, Shield, Target } from "lucide-react";
+import { ArrowLeft, Clock, Crosshair, Download, Shield, Target } from "lucide-react";
 import { useScanDetail } from "@/hooks/useScan";
-import type { ScanFinding } from "@/api/scans";
+import { type ScanFinding, downloadFile } from "@/api/scans";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
 import { Progress } from "@/components/ui/Progress";
 import { Badge } from "@/components/ui/Badge";
@@ -159,12 +159,36 @@ function ScanDetail() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-mono text-sm tracking-wide">
-            FINDINGS
-          </CardTitle>
-          <CardDescription className="font-mono text-xs">
-            {scan.findings?.length ?? 0} vulnerability findings detected
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="font-mono text-sm tracking-wide">
+                FINDINGS
+              </CardTitle>
+              <CardDescription className="font-mono text-xs">
+                {scan.findings?.length ?? 0} vulnerability findings detected
+              </CardDescription>
+            </div>
+            {id && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => downloadFile(id, "json")}
+                >
+                  <Download className="mr-1 h-3.5 w-3.5" />
+                  JSON
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => downloadFile(id, "html")}
+                >
+                  <Download className="mr-1 h-3.5 w-3.5" />
+                  HTML
+                </Button>
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <FindingsTable

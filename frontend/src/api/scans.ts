@@ -119,6 +119,25 @@ export async function getScanHistory(
   return data;
 }
 
+export async function downloadFile(
+  jobId: string,
+  format: "json" | "html",
+): Promise<void> {
+  const resp = await api.get(`/api/scan/${jobId}/export`, {
+    params: { format },
+    responseType: "blob",
+  });
+  const ext = format === "json" ? "json" : "html";
+  const url = window.URL.createObjectURL(new Blob([resp.data]));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `scan_${jobId}.${ext}`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 export function getWsUrl(jobId: string): string {
   const wsBase = import.meta.env.VITE_WS_URL || "";
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
