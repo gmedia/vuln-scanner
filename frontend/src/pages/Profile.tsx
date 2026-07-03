@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Shield, Loader2, CheckCircle, AlertCircle, Timer } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useRateLimitCooldown } from "@/hooks/useRateLimitCooldown";
@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 
 function Profile() {
-  const { user, updateProfile, changePassword, clearError, error } = useAuthStore();
+  const { user, updateProfile, changePassword, error } = useAuthStore();
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(user?.email ?? "");
   const [profilePassword, setProfilePassword] = useState("");
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState(false);
@@ -23,15 +23,6 @@ function Profile() {
 
   const profileCooldown = useRateLimitCooldown();
   const passwordCooldown = useRateLimitCooldown();
-
-  useEffect(() => {
-    if (user) {
-      setEmail(user.email);
-    }
-    return () => {
-      clearError();
-    };
-  }, [clearError, user]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
