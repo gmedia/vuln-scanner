@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Crosshair, Loader2, ArrowLeft, CheckCircle } from "lucide-react";
+import { Crosshair, Loader2, ArrowLeft, CheckCircle, Timer } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { useRateLimitCooldown } from "@/hooks/useRateLimitCooldown";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
@@ -11,6 +12,7 @@ function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const { cooldown, startCooldown } = useRateLimitCooldown();
 
   useEffect(() => {
     return () => {
@@ -26,6 +28,14 @@ function ForgotPassword() {
       setSuccess(true);
     } else {
       setIsSubmitting(false);
+      // Start cooldown on rate limit
+      const errMsg = useAuthStore.getState().error;
+      if (errMsg) {
+        const match = errMsg.match(/wait (\d+) seconds/);
+        if (match) {
+          startCooldown(parseInt(match[1], 10));
+        }
+      }
     }
   };
 
@@ -65,7 +75,13 @@ function ForgotPassword() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
+            {cooldown > 0 && (
+              <p className="font-mono text-xs text-amber-400 text-center flex items-center justify-center gap-1">
+                <Timer className="h-3 w-3" />
+                Too many attempts. Wait {cooldown}s
+              </p>
+            )}
+            {error && cooldown === 0 && (
               <p className="font-mono text-xs text-red-400 text-center">
                 {error}
               </p>
@@ -84,8 +100,13 @@ function ForgotPassword() {
                 disabled={isSubmitting}
               />
             </div>
-            <Button type="submit" className="w-full font-mono text-sm" disabled={isSubmitting}>
-              {isSubmitting ? (
+            <Button type="submit" className="w-full font-mono text-sm" disabled={isSubmitting || cooldown > 0}>
+              {cooldown > 0 ? (
+                <>
+                  <Timer className="mr-2 h-4 w-4" />
+                  Wait {cooldown}s
+                </>
+              ) : isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Sending reset link...

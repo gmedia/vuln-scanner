@@ -25,6 +25,10 @@ export interface VerifyEmailRequest {
   token: string;
 }
 
+export interface ResendVerificationRequest {
+  email: string;
+}
+
 export interface ForgotPasswordRequest {
   email: string;
 }
@@ -37,6 +41,17 @@ export interface ResetPasswordRequest {
 
 export interface RefreshTokenRequest {
   refresh_token?: string;
+}
+
+export interface UpdateProfileRequest {
+  email: string;
+  current_password: string;
+}
+
+export interface ChangePasswordRequest {
+  current_password: string;
+  new_password: string;
+  confirm_password: string;
 }
 
 export interface MessageResponse {
@@ -93,6 +108,16 @@ export async function verifyEmail(token: string): Promise<MessageResponse> {
   return data;
 }
 
+export async function resendVerification(
+  email: string,
+): Promise<MessageResponse> {
+  const { data } = await authApi.post<MessageResponse>(
+    "/api/auth/resend-verification",
+    { email },
+  );
+  return data;
+}
+
 export async function refreshToken(
   refreshToken?: string,
 ): Promise<LoginResponse> {
@@ -120,6 +145,33 @@ export async function resetPassword(
     "/api/auth/reset-password",
     {
       token,
+      new_password: newPassword,
+      confirm_password: confirmPassword,
+    },
+  );
+  return data;
+}
+
+export async function updateProfile(
+  email: string,
+  currentPassword: string,
+): Promise<MessageResponse> {
+  const { data } = await authApi.put<MessageResponse>("/api/auth/profile", {
+    email,
+    current_password: currentPassword,
+  });
+  return data;
+}
+
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+  confirmPassword: string,
+): Promise<MessageResponse> {
+  const { data } = await authApi.post<MessageResponse>(
+    "/api/auth/change-password",
+    {
+      current_password: currentPassword,
       new_password: newPassword,
       confirm_password: confirmPassword,
     },

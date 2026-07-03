@@ -19,6 +19,7 @@ const DomainScanner = lazy(() => import("@/pages/DomainScanner"));
 const MobileScanner = lazy(() => import("@/pages/MobileScanner"));
 const ScanDetail = lazy(() => import("@/pages/ScanDetail"));
 const CreditHistory = lazy(() => import("@/pages/credit/CreditHistory"));
+const Profile = lazy(() => import("@/pages/Profile"));
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
 const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
 const AdminUserDetail = lazy(() => import("@/pages/admin/AdminUserDetail"));
@@ -46,6 +47,7 @@ function App() {
             <Route path="/scan/mobile" element={<PageBoundary component={MobileScanner} />} />
             <Route path="/scan/:id" element={<PageBoundary component={ScanDetail} />} />
             <Route path="/credit-history" element={<PageBoundary component={CreditHistory} />} />
+            <Route path="/profile" element={<PageBoundary component={Profile} />} />
 
             {/* Admin routes */}
             <Route element={<AdminRoute />}>
