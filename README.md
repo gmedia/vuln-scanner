@@ -126,14 +126,41 @@ vuln-scanner/
 
 ## API
 
-All endpoints require `X-API-Key` header.
+### Authentication
+
+VulnScanner supports two auth methods:
+
+| Method | Header | Use Case |
+|--------|--------|----------|
+| **JWT Bearer** | `Authorization: Bearer <token>` | Dashboard users (web UI) |
+| **API Key** | `X-API-Key: <key>` | Programmatic / machine-to-machine |
+
+**JWT auth** is the primary auth for the dashboard. Obtain tokens via the auth endpoints:
 
 ```bash
-# Start scan
-curl -X POST http://localhost/api/scan \
+# Register a new account
+curl -X POST http://localhost/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"str0ng!Pa55","confirm_password":"str0ng!Pa55"}'
+
+# Login — returns access + refresh tokens
+curl -X POST http://localhost/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"str0ng!Pa55"}'
+
+# Use access token for authenticated requests
+curl http://localhost/api/scan/history \
+  -H "Authorization: Bearer <access-token>"
+```
+
+**API Key auth** bypasses user auth for service-to-service calls:
+
+```bash
+# Start scan (API key)
+curl -X POST http://localhost/api/scan/ip \
   -H "X-API-Key: your-key" \
   -H "Content-Type: application/json" \
-  -d '{"scan_type": "ip", "target": "8.8.8.8"}'
+  -d '{"target": "8.8.8.8", "ports": "22-443"}'
 
 # Get results
 curl http://localhost/api/scan/{id} \
@@ -144,11 +171,40 @@ curl http://localhost/api/scan/{id}/export?format=html \
   -H "X-API-Key: your-key" -o report.html
 ```
 
+### Key Endpoints
+
+| Endpoint | Auth | Method | Description |
+|----------|------|--------|-------------|
+| `/api/auth/register` | None | `POST` | Create account |
+| `/api/auth/login` | None | `POST` | Login, get tokens |
+| `/api/auth/refresh` | JWT | `POST` | Refresh access token |
+| `/api/auth/me` | JWT | `GET` | Get current user |
+| `/api/scan/ip` | JWT/Key | `POST` | Start IP scan |
+| `/api/scan/domain` | JWT/Key | `POST` | Start domain scan |
+| `/api/scan/mobile` | JWT/Key | `POST` | Upload APK/IPA for scan |
+| `/api/scan/history` | JWT | `GET` | Paginated scan history |
+| `/api/scan/{id}` | JWT | `GET` | Scan detail + findings |
+| `/api/scan/{id}/findings` | JWT | `GET` | Findings only |
+| `/api/scan/{id}/export` | JWT | `GET` | Export as JSON or HTML |
+| `/api/credits/balance` | JWT | `GET` | Credit balance |
+| `/api/credits/eligibility/{type}` | JWT | `GET` | Check scan cost |
+| `/api/admin/stats` | JWT+Admin | `GET` | Admin dashboard stats |
+| `/api/admin/users` | JWT+Admin | `GET` | List/manage users |
+| `/api/admin/pricing` | JWT+Admin | `GET/PUT` | Manage pricing |
+| `/ws/scan/{job_id}` | JWT | WebSocket | Real-time scan progress |
+| `/health` | None | `GET` | Health check |
+| `/metrics` | None | `GET` | Prometheus metrics |
+
 ## Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `API_KEY` | `dev-api-key-change-me` | API authentication key |
+| `API_KEY` | `dev-api-key-change-me` | API key for machine-to-machine auth |
+| `SECRET_KEY` | — | Secret for token signing |
+| `JWT_SECRET` | — | JSON Web Token signing key |
+| `JWT_ALGORITHM` | `HS256` | JWT signing algorithm |
+| `JWT_ACCESS_EXPIRE_MINUTES` | `30` | Access token TTL |
+| `JWT_REFRESH_EXPIRE_DAYS` | `7` | Refresh token TTL |
 | `DATABASE_URL` | `postgresql+asyncpg://...` | PostgreSQL connection string |
 | `REDIS_URL` | `redis://:${REDIS_PASSWORD}@redis:6379/0` | Redis connection string |
 
