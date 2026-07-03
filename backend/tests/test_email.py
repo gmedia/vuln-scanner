@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 import app.services.email as email_module
-from app.services.email import send_verification_email
+from app.services.email import send_password_reset_email, send_verification_email
 
 # ---------------------------------------------------------------------------
 # Successful sends
@@ -594,6 +594,338 @@ class TestEmailEdgeCases:
                 send_verification_email("user1@example.com", "tokenA"),
                 send_verification_email("user2@example.com", "tokenB"),
                 send_verification_email("user3@example.com", "tokenC"),
+            )
+
+        assert results == [True, True, True]
+        assert mock_smtp.send_message.await_count == 3
+
+
+# ---------------------------------------------------------------------------
+# Password reset email — send_password_reset_email
+# ---------------------------------------------------------------------------
+
+
+class TestSendPasswordResetEmailSuccess:
+    @pytest.mark.asyncio
+    async def test_returns_true_on_success(self):
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.login = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            result = await send_password_reset_email("user@example.com", "reset-token-123")
+
+        assert result is True
+        mock_smtp.connect.assert_awaited_once()
+        mock_smtp.login.assert_not_awaited()
+        mock_smtp.send_message.assert_awaited_once()
+        mock_smtp.quit.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_login_called_when_credentials_provided(self, monkeypatch):
+        monkeypatch.setattr(email_module, "SMTP_USER", "smtpuser")
+        monkeypatch.setattr(email_module, "SMTP_PASS", "smtppass")
+
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.login = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            result = await send_password_reset_email("user@example.com", "token123")
+
+        assert result is True
+        mock_smtp.login.assert_awaited_once_with("smtpuser", "smtppass")
+
+
+class TestPasswordResetMimeMessageStructure:
+    @pytest.mark.asyncio
+    async def test_subject_header(self):
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            await send_password_reset_email("user@example.com", "token123")
+
+        sent_msg = mock_smtp.send_message.call_args[0][0]
+        assert sent_msg["Subject"] == "VulnScanner — Reset Your Password"
+
+    @pytest.mark.asyncio
+    async def test_from_header(self, monkeypatch):
+        monkeypatch.setattr(email_module, "SMTP_FROM", "TestApp <test@app.com>")
+
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            await send_password_reset_email("to@example.com", "token123")
+
+        sent_msg = mock_smtp.send_message.call_args[0][0]
+        assert sent_msg["From"] == "TestApp <test@app.com>"
+
+    @pytest.mark.asyncio
+    async def test_to_header(self):
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            await send_password_reset_email("recipient@example.com", "token123")
+
+        sent_msg = mock_smtp.send_message.call_args[0][0]
+        assert sent_msg["To"] == "recipient@example.com"
+
+    @pytest.mark.asyncio
+    async def test_message_is_multipart_alternative(self):
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            await send_password_reset_email("user@example.com", "token123")
+
+        sent_msg = mock_smtp.send_message.call_args[0][0]
+        assert isinstance(sent_msg, MIMEMultipart)
+        assert sent_msg.get_content_subtype() == "alternative"
+
+    @pytest.mark.asyncio
+    async def test_html_body_contains_reset_link(self, monkeypatch):
+        monkeypatch.setattr(email_module, "FRONTEND_URL", "https://custom.example.com")
+
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            await send_password_reset_email("user@example.com", "special-token-456")
+
+        sent_msg = mock_smtp.send_message.call_args[0][0]
+        html_part = sent_msg.get_payload()[0]
+        html_body = html_part.get_payload(decode=True).decode("utf-8")
+        assert "https://custom.example.com/reset-password?token=special-token-456" in html_body
+
+    @pytest.mark.asyncio
+    async def test_html_body_uses_default_frontend_url(self):
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            await send_password_reset_email("user@example.com", "token789")
+
+        sent_msg = mock_smtp.send_message.call_args[0][0]
+        html_part = sent_msg.get_payload()[0]
+        html_body = html_part.get_payload(decode=True).decode("utf-8")
+        assert "https://vs.appmedia.id/reset-password?token=token789" in html_body
+
+    @pytest.mark.asyncio
+    async def test_html_body_mentions_one_hour_expiry(self):
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            await send_password_reset_email("user@example.com", "token123")
+
+        sent_msg = mock_smtp.send_message.call_args[0][0]
+        html_part = sent_msg.get_payload()[0]
+        html_body = html_part.get_payload(decode=True).decode("utf-8")
+        assert "expires in 1 hour" in html_body
+
+    @pytest.mark.asyncio
+    async def test_html_content_type(self):
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            await send_password_reset_email("user@example.com", "token123")
+
+        sent_msg = mock_smtp.send_message.call_args[0][0]
+        html_part = sent_msg.get_payload()[0]
+        assert html_part.get_content_type() == "text/html"
+        assert html_part.get_content_charset() == "utf-8"
+
+
+class TestSendPasswordResetEmailFailure:
+    @pytest.mark.asyncio
+    async def test_connect_failure_returns_false(self):
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock(side_effect=OSError("Connection refused"))
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            result = await send_password_reset_email("user@example.com", "token123")
+
+        assert result is False
+        mock_smtp.connect.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_send_failure_returns_false(self):
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock(side_effect=Exception("Send failed"))
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            result = await send_password_reset_email("user@example.com", "token123")
+
+        assert result is False
+        mock_smtp.send_message.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_login_failure_returns_false(self, monkeypatch):
+        monkeypatch.setattr(email_module, "SMTP_USER", "baduser")
+        monkeypatch.setattr(email_module, "SMTP_PASS", "badpass")
+
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.login = AsyncMock(side_effect=Exception("Auth failed"))
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            result = await send_password_reset_email("user@example.com", "token123")
+
+        assert result is False
+        mock_smtp.login.assert_awaited_once()
+
+
+class TestPasswordResetEdgeCases:
+    @pytest.mark.asyncio
+    async def test_token_appears_in_link(self):
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            await send_password_reset_email("user@example.com", "test-token-abc123")
+
+        sent_msg = mock_smtp.send_message.call_args[0][0]
+        html_part = sent_msg.get_payload()[0]
+        html_body = html_part.get_payload(decode=True).decode("utf-8")
+        assert "reset-password?token=test-token-abc123" in html_body
+
+    @pytest.mark.asyncio
+    async def test_empty_token(self):
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            result = await send_password_reset_email("user@example.com", "")
+
+        assert result is True
+        sent_msg = mock_smtp.send_message.call_args[0][0]
+        html_part = sent_msg.get_payload()[0]
+        html_body = html_part.get_payload(decode=True).decode("utf-8")
+        assert "reset-password?token=" in html_body
+
+    @pytest.mark.asyncio
+    async def test_frontend_url_with_trailing_slash(self, monkeypatch):
+        monkeypatch.setattr(email_module, "FRONTEND_URL", "https://example.com/")
+
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            await send_password_reset_email("user@example.com", "token123")
+
+        sent_msg = mock_smtp.send_message.call_args[0][0]
+        html_part = sent_msg.get_payload()[0]
+        html_body = html_part.get_payload(decode=True).decode("utf-8")
+        assert "https://example.com//reset-password?token=token123" in html_body
+
+    @pytest.mark.asyncio
+    async def test_very_long_token(self):
+        long_token = "x" * 1000
+
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            await send_password_reset_email("user@example.com", long_token)
+
+        sent_msg = mock_smtp.send_message.call_args[0][0]
+        html_part = sent_msg.get_payload()[0]
+        html_body = html_part.get_payload(decode=True).decode("utf-8")
+        assert long_token in html_body
+
+    @pytest.mark.asyncio
+    async def test_no_credentials_no_login(self, monkeypatch):
+        monkeypatch.setattr(email_module, "SMTP_USER", "")
+        monkeypatch.setattr(email_module, "SMTP_PASS", "")
+
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.login = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            result = await send_password_reset_email("user@example.com", "token123")
+
+        assert result is True
+        mock_smtp.login.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_quit_failure_still_returns_true(self):
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock(side_effect=OSError("Broken pipe"))
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            result = await send_password_reset_email("user@example.com", "token123")
+
+        assert result is False
+        mock_smtp.send_message.assert_awaited_once()
+        mock_smtp.quit.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_smtp_host_empty_string(self, monkeypatch):
+        monkeypatch.setattr(email_module, "SMTP_HOST", "")
+
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP") as mock_smtp_class:
+            mock_smtp_class.return_value = mock_smtp
+            await send_password_reset_email("user@example.com", "token123")
+
+        _, kwargs = mock_smtp_class.call_args
+        assert kwargs["hostname"] == ""
+
+    @pytest.mark.asyncio
+    async def test_concurrent_email_sends(self):
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            results = await asyncio.gather(
+                send_password_reset_email("user1@example.com", "tokenA"),
+                send_password_reset_email("user2@example.com", "tokenB"),
+                send_password_reset_email("user3@example.com", "tokenC"),
             )
 
         assert results == [True, True, True]
