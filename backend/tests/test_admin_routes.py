@@ -490,6 +490,43 @@ class TestAdminCredits:
         assert len(logs) == 1
         assert logs[0].description == "Custom description here"
 
+    @pytest.mark.asyncio
+    async def test_performed_by_set_on_credit_log(self, client, db_session, sample_user):
+        """Verify performed_by is set to the admin who made the adjustment."""
+        _patch_db_for_uuid(db_session)
+
+        resp = client.post(
+            f"/api/admin/users/{sample_user.id}/credits",
+            json={"amount": 50, "description": "Audit trail check"},
+            headers=API_HEADERS,
+        )
+        assert resp.status_code == 200
+
+        result = await db_session.execute(select(CreditLog).where(CreditLog.user_id == sample_user.id))
+        logs = result.scalars().all()
+        assert len(logs) == 1
+        assert logs[0].performed_by is not None
+        assert isinstance(logs[0].performed_by, uuid.UUID)
+
+    @pytest.mark.asyncio
+    async def test_performed_by_set_on_deduction(self, client, db_session, sample_user):
+        """Verify performed_by is also set on deduction credit logs."""
+        _patch_db_for_uuid(db_session)
+
+        resp = client.post(
+            f"/api/admin/users/{sample_user.id}/credits",
+            json={"amount": -30, "description": "Deduction audit trail"},
+            headers=API_HEADERS,
+        )
+        assert resp.status_code == 200
+
+        result = await db_session.execute(select(CreditLog).where(CreditLog.user_id == sample_user.id))
+        logs = result.scalars().all()
+        assert len(logs) == 1
+        assert logs[0].type == "deduct"
+        assert logs[0].performed_by is not None
+        assert isinstance(logs[0].performed_by, uuid.UUID)
+
     def test_unauthorized_non_admin_returns_403(self, admin_auth_client, db_session, sample_user):
         user, token = asyncio.get_event_loop().run_until_complete(
             _create_user_with_token(db_session, "regular4@example.com", is_admin=False)

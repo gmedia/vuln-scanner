@@ -793,6 +793,110 @@ class TestGetCurrentUser:
         assert result.email == "test@example.com"
 
 
+class TestGetCurrentUserTokenType:
+    """Tests for token type validation in get_current_user (Fix 1)."""
+
+    @pytest.fixture(autouse=True)
+    def _setup_mocks(self):
+        import app.services.auth as auth_mod
+
+        self.mock_request = MagicMock()
+        self.mock_db = AsyncMock()
+        self._get_db_patch = patch.object(auth_mod, "get_db", return_value=self.mock_db)
+        self._get_db_patch.start()
+        yield
+        self._get_db_patch.stop()
+
+    def _make_token(self, type_val, sub=None, email=None, exp_delta=30, include_sub=True, include_email=True):
+        """Helper to create a JWT with custom type claim."""
+        from app.config import settings
+
+        payload = {
+            "type": type_val,
+            "exp": datetime.now(UTC) + timedelta(minutes=exp_delta),
+        }
+        if include_sub:
+            payload["sub"] = sub or "550e8400-e29b-41d4-a716-446655440000"
+        if include_email:
+            payload["email"] = email or "test@example.com"
+        secret = settings.jwt_secret or settings.secret_key
+        algorithm = settings.jwt_algorithm
+        return jwt.encode(payload, secret, algorithm=algorithm)
+
+    def test_refresh_token_rejected(self):
+        """A token with type='refresh' is rejected in get_current_user."""
+        from fastapi import HTTPException
+
+        import app.services.auth as auth_mod
+
+        refresh_token = self._make_token("refresh")
+        self.mock_request.headers = {"Authorization": f"Bearer {refresh_token}"}
+
+        with pytest.raises(HTTPException) as exc_info:
+            asyncio.run(auth_mod.get_current_user(self.mock_request, self.mock_db))
+        assert exc_info.value.status_code == 401
+        assert "Invalid token type" in exc_info.value.detail
+
+    def test_missing_type_claim_rejected(self):
+        """A token with no 'type' claim is rejected (None != 'access')."""
+        from fastapi import HTTPException
+
+        import app.services.auth as auth_mod
+        from app.config import settings
+
+        payload = {
+            "sub": "550e8400-e29b-41d4-a716-446655440000",
+            "email": "test@example.com",
+            "exp": datetime.now(UTC) + timedelta(minutes=30),
+        }
+        secret = settings.jwt_secret or settings.secret_key
+        algorithm = settings.jwt_algorithm
+        no_type_token = jwt.encode(payload, secret, algorithm=algorithm)
+
+        self.mock_request.headers = {"Authorization": f"Bearer {no_type_token}"}
+
+        with pytest.raises(HTTPException) as exc_info:
+            asyncio.run(auth_mod.get_current_user(self.mock_request, self.mock_db))
+        assert exc_info.value.status_code == 401
+        assert "Invalid token type" in exc_info.value.detail
+
+    def test_access_token_accepted_with_valid_user(self):
+        """An access token (type='access') with valid user passes through."""
+        import app.services.auth as auth_mod
+        from app.models.user import User
+
+        access_token = self._make_token("access")
+        self.mock_request.headers = {"Authorization": f"Bearer {access_token}"}
+
+        user = User(
+            id="550e8400-e29b-41d4-a716-446655440000",
+            email="test@example.com",
+            password_hash="...",
+            is_admin=False,
+        )
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = user
+        self.mock_db.execute.return_value = mock_result
+
+        result = asyncio.run(auth_mod.get_current_user(self.mock_request, self.mock_db))
+        assert result is user
+        assert result.email == "test@example.com"
+
+    def test_arbitrary_type_value_rejected(self):
+        """A token with type='anything_else' is rejected."""
+        from fastapi import HTTPException
+
+        import app.services.auth as auth_mod
+
+        weird_token = self._make_token("admin_override")
+        self.mock_request.headers = {"Authorization": f"Bearer {weird_token}"}
+
+        with pytest.raises(HTTPException) as exc_info:
+            asyncio.run(auth_mod.get_current_user(self.mock_request, self.mock_db))
+        assert exc_info.value.status_code == 401
+        assert "Invalid token type" in exc_info.value.detail
+
+
 class TestGetCurrentAdmin:
     def test_non_admin_user_returns_403(self):
         """Non-admin user raises 403 Forbidden."""
