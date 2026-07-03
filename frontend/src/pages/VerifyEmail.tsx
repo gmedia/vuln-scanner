@@ -10,7 +10,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { verifyEmail, resendVerification, isLoading, error, clearError } = useAuthStore();
+  const { verifyEmail, resendVerification, isLoading, error } = useAuthStore();
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [resendEmail, setResendEmail] = useState("");
   const [isResending, setIsResending] = useState(false);
@@ -20,20 +20,16 @@ function VerifyEmail() {
   const token = searchParams.get("token");
 
   useEffect(() => {
-    clearError();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
     if (!token) return;
 
     const verify = async () => {
-      clearError();
       const success = await verifyEmail(token);
       setStatus(success ? "success" : "error");
     };
 
     verify();
-  }, [token, verifyEmail, clearError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, verifyEmail]);
 
   if (!token) {
     const handleResend = async (e: React.FormEvent) => {
