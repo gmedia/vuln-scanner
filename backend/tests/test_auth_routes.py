@@ -12,6 +12,7 @@ from app.database import get_db
 from app.main import app
 from app.models.credit_log import CreditLog
 from app.models.email_verification import EmailVerificationToken
+from app.models.password_reset import PasswordResetToken
 from app.models.user import User
 from app.services.auth import (
     create_access_token,
@@ -688,11 +689,11 @@ class TestVerifyEmail:
 
         user, token_str = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
 
-        # SQLite strips timezone from DateTime(timezone=True), making expires_at naive.
-        # The source code compares with datetime.now(UTC) (aware), which raises TypeError.
-        # Patch to return a naive UTC datetime so comparison works.
+        # SQLite may or may not strip timezone from DateTime(timezone=True).
+        # The endpoint now normalizes expires_at to UTC-aware before comparison.
+        # Patch to return a real datetime so the comparison works.
         with patch("app.api.auth_routes.datetime") as mock_dt:
-            mock_dt.now.return_value = datetime.now(UTC).replace(tzinfo=None)
+            mock_dt.now.return_value = datetime.now(UTC)
             resp = auth_client.post(
                 "/api/auth/verify-email",
                 json={"token": token_str},
@@ -728,7 +729,7 @@ class TestVerifyEmail:
         asyncio.get_event_loop().run_until_complete(verify())
 
         with patch("app.api.auth_routes.datetime") as mock_dt:
-            mock_dt.now.return_value = datetime.now(UTC).replace(tzinfo=None)
+            mock_dt.now.return_value = datetime.now(UTC)
             resp = auth_client.post(
                 "/api/auth/verify-email",
                 json={"token": token_str},
@@ -753,7 +754,7 @@ class TestVerifyEmail:
         user, token_str = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
 
         with patch("app.api.auth_routes.datetime") as mock_dt:
-            mock_dt.now.return_value = datetime.now(UTC).replace(tzinfo=None)
+            mock_dt.now.return_value = datetime.now(UTC)
             resp = auth_client.post(
                 "/api/auth/verify-email",
                 json={"token": token_str},
@@ -769,6 +770,335 @@ class TestVerifyEmail:
 
         deleted_token = asyncio.get_event_loop().run_until_complete(check_deleted())
         assert deleted_token is None
+
+
+# ---------------------------------------------------------------------------
+# POST /api/auth/forgot-password
+# ---------------------------------------------------------------------------
+
+
+class TestForgotPassword:
+    """POST /api/auth/forgot-password — requests a password reset email."""
+
+    async def _setup(self, db_session):
+        """Create a verified user for testing."""
+        return await _create_verified_user(db_session)
+
+    def test_known_email_returns_200(self, auth_client, db_session):
+        import asyncio
+
+        user = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+
+        with patch("app.api.auth_routes.send_password_reset_email", new_callable=AsyncMock) as mock_send:
+            resp = auth_client.post(
+                "/api/auth/forgot-password",
+                json={"email": user.email},
+            )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "message" in data
+        # Should have attempted to send email
+        mock_send.assert_called_once()
+
+    def test_unknown_email_returns_200_no_leak(self, auth_client, db_session):
+        """Anti-enumeration: unknown email still returns 200 but no email sent."""
+        with patch("app.api.auth_routes.send_password_reset_email", new_callable=AsyncMock) as mock_send:
+            resp = auth_client.post(
+                "/api/auth/forgot-password",
+                json={"email": "nonexistent@example.com"},
+            )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "message" in data
+        # No email should be sent for unknown email
+        mock_send.assert_not_called()
+
+    def test_creates_reset_token_in_db(self, auth_client, db_session):
+        import asyncio
+
+        user = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+
+        with patch("app.api.auth_routes.send_password_reset_email", new_callable=AsyncMock):
+            resp = auth_client.post(
+                "/api/auth/forgot-password",
+                json={"email": user.email},
+            )
+        assert resp.status_code == 200
+
+        # Verify token was created in DB
+        async def check_token():
+            result = await db_session.execute(select(PasswordResetToken).where(PasswordResetToken.user_id == user.id))
+            return result.scalar_one_or_none()
+
+        token = asyncio.get_event_loop().run_until_complete(check_token())
+        assert token is not None
+        assert token.user_id == user.id
+        assert len(token.token) > 0
+
+    def test_replaces_existing_token(self, auth_client, db_session):
+        """If user already has a reset token, old one is deleted and replaced."""
+        import asyncio
+
+        user = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+
+        # Create an existing token
+        old_token_str = "old-token-value-for-replacement-test"
+        old_token = PasswordResetToken(
+            user_id=user.id,
+            token=old_token_str,
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
+        )
+        db_session.add(old_token)
+        asyncio.get_event_loop().run_until_complete(db_session.commit())
+
+        with patch("app.api.auth_routes.send_password_reset_email", new_callable=AsyncMock):
+            resp = auth_client.post(
+                "/api/auth/forgot-password",
+                json={"email": user.email},
+            )
+        assert resp.status_code == 200
+
+        # Old token should be gone, new one created
+        async def check():
+            result = await db_session.execute(select(PasswordResetToken).where(PasswordResetToken.user_id == user.id))
+            return result.scalar_one_or_none()
+
+        new_token = asyncio.get_event_loop().run_until_complete(check())
+        assert new_token is not None
+        assert new_token.token != old_token_str
+
+    def test_email_send_failure_still_returns_200(self, auth_client, db_session):
+        """If SMTP fails, endpoint still returns 200 — no info leak."""
+        import asyncio
+
+        user = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+
+        with patch("app.api.auth_routes.send_password_reset_email", new_callable=AsyncMock) as mock_send:
+            mock_send.side_effect = Exception("SMTP connection refused")
+            resp = auth_client.post(
+                "/api/auth/forgot-password",
+                json={"email": user.email},
+            )
+        assert resp.status_code == 200
+
+    def test_missing_email_returns_422(self, auth_client, db_session):
+        resp = auth_client.post(
+            "/api/auth/forgot-password",
+            json={},
+        )
+        assert resp.status_code == 422
+
+    def test_invalid_email_format_returns_422(self, auth_client, db_session):
+        resp = auth_client.post(
+            "/api/auth/forgot-password",
+            json={"email": "not-an-email"},
+        )
+        assert resp.status_code == 422
+
+    def test_rate_limit_returns_429(self, auth_client, db_session):
+        _incr_counters["ratelimit:forgot_password:testclient"] = 6
+
+        resp = auth_client.post(
+            "/api/auth/forgot-password",
+            json={"email": "test@example.com"},
+        )
+        assert resp.status_code == 429
+
+
+# ---------------------------------------------------------------------------
+# POST /api/auth/reset-password
+# ---------------------------------------------------------------------------
+
+
+class TestResetPassword:
+    """POST /api/auth/reset-password — resets password with valid token."""
+
+    async def _setup(self, db_session):
+        """Create a verified user and a reset token."""
+        user = await _create_verified_user(db_session)
+        token_str = "valid-reset-token-32-bytes!!"
+        reset_token = PasswordResetToken(
+            user_id=user.id,
+            token=token_str,
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
+        )
+        db_session.add(reset_token)
+        await db_session.commit()
+        return user, token_str
+
+    def test_success_resets_password(self, auth_client, db_session):
+        import asyncio
+
+        user, token_str = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+
+        # SQLite may or may not strip timezone from DateTime(timezone=True).
+        # The endpoint now normalizes expires_at to UTC-aware before comparison.
+        with patch("app.api.auth_routes.datetime") as mock_dt:
+            mock_dt.now.side_effect = lambda *a, **kw: datetime.now(UTC)
+            resp = auth_client.post(
+                "/api/auth/reset-password",
+                json={
+                    "token": token_str,
+                    "new_password": "NewStrong1",
+                    "confirm_password": "NewStrong1",
+                },
+            )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "message" in data
+
+        # Verify password was actually changed
+        async def check_password():
+            result = await db_session.execute(select(User).where(User.id == user.id))
+            u = result.scalar_one()
+            return u.password_hash
+
+        new_hash = asyncio.get_event_loop().run_until_complete(check_password())
+        assert new_hash != "fake-hash"
+
+    def test_token_deleted_after_success(self, auth_client, db_session):
+        import asyncio
+
+        user, token_str = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+
+        with patch("app.api.auth_routes.datetime") as mock_dt:
+            mock_dt.now.side_effect = lambda *a, **kw: datetime.now(UTC)
+            resp = auth_client.post(
+                "/api/auth/reset-password",
+                json={
+                    "token": token_str,
+                    "new_password": "NewStrong1",
+                    "confirm_password": "NewStrong1",
+                },
+            )
+        assert resp.status_code == 200
+
+        # Token should be deleted
+        async def check_deleted():
+            result = await db_session.execute(select(PasswordResetToken).where(PasswordResetToken.token == token_str))
+            return result.scalar_one_or_none()
+
+        remaining = asyncio.get_event_loop().run_until_complete(check_deleted())
+        assert remaining is None
+
+    def test_invalid_token_returns_400(self, auth_client, db_session):
+        import asyncio
+
+        asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+
+        with patch("app.api.auth_routes.datetime") as mock_dt:
+            mock_dt.now.side_effect = lambda *a, **kw: datetime.now(UTC)
+            resp = auth_client.post(
+                "/api/auth/reset-password",
+                json={
+                    "token": "nonexistent-token-32-bytes!",
+                    "new_password": "NewStrong1",
+                    "confirm_password": "NewStrong1",
+                },
+            )
+        assert resp.status_code == 400
+
+    def test_expired_token_returns_400(self, auth_client, db_session):
+        import asyncio
+
+        user = asyncio.get_event_loop().run_until_complete(_create_verified_user(db_session))
+        token_str = "expired-reset-token-32-bytes"
+        reset_token = PasswordResetToken(
+            user_id=user.id,
+            token=token_str,
+            expires_at=datetime.now(UTC) - timedelta(hours=1),
+        )
+        db_session.add(reset_token)
+        asyncio.get_event_loop().run_until_complete(db_session.commit())
+
+        with patch("app.api.auth_routes.datetime") as mock_dt:
+            mock_dt.now.side_effect = lambda *a, **kw: datetime.now(UTC)
+            resp = auth_client.post(
+                "/api/auth/reset-password",
+                json={
+                    "token": token_str,
+                    "new_password": "NewStrong1",
+                    "confirm_password": "NewStrong1",
+                },
+            )
+        assert resp.status_code == 400
+
+    def test_password_mismatch_returns_400(self, auth_client, db_session):
+        import asyncio
+
+        user, token_str = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+
+        resp = auth_client.post(
+            "/api/auth/reset-password",
+            json={
+                "token": token_str,
+                "new_password": "NewStrong1",
+                "confirm_password": "Different1",
+            },
+        )
+        assert resp.status_code == 400
+
+    def test_weak_password_no_uppercase_returns_422(self, auth_client, db_session):
+        import asyncio
+
+        user, token_str = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+
+        resp = auth_client.post(
+            "/api/auth/reset-password",
+            json={
+                "token": token_str,
+                "new_password": "nouppercase1",
+                "confirm_password": "nouppercase1",
+            },
+        )
+        assert resp.status_code == 422
+
+    def test_weak_password_no_digit_returns_422(self, auth_client, db_session):
+        import asyncio
+
+        user, token_str = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+
+        resp = auth_client.post(
+            "/api/auth/reset-password",
+            json={
+                "token": token_str,
+                "new_password": "NoDigitHere",
+                "confirm_password": "NoDigitHere",
+            },
+        )
+        assert resp.status_code == 422
+
+    def test_short_password_returns_422(self, auth_client, db_session):
+        import asyncio
+
+        user, token_str = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+
+        resp = auth_client.post(
+            "/api/auth/reset-password",
+            json={
+                "token": token_str,
+                "new_password": "Short1",
+                "confirm_password": "Short1",
+            },
+        )
+        assert resp.status_code == 422
+
+    def test_missing_token_returns_422(self, auth_client, db_session):
+        resp = auth_client.post(
+            "/api/auth/reset-password",
+            json={
+                "new_password": "NewStrong1",
+                "confirm_password": "NewStrong1",
+            },
+        )
+        assert resp.status_code == 422
+
+    def test_missing_password_returns_422(self, auth_client, db_session):
+        resp = auth_client.post(
+            "/api/auth/reset-password",
+            json={"token": "some-token"},
+        )
+        assert resp.status_code == 422
 
 
 # ---------------------------------------------------------------------------
