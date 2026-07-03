@@ -8,14 +8,14 @@ import { ErrorBoundaryFallback } from "@/components/ErrorBoundaryFallback";
  * (nav, sidebar) remains functional so users can navigate away.
  */
 export function PageBoundary({
-  children: Page,
+  component: Component,
 }: {
-  children: ComponentType<unknown>;
+  component: ComponentType<unknown>;
 }) {
   return (
     <ErrorBoundary FallbackComponent={ErrorBoundaryFallback}>
       <Suspense fallback={<div>Loading...</div>}>
-        <Page />
+        <Component />
       </Suspense>
     </ErrorBoundary>
   );
