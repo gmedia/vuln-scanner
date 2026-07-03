@@ -281,7 +281,7 @@ async def forgot_password(
 @router.post("/reset-password", response_model=MessageResponse)
 async def reset_password(
     request: Request, body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)
-) -> MessageResponse:
+) -> MessageResponse | Response:
     limit_response = await reset_password_limiter(request)
     if limit_response:
         return limit_response
@@ -440,7 +440,7 @@ async def change_password(
     body: ChangePasswordRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> MessageResponse:
+) -> MessageResponse | Response:
     limit_response = await change_password_limiter(request)
     if limit_response:
         return limit_response

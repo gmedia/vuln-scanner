@@ -20,10 +20,8 @@ function VerifyEmail() {
   const token = searchParams.get("token");
 
   useEffect(() => {
-    return () => {
-      clearError();
-    };
-  }, [clearError]);
+    clearError();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!token) return;
