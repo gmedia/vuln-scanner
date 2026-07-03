@@ -4,6 +4,10 @@ from datetime import UTC, datetime
 import pytest
 from pydantic import ValidationError
 
+from app.schemas.auth import (
+    ChangePasswordRequest,
+    ResetPasswordRequest,
+)
 from app.schemas.scan import (
     DomainScanRequest,
     ErrorResponse,
@@ -114,3 +118,93 @@ class TestScanFindingResponseFromOrm:
         assert finding.severity == "high"
         assert finding.cvss_score == 7.5
         assert finding.cve_id == "CVE-2024-1234"
+
+
+# ---------------------------------------------------------------------------
+# ResetPasswordRequest — password strength validator
+# ---------------------------------------------------------------------------
+
+
+class TestResetPasswordRequest:
+    def test_valid(self):
+        req = ResetPasswordRequest(
+            token="abc123",
+            new_password="Valid1Pass",
+            confirm_password="Valid1Pass",
+        )
+        assert req.new_password == "Valid1Pass"
+        assert req.token == "abc123"
+
+    @pytest.mark.parametrize(
+        "password,expected_msg",
+        [
+            ("nouppercase1", "Password must contain at least one uppercase letter"),
+            ("NOLOWERCASE1", "Password must contain at least one lowercase letter"),
+            ("NoDigitsHere", "Password must contain at least one digit"),
+        ],
+    )
+    def test_rejects_weak_passwords(self, password, expected_msg):
+        with pytest.raises(ValidationError) as exc_info:
+            ResetPasswordRequest(
+                token="abc123",
+                new_password=password,
+                confirm_password=password,
+            )
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert expected_msg in errors[0]["msg"]
+
+    def test_rejects_too_short(self):
+        with pytest.raises(ValidationError) as exc_info:
+            ResetPasswordRequest(
+                token="abc123",
+                new_password="Ab1",
+                confirm_password="Ab1",
+            )
+        errors = exc_info.value.errors()
+        assert any("String should have at least 8 characters" in e["msg"] for e in errors)
+
+
+# ---------------------------------------------------------------------------
+# ChangePasswordRequest — password strength validator
+# ---------------------------------------------------------------------------
+
+
+class TestChangePasswordRequest:
+    def test_valid(self):
+        req = ChangePasswordRequest(
+            current_password="OldPass123",
+            new_password="NewPass456",
+            confirm_password="NewPass456",
+        )
+        assert req.new_password == "NewPass456"
+        assert req.current_password == "OldPass123"
+
+    @pytest.mark.parametrize(
+        "password,expected_msg",
+        [
+            ("nouppercase1", "Password must contain at least one uppercase letter"),
+            ("NOLOWERCASE1", "Password must contain at least one lowercase letter"),
+            ("NoDigitsHere", "Password must contain at least one digit"),
+        ],
+    )
+    def test_rejects_weak_passwords(self, password, expected_msg):
+        with pytest.raises(ValidationError) as exc_info:
+            ChangePasswordRequest(
+                current_password="OldPass123",
+                new_password=password,
+                confirm_password=password,
+            )
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert expected_msg in errors[0]["msg"]
+
+    def test_rejects_too_short(self):
+        with pytest.raises(ValidationError) as exc_info:
+            ChangePasswordRequest(
+                current_password="OldPass123",
+                new_password="Ab1",
+                confirm_password="Ab1",
+            )
+        errors = exc_info.value.errors()
+        assert any("String should have at least 8 characters" in e["msg"] for e in errors)
