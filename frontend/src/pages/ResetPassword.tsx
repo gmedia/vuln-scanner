@@ -66,7 +66,6 @@ function ResetPassword() {
       setSuccess(true);
     } else {
       setIsSubmitting(false);
-      // Start cooldown on rate limit
       const errMsg = useAuthStore.getState().error;
       if (errMsg) {
         const match = errMsg.match(/wait (\d+) seconds/);

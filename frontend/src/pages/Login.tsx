@@ -93,6 +93,11 @@ function Login() {
               )}
             </Button>
           </form>
+          <p className="mt-4 text-center font-mono text-xs">
+            <Link to="/forgot-password" className="text-muted-foreground hover:text-primary hover:underline">
+              Forgot password?
+            </Link>
+          </p>
           <p className="mt-6 text-center font-mono text-xs text-muted-foreground">
             Don't have an account?{" "}
             <Link to="/register" className="text-primary hover:underline">
