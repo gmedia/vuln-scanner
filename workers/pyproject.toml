@@ -9,7 +9,7 @@ select = ["E", "F", "W", "I", "N", "UP", "B", "SIM"]
 quote-style = "double"
 
 [tool.pytest.ini_options]
-addopts = "--cov=. --cov-branch --cov-report=term-missing --cov-fail-under=76"
+addopts = "--cov=. --cov-branch --cov-report=term-missing --cov-report=html --cov-report=json --cov-fail-under=76"
 
 [tool.coverage.run]
 source = ["."]
@@ -18,6 +18,12 @@ omit = ["tests/*", "health_server.py", "celery_app.py"]
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
+
+[tool.coverage.html]
+directory = "coverage"
+
+[tool.coverage.json]
+output = "coverage-report.json"
 
 [tool.mypy]
 python_version = "3.12"

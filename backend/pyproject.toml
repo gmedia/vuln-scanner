@@ -13,7 +13,7 @@ quote-style = "double"
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
-addopts = "--cov=app --cov-branch --cov-report=term-missing --cov-fail-under=75"
+addopts = "--cov=app --cov-branch --cov-report=term-missing --cov-report=html --cov-report=json --cov-fail-under=75"
 
 [tool.coverage.run]
 concurrency = ["thread", "greenlet"]
@@ -22,6 +22,12 @@ source = ["app"]
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.json]
+output = "coverage.json"
 
 [tool.mypy]
 python_version = "3.12"
