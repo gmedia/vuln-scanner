@@ -42,9 +42,30 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(
-    title="Vuln Scanner API",
+    title="VulnScanner API",
+    description="""Vulnerability scanner with IP, domain, and mobile scan modes.
+
+## Authentication
+
+| Method | Header | Use Case |
+|--------|--------|----------|
+| **JWT Bearer** | `Authorization: Bearer <token>` | Dashboard users (web UI) |
+| **API Key** | `X-API-Key: <key>` | Programmatic / machine-to-machine |
+
+**JWT auth** is the primary auth for the dashboard. See `/api/auth/*` endpoints.
+**API Key auth** bypasses user auth for service-to-service calls.
+
+## Scan Types
+
+- **IP Scan** — Port scan via nmap (`-sV -sC -O`), CVE lookup via OSV.dev
+- **Domain Scan** — DNS resolution, subdomain enum (crt.sh), SSL/TLS analysis
+- **Mobile Scan** — APK/IPA manifest analysis, permission classification
+""",
     version="0.1.0",
     lifespan=lifespan,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
 )
 
 app.add_middleware(
