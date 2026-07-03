@@ -22,8 +22,8 @@ DEAD_LETTER_MAX = 1000
 def dead_letter_handler(
     self: Any,
     task_name: str,
-    args: list[Any],
-    kwargs: dict[str, Any],
+    args: list[object],
+    kwargs: dict[str, object],
     exception_info: str,
 ) -> None:
     """Handle a task that exhausted all retries.

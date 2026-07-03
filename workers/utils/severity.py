@@ -1,4 +1,4 @@
-from typing import Any
+from utils.scan_types import ScanFinding, SeveritySummary
 
 
 def classify_severity(cvss_score: float | None) -> str:
@@ -16,7 +16,7 @@ def classify_severity(cvss_score: float | None) -> str:
     return "info"
 
 
-def compute_severity_summary(findings: list[dict[str, Any]]) -> dict[str, Any]:
+def compute_severity_summary(findings: list[ScanFinding]) -> SeveritySummary:
     """Count findings by severity level and return a summary with totals."""
     counts = {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0}
     for f in findings:
@@ -36,6 +36,6 @@ def compute_severity_summary(findings: list[dict[str, Any]]) -> dict[str, Any]:
 SEVERITY_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
 
 
-def sort_findings_by_severity(findings: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def sort_findings_by_severity(findings: list[ScanFinding]) -> list[ScanFinding]:
     """Sort findings in descending severity order (critical first, info last)."""
     return sorted(findings, key=lambda f: SEVERITY_ORDER.get(f.get("severity", "info"), 4))

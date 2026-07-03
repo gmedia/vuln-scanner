@@ -24,6 +24,7 @@ from utils.domain_utils import (
 )
 from utils.nmap_runner import findings_from_nmap, run_nmap
 from utils.redis_helpers import get_redis_pool
+from utils.scan_types import ScanFinding, TaskResult
 from utils.severity import compute_severity_summary, sort_findings_by_severity
 
 
@@ -49,7 +50,7 @@ def _run_async(coro: Any) -> Any:
 
 
 @shared_task(bind=True, name="domain_scan.run", max_retries=3)  # type: ignore
-def run_domain_scan(self: Any, job_id: str, domain: str) -> dict[str, Any]:
+def run_domain_scan(self: Any, job_id: str, domain: str) -> TaskResult:
     """Execute a full domain scan: DNS, subdomains, HTTP, SSL, headers, tech stack, nmap, and CVEs."""
     logger.info("Domain scan started: job={job_id} domain={domain}", job_id=job_id, domain=domain)
     domain = domain.lower().strip()
@@ -209,17 +210,18 @@ def run_domain_scan(self: Any, job_id: str, domain: str) -> dict[str, Any]:
         raise self.retry(exc=e, countdown=60 * (2**self.request.retries)) from e
 
 
-def _update_status(session: Any, job_id: str, status: str, **kwargs: Any) -> None:
+def _update_status(session: Any, job_id: str, status: str, **kwargs: object) -> None:
     from app.models.scan_job import ScanJob
 
     values = {"status": status, **kwargs}
     session.execute(update(ScanJob).where(ScanJob.id == job_id).values(**values))
 
 
-def _save_findings(session: Any, job_id: str, findings: list[dict[str, Any]]) -> None:
+def _save_findings(session: Any, job_id: str, findings: list[ScanFinding]) -> None:
     from app.models.scan_finding import ScanFinding
 
     for f in findings:
+        cve_id_raw = f.get("cve_id", "")
         finding = ScanFinding(
             id=uuid.uuid4(),
             job_id=job_id,
@@ -227,7 +229,7 @@ def _save_findings(session: Any, job_id: str, findings: list[dict[str, Any]]) ->
             category=f.get("category", ""),
             title=f.get("title", "")[:500],
             description=f.get("description", "")[:2000],
-            cve_id=f.get("cve_id", "")[:20] if f.get("cve_id") else None,
+            cve_id=cve_id_raw[:20] if cve_id_raw else None,
             cvss_score=f.get("cvss_score"),
             remediation=f.get("remediation"),
             raw_data=f.get("raw_data"),

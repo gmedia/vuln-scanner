@@ -16,6 +16,7 @@ from utils.cve_lookup import extract_cvss, format_vuln_finding, lookup_service_c
 from utils.database import get_sync_session
 from utils.nmap_runner import findings_from_nmap, run_nmap
 from utils.redis_helpers import get_redis_pool
+from utils.scan_types import ScanFinding, TaskResult
 from utils.severity import compute_severity_summary, sort_findings_by_severity
 
 
@@ -41,7 +42,7 @@ def _run_async(coro: Any) -> Any:
 
 
 @shared_task(bind=True, name="ip_scan.run", max_retries=3)  # type: ignore
-def run_ip_scan(self: Any, job_id: str, target: str, ports: str = "1-1000") -> dict[str, Any]:
+def run_ip_scan(self: Any, job_id: str, target: str, ports: str = "1-1000") -> TaskResult:
     """Execute a full IP scan: nmap, CVE lookup, and persist findings to the database."""
     logger.info(
         "IP scan started: job={job_id} target={target} ports={ports}", job_id=job_id, target=target, ports=ports
@@ -175,7 +176,7 @@ def run_ip_scan(self: Any, job_id: str, target: str, ports: str = "1-1000") -> d
         raise self.retry(exc=e, countdown=60 * (2**self.request.retries)) from e
 
 
-def _update_status(session: Any, job_id: str, status: str, **kwargs: Any) -> None:
+def _update_status(session: Any, job_id: str, status: str, **kwargs: object) -> None:
     from app.models.scan_job import ScanJob
 
     values = {"status": status, **kwargs}
@@ -183,10 +184,11 @@ def _update_status(session: Any, job_id: str, status: str, **kwargs: Any) -> Non
     session.execute(stmt)
 
 
-def _save_findings(session: Any, job_id: str, findings: list[dict[str, Any]]) -> None:
+def _save_findings(session: Any, job_id: str, findings: list[ScanFinding]) -> None:
     from app.models.scan_finding import ScanFinding
 
     for f in findings:
+        cve_id_raw = f.get("cve_id", "")
         finding = ScanFinding(
             id=uuid.uuid4(),
             job_id=job_id,
@@ -194,7 +196,7 @@ def _save_findings(session: Any, job_id: str, findings: list[dict[str, Any]]) ->
             category=f.get("category", ""),
             title=f.get("title", "")[:500],
             description=f.get("description", "")[:2000],
-            cve_id=f.get("cve_id", "")[:20] if f.get("cve_id") else None,
+            cve_id=cve_id_raw[:20] if cve_id_raw else None,
             cvss_score=f.get("cvss_score"),
             remediation=f.get("remediation"),
             raw_data=f.get("raw_data"),
