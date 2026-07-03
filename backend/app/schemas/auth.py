@@ -104,3 +104,29 @@ class RevokeRequest(BaseModel):
 class LogoutAllResponse(BaseModel):
     message: str
     revoked_count: int
+
+
+class UpdateProfileRequest(BaseModel):
+    email: EmailStr = Field(..., max_length=254)
+    current_password: str = Field(..., min_length=8, max_length=128)
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(..., min_length=8, max_length=128)
+    new_password: str = Field(
+        ...,
+        min_length=8,
+        max_length=128,
+    )
+    confirm_password: str = Field(..., max_length=128)
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        if not any(c.isupper() for c in v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not any(c.islower() for c in v):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Password must contain at least one digit")
+        return v

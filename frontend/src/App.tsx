@@ -11,12 +11,15 @@ const Landing = lazy(() => import("@/pages/Landing"));
 const Login = lazy(() => import("@/pages/Login"));
 const Register = lazy(() => import("@/pages/Register"));
 const VerifyEmail = lazy(() => import("@/pages/VerifyEmail"));
+const ForgotPassword = lazy(() => import("@/pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const IpScanner = lazy(() => import("@/pages/IpScanner"));
 const DomainScanner = lazy(() => import("@/pages/DomainScanner"));
 const MobileScanner = lazy(() => import("@/pages/MobileScanner"));
 const ScanDetail = lazy(() => import("@/pages/ScanDetail"));
 const CreditHistory = lazy(() => import("@/pages/credit/CreditHistory"));
+const Profile = lazy(() => import("@/pages/Profile"));
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
 const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
 const AdminUserDetail = lazy(() => import("@/pages/admin/AdminUserDetail"));
@@ -32,6 +35,8 @@ function App() {
         <Route path="/login" element={<PageBoundary component={Login} />} />
         <Route path="/register" element={<PageBoundary component={Register} />} />
         <Route path="/verify-email" element={<PageBoundary component={VerifyEmail} />} />
+        <Route path="/forgot-password" element={<PageBoundary component={ForgotPassword} />} />
+        <Route path="/reset-password" element={<PageBoundary component={ResetPassword} />} />
 
         {/* Protected routes — wrapped in AppShell */}
         <Route element={<ProtectedRoute />}>
@@ -42,6 +47,7 @@ function App() {
             <Route path="/scan/mobile" element={<PageBoundary component={MobileScanner} />} />
             <Route path="/scan/:id" element={<PageBoundary component={ScanDetail} />} />
             <Route path="/credit-history" element={<PageBoundary component={CreditHistory} />} />
+            <Route path="/profile" element={<PageBoundary component={Profile} />} />
 
             {/* Admin routes */}
             <Route element={<AdminRoute />}>

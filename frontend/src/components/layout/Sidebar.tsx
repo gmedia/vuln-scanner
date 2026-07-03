@@ -1,5 +1,5 @@
 import { Link, NavLink } from "react-router-dom";
-import { X, LayoutDashboard, Radar, Globe, Smartphone, Crosshair, Shield, Users, DollarSign, History } from "lucide-react";
+import { X, LayoutDashboard, Radar, Globe, Smartphone, Crosshair, Shield, Users, DollarSign, History, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useScanStore } from "@/store/scanStore";
 import { useAuthStore } from "@/store/authStore";
@@ -79,6 +79,22 @@ function Sidebar({ open, onClose }: SidebarProps) {
         >
           <History className="h-4 w-4 shrink-0" />
           Credit History
+        </NavLink>
+
+        <NavLink
+          to="/profile"
+          onClick={onClose}
+          className={({ isActive }) =>
+            cn(
+              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
+              isActive
+                ? "bg-primary/10 text-primary [&>svg]:text-primary"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground",
+            )
+          }
+        >
+          <User className="h-4 w-4 shrink-0" />
+          Profile
         </NavLink>
 
         {isAdmin && (

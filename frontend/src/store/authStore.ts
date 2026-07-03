@@ -3,8 +3,18 @@ import * as authApi from "../api/auth";
 import { isAxiosError } from "axios";
 
 function extractError(err: unknown, fallback: string): string {
-  if (isAxiosError(err) && err.response?.data?.detail) {
-    return err.response.data.detail;
+  if (isAxiosError(err)) {
+    if (err.response?.status === 429) {
+      const retryAfter = err.response.headers?.["retry-after"];
+      const seconds = retryAfter ? parseInt(retryAfter, 10) : null;
+      if (seconds && !isNaN(seconds)) {
+        return `Too many attempts. Please wait ${seconds} seconds before trying again.`;
+      }
+      return "Too many attempts. Please wait before trying again.";
+    }
+    if (err.response?.data?.detail) {
+      return err.response.data.detail;
+    }
   }
   return err instanceof Error ? err.message : fallback;
 }
@@ -31,6 +41,19 @@ interface AuthStore {
   ) => Promise<boolean>;
   logout: () => Promise<void>;
   verifyEmail: (token: string) => Promise<boolean>;
+  resendVerification: (email: string) => Promise<boolean>;
+  updateProfile: (email: string, currentPassword: string) => Promise<boolean>;
+  changePassword: (
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string,
+  ) => Promise<boolean>;
+  forgotPassword: (email: string) => Promise<boolean>;
+  resetPassword: (
+    token: string,
+    newPassword: string,
+    confirmPassword: string,
+  ) => Promise<boolean>;
   refreshAuth: () => Promise<boolean>;
   clearError: () => void;
   initialize: () => Promise<void>;
@@ -131,6 +154,83 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       return true;
     } catch (err) {
       const message = extractError(err, "Verifikasi email gagal");
+      set({ error: message, isLoading: false });
+      return false;
+    }
+  },
+
+  resendVerification: async (email) => {
+    set({ isLoading: true, error: null });
+    try {
+      await authApi.resendVerification(email);
+      set({ isLoading: false });
+      return true;
+    } catch (err) {
+      const message = extractError(
+        err,
+        "Gagal mengirim ulang email verifikasi",
+      );
+      set({ error: message, isLoading: false });
+      return false;
+    }
+  },
+
+  updateProfile: async (email, currentPassword) => {
+    set({ isLoading: true, error: null });
+    try {
+      await authApi.updateProfile(email, currentPassword);
+      const currentUser = get().user;
+      if (currentUser) {
+        set({ user: { ...currentUser, email }, isLoading: false });
+      } else {
+        set({ isLoading: false });
+      }
+      return true;
+    } catch (err) {
+      const message = extractError(err, "Gagal memperbarui profil");
+      set({ error: message, isLoading: false });
+      return false;
+    }
+  },
+
+  changePassword: async (currentPassword, newPassword, confirmPassword) => {
+    set({ isLoading: true, error: null });
+    try {
+      await authApi.changePassword(
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      );
+      set({ isLoading: false, error: null });
+      return true;
+    } catch (err) {
+      const message = extractError(err, "Gagal mengubah kata sandi");
+      set({ error: message, isLoading: false });
+      return false;
+    }
+  },
+
+  forgotPassword: async (email) => {
+    set({ isLoading: true, error: null });
+    try {
+      await authApi.forgotPassword(email);
+      set({ isLoading: false });
+      return true;
+    } catch (err) {
+      const message = extractError(err, "Gagal mengirim email reset password");
+      set({ error: message, isLoading: false });
+      return false;
+    }
+  },
+
+  resetPassword: async (token, newPassword, confirmPassword) => {
+    set({ isLoading: true, error: null });
+    try {
+      await authApi.resetPassword(token, newPassword, confirmPassword);
+      set({ isLoading: false, error: null });
+      return true;
+    } catch (err) {
+      const message = extractError(err, "Gagal mereset password");
       set({ error: message, isLoading: false });
       return false;
     }
