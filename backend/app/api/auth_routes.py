@@ -17,6 +17,7 @@ from app.models.email_verification import EmailVerificationToken
 from app.models.password_reset import PasswordResetToken
 from app.models.user import User
 from app.schemas.auth import (
+    ChangePasswordRequest,
     ForgotPasswordRequest,
     LoginRequest,
     LoginResponse,
@@ -27,6 +28,7 @@ from app.schemas.auth import (
     ResetPasswordRequest,
     RevokeRequest,
     TokenResponse,
+    UpdateProfileRequest,
     UserResponse,
     VerifyEmailRequest,
 )
@@ -51,6 +53,9 @@ register_limiter = RateLimiter(max_requests=3, window_seconds=60, prefix="rateli
 refresh_limiter = RateLimiter(max_requests=10, window_seconds=60, prefix="ratelimit:refresh")
 verify_email_limiter = RateLimiter(max_requests=5, window_seconds=60, prefix="ratelimit:verify_email")
 forgot_password_limiter = RateLimiter(max_requests=5, window_seconds=60, prefix="ratelimit:forgot_password")
+reset_password_limiter = RateLimiter(max_requests=5, window_seconds=60, prefix="ratelimit:reset_password")
+resend_verification_limiter = RateLimiter(max_requests=3, window_seconds=60, prefix="ratelimit:resend_verification")
+change_password_limiter = RateLimiter(max_requests=3, window_seconds=60, prefix="ratelimit:change_password")
 
 
 @router.post("/register", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
@@ -201,6 +206,43 @@ async def verify_email(
     return MessageResponse(message="Email berhasil diverifikasi")
 
 
+@router.post("/resend-verification", response_model=MessageResponse)
+async def resend_verification(
+    request: Request, body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)
+) -> MessageResponse | Response:
+    limit_response = await resend_verification_limiter(request)
+    if limit_response:
+        return limit_response
+
+    result = await db.execute(select(User).where(User.email == body.email))
+    user = result.scalar_one_or_none()
+    if user is None or user.is_verified is True:
+        return MessageResponse(message="Verification email sent. Please check your inbox.")
+
+    token_str = secrets.token_urlsafe(32)
+
+    existing = await db.execute(select(EmailVerificationToken).where(EmailVerificationToken.user_id == user.id))
+    old_token = existing.scalar_one_or_none()
+    if old_token is not None:
+        await db.delete(old_token)
+        await db.flush()
+
+    verification_token = EmailVerificationToken(
+        user_id=user.id,
+        token=token_str,
+        expires_at=datetime.now(UTC) + timedelta(hours=24),
+    )
+    db.add(verification_token)
+    await db.commit()
+
+    try:
+        await send_verification_email(email_to=user.email, token=token_str)
+    except Exception:
+        logger.exception("Failed to resend verification email to %s", user.email)
+
+    return MessageResponse(message="Verification email sent. Please check your inbox.")
+
+
 @router.post("/forgot-password", response_model=MessageResponse)
 async def forgot_password(
     request: Request, body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)
@@ -239,7 +281,11 @@ async def forgot_password(
 @router.post("/reset-password", response_model=MessageResponse)
 async def reset_password(
     request: Request, body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)
-) -> MessageResponse:
+) -> MessageResponse | Response:
+    limit_response = await reset_password_limiter(request)
+    if limit_response:
+        return limit_response
+
     if body.new_password != body.confirm_password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -360,6 +406,67 @@ async def refresh(
         refresh_token=new_refresh_token,
         expires_in=access_minutes * 60,
     )
+
+
+@router.put("/profile", response_model=MessageResponse)
+async def update_profile(
+    body: UpdateProfileRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> MessageResponse:
+    if not verify_password(body.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Kata sandi saat ini salah",
+        )
+
+    if body.email != current_user.email:
+        result = await db.execute(select(User).where(User.email == body.email))
+        existing = result.scalar_one_or_none()
+        if existing is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email sudah digunakan",
+            )
+        current_user.email = body.email
+        await db.commit()
+
+    return MessageResponse(message="Profil berhasil diperbarui")
+
+
+@router.post("/change-password", response_model=MessageResponse)
+async def change_password(
+    request: Request,
+    body: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> MessageResponse | Response:
+    limit_response = await change_password_limiter(request)
+    if limit_response:
+        return limit_response
+
+    if not verify_password(body.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Kata sandi saat ini salah",
+        )
+
+    if body.new_password != body.confirm_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Kata sandi tidak cocok",
+        )
+
+    if verify_password(body.new_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Kata sandi baru tidak boleh sama dengan kata sandi saat ini",
+        )
+
+    current_user.password_hash = hash_password(body.new_password)
+    await db.commit()
+
+    return MessageResponse(message="Kata sandi berhasil diubah")
 
 
 @router.get("/me", response_model=UserResponse)

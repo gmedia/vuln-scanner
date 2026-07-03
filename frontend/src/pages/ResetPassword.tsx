@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { Crosshair, Loader2, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
+import { Crosshair, Loader2, ArrowLeft, CheckCircle, AlertCircle, Timer } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { useRateLimitCooldown } from "@/hooks/useRateLimitCooldown";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
@@ -15,6 +16,7 @@ function ResetPassword() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const { cooldown, startCooldown } = useRateLimitCooldown();
 
   useEffect(() => {
     return () => {
@@ -64,6 +66,13 @@ function ResetPassword() {
       setSuccess(true);
     } else {
       setIsSubmitting(false);
+      const errMsg = useAuthStore.getState().error;
+      if (errMsg) {
+        const match = errMsg.match(/wait (\d+) seconds/);
+        if (match) {
+          startCooldown(parseInt(match[1], 10));
+        }
+      }
     }
   };
 
@@ -103,7 +112,13 @@ function ResetPassword() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {(validationError || error) && (
+            {cooldown > 0 && (
+              <p className="font-mono text-xs text-amber-400 text-center flex items-center justify-center gap-1">
+                <Timer className="h-3 w-3" />
+                Too many attempts. Wait {cooldown}s
+              </p>
+            )}
+            {(validationError || error) && cooldown === 0 && (
               <p className="font-mono text-xs text-red-400 text-center">
                 {validationError || error}
               </p>
@@ -136,8 +151,13 @@ function ResetPassword() {
                 disabled={isSubmitting}
               />
             </div>
-            <Button type="submit" className="w-full font-mono text-sm" disabled={isSubmitting}>
-              {isSubmitting ? (
+            <Button type="submit" className="w-full font-mono text-sm" disabled={isSubmitting || cooldown > 0}>
+              {cooldown > 0 ? (
+                <>
+                  <Timer className="mr-2 h-4 w-4" />
+                  Wait {cooldown}s
+                </>
+              ) : isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Resetting password...
