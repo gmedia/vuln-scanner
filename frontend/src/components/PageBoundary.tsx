@@ -1,4 +1,4 @@
-import { ComponentType, lazy, Suspense } from "react";
+import { ComponentType, Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { ErrorBoundaryFallback } from "@/components/ErrorBoundaryFallback";
 
@@ -8,15 +8,14 @@ import { ErrorBoundaryFallback } from "@/components/ErrorBoundaryFallback";
  * (nav, sidebar) remains functional so users can navigate away.
  */
 export function PageBoundary({
-  loader,
+  children: Page,
 }: {
-  loader: () => Promise<{ default: ComponentType<unknown> }>;
+  children: ComponentType<unknown>;
 }) {
-  const LazyComponent = lazy(loader);
   return (
     <ErrorBoundary FallbackComponent={ErrorBoundaryFallback}>
       <Suspense fallback={<div>Loading...</div>}>
-        <LazyComponent />
+        <Page />
       </Suspense>
     </ErrorBoundary>
   );
