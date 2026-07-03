@@ -29,6 +29,6 @@ class User(Base):
     )
 
     scan_jobs: Mapped[list["ScanJob"]] = relationship(back_populates="user")
-    credit_logs: Mapped[list["CreditLog"]] = relationship(back_populates="user")
+    credit_logs: Mapped[list["CreditLog"]] = relationship(back_populates="user", foreign_keys="[CreditLog.user_id]")
 
     __table_args__ = (CheckConstraint("credits >= 0", name="ck_user_credits_non_negative"),)
