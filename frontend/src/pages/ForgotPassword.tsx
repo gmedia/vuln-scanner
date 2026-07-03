@@ -1,23 +1,16 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Crosshair, Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Crosshair, Loader2, ArrowLeft, CheckCircle } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 
-function Login() {
-  const navigate = useNavigate();
-  const { login, error, isAuthenticated, clearError } = useAuthStore();
+function ForgotPassword() {
+  const { forgotPassword, error, clearError } = useAuthStore();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/dashboard");
-    }
-  }, [isAuthenticated, navigate]);
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -28,13 +21,36 @@ function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const success = await login(email, password);
-    if (success) {
-      navigate("/dashboard");
+    const ok = await forgotPassword(email);
+    if (ok) {
+      setSuccess(true);
     } else {
       setIsSubmitting(false);
     }
   };
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 text-center space-y-4">
+            <CheckCircle className="h-12 w-12 text-primary mx-auto" />
+            <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
+              Check Your Email
+            </h2>
+            <p className="font-mono text-xs text-muted-foreground">
+              We've sent a password reset link to your email address.
+            </p>
+            <Link to="/login">
+              <Button className="w-full font-mono text-sm mt-4">
+                Back to Sign In
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
@@ -44,7 +60,7 @@ function Login() {
             <Crosshair className="h-6 w-6 text-primary" />
           </div>
           <CardTitle className="font-mono text-lg tracking-wide">
-            Sign In
+            Reset Password
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -68,40 +84,21 @@ function Login() {
                 disabled={isSubmitting}
               />
             </div>
-            <div className="space-y-2">
-              <label htmlFor="password" className="block font-mono text-xs text-muted-foreground">
-                Password
-              </label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                disabled={isSubmitting}
-              />
-            </div>
             <Button type="submit" className="w-full font-mono text-sm" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
+                  Sending reset link...
                 </>
               ) : (
-                "Sign In"
+                "Send Reset Link"
               )}
             </Button>
           </form>
-          <p className="mt-4 text-center font-mono text-xs">
-            <Link to="/forgot-password" className="text-muted-foreground hover:text-primary hover:underline">
-              Forgot password?
-            </Link>
-          </p>
           <p className="mt-6 text-center font-mono text-xs text-muted-foreground">
-            Don't have an account?{" "}
-            <Link to="/register" className="text-primary hover:underline">
-              Register
+            <Link to="/login" className="inline-flex items-center gap-1 hover:text-primary hover:underline">
+              <ArrowLeft className="h-3 w-3" />
+              Back to sign in
             </Link>
           </p>
         </CardContent>
@@ -110,4 +107,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default ForgotPassword;

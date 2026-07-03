@@ -31,6 +31,12 @@ interface AuthStore {
   ) => Promise<boolean>;
   logout: () => Promise<void>;
   verifyEmail: (token: string) => Promise<boolean>;
+  forgotPassword: (email: string) => Promise<boolean>;
+  resetPassword: (
+    token: string,
+    newPassword: string,
+    confirmPassword: string,
+  ) => Promise<boolean>;
   refreshAuth: () => Promise<boolean>;
   clearError: () => void;
   initialize: () => Promise<void>;
@@ -131,6 +137,32 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       return true;
     } catch (err) {
       const message = extractError(err, "Verifikasi email gagal");
+      set({ error: message, isLoading: false });
+      return false;
+    }
+  },
+
+  forgotPassword: async (email) => {
+    set({ isLoading: true, error: null });
+    try {
+      await authApi.forgotPassword(email);
+      set({ isLoading: false });
+      return true;
+    } catch (err) {
+      const message = extractError(err, "Gagal mengirim email reset password");
+      set({ error: message, isLoading: false });
+      return false;
+    }
+  },
+
+  resetPassword: async (token, newPassword, confirmPassword) => {
+    set({ isLoading: true, error: null });
+    try {
+      await authApi.resetPassword(token, newPassword, confirmPassword);
+      set({ isLoading: false, error: null });
+      return true;
+    } catch (err) {
+      const message = extractError(err, "Gagal mereset password");
       set({ error: message, isLoading: false });
       return false;
     }
