@@ -63,6 +63,32 @@ class VerifyEmailRequest(BaseModel):
     token: str = Field(..., max_length=500, description="Email verification token")
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr = Field(..., max_length=254, description="Email address")
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(..., max_length=500, description="Password reset token")
+    new_password: str = Field(
+        ...,
+        min_length=8,
+        max_length=128,
+        description="Password must be at least 8 characters with uppercase, lowercase, and digit",
+    )
+    confirm_password: str = Field(..., max_length=128, description="Confirm password")
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        if not any(c.isupper() for c in v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not any(c.islower() for c in v):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Password must contain at least one digit")
+        return v
+
+
 class RefreshRequest(BaseModel):
     refresh_token: str | None = Field(default=None, max_length=500, description="Refresh token")
 

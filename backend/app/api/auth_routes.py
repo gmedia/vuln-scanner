@@ -14,14 +14,17 @@ from app.database import get_db
 from app.middleware.rate_limit import RateLimiter
 from app.models.credit_log import CreditLog
 from app.models.email_verification import EmailVerificationToken
+from app.models.password_reset import PasswordResetToken
 from app.models.user import User
 from app.schemas.auth import (
+    ForgotPasswordRequest,
     LoginRequest,
     LoginResponse,
     LogoutAllResponse,
     MessageResponse,
     RefreshRequest,
     RegisterRequest,
+    ResetPasswordRequest,
     RevokeRequest,
     TokenResponse,
     UserResponse,
@@ -37,7 +40,7 @@ from app.services.auth import (
     revoke_token,
     verify_password,
 )
-from app.services.email import send_verification_email
+from app.services.email import send_password_reset_email, send_verification_email
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +50,7 @@ login_limiter = RateLimiter(max_requests=5, window_seconds=60, prefix="ratelimit
 register_limiter = RateLimiter(max_requests=3, window_seconds=60, prefix="ratelimit:register")
 refresh_limiter = RateLimiter(max_requests=10, window_seconds=60, prefix="ratelimit:refresh")
 verify_email_limiter = RateLimiter(max_requests=5, window_seconds=60, prefix="ratelimit:verify_email")
+forgot_password_limiter = RateLimiter(max_requests=5, window_seconds=60, prefix="ratelimit:forgot_password")
 
 
 @router.post("/register", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
@@ -170,7 +174,12 @@ async def verify_email(
             detail="Token verifikasi tidak valid atau kadaluarsa",
         )
 
-    if verification_token.expires_at < datetime.now(UTC):
+    expires_at = (
+        verification_token.expires_at.replace(tzinfo=UTC)
+        if verification_token.expires_at.tzinfo is None
+        else verification_token.expires_at
+    )
+    if expires_at < datetime.now(UTC):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Token verifikasi tidak valid atau kadaluarsa",
@@ -190,6 +199,83 @@ async def verify_email(
     await db.commit()
 
     return MessageResponse(message="Email berhasil diverifikasi")
+
+
+@router.post("/forgot-password", response_model=MessageResponse)
+async def forgot_password(
+    request: Request, body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)
+) -> MessageResponse | Response:
+    limit_response = await forgot_password_limiter(request)
+    if limit_response:
+        return limit_response
+
+    result = await db.execute(select(User).where(User.email == body.email))
+    user = result.scalar_one_or_none()
+    if user is not None:
+        token_str = secrets.token_urlsafe(32)
+
+        existing = await db.execute(select(PasswordResetToken).where(PasswordResetToken.user_id == user.id))
+        old_token = existing.scalar_one_or_none()
+        if old_token is not None:
+            await db.delete(old_token)
+            await db.flush()
+
+        reset_token = PasswordResetToken(
+            user_id=user.id,
+            token=token_str,
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
+        )
+        db.add(reset_token)
+        await db.commit()
+
+        try:
+            await send_password_reset_email(email_to=user.email, token=token_str)
+        except Exception:
+            logger.exception("Failed to send password reset email to %s", user.email)
+
+    return MessageResponse(message="Jika email tersebut terdaftar, tautan reset telah dikirim")
+
+
+@router.post("/reset-password", response_model=MessageResponse)
+async def reset_password(
+    request: Request, body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)
+) -> MessageResponse:
+    if body.new_password != body.confirm_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Kata sandi tidak cocok",
+        )
+
+    result = await db.execute(select(PasswordResetToken).where(PasswordResetToken.token == body.token))
+    reset_token = result.scalar_one_or_none()
+    if reset_token is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token reset tidak valid atau kadaluarsa",
+        )
+
+    expires_at = (
+        reset_token.expires_at.replace(tzinfo=UTC) if reset_token.expires_at.tzinfo is None else reset_token.expires_at
+    )
+    if expires_at < datetime.now(UTC):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token reset tidak valid atau kadaluarsa",
+        )
+
+    user_result = await db.execute(select(User).where(User.id == reset_token.user_id))
+    user = user_result.scalar_one_or_none()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Pengguna tidak ditemukan",
+        )
+
+    user.password_hash = hash_password(body.new_password)
+    await db.delete(reset_token)
+    await db.commit()
+
+    return MessageResponse(message="Kata sandi berhasil direset")
 
 
 @router.post("/refresh", response_model=None)

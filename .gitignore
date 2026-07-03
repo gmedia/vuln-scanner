@@ -20,7 +20,7 @@ playwright-report/
 certbot/www/*
 certbot/conf/*
 backend/coverage.json
-workers/.coverage-report.json
+workers/coverage-report.json
 htmlcov/
 frontend/coverage/
 frontend/.nyc_output/
