@@ -94,6 +94,45 @@ class TestSecurityHeadersPresent:
         assert "geolocation=()" in resp.headers["Permissions-Policy"]
 
 
+class TestHstsHeader:
+    def test_hsts_is_set_when_cookie_secure(self):
+        """Strict-Transport-Security header is set when settings.cookie_secure is True."""
+        from app.config import settings
+
+        assert settings.cookie_secure is True
+        app = _make_app()
+        client = TestClient(app)
+
+        resp = client.get("/test")
+        assert "Strict-Transport-Security" in resp.headers
+        assert "max-age=31536000" in resp.headers["Strict-Transport-Security"]
+        assert "includeSubDomains" in resp.headers["Strict-Transport-Security"]
+
+    def test_hsts_is_omitted_when_cookie_secure_false(self):
+        """Strict-Transport-Security header is NOT set when settings.cookie_secure is False."""
+        import asyncio
+        from unittest.mock import MagicMock, patch
+
+        from starlette.responses import Response as StarletteResponse
+
+        middleware = SecurityHeadersMiddleware(MagicMock())
+        request = MagicMock()
+        request.url.path = "/test"
+
+        response = StarletteResponse()
+
+        async def call_next(req):
+            return response
+
+        with patch.object(middleware, "dispatch", wraps=middleware.dispatch):
+            from app import config
+
+            with patch.object(config.settings, "cookie_secure", False):
+                result = asyncio.run(middleware.dispatch(request, call_next))
+
+        assert "Strict-Transport-Security" not in result.headers
+
+
 class TestSensitivePathCacheControl:
     def test_sensitive_path_gets_no_store(self):
         """Requests to /api/auth/ paths get Cache-Control: no-store."""
