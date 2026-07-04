@@ -1019,12 +1019,7 @@ class TestMobileScanUnknownPlatform:
             patch("os.remove"),
             patch("builtins.open", mock_open(read_data=b"fake binary data")),
             patch("tasks.mobile_scan._run_async") as mock_run_async,
-            patch("tasks.mobile_scan._parse_manifest") as _mock_manifest,
-            patch("tasks.mobile_scan._scan_secrets") as _mock_secrets,
-            patch("tasks.mobile_scan._classify_findings") as _mock_classify,
-            patch("tasks.mobile_scan.analyze_apk_permissions") as _mock_analyze_apk,
-            patch("tasks.mobile_scan.extract_hardcoded_strings") as _mock_extract_strings,
-            patch("tasks.mobile_scan.check_exported_components") as _mock_check_exported,
+            patch("utils.mobile_utils._scan_secrets") as _mock_secrets,
         ):
             mock_session.return_value = MagicMock()
             mock_redis.return_value = MagicMock()
