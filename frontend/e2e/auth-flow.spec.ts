@@ -84,6 +84,18 @@ test.describe("Auth — Register", () => {
       timeout: 10_000,
     });
   });
+
+  test("register with valid data shows success page", async ({ page }) => {
+    const uniqueEmail = `e2e-register-${Date.now()}@vulnscan.dev`;
+    await page.goto("/register");
+    await page.locator("input#email").fill(uniqueEmail);
+    await page.locator("input#password").fill("Str0ng!Pass123");
+    await page.locator("input#confirmPassword").fill("Str0ng!Pass123");
+    await page.locator("button[type='submit']").click();
+    await expect(
+      page.locator("h2:has-text('Registration Successful!')"),
+    ).toBeVisible({ timeout: 15_000 });
+  });
 });
 
 test.describe("Auth — Logout", () => {
