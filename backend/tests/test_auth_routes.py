@@ -1598,3 +1598,359 @@ class TestRateLimit:
             json={"token": token_str},
         )
         assert resp.status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# POST /api/auth/resend-verification
+# ---------------------------------------------------------------------------
+
+
+class TestResendVerification:
+    def test_rate_limit_returns_429(self, auth_client, db_session):
+        _incr_counters["ratelimit:resend_verification:testclient"] = 4
+
+        resp = auth_client.post(
+            "/api/auth/resend-verification",
+            json={"email": "any@example.com"},
+        )
+        assert resp.status_code == 429
+
+    def test_user_not_found_returns_200_silent(self, auth_client, db_session):
+        resp = auth_client.post(
+            "/api/auth/resend-verification",
+            json={"email": "nonexistent@example.com"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "Verification email sent" in data["message"]
+
+    def test_already_verified_returns_200_silent(self, auth_client, db_session):
+        import asyncio
+
+        user = asyncio.get_event_loop().run_until_complete(_create_verified_user(db_session))
+
+        resp = auth_client.post(
+            "/api/auth/resend-verification",
+            json={"email": user.email},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "Verification email sent" in data["message"]
+
+    def test_success_sends_email(self, auth_client, db_session):
+        import asyncio
+
+        user = asyncio.get_event_loop().run_until_complete(_create_unverified_user(db_session))
+
+        with patch("app.api.auth_routes.send_verification_email", new_callable=AsyncMock) as mock_send:
+            resp = auth_client.post(
+                "/api/auth/resend-verification",
+                json={"email": user.email},
+            )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "Verification email sent" in data["message"]
+        mock_send.assert_called_once()
+
+    def test_email_failure_still_returns_200(self, auth_client, db_session):
+        import asyncio
+
+        user = asyncio.get_event_loop().run_until_complete(_create_unverified_user(db_session))
+
+        with patch("app.api.auth_routes.send_verification_email", new_callable=AsyncMock) as mock_send:
+            mock_send.side_effect = Exception("SMTP failure")
+            resp = auth_client.post(
+                "/api/auth/resend-verification",
+                json={"email": user.email},
+            )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "Verification email sent" in data["message"]
+
+    def test_success_with_existing_token_deletes_old(self, auth_client, db_session):
+        """Covers branch where old verification token exists and gets deleted."""
+        import asyncio
+
+        user = asyncio.get_event_loop().run_until_complete(_create_unverified_user(db_session))
+
+        # Create an existing verification token first
+        old_token_str = "old-verification-token-32-bytes"
+        old_token = EmailVerificationToken(
+            user_id=user.id,
+            token=old_token_str,
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
+        )
+        db_session.add(old_token)
+        asyncio.get_event_loop().run_until_complete(db_session.commit())
+
+        with patch("app.api.auth_routes.send_verification_email", new_callable=AsyncMock):
+            resp = auth_client.post(
+                "/api/auth/resend-verification",
+                json={"email": user.email},
+            )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "Verification email sent" in data["message"]
+
+        # Old token should be deleted
+        async def check_old_deleted():
+            result = await db_session.execute(
+                select(EmailVerificationToken).where(EmailVerificationToken.token == old_token_str)
+            )
+            return result.scalar_one_or_none()
+
+        remaining = asyncio.get_event_loop().run_until_complete(check_old_deleted())
+        assert remaining is None
+
+
+# ---------------------------------------------------------------------------
+# POST /api/auth/reset-password — additional tests
+# ---------------------------------------------------------------------------
+
+
+class TestResetPasswordExtra:
+    """Additional tests for POST /api/auth/reset-password."""
+
+    async def _setup(self, db_session):
+        user = await _create_verified_user(db_session)
+        token_str = "valid-reset-token-32-bytes!!"
+        reset_token = PasswordResetToken(
+            user_id=user.id,
+            token=token_str,
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
+        )
+        db_session.add(reset_token)
+        await db_session.commit()
+        return user, token_str
+
+    def test_rate_limit_returns_429(self, auth_client, db_session):
+        _incr_counters["ratelimit:reset_password:testclient"] = 6
+
+        resp = auth_client.post(
+            "/api/auth/reset-password",
+            json={
+                "token": "any-token",
+                "new_password": "NewStrong1",
+                "confirm_password": "NewStrong1",
+            },
+        )
+        assert resp.status_code == 429
+
+    def test_user_not_found_returns_400(self, auth_client, db_session):
+        import asyncio
+
+        token_str = "orphan-reset-token-32-bytes!!"
+        reset_token = PasswordResetToken(
+            user_id=uuid.uuid4(),
+            token=token_str,
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
+        )
+        db_session.add(reset_token)
+        asyncio.get_event_loop().run_until_complete(db_session.commit())
+
+        with patch("app.api.auth_routes.datetime") as mock_dt:
+            mock_dt.now.side_effect = lambda *a, **kw: datetime.now(UTC)
+            resp = auth_client.post(
+                "/api/auth/reset-password",
+                json={
+                    "token": token_str,
+                    "new_password": "NewStrong1",
+                    "confirm_password": "NewStrong1",
+                },
+            )
+        assert resp.status_code == 400
+        assert "Pengguna tidak ditemukan" in resp.json()["detail"]
+
+
+# ---------------------------------------------------------------------------
+# PUT /api/auth/profile
+# ---------------------------------------------------------------------------
+
+
+class TestUpdateProfile:
+    async def _setup(self, db_session):
+        user = await _create_verified_user(db_session)
+        from app.services.auth import create_access_token
+
+        token = create_access_token(user_id=str(user.id), email=user.email, is_admin=user.is_admin)
+        return user, token
+
+    def test_success_updates_email(self, auth_client, db_session):
+        import asyncio
+
+        user, token = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+
+        resp = auth_client.put(
+            "/api/auth/profile",
+            json={"email": "newemail@example.com", "current_password": "Test1234"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200
+
+    def test_same_email_returns_200(self, auth_client, db_session):
+        import asyncio
+
+        user, token = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+
+        resp = auth_client.put(
+            "/api/auth/profile",
+            json={"email": user.email, "current_password": "Test1234"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200
+
+    def test_wrong_password_returns_401(self, auth_client, db_session):
+        import asyncio
+
+        user, token = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+
+        resp = auth_client.put(
+            "/api/auth/profile",
+            json={"email": "newemail@example.com", "current_password": "WrongPass1"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 401
+        assert "Kata sandi saat ini salah" in resp.json()["detail"]
+
+    def test_email_conflict_returns_409(self, auth_client, db_session):
+        import asyncio
+
+        user1, token = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+        user2 = asyncio.get_event_loop().run_until_complete(
+            _create_verified_user(db_session, email="other@example.com")
+        )
+
+        resp = auth_client.put(
+            "/api/auth/profile",
+            json={"email": user2.email, "current_password": "Test1234"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 409
+        assert "Email sudah digunakan" in resp.json()["detail"]
+
+
+# ---------------------------------------------------------------------------
+# POST /api/auth/change-password
+# ---------------------------------------------------------------------------
+
+
+class TestChangePassword:
+    async def _setup(self, db_session):
+        user = await _create_verified_user(db_session)
+        from app.services.auth import create_access_token
+
+        token = create_access_token(user_id=str(user.id), email=user.email, is_admin=user.is_admin)
+        return user, token
+
+    def test_rate_limit_returns_429(self, auth_client, db_session):
+        import asyncio
+
+        user, token = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+        _incr_counters["ratelimit:change_password:testclient"] = 4
+
+        resp = auth_client.post(
+            "/api/auth/change-password",
+            json={
+                "current_password": "Test1234",
+                "new_password": "NewStrong1",
+                "confirm_password": "NewStrong1",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 429
+
+    def test_wrong_current_password_returns_401(self, auth_client, db_session):
+        import asyncio
+
+        user, token = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+
+        resp = auth_client.post(
+            "/api/auth/change-password",
+            json={
+                "current_password": "WrongPass1",
+                "new_password": "NewStrong1",
+                "confirm_password": "NewStrong1",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 401
+        assert "Kata sandi saat ini salah" in resp.json()["detail"]
+
+    def test_password_mismatch_returns_400(self, auth_client, db_session):
+        import asyncio
+
+        user, token = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+
+        resp = auth_client.post(
+            "/api/auth/change-password",
+            json={
+                "current_password": "Test1234",
+                "new_password": "NewStrong1",
+                "confirm_password": "Different1",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 400
+        assert "Kata sandi tidak cocok" in resp.json()["detail"]
+
+    def test_same_password_returns_400(self, auth_client, db_session):
+        import asyncio
+
+        user, token = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+
+        resp = auth_client.post(
+            "/api/auth/change-password",
+            json={
+                "current_password": "Test1234",
+                "new_password": "Test1234",
+                "confirm_password": "Test1234",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 400
+        assert "Kata sandi baru tidak boleh sama" in resp.json()["detail"]
+
+    def test_success_changes_password(self, auth_client, db_session):
+        import asyncio
+
+        user, token = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+
+        resp = auth_client.post(
+            "/api/auth/change-password",
+            json={
+                "current_password": "Test1234",
+                "new_password": "NewStrong1",
+                "confirm_password": "NewStrong1",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# POST /api/auth/refresh — additional test (cookie from body path)
+# ---------------------------------------------------------------------------
+
+
+class TestRefreshExtra2:
+    async def _setup(self, db_session):
+        user = await _create_verified_user(db_session)
+        from app.services.auth import create_access_token, create_refresh_token
+
+        return {
+            "user": user,
+            "access": create_access_token(user_id=str(user.id), email=user.email, is_admin=user.is_admin),
+            "refresh": create_refresh_token(user_id=str(user.id)),
+        }
+
+    def test_refresh_from_body_sets_cookie(self, auth_client, db_session):
+        import asyncio
+
+        tokens = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+
+        resp = auth_client.post(
+            "/api/auth/refresh",
+            json={"refresh_token": tokens["refresh"]},
+        )
+        assert resp.status_code == 200
+        assert "refresh_token" in resp.cookies
