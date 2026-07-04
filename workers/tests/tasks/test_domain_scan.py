@@ -249,17 +249,19 @@ class TestDomainScanNmapFailure:
 
         with (
             patch("tasks.domain_scan.get_sync_session") as mock_session,
-            patch("tasks.domain_scan.resolve_dns", new_callable=AsyncMock) as mock_dns,
-            patch("tasks.domain_scan.enumerate_subdomains", new_callable=AsyncMock) as mock_sub,
-            patch("tasks.domain_scan.check_http", new_callable=AsyncMock) as mock_http,
+            patch("tasks.domain_scan.resolve_dns") as mock_dns,
+            patch("tasks.domain_scan.enumerate_subdomains") as mock_sub,
+            patch("tasks.domain_scan.check_http") as mock_http,
             patch("tasks.domain_scan.check_security_headers") as mock_headers,
             patch("tasks.domain_scan.detect_tech_stack") as mock_tech,
             patch("tasks.domain_scan.run_nmap", new_callable=AsyncMock) as mock_nmap,
+            patch("tasks.domain_scan.lookup_service_cves", new_callable=AsyncMock) as _mock_cve,
             patch("tasks.domain_scan.publish_progress") as mock_progress,
             patch("tasks.domain_scan._update_status") as mock_update_status,
             patch("tasks.domain_scan._save_findings") as mock_save_findings,
             patch("tasks.domain_scan.redis.Redis") as mock_redis,
         ):
+            mock_session.return_value = MagicMock()
             mock_dns.return_value = (["93.184.216.34"], [])
             mock_sub.return_value = []
             mock_http.return_value = (True, True, 200, {"Server": "nginx/1.24.0"})
@@ -268,7 +270,6 @@ class TestDomainScanNmapFailure:
                 TechInfo(name="nginx", category="web_server", version="1.24.0", confidence=100),
             ]
             mock_nmap.side_effect = Exception("nmap failed")
-            mock_session.return_value = MagicMock()
             mock_redis.return_value = MagicMock()
 
             self.mock_session = mock_session
@@ -704,3 +705,66 @@ class TestRefundCredits:
         _refund_credits(session, self.JOB_ID_STR, "domain")
 
         session.add.assert_not_called()
+
+
+class TestDomainScanEmptyTechStack:
+    """Coverage for empty tech.name or tech.category branch (line 139)."""
+
+    @pytest.fixture(autouse=True)
+    def _setup_patches(self):
+        from utils.domain_utils import TechInfo
+
+        with (
+            patch("tasks.domain_scan.get_sync_session") as mock_session,
+            patch("tasks.domain_scan.resolve_dns", new_callable=AsyncMock) as mock_dns,
+            patch("tasks.domain_scan.enumerate_subdomains", new_callable=AsyncMock) as mock_sub,
+            patch("tasks.domain_scan.check_http", new_callable=AsyncMock) as mock_http,
+            patch("tasks.domain_scan.check_ssl", new_callable=AsyncMock) as mock_ssl,
+            patch("tasks.domain_scan.check_security_headers") as mock_headers,
+            patch("tasks.domain_scan.detect_tech_stack") as mock_tech,
+            patch("tasks.domain_scan.run_nmap", new_callable=AsyncMock) as mock_nmap,
+            patch("tasks.domain_scan.lookup_service_cves", new_callable=AsyncMock) as mock_cve,
+            patch("tasks.domain_scan.publish_progress") as _mock_progress,
+            patch("tasks.domain_scan._update_status") as _mock_update_status,
+            patch("tasks.domain_scan._save_findings") as mock_save_findings,
+            patch("tasks.domain_scan.redis.Redis") as mock_redis,
+        ):
+            mock_session.return_value = MagicMock()
+            mock_redis.return_value = MagicMock()
+
+            mock_dns.return_value = (["1.2.3.4"], ["A"])
+            mock_sub.return_value = []
+            mock_http.return_value = (True, True, 200, {"strict-transport-security": "max-age=31536000"})
+            mock_ssl.return_value = MagicMock()
+            mock_nmap.return_value = MagicMock()
+            mock_cve.return_value = []
+            mock_headers.return_value = []
+            mock_tech.return_value = [
+                TechInfo(name="", category="web-server"),
+                TechInfo(name="nginx", category=""),
+                TechInfo(name="", category=""),
+            ]
+
+            self.mock_session = mock_session
+            self.mock_cve = mock_cve
+            self.mock_save_findings = mock_save_findings
+            yield
+
+    def _call_task(self):
+        from tasks.domain_scan import run_domain_scan
+
+        return run_domain_scan(JOB_ID, DOMAIN)
+
+    def test_empty_tech_name_skips_cve_lookup(self):
+        result = self._call_task()
+        assert result["job_id"] == JOB_ID
+        self.mock_cve.assert_not_called()
+
+    def test_empty_tech_category_skips_cve_lookup(self):
+        result = self._call_task()
+        assert result["job_id"] == JOB_ID
+        self.mock_cve.assert_not_called()
+
+    def test_scan_completes_with_empty_tech_stack(self):
+        result = self._call_task()
+        assert "summary" in result

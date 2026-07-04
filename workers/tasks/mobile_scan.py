@@ -108,6 +108,9 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
             except Exception as e:
                 publish_progress(job_id, "plist_error", 25, f"IPA analysis warning: {str(e)[:100]}")
 
+        else:
+            libraries = []
+
         publish_progress(job_id, "secrets", 50, "Scanning for hardcoded secrets...")
         try:
             with open(file_path, "rb") as f:
