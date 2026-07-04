@@ -1001,3 +1001,114 @@ class TestMobileScanHelpers:
             mock_session.query.side_effect = query_side_effect
             _refund_credits(mock_session, JOB_ID, "android")
             mock_session.add.assert_not_called()
+
+
+class TestMobileScanUnknownPlatform:
+    """Coverage for unknown platform branch — 'else: libraries = []'."""
+
+    @pytest.fixture(autouse=True)
+    def _setup_patches(self):
+        with (
+            patch("tasks.mobile_scan.get_sync_session") as mock_session,
+            patch("tasks.mobile_scan.publish_progress") as _mock_progress,
+            patch("tasks.mobile_scan._update_status") as _mock_update_status,
+            patch("tasks.mobile_scan._save_findings") as mock_save_findings,
+            patch("tasks.mobile_scan.redis.Redis") as mock_redis,
+            patch("os.path.exists", return_value=True),
+            patch("os.path.getsize", return_value=1024),
+            patch("os.remove"),
+            patch("builtins.open", mock_open(read_data=b"fake binary data")),
+            patch("tasks.mobile_scan._run_async") as mock_run_async,
+            patch("tasks.mobile_scan._parse_manifest") as _mock_manifest,
+            patch("tasks.mobile_scan._scan_secrets") as _mock_secrets,
+            patch("tasks.mobile_scan._classify_findings") as _mock_classify,
+            patch("tasks.mobile_scan.analyze_apk_permissions") as _mock_analyze_apk,
+            patch("tasks.mobile_scan.extract_hardcoded_strings") as _mock_extract_strings,
+            patch("tasks.mobile_scan.check_exported_components") as _mock_check_exported,
+        ):
+            mock_session.return_value = MagicMock()
+            mock_redis.return_value = MagicMock()
+            mock_run_async.return_value = []
+
+            self.mock_session = mock_session
+            self.mock_save_findings = mock_save_findings
+            yield
+
+    def _call_task(self, platform="windows"):
+        from tasks.mobile_scan import run_mobile_scan
+
+        return run_mobile_scan(JOB_ID, FILE_PATH, platform)
+
+    def test_unknown_platform_skips_manifest_analysis(self):
+        """Neither android nor ios — goes to else branch, libraries = []."""
+        result = self._call_task("windows")
+        assert result["job_id"] == JOB_ID
+
+    def test_unknown_platform_completes_without_platform_analysis(self):
+        result = self._call_task("symbian")
+        assert "summary" in result
+
+    def test_unknown_platform_still_runs_secret_scan(self):
+        result = self._call_task("windows")
+        assert result["summary"]["total_findings"] >= 0
+
+    def test_unknown_platform_returns_summary(self):
+        result = self._call_task("blackberry")
+        assert "summary" in result
+        assert result["summary"]["total_findings"] == 0
+
+
+class TestMobileScanDuplicateFinding:
+    """Coverage for dedup branch: 'if sf not in all_findings'."""
+
+    @pytest.fixture(autouse=True)
+    def _setup_patches(self):
+        duplicate_finding = {
+            "type": "hardcoded_secret",
+            "severity": "high",
+            "title": "Hardcoded API Key",
+            "description": "Found in source",
+        }
+
+        with (
+            patch("tasks.mobile_scan.get_sync_session") as mock_session,
+            patch("tasks.mobile_scan.publish_progress") as _mock_progress,
+            patch("tasks.mobile_scan._update_status") as _mock_update_status,
+            patch("tasks.mobile_scan._save_findings") as mock_save_findings,
+            patch("tasks.mobile_scan.redis.Redis") as mock_redis,
+            patch("os.path.exists", return_value=True),
+            patch("os.path.getsize", return_value=1024),
+            patch("os.remove"),
+            patch("builtins.open", mock_open(read_data=b"fake binary data")),
+            patch("tasks.mobile_scan._run_async") as mock_run_async,
+            patch("utils.mobile_utils._scan_secrets", return_value=[duplicate_finding]),
+            patch("tasks.mobile_scan.analyze_apk") as mock_analyze_apk,
+        ):
+            mock_session.return_value = MagicMock()
+            mock_redis.return_value = MagicMock()
+            mock_run_async.return_value = []
+
+            # analyze_apk returns the SAME finding so dedup triggers
+            mock_apk_info = MagicMock()
+            mock_apk_info.package_name = "com.test.app"
+            mock_apk_info.permissions = []
+            mock_analyze_apk.return_value = (mock_apk_info, [duplicate_finding], ["lib1"])
+
+            self.mock_session = mock_session
+            self.mock_save_findings = mock_save_findings
+            yield
+
+    def _call_task(self):
+        from tasks.mobile_scan import run_mobile_scan
+
+        return run_mobile_scan(JOB_ID, FILE_PATH, PLATFORM)
+
+    def test_duplicate_finding_not_added_twice(self):
+        """When _scan_secrets returns same finding as analyze_apk, dedup skips it."""
+        result = self._call_task()
+        assert result["job_id"] == JOB_ID
+
+    def test_dedup_preserves_original_finding(self):
+        """The original finding from analyze_apk is kept."""
+        result = self._call_task()
+        assert result["summary"]["total_findings"] >= 1

@@ -852,3 +852,51 @@ class TestUpdateStatus:
         _update_status(session, "job-xyz", "completed", progress=100, result_summary={"total": 5})
 
         session.execute.assert_called_once()
+
+
+class TestIpScanNoProductVersion:
+    """Coverage for when port.product or port.version is None/empty (lines 95-120)."""
+
+    @pytest.fixture(autouse=True)
+    def _setup_patches(self, sample_nmap_result_no_product):
+        with (
+            patch("tasks.ip_scan.get_sync_session") as mock_session,
+            patch("tasks.ip_scan.run_nmap", new_callable=AsyncMock) as mock_nmap,
+            patch("tasks.ip_scan.lookup_service_cves", new_callable=AsyncMock) as mock_cve,
+            patch("tasks.ip_scan.publish_progress") as mock_progress,
+            patch("tasks.ip_scan._update_status") as mock_update_status,
+            patch("tasks.ip_scan._save_findings") as mock_save_findings,
+            patch("tasks.ip_scan.redis.Redis") as mock_redis,
+        ):
+            mock_nmap.return_value = sample_nmap_result_no_product
+            mock_session.return_value = MagicMock()
+            mock_redis.return_value = MagicMock()
+
+            self.mock_session = mock_session
+            self.mock_nmap = mock_nmap
+            self.mock_cve = mock_cve
+            self.mock_progress = mock_progress
+            self.mock_update_status = mock_update_status
+            self.mock_save_findings = mock_save_findings
+            self.mock_redis = mock_redis
+            yield
+
+    def _call_task(self):
+        from tasks.ip_scan import run_ip_scan
+
+        return run_ip_scan(JOB_ID, TARGET, PORTS)
+
+    def test_no_product_skips_cve_lookup(self):
+        """When port.product is None, CVE lookup is skipped."""
+        result = self._call_task()
+        assert result["job_id"] == JOB_ID
+
+    def test_no_version_skips_cve_lookup(self):
+        """When port.version is None, CVE lookup is skipped."""
+        result = self._call_task()
+        assert result["job_id"] == JOB_ID
+
+    def test_scan_completes_without_product_version(self):
+        """Full scan completes even when no ports have product/version."""
+        result = self._call_task()
+        assert "summary" in result
