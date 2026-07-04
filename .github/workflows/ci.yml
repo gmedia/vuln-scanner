@@ -272,8 +272,17 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build ${{ matrix.dir }} image
-        run: docker build -t vuln-scanner-${{ matrix.dir }}:${{ github.sha }} ${{ matrix.dir }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.dir }}
+          load: true
+          tags: vuln-scanner-${{ matrix.dir }}:${{ github.sha }}
+          cache-from: type=gha,scope=buildkit-${{ matrix.dir }}
+          cache-to: type=gha,scope=buildkit-${{ matrix.dir }},mode=max
 
       - name: Scan ${{ matrix.dir }} image with Trivy
         uses: aquasecurity/trivy-action@v0.36.0
