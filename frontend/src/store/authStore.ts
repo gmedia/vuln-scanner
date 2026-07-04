@@ -133,6 +133,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
     delete authApi.authApi.defaults.headers.common["Authorization"];
     localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
     set({
       user: null,
       accessToken: null,
@@ -238,9 +239,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   refreshAuth: async () => {
     try {
-      const refreshRes = await authApi.refreshToken();
+      const storedRefresh = localStorage.getItem("refreshToken") || undefined;
+      const refreshRes = await authApi.refreshToken(storedRefresh);
       set({ accessToken: refreshRes.access_token });
       localStorage.setItem("accessToken", refreshRes.access_token);
+      if (refreshRes.refresh_token) {
+        localStorage.setItem("refreshToken", refreshRes.refresh_token);
+      }
       authApi.authApi.defaults.headers.common["Authorization"] =
         `Bearer ${refreshRes.access_token}`;
       const user = await authApi.getMe();

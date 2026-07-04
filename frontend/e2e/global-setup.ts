@@ -27,23 +27,37 @@ async function globalSetup(config: FullConfig) {
     process.exit(1);
   }
 
-  // Extract access_token and seed localStorage BEFORE navigating to dashboard.
-  // page.request.post is a direct API call — it does NOT execute the frontend
-  // auth flow, so we must manually persist the token so that initialize() can
-  // find it and skip refreshAuth().
+  // Extract access_token AND refresh_token. Seed localStorage with both so:
+  //  - initialize() finds accessToken and skips refreshAuth() initially
+  //  - When the access token expires (30 min TTL), refreshAuth() can use the
+  //    stored refresh token instead of relying on httpOnly cookies (which are
+  //    not captured by Playwright's storageState).
   const loginData = await loginRes.json();
   const accessToken = loginData.access_token;
+  const refreshToken = loginData.refresh_token;
   if (!accessToken) {
     console.error("Login response missing access_token");
     await browser.close();
     process.exit(1);
   }
 
-  // Set token in localStorage via addInitScript so it's available when the
+  // Set tokens in localStorage via addInitScript so they're available when the
   // frontend app mounts and calls initialize().
-  await page.context().addInitScript((token: string) => {
-    window.localStorage.setItem("accessToken", token);
-  }, accessToken);
+  await page.context().addInitScript(
+    ({
+      accessToken,
+      refreshToken,
+    }: {
+      accessToken: string;
+      refreshToken?: string;
+    }) => {
+      window.localStorage.setItem("accessToken", accessToken);
+      if (refreshToken) {
+        window.localStorage.setItem("refreshToken", refreshToken);
+      }
+    },
+    { accessToken, refreshToken },
+  );
 
   await page.goto(`${baseURL}/dashboard`);
   // Wait for Dashboard to fully render (ensures initialize() → refreshAuth() completes

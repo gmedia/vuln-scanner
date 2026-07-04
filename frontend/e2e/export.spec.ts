@@ -1,25 +1,26 @@
 import { test, expect } from "@playwright/test";
 
-const API_KEY = process.env.API_KEY || "e2e-test-api-key";
+const API_KEY = process.env.API_KEY || "dev-api-key-change-me";
 const BASE_URL = process.env.BASE_URL || "http://localhost:8000";
 
-let authToken: string;
+async function login(
+  request: Parameters<Parameters<typeof test>[1]>[0]["request"],
+) {
+  const loginRes = await request.post(`${BASE_URL}/api/auth/login`, {
+    headers: { "Content-Type": "application/json", "X-E2E-Test": "true" },
+    data: { email: "e2e@vulnscan.dev", password: "E2eTestPass123!" },
+  });
+  expect(loginRes.status()).toBe(200);
+  const body = await loginRes.json();
+  return body.access_token as string;
+}
 
 test.describe("Export", () => {
-  test.beforeAll(async ({ request }) => {
-    const loginRes = await request.post(`${BASE_URL}/api/auth/login`, {
-      headers: { "Content-Type": "application/json", "X-E2E-Test": "true" },
-      data: { email: "e2e@vulnscan.dev", password: "E2eTestPass123!" },
-    });
-    expect(loginRes.status()).toBe(200);
-    const body = await loginRes.json();
-    authToken = body.access_token;
-  });
-
   test("export buttons trigger download on completed scan", async ({
     page,
     request,
   }) => {
+    const authToken = await login(request);
     const resp = await request.post(`${BASE_URL}/api/scan/ip`, {
       headers: {
         "Content-Type": "application/json",
