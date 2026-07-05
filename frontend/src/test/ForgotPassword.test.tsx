@@ -26,7 +26,7 @@ vi.mock("@/store/authStore", () => ({
   }),
 }));
 
-const mockUseAuthStore = useAuthStore as ReturnType<typeof vi.fn>;
+const mockUseAuthStore = useAuthStore as unknown as ReturnType<typeof vi.fn>;
 
 vi.mock("@/hooks/useRateLimitCooldown", () => ({
   useRateLimitCooldown: vi.fn(() => ({

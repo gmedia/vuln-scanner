@@ -49,7 +49,7 @@ vi.mock("@/store/authStore", () => {
   return { useAuthStore: mockFn };
 });
 
-const mockUseAuthStore = useAuthStore as ReturnType<typeof vi.fn>;
+const mockUseAuthStore = useAuthStore as unknown as ReturnType<typeof vi.fn>;
 
 describe("Profile", () => {
   beforeEach(() => {

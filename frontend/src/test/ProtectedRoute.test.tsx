@@ -26,7 +26,7 @@ vi.mock("lucide-react", () => ({
   ),
 }));
 
-const mockUseAuthStore = useAuthStore as ReturnType<typeof vi.fn>;
+const mockUseAuthStore = useAuthStore as unknown as ReturnType<typeof vi.fn>;
 
 describe("ProtectedRoute", () => {
   beforeEach(() => {

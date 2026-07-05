@@ -28,7 +28,7 @@ vi.mock("@/hooks/useRateLimitCooldown", () => ({
   })),
 }));
 
-const mockUseAuthStore = useAuthStore as ReturnType<typeof vi.fn>;
+const mockUseAuthStore = useAuthStore as unknown as ReturnType<typeof vi.fn>;
 
 vi.mock("react-router-dom", () => ({
   Link: ({ to, children }: { to: string; children: React.ReactNode }) => (

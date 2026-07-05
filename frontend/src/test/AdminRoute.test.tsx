@@ -21,7 +21,7 @@ vi.mock("react-router-dom", () => ({
   Outlet: () => <div data-testid="outlet">Admin outlet content</div>,
 }));
 
-const mockUseAuthStore = useAuthStore as ReturnType<typeof vi.fn>;
+const mockUseAuthStore = useAuthStore as unknown as ReturnType<typeof vi.fn>;
 
 describe("AdminRoute", () => {
   beforeEach(() => {
