@@ -61,7 +61,7 @@ test.describe("Dashboard", () => {
     await page.goto("/dashboard");
     await expect(page.locator("aside")).toBeVisible();
     await expect(
-      page.locator("aside").locator("a:has-text('Dashboard')"),
+      page.locator("aside").locator("a:has-text('Dashboard')").first(),
     ).toBeVisible();
     await expect(
       page.locator("aside").locator("a:has-text('IP Scanner')"),
@@ -85,7 +85,11 @@ test.describe("Dashboard", () => {
     await page.locator("aside").locator("a:has-text('Mobile Scanner')").click();
     await expect(page).toHaveURL("/scan/mobile");
 
-    await page.locator("aside").locator("a:has-text('Dashboard')").click();
+    await page
+      .locator("aside")
+      .locator("a:has-text('Dashboard')")
+      .first()
+      .click();
     await expect(page).toHaveURL("/dashboard");
   });
 });

@@ -2,19 +2,17 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Credit History", () => {
   test("page loads with CREDIT HISTORY heading", async ({ page }) => {
-    await page.goto("/credits");
+    await page.goto("/credit-history");
     await expect(page.locator("h2:has-text('CREDIT HISTORY')")).toBeVisible();
   });
 
   test("TRANSACTIONS card title is visible", async ({ page }) => {
-    await page.goto("/credits");
-    await expect(
-      page.locator("text=TRANSACTIONS"),
-    ).toBeVisible();
+    await page.goto("/credit-history");
+    await expect(page.locator("text=TRANSACTIONS")).toBeVisible();
   });
 
   test("shows loading skeletons initially then resolves", async ({ page }) => {
-    await page.goto("/credits");
+    await page.goto("/credit-history");
     const skeletons = page.locator("[data-slot='skeleton']");
     const skeletonCount = await skeletons.count();
     if (skeletonCount > 0) {
@@ -24,11 +22,13 @@ test.describe("Credit History", () => {
   });
 
   test("shows either empty state or data table", async ({ page }) => {
-    await page.goto("/credits");
-    await page.waitForSelector("[data-slot='skeleton']", {
-      state: "hidden",
-      timeout: 15_000,
-    }).catch(() => {});
+    await page.goto("/credit-history");
+    await page
+      .waitForSelector("[data-slot='skeleton']", {
+        state: "hidden",
+        timeout: 15_000,
+      })
+      .catch(() => {});
 
     const emptyText = page.locator("text=No transactions yet");
     const table = page.locator("table");
@@ -47,11 +47,13 @@ test.describe("Credit History", () => {
   });
 
   test("table headers are correct when data exists", async ({ page }) => {
-    await page.goto("/credits");
-    await page.waitForSelector("[data-slot='skeleton']", {
-      state: "hidden",
-      timeout: 15_000,
-    }).catch(() => {});
+    await page.goto("/credit-history");
+    await page
+      .waitForSelector("[data-slot='skeleton']", {
+        state: "hidden",
+        timeout: 15_000,
+      })
+      .catch(() => {});
 
     const table = page.locator("table");
     if (await table.isVisible().catch(() => false)) {
@@ -65,11 +67,13 @@ test.describe("Credit History", () => {
   test("transaction rows have date, type badge, amount, and description", async ({
     page,
   }) => {
-    await page.goto("/credits");
-    await page.waitForSelector("[data-slot='skeleton']", {
-      state: "hidden",
-      timeout: 15_000,
-    }).catch(() => {});
+    await page.goto("/credit-history");
+    await page
+      .waitForSelector("[data-slot='skeleton']", {
+        state: "hidden",
+        timeout: 15_000,
+      })
+      .catch(() => {});
 
     const rows = page.locator("table tbody tr");
     const rowCount = await rows.count().catch(() => 0);
@@ -81,18 +85,24 @@ test.describe("Credit History", () => {
     expect(cellCount).toBeGreaterThanOrEqual(4);
 
     const cellTexts = await cells.allTextContents();
-    expect(cellTexts.some((t) => /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(t.trim()))).toBeTruthy();
-    expect(cellTexts.some((t) =>
-      ["credit", "deduct", "refund"].includes(t.trim().toLowerCase()),
-    )).toBeTruthy();
+    expect(
+      cellTexts.some((t) => /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(t.trim())),
+    ).toBeTruthy();
+    expect(
+      cellTexts.some((t) =>
+        ["credit", "deduct", "refund"].includes(t.trim().toLowerCase()),
+      ),
+    ).toBeTruthy();
   });
 
   test("type badges have correct color classes", async ({ page }) => {
-    await page.goto("/credits");
-    await page.waitForSelector("[data-slot='skeleton']", {
-      state: "hidden",
-      timeout: 15_000,
-    }).catch(() => {});
+    await page.goto("/credit-history");
+    await page
+      .waitForSelector("[data-slot='skeleton']", {
+        state: "hidden",
+        timeout: 15_000,
+      })
+      .catch(() => {});
 
     const creditBadge = page.locator("table tbody tr td span.bg-green-600");
     const deductBadge = page.locator("table tbody tr td span.bg-red-600");
@@ -110,13 +120,17 @@ test.describe("Credit History", () => {
   });
 
   test("positive amounts have green-400 class", async ({ page }) => {
-    await page.goto("/credits");
-    await page.waitForSelector("[data-slot='skeleton']", {
-      state: "hidden",
-      timeout: 15_000,
-    }).catch(() => {});
+    await page.goto("/credit-history");
+    await page
+      .waitForSelector("[data-slot='skeleton']", {
+        state: "hidden",
+        timeout: 15_000,
+      })
+      .catch(() => {});
 
-    const positiveAmounts = page.locator("table tbody tr td span.text-green-400");
+    const positiveAmounts = page.locator(
+      "table tbody tr td span.text-green-400",
+    );
     const negativeAmounts = page.locator("table tbody tr td span.text-red-400");
 
     const posCount = await positiveAmounts.count().catch(() => 0);
@@ -135,26 +149,36 @@ test.describe("Credit History", () => {
   });
 
   test("pagination appears when totalPages > 1", async ({ page }) => {
-    await page.goto("/credits");
-    await page.waitForSelector("[data-slot='skeleton']", {
-      state: "hidden",
-      timeout: 15_000,
-    }).catch(() => {});
+    await page.goto("/credit-history");
+    await page
+      .waitForSelector("[data-slot='skeleton']", {
+        state: "hidden",
+        timeout: 15_000,
+      })
+      .catch(() => {});
 
     const pagination = page.locator("text=/Page \\d+ of \\d+/");
     if (await pagination.isVisible().catch(() => false)) {
       await expect(pagination).toBeVisible();
-      await expect(page.locator("button:has(svg.lucide-chevron-left)")).toBeVisible();
-      await expect(page.locator("button:has(svg.lucide-chevron-right)")).toBeVisible();
+      await expect(
+        page.locator("button:has(svg.lucide-chevron-left)"),
+      ).toBeVisible();
+      await expect(
+        page.locator("button:has(svg.lucide-chevron-right)"),
+      ).toBeVisible();
     }
   });
 
-  test("pagination previous button is disabled on first page", async ({ page }) => {
-    await page.goto("/credits");
-    await page.waitForSelector("[data-slot='skeleton']", {
-      state: "hidden",
-      timeout: 15_000,
-    }).catch(() => {});
+  test("pagination previous button is disabled on first page", async ({
+    page,
+  }) => {
+    await page.goto("/credit-history");
+    await page
+      .waitForSelector("[data-slot='skeleton']", {
+        state: "hidden",
+        timeout: 15_000,
+      })
+      .catch(() => {});
 
     const pagination = page.locator("text=/Page 1 of \\d+/");
     if (await pagination.isVisible().catch(() => false)) {
@@ -166,11 +190,13 @@ test.describe("Credit History", () => {
   test("pagination next button is enabled when not on last page", async ({
     page,
   }) => {
-    await page.goto("/credits");
-    await page.waitForSelector("[data-slot='skeleton']", {
-      state: "hidden",
-      timeout: 15_000,
-    }).catch(() => {});
+    await page.goto("/credit-history");
+    await page
+      .waitForSelector("[data-slot='skeleton']", {
+        state: "hidden",
+        timeout: 15_000,
+      })
+      .catch(() => {});
 
     const pagination = page.locator("text=/Page \\d+ of \\d+/");
     if (await pagination.isVisible().catch(() => false)) {
@@ -184,11 +210,13 @@ test.describe("Credit History", () => {
   });
 
   test("clicking next page updates pagination text", async ({ page }) => {
-    await page.goto("/credits");
-    await page.waitForSelector("[data-slot='skeleton']", {
-      state: "hidden",
-      timeout: 15_000,
-    }).catch(() => {});
+    await page.goto("/credit-history");
+    await page
+      .waitForSelector("[data-slot='skeleton']", {
+        state: "hidden",
+        timeout: 15_000,
+      })
+      .catch(() => {});
 
     const pagination = page.locator("text=/Page \\d+ of \\d+/");
     if (await pagination.isVisible().catch(() => false)) {
@@ -202,12 +230,16 @@ test.describe("Credit History", () => {
     }
   });
 
-  test("total count badge visible when transactions exist", async ({ page }) => {
-    await page.goto("/credits");
-    await page.waitForSelector("[data-slot='skeleton']", {
-      state: "hidden",
-      timeout: 15_000,
-    }).catch(() => {});
+  test("total count badge visible when transactions exist", async ({
+    page,
+  }) => {
+    await page.goto("/credit-history");
+    await page
+      .waitForSelector("[data-slot='skeleton']", {
+        state: "hidden",
+        timeout: 15_000,
+      })
+      .catch(() => {});
 
     const table = page.locator("table");
     if (await table.isVisible().catch(() => false)) {
@@ -219,11 +251,13 @@ test.describe("Credit History", () => {
   });
 
   test("description shows — when null", async ({ page }) => {
-    await page.goto("/credits");
-    await page.waitForSelector("[data-slot='skeleton']", {
-      state: "hidden",
-      timeout: 15_000,
-    }).catch(() => {});
+    await page.goto("/credit-history");
+    await page
+      .waitForSelector("[data-slot='skeleton']", {
+        state: "hidden",
+        timeout: 15_000,
+      })
+      .catch(() => {});
 
     const table = page.locator("table");
     if (await table.isVisible().catch(() => false)) {

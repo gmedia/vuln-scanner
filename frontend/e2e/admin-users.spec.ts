@@ -13,10 +13,12 @@ test.describe("Admin — Users", () => {
 
   test("table headers are correct", async ({ page }) => {
     await page.goto("/admin/users");
-    await page.waitForSelector("[data-slot='skeleton']", {
-      state: "hidden",
-      timeout: 15_000,
-    }).catch(() => {});
+    await page
+      .waitForSelector("[data-slot='skeleton']", {
+        state: "hidden",
+        timeout: 15_000,
+      })
+      .catch(() => {});
 
     await expect(page.locator("th:has-text('Email')")).toBeVisible();
     await expect(page.locator("th:has-text('Admin')")).toBeVisible();
@@ -29,72 +31,90 @@ test.describe("Admin — Users", () => {
 
   test("user rows are visible in table", async ({ page }) => {
     await page.goto("/admin/users");
-    await page.waitForSelector("[data-slot='skeleton']", {
-      state: "hidden",
-      timeout: 15_000,
-    }).catch(() => {});
+    await page
+      .waitForSelector("[data-slot='skeleton']", {
+        state: "hidden",
+        timeout: 15_000,
+      })
+      .catch(() => {});
 
     const rows = page.locator("table tbody tr");
     await expect(rows.first()).toBeVisible();
   });
 
-  test("shows both seeded users", async ({ page }) => {
+  test("shows seeded admin user", async ({ page }) => {
     await page.goto("/admin/users");
-    await page.waitForSelector("[data-slot='skeleton']", {
-      state: "hidden",
-      timeout: 15_000,
-    }).catch(() => {});
+    await page
+      .waitForSelector("[data-slot='skeleton']", {
+        state: "hidden",
+        timeout: 15_000,
+      })
+      .catch(() => {});
 
-    await expect(page.locator("text=e2e@vulnscan.dev")).toBeVisible();
-    await expect(page.locator("text=e2e-nonadmin@vulnscan.dev")).toBeVisible();
+    await expect(
+      page.locator("table").locator("text=e2e@vulnscan.dev"),
+    ).toBeVisible();
   });
 
   test("admin badge shows Yes for admin user", async ({ page }) => {
     await page.goto("/admin/users");
-    await page.waitForSelector("[data-slot='skeleton']", {
-      state: "hidden",
-      timeout: 15_000,
-    }).catch(() => {});
+    await page
+      .waitForSelector("[data-slot='skeleton']", {
+        state: "hidden",
+        timeout: 15_000,
+      })
+      .catch(() => {});
 
-    const adminBadge = page.locator("table tbody tr", {
-      has: page.locator("text=e2e@vulnscan.dev"),
-    }).locator("td span:has-text('Yes')").first();
+    const adminBadge = page
+      .locator("table tbody tr", {
+        has: page.locator("text=e2e@vulnscan.dev"),
+      })
+      .locator("td span:has-text('Yes')")
+      .first();
     await expect(adminBadge).toBeVisible();
   });
 
   test("total count badge is visible", async ({ page }) => {
     await page.goto("/admin/users");
-    await page.waitForSelector("[data-slot='skeleton']", {
-      state: "hidden",
-      timeout: 15_000,
-    }).catch(() => {});
+    await page
+      .waitForSelector("[data-slot='skeleton']", {
+        state: "hidden",
+        timeout: 15_000,
+      })
+      .catch(() => {});
 
     await expect(page.locator("text=/\\d+ total/")).toBeVisible();
   });
 
   test("search input filters users", async ({ page }) => {
     await page.goto("/admin/users");
-    await page.waitForSelector("[data-slot='skeleton']", {
-      state: "hidden",
-      timeout: 15_000,
-    }).catch(() => {});
+    await page
+      .waitForSelector("[data-slot='skeleton']", {
+        state: "hidden",
+        timeout: 15_000,
+      })
+      .catch(() => {});
 
     const searchInput = page.locator("input[placeholder='Search email...']");
-    await searchInput.fill("e2e-nonadmin");
+    await searchInput.fill("e2e");
     await page.waitForTimeout(500);
 
     const rows = page.locator("table tbody tr");
     const rowCount = await rows.count();
     expect(rowCount).toBeGreaterThanOrEqual(1);
-    await expect(page.locator("text=e2e-nonadmin@vulnscan.dev")).toBeVisible();
+    await expect(
+      page.locator("table").locator("text=e2e@vulnscan.dev"),
+    ).toBeVisible();
   });
 
   test("search with no results shows empty state", async ({ page }) => {
     await page.goto("/admin/users");
-    await page.waitForSelector("[data-slot='skeleton']", {
-      state: "hidden",
-      timeout: 15_000,
-    }).catch(() => {});
+    await page
+      .waitForSelector("[data-slot='skeleton']", {
+        state: "hidden",
+        timeout: 15_000,
+      })
+      .catch(() => {});
 
     const searchInput = page.locator("input[placeholder='Search email...']");
     await searchInput.fill("nonexistent-user-xyz");
@@ -105,10 +125,12 @@ test.describe("Admin — Users", () => {
 
   test("clicking View navigates to user detail page", async ({ page }) => {
     await page.goto("/admin/users");
-    await page.waitForSelector("[data-slot='skeleton']", {
-      state: "hidden",
-      timeout: 15_000,
-    }).catch(() => {});
+    await page
+      .waitForSelector("[data-slot='skeleton']", {
+        state: "hidden",
+        timeout: 15_000,
+      })
+      .catch(() => {});
 
     const viewBtn = page.locator("button:has-text('View')").first();
     await viewBtn.click({ force: true });

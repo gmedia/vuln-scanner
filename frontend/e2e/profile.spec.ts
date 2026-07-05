@@ -31,7 +31,7 @@ test.describe("Profile", () => {
     await page.goto("/profile");
     await expect(page.locator("aside")).toBeVisible();
     await expect(
-      page.locator("aside").locator("a:has-text('Dashboard')"),
+      page.locator("aside").locator("a:has-text('Dashboard')").first(),
     ).toBeVisible();
   });
 });

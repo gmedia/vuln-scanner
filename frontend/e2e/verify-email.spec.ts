@@ -17,7 +17,9 @@ test.describe("Verify Email", () => {
     test("shows instructional text", async ({ page }) => {
       await page.goto("/verify-email");
       await expect(
-        page.locator("text=We've sent a verification link to your email address"),
+        page.locator(
+          "text=We've sent a verification link to your email address",
+        ),
       ).toBeVisible();
     });
 
@@ -31,7 +33,10 @@ test.describe("Verify Email", () => {
     test("resend email input has correct placeholder", async ({ page }) => {
       await page.goto("/verify-email");
       const emailInput = page.locator("input[type='email']");
-      await expect(emailInput).toHaveAttribute("placeholder", "you@example.com");
+      await expect(emailInput).toHaveAttribute(
+        "placeholder",
+        "you@example.com",
+      );
     });
 
     test("resend button is enabled when email is filled", async ({ page }) => {
@@ -65,10 +70,15 @@ test.describe("Verify Email", () => {
     test("shows verification error for invalid token", async ({ page }) => {
       await page.goto("/verify-email?token=invalid-token-value");
 
+      // Wait for loading to finish (XCircle icon appears only in error state)
+      await expect(page.locator(".text-destructive").first()).toBeVisible({
+        timeout: 15_000,
+      });
+
       const errorOrFailed = page.locator(
-        "text=/Verification failed|verification failed/i",
+        "text=/Verification failed|kadaluarsa/i",
       );
-      await expect(errorOrFailed).toBeVisible({ timeout: 15_000 });
+      await expect(errorOrFailed).toBeVisible();
     });
 
     test("Back to Login button visible in error state", async ({ page }) => {
