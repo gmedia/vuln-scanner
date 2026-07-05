@@ -24,6 +24,11 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 # Import models first so metadata is populated
 from app.database import Base
 from app.models.api_key import ApiKey  # noqa: F401
+from app.models.credit_log import CreditLog  # noqa: F401
+from app.models.cve_cache import CveCache  # noqa: F401
+from app.models.email_verification import EmailVerificationToken  # noqa: F401
+from app.models.password_reset import PasswordResetToken  # noqa: F401
+from app.models.pricing import PricingConfig  # noqa: F401
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.user import User
