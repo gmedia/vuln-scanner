@@ -115,6 +115,13 @@ async def seed() -> None:
             session.add(e2e_user)
             await session.flush()
             print(f"Created verified E2E test user: {e2e_email}")
+        elif not e2e_user.is_admin or not e2e_user.is_verified:
+            e2e_user.is_admin = True
+            e2e_user.is_verified = True
+            e2e_user.verified_at = e2e_user.verified_at or datetime.now(UTC)
+            await session.flush()
+            await session.commit()
+            print("Fixed E2E user flags: is_admin=True, is_verified=True")
 
         # Ensure E2E user always has enough credits for scan tests
         if e2e_user.credits < 100:
@@ -124,6 +131,9 @@ async def seed() -> None:
             )
             await session.flush()
             print(f"Topped up E2E user credits to 100 (was {e2e_user.credits})")
+
+        # Commit any user-level changes before early-return on existing scan jobs
+        await session.commit()
 
         result = await session.execute(text("SELECT COUNT(*) FROM scan_jobs"))
         count: int = result.scalar_one()  # type: ignore[assignment]
