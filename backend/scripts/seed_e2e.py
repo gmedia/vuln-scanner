@@ -108,6 +108,7 @@ async def seed() -> None:
                 email=e2e_email,
                 password_hash=hash_password("E2eTestPass123!"),
                 is_verified=True,
+                is_admin=True,
                 verified_at=datetime.now(UTC),
                 credits=100,
             )
