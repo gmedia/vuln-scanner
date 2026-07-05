@@ -62,7 +62,8 @@ test.describe("Admin — User Detail", () => {
       })
       .catch(() => {});
 
-    await expect(page.locator("text=e2e@vulnscan.dev")).toBeVisible();
+    // .last() — the detail page email renders after the header user button
+    await expect(page.locator("text=e2e@vulnscan.dev").last()).toBeVisible();
   });
 
   test("admin badge shows Admin", async ({ page }) => {

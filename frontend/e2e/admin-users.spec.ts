@@ -134,7 +134,7 @@ test.describe("Admin — Users", () => {
 
     const viewBtn = page.locator("button:has-text('View')").first();
     await viewBtn.click({ force: true });
-    await page.waitForURL(/\/admin\/users\/\d+/, { timeout: 15_000 });
+    await page.waitForURL(/\/admin\/users\/[a-f0-9-]+/, { timeout: 15_000 });
     await expect(page.locator("h2:has-text('USER DETAILS')")).toBeVisible();
   });
 });
