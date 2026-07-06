@@ -50,7 +50,7 @@ test.describe("Admin — User Detail", () => {
       })
       .catch(() => {});
 
-    await expect(page.locator("text=PROFILE")).toBeVisible();
+    await expect(page.locator("h3:has-text('PROFILE')")).toBeVisible();
   });
 
   test("displays user email", async ({ page }) => {
