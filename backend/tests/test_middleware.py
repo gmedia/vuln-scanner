@@ -1,4 +1,5 @@
 import redis.asyncio as redis
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import settings
 
@@ -63,7 +64,7 @@ def test_options_preflight(client):
 
 def test_auth_db_exception(client, db_session, monkeypatch):
     async def mock_execute(*args, **kwargs):
-        raise Exception("DB error")
+        raise SQLAlchemyError("DB error")
 
     monkeypatch.setattr(db_session, "execute", mock_execute)
     resp = client.get("/api/scan/history", headers={"X-API-Key": "some-non-master-key"})

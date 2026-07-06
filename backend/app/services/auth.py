@@ -131,7 +131,7 @@ def _check_redis_revocation_sync(jti: str | None, sub: str | None) -> None:
                 raise jwt.PyJWTError("Token has been revoked (user logged out)")
     except jwt.PyJWTError:
         raise
-    except Exception:
+    except redis.RedisError:
         pass
 
 

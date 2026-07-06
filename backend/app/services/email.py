@@ -4,6 +4,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 import aiosmtplib
+from aiosmtplib.errors import SMTPException
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,7 @@ async def send_verification_email(email_to: str, token: str) -> bool:
         logger.info("Verification email sent to %s", email_to)
         return True
 
-    except Exception:
+    except (SMTPException, OSError):
         logger.exception("Failed to send verification email to %s", email_to)
         return False
 
@@ -124,6 +125,6 @@ async def send_password_reset_email(email_to: str, token: str) -> bool:
         logger.info("Password reset email sent to %s", email_to)
         return True
 
-    except Exception:
+    except (SMTPException, OSError):
         logger.exception("Failed to send password reset email to %s", email_to)
         return False

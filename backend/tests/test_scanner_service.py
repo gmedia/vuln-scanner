@@ -1,6 +1,7 @@
 import uuid
 
 import pytest
+from celery.exceptions import CeleryError
 from fastapi import HTTPException
 from sqlalchemy import select
 
@@ -199,7 +200,7 @@ async def test_start_scan_dispatch_failure_rollback(db_session, sample_user, moc
     original_credits = sample_user.credits
 
     # Override the already-patched send_task to raise
-    mock_celery.side_effect = RuntimeError("Celery broker down")
+    mock_celery.side_effect = CeleryError("Celery broker down")
 
     svc = ScannerService(db_session)
     with pytest.raises(HTTPException) as exc_info:

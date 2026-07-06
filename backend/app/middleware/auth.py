@@ -7,6 +7,7 @@ import redis.asyncio as redis
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
@@ -106,7 +107,7 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
         try:
             result = await session.execute(select(ApiKey).where(ApiKey.key_hash == key_hash))
             api_key = result.scalar_one_or_none()
-        except Exception:
+        except SQLAlchemyError:
             return JSONResponse(status_code=401, content={"detail": "Invalid API key"})
         finally:
             await gen.aclose()

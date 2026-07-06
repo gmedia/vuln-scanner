@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import WebSocketDisconnect
+from redis.exceptions import RedisError
 
 from app.config import settings
 
@@ -234,7 +235,7 @@ class TestWebSocketRateLimit:
         monkeypatch.setattr("app.api.websocket.validate_api_key", mock_validate)
 
         async def mock_ws_rl_error():
-            raise Exception("Redis connection refused")
+            raise RedisError("Redis connection refused")
 
         monkeypatch.setattr("app.api.websocket._get_ws_rate_limit_redis", mock_ws_rl_error)
 
@@ -621,7 +622,7 @@ def test_websocket_redis_subscribe_error(client, monkeypatch):
     monkeypatch.setattr("app.api.websocket.validate_api_key", mock_validate)
 
     mock_pubsub = MagicMock()
-    mock_pubsub.subscribe = AsyncMock(side_effect=Exception("subscribe failed"))
+    mock_pubsub.subscribe = AsyncMock(side_effect=RedisError("subscribe failed"))
     mock_pubsub.unsubscribe = AsyncMock()
 
     mock_redis = MagicMock()
