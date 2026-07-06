@@ -352,34 +352,34 @@ def test_list_keys_has_correct_shape(client):
 
 
 def test_hash_key_deterministic():
-    from app.api.key_routes import _hash_key
+    from app.utils import hash_key
 
-    result1 = _hash_key("my-secret-key")
-    result2 = _hash_key("my-secret-key")
+    result1 = hash_key("my-secret-key")
+    result2 = hash_key("my-secret-key")
     assert result1 == result2
 
 
 def test_hash_key_different_inputs():
-    from app.api.key_routes import _hash_key
+    from app.utils import hash_key
 
-    h1 = _hash_key("key-one")
-    h2 = _hash_key("key-two")
+    h1 = hash_key("key-one")
+    h2 = hash_key("key-two")
     assert h1 != h2
 
 
 def test_hash_key_output_format():
-    from app.api.key_routes import _hash_key
+    from app.utils import hash_key
 
-    result = _hash_key("some-key")
+    result = hash_key("some-key")
     assert isinstance(result, str)
     assert len(result) == 64
     assert all(c in "0123456789abcdef" for c in result)
 
 
 def test_hash_key_empty_string():
-    from app.api.key_routes import _hash_key
+    from app.utils import hash_key
 
-    result = _hash_key("")
+    result = hash_key("")
     assert len(result) == 64
 
 

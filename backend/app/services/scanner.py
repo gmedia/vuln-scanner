@@ -23,13 +23,6 @@ celery_app = Celery(
     backend=settings.celery_result_backend,
 )
 
-SCAN_TYPE_PRICING_MAP = {
-    "ip": "ip_scan_credit_cost",
-    "domain": "domain_scan_credit_cost",
-    "apk": "apk_scan_credit_cost",
-    "ipa": "ipa_scan_credit_cost",
-}
-
 
 class ScannerService:
     def __init__(self, db: AsyncSession):
@@ -49,7 +42,7 @@ class ScannerService:
         if pricing:
             credit_cost = pricing.credit_cost
         else:
-            config_attr = SCAN_TYPE_PRICING_MAP.get(scan_type, "")
+            config_attr = settings.scan_type_pricing_map.get(scan_type, "")
             credit_cost = getattr(settings, config_attr, 0) if config_attr else 0
 
         # Atomic check-and-deduct: only deduct if user has enough credits
@@ -162,7 +155,7 @@ class ScannerService:
         # Verify job exists and belongs to user before returning findings
         job_result = await self.db.execute(select(ScanJob.id).where(ScanJob.id == job_id, ScanJob.user_id == user_id))
         if not job_result.scalar_one_or_none():
-            return []
+            raise HTTPException(status_code=404, detail="Scan job not found")
         result = await self.db.execute(select(ScanFinding).where(ScanFinding.job_id == job_id))
         findings = result.scalars().all()
         return [ScanFindingResponse.model_validate(f) for f in findings]

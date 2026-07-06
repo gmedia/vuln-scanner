@@ -42,8 +42,8 @@ async def test_export_json(client, db_session, sample_user):
     resp = client.get(f"/api/scan/{job.id}/export?format=json", headers=HEADERS)
     assert resp.status_code == 200
     data = resp.json()
-    assert "scan_id" in data
-    assert data["scan_id"] == str(job.id)
+    assert "job_id" in data
+    assert data["job_id"] == str(job.id)
     assert data["target"] == "10.0.0.1"
     assert "findings" in data
     assert len(data["findings"]) == 1
@@ -170,7 +170,7 @@ async def test_get_scan_detail_with_findings_and_export(client, db_session, samp
     titles = {f["title"] for f in data["findings"]}
     assert "Open port 22" in titles
     assert "Open port 80" in titles
-    assert data["scan_id"] == str(job.id)
+    assert data["job_id"] == str(job.id)
     assert data["target"] == "192.168.1.1"
     assert "exported_at" in data
 
@@ -312,7 +312,7 @@ def test_export_json_helper_null_dates():
         findings = [_MockFinding()]
 
     result = _export_json(_MockJob())
-    assert result["scan_id"] == "00000000-0000-0000-0000-000000000000"
+    assert result["job_id"] == "00000000-0000-0000-0000-000000000000"
     assert result["started_at"] is None
     assert result["completed_at"] is None
     assert result["duration_seconds"] is None

@@ -1,7 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -109,7 +109,7 @@ async def get_user_detail(
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     scan_count_result = await db.execute(select(func.count(ScanJob.id)).where(ScanJob.user_id == user.id))
     scan_count = scan_count_result.scalar() or 0
@@ -125,7 +125,7 @@ async def get_user_detail(
     )
 
 
-@router.post("/users/{user_id}/credits")
+@router.post("/users/{user_id}/credits", response_model=AdminUserItem)
 async def adjust_user_credits(
     user_id: uuid.UUID,
     body: CreditUpdateRequest,
@@ -135,10 +135,10 @@ async def adjust_user_credits(
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     if body.amount < 0 and user.credits + body.amount < 0:
-        raise HTTPException(status_code=400, detail="Insufficient credits for deduction")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Insufficient credits for deduction")
 
     await db.execute(
         text("UPDATE users SET credits = credits + :amount WHERE id = :uid"),
@@ -182,7 +182,7 @@ async def get_pricing(
     return PricingListResponse(items=[PricingItem.model_validate(item) for item in items])
 
 
-@router.put("/pricing/{scan_type}")
+@router.put("/pricing/{scan_type}", response_model=PricingItem)
 async def update_pricing(
     scan_type: str,
     body: PricingUpdateRequest,
@@ -190,7 +190,7 @@ async def update_pricing(
     db: AsyncSession = Depends(get_db),
 ) -> PricingItem:
     if scan_type not in ("ip", "domain", "apk", "ipa"):
-        raise HTTPException(status_code=400, detail="Invalid scan type")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid scan type")
 
     result = await db.execute(select(PricingConfig).where(PricingConfig.scan_type == scan_type))
     pricing = result.scalar_one_or_none()

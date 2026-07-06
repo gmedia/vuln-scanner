@@ -1,4 +1,3 @@
-import hashlib
 import secrets
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -15,14 +14,11 @@ from app.schemas.api_key import (
     KeyRevokeResponse,
 )
 from app.services.auth import get_current_admin
+from app.utils import hash_key
 
 router = APIRouter(prefix="/keys", tags=["keys"])
 
 API_KEY_PREFIX = "sk_"
-
-
-def _hash_key(key: str) -> str:
-    return hashlib.sha256(key.encode()).hexdigest()
 
 
 def _generate_key() -> str:
@@ -37,7 +33,7 @@ async def generate_key(
 ) -> KeyResponse:
     """Generate a new API key. Returns the plain-text key once; only the hash is stored."""
     plain_key = _generate_key()
-    key_hash = _hash_key(plain_key)
+    key_hash = hash_key(plain_key)
 
     api_key = ApiKey(
         key_hash=key_hash,

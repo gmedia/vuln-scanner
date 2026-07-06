@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Upload
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
 from app.models.scan_job import ScanJob
 from app.models.user import User
@@ -24,12 +25,11 @@ from app.services.auth import get_current_user
 from app.services.scanner import ScannerService
 
 router = APIRouter(tags=["scans"])
-UPLOAD_DIR = "/tmp/scans"
 
 
 def _export_json(job: ScanJobDetailResponse) -> dict[str, object]:
     return {
-        "scan_id": str(job.id),
+        "job_id": str(job.id),
         "scan_type": job.scan_type,
         "target": job.target,
         "status": job.status,
@@ -181,8 +181,8 @@ async def start_mobile_scan(
 
     ext = ".apk" if platform == "android" else ".ipa"
     safe_name = os.path.basename(file.filename or f"upload{ext}")
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    file_path = os.path.join(UPLOAD_DIR, f"{os.urandom(8).hex()}_{safe_name}")
+    os.makedirs(settings.upload_dir, exist_ok=True)
+    file_path = os.path.join(settings.upload_dir, f"{os.urandom(8).hex()}_{safe_name}")
 
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)

@@ -1623,7 +1623,7 @@ class TestResendVerification:
         )
         assert resp.status_code == 200
         data = resp.json()
-        assert "Verification email sent" in data["message"]
+        assert "Email verifikasi telah dikirim" in data["message"]
 
     def test_already_verified_returns_200_silent(self, auth_client, db_session):
         import asyncio
@@ -1636,7 +1636,7 @@ class TestResendVerification:
         )
         assert resp.status_code == 200
         data = resp.json()
-        assert "Verification email sent" in data["message"]
+        assert "Email verifikasi telah dikirim" in data["message"]
 
     def test_success_sends_email(self, auth_client, db_session):
         import asyncio
@@ -1650,7 +1650,7 @@ class TestResendVerification:
             )
         assert resp.status_code == 200
         data = resp.json()
-        assert "Verification email sent" in data["message"]
+        assert "Email verifikasi telah dikirim" in data["message"]
         mock_send.assert_called_once()
 
     def test_email_failure_still_returns_200(self, auth_client, db_session):
@@ -1666,7 +1666,7 @@ class TestResendVerification:
             )
         assert resp.status_code == 200
         data = resp.json()
-        assert "Verification email sent" in data["message"]
+        assert "Email verifikasi telah dikirim" in data["message"]
 
     def test_success_with_existing_token_deletes_old(self, auth_client, db_session):
         """Covers branch where old verification token exists and gets deleted."""
@@ -1691,7 +1691,7 @@ class TestResendVerification:
             )
         assert resp.status_code == 200
         data = resp.json()
-        assert "Verification email sent" in data["message"]
+        assert "Email verifikasi telah dikirim" in data["message"]
 
         # Old token should be deleted
         async def check_old_deleted():

@@ -60,6 +60,21 @@ class Settings(BaseSettings):
     apk_scan_credit_cost: int = 3
     ipa_scan_credit_cost: int = 3
 
+    upload_dir: str = "/tmp/scans"
+
+    @property
+    def scan_type_pricing_map(self) -> dict[str, str]:
+        return {
+            "ip": "ip_scan_credit_cost",
+            "domain": "domain_scan_credit_cost",
+            "apk": "apk_scan_credit_cost",
+            "ipa": "ipa_scan_credit_cost",
+        }
+
+    @property
+    def valid_scan_types(self) -> tuple[str, ...]:
+        return ("ip", "domain", "apk", "ipa")
+
 
 settings = Settings()
 

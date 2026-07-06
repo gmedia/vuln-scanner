@@ -26,6 +26,7 @@ from app.schemas.auth import (
     MessageResponse,
     RefreshRequest,
     RegisterRequest,
+    ResendVerificationRequest,
     ResetPasswordRequest,
     RevokeRequest,
     TokenResponse,
@@ -60,9 +61,7 @@ change_password_limiter = RateLimiter(max_requests=3, window_seconds=60, prefix=
 
 
 @router.post("/register", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
-async def register(
-    request: Request, body: RegisterRequest, db: AsyncSession = Depends(get_db)
-) -> MessageResponse | Response:
+async def register(request: Request, body: RegisterRequest, db: AsyncSession = Depends(get_db)) -> MessageResponse:
     limit_response = await register_limiter(request)
     if limit_response:
         return limit_response
@@ -121,7 +120,7 @@ async def login(
     request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
-) -> LoginResponse | Response:
+) -> LoginResponse:
     limit_response = await login_limiter(request)
     if limit_response:
         return limit_response
@@ -167,7 +166,7 @@ async def login(
 @router.post("/verify-email", response_model=MessageResponse)
 async def verify_email(
     request: Request, body: VerifyEmailRequest, db: AsyncSession = Depends(get_db)
-) -> MessageResponse | Response:
+) -> MessageResponse:
     limit_response = await verify_email_limiter(request)
     if limit_response:
         return limit_response
@@ -209,8 +208,8 @@ async def verify_email(
 
 @router.post("/resend-verification", response_model=MessageResponse)
 async def resend_verification(
-    request: Request, body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)
-) -> MessageResponse | Response:
+    request: Request, body: ResendVerificationRequest, db: AsyncSession = Depends(get_db)
+) -> MessageResponse:
     limit_response = await resend_verification_limiter(request)
     if limit_response:
         return limit_response
@@ -218,7 +217,7 @@ async def resend_verification(
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
     if user is None or user.is_verified is True:
-        return MessageResponse(message="Verification email sent. Please check your inbox.")
+        return MessageResponse(message="Email verifikasi telah dikirim. Silakan periksa kotak masuk Anda.")
 
     token_str = secrets.token_urlsafe(32)
 
@@ -241,13 +240,13 @@ async def resend_verification(
     except SMTPException:
         logger.exception("Failed to resend verification email to %s", user.email)
 
-    return MessageResponse(message="Verification email sent. Please check your inbox.")
+    return MessageResponse(message="Email verifikasi telah dikirim. Silakan periksa kotak masuk Anda.")
 
 
 @router.post("/forgot-password", response_model=MessageResponse)
 async def forgot_password(
     request: Request, body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)
-) -> MessageResponse | Response:
+) -> MessageResponse:
     limit_response = await forgot_password_limiter(request)
     if limit_response:
         return limit_response
@@ -282,7 +281,7 @@ async def forgot_password(
 @router.post("/reset-password", response_model=MessageResponse)
 async def reset_password(
     request: Request, body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)
-) -> MessageResponse | Response:
+) -> MessageResponse:
     limit_response = await reset_password_limiter(request)
     if limit_response:
         return limit_response
@@ -325,13 +324,13 @@ async def reset_password(
     return MessageResponse(message="Kata sandi berhasil direset")
 
 
-@router.post("/refresh", response_model=None)
+@router.post("/refresh", response_model=TokenResponse)
 async def refresh(
     request: Request,
     body: RefreshRequest | None = None,
     response: Response = None,  # type: ignore[assignment]  # FastAPI injects Response, not a body field
     db: AsyncSession = Depends(get_db),
-) -> TokenResponse | Response:
+) -> TokenResponse:
     limit_response = await refresh_limiter(request)
     if limit_response:
         return limit_response
@@ -441,7 +440,7 @@ async def change_password(
     body: ChangePasswordRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> MessageResponse | Response:
+) -> MessageResponse:
     limit_response = await change_password_limiter(request)
     if limit_response:
         return limit_response

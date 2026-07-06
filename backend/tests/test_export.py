@@ -81,7 +81,7 @@ async def test_export_defaults_to_json(client, db_session, sample_user):
     resp = client.get(f"/api/scan/{job.id}/export", headers=HEADERS)
     assert resp.status_code == 200
     data = resp.json()
-    assert data["scan_id"] == str(job.id)
+    assert data["job_id"] == str(job.id)
     assert "exported_at" in data
     assert "application/octet-stream" in resp.headers.get("content-type", "")
 

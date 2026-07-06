@@ -1,4 +1,3 @@
-import hashlib
 import logging
 import time
 from collections.abc import Awaitable, Callable
@@ -14,6 +13,7 @@ from starlette.types import ASGIApp
 from app.config import settings
 from app.database import get_db as _get_db
 from app.models.api_key import ApiKey
+from app.utils import hash_key
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +100,7 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
             settings.api_key[:8] + "..." if len(settings.api_key) > 8 else settings.api_key,
         )
 
-        key_hash = hashlib.sha256(api_key_header.encode()).hexdigest()
+        key_hash = hash_key(api_key_header)
         get_db_fn = request.app.dependency_overrides.get(_get_db, _get_db)
         gen = get_db_fn()
         session = await gen.__anext__()
