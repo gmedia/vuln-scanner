@@ -1,11 +1,13 @@
 import uuid
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
+from app.middleware.rate_limit import RateLimiter
 from app.models.credit_log import CreditLog
 from app.models.pricing import PricingConfig
 from app.models.scan_finding import ScanFinding
@@ -24,12 +26,22 @@ from app.services.auth import get_current_admin
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
+admin_limiter = RateLimiter(
+    max_requests=settings.admin_rate_limit,
+    window_seconds=settings.admin_rate_limit_window,
+    prefix="ratelimit:admin",
+)
+
 
 @router.get("/stats", response_model=AdminStats)
 async def get_stats(
+    request: Request,
     current_admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
 ) -> AdminStats:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        return limit_response
     total_users_result = await db.execute(select(func.count(User.id)))
     total_users = total_users_result.scalar() or 0
 
@@ -60,12 +72,16 @@ async def get_stats(
 
 @router.get("/users", response_model=AdminUserList)
 async def get_users(
+    request: Request,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     search: str = Query(default=""),
     current_admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
 ) -> AdminUserList:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        return limit_response
     count_query = select(func.count(User.id))
     if search:
         count_query = count_query.where(User.email.ilike(f"%{search}%"))
@@ -102,10 +118,14 @@ async def get_users(
 
 @router.get("/users/{user_id}", response_model=AdminUserItem)
 async def get_user_detail(
+    request: Request,
     user_id: uuid.UUID,
     current_admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
 ) -> AdminUserItem:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        return limit_response
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
@@ -127,11 +147,15 @@ async def get_user_detail(
 
 @router.post("/users/{user_id}/credits", response_model=AdminUserItem)
 async def adjust_user_credits(
+    request: Request,
     user_id: uuid.UUID,
     body: CreditUpdateRequest,
     current_admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
 ) -> AdminUserItem:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        return limit_response
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
@@ -174,9 +198,13 @@ async def adjust_user_credits(
 
 @router.get("/pricing", response_model=PricingListResponse)
 async def get_pricing(
+    request: Request,
     current_admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
 ) -> PricingListResponse:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        return limit_response
     result = await db.execute(select(PricingConfig).order_by(PricingConfig.scan_type))
     items = result.scalars().all()
     return PricingListResponse(items=[PricingItem.model_validate(item) for item in items])
@@ -184,11 +212,15 @@ async def get_pricing(
 
 @router.put("/pricing/{scan_type}", response_model=PricingItem)
 async def update_pricing(
+    request: Request,
     scan_type: str,
     body: PricingUpdateRequest,
     current_admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
 ) -> PricingItem:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        return limit_response
     if scan_type not in ("ip", "domain", "apk", "ipa"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid scan type")
 

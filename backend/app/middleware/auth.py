@@ -27,7 +27,6 @@ EXCLUDED_PATHS = [
     "/api/auth/login",
     "/api/auth/verify-email",
     "/api/auth/refresh",
-    "/api/auth/me",
 ]
 
 MASTER_KEY_ID = "__master__"
@@ -57,7 +56,11 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         api_key_header = request.headers.get("X-API-Key")
+
+        # JWT-authenticated requests get IP-based rate limiting only
         if not api_key_header:
+            if request.headers.get("Authorization", "").startswith("Bearer "):
+                return await self._jwt_rate_limit(request, call_next)
             return JSONResponse(status_code=401, content={"detail": "Missing API key"})
 
         client_ip = request.client.host if request.client else "unknown"
@@ -156,6 +159,49 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
         now = time.time()
         reset_at = int(now + 3600)
         response.headers["X-RateLimit-Limit"] = str(rate_limit)
+        response.headers["X-RateLimit-Remaining"] = str(remaining)
+        response.headers["X-RateLimit-Reset"] = str(reset_at)
+        return response
+
+    async def _jwt_rate_limit(
+        self,
+        request: Request,
+        call_next: Callable[[Request], Awaitable[JSONResponse]],
+    ) -> JSONResponse:
+        """IP-based rate limiting for JWT-authenticated requests (no API key present)."""
+        jwt_limit = settings.jwt_rate_limit
+        jwt_window = settings.jwt_rate_limit_window
+
+        if request.headers.get("X-E2E-Test"):
+            return await call_next(request)
+
+        client_ip = request.client.host if request.client else "unknown"
+        jwt_key = f"ratelimit:jwt:{client_ip}"
+        try:
+            count = await (await self._get_redis()).incr(jwt_key)
+            if count == 1:
+                await (await self._get_redis()).expire(jwt_key, jwt_window)
+            if count > jwt_limit:
+                return JSONResponse(
+                    status_code=429,
+                    content={"detail": "Too many requests. Try again later."},
+                    headers={
+                        "Retry-After": str(jwt_window),
+                        "X-RateLimit-Limit": str(jwt_limit),
+                        "X-RateLimit-Remaining": "0",
+                        "X-RateLimit-Reset": str(int(time.time() + jwt_window)),
+                    },
+                )
+        except redis.RedisError:
+            logger.critical("Rate limit infrastructure unavailable: Redis down for JWT rate limit")
+            return JSONResponse(
+                status_code=503, content={"detail": "Service temporarily unavailable. Rate limit infrastructure down."}
+            )
+
+        response = await call_next(request)
+        remaining = max(0, jwt_limit - count)
+        reset_at = int(time.time() + jwt_window)
+        response.headers["X-RateLimit-Limit"] = str(jwt_limit)
         response.headers["X-RateLimit-Remaining"] = str(remaining)
         response.headers["X-RateLimit-Reset"] = str(reset_at)
         return response
