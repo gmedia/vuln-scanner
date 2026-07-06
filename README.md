@@ -233,3 +233,9 @@ curl http://localhost/api/scan/{id}/export?format=html \
 ## License
 
 MIT
+
+## Usage
+
+```bash
+python3 main.py
+```
