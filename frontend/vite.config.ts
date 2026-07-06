@@ -27,6 +27,7 @@ export default defineConfig(({ mode }) => {
               if (apiKey) {
                 proxyReq.setHeader("X-API-Key", apiKey);
               }
+              proxyReq.setHeader("X-E2E-Test", "true");
             });
           },
         },
