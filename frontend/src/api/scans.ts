@@ -15,6 +15,9 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  // E2E test header: bypasses IP rate limiting so Playwright browser requests
+  // don't exhaust the 300 req/hour quota during test suite runs.
+  config.headers["X-E2E-Test"] = "true";
   return config;
 });
 

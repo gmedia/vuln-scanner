@@ -69,6 +69,33 @@ async function globalSetup(config: FullConfig) {
     process.exit(1);
   }
 
+  // Replenish credits for E2E test user — scans consume credits and after many
+  // runs the balance can drop below what tests need (domain: 2, IP: 1 credit).
+  try {
+    // Fetch user ID via /api/auth/me
+    const meRes = await page.request.get(`${baseURL}/api/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "X-API-Key": process.env.API_KEY || "dev-api-key-change-me",
+        "X-E2E-Test": "true",
+      },
+    });
+    if (meRes.status() === 200) {
+      const me = await meRes.json();
+      await page.request.post(`${baseURL}/api/admin/users/${me.id}/credits`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+          "X-API-Key": process.env.API_KEY || "dev-api-key-change-me",
+          "X-E2E-Test": "true",
+        },
+        data: { amount: 1000 },
+      });
+    }
+  } catch {
+    // Non-fatal — tests may still work if credits haven't run out
+  }
+
   mkdirSync("e2e/.auth", { recursive: true });
   await page.context().storageState({ path: "e2e/.auth/storageState.json" });
 
