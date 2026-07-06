@@ -4,17 +4,18 @@ Web-based vulnerability scanner with 3 scan modes — IP, domain, and APK/IPA mo
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────┐
-│                   nginx :80                  │
-├─────────────────────────────────────────────┤
-│         frontend (React + Vite) :5173        │
-├─────────────────────────────────────────────┤
-│            backend (FastAPI) :8000           │
-├──────┬──────┬──────┬────────────────────────┤
-│ ip   │domain│mobile│                        │
-│worker│worker│worker│  Redis ── Postgres     │
-└──────┴──────┴──────┴────────────────────────┘
+```mermaid
+graph TD
+    nginx[nginx :80] --> frontend[frontend React + Vite :5173]
+    nginx --> backend[backend FastAPI :8000]
+    backend --> postgres[(PostgreSQL)]
+    backend --> redis[(Redis)]
+    backend --> ip_worker[IP Worker]
+    backend --> domain_worker[Domain Worker]
+    backend --> mobile_worker[Mobile Worker]
+    ip_worker --> redis
+    domain_worker --> redis
+    mobile_worker --> redis
 ```
 
 ## Quick Start
