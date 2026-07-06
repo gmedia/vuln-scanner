@@ -22,8 +22,10 @@ class TestHealthEndpoint:
 
     def test_health_redis_connected(self, client):
         mock_redis = AsyncMock()
+        mock_bad_db = MagicMock()
+        mock_bad_db.connect.side_effect = Exception("mock DB unavailable")
 
-        with patch("redis.asyncio.from_url", return_value=mock_redis):
+        with patch("redis.asyncio.from_url", return_value=mock_redis), patch("app.database.engine", mock_bad_db):
             resp = client.get("/health")
 
         assert resp.status_code == 503

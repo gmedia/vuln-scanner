@@ -97,16 +97,18 @@ class TestSecurityHeadersPresent:
 class TestHstsHeader:
     def test_hsts_is_set_when_cookie_secure(self):
         """Strict-Transport-Security header is set when settings.cookie_secure is True."""
-        from app.config import settings
+        from unittest.mock import patch
 
-        assert settings.cookie_secure is True
-        app = _make_app()
-        client = TestClient(app)
+        from app import config
 
-        resp = client.get("/test")
-        assert "Strict-Transport-Security" in resp.headers
-        assert "max-age=31536000" in resp.headers["Strict-Transport-Security"]
-        assert "includeSubDomains" in resp.headers["Strict-Transport-Security"]
+        with patch.object(config.settings, "cookie_secure", True):
+            app = _make_app()
+            client = TestClient(app)
+
+            resp = client.get("/test")
+            assert "Strict-Transport-Security" in resp.headers
+            assert "max-age=31536000" in resp.headers["Strict-Transport-Security"]
+            assert "includeSubDomains" in resp.headers["Strict-Transport-Security"]
 
     def test_hsts_is_omitted_when_cookie_secure_false(self):
         """Strict-Transport-Security header is NOT set when settings.cookie_secure is False."""
