@@ -3,6 +3,7 @@ import uuid
 from uuid import UUID
 
 from celery import Celery
+from celery.exceptions import CeleryError
 from celery.result import AsyncResult
 from fastapi import HTTPException
 from sqlalchemy import func, select, text
@@ -90,7 +91,7 @@ class ScannerService:
 
         try:
             task = self._dispatch_task(str(job.id), scan_type, target, ports, platform, file_path)
-        except Exception:
+        except CeleryError:
             # Rollback credit deduction and job creation
             await self.db.execute(
                 text("UPDATE users SET credits = credits + :cost WHERE id = :uid"),

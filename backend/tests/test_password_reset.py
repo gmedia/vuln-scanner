@@ -5,6 +5,7 @@ from email.mime.multipart import MIMEMultipart
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from aiosmtplib.errors import SMTPException
 from sqlalchemy import select
 
 import app.services.email as email_module
@@ -229,7 +230,7 @@ class TestForgotPassword:
         asyncio.get_event_loop().run_until_complete(_create_verified_user(db_session, email="emailfail@example.com"))
 
         with patch("app.api.auth_routes.send_password_reset_email") as mock_send:
-            mock_send.side_effect = Exception("SMTP connection failed")
+            mock_send.side_effect = SMTPException("SMTP connection failed")
             resp = auth_client.post(
                 "/api/auth/forgot-password",
                 json={"email": "emailfail@example.com"},
@@ -724,7 +725,7 @@ class TestSendPasswordResetEmailFailure:
     async def test_send_failure_returns_false(self):
         mock_smtp = AsyncMock()
         mock_smtp.connect = AsyncMock()
-        mock_smtp.send_message = AsyncMock(side_effect=Exception("Send failed"))
+        mock_smtp.send_message = AsyncMock(side_effect=SMTPException("Send failed"))
         mock_smtp.quit = AsyncMock()
 
         with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
@@ -740,7 +741,7 @@ class TestSendPasswordResetEmailFailure:
 
         mock_smtp = AsyncMock()
         mock_smtp.connect = AsyncMock()
-        mock_smtp.login = AsyncMock(side_effect=Exception("Auth failed"))
+        mock_smtp.login = AsyncMock(side_effect=SMTPException("Auth failed"))
 
         with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
             result = await send_password_reset_email("user@example.com", "token123")

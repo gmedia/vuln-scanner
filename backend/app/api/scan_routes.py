@@ -4,6 +4,7 @@ import os
 import shutil
 from datetime import UTC, datetime
 
+from celery.exceptions import CeleryError
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -197,7 +198,7 @@ async def start_mobile_scan(
             file_path=file_path,
         )
         return job
-    except Exception:
+    except (HTTPException, OSError, CeleryError):
         with contextlib.suppress(Exception):
             os.remove(file_path)
         raise

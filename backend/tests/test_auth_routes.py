@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import jwt
 import pytest
+from aiosmtplib.errors import SMTPException
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
@@ -874,7 +875,7 @@ class TestForgotPassword:
         user = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
 
         with patch("app.api.auth_routes.send_password_reset_email", new_callable=AsyncMock) as mock_send:
-            mock_send.side_effect = Exception("SMTP connection refused")
+            mock_send.side_effect = SMTPException("SMTP connection refused")
             resp = auth_client.post(
                 "/api/auth/forgot-password",
                 json={"email": user.email},
@@ -1304,7 +1305,7 @@ class TestLoginExtra:
 class TestRegisterExtra:
     def test_register_with_email_sending_failure_still_returns_201(self, auth_client, db_session):
         with patch("app.api.auth_routes.send_verification_email") as mock_send:
-            mock_send.side_effect = Exception("SMTP connection failed")
+            mock_send.side_effect = SMTPException("SMTP connection failed")
 
             resp = auth_client.post(
                 "/api/auth/register",
@@ -1658,7 +1659,7 @@ class TestResendVerification:
         user = asyncio.get_event_loop().run_until_complete(_create_unverified_user(db_session))
 
         with patch("app.api.auth_routes.send_verification_email", new_callable=AsyncMock) as mock_send:
-            mock_send.side_effect = Exception("SMTP failure")
+            mock_send.side_effect = SMTPException("SMTP failure")
             resp = auth_client.post(
                 "/api/auth/resend-verification",
                 json={"email": user.email},

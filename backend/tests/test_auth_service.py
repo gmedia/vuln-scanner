@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import jwt
 import pytest
+import redis
 
 from app.services.auth import (
     _check_redis_revocation_sync,
@@ -440,7 +441,7 @@ class TestCheckRedisRevocationSync:
     def test_redis_connection_error_no_crash(self):
         """When Redis connection fails, _check_redis_revocation_sync does not crash."""
         mock_redis = MagicMock()
-        mock_redis.get.side_effect = Exception("Connection refused")
+        mock_redis.get.side_effect = redis.RedisError("Connection refused")
         with patch("app.services.auth._get_sync_redis", return_value=mock_redis):
             # Should not raise
             _check_redis_revocation_sync("some-jti", "some-sub")

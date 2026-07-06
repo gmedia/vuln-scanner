@@ -3,6 +3,7 @@ from email.mime.multipart import MIMEMultipart
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from aiosmtplib.errors import SMTPException
 
 import app.services.email as email_module
 from app.services.email import send_password_reset_email, send_verification_email
@@ -178,7 +179,7 @@ class TestSendVerificationEmailFailure:
     async def test_send_failure_returns_false(self):
         mock_smtp = AsyncMock()
         mock_smtp.connect = AsyncMock()
-        mock_smtp.send_message = AsyncMock(side_effect=Exception("Send failed"))
+        mock_smtp.send_message = AsyncMock(side_effect=SMTPException("Send failed"))
         mock_smtp.quit = AsyncMock()
 
         with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
@@ -194,7 +195,7 @@ class TestSendVerificationEmailFailure:
 
         mock_smtp = AsyncMock()
         mock_smtp.connect = AsyncMock()
-        mock_smtp.login = AsyncMock(side_effect=Exception("Auth failed"))
+        mock_smtp.login = AsyncMock(side_effect=SMTPException("Auth failed"))
 
         with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
             result = await send_verification_email("user@example.com", "token123")
@@ -456,7 +457,7 @@ class TestEmailEdgeCases:
         mock_smtp = AsyncMock()
         mock_smtp.connect = AsyncMock()
         mock_smtp.send_message = AsyncMock()
-        mock_smtp.quit = AsyncMock(side_effect=Exception("Connection lost during quit"))
+        mock_smtp.quit = AsyncMock(side_effect=OSError("Connection lost during quit"))
 
         with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
             result = await send_verification_email("user@example.com", "token123")
@@ -476,10 +477,12 @@ class TestEmailEdgeCases:
         mock_smtp.send_message = AsyncMock(side_effect=RuntimeError("Unexpected error"))
         mock_smtp.quit = AsyncMock()
 
-        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
-            result = await send_verification_email("user@example.com", "token123")
+        with (
+            patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp),
+            pytest.raises(RuntimeError, match="Unexpected error"),
+        ):
+            await send_verification_email("user@example.com", "token123")
 
-        assert result is False
         mock_smtp.send_message.assert_awaited_once()
 
     # -- SMTP constructor timeout ----------------------------------------------
@@ -776,7 +779,7 @@ class TestSendPasswordResetEmailFailure:
     async def test_send_failure_returns_false(self):
         mock_smtp = AsyncMock()
         mock_smtp.connect = AsyncMock()
-        mock_smtp.send_message = AsyncMock(side_effect=Exception("Send failed"))
+        mock_smtp.send_message = AsyncMock(side_effect=SMTPException("Send failed"))
         mock_smtp.quit = AsyncMock()
 
         with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
@@ -792,7 +795,7 @@ class TestSendPasswordResetEmailFailure:
 
         mock_smtp = AsyncMock()
         mock_smtp.connect = AsyncMock()
-        mock_smtp.login = AsyncMock(side_effect=Exception("Auth failed"))
+        mock_smtp.login = AsyncMock(side_effect=SMTPException("Auth failed"))
 
         with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
             result = await send_password_reset_email("user@example.com", "token123")

@@ -3,6 +3,7 @@ import logging
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from redis.asyncio import Redis
+from redis.exceptions import RedisError
 from sqlalchemy import select
 
 from app.config import settings
@@ -93,7 +94,7 @@ async def scan_progress(
             )
             await websocket.close(code=4008, reason="Rate limit exceeded: max 10 WebSocket connections per minute")
             return
-    except Exception:
+    except RedisError:
         logger.critical("Rate limit infrastructure unavailable for WebSocket (Redis down)")
         await websocket.close(code=4001, reason="Service temporarily unavailable")
         return

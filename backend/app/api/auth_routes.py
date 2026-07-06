@@ -5,6 +5,7 @@ from typing import cast
 from uuid import UUID
 
 import jwt
+from aiosmtplib.errors import SMTPException
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -108,7 +109,7 @@ async def register(
 
     try:
         await send_verification_email(email_to=user.email, token=token_str)
-    except Exception:
+    except SMTPException:
         logger.exception("Failed to send verification email to %s", user.email)
 
     return MessageResponse(message="Registrasi berhasil. Periksa email Anda untuk verifikasi.")
@@ -237,7 +238,7 @@ async def resend_verification(
 
     try:
         await send_verification_email(email_to=user.email, token=token_str)
-    except Exception:
+    except SMTPException:
         logger.exception("Failed to resend verification email to %s", user.email)
 
     return MessageResponse(message="Verification email sent. Please check your inbox.")
@@ -272,7 +273,7 @@ async def forgot_password(
 
         try:
             await send_password_reset_email(email_to=user.email, token=token_str)
-        except Exception:
+        except SMTPException:
             logger.exception("Failed to send password reset email to %s", user.email)
 
     return MessageResponse(message="Jika email tersebut terdaftar, tautan reset telah dikirim")
