@@ -16,6 +16,7 @@ from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, mock_open, patch
 
 import pytest
+from celery.app.task import Context
 from sqlalchemy import String, Text, TypeDecorator, create_engine, text
 from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -202,6 +203,16 @@ class TestMobileScanIntegration:
             }
         ]
 
+        # Simulate max retries exhausted so the dead-letter path is taken
+        # instead of raising Retry. When called directly (not via Celery
+        # worker), self.request is a fresh Context with retries=0, which
+        # is < max_retries=3. Override Context.__init__ to set retries=3.
+        orig_init = Context.__init__
+
+        def _patched_context_init(ctx_self, *args, **kwargs):
+            orig_init(ctx_self, *args, **kwargs)
+            ctx_self.retries = 3
+
         with (
             patch("tasks.mobile_scan.get_sync_session") as mock_get_session,
             patch("tasks.mobile_scan.analyze_apk") as mock_analyze_apk,
@@ -217,6 +228,7 @@ class TestMobileScanIntegration:
             patch("os.path.getsize") as mock_getsize,
             patch("os.remove") as mock_remove,
             patch("builtins.open", mock_open(read_data=b"test data")) as mock_file_open,
+            patch.object(Context, "__init__", _patched_context_init),
         ):
             mock_analyze_apk.return_value = (apk_info, sample_findings, sample_libraries)
             mock_analyze_ipa.return_value = MagicMock()

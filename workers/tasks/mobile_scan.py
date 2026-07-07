@@ -8,6 +8,7 @@ from typing import Any
 
 import redis
 from celery import shared_task
+from celery.exceptions import Retry
 from loguru import logger
 from sqlalchemy import update
 
@@ -52,29 +53,43 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
     )
     session = get_sync_session()
 
-    _update_status(session, job_id, "running", started_at=datetime.now(UTC))
-    session.commit()
-
-    if not os.path.exists(file_path):
-        _update_status(session, job_id, "failed")
-        _refund_credits(session, job_id, platform)
-        session.commit()
-        session.close()
-        publish_progress(job_id, "failed", 100, f"File not found: {file_path}")
-        return {
-            "job_id": job_id,
-            "summary": {
-                "total_findings": 0,
-                "critical": 0,
-                "high": 0,
-                "medium": 0,
-                "low": 0,
-                "info": 0,
-            },
-            "error": "file not found",
-        }
-
     try:
+        _update_status(session, job_id, "running", started_at=datetime.now(UTC))
+        session.commit()
+
+        if not os.path.exists(file_path):
+            _update_status(session, job_id, "failed")
+            _refund_credits(session, job_id, platform)
+            session.commit()
+            session.close()
+            publish_progress(job_id, "failed", 100, f"File not found: {file_path}")
+            logger.error(
+                "Mobile scan file not found: job={job_id} path={path} retry={retry}",
+                job_id=job_id,
+                path=file_path,
+                retry=self.request.retries,
+            )
+            if self.request.retries >= self.max_retries:
+                dead_letter_handler.delay(
+                    task_name="mobile_scan.run",
+                    args=[job_id, file_path, platform],
+                    kwargs={},
+                    exception_info=f"File not found: {file_path}",
+                )
+                return {
+                    "job_id": job_id,
+                    "summary": {
+                        "total_findings": 0,
+                        "critical": 0,
+                        "high": 0,
+                        "medium": 0,
+                        "low": 0,
+                        "info": 0,
+                    },
+                    "error": "file not found",
+                }
+            raise self.retry(countdown=60 * (2**self.request.retries))
+
         file_size_mb = os.path.getsize(file_path) / (1024 * 1024)
         publish_progress(job_id, "extracting", 5, f"Analyzing file ({file_size_mb:.1f}MB)...")
 
@@ -190,6 +205,8 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
             logger.warning("Failed to update Redis health timestamp for job {job_id}: {error}", job_id=job_id, error=e)
 
         return {"job_id": job_id, "summary": summary}
+    except Retry:
+        raise
     except Exception as e:
         try:
             _update_status(session, job_id, "failed")

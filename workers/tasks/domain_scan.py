@@ -7,6 +7,7 @@ from typing import Any
 
 import redis
 from celery import shared_task
+from celery.exceptions import Retry
 from loguru import logger
 from sqlalchemy import update
 
@@ -130,6 +131,8 @@ def run_domain_scan(self: Any, job_id: str, domain: str) -> TaskResult:
             nmap_result = _run_async(run_nmap(domain, "1-1000"))
             base_nmap = findings_from_nmap(nmap_result)
             all_findings.extend(base_nmap)
+        except Retry:
+            raise
         except Exception as e:
             logger.warning("Nmap scan failed for domain scan {domain}: {error}", domain=domain, error=e)
 
@@ -191,6 +194,8 @@ def run_domain_scan(self: Any, job_id: str, domain: str) -> TaskResult:
             logger.warning("Failed to update Redis health timestamp for job {job_id}: {error}", job_id=job_id, error=e)
 
         return {"job_id": job_id, "summary": summary}
+    except Retry:
+        raise
     except Exception as e:
         try:
             _update_status(session, job_id, "failed")
