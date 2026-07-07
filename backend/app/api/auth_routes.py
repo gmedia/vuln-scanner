@@ -61,7 +61,9 @@ change_password_limiter = RateLimiter(max_requests=3, window_seconds=60, prefix=
 
 
 @router.post("/register", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
-async def register(request: Request, body: RegisterRequest, db: AsyncSession = Depends(get_db)) -> MessageResponse:
+async def register(
+    request: Request, body: RegisterRequest, db: AsyncSession = Depends(get_db)
+) -> MessageResponse | Response:
     limit_response = await register_limiter(request)
     if limit_response:
         return limit_response
@@ -120,7 +122,7 @@ async def login(
     request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
-) -> LoginResponse:
+) -> LoginResponse | Response:
     limit_response = await login_limiter(request)
     if limit_response:
         return limit_response
@@ -166,7 +168,7 @@ async def login(
 @router.post("/verify-email", response_model=MessageResponse)
 async def verify_email(
     request: Request, body: VerifyEmailRequest, db: AsyncSession = Depends(get_db)
-) -> MessageResponse:
+) -> MessageResponse | Response:
     limit_response = await verify_email_limiter(request)
     if limit_response:
         return limit_response
@@ -209,7 +211,7 @@ async def verify_email(
 @router.post("/resend-verification", response_model=MessageResponse)
 async def resend_verification(
     request: Request, body: ResendVerificationRequest, db: AsyncSession = Depends(get_db)
-) -> MessageResponse:
+) -> MessageResponse | Response:
     limit_response = await resend_verification_limiter(request)
     if limit_response:
         return limit_response
@@ -246,7 +248,7 @@ async def resend_verification(
 @router.post("/forgot-password", response_model=MessageResponse)
 async def forgot_password(
     request: Request, body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)
-) -> MessageResponse:
+) -> MessageResponse | Response:
     limit_response = await forgot_password_limiter(request)
     if limit_response:
         return limit_response
@@ -281,7 +283,7 @@ async def forgot_password(
 @router.post("/reset-password", response_model=MessageResponse)
 async def reset_password(
     request: Request, body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)
-) -> MessageResponse:
+) -> MessageResponse | Response:
     limit_response = await reset_password_limiter(request)
     if limit_response:
         return limit_response
@@ -330,7 +332,7 @@ async def refresh(
     body: RefreshRequest | None = None,
     response: Response = None,  # type: ignore[assignment]  # FastAPI injects Response, not a body field
     db: AsyncSession = Depends(get_db),
-) -> TokenResponse:
+) -> TokenResponse | Response:
     limit_response = await refresh_limiter(request)
     if limit_response:
         return limit_response
@@ -440,7 +442,7 @@ async def change_password(
     body: ChangePasswordRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> MessageResponse:
+) -> MessageResponse | Response:
     limit_response = await change_password_limiter(request)
     if limit_response:
         return limit_response
