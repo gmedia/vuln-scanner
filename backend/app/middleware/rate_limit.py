@@ -25,9 +25,9 @@ class RateLimiter:
         self.max_requests = max_requests
         self.window_seconds = window_seconds
         self.prefix = prefix
-        self._redis: redis.Redis | None = None
+        self._redis: redis.Redis[str] | None = None
 
-    async def _get_redis(self) -> redis.Redis:
+    async def _get_redis(self) -> redis.Redis[str]:
         if self._redis is None:
             self._redis = redis.Redis.from_url(settings.redis_url, decode_responses=True)
         return self._redis

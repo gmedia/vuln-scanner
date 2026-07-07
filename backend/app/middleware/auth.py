@@ -41,9 +41,9 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
 
     def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
-        self._redis: redis.Redis | None = None
+        self._redis: redis.Redis[str] | None = None
 
-    async def _get_redis(self) -> redis.Redis:
+    async def _get_redis(self) -> redis.Redis[str]:
         """Lazy Redis connection — avoids hanging at startup when Redis is unavailable."""
         if self._redis is None:
             self._redis = redis.Redis.from_url(settings.redis_url, decode_responses=True)

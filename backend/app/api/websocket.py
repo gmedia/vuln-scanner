@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["websocket"])
 
-redis: Redis | None = None
-_ws_rate_limit_redis: Redis | None = None
+redis: Redis[bytes] | None = None
+_ws_rate_limit_redis: Redis[str] | None = None
 
 WS_RATE_LIMIT_MAX = settings.ws_rate_limit_max
 WS_RATE_LIMIT_WINDOW = settings.ws_rate_limit_window
@@ -27,7 +27,7 @@ WS_KEY_LIMIT_WINDOW = settings.ws_key_rate_limit_window
 WS_KEY_LIMIT_PREFIX = "ratelimit:ws_key"
 
 
-async def get_redis() -> Redis:
+async def get_redis() -> Redis[bytes]:
     """Return a shared Redis connection, creating it lazily on first call."""
     global redis
     if redis is None:
@@ -35,7 +35,7 @@ async def get_redis() -> Redis:
     return redis
 
 
-async def _get_ws_rate_limit_redis() -> Redis:
+async def _get_ws_rate_limit_redis() -> Redis[str]:
     """Return a Redis connection for WebSocket rate limiting (decode_responses=True)."""
     global _ws_rate_limit_redis
     if _ws_rate_limit_redis is None:
