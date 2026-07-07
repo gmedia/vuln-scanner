@@ -9,6 +9,31 @@ from app.config import settings
 API_KEY = settings.api_key
 
 
+def _make_fake_ws_rl_redis(initial_counters=None):
+    """Create a fake rate-limit Redis with per-key counter tracking.
+
+    Both IP-based and per-key rate limiters use the same Redis instance,
+    so we must track counters by key prefix to avoid the per-key limit
+    (WS_KEY_LIMIT_MAX=5) interfering with IP-based tests (WS_RATE_LIMIT_MAX=10).
+    Per-key rate limit keys always return 1 (never exceed the limit).
+    """
+    counters: dict[str, int] = dict(initial_counters) if initial_counters else {}
+
+    async def incr(key):
+        # Never trigger per-key rate limit (WS_KEY_LIMIT_MAX=5)
+        if "ws_key" in key:
+            return 1
+        counters[key] = counters.get(key, 0) + 1
+        return counters[key]
+
+    fake = MagicMock()
+    fake.incr = incr
+    fake.expire = AsyncMock(return_value=True)
+    fake.ping = AsyncMock(return_value=True)
+    fake.aclose = AsyncMock(return_value=None)
+    return fake
+
+
 class TestWebSocketRateLimit:
     """Tests for IP-based WebSocket rate limiting (WS_RATE_LIMIT_MAX=10, WINDOW=60)."""
 
@@ -31,6 +56,11 @@ class TestWebSocketRateLimit:
             return mock_redis
 
         monkeypatch.setattr("app.api.websocket.get_redis", mock_get_redis)
+
+        fake_rl = _make_fake_ws_rl_redis()
+        async def mock_ws_rl():
+            return fake_rl
+        monkeypatch.setattr("app.api.websocket._get_ws_rate_limit_redis", mock_ws_rl)
 
         for i in range(10):
             mock_pubsub.get_message = AsyncMock(
@@ -62,6 +92,11 @@ class TestWebSocketRateLimit:
             return mock_redis
 
         monkeypatch.setattr("app.api.websocket.get_redis", mock_get_redis)
+
+        fake_rl = _make_fake_ws_rl_redis()
+        async def mock_ws_rl():
+            return fake_rl
+        monkeypatch.setattr("app.api.websocket._get_ws_rate_limit_redis", mock_ws_rl)
 
         for i in range(10):
             mock_pubsub.get_message = AsyncMock(
@@ -126,6 +161,8 @@ class TestWebSocketRateLimit:
                 self.aclose = AsyncMock(return_value=None)
 
             async def _incr(self, key):
+                if "ws_key" in key:
+                    return 1
                 self._counters[key] = self._counters.get(key, 0) + 1
                 return self._counters[key]
 
@@ -175,6 +212,8 @@ class TestWebSocketRateLimit:
         counters = {}
 
         async def incr_side_effect(key):
+            if "ws_key" in key:
+                return 1
             counters[key] = counters.get(key, 0) + 1
             return counters[key]
 
@@ -266,6 +305,11 @@ class TestWebSocketRateLimit:
 
         monkeypatch.setattr("app.api.websocket.get_redis", mock_get_redis)
 
+        fake_rl = _make_fake_ws_rl_redis()
+        async def mock_ws_rl():
+            return fake_rl
+        monkeypatch.setattr("app.api.websocket._get_ws_rate_limit_redis", mock_ws_rl)
+
         # Saturate rate limit with 10 connections using master key
         for i in range(10):
             mock_pubsub.get_message = AsyncMock(
@@ -319,6 +363,11 @@ class TestWebSocketRateLimit:
             return mock_redis
 
         monkeypatch.setattr("app.api.websocket.get_redis", mock_get_redis)
+
+        fake_rl = _make_fake_ws_rl_redis()
+        async def mock_ws_rl():
+            return fake_rl
+        monkeypatch.setattr("app.api.websocket._get_ws_rate_limit_redis", mock_ws_rl)
 
         # Saturate with a DB key (key value doesn't matter, validate returns True)
         for i in range(10):

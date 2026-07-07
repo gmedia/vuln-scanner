@@ -1,7 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -38,7 +38,7 @@ async def get_stats(
     request: Request,
     current_admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
-) -> AdminStats:
+) -> AdminStats | Response:
     limit_response = await admin_limiter(request)
     if limit_response:
         return limit_response
@@ -78,7 +78,7 @@ async def get_users(
     search: str = Query(default=""),
     current_admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
-) -> AdminUserList:
+) -> AdminUserList | Response:
     limit_response = await admin_limiter(request)
     if limit_response:
         return limit_response
@@ -122,7 +122,7 @@ async def get_user_detail(
     user_id: uuid.UUID,
     current_admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
-) -> AdminUserItem:
+) -> AdminUserItem | Response:
     limit_response = await admin_limiter(request)
     if limit_response:
         return limit_response
@@ -145,14 +145,14 @@ async def get_user_detail(
     )
 
 
-@router.post("/users/{user_id}/credits", response_model=AdminUserItem)
+@router.post("/users/{user_id}/credits", response_model=None)
 async def adjust_user_credits(
     request: Request,
     user_id: uuid.UUID,
     body: CreditUpdateRequest,
     current_admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
-) -> AdminUserItem:
+) -> AdminUserItem | Response:
     limit_response = await admin_limiter(request)
     if limit_response:
         return limit_response
@@ -201,7 +201,7 @@ async def get_pricing(
     request: Request,
     current_admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
-) -> PricingListResponse:
+) -> PricingListResponse | Response:
     limit_response = await admin_limiter(request)
     if limit_response:
         return limit_response
@@ -210,14 +210,14 @@ async def get_pricing(
     return PricingListResponse(items=[PricingItem.model_validate(item) for item in items])
 
 
-@router.put("/pricing/{scan_type}", response_model=PricingItem)
+@router.put("/pricing/{scan_type}", response_model=None)
 async def update_pricing(
     request: Request,
     scan_type: str,
     body: PricingUpdateRequest,
     current_admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
-) -> PricingItem:
+) -> PricingItem | Response:
     limit_response = await admin_limiter(request)
     if limit_response:
         return limit_response
