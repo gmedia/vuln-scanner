@@ -84,7 +84,7 @@ def auth_client(db_session):
 # ---------------------------------------------------------------------------
 
 
-async def _create_verified_user(db_session, email="test@example.com", password="Test1234", is_admin=False):
+async def _create_verified_user(db_session, email="test@example.com", password="Test1234!", is_admin=False):
     user = User(
         id=uuid.uuid4(),
         email=email,
@@ -99,7 +99,7 @@ async def _create_verified_user(db_session, email="test@example.com", password="
     return user
 
 
-async def _create_unverified_user(db_session, email="unverified@example.com", password="Test1234"):
+async def _create_unverified_user(db_session, email="unverified@example.com", password="Test1234!"):
     user = User(
         id=uuid.uuid4(),
         email=email,
@@ -125,8 +125,8 @@ class TestRegister:
             "/api/auth/register",
             json={
                 "email": "newuser@example.com",
-                "password": "StrongPass1",
-                "confirm_password": "StrongPass1",
+                "password": "StrongPass1!",
+                "confirm_password": "StrongPass1!",
             },
         )
         assert resp.status_code == 201
@@ -138,16 +138,16 @@ class TestRegister:
             "/api/auth/register",
             json={
                 "email": "dup@example.com",
-                "password": "StrongPass1",
-                "confirm_password": "StrongPass1",
+                "password": "StrongPass1!",
+                "confirm_password": "StrongPass1!",
             },
         )
         resp = auth_client.post(
             "/api/auth/register",
             json={
                 "email": "dup@example.com",
-                "password": "AnotherPass1",
-                "confirm_password": "AnotherPass1",
+                "password": "AnotherPass1!",
+                "confirm_password": "AnotherPass1!",
             },
         )
         assert resp.status_code == 409
@@ -157,7 +157,7 @@ class TestRegister:
             "/api/auth/register",
             json={
                 "email": "mismatch@example.com",
-                "password": "StrongPass1",
+                "password": "StrongPass1!",
                 "confirm_password": "DifferentPass1",
             },
         )
@@ -168,8 +168,8 @@ class TestRegister:
             "/api/auth/register",
             json={
                 "email": "weak@example.com",
-                "password": "alllowercase1",
-                "confirm_password": "alllowercase1",
+                "password": "alllowercase1!",
+                "confirm_password": "alllowercase1!",
             },
         )
         assert resp.status_code == 422
@@ -179,8 +179,8 @@ class TestRegister:
             "/api/auth/register",
             json={
                 "email": "weak@example.com",
-                "password": "NoDigitHere",
-                "confirm_password": "NoDigitHere",
+                "password": "NoDigitHere!",
+                "confirm_password": "NoDigitHere!",
             },
         )
         assert resp.status_code == 422
@@ -190,7 +190,7 @@ class TestRegister:
             "/api/auth/register",
             json={
                 "email": "short@example.com",
-                "password": "Ab1",
+                "password": "Ab1!",
                 "confirm_password": "Ab1",
             },
         )
@@ -200,8 +200,8 @@ class TestRegister:
         resp = auth_client.post(
             "/api/auth/register",
             json={
-                "password": "StrongPass1",
-                "confirm_password": "StrongPass1",
+                "password": "StrongPass1!",
+                "confirm_password": "StrongPass1!",
             },
         )
         assert resp.status_code == 422
@@ -211,7 +211,7 @@ class TestRegister:
             "/api/auth/register",
             json={
                 "email": "nopass@example.com",
-                "confirm_password": "StrongPass1",
+                "confirm_password": "StrongPass1!",
             },
         )
         assert resp.status_code == 422
@@ -221,8 +221,8 @@ class TestRegister:
             "/api/auth/register",
             json={
                 "email": "not-an-email",
-                "password": "StrongPass1",
-                "confirm_password": "StrongPass1",
+                "password": "StrongPass1!",
+                "confirm_password": "StrongPass1!",
             },
         )
         assert resp.status_code == 422
@@ -232,8 +232,8 @@ class TestRegister:
             "/api/auth/register",
             json={
                 "email": "dbcheck@example.com",
-                "password": "StrongPass1",
-                "confirm_password": "StrongPass1",
+                "password": "StrongPass1!",
+                "confirm_password": "StrongPass1!",
             },
         )
 
@@ -254,8 +254,8 @@ class TestRegister:
             "/api/auth/register",
             json={
                 "email": "verifytoken@example.com",
-                "password": "StrongPass1",
-                "confirm_password": "StrongPass1",
+                "password": "StrongPass1!",
+                "confirm_password": "StrongPass1!",
             },
         )
 
@@ -290,7 +290,7 @@ class TestLogin:
 
         resp = auth_client.post(
             "/api/auth/login",
-            json={"email": "test@example.com", "password": "Test1234"},
+            json={"email": "test@example.com", "password": "Test1234!"},
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -308,21 +308,21 @@ class TestLogin:
 
         resp = auth_client.post(
             "/api/auth/login",
-            json={"email": "test@example.com", "password": "WrongPass1"},
+            json={"email": "test@example.com", "password": "WrongPass1!"},
         )
         assert resp.status_code == 401
 
     def test_nonexistent_user_returns_401(self, auth_client, db_session):
         resp = auth_client.post(
             "/api/auth/login",
-            json={"email": "noone@example.com", "password": "Test1234"},
+            json={"email": "noone@example.com", "password": "Test1234!"},
         )
         assert resp.status_code == 401
 
     def test_missing_email_returns_422(self, auth_client, db_session):
         resp = auth_client.post(
             "/api/auth/login",
-            json={"password": "Test1234"},
+            json={"password": "Test1234!"},
         )
         assert resp.status_code == 422
 
@@ -340,7 +340,7 @@ class TestLogin:
 
         resp = auth_client.post(
             "/api/auth/login",
-            json={"email": "unverified@example.com", "password": "Test1234"},
+            json={"email": "unverified@example.com", "password": "Test1234!"},
         )
         assert resp.status_code == 403
 
@@ -351,7 +351,7 @@ class TestLogin:
 
         resp = auth_client.post(
             "/api/auth/login",
-            json={"email": "test@example.com", "password": "Test1234"},
+            json={"email": "test@example.com", "password": "Test1234!"},
         )
         assert "refresh_token" in resp.cookies
         cookie = resp.cookies["refresh_token"]
@@ -940,8 +940,8 @@ class TestResetPassword:
                 "/api/auth/reset-password",
                 json={
                     "token": token_str,
-                    "new_password": "NewStrong1",
-                    "confirm_password": "NewStrong1",
+                    "new_password": "NewStrong1!",
+                    "confirm_password": "NewStrong1!",
                 },
             )
         assert resp.status_code == 200
@@ -968,8 +968,8 @@ class TestResetPassword:
                 "/api/auth/reset-password",
                 json={
                     "token": token_str,
-                    "new_password": "NewStrong1",
-                    "confirm_password": "NewStrong1",
+                    "new_password": "NewStrong1!",
+                    "confirm_password": "NewStrong1!",
                 },
             )
         assert resp.status_code == 200
@@ -993,8 +993,8 @@ class TestResetPassword:
                 "/api/auth/reset-password",
                 json={
                     "token": "nonexistent-token-32-bytes!",
-                    "new_password": "NewStrong1",
-                    "confirm_password": "NewStrong1",
+                    "new_password": "NewStrong1!",
+                    "confirm_password": "NewStrong1!",
                 },
             )
         assert resp.status_code == 400
@@ -1018,8 +1018,8 @@ class TestResetPassword:
                 "/api/auth/reset-password",
                 json={
                     "token": token_str,
-                    "new_password": "NewStrong1",
-                    "confirm_password": "NewStrong1",
+                    "new_password": "NewStrong1!",
+                    "confirm_password": "NewStrong1!",
                 },
             )
         assert resp.status_code == 400
@@ -1033,8 +1033,8 @@ class TestResetPassword:
             "/api/auth/reset-password",
             json={
                 "token": token_str,
-                "new_password": "NewStrong1",
-                "confirm_password": "Different1",
+                "new_password": "NewStrong1!",
+                "confirm_password": "Different1!",
             },
         )
         assert resp.status_code == 400
@@ -1048,8 +1048,8 @@ class TestResetPassword:
             "/api/auth/reset-password",
             json={
                 "token": token_str,
-                "new_password": "nouppercase1",
-                "confirm_password": "nouppercase1",
+                "new_password": "nouppercase1!",
+                "confirm_password": "nouppercase1!",
             },
         )
         assert resp.status_code == 422
@@ -1088,8 +1088,8 @@ class TestResetPassword:
         resp = auth_client.post(
             "/api/auth/reset-password",
             json={
-                "new_password": "NewStrong1",
-                "confirm_password": "NewStrong1",
+                "new_password": "NewStrong1!",
+                "confirm_password": "NewStrong1!",
             },
         )
         assert resp.status_code == 422
@@ -1121,7 +1121,7 @@ class TestRevoke:
         # First login to get an access token for auth header
         resp = auth_client.post(
             "/api/auth/login",
-            json={"email": "test@example.com", "password": "Test1234"},
+            json={"email": "test@example.com", "password": "Test1234!"},
         )
         assert resp.status_code == 200
         access_token = resp.json()["access_token"]
@@ -1142,7 +1142,7 @@ class TestRevoke:
 
         resp = auth_client.post(
             "/api/auth/login",
-            json={"email": "test@example.com", "password": "Test1234"},
+            json={"email": "test@example.com", "password": "Test1234!"},
         )
         access_token = resp.json()["access_token"]
 
@@ -1160,7 +1160,7 @@ class TestRevoke:
 
         resp = auth_client.post(
             "/api/auth/login",
-            json={"email": "test@example.com", "password": "Test1234"},
+            json={"email": "test@example.com", "password": "Test1234!"},
         )
         access_token = resp.json()["access_token"]
 
@@ -1184,7 +1184,7 @@ class TestRevoke:
 
         resp = auth_client.post(
             "/api/auth/login",
-            json={"email": "test@example.com", "password": "Test1234"},
+            json={"email": "test@example.com", "password": "Test1234!"},
         )
         access_token = resp.json()["access_token"]
 
@@ -1285,7 +1285,7 @@ class TestLoginExtra:
 
         resp = auth_client.post(
             "/api/auth/login",
-            json={"email": "test@example.com", "password": "Test1234"},
+            json={"email": "test@example.com", "password": "Test1234!"},
         )
         assert resp.status_code == 200
 
@@ -1311,8 +1311,8 @@ class TestRegisterExtra:
                 "/api/auth/register",
                 json={
                     "email": "smtpfail@example.com",
-                    "password": "StrongPass1",
-                    "confirm_password": "StrongPass1",
+                    "password": "StrongPass1!",
+                    "confirm_password": "StrongPass1!",
                 },
             )
             assert resp.status_code == 201
@@ -1326,8 +1326,8 @@ class TestRegisterExtra:
             "/api/auth/register",
             json={
                 "email": "creditlog@example.com",
-                "password": "StrongPass1",
-                "confirm_password": "StrongPass1",
+                "password": "StrongPass1!",
+                "confirm_password": "StrongPass1!",
             },
         )
 
@@ -1350,8 +1350,8 @@ class TestRegisterExtra:
             "/api/auth/register",
             json={
                 "email": "nolower@example.com",
-                "password": "ALLUPPERCASE1",
-                "confirm_password": "ALLUPPERCASE1",
+                "password": "ALLUPPERCASE1!",
+                "confirm_password": "ALLUPPERCASE1!",
             },
         )
         assert resp.status_code == 422
@@ -1496,7 +1496,7 @@ class TestRateLimit:
 
         resp = auth_client.post(
             "/api/auth/login",
-            json={"email": "test@example.com", "password": "Test1234"},
+            json={"email": "test@example.com", "password": "Test1234!"},
         )
         assert resp.status_code == 429
 
@@ -1508,8 +1508,8 @@ class TestRateLimit:
             "/api/auth/register",
             json={
                 "email": "ratelimit@example.com",
-                "password": "StrongPass1",
-                "confirm_password": "StrongPass1",
+                "password": "StrongPass1!",
+                "confirm_password": "StrongPass1!",
             },
         )
         assert resp.status_code == 429
@@ -1544,7 +1544,7 @@ class TestRateLimit:
 
         resp = auth_client.post(
             "/api/auth/login",
-            json={"email": "test@example.com", "password": "Test1234"},
+            json={"email": "test@example.com", "password": "Test1234!"},
         )
         assert resp.status_code == 200
 
@@ -1731,8 +1731,8 @@ class TestResetPasswordExtra:
             "/api/auth/reset-password",
             json={
                 "token": "any-token",
-                "new_password": "NewStrong1",
-                "confirm_password": "NewStrong1",
+                "new_password": "NewStrong1!",
+                "confirm_password": "NewStrong1!",
             },
         )
         assert resp.status_code == 429
@@ -1755,8 +1755,8 @@ class TestResetPasswordExtra:
                 "/api/auth/reset-password",
                 json={
                     "token": token_str,
-                    "new_password": "NewStrong1",
-                    "confirm_password": "NewStrong1",
+                    "new_password": "NewStrong1!",
+                    "confirm_password": "NewStrong1!",
                 },
             )
         assert resp.status_code == 400
@@ -1783,7 +1783,7 @@ class TestUpdateProfile:
 
         resp = auth_client.put(
             "/api/auth/profile",
-            json={"email": "newemail@example.com", "current_password": "Test1234"},
+            json={"email": "newemail@example.com", "current_password": "Test1234!"},
             headers={"Authorization": f"Bearer {token}"},
         )
         assert resp.status_code == 200
@@ -1795,7 +1795,7 @@ class TestUpdateProfile:
 
         resp = auth_client.put(
             "/api/auth/profile",
-            json={"email": user.email, "current_password": "Test1234"},
+            json={"email": user.email, "current_password": "Test1234!"},
             headers={"Authorization": f"Bearer {token}"},
         )
         assert resp.status_code == 200
@@ -1807,7 +1807,7 @@ class TestUpdateProfile:
 
         resp = auth_client.put(
             "/api/auth/profile",
-            json={"email": "newemail@example.com", "current_password": "WrongPass1"},
+            json={"email": "newemail@example.com", "current_password": "WrongPass1!"},
             headers={"Authorization": f"Bearer {token}"},
         )
         assert resp.status_code == 401
@@ -1823,7 +1823,7 @@ class TestUpdateProfile:
 
         resp = auth_client.put(
             "/api/auth/profile",
-            json={"email": user2.email, "current_password": "Test1234"},
+            json={"email": user2.email, "current_password": "Test1234!"},
             headers={"Authorization": f"Bearer {token}"},
         )
         assert resp.status_code == 409
@@ -1852,9 +1852,9 @@ class TestChangePassword:
         resp = auth_client.post(
             "/api/auth/change-password",
             json={
-                "current_password": "Test1234",
-                "new_password": "NewStrong1",
-                "confirm_password": "NewStrong1",
+                "current_password": "Test1234!",
+                "new_password": "NewStrong1!",
+                "confirm_password": "NewStrong1!",
             },
             headers={"Authorization": f"Bearer {token}"},
         )
@@ -1868,9 +1868,9 @@ class TestChangePassword:
         resp = auth_client.post(
             "/api/auth/change-password",
             json={
-                "current_password": "WrongPass1",
-                "new_password": "NewStrong1",
-                "confirm_password": "NewStrong1",
+                "current_password": "WrongPass1!",
+                "new_password": "NewStrong1!",
+                "confirm_password": "NewStrong1!",
             },
             headers={"Authorization": f"Bearer {token}"},
         )
@@ -1885,9 +1885,9 @@ class TestChangePassword:
         resp = auth_client.post(
             "/api/auth/change-password",
             json={
-                "current_password": "Test1234",
-                "new_password": "NewStrong1",
-                "confirm_password": "Different1",
+                "current_password": "Test1234!",
+                "new_password": "NewStrong1!",
+                "confirm_password": "Different1!",
             },
             headers={"Authorization": f"Bearer {token}"},
         )
@@ -1902,9 +1902,9 @@ class TestChangePassword:
         resp = auth_client.post(
             "/api/auth/change-password",
             json={
-                "current_password": "Test1234",
-                "new_password": "Test1234",
-                "confirm_password": "Test1234",
+                "current_password": "Test1234!",
+                "new_password": "Test1234!",
+                "confirm_password": "Test1234!",
             },
             headers={"Authorization": f"Bearer {token}"},
         )
@@ -1919,9 +1919,9 @@ class TestChangePassword:
         resp = auth_client.post(
             "/api/auth/change-password",
             json={
-                "current_password": "Test1234",
-                "new_password": "NewStrong1",
-                "confirm_password": "NewStrong1",
+                "current_password": "Test1234!",
+                "new_password": "NewStrong1!",
+                "confirm_password": "NewStrong1!",
             },
             headers={"Authorization": f"Bearer {token}"},
         )

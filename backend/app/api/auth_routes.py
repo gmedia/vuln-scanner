@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import secrets
 from datetime import UTC, datetime, timedelta
@@ -276,6 +277,8 @@ async def forgot_password(
             await send_password_reset_email(email_to=user.email, token=token_str)
         except SMTPException:
             logger.exception("Failed to send password reset email to %s", user.email)
+    else:
+        await asyncio.sleep(0.5)
 
     return MessageResponse(message="Jika email tersebut terdaftar, tautan reset telah dikirim")
 
@@ -387,6 +390,10 @@ async def refresh(
             detail="Pengguna tidak ditemukan",
         )
 
+    old_jti = payload.get("jti")
+    if old_jti is not None:
+        await revoke_token(str(old_jti), user_id_str)
+
     new_access_token = create_access_token(user_id=user_id_str, email=user.email, is_admin=user.is_admin)
     new_refresh_token = create_refresh_token(user_id=user_id_str)
 
@@ -431,7 +438,22 @@ async def update_profile(
                 detail="Email sudah digunakan",
             )
         current_user.email = body.email
+        current_user.is_verified = False
+        current_user.verified_at = None
+
+        token_str = secrets.token_urlsafe(32)
+        verification_token = EmailVerificationToken(
+            user_id=current_user.id,
+            token=token_str,
+            expires_at=datetime.now(UTC) + timedelta(hours=24),
+        )
+        db.add(verification_token)
         await db.commit()
+
+        try:
+            await send_verification_email(email_to=current_user.email, token=token_str)
+        except SMTPException:
+            logger.exception("Failed to send verification email to %s", current_user.email)
 
     return MessageResponse(message="Profil berhasil diperbarui")
 
@@ -467,6 +489,8 @@ async def change_password(
 
     current_user.password_hash = hash_password(body.new_password)
     await db.commit()
+
+    await logout_all(str(current_user.id))
 
     return MessageResponse(message="Kata sandi berhasil diubah")
 

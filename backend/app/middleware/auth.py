@@ -27,6 +27,9 @@ EXCLUDED_PATHS = [
     "/api/auth/login",
     "/api/auth/verify-email",
     "/api/auth/refresh",
+    "/api/auth/forgot-password",
+    "/api/auth/reset-password",
+    "/api/auth/resend-verification",
 ]
 
 MASTER_KEY_ID = "__master__"

@@ -296,8 +296,8 @@ class TestResetPassword:
                 "/api/auth/reset-password",
                 json={
                     "token": token_str,
-                    "new_password": "NewPass1",
-                    "confirm_password": "NewPass1",
+                    "new_password": "NewPass1!",
+                    "confirm_password": "NewPass1!",
                 },
             )
         assert resp.status_code == 200
@@ -315,8 +315,8 @@ class TestResetPassword:
                 "/api/auth/reset-password",
                 json={
                     "token": token_str,
-                    "new_password": "Changed1",
-                    "confirm_password": "Changed1",
+                    "new_password": "Changed1!",
+                    "confirm_password": "Changed1!",
                 },
             )
 
@@ -339,8 +339,8 @@ class TestResetPassword:
                 "/api/auth/reset-password",
                 json={
                     "token": token_str,
-                    "new_password": "NewPass1",
-                    "confirm_password": "NewPass1",
+                    "new_password": "NewPass1!",
+                    "confirm_password": "NewPass1!",
                 },
             )
 
@@ -362,15 +362,15 @@ class TestResetPassword:
                 "/api/auth/reset-password",
                 json={
                     "token": token_str,
-                    "new_password": "NewLogin1",
-                    "confirm_password": "NewLogin1",
+                    "new_password": "NewLogin1!",
+                    "confirm_password": "NewLogin1!",
                 },
             )
 
         # Try login with new password
         resp = auth_client.post(
             "/api/auth/login",
-            json={"email": "resetuser@example.com", "password": "NewLogin1"},
+            json={"email": "resetuser@example.com", "password": "NewLogin1!"},
         )
         assert resp.status_code == 200
 
@@ -379,8 +379,8 @@ class TestResetPassword:
             "/api/auth/reset-password",
             json={
                 "token": "nonexistent-token-1234567890",
-                "new_password": "NewPass1",
-                "confirm_password": "NewPass1",
+                "new_password": "NewPass1!",
+                "confirm_password": "NewPass1!",
             },
         )
         assert resp.status_code == 400
@@ -404,8 +404,8 @@ class TestResetPassword:
             "/api/auth/reset-password",
             json={
                 "token": token_str,
-                "new_password": "NewPass1",
-                "confirm_password": "NewPass1",
+                "new_password": "NewPass1!",
+                "confirm_password": "NewPass1!",
             },
         )
         assert resp.status_code == 400
@@ -419,7 +419,7 @@ class TestResetPassword:
             "/api/auth/reset-password",
             json={
                 "token": token_str,
-                "new_password": "NewPass1",
+                "new_password": "NewPass1!",
                 "confirm_password": "Different1",
             },
         )
@@ -434,8 +434,8 @@ class TestResetPassword:
             "/api/auth/reset-password",
             json={
                 "token": token_str,
-                "new_password": "alllowercase1",
-                "confirm_password": "alllowercase1",
+                "new_password": "alllowercase1!",
+                "confirm_password": "alllowercase1!",
             },
         )
         assert resp.status_code == 422
@@ -449,8 +449,8 @@ class TestResetPassword:
             "/api/auth/reset-password",
             json={
                 "token": token_str,
-                "new_password": "NoDigitHere",
-                "confirm_password": "NoDigitHere",
+                "new_password": "NoDigitHere!",
+                "confirm_password": "NoDigitHere!",
             },
         )
         assert resp.status_code == 422
@@ -464,8 +464,8 @@ class TestResetPassword:
             "/api/auth/reset-password",
             json={
                 "token": token_str,
-                "new_password": "ALLUPPERCASE1",
-                "confirm_password": "ALLUPPERCASE1",
+                "new_password": "ALLUPPERCASE1!",
+                "confirm_password": "ALLUPPERCASE1!",
             },
         )
         assert resp.status_code == 422
@@ -479,8 +479,8 @@ class TestResetPassword:
             "/api/auth/reset-password",
             json={
                 "token": token_str,
-                "new_password": "Ab1",
-                "confirm_password": "Ab1",
+                "new_password": "Ab1!",
+                "confirm_password": "Ab1!",
             },
         )
         assert resp.status_code == 422
@@ -489,8 +489,8 @@ class TestResetPassword:
         resp = auth_client.post(
             "/api/auth/reset-password",
             json={
-                "new_password": "NewPass1",
-                "confirm_password": "NewPass1",
+                "new_password": "NewPass1!",
+                "confirm_password": "NewPass1!",
             },
         )
         assert resp.status_code == 422
@@ -504,7 +504,7 @@ class TestResetPassword:
             "/api/auth/reset-password",
             json={
                 "token": token_str,
-                "confirm_password": "NewPass1",
+                "confirm_password": "NewPass1!",
             },
         )
         assert resp.status_code == 422
@@ -514,8 +514,8 @@ class TestResetPassword:
             "/api/auth/reset-password",
             json={
                 "token": "",
-                "new_password": "NewPass1",
-                "confirm_password": "NewPass1",
+                "new_password": "NewPass1!",
+                "confirm_password": "NewPass1!",
             },
         )
         assert resp.status_code == 400
@@ -537,8 +537,8 @@ class TestResetPassword:
             "/api/auth/reset-password",
             json={
                 "token": token_str,
-                "new_password": "NewPass1",
-                "confirm_password": "NewPass1",
+                "new_password": "NewPass1!",
+                "confirm_password": "NewPass1!",
             },
         )
         assert resp.status_code == 400
@@ -554,8 +554,8 @@ class TestResetPassword:
                 "/api/auth/reset-password",
                 json={
                     "token": token_str,
-                    "new_password": "NewPass1",
-                    "confirm_password": "NewPass1",
+                    "new_password": "NewPass1!",
+                    "confirm_password": "NewPass1!",
                 },
             )
         assert resp.status_code == 200
