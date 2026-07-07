@@ -1,4 +1,5 @@
 import logging
+import time
 
 import redis.asyncio as redis
 from fastapi import Request
@@ -45,6 +46,11 @@ class RateLimiter:
             if count == 1:
                 await r.expire(key, self.window_seconds)
             if count > self.max_requests:
+                try:
+                    ttl = await r.ttl(key)
+                except redis.RedisError:
+                    ttl = -1
+                retry_after = ttl if ttl > 0 else self.window_seconds
                 logger.warning(
                     "Rate limit hit: prefix=%s ip=%s count=%d/%d window=%ds",
                     self.prefix,
@@ -56,6 +62,12 @@ class RateLimiter:
                 return JSONResponse(
                     status_code=429,
                     content={"detail": "Too many requests. Try again later."},
+                    headers={
+                        "Retry-After": str(retry_after),
+                        "X-RateLimit-Limit": str(self.max_requests),
+                        "X-RateLimit-Remaining": "0",
+                        "X-RateLimit-Reset": str(int(time.time() + retry_after)),
+                    },
                 )
         except redis.RedisError:
             logger.critical(

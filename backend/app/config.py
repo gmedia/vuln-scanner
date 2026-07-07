@@ -75,6 +75,29 @@ class Settings(BaseSettings):
     def valid_scan_types(self) -> tuple[str, ...]:
         return ("ip", "domain", "apk", "ipa")
 
+    # Rate limiting — env-configurable for operational tuning without code changes
+    ip_rate_limit: int = 300  # requests per hour per IP (ApiKeyMiddleware)
+    ip_rate_limit_window: int = 3600  # seconds (1 hour)
+    ws_rate_limit_max: int = 10  # WebSocket connections per minute per IP
+    ws_rate_limit_window: int = 60  # seconds
+    ws_key_rate_limit_max: int = 5  # WebSocket connections per minute per API key
+    ws_key_rate_limit_window: int = 60  # seconds
+    auth_login_limit: int = 5  # requests per minute per IP
+    auth_register_limit: int = 3  # requests per minute per IP
+    auth_refresh_limit: int = 10  # requests per minute per IP
+    auth_verify_email_limit: int = 5  # requests per minute per IP
+    auth_forgot_password_limit: int = 5  # requests per minute per IP
+    auth_reset_password_limit: int = 5  # requests per minute per IP
+    auth_resend_verification_limit: int = 3  # requests per minute per IP
+    auth_change_password_limit: int = 3  # requests per minute per IP
+    jwt_rate_limit: int = 300  # requests per hour per IP for JWT-authenticated endpoints
+    jwt_rate_limit_window: int = 3600  # seconds (1 hour)
+    admin_rate_limit: int = 60  # requests per minute per IP for admin endpoints
+    admin_rate_limit_window: int = 60  # seconds
+    scan_submit_limit: int = 30  # scan submissions per hour per IP
+    scan_submit_window: int = 3600  # seconds (1 hour)
+    auth_rate_limit_window: int = 60  # seconds for auth endpoint limiters
+
 
 settings = Settings()
 

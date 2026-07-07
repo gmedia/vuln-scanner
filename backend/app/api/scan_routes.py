@@ -5,12 +5,13 @@ import shutil
 from datetime import UTC, datetime
 
 from celery.exceptions import CeleryError
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
+from app.middleware.rate_limit import RateLimiter
 from app.models.scan_job import ScanJob
 from app.models.user import User
 from app.schemas.scan import (
@@ -25,6 +26,12 @@ from app.services.auth import get_current_user
 from app.services.scanner import ScannerService
 
 router = APIRouter(tags=["scans"])
+
+scan_submit_limiter = RateLimiter(
+    max_requests=settings.scan_submit_limit,
+    window_seconds=settings.scan_submit_window,
+    prefix="ratelimit:scan_submit",
+)
 
 
 def _export_json(job: ScanJobDetailResponse) -> dict[str, object]:
@@ -147,10 +154,14 @@ def _render_pdf_html(job: ScanJobDetailResponse) -> str:
 
 @router.post("/scan/ip", response_model=ScanJobResponse, status_code=202)
 async def start_ip_scan(
+    request: Request,
     req: ScanRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> ScanJob:
+) -> ScanJob | JSONResponse:
+    limit_response = await scan_submit_limiter(request)
+    if limit_response:
+        return limit_response
     svc = ScannerService(db)
     job = await svc.start_scan(user=current_user, scan_type="ip", target=req.target, ports=req.ports)
     return job
@@ -158,10 +169,14 @@ async def start_ip_scan(
 
 @router.post("/scan/domain", response_model=ScanJobResponse, status_code=202)
 async def start_domain_scan(
+    request: Request,
     req: DomainScanRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> ScanJob:
+) -> ScanJob | JSONResponse:
+    limit_response = await scan_submit_limiter(request)
+    if limit_response:
+        return limit_response
     svc = ScannerService(db)
     job = await svc.start_scan(user=current_user, scan_type="domain", target=req.domain)
     return job
@@ -169,11 +184,15 @@ async def start_domain_scan(
 
 @router.post("/scan/mobile", response_model=ScanJobResponse, status_code=202)
 async def start_mobile_scan(
+    request: Request,
     file: UploadFile = File(...),
     platform: str = Form(...),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> ScanJob:
+) -> ScanJob | JSONResponse:
+    limit_response = await scan_submit_limiter(request)
+    if limit_response:
+        return limit_response
     if platform not in ("android", "ios"):
         raise HTTPException(status_code=400, detail="platform must be 'android' or 'ios'")
     if not file.filename:

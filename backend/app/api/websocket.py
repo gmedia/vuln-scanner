@@ -1,3 +1,4 @@
+import hashlib
 import logging
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
@@ -18,9 +19,12 @@ router = APIRouter(tags=["websocket"])
 redis: Redis | None = None
 _ws_rate_limit_redis: Redis | None = None
 
-WS_RATE_LIMIT_MAX = 10
-WS_RATE_LIMIT_WINDOW = 60
+WS_RATE_LIMIT_MAX = settings.ws_rate_limit_max
+WS_RATE_LIMIT_WINDOW = settings.ws_rate_limit_window
 WS_RATE_LIMIT_PREFIX = "ratelimit:ws"
+WS_KEY_LIMIT_MAX = settings.ws_key_rate_limit_max
+WS_KEY_LIMIT_WINDOW = settings.ws_key_rate_limit_window
+WS_KEY_LIMIT_PREFIX = "ratelimit:ws_key"
 
 
 async def get_redis() -> Redis:
@@ -96,6 +100,29 @@ async def scan_progress(
             return
     except RedisError:
         logger.critical("Rate limit infrastructure unavailable for WebSocket (Redis down)")
+        await websocket.close(code=4001, reason="Service temporarily unavailable")
+        return
+
+    # Per-key rate limiting
+    key_hash = hashlib.sha256((api_key or "").encode()).hexdigest()
+    key_rl_key = f"{WS_KEY_LIMIT_PREFIX}:{key_hash}"
+    try:
+        rl = await _get_ws_rate_limit_redis()
+        key_count = await rl.incr(key_rl_key)
+        if key_count == 1:
+            await rl.expire(key_rl_key, WS_KEY_LIMIT_WINDOW)
+        if key_count > WS_KEY_LIMIT_MAX:
+            logger.warning(
+                "WebSocket per-key rate limit hit: key_hash=%s count=%d/%d window=%ds",
+                key_hash,
+                key_count,
+                WS_KEY_LIMIT_MAX,
+                WS_KEY_LIMIT_WINDOW,
+            )
+            await websocket.close(code=4008, reason="Rate limit exceeded per API key")
+            return
+    except RedisError:
+        logger.critical("Rate limit infrastructure unavailable for WebSocket key limit (Redis down)")
         await websocket.close(code=4001, reason="Service temporarily unavailable")
         return
 

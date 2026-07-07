@@ -45,6 +45,7 @@ async def _incr_side_effect(key: str) -> int:
 _fake_redis = _AsyncMock(spec=_aioredis.Redis)
 _fake_redis.incr = _incr_side_effect
 _fake_redis.expire = _AsyncMock(return_value=True)
+_fake_redis.ttl = _AsyncMock(return_value=-1)
 _fake_redis.ping = _AsyncMock(return_value=True)
 _fake_redis.aclose = _AsyncMock(return_value=None)
 _aioredis.Redis.from_url = staticmethod(lambda *a, **kw: _fake_redis)

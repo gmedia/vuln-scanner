@@ -1,3 +1,4 @@
+import pytest
 import redis.asyncio as redis
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -129,10 +130,10 @@ def test_excluded_path_refresh(client):
 
 
 def test_excluded_path_me(client):
-    """GET /api/auth/me skips middleware auth but may fail on FastAPI Bearer dependency."""
+    """GET /api/auth/me is NOT excluded from auth middleware — returns 401 'Missing API key'."""
     resp = client.get("/api/auth/me")
-    if resp.status_code == 401:
-        assert "Missing API key" not in resp.json().get("detail", "")
+    assert resp.status_code == 401
+    assert resp.json()["detail"] == "Missing API key"
 
 
 def test_master_key_rate_limit_headers(client, mock_celery):
@@ -386,3 +387,183 @@ def test_rate_limiter_e2e_bypass_via_login_route(client):
     )
     assert resp.status_code != 429
     assert resp.status_code in (401, 403)
+
+
+def test_auth_me_requires_jwt(client):
+    """GET /api/auth/me without Authorization header → 401."""
+    resp = client.get("/api/auth/me")
+    assert resp.status_code == 401
+
+
+def test_auth_me_requires_jwt_not_api_key(client):
+    """GET /api/auth/me with API key → 200 (middleware passes, dependency override provides user).
+    /api/auth/me requires JWT Bearer auth at the dependency level, but the test fixture
+    overrides get_current_user, so an API key that passes middleware will get through."""
+    resp = client.get("/api/auth/me", headers={"X-API-Key": API_KEY})
+    assert resp.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_jwt_bearer_gets_rate_limited(client, mock_celery, db_session):
+    """Bearer token requests are IP-rate-limited via _jwt_rate_limit()."""
+    import uuid as _uuid
+
+    import app.middleware.auth as auth_module
+    from app.models.user import User
+    from app.services.auth import hash_password
+
+    auth_module.settings.jwt_rate_limit = 3
+    auth_module.settings.jwt_rate_limit_window = 3600
+
+    user = User(
+        id=_uuid.uuid4(),
+        email="jwtrate@example.com",
+        password_hash=hash_password("Test1234!"),
+        is_verified=True,
+        credits=100,
+    )
+    db_session.add(user)
+    await db_session.commit()
+
+    login_resp = client.post(
+        "/api/auth/login",
+        json={"email": "jwtrate@example.com", "password": "Test1234!"},
+        headers={"X-E2E-Test": "true"},
+    )
+    assert login_resp.status_code == 200
+    token = login_resp.json()["access_token"]
+
+    for _ in range(3):
+        resp = client.get(
+            "/api/scan/history",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200, f"Expected 200, got {resp.status_code} at iteration {_}"
+
+    resp = client.get(
+        "/api/scan/history",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 429
+    assert "Too many requests" in resp.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_jwt_rate_limit_e2e_bypass(client, mock_celery, db_session):
+    """X-E2E-Test header bypasses JWT IP rate limiting."""
+    import uuid as _uuid
+
+    import app.middleware.auth as auth_module
+    from app.models.user import User
+    from app.services.auth import hash_password
+
+    auth_module.settings.jwt_rate_limit = 1
+    auth_module.settings.jwt_rate_limit_window = 3600
+
+    user = User(
+        id=_uuid.uuid4(),
+        email="jwte2e@example.com",
+        password_hash=hash_password("Test1234!"),
+        is_verified=True,
+        credits=100,
+    )
+    db_session.add(user)
+    await db_session.commit()
+
+    login_resp = client.post(
+        "/api/auth/login",
+        json={"email": "jwte2e@example.com", "password": "Test1234!"},
+        headers={"X-E2E-Test": "true"},
+    )
+    assert login_resp.status_code == 200
+    token = login_resp.json()["access_token"]
+
+    resp = client.get(
+        "/api/scan/history",
+        headers={"Authorization": f"Bearer {token}", "X-E2E-Test": "true"},
+    )
+    assert resp.status_code == 200
+
+
+def test_scan_submit_rate_limited(client, mock_celery, monkeypatch):
+    """POST /api/scan/ip is rate-limited at 30 req/hr via scan_submit_limiter."""
+    from app.api import scan_routes
+
+    call_count = [0]
+
+    async def mock_limiter_second_hit(request):
+        call_count[0] += 1
+        if call_count[0] > 1:
+            from fastapi.responses import JSONResponse
+
+            return JSONResponse(status_code=429, content={"detail": "Too many scan requests"})
+        return None
+
+    monkeypatch.setattr(scan_routes, "scan_submit_limiter", mock_limiter_second_hit)
+
+    resp1 = client.post(
+        "/api/scan/ip",
+        headers={"X-API-Key": API_KEY},
+        json={"target": "8.8.8.8", "ports": "22-443"},
+    )
+    assert resp1.status_code == 202
+
+    resp2 = client.post(
+        "/api/scan/ip",
+        headers={"X-API-Key": API_KEY},
+        json={"target": "8.8.8.8", "ports": "22-443"},
+    )
+    assert resp2.status_code == 429
+
+
+@pytest.mark.asyncio
+async def test_admin_endpoint_rate_limited(client, mock_celery, monkeypatch, db_session):
+    """GET /api/admin/stats is rate-limited via admin_limiter."""
+    import uuid as _uuid
+
+    from app.api.admin_routes import admin_limiter
+    from app.models.user import User
+    from app.services.auth import hash_password
+
+    call_count = [0]
+
+    async def mock_limiter_second_hit(request):
+        call_count[0] += 1
+        if call_count[0] > 1:
+            from fastapi.responses import JSONResponse
+
+            return JSONResponse(status_code=429, content={"detail": "Too many admin requests"})
+        return None
+
+    monkeypatch.setattr(admin_limiter, "__call__", mock_limiter_second_hit)
+
+    user = User(
+        id=_uuid.uuid4(),
+        email="admintest@example.com",
+        password_hash=hash_password("Test1234!"),
+        is_verified=True,
+        is_admin=True,
+        credits=100,
+    )
+    db_session.add(user)
+    await db_session.commit()
+
+    login_resp = client.post(
+        "/api/auth/login",
+        json={"email": "admintest@example.com", "password": "Test1234!"},
+        headers={"X-E2E-Test": "true"},
+    )
+    assert login_resp.status_code == 200
+    token = login_resp.json()["access_token"]
+
+    resp1 = client.get(
+        "/api/admin/stats",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp1.status_code == 200
+
+    resp2 = client.get(
+        "/api/admin/stats",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp2.status_code == 429
