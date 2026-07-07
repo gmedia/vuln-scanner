@@ -5,6 +5,20 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
+_SPECIAL_CHARS = "!@#$%^&*()-_=+[]{}|;:',.<>?/~`\""
+
+
+def _validate_password_strength(v: str) -> str:
+    if not any(c.isupper() for c in v):
+        raise ValueError("Password must contain at least one uppercase letter")
+    if not any(c.islower() for c in v):
+        raise ValueError("Password must contain at least one lowercase letter")
+    if not any(c.isdigit() for c in v):
+        raise ValueError("Password must contain at least one digit")
+    if not any(c in _SPECIAL_CHARS for c in v):
+        raise ValueError("Password must contain at least one special character")
+    return v
+
 
 class RegisterRequest(BaseModel):
     email: EmailStr = Field(..., max_length=254, description="Email address (RFC 5321 max 254 chars)")
@@ -12,20 +26,14 @@ class RegisterRequest(BaseModel):
         ...,
         min_length=8,
         max_length=128,
-        description="Password must be at least 8 characters with uppercase, lowercase, and digit",
+        description="Password must be at least 8 characters with uppercase, lowercase, digit, and special character",
     )
     confirm_password: str = Field(..., max_length=128, description="Confirm password")
 
     @field_validator("password")
     @classmethod
     def validate_password_strength(cls, v: str) -> str:
-        if not any(c.isupper() for c in v):
-            raise ValueError("Password must contain at least one uppercase letter")
-        if not any(c.islower() for c in v):
-            raise ValueError("Password must contain at least one lowercase letter")
-        if not any(c.isdigit() for c in v):
-            raise ValueError("Password must contain at least one digit")
-        return v
+        return _validate_password_strength(v)
 
 
 class LoginRequest(BaseModel):
@@ -72,25 +80,19 @@ class ResendVerificationRequest(BaseModel):
 
 
 class ResetPasswordRequest(BaseModel):
-    token: str = Field(..., max_length=500, description="Password reset token")
+    token: str = Field(..., max_length=128, description="Password reset token")
     new_password: str = Field(
         ...,
         min_length=8,
         max_length=128,
-        description="Password must be at least 8 characters with uppercase, lowercase, and digit",
+        description="New password",
     )
     confirm_password: str = Field(..., max_length=128, description="Confirm password")
 
     @field_validator("new_password")
     @classmethod
     def validate_password_strength(cls, v: str) -> str:
-        if not any(c.isupper() for c in v):
-            raise ValueError("Password must contain at least one uppercase letter")
-        if not any(c.islower() for c in v):
-            raise ValueError("Password must contain at least one lowercase letter")
-        if not any(c.isdigit() for c in v):
-            raise ValueError("Password must contain at least one digit")
-        return v
+        return _validate_password_strength(v)
 
 
 class RefreshRequest(BaseModel):
@@ -127,10 +129,4 @@ class ChangePasswordRequest(BaseModel):
     @field_validator("new_password")
     @classmethod
     def validate_password_strength(cls, v: str) -> str:
-        if not any(c.isupper() for c in v):
-            raise ValueError("Password must contain at least one uppercase letter")
-        if not any(c.islower() for c in v):
-            raise ValueError("Password must contain at least one lowercase letter")
-        if not any(c.isdigit() for c in v):
-            raise ValueError("Password must contain at least one digit")
-        return v
+        return _validate_password_strength(v)
