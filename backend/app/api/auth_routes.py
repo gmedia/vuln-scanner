@@ -26,6 +26,7 @@ from app.schemas.auth import (
     MessageResponse,
     RefreshRequest,
     RegisterRequest,
+    ResendVerificationRequest,
     ResetPasswordRequest,
     RevokeRequest,
     TokenResponse,
@@ -209,7 +210,7 @@ async def verify_email(
 
 @router.post("/resend-verification", response_model=MessageResponse)
 async def resend_verification(
-    request: Request, body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)
+    request: Request, body: ResendVerificationRequest, db: AsyncSession = Depends(get_db)
 ) -> MessageResponse | Response:
     limit_response = await resend_verification_limiter(request)
     if limit_response:
@@ -218,7 +219,7 @@ async def resend_verification(
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
     if user is None or user.is_verified is True:
-        return MessageResponse(message="Verification email sent. Please check your inbox.")
+        return MessageResponse(message="Email verifikasi telah dikirim. Silakan periksa kotak masuk Anda.")
 
     token_str = secrets.token_urlsafe(32)
 
@@ -241,7 +242,7 @@ async def resend_verification(
     except SMTPException:
         logger.exception("Failed to resend verification email to %s", user.email)
 
-    return MessageResponse(message="Verification email sent. Please check your inbox.")
+    return MessageResponse(message="Email verifikasi telah dikirim. Silakan periksa kotak masuk Anda.")
 
 
 @router.post("/forgot-password", response_model=MessageResponse)
@@ -325,7 +326,7 @@ async def reset_password(
     return MessageResponse(message="Kata sandi berhasil direset")
 
 
-@router.post("/refresh", response_model=None)
+@router.post("/refresh", response_model=TokenResponse)
 async def refresh(
     request: Request,
     body: RefreshRequest | None = None,

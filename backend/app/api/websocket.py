@@ -1,4 +1,3 @@
-import hashlib
 import logging
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
@@ -10,6 +9,7 @@ from app.config import settings
 from app.database import async_session
 from app.models.api_key import ApiKey
 from app.models.scan_job import ScanJob
+from app.utils import hash_key
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ async def validate_api_key(api_key: str | None) -> bool:
         return True
 
     # Check against DB-stored keys
-    key_hash = hashlib.sha256(api_key.encode()).hexdigest()
+    key_hash = hash_key(api_key)
     async with async_session() as session:
         result = await session.execute(select(ApiKey).where(ApiKey.key_hash == key_hash, ApiKey.is_active.is_(True)))
         return result.scalar_one_or_none() is not None

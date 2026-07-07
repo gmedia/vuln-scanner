@@ -64,7 +64,7 @@ async def test_get_scan_idor_returns_404(client, db_session, sample_user):
 
 @pytest.mark.asyncio
 async def test_get_findings_idor_returns_empty(client, db_session, sample_user):
-    """A user requesting findings for another user's job must receive an empty list."""
+    """A user requesting findings for another user's job must receive 404."""
     # Create a second user
     other_user = User(
         id=uuid.uuid4(),
@@ -100,12 +100,11 @@ async def test_get_findings_idor_returns_empty(client, db_session, sample_user):
     db_session.add(finding)
     await db_session.commit()
 
-    # Request findings as the original user — must return empty list
+    # Request findings as the original user — must return 404
     resp = client.get(f"/api/scan/{other_job.id}/findings", headers=HEADERS)
-    assert resp.status_code == 200
+    assert resp.status_code == 404
     data = resp.json()
-    assert isinstance(data, list)
-    assert len(data) == 0
+    assert data["detail"] == "Scan job not found"
 
 
 # ---------------------------------------------------------------------------

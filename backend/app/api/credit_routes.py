@@ -52,14 +52,6 @@ async def get_history(
     )
 
 
-SCAN_TYPE_PRICING_MAP = {
-    "ip": "ip_scan_credit_cost",
-    "domain": "domain_scan_credit_cost",
-    "apk": "apk_scan_credit_cost",
-    "ipa": "ipa_scan_credit_cost",
-}
-
-
 @router.get("/eligibility/{scan_type}", response_model=ScanEligibility)
 async def get_scan_eligibility(
     scan_type: str,
@@ -67,7 +59,7 @@ async def get_scan_eligibility(
     db: AsyncSession = Depends(get_db),
 ) -> ScanEligibility:
     """Check whether the current user has enough credits for a given scan type."""
-    if scan_type not in SCAN_TYPE_PRICING_MAP:
+    if scan_type not in settings.scan_type_pricing_map:
         raise HTTPException(status_code=400, detail=f"Invalid scan type: {scan_type}")
 
     # Look up pricing from the database first, fall back to config defaults
@@ -77,7 +69,7 @@ async def get_scan_eligibility(
     if pricing:
         required_credits = pricing.credit_cost
     else:
-        config_attr = SCAN_TYPE_PRICING_MAP[scan_type]
+        config_attr = settings.scan_type_pricing_map[scan_type]
         required_credits = getattr(settings, config_attr, 0)
 
     eligible = current_user.credits >= required_credits

@@ -39,6 +39,17 @@ class DomainScanRequest(BaseModel):
         pattern=r"^[a-zA-Z0-9._\-]+$",
     )
 
+    @field_validator("domain")
+    @classmethod
+    def validate_domain(cls, v: str) -> str:
+        if len(v) > 253 or "." not in v:
+            raise ValueError("domain must be a valid fully-qualified domain name")
+        labels = v.split(".")
+        for label in labels:
+            if not label or len(label) > 63 or label.startswith("-") or label.endswith("-"):
+                raise ValueError("domain must be a valid fully-qualified domain name")
+        return v
+
 
 class ScanJobResponse(BaseModel):
     """Public representation of a scan job returned in lists and creation responses."""

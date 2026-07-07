@@ -265,7 +265,7 @@ async def test_get_findings_empty(db_session, sample_user):
 
 @pytest.mark.asyncio
 async def test_get_findings_idor(db_session, sample_job, sample_finding):
-    """get_findings returns empty list when job belongs to a different user."""
+    """get_findings raises 404 when job belongs to a different user."""
     other_user = User(
         id=uuid.uuid4(),
         email="other@example.com",
@@ -277,8 +277,10 @@ async def test_get_findings_idor(db_session, sample_job, sample_finding):
     await db_session.commit()
 
     svc = ScannerService(db_session)
-    findings = await svc.get_findings(str(sample_job.id), user_id=other_user.id)
-    assert findings == []
+    with pytest.raises(HTTPException) as exc_info:
+        await svc.get_findings(str(sample_job.id), user_id=other_user.id)
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == "Scan job not found"
 
 
 # --- New tests: get_history pagination ---
