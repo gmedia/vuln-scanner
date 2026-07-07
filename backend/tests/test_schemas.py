@@ -129,18 +129,19 @@ class TestResetPasswordRequest:
     def test_valid(self):
         req = ResetPasswordRequest(
             token="abc123",
-            new_password="Valid1Pass",
-            confirm_password="Valid1Pass",
+            new_password="Valid1Pass!",
+            confirm_password="Valid1Pass!",
         )
-        assert req.new_password == "Valid1Pass"
+        assert req.new_password == "Valid1Pass!"
         assert req.token == "abc123"
 
     @pytest.mark.parametrize(
         "password,expected_msg",
         [
-            ("nouppercase1", "Password must contain at least one uppercase letter"),
-            ("NOLOWERCASE1", "Password must contain at least one lowercase letter"),
-            ("NoDigitsHere", "Password must contain at least one digit"),
+            ("nouppercase1!", "Password must contain at least one uppercase letter"),
+            ("NOLOWERCASE1!", "Password must contain at least one lowercase letter"),
+            ("NoDigitsHere!", "Password must contain at least one digit"),
+            ("NoSpecial1", "Password must contain at least one special character"),
         ],
     )
     def test_rejects_weak_passwords(self, password, expected_msg):
@@ -158,8 +159,8 @@ class TestResetPasswordRequest:
         with pytest.raises(ValidationError) as exc_info:
             ResetPasswordRequest(
                 token="abc123",
-                new_password="Ab1",
-                confirm_password="Ab1",
+                new_password="Ab1!",
+                confirm_password="Ab1!",
             )
         errors = exc_info.value.errors()
         assert any("String should have at least 8 characters" in e["msg"] for e in errors)
@@ -173,25 +174,26 @@ class TestResetPasswordRequest:
 class TestChangePasswordRequest:
     def test_valid(self):
         req = ChangePasswordRequest(
-            current_password="OldPass123",
-            new_password="NewPass456",
-            confirm_password="NewPass456",
+            current_password="OldPass1!2",
+            new_password="NewPass4!6",
+            confirm_password="NewPass4!6",
         )
-        assert req.new_password == "NewPass456"
-        assert req.current_password == "OldPass123"
+        assert req.new_password == "NewPass4!6"
+        assert req.current_password == "OldPass1!2"
 
     @pytest.mark.parametrize(
         "password,expected_msg",
         [
-            ("nouppercase1", "Password must contain at least one uppercase letter"),
-            ("NOLOWERCASE1", "Password must contain at least one lowercase letter"),
-            ("NoDigitsHere", "Password must contain at least one digit"),
+            ("nouppercase1!", "Password must contain at least one uppercase letter"),
+            ("NOLOWERCASE1!", "Password must contain at least one lowercase letter"),
+            ("NoDigitsHere!", "Password must contain at least one digit"),
+            ("NoSpecial1", "Password must contain at least one special character"),
         ],
     )
     def test_rejects_weak_passwords(self, password, expected_msg):
         with pytest.raises(ValidationError) as exc_info:
             ChangePasswordRequest(
-                current_password="OldPass123",
+                current_password="OldPass1!2",
                 new_password=password,
                 confirm_password=password,
             )
