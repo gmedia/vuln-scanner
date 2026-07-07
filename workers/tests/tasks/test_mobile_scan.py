@@ -6,6 +6,7 @@ sys.path.insert(0, "/home/ubuntu/vuln-scanner/backend")
 from unittest.mock import ANY, MagicMock, PropertyMock, mock_open, patch
 
 import pytest
+from celery.app.task import Context
 from celery.exceptions import Retry
 
 JOB_ID = "test-job-mobile-9012"
@@ -225,12 +226,25 @@ class TestMobileAndroidSuccessfulFlow:
 class TestMobileScanFileNotFound:
     @pytest.fixture(autouse=True)
     def _setup_patches(self):
+        # Simulate max retries exhausted so the task takes the dead-letter
+        # path instead of raising Retry. When called directly (not via
+        # Celery worker), self.request is a fresh Context with retries=0,
+        # which is < max_retries=3. We override Context.__init__ to set
+        # retries=3, simulating the worker's retry counter.
+        orig_init = Context.__init__
+
+        def patched_init(ctx_self, *args, **kwargs):
+            orig_init(ctx_self, *args, **kwargs)
+            ctx_self.retries = 3
+
         with (
             patch("tasks.mobile_scan.get_sync_session") as mock_session,
             patch("tasks.mobile_scan.publish_progress") as mock_progress,
             patch("tasks.mobile_scan._update_status") as mock_update_status,
             patch("tasks.mobile_scan.os.path.exists") as mock_exists,
             patch("tasks.mobile_scan._refund_credits") as mock_refund_credits,
+            patch("tasks.mobile_scan.dead_letter_handler.delay") as _mock_dead_letter,
+            patch.object(Context, "__init__", patched_init),
         ):
             mock_exists.return_value = False
             mock_session.return_value = MagicMock()
