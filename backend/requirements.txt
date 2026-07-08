@@ -13,8 +13,8 @@ psycopg2-binary==2.9.12
 alembic==1.18.5
 pydantic==2.13.4
 pydantic-settings==2.14.2
+redis==5.2.1
 celery[redis]==5.6.3
-redis
 python-multipart==0.0.32
 websockets==16.0
 pyjwt[crypto]==2.13.0
@@ -30,5 +30,5 @@ urllib3==2.7.0
 msgpack==1.2.1
 tornado==6.5.7
 bleach==6.4.0
-langsmith==0.9.7
+langsmith==0.9.8
 protobuf==7.35.1
