@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import contextlib
 import logging
 import uuid as _uuid
@@ -22,14 +24,14 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # ---------------------------------------------------------------------------
 # Redis connection (lazy, shared across module)
 # ---------------------------------------------------------------------------
-_redis: redis.Redis | None = None
-_sync_redis: sync_redis.Redis | None = None
+_redis: redis.Redis[str] | None = None
+_sync_redis: sync_redis.Redis[str] | None = None
 
 # TTL for revoked keys: max(access_token, refresh_token) in seconds
 _REVOKE_TTL = max(settings.jwt_access_expire_minutes * 60, settings.jwt_refresh_expire_days * 86400)
 
 
-async def _get_redis() -> redis.Redis:
+async def _get_redis() -> redis.Redis[str]:
     """Lazy Redis connection using settings.redis_url."""
     global _redis
     if _redis is None:
@@ -37,7 +39,7 @@ async def _get_redis() -> redis.Redis:
     return _redis
 
 
-def _get_sync_redis() -> sync_redis.Redis:
+def _get_sync_redis() -> sync_redis.Redis[str]:
     """Lazy synchronous Redis connection for revocation checks.
 
     Uses the blocking redis.Redis client (not redis.asyncio.Redis) so that
@@ -120,7 +122,7 @@ def _check_redis_revocation_sync(jti: str | None, sub: str | None) -> None:
     try:
         r = _get_sync_redis()
         if jti is not None:
-            user_id: str | None = cast(str | None, r.get(f"revoked_tokens:{jti}"))
+            user_id: str | None = r.get(f"revoked_tokens:{jti}")
             if user_id is not None:
                 _revoked_tokens[jti] = user_id
                 raise jwt.PyJWTError("Token has been revoked")
