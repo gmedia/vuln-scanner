@@ -140,7 +140,7 @@ def analyze_apk(file_path: str) -> tuple[AndroidManifestInfo, list[ScanFinding],
             secret_findings = _scan_secrets(strings_content)
             if secret_findings:
                 logger.info("Found {n} potential secrets in APK", n=len(secret_findings))
-    except Exception as e:
+    except (OSError, zipfile.BadZipFile, ValueError) as e:
         logger.error("APK analysis failed for {path}: {error}", path=file_path, error=e)
     finally:
         shutil.rmtree(extracts_dir, ignore_errors=True)
@@ -171,12 +171,12 @@ def analyze_ipa(file_path: str) -> tuple[IpaInfo, list[ScanFinding], list[str]]:
                         plist_data = plistlib.load(pf)
                     info = _parse_ios_plist(plist_data)
                     break
-                except Exception as e:
+                except (OSError, plistlib.InvalidFileException, ValueError) as e:
                     logger.warning("Failed to parse plist {path}: {error}", path=plist_path, error=e)
                     continue
 
             lib_files = [f for f in all_files if ".framework" in f or ".dylib" in f]
-    except Exception as e:
+    except (OSError, zipfile.BadZipFile) as e:
         logger.error("IPA analysis failed for {path}: {error}", path=file_path, error=e)
     finally:
         shutil.rmtree(extracts_dir, ignore_errors=True)
@@ -229,7 +229,7 @@ def _parse_android_manifest(manifest_path: str) -> AndroidManifestInfo:
         info.allow_backup = 'android:allowBackup="false"' not in text
         info.uses_cleartext_traffic = 'android:usesCleartextTraffic="true"' in text
 
-    except Exception as e:
+    except (OSError, UnicodeDecodeError) as e:
         logger.warning("Failed to parse AndroidManifest at {path}: {error}", path=manifest_path, error=e)
 
     return info
@@ -447,11 +447,11 @@ def _extract_text_from_zip(zf: zipfile.ZipFile, file_list: list[str], *skip_exte
                 raw = fh.read(1024 * 1024)
                 try:
                     text = raw.decode("utf-8", errors="replace")
-                except Exception as e:
+                except UnicodeDecodeError as e:
                     logger.trace("Zip text decode fallback to latin-1 for {name}: {error}", name=name, error=e)
                     text = raw.decode("latin-1", errors="replace")
                 chunks.append(text[:50000])
-        except Exception as e:
+        except (OSError, zipfile.BadZipFile, RuntimeError) as e:
             logger.trace("Skipping unreadable zip entry {name}: {error}", name=name, error=e)
             continue
     return "\n".join(chunks)

@@ -25,7 +25,7 @@ def _queue_depth(r: redis.Redis[str]) -> dict[str, int | str]:
     for q in CELERY_QUEUES:
         try:
             depths[q] = int(r.llen(q))
-        except Exception as e:
+        except redis.RedisError as e:
             logger.warning("Failed to get queue depth for {}: {}", q, e)
             depths[q] = "unavailable"
     return depths
@@ -34,7 +34,7 @@ def _queue_depth(r: redis.Redis[str]) -> dict[str, int | str]:
 def _dead_letter_count(r: redis.Redis[str]) -> int | str:
     try:
         return int(r.zcard("dead_letter:log"))
-    except Exception as e:
+    except redis.RedisError as e:
         logger.warning("Failed to check dead letter queue: {}", e)
         return "unavailable"
 
@@ -42,7 +42,7 @@ def _dead_letter_count(r: redis.Redis[str]) -> int | str:
 def _celery_broker_ok(r: redis.Redis[str]) -> bool:
     try:
         return r.ping() is True
-    except Exception as e:
+    except redis.RedisError as e:
         logger.warning("Failed to check broker: {}", e)
         return False
 
@@ -82,7 +82,7 @@ class HealthHandler(BaseHTTPRequestHandler):
                 payload["last_task_seconds_ago"] = seconds_ago
             else:
                 payload["last_task_seconds_ago"] = None
-        except Exception as e:
+        except (redis.RedisError, ValueError) as e:
             logger.error("Health check failed: {}", e)
             payload["last_task_seconds_ago"] = "unavailable"
 

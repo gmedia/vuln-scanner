@@ -1,8 +1,10 @@
 import asyncio
 import json
 import os
+import plistlib
 import time
 import uuid
+import zipfile
 from datetime import UTC, datetime
 from typing import Any
 
@@ -29,7 +31,7 @@ def publish_progress(job_id: str, step: str, progress: int, message: str) -> Non
             f"scan_progress:{job_id}",
             json.dumps({"type": "progress", "step": step, "progress": progress, "message": message}),
         )
-    except Exception as e:
+    except (redis.RedisError, TypeError, ValueError) as e:
         logger.warning("Redis publish failed for job {job_id} step {step}: {error}", job_id=job_id, step=step, error=e)
 
 
@@ -106,7 +108,7 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
                     30,
                     f"Package: {apk_info.package_name}, {len(apk_info.permissions)} permissions",
                 )
-            except Exception as e:
+            except (OSError, zipfile.BadZipFile, ValueError) as e:
                 publish_progress(job_id, "manifest_error", 25, f"APK analysis warning: {str(e)[:100]}")
 
         elif platform == "ios":
@@ -120,7 +122,7 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
                     30,
                     f"Bundle: {ipa_info.bundle_id}, {len(ipa_info.ats_exceptions)} ATS exemptions",
                 )
-            except Exception as e:
+            except (OSError, zipfile.BadZipFile, ValueError, plistlib.InvalidFileException) as e:
                 publish_progress(job_id, "plist_error", 25, f"IPA analysis warning: {str(e)[:100]}")
 
         else:
@@ -138,7 +140,7 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
                 if sf not in all_findings:
                     all_findings.append(sf)
             publish_progress(job_id, "secrets_done", 65, f"Found {len(secret_findings)} potential secrets")
-        except Exception as e:
+        except (OSError, UnicodeDecodeError, ValueError) as e:
             logger.warning("Secret scan failed for job {job_id}: {error}", job_id=job_id, error=e)
             publish_progress(job_id, "secrets_done", 65, "Secret scan skipped")
 
@@ -152,7 +154,7 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
             seen_libs.add(lib_name)
             try:
                 vulns = _run_async(lookup_service_cves(lib_name, lib_name, ""))
-            except Exception as e:
+            except (TimeoutError, OSError, RuntimeError) as e:
                 logger.warning("CVE lookup failed for lib {lib}: {error}", lib=lib_name, error=e)
                 vulns = []
             for vuln in vulns:
@@ -195,25 +197,25 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
 
         try:
             os.remove(file_path)
-        except Exception as e:
+        except OSError as e:
             logger.warning("Failed to remove mobile scan file {path}: {error}", path=file_path, error=e)
 
         try:
             r = redis.Redis(connection_pool=get_redis_pool())
             r.set("health:last_task_completed", time.time())
-        except Exception as e:
+        except redis.RedisError as e:
             logger.warning("Failed to update Redis health timestamp for job {job_id}: {error}", job_id=job_id, error=e)
 
         return {"job_id": job_id, "summary": summary}
     except Retry:
         raise
-    except Exception as e:
+    except Exception as e:  # Broad catch at task top-level — inner exceptions already handled
         try:
             _update_status(session, job_id, "failed")
             _refund_credits(session, job_id, platform)
             session.commit()
             session.close()
-        except Exception as e2:
+        except (OSError, redis.RedisError) as e2:
             logger.warning("Failed to update status/commit for failed job {job_id}: {error}", job_id=job_id, error=e2)
         publish_progress(job_id, "failed", 100, f"Mobile scan failed: {str(e)[:200]}")
         if self.request.retries >= self.max_retries:
