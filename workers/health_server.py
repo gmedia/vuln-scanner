@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import os
 import sys
@@ -14,30 +16,30 @@ CELERY_QUEUES = ["ip_scan", "domain_scan", "mobile_scan"]
 _start_time = time.monotonic()
 
 
-def _get_redis() -> redis.Redis:
-    return redis.Redis(connection_pool=_redis_pool)
+def _get_redis() -> redis.Redis[str]:
+    return redis.Redis(connection_pool=_redis_pool, decode_responses=True)
 
 
-def _queue_depth(r: redis.Redis) -> dict[str, int | str]:
+def _queue_depth(r: redis.Redis[str]) -> dict[str, int | str]:
     depths: dict[str, int | str] = {}
     for q in CELERY_QUEUES:
         try:
-            depths[q] = int(r.llen(q))  # type: ignore[arg-type]
+            depths[q] = int(r.llen(q))
         except Exception as e:
             logger.warning("Failed to get queue depth for {}: {}", q, e)
             depths[q] = "unavailable"
     return depths
 
 
-def _dead_letter_count(r: redis.Redis) -> int | str:
+def _dead_letter_count(r: redis.Redis[str]) -> int | str:
     try:
-        return int(r.zcard("dead_letter:log"))  # type: ignore[arg-type]
+        return int(r.zcard("dead_letter:log"))
     except Exception as e:
         logger.warning("Failed to check dead letter queue: {}", e)
         return "unavailable"
 
 
-def _celery_broker_ok(r: redis.Redis) -> bool:
+def _celery_broker_ok(r: redis.Redis[str]) -> bool:
     try:
         return r.ping() is True
     except Exception as e:
@@ -75,7 +77,7 @@ class HealthHandler(BaseHTTPRequestHandler):
         try:
             last_task = r.get("health:last_task_completed")
             if last_task is not None:
-                last_ts = float(last_task)  # type: ignore[arg-type]
+                last_ts = float(last_task)
                 seconds_ago = int(time.time() - last_ts)
                 payload["last_task_seconds_ago"] = seconds_ago
             else:

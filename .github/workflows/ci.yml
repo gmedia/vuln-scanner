@@ -153,7 +153,7 @@ jobs:
       - name: Install mypy
         run: pip install mypy==1.13.0
       - name: Install runtime deps (for type stubs)
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt types-redis
       - name: Run mypy
         run: mypy --config-file=pyproject.toml .
 
