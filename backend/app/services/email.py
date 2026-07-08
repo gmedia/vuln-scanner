@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 from email.mime.multipart import MIMEMultipart
@@ -14,6 +15,56 @@ SMTP_USER = os.getenv("SMTP_USER", "")
 SMTP_PASS = os.getenv("SMTP_PASS", "")
 SMTP_FROM = os.getenv("SMTP_FROM", "VulnScanner <noreply@vs.appmedia.id>")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://vs.appmedia.id")
+
+_MAX_RETRIES = 3
+_RETRY_BACKOFF_BASE = 1  # seconds: 1s, 2s, 4s
+
+
+async def _send_with_retry(msg: MIMEMultipart, email_to: str, label: str) -> bool:
+    """Send email via SMTP with exponential backoff retry (up to 3 attempts)."""
+    for attempt in range(1, _MAX_RETRIES + 1):
+        try:
+            use_tls = SMTP_PORT == 465
+            start_tls = SMTP_PORT == 587
+            smtp = aiosmtplib.SMTP(
+                hostname=SMTP_HOST,
+                port=SMTP_PORT,
+                use_tls=use_tls,
+                start_tls=start_tls,
+                timeout=10,
+            )
+            await smtp.connect()
+
+            if SMTP_USER and SMTP_PASS:
+                await smtp.login(SMTP_USER, SMTP_PASS)
+
+            await smtp.send_message(msg)
+            await smtp.quit()
+
+            logger.info("%s email sent to %s", label, email_to)
+            return True
+
+        except (SMTPException, OSError):
+            if attempt < _MAX_RETRIES:
+                delay = _RETRY_BACKOFF_BASE * (2 ** (attempt - 1))
+                logger.warning(
+                    "Retry %d/%d sending %s email to %s — retrying in %ds",
+                    attempt,
+                    _MAX_RETRIES,
+                    label,
+                    email_to,
+                    delay,
+                )
+                await asyncio.sleep(delay)
+            else:
+                logger.exception(
+                    "Failed to send %s email to %s after %d attempts",
+                    label,
+                    email_to,
+                    _MAX_RETRIES,
+                )
+
+    return False
 
 
 async def send_verification_email(email_to: str, token: str) -> bool:
@@ -46,31 +97,7 @@ async def send_verification_email(email_to: str, token: str) -> bool:
     msg["Subject"] = "VulnScanner — Verify Your Email"
     msg.attach(MIMEText(html_body, "html", "utf-8"))
 
-    try:
-        # Port 465 = implicit TLS (SMTPS), port 587 = STARTTLS
-        use_tls = SMTP_PORT == 465
-        start_tls = SMTP_PORT == 587
-        smtp = aiosmtplib.SMTP(
-            hostname=SMTP_HOST,
-            port=SMTP_PORT,
-            use_tls=use_tls,
-            start_tls=start_tls,
-            timeout=10,
-        )
-        await smtp.connect()
-
-        if SMTP_USER and SMTP_PASS:
-            await smtp.login(SMTP_USER, SMTP_PASS)
-
-        await smtp.send_message(msg)
-        await smtp.quit()
-
-        logger.info("Verification email sent to %s", email_to)
-        return True
-
-    except (SMTPException, OSError):
-        logger.exception("Failed to send verification email to %s", email_to)
-        return False
+    return await _send_with_retry(msg, email_to, "Verification")
 
 
 async def send_password_reset_email(email_to: str, token: str) -> bool:
@@ -103,28 +130,4 @@ async def send_password_reset_email(email_to: str, token: str) -> bool:
     msg["Subject"] = "VulnScanner — Reset Your Password"
     msg.attach(MIMEText(html_body, "html", "utf-8"))
 
-    try:
-        # Port 465 = implicit TLS (SMTPS), port 587 = STARTTLS
-        use_tls = SMTP_PORT == 465
-        start_tls = SMTP_PORT == 587
-        smtp = aiosmtplib.SMTP(
-            hostname=SMTP_HOST,
-            port=SMTP_PORT,
-            use_tls=use_tls,
-            start_tls=start_tls,
-            timeout=10,
-        )
-        await smtp.connect()
-
-        if SMTP_USER and SMTP_PASS:
-            await smtp.login(SMTP_USER, SMTP_PASS)
-
-        await smtp.send_message(msg)
-        await smtp.quit()
-
-        logger.info("Password reset email sent to %s", email_to)
-        return True
-
-    except (SMTPException, OSError):
-        logger.exception("Failed to send password reset email to %s", email_to)
-        return False
+    return await _send_with_retry(msg, email_to, "Password reset")
