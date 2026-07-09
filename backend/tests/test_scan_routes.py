@@ -48,7 +48,7 @@ def test_start_mobile_scan(client, mock_celery):
     url = "/api/scan/mobile"
     resp = client.post(
         url,
-        files={"file": ("test.apk", b"fake-apk-content")},
+        files={"file": ("test.apk", b"PK\x03\x04fake-apk-content")},
         data={"platform": "android"},
         headers=HEADERS,
     )

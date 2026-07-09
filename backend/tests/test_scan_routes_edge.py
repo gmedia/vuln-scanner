@@ -261,7 +261,7 @@ def test_start_mobile_scan_cleanup_error(client, monkeypatch):
     client._transport.raise_server_exceptions = False
     resp = client.post(
         "/api/scan/mobile",
-        files={"file": ("test.apk", b"fake-apk-content")},
+        files={"file": ("test.apk", b"PK\x03\x04fake-apk-content")},
         data={"platform": "android"},
         headers=HEADERS,
     )
@@ -280,7 +280,7 @@ def test_start_mobile_scan_cleanup_remove_fails(client, monkeypatch):
     client._transport.raise_server_exceptions = False
     resp = client.post(
         "/api/scan/mobile",
-        files={"file": ("test.apk", b"fake-apk-content")},
+        files={"file": ("test.apk", b"PK\x03\x04fake-apk-content")},
         data={"platform": "android"},
         headers=HEADERS,
     )

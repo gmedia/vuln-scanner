@@ -164,6 +164,10 @@ class TestMimeMessageStructure:
 
 
 class TestSendVerificationEmailFailure:
+    @pytest.fixture(autouse=True)
+    def _set_max_retries(self, monkeypatch):
+        monkeypatch.setattr(email_module, "_MAX_RETRIES", 1)
+
     @pytest.mark.asyncio
     async def test_connect_failure_returns_false(self):
         mock_smtp = AsyncMock()
@@ -361,6 +365,10 @@ class TestTokenInLink:
 
 
 class TestEmailEdgeCases:
+    @pytest.fixture(autouse=True)
+    def _set_max_retries(self, monkeypatch):
+        monkeypatch.setattr(email_module, "_MAX_RETRIES", 1)
+
     # -- non-standard SMTP ports -----------------------------------------------
 
     @pytest.mark.asyncio
@@ -764,6 +772,10 @@ class TestPasswordResetMimeMessageStructure:
 
 
 class TestSendPasswordResetEmailFailure:
+    @pytest.fixture(autouse=True)
+    def _set_max_retries(self, monkeypatch):
+        monkeypatch.setattr(email_module, "_MAX_RETRIES", 1)
+
     @pytest.mark.asyncio
     async def test_connect_failure_returns_false(self):
         mock_smtp = AsyncMock()
@@ -805,6 +817,10 @@ class TestSendPasswordResetEmailFailure:
 
 
 class TestPasswordResetEdgeCases:
+    @pytest.fixture(autouse=True)
+    def _set_max_retries(self, monkeypatch):
+        monkeypatch.setattr(email_module, "_MAX_RETRIES", 1)
+
     @pytest.mark.asyncio
     async def test_token_appears_in_link(self):
         mock_smtp = AsyncMock()

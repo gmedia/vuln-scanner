@@ -303,7 +303,7 @@ def test_mobile_scan_neutralizes_path_traversal(client, mock_celery):
 
     resp = client.post(
         "/api/scan/mobile",
-        files={"file": (traversal_filename, b"fake-apk-content")},
+        files={"file": (traversal_filename, b"PK\x03\x04fake-apk-content")},
         data={"platform": "android"},
         headers=HEADERS,
     )
