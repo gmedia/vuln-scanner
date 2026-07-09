@@ -7,6 +7,7 @@ sys.path.insert(0, "/home/ubuntu/vuln-scanner/workers")
 from unittest.mock import ANY, AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
+import redis
 from celery.exceptions import Retry
 
 JOB_ID = "test-job-uuid-1234"
@@ -125,7 +126,7 @@ class TestPublishProgress:
 
         with patch("tasks.ip_scan.redis.Redis") as mock_redis:
             mock_instance = MagicMock()
-            mock_instance.publish.side_effect = Exception("Redis error")
+            mock_instance.publish.side_effect = redis.RedisError("Redis error")
             mock_redis.return_value = mock_instance
             publish_progress("test-job", "nmap_scan", 50, "test message")
         mock_instance.publish.assert_called_once()
@@ -144,7 +145,7 @@ class TestIpScanNmapFailure:
             patch("tasks.ip_scan.redis.Redis") as mock_redis,
             patch("tasks.ip_scan._refund_credits") as mock_refund_credits,
         ):
-            mock_nmap.side_effect = Exception("nmap binary not found")
+            mock_nmap.side_effect = OSError("nmap binary not found")
             mock_session.return_value = MagicMock()
             mock_redis.return_value = MagicMock()
 
@@ -530,7 +531,7 @@ class TestIpScanCatchAllHandler:
             patch("tasks.ip_scan._refund_credits") as mock_refund,
         ):
             mock_req.return_value = MagicMock(retries=1)
-            mock_update_status.side_effect = [None, Exception("DB down")]
+            mock_update_status.side_effect = [None, None, OSError("DB down")]
             mock_refund.side_effect = Exception("Refund DB error")
 
             self.mock_retry = mock_retry
@@ -538,7 +539,7 @@ class TestIpScanCatchAllHandler:
             self.mock_update_status = mock_update_status
 
             with patch("tasks.ip_scan.run_nmap", new_callable=AsyncMock) as mock_nmap:
-                mock_nmap.side_effect = Exception("nmap segfault")
+                mock_nmap.side_effect = OSError("nmap segfault")
                 run_ip_scan(JOB_ID, TARGET, PORTS)
 
     def test_catch_all_retries_even_when_inner_update_fails(self):
@@ -724,7 +725,7 @@ class TestCveLookupFailure:
             patch("tasks.ip_scan.redis.Redis") as mock_redis,
         ):
             mock_nmap.return_value = sample_nmap_result
-            mock_cve.side_effect = Exception("OSV API timeout")
+            mock_cve.side_effect = OSError("OSV API timeout")
             mock_session.return_value = MagicMock()
             mock_redis.return_value = MagicMock()
 
@@ -775,7 +776,7 @@ class TestHealthRedisError:
             mock_session.return_value = MagicMock()
 
             mock_redis_instance = MagicMock()
-            mock_redis_instance.set.side_effect = Exception("Redis connection refused")
+            mock_redis_instance.set.side_effect = redis.RedisError("Redis connection refused")
             mock_redis_cls.return_value = mock_redis_instance
 
             self.mock_session = mock_session

@@ -8,6 +8,7 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
+import redis
 
 TASK_NAME = "test_task"
 ARGS = ["arg1"]
@@ -112,17 +113,17 @@ class TestDeadLetterRedisFailure:
         return dead_letter_handler(TASK_NAME, ARGS, KWARGS, EXCEPTION_INFO)
 
     def test_redis_connection_error(self):
-        self.mock_redis_from_url.side_effect = ConnectionError("Redis connection refused")
+        self.mock_redis_from_url.side_effect = redis.RedisError("Redis connection refused")
         self._call_handler()
 
     def test_redis_zadd_error(self):
-        self.mock_r.zadd.side_effect = Exception("ZADD failed")
+        self.mock_r.zadd.side_effect = redis.RedisError("ZADD failed")
         with patch("tasks.dead_letter.logger") as mock_logger:
             self._call_handler()
             assert "Failed to persist" in str(mock_logger.error.call_args)
 
     def test_redis_zcard_error(self):
-        self.mock_r.zcard.side_effect = Exception("ZCARD failed")
+        self.mock_r.zcard.side_effect = redis.RedisError("ZCARD failed")
         with patch("tasks.dead_letter.logger") as mock_logger:
             self._call_handler()
             assert "Failed to persist" in str(mock_logger.error.call_args)
