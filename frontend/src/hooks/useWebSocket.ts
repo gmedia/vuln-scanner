@@ -19,9 +19,16 @@ export function useWebSocket(
 ) {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttemptRef = useRef(0);
-  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout>>();
-  const heartbeatTimerRef = useRef<ReturnType<typeof setInterval>>();
-  const heartbeatTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
+  const heartbeatTimerRef = useRef<ReturnType<typeof setInterval> | undefined>(
+    undefined,
+  );
+  const heartbeatTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
+  const connectRef = useRef<(jobId: string) => void>(undefined);
 
   const clearTimers = useCallback(() => {
     if (reconnectTimerRef.current) {
@@ -36,6 +43,28 @@ export function useWebSocket(
       clearTimeout(heartbeatTimeoutRef.current);
       heartbeatTimeoutRef.current = undefined;
     }
+  }, []);
+
+  const resetHeartbeatTimeout = useCallback(() => {
+    if (heartbeatTimeoutRef.current) {
+      clearTimeout(heartbeatTimeoutRef.current);
+    }
+    heartbeatTimeoutRef.current = setTimeout(() => {
+      wsRef.current?.close();
+    }, HEARTBEAT_TIMEOUT_MS);
+  }, []);
+
+  const scheduleReconnect = useCallback((currentJobId: string) => {
+    const attempt = reconnectAttemptRef.current;
+    const delay = Math.min(
+      RECONNECT_BASE_DELAY_MS * Math.pow(2, attempt),
+      RECONNECT_MAX_DELAY_MS,
+    );
+    reconnectAttemptRef.current = attempt + 1;
+
+    reconnectTimerRef.current = setTimeout(() => {
+      connectRef.current?.(currentJobId);
+    }, delay);
   }, []);
 
   const connect = useCallback(
@@ -79,30 +108,14 @@ export function useWebSocket(
         scheduleReconnect(currentJobId);
       };
     },
-    [onProgress, clearTimers],
+    [onProgress, clearTimers, resetHeartbeatTimeout, scheduleReconnect],
   );
 
-  const resetHeartbeatTimeout = () => {
-    if (heartbeatTimeoutRef.current) {
-      clearTimeout(heartbeatTimeoutRef.current);
-    }
-    heartbeatTimeoutRef.current = setTimeout(() => {
-      wsRef.current?.close();
-    }, HEARTBEAT_TIMEOUT_MS);
-  };
-
-  const scheduleReconnect = (currentJobId: string) => {
-    const attempt = reconnectAttemptRef.current;
-    const delay = Math.min(
-      RECONNECT_BASE_DELAY_MS * Math.pow(2, attempt),
-      RECONNECT_MAX_DELAY_MS,
-    );
-    reconnectAttemptRef.current = attempt + 1;
-
-    reconnectTimerRef.current = setTimeout(() => {
-      connect(currentJobId);
-    }, delay);
-  };
+  // Keep connectRef up to date so scheduleReconnect can call it without
+  // creating a circular dependency in the useCallback dependency arrays.
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   useEffect(() => {
     if (!jobId) return;

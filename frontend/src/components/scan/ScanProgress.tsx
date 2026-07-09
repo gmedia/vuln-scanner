@@ -22,14 +22,18 @@ function ScanProgress({ className }: ScanProgressProps) {
 
   const { data: scanData } = useScanDetail(activeJobId);
 
-  const lastMessageTimeRef = useRef<number>(Date.now());
-  const disconnectedRef = useRef(false);
+  const lastMessageTimeRef = useRef(0);
+  const [isDisconnected, setIsDisconnected] = useState(false);
   const [, setTick] = useState(0);
+
+  useEffect(() => {
+    lastMessageTimeRef.current = Date.now();
+  }, []);
 
   const handleProgress = useCallback(
     (msg: { step: string; progress: number; message: string }) => {
       lastMessageTimeRef.current = Date.now();
-      disconnectedRef.current = false;
+      setIsDisconnected(false);
       setProgress(msg.progress, msg.step || "running");
     },
     [setProgress],
@@ -41,10 +45,9 @@ function ScanProgress({ className }: ScanProgressProps) {
     const interval = setInterval(() => {
       if (
         activeJobId &&
-        Date.now() - lastMessageTimeRef.current > 20000 &&
-        !disconnectedRef.current
+        Date.now() - lastMessageTimeRef.current > 20000
       ) {
-        disconnectedRef.current = true;
+        setIsDisconnected(true);
         setTick((t) => t + 1);
       }
     }, 5000);
@@ -73,7 +76,6 @@ function ScanProgress({ className }: ScanProgressProps) {
 
   const isComplete = status === "completed" || progress >= 100;
   const isFailed = status === "failed";
-  const isDisconnected = disconnectedRef.current && !isComplete && !isFailed;
 
   return (
     <div className={cn("space-y-4", className)}>
