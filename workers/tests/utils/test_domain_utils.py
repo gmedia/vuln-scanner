@@ -509,7 +509,7 @@ class TestCheckHttp:
         """Status line with HTTP/1.1 404 → status_code=404."""
         resp = _http_response("HTTP/1.1 404 Not Found")
         reader = AsyncMock()
-        reader.read.side_effect = [resp.encode(), b""]
+        reader.read.side_effect = [resp.encode(), b"", resp.encode(), b""]
         writer = MagicMock()
         writer.drain = AsyncMock()
         writer.wait_closed = AsyncMock()
@@ -524,7 +524,7 @@ class TestCheckHttp:
     async def test_no_status_line_returns_zero(self):
         """Response without a status line → status_code stays 0."""
         reader = AsyncMock()
-        reader.read.side_effect = [b"garbage_no_http\r\n", b""]
+        reader.read.side_effect = [b"garbage_no_http\r\n", b"", b"garbage_no_http\r\n", b""]
         writer = MagicMock()
         writer.drain = AsyncMock()
         writer.wait_closed = AsyncMock()
@@ -547,7 +547,7 @@ class TestCheckHttp:
             },
         )
         reader = AsyncMock()
-        reader.read.side_effect = [resp.encode(), b""]
+        reader.read.side_effect = [resp.encode(), b"", resp.encode(), b""]
         writer = MagicMock()
         writer.drain = AsyncMock()
         writer.wait_closed = AsyncMock()
