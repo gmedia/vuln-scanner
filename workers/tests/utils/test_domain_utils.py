@@ -410,7 +410,7 @@ class TestEnumerateSubdomains:
     async def test_reader_exception_during_read_returns_empty(self):
         """reader.read raises Exception mid-read → caught, returns empty list."""
         reader = AsyncMock()
-        reader.read.side_effect = Exception("connection reset")
+        reader.read.side_effect = OSError("connection reset")
         writer = MagicMock()
         writer.drain = AsyncMock()
         writer.wait_closed = AsyncMock()
