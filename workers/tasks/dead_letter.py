@@ -64,5 +64,5 @@ def dead_letter_handler(
             task=task_name,
             size=min(count, DEAD_LETTER_MAX),
         )
-    except Exception as e:
+    except redis.RedisError as e:
         logger.error("Failed to persist dead letter to Redis: {error}", error=e)

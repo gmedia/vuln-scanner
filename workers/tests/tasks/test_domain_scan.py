@@ -7,6 +7,7 @@ sys.path.insert(0, "/home/ubuntu/vuln-scanner/workers")
 from unittest.mock import ANY, AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
+import redis
 from celery.exceptions import Retry
 
 JOB_ID = "test-job-domain-5678"
@@ -259,6 +260,7 @@ class TestDomainScanNmapFailure:
             patch("tasks.domain_scan.publish_progress") as mock_progress,
             patch("tasks.domain_scan._update_status") as mock_update_status,
             patch("tasks.domain_scan._save_findings") as mock_save_findings,
+            patch("tasks.domain_scan._refund_credits"),
             patch("tasks.domain_scan.redis.Redis") as mock_redis,
         ):
             mock_session.return_value = MagicMock()
@@ -269,7 +271,7 @@ class TestDomainScanNmapFailure:
             mock_tech.return_value = [
                 TechInfo(name="nginx", category="web_server", version="1.24.0", confidence=100),
             ]
-            mock_nmap.side_effect = Exception("nmap failed")
+            mock_nmap.side_effect = OSError("nmap failed")
             mock_redis.return_value = MagicMock()
 
             self.mock_session = mock_session
@@ -308,7 +310,7 @@ class TestDomainScanNmapFailure:
             not_after="2026-01-01",
             days_remaining=365,
         )
-        mock_cve.side_effect = Exception("CVE lookup failed")
+        mock_cve.side_effect = OSError("CVE lookup failed")
         result = self._call_task()
         self.mock_save_findings.assert_called_once()
         self.mock_update_status.assert_any_call(
@@ -331,7 +333,7 @@ class TestDomainScanNmapFailure:
             not_after="2026-01-01",
             days_remaining=365,
         )
-        self.mock_redis.side_effect = Exception("Redis connection failed")
+        self.mock_redis.side_effect = redis.RedisError("Redis connection failed")
         result = self._call_task()
         self.mock_save_findings.assert_called_once()
         self.mock_update_status.assert_any_call(
@@ -411,7 +413,7 @@ class TestDomainScanNestedStatusUpdateFailure:
             nonlocal call_count
             call_count += 1
             if call_count == 2:
-                raise Exception("DB update failed in except handler")
+                raise OSError("DB update failed in except handler")
             return None
 
         self.mock_update_status.side_effect = update_status_side_effect
@@ -430,7 +432,7 @@ class TestPublishProgress:
 
         with patch("tasks.domain_scan.redis.Redis") as mock_redis:
             mock_instance = MagicMock()
-            mock_instance.publish.side_effect = Exception("Redis connection lost")
+            mock_instance.publish.side_effect = redis.RedisError("Redis connection lost")
             mock_redis.return_value = mock_instance
             publish_progress("test-job", "nmap_scan", 50, "scanning")
         mock_instance.publish.assert_called_once()
@@ -440,7 +442,7 @@ class TestPublishProgress:
         from tasks.domain_scan import publish_progress
 
         with patch("tasks.domain_scan.redis.Redis") as mock_redis:
-            mock_redis.side_effect = Exception("Cannot connect to Redis")
+            mock_redis.side_effect = redis.RedisError("Cannot connect to Redis")
             publish_progress("test-job", "nmap_scan", 50, "scanning")
         # Should not raise — just log warning
 

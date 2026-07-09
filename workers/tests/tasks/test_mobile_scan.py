@@ -1,5 +1,7 @@
 import sys
 
+import redis
+
 sys.path.insert(0, "/home/ubuntu/vuln-scanner/workers")
 sys.path.insert(0, "/home/ubuntu/vuln-scanner/backend")
 
@@ -21,7 +23,7 @@ class TestPublishProgressRedisFailure:
         from tasks.mobile_scan import publish_progress
 
         with patch("tasks.mobile_scan.redis.Redis") as mock_redis:
-            mock_redis.return_value.publish.side_effect = Exception("Redis connection refused")
+            mock_redis.return_value.publish.side_effect = redis.RedisError("Redis connection refused")
             # Should not raise
             publish_progress(JOB_ID, "test_step", 50, "test message")
             mock_redis.return_value.publish.assert_called_once()
@@ -145,7 +147,7 @@ class TestMobileAndroidSuccessfulFlow:
         assert self.mock_cve.call_count > 0
 
     def test_secret_scan_failure_does_not_crash(self):
-        self.mock_secrets.side_effect = Exception("secret scan failed")
+        self.mock_secrets.side_effect = OSError("secret scan failed")
         result = self._call_task()
         assert result["job_id"] == JOB_ID
         assert "summary" in result
@@ -160,7 +162,7 @@ class TestMobileAndroidSuccessfulFlow:
         self.mock_save_findings.assert_called_once()
 
     def test_cve_lookup_failure_does_not_crash(self):
-        self.mock_cve.side_effect = Exception("CVE failed")
+        self.mock_cve.side_effect = OSError("CVE failed")
         result = self._call_task()
         assert result["job_id"] == JOB_ID
         assert "summary" in result
@@ -175,7 +177,7 @@ class TestMobileAndroidSuccessfulFlow:
         self.mock_save_findings.assert_called_once()
 
     def test_os_remove_failure_does_not_crash(self):
-        self.mock_remove.side_effect = Exception("remove failed")
+        self.mock_remove.side_effect = OSError("remove failed")
         result = self._call_task()
         assert result["job_id"] == JOB_ID
         assert "summary" in result
@@ -189,7 +191,7 @@ class TestMobileAndroidSuccessfulFlow:
         )
 
     def test_redis_health_failure_does_not_crash(self):
-        self.mock_redis.side_effect = Exception("redis health failed")
+        self.mock_redis.side_effect = redis.RedisError("redis health failed")
         result = self._call_task()
         assert result["job_id"] == JOB_ID
         assert "summary" in result

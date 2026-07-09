@@ -115,7 +115,7 @@ async def enumerate_subdomains(domain: str) -> list[str]:
                 if not chunk:
                     break
                 data += chunk
-        except Exception as e:
+        except (TimeoutError, ConnectionError, OSError) as e:
             logger.warning("Error reading crt.sh response for {domain}: {error}", domain=domain, error=e)
 
         writer.close()
@@ -136,7 +136,7 @@ async def enumerate_subdomains(domain: str) -> list[str]:
                         subdomains.append(sub)
         except (json.JSONDecodeError, TypeError) as e:
             logger.warning("Failed to parse crt.sh JSON for {domain}: {error}", domain=domain, error=e)
-    except Exception as e:
+    except (TimeoutError, OSError, ssl.SSLError) as e:
         logger.warning("Subdomain enumeration failed for {domain}: {error}", domain=domain, error=e)
 
     return subdomains
@@ -166,7 +166,7 @@ async def check_http(domain: str) -> tuple[bool, bool, int, dict[str, str]]:
                     if not chunk:
                         break
                     response += chunk
-            except Exception as e:
+            except (TimeoutError, ConnectionError, OSError) as e:
                 logger.warning(
                     "Error reading HTTP response for {domain}:{port}: {error}", domain=domain, port=port, error=e
                 )
@@ -193,7 +193,7 @@ async def check_http(domain: str) -> tuple[bool, bool, int, dict[str, str]]:
             else:
                 https_reachable = True
 
-        except Exception as e:
+        except (TimeoutError, OSError, ssl.SSLError, UnicodeDecodeError) as e:
             logger.debug("HTTP check failed for {domain}:{port}: {error}", domain=domain, port=port, error=e)
             continue
 
@@ -226,7 +226,7 @@ async def check_ssl(domain: str) -> SslInfo:
 
                 not_after_dt = datetime.datetime.strptime(not_after, "%b %d %H:%M:%S %Y %Z")
                 info.days_remaining = (not_after_dt - datetime.datetime.utcnow()).days
-            except Exception as e:
+            except (ValueError, TypeError) as e:
                 logger.trace(
                     "Failed to parse cert date {date} for {domain}: {error}", date=not_after, domain=domain, error=e
                 )
@@ -242,7 +242,7 @@ async def check_ssl(domain: str) -> SslInfo:
             info.issues.append(f"Certificate expires in {info.days_remaining} days")
         info.supported_versions = ["TLSv1.2", "TLSv1.3"]
 
-    except Exception as e:
+    except (TimeoutError, ssl.SSLError, OSError, AttributeError, TypeError) as e:
         logger.warning("SSL check failed for {domain}: {error}", domain=domain, error=e)
         info.issues.append(f"SSL check failed: {str(e)[:100]}")
 
