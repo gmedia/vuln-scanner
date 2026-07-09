@@ -382,7 +382,7 @@ class TestMobileScanNestedStatusUpdateFailure:
             mock_redis.return_value = MagicMock()
             # First call: "running" (line 48) — succeeds
             # Second call: "failed" inside except (line 155) — raises
-            mock_update_status.side_effect = [None, Exception("nested status update failed")]
+            mock_update_status.side_effect = [None, redis.RedisError("nested status update failed")]
             mock_apk.side_effect = Exception("APK parsing failed")
 
             self.mock_session = mock_session
@@ -747,7 +747,7 @@ class TestMobileScanOuterCatchAll:
 
             # First _update_status call (line 52, "running") succeeds
             # Second _update_status call (line 160, "failed" in outer except) raises
-            mock_update_status.side_effect = [None, Exception("status update failed in outer catch")]
+            mock_update_status.side_effect = [None, redis.RedisError("status update failed in outer catch")]
 
             # analyze_apk raises to trigger the outer except block
             mock_apk.side_effect = Exception("APK parsing failed")

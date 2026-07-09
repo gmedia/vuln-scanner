@@ -451,7 +451,7 @@ def _extract_text_from_zip(zf: zipfile.ZipFile, file_list: list[str], *skip_exte
                     logger.trace("Zip text decode fallback to latin-1 for {name}: {error}", name=name, error=e)
                     text = raw.decode("latin-1", errors="replace")
                 chunks.append(text[:50000])
-        except (OSError, zipfile.BadZipFile, RuntimeError) as e:
+        except (OSError, zipfile.BadZipFile, RuntimeError, KeyError) as e:
             logger.trace("Skipping unreadable zip entry {name}: {error}", name=name, error=e)
             continue
     return "\n".join(chunks)
