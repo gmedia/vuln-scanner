@@ -4,6 +4,7 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
+import redis
 
 from utils.cve_lookup import (
     _cache_key,
@@ -57,7 +58,7 @@ class TestGetCachedVulns:
 
     def test_cache_exception_returns_none(self):
         mock = MagicMock()
-        mock.get.side_effect = Exception("Redis down")
+        mock.get.side_effect = redis.RedisError("Redis down")
         with (
             patch("utils.redis_helpers.redis.ConnectionPool.from_url"),
             patch("utils.cve_lookup.redis.Redis", return_value=mock),
@@ -94,7 +95,7 @@ class TestSetCachedVulns:
 
     def test_exception_silently_handled(self):
         mock = MagicMock()
-        mock.setex.side_effect = Exception("Write error")
+        mock.setex.side_effect = redis.RedisError("Write error")
         with (
             patch("utils.redis_helpers.redis.ConnectionPool.from_url"),
             patch("utils.cve_lookup.redis.Redis", return_value=mock),
