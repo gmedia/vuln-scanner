@@ -102,7 +102,7 @@ test.describe("Mobile Scanner", () => {
     await fileInput.setInputFiles({
       name: "test_app.apk",
       mimeType: "application/octet-stream",
-      buffer: Buffer.from("fake apk content here"),
+      buffer: Buffer.from("PK\x03\x04fake apk content here"),
     });
     await page.locator('button:has-text("START MOBILE SCAN")').click();
     await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, {
