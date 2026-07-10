@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Upload, Smartphone, FileWarning, Loader2, X, File, Coins } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useStartMobileScan } from "@/hooks/useScan";
+import { useScanError } from "@/hooks/useScanError";
 import { useScanStore } from "@/store/scanStore";
 import { useCreditStore } from "@/store/creditStore";
 
@@ -16,6 +17,7 @@ function MobileUpload() {
   const fileRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const startMobileScan = useStartMobileScan();
+  const handleScanError = useScanError();
   const setActiveScan = useScanStore((s) => s.setActiveScan);
   const { credits, fetchBalance, checkEligibility } = useCreditStore();
 
@@ -95,7 +97,7 @@ function MobileUpload() {
           navigate(`/scan/${data.id}`);
         },
         onError: (error) => {
-          setError((error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Failed to start scan. Check your connection.");
+          setError(handleScanError(error));
         },
       },
     );

@@ -4,14 +4,14 @@ test.describe("Domain Scanner Error States", () => {
   test("shows validation error for empty domain", async ({ page }) => {
     await page.goto("/scan/domain");
     await page.locator('button:has-text("START DOMAIN SCAN")').click();
-    await expect(page.locator("text=Domain name is required")).toBeVisible();
+    await expect(page.locator("text=/Domain name is required/i")).toBeVisible();
   });
 
   test("shows validation error for invalid domain format", async ({ page }) => {
     await page.goto("/scan/domain");
     await page.locator('input[placeholder="example.com"]').fill("not-a-domain");
     await page.locator('button:has-text("START DOMAIN SCAN")').click();
-    await expect(page.locator("text=Invalid domain format")).toBeVisible();
+    await expect(page.locator("text=/Invalid domain format/i")).toBeVisible();
   });
 
   test("shows error when domain scan fails due to unreachable domain", async ({
@@ -36,6 +36,6 @@ test.describe("Domain Scanner Error States", () => {
       .locator('input[placeholder="example.com"]')
       .fill("invalid domain with spaces");
     await page.locator('button:has-text("START DOMAIN SCAN")').click();
-    await expect(page.locator("text=Invalid domain format")).toBeVisible();
+    await expect(page.locator("text=/Invalid domain format/i")).toBeVisible();
   });
 });
