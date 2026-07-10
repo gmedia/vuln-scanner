@@ -14,6 +14,7 @@ scan_data/
 *.log
 *.tsbuildinfo
 .coverage
+coverage.json
 .sisyphus/
 test-results/
 playwright-report/
