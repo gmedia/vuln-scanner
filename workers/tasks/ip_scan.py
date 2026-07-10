@@ -28,7 +28,7 @@ def publish_progress(job_id: str, step: str, progress: int, message: str) -> Non
             f"scan_progress:{job_id}",
             json.dumps({"type": "progress", "step": step, "progress": progress, "message": message}),
         )
-    except Exception as e:
+    except (redis.RedisError, TypeError, ValueError) as e:
         logger.warning("Redis publish failed for job {job_id} step {step}: {error}", job_id=job_id, step=step, error=e)
 
 
@@ -59,7 +59,7 @@ def run_ip_scan(self: Any, job_id: str, target: str, ports: str = "1-1000") -> T
             nmap_result = _run_async(run_nmap(target, ports))
         except Retry:
             raise
-        except Exception as e:
+        except (TimeoutError, OSError, RuntimeError) as e:
             _update_status(session, job_id, "failed")
             _refund_credits(session, job_id, "ip")
             session.commit()
@@ -95,7 +95,7 @@ def run_ip_scan(self: Any, job_id: str, target: str, ports: str = "1-1000") -> T
                 if port.product and port.version:
                     try:
                         vulns = _run_async(lookup_service_cves(port.service, port.product, port.version))
-                    except Exception as e:
+                    except (TimeoutError, OSError, RuntimeError) as e:
                         logger.warning(
                             "CVE lookup failed for {service} {product} {ver}: {error}",
                             service=port.service,
@@ -151,19 +151,19 @@ def run_ip_scan(self: Any, job_id: str, target: str, ports: str = "1-1000") -> T
         try:
             r = redis.Redis(connection_pool=get_redis_pool())
             r.set("health:last_task_completed", time.time())
-        except Exception as e:
+        except redis.RedisError as e:
             logger.warning("Failed to update Redis health timestamp for job {job_id}: {error}", job_id=job_id, error=e)
 
         return {"job_id": job_id, "summary": summary}
     except Retry:
         raise
-    except Exception as e:
+    except Exception as e:  # Broad catch at task top-level — inner exceptions already handled
         try:
             _update_status(session, job_id, "failed")
             _refund_credits(session, job_id, "ip")
             session.commit()
             session.close()
-        except Exception as e2:
+        except (OSError, redis.RedisError) as e2:
             logger.warning("Failed to update status/commit for failed job {job_id}: {error}", job_id=job_id, error=e2)
         publish_progress(job_id, "failed", 100, f"IP scan failed: {str(e)[:200]}")
         if self.request.retries >= self.max_retries:
