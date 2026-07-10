@@ -23,6 +23,26 @@ function IpScanForm() {
   const isValidIp = (ip: string) =>
     /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/.test(ip);
 
+  const isValidPort = (p: string): boolean => {
+    const trimmed = p.trim();
+    if (!trimmed) return true;
+    // Comma-separated: 22,80,443
+    if (/^\d+(,\d+)*$/.test(trimmed)) {
+      return trimmed.split(",").every((n) => {
+        const port = parseInt(n, 10);
+        return port >= 1 && port <= 65535;
+      });
+    }
+    // Range: 1-1000
+    const rangeMatch = trimmed.match(/^(\d+)-(\d+)$/);
+    if (rangeMatch) {
+      const start = parseInt(rangeMatch[1], 10);
+      const end = parseInt(rangeMatch[2], 10);
+      return start >= 1 && end <= 65535 && start <= end;
+    }
+    return false;
+  };
+
   const handleSubmit = async () => {
     setError("");
     if (!target.trim()) {
@@ -31,6 +51,10 @@ function IpScanForm() {
     }
     if (!isValidIp(target.trim())) {
       setError("Invalid IP address format (e.g. 192.168.1.1)");
+      return;
+    }
+    if (!isValidPort(ports)) {
+      setError("Invalid port format. Use start-end (e.g. 1-1000) or comma-separated (e.g. 22,80,443). Ports must be 1-65535.");
       return;
     }
 
@@ -52,8 +76,8 @@ function IpScanForm() {
           fetchBalance();
           navigate(`/scan/${data.id}`);
         },
-        onError: () => {
-          setError("Failed to start scan. Check your connection.");
+        onError: (error) => {
+          setError((error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Failed to start scan. Check your connection.");
         },
       },
     );

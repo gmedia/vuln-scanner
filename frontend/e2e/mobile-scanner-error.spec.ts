@@ -63,10 +63,10 @@ test.describe("Mobile Scanner Error States", () => {
     });
     await page.locator('button:has-text("START MOBILE SCAN")').click();
 
-    // Backend rejects the invalid file (HTTP 400: "File must be a valid ZIP archive"),
-    // but the frontend onError callback shows the generic failure message.
+    // Backend rejects the invalid file (HTTP 400: "File must be a valid ZIP archive").
+    // Now exposed via onError callback using error.response?.data?.detail.
     await expect(
-      page.locator("text=Failed to start scan. Check your connection."),
+      page.locator("text=File must be a valid ZIP archive"),
     ).toBeVisible({ timeout: 15_000 });
   });
 });
