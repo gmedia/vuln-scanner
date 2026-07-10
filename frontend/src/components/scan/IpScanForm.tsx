@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Radar, Loader2, Coins } from "lucide-react";
-import { isAxiosError } from "axios";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useStartIpScan } from "@/hooks/useScan";
+import { useScanError } from "@/hooks/useScanError";
 import { useScanStore } from "@/store/scanStore";
 import { useCreditStore } from "@/store/creditStore";
-import { isValidPort, type ApiError } from "@/lib/utils";
+import { isValidPort } from "@/lib/utils";
 
 function IpScanForm() {
   const [target, setTarget] = useState("");
@@ -15,6 +15,7 @@ function IpScanForm() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const startIpScan = useStartIpScan();
+  const handleScanError = useScanError();
   const setActiveScan = useScanStore((s) => s.setActiveScan);
   const { credits, fetchBalance, checkEligibility } = useCreditStore();
 
@@ -59,10 +60,7 @@ function IpScanForm() {
           navigate(`/scan/${data.id}`);
         },
         onError: (error) => {
-          setError(
-            (isAxiosError(error) && (error as ApiError).response?.data?.detail) ||
-              "Failed to start scan. Check your connection.",
-          );
+          setError(handleScanError(error));
         },
       },
     );

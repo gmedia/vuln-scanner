@@ -1,12 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Upload, Smartphone, FileWarning, Loader2, X, File, Coins } from "lucide-react";
-import { isAxiosError } from "axios";
 import { Button } from "@/components/ui/Button";
 import { useStartMobileScan } from "@/hooks/useScan";
+import { useScanError } from "@/hooks/useScanError";
 import { useScanStore } from "@/store/scanStore";
 import { useCreditStore } from "@/store/creditStore";
-import { type ApiError } from "@/lib/utils";
 
 const MAX_FILE_SIZE = 500 * 1024 * 1024;
 
@@ -18,6 +17,7 @@ function MobileUpload() {
   const fileRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const startMobileScan = useStartMobileScan();
+  const handleScanError = useScanError();
   const setActiveScan = useScanStore((s) => s.setActiveScan);
   const { credits, fetchBalance, checkEligibility } = useCreditStore();
 
@@ -97,10 +97,7 @@ function MobileUpload() {
           navigate(`/scan/${data.id}`);
         },
         onError: (error) => {
-          setError(
-            (isAxiosError(error) && (error as ApiError).response?.data?.detail) ||
-              "Failed to start scan. Check your connection.",
-          );
+          setError(handleScanError(error));
         },
       },
     );

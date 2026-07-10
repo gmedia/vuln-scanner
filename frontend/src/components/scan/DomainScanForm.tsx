@@ -1,19 +1,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Globe, Loader2, Coins } from "lucide-react";
-import { isAxiosError } from "axios";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useStartDomainScan } from "@/hooks/useScan";
+import { useScanError } from "@/hooks/useScanError";
 import { useScanStore } from "@/store/scanStore";
 import { useCreditStore } from "@/store/creditStore";
-import { type ApiError } from "@/lib/utils";
 
 function DomainScanForm() {
   const [domain, setDomain] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const startDomainScan = useStartDomainScan();
+  const handleScanError = useScanError();
   const setActiveScan = useScanStore((s) => s.setActiveScan);
   const { credits, fetchBalance, checkEligibility } = useCreditStore();
 
@@ -55,10 +55,7 @@ function DomainScanForm() {
           navigate(`/scan/${data.id}`);
         },
         onError: (error) => {
-          setError(
-            (isAxiosError(error) && (error as ApiError).response?.data?.detail) ||
-              "Failed to start scan. Check your connection.",
-          );
+          setError(handleScanError(error));
         },
       },
     );
