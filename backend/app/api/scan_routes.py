@@ -1,7 +1,6 @@
 import contextlib
 import html
 import os
-import shutil
 from datetime import UTC, datetime
 
 from celery.exceptions import CeleryError
@@ -195,16 +194,33 @@ async def start_mobile_scan(
         return limit_response
     if platform not in ("android", "ios"):
         raise HTTPException(status_code=400, detail="platform must be 'android' or 'ios'")
+
+    # Validate file before reading: filename length, magic bytes, size limit
     if not file.filename:
         raise HTTPException(status_code=400, detail="File must have a filename")
+    if len(file.filename) > 255:
+        raise HTTPException(status_code=400, detail="Filename too long")
 
-    ext = ".apk" if platform == "android" else ".ipa"
-    safe_name = os.path.basename(file.filename or f"upload{ext}")
+    header = await file.read(4)
+    await file.seek(0)
+    if header[:2] != b"PK":
+        raise HTTPException(status_code=400, detail="File must be a valid ZIP archive (APK/IPA)")
+
+    # Stream to a temp file while enforcing size limit
     os.makedirs(settings.upload_dir, exist_ok=True)
+    safe_name = os.path.basename(file.filename)
     file_path = os.path.join(settings.upload_dir, f"{os.urandom(8).hex()}_{safe_name}")
 
+    max_size = 500 * 1024 * 1024  # 500 MB
+    total = 0
     with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        while chunk := await file.read(8192):
+            total += len(chunk)
+            if total > max_size:
+                buffer.close()
+                os.unlink(file_path)
+                raise HTTPException(status_code=413, detail="File exceeds 500 MB limit")
+            buffer.write(chunk)
 
     try:
         scan_type = "apk" if platform == "android" else "ipa"
@@ -260,7 +276,11 @@ async def get_scan_findings(
     return findings
 
 
-@router.get("/scan/{job_id}/export", response_model=None)
+@router.get(
+    "/scan/{job_id}/export",
+    response_model=None,
+    responses={200: {"content": {"application/json": {}, "text/html": {}}}},
+)
 async def export_scan(
     job_id: str,
     format: str = Query(default="json"),

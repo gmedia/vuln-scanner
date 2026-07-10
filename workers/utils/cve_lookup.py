@@ -33,7 +33,7 @@ def _get_cached_vulns(package_name: str, ecosystem: str, version: str) -> list[C
             logger.info("CVE cache HIT for {ecosystem}:{pkg}@{ver}", ecosystem=ecosystem, pkg=package_name, ver=version)
             return cast(list[CveVuln], json.loads(data))
         logger.debug("CVE cache MISS for {ecosystem}:{pkg}@{ver}", ecosystem=ecosystem, pkg=package_name, ver=version)
-    except Exception as e:
+    except (redis.RedisError, json.JSONDecodeError) as e:
         logger.warning(
             "CVE cache read error for {ecosystem}:{pkg}@{ver}: {error}",
             ecosystem=ecosystem,
@@ -48,7 +48,7 @@ def _set_cached_vulns(package_name: str, ecosystem: str, version: str, vulns: li
     try:
         r = redis.Redis(connection_pool=_get_redis_pool())
         r.setex(_cache_key(package_name, ecosystem, version), CVE_CACHE_TTL, json.dumps(vulns))
-    except Exception as e:
+    except (redis.RedisError, TypeError) as e:
         logger.warning(
             "CVE cache write error for {ecosystem}:{pkg}@{ver}: {error}",
             ecosystem=ecosystem,
@@ -81,7 +81,7 @@ async def _query_ecosystem(package_name: str, ecosystem: str, version: str) -> l
                 ver=version,
             )
             return []
-    except Exception as e:
+    except (httpx.HTTPError, httpx.TimeoutException, json.JSONDecodeError) as e:
         logger.error(
             "OSV query failed for {ecosystem}:{pkg}@{ver}: {error}",
             ecosystem=ecosystem,

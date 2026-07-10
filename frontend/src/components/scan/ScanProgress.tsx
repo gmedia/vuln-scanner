@@ -1,6 +1,6 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, XCircle, Clock } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, WifiOff } from "lucide-react";
 import { useScanStore } from "@/store/scanStore";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useScanDetail } from "@/hooks/useScan";
@@ -22,14 +22,37 @@ function ScanProgress({ className }: ScanProgressProps) {
 
   const { data: scanData } = useScanDetail(activeJobId);
 
+  const lastMessageTimeRef = useRef(0);
+  const [isDisconnected, setIsDisconnected] = useState(false);
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    lastMessageTimeRef.current = Date.now();
+  }, []);
+
   const handleProgress = useCallback(
     (msg: { step: string; progress: number; message: string }) => {
+      lastMessageTimeRef.current = Date.now();
+      setIsDisconnected(false);
       setProgress(msg.progress, msg.step || "running");
     },
     [setProgress],
   );
 
   useWebSocket(activeJobId, handleProgress);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (
+        activeJobId &&
+        Date.now() - lastMessageTimeRef.current > 20000
+      ) {
+        setIsDisconnected(true);
+        setTick((t) => t + 1);
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [activeJobId]);
 
   useEffect(() => {
     if (scanData?.status === "completed" || scanData?.status === "failed") {
@@ -42,7 +65,14 @@ function ScanProgress({ className }: ScanProgressProps) {
         return () => clearTimeout(timer);
       }
     }
-  }, [scanData?.status, scanData?.id, activeJobId, navigate, clearActiveScan, setProgress]);
+  }, [
+    scanData?.status,
+    scanData?.id,
+    activeJobId,
+    navigate,
+    clearActiveScan,
+    setProgress,
+  ]);
 
   const isComplete = status === "completed" || progress >= 100;
   const isFailed = status === "failed";
@@ -55,11 +85,19 @@ function ScanProgress({ className }: ScanProgressProps) {
             <CheckCircle2 className="h-5 w-5 text-primary" />
           ) : isFailed ? (
             <XCircle className="h-5 w-5 text-destructive" />
+          ) : isDisconnected ? (
+            <WifiOff className="h-5 w-5 text-amber-400" />
           ) : (
             <Clock className="h-5 w-5 animate-pulse text-blue-400" />
           )}
           <span className="font-mono text-sm font-medium text-foreground">
-            {isComplete ? "SCAN COMPLETE" : isFailed ? "SCAN FAILED" : "SCANNING TARGET"}
+            {isComplete
+              ? "SCAN COMPLETE"
+              : isFailed
+                ? "SCAN FAILED"
+                : isDisconnected
+                  ? "CONNECTION LOST"
+                  : "SCANNING TARGET"}
           </span>
         </div>
         <Badge

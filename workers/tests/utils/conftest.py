@@ -7,6 +7,7 @@ sys.path.insert(0, "/home/ubuntu/vuln-scanner/workers")
 import json
 from unittest.mock import AsyncMock, MagicMock
 
+import httpx
 import pytest
 
 # ---------------------------------------------------------------------------
@@ -287,7 +288,7 @@ def mock_httpx_osv_error():
     """Mock httpx.AsyncClient that raises an exception."""
     mock_client = AsyncMock()
     mock_client.__aenter__.return_value = mock_client
-    mock_client.post.side_effect = Exception("Connection error")
+    mock_client.post.side_effect = httpx.HTTPError("Connection error")
     return mock_client
 
 

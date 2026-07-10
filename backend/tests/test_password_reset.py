@@ -710,6 +710,10 @@ class TestPasswordResetMimeMessage:
 
 
 class TestSendPasswordResetEmailFailure:
+    @pytest.fixture(autouse=True)
+    def _set_max_retries(self, monkeypatch):
+        monkeypatch.setattr(email_module, "_MAX_RETRIES", 1)
+
     @pytest.mark.asyncio
     async def test_connect_failure_returns_false(self):
         mock_smtp = AsyncMock()
@@ -810,6 +814,10 @@ class TestPasswordResetTokenInLink:
 
 
 class TestPasswordResetEmailEdgeCases:
+    @pytest.fixture(autouse=True)
+    def _set_max_retries(self, monkeypatch):
+        monkeypatch.setattr(email_module, "_MAX_RETRIES", 1)
+
     @pytest.mark.asyncio
     async def test_quit_failure_still_returns_false(self):
         mock_smtp = AsyncMock()

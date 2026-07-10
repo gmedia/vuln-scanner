@@ -145,7 +145,7 @@ async def get_user_detail(
     )
 
 
-@router.post("/users/{user_id}/credits", response_model=None)
+@router.post("/users/{user_id}/credits", response_model=AdminUserItem)
 async def adjust_user_credits(
     request: Request,
     user_id: uuid.UUID,
@@ -210,7 +210,7 @@ async def get_pricing(
     return PricingListResponse(items=[PricingItem.model_validate(item) for item in items])
 
 
-@router.put("/pricing/{scan_type}", response_model=None)
+@router.put("/pricing/{scan_type}", response_model=PricingItem)
 async def update_pricing(
     request: Request,
     scan_type: str,
