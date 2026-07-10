@@ -9,7 +9,7 @@ test.describe("Mobile Scanner Error States", () => {
       mimeType: "text/plain",
       buffer: Buffer.from("not an apk"),
     });
-    await expect(page.locator("text=Invalid file type")).toBeVisible();
+    await expect(page.locator("text=/Invalid file type/i")).toBeVisible();
   });
 
   test("shows error for wrong file extension on iOS", async ({ page }) => {
@@ -21,7 +21,7 @@ test.describe("Mobile Scanner Error States", () => {
       mimeType: "application/octet-stream",
       buffer: Buffer.from("fake apk"),
     });
-    await expect(page.locator("text=Expected .ipa for iOS.")).toBeVisible();
+    await expect(page.locator("text=/Expected .ipa for iOS/i")).toBeVisible();
   });
 
   test("submit button disabled when no file selected", async ({ page }) => {
@@ -66,7 +66,7 @@ test.describe("Mobile Scanner Error States", () => {
     // Backend rejects the invalid file (HTTP 400: "File must be a valid ZIP archive").
     // Now exposed via onError callback using error.response?.data?.detail.
     await expect(
-      page.locator("text=File must be a valid ZIP archive"),
+      page.locator("text=/File must be a valid ZIP archive/i"),
     ).toBeVisible({ timeout: 15_000 });
   });
 });

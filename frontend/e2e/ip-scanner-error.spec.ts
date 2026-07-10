@@ -19,7 +19,7 @@ test.describe("IP Scanner Error States", () => {
     await page.locator('input[placeholder="192.168.1.1"]').fill("8.8.8.8");
     await page.locator('input[placeholder="1-1000"]').fill("abc");
     await page.locator('button:has-text("START IP SCAN")').click();
-    await expect(page.locator("text=Invalid port format")).toBeVisible();
+    await expect(page.locator("text=/Invalid port format/i")).toBeVisible();
   });
 
   test("shows error when IP scan fails to start", async ({ page }) => {

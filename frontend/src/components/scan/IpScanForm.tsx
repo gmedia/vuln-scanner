@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Radar, Loader2, Coins } from "lucide-react";
+import { isAxiosError } from "axios";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useStartIpScan } from "@/hooks/useScan";
 import { useScanStore } from "@/store/scanStore";
 import { useCreditStore } from "@/store/creditStore";
+import { isValidPort, type ApiError } from "@/lib/utils";
 
 function IpScanForm() {
   const [target, setTarget] = useState("");
@@ -22,26 +24,6 @@ function IpScanForm() {
 
   const isValidIp = (ip: string) =>
     /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/.test(ip);
-
-  const isValidPort = (p: string): boolean => {
-    const trimmed = p.trim();
-    if (!trimmed) return true;
-    // Comma-separated: 22,80,443
-    if (/^\d+(,\d+)*$/.test(trimmed)) {
-      return trimmed.split(",").every((n) => {
-        const port = parseInt(n, 10);
-        return port >= 1 && port <= 65535;
-      });
-    }
-    // Range: 1-1000
-    const rangeMatch = trimmed.match(/^(\d+)-(\d+)$/);
-    if (rangeMatch) {
-      const start = parseInt(rangeMatch[1], 10);
-      const end = parseInt(rangeMatch[2], 10);
-      return start >= 1 && end <= 65535 && start <= end;
-    }
-    return false;
-  };
 
   const handleSubmit = async () => {
     setError("");
@@ -77,7 +59,10 @@ function IpScanForm() {
           navigate(`/scan/${data.id}`);
         },
         onError: (error) => {
-          setError((error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Failed to start scan. Check your connection.");
+          setError(
+            (isAxiosError(error) && (error as ApiError).response?.data?.detail) ||
+              "Failed to start scan. Check your connection.",
+          );
         },
       },
     );
