@@ -94,8 +94,8 @@ function MobileUpload() {
           fetchBalance();
           navigate(`/scan/${data.id}`);
         },
-        onError: (error: any) => {
-          setError(error.response?.data?.detail || "Failed to start scan. Check your connection.");
+        onError: (error) => {
+          setError((error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Failed to start scan. Check your connection.");
         },
       },
     );
