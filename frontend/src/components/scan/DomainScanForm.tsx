@@ -52,8 +52,8 @@ function DomainScanForm() {
           fetchBalance();
           navigate(`/scan/${data.id}`);
         },
-        onError: () => {
-          setError("Failed to start scan. Check your connection.");
+        onError: (error: any) => {
+          setError(error.response?.data?.detail || "Failed to start scan. Check your connection.");
         },
       },
     );
