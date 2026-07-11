@@ -772,3 +772,70 @@ class TestAdminDeleteKey:
             headers={"Authorization": f"Bearer {token}"},
         )
         assert resp.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# Admin rate-limit-hit tests (coverage: lines 44,84,128,158,207,223)
+# ---------------------------------------------------------------------------
+
+
+class TestAdminRateLimits:
+    """Verify that hitting admin rate limits returns 429 across all admin endpoints."""
+
+    @pytest.fixture(autouse=True)
+    def _patch_admin_limiter(self, monkeypatch):
+        import app.api.admin_routes as admin_routes
+
+        monkeypatch.setattr(admin_routes.admin_limiter, "max_requests", 3)
+        monkeypatch.setattr(admin_routes.admin_limiter, "window_seconds", 3600)
+
+    def test_stats_rate_limit_returns_429(self, client):
+        """GET /api/admin/stats — 4th request hits rate limit (line 44)."""
+        for _ in range(3):
+            resp = client.get("/api/admin/stats", headers=API_HEADERS)
+            assert resp.status_code == 200
+        resp = client.get("/api/admin/stats", headers=API_HEADERS)
+        assert resp.status_code == 429
+
+    def test_users_rate_limit_returns_429(self, client):
+        """GET /api/admin/users — 4th request hits rate limit (line 84)."""
+        for _ in range(3):
+            resp = client.get("/api/admin/users", headers=API_HEADERS)
+            assert resp.status_code == 200
+        resp = client.get("/api/admin/users", headers=API_HEADERS)
+        assert resp.status_code == 429
+
+    def test_user_detail_rate_limit_returns_429(self, client, sample_user):
+        """GET /api/admin/users/{id} — 4th request hits rate limit (line 128)."""
+        url = f"/api/admin/users/{sample_user.id}"
+        for _ in range(3):
+            resp = client.get(url, headers=API_HEADERS)
+            assert resp.status_code == 200
+        resp = client.get(url, headers=API_HEADERS)
+        assert resp.status_code == 429
+
+    def test_user_credits_rate_limit_returns_429(self, client, db_session, sample_user):
+        """POST /api/admin/users/{id}/credits — 4th request hits rate limit (line 158)."""
+        _patch_db_for_uuid(db_session)
+        url = f"/api/admin/users/{sample_user.id}/credits"
+        for _ in range(3):
+            resp = client.post(url, json={"amount": 10, "description": "test"}, headers=API_HEADERS)
+            assert resp.status_code == 200
+        resp = client.post(url, json={"amount": 10, "description": "test"}, headers=API_HEADERS)
+        assert resp.status_code == 429
+
+    def test_pricing_list_rate_limit_returns_429(self, client):
+        """GET /api/admin/pricing — 4th request hits rate limit (line 207)."""
+        for _ in range(3):
+            resp = client.get("/api/admin/pricing", headers=API_HEADERS)
+            assert resp.status_code == 200
+        resp = client.get("/api/admin/pricing", headers=API_HEADERS)
+        assert resp.status_code == 429
+
+    def test_pricing_update_rate_limit_returns_429(self, client):
+        """PUT /api/admin/pricing/ip — 4th request hits rate limit (line 223)."""
+        for _ in range(3):
+            resp = client.put("/api/admin/pricing/ip", json={"credit_cost": 10}, headers=API_HEADERS)
+            assert resp.status_code == 200
+        resp = client.put("/api/admin/pricing/ip", json={"credit_cost": 10}, headers=API_HEADERS)
+        assert resp.status_code == 429
