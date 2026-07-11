@@ -58,8 +58,10 @@ class TestWebSocketRateLimit:
         monkeypatch.setattr("app.api.websocket.get_redis", mock_get_redis)
 
         fake_rl = _make_fake_ws_rl_redis()
+
         async def mock_ws_rl():
             return fake_rl
+
         monkeypatch.setattr("app.api.websocket._get_ws_rate_limit_redis", mock_ws_rl)
 
         for i in range(10):
@@ -94,8 +96,10 @@ class TestWebSocketRateLimit:
         monkeypatch.setattr("app.api.websocket.get_redis", mock_get_redis)
 
         fake_rl = _make_fake_ws_rl_redis()
+
         async def mock_ws_rl():
             return fake_rl
+
         monkeypatch.setattr("app.api.websocket._get_ws_rate_limit_redis", mock_ws_rl)
 
         for i in range(10):
@@ -306,8 +310,10 @@ class TestWebSocketRateLimit:
         monkeypatch.setattr("app.api.websocket.get_redis", mock_get_redis)
 
         fake_rl = _make_fake_ws_rl_redis()
+
         async def mock_ws_rl():
             return fake_rl
+
         monkeypatch.setattr("app.api.websocket._get_ws_rate_limit_redis", mock_ws_rl)
 
         # Saturate rate limit with 10 connections using master key
@@ -365,8 +371,10 @@ class TestWebSocketRateLimit:
         monkeypatch.setattr("app.api.websocket.get_redis", mock_get_redis)
 
         fake_rl = _make_fake_ws_rl_redis()
+
         async def mock_ws_rl():
             return fake_rl
+
         monkeypatch.setattr("app.api.websocket._get_ws_rate_limit_redis", mock_ws_rl)
 
         # Saturate with a DB key (key value doesn't matter, validate returns True)
@@ -889,3 +897,93 @@ def test_non_master_key_job_not_found(client, monkeypatch):
     ):
         pass
     assert exc_info.value.code == 4004
+
+
+def test_per_key_rate_limit_exceeded(client, monkeypatch):
+    """When per-key rate limit (WS_KEY_LIMIT_MAX=5) is exceeded, close code 4008.
+
+    Lines 116-125 in websocket.py.
+    """
+
+    async def mock_validate(_key):
+        return True
+
+    monkeypatch.setattr("app.api.websocket.validate_api_key", mock_validate)
+
+    # Mock get_redis + pubsub for heartbeat (won't be reached)
+    mock_pubsub = MagicMock()
+    mock_pubsub.subscribe = AsyncMock()
+    mock_pubsub.unsubscribe = AsyncMock()
+    mock_redis = MagicMock()
+    mock_redis.pubsub.return_value = mock_pubsub
+
+    async def mock_get_redis():
+        return mock_redis
+
+    monkeypatch.setattr("app.api.websocket.get_redis", mock_get_redis)
+
+    # Fake rate-limit Redis: IP always returns 1 (never hits IP limit),
+    # but per-key returns > WS_KEY_LIMIT_MAX (5) to trigger the per-key block.
+    fake_rl = MagicMock()
+
+    async def incr(key):
+        if "ws_key" in key:
+            return 6  # Exceeds WS_KEY_LIMIT_MAX (5)
+        return 1
+
+    fake_rl.incr = incr
+    fake_rl.expire = AsyncMock(return_value=True)
+    fake_rl.ping = AsyncMock(return_value=True)
+    fake_rl.aclose = AsyncMock(return_value=None)
+
+    async def mock_ws_rl():
+        return fake_rl
+
+    monkeypatch.setattr("app.api.websocket._get_ws_rate_limit_redis", mock_ws_rl)
+
+    with (
+        pytest.raises(WebSocketDisconnect) as exc_info,
+        client.websocket_connect(f"/api/ws/scan/job-perkey?api_key={API_KEY}"),
+    ):
+        pass
+    assert exc_info.value.code == 4008
+
+
+def test_per_key_rate_limit_redis_error(client, monkeypatch):
+    """When per-key rate limit Redis call raises RedisError, close code 4001.
+
+    Lines 126-129 in websocket.py.
+    """
+
+    async def mock_validate(_key):
+        return True
+
+    monkeypatch.setattr("app.api.websocket.validate_api_key", mock_validate)
+
+    # Fake rate-limit Redis: IP check passes, but per-key check raises RedisError.
+    call_count = 0
+
+    async def incr(key):
+        nonlocal call_count
+        call_count += 1
+        if "ws_key" in key:
+            raise RedisError("Connection lost during per-key check")
+        return 1
+
+    fake_rl = MagicMock()
+    fake_rl.incr = incr
+    fake_rl.expire = AsyncMock(return_value=True)
+    fake_rl.ping = AsyncMock(return_value=True)
+    fake_rl.aclose = AsyncMock(return_value=None)
+
+    async def mock_ws_rl():
+        return fake_rl
+
+    monkeypatch.setattr("app.api.websocket._get_ws_rate_limit_redis", mock_ws_rl)
+
+    with (
+        pytest.raises(WebSocketDisconnect) as exc_info,
+        client.websocket_connect(f"/api/ws/scan/job-perkey-error?api_key={API_KEY}"),
+    ):
+        pass
+    assert exc_info.value.code == 4001
