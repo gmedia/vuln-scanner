@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import React from "react";
 import userEvent from "@testing-library/user-event";
 import MobileUpload from "@/components/scan/MobileUpload";
 
@@ -22,22 +23,13 @@ vi.mock("@/store/scanStore", () => ({
     return selector ? selector(state) : state;
   }),
 }));
-vi.mock("@/store/creditStore", () => ({
-  useCreditStore: vi.fn((selector) => {
-    const state = {
-      credits: 100,
-      isAdmin: false,
-      isLoading: false,
-      error: null,
-      fetchBalance: vi.fn(),
-      checkEligibility: vi.fn().mockResolvedValue({
-        eligible: true,
-        required_credits: 10,
-        current_credits: 100,
-      }),
-    };
-    return selector ? selector(state) : state;
-  }),
+vi.mock("@/hooks/useScanCredit", () => ({
+  useScanCredit: vi.fn(() => ({
+    credits: 100,
+    creditDisplay: React.createElement("div", { "data-testid": "credit-display" }, "Available Credits: 100"),
+    checkAndDeduct: vi.fn().mockResolvedValue({ eligible: true, error: null }),
+    refreshAfterScan: vi.fn(),
+  })),
 }));
 vi.mock("react-router-dom", () => ({
   useNavigate: vi.fn(() => vi.fn()),
@@ -101,8 +93,7 @@ describe("MobileUpload", () => {
 
   it("displays available credits", () => {
     render(<MobileUpload />);
-    expect(screen.getByText("Available Credits")).toBeInTheDocument();
-    expect(screen.getByText("100")).toBeInTheDocument();
+    expect(screen.getByTestId("credit-display")).toBeInTheDocument();
   });
 
   it("switches to iOS platform when iOS button is clicked", async () => {

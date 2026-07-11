@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Radar, Loader2, Coins } from "lucide-react";
+import { Radar, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useStartIpScan } from "@/hooks/useScan";
 import { useScanError } from "@/hooks/useScanError";
+import { useScanCredit } from "@/hooks/useScanCredit";
 import { useScanStore } from "@/store/scanStore";
-import { useCreditStore } from "@/store/creditStore";
 import { isValidPort } from "@/lib/utils";
+import { ScanError } from "./ScanError";
 
 function IpScanForm() {
   const [target, setTarget] = useState("");
@@ -17,11 +18,7 @@ function IpScanForm() {
   const startIpScan = useStartIpScan();
   const handleScanError = useScanError();
   const setActiveScan = useScanStore((s) => s.setActiveScan);
-  const { credits, fetchBalance, checkEligibility } = useCreditStore();
-
-  useEffect(() => {
-    fetchBalance();
-  }, [fetchBalance]);
+  const { creditDisplay, checkAndDeduct, refreshAfterScan } = useScanCredit();
 
   const isValidIp = (ip: string) =>
     /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/.test(ip);
@@ -41,13 +38,9 @@ function IpScanForm() {
       return;
     }
 
-    const eligibility = await checkEligibility("ip");
-    if (!eligibility) {
-      setError("Failed to check credit eligibility.");
-      return;
-    }
-    if (!eligibility.eligible) {
-      setError(`Insufficient credits. Required: ${eligibility.required_credits}, Available: ${eligibility.current_credits}`);
+    const { eligible, error: creditError } = await checkAndDeduct("ip");
+    if (!eligible) {
+      setError(creditError!);
       return;
     }
 
@@ -56,7 +49,7 @@ function IpScanForm() {
       {
         onSuccess: (data) => {
           setActiveScan(data.id, "ip");
-          fetchBalance();
+          refreshAfterScan();
           navigate(`/scan/${data.id}`);
         },
         onError: (error) => {
@@ -68,13 +61,7 @@ function IpScanForm() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2">
-        <span className="font-mono text-xs text-muted-foreground">Available Credits</span>
-        <span className="flex items-center gap-1 font-mono text-sm font-bold text-primary">
-          <Coins className="h-3.5 w-3.5" />
-          {credits}
-        </span>
-      </div>
+      {creditDisplay}
 
       <div>
         <label className="mb-1.5 block font-mono text-xs font-medium text-muted-foreground">
@@ -112,11 +99,7 @@ function IpScanForm() {
         </p>
       </div>
 
-      {error && (
-        <div className="rounded-md border border-red-600/30 bg-red-600/10 px-3 py-2">
-          <p className="font-mono text-xs text-red-400">{error}</p>
-        </div>
-      )}
+      {error && <ScanError message={error} />}
 
       <Button
         onClick={handleSubmit}

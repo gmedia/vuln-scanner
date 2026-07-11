@@ -1,11 +1,12 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload, Smartphone, FileWarning, Loader2, X, File, Coins } from "lucide-react";
+import { Upload, Smartphone, Loader2, X, File } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useStartMobileScan } from "@/hooks/useScan";
 import { useScanError } from "@/hooks/useScanError";
+import { useScanCredit } from "@/hooks/useScanCredit";
 import { useScanStore } from "@/store/scanStore";
-import { useCreditStore } from "@/store/creditStore";
+import { ScanError } from "./ScanError";
 
 const MAX_FILE_SIZE = 500 * 1024 * 1024;
 
@@ -19,11 +20,7 @@ function MobileUpload() {
   const startMobileScan = useStartMobileScan();
   const handleScanError = useScanError();
   const setActiveScan = useScanStore((s) => s.setActiveScan);
-  const { credits, fetchBalance, checkEligibility } = useCreditStore();
-
-  useEffect(() => {
-    fetchBalance();
-  }, [fetchBalance]);
+  const { creditDisplay, checkAndDeduct, refreshAfterScan } = useScanCredit();
 
   const validateFile = useCallback((f: File): string | null => {
     const ext = f.name.split(".").pop()?.toLowerCase();
@@ -78,13 +75,9 @@ function MobileUpload() {
     }
 
     const scanType = platform === "android" ? "apk" : "ipa";
-    const eligibility = await checkEligibility(scanType);
-    if (!eligibility) {
-      setError("Failed to check credit eligibility.");
-      return;
-    }
-    if (!eligibility.eligible) {
-      setError(`Insufficient credits. Required: ${eligibility.required_credits}, Available: ${eligibility.current_credits}`);
+    const { eligible, error: creditError } = await checkAndDeduct(scanType);
+    if (!eligible) {
+      setError(creditError!);
       return;
     }
 
@@ -93,7 +86,7 @@ function MobileUpload() {
       {
         onSuccess: (data) => {
           setActiveScan(data.id, scanType);
-          fetchBalance();
+          refreshAfterScan();
           navigate(`/scan/${data.id}`);
         },
         onError: (error) => {
@@ -117,13 +110,7 @@ function MobileUpload() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2">
-        <span className="font-mono text-xs text-muted-foreground">Available Credits</span>
-        <span className="flex items-center gap-1 font-mono text-sm font-bold text-primary">
-          <Coins className="h-3.5 w-3.5" />
-          {credits}
-        </span>
-      </div>
+      {creditDisplay}
 
       <div>
         <label className="mb-1.5 block font-mono text-xs font-medium text-muted-foreground">
@@ -221,12 +208,7 @@ function MobileUpload() {
         </div>
       )}
 
-      {error && (
-        <div className="flex items-start gap-2 rounded-md border border-red-600/30 bg-red-600/10 px-3 py-2">
-          <FileWarning className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-          <p className="font-mono text-xs text-red-400">{error}</p>
-        </div>
-      )}
+      {error && <ScanError message={error} showIcon />}
 
       <Button
         onClick={handleSubmit}
