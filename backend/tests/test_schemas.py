@@ -61,6 +61,23 @@ class TestDomainScanRequest:
         with pytest.raises(ValidationError):
             DomainScanRequest(domain="ab")
 
+    def test_empty_label(self):
+        with pytest.raises(ValidationError):
+            DomainScanRequest(domain="a..b.com")
+
+    def test_label_too_long(self):
+        long_label = "a" * 64
+        with pytest.raises(ValidationError):
+            DomainScanRequest(domain=f"{long_label}.com")
+
+    def test_label_starts_with_dash(self):
+        with pytest.raises(ValidationError):
+            DomainScanRequest(domain="-foo.example.com")
+
+    def test_label_ends_with_dash(self):
+        with pytest.raises(ValidationError):
+            DomainScanRequest(domain="foo-.example.com")
+
 
 class TestPaginatedResponse:
     def test_construct(self):
