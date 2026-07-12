@@ -61,6 +61,10 @@ class TestDomainScanRequest:
         with pytest.raises(ValidationError):
             DomainScanRequest(domain="ab")
 
+    def test_too_long(self):
+        with pytest.raises(ValidationError):
+            DomainScanRequest(domain="a" * 254 + ".com")
+
     def test_empty_label(self):
         with pytest.raises(ValidationError):
             DomainScanRequest(domain="a..b.com")
