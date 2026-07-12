@@ -567,3 +567,53 @@ async def test_admin_endpoint_rate_limited(client, mock_celery, monkeypatch, db_
         headers={"Authorization": f"Bearer {token}"},
     )
     assert resp2.status_code == 429
+
+
+@pytest.mark.asyncio
+async def test_jwt_rate_limit_redis_error_returns_503(client, db_session, monkeypatch):
+    """JWT request — RedisError in rate limiter returns 503."""
+    import uuid as _uuid
+
+    import redis.asyncio as aioredis
+
+    from app.models.user import User
+    from app.services.auth import hash_password
+
+    user = User(
+        id=_uuid.uuid4(),
+        email="rediserr@example.com",
+        password_hash=hash_password("Test1234!"),
+        is_verified=True,
+        is_admin=False,
+        credits=100,
+    )
+    db_session.add(user)
+    await db_session.commit()
+
+    login_resp = client.post(
+        "/api/auth/login",
+        json={"email": "rediserr@example.com", "password": "Test1234!"},
+        headers={"X-E2E-Test": "true"},
+    )
+    assert login_resp.status_code == 200
+    token = login_resp.json()["access_token"]
+
+    # Make Redis incr raise RedisError
+    async def _raise_redis_error(_key):
+        raise aioredis.RedisError("simulated Redis failure")
+
+    import sys
+
+    conftest = sys.modules["tests.conftest"]
+    original_incr = conftest._fake_redis.incr
+    conftest._fake_redis.incr = _raise_redis_error
+    try:
+        resp = client.get(
+            "/api/scan/history",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 503
+        data = resp.json()
+        assert "unavailable" in data["detail"].lower()
+    finally:
+        conftest._fake_redis.incr = original_incr
