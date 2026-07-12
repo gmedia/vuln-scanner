@@ -176,3 +176,8 @@ def test_check_settings_cors_origins_valid(caplog, monkeypatch):
     check_settings()
     cors_warnings = [rec for rec in caplog.records if "CORS_ORIGINS" in rec.message]
     assert len(cors_warnings) == 0
+
+
+def test_valid_scan_types():
+    """valid_scan_types returns the four supported scan type identifiers."""
+    assert settings.valid_scan_types == ("ip", "domain", "apk", "ipa")
