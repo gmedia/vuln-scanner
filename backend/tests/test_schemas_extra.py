@@ -5,10 +5,48 @@ import pytest
 from pydantic import ValidationError
 
 from app.schemas.scan import (
+    DomainScanRequest,
     ScanFindingResponse,
     ScanHistoryParams,
     ScanRequest,
 )
+
+
+class TestDomainScanRequest:
+    def test_valid_domain(self):
+        req = DomainScanRequest(domain="example.com")
+        assert req.domain == "example.com"
+
+    def test_domain_without_dot_raises(self):
+        with pytest.raises(ValidationError) as exc_info:
+            DomainScanRequest(domain="nodot")
+        assert "fully-qualified domain name" in str(exc_info.value)
+
+    def test_domain_too_long_raises_field_level(self):
+        long_domain = "a" * 254
+        with pytest.raises(ValidationError):
+            DomainScanRequest(domain=long_domain)
+
+    def test_domain_empty_label_raises(self):
+        with pytest.raises(ValidationError) as exc_info:
+            DomainScanRequest(domain="example..com")
+        assert "fully-qualified domain name" in str(exc_info.value)
+
+    def test_domain_label_too_long_raises(self):
+        long_label = "a" * 64 + ".com"
+        with pytest.raises(ValidationError) as exc_info:
+            DomainScanRequest(domain=long_label)
+        assert "fully-qualified domain name" in str(exc_info.value)
+
+    def test_domain_label_starts_with_hyphen_raises(self):
+        with pytest.raises(ValidationError) as exc_info:
+            DomainScanRequest(domain="-example.com")
+        assert "fully-qualified domain name" in str(exc_info.value)
+
+    def test_domain_label_ends_with_hyphen_raises(self):
+        with pytest.raises(ValidationError) as exc_info:
+            DomainScanRequest(domain="example-.com")
+        assert "fully-qualified domain name" in str(exc_info.value)
 
 
 class TestScanHistoryParams:
@@ -52,6 +90,11 @@ class TestScanRequest:
         req = ScanRequest(target=target, ports="80")
         assert len(req.target) == 499
         assert req.ports == "80"
+
+    def test_invalid_target_raises(self):
+        with pytest.raises(ValidationError) as exc_info:
+            ScanRequest(target="1.2.3", ports="80")
+        assert "valid IPv4" in str(exc_info.value) or "fully-qualified domain" in str(exc_info.value)
 
 
 class TestScanFindingResponseAllOptionalNone:
