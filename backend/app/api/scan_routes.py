@@ -24,6 +24,8 @@ from app.schemas.scan import (
 from app.services.auth import get_current_user
 from app.services.scanner import ScannerService
 
+MOBILE_UPLOAD_MAX_SIZE = 500 * 1024 * 1024  # 500 MB
+
 router = APIRouter(tags=["scans"])
 
 scan_submit_limiter = RateLimiter(
@@ -211,7 +213,7 @@ async def start_mobile_scan(
     safe_name = os.path.basename(file.filename)
     file_path = os.path.join(settings.upload_dir, f"{os.urandom(8).hex()}_{safe_name}")
 
-    max_size = 500 * 1024 * 1024  # 500 MB
+    max_size = MOBILE_UPLOAD_MAX_SIZE
     total = 0
     with open(file_path, "wb") as buffer:
         while chunk := await file.read(8192):

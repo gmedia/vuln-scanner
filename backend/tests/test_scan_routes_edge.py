@@ -318,3 +318,154 @@ def test_export_json_helper_null_dates():
     assert result["duration_seconds"] is None
     assert result["summary"] is None
     assert len(result["findings"]) == 1
+
+
+# ── Domain scan rate-limit hit (line 178) ──────────────────────────────────
+
+
+def test_domain_scan_rate_limit_returns_429(client, db_session, monkeypatch):
+    """POST /api/scan/domain — rate limit hit returns 429."""
+    from app.api import scan_routes
+
+    async def mock_start_scan(*args, **kwargs):
+        job = ScanJob(
+            id=uuid.uuid4(),
+            scan_type="domain",
+            target="example.com",
+            status="pending",
+            progress=0,
+            user_id=kwargs["user"].id,
+        )
+        db_session.add(job)
+        await db_session.commit()
+        return job
+
+    monkeypatch.setattr("app.api.scan_routes.ScannerService.start_scan", mock_start_scan)
+    monkeypatch.setattr(scan_routes.scan_submit_limiter, "max_requests", 1)
+
+    resp1 = client.post("/api/scan/domain", json={"domain": "example.com"}, headers=HEADERS)
+    assert resp1.status_code == 202
+
+    resp2 = client.post("/api/scan/domain", json={"domain": "example.com"}, headers=HEADERS)
+    assert resp2.status_code == 429
+
+
+# ── Mobile scan rate-limit hit (line 194) ──────────────────────────────────
+
+
+def test_mobile_scan_rate_limit_returns_429(client, db_session, monkeypatch):
+    """POST /api/scan/mobile — rate limit hit returns 429."""
+    from app.api import scan_routes
+
+    async def mock_start_scan(*args, **kwargs):
+        job = ScanJob(
+            id=uuid.uuid4(),
+            scan_type="apk",
+            target="test.apk",
+            status="pending",
+            progress=0,
+            user_id=kwargs["user"].id,
+        )
+        db_session.add(job)
+        await db_session.commit()
+        return job
+
+    monkeypatch.setattr("app.api.scan_routes.ScannerService.start_scan", mock_start_scan)
+    monkeypatch.setattr(scan_routes.scan_submit_limiter, "max_requests", 1)
+
+    resp1 = client.post(
+        "/api/scan/mobile",
+        files={"file": ("test.apk", b"PK\x03\x04fake-apk-content")},
+        data={"platform": "android"},
+        headers=HEADERS,
+    )
+    assert resp1.status_code == 202
+
+    resp2 = client.post(
+        "/api/scan/mobile",
+        files={"file": ("test.apk", b"PK\x03\x04fake-apk-content")},
+        data={"platform": "android"},
+        headers=HEADERS,
+    )
+    assert resp2.status_code == 429
+
+
+# ── Filename too long (line 202) ───────────────────────────────────────────
+
+
+def test_mobile_scan_filename_too_long(client):
+    """POST /api/scan/mobile — filename > 255 chars returns 400."""
+    long_name = "a" * 256
+    resp = client.post(
+        "/api/scan/mobile",
+        files={"file": (long_name, b"PK\x03\x04fake-apk-content")},
+        data={"platform": "android"},
+        headers=HEADERS,
+    )
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "Filename too long"
+
+
+# ── Not a valid ZIP (line 207) ─────────────────────────────────────────────
+
+
+def test_mobile_scan_invalid_zip_returns_400(client):
+    """POST /api/scan/mobile — non-ZIP file returns 400."""
+    resp = client.post(
+        "/api/scan/mobile",
+        files={"file": ("test.apk", b"\x00\x01\x02\x03not-a-zip")},
+        data={"platform": "android"},
+        headers=HEADERS,
+    )
+    assert resp.status_code == 400
+    assert "valid ZIP" in resp.json()["detail"]
+
+
+# ── File exceeds 500 MB limit (lines 220-222) ─────────────────────────────
+
+
+def test_mobile_scan_file_exceeds_size_limit(client, monkeypatch):
+    """POST /api/scan/mobile — file > 500MB raises 413."""
+    import tempfile
+
+    tmpdir = tempfile.mkdtemp()
+    monkeypatch.setattr("app.api.scan_routes.settings.upload_dir", tmpdir)
+    monkeypatch.setattr("app.api.scan_routes.os.unlink", lambda p: None)
+    monkeypatch.setattr("app.api.scan_routes.os.remove", lambda p: None)
+
+    # Patch max_size in the mobile_scan function by setting it at module level
+    import app.api.scan_routes as sr_mod
+
+    monkeypatch.setattr(sr_mod, "MOBILE_UPLOAD_MAX_SIZE", 10)
+
+    resp = client.post(
+        "/api/scan/mobile",
+        files={"file": ("big.apk", b"PK\x03\x04" + b"x" * 2000)},
+        data={"platform": "android"},
+        headers=HEADERS,
+    )
+    assert resp.status_code == 413
+    assert "exceeds" in resp.json()["detail"].lower() or "500" in resp.json()["detail"]
+
+
+# ── CeleryError cleanup (lines 237-239) ────────────────────────────────────
+
+
+def test_mobile_scan_celery_error_cleanup(client, monkeypatch):
+    """POST /api/scan/mobile — CeleryError triggers file cleanup."""
+    from celery.exceptions import CeleryError
+
+    async def mock_start_scan(*args, **kwargs):
+        raise CeleryError("Celery broker down")
+
+    monkeypatch.setattr("app.api.scan_routes.ScannerService.start_scan", mock_start_scan)
+    monkeypatch.setattr("app.api.scan_routes.os.remove", lambda p: None)
+
+    client._transport.raise_server_exceptions = False
+    resp = client.post(
+        "/api/scan/mobile",
+        files={"file": ("test.apk", b"PK\x03\x04fake-apk-content")},
+        data={"platform": "android"},
+        headers=HEADERS,
+    )
+    assert resp.status_code == 500
