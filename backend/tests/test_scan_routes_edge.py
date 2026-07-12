@@ -469,3 +469,375 @@ def test_mobile_scan_celery_error_cleanup(client, monkeypatch):
         headers=HEADERS,
     )
     assert resp.status_code == 500
+
+
+# ---------------------------------------------------------------------------
+# Direct handler tests — coverage for lines unreachable via TestClient
+# ---------------------------------------------------------------------------
+
+
+class TestStartScanDirectHandlers:
+    @pytest.mark.asyncio
+    async def test_start_ip_scan_direct(self):
+        """Call start_ip_scan directly to cover return job at line 168."""
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        from app.api.scan_routes import start_ip_scan
+        from app.schemas.scan import ScanRequest
+
+        mock_job = MagicMock()
+        mock_job.id = uuid.uuid4()
+        mock_job.scan_type = "ip"
+        mock_job.target = "192.168.1.1"
+        mock_job.status = "pending"
+        mock_job.progress = 0
+        mock_job.result_summary = None
+        mock_job.celery_task_id = None
+        mock_job.user_id = uuid.uuid4()
+        mock_job.credit_cost = 1
+        mock_job.started_at = None
+        mock_job.completed_at = None
+        mock_job.created_at = datetime.now(UTC)
+
+        mock_req = ScanRequest(target="192.168.1.1", ports="1-1000")
+        mock_user = MagicMock()
+        mock_request = MagicMock()
+
+        with (
+            patch("app.api.scan_routes.scan_submit_limiter", new_callable=AsyncMock) as mock_limiter,
+            patch("app.api.scan_routes.ScannerService") as mock_svc_cls,
+        ):
+            mock_limiter.return_value = None
+            mock_svc = MagicMock()
+            mock_svc.start_scan = AsyncMock(return_value=mock_job)
+            mock_svc_cls.return_value = mock_svc
+
+            result = await start_ip_scan(
+                request=mock_request,
+                req=mock_req,
+                current_user=mock_user,
+                db=MagicMock(),
+            )
+
+        assert result is mock_job
+
+    @pytest.mark.asyncio
+    async def test_start_domain_scan_direct(self):
+        """Call start_domain_scan directly to cover return job at line 183."""
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        from app.api.scan_routes import start_domain_scan
+        from app.schemas.scan import DomainScanRequest
+
+        mock_job = MagicMock()
+        mock_job.id = uuid.uuid4()
+        mock_job.scan_type = "domain"
+        mock_job.target = "example.com"
+        mock_job.status = "pending"
+        mock_job.progress = 0
+        mock_job.result_summary = None
+        mock_job.celery_task_id = None
+        mock_job.user_id = uuid.uuid4()
+        mock_job.credit_cost = 2
+        mock_job.started_at = None
+        mock_job.completed_at = None
+        mock_job.created_at = datetime.now(UTC)
+
+        mock_req = DomainScanRequest(domain="example.com")
+        mock_user = MagicMock()
+        mock_request = MagicMock()
+
+        with (
+            patch("app.api.scan_routes.scan_submit_limiter", new_callable=AsyncMock) as mock_limiter,
+            patch("app.api.scan_routes.ScannerService") as mock_svc_cls,
+        ):
+            mock_limiter.return_value = None
+            mock_svc = MagicMock()
+            mock_svc.start_scan = AsyncMock(return_value=mock_job)
+            mock_svc_cls.return_value = mock_svc
+
+            result = await start_domain_scan(
+                request=mock_request,
+                req=mock_req,
+                current_user=mock_user,
+                db=MagicMock(),
+            )
+
+        assert result is mock_job
+
+    @pytest.mark.asyncio
+    async def test_start_mobile_scan_direct(self):
+        """Call start_mobile_scan directly to cover return job at line 237."""
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        from app.api.scan_routes import start_mobile_scan
+
+        mock_job = MagicMock()
+        mock_job.id = uuid.uuid4()
+        mock_job.scan_type = "apk"
+        mock_job.target = "test.apk"
+        mock_job.status = "pending"
+        mock_job.progress = 0
+        mock_job.result_summary = None
+        mock_job.celery_task_id = None
+        mock_job.user_id = uuid.uuid4()
+        mock_job.credit_cost = 3
+        mock_job.started_at = None
+        mock_job.completed_at = None
+        mock_job.created_at = datetime.now(UTC)
+
+        mock_user = MagicMock()
+        mock_request = MagicMock()
+
+        mock_file = MagicMock()
+        mock_file.filename = "test.apk"
+        mock_file.read = AsyncMock(side_effect=[b"PK\x03\x04", b"", b""])
+        mock_file.seek = AsyncMock()
+
+        with (
+            patch("app.api.scan_routes.scan_submit_limiter", new_callable=AsyncMock) as mock_limiter,
+            patch("app.api.scan_routes.ScannerService") as mock_svc_cls,
+            patch("app.api.scan_routes.os.makedirs"),
+            patch("app.api.scan_routes.os.urandom", return_value=b"\x00" * 8),
+            patch("builtins.open"),
+        ):
+            mock_limiter.return_value = None
+            mock_svc = MagicMock()
+            mock_svc.start_scan = AsyncMock(return_value=mock_job)
+            mock_svc_cls.return_value = mock_svc
+
+            result = await start_mobile_scan(
+                request=mock_request,
+                file=mock_file,
+                platform="android",
+                current_user=mock_user,
+                db=MagicMock(),
+            )
+
+        assert result is mock_job
+
+
+class TestGetScanDirectHandlers:
+    @pytest.mark.asyncio
+    async def test_get_scan_not_found_direct(self):
+        """Call get_scan directly to cover 404 at lines 266-268."""
+        import uuid
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        from fastapi import HTTPException
+
+        from app.api.scan_routes import get_scan
+
+        mock_user = MagicMock()
+        job_id = str(uuid.uuid4())
+
+        with patch("app.api.scan_routes.ScannerService") as mock_svc_cls:
+            mock_svc = MagicMock()
+            mock_svc.get_job = AsyncMock(return_value=None)
+            mock_svc_cls.return_value = mock_svc
+
+            with pytest.raises(HTTPException) as exc_info:
+                await get_scan(
+                    job_id=job_id,
+                    current_user=mock_user,
+                    db=MagicMock(),
+                )
+
+        assert exc_info.value.status_code == 404
+        assert "Scan job not found" in exc_info.value.detail
+
+    @pytest.mark.asyncio
+    async def test_get_scan_found_direct(self):
+        """Call get_scan directly with a found job to cover return at line 268."""
+        import uuid
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        from app.api.scan_routes import get_scan
+
+        mock_job = MagicMock()
+        mock_user = MagicMock()
+        job_id = str(uuid.uuid4())
+
+        with patch("app.api.scan_routes.ScannerService") as mock_svc_cls:
+            mock_svc = MagicMock()
+            mock_svc.get_job = AsyncMock(return_value=mock_job)
+            mock_svc_cls.return_value = mock_svc
+
+            result = await get_scan(
+                job_id=job_id,
+                current_user=mock_user,
+                db=MagicMock(),
+            )
+
+        assert result is mock_job
+
+    @pytest.mark.asyncio
+    async def test_get_scan_findings_direct(self):
+        """Call get_scan_findings directly to cover return at line 278."""
+        import uuid
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        from app.api.scan_routes import get_scan_findings
+
+        mock_findings = [MagicMock(), MagicMock()]
+        mock_user = MagicMock()
+        job_id = str(uuid.uuid4())
+
+        with patch("app.api.scan_routes.ScannerService") as mock_svc_cls:
+            mock_svc = MagicMock()
+            mock_svc.get_findings = AsyncMock(return_value=mock_findings)
+            mock_svc_cls.return_value = mock_svc
+
+            result = await get_scan_findings(
+                job_id=job_id,
+                current_user=mock_user,
+                db=MagicMock(),
+            )
+
+        assert result is mock_findings
+        assert len(result) == 2
+
+
+class TestExportScanDirectHandlers:
+    @pytest.mark.asyncio
+    async def test_export_scan_not_found_direct(self):
+        """Call export_scan directly to cover 404 at lines 295-296."""
+        import uuid
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        from fastapi import HTTPException
+
+        from app.api.scan_routes import export_scan
+
+        mock_user = MagicMock()
+        job_id = str(uuid.uuid4())
+
+        with patch("app.api.scan_routes.ScannerService") as mock_svc_cls:
+            mock_svc = MagicMock()
+            mock_svc.get_job = AsyncMock(return_value=None)
+            mock_svc_cls.return_value = mock_svc
+
+            with pytest.raises(HTTPException) as exc_info:
+                await export_scan(
+                    job_id=job_id,
+                    format="json",
+                    current_user=mock_user,
+                    db=MagicMock(),
+                )
+
+        assert exc_info.value.status_code == 404
+        assert "Scan job not found" in exc_info.value.detail
+
+    @pytest.mark.asyncio
+    async def test_export_scan_json_format_direct(self):
+        """Call export_scan with format=json to cover lines 298-306."""
+        import uuid
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        from app.api.scan_routes import export_scan
+
+        mock_job = MagicMock()
+        mock_job.id = uuid.uuid4()
+        mock_job.scan_type = "ip"
+        mock_job.target = "192.168.1.1"
+        mock_job.status = "completed"
+        mock_job.started_at = None
+        mock_job.completed_at = None
+        mock_job.result_summary = None
+        mock_job.findings = []
+
+        mock_user = MagicMock()
+        job_id = str(uuid.uuid4())
+
+        with (
+            patch("app.api.scan_routes.ScannerService") as mock_svc_cls,
+            patch("app.api.scan_routes._export_json") as mock_export_json,
+        ):
+            mock_svc = MagicMock()
+            mock_svc.get_job = AsyncMock(return_value=mock_job)
+            mock_svc_cls.return_value = mock_svc
+            mock_export_json.return_value = {"status": "ok"}
+
+            from fastapi.responses import JSONResponse
+
+            result = await export_scan(
+                job_id=job_id,
+                format="json",
+                current_user=mock_user,
+                db=MagicMock(),
+            )
+
+        assert isinstance(result, JSONResponse)
+        assert "Content-Disposition" in result.headers
+        assert result.headers["Content-Type"] == "application/octet-stream"
+
+    @pytest.mark.asyncio
+    async def test_export_scan_html_format_direct(self):
+        """Call export_scan with format=html to cover lines 308-310."""
+        import uuid
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        from app.api.scan_routes import export_scan
+
+        mock_job = MagicMock()
+        mock_job.id = uuid.uuid4()
+        mock_job.scan_type = "ip"
+        mock_job.target = "192.168.1.1"
+        mock_job.status = "completed"
+        mock_job.started_at = None
+        mock_job.completed_at = None
+        mock_job.result_summary = None
+        mock_job.findings = []
+
+        mock_user = MagicMock()
+        job_id = str(uuid.uuid4())
+
+        with (
+            patch("app.api.scan_routes.ScannerService") as mock_svc_cls,
+            patch("app.api.scan_routes._render_pdf_html", return_value="<html></html>"),
+        ):
+            mock_svc = MagicMock()
+            mock_svc.get_job = AsyncMock(return_value=mock_job)
+            mock_svc_cls.return_value = mock_svc
+
+            from fastapi.responses import HTMLResponse
+
+            result = await export_scan(
+                job_id=job_id,
+                format="html",
+                current_user=mock_user,
+                db=MagicMock(),
+            )
+
+        assert isinstance(result, HTMLResponse)
+        assert result.body == b"<html></html>"
+
+    @pytest.mark.asyncio
+    async def test_export_scan_invalid_format_direct(self):
+        """Call export_scan with invalid format to cover line 312."""
+        import uuid
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        from fastapi import HTTPException
+
+        from app.api.scan_routes import export_scan
+
+        mock_job = MagicMock()
+        mock_user = MagicMock()
+        job_id = str(uuid.uuid4())
+
+        with patch("app.api.scan_routes.ScannerService") as mock_svc_cls:
+            mock_svc = MagicMock()
+            mock_svc.get_job = AsyncMock(return_value=mock_job)
+            mock_svc_cls.return_value = mock_svc
+
+            with pytest.raises(HTTPException) as exc_info:
+                await export_scan(
+                    job_id=job_id,
+                    format="xml",
+                    current_user=mock_user,
+                    db=MagicMock(),
+                )
+
+        assert exc_info.value.status_code == 400
+        assert "format must be" in exc_info.value.detail

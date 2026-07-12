@@ -1846,6 +1846,55 @@ class TestUpdateProfile:
         data = resp.json()
         assert "Profil berhasil diperbarui" in data["message"]
 
+    @pytest.mark.asyncio
+    async def test_smtp_exception_direct_handler(self):
+        """Call update_profile directly with mocked deps — SMTPException at line 455-456 is covered."""
+        from unittest.mock import MagicMock
+
+        from app.api.auth_routes import update_profile
+        from app.schemas.auth import UpdateProfileRequest
+
+        mock_user = MagicMock(spec=User)
+        mock_user.id = uuid.uuid4()
+        mock_user.email = "old@example.com"
+        mock_user.password_hash = "fake-hash"
+        mock_user.is_verified = True
+        mock_user.verified_at = datetime.now(UTC)
+
+        mock_body = UpdateProfileRequest(email="new@example.com", current_password="Test1234!")
+
+        mock_db = AsyncMock()
+        mock_db.execute = AsyncMock()
+        mock_db.commit = AsyncMock()
+
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        mock_db.execute.return_value = mock_result
+
+        mock_token = "a" * 32
+
+        with (
+            patch("app.api.auth_routes.verify_password", return_value=True),
+            patch("app.api.auth_routes.secrets.token_urlsafe", return_value=mock_token),
+            patch("app.api.auth_routes.datetime") as mock_dt,
+            patch("app.api.auth_routes.send_verification_email", new_callable=AsyncMock) as mock_send,
+        ):
+            mock_send.side_effect = SMTPException("test error")
+            fixed_now = datetime(2025, 1, 1, tzinfo=UTC)
+            mock_dt.now.return_value = fixed_now
+
+            result = await update_profile(
+                body=mock_body,
+                current_user=mock_user,
+                db=mock_db,
+            )
+
+        assert result.message == "Profil berhasil diperbarui"
+        assert mock_user.email == "new@example.com"
+        assert mock_user.is_verified is False
+        assert mock_user.verified_at is None
+        mock_db.commit.assert_called()
+
 
 # ---------------------------------------------------------------------------
 # POST /api/auth/change-password
