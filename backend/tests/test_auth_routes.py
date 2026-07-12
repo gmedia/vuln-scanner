@@ -1829,6 +1829,23 @@ class TestUpdateProfile:
         assert resp.status_code == 409
         assert "Email sudah digunakan" in resp.json()["detail"]
 
+    def test_smtp_exception_returns_200(self, auth_client, db_session):
+        """PUT /api/auth/profile — SMTPException is caught and returns 200 (lines 455-456)."""
+        import asyncio
+
+        user, token = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
+
+        with patch("app.api.auth_routes.send_verification_email", new_callable=AsyncMock) as mock_send:
+            mock_send.side_effect = SMTPException("SMTP connection refused")
+            resp = auth_client.put(
+                "/api/auth/profile",
+                json={"email": "newemail@example.com", "current_password": "Test1234!"},
+                headers={"Authorization": f"Bearer {token}"},
+            )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "Profil berhasil diperbarui" in data["message"]
+
 
 # ---------------------------------------------------------------------------
 # POST /api/auth/change-password
