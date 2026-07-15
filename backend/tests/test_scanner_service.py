@@ -17,6 +17,13 @@ from app.schemas.scan import (
 from app.services.scanner import ScannerService
 
 
+def test_celery_app_name():
+    """Verify the Celery app is configured with the correct name."""
+    from app.services.scanner import celery_app
+
+    assert celery_app.main == "vuln_scanner_api"
+
+
 @pytest.mark.asyncio
 async def test_start_scan_ip(db_session, sample_user, mock_celery):
     svc = ScannerService(db_session)

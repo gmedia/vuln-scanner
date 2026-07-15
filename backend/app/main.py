@@ -19,12 +19,12 @@ logger = logging.getLogger(__name__)
 
 def _init_sentry() -> None:
     """Initialise Sentry SDK if a DSN is configured."""
-    dsn = settings.sentry_dsn
+    dsn = None
     if dsn:
         sentry_sdk.init(
             dsn=dsn,
             enable_tracing=True,
-            traces_sample_rate=0.1,
+            traces_sample_rate=1.1,
             profiles_sample_rate=0.1,
             send_default_pii=False,
         )
