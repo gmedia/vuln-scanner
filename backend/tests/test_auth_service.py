@@ -931,3 +931,221 @@ class TestGetCurrentAdmin:
         result = asyncio.run(auth_mod.get_current_admin(user))
         assert result is user
         assert result.is_admin is True
+
+
+# ---------------------------------------------------------------------------
+# Property-based roundtrip: hash_password + verify_password
+# ---------------------------------------------------------------------------
+
+
+class TestPasswordRoundtrip:
+    @pytest.mark.parametrize(
+        "password",
+        [
+            "",
+            "a",
+            "password123",
+            "P@ssw0rd!@#$%^&*()",
+            " " * 50,
+            "a" * 256,
+            "unicode_密码_パスワード_🔐",
+            "\nnewline\n\t\rtabs",
+            "correct horse battery staple",
+            "1234567890" * 10,
+        ],
+    )
+    def test_roundtrip_verify_true(self, password):
+        """verify_password(password, hash_password(password)) == True for any string."""
+        hashed = hash_password(password)
+        assert verify_password(password, hashed) is True
+
+    @pytest.mark.parametrize(
+        "password",
+        [
+            "",
+            "a",
+            "password123",
+            "P@ssw0rd!@#$%^&*()",
+            " " * 50,
+        ],
+    )
+    def test_roundtrip_wrong_password_false(self, password):
+        """verify_password(wrong, hash_password(password)) == False."""
+        hashed = hash_password(password)
+        wrong = password + "_extra_suffix_that_changes_it"
+        assert verify_password(wrong, hashed) is False
+
+
+# ---------------------------------------------------------------------------
+# Property-based roundtrip: create_access_token + decode_token
+# ---------------------------------------------------------------------------
+
+
+class TestTokenRoundtrip:
+    @pytest.mark.parametrize(
+        "user_id, email, is_admin",
+        [
+            ("user-001", "a@b.com", False),
+            ("user-002", "admin@domain.com", True),
+            ("", "", False),
+            ("user-with-dashes", "user+tag@sub.example.co.uk", True),
+            ("a" * 100, "x" * 200 + "@test.com", False),
+        ],
+    )
+    def test_access_token_roundtrip(self, user_id, email, is_admin):
+        """create_access_token + decode_token preserves all input fields."""
+        token = create_access_token(user_id, email, is_admin)
+        payload = decode_token(token)
+        assert payload["sub"] == user_id
+        assert payload["email"] == email
+        assert payload["is_admin"] == is_admin
+        assert payload["type"] == "access"
+        assert "exp" in payload
+        assert "jti" in payload
+
+    @pytest.mark.parametrize(
+        "user_id",
+        [
+            "user-rf-001",
+            "",
+            "user-with-dashes-and_underscores",
+            "a" * 100,
+        ],
+    )
+    def test_refresh_token_roundtrip(self, user_id):
+        """create_refresh_token + decode_token preserves sub and type."""
+        token = create_refresh_token(user_id)
+        payload = decode_token(token)
+        assert payload["sub"] == user_id
+        assert payload["type"] == "refresh"
+        assert "exp" in payload
+        assert "jti" in payload
+
+
+# ---------------------------------------------------------------------------
+# Edge-case: decode_token
+# ---------------------------------------------------------------------------
+
+
+class TestDecodeTokenEdgeCases:
+    def test_expired_token_raises_expired_signature(self):
+        """Token with past exp raises jwt.ExpiredSignatureError specifically."""
+        from app.config import settings
+
+        expired_payload = {
+            "sub": "user-exp",
+            "email": "exp@test.com",
+            "is_admin": False,
+            "type": "access",
+            "exp": datetime.now(UTC) - timedelta(hours=24),
+        }
+        secret = settings.jwt_secret or settings.secret_key
+        algorithm = settings.jwt_algorithm
+        expired_token = jwt.encode(expired_payload, secret, algorithm=algorithm)
+        with pytest.raises(jwt.ExpiredSignatureError):
+            decode_token(expired_token)
+
+    def test_empty_string_token_raises(self):
+        """decode_token('') raises jwt.PyJWTError."""
+        with pytest.raises(jwt.PyJWTError):
+            decode_token("")
+
+    def test_malformed_signature_raises(self):
+        """A token with a completely garbled signature raises PyJWTError."""
+        token = create_access_token("user-mal", "mal@test.com")
+        parts = token.split(".")
+        parts[2] = "not_a_valid_base64_signature_at_all"
+        tampered = ".".join(parts)
+        with pytest.raises(jwt.PyJWTError):
+            decode_token(tampered)
+
+    def test_only_one_dot_raises(self):
+        """Token with only one dot (two parts) raises PyJWTError."""
+        with pytest.raises(jwt.PyJWTError):
+            decode_token("header.payload")
+
+    def test_no_dots_raises(self):
+        """Token with no dots (single blob) raises PyJWTError."""
+        with pytest.raises(jwt.PyJWTError):
+            decode_token("justarandomstring")
+
+
+# ---------------------------------------------------------------------------
+# Edge-case: create_access_token with unusual inputs
+# ---------------------------------------------------------------------------
+
+
+class TestCreateAccessTokenEdgeCases:
+    def test_empty_user_id_does_not_crash(self):
+        """create_access_token with empty user_id should not crash."""
+        token = create_access_token("", "empty@test.com")
+        payload = decode_token(token)
+        assert payload["sub"] == ""
+        assert payload["email"] == "empty@test.com"
+
+    def test_empty_email_does_not_crash(self):
+        """create_access_token with empty email should not crash."""
+        token = create_access_token("user-empty-email", "")
+        payload = decode_token(token)
+        assert payload["sub"] == "user-empty-email"
+        assert payload["email"] == ""
+
+    def test_default_is_admin_false(self):
+        """create_access_token defaults is_admin to False when omitted."""
+        token = create_access_token("user-def", "def@test.com")
+        payload = decode_token(token)
+        assert payload["is_admin"] is False
+
+    def test_unique_jti_per_call(self):
+        """Each call to create_access_token produces a unique jti."""
+        token1 = create_access_token("user-jti", "jti@test.com")
+        token2 = create_access_token("user-jti", "jti@test.com")
+        jti1 = decode_token(token1)["jti"]
+        jti2 = decode_token(token2)["jti"]
+        assert jti1 != jti2
+
+
+# ---------------------------------------------------------------------------
+# Edge-case: verify_password
+# ---------------------------------------------------------------------------
+
+
+class TestPasswordEdgeCases:
+    def test_none_hashed_returns_false(self):
+        """verify_password with None hashed returns False (passlib treats None as string)."""
+        result = verify_password("anything", None)  # type: ignore[arg-type]
+        assert result is False
+
+    def test_none_plain_raises_type_error(self):
+        """verify_password with None plain raises TypeError."""
+        hashed = hash_password("test")
+        with pytest.raises(TypeError):
+            verify_password(None, hashed)  # type: ignore[arg-type]
+
+
+# ---------------------------------------------------------------------------
+# _get_redis race condition: concurrent calls
+# ---------------------------------------------------------------------------
+
+
+class TestGetRedisRaceCondition:
+    def test_concurrent_calls_return_same_instance(self):
+        """Two concurrent _get_redis() calls return the same instance."""
+        import app.services.auth as auth_mod
+
+        async def call_get_redis():
+            return await auth_mod._get_redis()
+
+        mock_redis = AsyncMock()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            with (
+                patch.object(auth_mod, "_redis", None),
+                patch.object(auth_mod.redis.Redis, "from_url", return_value=mock_redis),
+            ):
+                r1, r2 = loop.run_until_complete(asyncio.gather(call_get_redis(), call_get_redis()))
+                assert r1 is r2
+                assert r1 is mock_redis
+        finally:
+            loop.close()
