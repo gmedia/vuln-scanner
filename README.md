@@ -1,5 +1,7 @@
 # VulnScanner
 
+[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/gmedia/vuln-scanner)
+
 Web-based vulnerability scanner with 3 scan modes — IP, domain, and APK/IPA mobile analysis. Deployed via Docker Compose with async task processing.
 
 ## Architecture
