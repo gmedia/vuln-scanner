@@ -3,7 +3,6 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any, cast
 
-import sentry_sdk
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
@@ -17,27 +16,10 @@ from app.utils.log_sanitizer import sanitize_for_log
 logger = logging.getLogger(__name__)
 
 
-def _init_sentry() -> None:
-    """Initialise Sentry SDK if a DSN is configured."""
-    dsn = None
-    if dsn:
-        sentry_sdk.init(
-            dsn=dsn,
-            enable_tracing=True,
-            traces_sample_rate=1.1,
-            profiles_sample_rate=0.1,
-            send_default_pii=False,
-        )
-        logger.info("Sentry SDK initialised (DSN configured)")
-    else:
-        logger.info("Sentry DSN not set — error tracking disabled")
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Verify settings on startup and clean up on shutdown."""
     check_settings()
-    _init_sentry()
     yield
 
 
