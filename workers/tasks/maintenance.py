@@ -6,11 +6,13 @@ from sqlalchemy import update
 
 from utils.database import get_sync_session
 
+type ScanJobDict = dict[str, int]
+
 STALE_THRESHOLD_MINUTES = 30
 
 
 @shared_task(bind=True, name="maintenance.fail_stale_pending", acks_late=True, max_retries=1)  # type: ignore
-def fail_stale_pending_jobs(self) -> dict:
+def fail_stale_pending_jobs(self) -> ScanJobDict:
     """Find scan jobs stuck in 'pending' status > STALE_THRESHOLD_MINUTES and mark them as failed.
 
     Returns a dict with the count of jobs that were auto-failed.
