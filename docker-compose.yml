@@ -200,7 +200,7 @@ services:
       - ./backend:/backend
     entrypoint: ["celery", "-A", "celery_app", "beat", "--loglevel=info"]
     healthcheck:
-      test: ["CMD-SHELL", "ls /proc/1/cmdline > /dev/null 2>&1"]
+      test: ["CMD-SHELL", "python -c \"import os; os.stat(os.path.join(os.getcwd(), 'celerybeat-schedule'))\""]
       interval: 30s
       timeout: 10s
       retries: 3
