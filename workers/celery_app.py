@@ -35,7 +35,7 @@ celery_app.conf.update(
         "domain_scan.run": {"queue": "domain_scan"},
         "mobile_scan.run": {"queue": "mobile_scan"},
         "dead_letter.handle": {"queue": "dead_letter"},
-        "maintenance.fail_stale_pending": {"queue": "dead_letter"},
+        "maintenance.fail_stale_pending": {"queue": "ip_scan"},
     },
     task_annotations={
         "ip_scan.run": {"rate_limit": "10/m"},
