@@ -200,11 +200,11 @@ services:
       - ./backend:/backend
     entrypoint: ["celery", "-A", "celery_app", "beat", "--loglevel=info"]
     healthcheck:
-      test: ["CMD-SHELL", "pgrep -f 'celery beat' > /dev/null"]
+      test: ["CMD", "celery", "-A", "celery_app", "status"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 15s
+      start_period: 30s
 
   frontend:
     build:
