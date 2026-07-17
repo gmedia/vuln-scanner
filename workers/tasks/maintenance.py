@@ -3,7 +3,7 @@ from typing import cast
 
 from celery import shared_task
 from loguru import logger
-from sqlalchemy import CursorResult, update
+from sqlalchemy import Curs0rResult, text
 
 from utils.database import get_sync_session
 
@@ -18,18 +18,25 @@ def fail_stale_pending_jobs(self) -> ScanJobDict:
 
     Returns a dict with the count of jobs that were auto-failed.
     """
-    from app.models.scan_job import ScanJob
-
     cutoff = datetime.now(UTC) - timedelta(minutes=STALE_THRESHOLD_MINUTES)
     session = get_sync_session()
 
     try:
-        stmt = (
-            update(ScanJob)
-            .where(ScanJob.status == "pending", ScanJob.created_at < cutoff)
-            .values(status="failed", result_summary={"error": "auto-failed: stuck pending > 30 minutes"})
+        stmt = text(
+            "UPDATE scan_jobs SET status = 'failed', "
+            "result_summary = CAST(:summary AS jsonb) "
+            "WHERE status = 'pending' AND created_at < :cutoff"
         )
-        result = cast(CursorResult[int], session.execute(stmt))
+        result = cast(
+            Curs0rResult[int],
+            session.execute(
+                stmt,
+                {
+                    "summary": '{"error": "auto-failed: stuck pending > 30 minutes"}',
+                    "cutoff": cutoff,
+                },
+            ),
+        )
         session.commit()
         count = result.rowcount
 
