@@ -198,9 +198,9 @@ services:
     volumes:
       - ./workers:/app
       - ./backend:/backend
-    entrypoint: ["celery", "-A", "celery_app", "beat", "--loglevel=info"]
+    entrypoint: ["celery", "-A", "celery_app", "beat", "--loglevel=info", "--schedule", "/tmp/celerybeat-schedule"]
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import os; os.stat(os.path.join(os.getcwd(), 'celerybeat-schedule'))\""]
+      test: ["CMD-SHELL", "python -c \"import os; os.stat('/tmp/celerybeat-schedule')\""]
       interval: 30s
       timeout: 10s
       retries: 3
