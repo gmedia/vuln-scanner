@@ -3,7 +3,7 @@ from typing import cast
 
 from celery import shared_task
 from loguru import logger
-from sqlalchemy import Curs0rResult, text
+from sqlalchemy import CursorResult, text
 
 from utils.database import get_sync_session
 
@@ -28,7 +28,7 @@ def fail_stale_pending_jobs(self) -> ScanJobDict:
             "WHERE status = 'pending' AND created_at < :cutoff"
         )
         result = cast(
-            Curs0rResult[int],
+            CursorResult[int],
             session.execute(
                 stmt,
                 {
