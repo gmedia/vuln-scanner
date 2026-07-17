@@ -35,12 +35,21 @@ celery_app.conf.update(
         "domain_scan.run": {"queue": "domain_scan"},
         "mobile_scan.run": {"queue": "mobile_scan"},
         "dead_letter.handle": {"queue": "dead_letter"},
+        "maintenance.fail_stale_pending": {"queue": "dead_letter"},
     },
     task_annotations={
         "ip_scan.run": {"rate_limit": "10/m"},
         "domain_scan.run": {"rate_limit": "10/m"},
         "mobile_scan.run": {"rate_limit": "10/m"},
     },
+    beat_schedule={
+        "fail-stale-pending-every-5m": {
+            "task": "maintenance.fail_stale_pending",
+            "schedule": 300.0,
+        },
+    },
 )
 
-celery_app.autodiscover_tasks(["tasks.ip_scan", "tasks.domain_scan", "tasks.mobile_scan", "tasks.dead_letter"])
+celery_app.autodiscover_tasks(
+    ["tasks.ip_scan", "tasks.domain_scan", "tasks.mobile_scan", "tasks.dead_letter", "tasks.maintenance"]
+)

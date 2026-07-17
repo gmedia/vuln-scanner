@@ -18,9 +18,23 @@ from app.models.user import User
 from app.schemas.scan import PaginatedResponse, ScanFindingResponse, ScanJobDetailResponse, ScanJobResponse
 
 celery_app = Celery(
-    "vuln_scanner_api",
+    "vuln_scanner",
     broker=settings.celery_broker_url,
     backend=settings.celery_result_backend,
+)
+
+celery_app.conf.update(
+    task_serializer="json",
+    accept_content=["json"],
+    result_serializer="json",
+    timezone="UTC",
+    enable_utc=True,
+    task_routes={
+        "ip_scan.run": {"queue": "ip_scan"},
+        "domain_scan.run": {"queue": "domain_scan"},
+        "mobile_scan.run": {"queue": "mobile_scan"},
+    },
+    broker_connection_retry_on_startup=True,
 )
 
 
