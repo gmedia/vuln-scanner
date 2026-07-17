@@ -261,6 +261,7 @@ jobs:
           docker compose -f docker-compose.yml logs postgres --tail=30
           docker compose -f docker-compose.yml logs worker_ip --tail=30
           docker compose -f docker-compose.yml logs worker_domain --tail=30
+          docker compose -f docker-compose.yml logs celery_beat --tail=30
 
   docker-scan:
     if: ${{ github.event_name != 'workflow_dispatch' || !inputs.skip_build }}
