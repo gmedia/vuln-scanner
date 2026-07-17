@@ -200,7 +200,7 @@ services:
       - ./backend:/backend
     entrypoint: ["celery", "-A", "celery_app", "beat", "--loglevel=info"]
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import os; os.kill(1, 0)\""]
+      test: ["CMD-SHELL", "ls /proc/1/cmdline > /dev/null 2>&1"]
       interval: 30s
       timeout: 10s
       retries: 3
