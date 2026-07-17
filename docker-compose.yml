@@ -176,6 +176,36 @@ services:
       retries: 5
       start_period: 15s
 
+  celery_beat:
+    build:
+      context: ./workers
+      dockerfile: Dockerfile
+    container_name: vuln-celery-beat
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL_SYNC: ${DATABASE_URL_SYNC}
+      REDIS_URL: ${REDIS_URL}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+      OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
+    volumes:
+      - ./workers:/app
+      - ./backend:/backend
+    entrypoint: ["celery", "-A", "celery_app", "beat", "--loglevel=info", "--schedule", "/tmp/celerybeat-schedule"]
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import os; os.stat('/tmp/celerybeat-schedule')\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
   frontend:
     build:
       context: ./frontend

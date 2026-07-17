@@ -21,7 +21,7 @@ def test_celery_app_name():
     """Verify the Celery app is configured with the correct name."""
     from app.services.scanner import celery_app
 
-    assert celery_app.main == "vuln_scanner_api"
+    assert celery_app.main == "vuln_scanner"
 
 
 @pytest.mark.asyncio
