@@ -1,8 +1,9 @@
 from datetime import UTC, datetime, timedelta
+from typing import cast
 
 from celery import shared_task
 from loguru import logger
-from sqlalchemy import update
+from sqlalchemy import CursorResult, update
 
 from utils.database import get_sync_session
 
@@ -28,9 +29,9 @@ def fail_stale_pending_jobs(self) -> ScanJobDict:
             .where(ScanJob.status == "pending", ScanJob.created_at < cutoff)
             .values(status="failed", result_summary={"error": "auto-failed: stuck pending > 30 minutes"})
         )
-        result = session.execute(stmt)
+        result = cast(CursorResult[int], session.execute(stmt))
         session.commit()
-        count = result.rowcount or 0
+        count = result.rowcount
 
         if count > 0:
             logger.warning(
