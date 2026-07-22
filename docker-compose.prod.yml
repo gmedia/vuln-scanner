@@ -152,6 +152,7 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
       NVD_API_KEY: ${NVD_API_KEY:-}
+      CELERY_MODE: worker
       CELERY_QUEUE: ip_scan
       CELERY_CONCURRENCY: 2
     volumes:
@@ -190,6 +191,7 @@ services:
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
+      CELERY_MODE: worker
       CELERY_QUEUE: domain_scan
       CELERY_CONCURRENCY: 2
     healthcheck:
@@ -226,10 +228,49 @@ services:
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
+      CELERY_MODE: worker
       CELERY_QUEUE: mobile_scan
       CELERY_CONCURRENCY: 1
     volumes:
       - scan_data:/tmp/scans
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/ready')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - vuln-net
+
+
+  worker_dead_letter:
+    build:
+      context: ./workers
+      dockerfile: Dockerfile
+    container_name: vuln-worker-dead-letter
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=128M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL_SYNC: ${DATABASE_URL_SYNC}
+      REDIS_URL: ${REDIS_URL}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+      CELERY_MODE: worker
+      CELERY_QUEUE: dead_letter
+      CELERY_CONCURRENCY: 1
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/ready')"]
       interval: 5s
@@ -264,8 +305,8 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       CELERY_BROKER_URL: ${CELERY_BROKER_URL}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+      CELERY_MODE: beat
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
-    entrypoint: ["celery", "-A", "celery_app", "beat", "--loglevel=info", "--schedule", "/tmp/celerybeat-schedule"]
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import os; os.stat('/tmp/celerybeat-schedule')\""]
       interval: 30s
