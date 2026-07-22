@@ -1,25 +1,25 @@
 from __future__ import annotations
 
+import base64
 import contextlib
+import hashlib
 import logging
 import uuid as _uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 from uuid import UUID
 
+import bcrypt
 import jwt
 import redis as sync_redis
 import redis.asyncio as redis
 from fastapi import Depends, HTTPException, Request, status
-from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
 from app.models.user import User
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # ---------------------------------------------------------------------------
 # Redis connection (lazy, shared across module)
@@ -64,12 +64,32 @@ ACCESS_EXPIRE = settings.jwt_access_expire_minutes
 REFRESH_EXPIRE = settings.jwt_refresh_expire_days
 
 
+def _password_digest(password: str) -> bytes:
+    digest = hashlib.sha256(password.encode("utf-8")).digest()
+    return base64.b64encode(digest)
+
+
 def hash_password(password: str) -> str:
-    return str(pwd_context.hash(password))
+    return bcrypt.hashpw(_password_digest(password), bcrypt.gensalt()).decode("ascii")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return bool(pwd_context.verify(plain, hashed))
+    if hashed is None:
+        return False
+    if not isinstance(hashed, str) or not hashed:
+        raise ValueError("Invalid password hash")
+    if plain is None:
+        raise TypeError("password must be a string")
+    hashed_bytes = hashed.encode("ascii")
+    try:
+        if bcrypt.checkpw(_password_digest(plain), hashed_bytes):
+            return True
+    except ValueError:
+        raise
+    try:
+        return bool(bcrypt.checkpw(plain.encode("utf-8"), hashed_bytes))
+    except ValueError:
+        return False
 
 
 def create_access_token(user_id: str, email: str, is_admin: bool = False) -> str:
