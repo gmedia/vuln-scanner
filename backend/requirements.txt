@@ -19,7 +19,7 @@ python-multipart==0.0.32
 websockets==16.1.1
 pyjwt[crypto]==2.13.0
 passlib[bcrypt]==1.7.4
-bcrypt==4.2.1
+bcrypt==5.0.0
 sentry-sdk[fastapi]==2.66.0
 prometheus-fastapi-instrumentator==8.0.2
 aiosmtplib==5.1.2
