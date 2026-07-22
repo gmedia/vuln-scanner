@@ -100,10 +100,15 @@ class TestFailStalePendingSuccess:
         assert "FROM refundable" in sql
 
     def test_logs_warning_when_jobs_failed(self):
-        with patch("tasks.maintenance.logger") as mock_logger:
+        with (
+            patch("tasks.maintenance.logger") as mock_logger,
+            patch("tasks.maintenance._record_auto_fail_metric") as mock_metric,
+        ):
             self._call_task()
             mock_logger.warning.assert_called_once()
             assert "2" in str(mock_logger.warning.call_args) or mock_logger.warning.call_args.kwargs.get("count") == 2
+            mock_logger.error.assert_called_once()
+            mock_metric.assert_called_once_with("pending", 2)
 
 
 class TestFailStalePendingNoJobs:
@@ -224,11 +229,16 @@ class TestFailStaleRunningSuccess:
         self.mock_session.close.assert_called_once()
 
     def test_logs_warning_when_jobs_failed(self):
-        with patch("tasks.maintenance.logger") as mock_logger:
+        with (
+            patch("tasks.maintenance.logger") as mock_logger,
+            patch("tasks.maintenance._record_auto_fail_metric") as mock_metric,
+        ):
             fail_stale_running_jobs()
             mock_logger.warning.assert_called_once()
             assert mock_logger.warning.call_args.kwargs.get("count") == 1
             assert mock_logger.warning.call_args.kwargs.get("threshold") == STALE_RUNNING_THRESHOLD_MINUTES
+            mock_logger.error.assert_called_once()
+            mock_metric.assert_called_once_with("running", 1)
 
 
 class TestFailStaleRunningNoJobs:
