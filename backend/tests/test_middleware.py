@@ -28,6 +28,12 @@ def test_health_excluded_from_auth(client):
     assert resp.status_code in (200, 503)
 
 
+def test_health_queues_excluded_from_auth(client):
+    resp = client.get("/health/queues")
+    assert resp.status_code != 401
+    assert resp.status_code in (200, 503)
+
+
 def test_websocket_excluded(client):
     resp = client.get("/ws/scan/some-id")
     assert resp.status_code not in (401, 429)
