@@ -42,13 +42,22 @@ def _fail_stale_and_refund(
                   AND {age_sql}
                 RETURNING id, user_id, credit_cost, scan_type
             ),
+            refundable AS (
+                SELECT id AS job_id, user_id, credit_cost, scan_type
+                FROM stale
+                WHERE COALESCE(credit_cost, 0) > 0
+            ),
+            by_user AS (
+                SELECT user_id, SUM(credit_cost)::int AS total_refund
+                FROM refundable
+                GROUP BY user_id
+            ),
             refund_users AS (
                 UPDATE users u
-                SET credits = u.credits + s.credit_cost
-                FROM stale s
-                WHERE u.id = s.user_id
-                  AND COALESCE(s.credit_cost, 0) > 0
-                RETURNING s.id AS job_id, s.user_id, s.credit_cost, s.scan_type
+                SET credits = u.credits + b.total_refund
+                FROM by_user b
+                WHERE u.id = b.user_id
+                RETURNING u.id AS user_id, b.total_refund
             ),
             ins AS (
                 INSERT INTO credit_logs (
@@ -62,12 +71,12 @@ def _fail_stale_and_refund(
                     'Refund: ' || scan_type || ' scan auto-failed ({refund_reason})',
                     job_id,
                     NOW()
-                FROM refund_users
+                FROM refundable
                 RETURNING id
             )
             SELECT
                 (SELECT COUNT(*) FROM stale)::int AS auto_failed_count,
-                (SELECT COUNT(*) FROM refund_users)::int AS refunded_count
+                (SELECT COUNT(*) FROM refundable)::int AS refunded_count
             """
         )
         result = cast(

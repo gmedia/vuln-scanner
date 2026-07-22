@@ -95,6 +95,9 @@ class TestFailStalePendingSuccess:
         assert "refund" in sql
         assert "created_at < :cutoff" in sql
         assert "stuck pending" in sql
+        assert "SUM(credit_cost)" in sql
+        assert "GROUP BY user_id" in sql
+        assert "FROM refundable" in sql
 
     def test_logs_warning_when_jobs_failed(self):
         with patch("tasks.maintenance.logger") as mock_logger:
@@ -209,6 +212,8 @@ class TestFailStaleRunningSuccess:
         assert params["summary"] == STALE_RUNNING_FAIL_SUMMARY
         assert "COALESCE(started_at, created_at) < :cutoff" in sql
         assert "stuck running" in sql
+        assert "SUM(credit_cost)" in sql
+        assert "GROUP BY user_id" in sql
         expected_min = before - timedelta(minutes=STALE_RUNNING_THRESHOLD_MINUTES)
         expected_max = after - timedelta(minutes=STALE_RUNNING_THRESHOLD_MINUTES)
         assert expected_min <= params["cutoff"] <= expected_max
