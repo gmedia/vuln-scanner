@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 EXCLUDED_PATHS = [
     "/health",
+    "/health/queues",
     "/api/health",
     "/docs",
     "/openapi.json",
