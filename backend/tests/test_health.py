@@ -1,6 +1,39 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
+class TestHealthQueuesEndpoint:
+    def test_health_queues_ok(self, client):
+        mock_redis = AsyncMock()
+        mock_redis.llen = AsyncMock(
+            side_effect=lambda q: {"ip_scan": 1, "domain_scan": 0, "mobile_scan": 2, "dead_letter": 3}[q]
+        )
+
+        with patch("redis.asyncio.from_url", return_value=mock_redis):
+            resp = client.get("/health/queues")
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "ok"
+        assert data["queues"] == {
+            "ip_scan": 1,
+            "domain_scan": 0,
+            "mobile_scan": 2,
+            "dead_letter": 3,
+        }
+
+    def test_health_queues_redis_error(self, client):
+        mock_redis = AsyncMock()
+        mock_redis.llen = AsyncMock(side_effect=ConnectionError("mock Redis unavailable"))
+
+        with patch("redis.asyncio.from_url", return_value=mock_redis):
+            resp = client.get("/health/queues")
+
+        assert resp.status_code == 503
+        data = resp.json()
+        assert data["status"] == "degraded"
+        assert "error" in data
+
+
 class TestHealthEndpoint:
     def test_health_database_connected(self, client):
         mock_conn = AsyncMock()
