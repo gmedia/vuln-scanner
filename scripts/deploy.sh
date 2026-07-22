@@ -20,6 +20,7 @@ docker tag vuln-frontend:latest vuln-frontend:previous 2>/dev/null || true
 docker tag vuln-worker_ip:latest vuln-worker_ip:previous 2>/dev/null || true
 docker tag vuln-worker_domain:latest vuln-worker_domain:previous 2>/dev/null || true
 docker tag vuln-worker_mobile:latest vuln-worker_mobile:previous 2>/dev/null || true
+docker tag vuln-celery_beat:latest vuln-celery_beat:previous 2>/dev/null || true
 
 docker compose -f docker-compose.prod.yml build --no-cache
 
@@ -29,6 +30,7 @@ docker tag vuln-frontend:latest vuln-frontend:$SHA
 docker tag vuln-worker_ip:latest vuln-worker_ip:$SHA
 docker tag vuln-worker_domain:latest vuln-worker_domain:$SHA
 docker tag vuln-worker_mobile:latest vuln-worker_mobile:$SHA
+docker tag vuln-celery_beat:latest vuln-celery_beat:$SHA 2>/dev/null || true
 
 echo "Deploying commit: $SHA"
 
@@ -42,7 +44,7 @@ docker compose -f docker-compose.prod.yml --project-name vuln-scanner down --vol
 docker compose -f docker-compose.prod.yml down --remove-orphans
 # Force-remove any leftover containers from failed prior deploys
 docker rm -f vuln-backend vuln-frontend vuln-redis vuln-postgres \
-  vuln-worker-ip vuln-worker-domain vuln-worker-mobile 2>/dev/null || true
+  vuln-worker-ip vuln-worker-domain vuln-worker-mobile vuln-celery-beat 2>/dev/null || true
 # Remove any lingering volumes from old project names
 docker volume rm -f vuln-scanner_postgres_data vuln-scanner_redis_data vuln-scanner_scan_data 2>/dev/null || true
 
