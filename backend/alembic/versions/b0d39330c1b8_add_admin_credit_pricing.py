@@ -5,11 +5,13 @@ Revises: add_users_auth
 Create Date: 2026-06-22 13:25:02.477918
 """
 
+import base64
+import hashlib
 import os
 from collections.abc import Sequence
 
+import bcrypt
 import sqlalchemy as sa
-from passlib.context import CryptContext
 from sqlalchemy.dialects import postgresql
 
 from alembic import op
@@ -18,8 +20,6 @@ revision: str = "b0d39330c1b8"
 down_revision: str | None = "add_users_auth"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def _seed_pricing() -> None:
@@ -43,7 +43,8 @@ def _seed_admin_user() -> None:
     admin_password = os.environ.get("ADMIN_PASSWORD", "").strip()
     if not admin_email or not admin_password:
         return
-    password_hash = pwd_context.hash(admin_password)
+    digest = base64.b64encode(hashlib.sha256(admin_password.encode("utf-8")).digest())
+    password_hash = bcrypt.hashpw(digest, bcrypt.gensalt()).decode("ascii")
     op.execute(
         sa.text(
             """

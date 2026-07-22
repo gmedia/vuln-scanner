@@ -69,7 +69,6 @@ class TestVerifyPassword:
         assert verify_password("x", hashed) is False
 
     def test_wrong_hash_format(self):
-        # passlib raises for completely invalid hash format
         with pytest.raises(ValueError):
             verify_password("anything", "not-a-valid-bcrypt-hash")
 
@@ -416,7 +415,7 @@ class TestCheckRedisRevocationSync:
     def test_redis_jti_hit_populates_cache_and_raises(self):
         """When Redis has a revoked JTI, it populates _revoked_tokens and raises."""
         mock_redis = MagicMock()
-        mock_redis.get.side_effect = lambda key: ("user-redis-jti" if key == "revoked_tokens:test-jti-redis" else None)
+        mock_redis.get.side_effect = lambda key: "user-redis-jti" if key == "revoked_tokens:test-jti-redis" else None
         with patch("app.services.auth._get_sync_redis", return_value=mock_redis):
             with pytest.raises(jwt.PyJWTError, match="revoked"):
                 _check_redis_revocation_sync("test-jti-redis", None)
@@ -429,7 +428,7 @@ class TestCheckRedisRevocationSync:
     def test_redis_user_hit_populates_set_and_raises(self):
         """When Redis has a revoked user, it populates _revoked_users and raises."""
         mock_redis = MagicMock()
-        mock_redis.get.side_effect = lambda key: ("1" if key == "revoked_users:user-redis-set" else None)
+        mock_redis.get.side_effect = lambda key: "1" if key == "revoked_users:user-redis-set" else None
         with patch("app.services.auth._get_sync_redis", return_value=mock_redis):
             with pytest.raises(jwt.PyJWTError, match="revoked"):
                 _check_redis_revocation_sync(None, "user-redis-set")
@@ -1112,12 +1111,10 @@ class TestCreateAccessTokenEdgeCases:
 
 class TestPasswordEdgeCases:
     def test_none_hashed_returns_false(self):
-        """verify_password with None hashed returns False (passlib treats None as string)."""
         result = verify_password("anything", None)  # type: ignore[arg-type]
         assert result is False
 
     def test_none_plain_raises_type_error(self):
-        """verify_password with None plain raises TypeError."""
         hashed = hash_password("test")
         with pytest.raises(TypeError):
             verify_password(None, hashed)  # type: ignore[arg-type]
