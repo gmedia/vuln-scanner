@@ -36,6 +36,7 @@ celery_app.conf.update(
         "mobile_scan.run": {"queue": "mobile_scan"},
         "dead_letter.handle": {"queue": "dead_letter"},
         "maintenance.fail_stale_pending": {"queue": "ip_scan"},
+        "maintenance.fail_stale_running": {"queue": "ip_scan"},
     },
     task_annotations={
         "ip_scan.run": {"rate_limit": "10/m"},
@@ -45,6 +46,10 @@ celery_app.conf.update(
     beat_schedule={
         "fail-stale-pending-every-5m": {
             "task": "maintenance.fail_stale_pending",
+            "schedule": 300.0,
+        },
+        "fail-stale-running-every-5m": {
+            "task": "maintenance.fail_stale_running",
             "schedule": 300.0,
         },
     },
