@@ -1,14 +1,18 @@
 #!/bin/sh
-# Worker entrypoint.
-# Validates environment, waits for Redis, then starts both the health server
-# and the Celery worker for the configured queue.
-
 set -e
 
-echo "=== Worker prestart: validating environment ==="
+CELERY_MODE="${CELERY_MODE:-worker}"
 
-# --- Env var validation ---
-REQUIRED_VARS="CELERY_BROKER_URL DATABASE_URL_SYNC CELERY_QUEUE"
+echo "=== Celery prestart: mode=${CELERY_MODE} ==="
+
+REQUIRED_VARS="CELERY_BROKER_URL DATABASE_URL_SYNC"
+if [ "$CELERY_MODE" = "worker" ]; then
+  REQUIRED_VARS="$REQUIRED_VARS CELERY_QUEUE"
+elif [ "$CELERY_MODE" != "beat" ]; then
+  echo "FATAL: CELERY_MODE must be 'worker' or 'beat', got: $CELERY_MODE"
+  exit 1
+fi
+
 MISSING=""
 for var in $REQUIRED_VARS; do
   eval "val=\"\$$var\""
@@ -21,9 +25,12 @@ if [ -n "$MISSING" ]; then
   echo "FATAL: missing required environment variables:$MISSING"
   exit 1
 fi
-echo "[OK] Required env vars are set ($CELERY_QUEUE)"
+if [ "$CELERY_MODE" = "worker" ]; then
+  echo "[OK] Required env vars are set (queue=$CELERY_QUEUE)"
+else
+  echo "[OK] Required env vars are set (beat)"
+fi
 
-# --- Wait for Redis ---
 REDIS_HOST=$(python -c "
 from urllib.parse import urlparse
 import os
@@ -57,7 +64,6 @@ except Exception:
   sleep 2
 done
 
-# --- Wait for PostgreSQL ---
 echo "Waiting for PostgreSQL ..."
 for i in $(seq 1 30); do
   if python -c "
@@ -79,12 +85,16 @@ except Exception as e:
   sleep 2
 done
 
-echo "=== Worker prestart complete ==="
+echo "=== Celery prestart complete ==="
 
-# Start health server in background
+if [ "$CELERY_MODE" = "beat" ]; then
+  exec celery -A celery_app beat \
+    --loglevel=info \
+    --schedule="${CELERY_BEAT_SCHEDULE:-/tmp/celerybeat-schedule}"
+fi
+
 python /app/health_server.py 8001 &
 
-# Start Celery worker (foreground, so container stays alive)
 exec celery -A celery_app worker \
   -Q "$CELERY_QUEUE" \
   --concurrency="${CELERY_CONCURRENCY:-2}" \

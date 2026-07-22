@@ -129,7 +129,7 @@ async def health_queues() -> JSONResponse:
 
     try:
         r = cast(Any, aioredis).from_url(settings.celery_broker_url, socket_connect_timeout=3)
-        for queue in ("ip_scan", "domain_scan", "mobile_scan"):
+        for queue in ("ip_scan", "domain_scan", "mobile_scan", "dead_letter"):
             length = await r.llen(queue)
             result["queues"][queue] = length
         await r.aclose()

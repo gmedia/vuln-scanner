@@ -1,3 +1,4 @@
+import os
 from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 
@@ -19,6 +20,74 @@ STALE_FAIL_SUMMARY = STALE_PENDING_FAIL_SUMMARY
 
 _PENDING_AGE_SQL = "created_at < :cutoff"
 _RUNNING_AGE_SQL = "COALESCE(started_at, created_at) < :cutoff"
+
+AUTO_FAIL_ALERT_THRESHOLD = int(os.getenv("AUTO_FAIL_ALERT_THRESHOLD", "1"))
+
+
+def _record_auto_fail_metric(status: str, count: int) -> None:
+    if count <= 0:
+        return
+    try:
+        import redis
+
+        from utils.redis_helpers import build_redis_url
+
+        r = redis.Redis.from_url(build_redis_url(), socket_connect_timeout=2)
+        key = f"metrics:maintenance:auto_failed:{status}"
+        r.incrby(key, count)
+        r.expire(key, 86400 * 7)
+    except Exception as e:
+        logger.debug("Failed to record auto-fail metric: {error}", error=e)
+
+
+def _alert_auto_fail(
+    *,
+    status: str,
+    count: int,
+    refunded: int,
+    threshold_minutes: int,
+    cutoff: datetime,
+) -> None:
+    if count <= 0:
+        return
+
+    logger.warning(
+        "Auto-failed {count} stale {status} job(s) (>{threshold}m, cutoff={cutoff}, refunded={refunded})",
+        count=count,
+        status=status,
+        threshold=threshold_minutes,
+        cutoff=cutoff.isoformat(),
+        refunded=refunded,
+    )
+
+    _record_auto_fail_metric(status, count)
+
+    if count < AUTO_FAIL_ALERT_THRESHOLD:
+        return
+
+    logger.error(
+        "ALERT: auto-failed {count} stale {status} job(s) (threshold={alert_threshold}, refunded={refunded})",
+        count=count,
+        status=status,
+        alert_threshold=AUTO_FAIL_ALERT_THRESHOLD,
+        refunded=refunded,
+    )
+
+    try:
+        import sentry_sdk
+
+        with sentry_sdk.new_scope() as scope:
+            scope.set_tag("maintenance.status", status)
+            scope.set_extra("auto_failed_count", count)
+            scope.set_extra("refunded_count", refunded)
+            scope.set_extra("threshold_minutes", threshold_minutes)
+            scope.set_extra("cutoff", cutoff.isoformat())
+            sentry_sdk.capture_message(
+                f"Auto-failed {count} stale {status} scan job(s)",
+                level="error",
+            )
+    except Exception:
+        pass
 
 
 def _fail_stale_and_refund(
@@ -113,14 +182,13 @@ def fail_stale_pending_jobs(self: Any) -> ScanJobDict:
         age_sql=_PENDING_AGE_SQL,
         refund_reason="stuck pending",
     )
-    if result["auto_failed_count"] > 0:
-        logger.warning(
-            "Auto-failed {count} stale pending job(s) (>{threshold}m, cutoff={cutoff}, refunded={refunded})",
-            count=result["auto_failed_count"],
-            threshold=STALE_PENDING_THRESHOLD_MINUTES,
-            cutoff=cutoff.isoformat(),
-            refunded=result["refunded_count"],
-        )
+    _alert_auto_fail(
+        status="pending",
+        count=result["auto_failed_count"],
+        refunded=result["refunded_count"],
+        threshold_minutes=STALE_PENDING_THRESHOLD_MINUTES,
+        cutoff=cutoff,
+    )
     return result
 
 
@@ -134,12 +202,11 @@ def fail_stale_running_jobs(self: Any) -> ScanJobDict:
         age_sql=_RUNNING_AGE_SQL,
         refund_reason="stuck running",
     )
-    if result["auto_failed_count"] > 0:
-        logger.warning(
-            "Auto-failed {count} stale running job(s) (>{threshold}m, cutoff={cutoff}, refunded={refunded})",
-            count=result["auto_failed_count"],
-            threshold=STALE_RUNNING_THRESHOLD_MINUTES,
-            cutoff=cutoff.isoformat(),
-            refunded=result["refunded_count"],
-        )
+    _alert_auto_fail(
+        status="running",
+        count=result["auto_failed_count"],
+        refunded=result["refunded_count"],
+        threshold_minutes=STALE_RUNNING_THRESHOLD_MINUTES,
+        cutoff=cutoff,
+    )
     return result
