@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Crosshair, Loader2, CheckCircle } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
@@ -15,6 +15,14 @@ function Register() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -42,8 +50,9 @@ function Register() {
     }
 
     setIsSubmitting(true);
-    const success = await register(email, password, confirmPassword);
-    if (success) {
+    const ok = await register(email, password, confirmPassword);
+    if (!mountedRef.current) return;
+    if (ok) {
       setSuccess(true);
     } else {
       setIsSubmitting(false);

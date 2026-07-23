@@ -20,18 +20,28 @@ const SEVERITY_LABELS = {
 
 interface SeverityChartProps {
   summary: {
-    critical: number;
-    high: number;
-    medium: number;
-    low: number;
-    info: number;
-    total_findings: number;
+    critical?: number;
+    high?: number;
+    medium?: number;
+    low?: number;
+    info?: number;
+    total_findings?: number;
   } | null;
   className?: string;
 }
 
+function severityValue(
+  summary: NonNullable<SeverityChartProps["summary"]>,
+  key: keyof typeof SEVERITY_LABELS | "total_findings",
+): number {
+  const raw = summary[key];
+  return typeof raw === "number" && Number.isFinite(raw) ? raw : 0;
+}
+
 function SeverityChart({ summary, className }: SeverityChartProps) {
-  if (!summary || summary.total_findings === 0) {
+  const totalFindings = summary ? severityValue(summary, "total_findings") : 0;
+
+  if (!summary || totalFindings === 0) {
     return (
       <div className={cn("flex flex-col items-center justify-center py-12 text-center", className)}>
         <AlertTriangle className="mb-3 h-10 w-10 text-muted-foreground opacity-40" />
@@ -43,7 +53,7 @@ function SeverityChart({ summary, className }: SeverityChartProps) {
   const data = (Object.keys(SEVERITY_LABELS) as Array<keyof typeof SEVERITY_LABELS>)
     .map((key) => ({
       name: SEVERITY_LABELS[key],
-      value: summary[key],
+      value: severityValue(summary, key),
       color: PIE_COLORS[key],
     }))
     .filter((d) => d.value > 0);
@@ -76,7 +86,7 @@ function SeverityChart({ summary, className }: SeverityChartProps) {
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
             <Label
-              value={summary.total_findings}
+              value={totalFindings}
               position="center"
               className="fill-foreground font-mono text-2xl font-bold"
             />
