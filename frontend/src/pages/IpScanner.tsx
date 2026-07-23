@@ -52,7 +52,15 @@ function IpScanner() {
         </Card>
       )}
 
-      {hasResults && (
+      {hasResults && (() => {
+        const summary = scanData.result_summary!;
+        const critical = typeof summary.critical === "number" ? summary.critical : 0;
+        const high = typeof summary.high === "number" ? summary.high : 0;
+        const medium = typeof summary.medium === "number" ? summary.medium : 0;
+        const low = typeof summary.low === "number" ? summary.low : 0;
+        const info = typeof summary.info === "number" ? summary.info : 0;
+        const totalFindings = typeof summary.total_findings === "number" ? summary.total_findings : 0;
+        return (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -67,11 +75,11 @@ function IpScanner() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-5 gap-3">
               {[
-                { label: "Critical", count: scanData.result_summary!.critical, color: "text-red-400", bg: "bg-red-600/10" },
-                { label: "High", count: scanData.result_summary!.high, color: "text-orange-400", bg: "bg-orange-500/10" },
-                { label: "Medium", count: scanData.result_summary!.medium, color: "text-yellow-400", bg: "bg-yellow-500/10" },
-                { label: "Low", count: scanData.result_summary!.low, color: "text-blue-400", bg: "bg-blue-500/10" },
-                { label: "Info", count: scanData.result_summary!.info, color: "text-gray-400", bg: "bg-gray-500/10" },
+                { label: "Critical", count: critical, color: "text-red-400", bg: "bg-red-600/10" },
+                { label: "High", count: high, color: "text-orange-400", bg: "bg-orange-500/10" },
+                { label: "Medium", count: medium, color: "text-yellow-400", bg: "bg-yellow-500/10" },
+                { label: "Low", count: low, color: "text-blue-400", bg: "bg-blue-500/10" },
+                { label: "Info", count: info, color: "text-gray-400", bg: "bg-gray-500/10" },
               ].map((item) => (
                 <div
                   key={item.label}
@@ -89,14 +97,14 @@ function IpScanner() {
 
             <div className="flex items-center justify-between rounded-md bg-muted p-3">
               <div className="flex items-center gap-2">
-                {scanData.result_summary!.critical > 0 || scanData.result_summary!.high > 0 ? (
+                {critical > 0 || high > 0 ? (
                   <AlertTriangle className="h-4 w-4 text-red-400" />
                 ) : (
                   <CheckCircle2 className="h-4 w-4 text-primary" />
                 )}
                 <span className="font-mono text-xs text-foreground">
-                  {scanData.result_summary!.total_findings} finding
-                  {scanData.result_summary!.total_findings !== 1 ? "s" : ""} found
+                  {totalFindings} finding
+                  {totalFindings !== 1 ? "s" : ""} found
                 </span>
               </div>
               <Button
@@ -110,7 +118,8 @@ function IpScanner() {
             </div>
           </CardContent>
         </Card>
-      )}
+        );
+      })()}
     </div>
   );
 }
