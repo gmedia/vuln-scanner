@@ -78,4 +78,28 @@ describe("SeverityChart", () => {
     // Should still render a chart even though medium/low/info are 0
     expect(screen.queryByText("No findings to display")).not.toBeInTheDocument();
   });
+
+  it("shows full severity legend with counts and percentages", () => {
+    render(
+      <SeverityChart
+        summary={{
+          critical: 2,
+          high: 2,
+          medium: 0,
+          low: 0,
+          info: 1,
+          total_findings: 5,
+        }}
+      />,
+    );
+    expect(screen.getByTestId("severity-legend")).toBeInTheDocument();
+    expect(screen.getByText("Critical")).toBeInTheDocument();
+    expect(screen.getByText("High")).toBeInTheDocument();
+    expect(screen.getByText("Medium")).toBeInTheDocument();
+    expect(screen.getByText("Low")).toBeInTheDocument();
+    expect(screen.getByText("Info")).toBeInTheDocument();
+    expect(screen.getAllByText("2").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText(/40%/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/0%/).length).toBeGreaterThanOrEqual(1);
+  });
 });

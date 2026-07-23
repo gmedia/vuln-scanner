@@ -1,8 +1,17 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import Sidebar from "@/components/layout/Sidebar";
 import { useScanStore } from "@/store/scanStore";
+import { useAuthStore } from "@/store/authStore";
+import { useCreditStore } from "@/store/creditStore";
+
+vi.mock("@/store/creditStore", () => ({
+  useCreditStore: vi.fn(() => ({
+    credits: 0,
+    fetchBalance: vi.fn(),
+  })),
+}));
 
 describe("Sidebar", () => {
   const renderSidebar = (open: boolean, onClose = vi.fn()) => {
@@ -20,6 +29,21 @@ describe("Sidebar", () => {
       progress: 0,
       status: "pending",
     });
+    useAuthStore.setState({
+      user: null,
+      isAuthenticated: false,
+      accessToken: null,
+      isLoading: false,
+      error: null,
+    });
+    vi.mocked(useCreditStore).mockReturnValue({
+      credits: 0,
+      isAdmin: false,
+      isLoading: false,
+      error: null,
+      fetchBalance: vi.fn(),
+      checkEligibility: vi.fn(),
+    });
   });
 
   it("renders nav items", () => {
@@ -28,6 +52,28 @@ describe("Sidebar", () => {
     expect(screen.getByText("IP Scanner")).toBeInTheDocument();
     expect(screen.getByText("Domain Scanner")).toBeInTheDocument();
     expect(screen.getByText("Mobile Scanner")).toBeInTheDocument();
+  });
+
+  it("renames admin Dashboard to Admin overview", () => {
+    useAuthStore.setState({
+      isAuthenticated: true,
+      user: {
+        id: "admin-1",
+        email: "admin@example.com",
+        is_verified: true,
+        is_admin: true,
+        credits: 100,
+      },
+      accessToken: "tok",
+      isLoading: false,
+      error: null,
+    });
+    renderSidebar(true);
+    expect(screen.getByText("Admin overview")).toBeInTheDocument();
+    const adminLinks = screen.getAllByRole("link").filter((a) =>
+      a.getAttribute("href") === "/admin",
+    );
+    expect(adminLinks[0]).toHaveTextContent("Admin overview");
   });
 
   it("shows active scan section when activeJobId is set", () => {

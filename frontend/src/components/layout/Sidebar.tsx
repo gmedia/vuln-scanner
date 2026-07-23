@@ -124,7 +124,7 @@ function Sidebar({ open, onClose }: SidebarProps) {
               }
             >
               <Shield className="h-4 w-4 shrink-0" />
-              Dashboard
+              Admin overview
             </NavLink>
             <NavLink
               to="/admin/users"
