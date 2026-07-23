@@ -189,4 +189,46 @@ describe("Dashboard", () => {
     render(<Dashboard />);
     expect(screen.getByText("42 total")).toBeInTheDocument();
   });
+
+  it("does not show NaN when result_summary is error-only (auto-failed)", () => {
+    mockHistoryData.items = [
+      {
+        id: "scan-failed-1",
+        target: "stg3.example.com",
+        scan_type: "domain",
+        status: "failed",
+        started_at: null,
+        result_summary: {
+          error: "auto-failed: stuck pending > 30 minutes",
+        } as unknown as (typeof mockHistoryData.items)[0]["result_summary"],
+      },
+      {
+        id: "scan-ok-1",
+        target: "ok.example.com",
+        scan_type: "domain",
+        status: "completed",
+        started_at: "2026-01-01T00:00:00Z",
+        result_summary: {
+          total_findings: 3,
+          critical: 1,
+          high: 0,
+          medium: 2,
+          low: 0,
+          info: 0,
+        },
+      },
+    ];
+    mockHistoryData.total = 2;
+    mockUseScanHistory.mockReturnValue({
+      data: mockHistoryData,
+      isLoading: false,
+      isFetching: false,
+    });
+    render(<Dashboard />);
+    expect(screen.queryByText("NaN")).not.toBeInTheDocument();
+    expect(screen.getByText("Critical").previousElementSibling?.textContent).toBe("1");
+    expect(screen.getByText("High").previousElementSibling?.textContent).toBe("0");
+    expect(screen.getByText("Medium").previousElementSibling?.textContent).toBe("2");
+    expect(screen.queryByText("undefined findings")).not.toBeInTheDocument();
+  });
 });

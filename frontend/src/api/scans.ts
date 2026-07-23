@@ -30,12 +30,14 @@ export interface ScanJob {
   status: string;
   progress: number;
   result_summary: {
-    total_findings: number;
-    critical: number;
-    high: number;
-    medium: number;
-    low: number;
-    info: number;
+    total_findings?: number;
+    critical?: number;
+    high?: number;
+    medium?: number;
+    low?: number;
+    info?: number;
+    error?: string;
+    [key: string]: unknown;
   } | null;
   celery_task_id: string | null;
   started_at: string | null;

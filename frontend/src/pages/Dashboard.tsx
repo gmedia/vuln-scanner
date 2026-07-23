@@ -23,6 +23,15 @@ const FILTER_OPTIONS = [
   { value: "ipa", label: "IPA" },
 ] as const;
 
+function severityCount(
+  summary: ScanJob["result_summary"],
+  key: "critical" | "high" | "medium" | "low" | "info" | "total_findings",
+): number {
+  if (!summary) return 0;
+  const raw = summary[key];
+  return typeof raw === "number" && Number.isFinite(raw) ? raw : 0;
+}
+
 function Dashboard() {
   const [filter, setFilter] = useState("");
   const [page, setPage] = useState(1);
@@ -66,14 +75,12 @@ function Dashboard() {
 
   const totals = scans.reduce(
     (acc, s) => {
-      if (s.result_summary) {
-        acc.critical += s.result_summary.critical;
-        acc.high += s.result_summary.high;
-        acc.medium += s.result_summary.medium;
-        acc.low += s.result_summary.low;
-        acc.info += s.result_summary.info;
-        acc.total += s.result_summary.total_findings;
-      }
+      acc.critical += severityCount(s.result_summary, "critical");
+      acc.high += severityCount(s.result_summary, "high");
+      acc.medium += severityCount(s.result_summary, "medium");
+      acc.low += severityCount(s.result_summary, "low");
+      acc.info += severityCount(s.result_summary, "info");
+      acc.total += severityCount(s.result_summary, "total_findings");
       return acc;
     },
     { total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 },
@@ -217,9 +224,9 @@ function Dashboard() {
                             {new Date(scan.started_at).toLocaleDateString()}
                           </span>
                         )}
-                        {scan.result_summary && (
+                        {severityCount(scan.result_summary, "total_findings") > 0 && (
                           <span className="font-mono text-[10px] text-muted-foreground">
-                            {scan.result_summary.total_findings} findings
+                            {severityCount(scan.result_summary, "total_findings")} findings
                           </span>
                         )}
                       </div>
