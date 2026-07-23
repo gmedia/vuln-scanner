@@ -43,9 +43,14 @@ vi.mock("@/components/ui/Badge", () => ({
 }));
 
 vi.mock("@/components/ui/Button", () => ({
-  Button: ({ children, onClick, ...props }: any) => (
-    <button onClick={onClick} {...props}>{children}</button>
-  ),
+  Button: ({ children, onClick, asChild, ...props }: any) => {
+    if (asChild && children) {
+      return children;
+    }
+    return (
+      <button onClick={onClick} {...props}>{children}</button>
+    );
+  },
 }));
 
 vi.mock("@/components/ui/Skeleton", () => ({
@@ -179,10 +184,10 @@ describe("ScanDetail", () => {
   });
 
   describe("loaded state", () => {
-    it("renders SCAN DETAILS heading", () => {
+    it("renders Scan details heading", () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
-      expect(screen.getByText("SCAN DETAILS")).toBeInTheDocument();
+      expect(screen.getByText("Scan details")).toBeInTheDocument();
     });
 
     it("renders scan target", () => {
@@ -244,10 +249,10 @@ describe("ScanDetail", () => {
       expect(screen.getByText("N/A")).toBeInTheDocument();
     });
 
-    it("renders SEVERITY card", () => {
+    it("renders Severity card", () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
-      expect(screen.getByText("SEVERITY")).toBeInTheDocument();
+      expect(screen.getByText("Severity")).toBeInTheDocument();
     });
 
     it("renders severity chart", () => {
@@ -256,10 +261,10 @@ describe("ScanDetail", () => {
       expect(screen.getByTestId("severity-chart")).toBeInTheDocument();
     });
 
-    it("renders SCAN INFO card", () => {
+    it("renders Scan info card", () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
-      expect(screen.getByText("SCAN INFO")).toBeInTheDocument();
+      expect(screen.getByText("Scan info")).toBeInTheDocument();
     });
 
     it("renders Task ID when celery_task_id exists", () => {
@@ -292,17 +297,21 @@ describe("ScanDetail", () => {
       expect(screen.queryByText("Remediation Available")).not.toBeInTheDocument();
     });
 
-    it("renders FINDINGS card", () => {
+    it("renders Findings card", () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
-      expect(screen.getByText("FINDINGS")).toBeInTheDocument();
+      expect(screen.getAllByText("Findings").length).toBeGreaterThanOrEqual(1);
     });
 
-    it("renders findings table", () => {
+    it("renders findings table before severity chart in DOM order", () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
       const table = screen.getByTestId("findings-table");
+      const chart = screen.getByTestId("severity-chart");
       expect(table.dataset.findingsCount).toBe("3");
+      expect(
+        table.compareDocumentPosition(chart) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
     });
 
     it("renders download buttons", () => {
@@ -310,6 +319,25 @@ describe("ScanDetail", () => {
       renderPage();
       expect(screen.getByText("JSON")).toBeInTheDocument();
       expect(screen.getByText("HTML")).toBeInTheDocument();
+    });
+
+    it("renders Re-scan link for IP scan type", () => {
+      mockUseScanDetailReturn({ data: baseScan as any });
+      renderPage();
+      const rescan = screen.getByTestId("rescan-button");
+      expect(rescan).toHaveAttribute("href", "/scan/ip");
+      expect(screen.getByRole("link", { name: /Re-scan/i })).toBeInTheDocument();
+    });
+
+    it("routes Re-scan to domain scanner for domain scans", () => {
+      mockUseScanDetailReturn({
+        data: { ...baseScan, scan_type: "domain" } as any,
+      });
+      renderPage();
+      expect(screen.getByRole("link", { name: /Re-scan/i })).toHaveAttribute(
+        "href",
+        "/scan/domain",
+      );
     });
 
     it("calls downloadFile with JSON on JSON button click", async () => {
