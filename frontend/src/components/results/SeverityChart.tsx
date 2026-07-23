@@ -1,4 +1,4 @@
-import { PieChart, Pie, Cell, Label, Legend, Tooltip, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, Label, Tooltip, ResponsiveContainer } from "recharts";
 import { AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -9,6 +9,8 @@ const PIE_COLORS = {
   low: "#3b82f6",
   info: "#6b7280",
 };
+
+const SEVERITY_KEYS = ["critical", "high", "medium", "low", "info"] as const;
 
 const SEVERITY_LABELS = {
   critical: "Critical",
@@ -32,7 +34,7 @@ interface SeverityChartProps {
 
 function severityValue(
   summary: NonNullable<SeverityChartProps["summary"]>,
-  key: keyof typeof SEVERITY_LABELS | "total_findings",
+  key: (typeof SEVERITY_KEYS)[number] | "total_findings",
 ): number {
   const raw = summary[key];
   return typeof raw === "number" && Number.isFinite(raw) ? raw : 0;
@@ -50,15 +52,16 @@ function SeverityChart({ summary, className }: SeverityChartProps) {
     );
   }
 
-  const data = (Object.keys(SEVERITY_LABELS) as Array<keyof typeof SEVERITY_LABELS>)
-    .map((key) => ({
-      name: SEVERITY_LABELS[key],
-      value: severityValue(summary, key),
-      color: PIE_COLORS[key],
-    }))
-    .filter((d) => d.value > 0);
+  const allSeverities = SEVERITY_KEYS.map((key) => ({
+    key,
+    name: SEVERITY_LABELS[key],
+    value: severityValue(summary, key),
+    color: PIE_COLORS[key],
+  }));
 
-  if (data.length === 0) {
+  const pieData = allSeverities.filter((d) => d.value > 0);
+
+  if (pieData.length === 0) {
     return (
       <div className={cn("flex flex-col items-center justify-center py-12 text-center", className)}>
         <AlertTriangle className="mb-3 h-10 w-10 text-muted-foreground opacity-40" />
@@ -68,22 +71,22 @@ function SeverityChart({ summary, className }: SeverityChartProps) {
   }
 
   return (
-    <div className={cn("w-full", className)}>
-      <ResponsiveContainer width="100%" height={280}>
+    <div className={cn("w-full", className)} data-testid="severity-chart-content">
+      <ResponsiveContainer width="100%" height={220}>
         <PieChart>
           <Pie
-            data={data}
+            data={pieData}
             cx="50%"
             cy="50%"
-            innerRadius={60}
-            outerRadius={100}
+            innerRadius={52}
+            outerRadius={88}
             paddingAngle={3}
             dataKey="value"
             strokeWidth={2}
             stroke="hsl(var(--card))"
           >
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color} />
+            {pieData.map((entry) => (
+              <Cell key={entry.key} fill={entry.color} />
             ))}
             <Label
               value={totalFindings}
@@ -104,17 +107,40 @@ function SeverityChart({ summary, className }: SeverityChartProps) {
               return [`${num} finding${num !== 1 ? "s" : ""}`, ""];
             }}
           />
-          <Legend
-            verticalAlign="bottom"
-            height={36}
-            iconType="circle"
-            iconSize={8}
-            formatter={(value: string) => (
-              <span className="font-mono text-xs text-muted-foreground">{value}</span>
-            )}
-          />
         </PieChart>
       </ResponsiveContainer>
+
+      <ul
+        className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2"
+        data-testid="severity-legend"
+        aria-label="Severity legend"
+      >
+        {allSeverities.map((item) => {
+          const pct =
+            totalFindings > 0 ? Math.round((item.value / totalFindings) * 100) : 0;
+          return (
+            <li
+              key={item.key}
+              className="flex items-center justify-between gap-2 rounded-md bg-muted/40 px-2 py-1.5"
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                <span
+                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: item.color }}
+                  aria-hidden
+                />
+                <span className="truncate font-mono text-xs text-muted-foreground">
+                  {item.name}
+                </span>
+              </span>
+              <span className="shrink-0 font-mono text-xs tabular-nums text-foreground">
+                {item.value}
+                <span className="ml-1 text-muted-foreground">({pct}%)</span>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
