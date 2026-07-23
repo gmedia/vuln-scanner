@@ -42,6 +42,7 @@ from app.services.auth import (
     get_current_user,
     hash_password,
     logout_all,
+    password_needs_rehash,
     revoke_token,
     verify_password,
 )
@@ -142,6 +143,10 @@ async def login(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Email belum diverifikasi",
         )
+
+    if password_needs_rehash(body.password, user.password_hash):
+        user.password_hash = hash_password(body.password)
+        await db.commit()
 
     user_id_str = str(user.id)
     access_token = create_access_token(user_id=user_id_str, email=user.email, is_admin=user.is_admin)

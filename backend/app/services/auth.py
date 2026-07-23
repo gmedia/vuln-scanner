@@ -92,6 +92,21 @@ def verify_password(plain: str, hashed: str) -> bool:
         return False
 
 
+def password_needs_rehash(plain: str, hashed: str) -> bool:
+    if not hashed or not isinstance(hashed, str):
+        return False
+    hashed_bytes = hashed.encode("ascii")
+    try:
+        if bcrypt.checkpw(_password_digest(plain), hashed_bytes):
+            return False
+    except ValueError:
+        return False
+    try:
+        return bool(bcrypt.checkpw(plain.encode("utf-8"), hashed_bytes))
+    except ValueError:
+        return False
+
+
 def create_access_token(user_id: str, email: str, is_admin: bool = False) -> str:
     expire = datetime.now(UTC) + timedelta(minutes=ACCESS_EXPIRE)
     payload = {
