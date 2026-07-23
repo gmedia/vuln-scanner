@@ -208,6 +208,37 @@ curl http://localhost/api/scan/{id}/export?format=html \
 | Prometheus gauge | `vuln_maintenance_auto_failed_jobs{status=pending\|running}` on `/metrics` | Scrape with API key |
 | Auto-fail alert | Worker `logger.error` + optional Sentry | Fires when count ≥ `AUTO_FAIL_ALERT_THRESHOLD` (default `1`) |
 
+#### Prometheus scrape & alert (optional)
+
+No in-repo Grafana/Prometheus stack — point an existing Prometheus at the public edge:
+
+```bash
+# Verify scrape surface (401 without key, 200 with key)
+curl -sS -o /dev/null -w "%{http_code}\n" https://vs.appmedia.id/metrics
+curl -sS -H "X-API-Key: $API_KEY" https://vs.appmedia.id/metrics | grep vuln_maintenance
+```
+
+- Scrape job template: [`monitoring/prometheus-scrape.example.yml`](monitoring/prometheus-scrape.example.yml)
+- Alert rule template: [`monitoring/alerts-vuln-scanner.example.yml`](monitoring/alerts-vuln-scanner.example.yml)
+  Fires when `sum(vuln_maintenance_auto_failed_jobs) > 0` for 5m.
+
+`/metrics` requires `X-API-Key`. Prefer a local metrics proxy/sidecar that injects the header rather than putting the key in a public scrape config.
+
+#### Host nginx (production)
+
+Production uses **host nginx** (not the compose nginx service). Config:
+
+- Template: [`nginx/vs.appmedia.id.conf`](nginx/vs.appmedia.id.conf) → `/etc/nginx/conf.d/vs.appmedia.id.conf`
+- Frontend upstream: `127.0.0.1:5174` (compose publishes frontend on host `5174`)
+- Backend upstream: `127.0.0.1:8000`
+- Public routes: `/health`, `/health/queues`
+- API-key route: `/metrics` (auth enforced by FastAPI)
+
+```bash
+sudo cp nginx/vs.appmedia.id.conf /etc/nginx/conf.d/vs.appmedia.id.conf
+sudo nginx -t && sudo systemctl reload nginx
+```
+
 ## Environment Variables
 
 | Variable | Default | Description |
@@ -227,8 +258,9 @@ curl http://localhost/api/scan/{id}/export?format=html \
 
 | Service | Port | Description |
 |---------|------|-------------|
-| nginx | `:80` | Reverse proxy |
-| frontend | `:5173` | React dashboard |
+| nginx (compose) | `:80` | Reverse proxy (local/dev compose only) |
+| host nginx | `:443` | Prod edge SSL (`vs.appmedia.id`) |
+| frontend | `:5173` local / `:5174` prod host | React dashboard |
 | backend | `:8000` | FastAPI REST API |
 | ip_worker | — | IP scan tasks |
 | domain_worker | — | Domain scan tasks |

@@ -1,0 +1,17 @@
+# Example Prometheus rules for VulnScanner auto-fail gauge on /metrics.
+# Load via rule_files; route via Alertmanager.
+
+groups:
+  - name: vuln-scanner
+    rules:
+      - alert: VulnScannerAutoFailedJobs
+        expr: sum(vuln_maintenance_auto_failed_jobs) > 0
+        for: 5m
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "Stale scan jobs were auto-failed"
+          description: >-
+            vuln_maintenance_auto_failed_jobs is {{ $value }} (pending+running).
+            Check celery beat logs, /health/queues auto_failed, and dead_letter depth.

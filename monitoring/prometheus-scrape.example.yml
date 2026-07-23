@@ -1,0 +1,17 @@
+# Example Prometheus scrape job for VulnScanner (/metrics requires X-API-Key).
+# Do not commit real API keys. Prefer a local sidecar that injects X-API-Key.
+
+scrape_configs:
+  - job_name: vuln-scanner
+    metrics_path: /metrics
+    scheme: https
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    # Stock Prometheus does not send arbitrary headers. Options:
+    # 1) Sidecar/proxy on 127.0.0.1 that adds X-API-Key and scrape that target
+    # 2) Prometheus build/extension that supports custom scrape headers
+    static_configs:
+      - targets: ["vs.appmedia.id"]
+        labels:
+          service: vuln-scanner
+          env: production
