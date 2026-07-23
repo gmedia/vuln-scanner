@@ -223,6 +223,19 @@ describe("ScanDetail", () => {
       expect(screen.getByText("1m 30s")).toBeInTheDocument();
     });
 
+    it("renders duration from created_at when started_at is missing", () => {
+      mockUseScanDetailReturn({
+        data: {
+          ...baseScan,
+          started_at: null,
+          created_at: "2025-06-01T10:00:00Z",
+          completed_at: "2025-06-01T10:00:45Z",
+        } as any,
+      });
+      renderPage();
+      expect(screen.getByText("45s")).toBeInTheDocument();
+    });
+
     it("renders N/A duration when not completed", () => {
       mockUseScanDetailReturn({
         data: { ...baseScan, completed_at: null, started_at: null } as any,

@@ -49,11 +49,18 @@ function ScanDetail() {
     );
   }
 
-  const duration = scan.started_at && scan.completed_at
-    ? Math.round(
-        (new Date(scan.completed_at).getTime() - new Date(scan.started_at).getTime()) / 1000,
-      )
-    : null;
+  const durationStart = scan.started_at ?? scan.created_at;
+  const duration =
+    scan.completed_at && durationStart
+      ? Math.max(
+          0,
+          Math.round(
+            (new Date(scan.completed_at).getTime() -
+              new Date(durationStart).getTime()) /
+              1000,
+          ),
+        )
+      : null;
 
   const formatDuration = (seconds: number) => {
     if (seconds < 60) return `${seconds}s`;
@@ -103,7 +110,7 @@ function ScanDetail() {
         <QuickStat
           icon={Clock}
           label="Duration"
-          value={duration ? formatDuration(duration) : "N/A"}
+          value={duration != null ? formatDuration(duration) : "N/A"}
         />
       </div>
 

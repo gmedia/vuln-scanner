@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import {
   Card,
@@ -17,8 +19,12 @@ export function ErrorBoundaryFallback({
   error,
   resetErrorBoundary,
 }: FallbackProps) {
+  const [showDetails, setShowDetails] = useState(false);
+  const message = getErrorMessage(error);
+  const isDev = import.meta.env.DEV;
+
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <div className="flex items-center justify-center p-4 py-12">
       <Card className="w-full max-w-lg">
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -29,6 +35,7 @@ export function ErrorBoundaryFallback({
                 viewBox="0 0 24 24"
                 strokeWidth={1.5}
                 stroke="currentColor"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -40,17 +47,33 @@ export function ErrorBoundaryFallback({
             <CardTitle>Something went wrong</CardTitle>
           </div>
         </CardHeader>
-        <CardContent>
-          <p className="mb-3 text-sm text-muted-foreground">
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
             An unexpected error occurred. Please try again or contact support if
             the problem persists.
           </p>
-          <pre className="max-h-32 overflow-auto rounded-md bg-muted p-3 text-xs text-muted-foreground">
-            <code>{getErrorMessage(error)}</code>
-          </pre>
+          {(isDev || showDetails) && (
+            <pre className="max-h-32 overflow-auto rounded-md bg-muted p-3 text-xs text-muted-foreground">
+              <code>{message}</code>
+            </pre>
+          )}
+          {!isDev && (
+            <button
+              type="button"
+              onClick={() => setShowDetails((v) => !v)}
+              className="font-mono text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              {showDetails ? "Hide technical details" : "Show technical details"}
+            </button>
+          )}
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-wrap gap-2">
           <Button onClick={resetErrorBoundary}>Try Again</Button>
+          <Button variant="outline" asChild>
+            <Link to="/dashboard" onClick={resetErrorBoundary}>
+              Back to Dashboard
+            </Link>
+          </Button>
         </CardFooter>
       </Card>
     </div>
