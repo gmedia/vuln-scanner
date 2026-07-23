@@ -63,6 +63,9 @@ app.add_middleware(SecurityHeadersMiddleware)
 # Prometheus metrics — registered before ApiKeyMiddleware so /metrics is open
 from prometheus_fastapi_instrumentator import Instrumentator  # noqa: E402
 
+from app.metrics import register_custom_metrics  # noqa: E402
+
+register_custom_metrics()
 instrumentator = Instrumentator().instrument(app)
 instrumentator.expose(app, endpoint="/metrics", include_in_schema=True)
 
@@ -122,16 +125,23 @@ async def health_check() -> JSONResponse:
 
 @app.get("/health/queues")
 async def health_queues() -> JSONResponse:
-    """Monitor Celery queue depths and worker status. Returns queue lengths and worker counts."""
     import redis.asyncio as aioredis
 
-    result: dict[str, Any] = {"status": "ok", "queues": {}}
+    result: dict[str, Any] = {
+        "status": "ok",
+        "queues": {},
+        "auto_failed": {"pending": 0, "running": 0},
+    }
 
     try:
         r = cast(Any, aioredis).from_url(settings.celery_broker_url, socket_connect_timeout=3)
         for queue in ("ip_scan", "domain_scan", "mobile_scan", "dead_letter"):
             length = await r.llen(queue)
             result["queues"][queue] = length
+        for status in ("pending", "running"):
+            raw = await r.get(f"metrics:maintenance:auto_failed:{status}")
+            if raw is not None:
+                result["auto_failed"][status] = int(raw)
         await r.aclose()
     except Exception as e:
         result["status"] = "degraded"

@@ -7,19 +7,19 @@ export COMPOSE_PROJECT_NAME=vuln
 
 git pull origin main
 
-# Free disk space before building new images
 echo "=== Disk before cleanup ==="
 df -h / || true
-docker system prune -af --volumes || true
+docker image prune -af || true
+docker builder prune -af || true
 echo "=== Disk after cleanup ==="
 df -h / || true
 
-# Tag existing images for rollback
 docker tag vuln-backend:latest vuln-backend:previous 2>/dev/null || true
 docker tag vuln-frontend:latest vuln-frontend:previous 2>/dev/null || true
 docker tag vuln-worker_ip:latest vuln-worker_ip:previous 2>/dev/null || true
 docker tag vuln-worker_domain:latest vuln-worker_domain:previous 2>/dev/null || true
 docker tag vuln-worker_mobile:latest vuln-worker_mobile:previous 2>/dev/null || true
+docker tag vuln-worker_dead_letter:latest vuln-worker_dead_letter:previous 2>/dev/null || true
 docker tag vuln-celery_beat:latest vuln-celery_beat:previous 2>/dev/null || true
 
 docker compose -f docker-compose.prod.yml build --no-cache
@@ -30,6 +30,7 @@ docker tag vuln-frontend:latest vuln-frontend:$SHA
 docker tag vuln-worker_ip:latest vuln-worker_ip:$SHA
 docker tag vuln-worker_domain:latest vuln-worker_domain:$SHA
 docker tag vuln-worker_mobile:latest vuln-worker_mobile:$SHA
+docker tag vuln-worker_dead_letter:latest vuln-worker_dead_letter:$SHA 2>/dev/null || true
 docker tag vuln-celery_beat:latest vuln-celery_beat:$SHA 2>/dev/null || true
 
 echo "Deploying commit: $SHA"
@@ -39,13 +40,11 @@ docker ps -a --format "{{.Names}} {{.Status}}" || true
 docker volume ls --format "{{.Name}}" | grep postgres || true
 
 echo "=== Bringing services down ==="
-# Also bring down the old project name (vuln-scanner) from before COMPOSE_PROJECT_NAME was set
 docker compose -f docker-compose.prod.yml --project-name vuln-scanner down --volumes --remove-orphans 2>/dev/null || true
 docker compose -f docker-compose.prod.yml down --remove-orphans
-# Force-remove any leftover containers from failed prior deploys
 docker rm -f vuln-backend vuln-frontend vuln-redis vuln-postgres \
-  vuln-worker-ip vuln-worker-domain vuln-worker-mobile vuln-celery-beat 2>/dev/null || true
-# Remove any lingering volumes from old project names
+  vuln-worker-ip vuln-worker-domain vuln-worker-mobile vuln-worker-dead-letter \
+  vuln-celery-beat 2>/dev/null || true
 docker volume rm -f vuln-scanner_postgres_data vuln-scanner_redis_data vuln-scanner_scan_data 2>/dev/null || true
 
 echo "=== Remaining volumes ==="
@@ -70,7 +69,6 @@ for i in $(seq 1 30); do
   sleep 2
 done
 
-# Source .env so REDIS_PASSWORD is available for redis-cli polling below
 set -a; source .env; set +a
 
 echo "Waiting for redis..."

@@ -19,6 +19,7 @@ from app.services.auth import (
     hash_password,
     is_token_revoked,
     logout_all,
+    password_needs_rehash,
     revoke_token,
     verify_password,
 )
@@ -71,6 +72,26 @@ class TestVerifyPassword:
     def test_wrong_hash_format(self):
         with pytest.raises(ValueError):
             verify_password("anything", "not-a-valid-bcrypt-hash")
+
+    def test_legacy_raw_bcrypt_still_verifies(self):
+        import bcrypt
+
+        plain = "LegacyPass1!"
+        legacy = bcrypt.hashpw(plain.encode("utf-8"), bcrypt.gensalt()).decode("ascii")
+        assert verify_password(plain, legacy) is True
+        assert password_needs_rehash(plain, legacy) is True
+
+    def test_modern_hash_does_not_need_rehash(self):
+        plain = "ModernPass1!"
+        modern = hash_password(plain)
+        assert verify_password(plain, modern) is True
+        assert password_needs_rehash(plain, modern) is False
+
+    def test_wrong_password_does_not_need_rehash(self):
+        import bcrypt
+
+        legacy = bcrypt.hashpw(b"real", bcrypt.gensalt()).decode("ascii")
+        assert password_needs_rehash("wrong", legacy) is False
 
 
 # ---------------------------------------------------------------------------

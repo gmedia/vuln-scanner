@@ -357,6 +357,46 @@ class TestLogin:
         cookie = resp.cookies["refresh_token"]
         assert cookie != ""
 
+    def test_login_rehashes_legacy_password(self, auth_client, db_session):
+        import asyncio
+
+        import bcrypt
+
+        from app.services.auth import password_needs_rehash, verify_password
+
+        plain = "LegacyPass1!"
+        legacy_hash = bcrypt.hashpw(plain.encode("utf-8"), bcrypt.gensalt()).decode("ascii")
+
+        async def _create_legacy():
+            user = User(
+                id=uuid.uuid4(),
+                email="legacy@example.com",
+                password_hash=legacy_hash,
+                is_verified=True,
+                is_admin=False,
+                credits=30,
+            )
+            db_session.add(user)
+            await db_session.commit()
+            return user
+
+        asyncio.get_event_loop().run_until_complete(_create_legacy())
+
+        resp = auth_client.post(
+            "/api/auth/login",
+            json={"email": "legacy@example.com", "password": plain},
+        )
+        assert resp.status_code == 200
+
+        async def _reload():
+            result = await db_session.execute(select(User).where(User.email == "legacy@example.com"))
+            return result.scalar_one()
+
+        user = asyncio.get_event_loop().run_until_complete(_reload())
+        assert user.password_hash != legacy_hash
+        assert verify_password(plain, user.password_hash) is True
+        assert password_needs_rehash(plain, user.password_hash) is False
+
 
 # ---------------------------------------------------------------------------
 # GET /api/auth/me
