@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import Dashboard from "@/pages/Dashboard";
 
 let mockUseScanHistory: ReturnType<typeof vi.fn>;
@@ -34,8 +35,8 @@ vi.mock("@/hooks/useScan", () => ({
 }));
 
 vi.mock("react-router-dom", () => ({
-  Link: ({ to, children }: { to: string; children: React.ReactNode }) => (
-    <a href={to}>{children}</a>
+  Link: ({ to, children, ...props }: { to: string; children: React.ReactNode }) => (
+    <a href={to} {...props}>{children}</a>
   ),
   useNavigate: vi.fn(() => vi.fn()),
 }));
@@ -55,33 +56,42 @@ describe("Dashboard", () => {
     });
   });
 
-  it("renders the DASHBOARD heading", () => {
+  it("renders the Dashboard heading", () => {
     render(<Dashboard />);
-    expect(screen.getByText("DASHBOARD")).toBeInTheDocument();
+    expect(screen.getByText("Dashboard")).toBeInTheDocument();
   });
 
-  it("renders the Crosshair icon", () => {
+  it("renders primary New scan CTA", () => {
     render(<Dashboard />);
-    // lucide-react Crosshair renders an SVG — check by heading text which is always present
-    expect(screen.getByText("DASHBOARD")).toBeInTheDocument();
+    expect(screen.getByTestId("new-scan-cta")).toHaveTextContent("New scan");
   });
 
-  it("renders stat cards with zero values when no scans", () => {
+  it("opens New scan menu with scan type links", async () => {
     render(<Dashboard />);
-    expect(screen.getByText("Total Scans")).toBeInTheDocument();
+    await userEvent.click(screen.getByTestId("new-scan-cta"));
+    expect(screen.getByRole("menuitem", { name: /IP scan/i })).toHaveAttribute("href", "/scan/ip");
+    expect(screen.getByRole("menuitem", { name: /Domain scan/i })).toHaveAttribute("href", "/scan/domain");
+    expect(screen.getByRole("menuitem", { name: /Mobile scan/i })).toHaveAttribute("href", "/scan/mobile");
+  });
+
+  it("renders findings-by-severity KPI labels", () => {
+    render(<Dashboard />);
+    expect(screen.getByText("Findings by severity")).toBeInTheDocument();
+    expect(screen.getByText("Total scans")).toBeInTheDocument();
     expect(screen.getByText("Critical")).toBeInTheDocument();
     expect(screen.getByText("High")).toBeInTheDocument();
     expect(screen.getByText("Medium")).toBeInTheDocument();
+    expect(screen.getByText("Low + Info")).toBeInTheDocument();
   });
 
-  it("renders SCAN HISTORY section", () => {
+  it("renders Scan history section", () => {
     render(<Dashboard />);
-    expect(screen.getByText("SCAN HISTORY")).toBeInTheDocument();
+    expect(screen.getByText("Scan history")).toBeInTheDocument();
   });
 
-  it("renders QUICK ACTIONS section", () => {
+  it("renders Quick actions section", () => {
     render(<Dashboard />);
-    expect(screen.getByText("QUICK ACTIONS")).toBeInTheDocument();
+    expect(screen.getByText("Quick actions")).toBeInTheDocument();
   });
 
   it("renders quick action links", () => {
@@ -103,7 +113,7 @@ describe("Dashboard", () => {
       isFetching: false,
     });
     render(<Dashboard />);
-    expect(screen.getByText("DASHBOARD")).toBeInTheDocument();
+    expect(screen.getByText("Dashboard")).toBeInTheDocument();
   });
 
   it("renders scan items when history has data", () => {
@@ -133,7 +143,7 @@ describe("Dashboard", () => {
     render(<Dashboard />);
     expect(screen.getByText("example.com")).toBeInTheDocument();
     expect(screen.getByText("completed")).toBeInTheDocument();
-    expect(screen.getByText("5 findings")).toBeInTheDocument();
+    expect(screen.getByText(/5 findings/)).toBeInTheDocument();
   });
 
   it("displays correct scan type label for IP scans", () => {
@@ -176,10 +186,10 @@ describe("Dashboard", () => {
       isFetching: false,
     });
     render(<Dashboard />);
-    expect(screen.getByText("Load More")).toBeInTheDocument();
+    expect(screen.getByText("Load more")).toBeInTheDocument();
   });
 
-  it("shows total scan count", () => {
+  it("shows total scan count in history header", () => {
     mockHistoryData.total = 42;
     mockUseScanHistory.mockReturnValue({
       data: mockHistoryData,
@@ -187,7 +197,7 @@ describe("Dashboard", () => {
       isFetching: false,
     });
     render(<Dashboard />);
-    expect(screen.getByText("42 total")).toBeInTheDocument();
+    expect(screen.getByText(/42 scan/)).toBeInTheDocument();
   });
 
   it("does not show NaN when result_summary is error-only (auto-failed)", () => {
