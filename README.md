@@ -195,8 +195,18 @@ curl http://localhost/api/scan/{id}/export?format=html \
 | `/api/admin/users` | JWT+Admin | `GET` | List/manage users |
 | `/api/admin/pricing` | JWT+Admin | `GET/PUT` | Manage pricing |
 | `/ws/scan/{job_id}` | JWT | WebSocket | Real-time scan progress |
-| `/health` | None | `GET` | Health check |
-| `/metrics` | None | `GET` | Prometheus metrics |
+| `/health` | None | `GET` | DB + Redis health (`200` ok / `503` degraded) |
+| `/health/queues` | None | `GET` | Celery queue depths + `auto_failed` counters |
+| `/metrics` | API Key | `GET` | Prometheus metrics (requires `X-API-Key`) |
+
+### Observability
+
+| Signal | Source | Notes |
+|--------|--------|-------|
+| Queue depth | `GET /health/queues` → `queues.{ip_scan,domain_scan,mobile_scan,dead_letter}` | Public, for uptime monitors |
+| Auto-failed jobs | `GET /health/queues` → `auto_failed.{pending,running}` | Cumulative Redis counters (7d TTL) |
+| Prometheus gauge | `vuln_maintenance_auto_failed_jobs{status=pending\|running}` on `/metrics` | Scrape with API key |
+| Auto-fail alert | Worker `logger.error` + optional Sentry | Fires when count ≥ `AUTO_FAIL_ALERT_THRESHOLD` (default `1`) |
 
 ## Environment Variables
 
@@ -210,6 +220,8 @@ curl http://localhost/api/scan/{id}/export?format=html \
 | `JWT_REFRESH_EXPIRE_DAYS` | `7` | Refresh token TTL |
 | `DATABASE_URL` | `postgresql+asyncpg://...` | PostgreSQL connection string |
 | `REDIS_URL` | `redis://:${REDIS_PASSWORD}@redis:6379/0` | Redis connection string |
+| `SENTRY_DSN` | (empty) | Optional Sentry error tracking |
+| `AUTO_FAIL_ALERT_THRESHOLD` | `1` | Min auto-failed jobs per run to alert |
 
 ## Services
 
@@ -221,6 +233,8 @@ curl http://localhost/api/scan/{id}/export?format=html \
 | ip_worker | — | IP scan tasks |
 | domain_worker | — | Domain scan tasks |
 | mobile_worker | — | Mobile scan tasks |
+| dead_letter_worker | — | Dead-letter queue consumer |
+| celery_beat | — | Periodic maintenance (stale job auto-fail) |
 | postgres | `:5432` | Database |
 | redis | `:6379` | Message broker / cache |
 
