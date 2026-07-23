@@ -60,7 +60,7 @@ app.add_middleware(
 
 app.add_middleware(SecurityHeadersMiddleware)
 
-# Prometheus metrics — registered before ApiKeyMiddleware so /metrics is open
+# Prometheus metrics — /metrics requires X-API-Key (not in EXCLUDED_PATHS)
 from prometheus_fastapi_instrumentator import Instrumentator  # noqa: E402
 
 from app.metrics import register_custom_metrics  # noqa: E402

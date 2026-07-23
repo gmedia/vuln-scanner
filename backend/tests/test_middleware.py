@@ -34,6 +34,17 @@ def test_health_queues_excluded_from_auth(client):
     assert resp.status_code in (200, 503)
 
 
+def test_metrics_requires_api_key(client):
+    resp = client.get("/metrics")
+    assert resp.status_code == 401
+
+
+def test_metrics_with_api_key(client):
+    resp = client.get("/metrics", headers={"X-API-Key": API_KEY})
+    assert resp.status_code == 200
+    assert "vuln_maintenance_auto_failed_jobs" in resp.text
+
+
 def test_websocket_excluded(client):
     resp = client.get("/ws/scan/some-id")
     assert resp.status_code not in (401, 429)
