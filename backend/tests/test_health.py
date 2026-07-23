@@ -7,6 +7,12 @@ class TestHealthQueuesEndpoint:
         mock_redis.llen = AsyncMock(
             side_effect=lambda q: {"ip_scan": 1, "domain_scan": 0, "mobile_scan": 2, "dead_letter": 3}[q]
         )
+        mock_redis.get = AsyncMock(
+            side_effect=lambda k: {
+                "metrics:maintenance:auto_failed:pending": "4",
+                "metrics:maintenance:auto_failed:running": "1",
+            }.get(k)
+        )
 
         with patch("redis.asyncio.from_url", return_value=mock_redis):
             resp = client.get("/health/queues")
@@ -20,6 +26,18 @@ class TestHealthQueuesEndpoint:
             "mobile_scan": 2,
             "dead_letter": 3,
         }
+        assert data["auto_failed"] == {"pending": 4, "running": 1}
+
+    def test_health_queues_auto_failed_defaults_zero(self, client):
+        mock_redis = AsyncMock()
+        mock_redis.llen = AsyncMock(return_value=0)
+        mock_redis.get = AsyncMock(return_value=None)
+
+        with patch("redis.asyncio.from_url", return_value=mock_redis):
+            resp = client.get("/health/queues")
+
+        assert resp.status_code == 200
+        assert resp.json()["auto_failed"] == {"pending": 0, "running": 0}
 
     def test_health_queues_redis_error(self, client):
         mock_redis = AsyncMock()
