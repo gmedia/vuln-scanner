@@ -30,6 +30,18 @@ export interface PricingItem {
   updated_at: string;
 }
 
+export interface PricingListResponse {
+  items: PricingItem[];
+}
+
+export function normalizePricingList(
+  data: PricingListResponse | PricingItem[] | null | undefined,
+): PricingItem[] {
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.items)) return data.items;
+  return [];
+}
+
 export async function getAdminStats(): Promise<AdminStats> {
   const { data } = await api.get<AdminStats>("/api/admin/stats");
   return data;
@@ -63,8 +75,10 @@ export async function updateUserCredits(
 }
 
 export async function getPricing(): Promise<PricingItem[]> {
-  const { data } = await api.get<PricingItem[]>("/api/admin/pricing");
-  return data;
+  const { data } = await api.get<PricingListResponse | PricingItem[]>(
+    "/api/admin/pricing",
+  );
+  return normalizePricingList(data);
 }
 
 export async function updatePricing(
