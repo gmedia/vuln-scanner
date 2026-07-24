@@ -6,7 +6,7 @@ test.describe("Profile", () => {
     await expect(page.getByRole("heading", { name: "Profile" })).toBeVisible();
     await expect(page.locator("input#profile-email")).toBeVisible();
     await expect(page.locator("input#profile-password")).toBeVisible();
-    await expect(page.locator("text=Current Email")).toBeVisible();
+    await expect(page.locator("text=Current email")).toBeVisible();
   });
 
   test("profile page shows change password form", async ({ page }) => {
@@ -15,7 +15,7 @@ test.describe("Profile", () => {
     await expect(page.locator("input#new-password")).toBeVisible();
     await expect(page.locator("input#confirm-password")).toBeVisible();
     await expect(
-      page.locator("button:has-text('Change Password')"),
+      page.locator("button:has-text('Change password')"),
     ).toBeVisible();
   });
 
@@ -23,7 +23,7 @@ test.describe("Profile", () => {
     page,
   }) => {
     await page.goto("/profile");
-    await page.locator("button:has-text('Change Password')").click();
+    await page.locator("button:has-text('Change password')").click();
     await expect(page.locator("input#current-password:invalid")).toBeVisible();
   });
 
