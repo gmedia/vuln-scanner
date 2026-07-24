@@ -4,14 +4,15 @@ import path from "path";
 test.describe("Mobile Scanner", () => {
   test("loads mobile scanner page with upload area", async ({ page }) => {
     await page.goto("/scan/mobile");
-    await expect(page.locator("h2:has-text('MOBILE SCANNER')")).toBeVisible();
-    await expect(page.locator("text=UPLOAD BINARY")).toBeVisible();
+    await expect(page.locator("h2:has-text('Mobile scanner')")).toBeVisible();
+    await expect(page.locator("text=Upload binary")).toBeVisible();
     await expect(page.locator("text=Drop .apk file here")).toBeVisible();
     await expect(
-      page.locator("text=or click to browse (max 500MB)"),
+      page.locator("text=or drag and drop (max 500MB)"),
     ).toBeVisible();
+    await expect(page.locator("button:has-text('Browse files')")).toBeVisible();
     await expect(
-      page.locator("button:has-text('START MOBILE SCAN')"),
+      page.locator("button:has-text('Start mobile scan')"),
     ).toBeVisible();
   });
 
@@ -40,7 +41,7 @@ test.describe("Mobile Scanner", () => {
   test("submit button disabled when no file selected", async ({ page }) => {
     await page.goto("/scan/mobile");
     await expect(
-      page.locator('button:has-text("START MOBILE SCAN")'),
+      page.locator('button:has-text("Start mobile scan")'),
     ).toBeDisabled();
   });
 
@@ -104,7 +105,7 @@ test.describe("Mobile Scanner", () => {
       mimeType: "application/octet-stream",
       buffer: Buffer.from("PK\x03\x04fake apk content here"),
     });
-    await page.locator('button:has-text("START MOBILE SCAN")').click();
+    await page.locator('button:has-text("Start mobile scan")').click();
     await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, {
       timeout: 15_000,
     });
@@ -112,7 +113,7 @@ test.describe("Mobile Scanner", () => {
 
   test("submit button disabled until file selected", async ({ page }) => {
     await page.goto("/scan/mobile");
-    const button = page.locator('button:has-text("START MOBILE SCAN")');
+    const button = page.locator('button:has-text("Start mobile scan")');
     await expect(button).toBeDisabled();
 
     const fileInput = page.locator('input[type="file"]');

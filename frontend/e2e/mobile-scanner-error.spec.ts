@@ -27,7 +27,7 @@ test.describe("Mobile Scanner Error States", () => {
   test("submit button disabled when no file selected", async ({ page }) => {
     await page.goto("/scan/mobile");
     await expect(
-      page.locator('button:has-text("START MOBILE SCAN")'),
+      page.locator('button:has-text("Start mobile scan")'),
     ).toBeDisabled();
   });
 
@@ -49,7 +49,7 @@ test.describe("Mobile Scanner Error States", () => {
 
     // Submit button should be disabled again
     await expect(
-      page.locator('button:has-text("START MOBILE SCAN")'),
+      page.locator('button:has-text("Start mobile scan")'),
     ).toBeDisabled();
   });
 
@@ -61,7 +61,7 @@ test.describe("Mobile Scanner Error States", () => {
       mimeType: "application/octet-stream",
       buffer: Buffer.from("invalid apk without PK header"),
     });
-    await page.locator('button:has-text("START MOBILE SCAN")').click();
+    await page.locator('button:has-text("Start mobile scan")').click();
 
     // Backend rejects the invalid file (HTTP 400: "File must be a valid ZIP archive").
     // Now exposed via onError callback using error.response?.data?.detail.
