@@ -8,7 +8,7 @@ test.describe("Auth — Reset Password", () => {
   }) => {
     await page.goto("/reset-password");
     await expect(
-      page.locator("h2:has-text('Invalid Reset Link')"),
+      page.locator("h1:has-text('Invalid Reset Link')"),
     ).toBeVisible();
   });
 

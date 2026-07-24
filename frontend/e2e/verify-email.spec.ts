@@ -6,12 +6,13 @@ test.describe("Verify Email", () => {
   test.describe("no token — resend form", () => {
     test("shows VULNSCANNER branding", async ({ page }) => {
       await page.goto("/verify-email");
-      await expect(page.locator("text=VULNSCANNER")).toBeVisible();
+      await expect(page.getByText("VULN")).toBeVisible();
+      await expect(page.getByText("SCAN")).toBeVisible();
     });
 
     test("shows Check Your Email card title", async ({ page }) => {
       await page.goto("/verify-email");
-      await expect(page.locator("text=Check Your Email")).toBeVisible();
+      await expect(page.locator("text=Check your email")).toBeVisible();
     });
 
     test("shows instructional text", async ({ page }) => {
@@ -26,7 +27,7 @@ test.describe("Verify Email", () => {
     test("Back to Login button is visible", async ({ page }) => {
       await page.goto("/verify-email");
       await expect(
-        page.locator("a[href='/login']").locator("text=Back to Login"),
+        page.locator("a[href='/login']").locator("text=Back to sign in"),
       ).toBeVisible();
     });
 
@@ -85,7 +86,7 @@ test.describe("Verify Email", () => {
       await page.goto("/verify-email?token=invalid-token-value");
 
       await expect(
-        page.locator("a[href='/login']").locator("text=Back to Login"),
+        page.locator("a[href='/login']").locator("text=Back to sign in"),
       ).toBeVisible({ timeout: 15_000 });
     });
   });

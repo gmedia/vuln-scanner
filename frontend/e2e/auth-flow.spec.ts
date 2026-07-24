@@ -5,7 +5,7 @@ test.describe("Auth — Login", () => {
 
   test("login page renders correctly", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.locator("h3")).toContainText("Sign In");
+    await expect(page.locator("h1")).toContainText("Sign in");
     await expect(page.locator("input#email")).toBeVisible();
     await expect(page.locator("input#password")).toBeVisible();
     await expect(page.locator("button[type='submit']")).toBeVisible();
@@ -19,7 +19,7 @@ test.describe("Auth — Login", () => {
     await page.locator("input#password").fill("E2eTestPass123!");
     await page.locator("button[type='submit']").click();
     await page.waitForURL("/dashboard", { timeout: 15_000 });
-    await expect(page.locator("h2:has-text('DASHBOARD')")).toBeVisible();
+    await expect(page.locator("h2:has-text('Dashboard')")).toBeVisible();
   });
 
   test("login with invalid credentials shows error", async ({ page }) => {
@@ -49,7 +49,7 @@ test.describe("Auth — Register", () => {
 
   test("register page renders correctly", async ({ page }) => {
     await page.goto("/register");
-    await expect(page.locator("h3")).toContainText("Create Account");
+    await expect(page.locator("h1")).toContainText("Create account");
     await expect(page.locator("input#email")).toBeVisible();
     await expect(page.locator("input#password")).toBeVisible();
     await expect(page.locator("input#confirmPassword")).toBeVisible();
@@ -93,7 +93,7 @@ test.describe("Auth — Register", () => {
     await page.locator("input#confirmPassword").fill("Str0ng!Pass123");
     await page.locator("button[type='submit']").click();
     await expect(
-      page.locator("h2:has-text('Registration Successful!')"),
+      page.locator("h1:has-text('Registration Successful!')"),
     ).toBeVisible({ timeout: 15_000 });
   });
 });
@@ -111,7 +111,7 @@ test.describe("Auth — Logout", () => {
       await expect(signOutBtn).toBeVisible();
       await signOutBtn.click();
       await page.waitForURL("/login", { timeout: 10_000 });
-      await expect(page.locator("h3")).toContainText("Sign In");
+      await expect(page.locator("h1")).toContainText("Sign in");
     }
   });
 
@@ -126,7 +126,7 @@ test.describe("Auth — Logout", () => {
     const freshPage = await freshContext.newPage();
     await freshPage.goto("/dashboard");
     await freshPage.waitForURL("/login", { timeout: 10_000 });
-    await expect(freshPage.locator("h3")).toContainText("Sign In");
+    await expect(freshPage.locator("h1")).toContainText("Sign in");
     await freshContext.close();
   });
 });
