@@ -96,12 +96,16 @@ function Header({ children }: HeaderProps) {
             </button>
 
             {dropdownOpen && (
-              <div className="absolute right-0 top-full mt-1 w-56 rounded-md border border-border bg-card p-1 shadow-lg">
+              <div
+                data-testid="user-menu"
+                className="absolute right-0 top-full z-50 mt-1 w-56 rounded-md border border-border bg-card p-1 shadow-lg"
+              >
                 <div className="px-3 py-2 font-mono text-xs text-muted-foreground">
                   Signed in as <span className="text-foreground">{user.email}</span>
                 </div>
                 <Button
                   variant="ghost"
+                  data-testid="sign-out"
                   onClick={handleSignOut}
                   className="w-full justify-start px-3 py-2 font-mono text-xs text-red-400 hover:bg-red-400/10"
                 >

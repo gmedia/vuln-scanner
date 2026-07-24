@@ -16,7 +16,14 @@ function DomainScanForm() {
   const startDomainScan = useStartDomainScan();
   const handleScanError = useScanError();
   const setActiveScan = useScanStore((s) => s.setActiveScan);
-  const { creditDisplay, checkAndDeduct, refreshAfterScan } = useScanCredit();
+  const {
+    creditDisplay,
+    costPreview,
+    checkAndDeduct,
+    refreshAfterScan,
+    eligible,
+    eligibilityLoading,
+  } = useScanCredit("domain");
 
   const isValidDomain = (d: string) =>
     /^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/.test(d);
@@ -33,8 +40,8 @@ function DomainScanForm() {
       return;
     }
 
-    const { eligible, error: creditError } = await checkAndDeduct("domain");
-    if (!eligible) {
+    const { eligible: canScan, error: creditError } = await checkAndDeduct("domain");
+    if (!canScan) {
       setError(creditError!);
       return;
     }
@@ -47,20 +54,23 @@ function DomainScanForm() {
           refreshAfterScan();
           navigate(`/scan/${data.id}`);
         },
-        onError: (error) => {
-          setError(handleScanError(error));
+        onError: (err) => {
+          setError(handleScanError(err));
         },
       },
     );
   };
+
+  const submitDisabled =
+    startDomainScan.isPending || (!eligibilityLoading && !eligible);
 
   return (
     <div className="space-y-4">
       {creditDisplay}
 
       <div>
-        <label className="mb-1.5 block font-mono text-xs font-medium text-muted-foreground">
-          TARGET DOMAIN
+        <label className="mb-1.5 block font-mono text-xs font-medium text-foreground/70">
+          Target domain
         </label>
         <Input
           type="text"
@@ -72,30 +82,46 @@ function DomainScanForm() {
           }}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
           disabled={startDomainScan.isPending}
-          className="font-mono"
+          className="border-border bg-background font-mono"
         />
-        <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+        <p className="mt-1 font-mono text-xs text-muted-foreground">
           e.g. example.com, sub.example.com
         </p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          data-testid="try-example-domain"
+          className="mt-2"
+          onClick={() => {
+            setDomain("example.com");
+            setError("");
+          }}
+          disabled={startDomainScan.isPending}
+        >
+          Try example.com
+        </Button>
       </div>
 
       {error && <ScanError message={error} />}
 
+      {costPreview}
+
       <Button
         onClick={handleSubmit}
-        disabled={startDomainScan.isPending}
+        disabled={submitDisabled}
         size="lg"
         className="w-full"
       >
         {startDomainScan.isPending ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            INITIALIZING SCAN...
+            Initializing scan...
           </>
         ) : (
           <>
             <Globe className="mr-2 h-4 w-4" />
-            START DOMAIN SCAN
+            Start domain scan
           </>
         )}
       </Button>

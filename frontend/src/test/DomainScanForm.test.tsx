@@ -25,7 +25,11 @@ vi.mock("@/store/scanStore", () => ({
 vi.mock("@/hooks/useScanCredit", () => ({
   useScanCredit: vi.fn(() => ({
     credits: 100,
+    cost: 10,
+    eligible: true,
+    eligibilityLoading: false,
     creditDisplay: React.createElement("div", { "data-testid": "credit-display" }, "Available Credits: 100"),
+    costPreview: React.createElement("div", { "data-testid": "scan-cost-preview" }, "cost"),
     checkAndDeduct: vi.fn().mockResolvedValue({ eligible: true, error: null }),
     refreshAfterScan: vi.fn(),
   })),
@@ -41,9 +45,16 @@ describe("DomainScanForm", () => {
 
   it("renders domain input with label", () => {
     render(<DomainScanForm />);
-    expect(screen.getByText("TARGET DOMAIN")).toBeInTheDocument();
+    expect(screen.getByText("Target domain")).toBeInTheDocument();
     const input = screen.getByPlaceholderText("example.com");
     expect(input).toBeInTheDocument();
+  });
+
+  it("fills domain input when Try example.com chip is clicked", () => {
+    render(<DomainScanForm />);
+    const chip = screen.getByTestId("try-example-domain");
+    fireEvent.click(chip);
+    expect(screen.getByPlaceholderText("example.com")).toHaveValue("example.com");
   });
 
   it("renders submit button", () => {

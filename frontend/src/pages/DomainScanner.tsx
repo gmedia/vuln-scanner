@@ -24,14 +24,14 @@ function DomainScanner() {
         </Link>
         <Globe className="h-6 w-6 text-primary" />
         <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
-          DOMAIN SCANNER
+          Domain scanner
         </h2>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="font-mono text-sm tracking-wide">
-            SCAN TARGET
+            Scan target
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -39,11 +39,29 @@ function DomainScanner() {
         </CardContent>
       </Card>
 
+      {!isScanning && !hasResults && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-mono text-sm tracking-wide">
+              What this scan covers
+            </CardTitle>
+          </CardHeader>
+          <CardContent data-testid="scan-coverage">
+            <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+              <li>DNS resolution and subdomain enumeration</li>
+              <li>SSL/TLS certificate analysis</li>
+              <li>Security headers audit</li>
+              <li>Technology stack fingerprinting</li>
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
       {isScanning && (
         <Card>
           <CardHeader>
             <CardTitle className="font-mono text-sm tracking-wide">
-              SCAN PROGRESS
+              Scan progress
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -65,7 +83,7 @@ function DomainScanner() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="font-mono text-sm tracking-wide">
-                RESULTS
+                Results
               </CardTitle>
               <Badge variant="completed" className="font-mono text-[10px]">
                 COMPLETED

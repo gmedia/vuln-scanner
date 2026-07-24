@@ -22,21 +22,21 @@ test.describe("Dashboard", () => {
     await page.goto("/dashboard");
     await page.locator("text=New IP Scan").click();
     await expect(page).toHaveURL("/scan/ip");
-    await expect(page.locator("h2:has-text('IP SCANNER')")).toBeVisible();
+    await expect(page.locator("h2:has-text('IP scanner')")).toBeVisible();
   });
 
   test("navigates to Domain scanner via quick action", async ({ page }) => {
     await page.goto("/dashboard");
     await page.locator("text=New Domain Scan").click();
     await expect(page).toHaveURL("/scan/domain");
-    await expect(page.locator("h2:has-text('DOMAIN SCANNER')")).toBeVisible();
+    await expect(page.locator("h2:has-text('Domain scanner')")).toBeVisible();
   });
 
   test("navigates to Mobile scanner via quick action", async ({ page }) => {
     await page.goto("/dashboard");
     await page.locator("text=Upload APK/IPA").click();
     await expect(page).toHaveURL("/scan/mobile");
-    await expect(page.locator("h2:has-text('MOBILE SCANNER')")).toBeVisible();
+    await expect(page.locator("h2:has-text('Mobile scanner')")).toBeVisible();
   });
 
   test("shows scan history list when scans exist", async ({ page }) => {

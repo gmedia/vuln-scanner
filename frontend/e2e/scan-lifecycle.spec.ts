@@ -47,7 +47,7 @@ test.describe("Scan Lifecycle", () => {
       // Navigate into scan detail
       await page.locator(`a[href='/scan/${scanId}']`).click();
       await expect(page).toHaveURL(`/scan/${scanId}`);
-      await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({
+      await expect(page.locator("h2:has-text('Scan details')")).toBeVisible({
         timeout: 15_000,
       });
     });
@@ -76,7 +76,7 @@ test.describe("Scan Lifecycle", () => {
 
       // Navigate directly to scan detail — should load
       await page.goto(`/scan/${scanId}`);
-      await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({
+      await expect(page.locator("h2:has-text('Scan details')")).toBeVisible({
         timeout: 15_000,
       });
 

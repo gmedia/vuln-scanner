@@ -58,20 +58,20 @@ describe("MobileScanner", () => {
     );
   }
 
-  it("renders MOBILE SCANNER heading", () => {
+  it("renders Mobile scanner heading", () => {
     vi.mocked(useScanStore).mockReturnValue(null);
     vi.mocked(useScanDetail).mockReturnValue({ data: undefined } as ReturnType<typeof useScanDetail>);
 
     renderPage();
-    expect(screen.getByText("MOBILE SCANNER")).toBeInTheDocument();
+    expect(screen.getByText("Mobile scanner")).toBeInTheDocument();
   });
 
-  it("renders UPLOAD BINARY card", () => {
+  it("renders Upload binary card", () => {
     vi.mocked(useScanStore).mockReturnValue(null);
     vi.mocked(useScanDetail).mockReturnValue({ data: undefined } as ReturnType<typeof useScanDetail>);
 
     renderPage();
-    expect(screen.getByText("UPLOAD BINARY")).toBeInTheDocument();
+    expect(screen.getByText("Upload binary")).toBeInTheDocument();
   });
 
   it("renders the MobileUpload", () => {
@@ -87,7 +87,7 @@ describe("MobileScanner", () => {
     vi.mocked(useScanDetail).mockReturnValue({ data: undefined } as ReturnType<typeof useScanDetail>);
 
     renderPage();
-    expect(screen.queryByText("SCAN PROGRESS")).not.toBeInTheDocument();
+    expect(screen.queryByText("Scan progress")).not.toBeInTheDocument();
   });
 
   it("shows scan progress when scanning", () => {
@@ -97,7 +97,7 @@ describe("MobileScanner", () => {
     } as ReturnType<typeof useScanDetail>);
 
     renderPage();
-    expect(screen.getByText("SCAN PROGRESS")).toBeInTheDocument();
+    expect(screen.getByText("Scan progress")).toBeInTheDocument();
     expect(screen.getByTestId("scan-progress")).toBeInTheDocument();
   });
 

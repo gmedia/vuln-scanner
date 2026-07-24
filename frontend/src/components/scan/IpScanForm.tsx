@@ -18,7 +18,14 @@ function IpScanForm() {
   const startIpScan = useStartIpScan();
   const handleScanError = useScanError();
   const setActiveScan = useScanStore((s) => s.setActiveScan);
-  const { creditDisplay, checkAndDeduct, refreshAfterScan } = useScanCredit();
+  const {
+    creditDisplay,
+    costPreview,
+    checkAndDeduct,
+    refreshAfterScan,
+    eligible,
+    eligibilityLoading,
+  } = useScanCredit("ip");
 
   const isValidIp = (ip: string) =>
     /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/.test(ip);
@@ -38,8 +45,8 @@ function IpScanForm() {
       return;
     }
 
-    const { eligible, error: creditError } = await checkAndDeduct("ip");
-    if (!eligible) {
+    const { eligible: canScan, error: creditError } = await checkAndDeduct("ip");
+    if (!canScan) {
       setError(creditError!);
       return;
     }
@@ -52,20 +59,23 @@ function IpScanForm() {
           refreshAfterScan();
           navigate(`/scan/${data.id}`);
         },
-        onError: (error) => {
-          setError(handleScanError(error));
+        onError: (err) => {
+          setError(handleScanError(err));
         },
       },
     );
   };
+
+  const submitDisabled =
+    startIpScan.isPending || (!eligibilityLoading && !eligible);
 
   return (
     <div className="space-y-4">
       {creditDisplay}
 
       <div>
-        <label className="mb-1.5 block font-mono text-xs font-medium text-muted-foreground">
-          TARGET IP ADDRESS
+        <label className="mb-1.5 block font-mono text-xs font-medium text-foreground/70">
+          Target IP address
         </label>
         <Input
           type="text"
@@ -77,13 +87,13 @@ function IpScanForm() {
           }}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
           disabled={startIpScan.isPending}
-          className="font-mono"
+          className="border-border bg-background font-mono"
         />
       </div>
 
       <div>
-        <label className="mb-1.5 block font-mono text-xs font-medium text-muted-foreground">
-          PORT RANGE
+        <label className="mb-1.5 block font-mono text-xs font-medium text-foreground/70">
+          Port range
         </label>
         <Input
           type="text"
@@ -92,30 +102,32 @@ function IpScanForm() {
           onChange={(e) => setPorts(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
           disabled={startIpScan.isPending}
-          className="font-mono"
+          className="border-border bg-background font-mono"
         />
-        <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+        <p className="mt-1 font-mono text-xs text-muted-foreground">
           Format: start-end (e.g. 1-1000) or comma-separated (e.g. 22,80,443)
         </p>
       </div>
 
       {error && <ScanError message={error} />}
 
+      {costPreview}
+
       <Button
         onClick={handleSubmit}
-        disabled={startIpScan.isPending}
+        disabled={submitDisabled}
         size="lg"
         className="w-full"
       >
         {startIpScan.isPending ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            INITIALIZING SCAN...
+            Initializing scan...
           </>
         ) : (
           <>
             <Radar className="mr-2 h-4 w-4" />
-            START IP SCAN
+            Start IP scan
           </>
         )}
       </Button>

@@ -3,37 +3,37 @@ import { test, expect } from "@playwright/test";
 test.describe("Domain Scanner", () => {
   test("loads domain scanner page with form", async ({ page }) => {
     await page.goto("/scan/domain");
-    await expect(page.locator("h2:has-text('DOMAIN SCANNER')")).toBeVisible();
-    await expect(page.locator("text=SCAN TARGET")).toBeVisible();
+    await expect(page.locator("h2:has-text('Domain scanner')")).toBeVisible();
+    await expect(page.locator("text=Scan target")).toBeVisible();
     await expect(
       page.locator('input[placeholder="example.com"]'),
     ).toBeVisible();
     await expect(
-      page.locator('button:has-text("START DOMAIN SCAN")'),
+      page.locator('button:has-text("Start domain scan")'),
     ).toBeVisible();
   });
 
   test("shows validation error for empty domain", async ({ page }) => {
     await page.goto("/scan/domain");
-    await page.locator('button:has-text("START DOMAIN SCAN")').click();
+    await page.locator('button:has-text("Start domain scan")').click();
     await expect(page.locator("text=Domain name is required")).toBeVisible();
   });
 
   test("shows validation error for invalid domain format", async ({ page }) => {
     await page.goto("/scan/domain");
     await page.locator('input[placeholder="example.com"]').fill("not-a-domain");
-    await page.locator('button:has-text("START DOMAIN SCAN")').click();
+    await page.locator('button:has-text("Start domain scan")').click();
     await expect(page.locator("text=Invalid domain format")).toBeVisible();
   });
 
   test("successful domain scan navigates to scan detail", async ({ page }) => {
     await page.goto("/scan/domain");
     await page.locator('input[placeholder="example.com"]').fill("example.com");
-    await page.locator('button:has-text("START DOMAIN SCAN")').click();
+    await page.locator('button:has-text("Start domain scan")').click();
     await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, {
       timeout: 15_000,
     });
-    await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({
+    await expect(page.locator("h2:has-text('Scan details')")).toBeVisible({
       timeout: 15_000,
     });
   });
@@ -45,7 +45,7 @@ test.describe("Domain Scanner", () => {
     await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, {
       timeout: 15_000,
     });
-    await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({
+    await expect(page.locator("h2:has-text('Scan details')")).toBeVisible({
       timeout: 15_000,
     });
   });

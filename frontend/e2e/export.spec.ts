@@ -50,7 +50,7 @@ test.describe("Export", () => {
     expect(scanStatus).toBe("completed");
 
     await page.goto(`/scan/${id}`);
-    await expect(page.locator("h2:has-text('SCAN DETAILS')")).toBeVisible({
+    await expect(page.locator("h2:has-text('Scan details')")).toBeVisible({
       timeout: 15_000,
     });
 

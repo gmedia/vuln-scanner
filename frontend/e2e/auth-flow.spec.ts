@@ -105,7 +105,9 @@ test.describe("Auth — Logout", () => {
     const userBtn = page.locator("header button:has(svg.lucide-user)");
     if (await userBtn.isVisible().catch(() => false)) {
       await userBtn.click();
-      const signOutBtn = page.locator("text=Sign Out");
+      const userMenu = page.getByTestId("user-menu");
+      await expect(userMenu).toBeVisible();
+      const signOutBtn = page.getByTestId("sign-out");
       await expect(signOutBtn).toBeVisible();
       await signOutBtn.click();
       await page.waitForURL("/login", { timeout: 10_000 });
