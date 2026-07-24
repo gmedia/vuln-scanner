@@ -1,11 +1,12 @@
 import { useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload, Smartphone, Loader2, X, File } from "lucide-react";
+import { Upload, Smartphone, Loader2, X, File, Check } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useStartMobileScan } from "@/hooks/useScan";
 import { useScanError } from "@/hooks/useScanError";
 import { useScanCredit } from "@/hooks/useScanCredit";
 import { useScanStore } from "@/store/scanStore";
+import { cn } from "@/lib/utils";
 import { ScanError } from "./ScanError";
 
 const MAX_FILE_SIZE = 500 * 1024 * 1024;
@@ -20,7 +21,14 @@ function MobileUpload() {
   const startMobileScan = useStartMobileScan();
   const handleScanError = useScanError();
   const setActiveScan = useScanStore((s) => s.setActiveScan);
-  const { creditDisplay, checkAndDeduct, refreshAfterScan } = useScanCredit();
+  const {
+    creditDisplay,
+    costPreview,
+    checkAndDeduct,
+    refreshAfterScan,
+    eligible,
+    eligibilityLoading,
+  } = useScanCredit(platform === "android" ? "apk" : "ipa");
 
   const validateFile = useCallback((f: File): string | null => {
     const ext = f.name.split(".").pop()?.toLowerCase();
@@ -75,8 +83,8 @@ function MobileUpload() {
     }
 
     const scanType = platform === "android" ? "apk" : "ipa";
-    const { eligible, error: creditError } = await checkAndDeduct(scanType);
-    if (!eligible) {
+    const { eligible: canScan, error: creditError } = await checkAndDeduct(scanType);
+    if (!canScan) {
       setError(creditError!);
       return;
     }
@@ -89,8 +97,8 @@ function MobileUpload() {
           refreshAfterScan();
           navigate(`/scan/${data.id}`);
         },
-        onError: (error) => {
-          setError(handleScanError(error));
+        onError: (err) => {
+          setError(handleScanError(err));
         },
       },
     );
@@ -108,43 +116,63 @@ function MobileUpload() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const selectPlatform = (next: "android" | "ios") => {
+    setPlatform(next);
+    setFile(null);
+    setError("");
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const submitDisabled =
+    !file || startMobileScan.isPending || (!eligibilityLoading && !eligible);
+
   return (
     <div className="space-y-4">
       {creditDisplay}
 
       <div>
-        <label className="mb-1.5 block font-mono text-xs font-medium text-muted-foreground">
-          PLATFORM
+        <label className="mb-1.5 block font-mono text-xs font-medium text-foreground/70">
+          Platform
         </label>
         <div className="flex gap-2">
           <Button
-            variant={platform === "android" ? "default" : "outline"}
+            type="button"
+            variant="outline"
             size="sm"
-            onClick={() => {
-              setPlatform("android");
-              setFile(null);
-              setError("");
-              if (fileRef.current) fileRef.current.value = "";
-            }}
+            aria-pressed={platform === "android"}
+            onClick={() => selectPlatform("android")}
             disabled={startMobileScan.isPending}
-            className="flex-1"
+            className={cn(
+              "flex-1",
+              platform === "android" &&
+                "ring-2 ring-primary bg-primary/10 text-foreground",
+            )}
           >
-            <Smartphone className="mr-1.5 h-4 w-4" />
+            {platform === "android" ? (
+              <Check className="mr-1.5 h-4 w-4" aria-hidden />
+            ) : (
+              <Smartphone className="mr-1.5 h-4 w-4" aria-hidden />
+            )}
             Android (.apk)
           </Button>
           <Button
-            variant={platform === "ios" ? "default" : "outline"}
+            type="button"
+            variant="outline"
             size="sm"
-            onClick={() => {
-              setPlatform("ios");
-              setFile(null);
-              setError("");
-              if (fileRef.current) fileRef.current.value = "";
-            }}
+            aria-pressed={platform === "ios"}
+            onClick={() => selectPlatform("ios")}
             disabled={startMobileScan.isPending}
-            className="flex-1"
+            className={cn(
+              "flex-1",
+              platform === "ios" &&
+                "ring-2 ring-primary bg-primary/10 text-foreground",
+            )}
           >
-            <Smartphone className="mr-1.5 h-4 w-4" />
+            {platform === "ios" ? (
+              <Check className="mr-1.5 h-4 w-4" aria-hidden />
+            ) : (
+              <Smartphone className="mr-1.5 h-4 w-4" aria-hidden />
+            )}
             iOS (.ipa)
           </Button>
         </div>
@@ -166,32 +194,44 @@ function MobileUpload() {
           }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
-          onClick={() => fileRef.current?.click()}
-          className={`
-            flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-8
-            transition-all duration-200
-            ${isDragging
+          className={cn(
+            "flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-all duration-200",
+            isDragging
               ? "border-primary bg-primary/5"
-              : "border-border hover:border-muted-foreground/50 hover:bg-muted/50"
-            }
-          `}
+              : "border-muted-foreground/40 bg-muted/30",
+          )}
         >
           <Upload
-            className={`mb-3 h-10 w-10 transition-colors ${isDragging ? "text-primary" : "text-muted-foreground"}`}
+            className={cn(
+              "mb-3 h-10 w-10 transition-colors",
+              isDragging ? "text-primary" : "text-muted-foreground",
+            )}
           />
           <p className="mb-1 font-mono text-sm text-foreground">
             Drop {platform === "android" ? ".apk" : ".ipa"} file here
           </p>
-          <p className="font-mono text-xs text-muted-foreground">
-            or click to browse (max 500MB)
+          <p className="mb-3 font-mono text-xs text-muted-foreground">
+            or drag and drop (max 500MB)
           </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              fileRef.current?.click();
+            }}
+            disabled={startMobileScan.isPending}
+          >
+            Browse files
+          </Button>
         </div>
       ) : (
         <div className="flex items-center justify-between rounded-lg border border-border bg-muted/50 p-4">
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex min-w-0 items-center gap-3">
             <File className="h-8 w-8 shrink-0 text-primary" />
             <div className="min-w-0">
-              <p className="font-mono text-sm text-foreground truncate">{file.name}</p>
+              <p className="truncate font-mono text-sm text-foreground">{file.name}</p>
               <p className="font-mono text-xs text-muted-foreground">
                 {formatSize(file.size)} &middot; .{file.name.split(".").pop()?.toUpperCase()}
               </p>
@@ -202,6 +242,7 @@ function MobileUpload() {
             size="icon"
             onClick={clearFile}
             disabled={startMobileScan.isPending}
+            aria-label="Clear file"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -210,21 +251,23 @@ function MobileUpload() {
 
       {error && <ScanError message={error} showIcon />}
 
+      {costPreview}
+
       <Button
         onClick={handleSubmit}
-        disabled={!file || startMobileScan.isPending}
+        disabled={submitDisabled}
         size="lg"
         className="w-full"
       >
         {startMobileScan.isPending ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ANALYZING BINARY...
+            Analyzing binary...
           </>
         ) : (
           <>
             <Smartphone className="mr-2 h-4 w-4" />
-            START MOBILE SCAN
+            Start mobile scan
           </>
         )}
       </Button>

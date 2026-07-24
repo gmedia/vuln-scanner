@@ -25,7 +25,11 @@ vi.mock("@/store/scanStore", () => ({
 vi.mock("@/hooks/useScanCredit", () => ({
   useScanCredit: vi.fn(() => ({
     credits: 100,
+    cost: 10,
+    eligible: true,
+    eligibilityLoading: false,
     creditDisplay: React.createElement("div", { "data-testid": "credit-display" }, "Available Credits: 100"),
+    costPreview: React.createElement("div", { "data-testid": "scan-cost-preview" }, "cost"),
     checkAndDeduct: vi.fn().mockResolvedValue({ eligible: true, error: null }),
     refreshAfterScan: vi.fn(),
   })),
@@ -41,14 +45,14 @@ describe("IpScanForm", () => {
 
   it("renders target IP input with label", () => {
     render(<IpScanForm />);
-    expect(screen.getByText("TARGET IP ADDRESS")).toBeInTheDocument();
+    expect(screen.getByText("Target IP address")).toBeInTheDocument();
     const input = screen.getByPlaceholderText("192.168.1.1");
     expect(input).toBeInTheDocument();
   });
 
   it("renders port range input with label", () => {
     render(<IpScanForm />);
-    expect(screen.getByText("PORT RANGE")).toBeInTheDocument();
+    expect(screen.getByText("Port range")).toBeInTheDocument();
     const input = screen.getByPlaceholderText("1-1000");
     expect(input).toBeInTheDocument();
   });

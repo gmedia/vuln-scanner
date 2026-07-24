@@ -26,7 +26,11 @@ vi.mock("@/store/scanStore", () => ({
 vi.mock("@/hooks/useScanCredit", () => ({
   useScanCredit: vi.fn(() => ({
     credits: 100,
+    cost: 10,
+    eligible: true,
+    eligibilityLoading: false,
     creditDisplay: React.createElement("div", { "data-testid": "credit-display" }, "Available Credits: 100"),
+    costPreview: React.createElement("div", { "data-testid": "scan-cost-preview" }, "cost"),
     checkAndDeduct: vi.fn().mockResolvedValue({ eligible: true, error: null }),
     refreshAfterScan: vi.fn(),
   })),
@@ -56,19 +60,35 @@ describe("MobileUpload", () => {
       name: /android \(\.apk\)/i,
     });
     expect(androidBtn).toBeInTheDocument();
+    expect(androidBtn).toHaveAttribute("aria-pressed", "true");
     expect(
       screen.getByText(/drop \.apk file here/i),
     ).toBeInTheDocument();
   });
 
-  it("renders drop zone with file type text", () => {
+  it("renders drop zone with file type text and Browse files", () => {
     render(<MobileUpload />);
     expect(
       screen.getByText(/drop \.apk file here/i),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/or click to browse \(max 500MB\)/i),
+      screen.getByText(/or drag and drop \(max 500MB\)/i),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /browse files/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("sets aria-pressed on platform selection", async () => {
+    const user = userEvent.setup();
+    render(<MobileUpload />);
+    const androidBtn = screen.getByRole("button", { name: /android \(\.apk\)/i });
+    const iosBtn = screen.getByRole("button", { name: /ios \(\.ipa\)/i });
+    expect(androidBtn).toHaveAttribute("aria-pressed", "true");
+    expect(iosBtn).toHaveAttribute("aria-pressed", "false");
+    await user.click(iosBtn);
+    expect(iosBtn).toHaveAttribute("aria-pressed", "true");
+    expect(androidBtn).toHaveAttribute("aria-pressed", "false");
   });
 
   it("submit button is disabled when no file selected", () => {
@@ -151,7 +171,7 @@ describe("MobileUpload", () => {
     await waitFor(() => {
       expect(screen.getByText("test.apk")).toBeInTheDocument();
     });
-    const clearBtn = screen.getByRole("button", { name: "" });
+    const clearBtn = screen.getByRole("button", { name: /clear file/i });
     await user.click(clearBtn);
     await waitFor(() => {
       expect(screen.queryByText("test.apk")).not.toBeInTheDocument();
@@ -219,13 +239,12 @@ describe("MobileUpload", () => {
     expect(dropZone).not.toHaveClass("border-primary");
   });
 
-  it("clicking drop zone triggers file input", async () => {
+  it("clicking Browse files triggers file input", async () => {
     const user = userEvent.setup();
     render(<MobileUpload />);
-    const dropZone = screen.getByText(/drop \.apk file here/i).parentElement as HTMLElement;
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     const clickSpy = vi.spyOn(fileInput, "click");
-    await user.click(dropZone);
+    await user.click(screen.getByRole("button", { name: /browse files/i }));
     expect(clickSpy).toHaveBeenCalled();
   });
 
@@ -295,7 +314,7 @@ describe("MobileUpload", () => {
   it("drop zone has correct styling when not dragging", () => {
     render(<MobileUpload />);
     const dropZone = screen.getByText(/drop \.apk file here/i).parentElement as HTMLElement;
-    expect(dropZone.className).toContain("border-border");
+    expect(dropZone.className).toContain("border-muted-foreground/40");
   });
 
   it("shows upload icon in drop zone", () => {
