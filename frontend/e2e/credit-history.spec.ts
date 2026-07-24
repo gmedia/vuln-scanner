@@ -1,14 +1,14 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Credit History", () => {
-  test("page loads with CREDIT HISTORY heading", async ({ page }) => {
+  test("page loads with Credit history heading", async ({ page }) => {
     await page.goto("/credit-history");
-    await expect(page.locator("h2:has-text('CREDIT HISTORY')")).toBeVisible();
+    await expect(page.locator("h2:has-text('Credit history')")).toBeVisible();
   });
 
-  test("TRANSACTIONS card title is visible", async ({ page }) => {
+  test("Transactions card title is visible", async ({ page }) => {
     await page.goto("/credit-history");
-    await expect(page.locator("text=TRANSACTIONS")).toBeVisible();
+    await expect(page.locator("text=Transactions")).toBeVisible();
   });
 
   test("shows loading skeletons initially then resolves", async ({ page }) => {
