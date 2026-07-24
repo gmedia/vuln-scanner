@@ -6,8 +6,12 @@ test.describe("Verify Email", () => {
   test.describe("no token — resend form", () => {
     test("shows VULNSCANNER branding", async ({ page }) => {
       await page.goto("/verify-email");
-      await expect(page.getByText("VULN")).toBeVisible();
-      await expect(page.getByText("SCAN")).toBeVisible();
+      await expect(
+        page.locator("span.font-mono").filter({ hasText: "VULN" }).first(),
+      ).toBeVisible();
+      await expect(
+        page.locator("span.text-primary").filter({ hasText: "SCAN" }).first(),
+      ).toBeVisible();
     });
 
     test("shows Check Your Email card title", async ({ page }) => {
@@ -76,10 +80,9 @@ test.describe("Verify Email", () => {
         timeout: 15_000,
       });
 
-      const errorOrFailed = page.locator(
-        "text=/Verification failed|kadaluarsa/i",
-      );
-      await expect(errorOrFailed).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: /Verification failed/i }),
+      ).toBeVisible();
     });
 
     test("Back to Login button visible in error state", async ({ page }) => {

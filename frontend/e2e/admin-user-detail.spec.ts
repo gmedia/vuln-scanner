@@ -114,7 +114,7 @@ test.describe("Admin — User Detail", () => {
       })
       .catch(() => {});
 
-    await expect(page.locator("text=/Joined \\d/")).toBeVisible();
+    await expect(page.locator("text=/Joined [A-Za-z]/")).toBeVisible();
   });
 
   test("scan count is visible", async ({ page }) => {
