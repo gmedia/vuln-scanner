@@ -5,7 +5,7 @@ test.describe("Auth — Forgot Password", () => {
 
   test("forgot password page renders correctly", async ({ page }) => {
     await page.goto("/forgot-password");
-    await expect(page.locator("h3")).toContainText("Reset Password");
+    await expect(page.locator("h1")).toContainText("Forgot password");
     await expect(page.locator("input#email")).toBeVisible();
     await expect(page.locator("button[type='submit']")).toBeVisible();
   });
@@ -16,7 +16,7 @@ test.describe("Auth — Forgot Password", () => {
     await page.goto("/forgot-password");
     await page.locator("input#email").fill("e2e@vulnscan.dev");
     await page.locator("button[type='submit']").click();
-    await expect(page.locator("h2:has-text('Check Your Email')")).toBeVisible({
+    await expect(page.locator("h1:has-text('Check Your Email')")).toBeVisible({
       timeout: 15_000,
     });
   });

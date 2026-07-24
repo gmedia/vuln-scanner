@@ -73,9 +73,9 @@ describe("Register", () => {
     expect(button).not.toBeDisabled();
   });
 
-  it("renders the Crosshair icon and Create Account title", () => {
+  it("renders the Crosshair icon and Create account title", () => {
     render(<Register />);
-    expect(screen.getByRole("heading", { name: "Create Account" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /create account/i })).toBeInTheDocument();
   });
 
   it("renders Sign in link", () => {
@@ -99,7 +99,7 @@ describe("Register", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /create account/i }));
     await waitFor(() => {
-      expect(screen.getByText("Kata sandi minimal 8 karakter")).toBeInTheDocument();
+      expect(screen.getByText("Password must be at least 8 characters")).toBeInTheDocument();
     });
     expect(defaultAuthState.register).not.toHaveBeenCalled();
   });
@@ -117,7 +117,7 @@ describe("Register", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /create account/i }));
     await waitFor(() => {
-      expect(screen.getByText("Kata sandi tidak cocok")).toBeInTheDocument();
+      expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
     });
     expect(defaultAuthState.register).not.toHaveBeenCalled();
   });

@@ -10,7 +10,7 @@ test.describe("Admin — Access", () => {
     page,
   }) => {
     await page.goto("/admin/users");
-    await expect(page.locator("h2:has-text('USER MANAGEMENT')")).toBeVisible({
+    await expect(page.locator("h2:has-text('User management')")).toBeVisible({
       timeout: 15_000,
     });
   });
@@ -25,7 +25,7 @@ test.describe("Admin — Access", () => {
         timeout: 15_000,
       })
       .catch(() => {});
-    await expect(page.locator("h2:has-text('USER DETAILS')")).toBeVisible({
+    await expect(page.locator("h2:has-text('User details')")).toBeVisible({
       timeout: 15_000,
     });
   });

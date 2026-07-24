@@ -66,9 +66,19 @@ describe("Login", () => {
     expect(button).not.toBeDisabled();
   });
 
-  it("renders the Crosshair icon and Sign In title", () => {
+  it("renders the Crosshair icon and Sign in title", () => {
     render(<Login />);
-    expect(screen.getByRole("heading", { name: "Sign In" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /sign in/i })).toBeInTheDocument();
+  });
+
+  it("toggles password visibility", () => {
+    render(<Login />);
+    const passwordInput = screen.getByLabelText("Password");
+    expect(passwordInput).toHaveAttribute("type", "password");
+    fireEvent.click(screen.getByRole("button", { name: /show password/i }));
+    expect(passwordInput).toHaveAttribute("type", "text");
+    fireEvent.click(screen.getByRole("button", { name: /hide password/i }));
+    expect(passwordInput).toHaveAttribute("type", "password");
   });
 
   it("renders Forgot password? link", () => {

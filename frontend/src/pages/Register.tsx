@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Crosshair, Loader2, CheckCircle } from "lucide-react";
+import { Eye, EyeOff, Loader2, CheckCircle } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { Card, CardContent } from "@/components/ui/Card";
+import AuthLayout from "@/components/layout/AuthLayout";
 
 function Register() {
   const navigate = useNavigate();
@@ -12,6 +13,8 @@ function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,11 +44,11 @@ function Register() {
     setValidationError(null);
 
     if (password.length < 8) {
-      setValidationError("Kata sandi minimal 8 karakter");
+      setValidationError("Password must be at least 8 characters");
       return;
     }
     if (password !== confirmPassword) {
-      setValidationError("Kata sandi tidak cocok");
+      setValidationError("Passwords do not match");
       return;
     }
 
@@ -61,13 +64,10 @@ function Register() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <Card className="w-full max-w-md">
+      <AuthLayout title="Registration Successful!">
+        <Card className="w-full">
           <CardContent className="pt-6 text-center space-y-4">
             <CheckCircle className="h-12 w-12 text-primary mx-auto" />
-            <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
-              Registration Successful!
-            </h2>
             <p className="font-mono text-xs text-muted-foreground">
               Check your email to verify your account.
             </p>
@@ -78,30 +78,27 @@ function Register() {
             </Link>
           </CardContent>
         </Card>
-      </div>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Crosshair className="h-6 w-6 text-primary" />
-          </div>
-          <CardTitle className="font-mono text-lg tracking-wide">
-            Create Account
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+    <AuthLayout title="Create account">
+      <Card className="w-full">
+        <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {(error || validationError) && (
-              <p className="font-mono text-xs text-red-400 text-center">
-                {validationError || error}
-              </p>
-            )}
+            <div className="min-h-[1.25rem]">
+              {(error || validationError) && (
+                <p className="font-mono text-xs text-red-400 text-center">
+                  {validationError || error}
+                </p>
+              )}
+            </div>
             <div className="space-y-2">
-              <label htmlFor="email" className="block font-mono text-xs text-muted-foreground">
+              <label
+                htmlFor="email"
+                className="block font-mono text-xs text-muted-foreground"
+              >
                 Email
               </label>
               <Input
@@ -115,34 +112,80 @@ function Register() {
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor="password" className="block font-mono text-xs text-muted-foreground">
+              <label
+                htmlFor="password"
+                className="block font-mono text-xs text-muted-foreground"
+              >
                 Password
               </label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                disabled={isSubmitting}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  disabled={isSubmitting}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground hover:text-foreground"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
             <div className="space-y-2">
-              <label htmlFor="confirmPassword" className="block font-mono text-xs text-muted-foreground">
+              <label
+                htmlFor="confirmPassword"
+                className="block font-mono text-xs text-muted-foreground"
+              >
                 Confirm Password
               </label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                disabled={isSubmitting}
-              />
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  disabled={isSubmitting}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground hover:text-foreground"
+                  aria-label={
+                    showConfirmPassword
+                      ? "Hide confirm password"
+                      : "Show confirm password"
+                  }
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
-            <Button type="submit" className="w-full font-mono text-sm" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              className="w-full font-mono text-sm"
+              disabled={isSubmitting}
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -161,7 +204,7 @@ function Register() {
           </p>
         </CardContent>
       </Card>
-    </div>
+    </AuthLayout>
   );
 }
 

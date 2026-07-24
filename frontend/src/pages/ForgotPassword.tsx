@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Crosshair, Loader2, ArrowLeft, CheckCircle, Timer } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle, Timer } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useRateLimitCooldown } from "@/hooks/useRateLimitCooldown";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { Card, CardContent } from "@/components/ui/Card";
+import AuthLayout from "@/components/layout/AuthLayout";
 
 function ForgotPassword() {
   const { forgotPassword, error, clearError } = useAuthStore();
@@ -28,7 +29,6 @@ function ForgotPassword() {
       setSuccess(true);
     } else {
       setIsSubmitting(false);
-      // Start cooldown on rate limit
       const errMsg = useAuthStore.getState().error;
       if (errMsg) {
         const match = errMsg.match(/wait (\d+) seconds/);
@@ -41,13 +41,10 @@ function ForgotPassword() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <Card className="w-full max-w-md">
+      <AuthLayout title="Check Your Email">
+        <Card className="w-full">
           <CardContent className="pt-6 text-center space-y-4">
             <CheckCircle className="h-12 w-12 text-primary mx-auto" />
-            <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
-              Check Your Email
-            </h2>
             <p className="font-mono text-xs text-muted-foreground">
               We've sent a password reset link to your email address.
             </p>
@@ -58,36 +55,36 @@ function ForgotPassword() {
             </Link>
           </CardContent>
         </Card>
-      </div>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Crosshair className="h-6 w-6 text-primary" />
-          </div>
-          <CardTitle className="font-mono text-lg tracking-wide">
-            Reset Password
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+    <AuthLayout
+      title="Forgot password"
+      subtitle="Enter your email and we'll send a reset link."
+    >
+      <Card className="w-full">
+        <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {cooldown > 0 && (
-              <p className="font-mono text-xs text-amber-400 text-center flex items-center justify-center gap-1">
-                <Timer className="h-3 w-3" />
-                Too many attempts. Wait {cooldown}s
-              </p>
-            )}
-            {error && cooldown === 0 && (
-              <p className="font-mono text-xs text-red-400 text-center">
-                {error}
-              </p>
-            )}
+            <div className="min-h-[1.25rem]">
+              {cooldown > 0 && (
+                <p className="font-mono text-xs text-amber-400 text-center flex items-center justify-center gap-1">
+                  <Timer className="h-3 w-3" />
+                  Too many attempts. Wait {cooldown}s
+                </p>
+              )}
+              {error && cooldown === 0 && (
+                <p className="font-mono text-xs text-red-400 text-center">
+                  {error}
+                </p>
+              )}
+            </div>
             <div className="space-y-2">
-              <label htmlFor="email" className="block font-mono text-xs text-muted-foreground">
+              <label
+                htmlFor="email"
+                className="block font-mono text-xs text-muted-foreground"
+              >
                 Email
               </label>
               <Input
@@ -100,7 +97,11 @@ function ForgotPassword() {
                 disabled={isSubmitting}
               />
             </div>
-            <Button type="submit" className="w-full font-mono text-sm" disabled={isSubmitting || cooldown > 0}>
+            <Button
+              type="submit"
+              className="w-full font-mono text-sm"
+              disabled={isSubmitting || cooldown > 0}
+            >
               {cooldown > 0 ? (
                 <>
                   <Timer className="mr-2 h-4 w-4" />
@@ -116,15 +117,18 @@ function ForgotPassword() {
               )}
             </Button>
           </form>
-          <p className="mt-6 text-center font-mono text-xs text-muted-foreground">
-            <Link to="/login" className="inline-flex items-center gap-1 hover:text-primary hover:underline">
+          <p className="mt-6 text-center font-mono text-xs">
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-1 text-foreground/80 hover:text-primary hover:underline"
+            >
               <ArrowLeft className="h-3 w-3" />
               Back to sign in
             </Link>
           </p>
         </CardContent>
       </Card>
-    </div>
+    </AuthLayout>
   );
 }
 

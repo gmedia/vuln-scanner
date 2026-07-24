@@ -52,25 +52,29 @@ describe("VerifyEmail", () => {
   });
 
   describe("no token", () => {
-    it("renders Check Your Email heading", () => {
+    it("renders Check your email heading", () => {
       render(<VerifyEmail />);
       expect(
-        screen.getByRole("heading", { name: "Check Your Email" }),
+        screen.getByRole("heading", { name: /check your email/i }),
       ).toBeInTheDocument();
     });
 
-    it("renders VULNSCANNER branding", () => {
+    it("renders VULNSCAN branding", () => {
       render(<VerifyEmail />);
-      expect(screen.getByText("VULNSCANNER")).toBeInTheDocument();
+      expect(screen.getByText(/VULN/)).toBeInTheDocument();
+      expect(screen.getByText(/SCAN/)).toBeInTheDocument();
     });
 
-    it("renders Back to Login link", () => {
+    it("renders Back to sign in secondary link", () => {
       render(<VerifyEmail />);
-      expect(screen.getByRole("link", { name: "Back to Login" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: /back to sign in/i }),
+      ).toBeInTheDocument();
     });
 
-    it("renders resend email form with input and button", () => {
+    it("renders resend email form with labeled input and button", () => {
       render(<VerifyEmail />);
+      expect(screen.getByLabelText("Email")).toBeInTheDocument();
       expect(screen.getByPlaceholderText("you@example.com")).toBeInTheDocument();
       expect(
         screen.getByRole("button", { name: "Resend Verification Email" }),
@@ -154,10 +158,10 @@ describe("VerifyEmail", () => {
       searchParams = new URLSearchParams({ token: "valid-token" });
     });
 
-    it("renders Verifying Email heading", () => {
+    it("renders Verifying email heading", () => {
       render(<VerifyEmail />);
       expect(
-        screen.getByRole("heading", { name: "Verifying Email" }),
+        screen.getByRole("heading", { name: /verifying email/i }),
       ).toBeInTheDocument();
     });
 
@@ -189,21 +193,21 @@ describe("VerifyEmail", () => {
       });
     });
 
-    it("shows Go to Dashboard button on success", async () => {
+    it("shows Go to dashboard button on success", async () => {
       render(<VerifyEmail />);
 
       await waitFor(() => {
         expect(
-          screen.getByRole("button", { name: "Go to Dashboard" }),
+          screen.getByRole("button", { name: /go to dashboard/i }),
         ).toBeInTheDocument();
       });
     });
 
-    it("navigates to dashboard when Go to Dashboard is clicked", async () => {
+    it("navigates to dashboard when Go to dashboard is clicked", async () => {
       render(<VerifyEmail />);
 
       await waitFor(() => {
-        fireEvent.click(screen.getByRole("button", { name: "Go to Dashboard" }));
+        fireEvent.click(screen.getByRole("button", { name: /go to dashboard/i }));
       });
 
       expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
@@ -214,17 +218,19 @@ describe("VerifyEmail", () => {
       render(<VerifyEmail />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Verification failed/)).toBeInTheDocument();
+        expect(
+          screen.getByText("Verification failed. Please try again."),
+        ).toBeInTheDocument();
       });
     });
 
-    it("shows Back to Login link on error", async () => {
+    it("shows Back to sign in link on error", async () => {
       mockVerifyEmail = vi.fn().mockResolvedValue(false);
       render(<VerifyEmail />);
 
       await waitFor(() => {
         expect(
-          screen.getByRole("link", { name: "Back to Login" }),
+          screen.getByRole("link", { name: /back to sign in/i }),
         ).toBeInTheDocument();
       });
     });

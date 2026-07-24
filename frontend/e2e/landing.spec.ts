@@ -17,21 +17,21 @@ test.describe("Landing", () => {
 
   test("Get Started button links to register", async ({ page }) => {
     await page.goto("/");
-    const getStartedLink = page.locator("a[href='/register']");
+    const getStartedLink = page.locator("a[href='/register']").first();
     await expect(getStartedLink).toBeVisible();
     await expect(getStartedLink.locator("text=Get Started")).toBeVisible();
   });
 
   test("Sign In button links to login", async ({ page }) => {
     await page.goto("/");
-    const signInLink = page.locator("a[href='/login']");
+    const signInLink = page.locator("a[href='/login']").first();
     await expect(signInLink).toBeVisible();
     await expect(signInLink.locator("text=Sign In")).toBeVisible();
   });
 
   test("FEATURES section heading is visible", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("h2:has-text('FEATURES')")).toBeVisible();
+    await expect(page.locator("h2:has-text('Features')")).toBeVisible();
   });
 
   test("renders IP Scanner feature card", async ({ page }) => {
@@ -39,7 +39,7 @@ test.describe("Landing", () => {
     const card = page.locator("text=IP Scanner");
     await expect(card).toBeVisible();
     await expect(
-      page.locator("text=Port scanning with CVE lookup"),
+      page.locator("text=Port scanning with CVE lookup and severity scoring"),
     ).toBeVisible();
   });
 
@@ -48,7 +48,7 @@ test.describe("Landing", () => {
     const card = page.locator("text=Domain Scanner");
     await expect(card).toBeVisible();
     await expect(
-      page.locator("text=SSL/TLS analysis & subdomain enumeration"),
+      page.locator("text=DNS, SSL/TLS, headers, and tech fingerprinting"),
     ).toBeVisible();
   });
 
@@ -57,7 +57,7 @@ test.describe("Landing", () => {
     const card = page.locator("text=Mobile Scanner");
     await expect(card).toBeVisible();
     await expect(
-      page.locator("text=APK/IPA static analysis & secret detection"),
+      page.locator("text=APK/IPA static analysis and secret detection"),
     ).toBeVisible();
   });
 

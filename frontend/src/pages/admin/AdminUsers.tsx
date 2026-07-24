@@ -12,6 +12,14 @@ import type { AdminUserItem } from "@/api/admin";
 
 const PAGE_SIZE = 20;
 
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 function AdminUsers() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
@@ -19,7 +27,8 @@ function AdminUsers() {
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-users", page, search],
-    queryFn: () => adminApi.getUsers({ page, page_size: PAGE_SIZE, search: search || undefined }),
+    queryFn: () =>
+      adminApi.getUsers({ page, page_size: PAGE_SIZE, search: search || undefined }),
   });
 
   const totalPages = Math.ceil((data?.total ?? 0) / PAGE_SIZE);
@@ -28,16 +37,19 @@ function AdminUsers() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex items-center gap-3">
         <Users className="h-6 w-6 text-primary" />
-        <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
-          USER MANAGEMENT
-        </h2>
+        <div>
+          <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
+            User management
+          </h2>
+          <p className="font-mono text-[11px] text-muted-foreground">
+            Search and manage registered accounts
+          </p>
+        </div>
       </div>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <CardTitle className="font-mono text-sm tracking-wide">
-            USERS
-          </CardTitle>
+          <CardTitle className="font-mono text-sm tracking-wide">Users</CardTitle>
           <div className="flex items-center gap-3">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -53,7 +65,7 @@ function AdminUsers() {
               />
             </div>
             {data && data.total > 0 && (
-              <span className="font-mono text-[10px] text-muted-foreground shrink-0">
+              <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
                 {data.total} total
               </span>
             )}
@@ -71,9 +83,7 @@ function AdminUsers() {
               <div className="mb-3 rounded-full bg-muted p-3">
                 <Users className="h-6 w-6 text-muted-foreground opacity-40" />
               </div>
-              <p className="font-mono text-sm text-foreground">
-                No users found
-              </p>
+              <p className="font-mono text-sm text-foreground">No users found</p>
               <p className="font-mono text-xs text-muted-foreground">
                 {search ? "Try a different search term." : "No users registered yet."}
               </p>
@@ -87,15 +97,15 @@ function AdminUsers() {
                       Email
                     </th>
                     <th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Admin
+                      Role
                     </th>
                     <th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
                       Verified
                     </th>
-                    <th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
                       Credits
                     </th>
-                    <th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
                       Scans
                     </th>
                     <th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -152,41 +162,42 @@ function AdminUsers() {
 
 function UserRow({ user, onView }: { user: AdminUserItem; onView: () => void }) {
   return (
-    <tr className="group transition-colors hover:bg-muted/50">
+    <tr className="transition-colors hover:bg-muted/50">
       <td className="px-3 py-3">
-        <span className="font-mono text-xs text-foreground truncate max-w-[200px] block">
+        <span
+          className="block max-w-[200px] truncate font-mono text-xs text-foreground"
+          title={user.email}
+        >
           {user.email}
         </span>
       </td>
       <td className="px-3 py-3">
         <Badge
           variant={user.is_admin ? "completed" : "default"}
-          className="text-[9px] capitalize"
+          className="text-[9px]"
         >
-          {user.is_admin ? "Yes" : "No"}
+          {user.is_admin ? "Admin" : "User"}
         </Badge>
       </td>
       <td className="px-3 py-3">
         <Badge
-          variant={user.is_verified ? "completed" : "default"}
-          className="text-[9px] capitalize"
+          variant={user.is_verified ? "completed" : "pending"}
+          className="text-[9px]"
         >
-          {user.is_verified ? "Yes" : "No"}
+          {user.is_verified ? "Verified" : "Unverified"}
         </Badge>
       </td>
-      <td className="px-3 py-3">
-        <span className="font-mono text-xs text-foreground">
-          {user.credits}
-        </span>
+      <td className="px-3 py-3 text-right">
+        <span className="font-mono text-xs text-foreground">{user.credits}</span>
       </td>
-      <td className="px-3 py-3">
+      <td className="px-3 py-3 text-right">
         <span className="font-mono text-xs text-muted-foreground">
           {user.scan_count}
         </span>
       </td>
       <td className="px-3 py-3">
         <span className="font-mono text-xs text-muted-foreground">
-          {new Date(user.created_at).toLocaleDateString()}
+          {formatDate(user.created_at)}
         </span>
       </td>
       <td className="px-3 py-3 text-right">
@@ -194,9 +205,9 @@ function UserRow({ user, onView }: { user: AdminUserItem; onView: () => void }) 
           variant="ghost"
           size="sm"
           onClick={onView}
-          className="font-mono text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+          className="font-mono text-xs"
         >
-          <Eye className="h-3 w-3 mr-1" />
+          <Eye className="mr-1 h-3 w-3" />
           View
         </Button>
       </td>

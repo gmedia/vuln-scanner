@@ -66,20 +66,26 @@ describe("ResetPassword", () => {
       ).toBeInTheDocument();
     });
 
-    it("renders Back to Sign In link", () => {
+    it("renders Request new link primary CTA to /forgot-password", () => {
       render(<ResetPassword />);
-      expect(screen.getByRole("link", { name: "Back to Sign In" })).toHaveAttribute(
-        "href",
-        "/login",
-      );
+      expect(
+        screen.getByRole("link", { name: /request new link/i }),
+      ).toHaveAttribute("href", "/forgot-password");
+    });
+
+    it("renders Back to sign in secondary link", () => {
+      render(<ResetPassword />);
+      expect(
+        screen.getByRole("link", { name: /back to sign in/i }),
+      ).toHaveAttribute("href", "/login");
     });
   });
 
   describe("with token", () => {
-    it("renders Set New Password heading", () => {
+    it("renders Set new password heading", () => {
       render(<ResetPassword />);
       expect(
-        screen.getByRole("heading", { name: "Set New Password" }),
+        screen.getByRole("heading", { name: /set new password/i }),
       ).toBeInTheDocument();
     });
 
