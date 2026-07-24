@@ -44,10 +44,10 @@ describe("ForgotPassword", () => {
     mockCooldown = 0;
   });
 
-  it("renders the Reset Password heading", () => {
+  it("renders the Forgot password heading", () => {
     render(<ForgotPassword />);
     expect(
-      screen.getByRole("heading", { name: "Reset Password" }),
+      screen.getByRole("heading", { name: /forgot password/i }),
     ).toBeInTheDocument();
   });
 
