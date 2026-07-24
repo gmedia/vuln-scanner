@@ -3,12 +3,12 @@ import { test, expect } from "@playwright/test";
 test.describe("Admin — Users", () => {
   test("page loads with USER MANAGEMENT heading", async ({ page }) => {
     await page.goto("/admin/users");
-    await expect(page.locator("h2:has-text('USER MANAGEMENT')")).toBeVisible();
+    await expect(page.locator("h2:has-text('User management')")).toBeVisible();
   });
 
   test("USERS card title is visible", async ({ page }) => {
     await page.goto("/admin/users");
-    await expect(page.locator("text=USERS")).toBeVisible();
+    await expect(page.locator("text=Users").first()).toBeVisible();
   });
 
   test("table headers are correct", async ({ page }) => {
@@ -21,7 +21,7 @@ test.describe("Admin — Users", () => {
       .catch(() => {});
 
     await expect(page.locator("th:has-text('Email')")).toBeVisible();
-    await expect(page.locator("th:has-text('Admin')")).toBeVisible();
+    await expect(page.locator("th:has-text('Role')")).toBeVisible();
     await expect(page.locator("th:has-text('Verified')")).toBeVisible();
     await expect(page.locator("th:has-text('Credits')")).toBeVisible();
     await expect(page.locator("th:has-text('Scans')")).toBeVisible();
@@ -69,7 +69,7 @@ test.describe("Admin — Users", () => {
       .locator("table tbody tr", {
         has: page.locator("text=e2e@vulnscan.dev"),
       })
-      .locator("td span:has-text('Yes')")
+      .locator("td span:has-text('Admin')")
       .first();
     await expect(adminBadge).toBeVisible();
   });
@@ -135,6 +135,6 @@ test.describe("Admin — Users", () => {
     const viewBtn = page.locator("button:has-text('View')").first();
     await viewBtn.click({ force: true });
     await page.waitForURL(/\/admin\/users\/[a-f0-9-]+/, { timeout: 15_000 });
-    await expect(page.locator("h2:has-text('USER DETAILS')")).toBeVisible();
+    await expect(page.locator("h2:has-text('User details')")).toBeVisible();
   });
 });

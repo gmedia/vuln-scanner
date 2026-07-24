@@ -24,7 +24,7 @@ test.describe("Admin — User Detail", () => {
       })
       .catch(() => {});
 
-    await expect(page.locator("h2:has-text('USER DETAILS')")).toBeVisible();
+    await expect(page.locator("h2:has-text('User details')")).toBeVisible();
   });
 
   test("Back button navigates to user list", async ({ page }) => {
@@ -38,7 +38,7 @@ test.describe("Admin — User Detail", () => {
 
     await page.locator("button:has-text('Back')").click();
     await page.waitForURL("/admin/users", { timeout: 15_000 });
-    await expect(page.locator("h2:has-text('USER MANAGEMENT')")).toBeVisible();
+    await expect(page.locator("h2:has-text('User management')")).toBeVisible();
   });
 
   test("PROFILE card title is visible", async ({ page }) => {
@@ -50,7 +50,9 @@ test.describe("Admin — User Detail", () => {
       })
       .catch(() => {});
 
-    await expect(page.locator("h3:has-text('PROFILE')")).toBeVisible();
+    await expect(
+      page.getByText("Profile", { exact: true }).first(),
+    ).toBeVisible();
   });
 
   test("displays user email", async ({ page }) => {
@@ -136,7 +138,7 @@ test.describe("Admin — User Detail", () => {
       })
       .catch(() => {});
 
-    await expect(page.locator("text=CREDIT ADJUSTMENT")).toBeVisible();
+    await expect(page.locator("text=Credit adjustment")).toBeVisible();
   });
 
   test("ADJUST CREDITS button is disabled when amount is empty", async ({
@@ -150,7 +152,7 @@ test.describe("Admin — User Detail", () => {
       })
       .catch(() => {});
 
-    const adjustBtn = page.locator("button:has-text('ADJUST CREDITS')");
+    const adjustBtn = page.locator("button:has-text('Adjust credits')");
     await expect(adjustBtn).toBeDisabled();
   });
 
@@ -163,10 +165,10 @@ test.describe("Admin — User Detail", () => {
       })
       .catch(() => {});
 
-    const amountInput = page.locator("label:has-text('AMOUNT') + input");
+    const amountInput = page.locator("label:has-text('Amount') + input");
     await amountInput.fill("10");
 
-    const adjustBtn = page.locator("button:has-text('ADJUST CREDITS')");
+    const adjustBtn = page.locator("button:has-text('Adjust credits')");
     await expect(adjustBtn).not.toBeDisabled();
   });
 
@@ -179,15 +181,15 @@ test.describe("Admin — User Detail", () => {
       })
       .catch(() => {});
 
-    const amountInput = page.locator("label:has-text('AMOUNT') + input");
+    const amountInput = page.locator("label:has-text('Amount') + input");
     await amountInput.fill("5");
 
     const descriptionInput = page.locator(
-      "label:has-text('DESCRIPTION') + input",
+      "label:has-text('Description') + input",
     );
     await descriptionInput.fill("e2e test credit");
 
-    await page.locator("button:has-text('ADJUST CREDITS')").click();
+    await page.locator("button:has-text('Adjust credits')").click();
 
     const feedback = page.locator(
       "text=/Credits updated successfully|Failed to update credits/",
