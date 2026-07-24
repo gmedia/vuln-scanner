@@ -11,11 +11,13 @@ vi.mock("react-router-dom", () => ({
 vi.mock("@/components/ui/Button", () => ({
   Button: ({
     children,
+    asChild,
     ...props
   }: {
     children: React.ReactNode;
+    asChild?: boolean;
     [key: string]: unknown;
-  }) => <button {...props}>{children}</button>,
+  }) => (asChild ? <>{children}</> : <button {...props}>{children}</button>),
 }));
 
 describe("NotFound", () => {
@@ -27,8 +29,8 @@ describe("NotFound", () => {
     expect(screen.getByText("404")).toBeInTheDocument();
   });
 
-  it("renders the PAGE NOT FOUND subheading", () => {
-    expect(screen.getByText("PAGE NOT FOUND")).toBeInTheDocument();
+  it("renders the Page not found subheading", () => {
+    expect(screen.getByText("Page not found")).toBeInTheDocument();
   });
 
   it("renders the description text", () => {
@@ -39,10 +41,16 @@ describe("NotFound", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders a Return to Dashboard link", () => {
-    const link = screen.getByRole("link", { name: /Return to Dashboard/i });
+  it("renders a Return to dashboard link", () => {
+    const link = screen.getByRole("link", { name: /Return to dashboard/i });
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute("href", "/dashboard");
+  });
+
+  it("renders a Back to home link", () => {
+    const link = screen.getByRole("link", { name: /Back to home/i });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute("href", "/");
   });
 
   it("renders Crosshair icons", () => {

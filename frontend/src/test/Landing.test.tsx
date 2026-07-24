@@ -38,48 +38,62 @@ describe("Landing Page", () => {
     ).toBeInTheDocument();
   });
 
-  it('renders "Get Started" link pointing to /register', () => {
-    const link = screen.getByRole("link", { name: /get started/i });
-    expect(link).toHaveAttribute("href", "/register");
+  it("renders brand logo in top nav", () => {
+    expect(screen.getByText("VULN")).toBeInTheDocument();
+    expect(screen.getByText("SCAN")).toBeInTheDocument();
   });
 
-  it('renders "Sign In" link pointing to /login', () => {
-    const link = screen.getByRole("link", { name: /sign in/i });
-    expect(link).toHaveAttribute("href", "/login");
+  it('renders "Get Started" links pointing to /register', () => {
+    const links = screen.getAllByRole("link", { name: /get started/i });
+    expect(links.length).toBeGreaterThanOrEqual(1);
+    links.forEach((link) => {
+      expect(link).toHaveAttribute("href", "/register");
+    });
   });
 
-  it("renders FEATURES section heading", () => {
-    expect(screen.getByText("FEATURES")).toBeInTheDocument();
+  it('renders "Sign In" links pointing to /login', () => {
+    const links = screen.getAllByRole("link", { name: /sign in/i });
+    expect(links.length).toBeGreaterThanOrEqual(1);
+    links.forEach((link) => {
+      expect(link).toHaveAttribute("href", "/login");
+    });
+  });
+
+  it("renders trust line with real deploy facts", () => {
+    expect(
+      screen.getByText(/JWT auth · API key access · Docker Compose deploy/),
+    ).toBeInTheDocument();
+  });
+
+  it("renders Features section heading", () => {
+    expect(screen.getByText("Features")).toBeInTheDocument();
   });
 
   it("renders IP Scanner feature card with correct title", () => {
     expect(screen.getByText("IP Scanner")).toBeInTheDocument();
   });
 
-  it("renders IP Scanner feature card with correct description", () => {
-    expect(
-      screen.getByText("Port scanning with CVE lookup"),
-    ).toBeInTheDocument();
+  it("renders IP Scanner capability bullets", () => {
+    expect(screen.getByText("Port scan (nmap)")).toBeInTheDocument();
+    expect(screen.getByText("CVE lookup")).toBeInTheDocument();
   });
 
   it("renders Domain Scanner feature card with correct title", () => {
     expect(screen.getByText("Domain Scanner")).toBeInTheDocument();
   });
 
-  it("renders Domain Scanner feature card with correct description", () => {
-    expect(
-      screen.getByText("SSL/TLS analysis & subdomain enumeration"),
-    ).toBeInTheDocument();
+  it("renders Domain Scanner capability bullets", () => {
+    expect(screen.getByText("DNS & subdomains")).toBeInTheDocument();
+    expect(screen.getByText("SSL/TLS analysis")).toBeInTheDocument();
   });
 
   it("renders Mobile Scanner feature card with correct title", () => {
     expect(screen.getByText("Mobile Scanner")).toBeInTheDocument();
   });
 
-  it("renders Mobile Scanner feature card with correct description", () => {
-    expect(
-      screen.getByText("APK/IPA static analysis & secret detection"),
-    ).toBeInTheDocument();
+  it("renders Mobile Scanner capability bullets", () => {
+    expect(screen.getByText("APK/IPA static analysis")).toBeInTheDocument();
+    expect(screen.getByText("Hardcoded secret scan")).toBeInTheDocument();
   });
 
   it("renders 3 feature cards", () => {
@@ -88,6 +102,6 @@ describe("Landing Page", () => {
   });
 
   it("renders footer with version text", () => {
-    expect(screen.getByText("VulnScanner v0.1.0")).toBeInTheDocument();
+    expect(screen.getByText(/VulnScanner v0\.1\.0/)).toBeInTheDocument();
   });
 });
