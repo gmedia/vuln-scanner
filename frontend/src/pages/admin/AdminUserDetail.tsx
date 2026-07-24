@@ -1,7 +1,18 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, User, Shield, Mail, Calendar, Coins, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  User,
+  Shield,
+  Mail,
+  Calendar,
+  Coins,
+  Loader2,
+  Copy,
+  Check,
+  Radar,
+} from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -9,12 +20,21 @@ import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { adminApi } from "@/api/admin";
 
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 function AdminUserDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const { data: user, isLoading } = useQuery({
     queryKey: ["admin-user", id],
@@ -23,10 +43,11 @@ function AdminUserDetail() {
   });
 
   const updateCredits = useMutation({
-    mutationFn: () => adminApi.updateUserCredits(id!, {
-      amount: parseInt(amount, 10),
-      description: description.trim(),
-    }),
+    mutationFn: () =>
+      adminApi.updateUserCredits(id!, {
+        amount: parseInt(amount, 10),
+        description: description.trim(),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-user", id] });
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
@@ -41,6 +62,17 @@ function AdminUserDetail() {
     updateCredits.mutate();
   };
 
+  const handleCopyEmail = async () => {
+    if (!user?.email) return;
+    try {
+      await navigator.clipboard.writeText(user.email);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      void 0;
+    }
+  };
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-3">
@@ -50,16 +82,21 @@ function AdminUserDetail() {
           onClick={() => navigate("/admin/users")}
           className="font-mono text-xs"
         >
-          <ArrowLeft className="h-4 w-4 mr-1" />
+          <ArrowLeft className="mr-1 h-4 w-4" />
           Back
         </Button>
       </div>
 
       <div className="flex items-center gap-3">
         <User className="h-6 w-6 text-primary" />
-        <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
-          USER DETAILS
-        </h2>
+        <div>
+          <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
+            User details
+          </h2>
+          <p className="font-mono text-[11px] text-muted-foreground">
+            Profile and credit adjustment
+          </p>
+        </div>
       </div>
 
       {isLoading ? (
@@ -77,17 +114,35 @@ function AdminUserDetail() {
           <Card>
             <CardHeader>
               <CardTitle className="font-mono text-sm tracking-wide">
-                PROFILE
+                Profile
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <span className="font-mono text-sm text-foreground">
+                <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span
+                  className="min-w-0 flex-1 truncate font-mono text-sm text-foreground"
+                  title={user.email}
+                >
                   {user.email}
                 </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCopyEmail}
+                  className="shrink-0 font-mono text-xs"
+                  title={copied ? "Copied" : "Copy email"}
+                  aria-label={copied ? "Copied" : "Copy email"}
+                >
+                  {copied ? (
+                    <Check className="h-3.5 w-3.5 text-primary" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5" />
+                  )}
+                </Button>
               </div>
-              <div className="flex items-center gap-6">
+              <div className="flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-2">
                   <Shield className="h-4 w-4 text-muted-foreground" />
                   <Badge
@@ -100,7 +155,7 @@ function AdminUserDetail() {
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
                   <Badge
-                    variant={user.is_verified ? "completed" : "default"}
+                    variant={user.is_verified ? "completed" : "pending"}
                     className="text-[10px]"
                   >
                     {user.is_verified ? "Verified" : "Unverified"}
@@ -108,20 +163,21 @@ function AdminUserDetail() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Coins className="h-4 w-4 text-muted-foreground" />
+                <Coins className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span className="font-mono text-sm text-primary">
                   {user.credits} credits
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <Radar className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span className="font-mono text-xs text-muted-foreground">
-                  Joined {new Date(user.created_at).toLocaleDateString()}
+                  {user.scan_count} scans performed
                 </span>
               </div>
               <div className="flex items-center gap-3">
+                <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span className="font-mono text-xs text-muted-foreground">
-                  {user.scan_count} scans performed
+                  Joined {formatDate(user.created_at)}
                 </span>
               </div>
             </CardContent>
@@ -130,14 +186,14 @@ function AdminUserDetail() {
           <Card>
             <CardHeader>
               <CardTitle className="font-mono text-sm tracking-wide">
-                CREDIT ADJUSTMENT
+                Credit adjustment
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1.5 block font-mono text-xs font-medium text-muted-foreground">
-                    AMOUNT (+ or -)
+                    Amount (+ or −)
                   </label>
                   <Input
                     type="number"
@@ -149,7 +205,7 @@ function AdminUserDetail() {
                 </div>
                 <div>
                   <label className="mb-1.5 block font-mono text-xs font-medium text-muted-foreground">
-                    DESCRIPTION
+                    Description
                   </label>
                   <Input
                     type="text"
@@ -162,16 +218,18 @@ function AdminUserDetail() {
               </div>
               <Button
                 onClick={handleSubmit}
-                disabled={!amount || parseInt(amount, 10) === 0 || updateCredits.isPending}
+                disabled={
+                  !amount || parseInt(amount, 10) === 0 || updateCredits.isPending
+                }
                 className="font-mono text-xs"
               >
                 {updateCredits.isPending ? (
                   <>
-                    <Loader2 className="h-3 w-3 mr-2 animate-spin" />
-                    PROCESSING...
+                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                    Processing...
                   </>
                 ) : (
-                  "ADJUST CREDITS"
+                  "Adjust credits"
                 )}
               </Button>
               {updateCredits.isError && (

@@ -24,30 +24,66 @@ vi.mock("@/api/admin", () => ({
 }));
 
 vi.mock("@/components/ui/Card", () => ({
-  Card: ({ children, ...props }: any) => <div data-testid="card" {...props}>{children}</div>,
-  CardHeader: ({ children, className, ...props }: any) => <div data-testid="card-header" className={className} {...props}>{children}</div>,
-  CardTitle: ({ children, ...props }: any) => <h3 data-testid="card-title" {...props}>{children}</h3>,
-  CardContent: ({ children, ...props }: any) => <div data-testid="card-content" {...props}>{children}</div>,
+  Card: ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => (
+    <div data-testid="card" {...props}>{children}</div>
+  ),
+  CardHeader: ({ children, className, ...props }: { children?: React.ReactNode; className?: string; [key: string]: unknown }) => (
+    <div data-testid="card-header" className={className} {...props}>{children}</div>
+  ),
+  CardTitle: ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => (
+    <h3 data-testid="card-title" {...props}>{children}</h3>
+  ),
+  CardContent: ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => (
+    <div data-testid="card-content" {...props}>{children}</div>
+  ),
 }));
 
 vi.mock("@/components/ui/Button", () => ({
-  Button: ({ children, disabled, onClick, ...props }: any) => (
+  Button: ({
+    children,
+    disabled,
+    onClick,
+    ...props
+  }: {
+    children?: React.ReactNode;
+    disabled?: boolean;
+    onClick?: () => void;
+    [key: string]: unknown;
+  }) => (
     <button disabled={disabled} onClick={onClick} {...props}>{children}</button>
   ),
 }));
 
 vi.mock("@/components/ui/Input", () => ({
-  Input: ({ value, onChange, placeholder, ...props }: any) => (
+  Input: ({
+    value,
+    onChange,
+    placeholder,
+    ...props
+  }: {
+    value?: string;
+    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    placeholder?: string;
+    [key: string]: unknown;
+  }) => (
     <input value={value} onChange={onChange} placeholder={placeholder} {...props} />
   ),
 }));
 
 vi.mock("@/components/ui/Badge", () => ({
-  Badge: ({ children, variant, ...props }: any) => <span data-variant={variant} {...props}>{children}</span>,
+  Badge: ({
+    children,
+    variant,
+    ...props
+  }: {
+    children?: React.ReactNode;
+    variant?: string;
+    [key: string]: unknown;
+  }) => <span data-variant={variant} {...props}>{children}</span>,
 }));
 
 vi.mock("@/components/ui/Skeleton", () => ({
-  Skeleton: (props: any) => <div data-testid="skeleton" {...props} />,
+  Skeleton: (props: { [key: string]: unknown }) => <div data-testid="skeleton" {...props} />,
 }));
 
 import { useQuery } from "@tanstack/react-query";
@@ -76,16 +112,16 @@ describe("AdminUsers", () => {
     );
   }
 
-  it("renders USER MANAGEMENT heading", () => {
+  it("renders User management heading", () => {
     mockUseQueryReturn();
     renderPage();
-    expect(screen.getByText("USER MANAGEMENT")).toBeInTheDocument();
+    expect(screen.getByText("User management")).toBeInTheDocument();
   });
 
-  it("renders USERS card title", () => {
+  it("renders Users card title", () => {
     mockUseQueryReturn();
     renderPage();
-    expect(screen.getByText("USERS")).toBeInTheDocument();
+    expect(screen.getByText("Users")).toBeInTheDocument();
   });
 
   it("renders search input", () => {
@@ -153,20 +189,28 @@ describe("AdminUsers", () => {
       expect(screen.getByText("2 total")).toBeInTheDocument();
     });
 
-    it("renders admin badge for admin user", () => {
+    it("renders Admin badge for admin user", () => {
       mockUseQueryReturn({ data: { users: mockUsers, total: 2 } });
       renderPage();
-      const badges = screen.getAllByText("Yes");
-      // admin user has is_admin:true + is_verified:true = 2 "Yes" badges
-      expect(badges.length).toBe(2);
+      expect(screen.getByText("Admin")).toBeInTheDocument();
     });
 
-    it("renders No badge for non-admin user", () => {
+    it("renders User badge for non-admin user", () => {
       mockUseQueryReturn({ data: { users: mockUsers, total: 2 } });
       renderPage();
-      const badges = screen.getAllByText("No");
-      // non-admin user has is_admin:false + is_verified:false = 2 "No" badges
-      expect(badges.length).toBe(2);
+      expect(screen.getByText("User")).toBeInTheDocument();
+    });
+
+    it("renders Verified and Unverified badges", () => {
+      mockUseQueryReturn({ data: { users: mockUsers, total: 2 } });
+      renderPage();
+      const verifiedBadges = screen
+        .getAllByText("Verified")
+        .filter((el) => el.getAttribute("data-variant") === "completed");
+      expect(verifiedBadges).toHaveLength(1);
+      const unverified = screen.getByText("Unverified");
+      expect(unverified).toBeInTheDocument();
+      expect(unverified).toHaveAttribute("data-variant", "pending");
     });
 
     it("renders credit values", () => {
@@ -183,10 +227,20 @@ describe("AdminUsers", () => {
       expect(screen.getByText("3")).toBeInTheDocument();
     });
 
+    it("sets title tooltip on email cells", () => {
+      mockUseQueryReturn({ data: { users: mockUsers, total: 2 } });
+      renderPage();
+      expect(screen.getByText("admin@test.com")).toHaveAttribute(
+        "title",
+        "admin@test.com",
+      );
+    });
+
     it("navigates to user detail on View click", async () => {
       mockUseQueryReturn({ data: { users: mockUsers, total: 2 } });
       renderPage();
       const viewButtons = screen.getAllByText("View");
+      expect(viewButtons.length).toBe(2);
       await userEvent.click(viewButtons[0]);
       expect(mockNavigate).toHaveBeenCalledWith("/admin/users/1");
     });
