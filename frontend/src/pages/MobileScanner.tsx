@@ -24,14 +24,14 @@ function MobileScanner() {
         </Link>
         <Smartphone className="h-6 w-6 text-primary" />
         <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
-          MOBILE SCANNER
+          Mobile scanner
         </h2>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="font-mono text-sm tracking-wide">
-            UPLOAD BINARY
+            Upload binary
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -39,11 +39,29 @@ function MobileScanner() {
         </CardContent>
       </Card>
 
+      {!isScanning && !hasResults && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-mono text-sm tracking-wide">
+              What this scan covers
+            </CardTitle>
+          </CardHeader>
+          <CardContent data-testid="scan-coverage">
+            <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+              <li>Manifest and permission analysis</li>
+              <li>Exported component detection</li>
+              <li>Hardcoded secret scanning</li>
+              <li>Platform-specific binary checks (.apk / .ipa)</li>
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
       {isScanning && (
         <Card>
           <CardHeader>
             <CardTitle className="font-mono text-sm tracking-wide">
-              SCAN PROGRESS
+              Scan progress
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -65,7 +83,7 @@ function MobileScanner() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="font-mono text-sm tracking-wide">
-                RESULTS
+                Results
               </CardTitle>
               <Badge variant="completed" className="font-mono text-[10px]">
                 COMPLETED

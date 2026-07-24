@@ -24,14 +24,14 @@ function IpScanner() {
         </Link>
         <Radar className="h-6 w-6 text-primary" />
         <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
-          IP SCANNER
+          IP scanner
         </h2>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="font-mono text-sm tracking-wide">
-            SCAN TARGET
+            Scan target
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -39,11 +39,29 @@ function IpScanner() {
         </CardContent>
       </Card>
 
+      {!isScanning && !hasResults && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-mono text-sm tracking-wide">
+              What this scan covers
+            </CardTitle>
+          </CardHeader>
+          <CardContent data-testid="scan-coverage">
+            <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+              <li>Open ports and service versions (nmap)</li>
+              <li>CVE lookup via OSV.dev</li>
+              <li>Severity classification of findings</li>
+              <li>Operating system fingerprinting when available</li>
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
       {isScanning && (
         <Card>
           <CardHeader>
             <CardTitle className="font-mono text-sm tracking-wide">
-              SCAN PROGRESS
+              Scan progress
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -65,7 +83,7 @@ function IpScanner() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="font-mono text-sm tracking-wide">
-                RESULTS
+                Results
               </CardTitle>
               <Badge variant="completed" className="font-mono text-[10px]">
                 COMPLETED
