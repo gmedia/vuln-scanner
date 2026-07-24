@@ -83,6 +83,25 @@ describe("Profile", () => {
       render(<Profile />);
       expect(screen.getByText("user@example.com")).toBeInTheDocument();
     });
+
+    it("starts New email field empty (not prefilled)", () => {
+      render(<Profile />);
+      const emailInput = screen.getByPlaceholderText("new@example.com");
+      expect(emailInput).toHaveValue("");
+      expect(emailInput).not.toHaveValue("user@example.com");
+    });
+
+    it("shows password confirmation helper", () => {
+      render(<Profile />);
+      expect(screen.getByText("Password required to confirm")).toBeInTheDocument();
+    });
+
+    it("shows page subtitle", () => {
+      render(<Profile />);
+      expect(
+        screen.getByText("Manage your account email and password"),
+      ).toBeInTheDocument();
+    });
   });
 
   describe("Update Email form", () => {
@@ -93,10 +112,10 @@ describe("Profile", () => {
       expect(passwordInputs.length).toBeGreaterThanOrEqual(1);
     });
 
-    it("has Update Email button", () => {
+    it("has Update email button", () => {
       render(<Profile />);
       expect(
-        screen.getByRole("button", { name: "Update Email" }),
+        screen.getByRole("button", { name: "Update email" }),
       ).toBeInTheDocument();
     });
 
@@ -109,7 +128,7 @@ describe("Profile", () => {
         target: { value: "currentpass" },
       });
 
-      fireEvent.click(screen.getByRole("button", { name: "Update Email" }));
+      fireEvent.click(screen.getByRole("button", { name: "Update email" }));
 
       await waitFor(() => {
         expect(mockUpdateProfile).toHaveBeenCalledWith(
@@ -128,7 +147,7 @@ describe("Profile", () => {
         target: { value: "currentpass" },
       });
 
-      fireEvent.click(screen.getByRole("button", { name: "Update Email" }));
+      fireEvent.click(screen.getByRole("button", { name: "Update email" }));
 
       await waitFor(() => {
         expect(screen.getByText("Profile updated")).toBeInTheDocument();
@@ -160,7 +179,7 @@ describe("Profile", () => {
         target: { value: "currentpass" },
       });
 
-      fireEvent.click(screen.getByRole("button", { name: "Update Email" }));
+      fireEvent.click(screen.getByRole("button", { name: "Update email" }));
 
       await waitFor(() => {
         expect(screen.getByText("Updating...")).toBeInTheDocument();
@@ -172,20 +191,18 @@ describe("Profile", () => {
     it("renders Current Password, New Password, Confirm New Password inputs", () => {
       render(<Profile />);
       expect(
-        screen.getByRole("heading", { name: "Change Password" }),
+        screen.getByRole("heading", { name: "Change password" }),
       ).toBeInTheDocument();
-      // 2 "••••••••" inputs (Current Password, Confirm New Password) + 1 in update email
-      // New Password has placeholder "Min 8 chars, uppercase, lowercase, digit"
       expect(screen.getAllByPlaceholderText("••••••••")).toHaveLength(3);
       expect(
         screen.getByPlaceholderText("Min 8 chars, uppercase, lowercase, digit"),
       ).toBeInTheDocument();
     });
 
-    it("has Change Password button", () => {
+    it("has Change password button", () => {
       render(<Profile />);
       expect(
-        screen.getByRole("button", { name: "Change Password" }),
+        screen.getByRole("button", { name: "Change password" }),
       ).toBeInTheDocument();
     });
 
@@ -199,7 +216,7 @@ describe("Profile", () => {
       fireEvent.change(newPassInput, { target: { value: "newpass123" } });
       fireEvent.change(passInputs[2], { target: { value: "newpass123" } });
 
-      fireEvent.click(screen.getByRole("button", { name: "Change Password" }));
+      fireEvent.click(screen.getByRole("button", { name: "Change password" }));
 
       await waitFor(() => {
         expect(mockChangePassword).toHaveBeenCalledWith(
@@ -220,7 +237,7 @@ describe("Profile", () => {
       fireEvent.change(newPassInput, { target: { value: "newpass123" } });
       fireEvent.change(passInputs[2], { target: { value: "newpass123" } });
 
-      fireEvent.click(screen.getByRole("button", { name: "Change Password" }));
+      fireEvent.click(screen.getByRole("button", { name: "Change password" }));
 
       await waitFor(() => {
         expect(screen.getByText("Password changed")).toBeInTheDocument();
@@ -240,7 +257,7 @@ describe("Profile", () => {
       fireEvent.change(newPassInput, { target: { value: "newpass123" } });
       fireEvent.change(passInputs[2], { target: { value: "newpass123" } });
 
-      fireEvent.click(screen.getByRole("button", { name: "Change Password" }));
+      fireEvent.click(screen.getByRole("button", { name: "Change password" }));
 
       await waitFor(() => {
         expect(screen.getByText("Invalid current password")).toBeInTheDocument();
@@ -266,7 +283,7 @@ describe("Profile", () => {
       fireEvent.change(newPassInput, { target: { value: "newpass123" } });
       fireEvent.change(passInputs[2], { target: { value: "newpass123" } });
 
-      fireEvent.click(screen.getByRole("button", { name: "Change Password" }));
+      fireEvent.click(screen.getByRole("button", { name: "Change password" }));
 
       await waitFor(() => {
         expect(screen.getByText("Changing...")).toBeInTheDocument();
