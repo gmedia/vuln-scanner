@@ -59,7 +59,7 @@ describe("AdminUserDetail", () => {
       isPending: false,
       isError: false,
       isSuccess: false,
-    } as ReturnType<typeof useMutation>);
+    } as unknown as ReturnType<typeof useMutation>);
   });
 
   it("renders User details heading", () => {
