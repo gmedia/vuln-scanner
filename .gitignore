@@ -18,6 +18,7 @@ coverage.json
 .sisyphus/
 test-results/
 playwright-report/
+.playwright-mcp/
 certbot/www/*
 certbot/conf/*
 backend/coverage.json
