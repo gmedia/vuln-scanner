@@ -174,7 +174,13 @@ function ScanDetail() {
         <QuickStat
           icon={Clock}
           label="Duration"
-          value={duration != null ? formatDuration(duration) : "N/A"}
+          value={
+            duration != null
+              ? formatDuration(duration)
+              : scan.status === "running" || scan.status === "pending"
+                ? "In progress"
+                : "N/A"
+          }
         />
       </div>
 
