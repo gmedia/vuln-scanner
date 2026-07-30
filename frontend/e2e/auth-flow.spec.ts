@@ -103,16 +103,15 @@ test.describe("Auth — Logout", () => {
     await page.goto("/dashboard");
     await page.waitForSelector("header", { timeout: 10_000 });
     const userBtn = page.locator("header button:has(svg.lucide-user)");
-    if (await userBtn.isVisible().catch(() => false)) {
-      await userBtn.click();
-      const userMenu = page.getByTestId("user-menu");
-      await expect(userMenu).toBeVisible();
-      const signOutBtn = page.getByTestId("sign-out");
-      await expect(signOutBtn).toBeVisible();
-      await signOutBtn.click();
-      await page.waitForURL("/login", { timeout: 10_000 });
-      await expect(page.locator("h1")).toContainText("Sign in");
-    }
+    await expect(userBtn).toBeVisible({ timeout: 10_000 });
+    await userBtn.click();
+    const userMenu = page.getByTestId("user-menu");
+    await expect(userMenu).toBeVisible();
+    const signOutBtn = page.getByTestId("sign-out");
+    await expect(signOutBtn).toBeVisible();
+    await signOutBtn.click();
+    await page.waitForURL("/login", { timeout: 10_000 });
+    await expect(page.locator("h1")).toContainText("Sign in");
   });
 
   test("protected route redirects to login when unauthenticated", async ({

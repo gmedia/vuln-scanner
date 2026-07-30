@@ -138,7 +138,9 @@ test.describe("Admin — User Detail", () => {
       })
       .catch(() => {});
 
-    await expect(page.locator("text=Credit adjustment")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Credit adjustment" }),
+    ).toBeVisible();
   });
 
   test("ADJUST CREDITS button is disabled when amount is empty", async ({
