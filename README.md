@@ -239,6 +239,53 @@ sudo cp nginx/vs.appmedia.id.conf /etc/nginx/conf.d/vs.appmedia.id.conf
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
+### Production deploys
+
+| Change type | Script | Notes |
+|-------------|--------|-------|
+| **SPA / frontend only** | [`scripts/deploy-frontend.sh`](scripts/deploy-frontend.sh) | Rebuild + recreate `frontend` only. Prefer for UI waves. |
+| **Full stack** | [`scripts/deploy.sh`](scripts/deploy.sh) | Rebuild all images, restart services, run Alembic. Avoid for SPA-only work. |
+
+```bash
+# On the deploy host after git pull of the target SHA:
+./scripts/deploy-frontend.sh /home/ubuntu/vuln-scanner
+
+# Verify SPA hash flipped + API still healthy:
+curl -sS https://vs.appmedia.id/api/health
+curl -sS https://vs.appmedia.id/ | grep -oE 'assets/index-[^"]+\.js'
+```
+
+### E2E user (prod visual QA / Playwright)
+
+Expected credentials (see `frontend/e2e/global-setup.ts`):
+
+| Field | Value |
+|-------|-------|
+| Email | `e2e@vulnscan.dev` |
+| Password | `E2eTestPass123!` |
+| Flags | `is_admin=true`, `is_verified=true`, credits ≥ 100 |
+
+If login returns 401/403/429, reset on the deploy host:
+
+```bash
+./scripts/ensure_e2e_user.sh
+# optional smoke:
+curl -sS -X POST https://vs.appmedia.id/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"e2e@vulnscan.dev","password":"E2eTestPass123!"}'
+```
+
+Do **not** `POST /api/auth/register` for this email on prod — it creates an unverified user and breaks Playwright.
+
+Wave E full-site screenshots (18 routes, 1440×900):
+
+```bash
+cd frontend && npm ci   # needs @playwright/test
+cd ..
+node scripts/wave-e-screenshots.mjs
+# PNGs + report → .playwright-mcp/screenshots-wave-e/
+```
+
 ## Environment Variables
 
 | Variable | Default | Description |
