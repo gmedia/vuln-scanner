@@ -121,8 +121,9 @@ describe("CreditHistory", () => {
     } as ReturnType<typeof useQuery>);
 
     render(<CreditHistory />);
-    // History icon renders as an SVG with class containing "lucide-history"
-    const svg = document.querySelector("svg.lucide-history");
+    const svg = document.querySelector(
+      "svg.lucide-rotate-ccw-clock, svg.lucide-history",
+    );
     expect(svg).toBeInTheDocument();
   });
 

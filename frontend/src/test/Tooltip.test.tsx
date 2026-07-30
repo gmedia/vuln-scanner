@@ -12,8 +12,7 @@ describe("Tooltip", () => {
         </Tooltip>
       </TooltipProvider>,
     );
-    const elements = screen.getAllByText("Tooltip text");
-    expect(elements.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole("tooltip")).toHaveTextContent("Tooltip text");
   });
 
   it("TooltipContent applies custom className", () => {
@@ -25,11 +24,7 @@ describe("Tooltip", () => {
         </Tooltip>
       </TooltipProvider>,
     );
-    const elements = screen.getAllByText("Tooltip text");
-    const visible = elements.find(
-      (el) => el.getAttribute("role") !== "tooltip",
-    ) as HTMLElement;
-    expect(visible).toHaveClass("custom-tooltip");
+    expect(screen.getByRole("tooltip")).toHaveClass("custom-tooltip");
   });
 
   it("TooltipContent renders with default sideOffset", () => {
@@ -41,11 +36,7 @@ describe("Tooltip", () => {
         </Tooltip>
       </TooltipProvider>,
     );
-    const elements = screen.getAllByText("Tooltip text");
-    const visible = elements.find(
-      (el) => el.getAttribute("role") !== "tooltip",
-    );
-    expect(visible).toBeInTheDocument();
+    expect(screen.getByRole("tooltip")).toBeInTheDocument();
   });
 
   it("TooltipContent applies custom sideOffset", () => {
@@ -57,10 +48,6 @@ describe("Tooltip", () => {
         </Tooltip>
       </TooltipProvider>,
     );
-    const elements = screen.getAllByText("Tooltip text");
-    const visible = elements.find(
-      (el) => el.getAttribute("role") !== "tooltip",
-    );
-    expect(visible).toBeInTheDocument();
+    expect(screen.getByRole("tooltip")).toBeInTheDocument();
   });
 });
