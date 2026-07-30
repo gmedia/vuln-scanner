@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Coins } from "lucide-react";
 import { useCreditStore } from "@/store/creditStore";
+import { formatCredits } from "@/lib/utils";
 
 interface EligibilityResult {
   eligible: boolean;
@@ -55,8 +56,9 @@ export function useScanCredit(scanType: string) {
         <>
           <p className="text-muted-foreground">
             Scan cost:{" "}
-            <span className="font-medium text-foreground tabular-nums">{cost}</span>{" "}
-            credits
+            <span className="font-medium text-foreground tabular-nums">
+              {formatCredits(cost)}
+            </span>
           </p>
           <p className="text-muted-foreground">
             Balance after:{" "}

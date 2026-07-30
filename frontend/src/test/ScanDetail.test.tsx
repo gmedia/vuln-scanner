@@ -243,10 +243,28 @@ describe("ScanDetail", () => {
 
     it("renders N/A duration when not completed", () => {
       mockUseScanDetailReturn({
-        data: { ...baseScan, completed_at: null, started_at: null } as any,
+        data: {
+          ...baseScan,
+          status: "failed",
+          completed_at: null,
+          started_at: null,
+        } as any,
       });
       renderPage();
       expect(screen.getByText("N/A")).toBeInTheDocument();
+    });
+
+    it("renders In progress duration when running", () => {
+      mockUseScanDetailReturn({
+        data: {
+          ...baseScan,
+          status: "running",
+          completed_at: null,
+          started_at: "2025-06-01T10:00:00Z",
+        } as any,
+      });
+      renderPage();
+      expect(screen.getByText("In progress")).toBeInTheDocument();
     });
 
     it("renders Severity card", () => {
@@ -366,7 +384,7 @@ describe("ScanDetail", () => {
       });
       renderPage();
       expect(screen.getByText("running")).toBeInTheDocument();
-      expect(screen.getByText("N/A")).toBeInTheDocument();
+      expect(screen.getByText("In progress")).toBeInTheDocument();
     });
   });
 });

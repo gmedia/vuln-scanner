@@ -55,7 +55,7 @@ function Landing() {
               <Button
                 variant="outline"
                 size="sm"
-                className="font-mono text-xs border-border text-foreground"
+                className="font-mono text-xs border-muted-foreground/50 text-foreground hover:border-foreground/40 hover:bg-accent"
               >
                 Sign In
               </Button>
@@ -91,7 +91,7 @@ function Landing() {
               <Button
                 variant="outline"
                 size="lg"
-                className="font-mono text-sm border-border text-foreground"
+                className="font-mono text-sm border-muted-foreground/50 text-foreground hover:border-foreground/40 hover:bg-accent"
               >
                 Sign In
               </Button>

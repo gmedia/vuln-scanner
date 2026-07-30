@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { adminApi } from "@/api/admin";
+import { formatCredits } from "@/lib/utils";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -165,7 +166,7 @@ function AdminUserDetail() {
               <div className="flex items-center gap-3">
                 <Coins className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span className="font-mono text-sm text-primary">
-                  {user.credits} credits
+                  {formatCredits(user.credits)}
                 </span>
               </div>
               <div className="flex items-center gap-3">
