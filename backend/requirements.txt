@@ -20,7 +20,7 @@ websockets==16.1.1
 pyjwt[crypto]==2.13.0
 bcrypt==5.0.0
 sentry-sdk[fastapi]==2.66.0
-prometheus-fastapi-instrumentator==8.0.2
+prometheus-fastapi-instrumentator==8.1.0
 aiosmtplib==5.1.2
 email-validator==2.3.0
 # Transitive dependency pins for CVE fixes
