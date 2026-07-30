@@ -13,6 +13,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function formatCredits(n: number): string {
+  return `${n} credit${n === 1 ? "" : "s"}`;
+}
+
 export function isValidPort(p: string): boolean {
   const trimmed = p.trim();
   if (!trimmed) return true;

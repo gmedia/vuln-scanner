@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cn, isValidPort } from "@/lib/utils";
+import { cn, formatCredits, isValidPort } from "@/lib/utils";
 
 describe("cn", () => {
   it("returns a string", () => {
@@ -33,6 +33,21 @@ describe("cn", () => {
   it("removes falsey values", () => {
     const result = cn("px-4", false, null, undefined, 0, "py-2");
     expect(result).toBe("px-4 py-2");
+  });
+});
+
+describe("formatCredits", () => {
+  it("uses singular for 1", () => {
+    expect(formatCredits(1)).toBe("1 credit");
+  });
+
+  it("uses plural for 0", () => {
+    expect(formatCredits(0)).toBe("0 credits");
+  });
+
+  it("uses plural for values other than 1", () => {
+    expect(formatCredits(2)).toBe("2 credits");
+    expect(formatCredits(25)).toBe("25 credits");
   });
 });
 
