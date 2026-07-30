@@ -92,13 +92,17 @@ async function resolveDynamicRoutes(request, accessToken) {
   let userId = null;
 
   try {
-    const hist = await request.get(`${BASE_URL}/api/scan/history?page=1&limit=5`, {
-      headers,
-    });
+    const hist = await request.get(
+      `${BASE_URL}/api/scan/history?page=1&limit=20`,
+      { headers },
+    );
     if (hist.ok()) {
       const data = await hist.json();
       const items = data.items || data.scans || [];
-      if (items[0]?.id) scanId = items[0].id;
+      const completed = items.find((i) => i.status === "completed" && i.id);
+      const any = items.find((i) => i.id);
+      if (completed?.id) scanId = completed.id;
+      else if (any?.id) scanId = any.id;
     }
   } catch {
     /* optional */
