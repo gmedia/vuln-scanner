@@ -19,14 +19,13 @@ function AdminDashboard() {
     queryFn: adminApi.getStats,
   });
 
-  const statCards = [
+  const countCards = [
     {
       label: "Total users",
       value: stats?.total_users ?? 0,
       icon: Users,
       color: "text-blue-400",
       bg: "bg-blue-500/10",
-      span: "lg:col-span-2",
     },
     {
       label: "Total scans",
@@ -34,7 +33,6 @@ function AdminDashboard() {
       icon: Radar,
       color: "text-primary",
       bg: "bg-primary/10",
-      span: "lg:col-span-2",
     },
     {
       label: "Total findings",
@@ -42,15 +40,16 @@ function AdminDashboard() {
       icon: Shield,
       color: "text-orange-400",
       bg: "bg-orange-500/10",
-      span: "lg:col-span-2",
     },
+  ];
+
+  const creditCards = [
     {
       label: "Credits distributed",
       value: stats?.credits_distributed ?? 0,
       icon: Coins,
       color: "text-green-400",
       bg: "bg-green-500/10",
-      span: "lg:col-span-3",
     },
     {
       label: "Credits used",
@@ -58,7 +57,6 @@ function AdminDashboard() {
       icon: TrendingUp,
       color: "text-yellow-400",
       bg: "bg-yellow-500/10",
-      span: "lg:col-span-3",
     },
   ];
 
@@ -91,33 +89,63 @@ function AdminDashboard() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
-        {statCards.map((card) => (
-          <Card key={card.label} className={`border-border ${card.span}`}>
-            <CardContent className="flex flex-col items-center justify-center p-4">
-              {isLoading ? (
-                <>
-                  <Skeleton className="mb-2 h-8 w-16" />
-                  <Skeleton className="h-3 w-20" />
-                </>
-              ) : (
-                <>
-                  <div className={`mb-2 rounded-full p-2 ${card.bg}`}>
-                    <card.icon className={`h-4 w-4 ${card.color}`} />
-                  </div>
-                  <span
-                    className={`font-mono text-2xl font-bold tracking-tight ${card.color}`}
-                  >
-                    {card.value.toLocaleString()}
-                  </span>
-                  <span className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                    {card.label}
-                  </span>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+      <div className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {countCards.map((card) => (
+            <Card key={card.label} className="border-border">
+              <CardContent className="flex flex-col items-center justify-center p-4">
+                {isLoading ? (
+                  <>
+                    <Skeleton className="mb-2 h-8 w-16" />
+                    <Skeleton className="h-3 w-20" />
+                  </>
+                ) : (
+                  <>
+                    <div className={`mb-2 rounded-full p-2 ${card.bg}`}>
+                      <card.icon className={`h-4 w-4 ${card.color}`} />
+                    </div>
+                    <span
+                      className={`font-mono text-2xl font-bold tracking-tight ${card.color}`}
+                    >
+                      {card.value.toLocaleString()}
+                    </span>
+                    <span className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {card.label}
+                    </span>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {creditCards.map((card) => (
+            <Card key={card.label} className="border-border">
+              <CardContent className="flex flex-col items-center justify-center p-4">
+                {isLoading ? (
+                  <>
+                    <Skeleton className="mb-2 h-8 w-16" />
+                    <Skeleton className="h-3 w-20" />
+                  </>
+                ) : (
+                  <>
+                    <div className={`mb-2 rounded-full p-2 ${card.bg}`}>
+                      <card.icon className={`h-4 w-4 ${card.color}`} />
+                    </div>
+                    <span
+                      className={`font-mono text-2xl font-bold tracking-tight ${card.color}`}
+                    >
+                      {card.value.toLocaleString()}
+                    </span>
+                    <span className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {card.label}
+                    </span>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
 
       <Card>
