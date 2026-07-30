@@ -50,7 +50,7 @@ function Header({ children }: HeaderProps) {
   }
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border bg-card/50 px-4 backdrop-blur-xs">
+    <header className="relative z-40 flex h-14 shrink-0 items-center gap-4 border-b border-border bg-card/50 px-4 backdrop-blur-xs">
       {children}
       <div className="flex flex-1 items-center justify-between gap-3">
         <h1 className="font-mono text-sm font-bold tracking-wider text-foreground lg:sr-only">
