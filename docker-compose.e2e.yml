@@ -72,8 +72,8 @@ services:
 
   worker_ip:
     build:
-      context: ./workers
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: workers/Dockerfile
     container_name: vuln-worker-ip-e2e
     restart: unless-stopped
     depends_on:
@@ -91,8 +91,8 @@ services:
 
   worker_domain:
     build:
-      context: ./workers
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: workers/Dockerfile
     container_name: vuln-worker-domain-e2e
     restart: unless-stopped
     depends_on:
@@ -114,8 +114,8 @@ services:
 
   worker_mobile:
     build:
-      context: ./workers
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: workers/Dockerfile
     container_name: vuln-worker-mobile-e2e
     restart: unless-stopped
     depends_on:

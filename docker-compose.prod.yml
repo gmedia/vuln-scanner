@@ -125,8 +125,8 @@ services:
 
   worker_ip:
     build:
-      context: ./workers
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: workers/Dockerfile
     container_name: vuln-worker-ip
     restart: unless-stopped
     read_only: true
@@ -168,8 +168,8 @@ services:
 
   worker_domain:
     build:
-      context: ./workers
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: workers/Dockerfile
     container_name: vuln-worker-domain
     restart: unless-stopped
     read_only: true
@@ -205,8 +205,8 @@ services:
 
   worker_mobile:
     build:
-      context: ./workers
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: workers/Dockerfile
     container_name: vuln-worker-mobile
     restart: unless-stopped
     read_only: true
@@ -245,8 +245,8 @@ services:
 
   worker_dead_letter:
     build:
-      context: ./workers
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: workers/Dockerfile
     container_name: vuln-worker-dead-letter
     restart: unless-stopped
     read_only: true
@@ -282,8 +282,8 @@ services:
 
   celery_beat:
     build:
-      context: ./workers
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: workers/Dockerfile
     container_name: vuln-celery-beat
     restart: unless-stopped
     read_only: true
