@@ -115,12 +115,11 @@ class TestFindingsFromNmap:
 
 
 class TestRunNmap:
-    """Cover run_nmap() exit-code paths: success (0), non-zero without fallback trigger, and
-    non-zero with 'Failed to open' that triggers the OS-detection-free retry."""
+    """Cover run_nmap() exit-code paths: success, privilege abort fallback, and double-fail."""
 
     @pytest.mark.asyncio
     async def test_run_nmap_success(self, sample_nmap_xml_open):
-        """Exit code 0 → stdout XML parsed normally."""
+        """Exit code 0 → stdout XML parsed normally; -oX - precedes --."""
         fake_stdout = sample_nmap_xml_open.encode("utf-8")
         fake_stderr = b""
 
@@ -132,14 +131,19 @@ class TestRunNmap:
             result = await run_nmap("192.168.1.1")
 
         mock_exec.assert_called_once()
+        primary_args = mock_exec.call_args_list[0][0]
+        assert primary_args.index("-oX") < primary_args.index("--")
+        assert primary_args[primary_args.index("-oX") + 1] == "-"
+        assert primary_args[-1] == "192.168.1.1"
+        assert "-O" in primary_args
         assert len(result.hosts) == 1
         assert result.hosts[0].ip == "192.168.1.1"
         assert result.hosts[0].os_match == "Linux 5.15"
         assert len(result.hosts[0].ports) == 3
 
     @pytest.mark.asyncio
-    async def test_run_nmap_nonzero_no_fallback(self):
-        """Exit code non-zero with generic stderr → no retry, raw XML is empty string."""
+    async def test_run_nmap_empty_xml_retries_then_empty(self):
+        """Non-zero + empty XML on both attempts → fallback once, empty hosts."""
         fake_stdout = b""
         fake_stderr = b"some generic nmap error"
 
@@ -150,8 +154,7 @@ class TestRunNmap:
         with patch("utils.nmap_runner.asyncio.create_subprocess_exec", return_value=mock_proc) as mock_exec:
             result = await run_nmap("10.0.0.5")
 
-        # Only called once — no fallback triggered
-        mock_exec.assert_called_once()
+        assert mock_exec.call_count == 2
         assert result.hosts == []
 
     @pytest.mark.asyncio
@@ -177,15 +180,43 @@ class TestRunNmap:
 
         assert mock_exec.call_count == 2
 
-        # Second call must NOT contain -O or --osscan-guess
         fallback_cmd_args = mock_exec.call_args_list[1][0]
         assert "-O" not in fallback_cmd_args
         assert "--osscan-guess" not in fallback_cmd_args
+        assert fallback_cmd_args.index("-oX") < fallback_cmd_args.index("--")
 
-        # Result from the second (successful) call
         assert len(result.hosts) == 1
         assert result.hosts[0].ip == "10.0.0.1"
-        assert result.hosts[0].os_match == ""  # no OS in fallback XML
+        assert result.hosts[0].os_match == ""
+
+    @pytest.mark.asyncio
+    async def test_run_nmap_fallback_on_os_requires_root(self, sample_nmap_xml_no_os):
+        """Prod failure: -O fatals with fingerprinting message → unprivileged retry works."""
+        fake_stdout_fail = b""
+        fake_stderr_fail = b"TCP/IP fingerprinting (for OS scan) requires root privileges.\nQUITTING!\n"
+
+        mock_proc_fail = MagicMock()
+        mock_proc_fail.returncode = 1
+        mock_proc_fail.communicate = AsyncMock(return_value=(fake_stdout_fail, fake_stderr_fail))
+
+        fake_stdout_ok = sample_nmap_xml_no_os.encode("utf-8")
+        mock_proc_ok = MagicMock()
+        mock_proc_ok.returncode = 0
+        mock_proc_ok.communicate = AsyncMock(return_value=(fake_stdout_ok, b""))
+
+        with patch("utils.nmap_runner.asyncio.create_subprocess_exec") as mock_exec:
+            mock_exec.side_effect = [mock_proc_fail, mock_proc_ok]
+            result = await run_nmap("103.217.209.214", ports="1-1000")
+
+        assert mock_exec.call_count == 2
+        primary = mock_exec.call_args_list[0][0]
+        fallback = mock_exec.call_args_list[1][0]
+        assert "-O" in primary
+        assert "-O" not in fallback
+        assert primary.index("-oX") < primary.index("--")
+        assert fallback.index("-oX") < fallback.index("--")
+        assert len(result.hosts) == 1
+        assert result.hosts[0].ports  # open ports recovered without OS detection
 
 
 # ---------------------------------------------------------------------------

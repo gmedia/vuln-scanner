@@ -41,6 +41,17 @@ class NmapResult:
     raw_xml: str = ""
 
 
+_PRIVILEGE_FALLBACK_MARKERS = (
+    "Failed to open",
+    "Permission denied",
+    "requires root",
+    "requires root privileges",
+    "TCP/IP fingerprinting",
+    "You requested a scan type which requires",
+    "QUITTING",
+)
+
+
 def parse_nmap_xml(xml_output: str) -> NmapResult:
     """Parse raw nmap XML string into an NmapResult dataclass."""
     result = NmapResult(raw_xml=xml_output)
@@ -113,60 +124,60 @@ def parse_nmap_xml(xml_output: str) -> NmapResult:
     return result
 
 
-async def run_nmap(target: str, ports: str = "1-1000") -> NmapResult:
-    """Run nmap against a target and return parsed results."""
-    logger.info("Starting nmap scan on {target} ports {ports}", target=target, ports=ports)
-    cmd = [
-        "nmap",
-        "-sV",
-        "-sC",
-        "-O",
-        "--osscan-guess",
-        "-p",
-        ports,
-        "--",
-        target,
-        "-oX",
-        "-",
-    ]
+def _nmap_cmd(target: str, ports: str, *, with_os: bool) -> list[str]:
+    # -oX - MUST precede -- ; otherwise nmap treats -oX/- as hostnames and never emits XML.
+    cmd = ["nmap", "-sV", "-sC"]
+    if with_os:
+        cmd.extend(["-O", "--osscan-guess"])
+    cmd.extend(["-p", ports, "-oX", "-", "--", target])
+    return cmd
 
+
+def _needs_unprivileged_fallback(returncode: int, stderr_text: str, xml_output: str) -> bool:
+    if returncode == 0 and xml_output.strip().startswith("<"):
+        return False
+    if returncode != 0 and any(marker in stderr_text for marker in _PRIVILEGE_FALLBACK_MARKERS):
+        return True
+    return not xml_output.strip() or not xml_output.strip().startswith("<")
+
+
+async def _exec_nmap(cmd: list[str]) -> tuple[int, str, str]:
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
-
     stdout, stderr = await proc.communicate()
-    xml_output = stdout.decode("utf-8", errors="replace")
+    return (
+        proc.returncode or 0,
+        stdout.decode("utf-8", errors="replace"),
+        stderr.decode("utf-8", errors="replace"),
+    )
 
-    if proc.returncode != 0:
-        stderr_text = stderr.decode("utf-8", errors="replace")
+
+async def run_nmap(target: str, ports: str = "1-1000") -> NmapResult:
+    """Run nmap; on -O privilege abort, retry without OS detection. -oX precedes --."""
+    logger.info("Starting nmap scan on {target} ports {ports}", target=target, ports=ports)
+    cmd = _nmap_cmd(target, ports, with_os=True)
+    returncode, xml_output, stderr_text = await _exec_nmap(cmd)
+
+    if _needs_unprivileged_fallback(returncode, stderr_text, xml_output):
         logger.warning(
             "nmap exited with code {code} for {target}: {stderr}",
-            code=proc.returncode,
+            code=returncode,
             target=target,
-            stderr=stderr_text[:200],
+            stderr=stderr_text[:200] if stderr_text else "(empty stderr / no XML)",
         )
-        if "Failed to open" in stderr_text or "Permission denied" in stderr_text:
-            logger.info("Retrying nmap without OS detection for {target}", target=target)
-            cmd_fallback = [
-                "nmap",
-                "-sV",
-                "-sC",
-                "-p",
-                ports,
-                "--",
-                target,
-                "-oX",
-                "-",
-            ]
-            proc = await asyncio.create_subprocess_exec(
-                *cmd_fallback,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
+        logger.info("Retrying nmap without OS detection for {target}", target=target)
+        cmd_fallback = _nmap_cmd(target, ports, with_os=False)
+        returncode, xml_output, stderr_text = await _exec_nmap(cmd_fallback)
+        if returncode != 0:
+            logger.warning(
+                "nmap fallback exited with code {code} for {target}: {stderr}",
+                code=returncode,
+                target=target,
+                stderr=stderr_text[:200],
             )
-            stdout, _ = await proc.communicate()
-            xml_output = stdout.decode("utf-8", errors="replace")
 
     return parse_nmap_xml(xml_output)
 
