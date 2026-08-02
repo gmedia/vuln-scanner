@@ -137,12 +137,38 @@ def extract_cvss(vuln: CveVuln) -> float | None:
     return None
 
 
+def _fixed_versions_from_affected(vuln: CveVuln) -> list[str]:
+    fixed_versions: list[str] = []
+    seen: set[str] = set()
+    for affected in vuln.get("affected") or []:
+        if not isinstance(affected, dict):
+            continue
+        for range_entry in affected.get("ranges") or []:
+            if not isinstance(range_entry, dict):
+                continue
+            for event in range_entry.get("events") or []:
+                if not isinstance(event, dict):
+                    continue
+                fixed = event.get("fixed")
+                if isinstance(fixed, str) and fixed.strip() and fixed not in seen:
+                    seen.add(fixed)
+                    fixed_versions.append(fixed.strip())
+    return fixed_versions
+
+
 def _extract_remediation(vuln: CveVuln) -> str | None:
     parts = []
     db_specific = vuln.get("database_specific") or {}
     fixed = db_specific.get("fixed_version") or db_specific.get("fixed")
     if fixed:
         parts.append(f"Upgrade to version {fixed} or later")
+    else:
+        event_fixed = _fixed_versions_from_affected(vuln)
+        if event_fixed:
+            if len(event_fixed) == 1:
+                parts.append(f"Upgrade to version {event_fixed[0]} or later")
+            else:
+                parts.append("Upgrade to a fixed version: " + ", ".join(event_fixed[:5]))
     refs = vuln.get("references") or []
     fix_urls = [r["url"] for r in refs if r.get("type") == "FIX" and r.get("url")]
     if fix_urls:
@@ -156,6 +182,8 @@ def _extract_remediation(vuln: CveVuln) -> str | None:
 
 def format_vuln_finding(vuln: CveVuln, cvss_score: float | None) -> ScanFinding:
     """Format an OSV vulnerability into a standardized finding dict with severity and remediation."""
+    from utils.action_advice import ensure_remediation
+
     aliases = vuln.get("aliases", [])
     cve_id = ""
     for alias in aliases:
@@ -170,7 +198,7 @@ def format_vuln_finding(vuln: CveVuln, cvss_score: float | None) -> ScanFinding:
 
     severity = severity_from_cvss(cvss_score)
 
-    return {
+    finding: ScanFinding = {
         "severity": severity,
         "category": "vulnerability",
         "title": cve_id,
@@ -180,6 +208,7 @@ def format_vuln_finding(vuln: CveVuln, cvss_score: float | None) -> ScanFinding:
         "remediation": _extract_remediation(vuln),
         "raw_data": vuln,
     }
+    return ensure_remediation(finding)
 
 
 def severity_from_cvss(cvss: float | None) -> str:

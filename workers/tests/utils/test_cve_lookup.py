@@ -298,6 +298,23 @@ class TestExtractRemediation:
         assert result is not None
         assert "Upgrade to version 2.0.0" in result
 
+    def test_fixed_from_affected_events(self):
+        vuln = {
+            "id": "GHSA-events",
+            "database_specific": {},
+            "references": [],
+            "affected": [
+                {
+                    "ranges": [
+                        {"type": "ECOSYSTEM", "events": [{"introduced": "0"}, {"fixed": "4.5.6"}]},
+                    ]
+                }
+            ],
+        }
+        result = _extract_remediation(vuln)
+        assert result is not None
+        assert "4.5.6" in result
+
 
 class TestFormatVulnFinding:
     def test_cve_id_from_aliases(self, sample_osv_response):
@@ -351,9 +368,10 @@ class TestFormatVulnFinding:
         finding = format_vuln_finding(sample_vuln_with_remediation, 9.2)
         assert finding["remediation"] is not None
 
-    def test_remediation_none_when_missing(self, sample_vuln_no_remediation):
+    def test_remediation_template_when_extractor_empty(self, sample_vuln_no_remediation):
         finding = format_vuln_finding(sample_vuln_no_remediation, 7.0)
-        assert finding["remediation"] is None
+        assert finding["remediation"] is not None
+        assert "upgrade" in finding["remediation"].lower() or "advisory" in finding["remediation"].lower()
 
     def test_raw_data_preserved(self, sample_osv_response):
         vuln = sample_osv_response["vulns"][0]
