@@ -284,6 +284,8 @@ def _parse_ios_plist(plist_data: dict[str, object]) -> IpaInfo:
 
 
 def _build_android_findings(info: AndroidManifestInfo) -> list[ScanFinding]:
+    from utils.action_advice import ensure_remediations
+
     findings: list[ScanFinding] = []
 
     if info.package_name:
@@ -368,10 +370,12 @@ def _build_android_findings(info: AndroidManifestInfo) -> list[ScanFinding]:
             }
         )
 
-    return findings
+    return ensure_remediations(findings)
 
 
 def _build_ios_findings(info: IpaInfo) -> list[ScanFinding]:
+    from utils.action_advice import ensure_remediations
+
     findings: list[ScanFinding] = []
 
     if info.bundle_id:
@@ -415,10 +419,12 @@ def _build_ios_findings(info: IpaInfo) -> list[ScanFinding]:
             }
         )
 
-    return findings
+    return ensure_remediations(findings)
 
 
 def _scan_secrets(text_content: str) -> list[ScanFinding]:
+    from utils.action_advice import ensure_remediations
+
     findings: list[ScanFinding] = []
     for pattern, secret_type in SECRET_PATTERNS:
         matches = re.findall(pattern, text_content)
@@ -433,7 +439,7 @@ def _scan_secrets(text_content: str) -> list[ScanFinding]:
                     "description": f"Found: {match[:80]}..." if len(match) > 80 else f"Found: {match}",
                 }
             )
-    return findings
+    return ensure_remediations(findings)
 
 
 def _extract_text_from_zip(zf: zipfile.ZipFile, file_list: list[str], *skip_extensions: str) -> str:
