@@ -167,7 +167,7 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
                 onClick={() => toggleSort("cvss_score")}
               />
               <th className="px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                Remediation
+                Saran aksi
               </th>
             </tr>
           </thead>
@@ -252,7 +252,7 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
                     {finding.remediation ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                        Fix
+                        Ada saran
                       </span>
                     ) : (
                       <span className="text-muted-foreground">-</span>
