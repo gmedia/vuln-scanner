@@ -1,0 +1,166 @@
+"""Tests for action_advice templates and ensure_remediation."""
+
+from utils.action_advice import (
+    CATEGORY_ADVICE,
+    advice_for_category,
+    advice_for_open_port,
+    ensure_remediation,
+    ensure_remediations,
+)
+from utils.cve_lookup import _extract_remediation, format_vuln_finding
+
+
+class TestAdviceForOpenPort:
+    def test_risky_port_ssh_not_special(self):
+        advice = advice_for_open_port("Open port: 22/tcp (ssh)")
+        assert advice == CATEGORY_ADVICE["open_port"]
+
+    def test_risky_port_redis(self):
+        advice = advice_for_open_port("Open port: 6379/tcp (redis)")
+        assert "Redis" in advice
+        assert "AUTH" in advice
+
+    def test_risky_port_rdp(self):
+        advice = advice_for_open_port("Open port: 3389/tcp (ms-wbt-server)")
+        assert "RDP" in advice
+
+
+class TestAdviceForCategory:
+    def test_explicit_wins(self):
+        result = advice_for_category(
+            "missing_header",
+            explicit="Add HSTS header (max-age=31536000)",
+        )
+        assert result == "Add HSTS header (max-age=31536000)"
+
+    def test_category_template(self):
+        result = advice_for_category("android_debug")
+        assert result is not None
+        assert "debuggable" in result
+
+    def test_unknown_category(self):
+        assert advice_for_category("not_a_real_category") is None
+
+
+class TestEnsureRemediation:
+    def test_fills_when_missing(self):
+        finding = {
+            "severity": "info",
+            "category": "open_port",
+            "title": "Open port: 80/tcp (http)",
+            "description": "Service: http",
+        }
+        ensure_remediation(finding)
+        assert finding.get("remediation")
+        assert "firewall" in finding["remediation"].lower() or "service" in finding["remediation"].lower()
+
+    def test_preserves_existing(self):
+        finding = {
+            "severity": "high",
+            "category": "vulnerability",
+            "title": "CVE-2024-1",
+            "description": "x",
+            "remediation": "Upgrade to 2.0.0",
+        }
+        ensure_remediation(finding)
+        assert finding["remediation"] == "Upgrade to 2.0.0"
+
+    def test_risky_port_in_ensure(self):
+        finding = {
+            "severity": "info",
+            "category": "open_port",
+            "title": "Open port: 445/tcp (microsoft-ds)",
+            "description": "SMB",
+        }
+        ensure_remediation(finding)
+        assert "SMB" in finding["remediation"]
+
+    def test_ensure_remediations_batch(self):
+        findings = [
+            {
+                "severity": "info",
+                "category": "ip_address",
+                "title": "IP Address: 1.2.3.4",
+                "description": "Resolved",
+            },
+            {
+                "severity": "high",
+                "category": "hardcoded_secret",
+                "title": "Potential aws_access_key detected",
+                "description": "Found: AKIAxxxx",
+            },
+        ]
+        ensure_remediations(findings)
+        assert all(f.get("remediation") for f in findings)
+
+
+class TestExtractRemediationEventsFixed:
+    def test_events_fixed_single(self):
+        vuln = {
+            "id": "GHSA-test",
+            "aliases": ["CVE-2024-9990"],
+            "database_specific": {},
+            "references": [],
+            "affected": [
+                {
+                    "package": {"name": "pkg", "ecosystem": "PyPI"},
+                    "ranges": [
+                        {
+                            "type": "ECOSYSTEM",
+                            "events": [{"introduced": "0"}, {"fixed": "1.2.3"}],
+                        }
+                    ],
+                }
+            ],
+        }
+        result = _extract_remediation(vuln)
+        assert result is not None
+        assert "1.2.3" in result
+
+    def test_events_fixed_multiple_dedup(self):
+        vuln = {
+            "id": "GHSA-multi",
+            "database_specific": {},
+            "references": [],
+            "affected": [
+                {
+                    "ranges": [
+                        {"events": [{"fixed": "2.0.0"}, {"fixed": "2.0.0"}]},
+                    ]
+                },
+                {
+                    "ranges": [
+                        {"events": [{"fixed": "2.1.0"}]},
+                    ]
+                },
+            ],
+        }
+        result = _extract_remediation(vuln)
+        assert result is not None
+        assert "2.0.0" in result
+        assert "2.1.0" in result
+
+    def test_database_specific_wins_over_events(self):
+        vuln = {
+            "id": "GHSA-db",
+            "database_specific": {"fixed_version": "9.9.9"},
+            "references": [],
+            "affected": [{"ranges": [{"events": [{"fixed": "1.0.0"}]}]}],
+        }
+        result = _extract_remediation(vuln)
+        assert result is not None
+        assert "9.9.9" in result
+        assert "1.0.0" not in result
+
+    def test_format_vuln_fallback_template(self):
+        vuln = {
+            "id": "MAL-2025-1",
+            "aliases": [],
+            "summary": "Malware package",
+            "severity": [],
+            "database_specific": {},
+            "references": [],
+        }
+        finding = format_vuln_finding(vuln, None)
+        assert finding["remediation"] is not None
+        assert "advisory" in finding["remediation"].lower() or "upgrade" in finding["remediation"].lower()
