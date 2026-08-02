@@ -367,6 +367,8 @@ def detect_tech_stack(domain: str, headers: dict[str, str]) -> list[TechInfo]:
 
 def findings_from_domain(result: DomainResult) -> list[ScanFinding]:
     """Convert a DomainResult into a list of finding dicts for database persistence."""
+    from utils.action_advice import advice_for_category, ensure_remediations
+
     findings: list[ScanFinding] = []
 
     for ip in result.ip_addresses:
@@ -420,6 +422,10 @@ def findings_from_domain(result: DomainResult) -> list[ScanFinding]:
                     "category": "missing_header",
                     "title": f"Missing header: {check.name}",
                     "description": check.recommendation,
+                    "remediation": advice_for_category(
+                        "missing_header",
+                        explicit=check.recommendation,
+                    ),
                 }
             )
 
@@ -435,4 +441,4 @@ def findings_from_domain(result: DomainResult) -> list[ScanFinding]:
             }
         )
 
-    return findings
+    return ensure_remediations(findings)
