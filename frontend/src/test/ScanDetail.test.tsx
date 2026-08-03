@@ -302,7 +302,7 @@ describe("ScanDetail", () => {
     it("renders RemediationCard when findings have remediation", () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
-      expect(screen.getByText("Remediation Available")).toBeInTheDocument();
+      expect(screen.getByText("Saran aksi tersedia")).toBeInTheDocument();
       const progress = screen.getByTestId("progress");
       expect(progress.dataset.value).toBe("67");
     });
@@ -312,7 +312,7 @@ describe("ScanDetail", () => {
         data: { ...baseScan, findings: [] } as any,
       });
       renderPage();
-      expect(screen.queryByText("Remediation Available")).not.toBeInTheDocument();
+      expect(screen.queryByText("Saran aksi tersedia")).not.toBeInTheDocument();
     });
 
     it("renders Findings card", () => {

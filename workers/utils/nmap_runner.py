@@ -184,6 +184,8 @@ async def run_nmap(target: str, ports: str = "1-1000") -> NmapResult:
 
 def findings_from_nmap(result: NmapResult) -> list[ScanFinding]:
     """Convert nmap results into a list of finding dicts for database persistence."""
+    from utils.action_advice import ensure_remediations
+
     findings: list[ScanFinding] = []
 
     for host in result.hosts:
@@ -212,4 +214,4 @@ def findings_from_nmap(result: NmapResult) -> list[ScanFinding]:
                 }
             )
 
-    return findings
+    return ensure_remediations(findings)

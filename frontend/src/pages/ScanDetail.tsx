@@ -330,7 +330,7 @@ function RemediationCard({ findings }: { findings: ScanFinding[] }) {
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-2">
               <p className="font-mono text-xs text-muted-foreground">
-                Remediation Available
+                Saran aksi tersedia
               </p>
               <p className="whitespace-nowrap font-mono text-sm font-semibold text-foreground">
                 {remediated}

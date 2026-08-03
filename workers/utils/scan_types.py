@@ -41,6 +41,7 @@ class CveVuln(TypedDict, total=False):
     severity: list[dict[str, str | float]]
     references: list[dict[str, str]]
     database_specific: dict[str, str] | None
+    affected: list[dict[str, object]]
 
 
 class ProgressMessage(TypedDict):

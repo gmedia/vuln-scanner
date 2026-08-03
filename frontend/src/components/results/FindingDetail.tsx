@@ -60,7 +60,7 @@ function FindingDetail({ finding }: FindingDetailProps) {
           <div className="mb-1.5 flex items-center gap-1.5">
             <Wrench className="h-3.5 w-3.5 text-primary" />
             <span className="font-mono text-[10px] font-medium uppercase tracking-wider text-primary">
-              Remediation
+              Saran aksi
             </span>
           </div>
           <p className="font-mono text-xs text-foreground leading-relaxed">

@@ -82,6 +82,8 @@ class TestFindingsFromNmap:
         assert "22" in port_finding["title"]
         assert port_finding["product"] == "OpenSSH"
         assert port_finding["version"] == "8.9p1"
+        assert os_finding.get("remediation")
+        assert port_finding.get("remediation")
 
     def test_closed_ports_no_findings(self, sample_nmap_xml_closed):
         result = parse_nmap_xml(sample_nmap_xml_closed)

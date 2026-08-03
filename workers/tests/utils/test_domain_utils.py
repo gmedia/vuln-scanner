@@ -226,6 +226,7 @@ class TestFindingsFromDomain:
         assert len(missing) == 1
         assert "Strict-Transport-Security" in missing[0]["title"]
         assert missing[0]["severity"] == "medium"
+        assert missing[0].get("remediation") == "Add HSTS header"
 
     def test_tech_stack_included(self):
         tech = TechInfo(name="nginx", category="reverse-proxy", confidence=80)

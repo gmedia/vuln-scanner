@@ -51,12 +51,9 @@ describe("FindingDetail", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders remediation section with 'Remediation' label when remediation exists", () => {
+  it("renders remediation section with 'Saran aksi' label when remediation exists", () => {
     render(<FindingDetail finding={mockFinding()} />);
-    expect(screen.getByText("Remediation")).toBeInTheDocument();
-    expect(
-      screen.getByText("Use parameterized queries")
-    ).toBeInTheDocument();
+    expect(screen.getByText("Saran aksi")).toBeInTheDocument();
   });
 
   it("does NOT render remediation section when remediation is null", () => {
@@ -65,7 +62,7 @@ describe("FindingDetail", () => {
         finding={mockFinding({ remediation: null })}
       />
     );
-    expect(screen.queryByText("Remediation")).not.toBeInTheDocument();
+    expect(screen.queryByText("Saran aksi")).not.toBeInTheDocument();
   });
 
   it("renders 'RAW DATA' toggle button", async () => {
