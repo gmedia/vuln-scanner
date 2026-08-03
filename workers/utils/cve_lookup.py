@@ -143,10 +143,16 @@ def _fixed_versions_from_affected(vuln: CveVuln) -> list[str]:
     for affected in vuln.get("affected") or []:
         if not isinstance(affected, dict):
             continue
-        for range_entry in affected.get("ranges") or []:
+        ranges = affected.get("ranges")
+        if not isinstance(ranges, list):
+            continue
+        for range_entry in ranges:
             if not isinstance(range_entry, dict):
                 continue
-            for event in range_entry.get("events") or []:
+            events = range_entry.get("events")
+            if not isinstance(events, list):
+                continue
+            for event in events:
                 if not isinstance(event, dict):
                     continue
                 fixed = event.get("fixed")
