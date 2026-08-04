@@ -74,6 +74,20 @@ export async function updateUserCredits(
   return res;
 }
 
+export interface ResendVerificationResponse {
+  message: string;
+  email_sent?: boolean | null;
+}
+
+export async function resendVerification(
+  userId: string,
+): Promise<ResendVerificationResponse> {
+  const { data } = await api.post<ResendVerificationResponse>(
+    `/api/admin/users/${userId}/resend-verification`,
+  );
+  return data;
+}
+
 export async function getPricing(): Promise<PricingItem[]> {
   const { data } = await api.get<PricingListResponse | PricingItem[]>(
     "/api/admin/pricing",
@@ -97,6 +111,7 @@ export const adminApi = {
   getUsers: getAdminUsers,
   getUserDetail: getAdminUserDetail,
   updateUserCredits,
+  resendVerification,
   getPricing,
   updatePricing,
 };

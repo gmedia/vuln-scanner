@@ -15,6 +15,7 @@ vi.mock("@/api/scans", () => ({
 import {
   getPricing,
   normalizePricingList,
+  resendVerification,
   type PricingItem,
 } from "@/api/admin";
 
@@ -59,5 +60,24 @@ describe("getPricing", () => {
   it("accepts a bare array response", async () => {
     mockGet.mockResolvedValue({ data: sample });
     await expect(getPricing()).resolves.toEqual(sample);
+  });
+});
+
+describe("resendVerification", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to admin resend-verification endpoint", async () => {
+    mockPost.mockResolvedValue({
+      data: { message: "Verification email has been sent.", email_sent: true },
+    });
+    await expect(resendVerification("user-1")).resolves.toEqual({
+      message: "Verification email has been sent.",
+      email_sent: true,
+    });
+    expect(mockPost).toHaveBeenCalledWith(
+      "/api/admin/users/user-1/resend-verification",
+    );
   });
 });
