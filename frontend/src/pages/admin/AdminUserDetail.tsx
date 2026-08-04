@@ -12,6 +12,7 @@ import {
   Copy,
   Check,
   Radar,
+  Send,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -55,6 +56,10 @@ function AdminUserDetail() {
       setAmount("");
       setDescription("");
     },
+  });
+
+  const resendVerification = useMutation({
+    mutationFn: () => adminApi.resendVerification(id!),
   });
 
   const handleSubmit = () => {
@@ -163,6 +168,55 @@ function AdminUserDetail() {
                   </Badge>
                 </div>
               </div>
+              {!user.is_verified && (
+                <div className="space-y-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => resendVerification.mutate()}
+                    disabled={resendVerification.isPending}
+                    className="font-mono text-xs"
+                  >
+                    {resendVerification.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="mr-2 h-3 w-3" />
+                        Resend verification email
+                      </>
+                    )}
+                  </Button>
+                  {resendVerification.isError && (
+                    <div className="rounded-md border border-red-600/30 bg-red-600/10 px-3 py-2">
+                      <p className="font-mono text-xs text-red-400">
+                        Failed to resend verification email
+                      </p>
+                    </div>
+                  )}
+                  {resendVerification.isSuccess &&
+                    resendVerification.data?.email_sent === false && (
+                      <div className="rounded-md border border-red-600/30 bg-red-600/10 px-3 py-2">
+                        <p className="font-mono text-xs text-red-400">
+                          {resendVerification.data.message ||
+                            "Failed to send verification email. Please try again shortly."}
+                        </p>
+                      </div>
+                    )}
+                  {resendVerification.isSuccess &&
+                    resendVerification.data?.email_sent !== false && (
+                      <div className="rounded-md border border-green-600/30 bg-green-600/10 px-3 py-2">
+                        <p className="font-mono text-xs text-green-400">
+                          {resendVerification.data.message ||
+                            "Verification email has been sent."}
+                        </p>
+                      </div>
+                    )}
+                </div>
+              )}
               <div className="flex items-center gap-3">
                 <Coins className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span className="font-mono text-sm text-primary">

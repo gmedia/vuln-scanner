@@ -25,6 +25,7 @@ vi.mock("@/api/admin", () => ({
   adminApi: {
     getUserDetail: vi.fn(),
     updateUserCredits: vi.fn(),
+    resendVerification: vi.fn(),
   },
 }));
 
@@ -168,5 +169,109 @@ describe("AdminUserDetail", () => {
     renderPage();
     await userEvent.click(screen.getByRole("button", { name: "Copy email" }));
     expect(writeText).toHaveBeenCalledWith("detail@example.com");
+  });
+
+  it("shows resend verification button for unverified users", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: mockUser,
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    renderPage();
+    expect(
+      screen.getByRole("button", { name: /Resend verification email/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("hides resend verification button for verified users", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: { ...mockUser, is_verified: true },
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    renderPage();
+    expect(
+      screen.queryByRole("button", { name: /Resend verification email/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("calls resend mutation when button is clicked", async () => {
+    const mutate = vi.fn();
+    vi.mocked(useMutation).mockReturnValue({
+      mutate,
+      isPending: false,
+      isError: false,
+      isSuccess: false,
+    } as unknown as ReturnType<typeof useMutation>);
+
+    vi.mocked(useQuery).mockReturnValue({
+      data: mockUser,
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    renderPage();
+    await userEvent.click(
+      screen.getByRole("button", { name: /Resend verification email/i }),
+    );
+    expect(mutate).toHaveBeenCalled();
+  });
+
+  it("shows success message after resend", () => {
+    vi.mocked(useMutation)
+      .mockReturnValueOnce({
+        mutate: vi.fn(),
+        isPending: false,
+        isError: false,
+        isSuccess: false,
+      } as unknown as ReturnType<typeof useMutation>)
+      .mockReturnValueOnce({
+        mutate: vi.fn(),
+        isPending: false,
+        isError: false,
+        isSuccess: true,
+        data: { message: "Verification email has been sent.", email_sent: true },
+      } as unknown as ReturnType<typeof useMutation>);
+
+    vi.mocked(useQuery).mockReturnValue({
+      data: mockUser,
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    renderPage();
+    expect(
+      screen.getByText("Verification email has been sent."),
+    ).toBeInTheDocument();
+  });
+
+  it("shows failure message when email_sent is false", () => {
+    vi.mocked(useMutation)
+      .mockReturnValueOnce({
+        mutate: vi.fn(),
+        isPending: false,
+        isError: false,
+        isSuccess: false,
+      } as unknown as ReturnType<typeof useMutation>)
+      .mockReturnValueOnce({
+        mutate: vi.fn(),
+        isPending: false,
+        isError: false,
+        isSuccess: true,
+        data: {
+          message: "Failed to send verification email. Please try again shortly.",
+          email_sent: false,
+        },
+      } as unknown as ReturnType<typeof useMutation>);
+
+    vi.mocked(useQuery).mockReturnValue({
+      data: mockUser,
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    renderPage();
+    expect(
+      screen.getByText(
+        "Failed to send verification email. Please try again shortly.",
+      ),
+    ).toBeInTheDocument();
   });
 });
