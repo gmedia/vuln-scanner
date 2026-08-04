@@ -65,6 +65,7 @@ describe("auth API", () => {
     it("posts to /api/auth/register with email, password, and confirm_password", async () => {
       const mockResponse: MessageResponse = {
         message: "Registrasi berhasil. Silakan cek email untuk verifikasi.",
+        email_sent: true,
       };
       mockAxios.post.mockResolvedValueOnce({ data: mockResponse });
 
@@ -81,12 +82,16 @@ describe("auth API", () => {
       expect(result).toEqual(mockResponse);
     });
 
-    it("returns the message response on success", async () => {
-      const mockResponse: MessageResponse = { message: "OK" };
+    it("returns the message response on success including email_sent", async () => {
+      const mockResponse: MessageResponse = {
+        message: "OK",
+        email_sent: false,
+      };
       mockAxios.post.mockResolvedValueOnce({ data: mockResponse });
 
       const result = await register("a@b.com", "pass", "pass");
       expect(result.message).toBe("OK");
+      expect(result.email_sent).toBe(false);
     });
   });
 

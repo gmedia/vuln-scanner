@@ -56,6 +56,7 @@ export interface ChangePasswordRequest {
 
 export interface MessageResponse {
   message: string;
+  email_sent?: boolean | null;
 }
 
 export interface LoginResponse {
