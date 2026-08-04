@@ -32,6 +32,23 @@ from tests.conftest import _fake_redis, _incr_counters
 _fake_redis.set = AsyncMock(return_value=True)
 
 
+@pytest.fixture(autouse=True)
+def _mock_outbound_email_no_smtp():
+    with (
+        patch(
+            "app.api.auth_routes.send_verification_email",
+            new_callable=AsyncMock,
+            return_value=True,
+        ) as mock_verify,
+        patch(
+            "app.api.auth_routes.send_password_reset_email",
+            new_callable=AsyncMock,
+            return_value=True,
+        ) as mock_reset,
+    ):
+        yield {"verify": mock_verify, "reset": mock_reset}
+
+
 # ---------------------------------------------------------------------------
 # Helper: create an auth-specific TestClient that only overrides get_db,
 # not get_current_user (so auth routes actually validate Bearer tokens).
@@ -132,6 +149,8 @@ class TestRegister:
         assert resp.status_code == 201
         data = resp.json()
         assert "message" in data
+        assert data["email_sent"] is True
+        assert "Registrasi berhasil" in data["message"]
 
     def test_duplicate_email_returns_409(self, auth_client, db_session):
         auth_client.post(
@@ -271,7 +290,8 @@ class TestRegister:
 
         token = asyncio.get_event_loop().run_until_complete(check())
         assert token is not None
-        assert token.expires_at > datetime.now(UTC)
+        expires_at = token.expires_at.replace(tzinfo=UTC) if token.expires_at.tzinfo is None else token.expires_at
+        assert expires_at > datetime.now(UTC)
 
 
 # ---------------------------------------------------------------------------
@@ -952,6 +972,7 @@ class TestForgotPassword:
                 json={"email": user.email},
             )
         assert resp.status_code == 200
+        assert "Jika email tersebut terdaftar" in resp.json()["message"]
 
     def test_missing_email_returns_422(self, auth_client, db_session):
         resp = auth_client.post(
@@ -1375,7 +1396,7 @@ class TestLoginExtra:
 
 class TestRegisterExtra:
     def test_register_with_email_sending_failure_still_returns_201(self, auth_client, db_session):
-        with patch("app.api.auth_routes.send_verification_email") as mock_send:
+        with patch("app.api.auth_routes.send_verification_email", new_callable=AsyncMock) as mock_send:
             mock_send.side_effect = SMTPException("SMTP connection failed")
 
             resp = auth_client.post(
@@ -1388,7 +1409,8 @@ class TestRegisterExtra:
             )
             assert resp.status_code == 201
             data = resp.json()
-            assert "message" in data
+            assert data["email_sent"] is False
+            assert "email verifikasi gagal dikirim" in data["message"]
 
     def test_register_creates_credit_log_entry(self, auth_client, db_session):
         import asyncio
@@ -1695,6 +1717,7 @@ class TestResendVerification:
         assert resp.status_code == 200
         data = resp.json()
         assert "Email verifikasi telah dikirim" in data["message"]
+        assert data["email_sent"] is True
 
     def test_already_verified_returns_200_silent(self, auth_client, db_session):
         import asyncio
@@ -1708,13 +1731,18 @@ class TestResendVerification:
         assert resp.status_code == 200
         data = resp.json()
         assert "Email verifikasi telah dikirim" in data["message"]
+        assert data["email_sent"] is True
 
     def test_success_sends_email(self, auth_client, db_session):
         import asyncio
 
         user = asyncio.get_event_loop().run_until_complete(_create_unverified_user(db_session))
 
-        with patch("app.api.auth_routes.send_verification_email", new_callable=AsyncMock) as mock_send:
+        with patch(
+            "app.api.auth_routes.send_verification_email",
+            new_callable=AsyncMock,
+            return_value=True,
+        ) as mock_send:
             resp = auth_client.post(
                 "/api/auth/resend-verification",
                 json={"email": user.email},
@@ -1722,6 +1750,7 @@ class TestResendVerification:
         assert resp.status_code == 200
         data = resp.json()
         assert "Email verifikasi telah dikirim" in data["message"]
+        assert data["email_sent"] is True
         mock_send.assert_called_once()
 
     def test_email_failure_still_returns_200(self, auth_client, db_session):
@@ -1737,7 +1766,8 @@ class TestResendVerification:
             )
         assert resp.status_code == 200
         data = resp.json()
-        assert "Email verifikasi telah dikirim" in data["message"]
+        assert data["email_sent"] is False
+        assert "Gagal mengirim email verifikasi" in data["message"]
 
     def test_success_with_existing_token_deletes_old(self, auth_client, db_session):
         """Covers branch where old verification token exists and gets deleted."""
@@ -1901,7 +1931,7 @@ class TestUpdateProfile:
         assert "Email sudah digunakan" in resp.json()["detail"]
 
     def test_smtp_exception_returns_200(self, auth_client, db_session):
-        """PUT /api/auth/profile — SMTPException is caught and returns 200 (lines 455-456)."""
+        """PUT /api/auth/profile — SMTPException is caught and returns 200 with email_sent=false."""
         import asyncio
 
         user, token = asyncio.get_event_loop().run_until_complete(self._setup(db_session))
@@ -1916,10 +1946,12 @@ class TestUpdateProfile:
         assert resp.status_code == 200
         data = resp.json()
         assert "Profil berhasil diperbarui" in data["message"]
+        assert "email verifikasi gagal dikirim" in data["message"]
+        assert data["email_sent"] is False
 
     @pytest.mark.asyncio
     async def test_smtp_exception_direct_handler(self):
-        """Call update_profile directly with mocked deps — SMTPException at line 455-456 is covered."""
+        """Call update_profile directly with mocked deps — SMTPException is covered."""
         from unittest.mock import MagicMock
 
         from app.api.auth_routes import update_profile
@@ -1960,7 +1992,9 @@ class TestUpdateProfile:
                 db=mock_db,
             )
 
-        assert result.message == "Profil berhasil diperbarui"
+        assert "Profil berhasil diperbarui" in result.message
+        assert "email verifikasi gagal dikirim" in result.message
+        assert result.email_sent is False
         assert mock_user.email == "new@example.com"
         assert mock_user.is_verified is False
         assert mock_user.verified_at is None

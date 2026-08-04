@@ -16,9 +16,17 @@ from app.utils.log_sanitizer import sanitize_for_log
 logger = logging.getLogger(__name__)
 
 
+def _configure_app_logging() -> None:
+    for name in ("app.services.email", "app.api.auth_routes"):
+        lg = logging.getLogger(name)
+        if lg.level == logging.NOTSET or lg.level > logging.INFO:
+            lg.setLevel(logging.INFO)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Verify settings on startup and clean up on shutdown."""
+    _configure_app_logging()
     check_settings()
     yield
 

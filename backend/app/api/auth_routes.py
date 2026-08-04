@@ -6,7 +6,6 @@ from typing import cast
 from uuid import UUID
 
 import jwt
-from aiosmtplib.errors import SMTPException
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -49,6 +48,25 @@ from app.services.auth import (
 from app.services.email import send_password_reset_email, send_verification_email
 
 logger = logging.getLogger(__name__)
+
+_MSG_REGISTER_OK = "Registrasi berhasil. Periksa email Anda untuk verifikasi."
+_MSG_REGISTER_EMAIL_FAILED = (
+    "Registrasi berhasil, tetapi email verifikasi gagal dikirim. Silakan gunakan kirim ulang verifikasi."
+)
+_MSG_RESEND_OK = "Email verifikasi telah dikirim. Silakan periksa kotak masuk Anda."
+_MSG_RESEND_FAILED = "Gagal mengirim email verifikasi. Silakan coba lagi dalam beberapa saat."
+
+
+async def _try_send_verification(email_to: str, token: str, *, context: str) -> bool:
+    try:
+        sent = await send_verification_email(email_to=email_to, token=token)
+    except Exception:
+        logger.exception("Unexpected error sending verification email (%s) to %s", context, email_to)
+        return False
+    if not sent:
+        logger.error("Verification email was not sent (%s) to %s", context, email_to)
+    return sent
+
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -110,12 +128,10 @@ async def register(
     db.add(verification_token)
     await db.commit()
 
-    try:
-        await send_verification_email(email_to=user.email, token=token_str)
-    except SMTPException:
-        logger.exception("Failed to send verification email to %s", user.email)
-
-    return MessageResponse(message="Registrasi berhasil. Periksa email Anda untuk verifikasi.")
+    email_sent = await _try_send_verification(user.email, token_str, context="register")
+    if email_sent:
+        return MessageResponse(message=_MSG_REGISTER_OK, email_sent=True)
+    return MessageResponse(message=_MSG_REGISTER_EMAIL_FAILED, email_sent=False)
 
 
 @router.post("/login", response_model=LoginResponse)
@@ -225,7 +241,7 @@ async def resend_verification(
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
     if user is None or user.is_verified is True:
-        return MessageResponse(message="Email verifikasi telah dikirim. Silakan periksa kotak masuk Anda.")
+        return MessageResponse(message=_MSG_RESEND_OK, email_sent=True)
 
     token_str = secrets.token_urlsafe(32)
 
@@ -243,12 +259,10 @@ async def resend_verification(
     db.add(verification_token)
     await db.commit()
 
-    try:
-        await send_verification_email(email_to=user.email, token=token_str)
-    except SMTPException:
-        logger.exception("Failed to resend verification email to %s", user.email)
-
-    return MessageResponse(message="Email verifikasi telah dikirim. Silakan periksa kotak masuk Anda.")
+    email_sent = await _try_send_verification(user.email, token_str, context="resend")
+    if email_sent:
+        return MessageResponse(message=_MSG_RESEND_OK, email_sent=True)
+    return MessageResponse(message=_MSG_RESEND_FAILED, email_sent=False)
 
 
 @router.post("/forgot-password", response_model=MessageResponse)
@@ -279,8 +293,10 @@ async def forgot_password(
         await db.commit()
 
         try:
-            await send_password_reset_email(email_to=user.email, token=token_str)
-        except SMTPException:
+            sent = await send_password_reset_email(email_to=user.email, token=token_str)
+            if not sent:
+                logger.error("Password reset email was not sent to %s", user.email)
+        except Exception:
             logger.exception("Failed to send password reset email to %s", user.email)
     else:
         await asyncio.sleep(0.5)
@@ -455,10 +471,19 @@ async def update_profile(
         db.add(verification_token)
         await db.commit()
 
-        try:
-            await send_verification_email(email_to=current_user.email, token=token_str)
-        except SMTPException:
-            logger.exception("Failed to send verification email to %s", current_user.email)
+        email_sent = await _try_send_verification(current_user.email, token_str, context="profile-email-change")
+        if email_sent:
+            return MessageResponse(
+                message="Profil berhasil diperbarui. Periksa email baru untuk verifikasi.",
+                email_sent=True,
+            )
+        return MessageResponse(
+            message=(
+                "Profil berhasil diperbarui, tetapi email verifikasi gagal dikirim. "
+                "Silakan gunakan kirim ulang verifikasi."
+            ),
+            email_sent=False,
+        )
 
     return MessageResponse(message="Profil berhasil diperbarui")
 
