@@ -38,10 +38,20 @@ interface AuthStore {
     email: string,
     password: string,
     confirmPassword: string,
-  ) => Promise<boolean>;
+  ) => Promise<{
+    ok: boolean;
+    emailSent: boolean | null;
+    message: string | null;
+  }>;
   logout: () => Promise<void>;
   verifyEmail: (token: string) => Promise<boolean>;
-  resendVerification: (email: string) => Promise<boolean>;
+  resendVerification: (
+    email: string,
+  ) => Promise<{
+    ok: boolean;
+    emailSent: boolean | null;
+    message: string | null;
+  }>;
   updateProfile: (email: string, currentPassword: string) => Promise<boolean>;
   changePassword: (
     currentPassword: string,
@@ -115,13 +125,17 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   register: async (email, password, confirmPassword) => {
     set({ isLoading: true, error: null });
     try {
-      await authApi.register(email, password, confirmPassword);
+      const res = await authApi.register(email, password, confirmPassword);
       set({ isLoading: false });
-      return true;
+      return {
+        ok: true,
+        emailSent: res.email_sent ?? null,
+        message: res.message ?? null,
+      };
     } catch (err) {
       const message = extractError(err, "Registrasi gagal");
       set({ error: message, isLoading: false });
-      return false;
+      return { ok: false, emailSent: null, message: null };
     }
   },
 
@@ -163,16 +177,20 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   resendVerification: async (email) => {
     set({ isLoading: true, error: null });
     try {
-      await authApi.resendVerification(email);
+      const res = await authApi.resendVerification(email);
       set({ isLoading: false });
-      return true;
+      return {
+        ok: true,
+        emailSent: res.email_sent ?? null,
+        message: res.message ?? null,
+      };
     } catch (err) {
       const message = extractError(
         err,
         "Gagal mengirim ulang email verifikasi",
       );
       set({ error: message, isLoading: false });
-      return false;
+      return { ok: false, emailSent: null, message: null };
     }
   },
 
