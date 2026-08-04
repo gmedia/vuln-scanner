@@ -1,5 +1,7 @@
+import logging
+import secrets
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy import func, select, text
@@ -9,6 +11,7 @@ from app.config import settings
 from app.database import get_db
 from app.middleware.rate_limit import RateLimiter
 from app.models.credit_log import CreditLog
+from app.models.email_verification import EmailVerificationToken
 from app.models.pricing import PricingConfig
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
@@ -22,7 +25,11 @@ from app.schemas.admin import (
     PricingListResponse,
     PricingUpdateRequest,
 )
+from app.schemas.auth import MessageResponse
 from app.services.auth import get_current_admin
+from app.services.email import send_verification_email
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -194,6 +201,61 @@ async def adjust_user_credits(
         scan_count=scan_count,
         created_at=user.created_at,
     )
+
+
+@router.post("/users/{user_id}/resend-verification", response_model=MessageResponse)
+async def admin_resend_verification(
+    request: Request,
+    user_id: uuid.UUID,
+    current_admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> MessageResponse | Response:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        return limit_response
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User email is already verified",
+        )
+
+    token_str = secrets.token_urlsafe(32)
+
+    existing = await db.execute(select(EmailVerificationToken).where(EmailVerificationToken.user_id == user.id))
+    old_token = existing.scalar_one_or_none()
+    if old_token is not None:
+        await db.delete(old_token)
+        await db.flush()
+
+    verification_token = EmailVerificationToken(
+        user_id=user.id,
+        token=token_str,
+        expires_at=datetime.now(UTC) + timedelta(hours=24),
+    )
+    db.add(verification_token)
+    await db.commit()
+
+    try:
+        email_sent = await send_verification_email(email_to=user.email, token=token_str)
+    except Exception:
+        logger.exception(
+            "Unexpected error sending verification email (admin-resend) to %s",
+            user.email,
+        )
+        email_sent = False
+    if not email_sent:
+        logger.error("Verification email was not sent (admin-resend) to %s", user.email)
+        return MessageResponse(
+            message="Failed to send verification email. Please try again shortly.",
+            email_sent=False,
+        )
+    return MessageResponse(message="Verification email has been sent.", email_sent=True)
 
 
 @router.get("/pricing", response_model=PricingListResponse)

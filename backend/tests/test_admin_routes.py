@@ -540,6 +540,147 @@ class TestAdminCredits:
 
 
 # ---------------------------------------------------------------------------
+# POST /api/admin/users/{user_id}/resend-verification
+# ---------------------------------------------------------------------------
+
+
+class TestAdminResendVerification:
+    @pytest.mark.asyncio
+    async def test_resend_success(self, client, db_session):
+        from unittest.mock import AsyncMock, patch
+
+        from app.models.email_verification import EmailVerificationToken
+
+        user = User(
+            id=uuid.uuid4(),
+            email="unverified-admin-resend@example.com",
+            password_hash=hash_password("TestPass1"),
+            is_verified=False,
+            credits=10,
+        )
+        db_session.add(user)
+        await db_session.commit()
+        await db_session.refresh(user)
+
+        with patch("app.api.admin_routes.send_verification_email", new_callable=AsyncMock) as mock_send:
+            mock_send.return_value = True
+            resp = client.post(
+                f"/api/admin/users/{user.id}/resend-verification",
+                headers=API_HEADERS,
+            )
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["email_sent"] is True
+        assert "sent" in data["message"].lower()
+        mock_send.assert_awaited_once()
+        assert mock_send.await_args.kwargs["email_to"] == user.email
+
+        token_result = await db_session.execute(
+            select(EmailVerificationToken).where(EmailVerificationToken.user_id == user.id)
+        )
+        token = token_result.scalar_one_or_none()
+        assert token is not None
+        assert token.token == mock_send.await_args.kwargs["token"]
+
+    @pytest.mark.asyncio
+    async def test_resend_email_failed(self, client, db_session):
+        from unittest.mock import AsyncMock, patch
+
+        user = User(
+            id=uuid.uuid4(),
+            email="unverified-fail@example.com",
+            password_hash=hash_password("TestPass1"),
+            is_verified=False,
+            credits=10,
+        )
+        db_session.add(user)
+        await db_session.commit()
+        await db_session.refresh(user)
+
+        with patch("app.api.admin_routes.send_verification_email", new_callable=AsyncMock) as mock_send:
+            mock_send.return_value = False
+            resp = client.post(
+                f"/api/admin/users/{user.id}/resend-verification",
+                headers=API_HEADERS,
+            )
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["email_sent"] is False
+        assert "failed" in data["message"].lower()
+
+    def test_resend_already_verified_returns_400(self, client, sample_user):
+        resp = client.post(
+            f"/api/admin/users/{sample_user.id}/resend-verification",
+            headers=API_HEADERS,
+        )
+        assert resp.status_code == 400
+        assert resp.json()["detail"] == "User email is already verified"
+
+    def test_resend_user_not_found_returns_404(self, client):
+        fake_id = uuid.uuid4()
+        resp = client.post(
+            f"/api/admin/users/{fake_id}/resend-verification",
+            headers=API_HEADERS,
+        )
+        assert resp.status_code == 404
+        assert resp.json()["detail"] == "User not found"
+
+    @pytest.mark.asyncio
+    async def test_resend_rotates_existing_token(self, client, db_session):
+        from datetime import UTC, datetime, timedelta
+        from unittest.mock import AsyncMock, patch
+
+        from app.models.email_verification import EmailVerificationToken
+
+        user = User(
+            id=uuid.uuid4(),
+            email="rotate-token@example.com",
+            password_hash=hash_password("TestPass1"),
+            is_verified=False,
+            credits=10,
+        )
+        db_session.add(user)
+        await db_session.commit()
+        await db_session.refresh(user)
+
+        old = EmailVerificationToken(
+            user_id=user.id,
+            token="old-token-value",
+            expires_at=datetime.now(UTC) + timedelta(hours=12),
+        )
+        db_session.add(old)
+        await db_session.commit()
+
+        with patch("app.api.admin_routes.send_verification_email", new_callable=AsyncMock) as mock_send:
+            mock_send.return_value = True
+            resp = client.post(
+                f"/api/admin/users/{user.id}/resend-verification",
+                headers=API_HEADERS,
+            )
+
+        assert resp.status_code == 200
+        token_result = await db_session.execute(
+            select(EmailVerificationToken).where(EmailVerificationToken.user_id == user.id)
+        )
+        tokens = token_result.scalars().all()
+        assert len(tokens) == 1
+        assert tokens[0].token != "old-token-value"
+        assert tokens[0].token == mock_send.await_args.kwargs["token"]
+
+    def test_resend_unauthorized_non_admin_returns_403(self, admin_auth_client, db_session, sample_user):
+        user, token = asyncio.get_event_loop().run_until_complete(
+            _create_user_with_token(db_session, "regular-resend@example.com", is_admin=False)
+        )
+        resp = admin_auth_client.post(
+            f"/api/admin/users/{sample_user.id}/resend-verification",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 403
+
+
+# ---------------------------------------------------------------------------
 # GET /api/admin/pricing
 # ---------------------------------------------------------------------------
 
