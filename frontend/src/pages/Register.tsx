@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Eye, EyeOff, Loader2, CheckCircle } from "lucide-react";
+import { Eye, EyeOff, Loader2, CheckCircle, AlertTriangle } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -9,7 +9,8 @@ import AuthLayout from "@/components/layout/AuthLayout";
 
 function Register() {
   const navigate = useNavigate();
-  const { register, error, isAuthenticated, clearError } = useAuthStore();
+  const { register, resendVerification, error, isAuthenticated, clearError } =
+    useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -17,7 +18,11 @@ function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [emailSent, setEmailSent] = useState<boolean | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendFeedback, setResendFeedback] = useState<string | null>(null);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -53,26 +58,87 @@ function Register() {
     }
 
     setIsSubmitting(true);
-    const ok = await register(email, password, confirmPassword);
+    const result = await register(email, password, confirmPassword);
     if (!mountedRef.current) return;
-    if (ok) {
+    if (result.ok) {
+      setEmailSent(result.emailSent);
+      setStatusMessage(result.message);
       setSuccess(true);
     } else {
       setIsSubmitting(false);
     }
   };
 
+  const handleResend = async () => {
+    setResendFeedback(null);
+    setIsResending(true);
+    const result = await resendVerification(email);
+    if (!mountedRef.current) return;
+    setIsResending(false);
+    if (result.ok) {
+      setEmailSent(result.emailSent);
+      setStatusMessage(result.message);
+      if (result.emailSent === false) {
+        setResendFeedback(
+          result.message ||
+            "Failed to send verification email. Please try again shortly.",
+        );
+      } else {
+        setResendFeedback(
+          result.message || "Verification email sent. Please check your inbox.",
+        );
+      }
+    } else {
+      setResendFeedback(
+        "Failed to resend verification email. Please try again.",
+      );
+    }
+  };
+
   if (success) {
+    const sendFailed = emailSent === false;
     return (
       <AuthLayout title="Registration Successful!">
         <Card className="w-full">
           <CardContent className="pt-6 text-center space-y-4">
-            <CheckCircle className="h-12 w-12 text-primary mx-auto" />
+            {sendFailed ? (
+              <AlertTriangle className="h-12 w-12 text-amber-400 mx-auto" />
+            ) : (
+              <CheckCircle className="h-12 w-12 text-primary mx-auto" />
+            )}
             <p className="font-mono text-xs text-muted-foreground">
-              Check your email to verify your account.
+              {statusMessage ||
+                (sendFailed
+                  ? "Account created, but the verification email could not be sent."
+                  : "Check your email to verify your account.")}
             </p>
+            {resendFeedback && (
+              <p
+                className={`font-mono text-xs ${
+                  emailSent === false ? "text-amber-400" : "text-primary"
+                }`}
+              >
+                {resendFeedback}
+              </p>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full font-mono text-sm"
+              onClick={handleResend}
+              disabled={isResending || !email}
+            >
+              {isResending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Resending...
+                </>
+              ) : (
+                "Resend verification email"
+              )}
+            </Button>
             <Link to="/login">
-              <Button className="w-full font-mono text-sm mt-4">
+              <Button className="w-full font-mono text-sm mt-2">
                 Go to Sign In
               </Button>
             </Link>
