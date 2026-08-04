@@ -101,6 +101,7 @@ class RefreshRequest(BaseModel):
 
 class MessageResponse(BaseModel):
     message: str
+    email_sent: bool | None = None
 
 
 class RevokeRequest(BaseModel):

@@ -5,6 +5,7 @@ vi.mock("@/api/auth", () => ({
   login: vi.fn(),
   register: vi.fn(),
   verifyEmail: vi.fn(),
+  resendVerification: vi.fn(),
   refreshToken: vi.fn(),
   getMe: vi.fn(),
   authApi: {
@@ -22,6 +23,7 @@ const mockedAuthApi = authApi as unknown as {
   login: ReturnType<typeof vi.fn>;
   register: ReturnType<typeof vi.fn>;
   verifyEmail: ReturnType<typeof vi.fn>;
+  resendVerification: ReturnType<typeof vi.fn>;
   refreshToken: ReturnType<typeof vi.fn>;
   getMe: ReturnType<typeof vi.fn>;
   authApi: {
@@ -219,8 +221,11 @@ describe("authStore", () => {
   });
 
   describe("register", () => {
-    it("calls register API and returns true on success", async () => {
-      mockedAuthApi.register.mockResolvedValueOnce({ message: "OK" });
+    it("calls register API and returns ok/emailSent/message on success", async () => {
+      mockedAuthApi.register.mockResolvedValueOnce({
+        message: "OK",
+        email_sent: true,
+      });
 
       const result = await useAuthStore
         .getState()
@@ -231,12 +236,29 @@ describe("authStore", () => {
         "password123",
         "password123",
       );
-      expect(result).toBe(true);
+      expect(result).toEqual({ ok: true, emailSent: true, message: "OK" });
       expect(useAuthStore.getState().isLoading).toBe(false);
       expect(useAuthStore.getState().error).toBeNull();
     });
 
-    it("returns false and sets error on register failure", async () => {
+    it("returns emailSent false when API reports send failure", async () => {
+      mockedAuthApi.register.mockResolvedValueOnce({
+        message: "registered but email failed",
+        email_sent: false,
+      });
+
+      const result = await useAuthStore
+        .getState()
+        .register("new@example.com", "password123", "password123");
+
+      expect(result).toEqual({
+        ok: true,
+        emailSent: false,
+        message: "registered but email failed",
+      });
+    });
+
+    it("returns ok false and sets error on register failure", async () => {
       mockedAuthApi.register.mockRejectedValueOnce(
         new Error("Email already taken"),
       );
@@ -245,9 +267,41 @@ describe("authStore", () => {
         .getState()
         .register("taken@example.com", "pass", "pass");
 
-      expect(result).toBe(false);
+      expect(result).toEqual({ ok: false, emailSent: null, message: null });
       expect(useAuthStore.getState().error).toBe("Email already taken");
       expect(useAuthStore.getState().isLoading).toBe(false);
+    });
+  });
+
+  describe("resendVerification", () => {
+    it("returns ok/emailSent/message on success", async () => {
+      mockedAuthApi.resendVerification.mockResolvedValueOnce({
+        message: "sent",
+        email_sent: true,
+      });
+
+      const result = await useAuthStore
+        .getState()
+        .resendVerification("user@example.com");
+
+      expect(mockedAuthApi.resendVerification).toHaveBeenCalledWith(
+        "user@example.com",
+      );
+      expect(result).toEqual({ ok: true, emailSent: true, message: "sent" });
+      expect(useAuthStore.getState().isLoading).toBe(false);
+    });
+
+    it("returns ok false and sets error on failure", async () => {
+      mockedAuthApi.resendVerification.mockRejectedValueOnce(
+        new Error("Rate limited"),
+      );
+
+      const result = await useAuthStore
+        .getState()
+        .resendVerification("user@example.com");
+
+      expect(result).toEqual({ ok: false, emailSent: null, message: null });
+      expect(useAuthStore.getState().error).toBe("Rate limited");
     });
   });
 

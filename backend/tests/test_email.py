@@ -487,10 +487,12 @@ class TestEmailEdgeCases:
 
         with (
             patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp),
-            pytest.raises(RuntimeError, match="Unexpected error"),
+            patch("app.services.email.asyncio.sleep", new_callable=AsyncMock),
+            patch("app.services.email._MAX_RETRIES", 1),
         ):
-            await send_verification_email("user@example.com", "token123")
+            result = await send_verification_email("user@example.com", "token123")
 
+        assert result is False
         mock_smtp.send_message.assert_awaited_once()
 
     # -- SMTP constructor timeout ----------------------------------------------

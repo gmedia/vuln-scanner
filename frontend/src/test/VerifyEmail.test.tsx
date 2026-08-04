@@ -44,7 +44,11 @@ describe("VerifyEmail", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockVerifyEmail = vi.fn().mockResolvedValue(true);
-    mockResendVerification = vi.fn().mockResolvedValue(true);
+    mockResendVerification = vi.fn().mockResolvedValue({
+      ok: true,
+      emailSent: true,
+      message: "Email verifikasi telah dikirim.",
+    });
     mockNavigate = vi.fn();
     mockStartCooldown = vi.fn();
     mockCooldown = 0;
@@ -75,7 +79,9 @@ describe("VerifyEmail", () => {
     it("renders resend email form with labeled input and button", () => {
       render(<VerifyEmail />);
       expect(screen.getByLabelText("Email")).toBeInTheDocument();
-      expect(screen.getByPlaceholderText("you@example.com")).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText("you@example.com"),
+      ).toBeInTheDocument();
       expect(
         screen.getByRole("button", { name: "Resend Verification Email" }),
       ).toBeInTheDocument();
@@ -92,7 +98,9 @@ describe("VerifyEmail", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Verification email resent! Please check your inbox."),
+          screen.getByText(
+            "Verification email resent! Please check your inbox.",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -118,7 +126,9 @@ describe("VerifyEmail", () => {
     it("shows cooldown timer when cooldown > 0", () => {
       mockCooldown = 15;
       render(<VerifyEmail />);
-      expect(screen.getByText(/Too many attempts. Wait 15s/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Too many attempts. Wait 15s/),
+      ).toBeInTheDocument();
     });
 
     it("calls resendVerification on form submit", async () => {
@@ -137,7 +147,18 @@ describe("VerifyEmail", () => {
 
     it("shows loading state when resending", async () => {
       mockResendVerification = vi.fn().mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve(true), 100)),
+        () =>
+          new Promise((resolve) =>
+            setTimeout(
+              () =>
+                resolve({
+                  ok: true,
+                  emailSent: true,
+                  message: "Email verifikasi telah dikirim.",
+                }),
+              100,
+            ),
+          ),
       );
       render(<VerifyEmail />);
       const input = screen.getByPlaceholderText("you@example.com");
@@ -207,7 +228,9 @@ describe("VerifyEmail", () => {
       render(<VerifyEmail />);
 
       await waitFor(() => {
-        fireEvent.click(screen.getByRole("button", { name: /go to dashboard/i }));
+        fireEvent.click(
+          screen.getByRole("button", { name: /go to dashboard/i }),
+        );
       });
 
       expect(mockNavigate).toHaveBeenCalledWith("/dashboard");

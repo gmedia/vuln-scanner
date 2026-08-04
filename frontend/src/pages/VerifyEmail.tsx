@@ -1,12 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
-import {
-  Loader2,
-  CheckCircle,
-  XCircle,
-  Timer,
-  Mail,
-} from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Timer, Mail } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useRateLimitCooldown } from "@/hooks/useRateLimitCooldown";
 import { Input } from "@/components/ui/Input";
@@ -45,9 +39,9 @@ function VerifyEmail() {
       if (!resendEmail) return;
       setIsResending(true);
       setResendSuccess(false);
-      const ok = await resendVerification(resendEmail);
-      if (ok) {
-        setResendSuccess(true);
+      const result = await resendVerification(resendEmail);
+      if (result.ok) {
+        setResendSuccess(result.emailSent !== false);
         setIsResending(false);
       } else {
         setIsResending(false);
@@ -134,10 +128,7 @@ function VerifyEmail() {
             </form>
 
             <Link to="/login" className="block">
-              <Button
-                variant="outline"
-                className="w-full font-mono text-sm"
-              >
+              <Button variant="outline" className="w-full font-mono text-sm">
                 Back to sign in
               </Button>
             </Link>

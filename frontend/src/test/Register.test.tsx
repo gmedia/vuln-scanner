@@ -12,8 +12,19 @@ vi.mock("react-router-dom", () => ({
   ),
 }));
 
+const okRegister = {
+  ok: true as const,
+  emailSent: true as boolean | null,
+  message: "Registrasi berhasil. Periksa email Anda untuk verifikasi.",
+};
+
 const defaultAuthState = {
-  register: vi.fn().mockResolvedValue(true),
+  register: vi.fn().mockResolvedValue(okRegister),
+  resendVerification: vi.fn().mockResolvedValue({
+    ok: true,
+    emailSent: true,
+    message: "Email verifikasi telah dikirim.",
+  }),
   error: null as string | null,
   isAuthenticated: false,
   isLoading: false,
@@ -35,11 +46,29 @@ vi.mock("@/store/creditStore", () => ({
 
 const mockUseAuthStore = useAuthStore as unknown as ReturnType<typeof vi.fn>;
 
+async function submitValidRegistration() {
+  fireEvent.change(screen.getByLabelText("Email"), {
+    target: { value: "test@example.com" },
+  });
+  fireEvent.change(screen.getByLabelText("Password"), {
+    target: { value: "password123" },
+  });
+  fireEvent.change(screen.getByLabelText("Confirm Password"), {
+    target: { value: "password123" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: /create account/i }));
+}
+
 describe("Register", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseAuthStore.mockReturnValue(defaultAuthState);
-    defaultAuthState.register = vi.fn().mockResolvedValue(true);
+    defaultAuthState.register = vi.fn().mockResolvedValue(okRegister);
+    defaultAuthState.resendVerification = vi.fn().mockResolvedValue({
+      ok: true,
+      emailSent: true,
+      message: "Email verifikasi telah dikirim.",
+    });
     defaultAuthState.error = null;
     defaultAuthState.isAuthenticated = false;
     defaultAuthState.clearError = vi.fn();
@@ -75,7 +104,9 @@ describe("Register", () => {
 
   it("renders the Crosshair icon and Create account title", () => {
     render(<Register />);
-    expect(screen.getByRole("heading", { name: /create account/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /create account/i }),
+    ).toBeInTheDocument();
   });
 
   it("renders Sign in link", () => {
@@ -99,7 +130,9 @@ describe("Register", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /create account/i }));
     await waitFor(() => {
-      expect(screen.getByText("Password must be at least 8 characters")).toBeInTheDocument();
+      expect(
+        screen.getByText("Password must be at least 8 characters"),
+      ).toBeInTheDocument();
     });
     expect(defaultAuthState.register).not.toHaveBeenCalled();
   });
@@ -133,16 +166,7 @@ describe("Register", () => {
 
   it("calls register with email, password, confirmPassword on valid submit", async () => {
     render(<Register />);
-    fireEvent.change(screen.getByLabelText("Email"), {
-      target: { value: "test@example.com" },
-    });
-    fireEvent.change(screen.getByLabelText("Password"), {
-      target: { value: "password123" },
-    });
-    fireEvent.change(screen.getByLabelText("Confirm Password"), {
-      target: { value: "password123" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /create account/i }));
+    await submitValidRegistration();
     await waitFor(() => {
       expect(defaultAuthState.register).toHaveBeenCalledWith(
         "test@example.com",
@@ -154,35 +178,56 @@ describe("Register", () => {
 
   it("shows success view after successful registration", async () => {
     render(<Register />);
-    fireEvent.change(screen.getByLabelText("Email"), {
-      target: { value: "test@example.com" },
-    });
-    fireEvent.change(screen.getByLabelText("Password"), {
-      target: { value: "password123" },
-    });
-    fireEvent.change(screen.getByLabelText("Confirm Password"), {
-      target: { value: "password123" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /create account/i }));
+    await submitValidRegistration();
     await waitFor(() => {
       expect(screen.getByText("Registration Successful!")).toBeInTheDocument();
     });
-    expect(screen.getByText("Check your email to verify your account.")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Registrasi berhasil. Periksa email Anda untuk verifikasi.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /resend verification email/i }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Go to Sign In")).toBeInTheDocument();
+  });
+
+  it("shows send-failed warning and resend on email_sent false", async () => {
+    defaultAuthState.register = vi.fn().mockResolvedValue({
+      ok: true,
+      emailSent: false,
+      message:
+        "Registrasi berhasil, tetapi email verifikasi gagal dikirim. Silakan gunakan kirim ulang verifikasi.",
+    });
+    render(<Register />);
+    await submitValidRegistration();
+    await waitFor(() => {
+      expect(screen.getByText("Registration Successful!")).toBeInTheDocument();
+    });
+    expect(
+      screen.getByText(/email verifikasi gagal dikirim/i),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: /resend verification email/i }),
+    );
+    await waitFor(() => {
+      expect(defaultAuthState.resendVerification).toHaveBeenCalledWith(
+        "test@example.com",
+      );
+    });
+    await waitFor(() => {
+      const feedback = screen.getAllByText("Email verifikasi telah dikirim.");
+      expect(feedback.length).toBeGreaterThanOrEqual(1);
+      expect(feedback.some((el) => el.className.includes("text-primary"))).toBe(
+        true,
+      );
+    });
   });
 
   it("shows Go to Sign In link on success page", async () => {
     render(<Register />);
-    fireEvent.change(screen.getByLabelText("Email"), {
-      target: { value: "test@example.com" },
-    });
-    fireEvent.change(screen.getByLabelText("Password"), {
-      target: { value: "password123" },
-    });
-    fireEvent.change(screen.getByLabelText("Confirm Password"), {
-      target: { value: "password123" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /create account/i }));
+    await submitValidRegistration();
     await waitFor(() => {
       expect(screen.getByText("Registration Successful!")).toBeInTheDocument();
     });
@@ -192,19 +237,11 @@ describe("Register", () => {
 
   it("shows loading state when submitting", async () => {
     defaultAuthState.register = vi.fn(
-      () => new Promise((resolve) => setTimeout(() => resolve(true), 100)),
+      () =>
+        new Promise((resolve) => setTimeout(() => resolve(okRegister), 100)),
     );
     render(<Register />);
-    fireEvent.change(screen.getByLabelText("Email"), {
-      target: { value: "test@example.com" },
-    });
-    fireEvent.change(screen.getByLabelText("Password"), {
-      target: { value: "password123" },
-    });
-    fireEvent.change(screen.getByLabelText("Confirm Password"), {
-      target: { value: "password123" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /create account/i }));
+    await submitValidRegistration();
     await waitFor(() => {
       expect(screen.getByText("Creating account...")).toBeInTheDocument();
     });
@@ -212,19 +249,11 @@ describe("Register", () => {
 
   it("disables inputs when submitting", async () => {
     defaultAuthState.register = vi.fn(
-      () => new Promise((resolve) => setTimeout(() => resolve(true), 100)),
+      () =>
+        new Promise((resolve) => setTimeout(() => resolve(okRegister), 100)),
     );
     render(<Register />);
-    fireEvent.change(screen.getByLabelText("Email"), {
-      target: { value: "test@example.com" },
-    });
-    fireEvent.change(screen.getByLabelText("Password"), {
-      target: { value: "password123" },
-    });
-    fireEvent.change(screen.getByLabelText("Confirm Password"), {
-      target: { value: "password123" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /create account/i }));
+    await submitValidRegistration();
     await waitFor(() => {
       expect(screen.getByLabelText("Email")).toBeDisabled();
       expect(screen.getByLabelText("Password")).toBeDisabled();
@@ -234,21 +263,15 @@ describe("Register", () => {
 
   it("disables button when submitting", async () => {
     defaultAuthState.register = vi.fn(
-      () => new Promise((resolve) => setTimeout(() => resolve(true), 100)),
+      () =>
+        new Promise((resolve) => setTimeout(() => resolve(okRegister), 100)),
     );
     render(<Register />);
-    fireEvent.change(screen.getByLabelText("Email"), {
-      target: { value: "test@example.com" },
-    });
-    fireEvent.change(screen.getByLabelText("Password"), {
-      target: { value: "password123" },
-    });
-    fireEvent.change(screen.getByLabelText("Confirm Password"), {
-      target: { value: "password123" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /create account/i }));
+    await submitValidRegistration();
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /creating account/i })).toBeDisabled();
+      expect(
+        screen.getByRole("button", { name: /creating account/i }),
+      ).toBeDisabled();
     });
   });
 

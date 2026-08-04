@@ -41,10 +41,10 @@ async def _send_with_retry(msg: MIMEMultipart, email_to: str, label: str) -> boo
             await smtp.send_message(msg)
             await smtp.quit()
 
-            logger.info("%s email sent to %s", label, email_to)
+            logger.warning("%s email sent to %s", label, email_to)
             return True
 
-        except (SMTPException, OSError):
+        except (SMTPException, OSError, Exception):
             if attempt < _MAX_RETRIES:
                 delay = _RETRY_BACKOFF_BASE * (2 ** (attempt - 1))
                 logger.warning(
