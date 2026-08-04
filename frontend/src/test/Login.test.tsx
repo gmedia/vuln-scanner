@@ -14,6 +14,11 @@ vi.mock("react-router-dom", () => ({
 
 const defaultAuthState = {
   login: vi.fn().mockResolvedValue(true),
+  resendVerification: vi.fn().mockResolvedValue({
+    ok: true,
+    emailSent: true,
+    message: "Email verifikasi telah dikirim.",
+  }),
   error: null as string | null,
   isAuthenticated: false,
   isLoading: false,
@@ -40,6 +45,11 @@ describe("Login", () => {
     vi.clearAllMocks();
     mockUseAuthStore.mockReturnValue(defaultAuthState);
     defaultAuthState.login = vi.fn().mockResolvedValue(true);
+    defaultAuthState.resendVerification = vi.fn().mockResolvedValue({
+      ok: true,
+      emailSent: true,
+      message: "Email verifikasi telah dikirim.",
+    });
     defaultAuthState.error = null;
     defaultAuthState.isAuthenticated = false;
     defaultAuthState.clearError = vi.fn();
@@ -68,7 +78,9 @@ describe("Login", () => {
 
   it("renders the Crosshair icon and Sign in title", () => {
     render(<Login />);
-    expect(screen.getByRole("heading", { name: /sign in/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /sign in/i }),
+    ).toBeInTheDocument();
   });
 
   it("toggles password visibility", () => {
@@ -204,7 +216,9 @@ describe("Login", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /signing in/i })).toBeDisabled();
+      expect(
+        screen.getByRole("button", { name: /signing in/i }),
+      ).toBeDisabled();
     });
   });
 
@@ -225,10 +239,62 @@ describe("Login", () => {
 
   it("handles empty form submission gracefully", async () => {
     render(<Login />);
-    const form = screen.getByRole("button", { name: /sign in/i }).closest("form")!;
+    const form = screen
+      .getByRole("button", { name: /sign in/i })
+      .closest("form")!;
     fireEvent.submit(form);
     await waitFor(() => {
       expect(defaultAuthState.login).toHaveBeenCalledWith("", "");
+    });
+  });
+
+  it("shows resend verification when error is unverified email", () => {
+    mockUseAuthStore.mockReturnValue({
+      ...defaultAuthState,
+      error: "Email belum diverifikasi",
+    });
+    render(<Login />);
+    expect(screen.getByText("Email belum diverifikasi")).toBeInTheDocument();
+    expect(
+      screen.getByText("Need a new verification link?"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /resend verification email/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("does not show resend for generic login errors", () => {
+    mockUseAuthStore.mockReturnValue({
+      ...defaultAuthState,
+      error: "Invalid credentials",
+    });
+    render(<Login />);
+    expect(
+      screen.queryByRole("button", { name: /resend verification email/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("calls resendVerification with email on resend click", async () => {
+    mockUseAuthStore.mockReturnValue({
+      ...defaultAuthState,
+      error: "Email belum diverifikasi",
+    });
+    render(<Login />);
+    fireEvent.change(screen.getByLabelText("Email"), {
+      target: { value: "unverified@example.com" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: /resend verification email/i }),
+    );
+    await waitFor(() => {
+      expect(defaultAuthState.resendVerification).toHaveBeenCalledWith(
+        "unverified@example.com",
+      );
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByText("Email verifikasi telah dikirim."),
+      ).toBeInTheDocument();
     });
   });
 });
