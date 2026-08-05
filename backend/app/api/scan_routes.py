@@ -207,7 +207,13 @@ async def start_mobile_scan(
     header = await file.read(4)
     await file.seek(0)
     if header[:2] != b"PK":
-        raise HTTPException(status_code=400, detail="File must be a valid ZIP archive (APK/IPA)")
+        raise HTTPException(status_code=400, detail="File must be a valid ZIP archive (APK/AAB/IPA)")
+
+    lower_name = file.filename.lower()
+    if platform == "android" and not (lower_name.endswith(".apk") or lower_name.endswith(".aab")):
+        raise HTTPException(status_code=400, detail="Android uploads must use .apk or .aab extension")
+    if platform == "ios" and not lower_name.endswith(".ipa"):
+        raise HTTPException(status_code=400, detail="iOS uploads must use .ipa extension")
 
     # Stream to a temp file while enforcing size limit
     os.makedirs(settings.upload_dir, exist_ok=True)

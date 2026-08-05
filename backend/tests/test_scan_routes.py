@@ -489,6 +489,30 @@ def test_start_mobile_scan_ios(client, mock_celery):
     assert "id" in data
 
 
+def test_start_mobile_scan_aab(client, mock_celery):
+    resp = client.post(
+        "/api/scan/mobile",
+        files={"file": ("app.aab", b"PK\x03\x04fake-aab-content")},
+        data={"platform": "android"},
+        headers=HEADERS,
+    )
+    assert resp.status_code == 202
+    data = resp.json()
+    assert data["scan_type"] == "apk"
+    assert "id" in data
+
+
+def test_start_mobile_scan_android_wrong_extension(client, mock_celery):
+    resp = client.post(
+        "/api/scan/mobile",
+        files={"file": ("app.zip", b"PK\x03\x04fake-zip")},
+        data={"platform": "android"},
+        headers=HEADERS,
+    )
+    assert resp.status_code == 400
+    assert ".apk" in resp.json()["detail"].lower() or ".aab" in resp.json()["detail"].lower()
+
+
 def test_rate_limit_hit(client, mock_celery, monkeypatch):
     """Rate-limited scan submission returns 429."""
     # Lower the limit so a single request triggers it
@@ -916,7 +940,7 @@ async def test_mobile_upload_invalid_zip_kill_144(client, db_session, sample_use
     )
     assert resp.status_code == 400
     detail = resp.json()["detail"]
-    assert detail == "File must be a valid ZIP archive (APK/IPA)"
+    assert detail == "File must be a valid ZIP archive (APK/AAB/IPA)"
     # Mutant 144: "XXFile must be..." must not appear
     assert not detail.startswith("XX")
 
