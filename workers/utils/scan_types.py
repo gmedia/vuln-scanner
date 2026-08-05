@@ -73,3 +73,4 @@ class TaskResult(TypedDict):
     job_id: str
     summary: SeveritySummary
     error: NotRequired[str]
+    input_format: NotRequired[str]

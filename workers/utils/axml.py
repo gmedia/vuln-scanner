@@ -26,7 +26,8 @@ TYPE_INT_BOOLEAN = 0x12
 def is_binary_axml(data: bytes) -> bool:
     if len(data) < 8:
         return False
-    return struct.unpack_from("<I", data, 0)[0] == CHUNK_AXML_FILE
+    magic: int = struct.unpack_from("<I", data, 0)[0]
+    return magic == CHUNK_AXML_FILE
 
 
 def axml_to_xml(data: bytes) -> str:
