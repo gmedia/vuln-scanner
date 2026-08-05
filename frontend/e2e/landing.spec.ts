@@ -57,7 +57,7 @@ test.describe("Landing", () => {
     const card = page.locator("text=Mobile Scanner");
     await expect(card).toBeVisible();
     await expect(
-      page.locator("text=APK/IPA static analysis and secret detection"),
+      page.locator("text=APK/AAB/IPA static analysis and secret detection"),
     ).toBeVisible();
   });
 

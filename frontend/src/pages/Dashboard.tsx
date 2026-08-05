@@ -139,7 +139,7 @@ function Dashboard() {
     {
       to: "/scan/mobile",
       icon: Smartphone,
-      label: "Upload APK/IPA",
+      label: "Upload APK/AAB/IPA",
       desc: "Static analysis of mobile binaries",
     },
   ];

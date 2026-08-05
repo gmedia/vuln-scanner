@@ -98,7 +98,7 @@ describe("Dashboard", () => {
     render(<Dashboard />);
     expect(screen.getByText("New IP Scan")).toBeInTheDocument();
     expect(screen.getByText("New Domain Scan")).toBeInTheDocument();
-    expect(screen.getByText("Upload APK/IPA")).toBeInTheDocument();
+    expect(screen.getByText("Upload APK/AAB/IPA")).toBeInTheDocument();
   });
 
   it("shows No scans yet when scan list is empty", () => {
