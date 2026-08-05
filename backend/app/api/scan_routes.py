@@ -56,6 +56,7 @@ def _export_json(job: ScanJobDetailResponse) -> dict[str, object]:
                 "cve_id": f.cve_id,
                 "cvss_score": f.cvss_score,
                 "remediation": f.remediation,
+                "impact": f.impact,
                 "raw_data": f.raw_data,
             }
             for f in job.findings

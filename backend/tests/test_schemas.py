@@ -133,12 +133,15 @@ class TestScanFindingResponseFromOrm:
             cve_id="CVE-2024-1234",
             cvss_score=7.5,
             remediation="Disable root login",
+            impact="Exposed SSH can enable brute-force and remote shell access.",
             raw_data=None,
             found_at=now,
         )
         assert finding.severity == "high"
         assert finding.cvss_score == 7.5
         assert finding.cve_id == "CVE-2024-1234"
+        assert finding.impact is not None
+        assert "SSH" in finding.impact
 
 
 # ---------------------------------------------------------------------------
