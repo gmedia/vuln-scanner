@@ -171,6 +171,7 @@ describe("scans API", () => {
           cve_id: "CVE-2024-0001",
           cvss_score: 9.8,
           remediation: "Disable SSH",
+          impact: "Exposed SSH can enable remote shell access.",
           raw_data: null,
           found_at: "2025-01-01T00:00:00Z",
         },
