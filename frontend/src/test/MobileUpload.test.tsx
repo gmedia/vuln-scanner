@@ -47,7 +47,7 @@ describe("MobileUpload", () => {
   it("renders platform selector with Android and iOS buttons", () => {
     render(<MobileUpload />);
     expect(
-      screen.getByRole("button", { name: /android \(\.apk\)/i }),
+      screen.getByRole("button", { name: /android \(\.apk \/ \.aab\)/i }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /ios \(\.ipa\)/i }),
@@ -57,19 +57,19 @@ describe("MobileUpload", () => {
   it("Android is the default platform", () => {
     render(<MobileUpload />);
     const androidBtn = screen.getByRole("button", {
-      name: /android \(\.apk\)/i,
+      name: /android \(\.apk \/ \.aab\)/i,
     });
     expect(androidBtn).toBeInTheDocument();
     expect(androidBtn).toHaveAttribute("aria-pressed", "true");
     expect(
-      screen.getByText(/drop \.apk file here/i),
+      screen.getByText(/drop \.apk or \.aab file here/i),
     ).toBeInTheDocument();
   });
 
   it("renders drop zone with file type text and Browse files", () => {
     render(<MobileUpload />);
     expect(
-      screen.getByText(/drop \.apk file here/i),
+      screen.getByText(/drop \.apk or \.aab file here/i),
     ).toBeInTheDocument();
     expect(
       screen.getByText(/or drag and drop \(max 500MB\)/i),
@@ -82,7 +82,7 @@ describe("MobileUpload", () => {
   it("sets aria-pressed on platform selection", async () => {
     const user = userEvent.setup();
     render(<MobileUpload />);
-    const androidBtn = screen.getByRole("button", { name: /android \(\.apk\)/i });
+    const androidBtn = screen.getByRole("button", { name: /android \(\.apk \/ \.aab\)/i });
     const iosBtn = screen.getByRole("button", { name: /ios \(\.ipa\)/i });
     expect(androidBtn).toHaveAttribute("aria-pressed", "true");
     expect(iosBtn).toHaveAttribute("aria-pressed", "false");
@@ -129,7 +129,18 @@ describe("MobileUpload", () => {
     const file = new File(["test"], "test.ipa", { type: "application/octet-stream" });
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [file] } });
-    expect(screen.getByText("Invalid file type. Expected .apk for Android.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Invalid file type. Expected .apk or .aab for Android."),
+    ).toBeInTheDocument();
+  });
+
+  it("accepts .aab file on Android platform", async () => {
+    render(<MobileUpload />);
+    const file = new File(["PK"], "app.aab", { type: "application/octet-stream" });
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    expect(screen.getByText("app.aab")).toBeInTheDocument();
+    expect(screen.queryByText(/invalid file type/i)).not.toBeInTheDocument();
   });
 
   it("shows error for wrong file type on iOS platform", async () => {
@@ -175,7 +186,7 @@ describe("MobileUpload", () => {
     await user.click(clearBtn);
     await waitFor(() => {
       expect(screen.queryByText("test.apk")).not.toBeInTheDocument();
-      expect(screen.getByText(/drop \.apk file here/i)).toBeInTheDocument();
+      expect(screen.getByText(/drop \.apk or \.aab file here/i)).toBeInTheDocument();
     });
   });
 
@@ -210,7 +221,7 @@ describe("MobileUpload", () => {
 
   it("handles drag and drop", async () => {
     render(<MobileUpload />);
-    const dropZone = screen.getByText(/drop \.apk file here/i).parentElement as HTMLElement;
+    const dropZone = screen.getByText(/drop \.apk or \.aab file here/i).parentElement as HTMLElement;
     const file = new File(["test"], "app.apk", { type: "application/vnd.android.package-archive" });
     const dataTransfer = { files: [file] };
     fireEvent.dragOver(dropZone);
@@ -223,16 +234,18 @@ describe("MobileUpload", () => {
 
   it("shows error when dropping invalid file", async () => {
     render(<MobileUpload />);
-    const dropZone = screen.getByText(/drop \.apk file here/i).parentElement as HTMLElement;
+    const dropZone = screen.getByText(/drop \.apk or \.aab file here/i).parentElement as HTMLElement;
     const file = new File(["test"], "test.txt", { type: "text/plain" });
     const dataTransfer = { files: [file] };
     fireEvent.drop(dropZone, { dataTransfer });
-    expect(screen.getByText("Invalid file type. Expected .apk for Android.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Invalid file type. Expected .apk or .aab for Android."),
+    ).toBeInTheDocument();
   });
 
   it("handles drag leave", async () => {
     render(<MobileUpload />);
-    const dropZone = screen.getByText(/drop \.apk file here/i).parentElement as HTMLElement;
+    const dropZone = screen.getByText(/drop \.apk or \.aab file here/i).parentElement as HTMLElement;
     fireEvent.dragOver(dropZone);
     expect(dropZone).toHaveClass("border-primary");
     fireEvent.dragLeave(dropZone);
@@ -285,13 +298,13 @@ describe("MobileUpload", () => {
     render(<MobileUpload />);
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [] } });
-    expect(screen.getByText(/drop \.apk file here/i)).toBeInTheDocument();
+    expect(screen.getByText(/drop \.apk or \.aab file here/i)).toBeInTheDocument();
   });
 
   it("shows correct accept attribute for Android", () => {
     render(<MobileUpload />);
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    expect(fileInput).toHaveAttribute("accept", ".apk");
+    expect(fileInput).toHaveAttribute("accept", ".apk,.aab");
   });
 
   it("shows correct accept attribute for iOS", async () => {
@@ -305,7 +318,7 @@ describe("MobileUpload", () => {
 
   it("drop zone has correct styling when dragging", () => {
     render(<MobileUpload />);
-    const dropZone = screen.getByText(/drop \.apk file here/i).parentElement as HTMLElement;
+    const dropZone = screen.getByText(/drop \.apk or \.aab file here/i).parentElement as HTMLElement;
     fireEvent.dragOver(dropZone);
     expect(dropZone.className).toContain("border-primary");
     expect(dropZone.className).toContain("bg-primary/5");
@@ -313,7 +326,7 @@ describe("MobileUpload", () => {
 
   it("drop zone has correct styling when not dragging", () => {
     render(<MobileUpload />);
-    const dropZone = screen.getByText(/drop \.apk file here/i).parentElement as HTMLElement;
+    const dropZone = screen.getByText(/drop \.apk or \.aab file here/i).parentElement as HTMLElement;
     expect(dropZone.className).toContain("border-muted-foreground/40");
   });
 

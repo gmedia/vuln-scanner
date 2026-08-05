@@ -1,7 +1,9 @@
 import asyncio
+import contextlib
 import json
 import os
 import plistlib
+import shutil
 import time
 import uuid
 import zipfile
@@ -15,6 +17,7 @@ from loguru import logger
 from sqlalchemy import update
 
 from tasks.dead_letter import dead_letter_handler
+from utils.aab_convert import AabConversionError, convert_aab_to_universal_apk, is_aab_path
 from utils.cve_lookup import extract_cvss, format_vuln_finding, lookup_service_cves
 from utils.database import get_sync_session
 from utils.mobile_utils import analyze_apk, analyze_ipa
@@ -95,118 +98,176 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
         file_size_mb = os.path.getsize(file_path) / (1024 * 1024)
         publish_progress(job_id, "extracting", 5, f"Analyzing file ({file_size_mb:.1f}MB)...")
 
-        all_findings = []
+        all_findings: list[ScanFinding] = []
+        libraries: list[str] = []
+        analysis_path = file_path
+        converted_apk_path: str | None = None
+        input_format = "aab" if platform == "android" and is_aab_path(file_path) else platform
 
-        if platform == "android":
-            publish_progress(job_id, "manifest", 15, "Parsing AndroidManifest.xml...")
+        try:
+            if platform == "android" and is_aab_path(file_path):
+                publish_progress(job_id, "aab_convert", 8, "Converting AAB to universal APK via bundletool...")
+                try:
+                    analysis_path = convert_aab_to_universal_apk(file_path)
+                    converted_apk_path = analysis_path
+                    publish_progress(
+                        job_id,
+                        "aab_convert_done",
+                        12,
+                        "AAB converted (universal APK; on-demand modules may be incomplete)",
+                    )
+                    all_findings.append(
+                        {
+                            "severity": "info",
+                            "category": "aab_coverage",
+                            "title": "Scanned as universal APK from AAB",
+                            "description": (
+                                "Android App Bundle was converted with bundletool --mode=universal. "
+                                "On-demand feature modules and asset packs may not be fully included."
+                            ),
+                        }
+                    )
+                except AabConversionError as e:
+                    logger.error("AAB conversion failed for job {job_id}: {error}", job_id=job_id, error=e)
+                    publish_progress(job_id, "aab_convert_error", 100, f"AAB conversion failed: {str(e)[:150]}")
+                    _update_status(session, job_id, "failed")
+                    _refund_credits(session, job_id, platform)
+                    session.commit()
+                    session.close()
+                    with contextlib.suppress(OSError):
+                        os.remove(file_path)
+                    return {
+                        "job_id": job_id,
+                        "summary": {
+                            "total_findings": 0,
+                            "critical": 0,
+                            "high": 0,
+                            "medium": 0,
+                            "low": 0,
+                            "info": 0,
+                        },
+                        "error": f"aab conversion failed: {e}",
+                        "input_format": input_format,
+                    }
+
+            if platform == "android":
+                publish_progress(job_id, "manifest", 15, "Parsing AndroidManifest.xml...")
+                try:
+                    apk_info, findings, libraries = analyze_apk(analysis_path)
+                    all_findings.extend(findings)
+                    publish_progress(
+                        job_id,
+                        "manifest_done",
+                        30,
+                        f"Package: {apk_info.package_name}, {len(apk_info.permissions)} permissions",
+                    )
+                except (OSError, zipfile.BadZipFile, ValueError) as e:
+                    publish_progress(job_id, "manifest_error", 25, f"APK analysis warning: {str(e)[:100]}")
+
+            elif platform == "ios":
+                publish_progress(job_id, "plist", 15, "Parsing Info.plist...")
+                try:
+                    ipa_info, findings, libraries = analyze_ipa(file_path)
+                    all_findings.extend(findings)
+                    publish_progress(
+                        job_id,
+                        "plist_done",
+                        30,
+                        f"Bundle: {ipa_info.bundle_id}, {len(ipa_info.ats_exceptions)} ATS exemptions",
+                    )
+                except (OSError, zipfile.BadZipFile, ValueError, plistlib.InvalidFileException) as e:
+                    publish_progress(job_id, "plist_error", 25, f"IPA analysis warning: {str(e)[:100]}")
+
+            publish_progress(job_id, "secrets", 50, "Scanning for hardcoded secrets...")
             try:
-                apk_info, findings, libraries = analyze_apk(file_path)
-                all_findings.extend(findings)
-                publish_progress(
-                    job_id,
-                    "manifest_done",
-                    30,
-                    f"Package: {apk_info.package_name}, {len(apk_info.permissions)} permissions",
+                with open(analysis_path, "rb") as f:
+                    raw = f.read(5 * 1024 * 1024)
+                text = raw.decode("utf-8", errors="replace")
+                from utils.mobile_utils import _scan_secrets
+
+                secret_findings = _scan_secrets(text)
+                for sf in secret_findings:
+                    if sf not in all_findings:
+                        all_findings.append(sf)
+                publish_progress(job_id, "secrets_done", 65, f"Found {len(secret_findings)} potential secrets")
+            except (OSError, UnicodeDecodeError, ValueError) as e:
+                logger.warning("Secret scan failed for job {job_id}: {error}", job_id=job_id, error=e)
+                publish_progress(job_id, "secrets_done", 65, "Secret scan skipped")
+
+            publish_progress(job_id, "cve_lookup", 70, "Looking up CVEs for embedded libraries...")
+            seen_libs: set[str] = set()
+            for lib in libraries:
+                lib_name = lib.lstrip("lib").replace("_", "-").lower()
+                if lib_name in seen_libs or len(lib_name) < 3:
+                    continue
+                seen_libs.add(lib_name)
+                try:
+                    vulns = _run_async(lookup_service_cves(lib_name, lib_name, ""))
+                except (TimeoutError, OSError, RuntimeError) as e:
+                    logger.warning("CVE lookup failed for lib {lib}: {error}", lib=lib_name, error=e)
+                    vulns = []
+                for vuln in vulns:
+                    cvss = extract_cvss(vuln)
+                    finding = format_vuln_finding(vuln, cvss)
+                    finding["description"] = f"[{platform}] Library: {lib}\n" + (finding.get("description") or "")
+                    all_findings.append(finding)
+
+            all_findings = sort_findings_by_severity(all_findings)
+            summary = compute_severity_summary(all_findings)
+
+            publish_progress(job_id, "saving", 90, "Saving results...")
+            _save_findings(session, job_id, all_findings)
+
+            _update_status(
+                session, job_id, "completed", progress=100, result_summary=summary, completed_at=datetime.now(UTC)
+            )
+            session.commit()
+            session.close()
+
+            logger.info(
+                "Mobile scan complete: job={job_id} platform={platform} format={fmt} findings={total} "
+                "critical={c} high={h} medium={m} low={l}",
+                job_id=job_id,
+                platform=platform,
+                fmt=input_format,
+                total=summary["total_findings"],
+                c=summary["critical"],
+                h=summary["high"],
+                m=summary["medium"],
+                l=summary["low"],
+            )
+            publish_progress(
+                job_id,
+                "completed",
+                100,
+                f"Done: {summary['total_findings']} findings "
+                f"({summary['critical']}C/{summary['high']}H/{summary['medium']}M/{summary['low']}L)",
+            )
+
+            try:
+                os.remove(file_path)
+            except OSError as e:
+                logger.warning("Failed to remove mobile scan file {path}: {error}", path=file_path, error=e)
+
+            try:
+                r = redis.Redis(connection_pool=get_redis_pool())
+                r.set("health:last_task_completed", time.time())
+            except redis.RedisError as e:
+                logger.warning(
+                    "Failed to update Redis health timestamp for job {job_id}: {error}", job_id=job_id, error=e
                 )
-            except (OSError, zipfile.BadZipFile, ValueError) as e:
-                publish_progress(job_id, "manifest_error", 25, f"APK analysis warning: {str(e)[:100]}")
 
-        elif platform == "ios":
-            publish_progress(job_id, "plist", 15, "Parsing Info.plist...")
-            try:
-                ipa_info, findings, libraries = analyze_ipa(file_path)
-                all_findings.extend(findings)
-                publish_progress(
-                    job_id,
-                    "plist_done",
-                    30,
-                    f"Bundle: {ipa_info.bundle_id}, {len(ipa_info.ats_exceptions)} ATS exemptions",
-                )
-            except (OSError, zipfile.BadZipFile, ValueError, plistlib.InvalidFileException) as e:
-                publish_progress(job_id, "plist_error", 25, f"IPA analysis warning: {str(e)[:100]}")
-
-        else:
-            libraries = []
-
-        publish_progress(job_id, "secrets", 50, "Scanning for hardcoded secrets...")
-        try:
-            with open(file_path, "rb") as f:
-                raw = f.read(5 * 1024 * 1024)
-            text = raw.decode("utf-8", errors="replace")
-            from utils.mobile_utils import _scan_secrets
-
-            secret_findings = _scan_secrets(text)
-            for sf in secret_findings:
-                if sf not in all_findings:
-                    all_findings.append(sf)
-            publish_progress(job_id, "secrets_done", 65, f"Found {len(secret_findings)} potential secrets")
-        except (OSError, UnicodeDecodeError, ValueError) as e:
-            logger.warning("Secret scan failed for job {job_id}: {error}", job_id=job_id, error=e)
-            publish_progress(job_id, "secrets_done", 65, "Secret scan skipped")
-
-        publish_progress(job_id, "cve_lookup", 70, "Looking up CVEs for embedded libraries...")
-        total_vuln = 0
-        seen_libs = set()
-        for lib in libraries:
-            lib_name = lib.lstrip("lib").replace("_", "-").lower()
-            if lib_name in seen_libs or len(lib_name) < 3:
-                continue
-            seen_libs.add(lib_name)
-            try:
-                vulns = _run_async(lookup_service_cves(lib_name, lib_name, ""))
-            except (TimeoutError, OSError, RuntimeError) as e:
-                logger.warning("CVE lookup failed for lib {lib}: {error}", lib=lib_name, error=e)
-                vulns = []
-            for vuln in vulns:
-                cvss = extract_cvss(vuln)
-                finding = format_vuln_finding(vuln, cvss)
-                finding["description"] = f"[{platform}] Library: {lib}\n" + (finding.get("description") or "")
-                all_findings.append(finding)
-                total_vuln += 1
-
-        all_findings = sort_findings_by_severity(all_findings)
-        summary = compute_severity_summary(all_findings)
-
-        publish_progress(job_id, "saving", 90, "Saving results...")
-        _save_findings(session, job_id, all_findings)
-
-        _update_status(
-            session, job_id, "completed", progress=100, result_summary=summary, completed_at=datetime.now(UTC)
-        )
-        session.commit()
-        session.close()
-
-        logger.info(
-            "Mobile scan complete: job={job_id} platform={platform} findings={total} "
-            "critical={c} high={h} medium={m} low={l}",
-            job_id=job_id,
-            platform=platform,
-            total=summary["total_findings"],
-            c=summary["critical"],
-            h=summary["high"],
-            m=summary["medium"],
-            l=summary["low"],
-        )
-        publish_progress(
-            job_id,
-            "completed",
-            100,
-            f"Done: {summary['total_findings']} findings "
-            f"({summary['critical']}C/{summary['high']}H/{summary['medium']}M/{summary['low']}L)",
-        )
-
-        try:
-            os.remove(file_path)
-        except OSError as e:
-            logger.warning("Failed to remove mobile scan file {path}: {error}", path=file_path, error=e)
-
-        try:
-            r = redis.Redis(connection_pool=get_redis_pool())
-            r.set("health:last_task_completed", time.time())
-        except redis.RedisError as e:
-            logger.warning("Failed to update Redis health timestamp for job {job_id}: {error}", job_id=job_id, error=e)
-
-        return {"job_id": job_id, "summary": summary}
+            return {"job_id": job_id, "summary": summary, "input_format": input_format}
+        finally:
+            if converted_apk_path and converted_apk_path != file_path:
+                try:
+                    parent = os.path.dirname(converted_apk_path)
+                    if os.path.isfile(converted_apk_path):
+                        os.remove(converted_apk_path)
+                    if parent and os.path.isdir(parent) and "aab_convert_" in os.path.basename(parent):
+                        shutil.rmtree(parent, ignore_errors=True)
+                except OSError as e:
+                    logger.warning("Failed to clean converted APK {path}: {error}", path=converted_apk_path, error=e)
     except Retry:
         raise
     except Exception as e:  # Broad catch at task top-level — inner exceptions already handled

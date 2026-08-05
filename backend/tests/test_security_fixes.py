@@ -300,7 +300,7 @@ async def test_export_json_content_type_is_octet_stream(client, db_session, samp
 
 def test_mobile_scan_neutralizes_path_traversal(client, mock_celery):
     """Mobile scan must use os.path.basename to strip directory traversal from filename."""
-    traversal_filename = "../../../etc/passwd"
+    traversal_filename = "../../../tmp/evil.apk"
 
     resp = client.post(
         "/api/scan/mobile",

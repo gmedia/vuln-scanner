@@ -6,7 +6,9 @@ test.describe("Mobile Scanner", () => {
     await page.goto("/scan/mobile");
     await expect(page.locator("h2:has-text('Mobile scanner')")).toBeVisible();
     await expect(page.locator("text=Upload binary")).toBeVisible();
-    await expect(page.locator("text=Drop .apk file here")).toBeVisible();
+    await expect(
+      page.locator("text=Drop .apk or .aab file here"),
+    ).toBeVisible();
     await expect(
       page.locator("text=or drag and drop (max 500MB)"),
     ).toBeVisible();
@@ -18,7 +20,7 @@ test.describe("Mobile Scanner", () => {
 
   test("shows platform toggle buttons", async ({ page }) => {
     await page.goto("/scan/mobile");
-    await expect(page.locator("text=Android (.apk)")).toBeVisible();
+    await expect(page.locator("text=Android (.apk / .aab)")).toBeVisible();
     await expect(page.locator("text=iOS (.ipa)")).toBeVisible();
   });
 
@@ -27,15 +29,19 @@ test.describe("Mobile Scanner", () => {
   }) => {
     await page.goto("/scan/mobile");
     // Initially Android
-    await expect(page.locator("text=Drop .apk file here")).toBeVisible();
+    await expect(
+      page.locator("text=Drop .apk or .aab file here"),
+    ).toBeVisible();
 
     // Switch to iOS
     await page.locator("button:has-text('iOS (.ipa)')").click();
     await expect(page.locator("text=Drop .ipa file here")).toBeVisible();
 
     // Switch back
-    await page.locator("button:has-text('Android (.apk)')").click();
-    await expect(page.locator("text=Drop .apk file here")).toBeVisible();
+    await page.locator("button:has-text('Android (.apk / .aab)')").click();
+    await expect(
+      page.locator("text=Drop .apk or .aab file here"),
+    ).toBeVisible();
   });
 
   test("submit button disabled when no file selected", async ({ page }) => {
@@ -53,7 +59,11 @@ test.describe("Mobile Scanner", () => {
       mimeType: "text/plain",
       buffer: Buffer.from("not an apk"),
     });
-    await expect(page.locator("text=Invalid file type")).toBeVisible();
+    await expect(
+      page.locator(
+        "text=Invalid file type. Expected .apk or .aab for Android.",
+      ),
+    ).toBeVisible();
   });
 
   test("shows error for wrong iOS file type", async ({ page }) => {
@@ -94,7 +104,22 @@ test.describe("Mobile Scanner", () => {
       .filter({ has: page.locator("svg.lucide-x") })
       .last();
     await clearBtn.click();
-    await expect(page.locator("text=Drop .apk file here")).toBeVisible();
+    await expect(
+      page.locator("text=Drop .apk or .aab file here"),
+    ).toBeVisible();
+  });
+
+  test("accepts .aab file selection on Android", async ({ page }) => {
+    await page.goto("/scan/mobile");
+    const fileInput = page.locator('input[type="file"]');
+    await expect(fileInput).toHaveAttribute("accept", ".apk,.aab");
+    await fileInput.setInputFiles({
+      name: "app.aab",
+      mimeType: "application/octet-stream",
+      buffer: Buffer.from("PK\x03\x04fake aab content"),
+    });
+    await expect(page.locator("text=app.aab")).toBeVisible();
+    await expect(page.locator("text=.AAB").first()).toBeVisible();
   });
 
   test("successful mobile scan navigates to scan detail", async ({ page }) => {

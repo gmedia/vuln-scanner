@@ -51,7 +51,7 @@ function MobileScanner() {
               <li>Manifest and permission analysis</li>
               <li>Exported component detection</li>
               <li>Hardcoded secret scanning</li>
-              <li>Platform-specific binary checks (.apk / .ipa)</li>
+              <li>Platform-specific binary checks (.apk / .aab / .ipa)</li>
             </ul>
           </CardContent>
         </Card>

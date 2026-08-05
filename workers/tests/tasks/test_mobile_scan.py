@@ -1123,3 +1123,105 @@ class TestMobileScanDuplicateFinding:
         """The original finding from analyze_apk is kept."""
         result = self._call_task()
         assert result["summary"]["total_findings"] >= 1
+
+
+class TestMobileAabConversion:
+    """AAB path: convert to universal APK then analyze."""
+
+    AAB_PATH = "/tmp/test-app.aab"
+    CONVERTED = "/tmp/aab_convert_xyz/universal.apk"
+
+    @pytest.fixture(autouse=True)
+    def _setup_patches(self):
+        from utils.mobile_utils import AndroidManifestInfo
+
+        with (
+            patch("tasks.mobile_scan.get_sync_session") as mock_session,
+            patch("tasks.mobile_scan.analyze_apk") as mock_apk,
+            patch("tasks.mobile_scan.analyze_ipa") as mock_ipa,
+            patch("utils.mobile_utils._scan_secrets") as mock_secrets,
+            patch("tasks.mobile_scan.lookup_service_cves") as mock_cve,
+            patch("tasks.mobile_scan.publish_progress") as mock_progress,
+            patch("tasks.mobile_scan._update_status") as mock_update_status,
+            patch("tasks.mobile_scan._save_findings") as mock_save_findings,
+            patch("tasks.mobile_scan._refund_credits") as mock_refund,
+            patch("tasks.mobile_scan.redis.Redis") as mock_redis,
+            patch("tasks.mobile_scan.os.path.exists") as mock_exists,
+            patch("tasks.mobile_scan.os.path.getsize") as mock_size,
+            patch("tasks.mobile_scan.os.remove") as mock_remove,
+            patch("tasks.mobile_scan.os.path.isfile") as mock_isfile,
+            patch("tasks.mobile_scan.os.path.isdir") as mock_isdir,
+            patch("tasks.mobile_scan.shutil.rmtree") as mock_rmtree,
+            patch("tasks.mobile_scan.convert_aab_to_universal_apk") as mock_convert,
+            patch("builtins.open", mock_open(read_data=b"test data")),
+        ):
+            manifest_info = AndroidManifestInfo(
+                package_name="com.example.aab",
+                version_name="1.0.0",
+                version_code="1",
+                min_sdk="29",
+                target_sdk="34",
+                permissions=["INTERNET"],
+                exported_components=[],
+                debuggable=False,
+                allow_backup=True,
+                uses_cleartext_traffic=False,
+            )
+            mock_apk.return_value = (manifest_info, [], ["libssl.so"])
+            mock_ipa.return_value = (MagicMock(), [], [])
+            mock_secrets.return_value = []
+            mock_cve.return_value = []
+            mock_session.return_value = MagicMock()
+            mock_exists.return_value = True
+            mock_size.return_value = 8 * 1024 * 1024
+            mock_redis.return_value = MagicMock()
+            mock_convert.return_value = self.CONVERTED
+            mock_isfile.return_value = True
+            mock_isdir.return_value = True
+
+            self.mock_session = mock_session
+            self.mock_apk = mock_apk
+            self.mock_convert = mock_convert
+            self.mock_progress = mock_progress
+            self.mock_update_status = mock_update_status
+            self.mock_save_findings = mock_save_findings
+            self.mock_refund = mock_refund
+            self.mock_remove = mock_remove
+            self.mock_rmtree = mock_rmtree
+            yield
+
+    def _call_task(self):
+        from tasks.mobile_scan import run_mobile_scan
+
+        return run_mobile_scan(JOB_ID, self.AAB_PATH, "android")
+
+    def test_aab_converts_then_analyzes_converted_apk(self):
+        result = self._call_task()
+        self.mock_convert.assert_called_once_with(self.AAB_PATH)
+        self.mock_apk.assert_called_once_with(self.CONVERTED)
+        assert result["job_id"] == JOB_ID
+        assert result["input_format"] == "aab"
+        assert "summary" in result
+
+    def test_aab_adds_coverage_info_finding(self):
+        self._call_task()
+        saved = self.mock_save_findings.call_args[0][2]
+        assert any(f.get("category") == "aab_coverage" for f in saved)
+
+    def test_aab_conversion_failure_refunds_and_fails(self):
+        from utils.aab_convert import AabConversionError
+
+        self.mock_convert.side_effect = AabConversionError("bundletool missing")
+        result = self._call_task()
+        assert result["error"].startswith("aab conversion failed")
+        assert result["input_format"] == "aab"
+        self.mock_refund.assert_called_once()
+        self.mock_apk.assert_not_called()
+        self.mock_update_status.assert_any_call(self.mock_session.return_value, JOB_ID, "failed")
+
+    def test_aab_cleans_converted_apk(self):
+        self._call_task()
+        # original upload + converted apk removed
+        removed_paths = [c.args[0] for c in self.mock_remove.call_args_list]
+        assert self.AAB_PATH in removed_paths
+        assert self.CONVERTED in removed_paths

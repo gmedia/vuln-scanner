@@ -15,7 +15,7 @@ test.describe("Dashboard", () => {
     await page.goto("/dashboard");
     await expect(page.locator("text=New IP Scan")).toBeVisible();
     await expect(page.locator("text=New Domain Scan")).toBeVisible();
-    await expect(page.locator("text=Upload APK/IPA")).toBeVisible();
+    await expect(page.locator("text=Upload APK/AAB/IPA")).toBeVisible();
   });
 
   test("navigates to IP scanner via quick action", async ({ page }) => {
@@ -34,7 +34,7 @@ test.describe("Dashboard", () => {
 
   test("navigates to Mobile scanner via quick action", async ({ page }) => {
     await page.goto("/dashboard");
-    await page.locator("text=Upload APK/IPA").click();
+    await page.locator("text=Upload APK/AAB/IPA").click();
     await expect(page).toHaveURL("/scan/mobile");
     await expect(page.locator("h2:has-text('Mobile scanner')")).toBeVisible();
   });

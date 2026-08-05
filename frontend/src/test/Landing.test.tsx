@@ -92,7 +92,7 @@ describe("Landing Page", () => {
   });
 
   it("renders Mobile Scanner capability bullets", () => {
-    expect(screen.getByText("APK/IPA static analysis")).toBeInTheDocument();
+    expect(screen.getByText("APK/AAB/IPA static analysis")).toBeInTheDocument();
     expect(screen.getByText("Hardcoded secret scan")).toBeInTheDocument();
   });
 

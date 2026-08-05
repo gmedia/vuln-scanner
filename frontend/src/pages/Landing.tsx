@@ -29,9 +29,9 @@ const features = [
   {
     icon: Smartphone,
     title: "Mobile Scanner",
-    description: "APK/IPA static analysis and secret detection",
+    description: "APK/AAB/IPA static analysis and secret detection",
     bullets: [
-      "APK/IPA static analysis",
+      "APK/AAB/IPA static analysis",
       "Permissions review",
       "Exported components",
       "Hardcoded secret scan",

@@ -32,8 +32,8 @@ function MobileUpload() {
 
   const validateFile = useCallback((f: File): string | null => {
     const ext = f.name.split(".").pop()?.toLowerCase();
-    if (platform === "android" && ext !== "apk") {
-      return "Invalid file type. Expected .apk for Android.";
+    if (platform === "android" && ext !== "apk" && ext !== "aab") {
+      return "Invalid file type. Expected .apk or .aab for Android.";
     }
     if (platform === "ios" && ext !== "ipa") {
       return "Invalid file type. Expected .ipa for iOS.";
@@ -153,7 +153,7 @@ function MobileUpload() {
             ) : (
               <Smartphone className="mr-1.5 h-4 w-4" aria-hidden />
             )}
-            Android (.apk)
+            Android (.apk / .aab)
           </Button>
           <Button
             type="button"
@@ -181,7 +181,7 @@ function MobileUpload() {
       <input
         ref={fileRef}
         type="file"
-        accept={platform === "android" ? ".apk" : ".ipa"}
+        accept={platform === "android" ? ".apk,.aab" : ".ipa"}
         onChange={handleFileSelect}
         className="hidden"
       />
@@ -208,7 +208,7 @@ function MobileUpload() {
             )}
           />
           <p className="mb-1 font-mono text-sm text-foreground">
-            Drop {platform === "android" ? ".apk" : ".ipa"} file here
+            Drop {platform === "android" ? ".apk or .aab" : ".ipa"} file here
           </p>
           <p className="mb-3 font-mono text-xs text-muted-foreground">
             or drag and drop (max 500MB)
