@@ -210,19 +210,12 @@ async def start_mobile_scan(
         raise HTTPException(status_code=400, detail="File must be a valid ZIP archive (APK/AAB/IPA)")
 
     safe_name = os.path.basename(file.filename)
-    lower_name = safe_name.lower()
-    if platform == "android" and not (lower_name.endswith(".apk") or lower_name.endswith(".aab")):
-        raise HTTPException(status_code=400, detail="Android uploads must use .apk or .aab extension")
-    if platform == "ios" and not lower_name.endswith(".ipa"):
-        raise HTTPException(status_code=400, detail="iOS uploads must use .ipa extension")
-
-    safe_name = os.path.basename(file.filename)
     if not safe_name or safe_name in (".", ".."):
         raise HTTPException(status_code=400, detail="File must have a filename")
 
     lower_name = safe_name.lower()
-    if platform == "android" and not lower_name.endswith(".apk"):
-        raise HTTPException(status_code=400, detail="Android uploads must use .apk extension")
+    if platform == "android" and not (lower_name.endswith(".apk") or lower_name.endswith(".aab")):
+        raise HTTPException(status_code=400, detail="Android uploads must use .apk or .aab extension")
     if platform == "ios" and not lower_name.endswith(".ipa"):
         raise HTTPException(status_code=400, detail="iOS uploads must use .ipa extension")
 

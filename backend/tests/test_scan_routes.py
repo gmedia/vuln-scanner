@@ -499,7 +499,23 @@ def test_start_mobile_scan_aab(client, mock_celery):
     assert resp.status_code == 202
     data = resp.json()
     assert data["scan_type"] == "apk"
+    assert data["target"] == "app.aab"
     assert "id" in data
+
+
+def test_start_mobile_scan_aab_path_traversal_uses_basename(client, mock_celery):
+    resp = client.post(
+        "/api/scan/mobile",
+        files={"file": ("../../../tmp/evil.aab", b"PK\x03\x04fake-aab-content")},
+        data={"platform": "android"},
+        headers=HEADERS,
+    )
+    assert resp.status_code == 202
+    data = resp.json()
+    assert data["scan_type"] == "apk"
+    assert data["target"] == "evil.aab"
+    assert ".." not in data["target"]
+    assert "/" not in data["target"]
 
 
 def test_start_mobile_scan_android_wrong_extension(client, mock_celery):
