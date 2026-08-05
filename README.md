@@ -2,7 +2,7 @@
 
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/gmedia/vuln-scanner)
 
-Web-based vulnerability scanner with 3 scan modes — IP, domain, and mobile (Android APK / iOS IPA) analysis. Deployed via Docker Compose with async task processing.
+Web-based vulnerability scanner with 3 scan modes — IP, domain, and mobile (Android APK/AAB / iOS IPA) analysis. Deployed via Docker Compose with async task processing.
 
 ## Architecture
 
@@ -125,7 +125,7 @@ vuln-scanner/
 |------|-------|-------------|
 | **IP Scanner** | IP address | Port scan via nmap (`-sV -sC -O`), CVE lookup via OSV.dev, severity classification |
 | **Domain Scanner** | Domain name | DNS resolution, subdomain enum (crt.sh), SSL/TLS analysis, security headers audit, tech stack fingerprinting |
-| **Mobile Scanner** | Android `.apk` or iOS `.ipa` | Manifest analysis, permission classification, exported component detection, hardcoded secret scanning |
+| **Mobile Scanner** | Android `.apk`/`.aab` or iOS `.ipa` | Manifest analysis, permission classification, exported component detection, hardcoded secret scanning |
 
 ## API
 
@@ -184,7 +184,7 @@ curl http://localhost/api/scan/{id}/export?format=html \
 | `/api/auth/me` | JWT | `GET` | Get current user |
 | `/api/scan/ip` | JWT/Key | `POST` | Start IP scan |
 | `/api/scan/domain` | JWT/Key | `POST` | Start domain scan |
-| `/api/scan/mobile` | JWT/Key | `POST` | Upload Android APK or iOS IPA for scan |
+| `/api/scan/mobile` | JWT/Key | `POST` | Upload Android APK/AAB or iOS IPA for scan |
 | `/api/scan/history` | JWT | `GET` | Paginated scan history |
 | `/api/scan/{id}` | JWT | `GET` | Scan detail + findings |
 | `/api/scan/{id}/findings` | JWT | `GET` | Findings only |

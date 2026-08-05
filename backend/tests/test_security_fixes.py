@@ -325,7 +325,9 @@ def test_mobile_scan_rejects_traversal_without_apk_extension(client, mock_celery
         headers=HEADERS,
     )
     assert resp.status_code == 400
-    assert ".apk" in resp.json()["detail"].lower()
+    detail = resp.json()["detail"].lower()
+    assert ".apk" in detail
+    assert ".aab" in detail
 
 
 def test_mobile_scan_neutralizes_ios_path_traversal(client, mock_celery):
