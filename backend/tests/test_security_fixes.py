@@ -309,7 +309,36 @@ def test_mobile_scan_neutralizes_path_traversal(client, mock_celery):
         headers=HEADERS,
     )
     assert resp.status_code == 202
-    # The scan should succeed — the traversal is neutralized by os.path.basename
     data = resp.json()
     assert data["status"] == "pending"
     assert data["scan_type"] == "apk"
+    assert data["target"] == "evil.apk"
+    assert ".." not in data["target"]
+    assert "/" not in data["target"]
+
+
+def test_mobile_scan_rejects_traversal_without_apk_extension(client, mock_celery):
+    resp = client.post(
+        "/api/scan/mobile",
+        files={"file": ("../../../etc/passwd", b"PK\x03\x04fake-apk-content")},
+        data={"platform": "android"},
+        headers=HEADERS,
+    )
+    assert resp.status_code == 400
+    assert ".apk" in resp.json()["detail"].lower()
+
+
+def test_mobile_scan_neutralizes_ios_path_traversal(client, mock_celery):
+    resp = client.post(
+        "/api/scan/mobile",
+        files={"file": ("../../var/tmp/evil.ipa", b"PK\x03\x04fake-ipa-content")},
+        data={"platform": "ios"},
+        headers=HEADERS,
+    )
+    assert resp.status_code == 202
+    data = resp.json()
+    assert data["status"] == "pending"
+    assert data["scan_type"] == "ipa"
+    assert data["target"] == "evil.ipa"
+    assert ".." not in data["target"]
+    assert "/" not in data["target"]

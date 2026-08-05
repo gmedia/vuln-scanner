@@ -216,6 +216,16 @@ async def start_mobile_scan(
     if platform == "ios" and not lower_name.endswith(".ipa"):
         raise HTTPException(status_code=400, detail="iOS uploads must use .ipa extension")
 
+    safe_name = os.path.basename(file.filename)
+    if not safe_name or safe_name in (".", ".."):
+        raise HTTPException(status_code=400, detail="File must have a filename")
+
+    lower_name = safe_name.lower()
+    if platform == "android" and not lower_name.endswith(".apk"):
+        raise HTTPException(status_code=400, detail="Android uploads must use .apk extension")
+    if platform == "ios" and not lower_name.endswith(".ipa"):
+        raise HTTPException(status_code=400, detail="iOS uploads must use .ipa extension")
+
     # Stream to a temp file while enforcing size limit
     os.makedirs(settings.upload_dir, exist_ok=True)
     file_path = os.path.join(settings.upload_dir, f"{os.urandom(8).hex()}_{safe_name}")
@@ -237,7 +247,7 @@ async def start_mobile_scan(
         job = await svc.start_scan(
             user=current_user,
             scan_type=scan_type,
-            target=file.filename,
+            target=safe_name,
             platform=platform,
             file_path=file_path,
         )
