@@ -1,4 +1,7 @@
-"""Default action advice templates that fill ScanFinding.remediation when empty."""
+"""Default action advice and impact templates for ScanFinding enrichment.
+
+Fills ``remediation`` (saran aksi) and ``impact`` (risk if unfixed) when empty.
+"""
 
 from __future__ import annotations
 
@@ -22,6 +25,69 @@ _RISKY_PORTS: dict[int, str] = {
     9200: "Elasticsearch — require auth/TLS and restrict to internal networks.",
     11211: "Memcached — bind to localhost only; never expose to the internet (amplification risk).",
     27017: "MongoDB — enable auth, bind to private interfaces, and restrict by firewall.",
+}
+
+_RISKY_PORT_IMPACT: dict[int, str] = {
+    21: (
+        "If left unfixed, attackers on the network path can intercept credentials and file "
+        "transfers in cleartext, potentially gaining account access and sensitive data."
+    ),
+    23: (
+        "If left unfixed, attackers can capture login credentials in cleartext and take over "
+        "interactive sessions on the host."
+    ),
+    135: (
+        "If left unfixed, exposed RPC can enable remote service enumeration and, on unpatched "
+        "hosts, remote code execution or lateral movement."
+    ),
+    139: (
+        "If left unfixed, NetBIOS exposure can leak host and share information and aid "
+        "SMB-based lateral movement inside the network."
+    ),
+    445: (
+        "If left unfixed, internet-facing SMB can enable remote code execution via known "
+        "exploits, ransomware propagation, and credential theft."
+    ),
+    1433: (
+        "If left unfixed, attackers can attempt brute-force or exploit database flaws to read, "
+        "modify, or delete application data and pivot further into the network."
+    ),
+    1521: (
+        "If left unfixed, exposed Oracle listeners can allow credential attacks and data "
+        "exfiltration from critical enterprise databases."
+    ),
+    3306: (
+        "If left unfixed, attackers can attempt authentication attacks or abuse weak "
+        "configuration to access, alter, or drop application databases."
+    ),
+    3389: (
+        "If left unfixed, exposed RDP can enable brute-force logins, session takeover, and "
+        "full interactive control of the Windows host."
+    ),
+    5432: (
+        "If left unfixed, attackers can target weak credentials or misconfiguration to access "
+        "or corrupt PostgreSQL data stores."
+    ),
+    5900: (
+        "If left unfixed, unencrypted VNC can allow session hijacking and remote desktop "
+        "control by anyone who reaches the port."
+    ),
+    6379: (
+        "If left unfixed, unauthenticated Redis can allow remote command execution, data "
+        "theft, or use of the instance as a foothold for further attacks."
+    ),
+    9200: (
+        "If left unfixed, open Elasticsearch can expose indexed documents, enable data "
+        "destruction, or leak credentials and PII stored in indices."
+    ),
+    11211: (
+        "If left unfixed, exposed Memcached can be abused for DDoS amplification and may "
+        "leak or allow manipulation of cached application data."
+    ),
+    27017: (
+        "If left unfixed, open MongoDB can allow unauthenticated reads/writes, mass data "
+        "exfiltration, or ransomware-style collection wipes."
+    ),
 }
 
 CATEGORY_ADVICE: dict[str, str] = {
@@ -96,14 +162,113 @@ CATEGORY_ADVICE: dict[str, str] = {
     ),
 }
 
+CATEGORY_IMPACT: dict[str, str] = {
+    "open_port": (
+        "If left unfixed, an exposed service expands the remote attack surface and can be probed "
+        "for weak credentials, unpatched flaws, or misconfiguration leading to unauthorized access."
+    ),
+    "os_detection": (
+        "OS fingerprint alone is low risk, but it helps attackers choose OS-specific exploits "
+        "and prioritise unpatched hosts."
+    ),
+    "ip_address": (
+        "Informational DNS mapping. Unexpected published addresses can reveal internal hosts "
+        "or staging systems that attackers may target next."
+    ),
+    "subdomain": (
+        "Forgotten or unmanaged subdomains can host outdated software, default pages, or "
+        "takeover-prone DNS records that attackers use as an entry point."
+    ),
+    "ssl_issue": (
+        "If left unfixed, users may receive certificate warnings or fall back to insecure channels; "
+        "attackers can more easily run phishing or man-in-the-middle attacks against the site."
+    ),
+    "ssl_cipher": (
+        "If left unfixed, weak TLS configuration can allow protocol downgrade or cryptographic "
+        "attacks that expose session data and credentials in transit."
+    ),
+    "missing_header": (
+        "If left unfixed, browsers lack defenses against clickjacking, XSS, mixed content, or "
+        "unwanted framing — increasing the chance of successful client-side attacks."
+    ),
+    "tech_detected": (
+        "Stack fingerprints help attackers map known CVEs to your software versions and "
+        "prioritise exploits against outdated components."
+    ),
+    "android_manifest": (
+        "Informational package identity. Misconfigured release metadata rarely grants direct "
+        "access but can complicate incident response and update tracking."
+    ),
+    "android_sdk": (
+        "If left unfixed, outdated SDK levels miss platform security fixes and may allow "
+        "attacks that modern Android versions already block."
+    ),
+    "dangerous_permission": (
+        "If left unfixed, excess dangerous permissions enlarge the blast radius if the app is "
+        "compromised — attackers can abuse camera, location, SMS, or storage access."
+    ),
+    "android_permission": (
+        "Unnecessary permissions increase privacy exposure and give malware more capability "
+        "if the app process is abused."
+    ),
+    "android_debug": (
+        "If left unfixed, a debuggable release build can allow runtime inspection, code injection, "
+        "and extraction of app secrets on a physical or emulated device."
+    ),
+    "android_backup": (
+        "If left unfixed, ADB backup can extract app data — including tokens and local databases — "
+        "from a device an attacker briefly controls."
+    ),
+    "android_cleartext": (
+        "If left unfixed, HTTP traffic can be intercepted on hostile networks, exposing "
+        "credentials, session tokens, or personal data in transit."
+    ),
+    "exported_component": (
+        "If left unfixed, other apps can invoke the exported component with crafted intents, "
+        "potentially triggering privileged actions or data leakage without user consent."
+    ),
+    "ios_info": (
+        "Informational bundle metadata. Outdated minimum OS versions may leave users on "
+        "platforms without current security patches."
+    ),
+    "ios_ats": (
+        "If left unfixed, disabled ATS allows cleartext or weakly protected connections that "
+        "attackers on the network path can intercept or tamper with."
+    ),
+    "ios_url_scheme": (
+        "If left unfixed, custom URL schemes can be hijacked by another app to intercept deep "
+        "links, steal tokens passed in URLs, or trigger unintended app actions."
+    ),
+    "hardcoded_secret": (
+        "If left unfixed, anyone who extracts the binary can reuse API keys, tokens, or "
+        "credentials to impersonate the app, access backends, or incur fraudulent usage."
+    ),
+    "vulnerability": (
+        "If left unfixed, known vulnerabilities can be exploited using public proof-of-concepts "
+        "to gain unauthorized access, execute code, or exfiltrate data depending on the CVE."
+    ),
+}
 
-def advice_for_open_port(title: str, description: str = "") -> str:
+
+def _open_port_number(title: str) -> int | None:
     match = re.search(r"Open port:\s*(\d+)/", title)
     if match:
-        port = int(match.group(1))
-        if port in _RISKY_PORTS:
-            return _RISKY_PORTS[port]
+        return int(match.group(1))
+    return None
+
+
+def advice_for_open_port(title: str, description: str = "") -> str:
+    port = _open_port_number(title)
+    if port is not None and port in _RISKY_PORTS:
+        return _RISKY_PORTS[port]
     return CATEGORY_ADVICE["open_port"]
+
+
+def impact_for_open_port(title: str, description: str = "") -> str:
+    port = _open_port_number(title)
+    if port is not None and port in _RISKY_PORT_IMPACT:
+        return _RISKY_PORT_IMPACT[port]
+    return CATEGORY_IMPACT["open_port"]
 
 
 def advice_for_category(
@@ -120,21 +285,54 @@ def advice_for_category(
     return CATEGORY_ADVICE.get(category)
 
 
+def impact_for_category(
+    category: str,
+    *,
+    title: str = "",
+    description: str = "",
+    explicit: str | None = None,
+) -> str | None:
+    if explicit and explicit.strip():
+        return explicit.strip()
+    if category == "open_port":
+        return impact_for_open_port(title, description)
+    return CATEGORY_IMPACT.get(category)
+
+
 def ensure_remediation(finding: ScanFinding) -> ScanFinding:
     existing = finding.get("remediation")
+    if not (existing and str(existing).strip()):
+        advice = advice_for_category(
+            finding.get("category", ""),
+            title=finding.get("title", ""),
+            description=finding.get("description", ""),
+        )
+        if advice:
+            finding["remediation"] = advice
+    return ensure_impact(finding)
+
+
+def ensure_impact(finding: ScanFinding) -> ScanFinding:
+    existing = finding.get("impact")
     if existing and str(existing).strip():
         return finding
-    advice = advice_for_category(
+    impact = impact_for_category(
         finding.get("category", ""),
         title=finding.get("title", ""),
         description=finding.get("description", ""),
     )
-    if advice:
-        finding["remediation"] = advice
+    if impact:
+        finding["impact"] = impact
     return finding
 
 
 def ensure_remediations(findings: list[ScanFinding]) -> list[ScanFinding]:
     for f in findings:
         ensure_remediation(f)
+    return findings
+
+
+def ensure_impacts(findings: list[ScanFinding]) -> list[ScanFinding]:
+    for f in findings:
+        ensure_impact(f)
     return findings
