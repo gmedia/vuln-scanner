@@ -69,7 +69,11 @@ for i in $(seq 1 30); do
   sleep 2
 done
 
-set -a; source .env; set +a
+REDIS_PASSWORD=$(grep -E '^REDIS_PASSWORD=' .env | head -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+if [ -z "$REDIS_PASSWORD" ]; then
+  echo "=== FAILED — REDIS_PASSWORD missing from .env ==="
+  exit 1
+fi
 
 echo "Waiting for redis..."
 for i in $(seq 1 15); do
