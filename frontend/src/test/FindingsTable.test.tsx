@@ -15,6 +15,7 @@ function mockFinding(overrides: Partial<ScanFinding> = {}): ScanFinding {
     cve_id: "CVE-2024-1234",
     cvss_score: 9.8,
     remediation: "Use parameterized queries",
+    impact: "Attackers can manipulate database queries.",
     raw_data: {},
     found_at: "2024-01-01",
     ...overrides,

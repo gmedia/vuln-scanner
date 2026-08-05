@@ -237,6 +237,7 @@ def _save_findings(session: Any, job_id: str, findings: list[ScanFinding]) -> No
             cve_id=cve_id_raw[:20] if cve_id_raw else None,
             cvss_score=f.get("cvss_score"),
             remediation=f.get("remediation"),
+            impact=f.get("impact"),
             raw_data=f.get("raw_data"),
         )
         session.add(finding)

@@ -19,6 +19,7 @@ class ScanFinding(TypedDict):
     cve_id: NotRequired[str | None]
     cvss_score: NotRequired[float | None]
     remediation: NotRequired[str | None]
+    impact: NotRequired[str | None]
     raw_data: NotRequired[object | None]
     product: NotRequired[str]
     version: NotRequired[str]

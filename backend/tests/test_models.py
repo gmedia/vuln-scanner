@@ -233,6 +233,7 @@ class TestScanFinding:
             cve_id="CVE-2024-9999",
             cvss_score=9.5,
             remediation="Apply vendor patches",
+            impact="Attackers can exploit this to gain remote access.",
             raw_data={"proof": "abc123"},
         )
         db_session.add(finding)
@@ -248,6 +249,7 @@ class TestScanFinding:
         assert finding.cve_id == "CVE-2024-9999"
         assert finding.cvss_score == 9.5
         assert finding.remediation == "Apply vendor patches"
+        assert finding.impact == "Attackers can exploit this to gain remote access."
         assert finding.raw_data == {"proof": "abc123"}
 
     @pytest.mark.asyncio
@@ -267,4 +269,5 @@ class TestScanFinding:
         assert finding.cve_id is None
         assert finding.cvss_score is None
         assert finding.remediation is None
+        assert finding.impact is None
         assert finding.raw_data is None

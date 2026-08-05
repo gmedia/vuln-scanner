@@ -84,6 +84,7 @@ class ScanFindingResponse(BaseModel):
     cve_id: str | None
     cvss_score: float | None
     remediation: str | None
+    impact: str | None = None
     raw_data: dict[str, object] | None
     found_at: datetime
 

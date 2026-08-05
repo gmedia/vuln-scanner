@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, ExternalLink, Shield, Wrench } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Shield,
+  Wrench,
+} from "lucide-react";
 import type { ScanFinding } from "@/api/scans";
 import { Badge } from "@/components/ui/Badge";
 import { Separator } from "@/components/ui/Separator";
@@ -50,6 +57,21 @@ function FindingDetail({ finding }: FindingDetailProps) {
           </div>
           <p className="font-mono text-xs text-foreground leading-relaxed">
             {finding.description}
+          </p>
+        </div>
+      )}
+
+      {finding.impact && (
+        <div className="mb-4">
+          <Separator className="mb-3" />
+          <div className="mb-1.5 flex items-center gap-1.5">
+            <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+            <span className="font-mono text-[10px] font-medium uppercase tracking-wider text-amber-500">
+              Risiko jika tidak ditindaklanjuti
+            </span>
+          </div>
+          <p className="font-mono text-xs text-foreground leading-relaxed">
+            {finding.impact}
           </p>
         </div>
       )}

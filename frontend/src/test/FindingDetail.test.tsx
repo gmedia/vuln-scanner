@@ -15,6 +15,8 @@ function mockFinding(overrides: Partial<ScanFinding> = {}): ScanFinding {
     cve_id: "CVE-2024-1234",
     cvss_score: 9.8,
     remediation: "Use parameterized queries",
+    impact:
+      "If left unfixed, attackers can read or modify database contents via SQL injection.",
     raw_data: { vector: "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" },
     found_at: "2024-01-01",
     ...overrides,
@@ -49,6 +51,23 @@ describe("FindingDetail", () => {
     expect(
       screen.getByText("SQL injection vulnerability in login form")
     ).toBeInTheDocument();
+  });
+
+  it("renders impact section with risk label when impact exists", () => {
+    render(<FindingDetail finding={mockFinding()} />);
+    expect(
+      screen.getByText("Risiko jika tidak ditindaklanjuti")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/If left unfixed, attackers can read or modify/)
+    ).toBeInTheDocument();
+  });
+
+  it("does NOT render impact section when impact is null", () => {
+    render(<FindingDetail finding={mockFinding({ impact: null })} />);
+    expect(
+      screen.queryByText("Risiko jika tidak ditindaklanjuti")
+    ).not.toBeInTheDocument();
   });
 
   it("renders remediation section with 'Saran aksi' label when remediation exists", () => {

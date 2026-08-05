@@ -1,11 +1,16 @@
-"""Tests for action_advice templates and ensure_remediation."""
+"""Tests for action_advice templates, ensure_remediation, and ensure_impact."""
 
 from utils.action_advice import (
     CATEGORY_ADVICE,
+    CATEGORY_IMPACT,
     advice_for_category,
     advice_for_open_port,
+    ensure_impact,
+    ensure_impacts,
     ensure_remediation,
     ensure_remediations,
+    impact_for_category,
+    impact_for_open_port,
 )
 from utils.cve_lookup import _extract_remediation, format_vuln_finding
 
@@ -164,3 +169,114 @@ class TestExtractRemediationEventsFixed:
         finding = format_vuln_finding(vuln, None)
         assert finding["remediation"] is not None
         assert "advisory" in finding["remediation"].lower() or "upgrade" in finding["remediation"].lower()
+        assert finding.get("impact")
+        assert "unfixed" in finding["impact"].lower() or "exploit" in finding["impact"].lower()
+
+
+class TestImpactForOpenPort:
+    def test_generic_port_uses_category(self):
+        impact = impact_for_open_port("Open port: 22/tcp (ssh)")
+        assert impact == CATEGORY_IMPACT["open_port"]
+
+    def test_risky_port_redis(self):
+        impact = impact_for_open_port("Open port: 6379/tcp (redis)")
+        assert "Redis" in impact
+        assert "unauthenticated" in impact.lower() or "command" in impact.lower()
+
+    def test_risky_port_rdp(self):
+        impact = impact_for_open_port("Open port: 3389/tcp (ms-wbt-server)")
+        assert "RDP" in impact
+
+
+class TestImpactForCategory:
+    def test_explicit_wins(self):
+        result = impact_for_category(
+            "missing_header",
+            explicit="Custom impact for missing CSP.",
+        )
+        assert result == "Custom impact for missing CSP."
+
+    def test_category_template(self):
+        result = impact_for_category("hardcoded_secret")
+        assert result is not None
+        assert "binary" in result.lower() or "secret" in result.lower()
+
+    def test_unknown_category(self):
+        assert impact_for_category("not_a_real_category") is None
+
+
+class TestEnsureImpact:
+    def test_fills_when_missing(self):
+        finding = {
+            "severity": "info",
+            "category": "open_port",
+            "title": "Open port: 80/tcp (http)",
+            "description": "Service: http",
+        }
+        ensure_impact(finding)
+        assert finding.get("impact")
+        assert "attack" in finding["impact"].lower() or "surface" in finding["impact"].lower()
+
+    def test_preserves_existing(self):
+        finding = {
+            "severity": "high",
+            "category": "vulnerability",
+            "title": "CVE-2024-1",
+            "description": "x",
+            "impact": "Custom impact text",
+        }
+        ensure_impact(finding)
+        assert finding["impact"] == "Custom impact text"
+
+    def test_risky_port_in_ensure(self):
+        finding = {
+            "severity": "info",
+            "category": "open_port",
+            "title": "Open port: 445/tcp (microsoft-ds)",
+            "description": "SMB",
+        }
+        ensure_impact(finding)
+        assert "SMB" in finding["impact"]
+
+    def test_ensure_remediation_also_fills_impact(self):
+        finding = {
+            "severity": "high",
+            "category": "android_debug",
+            "title": "Debuggable APK",
+            "description": "android:debuggable=true",
+        }
+        ensure_remediation(finding)
+        assert finding.get("remediation")
+        assert finding.get("impact")
+        assert "debuggable" in finding["impact"].lower() or "debug" in finding["impact"].lower()
+
+    def test_ensure_impacts_batch(self):
+        findings = [
+            {
+                "severity": "info",
+                "category": "ip_address",
+                "title": "IP Address: 1.2.3.4",
+                "description": "Resolved",
+            },
+            {
+                "severity": "high",
+                "category": "hardcoded_secret",
+                "title": "Potential aws_access_key detected",
+                "description": "Found: AKIAxxxx",
+            },
+        ]
+        ensure_impacts(findings)
+        assert all(f.get("impact") for f in findings)
+
+    def test_ensure_remediations_fills_impact_too(self):
+        findings = [
+            {
+                "severity": "medium",
+                "category": "ssl_cipher",
+                "title": "Weak cipher suite",
+                "description": "TLS_RSA_WITH_RC4_128_MD5",
+            },
+        ]
+        ensure_remediations(findings)
+        assert findings[0].get("remediation")
+        assert findings[0].get("impact")

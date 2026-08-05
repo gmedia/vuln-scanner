@@ -118,6 +118,7 @@ async def test_export_json_includes_all_optional_fields(client, db_session, samp
         cve_id=None,
         cvss_score=5.3,
         remediation="Add HSTS header with max-age=31536000",
+        impact="Missing HSTS can allow protocol downgrade and session cookie theft over HTTP.",
         raw_data={"header": "Strict-Transport-Security", "present": False},
     )
     db_session.add(finding)
@@ -131,6 +132,7 @@ async def test_export_json_includes_all_optional_fields(client, db_session, samp
     assert f["title"] == "Missing HSTS header"
     assert f["cvss_score"] == 5.3
     assert f["remediation"] == "Add HSTS header with max-age=31536000"
+    assert f["impact"] == ("Missing HSTS can allow protocol downgrade and session cookie theft over HTTP.")
     assert f["raw_data"] == {"header": "Strict-Transport-Security", "present": False}
     assert f["cve_id"] is None
     assert "duration_seconds" in data
