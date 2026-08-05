@@ -18,7 +18,7 @@ export const SCAN_TYPES = ["ip", "domain", "apk", "ipa"] as const;
 export const SCAN_TYPE_LABELS: Record<string, string> = {
   ip: "IP Address",
   domain: "Domain",
-  apk: "APK",
+  apk: "APK / AAB",
   ipa: "IPA",
 };
 
