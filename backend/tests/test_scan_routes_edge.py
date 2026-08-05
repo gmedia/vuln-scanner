@@ -299,6 +299,7 @@ def test_export_json_helper_null_dates():
         cve_id = None
         cvss_score = None
         remediation = "Close the port"
+        impact = "Attackers may attempt SSH brute-force or exploit weak credentials."
         raw_data = None
 
     class _MockJob:
@@ -318,6 +319,8 @@ def test_export_json_helper_null_dates():
     assert result["duration_seconds"] is None
     assert result["summary"] is None
     assert len(result["findings"]) == 1
+    assert result["findings"][0]["impact"] == ("Attackers may attempt SSH brute-force or exploit weak credentials.")
+    assert result["findings"][0]["remediation"] == "Close the port"
 
 
 # ── Domain scan rate-limit hit (line 178) ──────────────────────────────────
