@@ -2,6 +2,7 @@ import os
 import plistlib
 import re
 import shutil
+import struct
 import tempfile
 import unicodedata
 import zipfile
@@ -188,12 +189,23 @@ def analyze_ipa(file_path: str) -> tuple[IpaInfo, list[ScanFinding], list[str]]:
     return info, findings + secret_findings, libraries
 
 
+def _manifest_bytes_to_text(raw: bytes) -> str:
+    from utils.axml import axml_to_xml, is_binary_axml
+
+    if is_binary_axml(raw):
+        try:
+            return axml_to_xml(raw)
+        except (ValueError, struct.error, IndexError) as e:
+            logger.warning("Binary AXML decode failed, falling back to raw text: {error}", error=e)
+    return raw.decode("utf-8", errors="replace")
+
+
 def _parse_android_manifest(manifest_path: str) -> AndroidManifestInfo:
     info = AndroidManifestInfo()
     try:
         with open(manifest_path, "rb") as f:
             raw = f.read()
-        text = raw.decode("utf-8", errors="replace")
+        text = _manifest_bytes_to_text(raw)
 
         pkg_match = re.search(r'package=["\']([^"\']+)["\']', text)
         if pkg_match:
