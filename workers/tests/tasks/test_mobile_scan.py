@@ -273,6 +273,7 @@ class TestMobileScanFileNotFound:
             self.mock_session.return_value,
             JOB_ID,
             "failed",
+            completed_at=ANY,
         )
 
     def test_file_not_found_publishes_failure(self):
@@ -339,6 +340,7 @@ class TestMobileScanFailureAndRetry:
             self.mock_session.return_value,
             JOB_ID,
             "failed",
+            completed_at=ANY,
         )
 
     def test_apk_failure_not_dead_letter_first_retry(self):
@@ -538,6 +540,7 @@ class TestMobileScanIosFailureAndRetry:
             self.mock_session.return_value,
             JOB_ID,
             "failed",
+            completed_at=ANY,
         )
 
     def test_ios_analysis_failure_not_dead_letter_first_retry(self):
@@ -1217,7 +1220,12 @@ class TestMobileAabConversion:
         assert result["input_format"] == "aab"
         self.mock_refund.assert_called_once()
         self.mock_apk.assert_not_called()
-        self.mock_update_status.assert_any_call(self.mock_session.return_value, JOB_ID, "failed")
+        self.mock_update_status.assert_any_call(
+            self.mock_session.return_value,
+            JOB_ID,
+            "failed",
+            completed_at=ANY,
+        )
 
     def test_aab_cleans_converted_apk(self):
         self._call_task()

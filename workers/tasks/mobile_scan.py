@@ -63,7 +63,7 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
         session.commit()
 
         if not os.path.exists(file_path):
-            _update_status(session, job_id, "failed")
+            _update_status(session, job_id, "failed", completed_at=datetime.now(UTC))
             _refund_credits(session, job_id, platform)
             session.commit()
             session.close()
@@ -130,7 +130,7 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
                 except AabConversionError as e:
                     logger.error("AAB conversion failed for job {job_id}: {error}", job_id=job_id, error=e)
                     publish_progress(job_id, "aab_convert_error", 100, f"AAB conversion failed: {str(e)[:150]}")
-                    _update_status(session, job_id, "failed")
+                    _update_status(session, job_id, "failed", completed_at=datetime.now(UTC))
                     _refund_credits(session, job_id, platform)
                     session.commit()
                     session.close()
@@ -272,7 +272,7 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
         raise
     except Exception as e:  # Broad catch at task top-level — inner exceptions already handled
         try:
-            _update_status(session, job_id, "failed")
+            _update_status(session, job_id, "failed", completed_at=datetime.now(UTC))
             _refund_credits(session, job_id, platform)
             session.commit()
             session.close()
