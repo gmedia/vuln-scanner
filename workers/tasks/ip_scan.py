@@ -60,7 +60,7 @@ def run_ip_scan(self: Any, job_id: str, target: str, ports: str = "1-1000") -> T
         except Retry:
             raise
         except (TimeoutError, OSError, RuntimeError) as e:
-            _update_status(session, job_id, "failed")
+            _update_status(session, job_id, "failed", completed_at=datetime.now(UTC))
             _refund_credits(session, job_id, "ip")
             session.commit()
             session.close()
@@ -159,7 +159,7 @@ def run_ip_scan(self: Any, job_id: str, target: str, ports: str = "1-1000") -> T
         raise
     except Exception as e:  # Broad catch at task top-level — inner exceptions already handled
         try:
-            _update_status(session, job_id, "failed")
+            _update_status(session, job_id, "failed", completed_at=datetime.now(UTC))
             _refund_credits(session, job_id, "ip")
             session.commit()
             session.close()
