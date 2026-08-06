@@ -66,22 +66,46 @@ vi.mock("react-router-dom", () => ({
 
 vi.mock("@/components/ui/Card", () => ({
   Card: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-    <div data-testid="card" {...props}>{children}</div>
+    <div data-testid="card" {...props}>
+      {children}
+    </div>
   ),
-  CardHeader: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-    <div data-testid="card-header" {...props}>{children}</div>
+  CardHeader: ({
+    children,
+    ...props
+  }: React.HTMLAttributes<HTMLDivElement>) => (
+    <div data-testid="card-header" {...props}>
+      {children}
+    </div>
   ),
-  CardTitle: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => (
-    <h3 data-testid="card-title" {...props}>{children}</h3>
+  CardTitle: ({
+    children,
+    ...props
+  }: React.HTMLAttributes<HTMLHeadingElement>) => (
+    <h3 data-testid="card-title" {...props}>
+      {children}
+    </h3>
   ),
-  CardContent: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-    <div data-testid="card-content" {...props}>{children}</div>
+  CardContent: ({
+    children,
+    ...props
+  }: React.HTMLAttributes<HTMLDivElement>) => (
+    <div data-testid="card-content" {...props}>
+      {children}
+    </div>
   ),
 }));
 
 vi.mock("@/components/ui/Button", () => ({
-  Button: ({ children, disabled, onClick, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-    <button disabled={disabled} onClick={onClick} {...props}>{children}</button>
+  Button: ({
+    children,
+    disabled,
+    onClick,
+    ...props
+  }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+    <button disabled={disabled} onClick={onClick} {...props}>
+      {children}
+    </button>
   ),
 }));
 
@@ -95,6 +119,89 @@ vi.mock("@/components/ui/Input", () => ({
   Input: ({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) => (
     <input {...props} />
   ),
+}));
+
+vi.mock("@/components/ui/Label", () => ({
+  Label: ({
+    children,
+    htmlFor,
+    ...props
+  }: React.LabelHTMLAttributes<HTMLLabelElement>) => (
+    <label htmlFor={htmlFor} {...props}>
+      {children}
+    </label>
+  ),
+}));
+
+vi.mock("@/components/ui/DatePicker", () => ({
+  DatePicker: ({
+    id,
+    value,
+    onChange,
+    placeholder,
+    "aria-label": ariaLabel,
+  }: {
+    id?: string;
+    value: string;
+    onChange: (v: string) => void;
+    placeholder?: string;
+    "aria-label"?: string;
+  }) => (
+    <button
+      type="button"
+      id={id}
+      aria-label={ariaLabel}
+      data-testid={id}
+      data-value={value}
+      onClick={() => onChange(value || "2024-01-01")}
+    >
+      {value || placeholder || "Pick a date"}
+    </button>
+  ),
+}));
+
+vi.mock("@/components/ui/Select", () => ({
+  Select: ({
+    children,
+    value,
+    onValueChange,
+  }: {
+    children: React.ReactNode;
+    value: string;
+    onValueChange: (v: string) => void;
+  }) => (
+    <div data-testid="select-root" data-value={value}>
+      {typeof children === "function" ? null : children}
+      <select
+        aria-hidden
+        value={value}
+        onChange={(e) => onValueChange(e.target.value)}
+        style={{ display: "none" }}
+      />
+    </div>
+  ),
+  SelectTrigger: ({
+    children,
+    id,
+    ...props
+  }: React.ButtonHTMLAttributes<HTMLButtonElement> & { id?: string }) => (
+    <button type="button" id={id} {...props}>
+      {children}
+    </button>
+  ),
+  SelectValue: ({ placeholder }: { placeholder?: string }) => (
+    <span>{placeholder}</span>
+  ),
+  SelectContent: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  SelectItem: ({
+    children,
+    value,
+  }: {
+    children: React.ReactNode;
+    value: string;
+  }) => <div data-value={value}>{children}</div>,
 }));
 
 import { useQuery } from "@tanstack/react-query";
@@ -166,7 +273,7 @@ describe("CreditHistory", () => {
 
     render(<CreditHistory />);
     expect(
-      screen.getByText("Credit adjustments will appear here.")
+      screen.getByText("Credit adjustments will appear here."),
     ).toBeInTheDocument();
   });
 
@@ -301,8 +408,12 @@ describe("CreditHistory", () => {
 
     render(<CreditHistory />);
     expect(screen.getByText("Page 1 of 2")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /previous page/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /next page/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /previous page/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /next page/i }),
+    ).toBeInTheDocument();
   });
 
   it("disables previous button on first page", () => {
@@ -358,8 +469,12 @@ describe("CreditHistory", () => {
 
     render(<CreditHistory />);
     expect(screen.queryByText(/Page \d+ of \d+/)).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /previous page/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /next page/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /previous page/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /next page/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders summary strip with balance and period totals", () => {
@@ -390,8 +505,12 @@ describe("CreditHistory", () => {
     expect(screen.getByLabelText("Type")).toBeInTheDocument();
     expect(screen.getByLabelText("From")).toBeInTheDocument();
     expect(screen.getByLabelText("To")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Search description")).toBeInTheDocument();
-    expect(screen.getByText("Filters apply to the current page")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("Search description"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Filters apply to the current page"),
+    ).toBeInTheDocument();
   });
 
   it("renders description as link when reference_id is present", () => {

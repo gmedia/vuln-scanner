@@ -5,7 +5,16 @@ import { History, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { DatePicker } from "@/components/ui/DatePicker";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/Select";
 import { creditApi, type CreditLogItem } from "@/api/credits";
 import { useCreditStore } from "@/store/creditStore";
 
@@ -85,7 +94,10 @@ function CreditHistory() {
 
   const hasServerData = Boolean(data && data.items.length > 0);
   const filtersActive =
-    typeFilter !== "all" || Boolean(dateFrom) || Boolean(dateTo) || Boolean(search.trim());
+    typeFilter !== "all" ||
+    Boolean(dateFrom) ||
+    Boolean(dateTo) ||
+    Boolean(search.trim());
 
   const resetPage = () => setPage(1);
 
@@ -93,7 +105,7 @@ function CreditHistory() {
     <div className="mx-auto max-w-4xl space-y-6">
       <div className="flex items-center gap-3">
         <History className="h-6 w-6 text-primary" />
-        <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
+        <h2 className="text-lg font-bold tracking-wide text-foreground">
           Credit history
         </h2>
       </div>
@@ -103,7 +115,7 @@ function CreditHistory() {
         className="grid grid-cols-1 gap-3 sm:grid-cols-3"
       >
         <div className="rounded-md border border-border bg-card px-4 py-3">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
             Current balance
           </p>
           <p className="mt-1 font-mono text-lg font-bold tabular-nums text-foreground">
@@ -111,7 +123,7 @@ function CreditHistory() {
           </p>
         </div>
         <div className="rounded-md border border-border bg-card px-4 py-3">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
             Period credits
           </p>
           <p className="mt-1 font-mono text-lg font-bold tabular-nums text-green-400">
@@ -119,7 +131,7 @@ function CreditHistory() {
           </p>
         </div>
         <div className="rounded-md border border-border bg-card px-4 py-3">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
             Period debits
           </p>
           <p className="mt-1 font-mono text-lg font-bold tabular-nums text-red-400">
@@ -132,71 +144,54 @@ function CreditHistory() {
         data-testid="credit-history-filters"
         className="flex flex-col gap-3 rounded-md border border-border bg-card p-4 sm:flex-row sm:flex-wrap sm:items-end"
       >
-        <div className="flex min-w-[140px] flex-1 flex-col gap-1">
-          <label
-            htmlFor="credit-type-filter"
-            className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground"
-          >
-            Type
-          </label>
-          <select
-            id="credit-type-filter"
+        <div className="flex min-w-[140px] flex-1 flex-col gap-1.5">
+          <Label htmlFor="credit-type-filter">Type</Label>
+          <Select
             value={typeFilter}
-            onChange={(e) => {
-              setTypeFilter(e.target.value as FilterType);
+            onValueChange={(value) => {
+              setTypeFilter(value as FilterType);
               resetPage();
             }}
-            className="flex h-10 w-full rounded-md border border-border bg-card px-3 py-2 font-mono text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <option value="all">All</option>
-            <option value="credit">credit</option>
-            <option value="deduct">deduct</option>
-            <option value="refund">refund</option>
-          </select>
+            <SelectTrigger id="credit-type-filter" aria-label="Type">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="credit">credit</SelectItem>
+              <SelectItem value="deduct">deduct</SelectItem>
+              <SelectItem value="refund">refund</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <div className="flex min-w-[140px] flex-1 flex-col gap-1">
-          <label
-            htmlFor="credit-date-from"
-            className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground"
-          >
-            From
-          </label>
-          <Input
+        <div className="flex min-w-[140px] flex-1 flex-col gap-1.5">
+          <Label htmlFor="credit-date-from">From</Label>
+          <DatePicker
             id="credit-date-from"
-            type="date"
             value={dateFrom}
-            onChange={(e) => {
-              setDateFrom(e.target.value);
+            onChange={(value) => {
+              setDateFrom(value);
               resetPage();
             }}
-            className="h-10"
+            placeholder="From date"
+            aria-label="From"
           />
         </div>
-        <div className="flex min-w-[140px] flex-1 flex-col gap-1">
-          <label
-            htmlFor="credit-date-to"
-            className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground"
-          >
-            To
-          </label>
-          <Input
+        <div className="flex min-w-[140px] flex-1 flex-col gap-1.5">
+          <Label htmlFor="credit-date-to">To</Label>
+          <DatePicker
             id="credit-date-to"
-            type="date"
             value={dateTo}
-            onChange={(e) => {
-              setDateTo(e.target.value);
+            onChange={(value) => {
+              setDateTo(value);
               resetPage();
             }}
-            className="h-10"
+            placeholder="To date"
+            aria-label="To"
           />
         </div>
-        <div className="flex min-w-[180px] flex-[2] flex-col gap-1">
-          <label
-            htmlFor="credit-search"
-            className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground"
-          >
-            Search
-          </label>
+        <div className="flex min-w-[180px] flex-[2] flex-col gap-1.5">
+          <Label htmlFor="credit-search">Search</Label>
           <Input
             id="credit-search"
             type="text"
@@ -209,7 +204,7 @@ function CreditHistory() {
             className="h-10"
           />
         </div>
-        <p className="w-full font-mono text-xs text-muted-foreground">
+        <p className="w-full text-xs text-muted-foreground">
           Filters apply to the current page
           {hasServerData && filtersActive
             ? ` · Showing ${filteredItems.length} of ${data?.items.length ?? 0}`
@@ -219,11 +214,9 @@ function CreditHistory() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <CardTitle className="font-mono text-sm tracking-wide">
-            Transactions
-          </CardTitle>
+          <CardTitle className="text-sm tracking-wide">Transactions</CardTitle>
           {data && data.total > 0 && (
-            <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+            <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
               {data.total} total
             </span>
           )}
@@ -240,10 +233,8 @@ function CreditHistory() {
               <div className="mb-3 rounded-full bg-muted p-3">
                 <History className="h-6 w-6 text-muted-foreground opacity-40" />
               </div>
-              <p className="font-mono text-sm text-foreground">
-                No transactions yet
-              </p>
-              <p className="font-mono text-xs text-muted-foreground">
+              <p className="text-sm text-foreground">No transactions yet</p>
+              <p className="text-xs text-muted-foreground">
                 Credit adjustments will appear here.
               </p>
             </div>
@@ -252,10 +243,10 @@ function CreditHistory() {
               <div className="mb-3 rounded-full bg-muted p-3">
                 <History className="h-6 w-6 text-muted-foreground opacity-40" />
               </div>
-              <p className="font-mono text-sm text-foreground">
+              <p className="text-sm text-foreground">
                 No matching transactions
               </p>
-              <p className="font-mono text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Try adjusting filters on this page.
               </p>
             </div>
@@ -264,16 +255,16 @@ function CreditHistory() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
                       Date
                     </th>
-                    <th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
                       Type
                     </th>
-                    <th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-muted-foreground">
                       Amount
                     </th>
-                    <th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
                       Description
                     </th>
                   </tr>
@@ -294,12 +285,12 @@ function CreditHistory() {
                 size="sm"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="font-mono text-xs"
+                className="text-xs"
                 aria-label="Previous page"
               >
                 <ChevronLeft className="h-3 w-3" />
               </Button>
-              <span className="font-mono text-xs text-muted-foreground">
+              <span className="font-mono text-xs tabular-nums text-muted-foreground">
                 Page {page} of {totalPages}
               </span>
               <Button
@@ -307,7 +298,7 @@ function CreditHistory() {
                 size="sm"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="font-mono text-xs"
+                className="text-xs"
                 aria-label="Next page"
               >
                 <ChevronRight className="h-3 w-3" />
@@ -326,7 +317,7 @@ function TransactionRow({ item }: { item: CreditLogItem }) {
   return (
     <tr className="transition-colors hover:bg-muted/50">
       <td className="px-3 py-3">
-        <span className="font-mono text-xs text-muted-foreground">
+        <span className="font-mono text-xs tabular-nums text-muted-foreground">
           {new Date(item.created_at).toLocaleString()}
         </span>
       </td>
@@ -351,12 +342,12 @@ function TransactionRow({ item }: { item: CreditLogItem }) {
         {item.reference_id ? (
           <Link
             to={`/scan/${item.reference_id}`}
-            className="block max-w-[300px] truncate font-mono text-xs text-primary underline-offset-2 hover:underline"
+            className="block max-w-[300px] truncate text-xs text-primary underline-offset-2 hover:underline"
           >
             {item.description || "View scan"}
           </Link>
         ) : (
-          <span className="block max-w-[300px] truncate font-mono text-xs text-foreground">
+          <span className="block max-w-[300px] truncate text-xs text-foreground">
             {item.description || "—"}
           </span>
         )}
