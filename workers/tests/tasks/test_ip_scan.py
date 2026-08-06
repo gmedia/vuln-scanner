@@ -185,7 +185,14 @@ class TestIpScanNmapFailure:
             JOB_ID,
             "failed",
             completed_at=ANY,
+            result_summary=ANY,
         )
+        failed_calls = [c for c in self.mock_update_status.call_args_list if len(c.args) >= 3 and c.args[2] == "failed"]
+        assert failed_calls
+        summary = failed_calls[0].kwargs.get("result_summary")
+        assert isinstance(summary, dict)
+        assert "error" in summary
+        assert "Nmap scan failed" in summary["error"]
 
     def test_nmap_failure_publishes_failure_progress(self):
         with pytest.raises(Retry):
@@ -670,7 +677,14 @@ class TestIpScanCatchAllInnerTrySuccess:
             JOB_ID,
             "failed",
             completed_at=ANY,
+            result_summary=ANY,
         )
+        failed_calls = [c for c in self.mock_update_status.call_args_list if len(c.args) >= 3 and c.args[2] == "failed"]
+        assert failed_calls
+        summary = failed_calls[0].kwargs.get("result_summary")
+        assert isinstance(summary, dict)
+        assert "error" in summary
+        assert "IP scan failed" in summary["error"]
 
     def test_catch_all_inner_try_calls_refund_credits(self):
         with pytest.raises(Retry):
