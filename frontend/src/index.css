@@ -39,15 +39,60 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --radius: 0.5rem;
-  --font-family-mono: "JetBrains Mono", "Fira Code", "monospace";
+  --font-sans:
+    "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-mono:
+    "JetBrains Mono", ui-monospace, "SFMono-Regular", "Menlo", monospace;
+  --font-family-sans: var(--font-sans);
+  --font-family-mono: var(--font-mono);
 }
 
 * {
   border-color: var(--color-border);
 }
+
+html {
+  font-family: var(--font-sans);
+}
+
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  letter-spacing: -0.011em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(0 0% 28%) hsl(0 0% 9%);
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: hsl(0 0% 9%);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: hsl(0 0% 28%);
+  border-radius: 4px;
+  border: 2px solid hsl(0 0% 9%);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: hsl(0 0% 40%);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* Animation keyframes for shadcn/ui components */
@@ -227,7 +272,7 @@ body {
 }
 
 @utility slide-in-from-top-48\% {
-  animation: slide-in-from-top-48\%200ms ease-out;
+  animation: slide-in-from-top-48\%200msease-out;
 }
 
 @utility slide-out-to-left-1\/2 {
@@ -235,5 +280,5 @@ body {
 }
 
 @utility slide-out-to-top-48\% {
-  animation: slide-out-to-top-48\%200ms ease-out;
+  animation: slide-out-to-top-48\%200msease-out;
 }
