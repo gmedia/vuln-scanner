@@ -150,10 +150,10 @@ function Dashboard() {
         <div className="flex items-center gap-3">
           <Crosshair className="h-6 w-6 text-primary" />
           <div>
-            <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
+            <h2 className="text-lg font-bold tracking-wide text-foreground">
               Dashboard
             </h2>
-            <p className="font-mono text-[11px] text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground">
               All-time overview · {totalScans} scan{totalScans === 1 ? "" : "s"}
             </p>
           </div>
@@ -162,7 +162,7 @@ function Dashboard() {
         <div ref={newScanRef} className="relative shrink-0">
           <Button
             size="lg"
-            className="w-full min-h-11 font-mono text-sm sm:w-auto"
+            className="w-full min-h-11 text-sm sm:w-auto"
             onClick={() => setNewScanOpen((o) => !o)}
             aria-expanded={newScanOpen}
             aria-haspopup="menu"
@@ -183,7 +183,7 @@ function Dashboard() {
                   to={opt.to}
                   role="menuitem"
                   onClick={() => setNewScanOpen(false)}
-                  className="flex items-center gap-2 rounded-md px-3 py-2.5 font-mono text-xs text-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className="flex items-center gap-2 rounded-md px-3 py-2.5 text-xs text-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <opt.icon className="h-4 w-4 shrink-0" />
                   {opt.label}
@@ -195,7 +195,7 @@ function Dashboard() {
       </div>
 
       <div>
-        <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+        <p className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
           Findings by severity
           <span className="ml-2 normal-case tracking-normal text-muted-foreground/80">
             (loaded history)
@@ -242,7 +242,7 @@ function Dashboard() {
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2 flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between gap-4 py-3">
-            <CardTitle className="shrink-0 font-mono text-sm tracking-wide">
+            <CardTitle className="shrink-0 text-sm tracking-wide">
               Scan history
             </CardTitle>
             <div className="flex items-center gap-3">
@@ -259,7 +259,7 @@ function Dashboard() {
                 </SelectContent>
               </Select>
               {totalScans > 0 && (
-                <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                <span className="shrink-0 text-[10px] text-muted-foreground">
                   {scans.length} of {totalScans}
                   {!allLoaded && totalScans > scans.length ? " · more available" : ""}
                 </span>
@@ -278,15 +278,15 @@ function Dashboard() {
                 <div className="mb-3 rounded-full bg-muted p-3">
                   <Radar className="h-6 w-6 text-muted-foreground opacity-40" />
                 </div>
-                <p className="mb-1 font-mono text-sm text-foreground">
+                <p className="mb-1 text-sm text-foreground">
                   No scans yet
                 </p>
-                <p className="mb-4 font-mono text-xs text-muted-foreground">
+                <p className="mb-4 text-xs text-muted-foreground">
                   {filter
                     ? `No ${SCAN_TYPE_LABELS[filter]?.toLowerCase() ?? filter} scans found.`
                     : "Start your first vulnerability scan."}
                 </p>
-                <Button asChild size="sm" className="font-mono text-xs">
+                <Button asChild size="sm" className="text-xs">
                   <Link to="/scan/ip">
                     <Plus className="mr-1.5 h-3.5 w-3.5" />
                     New scan
@@ -319,17 +319,17 @@ function Dashboard() {
                           </Badge>
                         </div>
                         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
-                          <span className="font-mono text-[10px] text-muted-foreground">
+                          <span className="text-[10px] text-muted-foreground">
                             {SCAN_TYPE_LABELS[scan.scan_type] ?? scan.scan_type}
                           </span>
                           {scan.started_at && (
-                            <span className="inline-flex items-center gap-1 font-mono text-[10px] text-muted-foreground">
+                            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
                               <Clock className="h-2.5 w-2.5" />
                               {new Date(scan.started_at).toLocaleDateString()}
                             </span>
                           )}
                           {findings > 0 && (
-                            <span className="font-mono text-[10px] text-muted-foreground">
+                            <span className="text-[10px] text-muted-foreground">
                               {findings} findings
                               {(crit > 0 || high > 0 || med > 0) && (
                                 <span className="ml-1 text-muted-foreground/90">
@@ -356,7 +356,7 @@ function Dashboard() {
                   size="sm"
                   onClick={handleLoadMore}
                   disabled={loadingMore || isFetching}
-                  className="font-mono text-xs"
+                  className="text-xs"
                 >
                   {loadingMore || isFetching ? (
                     <>
@@ -377,7 +377,7 @@ function Dashboard() {
 
         <Card>
           <CardHeader className="py-3">
-            <CardTitle className="font-mono text-sm tracking-wide">
+            <CardTitle className="text-sm tracking-wide">
               Quick actions
             </CardTitle>
           </CardHeader>
@@ -391,10 +391,10 @@ function Dashboard() {
                 >
                   <action.icon className="mr-3 h-4 w-4" />
                   <div className="text-left">
-                    <span className="font-mono text-xs font-medium">
+                    <span className="text-xs font-medium">
                       {action.label}
                     </span>
-                    <span className="mt-0.5 block font-mono text-[10px] text-muted-foreground">
+                    <span className="mt-0.5 block text-[10px] text-muted-foreground">
                       {action.desc}
                     </span>
                   </div>
@@ -433,13 +433,13 @@ function StatCard({
           <>
             <span
               className={cn(
-                "font-mono text-2xl font-bold tracking-tight sm:text-3xl",
+                "font-mono text-2xl font-bold tracking-tight tabular-nums sm:text-3xl",
                 valueClassName ?? "text-foreground",
               )}
             >
               {value}
             </span>
-            <span className="mt-1 text-center font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+            <span className="mt-1 text-center text-[10px] uppercase tracking-wider text-muted-foreground">
               {label}
             </span>
           </>

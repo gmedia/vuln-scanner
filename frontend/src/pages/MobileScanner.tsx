@@ -23,14 +23,14 @@ function MobileScanner() {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <Smartphone className="h-6 w-6 text-primary" />
-        <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
+        <h2 className="text-lg font-bold tracking-wide text-foreground">
           Mobile scanner
         </h2>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-mono text-sm tracking-wide">
+          <CardTitle className="text-sm tracking-wide">
             Upload binary
           </CardTitle>
         </CardHeader>
@@ -42,7 +42,7 @@ function MobileScanner() {
       {!isScanning && !hasResults && (
         <Card>
           <CardHeader>
-            <CardTitle className="font-mono text-sm tracking-wide">
+            <CardTitle className="text-sm tracking-wide">
               What this scan covers
             </CardTitle>
           </CardHeader>
@@ -60,7 +60,7 @@ function MobileScanner() {
       {isScanning && (
         <Card>
           <CardHeader>
-            <CardTitle className="font-mono text-sm tracking-wide">
+            <CardTitle className="text-sm tracking-wide">
               Scan progress
             </CardTitle>
           </CardHeader>
@@ -82,10 +82,10 @@ function MobileScanner() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="font-mono text-sm tracking-wide">
+              <CardTitle className="text-sm tracking-wide">
                 Results
               </CardTitle>
-              <Badge variant="completed" className="font-mono text-[10px]">
+              <Badge variant="completed" className="text-[10px]">
                 COMPLETED
               </Badge>
             </div>
@@ -103,10 +103,10 @@ function MobileScanner() {
                   key={item.label}
                   className={`flex flex-col items-center rounded-md ${item.bg} p-3`}
                 >
-                  <span className={`font-mono text-lg font-bold ${item.color}`}>
+                  <span className={`font-mono text-lg font-bold tabular-nums ${item.color}`}>
                     {item.count}
                   </span>
-                  <span className="mt-1 font-mono text-[9px] text-muted-foreground">
+                  <span className="mt-1 text-[9px] text-muted-foreground">
                     {item.label}
                   </span>
                 </div>
@@ -120,7 +120,7 @@ function MobileScanner() {
                 ) : (
                   <CheckCircle2 className="h-4 w-4 text-primary" />
                 )}
-                <span className="font-mono text-xs text-foreground">
+                <span className="text-xs text-foreground">
                   {totalFindings} finding
                   {totalFindings !== 1 ? "s" : ""} found
                 </span>
@@ -129,7 +129,7 @@ function MobileScanner() {
                 variant="outline"
                 size="sm"
                 onClick={() => navigate(`/scan/${activeJobId}`)}
-                className="font-mono text-xs"
+                className="text-xs"
               >
                 View Details
               </Button>

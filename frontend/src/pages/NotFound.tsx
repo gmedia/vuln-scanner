@@ -12,10 +12,10 @@ function NotFound() {
         <h1 className="mb-2 font-mono text-8xl font-bold tracking-tighter text-primary/30">
           404
         </h1>
-        <h2 className="mb-2 font-mono text-lg font-bold tracking-wide text-foreground">
+        <h2 className="mb-2 text-lg font-bold tracking-wide text-foreground">
           Page not found
         </h2>
-        <p className="mb-8 max-w-md text-center font-mono text-sm text-muted-foreground">
+        <p className="mb-8 max-w-md text-center text-sm text-muted-foreground">
           The target you&apos;re looking for is out of scan range. Return to base and try again.
         </p>
         <div className="flex flex-col items-center gap-3 sm:flex-row">

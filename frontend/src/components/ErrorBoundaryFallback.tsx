@@ -61,7 +61,7 @@ export function ErrorBoundaryFallback({
             <button
               type="button"
               onClick={() => setShowDetails((v) => !v)}
-              className="font-mono text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
             >
               {showDetails ? "Hide technical details" : "Show technical details"}
             </button>
