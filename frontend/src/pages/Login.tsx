@@ -85,12 +85,12 @@ function Login() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="min-h-[1.25rem]">
               {error && (
-                <p className="font-mono text-xs text-red-400 text-center">
+                <p className="text-xs text-red-400 text-center">
                   {error}
                 </p>
               )}
               {resendFeedback && (
-                <p className="font-mono text-xs text-primary text-center mt-1">
+                <p className="text-xs text-primary text-center mt-1">
                   {resendFeedback}
                 </p>
               )}
@@ -98,7 +98,7 @@ function Login() {
             <div className="space-y-2">
               <label
                 htmlFor="email"
-                className="block font-mono text-xs text-muted-foreground"
+                className="block text-xs text-muted-foreground"
               >
                 Email
               </label>
@@ -115,7 +115,7 @@ function Login() {
             <div className="space-y-2">
               <label
                 htmlFor="password"
-                className="block font-mono text-xs text-muted-foreground"
+                className="block text-xs text-muted-foreground"
               >
                 Password
               </label>
@@ -147,7 +147,7 @@ function Login() {
             </div>
             <Button
               type="submit"
-              className="w-full font-mono text-sm"
+              className="w-full text-sm"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
@@ -162,13 +162,13 @@ function Login() {
           </form>
           {showResend && (
             <div className="mt-4 space-y-2">
-              <p className="font-mono text-xs text-muted-foreground text-center">
+              <p className="text-xs text-muted-foreground text-center">
                 Need a new verification link?
               </p>
               <Button
                 type="button"
                 variant="outline"
-                className="w-full font-mono text-sm"
+                className="w-full text-sm"
                 onClick={handleResend}
                 disabled={isResending || !email}
               >
@@ -183,7 +183,7 @@ function Login() {
               </Button>
             </div>
           )}
-          <p className="mt-4 text-center font-mono text-xs">
+          <p className="mt-4 text-center text-xs">
             <Link
               to="/forgot-password"
               className="text-foreground/80 hover:text-primary hover:underline"
@@ -191,7 +191,7 @@ function Login() {
               Forgot password?
             </Link>
           </p>
-          <p className="mt-4 text-center font-mono text-xs text-muted-foreground">
+          <p className="mt-4 text-center text-xs text-muted-foreground">
             Don't have an account?{" "}
             <Link to="/register" className="text-primary hover:underline">
               Register

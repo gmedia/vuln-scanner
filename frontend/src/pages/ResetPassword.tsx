@@ -41,19 +41,19 @@ function ResetPassword() {
         <Card className="w-full">
           <CardContent className="pt-6 text-center space-y-4">
             <AlertCircle className="h-12 w-12 text-red-400 mx-auto" />
-            <p className="font-mono text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               This password reset link is invalid or missing a token.
             </p>
             <div className="space-y-2 pt-2">
               <Link to="/forgot-password" className="block">
-                <Button className="w-full font-mono text-sm">
+                <Button className="w-full text-sm">
                   Request new link
                 </Button>
               </Link>
               <Link to="/login" className="block">
                 <Button
                   variant="outline"
-                  className="w-full font-mono text-sm"
+                  className="w-full text-sm"
                 >
                   Back to sign in
                 </Button>
@@ -100,12 +100,12 @@ function ResetPassword() {
         <Card className="w-full">
           <CardContent className="pt-6 text-center space-y-4">
             <CheckCircle className="h-12 w-12 text-primary mx-auto" />
-            <p className="font-mono text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Your password has been changed. You can now sign in with your new
               password.
             </p>
             <Link to="/login">
-              <Button className="w-full font-mono text-sm mt-4">Sign In</Button>
+              <Button className="w-full text-sm mt-4">Sign In</Button>
             </Link>
           </CardContent>
         </Card>
@@ -120,13 +120,13 @@ function ResetPassword() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="min-h-[1.25rem]">
               {cooldown > 0 && (
-                <p className="font-mono text-xs text-amber-400 text-center flex items-center justify-center gap-1">
+                <p className="text-xs text-amber-400 text-center flex items-center justify-center gap-1">
                   <Timer className="h-3 w-3" />
                   Too many attempts. Wait {cooldown}s
                 </p>
               )}
               {(validationError || error) && cooldown === 0 && (
-                <p className="font-mono text-xs text-red-400 text-center">
+                <p className="text-xs text-red-400 text-center">
                   {validationError || error}
                 </p>
               )}
@@ -134,7 +134,7 @@ function ResetPassword() {
             <div className="space-y-2">
               <label
                 htmlFor="password"
-                className="block font-mono text-xs text-muted-foreground"
+                className="block text-xs text-muted-foreground"
               >
                 New Password
               </label>
@@ -167,7 +167,7 @@ function ResetPassword() {
             <div className="space-y-2">
               <label
                 htmlFor="confirmPassword"
-                className="block font-mono text-xs text-muted-foreground"
+                className="block text-xs text-muted-foreground"
               >
                 Confirm Password
               </label>
@@ -203,7 +203,7 @@ function ResetPassword() {
             </div>
             <Button
               type="submit"
-              className="w-full font-mono text-sm"
+              className="w-full text-sm"
               disabled={isSubmitting || cooldown > 0}
             >
               {cooldown > 0 ? (
@@ -221,7 +221,7 @@ function ResetPassword() {
               )}
             </Button>
           </form>
-          <p className="mt-6 text-center font-mono text-xs">
+          <p className="mt-6 text-center text-xs">
             <Link
               to="/login"
               className="inline-flex items-center gap-1 text-foreground/80 hover:text-primary hover:underline"

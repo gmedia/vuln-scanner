@@ -106,7 +106,7 @@ function Register() {
             ) : (
               <CheckCircle className="h-12 w-12 text-primary mx-auto" />
             )}
-            <p className="font-mono text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {statusMessage ||
                 (sendFailed
                   ? "Account created, but the verification email could not be sent."
@@ -114,7 +114,7 @@ function Register() {
             </p>
             {resendFeedback && (
               <p
-                className={`font-mono text-xs ${
+                className={`text-xs ${
                   emailSent === false ? "text-amber-400" : "text-primary"
                 }`}
               >
@@ -124,7 +124,7 @@ function Register() {
             <Button
               type="button"
               variant="outline"
-              className="w-full font-mono text-sm"
+              className="w-full text-sm"
               onClick={handleResend}
               disabled={isResending || !email}
             >
@@ -138,7 +138,7 @@ function Register() {
               )}
             </Button>
             <Link to="/login">
-              <Button className="w-full font-mono text-sm mt-2">
+              <Button className="w-full text-sm mt-2">
                 Go to Sign In
               </Button>
             </Link>
@@ -155,7 +155,7 @@ function Register() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="min-h-[1.25rem]">
               {(error || validationError) && (
-                <p className="font-mono text-xs text-red-400 text-center">
+                <p className="text-xs text-red-400 text-center">
                   {validationError || error}
                 </p>
               )}
@@ -163,7 +163,7 @@ function Register() {
             <div className="space-y-2">
               <label
                 htmlFor="email"
-                className="block font-mono text-xs text-muted-foreground"
+                className="block text-xs text-muted-foreground"
               >
                 Email
               </label>
@@ -180,7 +180,7 @@ function Register() {
             <div className="space-y-2">
               <label
                 htmlFor="password"
-                className="block font-mono text-xs text-muted-foreground"
+                className="block text-xs text-muted-foreground"
               >
                 Password
               </label>
@@ -213,7 +213,7 @@ function Register() {
             <div className="space-y-2">
               <label
                 htmlFor="confirmPassword"
-                className="block font-mono text-xs text-muted-foreground"
+                className="block text-xs text-muted-foreground"
               >
                 Confirm Password
               </label>
@@ -249,7 +249,7 @@ function Register() {
             </div>
             <Button
               type="submit"
-              className="w-full font-mono text-sm"
+              className="w-full text-sm"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
@@ -262,7 +262,7 @@ function Register() {
               )}
             </Button>
           </form>
-          <p className="mt-6 text-center font-mono text-xs text-muted-foreground">
+          <p className="mt-6 text-center text-xs text-muted-foreground">
             Already have an account?{" "}
             <Link to="/login" className="text-primary hover:underline">
               Sign in
