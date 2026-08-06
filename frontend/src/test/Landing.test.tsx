@@ -7,7 +7,9 @@ vi.mock("react-router-dom", () => ({
 }));
 
 vi.mock("@/components/ui/Button", () => ({
-  Button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+  Button: ({ children, ...props }: any) => (
+    <button {...props}>{children}</button>
+  ),
 }));
 
 vi.mock("@/components/ui/Card", () => ({
@@ -103,5 +105,16 @@ describe("Landing Page", () => {
 
   it("renders footer with version text", () => {
     expect(screen.getByText(/VulnScanner v0\.1\.0/)).toBeInTheDocument();
+  });
+
+  it("uses sticky-footer shell so footer pins on tall viewports", () => {
+    const root = document.querySelector(".min-h-screen.flex.flex-col");
+    expect(root).toBeTruthy();
+    const main = root!.querySelector("main");
+    expect(main).toBeTruthy();
+    expect(main).toHaveClass("flex-1");
+    const footer = root!.querySelector("footer");
+    expect(footer).toBeTruthy();
+    expect(footer).toHaveClass("mt-auto");
   });
 });
