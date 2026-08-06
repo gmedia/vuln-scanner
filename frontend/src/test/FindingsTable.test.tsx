@@ -77,4 +77,44 @@ describe("FindingsTable", () => {
     expect(screen.getByText("critical")).toBeInTheDocument();
     expect(screen.getByText("info")).toBeInTheDocument();
   });
+
+  it("expands detail directly under the clicked row, not below the table", async () => {
+    const user = userEvent.setup();
+    const findings = [
+      mockFinding({ id: "1", title: "SQL Injection" }),
+      mockFinding({
+        id: "2",
+        title: "XSS Attack",
+        severity: "high",
+        cvss_score: 7.5,
+        description: "Reflected XSS in search",
+      }),
+      mockFinding({
+        id: "3",
+        title: "Open Redirect",
+        severity: "medium",
+        cvss_score: 5.0,
+      }),
+    ];
+    render(<FindingsTable findings={findings} isLoading={false} />);
+
+    await user.click(screen.getByText("XSS Attack"));
+
+    const detailRow = screen.getByTestId("finding-detail-row-2");
+    expect(detailRow).toBeInTheDocument();
+    expect(detailRow.querySelector("td")).toHaveAttribute("colspan", "7");
+    expect(
+      screen.getByText("Reflected XSS in search"),
+    ).toBeInTheDocument();
+
+    const tbody = detailRow.closest("tbody");
+    expect(tbody).not.toBeNull();
+    const rows = Array.from(tbody!.querySelectorAll(":scope > tr"));
+    const summaryIdx = rows.findIndex((r) => r.textContent?.includes("XSS Attack"));
+    expect(summaryIdx).toBeGreaterThanOrEqual(0);
+    expect(rows[summaryIdx + 1]).toBe(detailRow);
+
+    await user.click(screen.getByText("XSS Attack"));
+    expect(screen.queryByTestId("finding-detail-row-2")).not.toBeInTheDocument();
+  });
 });
