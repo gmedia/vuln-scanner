@@ -27,6 +27,24 @@ describe("DatePicker", () => {
     expect(document.querySelector(".rdp-root")).toBeTruthy();
   });
 
+  it("keeps month nav buttons inside the calendar root", async () => {
+    const user = userEvent.setup();
+    render(
+      <DatePicker value="2026-08-06" onChange={() => {}} aria-label="Pick" />,
+    );
+    await user.click(screen.getByRole("button", { name: "Pick" }));
+    const root = document.querySelector(".rdp-root");
+    expect(root).toBeTruthy();
+    const prev = document.querySelector("button.rdp-button_previous");
+    const next = document.querySelector("button.rdp-button_next");
+    expect(prev).toBeTruthy();
+    expect(next).toBeTruthy();
+    expect(root!.contains(prev)).toBe(true);
+    expect(root!.contains(next)).toBe(true);
+    expect(prev).toHaveClass("size-7");
+    expect(next).toHaveClass("size-7");
+  });
+
   it("calls onChange with empty string when cleared", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
