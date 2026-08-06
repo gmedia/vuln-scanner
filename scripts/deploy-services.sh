@@ -98,6 +98,12 @@ fi
 export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-vuln}"
 COMPOSE=(docker compose -f docker-compose.prod.yml)
 
+# Capture once. Avoid `cmd | grep -q` under `set -o pipefail`: when grep -q
+# exits early on a match, the producer gets SIGPIPE and the pipeline fails
+# even though the service name is valid.
+KNOWN_SERVICES=$("${COMPOSE[@]}" config --services)
+KNOWN_SERVICES_FLAT=${KNOWN_SERVICES//$'\n'/ }
+
 for svc in "${SERVICES[@]}"; do
   for blocked in "${BLOCKED_SERVICES[@]}"; do
     if [[ "$svc" == "$blocked" ]]; then
@@ -106,9 +112,9 @@ for svc in "${SERVICES[@]}"; do
       exit 1
     fi
   done
-  if ! "${COMPOSE[@]}" config --services | grep -qx "$svc"; then
+  if ! grep -Fxq -- "$svc" <<< "$KNOWN_SERVICES"; then
     echo "error: unknown compose service '$svc'" >&2
-    echo "  known: $("${COMPOSE[@]}" config --services | tr '\n' ' ')" >&2
+    echo "  known: $KNOWN_SERVICES_FLAT" >&2
     exit 1
   fi
 done
