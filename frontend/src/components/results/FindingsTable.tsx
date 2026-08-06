@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { Fragment, useState, useMemo } from "react";
 import { ChevronDown, ChevronUp, Search } from "lucide-react";
 import type { ScanFinding } from "@/api/scans";
 import { Badge } from "@/components/ui/Badge";
@@ -179,105 +179,116 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
                 </td>
               </tr>
             ) : (
-              sorted.map((finding) => (
-                <tr
-                  key={finding.id}
-                  onClick={() =>
-                    setExpandedId((prev) =>
-                      prev === finding.id ? null : finding.id,
-                    )
-                  }
-                  className="group cursor-pointer border-b border-border last:border-0 transition-colors hover:bg-muted/30"
-                >
-                  <td className="px-3 py-2.5">
-                    <Badge
-                      variant={
-                        finding.severity as
-                          | "critical"
-                          | "high"
-                          | "medium"
-                          | "low"
-                          | "info"
+              sorted.map((finding) => {
+                const isExpanded = expandedId === finding.id;
+                return (
+                  <Fragment key={finding.id}>
+                    <tr
+                      onClick={() =>
+                        setExpandedId((prev) =>
+                          prev === finding.id ? null : finding.id,
+                        )
                       }
-                      className="text-[10px] capitalize"
+                      aria-expanded={isExpanded}
+                      className={cn(
+                        "group cursor-pointer border-b border-border transition-colors hover:bg-muted/30",
+                        isExpanded && "bg-muted/20",
+                      )}
                     >
-                      {finding.severity}
-                    </Badge>
-                  </td>
-                  <td className="px-3 py-2.5 font-mono text-xs text-foreground max-w-[200px] truncate">
-                    {finding.title}
-                  </td>
-                  <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
-                    {finding.category || "-"}
-                  </td>
-                  <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
-                    {finding.cve_id ? (
-                      <a
-                        href={`https://nvd.nist.gov/vuln/detail/${finding.cve_id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-primary hover:underline"
-                      >
-                        {finding.cve_id}
-                      </a>
-                    ) : (
-                      "-"
-                    )}
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <div className="flex items-center gap-2">
-                      <div className="h-1.5 w-12 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className={cn(
-                            "h-full rounded-full transition-all",
-                            cvssBarColor(finding.cvss_score),
-                          )}
-                          style={{
-                            width: `${((finding.cvss_score ?? 0) / 10) * 100}%`,
-                          }}
-                        />
-                      </div>
-                      <span
-                        className={cn(
-                          "font-mono text-xs font-medium",
-                          cvssColor(finding.cvss_score),
+                      <td className="px-3 py-2.5">
+                        <Badge
+                          variant={
+                            finding.severity as
+                              | "critical"
+                              | "high"
+                              | "medium"
+                              | "low"
+                              | "info"
+                          }
+                          className="text-[10px] capitalize"
+                        >
+                          {finding.severity}
+                        </Badge>
+                      </td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-foreground max-w-[200px] truncate">
+                        {finding.title}
+                      </td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
+                        {finding.category || "-"}
+                      </td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
+                        {finding.cve_id ? (
+                          <a
+                            href={`https://nvd.nist.gov/vuln/detail/${finding.cve_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-primary hover:underline"
+                          >
+                            {finding.cve_id}
+                          </a>
+                        ) : (
+                          "-"
                         )}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 w-12 overflow-hidden rounded-full bg-muted">
+                            <div
+                              className={cn(
+                                "h-full rounded-full transition-all",
+                                cvssBarColor(finding.cvss_score),
+                              )}
+                              style={{
+                                width: `${((finding.cvss_score ?? 0) / 10) * 100}%`,
+                              }}
+                            />
+                          </div>
+                          <span
+                            className={cn(
+                              "font-mono text-xs font-medium",
+                              cvssColor(finding.cvss_score),
+                            )}
+                          >
+                            {finding.cvss_score?.toFixed(1) ?? "-"}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5 font-mono text-xs">
+                        {finding.remediation ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                            Ada saran
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5 text-center">
+                        {isExpanded ? (
+                          <ChevronUp className="ml-auto h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                        ) : (
+                          <ChevronDown className="ml-auto h-3.5 w-3.5 text-muted-foreground transition-colors" />
+                        )}
+                      </td>
+                    </tr>
+                    {isExpanded && (
+                      <tr
+                        className="border-b border-border bg-card/30 last:border-0"
+                        data-testid={`finding-detail-row-${finding.id}`}
                       >
-                        {finding.cvss_score?.toFixed(1) ?? "-"}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-3 py-2.5 font-mono text-xs">
-                    {finding.remediation ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                        Ada saran
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
+                        <td colSpan={7} className="p-3">
+                          <FindingDetail finding={finding} />
+                        </td>
+                      </tr>
                     )}
-                  </td>
-                  <td className="px-3 py-2.5 text-center">
-                    {expandedId === finding.id ? (
-                      <ChevronUp className="ml-auto h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                    ) : (
-                      <ChevronDown className="ml-auto h-3.5 w-3.5 text-muted-foreground transition-colors" />
-                    )}
-                  </td>
-                </tr>
-              ))
+                  </Fragment>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
-
-      {sorted.map(
-        (finding) =>
-          expandedId === finding.id && (
-            <FindingDetail key={`detail-${finding.id}`} finding={finding} />
-          ),
-      )}
     </div>
   );
 }
