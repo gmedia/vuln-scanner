@@ -80,10 +80,10 @@ function AdminDashboard() {
       <div className="flex items-center gap-3">
         <Shield className="h-6 w-6 text-primary" />
         <div>
-          <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
+          <h2 className="text-lg font-bold tracking-wide text-foreground">
             Admin dashboard
           </h2>
-          <p className="font-mono text-[11px] text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             All-time overview
           </p>
         </div>
@@ -105,11 +105,11 @@ function AdminDashboard() {
                       <card.icon className={`h-4 w-4 ${card.color}`} />
                     </div>
                     <span
-                      className={`font-mono text-2xl font-bold tracking-tight ${card.color}`}
+                      className={`font-mono text-2xl font-bold tracking-tight tabular-nums ${card.color}`}
                     >
                       {card.value.toLocaleString()}
                     </span>
-                    <span className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
                       {card.label}
                     </span>
                   </>
@@ -133,11 +133,11 @@ function AdminDashboard() {
                       <card.icon className={`h-4 w-4 ${card.color}`} />
                     </div>
                     <span
-                      className={`font-mono text-2xl font-bold tracking-tight ${card.color}`}
+                      className={`font-mono text-2xl font-bold tracking-tight tabular-nums ${card.color}`}
                     >
                       {card.value.toLocaleString()}
                     </span>
-                    <span className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
                       {card.label}
                     </span>
                   </>
@@ -150,7 +150,7 @@ function AdminDashboard() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-mono text-sm tracking-wide">
+          <CardTitle className="text-sm tracking-wide">
             Quick links
           </CardTitle>
         </CardHeader>
@@ -166,8 +166,8 @@ function AdminDashboard() {
                   <link.icon className="h-4 w-4 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-mono text-sm text-foreground">{link.label}</p>
-                  <p className="font-mono text-[11px] text-muted-foreground">
+                  <p className="text-sm text-foreground">{link.label}</p>
+                  <p className="text-[11px] text-muted-foreground">
                     {link.desc}
                   </p>
                 </div>

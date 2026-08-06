@@ -38,10 +38,10 @@ function AdminUsers() {
       <div className="flex items-center gap-3">
         <Users className="h-6 w-6 text-primary" />
         <div>
-          <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
+          <h2 className="text-lg font-bold tracking-wide text-foreground">
             User management
           </h2>
-          <p className="font-mono text-[11px] text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             Search and manage registered accounts
           </p>
         </div>
@@ -49,7 +49,7 @@ function AdminUsers() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <CardTitle className="font-mono text-sm tracking-wide">Users</CardTitle>
+          <CardTitle className="text-sm tracking-wide">Users</CardTitle>
           <div className="flex items-center gap-3">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -61,11 +61,11 @@ function AdminUsers() {
                   setSearch(e.target.value);
                   setPage(1);
                 }}
-                className="h-7 w-[180px] pl-7 text-xs font-mono"
+                className="h-7 w-[180px] pl-7 text-xs"
               />
             </div>
             {data && data.total > 0 && (
-              <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+              <span className="shrink-0 text-[10px] text-muted-foreground">
                 {data.total} total
               </span>
             )}
@@ -83,8 +83,8 @@ function AdminUsers() {
               <div className="mb-3 rounded-full bg-muted p-3">
                 <Users className="h-6 w-6 text-muted-foreground opacity-40" />
               </div>
-              <p className="font-mono text-sm text-foreground">No users found</p>
-              <p className="font-mono text-xs text-muted-foreground">
+              <p className="text-sm text-foreground">No users found</p>
+              <p className="text-xs text-muted-foreground">
                 {search ? "Try a different search term." : "No users registered yet."}
               </p>
             </div>
@@ -93,25 +93,25 @@ function AdminUsers() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
                       Email
                     </th>
-                    <th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
                       Role
                     </th>
-                    <th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
                       Verified
                     </th>
-                    <th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-muted-foreground">
                       Credits
                     </th>
-                    <th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-muted-foreground">
                       Scans
                     </th>
-                    <th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
                       Created
                     </th>
-                    <th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-muted-foreground">
                       Actions
                     </th>
                   </tr>
@@ -136,11 +136,11 @@ function AdminUsers() {
                 size="sm"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="font-mono text-xs"
+                className="text-xs"
               >
                 <ChevronLeft className="h-3 w-3" />
               </Button>
-              <span className="font-mono text-xs text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 Page {page} of {totalPages}
               </span>
               <Button
@@ -148,7 +148,7 @@ function AdminUsers() {
                 size="sm"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="font-mono text-xs"
+                className="text-xs"
               >
                 <ChevronRight className="h-3 w-3" />
               </Button>
@@ -188,15 +188,15 @@ function UserRow({ user, onView }: { user: AdminUserItem; onView: () => void }) 
         </Badge>
       </td>
       <td className="px-3 py-3 text-right">
-        <span className="font-mono text-xs text-foreground">{user.credits}</span>
+        <span className="font-mono text-xs tabular-nums text-foreground">{user.credits}</span>
       </td>
       <td className="px-3 py-3 text-right">
-        <span className="font-mono text-xs text-muted-foreground">
+        <span className="font-mono text-xs tabular-nums text-muted-foreground">
           {user.scan_count}
         </span>
       </td>
       <td className="px-3 py-3">
-        <span className="font-mono text-xs text-muted-foreground">
+        <span className="font-mono text-xs tabular-nums text-muted-foreground">
           {formatDate(user.created_at)}
         </span>
       </td>
@@ -205,7 +205,7 @@ function UserRow({ user, onView }: { user: AdminUserItem; onView: () => void }) 
           variant="ghost"
           size="sm"
           onClick={onView}
-          className="font-mono text-xs"
+          className="text-xs"
         >
           <Eye className="mr-1 h-3 w-3" />
           View
