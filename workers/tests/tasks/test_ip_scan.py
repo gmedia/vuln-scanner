@@ -184,6 +184,7 @@ class TestIpScanNmapFailure:
             self.mock_session.return_value,
             JOB_ID,
             "failed",
+            completed_at=ANY,
         )
 
     def test_nmap_failure_publishes_failure_progress(self):
@@ -668,6 +669,7 @@ class TestIpScanCatchAllInnerTrySuccess:
             self.mock_session.return_value,
             JOB_ID,
             "failed",
+            completed_at=ANY,
         )
 
     def test_catch_all_inner_try_calls_refund_credits(self):

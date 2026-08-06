@@ -34,7 +34,10 @@ function ScanProgress({ className }: ScanProgressProps) {
     (msg: { step: string; progress: number; message: string }) => {
       lastMessageTimeRef.current = Date.now();
       setIsDisconnected(false);
-      setProgress(msg.progress, msg.step || "running");
+      const step = msg.step || "running";
+      const nextStatus =
+        step === "failed" || step.endsWith("_error") ? "failed" : step;
+      setProgress(msg.progress, nextStatus);
     },
     [setProgress],
   );
@@ -57,7 +60,7 @@ function ScanProgress({ className }: ScanProgressProps) {
   useEffect(() => {
     if (scanData?.status === "completed" || scanData?.status === "failed") {
       setProgress(100, scanData.status);
-      if (scanData.status === "completed" && activeJobId) {
+      if (activeJobId) {
         const timer = setTimeout(() => {
           navigate(`/scan/${activeJobId}`);
           clearActiveScan();
@@ -74,8 +77,8 @@ function ScanProgress({ className }: ScanProgressProps) {
     setProgress,
   ]);
 
-  const isComplete = status === "completed" || progress >= 100;
   const isFailed = status === "failed";
+  const isComplete = status === "completed";
 
   return (
     <div className={cn("space-y-4", className)}>

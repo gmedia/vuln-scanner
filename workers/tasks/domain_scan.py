@@ -198,7 +198,7 @@ def run_domain_scan(self: Any, job_id: str, domain: str) -> TaskResult:
         raise
     except Exception as e:  # Broad catch at task top-level — inner exceptions already handled
         try:
-            _update_status(session, job_id, "failed")
+            _update_status(session, job_id, "failed", completed_at=datetime.now(UTC))
             _refund_credits(session, job_id, "domain")
             session.commit()
             session.close()

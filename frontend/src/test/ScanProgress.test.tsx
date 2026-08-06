@@ -94,6 +94,18 @@ describe("ScanProgress", () => {
     expect(screen.getByText("SCAN COMPLETE")).toBeInTheDocument();
   });
 
+  it("does not show complete when progress is 100 but status is failed", () => {
+    mockStoreState = {
+      activeJobId: null,
+      progress: 100,
+      status: "failed",
+      scanType: null,
+    };
+    render(<ScanProgress />);
+    expect(screen.getByText("SCAN FAILED")).toBeInTheDocument();
+    expect(screen.queryByText("SCAN COMPLETE")).not.toBeInTheDocument();
+  });
+
   it("shows failed state when status is failed", () => {
     mockStoreState = {
       activeJobId: null,
@@ -314,5 +326,66 @@ describe("ScanProgress", () => {
     };
     render(<ScanProgress />);
     expect(screen.getByText("99%")).toBeInTheDocument();
+  });
+
+  it("navigates to scan detail when job completes", async () => {
+    const { useScanDetail } = await import("@/hooks/useScan");
+    vi.mocked(useScanDetail).mockReturnValue({
+      data: { id: "job-done", status: "completed" },
+    } as ReturnType<typeof useScanDetail>);
+    mockStoreState = {
+      activeJobId: "job-done",
+      progress: 90,
+      status: "running",
+      scanType: "apk",
+    };
+    render(<ScanProgress />);
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(mockNavigate).toHaveBeenCalledWith("/scan/job-done");
+    expect(mockClearActiveScan).toHaveBeenCalled();
+  });
+
+  it("navigates to scan detail when job fails", async () => {
+    const { useScanDetail } = await import("@/hooks/useScan");
+    vi.mocked(useScanDetail).mockReturnValue({
+      data: { id: "job-fail", status: "failed" },
+    } as ReturnType<typeof useScanDetail>);
+    mockStoreState = {
+      activeJobId: "job-fail",
+      progress: 100,
+      status: "failed",
+      scanType: "apk",
+    };
+    render(<ScanProgress />);
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(mockNavigate).toHaveBeenCalledWith("/scan/job-fail");
+    expect(mockClearActiveScan).toHaveBeenCalled();
+  });
+
+  it("maps websocket *_error steps to failed status", async () => {
+    const { useWebSocket } = await import("@/hooks/useWebSocket");
+    const captured: {
+      handler?: (msg: {
+        step: string;
+        progress: number;
+        message: string;
+      }) => void;
+    } = {};
+    vi.mocked(useWebSocket).mockImplementation((_id, onProgress) => {
+      captured.handler = onProgress as (typeof captured)["handler"];
+    });
+    mockStoreState = {
+      activeJobId: "job-aab",
+      progress: 8,
+      status: "running",
+      scanType: "apk",
+    };
+    render(<ScanProgress />);
+    captured.handler?.({
+      step: "aab_convert_error",
+      progress: 100,
+      message: "AAB conversion failed",
+    });
+    expect(mockSetProgress).toHaveBeenCalledWith(100, "failed");
   });
 });
