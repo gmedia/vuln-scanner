@@ -47,7 +47,7 @@ function SeverityChart({ summary, className }: SeverityChartProps) {
     return (
       <div className={cn("flex flex-col items-center justify-center py-12 text-center", className)}>
         <AlertTriangle className="mb-3 h-10 w-10 text-muted-foreground opacity-40" />
-        <p className="font-mono text-sm text-muted-foreground">No findings to display</p>
+        <p className="text-sm text-muted-foreground">No findings to display</p>
       </div>
     );
   }
@@ -65,7 +65,7 @@ function SeverityChart({ summary, className }: SeverityChartProps) {
     return (
       <div className={cn("flex flex-col items-center justify-center py-12 text-center", className)}>
         <AlertTriangle className="mb-3 h-10 w-10 text-muted-foreground opacity-40" />
-        <p className="font-mono text-sm text-muted-foreground">No findings to display</p>
+        <p className="text-sm text-muted-foreground">No findings to display</p>
       </div>
     );
   }
@@ -129,7 +129,7 @@ function SeverityChart({ summary, className }: SeverityChartProps) {
                   style={{ backgroundColor: item.color }}
                   aria-hidden
                 />
-                <span className="truncate font-mono text-xs text-muted-foreground">
+                <span className="truncate text-xs text-muted-foreground">
                   {item.name}
                 </span>
               </span>
