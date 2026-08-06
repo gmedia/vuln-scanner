@@ -6,14 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Align frontend CI Node with Docker builder (`node-version: "24"`; docs `Node.js 24+`; `engines.node >=24`)
+- Add `frontend/components.json` for shadcn/ui CLI (new-york, CSS variables, `@/` aliases)
+- Auth brand mark links to landing (`/`)
+- Landing footer and `package.json` version display `1.2.0` (aligned with last release tag)
+
+### Fixed
+
+- Hide browser-native number spinners on shadcn `Input` (`type="number"`)
+- Pin landing footer to viewport bottom on tall displays (sticky flex shell)
+- Keep DatePicker month nav chevrons inside calendar card (`rdp-*` classNames)
+- Replace default Vite favicon with brand Crosshair mark (SVG/ICO/PNG)
+- Inter / JetBrains fonts, dark scrollbar, shadcn form controls polish
+
 ### Security
 
 - nginx hardening: server_tokens off, TLS ciphers, OCSP stapling, CSP headers, buffer protections, proxy_hide_headers
-
-### Changed
-
-- Updated pytest-asyncio from 0.24.0 to 1.4.0
-- Updated websockets from 14.1 to 15.0.1
 
 ## [1.2.0] - 2026-06-24
 

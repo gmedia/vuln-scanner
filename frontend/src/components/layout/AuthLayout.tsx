@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 import { Crosshair } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,12 +33,16 @@ function AuthLayout({
 
       <div className={cn("relative z-10 w-full", maxWidthClass[maxWidth])}>
         <div className="mb-6 flex flex-col items-center gap-1.5 text-center">
-          <div className="flex items-center gap-2.5">
+          <Link
+            to="/"
+            className="flex items-center gap-2.5 transition-opacity hover:opacity-90"
+            aria-label="VulnScanner home"
+          >
             <Crosshair className="h-5 w-5 text-primary" />
             <span className="font-mono text-sm font-bold tracking-wider text-foreground">
               VULN<span className="text-primary">SCAN</span>
             </span>
-          </div>
+          </Link>
           <p className="text-xs text-muted-foreground">
             Web-based vulnerability scanner
           </p>

@@ -104,7 +104,7 @@ describe("Landing Page", () => {
   });
 
   it("renders footer with version text", () => {
-    expect(screen.getByText(/VulnScanner v0\.1\.0/)).toBeInTheDocument();
+    expect(screen.getByText(/VulnScanner v1\.2\.0/)).toBeInTheDocument();
   });
 
   it("uses sticky-footer shell so footer pins on tall viewports", () => {

@@ -6,7 +6,7 @@ Thank you for your interest in contributing to VulnScanner. This guide covers ev
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 24+
 - Python 3.12+
 - Docker (for PostgreSQL and Redis)
 

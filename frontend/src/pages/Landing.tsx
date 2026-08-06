@@ -154,7 +154,7 @@ function Landing() {
       <footer className="mt-auto shrink-0 border-t border-border py-6">
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-3 px-4 sm:flex-row sm:justify-between">
           <p className="text-xs text-muted-foreground text-center sm:text-left">
-            VulnScanner v0.1.0 · IP, domain &amp; mobile vulnerability scanning
+            VulnScanner v1.2.0 · IP, domain &amp; mobile vulnerability scanning
           </p>
           <div className="flex items-center gap-4 text-xs">
             <Link

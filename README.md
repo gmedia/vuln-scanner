@@ -36,7 +36,7 @@ docker compose up -d
 
 ## Local Development
 
-Prerequisites: Node.js 20+, Python 3.12+, Docker (PostgreSQL & Redis).
+Prerequisites: Node.js 24+, Python 3.12+, Docker (PostgreSQL & Redis).
 
 ### Quick Start (Makefile)
 
