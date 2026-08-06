@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Vite/Vitest alias: use `import.meta.dirname` instead of `__dirname` (native config loader)
+- NotFound: guest primary CTA is home + Sign in; dashboard only when authenticated
 - Hide browser-native number spinners on shadcn `Input` (`type="number"`)
 - Pin landing footer to viewport bottom on tall displays (sticky flex shell)
 - Keep DatePicker month nav chevrons inside calendar card (`rdp-*` classNames)
