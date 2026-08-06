@@ -1,9 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import NotFound from "@/pages/NotFound";
 
 const mockAuthState = vi.hoisted(() => ({
   isAuthenticated: false,
+  isLoading: false,
+  initialize: vi.fn(async () => {
+    mockAuthState.isLoading = false;
+  }),
 }));
 
 vi.mock("react-router-dom", () => ({
@@ -25,37 +29,53 @@ vi.mock("@/components/ui/Button", () => ({
 }));
 
 vi.mock("@/store/authStore", () => ({
-  useAuthStore: (selector: (s: { isAuthenticated: boolean }) => unknown) =>
+  useAuthStore: (selector: (s: typeof mockAuthState) => unknown) =>
     selector(mockAuthState),
 }));
 
 describe("NotFound", () => {
   beforeEach(() => {
     mockAuthState.isAuthenticated = false;
+    mockAuthState.isLoading = false;
+    mockAuthState.initialize.mockClear();
   });
 
-  it("renders the 404 heading", () => {
+  it("calls initialize on mount", () => {
     render(<NotFound />);
-    expect(screen.getByText("404")).toBeInTheDocument();
+    expect(mockAuthState.initialize).toHaveBeenCalled();
   });
 
-  it("renders the Page not found subheading", () => {
+  it("shows spinner while auth is loading", () => {
+    mockAuthState.isLoading = true;
+    const { container } = render(<NotFound />);
+    expect(container.querySelector(".animate-spin")).toBeInTheDocument();
+    expect(screen.queryByText("404")).not.toBeInTheDocument();
+  });
+
+  it("renders the 404 heading", async () => {
     render(<NotFound />);
-    expect(screen.getByText("Page not found")).toBeInTheDocument();
+    expect(await screen.findByText("404")).toBeInTheDocument();
   });
 
-  it("renders the description text", () => {
+  it("renders the Page not found subheading", async () => {
+    render(<NotFound />);
+    expect(await screen.findByText("Page not found")).toBeInTheDocument();
+  });
+
+  it("renders the description text", async () => {
     render(<NotFound />);
     expect(
-      screen.getByText(/The target you.*re looking for is out of scan range/),
+      await screen.findByText(
+        /The target you.*re looking for is out of scan range/,
+      ),
     ).toBeInTheDocument();
   });
 
-  it("for guests: primary home + Sign in, no dashboard CTA", () => {
+  it("for guests: primary home + Sign in, no dashboard CTA", async () => {
     mockAuthState.isAuthenticated = false;
     render(<NotFound />);
 
-    const home = screen.getByRole("link", { name: /Back to home/i });
+    const home = await screen.findByRole("link", { name: /Back to home/i });
     expect(home).toHaveAttribute("href", "/");
 
     const signIn = screen.getByRole("link", { name: /Sign in/i });
@@ -66,11 +86,13 @@ describe("NotFound", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("for authenticated: dashboard primary + home secondary", () => {
+  it("for authenticated: dashboard primary + home secondary", async () => {
     mockAuthState.isAuthenticated = true;
     render(<NotFound />);
 
-    const dash = screen.getByRole("link", { name: /Return to dashboard/i });
+    const dash = await screen.findByRole("link", {
+      name: /Return to dashboard/i,
+    });
     expect(dash).toHaveAttribute("href", "/dashboard");
 
     const home = screen.getByRole("link", { name: /Back to home/i });
@@ -81,15 +103,18 @@ describe("NotFound", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("renders Crosshair icons", () => {
+  it("renders Crosshair icons", async () => {
     render(<NotFound />);
-    const icons = document.querySelectorAll(".lucide-crosshair");
-    expect(icons.length).toBeGreaterThanOrEqual(2);
+    await waitFor(() => {
+      const icons = document.querySelectorAll(".lucide-crosshair");
+      expect(icons.length).toBeGreaterThanOrEqual(2);
+    });
   });
 
-  it("renders within a flex container", () => {
+  it("renders within a flex container", async () => {
     render(<NotFound />);
-    const container = document.querySelector(".flex.min-h-screen");
-    expect(container).toBeInTheDocument();
+    await waitFor(() => {
+      expect(document.querySelector(".flex.min-h-screen")).toBeInTheDocument();
+    });
   });
 });
