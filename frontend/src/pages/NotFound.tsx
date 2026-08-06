@@ -1,8 +1,11 @@
 import { Link } from "react-router-dom";
 import { Crosshair } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { useAuthStore } from "@/store/authStore";
 
 function NotFound() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
       <div className="flex w-full max-w-lg flex-col items-center text-center">
@@ -16,18 +19,45 @@ function NotFound() {
           Page not found
         </h2>
         <p className="mb-8 max-w-md text-center text-sm text-muted-foreground">
-          The target you&apos;re looking for is out of scan range. Return to base and try again.
+          The target you&apos;re looking for is out of scan range. Return to base
+          and try again.
         </p>
         <div className="flex flex-col items-center gap-3 sm:flex-row">
-          <Button asChild size="lg">
-            <Link to="/dashboard">
-              <Crosshair className="mr-2 h-4 w-4" />
-              Return to dashboard
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="lg" className="border-border text-foreground">
-            <Link to="/">Back to home</Link>
-          </Button>
+          {isAuthenticated ? (
+            <>
+              <Button asChild size="lg">
+                <Link to="/dashboard">
+                  <Crosshair className="mr-2 h-4 w-4" />
+                  Return to dashboard
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="border-border text-foreground"
+              >
+                <Link to="/">Back to home</Link>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button asChild size="lg">
+                <Link to="/">
+                  <Crosshair className="mr-2 h-4 w-4" />
+                  Back to home
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="border-border text-foreground"
+              >
+                <Link to="/login">Sign in</Link>
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>
