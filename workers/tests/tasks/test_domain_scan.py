@@ -205,6 +205,7 @@ class TestDomainScanFailure:
             self.mock_session.return_value,
             JOB_ID,
             "failed",
+            completed_at=ANY,
         )
 
     def test_dns_failure_not_dead_letter_on_first_retry(self):
