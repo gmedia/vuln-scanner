@@ -49,4 +49,17 @@ describe("Input", () => {
     const input = screen.getByPlaceholderText("Email");
     expect(input).toHaveAttribute("type", "email");
   });
+
+  it("uses sans text by default (no forced mono)", () => {
+    render(<Input placeholder="Sans" />);
+    const input = screen.getByPlaceholderText("Sans");
+    expect(input.className).not.toMatch(/\bfont-mono\b/);
+  });
+
+  it("supports aria-invalid styling class hook", () => {
+    render(<Input placeholder="Invalid" aria-invalid="true" />);
+    const input = screen.getByPlaceholderText("Invalid");
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(input.className).toMatch(/aria-invalid/);
+  });
 });
