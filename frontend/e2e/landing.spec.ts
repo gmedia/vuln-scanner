@@ -63,6 +63,6 @@ test.describe("Landing", () => {
 
   test("footer shows version", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("text=VulnScanner v0.1.0")).toBeVisible();
+    await expect(page.locator("text=VulnScanner v1.2.0")).toBeVisible();
   });
 });
