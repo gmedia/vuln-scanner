@@ -66,24 +66,24 @@ function VerifyEmail() {
             <Mail className="h-10 w-10 text-primary mx-auto" />
 
             <form onSubmit={handleResend} className="space-y-3 text-left">
-              <p className="font-mono text-xs text-muted-foreground text-center">
+              <p className="text-xs text-muted-foreground text-center">
                 Didn't receive the email? Enter your email to resend.
               </p>
 
               <div className="min-h-[1.25rem]">
                 {cooldown > 0 && (
-                  <p className="font-mono text-xs text-amber-400 text-center flex items-center justify-center gap-1">
+                  <p className="text-xs text-amber-400 text-center flex items-center justify-center gap-1">
                     <Timer className="h-3 w-3" />
                     Too many attempts. Wait {cooldown}s
                   </p>
                 )}
                 {resendSuccess && cooldown === 0 && (
-                  <p className="font-mono text-xs text-green-400 text-center">
+                  <p className="text-xs text-green-400 text-center">
                     Verification email resent! Please check your inbox.
                   </p>
                 )}
                 {error && !resendSuccess && cooldown === 0 && (
-                  <p className="font-mono text-xs text-red-400 text-center">
+                  <p className="text-xs text-red-400 text-center">
                     {error}
                   </p>
                 )}
@@ -92,7 +92,7 @@ function VerifyEmail() {
               <div className="space-y-2">
                 <label
                   htmlFor="email"
-                  className="block font-mono text-xs text-muted-foreground"
+                  className="block text-xs text-muted-foreground"
                 >
                   Email
                 </label>
@@ -108,7 +108,7 @@ function VerifyEmail() {
               </div>
               <Button
                 type="submit"
-                className="w-full font-mono text-sm"
+                className="w-full text-sm"
                 disabled={isResending || cooldown > 0}
               >
                 {cooldown > 0 ? (
@@ -128,7 +128,7 @@ function VerifyEmail() {
             </form>
 
             <Link to="/login" className="block">
-              <Button variant="outline" className="w-full font-mono text-sm">
+              <Button variant="outline" className="w-full text-sm">
                 Back to sign in
               </Button>
             </Link>
@@ -154,7 +154,7 @@ function VerifyEmail() {
           {status === "idle" && (
             <div className="flex flex-col items-center gap-3">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="font-mono text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Verifying...
               </p>
             </div>
@@ -162,12 +162,12 @@ function VerifyEmail() {
           {status === "success" && (
             <div className="flex flex-col items-center gap-3">
               <CheckCircle className="h-8 w-8 text-green-500" />
-              <p className="font-mono text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Email verified successfully!
               </p>
               <Button
                 onClick={() => navigate("/dashboard")}
-                className="w-full font-mono text-sm"
+                className="w-full text-sm"
               >
                 Go to dashboard
               </Button>
@@ -176,11 +176,11 @@ function VerifyEmail() {
           {status === "error" && (
             <div className="flex flex-col items-center gap-3">
               <XCircle className="h-8 w-8 text-destructive" />
-              <p className="font-mono text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {error || "Verification failed. Please try again."}
               </p>
               <Link to="/login" className="w-full">
-                <Button variant="outline" className="w-full font-mono text-sm">
+                <Button variant="outline" className="w-full text-sm">
                   Back to sign in
                 </Button>
               </Link>

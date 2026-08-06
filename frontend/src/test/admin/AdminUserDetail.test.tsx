@@ -94,7 +94,14 @@ describe("AdminUserDetail", () => {
     expect(screen.getByText("Profile")).toBeInTheDocument();
     expect(screen.getByText("detail@example.com")).toBeInTheDocument();
     expect(screen.getByText("25 credits")).toBeInTheDocument();
-    expect(screen.getByText("7 scans performed")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        (_, el) =>
+          el?.textContent === "7 scans performed" &&
+          el.children.length === 1 &&
+          el.tagName === "SPAN",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("renders Credit adjustment section with sentence-case CTA", () => {
@@ -229,7 +236,10 @@ describe("AdminUserDetail", () => {
         isPending: false,
         isError: false,
         isSuccess: true,
-        data: { message: "Verification email has been sent.", email_sent: true },
+        data: {
+          message: "Verification email has been sent.",
+          email_sent: true,
+        },
       } as unknown as ReturnType<typeof useMutation>);
 
     vi.mocked(useQuery).mockReturnValue({
@@ -257,7 +267,8 @@ describe("AdminUserDetail", () => {
         isError: false,
         isSuccess: true,
         data: {
-          message: "Failed to send verification email. Please try again shortly.",
+          message:
+            "Failed to send verification email. Please try again shortly.",
           email_sent: false,
         },
       } as unknown as ReturnType<typeof useMutation>);

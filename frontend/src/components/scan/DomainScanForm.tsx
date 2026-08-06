@@ -69,7 +69,7 @@ function DomainScanForm() {
       {creditDisplay}
 
       <div>
-        <label className="mb-1.5 block font-mono text-xs font-medium text-foreground/70">
+        <label className="mb-1.5 block text-xs font-medium text-foreground/70">
           Target domain
         </label>
         <Input
@@ -84,7 +84,7 @@ function DomainScanForm() {
           disabled={startDomainScan.isPending}
           className="border-border bg-background font-mono"
         />
-        <p className="mt-1 font-mono text-xs text-muted-foreground">
+        <p className="mt-1 text-xs text-muted-foreground">
           e.g. example.com, sub.example.com
         </p>
         <Button

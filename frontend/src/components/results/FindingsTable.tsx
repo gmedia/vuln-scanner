@@ -113,8 +113,8 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
         <div className="mb-3 rounded-full bg-muted p-3">
           <Search className="h-6 w-6 text-muted-foreground opacity-40" />
         </div>
-        <p className="mb-1 font-mono text-sm text-foreground">No findings detected</p>
-        <p className="font-mono text-xs text-muted-foreground">
+        <p className="mb-1 text-sm text-foreground">No findings detected</p>
+        <p className="text-xs text-muted-foreground">
           This scan returned a clean result.
         </p>
       </div>
@@ -130,7 +130,7 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
           placeholder="Filter findings..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="pl-9 font-mono"
+          className="pl-9"
         />
       </div>
 
@@ -166,7 +166,7 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
                 dir={sortDir}
                 onClick={() => toggleSort("cvss_score")}
               />
-              <th className="px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              <th className="px-3 py-2.5 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
                 Saran aksi
               </th>
             </tr>
@@ -174,7 +174,7 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
           <tbody>
             {sorted.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-8 text-center font-mono text-sm text-muted-foreground">
+                <td colSpan={6} className="p-8 text-center text-sm text-muted-foreground">
                   No matching findings
                 </td>
               </tr>
@@ -210,10 +210,10 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
                           {finding.severity}
                         </Badge>
                       </td>
-                      <td className="px-3 py-2.5 font-mono text-xs text-foreground max-w-[200px] truncate">
+                      <td className="px-3 py-2.5 text-xs text-foreground max-w-[200px] truncate">
                         {finding.title}
                       </td>
-                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
+                      <td className="px-3 py-2.5 text-xs text-muted-foreground">
                         {finding.category || "-"}
                       </td>
                       <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
@@ -246,7 +246,7 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
                           </div>
                           <span
                             className={cn(
-                              "font-mono text-xs font-medium",
+                              "font-mono text-xs font-medium tabular-nums",
                               cvssColor(finding.cvss_score),
                             )}
                           >
@@ -254,7 +254,7 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
                           </span>
                         </div>
                       </td>
-                      <td className="px-3 py-2.5 font-mono text-xs">
+                      <td className="px-3 py-2.5 text-xs">
                         {finding.remediation ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
@@ -309,7 +309,7 @@ function Th({
   return (
     <th
       onClick={onClick}
-      className="cursor-pointer px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground select-none"
+      className="cursor-pointer px-3 py-2.5 text-left text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground select-none"
     >
       <span className="inline-flex items-center gap-1">
         {label}

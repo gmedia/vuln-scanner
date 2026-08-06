@@ -49,10 +49,10 @@ function ScanDetail() {
           <div className="mb-4 rounded-full bg-red-600/10 p-4">
             <Crosshair className="h-8 w-8 text-red-400" />
           </div>
-          <h2 className="mb-2 font-mono text-lg font-bold text-foreground">
+          <h2 className="mb-2 text-lg font-bold text-foreground">
             SCAN NOT FOUND
           </h2>
-          <p className="mb-6 font-mono text-sm text-muted-foreground">
+          <p className="mb-6 text-sm text-muted-foreground">
             The scan you&apos;re looking for doesn&apos;t exist or failed to load.
           </p>
           <Button variant="outline" asChild>
@@ -106,12 +106,12 @@ function ScanDetail() {
           </Link>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
+              <h2 className="text-lg font-bold tracking-wide text-foreground">
                 Scan details
               </h2>
               <Badge
                 variant={scan.status as "running" | "completed" | "failed" | "pending"}
-                className="font-mono text-[10px] capitalize"
+                className="text-[10px] capitalize"
               >
                 {scan.status}
               </Badge>
@@ -120,7 +120,7 @@ function ScanDetail() {
               {scan.target}
             </p>
             {scan.completed_at && (
-              <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
                 Finished {new Date(scan.completed_at).toLocaleString()}
               </p>
             )}
@@ -133,7 +133,7 @@ function ScanDetail() {
               <Button
                 variant="outline"
                 size="sm"
-                className="font-mono text-xs"
+                className="text-xs"
                 onClick={() => downloadFile(id, "json")}
               >
                 <Download className="mr-1 h-3.5 w-3.5" />
@@ -142,7 +142,7 @@ function ScanDetail() {
               <Button
                 variant="outline"
                 size="sm"
-                className="font-mono text-xs"
+                className="text-xs"
                 onClick={() => downloadFile(id, "html")}
               >
                 <Download className="mr-1 h-3.5 w-3.5" />
@@ -150,7 +150,7 @@ function ScanDetail() {
               </Button>
             </>
           )}
-          <Button asChild size="sm" className="font-mono text-xs">
+          <Button asChild size="sm" className="text-xs">
             <Link to={reScanTo} data-testid="rescan-button">
               <RefreshCw className="mr-1 h-3.5 w-3.5" />
               Re-scan
@@ -197,10 +197,10 @@ function ScanDetail() {
         <CardHeader className="py-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <CardTitle className="font-mono text-sm tracking-wide">
+              <CardTitle className="text-sm tracking-wide">
                 Findings
               </CardTitle>
-              <CardDescription className="font-mono text-xs">
+              <CardDescription className="text-xs">
                 {scan.findings?.length ?? 0} vulnerability findings detected
               </CardDescription>
             </div>
@@ -217,10 +217,10 @@ function ScanDetail() {
       <div className="grid gap-5 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <CardHeader className="py-3">
-            <CardTitle className="font-mono text-sm tracking-wide">
+            <CardTitle className="text-sm tracking-wide">
               Severity
             </CardTitle>
-            <CardDescription className="font-mono text-xs">
+            <CardDescription className="text-xs">
               Distribution of {findingsCount} findings
             </CardDescription>
           </CardHeader>
@@ -231,7 +231,7 @@ function ScanDetail() {
 
         <Card className="lg:col-span-2">
           <CardHeader className="py-3">
-            <CardTitle className="font-mono text-sm tracking-wide">
+            <CardTitle className="text-sm tracking-wide">
               Scan info
             </CardTitle>
           </CardHeader>
@@ -289,9 +289,9 @@ function QuickStat({
           <Icon className={`h-4 w-4 ${emphasize ? "text-primary" : "text-muted-foreground"}`} />
         </div>
         <div className="min-w-0">
-          <p className="font-mono text-xs text-muted-foreground">{label}</p>
+          <p className="text-xs text-muted-foreground">{label}</p>
           <p
-            className={`truncate font-mono font-medium text-foreground ${
+            className={`truncate font-medium text-foreground ${
               emphasize ? "text-base sm:text-lg" : "text-sm"
             }`}
           >
@@ -314,7 +314,7 @@ function InfoRow({
 }) {
   return (
     <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2">
-      <span className="font-mono text-xs text-muted-foreground">{label}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
       <span
         className={`max-w-[60%] truncate text-xs text-foreground ${mono ? "font-mono" : ""}`}
       >
@@ -338,10 +338,10 @@ function RemediationCard({ findings }: { findings: ScanFinding[] }) {
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-2">
-              <p className="font-mono text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Saran aksi tersedia
               </p>
-              <p className="whitespace-nowrap font-mono text-sm font-semibold text-foreground">
+              <p className="whitespace-nowrap font-mono text-sm font-semibold tabular-nums text-foreground">
                 {remediated}
                 <span className="font-normal text-muted-foreground">
                   /{total}
@@ -350,7 +350,7 @@ function RemediationCard({ findings }: { findings: ScanFinding[] }) {
             </div>
             <div className="mt-1.5 flex items-center gap-2">
               <Progress value={pct} className="h-1.5" />
-              <span className="w-8 shrink-0 text-right font-mono text-[10px] text-muted-foreground">
+              <span className="w-8 shrink-0 text-right font-mono text-[10px] tabular-nums text-muted-foreground">
                 {pct}%
               </span>
             </div>

@@ -74,7 +74,7 @@ function IpScanForm() {
       {creditDisplay}
 
       <div>
-        <label className="mb-1.5 block font-mono text-xs font-medium text-foreground/70">
+        <label className="mb-1.5 block text-xs font-medium text-foreground/70">
           Target IP address
         </label>
         <Input
@@ -92,7 +92,7 @@ function IpScanForm() {
       </div>
 
       <div>
-        <label className="mb-1.5 block font-mono text-xs font-medium text-foreground/70">
+        <label className="mb-1.5 block text-xs font-medium text-foreground/70">
           Port range
         </label>
         <Input
@@ -104,7 +104,7 @@ function IpScanForm() {
           disabled={startIpScan.isPending}
           className="border-border bg-background font-mono"
         />
-        <p className="mt-1 font-mono text-xs text-muted-foreground">
+        <p className="mt-1 text-xs text-muted-foreground">
           Format: start-end (e.g. 1-1000) or comma-separated (e.g. 22,80,443)
         </p>
       </div>

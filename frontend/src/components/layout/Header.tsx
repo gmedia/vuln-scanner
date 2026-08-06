@@ -59,7 +59,7 @@ function Header({ children }: HeaderProps) {
 
         {activeJobId && (
           <div className="flex items-center gap-2">
-            <span className="hidden font-mono text-xs text-muted-foreground sm:inline">
+            <span className="hidden text-xs text-muted-foreground sm:inline">
               {scanType ? SCAN_TYPE_LABELS[scanType] ?? scanType : "Scan"}
             </span>
             <Badge variant="running" className="text-[10px]">
@@ -73,12 +73,12 @@ function Header({ children }: HeaderProps) {
         {isAuthenticated && (
           <Link
             to="/credit-history"
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 font-mono text-xs text-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs text-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             title="Credit balance"
           >
             <Coins className="h-3.5 w-3.5 text-primary" aria-hidden />
             <span className="text-muted-foreground hidden sm:inline">Credits</span>
-            <span className="font-bold text-primary tabular-nums" data-testid="header-credits">
+            <span className="font-mono font-bold text-primary tabular-nums" data-testid="header-credits">
               {credits}
             </span>
           </Link>
@@ -91,7 +91,7 @@ function Header({ children }: HeaderProps) {
               className="flex min-h-9 items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <User className="h-4 w-4" />
-              <span className="hidden font-mono text-xs sm:inline">{user.email}</span>
+              <span className="hidden text-xs sm:inline">{user.email}</span>
               <ChevronDown className="h-3 w-3" />
             </button>
 
@@ -100,14 +100,14 @@ function Header({ children }: HeaderProps) {
                 data-testid="user-menu"
                 className="absolute right-0 top-full z-50 mt-1 w-56 rounded-md border border-border bg-card p-1 shadow-lg"
               >
-                <div className="px-3 py-2 font-mono text-xs text-muted-foreground">
+                <div className="px-3 py-2 text-xs text-muted-foreground">
                   Signed in as <span className="text-foreground">{user.email}</span>
                 </div>
                 <Button
                   variant="ghost"
                   data-testid="sign-out"
                   onClick={handleSignOut}
-                  className="w-full justify-start px-3 py-2 font-mono text-xs text-red-400 hover:bg-red-400/10"
+                  className="w-full justify-start px-3 py-2 text-xs text-red-400 hover:bg-red-400/10"
                 >
                   <LogOut className="mr-2 h-3 w-3" />
                   Sign Out

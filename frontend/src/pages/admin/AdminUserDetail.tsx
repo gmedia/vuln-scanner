@@ -86,7 +86,7 @@ function AdminUserDetail() {
           variant="ghost"
           size="sm"
           onClick={() => navigate("/admin/users")}
-          className="font-mono text-xs"
+          className="text-xs"
         >
           <ArrowLeft className="mr-1 h-4 w-4" />
           Back
@@ -96,10 +96,10 @@ function AdminUserDetail() {
       <div className="flex items-center gap-3">
         <User className="h-6 w-6 text-primary" />
         <div>
-          <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
+          <h2 className="text-lg font-bold tracking-wide text-foreground">
             User details
           </h2>
-          <p className="font-mono text-[11px] text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             Profile and credit adjustment
           </p>
         </div>
@@ -119,7 +119,7 @@ function AdminUserDetail() {
         <>
           <Card>
             <CardHeader>
-              <CardTitle className="font-mono text-sm tracking-wide">
+              <CardTitle className="text-sm tracking-wide">
                 Profile
               </CardTitle>
             </CardHeader>
@@ -137,7 +137,7 @@ function AdminUserDetail() {
                   variant="ghost"
                   size="sm"
                   onClick={handleCopyEmail}
-                  className="shrink-0 font-mono text-xs"
+                  className="shrink-0 text-xs"
                   title={copied ? "Copied" : "Copy email"}
                   aria-label={copied ? "Copied" : "Copy email"}
                 >
@@ -176,7 +176,7 @@ function AdminUserDetail() {
                     size="sm"
                     onClick={() => resendVerification.mutate()}
                     disabled={resendVerification.isPending}
-                    className="font-mono text-xs"
+                    className="text-xs"
                   >
                     {resendVerification.isPending ? (
                       <>
@@ -192,7 +192,7 @@ function AdminUserDetail() {
                   </Button>
                   {resendVerification.isError && (
                     <div className="rounded-md border border-red-600/30 bg-red-600/10 px-3 py-2">
-                      <p className="font-mono text-xs text-red-400">
+                      <p className="text-xs text-red-400">
                         Failed to resend verification email
                       </p>
                     </div>
@@ -200,7 +200,7 @@ function AdminUserDetail() {
                   {resendVerification.isSuccess &&
                     resendVerification.data?.email_sent === false && (
                       <div className="rounded-md border border-red-600/30 bg-red-600/10 px-3 py-2">
-                        <p className="font-mono text-xs text-red-400">
+                        <p className="text-xs text-red-400">
                           {resendVerification.data.message ||
                             "Failed to send verification email. Please try again shortly."}
                         </p>
@@ -209,7 +209,7 @@ function AdminUserDetail() {
                   {resendVerification.isSuccess &&
                     resendVerification.data?.email_sent !== false && (
                       <div className="rounded-md border border-green-600/30 bg-green-600/10 px-3 py-2">
-                        <p className="font-mono text-xs text-green-400">
+                        <p className="text-xs text-green-400">
                           {resendVerification.data.message ||
                             "Verification email has been sent."}
                         </p>
@@ -219,19 +219,19 @@ function AdminUserDetail() {
               )}
               <div className="flex items-center gap-3">
                 <Coins className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="font-mono text-sm text-primary">
+                <span className="font-mono text-sm tabular-nums text-primary">
                   {formatCredits(user.credits)}
                 </span>
               </div>
               <div className="flex items-center gap-3">
                 <Radar className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="font-mono text-xs text-muted-foreground">
-                  {user.scan_count} scans performed
+                <span className="text-xs text-muted-foreground">
+                  <span className="font-mono tabular-nums">{user.scan_count}</span> scans performed
                 </span>
               </div>
               <div className="flex items-center gap-3">
                 <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="font-mono text-xs text-muted-foreground">
+                <span className="font-mono text-xs tabular-nums text-muted-foreground">
                   Joined {formatDate(user.created_at)}
                 </span>
               </div>
@@ -240,14 +240,14 @@ function AdminUserDetail() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="font-mono text-sm tracking-wide">
+              <CardTitle className="text-sm tracking-wide">
                 Credit adjustment
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block font-mono text-xs font-medium text-muted-foreground">
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
                     Amount (+ or −)
                   </label>
                   <Input
@@ -259,7 +259,7 @@ function AdminUserDetail() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block font-mono text-xs font-medium text-muted-foreground">
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
                     Description
                   </label>
                   <Input
@@ -267,7 +267,6 @@ function AdminUserDetail() {
                     placeholder="Reason for adjustment..."
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="font-mono"
                   />
                 </div>
               </div>
@@ -276,7 +275,7 @@ function AdminUserDetail() {
                 disabled={
                   !amount || parseInt(amount, 10) === 0 || updateCredits.isPending
                 }
-                className="font-mono text-xs"
+                className="text-xs"
               >
                 {updateCredits.isPending ? (
                   <>
@@ -289,14 +288,14 @@ function AdminUserDetail() {
               </Button>
               {updateCredits.isError && (
                 <div className="rounded-md border border-red-600/30 bg-red-600/10 px-3 py-2">
-                  <p className="font-mono text-xs text-red-400">
+                  <p className="text-xs text-red-400">
                     Failed to update credits
                   </p>
                 </div>
               )}
               {updateCredits.isSuccess && (
                 <div className="rounded-md border border-green-600/30 bg-green-600/10 px-3 py-2">
-                  <p className="font-mono text-xs text-green-400">
+                  <p className="text-xs text-green-400">
                     Credits updated successfully
                   </p>
                 </div>
@@ -307,7 +306,7 @@ function AdminUserDetail() {
       ) : (
         <Card>
           <CardContent className="p-6 text-center">
-            <p className="font-mono text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               User not found
             </p>
           </CardContent>

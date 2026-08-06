@@ -73,10 +73,10 @@ function Profile() {
       <div className="flex items-center gap-3">
         <User className="h-6 w-6 text-primary" />
         <div>
-          <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
+          <h2 className="text-lg font-bold tracking-wide text-foreground">
             Profile
           </h2>
-          <p className="font-mono text-[11px] text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             Manage your account email and password
           </p>
         </div>
@@ -84,12 +84,12 @@ function Profile() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-mono text-sm tracking-wide">
+          <CardTitle className="text-sm tracking-wide">
             Identity
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
             Current email
           </p>
           <p className="mt-1 font-mono text-sm text-foreground">{user?.email}</p>
@@ -98,26 +98,26 @@ function Profile() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-mono text-sm tracking-wide">
+          <CardTitle className="text-sm tracking-wide">
             Update email
           </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleUpdateProfile} className="space-y-3">
             {profileCooldown.cooldown > 0 && (
-              <p className="flex items-center gap-1 font-mono text-xs text-amber-400">
+              <p className="flex items-center gap-1 text-xs text-amber-400">
                 <Timer className="h-3 w-3" />
                 Too many attempts. Wait {profileCooldown.cooldown}s
               </p>
             )}
             {profileSuccess && (
-              <p className="flex items-center gap-1 font-mono text-xs text-green-400">
+              <p className="flex items-center gap-1 text-xs text-green-400">
                 <CheckCircle className="h-3 w-3" />
                 Profile updated
               </p>
             )}
             {error && profileCooldown.cooldown === 0 && !profileSuccess && (
-              <p className="flex items-center gap-1 font-mono text-xs text-red-400">
+              <p className="flex items-center gap-1 text-xs text-red-400">
                 <AlertCircle className="h-3 w-3" />
                 {error}
               </p>
@@ -125,7 +125,7 @@ function Profile() {
             <div className="space-y-1">
               <label
                 htmlFor="profile-email"
-                className="block font-mono text-xs text-muted-foreground"
+                className="block text-xs text-muted-foreground"
               >
                 New email
               </label>
@@ -142,7 +142,7 @@ function Profile() {
             <div className="space-y-1">
               <label
                 htmlFor="profile-password"
-                className="block font-mono text-xs text-muted-foreground"
+                className="block text-xs text-muted-foreground"
               >
                 Current password
               </label>
@@ -155,13 +155,13 @@ function Profile() {
                 required
                 disabled={isUpdatingProfile}
               />
-              <p className="font-mono text-[10px] text-muted-foreground">
+              <p className="text-[10px] text-muted-foreground">
                 Password required to confirm
               </p>
             </div>
             <Button
               type="submit"
-              className="w-full font-mono text-sm sm:w-auto"
+              className="w-full text-sm sm:w-auto"
               disabled={isUpdatingProfile || profileCooldown.cooldown > 0}
             >
               {profileCooldown.cooldown > 0 ? (
@@ -184,26 +184,26 @@ function Profile() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-mono text-sm tracking-wide">
+          <CardTitle className="text-sm tracking-wide">
             Change password
           </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleChangePassword} className="space-y-3">
             {passwordCooldown.cooldown > 0 && (
-              <p className="flex items-center gap-1 font-mono text-xs text-amber-400">
+              <p className="flex items-center gap-1 text-xs text-amber-400">
                 <Timer className="h-3 w-3" />
                 Too many attempts. Wait {passwordCooldown.cooldown}s
               </p>
             )}
             {passwordSuccess && (
-              <p className="flex items-center gap-1 font-mono text-xs text-green-400">
+              <p className="flex items-center gap-1 text-xs text-green-400">
                 <CheckCircle className="h-3 w-3" />
                 Password changed
               </p>
             )}
             {passwordError && passwordCooldown.cooldown === 0 && !passwordSuccess && (
-              <p className="flex items-center gap-1 font-mono text-xs text-red-400">
+              <p className="flex items-center gap-1 text-xs text-red-400">
                 <AlertCircle className="h-3 w-3" />
                 {passwordError}
               </p>
@@ -211,7 +211,7 @@ function Profile() {
             <div className="space-y-1">
               <label
                 htmlFor="current-password"
-                className="block font-mono text-xs text-muted-foreground"
+                className="block text-xs text-muted-foreground"
               >
                 Current password
               </label>
@@ -228,7 +228,7 @@ function Profile() {
             <div className="space-y-1">
               <label
                 htmlFor="new-password"
-                className="block font-mono text-xs text-muted-foreground"
+                className="block text-xs text-muted-foreground"
               >
                 New password
               </label>
@@ -245,7 +245,7 @@ function Profile() {
             <div className="space-y-1">
               <label
                 htmlFor="confirm-password"
-                className="block font-mono text-xs text-muted-foreground"
+                className="block text-xs text-muted-foreground"
               >
                 Confirm new password
               </label>
@@ -261,7 +261,7 @@ function Profile() {
             </div>
             <Button
               type="submit"
-              className="w-full font-mono text-sm sm:w-auto"
+              className="w-full text-sm sm:w-auto"
               disabled={isChangingPassword || passwordCooldown.cooldown > 0}
             >
               {passwordCooldown.cooldown > 0 ? (

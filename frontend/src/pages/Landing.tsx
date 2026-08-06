@@ -55,13 +55,13 @@ function Landing() {
               <Button
                 variant="outline"
                 size="sm"
-                className="font-mono text-xs border-muted-foreground/50 text-foreground hover:border-foreground/40 hover:bg-accent"
+                className="text-xs border-muted-foreground/50 text-foreground hover:border-foreground/40 hover:bg-accent"
               >
                 Sign In
               </Button>
             </Link>
             <Link to="/register">
-              <Button size="sm" className="font-mono text-xs">
+              <Button size="sm" className="text-xs">
                 Get Started
               </Button>
             </Link>
@@ -74,15 +74,15 @@ function Landing() {
           <div className="flex items-center justify-center gap-3">
             <Crosshair className="h-12 w-12 text-primary" />
           </div>
-          <h1 className="font-mono text-4xl sm:text-5xl font-bold tracking-wide text-foreground">
+          <h1 className="text-4xl sm:text-5xl font-bold tracking-wide text-foreground">
             VulnScanner
           </h1>
-          <p className="font-mono text-base sm:text-lg text-muted-foreground">
+          <p className="text-base sm:text-lg text-muted-foreground">
             Web-based vulnerability scanner — IP, domain, and mobile analysis
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
             <Link to="/register">
-              <Button size="lg" className="font-mono text-sm">
+              <Button size="lg" className="text-sm">
                 Get Started
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -91,13 +91,13 @@ function Landing() {
               <Button
                 variant="outline"
                 size="lg"
-                className="font-mono text-sm border-muted-foreground/50 text-foreground hover:border-foreground/40 hover:bg-accent"
+                className="text-sm border-muted-foreground/50 text-foreground hover:border-foreground/40 hover:bg-accent"
               >
                 Sign In
               </Button>
             </Link>
           </div>
-          <p className="font-mono text-xs text-muted-foreground pt-1">
+          <p className="text-xs text-muted-foreground pt-1">
             JWT auth · API key access · Docker Compose deploy
           </p>
         </div>
@@ -106,7 +106,7 @@ function Landing() {
       <section className="px-4 py-12 bg-card/50">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
-            <h2 className="font-mono text-lg font-bold tracking-wide text-foreground flex items-center justify-center gap-2">
+            <h2 className="text-lg font-bold tracking-wide text-foreground flex items-center justify-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
               Features
             </h2>
@@ -116,15 +116,15 @@ function Landing() {
               <Card key={feature.title} className="hover:border-primary/40 transition-colors">
                 <CardHeader>
                   <feature.icon className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle className="font-mono text-sm tracking-wide">
+                  <CardTitle className="text-sm tracking-wide">
                     {feature.title}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="font-mono text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     {feature.description}
                   </p>
-                  <ul className="space-y-1.5 font-mono text-xs text-muted-foreground">
+                  <ul className="space-y-1.5 text-xs text-muted-foreground">
                     {feature.bullets.map((bullet) => (
                       <li key={bullet} className="flex items-start gap-2">
                         <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary" />
@@ -141,10 +141,10 @@ function Landing() {
 
       <footer className="py-6 border-t border-border">
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-3 px-4 sm:flex-row sm:justify-between">
-          <p className="font-mono text-xs text-muted-foreground text-center sm:text-left">
+          <p className="text-xs text-muted-foreground text-center sm:text-left">
             VulnScanner v0.1.0 · IP, domain &amp; mobile vulnerability scanning
           </p>
-          <div className="flex items-center gap-4 font-mono text-xs">
+          <div className="flex items-center gap-4 text-xs">
             <Link
               to="/login"
               className="text-muted-foreground hover:text-foreground transition-colors"

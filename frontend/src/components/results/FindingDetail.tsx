@@ -41,7 +41,7 @@ function FindingDetail({ finding }: FindingDetailProps) {
           </a>
         )}
         {finding.cvss_score !== null && (
-          <span className="font-mono text-xs text-muted-foreground">
+          <span className="font-mono text-xs tabular-nums text-muted-foreground">
             CVSS {finding.cvss_score.toFixed(1)}
           </span>
         )}
@@ -51,11 +51,11 @@ function FindingDetail({ finding }: FindingDetailProps) {
         <div className="mb-4">
           <div className="mb-1.5 flex items-center gap-1.5">
             <Shield className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="font-mono text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
               Description
             </span>
           </div>
-          <p className="font-mono text-xs text-foreground leading-relaxed">
+          <p className="text-xs text-foreground leading-relaxed">
             {finding.description}
           </p>
         </div>
@@ -66,11 +66,11 @@ function FindingDetail({ finding }: FindingDetailProps) {
           <Separator className="mb-3" />
           <div className="mb-1.5 flex items-center gap-1.5">
             <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-            <span className="font-mono text-[10px] font-medium uppercase tracking-wider text-amber-500">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-amber-500">
               Risiko jika tidak ditindaklanjuti
             </span>
           </div>
-          <p className="font-mono text-xs text-foreground leading-relaxed">
+          <p className="text-xs text-foreground leading-relaxed">
             {finding.impact}
           </p>
         </div>
@@ -81,11 +81,11 @@ function FindingDetail({ finding }: FindingDetailProps) {
           <Separator className="mb-3" />
           <div className="mb-1.5 flex items-center gap-1.5">
             <Wrench className="h-3.5 w-3.5 text-primary" />
-            <span className="font-mono text-[10px] font-medium uppercase tracking-wider text-primary">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-primary">
               Saran aksi
             </span>
           </div>
-          <p className="font-mono text-xs text-foreground leading-relaxed">
+          <p className="text-xs text-foreground leading-relaxed">
             {finding.remediation}
           </p>
         </div>
@@ -95,7 +95,7 @@ function FindingDetail({ finding }: FindingDetailProps) {
 
       <button
         onClick={() => setShowRaw(!showRaw)}
-        className="flex items-center gap-1 font-mono text-[10px] text-muted-foreground transition-colors hover:text-foreground"
+        className="flex items-center gap-1 text-[10px] text-muted-foreground transition-colors hover:text-foreground"
       >
         {showRaw ? (
           <ChevronUp className="h-3 w-3" />
