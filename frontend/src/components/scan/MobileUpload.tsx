@@ -131,7 +131,7 @@ function MobileUpload() {
       {creditDisplay}
 
       <div>
-        <label className="mb-1.5 block font-mono text-xs font-medium text-foreground/70">
+        <label className="mb-1.5 block text-xs font-medium text-foreground/70">
           Platform
         </label>
         <div className="flex gap-2">
@@ -207,10 +207,10 @@ function MobileUpload() {
               isDragging ? "text-primary" : "text-muted-foreground",
             )}
           />
-          <p className="mb-1 font-mono text-sm text-foreground">
+          <p className="mb-1 text-sm text-foreground">
             Drop {platform === "android" ? ".apk or .aab" : ".ipa"} file here
           </p>
-          <p className="mb-3 font-mono text-xs text-muted-foreground">
+          <p className="mb-3 text-xs text-muted-foreground">
             or drag and drop (max 500MB)
           </p>
           <Button

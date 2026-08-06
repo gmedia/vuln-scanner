@@ -93,7 +93,7 @@ function ScanProgress({ className }: ScanProgressProps) {
           ) : (
             <Clock className="h-5 w-5 animate-pulse text-blue-400" />
           )}
-          <span className="font-mono text-sm font-medium text-foreground">
+          <span className="text-sm font-medium text-foreground">
             {isComplete
               ? "SCAN COMPLETE"
               : isFailed
@@ -105,7 +105,7 @@ function ScanProgress({ className }: ScanProgressProps) {
         </div>
         <Badge
           variant={isComplete ? "completed" : isFailed ? "failed" : "running"}
-          className="font-mono text-[10px]"
+          className="text-[10px]"
         >
           {progress}%
         </Badge>
