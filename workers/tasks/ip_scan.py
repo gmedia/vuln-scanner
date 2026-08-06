@@ -60,11 +60,18 @@ def run_ip_scan(self: Any, job_id: str, target: str, ports: str = "1-1000") -> T
         except Retry:
             raise
         except (TimeoutError, OSError, RuntimeError) as e:
-            _update_status(session, job_id, "failed", completed_at=datetime.now(UTC))
+            err_msg = f"Nmap scan failed: {str(e)[:200]}"
+            _update_status(
+                session,
+                job_id,
+                "failed",
+                completed_at=datetime.now(UTC),
+                result_summary={"error": err_msg},
+            )
             _refund_credits(session, job_id, "ip")
             session.commit()
             session.close()
-            publish_progress(job_id, "failed", 100, f"Nmap scan failed: {str(e)[:200]}")
+            publish_progress(job_id, "failed", 100, err_msg)
             if self.request.retries >= self.max_retries:
                 dead_letter_handler.delay(
                     task_name="ip_scan.run",
@@ -158,14 +165,21 @@ def run_ip_scan(self: Any, job_id: str, target: str, ports: str = "1-1000") -> T
     except Retry:
         raise
     except Exception as e:  # Broad catch at task top-level — inner exceptions already handled
+        err_msg = f"IP scan failed: {str(e)[:200]}"
         try:
-            _update_status(session, job_id, "failed", completed_at=datetime.now(UTC))
+            _update_status(
+                session,
+                job_id,
+                "failed",
+                completed_at=datetime.now(UTC),
+                result_summary={"error": err_msg},
+            )
             _refund_credits(session, job_id, "ip")
             session.commit()
             session.close()
         except (OSError, redis.RedisError) as e2:
             logger.warning("Failed to update status/commit for failed job {job_id}: {error}", job_id=job_id, error=e2)
-        publish_progress(job_id, "failed", 100, f"IP scan failed: {str(e)[:200]}")
+        publish_progress(job_id, "failed", 100, err_msg)
         if self.request.retries >= self.max_retries:
             dead_letter_handler.delay(
                 task_name="ip_scan.run",

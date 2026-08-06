@@ -257,6 +257,47 @@ describe("ScanDetail", () => {
       expect(screen.getByText("N/A")).toBeInTheDocument();
     });
 
+    it("shows failed banner with result_summary.error", () => {
+      mockUseScanDetailReturn({
+        data: {
+          ...baseScan,
+          status: "failed",
+          result_summary: { error: "Nmap scan failed: host unreachable" },
+          findings: [],
+          completed_at: "2025-06-01T10:01:00Z",
+        } as any,
+      });
+      renderPage();
+      expect(screen.getByText("failed")).toBeInTheDocument();
+      expect(
+        screen.getByText("Nmap scan failed: host unreachable"),
+      ).toBeInTheDocument();
+    });
+
+    it("shows failed banner fallback when result_summary has no error", () => {
+      mockUseScanDetailReturn({
+        data: {
+          ...baseScan,
+          status: "failed",
+          result_summary: null,
+          findings: [],
+          completed_at: "2025-06-01T10:01:00Z",
+        } as any,
+      });
+      renderPage();
+      expect(
+        screen.getByText(/This scan failed\. Credits were refunded/i),
+      ).toBeInTheDocument();
+    });
+
+    it("does not show failed banner when status is completed", () => {
+      mockUseScanDetailReturn({ data: baseScan as any });
+      renderPage();
+      expect(
+        screen.queryByText(/This scan failed\. Credits were refunded/i),
+      ).not.toBeInTheDocument();
+    });
+
     it("renders In progress duration when running", () => {
       mockUseScanDetailReturn({
         data: {

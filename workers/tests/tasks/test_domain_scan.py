@@ -206,7 +206,14 @@ class TestDomainScanFailure:
             JOB_ID,
             "failed",
             completed_at=ANY,
+            result_summary=ANY,
         )
+        failed_calls = [c for c in self.mock_update_status.call_args_list if len(c.args) >= 3 and c.args[2] == "failed"]
+        assert failed_calls
+        summary = failed_calls[0].kwargs.get("result_summary")
+        assert isinstance(summary, dict)
+        assert "error" in summary
+        assert "Domain scan failed" in summary["error"]
 
     def test_dns_failure_not_dead_letter_on_first_retry(self):
         self._RETRIES = 0

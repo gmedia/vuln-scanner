@@ -274,7 +274,14 @@ class TestMobileScanFileNotFound:
             JOB_ID,
             "failed",
             completed_at=ANY,
+            result_summary=ANY,
         )
+        failed_calls = [c for c in self.mock_update_status.call_args_list if len(c.args) >= 3 and c.args[2] == "failed"]
+        assert failed_calls
+        summary = failed_calls[0].kwargs.get("result_summary")
+        assert isinstance(summary, dict)
+        assert "error" in summary
+        assert "File not found" in summary["error"]
 
     def test_file_not_found_publishes_failure(self):
         self._call_task()
@@ -341,7 +348,14 @@ class TestMobileScanFailureAndRetry:
             JOB_ID,
             "failed",
             completed_at=ANY,
+            result_summary=ANY,
         )
+        failed_calls = [c for c in self.mock_update_status.call_args_list if len(c.args) >= 3 and c.args[2] == "failed"]
+        assert failed_calls
+        summary = failed_calls[0].kwargs.get("result_summary")
+        assert isinstance(summary, dict)
+        assert "error" in summary
+        assert "Mobile scan failed" in summary["error"]
 
     def test_apk_failure_not_dead_letter_first_retry(self):
         self._RETRIES = 0
@@ -541,7 +555,14 @@ class TestMobileScanIosFailureAndRetry:
             JOB_ID,
             "failed",
             completed_at=ANY,
+            result_summary=ANY,
         )
+        failed_calls = [c for c in self.mock_update_status.call_args_list if len(c.args) >= 3 and c.args[2] == "failed"]
+        assert failed_calls
+        summary = failed_calls[0].kwargs.get("result_summary")
+        assert isinstance(summary, dict)
+        assert "error" in summary
+        assert "Mobile scan failed" in summary["error"]
 
     def test_ios_analysis_failure_not_dead_letter_first_retry(self):
         self._RETRIES = 0
@@ -1225,7 +1246,14 @@ class TestMobileAabConversion:
             JOB_ID,
             "failed",
             completed_at=ANY,
+            result_summary=ANY,
         )
+        failed_calls = [c for c in self.mock_update_status.call_args_list if len(c.args) >= 3 and c.args[2] == "failed"]
+        assert failed_calls
+        summary = failed_calls[0].kwargs.get("result_summary")
+        assert isinstance(summary, dict)
+        assert "error" in summary
+        assert "AAB conversion failed" in summary["error"]
 
     def test_aab_cleans_converted_apk(self):
         self._call_task()

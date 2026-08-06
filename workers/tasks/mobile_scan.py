@@ -63,11 +63,18 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
         session.commit()
 
         if not os.path.exists(file_path):
-            _update_status(session, job_id, "failed", completed_at=datetime.now(UTC))
+            err_msg = f"File not found: {file_path}"
+            _update_status(
+                session,
+                job_id,
+                "failed",
+                completed_at=datetime.now(UTC),
+                result_summary={"error": err_msg},
+            )
             _refund_credits(session, job_id, platform)
             session.commit()
             session.close()
-            publish_progress(job_id, "failed", 100, f"File not found: {file_path}")
+            publish_progress(job_id, "failed", 100, err_msg)
             logger.error(
                 "Mobile scan file not found: job={job_id} path={path} retry={retry}",
                 job_id=job_id,
@@ -129,8 +136,15 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
                     )
                 except AabConversionError as e:
                     logger.error("AAB conversion failed for job {job_id}: {error}", job_id=job_id, error=e)
-                    publish_progress(job_id, "aab_convert_error", 100, f"AAB conversion failed: {str(e)[:150]}")
-                    _update_status(session, job_id, "failed", completed_at=datetime.now(UTC))
+                    err_msg = f"AAB conversion failed: {str(e)[:150]}"
+                    publish_progress(job_id, "aab_convert_error", 100, err_msg)
+                    _update_status(
+                        session,
+                        job_id,
+                        "failed",
+                        completed_at=datetime.now(UTC),
+                        result_summary={"error": err_msg},
+                    )
                     _refund_credits(session, job_id, platform)
                     session.commit()
                     session.close()
@@ -271,14 +285,21 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
     except Retry:
         raise
     except Exception as e:  # Broad catch at task top-level — inner exceptions already handled
+        err_msg = f"Mobile scan failed: {str(e)[:200]}"
         try:
-            _update_status(session, job_id, "failed", completed_at=datetime.now(UTC))
+            _update_status(
+                session,
+                job_id,
+                "failed",
+                completed_at=datetime.now(UTC),
+                result_summary={"error": err_msg},
+            )
             _refund_credits(session, job_id, platform)
             session.commit()
             session.close()
         except (OSError, redis.RedisError) as e2:
             logger.warning("Failed to update status/commit for failed job {job_id}: {error}", job_id=job_id, error=e2)
-        publish_progress(job_id, "failed", 100, f"Mobile scan failed: {str(e)[:200]}")
+        publish_progress(job_id, "failed", 100, err_msg)
         if self.request.retries >= self.max_retries:
             dead_letter_handler.delay(
                 task_name="mobile_scan.run",
