@@ -244,11 +244,20 @@ sudo nginx -t && sudo systemctl reload nginx
 | Change type | Script | Notes |
 |-------------|--------|-------|
 | **SPA / frontend only** | [`scripts/deploy-frontend.sh`](scripts/deploy-frontend.sh) | Rebuild + recreate `frontend` only. Prefer for UI waves. |
-| **Full stack** | [`scripts/deploy.sh`](scripts/deploy.sh) | Rebuild all images, restart services, run Alembic. Avoid for SPA-only work. |
+| **App services (safe)** | [`scripts/deploy-services.sh`](scripts/deploy-services.sh) | Rebuild + recreate selected app services (`--no-deps`). **Never** touches postgres/redis volumes. Default: all app services; or pass e.g. `backend frontend worker_mobile`. Runs Alembic when `backend` is included. |
+| **Full stack** | [`scripts/deploy.sh`](scripts/deploy.sh) | Rebuild all images, restart services, run Alembic. **Destructive history** (`down --volumes`). Prefer `deploy-services.sh` for routine app deploys. |
 
 ```bash
 # On the deploy host after git pull of the target SHA:
+
+# SPA-only:
 ./scripts/deploy-frontend.sh /home/ubuntu/vuln-scanner
+
+# Backend + mobile worker + SPA (typical multi-service wave):
+./scripts/deploy-services.sh /home/ubuntu/vuln-scanner backend frontend worker_mobile
+
+# All app services (still leaves postgres/redis volumes intact):
+./scripts/deploy-services.sh /home/ubuntu/vuln-scanner
 
 # Verify SPA hash flipped + API still healthy:
 curl -sS https://vs.appmedia.id/api/health
