@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { SCAN_TYPE_LABELS } from "@/lib/constants";
 import SeverityChart from "@/components/results/SeverityChart";
 import FindingsTable from "@/components/results/FindingsTable";
+import { ScanError } from "@/components/scan/ScanError";
 
 function rescanPath(scanType: string): string {
   if (scanType === "domain") return "/scan/domain";
@@ -87,6 +88,10 @@ function ScanDetail() {
 
   const findingsCount = scan.result_summary?.total_findings ?? scan.findings?.length ?? 0;
   const reScanTo = rescanPath(scan.scan_type);
+  const failMessage =
+    typeof scan.result_summary?.error === "string" && scan.result_summary.error.trim()
+      ? scan.result_summary.error
+      : "This scan failed. Credits were refunded if charged. Try Re-scan or contact support if it keeps failing.";
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
@@ -153,6 +158,10 @@ function ScanDetail() {
           </Button>
         </div>
       </div>
+
+      {scan.status === "failed" && (
+        <ScanError showIcon message={failMessage} />
+      )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <QuickStat
