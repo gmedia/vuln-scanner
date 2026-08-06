@@ -38,7 +38,7 @@ function AuthLayout({
               VULN<span className="text-primary">SCAN</span>
             </span>
           </div>
-          <p className="font-mono text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Web-based vulnerability scanner
           </p>
         </div>
@@ -46,12 +46,12 @@ function AuthLayout({
         {(title || subtitle) && (
           <div className="mb-4 space-y-1 text-center">
             {title && (
-              <h1 className="font-mono text-lg font-semibold tracking-wide text-foreground">
+              <h1 className="text-lg font-semibold tracking-wide text-foreground">
                 {title}
               </h1>
             )}
             {subtitle && (
-              <p className="font-mono text-xs text-muted-foreground">{subtitle}</p>
+              <p className="text-xs text-muted-foreground">{subtitle}</p>
             )}
           </div>
         )}

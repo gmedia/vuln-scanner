@@ -107,7 +107,7 @@ function Sidebar({ open, onClose }: SidebarProps) {
         {isAdmin && (
           <>
             <Separator className="my-2" />
-            <p className="px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+            <p className="px-3 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">
               Admin
             </p>
             <NavLink
@@ -165,10 +165,10 @@ function Sidebar({ open, onClose }: SidebarProps) {
           <Separator />
           <div className="p-3">
             <div className="rounded-md bg-muted p-3">
-              <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">
                 Active Scan
               </p>
-              <p className="font-mono text-xs text-foreground truncate">
+              <p className="truncate font-mono text-xs text-foreground">
                 {activeJobId.slice(0, 12)}...
               </p>
               <Badge variant="running" className="mt-2 text-[10px]">
@@ -181,15 +181,15 @@ function Sidebar({ open, onClose }: SidebarProps) {
 
       <div className="border-t border-border p-3 space-y-2">
         <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2">
-          <span className="font-mono text-[10px] text-muted-foreground">
+          <span className="text-[10px] text-muted-foreground">
             Credits
           </span>
-          <span className="flex items-center gap-1 font-mono text-xs font-bold text-primary">
+          <span className="flex items-center gap-1 font-mono text-xs font-bold tabular-nums text-primary">
             <Coins className="h-3 w-3" />
             {credits}
           </span>
         </div>
-        <p className="text-center font-mono text-[10px] text-muted-foreground">
+        <p className="text-center text-[10px] text-muted-foreground">
           VulnScanner v0.1.0
         </p>
       </div>

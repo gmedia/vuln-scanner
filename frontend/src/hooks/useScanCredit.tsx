@@ -38,31 +38,31 @@ export function useScanCredit(scanType: string) {
   const creditDisplay = (
     <div
       data-testid="scan-credits-chip"
-      className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 font-mono text-xs text-foreground"
+      className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs text-foreground"
     >
       <Coins className="h-3.5 w-3.5 text-primary" aria-hidden />
       <span className="text-muted-foreground">Credits</span>
-      <span className="font-semibold tabular-nums">{credits}</span>
+      <span className="font-mono font-semibold tabular-nums">{credits}</span>
     </div>
   );
 
   const balanceAfter = eligibilityLoading ? credits : credits - cost;
 
   const costPreview = (
-    <div data-testid="scan-cost-preview" className="space-y-1 font-mono text-xs">
+    <div data-testid="scan-cost-preview" className="space-y-1 text-xs">
       {eligibilityLoading ? (
         <p className="text-muted-foreground">Checking cost…</p>
       ) : (
         <>
           <p className="text-muted-foreground">
             Scan cost:{" "}
-            <span className="font-medium text-foreground tabular-nums">
+            <span className="font-mono font-medium text-foreground tabular-nums">
               {formatCredits(cost)}
             </span>
           </p>
           <p className="text-muted-foreground">
             Balance after:{" "}
-            <span className="font-medium text-foreground tabular-nums">
+            <span className="font-mono font-medium text-foreground tabular-nums">
               {balanceAfter}
             </span>
           </p>
