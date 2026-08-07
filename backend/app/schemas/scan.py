@@ -117,3 +117,16 @@ class ErrorResponse(BaseModel):
     """Standard API error response with a detail message."""
 
     detail: str
+
+
+class ScanDiffResponse(BaseModel):
+    """Baseline diff summary vs prior completed job on same target."""
+
+    compared_to_job_id: uuid.UUID | None
+    new_critical: int = 0
+    new_high: int = 0
+    resolved: int = 0
+    worsened: int = 0
+    unchanged: int = 0
+    new_finding_ids: list[str] = []
+    resolved_finding_ids: list[str] = []
