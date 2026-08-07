@@ -21,10 +21,13 @@ GIT_MASTER=1 git rev-parse --short HEAD   # expect ≥ 0fd5490 or newer
 
 Then read, in order:
 
-1. This file — `docs/AGENT_EXECUTION_GUIDE.md`
+1. This file — `docs/AGENT_EXECUTION_GUIDE.md` (**wins on product priority**)
 2. `AGENTS.md` — branch/PR/CI workflow
 3. `docs/dependency-pins.md` + `SECURITY.md` (accepted residual risks)
-4. Only if stuck-jobs context: `handoff.md` (legacy scan-pending diagnosis; may be stale)
+4. Only if the user names an active **stuck-job / worker** incident: `docs/archive/handoff-scan-pending-2026.md` (historical diagnosis — **re-verify**; do not treat PENDING list as current backlog)
+5. Root `handoff.md` is a **stub only** (redirects here / to the archive) — never a second roadmap
+
+**Priority rule:** If `handoff.md`, the archive, or any old session note **disagrees with this guide** on *what to build next*, **this guide wins**, unless the user explicitly scopes a stuck-job/ops incident.
 
 **Do not implement** until the user uses an explicit verb (`implement` / `buat` / `kerjakan` / `fix` / …) **or** points at an approved spec section.
 
@@ -261,7 +264,8 @@ Use as checklist when implementing Phase C:
 | `SECURITY.md` | Accepted residual dependency risks |
 | `docs/dependency-pins.md` | Redis/Celery/kombu pin matrix |
 | `scripts/smoke-broker.sh` | Broker/API smoke |
-| `handoff.md` | **Legacy** stuck-pending scan investigation (verify before trusting) |
+| `handoff.md` | **Stub only** — redirects to this guide + archive |
+| `docs/archive/handoff-scan-pending-2026.md` | **ARCHIVED** stuck-pending diagnosis (stale backlog risk; re-verify) |
 | `docs/specs/*` | (To be added) approved implementation specs |
 
 ---

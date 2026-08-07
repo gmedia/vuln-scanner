@@ -9,6 +9,7 @@
 - Build order: **Workspace (org+members) → soft rebrand → Guard (Wazuh thin)**. Do not implement Guard/Wazuh in the same epic as Workspace.
 - Speak **Bahasa Indonesia** with the user unless they switch language.
 - Prefix every git command with `GIT_MASTER=1`.
+- Root **`handoff.md` is a stub** (archived stuck-job notes live under `docs/archive/`). Do not treat it as the product backlog; execution guide wins on priority.
 
 ## Session Start (MANDATORY)
 ```
