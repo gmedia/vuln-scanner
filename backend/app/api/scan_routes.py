@@ -16,12 +16,14 @@ from app.models.user import User
 from app.schemas.scan import (
     DomainScanRequest,
     PaginatedResponse,
+    ScanDiffResponse,
     ScanFindingResponse,
     ScanJobDetailResponse,
     ScanJobResponse,
     ScanRequest,
 )
 from app.services.auth import get_current_user
+from app.services.baseline_diff import get_scan_diff
 from app.services.scanner import ScannerService
 
 MOBILE_UPLOAD_MAX_SIZE = 500 * 1024 * 1024  # 500 MB
@@ -286,6 +288,16 @@ async def get_scan_findings(
     svc = ScannerService(db)
     findings = await svc.get_findings(job_id, user_id=current_user.id)
     return findings
+
+
+@router.get("/scan/{job_id}/diff", response_model=ScanDiffResponse)
+async def get_scan_baseline_diff(
+    job_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ScanDiffResponse:
+    """Compare findings vs prior completed job on same user/type/target."""
+    return await get_scan_diff(db, job_id, user_id=current_user.id)
 
 
 @router.get(
