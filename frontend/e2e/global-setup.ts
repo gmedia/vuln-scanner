@@ -1,5 +1,6 @@
 import { chromium, type FullConfig } from "@playwright/test";
 import { mkdirSync } from "fs";
+import { e2eEmail, e2ePassword } from "./credentials";
 
 async function globalSetup(config: FullConfig) {
   const baseURL = process.env.BASE_URL || "http://localhost";
@@ -14,8 +15,8 @@ async function globalSetup(config: FullConfig) {
 
   const loginRes = await page.request.post(`${baseURL}/api/auth/login`, {
     data: {
-      email: "e2e@vulnscan.dev",
-      password: "E2eTestPass123!",
+      email: e2eEmail(),
+      password: e2ePassword(),
     },
   });
 

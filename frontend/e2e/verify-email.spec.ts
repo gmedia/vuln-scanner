@@ -58,7 +58,9 @@ test.describe("Verify Email", () => {
     test("submitting resend form shows feedback", async ({ page }) => {
       await page.goto("/verify-email");
       const emailInput = page.locator("input[type='email']");
-      await emailInput.fill("e2e@vulnscan.dev");
+      await emailInput.fill(
+        process.env.E2E_EMAIL?.trim() || "e2e@vulnscan.dev",
+      );
 
       await page
         .locator("button:has-text('Resend Verification Email')")

@@ -4,9 +4,9 @@
 # Usage (on the deploy host, from repo root):
 #   ./scripts/ensure_e2e_user.sh
 #
-# Env overrides:
-#   E2E_EMAIL          default e2e@vulnscan.dev
-#   E2E_PASSWORD       default E2eTestPass123!
+# Env:
+#   E2E_EMAIL          default e2e@vulnscan.dev (mailbox name only — not a secret)
+#   E2E_PASSWORD       required — no default in public repo
 #   BACKEND_CONTAINER  default vuln-backend
 #   REDIS_CONTAINER    default vuln-redis
 #   DEPLOY_PATH        default /home/ubuntu/vuln-scanner (for .env / REDIS_PASSWORD)
@@ -19,7 +19,10 @@
 set -euo pipefail
 
 E2E_EMAIL="${E2E_EMAIL:-e2e@vulnscan.dev}"
-E2E_PASSWORD="${E2E_PASSWORD:-E2eTestPass123!}"
+if [[ -z "${E2E_PASSWORD:-}" ]]; then
+  echo "error: E2E_PASSWORD is required (do not commit passwords; export in the shell)" >&2
+  exit 1
+fi
 BACKEND_CONTAINER="${BACKEND_CONTAINER:-vuln-backend}"
 REDIS_CONTAINER="${REDIS_CONTAINER:-vuln-redis}"
 DEPLOY_PATH="${DEPLOY_PATH:-/home/ubuntu/vuln-scanner}"

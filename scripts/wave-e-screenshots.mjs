@@ -13,7 +13,7 @@
  * Env:
  *   BASE_URL      default https://vs.appmedia.id
  *   E2E_EMAIL      default e2e@vulnscan.dev
- *   E2E_PASSWORD   default E2eTestPass123!
+ *   E2E_PASSWORD   required (no default in public repo)
  *   OUT_DIR        default .playwright-mcp/screenshots-wave-e
  *   VIEWPORT_W/H   default 1440 / 900
  */
@@ -30,7 +30,11 @@ const { chromium } = require("@playwright/test");
 
 const BASE_URL = (process.env.BASE_URL || "https://vs.appmedia.id").replace(/\/$/, "");
 const E2E_EMAIL = process.env.E2E_EMAIL || "e2e@vulnscan.dev";
-const E2E_PASSWORD = process.env.E2E_PASSWORD || "E2eTestPass123!";
+const E2E_PASSWORD = process.env.E2E_PASSWORD || "";
+if (!E2E_PASSWORD) {
+  console.error("E2E_PASSWORD is required (do not hardcode credentials in the repo).");
+  process.exit(1);
+}
 const OUT_DIR = process.env.OUT_DIR
   ? join(ROOT, process.env.OUT_DIR)
   : join(ROOT, ".playwright-mcp", "screenshots-wave-e");

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { e2eEmail, e2ePassword } from "./credentials";
 
 test.describe("Auth — Login", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
@@ -15,8 +16,8 @@ test.describe("Auth — Login", () => {
     page,
   }) => {
     await page.goto("/login");
-    await page.locator("input#email").fill("e2e@vulnscan.dev");
-    await page.locator("input#password").fill("E2eTestPass123!");
+    await page.locator("input#email").fill(e2eEmail());
+    await page.locator("input#password").fill(e2ePassword());
     await page.locator("button[type='submit']").click();
     await page.waitForURL("/dashboard", { timeout: 15_000 });
     await expect(page.locator("h2:has-text('Dashboard')")).toBeVisible();
