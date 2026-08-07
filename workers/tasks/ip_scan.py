@@ -136,6 +136,16 @@ def run_ip_scan(self: Any, job_id: str, target: str, ports: str = "1-1000") -> T
             session, job_id, "completed", progress=100, result_summary=summary, completed_at=datetime.now(UTC)
         )
         session.commit()
+        try:
+            from utils.scan_notify import maybe_notify_scan_complete
+
+            maybe_notify_scan_complete(session, job_id)
+        except Exception as notify_exc:
+            logger.warning(
+                "Scan notify failed job={job_id} error={error}",
+                job_id=job_id,
+                error=notify_exc,
+            )
         session.close()
 
         logger.info(
