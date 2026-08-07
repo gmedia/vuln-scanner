@@ -1,5 +1,6 @@
 # Workers requirements
 celery[redis]==5.6.3
+# redis-py max under kombu[redis] (<6.5); server image is redis:8-alpine — see docs/dependency-pins.md
 redis==6.4.0
 sqlalchemy[asyncio]==2.0.51
 asyncpg==0.31.0
