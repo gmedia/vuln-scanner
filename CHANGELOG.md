@@ -25,6 +25,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Security
 
+- Frontend `npm audit`: bump transitive `brace-expansion` (≥5.0.5) and `undici` (≥7.29.0); pin via `package.json` overrides
+- Residual high: `react-router` 7.12–8.2 (GHSA-qwww-vcr4-c8h2) — SPA uses `BrowserRouter` only (no unstable RSC); no patched 7.x; `react-router-dom@8` not published yet; avoid `npm audit fix --force` downgrade to 7.11
 - nginx hardening: server_tokens off, TLS ciphers, OCSP stapling, CSP headers, buffer protections, proxy_hide_headers
 
 ## [1.2.0] - 2026-06-24
