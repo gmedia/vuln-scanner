@@ -55,7 +55,8 @@ def _dispatch_scan(job_id: str, scan_type: str, target: str) -> str | None:
         else:
             logger.warning("Unsupported schedule scan_type={scan_type}", scan_type=scan_type)
             return None
-        return result.id
+        task_id = result.id
+        return str(task_id) if task_id is not None else None
     except Exception as exc:
         logger.exception("Failed to dispatch scheduled scan: {error}", error=exc)
         return None
