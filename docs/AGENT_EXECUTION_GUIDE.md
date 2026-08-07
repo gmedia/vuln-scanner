@@ -62,10 +62,7 @@ Then read, in order:
 
 ### 1.1 Evidence from GMD finance extracts (2026-08-07)
 
-**Sources (host paths only — outside git):**
-
-- `/home/ubuntu/gmd_finance_invoice_customer_202608071318.csv`
-- `/home/ubuntu/_select_i_id_i_service_id_s_customer_id_s_customer_kategori_i_da_202608071342.csv`
+**Sources:** offline finance invoice extracts provided by ops for analysis only — **never commit raw CSVs or customer PII** into this public repo.
 
 **Aggregates (enriched file, ~530 lines, ~2025-08 → 2026-08):**
 
@@ -258,15 +255,15 @@ Order:
 
 ### Deploy (production)
 
-| Change | Script | Host |
+| Change | Script | Notes |
 |--------|--------|------|
-| SPA only | `./scripts/deploy-frontend.sh` | **prod only** `ubuntu@103.217.209.127 -p 4122` path `/home/ubuntu/vuln-scanner` |
+| SPA only | `./scripts/deploy-frontend.sh` | Run on the **production deploy host** only (credentials/host via private ops notes — **not** this public repo) |
 | App services | `./scripts/deploy-services.sh` | same; **never** volume-wipe postgres/redis for routine deploys |
 | Compose project | `docker-compose.prod.yml` + `COMPOSE_PROJECT_NAME=vuln` | |
 
-- **Not** gelera / `111.68.25.27` for this product deploy
+- Use the designated production host for this product; do **not** document alternate lab/SSH endpoints in public markdown
 - Broker smoke: `./scripts/smoke-broker.sh` (optional deploy-path arg on host)
-- Health: `https://vs.appmedia.id/health`, `/health/queues`
+- Health: public product URL `/health`, `/health/queues` (see README)
 
 ### Code quality
 
@@ -354,18 +351,17 @@ Order:
 
 ---
 
-## 8) Quick reference — people & envs
+## 8) Quick reference — public vs private
 
-| Item | Value |
-|------|--------|
-| GitHub | `gmedia/vuln-scanner`, branch `main` |
-| Prod UI | https://vs.appmedia.id |
-| Prod SSH | `ubuntu@103.217.209.127 -p 4122` |
-| App path | `/home/ubuntu/vuln-scanner` |
-| Admin (ops) | `arief.novianto@gmedia.id` |
-| E2E user | `e2e@vulnscan.dev` / `E2eTestPass123!` (`ensure_e2e_user.sh`) |
-| Future brand domains | `sinexis.app`, `sinexis.tech` (DNS/app cutover not done at guide write) |
-| Finance CSVs | Under `/home/ubuntu/*.csv` on analysis host — **not** in git |
+**This repository is public.** Do **not** put production SSH hosts/ports, personal emails, real passwords, API keys, or customer/finance dumps in `*.md` (or any tracked file).
+
+| Item | Public OK | Private (ops / password manager / env) |
+|------|-----------|----------------------------------------|
+| GitHub | `gmedia/vuln-scanner`, branch `main` | Deploy SSH user@host, non-default ports |
+| Product UI | Public HTTPS hostname for the app | Internal jump hosts, lab IPs |
+| E2E / admin logins | Script names only (`scripts/ensure_e2e_user.sh`); defaults via **env** | Email + password values |
+| Brand domains | `sinexis.app`, `sinexis.tech` (cutover status) | Registrar/DNS panel access |
+| Finance analysis | Aggregates only (no customer_id / paths) | Raw CSV location and contents |
 
 ---
 
