@@ -11,6 +11,7 @@ from app.database import Base
 if TYPE_CHECKING:
     from app.models.credit_log import CreditLog
     from app.models.scan_job import ScanJob
+    from app.models.scan_schedule import ScanSchedule
 
 
 class User(Base):
@@ -29,6 +30,7 @@ class User(Base):
     )
 
     scan_jobs: Mapped[list["ScanJob"]] = relationship(back_populates="user")
+    scan_schedules: Mapped[list["ScanSchedule"]] = relationship(back_populates="user")
     credit_logs: Mapped[list["CreditLog"]] = relationship(back_populates="user", foreign_keys="[CreditLog.user_id]")
 
     __table_args__ = (CheckConstraint("credits >= 0", name="ck_user_credits_non_negative"),)
