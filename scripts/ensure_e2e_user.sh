@@ -15,6 +15,9 @@
 # - backend container is read-only; Python is fed via stdin (no docker cp).
 # - Always resets password + admin/verified flags + min credits.
 # - Clears Redis ratelimit:* keys so prior failed logins do not 429.
+# - Clears revoked_users:<id> + revoked_tokens for that user so a prior
+#   logout_all / password-change revoke does not yield "Invalid or expired token"
+#   on /api/auth/me after a successful login.
 
 set -euo pipefail
 
@@ -91,34 +94,41 @@ async def main() -> None:
 asyncio.run(main())
 PY
 
-echo "=== clear redis rate-limit keys ==="
-if docker ps --format '{{.Names}}' | grep -qx "$REDIS_CONTAINER"; then
-  if [[ -f "$DEPLOY_PATH/.env" ]]; then
-    set -a
-    # shellcheck disable=SC1091
-    source "$DEPLOY_PATH/.env"
-    set +a
-  fi
-  if [[ -z "${REDIS_PASSWORD:-}" ]]; then
-    echo "warn: REDIS_PASSWORD unset; skip rate-limit clear" >&2
-  else
-    mapfile -t keys < <(
-      docker exec "$REDIS_CONTAINER" redis-cli -a "$REDIS_PASSWORD" --no-auth-warning \
-        --scan --pattern 'ratelimit:*' 2>/dev/null || true
-    )
-    if ((${#keys[@]} == 0)); then
-      echo "no ratelimit:* keys"
-    else
-      for key in "${keys[@]}"; do
-        [[ -z "$key" ]] && continue
-        docker exec "$REDIS_CONTAINER" redis-cli -a "$REDIS_PASSWORD" --no-auth-warning DEL "$key" >/dev/null
-        echo "deleted $key"
-      done
-    fi
-  fi
-else
-  echo "warn: redis container '$REDIS_CONTAINER' not running; skip rate-limit clear" >&2
-fi
+echo "=== clear redis rate-limit + e2e token revocations ==="
+# Prefer app REDIS_URL (auth works even when redis-cli -a is awkward).
+docker exec -i -e E2E_EMAIL="$E2E_EMAIL" "$BACKEND_CONTAINER" python - <<'PY'
+import os
+
+import redis
+from sqlalchemy import select
+
+from app.config import settings
+from app.database import async_session
+from app.models.user import User
+import asyncio
+
+EMAIL = os.environ["E2E_EMAIL"]
+
+
+async def user_id() -> str | None:
+    async with async_session() as session:
+        result = await session.execute(select(User).where(User.email == EMAIL))
+        user = result.scalar_one_or_none()
+        return str(user.id) if user is not None else None
+
+
+uid = asyncio.run(user_id())
+r = redis.Redis.from_url(settings.redis_url, decode_responses=True)
+deleted = 0
+for key in r.scan_iter("ratelimit:*"):
+    deleted += int(r.delete(key))
+if uid:
+    deleted += int(r.delete(f"revoked_users:{uid}"))
+    for key in r.scan_iter("revoked_tokens:*"):
+        if r.get(key) == uid:
+            deleted += int(r.delete(key))
+print(f"redis_keys_deleted={deleted} e2e_uid={uid}")
+PY
 
 echo "=== done ==="
 echo "Login: $E2E_EMAIL / (E2E_PASSWORD)"
