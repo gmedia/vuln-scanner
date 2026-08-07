@@ -25,6 +25,14 @@
 
 **Priority rule:** If this stub, the archive, or old chat **disagrees** with the execution guide on *what to build next*, **the guide wins**, unless the user opens a stuck-job / worker incident.
 
+## P0 / P1 drafts (in repo)
+
+| Need | Go here |
+|------|---------|
+| One-pager (positioning) | [`docs/commercial/sinexis-one-pager.md`](docs/commercial/sinexis-one-pager.md) |
+| SKU tiers + target patterns | [`docs/commercial/sku-scan-secure-addon.md`](docs/commercial/sku-scan-secure-addon.md) |
+| P1 engineering spec (no implement until asked) | [`docs/specs/scan-attach-v1.md`](docs/specs/scan-attach-v1.md) |
+
 ## Other links
 
 | Need | Go here |
