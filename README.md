@@ -254,43 +254,40 @@ sudo nginx -t && sudo systemctl reload nginx
 | **Full stack** | [`scripts/deploy.sh`](scripts/deploy.sh) | Rebuild all images, restart services, run Alembic. **Destructive history** (`down --volumes`). Prefer `deploy-services.sh` for routine app deploys. |
 
 ```bash
-# On the deploy host after git pull of the target SHA:
+# On the deploy host after git pull of the target SHA
+# (pass the local checkout path as the first argument if required by the script):
 
 # SPA-only:
-./scripts/deploy-frontend.sh /home/ubuntu/vuln-scanner
+./scripts/deploy-frontend.sh /path/to/vuln-scanner
 
 # Backend + mobile worker + SPA (typical multi-service wave):
-./scripts/deploy-services.sh /home/ubuntu/vuln-scanner backend frontend worker_mobile
+./scripts/deploy-services.sh /path/to/vuln-scanner backend frontend worker_mobile
 
 # All app services (still leaves postgres/redis volumes intact):
-./scripts/deploy-services.sh /home/ubuntu/vuln-scanner
+./scripts/deploy-services.sh /path/to/vuln-scanner
 
-# Verify SPA hash flipped + API still healthy:
-curl -sS https://vs.appmedia.id/api/health
-curl -sS https://vs.appmedia.id/ | grep -oE 'assets/index-[^"]+\.js'
+# Verify SPA hash flipped + API still healthy (use your public base URL):
+curl -sS "$PUBLIC_BASE_URL/api/health"
+curl -sS "$PUBLIC_BASE_URL/" | grep -oE 'assets/index-[^"]+\.js'
 ```
 
 ### E2E user (prod visual QA / Playwright)
 
-Expected credentials (see `frontend/e2e/global-setup.ts`):
+Credentials are **not** documented in this public repo. Configure via environment (see `scripts/ensure_e2e_user.sh` and `frontend/e2e/global-setup.ts`): typically `E2E_EMAIL` / `E2E_PASSWORD` (and matching app secrets on the deploy host).
 
-| Field | Value |
-|-------|-------|
-| Email | `e2e@vulnscan.dev` |
-| Password | `E2eTestPass123!` |
-| Flags | `is_admin=true`, `is_verified=true`, credits ≥ 100 |
+Expected **flags** after ensure script (not secrets): `is_admin=true`, `is_verified=true`, credits ≥ 100.
 
 If login returns 401/403/429, reset on the deploy host:
 
 ```bash
 ./scripts/ensure_e2e_user.sh
-# optional smoke:
-curl -sS -X POST https://vs.appmedia.id/api/auth/login \
+# optional smoke (substitute env — do not commit real values):
+curl -sS -X POST "$PUBLIC_BASE_URL/api/auth/login" \
   -H 'Content-Type: application/json' \
-  -d '{"email":"e2e@vulnscan.dev","password":"E2eTestPass123!"}'
+  -d "{\"email\":\"$E2E_EMAIL\",\"password\":\"$E2E_PASSWORD\"}"
 ```
 
-Do **not** `POST /api/auth/register` for this email on prod — it creates an unverified user and breaks Playwright.
+Do **not** `POST /api/auth/register` for the shared e2e mailbox on prod — it can create an unverified user and break Playwright.
 
 Wave E full-site screenshots (18 routes, 1440×900):
 

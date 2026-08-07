@@ -10,6 +10,7 @@
 - Speak **Bahasa Indonesia** with the user unless they switch language.
 - Prefix every git command with `GIT_MASTER=1`.
 - Root **`handoff.md` is a stub + pointer** (archived stuck-job notes under `docs/archive/`). Not the product backlog; **`docs/AGENT_EXECUTION_GUIDE.md` wins** on priority.
+- **Public repo hygiene:** never put production SSH hosts/ports, personal emails, real passwords, API keys, or customer/finance dumps in `*.md` or other tracked files. Use env vars and private ops notes instead.
 
 ## Session Start (MANDATORY)
 ```
