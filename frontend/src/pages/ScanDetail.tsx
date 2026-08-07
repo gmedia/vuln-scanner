@@ -163,6 +163,15 @@ function ScanDetail() {
                 <Download className="mr-1 h-3.5 w-3.5" />
                 HTML
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                onClick={() => downloadFile(id, "executive")}
+              >
+                <Download className="mr-1 h-3.5 w-3.5" />
+                Eksekutif
+              </Button>
             </>
           )}
           <Button asChild size="sm" className="text-xs">

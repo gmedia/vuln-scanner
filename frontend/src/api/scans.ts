@@ -143,13 +143,18 @@ export async function getScanHistory(
 
 export async function downloadFile(
   jobId: string,
-  format: "json" | "html",
+  format: "json" | "html" | "executive",
 ): Promise<void> {
   const resp = await api.get(`/api/scan/${jobId}/export`, {
     params: { format },
     responseType: "blob",
   });
-  const ext = format === "json" ? "json" : "html";
+  const ext =
+    format === "json"
+      ? "json"
+      : format === "executive"
+        ? "executive.html"
+        : "html";
   const url = window.URL.createObjectURL(new Blob([resp.data]));
   const a = document.createElement("a");
   a.href = url;

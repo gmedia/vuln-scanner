@@ -1089,7 +1089,7 @@ async def test_export_invalid_format_with_job_kill_206(client, db_session, sampl
     resp = client.get(f"/api/scan/{job.id}/export?format=xml", headers=HEADERS)
     assert resp.status_code == 400
     detail = resp.json()["detail"]
-    assert detail == "format must be 'json' or 'html'"
+    assert detail == "format must be 'json', 'html', or 'executive'"
     assert not detail.startswith("XX")
 
 
