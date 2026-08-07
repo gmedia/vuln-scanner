@@ -1,5 +1,19 @@
 import { Link, NavLink } from "react-router-dom";
-import { X, LayoutDashboard, Radar, Globe, Smartphone, Crosshair, Shield, Users, DollarSign, History, User, Coins } from "lucide-react";
+import {
+  X,
+  LayoutDashboard,
+  Radar,
+  Globe,
+  Smartphone,
+  Crosshair,
+  Shield,
+  Users,
+  DollarSign,
+  History,
+  User,
+  Coins,
+  CalendarClock,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useScanStore } from "@/store/scanStore";
 import { useAuthStore } from "@/store/authStore";
@@ -18,6 +32,7 @@ const navItems = [
   { to: "/scan/ip", label: "IP Scanner", icon: Radar },
   { to: "/scan/domain", label: "Domain Scanner", icon: Globe },
   { to: "/scan/mobile", label: "Mobile Scanner", icon: Smartphone },
+  { to: "/schedules", label: "Schedules", icon: CalendarClock },
 ];
 
 function Sidebar({ open, onClose }: SidebarProps) {
@@ -181,9 +196,7 @@ function Sidebar({ open, onClose }: SidebarProps) {
 
       <div className="border-t border-border p-3 space-y-2">
         <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2">
-          <span className="text-[10px] text-muted-foreground">
-            Credits
-          </span>
+          <span className="text-[10px] text-muted-foreground">Credits</span>
           <span className="flex items-center gap-1 font-mono text-xs font-bold tabular-nums text-primary">
             <Coins className="h-3 w-3" />
             {credits}

@@ -13,6 +13,7 @@ class TestApiRouter:
     def test_includes_expected_routers(self):
         expected_prefixes = {
             "/api/scan",
+            "/api/schedules",
             "/ws/scan",
             "/api/keys",
             "/api/auth",

@@ -3,6 +3,15 @@ from app.models.email_verification import EmailVerificationToken
 from app.models.password_reset import PasswordResetToken
 from app.models.pricing import PricingConfig
 from app.models.scan_job import ScanJob
+from app.models.scan_schedule import ScanSchedule
 from app.models.user import User
 
-__all__ = ["User", "EmailVerificationToken", "PasswordResetToken", "ScanJob", "CreditLog", "PricingConfig"]
+__all__ = [
+    "User",
+    "EmailVerificationToken",
+    "PasswordResetToken",
+    "ScanJob",
+    "ScanSchedule",
+    "CreditLog",
+    "PricingConfig",
+]

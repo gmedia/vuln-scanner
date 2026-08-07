@@ -37,6 +37,7 @@ celery_app.conf.update(
         "dead_letter.handle": {"queue": "dead_letter"},
         "maintenance.fail_stale_pending": {"queue": "ip_scan"},
         "maintenance.fail_stale_running": {"queue": "ip_scan"},
+        "schedules.run_due": {"queue": "ip_scan"},
     },
     task_annotations={
         "ip_scan.run": {"rate_limit": "10/m"},
@@ -52,9 +53,20 @@ celery_app.conf.update(
             "task": "maintenance.fail_stale_running",
             "schedule": 300.0,
         },
+        "run-due-schedules-every-5m": {
+            "task": "schedules.run_due",
+            "schedule": 300.0,
+        },
     },
 )
 
 celery_app.autodiscover_tasks(
-    ["tasks.ip_scan", "tasks.domain_scan", "tasks.mobile_scan", "tasks.dead_letter", "tasks.maintenance"]
+    [
+        "tasks.ip_scan",
+        "tasks.domain_scan",
+        "tasks.mobile_scan",
+        "tasks.dead_letter",
+        "tasks.maintenance",
+        "tasks.schedules",
+    ]
 )
