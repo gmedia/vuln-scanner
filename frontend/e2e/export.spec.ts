@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { e2eEmail, e2ePassword } from "./credentials";
 
 const API_KEY = process.env.API_KEY || "dev-api-key-change-me";
 const BASE_URL = process.env.BASE_URL || "http://localhost:8000";
@@ -8,7 +9,7 @@ async function login(
 ) {
   const loginRes = await request.post(`${BASE_URL}/api/auth/login`, {
     headers: { "Content-Type": "application/json", "X-E2E-Test": "true" },
-    data: { email: "e2e@vulnscan.dev", password: "E2eTestPass123!" },
+    data: { email: e2eEmail(), password: e2ePassword() },
   });
   expect(loginRes.status()).toBe(200);
   const body = await loginRes.json();

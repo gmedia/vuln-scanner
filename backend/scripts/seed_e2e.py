@@ -5,6 +5,7 @@ Inserts sample scan jobs + findings so frontend E2E tests have data to work with
 """
 
 import asyncio
+import os
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -100,13 +101,16 @@ async def seed() -> None:
     async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     async with async_session() as session:
-        e2e_email = "e2e@vulnscan.dev"
+        e2e_email = os.environ.get("E2E_EMAIL", "e2e@vulnscan.dev").strip() or "e2e@vulnscan.dev"
+        e2e_password = os.environ.get("E2E_PASSWORD", "").strip()
         result = await session.execute(select(User).where(User.email == e2e_email))
         e2e_user = result.scalar_one_or_none()
         if not e2e_user:
+            if not e2e_password:
+                raise SystemExit("E2E_PASSWORD is required to create the e2e user (no default in public repo)")
             e2e_user = User(
                 email=e2e_email,
-                password_hash=hash_password("E2eTestPass123!"),
+                password_hash=hash_password(e2e_password),
                 is_verified=True,
                 is_admin=True,
                 verified_at=datetime.now(UTC),
@@ -115,13 +119,20 @@ async def seed() -> None:
             session.add(e2e_user)
             await session.flush()
             print(f"Created verified E2E test user: {e2e_email}")
-        elif not e2e_user.is_admin or not e2e_user.is_verified:
-            e2e_user.is_admin = True
-            e2e_user.is_verified = True
-            e2e_user.verified_at = e2e_user.verified_at or datetime.now(UTC)
-            await session.flush()
-            await session.commit()
-            print("Fixed E2E user flags: is_admin=True, is_verified=True")
+        else:
+            changed = False
+            if not e2e_user.is_admin or not e2e_user.is_verified:
+                e2e_user.is_admin = True
+                e2e_user.is_verified = True
+                e2e_user.verified_at = e2e_user.verified_at or datetime.now(UTC)
+                changed = True
+            if e2e_password:
+                e2e_user.password_hash = hash_password(e2e_password)
+                changed = True
+            if changed:
+                await session.flush()
+                await session.commit()
+                print("Updated E2E user flags/password from env")
 
         # Ensure E2E user always has enough credits for scan tests
         if e2e_user.credits < 100:

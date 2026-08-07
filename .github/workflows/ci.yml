@@ -179,6 +179,10 @@ jobs:
     if: ${{ github.event_name != 'workflow_dispatch' || !inputs.skip_tests }}
     needs: [python-tests, frontend-typecheck, frontend-unit-tests, frontend-build, python-lint, python-typecheck, frontend-lint]
     runs-on: ubuntu-latest
+    env:
+      # Repo secrets (Settings → Secrets). Same values Playwright + seed must share.
+      E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -186,6 +190,17 @@ jobs:
           node-version: "24"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+
+      - name: Require E2E secrets
+        run: |
+          if [ -z "${E2E_PASSWORD:-}" ]; then
+            echo "E2E_PASSWORD secret is empty. Add repository secrets E2E_EMAIL and E2E_PASSWORD." >&2
+            exit 1
+          fi
+          if [ -z "${E2E_EMAIL:-}" ]; then
+            echo "E2E_EMAIL empty — defaulting to e2e@vulnscan.dev for this job"
+            echo "E2E_EMAIL=e2e@vulnscan.dev" >> "$GITHUB_ENV"
+          fi
 
       - name: Create .env from example
         run: |
@@ -205,7 +220,11 @@ jobs:
         run: docker compose -f docker-compose.yml up -d --wait
 
       - name: Seed E2E test data
-        run: docker compose -f docker-compose.yml exec -T backend python -m scripts.seed_e2e
+        run: |
+          docker compose -f docker-compose.yml exec -T \
+            -e E2E_EMAIL \
+            -e E2E_PASSWORD \
+            backend python -m scripts.seed_e2e
 
       - name: Warm up Vite dev server (all routes)
         run: |
@@ -236,6 +255,8 @@ jobs:
           CI: "true"
           BASE_URL: "http://localhost:5173"
           API_KEY: "e2e-test-api-key"
+          E2E_EMAIL: ${{ env.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ env.E2E_PASSWORD }}
 
       - name: Upload Playwright HTML report (on failure)
         if: failure()
