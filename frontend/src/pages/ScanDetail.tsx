@@ -8,9 +8,15 @@ import {
   Shield,
   Target,
 } from "lucide-react";
-import { useScanDetail } from "@/hooks/useScan";
-import { type ScanFinding, downloadFile } from "@/api/scans";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
+import { useScanDetail, useScanDiff } from "@/hooks/useScan";
+import { type ScanDiff, type ScanFinding, downloadFile } from "@/api/scans";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/Card";
 import { Progress } from "@/components/ui/Progress";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -31,6 +37,10 @@ function rescanPath(scanType: string): string {
 function ScanDetail() {
   const { id } = useParams<{ id: string }>();
   const { data: scan, isLoading, isError } = useScanDetail(id ?? null);
+  const { data: diff } = useScanDiff(
+    id ?? null,
+    !!scan && scan.status === "completed",
+  );
 
   if (isLoading) {
     return (
@@ -53,7 +63,8 @@ function ScanDetail() {
             SCAN NOT FOUND
           </h2>
           <p className="mb-6 text-sm text-muted-foreground">
-            The scan you&apos;re looking for doesn&apos;t exist or failed to load.
+            The scan you&apos;re looking for doesn&apos;t exist or failed to
+            load.
           </p>
           <Button variant="outline" asChild>
             <Link to="/dashboard">
@@ -86,10 +97,12 @@ function ScanDetail() {
     return `${m}m ${s}s`;
   };
 
-  const findingsCount = scan.result_summary?.total_findings ?? scan.findings?.length ?? 0;
+  const findingsCount =
+    scan.result_summary?.total_findings ?? scan.findings?.length ?? 0;
   const reScanTo = rescanPath(scan.scan_type);
   const failMessage =
-    typeof scan.result_summary?.error === "string" && scan.result_summary.error.trim()
+    typeof scan.result_summary?.error === "string" &&
+    scan.result_summary.error.trim()
       ? scan.result_summary.error
       : "This scan failed. Credits were refunded if charged. Try Re-scan or contact support if it keeps failing.";
 
@@ -110,7 +123,9 @@ function ScanDetail() {
                 Scan details
               </h2>
               <Badge
-                variant={scan.status as "running" | "completed" | "failed" | "pending"}
+                variant={
+                  scan.status as "running" | "completed" | "failed" | "pending"
+                }
                 className="text-[10px] capitalize"
               >
                 {scan.status}
@@ -159,8 +174,10 @@ function ScanDetail() {
         </div>
       </div>
 
-      {scan.status === "failed" && (
-        <ScanError showIcon message={failMessage} />
+      {scan.status === "failed" && <ScanError showIcon message={failMessage} />}
+
+      {scan.status === "completed" && diff && shouldShowDiffBadge(diff) && (
+        <DiffBadgeStrip diff={diff} />
       )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -170,11 +187,7 @@ function ScanDetail() {
           value={`${findingsCount}`}
           emphasize
         />
-        <QuickStat
-          icon={Target}
-          label="Target"
-          value={scan.target}
-        />
+        <QuickStat icon={Target} label="Target" value={scan.target} />
         <QuickStat
           icon={Shield}
           label="Type"
@@ -197,9 +210,7 @@ function ScanDetail() {
         <CardHeader className="py-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <CardTitle className="text-sm tracking-wide">
-                Findings
-              </CardTitle>
+              <CardTitle className="text-sm tracking-wide">Findings</CardTitle>
               <CardDescription className="text-xs">
                 {scan.findings?.length ?? 0} vulnerability findings detected
               </CardDescription>
@@ -207,19 +218,14 @@ function ScanDetail() {
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <FindingsTable
-            findings={scan.findings}
-            isLoading={false}
-          />
+          <FindingsTable findings={scan.findings} isLoading={false} />
         </CardContent>
       </Card>
 
       <div className="grid gap-5 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <CardHeader className="py-3">
-            <CardTitle className="text-sm tracking-wide">
-              Severity
-            </CardTitle>
+            <CardTitle className="text-sm tracking-wide">Severity</CardTitle>
             <CardDescription className="text-xs">
               Distribution of {findingsCount} findings
             </CardDescription>
@@ -231,9 +237,7 @@ function ScanDetail() {
 
         <Card className="lg:col-span-2">
           <CardHeader className="py-3">
-            <CardTitle className="text-sm tracking-wide">
-              Scan info
-            </CardTitle>
+            <CardTitle className="text-sm tracking-wide">Scan info</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 pt-0">
             <InfoRow label="Scan ID" value={scan.id} mono />
@@ -260,8 +264,57 @@ function ScanDetail() {
         </Card>
       </div>
 
-      {scan.status === "completed" && scan.findings && scan.findings.length > 0 && (
-        <RemediationCard findings={scan.findings} />
+      {scan.status === "completed" &&
+        scan.findings &&
+        scan.findings.length > 0 && (
+          <RemediationCard findings={scan.findings} />
+        )}
+    </div>
+  );
+}
+
+function shouldShowDiffBadge(diff: ScanDiff): boolean {
+  return (
+    diff.compared_to_job_id != null ||
+    diff.new_critical > 0 ||
+    diff.new_high > 0 ||
+    diff.resolved > 0
+  );
+}
+
+function DiffBadgeStrip({ diff }: { diff: ScanDiff }) {
+  return (
+    <div
+      className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2"
+      data-testid="scan-diff-badge"
+    >
+      <span className="text-xs font-medium text-muted-foreground">
+        vs baseline
+      </span>
+      {diff.new_critical > 0 && (
+        <Badge variant="critical" className="text-[10px]">
+          +{diff.new_critical} critical
+        </Badge>
+      )}
+      {diff.new_high > 0 && (
+        <Badge variant="high" className="text-[10px]">
+          +{diff.new_high} high
+        </Badge>
+      )}
+      {diff.resolved > 0 && (
+        <Badge variant="success" className="text-[10px]">
+          {diff.resolved} resolved
+        </Badge>
+      )}
+      {diff.worsened > 0 && (
+        <Badge variant="medium" className="text-[10px]">
+          {diff.worsened} worsened
+        </Badge>
+      )}
+      {diff.unchanged > 0 && (
+        <Badge variant="default" className="text-[10px]">
+          {diff.unchanged} unchanged
+        </Badge>
       )}
     </div>
   );
@@ -286,7 +339,9 @@ function QuickStat({
             emphasize ? "bg-primary/15" : "bg-muted"
           }`}
         >
-          <Icon className={`h-4 w-4 ${emphasize ? "text-primary" : "text-muted-foreground"}`} />
+          <Icon
+            className={`h-4 w-4 ${emphasize ? "text-primary" : "text-muted-foreground"}`}
+          />
         </div>
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground">{label}</p>
