@@ -16,6 +16,7 @@ vi.mock("react-router-dom", async () => {
 
 vi.mock("@/hooks/useScan", () => ({
   useScanDetail: vi.fn(),
+  useScanDiff: vi.fn(() => ({ data: undefined, isLoading: false, isError: false })),
 }));
 
 vi.mock("@/api/scans", async () => {
