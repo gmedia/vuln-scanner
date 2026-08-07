@@ -19,6 +19,7 @@ const DomainScanner = lazy(() => import("@/pages/DomainScanner"));
 const MobileScanner = lazy(() => import("@/pages/MobileScanner"));
 const ScanDetail = lazy(() => import("@/pages/ScanDetail"));
 const CreditHistory = lazy(() => import("@/pages/credit/CreditHistory"));
+const Schedules = lazy(() => import("@/pages/Schedules"));
 const Profile = lazy(() => import("@/pages/Profile"));
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
 const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
@@ -33,28 +34,77 @@ function App() {
         {/* Public routes — no AppShell wrapper */}
         <Route path="/" element={<PageBoundary component={Landing} />} />
         <Route path="/login" element={<PageBoundary component={Login} />} />
-        <Route path="/register" element={<PageBoundary component={Register} />} />
-        <Route path="/verify-email" element={<PageBoundary component={VerifyEmail} />} />
-        <Route path="/forgot-password" element={<PageBoundary component={ForgotPassword} />} />
-        <Route path="/reset-password" element={<PageBoundary component={ResetPassword} />} />
+        <Route
+          path="/register"
+          element={<PageBoundary component={Register} />}
+        />
+        <Route
+          path="/verify-email"
+          element={<PageBoundary component={VerifyEmail} />}
+        />
+        <Route
+          path="/forgot-password"
+          element={<PageBoundary component={ForgotPassword} />}
+        />
+        <Route
+          path="/reset-password"
+          element={<PageBoundary component={ResetPassword} />}
+        />
 
         {/* Protected routes — wrapped in AppShell */}
         <Route element={<ProtectedRoute />}>
           <Route element={<AppShell />}>
-            <Route path="/dashboard" element={<PageBoundary component={Dashboard} />} />
-            <Route path="/scan/ip" element={<PageBoundary component={IpScanner} />} />
-            <Route path="/scan/domain" element={<PageBoundary component={DomainScanner} />} />
-            <Route path="/scan/mobile" element={<PageBoundary component={MobileScanner} />} />
-            <Route path="/scan/:id" element={<PageBoundary component={ScanDetail} />} />
-            <Route path="/credit-history" element={<PageBoundary component={CreditHistory} />} />
-            <Route path="/profile" element={<PageBoundary component={Profile} />} />
+            <Route
+              path="/dashboard"
+              element={<PageBoundary component={Dashboard} />}
+            />
+            <Route
+              path="/scan/ip"
+              element={<PageBoundary component={IpScanner} />}
+            />
+            <Route
+              path="/scan/domain"
+              element={<PageBoundary component={DomainScanner} />}
+            />
+            <Route
+              path="/scan/mobile"
+              element={<PageBoundary component={MobileScanner} />}
+            />
+            <Route
+              path="/scan/:id"
+              element={<PageBoundary component={ScanDetail} />}
+            />
+            <Route
+              path="/credit-history"
+              element={<PageBoundary component={CreditHistory} />}
+            />
+            <Route
+              path="/schedules"
+              element={<PageBoundary component={Schedules} />}
+            />
+            <Route
+              path="/profile"
+              element={<PageBoundary component={Profile} />}
+            />
 
             {/* Admin routes */}
             <Route element={<AdminRoute />}>
-              <Route path="/admin" element={<PageBoundary component={AdminDashboard} />} />
-              <Route path="/admin/users" element={<PageBoundary component={AdminUsers} />} />
-              <Route path="/admin/users/:id" element={<PageBoundary component={AdminUserDetail} />} />
-              <Route path="/admin/pricing" element={<PageBoundary component={AdminPricing} />} />
+              <Route
+                path="/admin"
+                element={<PageBoundary component={AdminDashboard} />}
+              />
+              <Route
+                path="/admin/users"
+                element={<PageBoundary component={AdminUsers} />}
+              />
+              <Route
+                path="/admin/users/:id"
+                element={<PageBoundary component={AdminUserDetail} />}
+              />
+              <Route
+                path="/admin/pricing"
+                element={<PageBoundary component={AdminPricing} />}
+              />
             </Route>
           </Route>
         </Route>
