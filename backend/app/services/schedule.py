@@ -118,6 +118,20 @@ class ScheduleService:
     async def update(self, schedule_id: UUID, user_id: UUID, body: ScheduleUpdate) -> ScheduleResponse:
         schedule = await self.get_owned(schedule_id, user_id)
         data = body.model_dump(exclude_unset=True)
+        if data.get("enabled") is True and not schedule.enabled:
+            count_result = await self.db.execute(
+                select(ScanSchedule).where(
+                    ScanSchedule.user_id == user_id,
+                    ScanSchedule.enabled.is_(True),
+                    ScanSchedule.id != schedule.id,
+                )
+            )
+            enabled_count = len(count_result.scalars().all())
+            if enabled_count >= MAX_SCHEDULES_PER_USER:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Maximum {MAX_SCHEDULES_PER_USER} enabled schedules per user",
+                )
         if "cadence" in data or "timezone" in data:
             cadence = data.get("cadence", schedule.cadence)
             timezone = data.get("timezone", schedule.timezone)
