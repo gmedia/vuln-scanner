@@ -149,27 +149,33 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 
 ### Phase A / P0 — Decide & lock (user-led, little/no code)
 
-- [ ] One-pager Sinexis (positioning, modules, buyer vs daily user, data trust)
-- [ ] **Scan/Secure Add-on SKU** sketch (Basic / Pro / Multi-asset; price or credit bundle)
-- [ ] Upsell target *patterns* (VPS+cPanel, colo IP surface, multi-asset hotel/corporate) — lists stay off-repo if PII
-- [ ] 1 pilot: relationship hotel **and/or** internal multi-asset design-partner pattern
-- [ ] Confirm soft dual-brand vs hard cut; confirm defaults in §1
-- [ ] Confirm near-term KPI: attach ARPU vs new hotel logos vs both
+**Drafts in repo (fill prices / tick decisions):**
 
-**Agent:** draft docs only if asked; **do not** open Guard/Wazuh feature branches.
+| Deliverable | Path |
+|-------------|------|
+| One-pager | [`docs/commercial/sinexis-one-pager.md`](commercial/sinexis-one-pager.md) |
+| SKU + patterns | [`docs/commercial/sku-scan-secure-addon.md`](commercial/sku-scan-secure-addon.md) |
+
+Still **user-owned** before treating P0 as locked:
+
+- [ ] Replace IDR *TBD* with approved list prices / discount rules
+- [ ] Tick open decisions on one-pager §7 (KPI, dual-brand, pilot identity **off-repo**)
+- [ ] Upsell SID *lists* stay in private CRM (patterns only in git)
+- [ ] 1 pilot named privately: relationship hotel **and/or** multi-service design-partner
+- [ ] Confirm soft dual-brand vs hard cut; confirm defaults in §1
+
+**Agent:** may maintain commercial drafts; **do not** open Guard/Wazuh feature branches.
 
 ### Phase B — Specs before code
 
-Deliverables (as user requests), under `docs/specs/`:
+| Spec | Status | Before implementing |
+|------|--------|---------------------|
+| [`docs/specs/scan-attach-v1.md`](specs/scan-attach-v1.md) | **Draft** (S1–S5 slices + acceptance) | User review + **explicit implement** |
+| `docs/specs/workspace-v1.md` | Not written | P2 — ERD, authZ matrix, migration, acceptance |
+| `docs/specs/assets-v1.md` | Not written | P3 — asset entity, limits per SKU tier |
+| Guard design note | Not written | P5 — only after P2 (and ideally P1) real |
 
-| Spec | Before implementing |
-|------|---------------------|
-| `docs/specs/scan-attach-v1.md` | P1 — schedule model, diff rules, report sections, credit charging |
-| `docs/specs/workspace-v1.md` | P2 — ERD, authZ matrix, migration, acceptance (§5) |
-| `docs/specs/assets-v1.md` | P3 — asset entity, limits per SKU tier |
-| Guard design note | P5 — only after P2 (and ideally P1) real |
-
-**Agent:** write specs when asked; wait for **explicit implement**.
+**Agent:** wait for **explicit implement** even when spec exists.
 
 ### Phase C1 / P1 — Scan Attach Loop (upsell engine)
 
