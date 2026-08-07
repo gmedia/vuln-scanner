@@ -152,6 +152,12 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
       NVD_API_KEY: ${NVD_API_KEY:-}
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-VulnScanner <noreply@vs.appmedia.id>}
+      FRONTEND_URL: ${FRONTEND_URL:-https://vs.appmedia.id}
       CELERY_MODE: worker
       CELERY_QUEUE: ip_scan
       CELERY_CONCURRENCY: 2
@@ -191,6 +197,12 @@ services:
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-VulnScanner <noreply@vs.appmedia.id>}
+      FRONTEND_URL: ${FRONTEND_URL:-https://vs.appmedia.id}
       CELERY_MODE: worker
       CELERY_QUEUE: domain_scan
       CELERY_CONCURRENCY: 2
