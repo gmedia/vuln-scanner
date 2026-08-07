@@ -131,3 +131,56 @@ async def send_password_reset_email(email_to: str, token: str) -> bool:
     msg.attach(MIMEText(html_body, "html", "utf-8"))
 
     return await _send_with_retry(msg, email_to, "Password reset")
+
+
+async def send_scan_diff_email(
+    email_to: str,
+    *,
+    target: str,
+    job_id: str,
+    new_critical: int,
+    new_high: int,
+    resolved: int = 0,
+    worsened: int = 0,
+) -> bool:
+    n_new = int(new_critical) + int(new_high)
+    detail_link = f"{FRONTEND_URL}/scan/{job_id}"
+    subject = f"[Sinexis Scan] {n_new} temuan baru critical/high — {target}"
+
+    html_body = f"""\
+<html>
+<body style="font-family: sans-serif; max-width: 520px; margin: 0 auto; padding: 24px;">
+  <h2 style="margin-bottom: 8px;">Sinexis Scan — temuan baru</h2>
+  <p style="color: #374151;">
+    Scan pada target <strong>{target}</strong> selesai dan menemukan
+    <strong>{n_new}</strong> temuan baru critical/high dibanding baseline sebelumnya.
+  </p>
+  <ul style="color: #111827; line-height: 1.6;">
+    <li>Critical baru: <strong>{int(new_critical)}</strong></li>
+    <li>High baru: <strong>{int(new_high)}</strong></li>
+    <li>Resolved: {int(resolved)}</li>
+    <li>Worsened: {int(worsened)}</li>
+  </ul>
+  <p>
+    <a href="{detail_link}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;
+       text-decoration:none;border-radius:6px">
+      Buka detail scan
+    </a>
+  </p>
+  <p style="color: #6b7280; font-size: 14px;">
+    Atau salin tautan:<br>
+    {detail_link}
+  </p>
+  <p style="color: #6b7280; font-size: 13px;">
+    Anda menerima email ini karena notifikasi scan (jadwal atau baseline diff) aktif.
+  </p>
+</body>
+</html>"""
+
+    msg = MIMEMultipart("alternative")
+    msg["From"] = SMTP_FROM
+    msg["To"] = email_to
+    msg["Subject"] = subject
+    msg.attach(MIMEText(html_body, "html", "utf-8"))
+
+    return await _send_with_retry(msg, email_to, "Scan diff")
