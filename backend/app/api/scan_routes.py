@@ -24,6 +24,7 @@ from app.schemas.scan import (
 )
 from app.services.auth import get_current_user
 from app.services.baseline_diff import get_scan_diff
+from app.services.executive_report import render_executive_html
 from app.services.scanner import ScannerService
 
 MOBILE_UPLOAD_MAX_SIZE = 500 * 1024 * 1024  # 500 MB
@@ -311,7 +312,6 @@ async def export_scan(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse | HTMLResponse:
-    """Export scan results as JSON or HTML. Returns file download or rendered page."""
     svc = ScannerService(db)
     job = await svc.get_job(job_id, user_id=current_user.id)
     if not job:
@@ -328,7 +328,25 @@ async def export_scan(
         )
 
     if format == "html":
-        html = _render_pdf_html(job)
-        return HTMLResponse(content=html)
+        return HTMLResponse(content=_render_pdf_html(job))
 
-    raise HTTPException(status_code=400, detail="format must be 'json' or 'html'")
+    if format == "executive":
+        diff: ScanDiffResponse | None = None
+        if job.status == "completed":
+            diff = await get_scan_diff(db, job_id, user_id=current_user.id)
+        body = render_executive_html(
+            job,
+            diff=diff,
+            account_email=getattr(current_user, "email", None),
+        )
+        return HTMLResponse(
+            content=body,
+            headers={
+                "Content-Disposition": f'attachment; filename="scan_{job_id}_executive.html"',
+            },
+        )
+
+    raise HTTPException(
+        status_code=400,
+        detail="format must be 'json', 'html', or 'executive'",
+    )
