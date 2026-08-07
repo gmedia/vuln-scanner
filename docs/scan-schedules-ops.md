@@ -1,0 +1,62 @@
+# Scan schedules — operator note (P1 / S5)
+
+Short ops reference for scheduled scans (Scan Attach). No secrets; set values via env / host `.env`.
+
+## What must be running
+
+| Piece | Why |
+|-------|-----|
+| **`celery_beat`** | Fires `schedules.run_due` every **5 minutes** (`workers/celery_app.py`). Without beat, schedules never enqueue. |
+| **`worker_ip` / `worker_domain`** (queues `ip_scan`, `domain_scan`) | Beat routes due work onto `ip_scan`; domain tasks still need a domain worker. Mobile is **not** scheduled in v1. |
+| **backend** | CRUD `/api/schedules`, credits, export. |
+| **DB migration** | Alembic head includes `scan_schedules` (incl. `last_error`). |
+
+Routine deploy (does **not** wipe volumes):
+
+```bash
+# On deploy host after git pull of target SHA
+./scripts/deploy-services.sh . backend worker_ip worker_domain celery_beat
+# Include frontend only if SPA schedule UI changed
+```
+
+`deploy-services.sh` defaults already include app services + **celery_beat**. Prefer this over full `deploy.sh` (volume wipe) for routine rollouts.
+
+## Credits gate (scheduled)
+
+Before enqueue, the beat tick uses the **same cost** as manual scans (`pricing.credit_cost` for `ip` / `domain`):
+
+- **Enough credits** → deduct, insert `scan_jobs`, dispatch Celery task, advance `next_run_at`, clear `last_error`.
+- **Insufficient credits** → **no job**, set `last_error` (e.g. `Insufficient credits. Need N, have M.`), set **`enabled = false`** so beat does not thrash. UI lists show `last_error`.
+- Prior job still **pending/running** for that schedule → skip (no pile-up). Overlapping ticks use `FOR UPDATE SKIP LOCKED`.
+
+Manual start still returns **HTTP 402** with the same insufficient-credits message.
+
+## Caps (abuse)
+
+- Global hard cap: **`MAX_SCHEDULES_PER_USER = 10`** enabled schedules per user (`backend/app/schemas/schedule.py`).
+- Enforced on **create** (when `enabled`) and on **PATCH re-enable**. Tiered Basic/Pro caps can replace this once billing entitlements exist.
+- Target validation matches manual scans (ip/domain only; no secrets in schedule rows).
+
+## Env (relevant, non-secret)
+
+| Variable | Role |
+|----------|------|
+| `DATABASE_URL` / worker DB URL | Schedules + jobs + credits |
+| `REDIS_URL` | Celery broker |
+| `CELERY_MODE=beat` | Compose beat service |
+| SMTP / `FRONTEND_URL` | Diff email (S3); not required for enqueue itself |
+
+Do not put production hostnames, passwords, or API keys in tracked markdown.
+
+## Smoke after deploy
+
+1. Confirm beat process up in Compose (`celery_beat`).
+2. Create a weekly schedule in UI or `POST /api/schedules` (JWT).
+3. Optionally set `next_run_at` due in DB for a dogfood user with **zero** credits → after next tick, schedule **disabled**, `last_error` set, **no** new job.
+4. User with credits + due schedule → job appears, credits deducted.
+5. Regression: schedule list shows `last_error`; Scan Attach S1–S4 (diff / notify / executive) still work when credits allow.
+
+## Related
+
+- Spec: [`docs/specs/scan-attach-v1.md`](specs/scan-attach-v1.md) (§5 runtime, §9 caps, §10 S5)
+- Deploy: [`scripts/deploy-services.sh`](../scripts/deploy-services.sh)

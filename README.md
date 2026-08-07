@@ -204,6 +204,7 @@ curl http://localhost/api/scan/{id}/export?format=html \
 - Broker stack (Redis 8 server vs `redis-py` 6.4 / Celery): [`docs/dependency-pins.md`](docs/dependency-pins.md)
 - Accepted npm residual (React Router RSC GHSA): [`SECURITY.md`](SECURITY.md#accepted-residual-dependency-risks)
 - Quick broker smoke: `./scripts/smoke-broker.sh` (optional path arg on deploy host)
+- Scan schedules (beat, credits gate, caps): [`docs/scan-schedules-ops.md`](docs/scan-schedules-ops.md)
 
 ### Observability
 

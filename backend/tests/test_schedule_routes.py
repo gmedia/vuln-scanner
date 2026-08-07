@@ -162,6 +162,87 @@ class TestScheduleCrud:
         assert resp.status_code == 200
         assert resp.json() == []
 
+    def test_create_rejects_over_enabled_cap(self, client):
+        from app.schemas.schedule import MAX_SCHEDULES_PER_USER
+
+        for i in range(MAX_SCHEDULES_PER_USER):
+            resp = client.post(
+                "/api/schedules",
+                headers=HEADERS,
+                json={
+                    "scan_type": "domain",
+                    "target": f"cap{i}.example.com",
+                    "cadence": "weekly",
+                },
+            )
+            assert resp.status_code == 201, resp.text
+
+        over = client.post(
+            "/api/schedules",
+            headers=HEADERS,
+            json={
+                "scan_type": "domain",
+                "target": "over-cap.example.com",
+                "cadence": "weekly",
+            },
+        )
+        assert over.status_code == 400
+        assert "Maximum" in over.json()["detail"]
+
+    def test_reenable_rejects_over_enabled_cap(self, client):
+        from app.schemas.schedule import MAX_SCHEDULES_PER_USER
+
+        ids: list[str] = []
+        for i in range(MAX_SCHEDULES_PER_USER):
+            resp = client.post(
+                "/api/schedules",
+                headers=HEADERS,
+                json={
+                    "scan_type": "domain",
+                    "target": f"re{i}.example.com",
+                    "cadence": "weekly",
+                    "enabled": True,
+                },
+            )
+            assert resp.status_code == 201, resp.text
+            ids.append(resp.json()["id"])
+
+        paused = client.post(
+            "/api/schedules",
+            headers=HEADERS,
+            json={
+                "scan_type": "domain",
+                "target": "paused-extra.example.com",
+                "cadence": "weekly",
+                "enabled": False,
+            },
+        )
+        assert paused.status_code == 201, paused.text
+        extra_id = paused.json()["id"]
+
+        bad = client.patch(
+            f"/api/schedules/{extra_id}",
+            headers=HEADERS,
+            json={"enabled": True},
+        )
+        assert bad.status_code == 400
+        assert "Maximum" in bad.json()["detail"]
+
+        ok_pause = client.patch(
+            f"/api/schedules/{ids[0]}",
+            headers=HEADERS,
+            json={"enabled": False},
+        )
+        assert ok_pause.status_code == 200
+
+        ok_enable = client.patch(
+            f"/api/schedules/{extra_id}",
+            headers=HEADERS,
+            json={"enabled": True},
+        )
+        assert ok_enable.status_code == 200
+        assert ok_enable.json()["enabled"] is True
+
 
 class TestNextRunHelpers:
     def test_compute_weekly_in_future(self):
