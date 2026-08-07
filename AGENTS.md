@@ -3,12 +3,20 @@
 ## Platform
 - **GitHub**: `gh` CLI. Remote: `gmedia/vuln-scanner`. Single branch: `main`.
 
+## Product / session continuity (MANDATORY after OpenCode reset)
+- Read **[`docs/AGENT_EXECUTION_GUIDE.md`](docs/AGENT_EXECUTION_GUIDE.md)** before feature work.
+- North star: **Sinexis** (hospitality security platform); repo still ships as VulnScanner scan SaaS.
+- Build order: **Workspace (org+members) → soft rebrand → Guard (Wazuh thin)**. Do not implement Guard/Wazuh in the same epic as Workspace.
+- Speak **Bahasa Indonesia** with the user unless they switch language.
+- Prefix every git command with `GIT_MASTER=1`.
+
 ## Session Start (MANDATORY)
 ```
 gh pr list --state open --assignee @me
 ```
 - CI green → `gh pr merge --squash` → `git branch -d <branch>`
 - CI red → `git checkout <branch>` → fix → push
+- Then: `git checkout main && git pull`, confirm tip, open `docs/AGENT_EXECUTION_GUIDE.md`
 
 ## Branch & Commit Rules
 - **Every task = own branch**: `feat/<desc>` or `fix/<desc>` from latest `main`
