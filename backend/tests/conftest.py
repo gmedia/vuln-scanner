@@ -32,6 +32,7 @@ from app.models.password_reset import PasswordResetToken  # noqa: F401
 from app.models.pricing import PricingConfig  # noqa: F401
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
+from app.models.scan_schedule import ScanSchedule  # noqa: F401
 from app.models.user import User
 
 # Counter-based incr so rate limiting tests work correctly
