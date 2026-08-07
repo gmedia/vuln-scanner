@@ -5,11 +5,11 @@
 
 ## Product / session continuity (MANDATORY after OpenCode reset)
 - Read **[`docs/AGENT_EXECUTION_GUIDE.md`](docs/AGENT_EXECUTION_GUIDE.md)** before feature work.
-- North star: **Sinexis** (hospitality security platform); repo still ships as VulnScanner scan SaaS.
-- Build order: **Workspace (org+members) → soft rebrand → Guard (Wazuh thin)**. Do not implement Guard/Wazuh in the same epic as Workspace.
+- North star: **Sinexis** — security attach (upsell on colo/VPS + hospitality beachhead); repo still ships as VulnScanner scan SaaS.
+- Build order (detail in guide **§1.3**): **P0 SKU lock → P1 Scan Attach Loop → P2 Workspace → P3 assets → P4 soft rebrand → P5 Guard (Wazuh thin)**. Do not implement Guard/Wazuh in the same epic as Workspace; do not block upsell attach on rebrand.
 - Speak **Bahasa Indonesia** with the user unless they switch language.
 - Prefix every git command with `GIT_MASTER=1`.
-- Root **`handoff.md` is a stub** (archived stuck-job notes live under `docs/archive/`). Do not treat it as the product backlog; execution guide wins on priority.
+- Root **`handoff.md` is a stub + pointer** (archived stuck-job notes under `docs/archive/`). Not the product backlog; **`docs/AGENT_EXECUTION_GUIDE.md` wins** on priority.
 
 ## Session Start (MANDATORY)
 ```
