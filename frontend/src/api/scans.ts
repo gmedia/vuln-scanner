@@ -72,6 +72,17 @@ export interface PaginatedResponse<T> {
   pages: number;
 }
 
+export interface ScanDiff {
+  compared_to_job_id: string | null;
+  new_critical: number;
+  new_high: number;
+  resolved: number;
+  worsened: number;
+  unchanged: number;
+  new_finding_ids: string[];
+  resolved_finding_ids: string[];
+}
+
 export async function startIpScan(
   target: string,
   ports?: string,
@@ -108,6 +119,11 @@ export async function getScan(jobId: string): Promise<ScanJobDetail> {
 
 export async function getScanFindings(jobId: string): Promise<ScanFinding[]> {
   const { data } = await api.get<ScanFinding[]>(`/api/scan/${jobId}/findings`);
+  return data;
+}
+
+export async function getScanDiff(jobId: string): Promise<ScanDiff> {
+  const { data } = await api.get<ScanDiff>(`/api/scan/${jobId}/diff`);
   return data;
 }
 

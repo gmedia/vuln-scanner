@@ -5,6 +5,7 @@ import {
   startMobileScan,
   getScan,
   getScanFindings,
+  getScanDiff,
   getScanHistory,
 } from "@/api/scans";
 
@@ -28,6 +29,14 @@ export function useScanFindings(jobId: string | null) {
     queryKey: ["scan-findings", jobId],
     queryFn: () => getScanFindings(jobId!),
     enabled: !!jobId,
+  });
+}
+
+export function useScanDiff(jobId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: ["scan-diff", jobId],
+    queryFn: () => getScanDiff(jobId!),
+    enabled: !!jobId && enabled,
   });
 }
 
