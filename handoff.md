@@ -14,10 +14,11 @@
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding checkout)** | `0eb7d42` — re-`git pull` after reset |
-| **Open PRs** | None expected after S1–S5; re-check `gh pr list` |
+| **`main` tip (coding checkout)** | `996aa68` — S1–S5 + ops docs (#240); re-`git pull` after reset |
+| **Open PRs** | None (re-check `gh pr list`) |
 | **P1 Scan Attach (code)** | **S1–S5 merged** on `main` (#235–#239): schedule, baseline diff, notify, executive HTML, credits gate + cap 10 + ops note |
-| **P1 Scan Attach (production)** | **Not closed** until **edge** deploy of that tip + smoke per [`docs/scan-schedules-ops.md`](docs/scan-schedules-ops.md) (`celery_beat` required) |
+| **P1 Scan Attach (ops docs)** | #240 on main — coding vs edge, `COMPOSE_PROJECT_NAME` in deploy header + schedule ops |
+| **P1 Scan Attach (production)** | **Not closed** until **edge** deploy of tip ≥ `0eb7d42` (prefer ≥ `996aa68`) + smoke per [`docs/scan-schedules-ops.md`](docs/scan-schedules-ops.md) (`celery_beat` required) |
 | **P0 commercial** | Still **user-led** (SKU / one-pager / pilot) |
 | **Coding-host Docker** | All `vuln-*` containers **stopped** (volumes kept). Default: leave stopped for OpenCode headroom; start only postgres/redis/(backend) when local tests need them |
 | **Next product default** | Finish **P1 on edge** (ops), then user P0; **do not** start P2 Workspace / P5 Guard unless user asks or multi-user blocks pilot |
