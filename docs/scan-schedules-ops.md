@@ -11,15 +11,28 @@ Short ops reference for scheduled scans (Scan Attach). No secrets; set values vi
 | **backend** | CRUD `/api/schedules`, credits, export. |
 | **DB migration** | Alembic head includes `scan_schedules` (incl. `last_error`). |
 
-Routine deploy (does **not** wipe volumes):
+## Coding host vs production (edge)
+
+| Host | Role |
+|------|------|
+| **Coding / OpenCode** | Branch, PR, unit tests. Full Docker stack optional and often **stopped** to free RAM. Local containers are **not** proof that `vs.appmedia.id` runs the tip. |
+| **Production (edge)** | Machine that **public DNS** for the product points at. Deploy + smoke **here** to close Scan Attach P1. |
+
+Do not treat coding-host health or a partial dogfood redeploy as production attach DoD.
+
+## Routine deploy (does **not** wipe volumes)
+
+On the **edge** host after `git pull` of target SHA:
 
 ```bash
-# On deploy host after git pull of target SHA
-./scripts/deploy-services.sh . backend worker_ip worker_domain celery_beat
+# Match live Compose project (often vuln-scanner — inspect if unsure):
+#   docker inspect vuln-backend --format '{{index .Config.Labels "com.docker.compose.project"}}'
+COMPOSE_PROJECT_NAME=vuln-scanner ./scripts/deploy-services.sh . \
+  backend worker_ip worker_domain celery_beat
 # Include frontend only if SPA schedule UI changed
 ```
 
-`deploy-services.sh` defaults already include app services + **celery_beat**. Prefer this over full `deploy.sh` (volume wipe) for routine rollouts.
+`deploy-services.sh` defaults already include app services + **celery_beat**. Prefer this over full `deploy.sh` (volume wipe) for routine rollouts. Wrong `COMPOSE_PROJECT_NAME` → container name conflicts or services on a new network away from postgres/redis.
 
 ## Credits gate (scheduled)
 
