@@ -13,19 +13,33 @@
 #   - multi-service waves (e.g. mobile AAB: backend + frontend + worker_mobile)
 # Prefer scripts/deploy-frontend.sh for SPA-only waves.
 #
-# Usage (on the deploy host, from repo root — git already on target SHA):
+# Usage (on the **production / edge** host that serves the public site — not a
+# coding-only laptop — from repo root, git already on target SHA):
 #   ./scripts/deploy-services.sh
 #   ./scripts/deploy-services.sh backend frontend worker_mobile
-#   ./scripts/deploy-services.sh /home/ubuntu/vuln-scanner backend worker_mobile
-#   DEPLOY_PATH=/home/ubuntu/vuln-scanner ./scripts/deploy-services.sh --all
+#   ./scripts/deploy-services.sh /path/to/vuln-scanner backend worker_mobile
+#   DEPLOY_PATH=/path/to/vuln-scanner ./scripts/deploy-services.sh --all
 #   ./scripts/deploy-services.sh --no-cache backend
 #   ./scripts/deploy-services.sh --skip-migrate backend
+#
+# Compose project name (important):
+#   Default COMPOSE_PROJECT_NAME is "vuln" if unset. Existing stacks often use
+#   "vuln-scanner" (container names vuln-backend, network …_default). Mismatch
+#   causes name conflicts or new empty networks. On the edge host, match live:
+#     docker inspect vuln-backend --format '{{index .Config.Labels "com.docker.compose.project"}}'
+#   then e.g.:
+#     COMPOSE_PROJECT_NAME=vuln-scanner ./scripts/deploy-services.sh . backend celery_beat …
+#   App services must join the same Docker network as running postgres/redis.
+#
+# Env: use the production env that already works on the edge host. A coding-host
+# .env may be incomplete vs live containers — do not blindly copy placeholders.
 #
 # Default services (when none listed): backend frontend worker_ip worker_domain
 #   worker_mobile worker_dead_letter celery_beat
 # Postgres and redis are NEVER rebuilt/recreated by this script.
+# Include celery_beat when rolling Scan Attach schedules (see docs/scan-schedules-ops.md).
 #
-# Verify after:
+# Verify after (on the same host as public DNS):
 #   curl -sS https://vs.appmedia.id/api/health
 #   curl -sS https://vs.appmedia.id/ | grep -oE 'assets/index-[^"]+\.js'
 #   docker ps --filter name=vuln- --format '{{.Names}} {{.Status}}'
