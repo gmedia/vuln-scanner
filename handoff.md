@@ -14,14 +14,14 @@
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding checkout)** | Re-`git pull` — tip was **`609742c`** (P1 closed #243) before this commercial docs PR |
+| **`main` tip (coding checkout)** | Re-`git pull` after P0-lock PR; was **`ac6ff35`** pre-lock |
 | **Open PRs** | Re-check `gh pr list` |
 | **P1 Scan Attach (code)** | **S1–S5 merged** on `main` (#235–#239) |
 | **P1 Scan Attach (ops docs)** | #240–#243 on main |
-| **P1 Scan Attach (production)** | **Closed (2026-08-08)** — on-host edge tip `6edd254` at smoke, alembic `add_scan_schedules`, beat firing `schedules.run_due`, due+credits + zero-credit gate (see below). Cap 10 proven remotely |
-| **P0 commercial** | **Docs ready for AM lock:** one-pager + SKU (P1-live, talk track, fulfillment). **User/GMD still must:** IDR list, service_id, first 10 CRM targets, pilot identity |
+| **P1 Scan Attach (production)** | **Closed (2026-08-08)** — edge smoke A (due+credits, zero-credit, cap 10) |
+| **P0 commercial** | **Policy locked (user 2026-08-08):** Basic 300k / Pro 650k / Multi 2M; credits 10/24/60; AM renew; hybrid email; attach ARPU; pilot #1 multi-service 1 mo sponsored. **Still execute (not git):** finance service_id, 10 CRM SIDs, named pilot, email template |
 | **Coding-host Docker** | All `vuln-*` **stopped**. Edge runs the live stack |
-| **Next product default** | Finish **P0 lock (user/AM)**; code epic only if user asks (**P2** if multi-user blocks); **no** P5 Guard default |
+| **Next product default** | **GTM execution** (AM/finance); engineering idle unless bug or user asks **P2 spec**; **no** P5 default |
 
 ### Edge on-host smoke A (2026-08-08) — P1 production DoD
 
@@ -66,7 +66,7 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 
 | P | Focus |
 |---|--------|
-| **P0** | One-pager + **Scan/Secure Add-on SKU** + pilot intent (user-led) |
+| **P0** | One-pager + SKU — **policy locked**; GTM execution (CRM/finance) remains user/AM |
 | **P1** | **Scan Attach Loop** — schedule, baseline diff, executive report (**code + production smoke closed**) |
 | **P2** | **Workspace v1** — org + members + org-scoped scans |
 | **P3** | Light **asset registry** (multi-target tiers) |
