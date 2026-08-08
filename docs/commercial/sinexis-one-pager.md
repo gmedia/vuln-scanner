@@ -1,7 +1,8 @@
 # Sinexis — one-pager (draft for sales / P0 lock)
 
 **Status:** draft for commercial lock (P0). Not a legal offer. Prices are **sketches** — replace with approved GMD rates before customer quotes.
-**Product surface today:** public repo ships as **VulnScanner** (`vs.appmedia.id`); **Sinexis** is the security attach brand (soft dual-brand).
+**Product readiness (2026-08):** **Scan Attach (P1) is live** on production — scheduled domain/IP scans, new critical/high notify, baseline diff, executive HTML, credit debit on schedule, max 10 enabled schedules/user. Sales can sell **automated** attach; hybrid managed review still optional for pilots.
+**Product surface:** public repo ships as **VulnScanner** (`vs.appmedia.id`); **Sinexis** is the security attach brand (soft dual-brand).
 **Evidence basis:** GMD finance mix (2026-08 analysis) — revenue dominated by **colo / rack + VPS/cloud**; security lines thin; hospitality mass logos almost absent in billing (beachhead = relationship, not invoice count).
 
 ---
@@ -47,7 +48,7 @@ Do not measure success only as “new hotel logos” while colo/VPS attach is ig
 
 | Module | Customer promise | Ship order |
 |--------|------------------|------------|
-| **Scan** | External check domain/IP on a cadence; alert on new critical/high; executive summary | **P1** |
+| **Scan** | External check domain/IP on a cadence; alert on new critical/high; executive summary | **P1 — shipped (prod)** |
 | **Workspace** | Several people, one company/hotel workspace | **P2** |
 | **Assets** | Named targets / packs (multi-property, multi-IP) | **P3** |
 | **Guard** | Agent inventory + critical host alerts | **P5** (after Workspace) |
@@ -68,6 +69,17 @@ Mobile APK/IPA stays in the engine; **not** the hero SKU for GMD base (servers/d
 ## 6. Competitive frame (one sentence)
 
 “You already pay for the rack or VPS — **Sinexis Scan** is the monthly check that shows what changed on the public surface, in language management can act on.”
+
+---
+
+## 6b. 60-second talk track (AM)
+
+1. **Hook:** Infra sudah dibayar (colo/VPS) — permukaan publik (IP/domain) jarang dicek berulang.
+2. **Offer:** Add-on bulanan **Sinexis Scan**: jadwal scan, kabar jika muncul critical/high baru, ringkasan beda vs bulan lalu, laporan HTML untuk management.
+3. **Not:** Bukan ganti firewall/SIEM; bukan “aman 100%”.
+4. **Proof:** Sudah jalan di platform scan GMD (jadwal + kredit + laporan).
+5. **Ask:** Pilih Basic (1 target/bulan) atau Pro (hingga 3, mingguan + diff) — harga final dari list GMD (lihat SKU).
+6. **Next:** AM catat SID di CRM privat; ops aktifkan user + schedule + kredit.
 
 ---
 

@@ -1,7 +1,7 @@
 # Scan / Secure Add-on — SKU sketch (P0)
 
-**Status:** commercial draft. **All IDR figures are placeholders** — replace before any customer quote.
-**Metering today:** per-scan **credits** (`PricingConfig` by `scan_type`: ip / domain / mobile). Attach SKU should **map cleanly** to credit bundles + schedule entitlements, not invent a second opaque currency on day one.
+**Status:** commercial draft for AM lock. **Product (P1 Scan Attach) is live on production** — schedules, baseline diff, notify, executive HTML, credits gate, cap 10 (edge smoke 2026-08-08). **All IDR figures remain placeholders** — product/ops must replace before any customer quote.
+**Metering today:** per-scan **credits** (`pricing.credit_cost` by `scan_type`: ip / domain / mobile). Typical edge costs observed in smoke: **domain = 2**, **ip = 1** (confirm live admin pricing before quoting bundles). Attach SKU should **map cleanly** to credit bundles + schedule entitlements, not invent a second opaque currency on day one.
 
 ---
 
@@ -41,7 +41,15 @@ Bundle with colo/VPS as **add-on line item**; do not reprice rack.
 | Workspace multi-user | No (P2) | No (P2) | Preferred after P2 |
 | Guard / Wazuh | No | No | Optional **separate** SKU later (P5) |
 
-Until P1 ships, sales may sell **hybrid**: human-run monthly scan + report using existing product (document as pilot SLA, not automated entitlement).
+**P1 is shipped.** Prefer **automated** schedule entitlement for new attaches. **Hybrid** (human-run + product report) remains valid for pilots that need managed review or before credits/entitlement process is smooth in CRM.
+
+### Fulfillment checklist (ops after sold)
+
+1. Ensure customer user has **enough credits** for first period (or admin top-up).
+2. Create **1…N schedules** (domain/IP, weekly/monthly) — hard cap **10 enabled** per user until tier entitlements exist in billing.
+3. Confirm **notify email** + that beat/workers are healthy (ops: `docs/scan-schedules-ops.md`).
+4. After first completed run: send or point to **executive HTML** + diff story for buyer.
+5. Track renew in CRM (no subscription table in app v1).
 
 ---
 
@@ -54,7 +62,7 @@ Until P1 ships, sales may sell **hybrid**: human-run monthly scan + report using
 3. Bundle top-up monthly on invoice date (billing system may stay outside app v1 — track entitlement in CRM until in-app subscription exists).
 4. Overage: customer buys credit top-up (existing admin/credit flows) or upgrade tier.
 
-**Current code hooks:** `PricingConfig.credit_cost` per `scan_type`; `User.credits`; `CreditLog`. No subscription table yet — P1 schedule can still debit personal credits.
+**Current code hooks:** table **`pricing`** (`credit_cost` per `scan_type`); `User.credits`; `CreditLog`. No subscription table yet — schedules **debit personal credits**. Insufficient credits → schedule **auto-disabled** + `last_error` (no thrash).
 
 ---
 
@@ -96,12 +104,14 @@ Use these patterns in CRM filters; **do not** paste customer_id / domains into c
 
 ---
 
-## 8. Open commercial decisions
+## 8. Open commercial decisions (**user / GMD must tick** — agent cannot invent prices)
 
-- [ ] Lock IDR list + discount policy for AM
-- [ ] Who owns renewals (AM vs product)
-- [ ] Credit bundle exact numbers vs “unlimited scheduled within fair use”
+- [ ] Lock **IDR list** + discount policy for AM (replace TBD in §2)
+- [ ] Who owns **renewals** (AM vs product)
+- [ ] Credit bundle **exact** numbers vs “unlimited scheduled within fair use”
 - [ ] Bahasa-only vs BI/EN executive report v1
+- [ ] Invoice **service_id** name(s) for Basic / Pro / Multi-asset
+- [ ] First **10 upsell** account patterns selected in **private** CRM (not git)
 
 ---
 
@@ -109,4 +119,5 @@ Use these patterns in CRM filters; **do not** paste customer_id / domains into c
 
 - One-pager: [`sinexis-one-pager.md`](sinexis-one-pager.md)
 - Engineering: [`../specs/scan-attach-v1.md`](../specs/scan-attach-v1.md)
+- Schedule ops: [`../scan-schedules-ops.md`](../scan-schedules-ops.md)
 - Priority: [`../AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) §1.3
