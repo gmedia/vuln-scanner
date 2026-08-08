@@ -14,14 +14,28 @@
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding checkout)** | `996aa68` — S1–S5 + ops docs (#240); re-`git pull` after reset |
+| **`main` tip (coding checkout)** | `b459e1c` — S1–S5 + ops docs (#240–#241); re-`git pull` after reset |
 | **Open PRs** | None (re-check `gh pr list`) |
 | **P1 Scan Attach (code)** | **S1–S5 merged** on `main` (#235–#239): schedule, baseline diff, notify, executive HTML, credits gate + cap 10 + ops note |
-| **P1 Scan Attach (ops docs)** | #240 on main — coding vs edge, `COMPOSE_PROJECT_NAME` in deploy header + schedule ops |
-| **P1 Scan Attach (production)** | **Not closed** until **edge** deploy of tip ≥ `0eb7d42` (prefer ≥ `996aa68`) + smoke per [`docs/scan-schedules-ops.md`](docs/scan-schedules-ops.md) (`celery_beat` required) |
-| **P0 commercial** | Still **user-led** (SKU / one-pager / pilot) |
+| **P1 Scan Attach (ops docs)** | #240–#241 on main — coding vs edge, `COMPOSE_PROJECT_NAME`, handoff tip |
+| **P1 Scan Attach (production)** | **Partial remote smoke only** (see below). **Not fully closed** until **on-host** edge proof: tip SHA on disk, `celery_beat` up, credit due/zero-credit tick per [`docs/scan-schedules-ops.md`](docs/scan-schedules-ops.md) |
+| **P0 commercial** | Still **user-led** (SKU / one-pager / pilot); draft in `docs/commercial/` |
 | **Coding-host Docker** | All `vuln-*` containers **stopped** (volumes kept). Default: leave stopped for OpenCode headroom; start only postgres/redis/(backend) when local tests need them |
-| **Next product default** | Finish **P1 on edge** (ops), then user P0; **do not** start P2 Workspace / P5 Guard unless user asks or multi-user blocks pilot |
+| **Next product default** | Finish **P1 on-host edge** (ops), then user P0; **do not** start P2 Workspace / P5 Guard unless user asks or multi-user blocks pilot |
+
+### Remote smoke from coding host (2026-08-08, public URL only)
+
+**Does not replace** on-host deploy verification (beat process, git SHA on edge, worker queues).
+
+| Check | Result |
+|-------|--------|
+| `GET /api/health` | **200** — DB + Redis connected |
+| SPA asset hash | Present (`assets/index-*.js`) — hash alone ≠ tip SHA |
+| E2E JWT login | **200** — public user id prefix `7a40f4f7-…` (≠ coding-host local DB) |
+| `GET/POST/DELETE /api/schedules` | **Works** — create domain monthly schedule **201** |
+| Cap 10 enabled | **10× 201**, **11th → 400** (`Maximum 10 enabled schedules per user`); rows cleaned up |
+| `/health/queues` without key | **401** (expected) — cannot assert beat from outside without host or metrics key |
+| Due tick / zero-credit gate / beat | **Not verified** — needs edge shell + optionally force `next_run_at` |
 
 ### Deploy notes (edge only — lessons from coding-host attempt)
 
