@@ -14,35 +14,43 @@
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding checkout)** | `b459e1c` — S1–S5 + ops docs (#240–#241); re-`git pull` after reset |
+| **`main` tip (coding checkout)** | `6edd254` — S1–S5 + ops docs (#240–#242); re-`git pull` after reset |
 | **Open PRs** | None (re-check `gh pr list`) |
-| **P1 Scan Attach (code)** | **S1–S5 merged** on `main` (#235–#239): schedule, baseline diff, notify, executive HTML, credits gate + cap 10 + ops note |
-| **P1 Scan Attach (ops docs)** | #240–#241 on main — coding vs edge, `COMPOSE_PROJECT_NAME`, handoff tip |
-| **P1 Scan Attach (production)** | **Partial remote smoke only** (see below). **Not fully closed** until **on-host** edge proof: tip SHA on disk, `celery_beat` up, credit due/zero-credit tick per [`docs/scan-schedules-ops.md`](docs/scan-schedules-ops.md) |
+| **P1 Scan Attach (code)** | **S1–S5 merged** on `main` (#235–#239) |
+| **P1 Scan Attach (ops docs)** | #240–#242 on main |
+| **P1 Scan Attach (production)** | **Closed (2026-08-08)** — on-host edge tip `6edd254`, alembic `add_scan_schedules`, beat firing `schedules.run_due`, due+credits + zero-credit gate (see below). Cap 10 already proven remotely |
 | **P0 commercial** | Still **user-led** (SKU / one-pager / pilot); draft in `docs/commercial/` |
-| **Coding-host Docker** | All `vuln-*` containers **stopped** (volumes kept). Default: leave stopped for OpenCode headroom; start only postgres/redis/(backend) when local tests need them |
-| **Next product default** | Finish **P1 on-host edge** (ops), then user P0; **do not** start P2 Workspace / P5 Guard unless user asks or multi-user blocks pilot |
+| **Coding-host Docker** | All `vuln-*` **stopped**. Edge runs the live stack |
+| **Next product default** | **P0** (user) then **P2 Workspace** if multi-user blocks delivery; **do not** start P5 Guard unless asked |
 
-### Remote smoke from coding host (2026-08-08, public URL only)
+### Edge on-host smoke A (2026-08-08) — P1 production DoD
 
-**Does not replace** on-host deploy verification (beat process, git SHA on edge, worker queues).
+No host IPs, SSH, or secrets in this file. Access path is private ops only.
 
 | Check | Result |
 |-------|--------|
-| `GET /api/health` | **200** — DB + Redis connected |
-| SPA asset hash | Present (`assets/index-*.js`) — hash alone ≠ tip SHA |
-| E2E JWT login | **200** — public user id prefix `7a40f4f7-…` (≠ coding-host local DB) |
-| `GET/POST/DELETE /api/schedules` | **Works** — create domain monthly schedule **201** |
-| Cap 10 enabled | **10× 201**, **11th → 400** (`Maximum 10 enabled schedules per user`); rows cleaned up |
-| `/health/queues` without key | **401** (expected) — cannot assert beat from outside without host or metrics key |
-| Due tick / zero-credit gate / beat | **Not verified** — needs edge shell + optionally force `next_run_at` |
+| Git tip on edge | **`6edd254`** (matches attach + ops docs) |
+| Compose project label | **`vuln`** on this edge (always `docker inspect` — may differ per host) |
+| Containers | backend, frontend, workers, **celery_beat**, postgres, redis **healthy** |
+| Alembic | **`add_scan_schedules` (head)** |
+| Beat | Logs show **`schedules.run_due` every 5m** |
+| Due + credits | Forced `next_run_at` past; `celery … call schedules.run_due` → job **completed**, domain cost **2**, credits **50→48**, `last_job_id` set, `next_run_at` advanced ~1 month |
+| Zero credits | Credits **0** + due → schedule **`enabled=false`**, `last_error` = insufficient credits Need 2 have 0, **no** `last_job_id` |
+| Cleanup | Smoke schedules deleted; e2e credits restored to **100** |
+| Cap 10 | Prior remote proof (10 OK / 11th 400) |
 
-### Deploy notes (edge only — lessons from coding-host attempt)
+### Remote smoke (public URL, earlier same day)
 
-- Prefer [`scripts/deploy-services.sh`](scripts/deploy-services.sh) (no volume wipe). Include **`celery_beat`** for schedules.
-- Live Compose project name may be **`vuln-scanner`** (not script default `vuln`). Match existing postgres/redis **network**; wrong project name → container name conflicts / wrong network.
-- Coding-host `.env` may be incomplete vs live container env — on edge use **production** env that already works; never commit secrets.
-- Public URL health can be **200 on a different host** than the coding box — always verify deploy on the **DNS edge** host.
+| Check | Result |
+|-------|--------|
+| `GET /api/health` | **200** |
+| Schedules CRUD + cap 10 | **Pass** (rows cleaned) |
+
+### Deploy notes (edge)
+
+- Prefer [`scripts/deploy-services.sh`](scripts/deploy-services.sh); include **`celery_beat`**.
+- **Match live** `COMPOSE_PROJECT_NAME` via inspect (this edge used **`vuln`**; other hosts may use `vuln-scanner`).
+- Never commit secrets, SSH targets, or production host addresses into the public repo.
 
 ### Smoke DoD (edge) — short
 

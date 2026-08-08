@@ -25,14 +25,17 @@ Do not treat coding-host health or a partial dogfood redeploy as production atta
 On the **edge** host after `git pull` of target SHA:
 
 ```bash
-# Match live Compose project (often vuln-scanner — inspect if unsure):
+# Match live Compose project (inspect — do not assume):
 #   docker inspect vuln-backend --format '{{index .Config.Labels "com.docker.compose.project"}}'
-COMPOSE_PROJECT_NAME=vuln-scanner ./scripts/deploy-services.sh . \
+# Known values seen in the wild: "vuln" or "vuln-scanner"
+COMPOSE_PROJECT_NAME=<from_inspect> ./scripts/deploy-services.sh . \
   backend worker_ip worker_domain celery_beat
 # Include frontend only if SPA schedule UI changed
 ```
 
 `deploy-services.sh` defaults already include app services + **celery_beat**. Prefer this over full `deploy.sh` (volume wipe) for routine rollouts. Wrong `COMPOSE_PROJECT_NAME` → container name conflicts or services on a new network away from postgres/redis.
+
+**DB names on edge (typical):** Postgres user/db often `vuln_scanner`; pricing table is **`pricing`** (not `pricing_configs`). Schedule jobs link via `scan_schedules.last_job_id` → `scan_jobs.id` (no `schedule_id` column on jobs).
 
 ## Credits gate (scheduled)
 
