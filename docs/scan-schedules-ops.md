@@ -63,11 +63,22 @@ Do not put production hostnames, passwords, or API keys in tracked markdown.
 
 ## Smoke after deploy
 
-1. Confirm beat process up in Compose (`celery_beat`).
-2. Create a weekly schedule in UI or `POST /api/schedules` (JWT).
+### A — On the edge host (required to close P1 production)
+
+1. Confirm git tip on disk ≥ attach tip (`0eb7d42` or newer) and beat process up (`celery_beat`).
+2. Create a weekly/monthly schedule in UI or `POST /api/schedules` (JWT; body uses **`cadence`**: `weekly` \| `monthly`).
 3. Optionally set `next_run_at` due in DB for a dogfood user with **zero** credits → after next tick, schedule **disabled**, `last_error` set, **no** new job.
 4. User with credits + due schedule → job appears, credits deducted.
 5. Regression: schedule list shows `last_error`; Scan Attach S1–S4 (diff / notify / executive) still work when credits allow.
+
+### B — Remote API checks (optional, from any host with JWT)
+
+Useful before/after deploy; **does not** prove beat or edge git SHA:
+
+1. `GET /api/health` → DB/Redis ok.
+2. Login + `POST /api/schedules` → **201**; list/delete work.
+3. Cap: ten enabled schedules → **201**; eleventh → **400** with max-enabled message; clean up test rows.
+4. Still do **section A** on the edge host for full DoD.
 
 ## Related
 
