@@ -14,14 +14,14 @@
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding checkout)** | `6edd254` — S1–S5 + ops docs (#240–#242); re-`git pull` after reset |
-| **Open PRs** | None (re-check `gh pr list`) |
+| **`main` tip (coding checkout)** | Re-`git pull` — tip was **`609742c`** (P1 closed #243) before this commercial docs PR |
+| **Open PRs** | Re-check `gh pr list` |
 | **P1 Scan Attach (code)** | **S1–S5 merged** on `main` (#235–#239) |
-| **P1 Scan Attach (ops docs)** | #240–#242 on main |
-| **P1 Scan Attach (production)** | **Closed (2026-08-08)** — on-host edge tip `6edd254`, alembic `add_scan_schedules`, beat firing `schedules.run_due`, due+credits + zero-credit gate (see below). Cap 10 already proven remotely |
-| **P0 commercial** | Still **user-led** (SKU / one-pager / pilot); draft in `docs/commercial/` |
+| **P1 Scan Attach (ops docs)** | #240–#243 on main |
+| **P1 Scan Attach (production)** | **Closed (2026-08-08)** — on-host edge tip `6edd254` at smoke, alembic `add_scan_schedules`, beat firing `schedules.run_due`, due+credits + zero-credit gate (see below). Cap 10 proven remotely |
+| **P0 commercial** | **Docs ready for AM lock:** one-pager + SKU (P1-live, talk track, fulfillment). **User/GMD still must:** IDR list, service_id, first 10 CRM targets, pilot identity |
 | **Coding-host Docker** | All `vuln-*` **stopped**. Edge runs the live stack |
-| **Next product default** | **P0** (user) then **P2 Workspace** if multi-user blocks delivery; **do not** start P5 Guard unless asked |
+| **Next product default** | Finish **P0 lock (user/AM)**; code epic only if user asks (**P2** if multi-user blocks); **no** P5 Guard default |
 
 ### Edge on-host smoke A (2026-08-08) — P1 production DoD
 
@@ -67,7 +67,7 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 | P | Focus |
 |---|--------|
 | **P0** | One-pager + **Scan/Secure Add-on SKU** + pilot intent (user-led) |
-| **P1** | **Scan Attach Loop** — schedule, baseline diff, executive report (**code on main; edge smoke open**) |
+| **P1** | **Scan Attach Loop** — schedule, baseline diff, executive report (**code + production smoke closed**) |
 | **P2** | **Workspace v1** — org + members + org-scoped scans |
 | **P3** | Light **asset registry** (multi-target tiers) |
 | **P4** | Soft **Sinexis** dual-brand (must not block P1) |
