@@ -1,12 +1,29 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, ArrowLeft, Plus, Trash2 } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import {
+  CalendarClock,
+  ArrowLeft,
+  Plus,
+  Trash2,
+  ChevronDown,
+  ChevronRight,
+  Download,
+  AlertTriangle,
+} from "lucide-react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardDescription,
+} from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { Badge } from "@/components/ui/Badge";
+import { Progress } from "@/components/ui/Progress";
 import {
   Select,
   SelectContent,
@@ -14,35 +31,147 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/Select";
+import { downloadFile } from "@/api/scans";
 import {
   createSchedule,
   deleteSchedule,
+  listScheduleRuns,
   listSchedules,
+  mapScheduleError,
+  MAX_ENABLED_SCHEDULES,
   updateSchedule,
   type ScanSchedule,
+  type ScheduleRunJob,
 } from "@/api/schedules";
+import type { ApiError } from "@/lib/utils";
+
+export { mapScheduleError };
 
 function formatWhen(iso: string | null): string {
   if (!iso) return "—";
   try {
-    return new Date(iso).toLocaleString();
+    return new Date(iso).toLocaleString("id-ID", {
+      timeZone: "Asia/Jakarta",
+    });
   } catch {
     return iso;
   }
 }
 
+function apiDetail(err: unknown, fallback: string): string {
+  if (err && typeof err === "object" && "response" in err) {
+    const detail = (err as ApiError).response?.data?.detail;
+    if (typeof detail === "string" && detail.trim()) return detail;
+  }
+  return fallback;
+}
+
+function isCreditError(raw: string | null | undefined): boolean {
+  return !!raw && raw.toLowerCase().includes("insufficient credits");
+}
+
+function parseScanType(value: string | null): "domain" | "ip" {
+  return value === "ip" ? "ip" : "domain";
+}
+
+function ScheduleRunsPanel({ scheduleId }: { scheduleId: string }) {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["schedule-runs", scheduleId],
+    queryFn: () => listScheduleRuns(scheduleId, 10),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="mt-2 space-y-1 pl-1">
+        <Skeleton className="h-6 w-full" />
+        <Skeleton className="h-6 w-3/4" />
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <p className="mt-2 text-xs text-destructive" role="alert">
+        Gagal memuat riwayat scan
+      </p>
+    );
+  }
+  if (!data || data.length === 0) {
+    return (
+      <p className="mt-2 text-xs text-muted-foreground">
+        Belum ada scan dari target ini.
+      </p>
+    );
+  }
+
+  return (
+    <ul className="mt-2 space-y-1 border-l border-border pl-3">
+      {data.map((job: ScheduleRunJob) => (
+        <li
+          key={job.id}
+          className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"
+        >
+          <Badge
+            variant={
+              job.status === "completed"
+                ? "completed"
+                : job.status === "failed"
+                  ? "failed"
+                  : job.status === "running"
+                    ? "running"
+                    : "pending"
+            }
+            className="text-[10px]"
+          >
+            {job.status}
+          </Badge>
+          <span>{formatWhen(job.created_at)}</span>
+          <Link
+            to={`/scan/${job.id}`}
+            className="text-primary hover:underline"
+          >
+            buka scan
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function Schedules() {
   const qc = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [name, setName] = useState("");
-  const [scanType, setScanType] = useState<"domain" | "ip">("domain");
-  const [target, setTarget] = useState("");
+  const [scanType, setScanType] = useState<"domain" | "ip">(() =>
+    parseScanType(searchParams.get("scan_type")),
+  );
+  const [target, setTarget] = useState(() => searchParams.get("target") ?? "");
   const [cadence, setCadence] = useState<"weekly" | "monthly">("weekly");
+  const [notifyEmail, setNotifyEmail] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [expandedRuns, setExpandedRuns] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const t = searchParams.get("target");
+    if (t) setTarget(t);
+    const st = searchParams.get("scan_type");
+    if (st === "ip" || st === "domain") setScanType(st);
+  }, [searchParams]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["schedules"],
     queryFn: listSchedules,
   });
+
+  const enabledCount = useMemo(
+    () => (data ? data.filter((s) => s.enabled).length : 0),
+    [data],
+  );
+  const atCap = enabledCount >= MAX_ENABLED_SCHEDULES;
+  const capPercent = Math.min(
+    100,
+    Math.round((enabledCount / MAX_ENABLED_SCHEDULES) * 100),
+  );
 
   const createMut = useMutation({
     mutationFn: createSchedule,
@@ -50,45 +179,69 @@ function Schedules() {
       void qc.invalidateQueries({ queryKey: ["schedules"] });
       setName("");
       setTarget("");
+      setNotifyEmail("");
       setFormError(null);
     },
     onError: (err: unknown) => {
-      const msg =
-        err && typeof err === "object" && "response" in err
-          ? String(
-              (err as { response?: { data?: { detail?: string } } }).response
-                ?.data?.detail ?? "Failed to create schedule",
-            )
-          : "Failed to create schedule";
-      setFormError(msg);
+      setFormError(
+        mapScheduleError(apiDetail(err, "Gagal membuat jadwal")),
+      );
     },
   });
 
   const toggleMut = useMutation({
     mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
       updateSchedule(id, { enabled }),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["schedules"] }),
+    onSuccess: () => {
+      setActionError(null);
+      void qc.invalidateQueries({ queryKey: ["schedules"] });
+    },
+    onError: (err: unknown) => {
+      setActionError(
+        mapScheduleError(apiDetail(err, "Gagal mengubah status jadwal")),
+      );
+    },
   });
 
   const deleteMut = useMutation({
     mutationFn: deleteSchedule,
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["schedules"] }),
+    onSuccess: () => {
+      setActionError(null);
+      void qc.invalidateQueries({ queryKey: ["schedules"] });
+    },
+    onError: (err: unknown) => {
+      setActionError(
+        mapScheduleError(apiDetail(err, "Gagal menghapus jadwal")),
+      );
+    },
   });
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
-    if (!target.trim()) {
-      setFormError("Target is required");
+    if (atCap) {
+      setFormError(
+        `Batas ${MAX_ENABLED_SCHEDULES} jadwal aktif tercapai. Nonaktifkan satu dulu.`,
+      );
       return;
     }
+    if (!target.trim()) {
+      setFormError("Target wajib diisi");
+      return;
+    }
+    const email = notifyEmail.trim();
     createMut.mutate({
       name: name.trim() || undefined,
       scan_type: scanType,
       target: target.trim(),
       cadence,
       timezone: "Asia/Jakarta",
+      notify_email: email || undefined,
     });
+  }
+
+  function toggleRuns(id: string) {
+    setExpandedRuns((prev) => ({ ...prev, [id]: !prev[id] }));
   }
 
   return (
@@ -102,28 +255,53 @@ function Schedules() {
         </Link>
         <CalendarClock className="h-6 w-6 text-primary" />
         <h2 className="text-lg font-bold tracking-wide text-foreground">
-          Scan schedules
+          Jadwal scan
         </h2>
       </div>
 
       <Card>
+        <CardHeader className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="text-sm tracking-wide">
+              Kuota jadwal aktif
+            </CardTitle>
+            <span className="font-mono text-xs tabular-nums text-muted-foreground">
+              {enabledCount}/{MAX_ENABLED_SCHEDULES}
+            </span>
+          </div>
+          <Progress value={capPercent} className="h-1.5" />
+          {atCap && (
+            <p className="flex items-start gap-2 text-xs text-amber-400" role="status">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              Batas {MAX_ENABLED_SCHEDULES} jadwal aktif tercapai. Nonaktifkan
+              satu jadwal sebelum membuat yang baru.
+            </p>
+          )}
+        </CardHeader>
+      </Card>
+
+      <Card>
         <CardHeader>
-          <CardTitle className="text-sm tracking-wide">New schedule</CardTitle>
+          <CardTitle className="text-sm tracking-wide">Jadwal baru</CardTitle>
+          <CardDescription className="text-xs">
+            Scan domain/IP berulang (mingguan atau bulanan). Dipotong kredit
+            setiap kali dijalankan.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="sched-name">Label (optional)</Label>
+                <Label htmlFor="sched-name">Label (opsional)</Label>
                 <Input
                   id="sched-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Weekly external"
+                  placeholder="Eksternal mingguan"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Type</Label>
+                <Label>Tipe</Label>
                 <Select
                   value={scanType}
                   onValueChange={(v) => setScanType(v as "domain" | "ip")}
@@ -150,7 +328,7 @@ function Schedules() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Cadence</Label>
+                <Label>Frekuensi</Label>
                 <Select
                   value={cadence}
                   onValueChange={(v) => setCadence(v as "weekly" | "monthly")}
@@ -159,10 +337,22 @@ function Schedules() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="weekly">Mingguan</SelectItem>
+                    <SelectItem value="monthly">Bulanan</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="sched-notify">
+                  Email notifikasi (opsional)
+                </Label>
+                <Input
+                  id="sched-notify"
+                  type="email"
+                  value={notifyEmail}
+                  onChange={(e) => setNotifyEmail(e.target.value)}
+                  placeholder="default: email akun Anda"
+                />
               </div>
             </div>
             {formError && (
@@ -170,9 +360,17 @@ function Schedules() {
                 {formError}
               </p>
             )}
-            <Button type="submit" disabled={createMut.isPending}>
+            <Button
+              type="submit"
+              disabled={createMut.isPending || atCap}
+              title={
+                atCap
+                  ? `Batas ${MAX_ENABLED_SCHEDULES} jadwal aktif tercapai`
+                  : undefined
+              }
+            >
               <Plus className="mr-2 h-4 w-4" />
-              {createMut.isPending ? "Creating…" : "Create schedule"}
+              {createMut.isPending ? "Membuat…" : "Buat jadwal"}
             </Button>
           </form>
         </CardContent>
@@ -181,10 +379,15 @@ function Schedules() {
       <Card>
         <CardHeader>
           <CardTitle className="text-sm tracking-wide">
-            Your schedules
+            Jadwal Anda
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {actionError && (
+            <p className="mb-3 text-sm text-destructive" role="alert">
+              {actionError}
+            </p>
+          )}
           {isLoading && (
             <div className="space-y-2">
               <Skeleton className="h-10 w-full" />
@@ -192,76 +395,159 @@ function Schedules() {
             </div>
           )}
           {error && (
-            <p className="text-sm text-destructive">Failed to load schedules</p>
+            <p className="text-sm text-destructive">Gagal memuat jadwal</p>
           )}
           {!isLoading && data && data.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              No schedules yet. Create a weekly or monthly domain/IP scan above.
+              Belum ada jadwal. Buat scan domain/IP mingguan atau bulanan di
+              atas.
             </p>
           )}
           {!isLoading && data && data.length > 0 && (
             <ul className="divide-y divide-border">
-              {data.map((s: ScanSchedule) => (
-                <li
-                  key={s.id}
-                  className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="min-w-0 space-y-0.5">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {s.name || s.target}
-                      <span className="ml-2 text-xs font-normal text-muted-foreground">
-                        {s.scan_type} · {s.cadence}
-                      </span>
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Next: {formatWhen(s.next_run_at)}
-                      {s.last_job_id && (
-                        <>
-                          {" · "}
-                          <Link
-                            to={`/scan/${s.last_job_id}`}
-                            className="text-primary hover:underline"
+              {data.map((s: ScanSchedule) => {
+                const runsOpen = !!expandedRuns[s.id];
+                const mappedErr = mapScheduleError(s.last_error);
+                const creditDisabled =
+                  !s.enabled && isCreditError(s.last_error);
+
+                return (
+                  <li key={s.id} className="space-y-2 py-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0 space-y-0.5">
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {s.name || s.target}
+                          <span className="ml-2 text-xs font-normal text-muted-foreground">
+                            {s.scan_type} ·{" "}
+                            {s.cadence === "weekly" ? "mingguan" : "bulanan"}
+                          </span>
+                          {!s.enabled && (
+                            <Badge variant="default" className="ml-2 text-[10px]">
+                              nonaktif
+                            </Badge>
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Berikutnya: {formatWhen(s.next_run_at)}
+                          {s.last_job_id && (
+                            <>
+                              {" · "}
+                              <Link
+                                to={`/scan/${s.last_job_id}`}
+                                className="text-primary hover:underline"
+                              >
+                                scan terakhir
+                              </Link>
+                            </>
+                          )}
+                        </p>
+                        {s.notify_email && (
+                          <p className="text-xs text-muted-foreground">
+                            Notifikasi: {s.notify_email}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex shrink-0 flex-wrap items-center gap-2">
+                        {s.last_job_id && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              if (s.last_job_id) {
+                                void downloadFile(s.last_job_id, "executive");
+                              }
+                            }}
+                            aria-label="Unduh laporan eksekutif"
                           >
-                            last job
-                          </Link>
-                        </>
-                      )}
-                    </p>
-                    {s.last_error && (
-                      <p className="text-xs text-destructive">{s.last_error}</p>
-                    )}
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={toggleMut.isPending}
-                      onClick={() =>
-                        toggleMut.mutate({ id: s.id, enabled: !s.enabled })
-                      }
-                    >
-                      {s.enabled ? "Disable" : "Enable"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      disabled={deleteMut.isPending}
-                      onClick={() => {
-                        if (
-                          window.confirm(`Delete schedule for ${s.target}?`)
-                        ) {
-                          deleteMut.mutate(s.id);
+                            <Download className="mr-1 h-3.5 w-3.5" />
+                            Eksekutif
+                          </Button>
+                        )}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={
+                            toggleMut.isPending ||
+                            (!s.enabled && atCap)
+                          }
+                          title={
+                            !s.enabled && atCap
+                              ? `Batas ${MAX_ENABLED_SCHEDULES} jadwal aktif tercapai`
+                              : undefined
+                          }
+                          onClick={() =>
+                            toggleMut.mutate({
+                              id: s.id,
+                              enabled: !s.enabled,
+                            })
+                          }
+                        >
+                          {s.enabled ? "Nonaktifkan" : "Aktifkan"}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={deleteMut.isPending}
+                          onClick={() => {
+                            if (
+                              window.confirm(
+                                `Hapus jadwal untuk ${s.target}?`,
+                              )
+                            ) {
+                              deleteMut.mutate(s.id);
+                            }
+                          }}
+                          aria-label="Hapus jadwal"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {mappedErr && (
+                      <div
+                        className={
+                          creditDisabled
+                            ? "rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
+                            : "text-xs text-destructive"
                         }
-                      }}
-                      aria-label="Delete schedule"
+                        role="alert"
+                      >
+                        <p>{mappedErr}</p>
+                        {creditDisabled && (
+                          <p className="mt-1">
+                            <Link
+                              to="/credit-history"
+                              className="font-medium text-primary hover:underline"
+                            >
+                              Lihat riwayat kredit
+                            </Link>{" "}
+                            lalu aktifkan kembali setelah top-up.
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => toggleRuns(s.id)}
+                      aria-expanded={runsOpen}
                     >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </li>
-              ))}
+                      {runsOpen ? (
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      ) : (
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      )}
+                      Riwayat scan
+                    </button>
+                    {runsOpen && <ScheduleRunsPanel scheduleId={s.id} />}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </CardContent>
