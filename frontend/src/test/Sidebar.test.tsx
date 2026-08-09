@@ -106,14 +106,14 @@ describe("Sidebar", () => {
 
   it("renders version text at bottom", () => {
     renderSidebar(true);
-    expect(screen.getByText("VulnScanner v0.1.0")).toBeInTheDocument();
+    expect(screen.getByText("Sinexis Scan v1.2.0")).toBeInTheDocument();
   });
 
-  it("renders brand VULNSCAN in sidebar header", () => {
+  it("renders brand SINEXIS in sidebar header", () => {
     renderSidebar(true);
-    const brandLinks = screen.getAllByText("VULN");
+    const brandLinks = screen.getAllByText("SINE");
     expect(brandLinks.length).toBeGreaterThanOrEqual(1);
-    const scanLinks = screen.getAllByText("SCAN");
-    expect(scanLinks.length).toBeGreaterThanOrEqual(1);
+    const accentLinks = screen.getAllByText("XIS");
+    expect(accentLinks.length).toBeGreaterThanOrEqual(1);
   });
 });
