@@ -3,15 +3,16 @@ import { test, expect } from "@playwright/test";
 test.describe("Landing", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
-  test("page loads with VulnScanner heading", async ({ page }) => {
+  test("page loads with Sinexis heading", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("h1:has-text('VulnScanner')")).toBeVisible();
+    await expect(page.locator("h1:has-text('Sinexis')")).toBeVisible();
+    await expect(page.locator("text=Sinexis Scan").first()).toBeVisible();
   });
 
-  test("shows tagline text", async ({ page }) => {
+  test("shows dual-brand tagline text", async ({ page }) => {
     await page.goto("/");
     await expect(
-      page.locator("text=Web-based vulnerability scanner"),
+      page.locator("text=powered by the VulnScanner engine"),
     ).toBeVisible();
   });
 
@@ -61,8 +62,11 @@ test.describe("Landing", () => {
     ).toBeVisible();
   });
 
-  test("footer shows version", async ({ page }) => {
+  test("footer shows dual-brand version", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("text=VulnScanner v1.2.0")).toBeVisible();
+    await expect(page.locator("text=Sinexis Scan v1.2.0")).toBeVisible();
+    await expect(
+      page.locator("text=powered by VulnScanner engine"),
+    ).toBeVisible();
   });
 });
