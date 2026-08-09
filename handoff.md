@@ -10,11 +10,11 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
-## Session snapshot (2026-08-08 — refresh against `main`)
+## Session snapshot (2026-08-09 — refresh against `main`)
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding checkout)** | Re-`git pull` — tip was **`8f26a8c`** (P0 lock #245) before wave-1 email PR |
+| **`main` tip (coding checkout)** | Re-`git pull` — tip was **`da8cd36`** (AM wave-1 email #246) before guide refresh PR |
 | **Open PRs** | Re-check `gh pr list` |
 | **P1 Scan Attach (code)** | **S1–S5 merged** on `main` (#235–#239) |
 | **P1 Scan Attach (ops docs)** | #240–#243 on main |

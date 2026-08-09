@@ -2,9 +2,10 @@
 
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
-**Last updated:** 2026-08-07
-**Repo tip at write time:** `main` @ `f96d60a` (includes #230 agent guide)
+**Last updated:** 2026-08-09
+**Repo tip at write time:** `main` @ `da8cd36` (P0 commercial lock + AM email #245–#246; P1 attach on main earlier). Re-`git pull` after reset.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
+**Phase snapshot:** **P0 policy locked in git** · **P1 Scan Attach shipped + production smoke closed** · **near-term work = GTM (finance/AM/ops)** · next **code** epic default = **none** until bug or explicit **P2 spec** (multi-user pain).
 
 ---
 
@@ -16,16 +17,16 @@ gh pr list --state open --assignee @me
 
 GIT_MASTER=1 git fetch origin
 GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull origin main
-GIT_MASTER=1 git rev-parse --short HEAD   # expect ≥ f96d60a or newer
+GIT_MASTER=1 git rev-parse --short HEAD   # expect ≥ da8cd36 or newer (re-pull)
 ```
 
 Then read, in order:
 
-1. This file — `docs/AGENT_EXECUTION_GUIDE.md` (**wins on product priority**)
+1. This file — `docs/AGENT_EXECUTION_GUIDE.md` (**wins on product priority / epic order**)
 2. `AGENTS.md` — branch/PR/CI workflow
-3. `docs/dependency-pins.md` + `SECURITY.md` (accepted residual risks)
-4. Only if the user names an active **stuck-job / worker** incident: `docs/archive/handoff-scan-pending-2026.md` (historical diagnosis — **re-verify**; do not treat PENDING list as current backlog)
-5. Root `handoff.md` — **pointer stub** only (not a second roadmap); always re-check this guide for *what to build next*
+3. Root `handoff.md` — **session snapshot + GTM checklist** (not a second roadmap; re-check this guide for *epic order*)
+4. `docs/dependency-pins.md` + `SECURITY.md` (accepted residual risks)
+5. Only if the user names an active **stuck-job / worker** incident: `docs/archive/handoff-scan-pending-2026.md` (historical — **re-verify**)
 
 **Priority rule:** If `handoff.md`, the archive, or any old session note **disagrees with this guide** on *what to build next*, **this guide wins**, unless the user explicitly scopes a stuck-job/ops incident.
 
@@ -42,8 +43,8 @@ Then read, in order:
 | **Legacy name** | VulnScanner / `vs.appmedia.id` — keep as **Scan module** during soft dual-brand |
 | **Near-term commercial goal** | **Upsell** recurring Secure/Scan add-on on customers who **already** pay colo / VPS / cloud / hosting |
 | **Strategic beachhead** | Hotel / hospitality (Yogya relationships + any multi-property group already on GMD) |
-| **Modules** | **Scan** (shipped) · **Workspace** (org + members) · **Attach pack** (schedule, assets, executive report, SKU) · **Guard** (Wazuh-backed, thin UI) |
-| **Build order (upsell-first)** | See **§1.2** — do **not** use the old “Workspace → rebrand → Guard only” sequence as the sole plan |
+| **Modules** | **Scan + Attach loop** (shipped on prod) · **Workspace** (P2, not built) · **Assets** (P3) · **Guard** (P5, parked) |
+| **Build order (upsell-first)** | See **§1.3** — do **not** use “Workspace → rebrand → Guard only” as the sole plan; **do not** start P2/P5 by default now that P1 is live |
 | **Not v1** | Full SIEM UI, nested multi-project, org billing dual-wallet, Windows depth, SOAR, hard brand cut blocking attach revenue |
 
 ### Positioning (one line)
@@ -89,17 +90,22 @@ Then read, in order:
 
 Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales/runbook may start before full UI.
 
-| P | Epic | Goal for upsell | In scope | Out of scope |
-|---|------|-----------------|----------|--------------|
-| **P0** | **Commercial lock** (user-led) | Something sales can quote | One-pager; **Scan/Secure Add-on SKU** (tiers, price sketch); 5–15 target SID *patterns* (not committed PII); confirm defaults §1 | Coding Guard/Wazuh; finance CSV in repo |
-| **P1** | **Scan Attach Loop** (productize what exists) | Recurring reason to pay monthly | **Scheduled** domain/IP scan; email/summary of new critical/high; **baseline diff** N vs N−1; **executive PDF/HTML** (Bahasa-friendly management view) | Org rewrite; Wazuh; full rebrand |
-| **P2** | **Workspace v1** (multi-tenant) | B2B delivery: IT runs, manager views | `organizations`, memberships, invites, scan list/detail scoped by org, personal credits, migration personal-org backfill; **API keys toward per-org** | Nested projects; org wallet; Wazuh |
-| **P3** | **Asset registry (light)** | Larger ticket / multi-target tiers | Named assets (domain/IP/label) per org; “scan all in pack”; ties to schedule | Full CMDB; IoT/CCTV; PMS deep integrate |
-| **P4** | **Soft dual-brand** | Package name trust | Sinexis shell strings, landing, emails; `sinexis.app` when ready; **Sinexis Scan** label on attach SKU | Hard cut blocking P1; favicon-only “epic” |
-| **P5** | **Guard MVP** (Wazuh thin) | **Second** upsell to security-aware accounts | Agent inventory, critical alerts, per-org enroll; optional managed review flag | Full SIEM, raw log product, SOAR |
-| **P6** | **Hospitality / pilot pack** | Beachhead A + design partner | Runbooks, report templates for hotel GM, hybrid SLA notes | Building only for logos not in pipeline |
+| P | Epic | Goal for upsell | In scope | Out of scope | **Status (2026-08-09)** |
+|---|------|-----------------|----------|--------------|-------------------------|
+| **P0** | **Commercial lock** (user-led + docs) | Something sales can quote | One-pager; **SKU** tiers/prices; SID *patterns*; AM email kit; defaults §1 | Guard coding; finance CSV in repo | **Policy locked in git** (#245–#246). **GTM still open:** finance `service_id`, 10 CRM SIDs, named pilot, AM send, ops fulfill |
+| **P1** | **Scan Attach Loop** | Recurring reason to pay monthly | **Scheduled** domain/IP; new critical/high notify; **baseline diff**; **executive HTML**; credits on schedule; cap 10 | Org rewrite; Wazuh; full rebrand | **Shipped on `main` + production smoke closed** (S1–S5, edge DoD) |
+| **P2** | **Workspace v1** | B2B multi-user | orgs, memberships, invites, org-scoped scans, personal credits, backfill; API keys toward per-org | Nested projects; org wallet; Wazuh | **Not started** — **spec first** (`workspace-v1.md` missing); only if multi-user blocks paid delivery |
+| **P3** | **Asset registry (light)** | Multi-target tiers | Named assets; scan pack; tier limits | Full CMDB; IoT; PMS | **Not started** |
+| **P4** | **Soft dual-brand** | Name trust | Sinexis strings, landing, `sinexis.app`; SKU label | Hard cut blocking attach revenue | **Not started** (must not block attach GTM) |
+| **P5** | **Guard MVP** (Wazuh thin) | Second upsell | Agent inventory, critical alerts, per-org enroll | Full SIEM, SOAR | **Parked** — never before P2 (or written risk accept) |
+| **P6** | **Hospitality / pilot pack** | Beachhead A | Hotel runbooks, hybrid SLA | Logos-only builds | After attach pilot story works |
 
-**Priority rule for agents:** If forced to choose one code epic after P0, prefer **P1 (Attach Loop)** for pure upsell speed; prefer **P2 (Workspace)** when the user prioritizes multi-user B2B or approved Workspace spec. Default recommendation after P0 docs: **P1 then P2** (or thin P2 slice if multi-user blocks delivery of paid attach). **Never** start P5 before P2 ships (or user accepts written risk). **Never** let P4 block P1.
+**Priority rule for agents (post–P1 ship):**
+
+1. **Default next work is GTM execution** (human: finance / AM / ops) — **not** a new code epic.
+2. Code only on **explicit** user verb, or **bugfix** on attach, or **draft/implement P2** after multi-user pain / approved spec.
+3. Historical rule still true for *ordering*: P1 before Guard; P2 before Guard; P4 must not block attach revenue.
+4. **Never** start P5 before P2 ships (or user accepts written risk). **Never** open P2/P5 “because P0/P1 docs finished.”
 
 ### 1.4 What *not* to prioritize for upsell
 
@@ -113,33 +119,37 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 
 ## 2) What the codebase is today (facts)
 
-**Stack:** SPA React/Vite + FastAPI + PostgreSQL + Redis + Celery (queues: `ip_scan`, `domain_scan`, `mobile_scan`, `dead_letter`) + host nginx prod.
+**Stack:** SPA React/Vite + FastAPI + PostgreSQL + Redis + Celery (queues: `ip_scan`, `domain_scan`, `mobile_scan`, `dead_letter` + schedule due tick) + **celery_beat** + host nginx prod.
 
-**Domain model (no multi-tenant yet):**
+**Domain model (still single-tenant user scope — no org yet):**
 
 | Entity | Scope | Notes |
 |--------|--------|------|
-| `User` | Global | `is_admin` bool, **personal** `credits` |
+| `User` | Global | `is_admin`, **personal** `credits` |
 | `ScanJob` | `user_id` only | Types: `ip` \| `domain` \| `apk` \| `ipa` |
-| `ScanFinding` | via job | Vuln taxonomy |
-| `CreditLog` / `PricingConfig` | user / global | Metering exists — foundation for attach SKU credits |
+| `ScanFinding` | via job | Vuln taxonomy; baseline **diff** across runs for attach |
+| `CreditLog` / **`pricing`** table | user / global | `credit_cost` per `scan_type` (edge smoke: domain **2**, IP **1** — re-confirm live) |
+| **`scan_schedules`** (P1) | `user_id` | Cadence weekly/monthly; `last_job_id`; `last_error`; **max 10 enabled**/user; debit credits on due; auto-disable if insufficient |
 | `ApiKey` | **Global** M2M | **No** user/org FK — unfit for per-tenant agents as-is |
 
-**AuthZ:** JWT (`sub`, `email`, `is_admin`) + optional `X-API-Key`. Scan isolation = `ScanJob.user_id == current_user`. Admin routes = **platform** superuser, not hotel/company admin.
+**AuthZ:** JWT + optional `X-API-Key`. Scan/schedule isolation = owning `user_id`. Admin = **platform** superuser, not org/hotel admin.
 
-**Absent (greenfield):** Organization, Project, Membership, invites, org-scoped keys, **scan schedules**, **asset registry**, **baseline/diff jobs**, Wazuh/agent pipeline, hospitality objects, Sinexis brand strings, formal **add-on SKU** catalog in-product.
+**Shipped for attach (P1) — reuse, don’t rewrite:** schedule API + beat `schedules.run_due`, baseline diff, new critical/high notify, executive HTML, credit gate, ops notes `docs/scan-schedules-ops.md`.
 
-**Already strong for upsell (reuse, don’t rewrite):** IP + domain scan pipelines, findings model, HTML/JSON export, credits, Celery + beat (maintenance exists — extend carefully for schedules).
+**Still absent (greenfield for later epics):** Organization, Project, Membership, invites, org-scoped keys, **asset registry product**, Wazuh/Guard pipeline, in-app subscription table, hard Sinexis UI cutover.
+
+**Commercial kit (docs, not in-app catalog):** `docs/commercial/sinexis-one-pager.md`, `sku-scan-secure-addon.md` (P0 lock), `am-wave1-email-id.md`.
 
 **Key paths:**
 
-- Models: `backend/app/models/`
+- Models / schedules: `backend/app/models/`, `backend/app/services/schedule.py`, `backend/app/schemas/schedule.py`
 - Auth: `backend/app/services/auth.py`
-- Scan ownership choke point: `backend/app/services/scanner.py`
+- Scan ownership: `backend/app/services/scanner.py`
 - Routes: `backend/app/api/router.py`
-- Workers / beat: `workers/`
+- Workers / beat: `workers/`, especially `workers/tasks/schedules.py`
 - SPA brand: `frontend/src/components/layout/Sidebar.tsx`, `Landing.tsx`, `index.html`
-- Prod edge: `nginx/vs.appmedia.id.conf`, URL `https://vs.appmedia.id`
+- Prod edge: `nginx/vs.appmedia.id.conf`, public URL `https://vs.appmedia.id`
+- Deploy: prefer `scripts/deploy-services.sh` (non-destructive); include **celery_beat**
 
 ---
 
@@ -147,52 +157,46 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 
 Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do not invent parallel conflicting orders.
 
-### Phase A / P0 — Decide & lock (user-led, little/no code)
+### Phase A / P0 — Decide & lock (user-led + commercial docs)
 
-**Drafts in repo (fill prices / tick decisions):**
+**In repo (policy locked 2026-08-08, user-approved defaults):**
 
 | Deliverable | Path |
 |-------------|------|
 | One-pager | [`docs/commercial/sinexis-one-pager.md`](commercial/sinexis-one-pager.md) |
-| SKU + patterns | [`docs/commercial/sku-scan-secure-addon.md`](commercial/sku-scan-secure-addon.md) |
+| SKU + decision log | [`docs/commercial/sku-scan-secure-addon.md`](commercial/sku-scan-secure-addon.md) |
+| AM wave-1 email (Bahasa) | [`docs/commercial/am-wave1-email-id.md`](commercial/am-wave1-email-id.md) |
 
-Still **user-owned** before treating P0 as locked:
+**Working list (see SKU §0):** Basic **300k** / Pro **650k** / Multi **2M** IDR/mo; credits **10/24/60**; AM owns renew; hybrid email; attach ARPU primary; pilot #1 multi-service, 1 mo sponsored; Guard parked; report Bahasa.
 
-- [ ] Replace IDR *TBD* with approved list prices / discount rules
-- [ ] Tick open decisions on one-pager §7 (KPI, dual-brand, pilot identity **off-repo**)
-- [ ] Upsell SID *lists* stay in private CRM (patterns only in git)
-- [ ] 1 pilot named privately: relationship hotel **and/or** multi-service design-partner
-- [ ] Confirm soft dual-brand vs hard cut; confirm defaults in §1
+**Still human/GTM (not “re-litigate policy” in git):**
 
-**Agent:** may maintain commercial drafts; **do not** open Guard/Wazuh feature branches.
+- [ ] Finance: three **service_id** rows (no silent VPS bundle)
+- [ ] AM: **10 wave-1 SIDs** in private CRM only
+- [ ] Named **pilot #1** privately; ops fulfill credits + schedules
+- [ ] AM **sends** wave-1 using email template; log CRM
+- [ ] Confirm live `pricing` domain/IP before each quote wave
+
+**Agent:** maintain commercial docs on request; **do not** open Guard/Wazuh feature branches; **do not** invent new list prices without user.
 
 ### Phase B — Specs before code
 
 | Spec | Status | Before implementing |
 |------|--------|---------------------|
-| [`docs/specs/scan-attach-v1.md`](specs/scan-attach-v1.md) | **Draft** (S1–S5 slices + acceptance) | User review + **explicit implement** |
-| `docs/specs/workspace-v1.md` | Not written | P2 — ERD, authZ matrix, migration, acceptance |
-| `docs/specs/assets-v1.md` | Not written | P3 — asset entity, limits per SKU tier |
-| Guard design note | Not written | P5 — only after P2 (and ideally P1) real |
+| [`docs/specs/scan-attach-v1.md`](specs/scan-attach-v1.md) | **Implemented** (S1–S5 on main; keep as historical acceptance) | N/A for new attach features unless extending |
+| `docs/specs/workspace-v1.md` | **Not written** | **Required** before P2 code |
+| `docs/specs/assets-v1.md` | Not written | P3 |
+| Guard design note | Not written | P5 — only after P2 (P1 already real) |
 
-**Agent:** wait for **explicit implement** even when spec exists.
+**Agent:** wait for **explicit implement** even when spec exists. Prefer **draft spec** over silent coding for P2+.
 
-### Phase C1 / P1 — Scan Attach Loop (upsell engine)
+### Phase C1 / P1 — Scan Attach Loop (upsell engine) — **DONE**
 
-Suggested branch prefix: `feat/scan-schedule-` / `feat/scan-baseline-` / `feat/exec-report-` (split PRs).
+**Shipped:** schedule entity + beat due tick; baseline diff; new critical/high notify; executive HTML; credit debit + auto-disable; cap 10; ops docs; **production smoke A** (due+credits, zero-credit gate). Detail: root `handoff.md`, `docs/scan-schedules-ops.md`.
 
-Order (adjust to spec):
+**Residual engineering:** bugfixes only; optional edge tip pull for docs-only SHAs; no second “implement P1” epic.
 
-1. Schedule entity + Celery beat / periodic enqueue (domain + IP first)
-2. Baseline store + diff of findings (new/resolved/worsened)
-3. Notification: email or in-app summary for critical/high **new** items
-4. Executive export (management-oriented HTML/PDF)
-5. Tests + credit debits per policy
-6. Deploy via `deploy-services.sh` when backend/workers involved
-
-**DoD:** a customer can pay for “monthly check” in practice (automated or hybrid), not only one-shot dashboard clicks.
-
-**Do not** require full Workspace to ship a **single-user** attach MVP; plan authZ so org scope can wrap jobs in P2.
+**Do not** require Workspace for single-user attach (already true in prod). Org FK for schedules = P2 follow-up when Workspace lands.
 
 ### Phase C2 / P2 — Workspace v1
 
@@ -289,15 +293,16 @@ Order:
 
 ## 5) Acceptance criteria (drafts)
 
-### 5.1 Scan Attach Loop (P1)
+### 5.1 Scan Attach Loop (P1) — **met on production (2026-08-08)**
 
-- [ ] User (or system) can define a recurring domain and/or IP scan
-- [ ] Jobs enqueue reliably via worker/beat; failures visible
-- [ ] Diff or equivalent shows **new** high/critical since previous run
-- [ ] Management-oriented export exists (HTML minimum; PDF optional)
-- [ ] Credits (or documented hybrid billing) charged per policy
-- [ ] Tests for schedule + authZ (user-scoped first; org-ready fields OK)
-- [ ] No Wazuh in this epic
+- [x] User can define recurring domain and/or IP scan (weekly/monthly)
+- [x] Jobs enqueue via worker/beat; failures / credit issues visible (`last_error`)
+- [x] Diff / notify path for **new** high/critical vs prior run
+- [x] Management-oriented **executive HTML**
+- [x] Credits charged on schedule; insufficient → disable schedule
+- [x] Cap **10** enabled schedules/user
+- [x] No Wazuh in this epic
+- [ ] Optional later: PDF, org-scoped schedules (P2), in-app subscription
 
 ### 5.2 Workspace v1 (P2)
 
@@ -337,23 +342,18 @@ Order:
 
 | User says | Agent does |
 |-----------|------------|
-| “lanjut” / “next” without spec | Re-read this guide §1.3; report P0–P6 status; **ask** — no silent feature coding |
-| “upsell” / “attach” / “jadwal scan” | Point at P1; offer/write `scan-attach-v1` spec or implement if explicit |
+| “lanjut” / “next” without spec | Re-read §1.3 + `handoff.md`; report **GTM open items** + P2–P6; **no** silent feature coding |
+| “upsell” / “attach” / “jadwal scan” | P1 is **shipped** — point at ops/commercial docs; fix bugs only if reported |
 | “tulis spek workspace” | Create/update `docs/specs/workspace-v1.md` only |
-| “implement workspace” / “kerjakan fase workspace” | Branch + implement P2 against approved spec |
-| “rebrand” / “sinexis.app” | P4 only; don’t invent Guard; don’t block P1 |
-| “wazuh” / “agent monitoring” | Confirm P2 done (and ideally P1); design P5 first |
-| “deploy” | Use correct script; prod SSH as above; verify health |
+| “implement workspace” / “kerjakan fase workspace” | Only with approved spec; branch + implement P2 |
+| “rebrand” / “sinexis.app” | P4 only; don’t invent Guard; don’t block attach GTM |
+| “wazuh” / “agent monitoring” | Confirm P2 done; design P5 first — P1 already done |
+| “deploy” | Correct script on **edge**; verify health; coding host Docker off by default |
+| “update handoff / guide” | Docs PR only |
 
-**Open questions to re-ask if missing from session memory:**
+**Locked answers (P0 — do not re-ask every session):** KPI = **attach ARPU primary**; renew = **AM**; billing v1 = **GMD invoice + app credit top-up**; dual-brand = **6–12 mo soft**; after P0/P1 = **GTM then P2 only on pain**.
 
-1. Near-term KPI: attach ARPU on existing SID vs new hotel logos vs both?
-2. Who pays vs who uses daily (GM / in-house IT / external vendor / GMD sales)?
-3. SKU price: credit bundle inside app vs invoice line outside app (hybrid)?
-4. Typical pilot asset mix (Linux VPS % vs Windows)?
-5. Data trust: full logs in Sinexis cloud vs alerts-only (Guard)?
-6. Soft dual-brand vs hard cut?
-7. After P0: implement **P1 first** or **P2 first**?
+**Still open (human, off-repo):** concrete 10 SIDs, pilot #1 identity, finance service_id creation, live quote ± on IDR.
 
 ---
 
@@ -376,19 +376,21 @@ Order:
 | Doc | Role |
 |-----|------|
 | `AGENTS.md` | Git/PR session workflow |
-| `README.md` | Product as-shipped (VulnScanner scan SaaS) |
+| `README.md` | Product as-shipped (VulnScanner scan SaaS + schedules ops pointer) |
 | `SECURITY.md` | Accepted residual dependency risks |
 | `docs/dependency-pins.md` | Redis/Celery/kombu pin matrix |
 | `scripts/smoke-broker.sh` | Broker/API smoke |
-| `handoff.md` | **Stub + pointer** — always defer product priority to this guide |
-| `docs/archive/handoff-scan-pending-2026.md` | **ARCHIVED** stuck-pending diagnosis (stale backlog risk; re-verify) |
-| `docs/specs/*` | Approved implementation specs (attach, workspace, assets, …) |
+| `docs/scan-schedules-ops.md` | Beat, credits gate, smoke A/B, compose project notes |
+| `docs/commercial/*` | P0 one-pager, SKU lock, AM email |
+| `handoff.md` | Session snapshot + GTM checklist — **epic order** still this guide |
+| `docs/archive/handoff-scan-pending-2026.md` | **ARCHIVED** stuck-pending (re-verify) |
+| `docs/specs/*` | Specs (attach historical; workspace/assets TBD) |
 
 ---
 
 ## 10) Agent one-liner
 
-> After reset: **boot §0 → honor dual GTM + upsell priority §1.2–1.3 (P0 lock → P1 attach loop → P2 workspace → P3 assets → P4 brand → P5 guard) → never code without explicit implement or approved spec → no finance PII in git → Indonesian with user, disciplined git/deploy.**
+> After reset: **boot §0 → §1.3 status (P0 locked, P1 shipped, GTM now, P2+ deferred) → no silent epics → bug/spec/implement only on explicit ask → no PII/SSH in git → Indonesian with user, `GIT_MASTER=1`, coding Docker off, edge for prod.**
 
 ---
 
