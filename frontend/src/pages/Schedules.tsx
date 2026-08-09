@@ -124,7 +124,7 @@ function ScheduleRunsPanel({ scheduleId }: { scheduleId: string }) {
           >
             {job.status}
           </Badge>
-          <span>{formatWhen(job.created_at)}</span>
+          <span>{formatWhen(job.created_at ?? null)}</span>
           <Link
             to={`/scan/${job.id}`}
             className="text-primary hover:underline"
