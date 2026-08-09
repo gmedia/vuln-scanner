@@ -99,7 +99,7 @@ services:
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-VulnScanner <noreply@vs.appmedia.id>}
+      SMTP_FROM: ${SMTP_FROM:-Sinexis <noreply@vs.appmedia.id>}
       FRONTEND_URL: ${FRONTEND_URL:-https://vs.appmedia.id}
       CORS_ORIGINS: ${CORS_ORIGINS:-https://vs.appmedia.id}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
@@ -156,7 +156,7 @@ services:
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-VulnScanner <noreply@vs.appmedia.id>}
+      SMTP_FROM: ${SMTP_FROM:-Sinexis <noreply@vs.appmedia.id>}
       FRONTEND_URL: ${FRONTEND_URL:-https://vs.appmedia.id}
       CELERY_MODE: worker
       CELERY_QUEUE: ip_scan
@@ -201,7 +201,7 @@ services:
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-VulnScanner <noreply@vs.appmedia.id>}
+      SMTP_FROM: ${SMTP_FROM:-Sinexis <noreply@vs.appmedia.id>}
       FRONTEND_URL: ${FRONTEND_URL:-https://vs.appmedia.id}
       CELERY_MODE: worker
       CELERY_QUEUE: domain_scan
