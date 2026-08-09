@@ -14,14 +14,14 @@
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding checkout)** | Re-`git pull` after P0-lock PR; was **`ac6ff35`** pre-lock |
+| **`main` tip (coding checkout)** | Re-`git pull` — tip was **`8f26a8c`** (P0 lock #245) before wave-1 email PR |
 | **Open PRs** | Re-check `gh pr list` |
 | **P1 Scan Attach (code)** | **S1–S5 merged** on `main` (#235–#239) |
 | **P1 Scan Attach (ops docs)** | #240–#243 on main |
 | **P1 Scan Attach (production)** | **Closed (2026-08-08)** — edge smoke A (due+credits, zero-credit, cap 10) |
-| **P0 commercial** | **Policy locked (user 2026-08-08):** Basic 300k / Pro 650k / Multi 2M; credits 10/24/60; AM renew; hybrid email; attach ARPU; pilot #1 multi-service 1 mo sponsored. **Still execute (not git):** finance service_id, 10 CRM SIDs, named pilot, email template |
+| **P0 commercial** | **Policy locked** + **AM email template** (`docs/commercial/am-wave1-email-id.md`). **Still human/GTM:** finance service_id, 10 CRM SIDs, named pilot, AM send, ops fulfill |
 | **Coding-host Docker** | All `vuln-*` **stopped**. Edge runs the live stack |
-| **Next product default** | **GTM execution** (AM/finance); engineering idle unless bug or user asks **P2 spec**; **no** P5 default |
+| **Next product default** | **GTM only** (finance/AM/ops); engineering **idle** unless bug or user asks P2 spec; **no** P5 |
 
 ### Edge on-host smoke A (2026-08-08) — P1 production DoD
 

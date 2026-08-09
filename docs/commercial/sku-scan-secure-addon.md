@@ -146,14 +146,17 @@ Bundle with colo/VPS as **add-on line item**; do not reprice rack.
 - [ ] Finance creates **three service_id** rows
 - [ ] AM picks **10 wave-1 SIDs** in private CRM
 - [ ] Name **pilot #1** privately; grant credits + schedules
-- [ ] Product delivers **1 email template** (Bahasa) for AM wave-1
+- [x] Product **email template** (Bahasa) for AM wave-1 — [`am-wave1-email-id.md`](am-wave1-email-id.md)
 - [ ] Confirm live `pricing` domain/IP still 2 / 1 before quoting
+- [ ] AM sends wave-1 using template; log outreach in CRM
+- [ ] Ops fulfills first “yes” / pilot (credits + schedule + HTML)
 
 ---
 
 ## 9. Links
 
 - One-pager: [`sinexis-one-pager.md`](sinexis-one-pager.md)
+- AM email template: [`am-wave1-email-id.md`](am-wave1-email-id.md)
 - Engineering: [`../specs/scan-attach-v1.md`](../specs/scan-attach-v1.md)
 - Schedule ops: [`../scan-schedules-ops.md`](../scan-schedules-ops.md)
 - Priority: [`../AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) §1.3
