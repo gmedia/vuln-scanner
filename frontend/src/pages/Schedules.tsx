@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -141,22 +141,22 @@ function Schedules() {
   const qc = useQueryClient();
   const [searchParams] = useSearchParams();
   const [name, setName] = useState("");
-  const [scanType, setScanType] = useState<"domain" | "ip">(() =>
-    parseScanType(searchParams.get("scan_type")),
-  );
-  const [target, setTarget] = useState(() => searchParams.get("target") ?? "");
   const [cadence, setCadence] = useState<"weekly" | "monthly">("weekly");
   const [notifyEmail, setNotifyEmail] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [expandedRuns, setExpandedRuns] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
+  const prefillKey = `${searchParams.get("target") ?? ""}\0${searchParams.get("scan_type") ?? ""}`;
+  const [prefillApplied, setPrefillApplied] = useState("");
+  const [target, setTarget] = useState("");
+  const [scanType, setScanType] = useState<"domain" | "ip">("domain");
+  if (prefillKey !== prefillApplied) {
+    setPrefillApplied(prefillKey);
     const t = searchParams.get("target");
-    if (t) setTarget(t);
-    const st = searchParams.get("scan_type");
-    if (st === "ip" || st === "domain") setScanType(st);
-  }, [searchParams]);
+    setTarget(t ?? "");
+    setScanType(parseScanType(searchParams.get("scan_type")));
+  }
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["schedules"],
