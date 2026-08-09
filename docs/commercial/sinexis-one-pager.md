@@ -103,7 +103,7 @@ Detail: [`sku-scan-secure-addon.md`](sku-scan-secure-addon.md).
 | Who | Does |
 |-----|------|
 | **AM** | 10 SID CRM, kirim wave-1, renew, upsell |
-| **Product/ops** | Template email, credits, schedules, first report, optional critical review on pilot |
+| **Product/ops** | Template email ([`am-wave1-email-id.md`](am-wave1-email-id.md)), credits, schedules, first report, optional critical review on pilot |
 | **Finance** | service_id Basic/Pro/Multi |
 | **Engineering** | Idle on epics unless bug or **P2 spec** after multi-user pain |
 
