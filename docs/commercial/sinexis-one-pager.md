@@ -1,23 +1,23 @@
-# Sinexis — one-pager (draft for sales / P0 lock)
+# Sinexis — one-pager (P0 locked)
 
-**Status:** draft for commercial lock (P0). Not a legal offer. Prices are **sketches** — replace with approved GMD rates before customer quotes.
-**Product readiness (2026-08):** **Scan Attach (P1) is live** on production — scheduled domain/IP scans, new critical/high notify, baseline diff, executive HTML, credit debit on schedule, max 10 enabled schedules/user. Sales can sell **automated** attach; hybrid managed review still optional for pilots.
-**Product surface:** public repo ships as **VulnScanner** (`vs.appmedia.id`); **Sinexis** is the security attach brand (soft dual-brand).
-**Evidence basis:** GMD finance mix (2026-08 analysis) — revenue dominated by **colo / rack + VPS/cloud**; security lines thin; hospitality mass logos almost absent in billing (beachhead = relationship, not invoice count).
+**Status:** **P0 commercial lock (user-approved 2026-08-08)**. Working list for AM — not a legal offer. Finance may ± adjust IDR; policy defaults are locked in [`sku-scan-secure-addon.md`](sku-scan-secure-addon.md) §0.
+**Product readiness:** **Scan Attach (P1) live** — schedule, new critical/high notify, baseline diff, executive HTML, credit debit, max 10 schedules/user.
+**Surface:** repo/product **VulnScanner** (`vs.appmedia.id`); attach brand **Sinexis** (soft dual-brand **6–12 months**).
+**Evidence:** GMD mix colo/rack + VPS/cloud heavy; security lines thin; hospitality = relationship beachhead, not mass invoice count.
 
 ---
 
 ## 1. What we sell
 
-**Sinexis Scan (working name)** is a **recurring security attach** on infrastructure GMD already bills:
+**Sinexis Scan** = recurring **security attach** on infra GMD already bills:
 
 | Not this | This |
 |----------|------|
 | Replace colo/VPS | **Add-on** on colo IP / VPS / cloud |
-| Full SIEM day-one | **Scheduled external scan** + clear “what changed” + manager-readable report |
-| One-shot dashboard hobby | **Monthly (or weekly) reason to pay** |
+| Full SIEM day-one | **Scheduled external scan** + what changed + manager-readable report |
+| One-shot hobby dashboard | **Monthly/weekly reason to pay** |
 
-Optional later module (P5, not P0): **Sinexis Guard** — thin host alerts (Wazuh-class), sold as **second** upsell after Scan attach works.
+**Sinexis Guard** (host alerts) = **parked** second upsell (P5) after Scan attach works.
 
 ---
 
@@ -25,78 +25,94 @@ Optional later module (P5, not P0): **Sinexis Guard** — thin host alerts (Wazu
 
 | Role | Typical | Needs |
 |------|---------|--------|
-| **Buyer** | Owner, GM, IT manager, account manager GMD | Price, risk reduction story, one PDF/email they can forward |
-| **Daily user** | IT / MSP / GMD NOC hybrid | Schedule, findings, re-scan, credits |
-| **Viewer** (P2+) | Hotel ops / compliance | Read-only history + report |
+| **Buyer** | Owner, GM, IT manager, AM GMD | Price, risk story, one HTML/email |
+| **Daily user** | IT / MSP / GMD NOC hybrid | Schedule, findings, credits |
+| **Viewer** (P2+ only if pain) | Hotel ops / compliance | Read-only history |
 
-**Near-term (pre-Workspace):** one login = one customer technical contact; hybrid managed review allowed for pilots.
-
----
-
-## 3. Dual GTM (both valid)
-
-| Wedge | Motion | Near-term weight |
-|-------|--------|------------------|
-| **B — Upsell existing** | Attach Scan on invoiced colo/VPS/cloud SIDs | **Primary KPI** |
-| **A — Hospitality beachhead** | Yogya (etc.) hotels via relationships; multi-property later | Narrative + pilot UX stress |
-
-Do not measure success only as “new hotel logos” while colo/VPS attach is ignored.
+**Near-term:** one login = one technical contact; pilot may add **human review** of critical findings.
 
 ---
 
-## 4. Modules (roadmap language for customers)
+## 3. Dual GTM
 
-| Module | Customer promise | Ship order |
-|--------|------------------|------------|
-| **Scan** | External check domain/IP on a cadence; alert on new critical/high; executive summary | **P1 — shipped (prod)** |
-| **Workspace** | Several people, one company/hotel workspace | **P2** |
-| **Assets** | Named targets / packs (multi-property, multi-IP) | **P3** |
-| **Guard** | Agent inventory + critical host alerts | **P5** (after Workspace) |
-
-Mobile APK/IPA stays in the engine; **not** the hero SKU for GMD base (servers/domains).
+| Wedge | Motion | Weight |
+|-------|--------|--------|
+| **B — Upsell existing** | Attach on invoiced colo/VPS/cloud | **Primary KPI = attach ARPU** |
+| **A — Hospitality** | Relationship hotels; multi-property later | Narrative + later pilot #2 |
 
 ---
 
-## 5. Trust & data (say this out loud)
+## 4. Modules (customer language)
 
-- Scans are **external** posture (ports, DNS, TLS, headers, known vulns via existing pipelines) — not a promise of “hack-proof”.
-- No raw customer **finance/PII dumps** in the public product repo; target lists for sales stay in **private** CRM/spreadsheets.
-- Production credentials and SSH targets are **ops-only** (not public markdown).
-- Hybrid pilot: product automation + optional **human review** of critical findings for design partners.
+| Module | Promise | Order |
+|--------|---------|-------|
+| **Scan** | Cadence check domain/IP; new critical/high; executive summary (Bahasa) | **P1 — shipped** |
+| **Workspace** | Several people, one company | **P2 — only if multi-user blocks** |
+| **Assets** | Named targets / packs | **P3** |
+| **Guard** | Host critical alerts | **P5 — parked** |
+
+Mobile APK/IPA = engine feature, **not** hero SKU for GMD servers/domains.
 
 ---
 
-## 6. Competitive frame (one sentence)
+## 5. Working list price (AM)
+
+| Tier | Targets | Credits / mo | IDR / mo |
+|------|---------|--------------|----------|
+| **Basic** | 1 | 10 | **300.000** |
+| **Pro** | ≤3 | 24 | **650.000** |
+| **Multi-asset** | ≤10 | 60 | **2.000.000** |
+
+**Pilot #1:** **1 bulan sponsored**; pattern = multi-service / VPS+domain; **1–3 targets**.
+**Overage:** top-up kredit or upgrade. **Invoice:** new service_id per tier (no silent VPS bundle).
+
+Detail: [`sku-scan-secure-addon.md`](sku-scan-secure-addon.md).
+
+---
+
+## 6. Trust (say out loud)
+
+- External posture only — not “hack-proof”.
+- No finance/PII dumps or customer target lists in public git.
+- SSH/prod credentials = ops-only.
+- Pilot: automation + optional human review of criticals.
+
+---
+
+## 7. Competitive frame
 
 “You already pay for the rack or VPS — **Sinexis Scan** is the monthly check that shows what changed on the public surface, in language management can act on.”
 
 ---
 
-## 6b. 60-second talk track (AM)
+## 8. 60-second talk track (AM)
 
-1. **Hook:** Infra sudah dibayar (colo/VPS) — permukaan publik (IP/domain) jarang dicek berulang.
-2. **Offer:** Add-on bulanan **Sinexis Scan**: jadwal scan, kabar jika muncul critical/high baru, ringkasan beda vs bulan lalu, laporan HTML untuk management.
-3. **Not:** Bukan ganti firewall/SIEM; bukan “aman 100%”.
-4. **Proof:** Sudah jalan di platform scan GMD (jadwal + kredit + laporan).
-5. **Ask:** Pilih Basic (1 target/bulan) atau Pro (hingga 3, mingguan + diff) — harga final dari list GMD (lihat SKU).
-6. **Next:** AM catat SID di CRM privat; ops aktifkan user + schedule + kredit.
+1. **Hook:** Colo/VPS sudah dibayar — permukaan publik jarang dicek berulang.
+2. **Offer:** Add-on **Sinexis Scan**: jadwal, kabar critical/high baru, beda vs run lalu, laporan HTML (Bahasa).
+3. **Not:** Bukan ganti firewall/SIEM; bukan aman 100%.
+4. **Proof:** Platform scan GMD sudah jadwal + kredit + laporan.
+5. **Ask:** Basic **300rb** (1 target/bulan) atau Pro **650rb** (hingga 3, mingguan + diff).
+6. **Next:** AM catat SID di CRM; ops: user + kredit + schedule.
 
----
-
-## 7. Open decisions (user must tick)
-
-- [ ] Final SKU **names** and **IDR prices** (see `sku-scan-secure-addon.md`)
-- [ ] Soft dual-brand window (default: 6–12 months; `sinexis.app` when ready) vs hard cut date
-- [ ] Near-term KPI: **attach ARPU** only / logos only / **both** (recommend: attach primary)
-- [ ] Pilot #1 identity (private): multi-service design-partner pattern and/or relationship hotel
-- [ ] Who sends first 10 upsell emails: AM GMD vs product vs hybrid
+**Wave-1 email:** product siapkan template; **AM kirim**. **Renew:** AM.
 
 ---
 
-## 8. Links
+## 9. Ownership & next execution
+
+| Who | Does |
+|-----|------|
+| **AM** | 10 SID CRM, kirim wave-1, renew, upsell |
+| **Product/ops** | Template email, credits, schedules, first report, optional critical review on pilot |
+| **Finance** | service_id Basic/Pro/Multi |
+| **Engineering** | Idle on epics unless bug or **P2 spec** after multi-user pain |
+
+---
+
+## 10. Links
 
 | Doc | Role |
 |-----|------|
-| [`sku-scan-secure-addon.md`](sku-scan-secure-addon.md) | Tiers, credits, target patterns |
-| [`../specs/scan-attach-v1.md`](../specs/scan-attach-v1.md) | Engineering acceptance for P1 |
-| [`../AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) | Full agent roadmap P0–P6 |
+| [`sku-scan-secure-addon.md`](sku-scan-secure-addon.md) | Full decision log + tiers |
+| [`../specs/scan-attach-v1.md`](../specs/scan-attach-v1.md) | P1 engineering |
+| [`../AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) | Roadmap P0–P6 |
