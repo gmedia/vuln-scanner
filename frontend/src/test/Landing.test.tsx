@@ -28,21 +28,24 @@ describe("Landing Page", () => {
     render(<Landing />);
   });
 
-  it("renders VulnScanner title", () => {
-    expect(screen.getByText("VulnScanner")).toBeInTheDocument();
+  it("renders Sinexis hero title and product line", () => {
+    expect(screen.getByRole("heading", { level: 1, name: "Sinexis" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Sinexis Scan", { selector: "p.text-primary" }),
+    ).toBeInTheDocument();
   });
 
-  it("renders description text", () => {
+  it("renders dual-brand description text", () => {
     expect(
       screen.getByText(
-        "Web-based vulnerability scanner — IP, domain, and mobile analysis",
+        /Security attach for teams that already run servers — Sinexis Scan, powered by the VulnScanner engine/,
       ),
     ).toBeInTheDocument();
   });
 
   it("renders brand logo in top nav", () => {
-    expect(screen.getByText("VULN")).toBeInTheDocument();
-    expect(screen.getByText("SCAN")).toBeInTheDocument();
+    expect(screen.getByText("SINE")).toBeInTheDocument();
+    expect(screen.getByText("XIS")).toBeInTheDocument();
   });
 
   it('renders "Get Started" links pointing to /register', () => {
@@ -103,8 +106,11 @@ describe("Landing Page", () => {
     expect(cards).toHaveLength(3);
   });
 
-  it("renders footer with version text", () => {
-    expect(screen.getByText(/VulnScanner v1\.2\.0/)).toBeInTheDocument();
+  it("renders footer with dual-brand version text", () => {
+    const footer = document.querySelector("footer");
+    expect(footer).toBeTruthy();
+    expect(footer!.textContent).toMatch(/Sinexis Scan v1\.2\.0/);
+    expect(footer!.textContent).toMatch(/powered by VulnScanner engine/i);
   });
 
   it("uses sticky-footer shell so footer pins on tall viewports", () => {

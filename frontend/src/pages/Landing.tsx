@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { BrandMark } from "@/components/brand/BrandMark";
+import { BRAND } from "@/lib/brand";
 
 const features = [
   {
@@ -51,12 +53,7 @@ function Landing() {
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b border-border">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <Link to="/" className="flex items-center gap-2.5">
-            <Crosshair className="h-5 w-5 text-primary" />
-            <span className="font-mono text-sm font-bold tracking-wider text-foreground">
-              VULN<span className="text-primary">SCAN</span>
-            </span>
-          </Link>
+          <BrandMark to="/" />
           <div className="flex items-center gap-3">
             <Link to="/login">
               <Button
@@ -82,11 +79,16 @@ function Landing() {
             <div className="flex items-center justify-center gap-3">
               <Crosshair className="h-12 w-12 text-primary" />
             </div>
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-wide text-foreground">
-              VulnScanner
-            </h1>
+            <div className="space-y-2">
+              <h1 className="text-4xl sm:text-5xl font-bold tracking-wide text-foreground">
+                {BRAND.heroTitle}
+              </h1>
+              <p className="text-lg sm:text-xl font-semibold tracking-wide text-primary">
+                {BRAND.heroProduct}
+              </p>
+            </div>
             <p className="text-base sm:text-lg text-muted-foreground">
-              Web-based vulnerability scanner — IP, domain, and mobile analysis
+              {BRAND.heroSub}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
               <Link to="/register">
@@ -154,7 +156,7 @@ function Landing() {
       <footer className="mt-auto shrink-0 border-t border-border py-6">
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-3 px-4 sm:flex-row sm:justify-between">
           <p className="text-xs text-muted-foreground text-center sm:text-left">
-            VulnScanner v1.2.0 · IP, domain &amp; mobile vulnerability scanning
+            {BRAND.footerLine}
           </p>
           <div className="flex items-center gap-4 text-xs">
             <Link
