@@ -14,14 +14,16 @@
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding checkout)** | Re-`git pull` — tip was **`da8cd36`** (AM wave-1 email #246) before guide refresh PR |
-| **Open PRs** | Re-check `gh pr list` |
-| **P1 Scan Attach (code)** | **S1–S5 merged** on `main` (#235–#239) |
-| **P1 Scan Attach (ops docs)** | #240–#243 on main |
-| **P1 Scan Attach (production)** | **Closed (2026-08-08)** — edge smoke A (due+credits, zero-credit, cap 10) |
-| **P0 commercial** | **Policy locked** + **AM email template** (`docs/commercial/am-wave1-email-id.md`). **Still human/GTM:** finance service_id, 10 CRM SIDs, named pilot, AM send, ops fulfill |
-| **Coding-host Docker** | All `vuln-*` **stopped**. Edge runs the live stack |
-| **Next product default** | **GTM only** (finance/AM/ops); engineering **idle** unless bug or user asks P2 spec; **no** P5 |
+| **`main` tip (coding)** | **`6185e01`** — post-P1 guide / GTM status (#248); re-`git pull` after reset |
+| **Open PRs** | Re-check `gh pr list` (often: P1 schedule polish, P4 dual-brand, Workspace spek, this handoff) |
+| **P1 Scan Attach (code)** | **S1–S5** on `main` (#235–#239) |
+| **P1 ops / production docs** | #240–#243 on main |
+| **P1 production** | **Closed (2026-08-08)** — edge smoke A (see below) |
+| **P0 commercial** | **Policy locked** (#245): Basic **300k** / Pro **650k** / Multi **2M**; credits **10/24/60**; AM renew; attach ARPU primary; pilot #1 multi-service, 1 mo sponsored |
+| **P0 GTM kit in git** | One-pager + SKU + **[`docs/commercial/am-wave1-email-id.md`](docs/commercial/am-wave1-email-id.md)** (#246) |
+| **Still human (not git)** | Finance **service_id** ×3; AM **10 CRM SIDs**; named **pilot #1**; AM **send** wave-1; ops **fulfill** first yes/pilot |
+| **Coding-host Docker** | All `vuln-*` **Exited**. Edge runs live stack |
+| **Engineering default** | **Dual-track OK:** GTM human + optional polish (P1 UX), soft dual-brand (P4), Workspace **spek only** until approve — **no** Guard/P5 by default |
 
 ### Edge on-host smoke A (2026-08-08) — P1 production DoD
 
@@ -29,27 +31,27 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 
 | Check | Result |
 |-------|--------|
-| Git tip on edge | **`6edd254`** (matches attach + ops docs) |
+| Git tip on edge (at smoke) | **`6edd254`** (attach + ops docs; later docs-only SHAs OK to pull) |
 | Compose project label | **`vuln`** on this edge (always `docker inspect` — may differ per host) |
 | Containers | backend, frontend, workers, **celery_beat**, postgres, redis **healthy** |
 | Alembic | **`add_scan_schedules` (head)** |
-| Beat | Logs show **`schedules.run_due` every 5m** |
-| Due + credits | Forced `next_run_at` past; `celery … call schedules.run_due` → job **completed**, domain cost **2**, credits **50→48**, `last_job_id` set, `next_run_at` advanced ~1 month |
-| Zero credits | Credits **0** + due → schedule **`enabled=false`**, `last_error` = insufficient credits Need 2 have 0, **no** `last_job_id` |
-| Cleanup | Smoke schedules deleted; e2e credits restored to **100** |
-| Cap 10 | Prior remote proof (10 OK / 11th 400) |
+| Beat | **`schedules.run_due` every 5m** |
+| Due + credits | Job **completed**, domain cost **2**, credits debit, `last_job_id` set, `next_run_at` advanced |
+| Zero credits | Schedule **`enabled=false`**, `last_error` insufficient credits, **no** new job |
+| Cleanup | Smoke schedules deleted; e2e credits restored |
+| Cap 10 | Remote proof: 10 OK / 11th **400** |
 
-### Remote smoke (public URL, earlier same day)
+### Remote smoke (public URL)
 
 | Check | Result |
 |-------|--------|
 | `GET /api/health` | **200** |
-| Schedules CRUD + cap 10 | **Pass** (rows cleaned) |
+| Schedules CRUD + cap 10 | **Pass** |
 
 ### Deploy notes (edge)
 
 - Prefer [`scripts/deploy-services.sh`](scripts/deploy-services.sh); include **`celery_beat`**.
-- **Match live** `COMPOSE_PROJECT_NAME` via inspect (this edge used **`vuln`**; other hosts may use `vuln-scanner`).
+- Match live `COMPOSE_PROJECT_NAME` via inspect (`vuln` vs `vuln-scanner`).
 - Never commit secrets, SSH targets, or production host addresses into the public repo.
 
 ### Smoke DoD (edge) — short
@@ -58,41 +60,60 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 2. Due schedule + credits → job enqueued, credits deducted.
 3. Zero credits → schedule disabled, `last_error` set, no new job.
 4. 11th enabled / re-enable over cap → HTTP 400.
-5. Regression: diff / notify / executive still OK when credits allow.
+5. Diff / notify / executive OK when credits allow.
+
+---
+
+## GTM execution checklist (current focus)
+
+| # | Owner | Action | Status |
+|---|--------|--------|--------|
+| 1 | Finance | Create **3 service_id** (Basic / Pro / Multi); no silent VPS bundle | **Open** |
+| 2 | AM | Pick **10 wave-1 SIDs** in private CRM (patterns in SKU §5) | **Open** |
+| 3 | AM + product | Name **pilot #1** (multi-service / VPS+domain, 1–3 targets, sponsored 1 mo) | **Open** |
+| 4 | Ops | Fulfill pilot: user + credits + schedule + notify + first HTML (Bahasa) | **Open** |
+| 5 | AM | Send wave-1 using [`am-wave1-email-id.md`](docs/commercial/am-wave1-email-id.md); log CRM | **Open** |
+| 6 | Ops | Confirm live `pricing` domain/IP (smoke: **2** / **1**) before quotes | **Open** |
+| 7 | AM | Follow-up 7–10d; renew ownership stays AM | **Open** |
+
+**Success (not a GitHub PR):** ≥1 pilot cycle delivered + attach line billable or sponsored with list price in CRM + wave-1 sent.
+
+---
 
 ## Current product priority (summary — detail in guide)
 
-**Goal bias:** **upsell** Secure/Scan add-on on existing GMD **colo / VPS / cloud** (finance CSV evidence, 2026-08), with hospitality as **strategic beachhead** (not mass hotel logos in current billing).
+**Goal bias:** **upsell** Secure/Scan add-on on existing GMD **colo / VPS / cloud**, hospitality as **strategic beachhead**.
 
-| P | Focus |
-|---|--------|
-| **P0** | One-pager + SKU — **policy locked**; GTM execution (CRM/finance) remains user/AM |
-| **P1** | **Scan Attach Loop** — schedule, baseline diff, executive report (**code + production smoke closed**) |
-| **P2** | **Workspace v1** — org + members + org-scoped scans |
-| **P3** | Light **asset registry** (multi-target tiers) |
-| **P4** | Soft **Sinexis** dual-brand (must not block P1) |
-| **P5** | **Guard** MVP (Wazuh thin) — second upsell |
-| **P6** | Hospitality / pilot pack |
+| P | Focus | State |
+|---|--------|--------|
+| **P0** | One-pager + SKU + AM kit | **Policy + templates in git**; **GTM execution open** |
+| **P1** | Scan Attach Loop | **Code + production smoke closed**; UX polish may still land in open PRs |
+| **P2** | Workspace v1 | **Spek draft** (review D1–D6) — no S1 code until user approve + implement verb |
+| **P3** | Light asset registry | Later |
+| **P4** | Soft Sinexis dual-brand | Open PR path OK; **no domain cut** (`vs.appmedia.id`) |
+| **P5** | Guard (Wazuh thin) | **Parked** |
+| **P6** | Hospitality / pilot pack | After attach story works |
 
 **Priority rule:** If this stub, the archive, or old chat **disagrees** with the execution guide on *what to build next*, **the guide wins**, unless the user opens a stuck-job / worker incident.
 
-## P0 / P1 drafts (in repo)
+**When to call engineering again:** bug on schedule/credits/notify; revise commercial copy; **implement P2** only after spek approval + explicit verb; P4 soft brand without blocking GTM.
+
+---
+
+## Commercial + eng docs (in repo)
 
 | Need | Go here |
 |------|---------|
-| One-pager (positioning) | [`docs/commercial/sinexis-one-pager.md`](docs/commercial/sinexis-one-pager.md) |
-| SKU tiers + target patterns | [`docs/commercial/sku-scan-secure-addon.md`](docs/commercial/sku-scan-secure-addon.md) |
+| One-pager (locked) | [`docs/commercial/sinexis-one-pager.md`](docs/commercial/sinexis-one-pager.md) |
+| SKU + decision log | [`docs/commercial/sku-scan-secure-addon.md`](docs/commercial/sku-scan-secure-addon.md) |
+| AM wave-1 email (Bahasa) | [`docs/commercial/am-wave1-email-id.md`](docs/commercial/am-wave1-email-id.md) |
 | P1 engineering spec | [`docs/specs/scan-attach-v1.md`](docs/specs/scan-attach-v1.md) |
+| Workspace v1 spek (draft) | [`docs/specs/workspace-v1.md`](docs/specs/workspace-v1.md) (if present on branch/`main`) |
 | Schedule ops / smoke | [`docs/scan-schedules-ops.md`](docs/scan-schedules-ops.md) |
+| Full execution guide | [`docs/AGENT_EXECUTION_GUIDE.md`](docs/AGENT_EXECUTION_GUIDE.md) |
+| Git / PR rules | [`AGENTS.md`](AGENTS.md) |
+| Historical stuck-pending only | [`docs/archive/handoff-scan-pending-2026.md`](docs/archive/handoff-scan-pending-2026.md) |
 
-## Other links
+**Before acting on the archive:** re-verify against current `main`.
 
-| Need | Go here |
-|------|---------|
-| Full execution contract, CSV aggregates, acceptance | [`docs/AGENT_EXECUTION_GUIDE.md`](docs/AGENT_EXECUTION_GUIDE.md) |
-| Git / PR / branch rules | [`AGENTS.md`](AGENTS.md) |
-| Historical stuck-pending notes only | [`docs/archive/handoff-scan-pending-2026.md`](docs/archive/handoff-scan-pending-2026.md) |
-
-**Before acting on the archive:** re-verify against current `main` (many fixes may already be shipped).
-
-**Do not commit** raw finance/customer CSV dumps, production host IPs/ports, passwords, or API keys into this repo.
+**Do not commit** raw finance/customer CSV dumps, production host IPs/ports, passwords, API keys, or customer SID/domain lists into this public repo.
