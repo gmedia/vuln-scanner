@@ -94,7 +94,7 @@ class TestMimeMessageStructure:
             await send_verification_email("user@example.com", "token123")
 
         sent_msg = mock_smtp.send_message.call_args[0][0]
-        assert sent_msg["Subject"] == "VulnScanner — Verify Your Email"
+        assert sent_msg["Subject"] == "Sinexis — Verify Your Email"
 
     @pytest.mark.asyncio
     async def test_message_is_multipart_alternative(self):
