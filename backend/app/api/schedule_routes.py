@@ -62,8 +62,10 @@ async def delete_schedule(
 @router.get("/{schedule_id}/runs", response_model=list[ScanJobResponse])
 async def list_schedule_runs(
     schedule_id: UUID,
+    limit: int = 20,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[ScanJobResponse]:
-    jobs = await ScheduleService(db).list_runs(schedule_id, current_user.id)
+    capped = max(1, min(limit, 50))
+    jobs = await ScheduleService(db).list_runs(schedule_id, current_user.id, limit=capped)
     return [ScanJobResponse.model_validate(j) for j in jobs]

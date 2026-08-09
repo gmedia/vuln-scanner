@@ -243,6 +243,46 @@ class TestScheduleCrud:
         assert ok_enable.status_code == 200
         assert ok_enable.json()["enabled"] is True
 
+    @pytest.mark.asyncio
+    async def test_reenable_clears_last_error(self, client, db_session):
+        create = client.post(
+            "/api/schedules",
+            headers=HEADERS,
+            json={
+                "scan_type": "domain",
+                "target": "clear-error.example.com",
+                "cadence": "weekly",
+            },
+        )
+        assert create.status_code == 201, create.text
+        sid = create.json()["id"]
+
+        paused = client.patch(
+            f"/api/schedules/{sid}",
+            headers=HEADERS,
+            json={"enabled": False},
+        )
+        assert paused.status_code == 200
+
+        sched = await db_session.get(ScanSchedule, uuid.UUID(sid))
+        assert sched is not None
+        sched.last_error = "Insufficient credits"
+        await db_session.commit()
+
+        stuck = client.get(f"/api/schedules/{sid}", headers=HEADERS)
+        assert stuck.status_code == 200
+        assert stuck.json()["last_error"] == "Insufficient credits"
+        assert stuck.json()["enabled"] is False
+
+        reenabled = client.patch(
+            f"/api/schedules/{sid}",
+            headers=HEADERS,
+            json={"enabled": True},
+        )
+        assert reenabled.status_code == 200, reenabled.text
+        assert reenabled.json()["enabled"] is True
+        assert reenabled.json()["last_error"] is None
+
 
 class TestNextRunHelpers:
     def test_compute_weekly_in_future(self):
