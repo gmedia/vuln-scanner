@@ -63,10 +63,10 @@ describe("VerifyEmail", () => {
       ).toBeInTheDocument();
     });
 
-    it("renders VULNSCAN branding", () => {
+    it("renders SINEXIS branding", () => {
       render(<VerifyEmail />);
-      expect(screen.getByText(/VULN/)).toBeInTheDocument();
-      expect(screen.getByText(/SCAN/)).toBeInTheDocument();
+      expect(screen.getByText(/SINE/)).toBeInTheDocument();
+      expect(screen.getByText(/XIS/)).toBeInTheDocument();
     });
 
     it("renders Back to sign in secondary link", () => {
