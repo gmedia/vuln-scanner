@@ -66,6 +66,14 @@ export interface LoginResponse {
   expires_in: number;
 }
 
+export interface OrgSummary {
+  id: string;
+  name: string;
+  slug: string;
+  role: "owner" | "admin" | "member" | "viewer";
+  kind?: string;
+}
+
 export interface UserResponse {
   id: string;
   email: string;
@@ -73,6 +81,8 @@ export interface UserResponse {
   is_admin?: boolean;
   credits?: number;
   created_at: string;
+  organizations?: OrgSummary[];
+  active_org_id?: string | null;
 }
 
 export async function register(
