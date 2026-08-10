@@ -207,7 +207,7 @@ curl http://localhost/api/scan/{id}/export?format=html \
 | Scan attach (schedules, baseline diff, executive HTML) | **Shipped** | Ops: [`docs/scan-schedules-ops.md`](docs/scan-schedules-ops.md) |
 | Workspace (orgs, roles, invites) | **Shipped** | Spek: [`docs/specs/workspace-v1.md`](docs/specs/workspace-v1.md) |
 | Soft dual-brand (Sinexis) | **Shipped** | Public host may still be `vs.appmedia.id` |
-| **Guard** (Wazuh thin) | **Spec S0** | Inventory + critical alerts + per-org enroll — **not** full SIEM. Spek: [`docs/specs/guard-v1.md`](docs/specs/guard-v1.md). No Guard API routes until a feature PR lands. |
+| **Guard** (Wazuh thin) | **Code on feature branch** | Inventory + critical alerts + per-org enroll — **not** full SIEM. Spek: [`docs/specs/guard-v1.md`](docs/specs/guard-v1.md). Mock Wazuh in CI; live manager on deploy host only. |
 | Asset registry | Planned (P3) | Not started |
 
 Agent/session priority after reset: [`docs/AGENT_EXECUTION_GUIDE.md`](docs/AGENT_EXECUTION_GUIDE.md).

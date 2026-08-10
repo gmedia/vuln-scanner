@@ -8,6 +8,8 @@ from unittest.mock import MagicMock
 os.environ.setdefault("API_KEY", "dev-api-key-change-me")
 os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5432/test")
 os.environ.setdefault("DATABASE_URL_SYNC", "postgresql://test:test@localhost:5432/test")
+os.environ.setdefault("GUARD_MOCK_WAZUH", "true")
+os.environ.setdefault("GUARD_ENABLED", "true")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -28,6 +30,7 @@ from app.models.api_key import ApiKey  # noqa: F401
 from app.models.credit_log import CreditLog  # noqa: F401
 from app.models.cve_cache import CveCache  # noqa: F401
 from app.models.email_verification import EmailVerificationToken  # noqa: F401
+from app.models.guard import GuardAgent, GuardAlert, GuardEnrollToken, GuardOrgBinding  # noqa: F401
 from app.models.organization import (  # noqa: F401
     Organization,
     OrganizationInvite,
