@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Header from "@/components/layout/Header";
 import { useScanStore } from "@/store/scanStore";
 import { useAuthStore } from "@/store/authStore";
@@ -11,7 +12,14 @@ vi.mock("@/store/creditStore", () => ({
 }));
 
 function renderWithRouter(ui: React.ReactElement) {
-  return render(<MemoryRouter>{ui}</MemoryRouter>);
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={client}>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </QueryClientProvider>,
+  );
 }
 
 describe("Header", () => {
@@ -28,6 +36,8 @@ describe("Header", () => {
       accessToken: null,
       isLoading: false,
       error: null,
+      organizations: [],
+      activeOrgId: null,
     });
     const creditState = {
       credits: 42,
@@ -37,9 +47,12 @@ describe("Header", () => {
       fetchBalance: vi.fn(),
       checkEligibility: vi.fn(),
     };
-    vi.mocked(useCreditStore).mockImplementation(((selector?: (s: typeof creditState) => unknown) =>
-      typeof selector === "function" ? selector(creditState) : creditState
-    ) as typeof useCreditStore);
+    vi.mocked(useCreditStore).mockImplementation(((
+      selector?: (s: typeof creditState) => unknown,
+    ) =>
+      typeof selector === "function"
+        ? selector(creditState)
+        : creditState) as typeof useCreditStore);
   });
 
   it("renders brand name SINEXIS", () => {
@@ -54,7 +67,9 @@ describe("Header", () => {
         <button>Test Child</button>
       </Header>,
     );
-    expect(screen.getByRole("button", { name: "Test Child" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Test Child" }),
+    ).toBeInTheDocument();
   });
 
   it("shows scan progress when activeJobId is set", () => {
@@ -111,7 +126,37 @@ describe("Header", () => {
     });
     renderWithRouter(<Header />);
     expect(screen.getByTestId("header-credits")).toHaveTextContent("42");
-    expect(screen.getByTitle("Credit balance")).toBeInTheDocument();
+    expect(
+      screen.getByTitle("Your personal credit balance"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows org switcher when organizations present", () => {
+    useAuthStore.setState({
+      isAuthenticated: true,
+      user: {
+        id: "u1",
+        email: "user@example.com",
+        is_verified: true,
+        is_admin: false,
+        credits: 10,
+      },
+      accessToken: "tok",
+      isLoading: false,
+      error: null,
+      organizations: [
+        {
+          id: "org-1",
+          name: "Personal",
+          slug: "personal",
+          role: "owner",
+        },
+      ],
+      activeOrgId: "org-1",
+    });
+    renderWithRouter(<Header />);
+    expect(screen.getByTestId("org-switcher")).toBeInTheDocument();
+    expect(screen.getByText("Personal")).toBeInTheDocument();
   });
 
   it("hides credits chip when not authenticated", () => {
