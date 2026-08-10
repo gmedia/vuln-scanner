@@ -33,6 +33,7 @@ EXCLUDED_PATHS = [
     "/api/auth/forgot-password",
     "/api/auth/reset-password",
     "/api/auth/resend-verification",
+    "/api/guard/enroll",
 ]
 
 MASTER_KEY_ID = "__master__"
