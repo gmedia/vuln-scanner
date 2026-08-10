@@ -1,6 +1,6 @@
 # Spec: Guard v1 (P5 — Wazuh thin)
 
-**Status:** **S1–S5 on `main`** (#274, tip includes Guard thin). **`HttpWazuhClient`** implements Manager JWT auth, groups, agents list, enroll+key, Indexer critical search (field whitelist). CI/default: `GUARD_MOCK_WAZUH=true`. Live: set manager/indexer URL + service users on **deploy host only**; `GUARD_MOCK_WAZUH=false`. S0 spek remains source of truth for D1–D10.
+**Status:** **S0–S5 + Http on `main`** (#273 spek, #274 thin, **#275** `HttpWazuhClient` @ merge `28bc69e`). Manager JWT, groups, agents list, enroll+key, Indexer critical search (field whitelist). CI/default: `GUARD_MOCK_WAZUH=true`. Live residual **human:** edge deploy tip + lab env on **deploy host only** + smoke; then `GUARD_MOCK_WAZUH=false`. S0 D1–D10 remain source of truth. **Not** full SIEM.
 **Goal:** second upsell surface — **agent inventory + critical alerts + per-org enroll** — without shipping a SIEM.
 **Epic:** P5 per [`docs/AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) §1.3, §3 Phase E, §5.3.
 **Branch convention:** S0 on `main` via docs PR; implement on `feat/guard-*`.

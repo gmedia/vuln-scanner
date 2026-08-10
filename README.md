@@ -2,7 +2,7 @@
 
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/gmedia/vuln-scanner)
 
-Web-based vulnerability scanner (**VulnScanner** engine) under the **Sinexis** soft dual-brand: IP, domain, and mobile (Android APK/AAB / iOS IPA) analysis, **scheduled** attach scans, **multi-user workspaces**, and a planned **Guard** thin layer (Wazuh-backed agent inventory + critical alerts — **spec only** until implemented). Deployed via Docker Compose with async task processing.
+Web-based vulnerability scanner (**VulnScanner** engine) under the **Sinexis** soft dual-brand: IP, domain, and mobile (Android APK/AAB / iOS IPA) analysis, **scheduled** attach scans, **multi-user workspaces**, and a **Guard** thin layer (Wazuh-backed agent inventory + critical alerts — **not** full SIEM; mock default in CI). Deployed via Docker Compose with async task processing.
 
 ## Architecture
 
@@ -207,7 +207,7 @@ curl http://localhost/api/scan/{id}/export?format=html \
 | Scan attach (schedules, baseline diff, executive HTML) | **Shipped** | Ops: [`docs/scan-schedules-ops.md`](docs/scan-schedules-ops.md) |
 | Workspace (orgs, roles, invites) | **Shipped** | Spek: [`docs/specs/workspace-v1.md`](docs/specs/workspace-v1.md) |
 | Soft dual-brand (Sinexis) | **Shipped** | Public host may still be `vs.appmedia.id` |
-| **Guard** (Wazuh thin) | **Code on feature branch** | Inventory + critical alerts + per-org enroll — **not** full SIEM. Spek: [`docs/specs/guard-v1.md`](docs/specs/guard-v1.md). Mock Wazuh in CI; live manager on deploy host only. |
+| **Guard** (Wazuh thin) | **Shipped on `main`** (#274–#275) | Inventory + critical alerts + per-org enroll — **not** full SIEM. Spek: [`docs/specs/guard-v1.md`](docs/specs/guard-v1.md). Mock Wazuh in CI; live Manager/Indexer env on **deploy host only** (lab smoke residual). |
 | Asset registry | Planned (P3) | Not started |
 
 Agent/session priority after reset: [`docs/AGENT_EXECUTION_GUIDE.md`](docs/AGENT_EXECUTION_GUIDE.md).
