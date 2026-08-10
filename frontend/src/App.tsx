@@ -21,6 +21,7 @@ const ScanDetail = lazy(() => import("@/pages/ScanDetail"));
 const CreditHistory = lazy(() => import("@/pages/credit/CreditHistory"));
 const Schedules = lazy(() => import("@/pages/Schedules"));
 const Profile = lazy(() => import("@/pages/Profile"));
+const WorkspaceSettings = lazy(() => import("@/pages/WorkspaceSettings"));
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
 const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
 const AdminUserDetail = lazy(() => import("@/pages/admin/AdminUserDetail"));
@@ -85,6 +86,14 @@ function App() {
             <Route
               path="/profile"
               element={<PageBoundary component={Profile} />}
+            />
+            <Route
+              path="/settings/workspace"
+              element={<PageBoundary component={WorkspaceSettings} />}
+            />
+            <Route
+              path="/org/members"
+              element={<PageBoundary component={WorkspaceSettings} />}
             />
 
             {/* Admin routes */}
