@@ -42,10 +42,10 @@ describe("Header", () => {
     ) as typeof useCreditStore);
   });
 
-  it("renders brand name VULNSCAN", () => {
+  it("renders brand name SINEXIS", () => {
     renderWithRouter(<Header />);
-    expect(screen.getByText("VULN")).toBeInTheDocument();
-    expect(screen.getByText("SCAN")).toBeInTheDocument();
+    expect(screen.getByText("SINE")).toBeInTheDocument();
+    expect(screen.getByText("XIS")).toBeInTheDocument();
   });
 
   it("renders children", () => {

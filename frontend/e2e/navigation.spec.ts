@@ -48,13 +48,13 @@ test.describe("Navigation", () => {
     await expect(page).toHaveURL("/scan/domain");
   });
 
-  test("header shows VULNSCAN branding", async ({ page }) => {
+  test("header shows SINEXIS branding", async ({ page }) => {
     await page.goto("/dashboard");
-    await expect(page.locator("header")).toContainText("VULNSCAN");
+    await expect(page.locator("header")).toContainText("SINEXIS");
   });
 
   test("sidebar shows version info", async ({ page }) => {
     await page.goto("/dashboard");
-    await expect(page.locator("text=VulnScanner v0.1.0")).toBeVisible();
+    await expect(page.locator("text=Sinexis Scan v1.2.0")).toBeVisible();
   });
 });

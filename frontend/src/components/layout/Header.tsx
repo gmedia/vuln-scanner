@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useCreditStore } from "@/store/creditStore";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { BrandMark } from "@/components/brand/BrandMark";
 import { SCAN_TYPE_LABELS } from "@/lib/constants";
 
 interface HeaderProps {
@@ -53,8 +54,11 @@ function Header({ children }: HeaderProps) {
     <header className="relative z-40 flex h-14 shrink-0 items-center gap-4 border-b border-border bg-card/50 px-4 backdrop-blur-xs">
       {children}
       <div className="flex flex-1 items-center justify-between gap-3">
-        <h1 className="font-mono text-sm font-bold tracking-wider text-foreground lg:sr-only">
-          VULN<span className="text-primary">SCAN</span>
+        <h1 className="lg:sr-only">
+          <BrandMark
+            to={false}
+            className="font-mono text-sm font-bold tracking-wider text-foreground"
+          />
         </h1>
 
         {activeJobId && (

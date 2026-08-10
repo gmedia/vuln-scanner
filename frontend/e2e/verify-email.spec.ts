@@ -4,13 +4,13 @@ test.describe("Verify Email", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
   test.describe("no token — resend form", () => {
-    test("shows VULNSCANNER branding", async ({ page }) => {
+    test("shows SINEXIS branding", async ({ page }) => {
       await page.goto("/verify-email");
       await expect(
-        page.locator("span.font-mono").filter({ hasText: "VULN" }).first(),
+        page.locator("span.font-mono").filter({ hasText: "SINE" }).first(),
       ).toBeVisible();
       await expect(
-        page.locator("span.text-primary").filter({ hasText: "SCAN" }).first(),
+        page.locator("span.text-primary").filter({ hasText: "XIS" }).first(),
       ).toBeVisible();
     });
 

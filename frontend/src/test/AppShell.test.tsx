@@ -47,14 +47,14 @@ describe("AppShell", () => {
     expect(overlays.length).toBe(0);
   });
 
-  it("renders VULNSCAN brand text in header", () => {
+  it("renders SINEXIS brand text in header", () => {
     render(
       <MemoryRouter>
         <AppShell />
       </MemoryRouter>,
     );
     const header = screen.getByRole("banner");
-    expect(header).toHaveTextContent("VULN");
-    expect(header).toHaveTextContent("SCAN");
+    expect(header).toHaveTextContent("SINE");
+    expect(header).toHaveTextContent("XIS");
   });
 });

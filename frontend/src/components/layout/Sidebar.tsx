@@ -1,11 +1,10 @@
-import { Link, NavLink } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import {
   X,
   LayoutDashboard,
   Radar,
   Globe,
   Smartphone,
-  Crosshair,
   Shield,
   Users,
   DollarSign,
@@ -15,11 +14,13 @@ import {
   CalendarClock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BRAND } from "@/lib/brand";
 import { useScanStore } from "@/store/scanStore";
 import { useAuthStore } from "@/store/authStore";
 import { useCreditStore } from "@/store/creditStore";
 import { Separator } from "@/components/ui/Separator";
 import { Badge } from "@/components/ui/Badge";
+import { BrandMark } from "@/components/brand/BrandMark";
 import { useEffect } from "react";
 
 interface SidebarProps {
@@ -52,12 +53,7 @@ function Sidebar({ open, onClose }: SidebarProps) {
       )}
     >
       <div className="flex h-14 items-center justify-between border-b border-border px-4">
-        <Link to="/" className="flex items-center gap-2.5" onClick={onClose}>
-          <Crosshair className="h-5 w-5 text-primary" />
-          <span className="font-mono text-sm font-bold tracking-wider text-foreground">
-            VULN<span className="text-primary">SCAN</span>
-          </span>
-        </Link>
+        <BrandMark to="/" onClick={onClose} />
         <button
           onClick={onClose}
           className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground lg:hidden"
@@ -203,7 +199,7 @@ function Sidebar({ open, onClose }: SidebarProps) {
           </span>
         </div>
         <p className="text-center text-[10px] text-muted-foreground">
-          VulnScanner v0.1.0
+          {BRAND.sidebarVersion}
         </p>
       </div>
     </aside>

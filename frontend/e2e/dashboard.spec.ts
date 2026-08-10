@@ -4,7 +4,7 @@ test.describe("Dashboard", () => {
   test("loads and shows all UI elements", async ({ page }) => {
     await page.goto("/dashboard");
     await expect(page.locator("h2:has-text('DASHBOARD')")).toBeVisible();
-    await expect(page.locator("text=VULNSCAN").first()).toBeVisible();
+    await expect(page.locator("text=SINEXIS").first()).toBeVisible();
     await expect(page.locator("text=Total Scans")).toBeVisible();
     await expect(page.locator("text=Critical")).toBeVisible();
     await expect(page.locator("text=High")).toBeVisible();

@@ -13,7 +13,7 @@ SMTP_HOST = os.getenv("SMTP_HOST", "localhost")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER", "")
 SMTP_PASS = os.getenv("SMTP_PASS", "")
-SMTP_FROM = os.getenv("SMTP_FROM", "VulnScanner <noreply@vs.appmedia.id>")
+SMTP_FROM = os.getenv("SMTP_FROM", "Sinexis <noreply@vs.appmedia.id>")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://vs.appmedia.id")
 
 _MAX_RETRIES = 3
@@ -74,7 +74,7 @@ async def send_verification_email(email_to: str, token: str) -> bool:
 <html>
 <body style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
   <h2>Verify Your Email</h2>
-  <p>Click the link below to verify your VulnScanner account:</p>
+  <p>Click the link below to verify your Sinexis account:</p>
   <p>
     <a href="{verification_link}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;"
        "text-decoration:none;border-radius:6px">
@@ -94,7 +94,7 @@ async def send_verification_email(email_to: str, token: str) -> bool:
     msg = MIMEMultipart("alternative")
     msg["From"] = SMTP_FROM
     msg["To"] = email_to
-    msg["Subject"] = "VulnScanner — Verify Your Email"
+    msg["Subject"] = "Sinexis — Verify Your Email"
     msg.attach(MIMEText(html_body, "html", "utf-8"))
 
     return await _send_with_retry(msg, email_to, "Verification")
@@ -107,7 +107,7 @@ async def send_password_reset_email(email_to: str, token: str) -> bool:
 <html>
 <body style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
   <h2>Reset Your Password</h2>
-  <p>Click the button below to reset your VulnScanner account password:</p>
+  <p>Click the button below to reset your Sinexis account password:</p>
   <p>
     <a href="{reset_link}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;"
        "text-decoration:none;border-radius:6px">
@@ -127,7 +127,7 @@ async def send_password_reset_email(email_to: str, token: str) -> bool:
     msg = MIMEMultipart("alternative")
     msg["From"] = SMTP_FROM
     msg["To"] = email_to
-    msg["Subject"] = "VulnScanner — Reset Your Password"
+    msg["Subject"] = "Sinexis — Reset Your Password"
     msg.attach(MIMEText(html_body, "html", "utf-8"))
 
     return await _send_with_retry(msg, email_to, "Password reset")

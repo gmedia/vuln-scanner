@@ -25,10 +25,10 @@ describe("AuthLayout", () => {
         <div>form</div>
       </AuthLayout>,
     );
-    const home = screen.getByRole("link", { name: /vulnscanner home/i });
+    const home = screen.getByRole("link", { name: /sinexis home/i });
     expect(home).toHaveAttribute("href", "/");
-    expect(screen.getByText("VULN")).toBeInTheDocument();
-    expect(screen.getByText("SCAN")).toBeInTheDocument();
+    expect(screen.getByText("SINE")).toBeInTheDocument();
+    expect(screen.getByText("XIS")).toBeInTheDocument();
   });
 
   it("renders optional title and subtitle", () => {
