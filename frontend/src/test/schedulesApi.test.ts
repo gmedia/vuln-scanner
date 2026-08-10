@@ -31,6 +31,7 @@ import {
   deleteSchedule,
   listScheduleRuns,
   MAX_ENABLED_SCHEDULES,
+  mapScheduleError,
 } from "@/api/schedules";
 
 const mockAxios = axios as unknown as {
@@ -47,6 +48,12 @@ describe("schedules API", () => {
 
   it("exports max enabled constant", () => {
     expect(MAX_ENABLED_SCHEDULES).toBe(10);
+  });
+
+  it("mapScheduleError mentions per-organization cap", () => {
+    expect(
+      mapScheduleError("Maximum 10 enabled schedules per organization"),
+    ).toContain("per organisasi");
   });
 
   it("listSchedules hits GET /api/schedules", async () => {
