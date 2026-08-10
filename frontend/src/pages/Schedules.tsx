@@ -220,7 +220,7 @@ function Schedules() {
     setFormError(null);
     if (atCap) {
       setFormError(
-        `Batas ${MAX_ENABLED_SCHEDULES} jadwal aktif tercapai. Nonaktifkan satu dulu.`,
+        `Batas ${MAX_ENABLED_SCHEDULES} jadwal aktif per organisasi tercapai. Nonaktifkan satu dulu.`,
       );
       return;
     }
@@ -275,8 +275,8 @@ function Schedules() {
               role="status"
             >
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              Batas {MAX_ENABLED_SCHEDULES} jadwal aktif tercapai. Nonaktifkan
-              satu jadwal sebelum membuat yang baru.
+              Batas {MAX_ENABLED_SCHEDULES} jadwal aktif per organisasi
+              tercapai. Nonaktifkan satu jadwal sebelum membuat yang baru.
             </p>
           )}
         </CardHeader>

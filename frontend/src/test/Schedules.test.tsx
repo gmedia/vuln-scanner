@@ -137,7 +137,9 @@ describe("Schedules page", () => {
     expect(await screen.findByText("10/10")).toBeInTheDocument();
     const submit = screen.getByRole("button", { name: /Buat jadwal/i });
     expect(submit).toBeDisabled();
-    expect(screen.getByText(/Batas 10 jadwal aktif tercapai/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Batas 10 jadwal aktif per organisasi/),
+    ).toBeInTheDocument();
   });
 
   it("expands recent runs and links to scan detail", async () => {
