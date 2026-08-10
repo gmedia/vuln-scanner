@@ -5,6 +5,7 @@ import re
 import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
+from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -371,7 +372,7 @@ class GuardService:
         org_id = await self._require_org(user, organization_id, min_role="admin")
         return await self.sync_org(org_id)
 
-    async def sync_all_enabled(self) -> dict[str, object]:
+    async def sync_all_enabled(self) -> dict[str, Any]:
         result = await self.db.execute(select(GuardOrgBinding).where(GuardOrgBinding.enabled.is_(True)))
         bindings = list(result.scalars().all())
         ok = 0

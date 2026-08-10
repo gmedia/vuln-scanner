@@ -26,7 +26,12 @@ def sync_all_guard() -> dict[str, Any]:
 
     async def _body() -> dict[str, Any]:
         async with async_session() as db:
-            return await GuardService(db).sync_all_enabled()
+            raw = await GuardService(db).sync_all_enabled()
+            return {
+                "ok": raw.get("ok", 0),
+                "failed": raw.get("failed", 0),
+                "total": raw.get("total", 0),
+            }
 
     try:
         try:

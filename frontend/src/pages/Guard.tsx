@@ -51,7 +51,7 @@ function statusBadge(status: string) {
   if (s === "disconnected")
     return <Badge className="bg-amber-500/15 text-amber-700">disconnected</Badge>;
   if (s === "pending") return <Badge className="bg-sky-500/15 text-sky-700">pending</Badge>;
-  return <Badge variant="secondary">{status}</Badge>;
+  return <Badge variant="info">{status}</Badge>;
 }
 
 export default function Guard() {
@@ -266,7 +266,7 @@ export default function Guard() {
                       className="rounded-md border border-border/80 px-3 py-2 text-sm"
                     >
                       <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="destructive">L{al.rule_level}</Badge>
+                        <Badge variant="critical">L{al.rule_level}</Badge>
                         <span className="font-medium">{al.rule_description}</span>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
