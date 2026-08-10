@@ -14,17 +14,18 @@
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding)** | **`98756de`** — Attach UX Wave B (#271) after Workspace **S5** (#270 `6b600fb`); re-`git pull` after reset |
-| **Open PRs** | Re-check `gh pr list` (often Dependabot only) |
+| **`main` tip (coding)** | **`31faa67`** — docs tip refresh (#272) after Attach UX Wave B (#271) + Workspace **S5** (#270); re-`git pull` after reset |
+| **Open PRs** | Re-check `gh pr list` (often Dependabot + docs Guard spek when open) |
 | **P1 Scan Attach (code)** | **S1–S5** on `main` (#235–#239) + **Wave B** SPA polish (#271) |
 | **P1 production** | **Closed (2026-08-08)** smoke A; Wave B **CI-deployed** with tip (2026-08-10) |
 | **P2 Workspace** | **S1–S5 on `main`** (#267 + #270); spek D1–D6; edge Alembic **`add_workspace_orgs`**; cap **10 enabled / org** |
 | **P4 soft dual-brand** | **On `main`** (#250); host stays **`vs.appmedia.id`** |
+| **P5 Guard** | **S0 spek** [`docs/specs/guard-v1.md`](docs/specs/guard-v1.md) — thin Wazuh (inventory + critical alerts + per-org enroll); **user risk-accepted**; **code S1+ not started** |
 | **P0 commercial** | **Policy locked** (#245): Basic **300k** / Pro **650k** / Multi **2M**; credits **10/24/60**; AM renew; attach ARPU primary; pilot #1 multi-service, 1 mo sponsored |
 | **P0 GTM kit in git** | One-pager + SKU + **[`docs/commercial/am-wave1-email-id.md`](docs/commercial/am-wave1-email-id.md)** (#246) |
 | **Still human (not git)** | Finance **service_id** ×3; AM **10 CRM SIDs**; named **pilot #1**; AM **send** wave-1; ops **fulfill** first yes/pilot |
 | **Coding-host Docker** | Prefer **off/minimal**. Edge runs live stack (CI **deploy** job on `main`) |
-| **Engineering default** | **GTM human** + residual multi-org/S5 smoke + bugfixes; **P3** only on explicit verb — **no** Guard/P5 by default |
+| **Engineering default** | **GTM human** (parallel) + residual multi-org/S5 smoke + bugfixes; **Guard code** only on explicit implement (thin DoD); **P3** on explicit verb |
 
 ### Edge public smoke — post-S5 + Wave B deploy (2026-08-10)
 
@@ -32,7 +33,7 @@ No host IPs, SSH, or secrets in this file.
 
 | Check | Result |
 |-------|--------|
-| CI deploy after #270/#271 | **success** (Actions push on `main`, tip `98756de`) |
+| CI deploy after #270/#271 | **success** (Actions push on `main`; tip moved to `31faa67` after #272 docs) |
 | Alembic (deploy log) | head includes **`add_workspace_orgs`** |
 | `GET /api/health` | **200** — DB + Redis connected |
 | SPA asset (at tip smoke) | `assets/index--pycNp6_.js` + Dashboard/ScanDetail/Schedules chunks (re-check after later deploys) |
@@ -117,12 +118,12 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 | **P2** | Workspace v1 | **S1–S5 shipped** (#267 + #270); residual multi-org/S5 smoke |
 | **P3** | Light asset registry | Later |
 | **P4** | Soft Sinexis dual-brand | **Shipped soft** (#250); **no domain cut** |
-| **P5** | Guard (Wazuh thin) | **Parked** |
+| **P5** | Guard (Wazuh thin) | **S0 spek** risk-accepted; code S1+ on implement verb — see [`guard-v1.md`](docs/specs/guard-v1.md) |
 | **P6** | Hospitality / pilot pack | After attach story works |
 
 **Priority rule:** If this stub, the archive, or old chat **disagrees** with the execution guide on *what to build next*, **the guide wins**, unless the user opens a stuck-job / worker incident.
 
-**When to call engineering again:** bug on schedule/credits/notify/**workspace AuthZ**; revise commercial copy; **P3** only on explicit verb; Guard only with written risk accept.
+**When to call engineering again:** bug on schedule/credits/notify/**workspace AuthZ**; revise commercial copy; **implement Guard S1+** per spek (explicit verb); **P3** only on explicit verb.
 
 ---
 
@@ -135,6 +136,7 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 | AM wave-1 email (Bahasa) | [`docs/commercial/am-wave1-email-id.md`](docs/commercial/am-wave1-email-id.md) |
 | P1 engineering spec | [`docs/specs/scan-attach-v1.md`](docs/specs/scan-attach-v1.md) |
 | Workspace v1 spek (approved; S1–S5 shipped) | [`docs/specs/workspace-v1.md`](docs/specs/workspace-v1.md) |
+| Guard v1 spek (P5 thin; S0) | [`docs/specs/guard-v1.md`](docs/specs/guard-v1.md) |
 | Schedule ops / smoke | [`docs/scan-schedules-ops.md`](docs/scan-schedules-ops.md) |
 | Full execution guide | [`docs/AGENT_EXECUTION_GUIDE.md`](docs/AGENT_EXECUTION_GUIDE.md) |
 | Git / PR rules | [`AGENTS.md`](AGENTS.md) |

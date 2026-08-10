@@ -3,9 +3,9 @@
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
 **Last updated:** 2026-08-10
-**Repo tip at write time:** `main` @ `98756de` (Workspace **S5** #270 + Attach UX Wave B #271; S1–S4 #267; P4 soft #250; P1 attach earlier). Re-`git pull` after reset.
+**Repo tip at write time:** `main` @ `31faa67` (docs tip #272 after Workspace **S5** #270 + Attach UX Wave B #271 @ `98756de`; S1–S4 #267; P4 soft #250; P1 attach earlier). Re-`git pull` after reset — tip may move when Guard spek merges.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
-**Phase snapshot:** **P0 policy locked** · **P1 attach shipped + edge smoke closed** · **P2 Workspace S1–S5 on `main` + edge CI deploy** · **Attach UX Wave B on `main`** · **P4 soft dual-brand on `main`** · **near-term = GTM (finance/AM/ops) + residual multi-org/S5 smoke** · next **code** default = **none** (bugfix or explicit P3 — **no** Guard by default).
+**Phase snapshot:** **P0 policy locked** · **P1 attach shipped + edge smoke closed** · **P2 Workspace S1–S5 on `main` + edge CI deploy** · **Attach UX Wave B on `main`** · **P4 soft dual-brand on `main`** · **P5 Guard spek S0** ([`docs/specs/guard-v1.md`](specs/guard-v1.md)) — **user risk-accepted thin Guard** (inventory + critical alerts + per-org enroll; **not** full SIEM) · **GTM human still open in parallel** · next **code** for Guard = only after explicit implement on S1+ (or approved slice); default without verb remains GTM/bugs — **do not** expand Guard into SIEM.
 
 ---
 
@@ -17,7 +17,7 @@ gh pr list --state open --assignee @me
 
 GIT_MASTER=1 git fetch origin
 GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull origin main
-GIT_MASTER=1 git rev-parse --short HEAD   # expect ≥ 98756de or newer (re-pull)
+GIT_MASTER=1 git rev-parse --short HEAD   # expect ≥ 31faa67 or newer (re-pull)
 ```
 
 Then read, in order:
@@ -43,8 +43,8 @@ Then read, in order:
 | **Legacy name** | VulnScanner / `vs.appmedia.id` — keep as **Scan module** during soft dual-brand |
 | **Near-term commercial goal** | **Upsell** recurring Secure/Scan add-on on customers who **already** pay colo / VPS / cloud / hosting |
 | **Strategic beachhead** | Hotel / hospitality (Yogya relationships + any multi-property group already on GMD) |
-| **Modules** | **Scan + Attach** (prod, Wave B UX polish) · **Workspace S1–S5** (prod; residual multi-org/S5 smoke may still be manual) · **Assets** (P3) · **Guard** (P5, parked) |
-| **Build order (upsell-first)** | See **§1.3** — do **not** treat rebrand or Guard as the main plan; **do not** start P5 by default; P2 **S1–S5** shipped — default eng = GTM + bugs |
+| **Modules** | **Scan + Attach** (prod, Wave B UX polish) · **Workspace S1–S5** (prod; residual multi-org/S5 smoke may still be manual) · **Assets** (P3) · **Guard** (P5 thin — **spek S0**; code S1+ on explicit verb) |
+| **Build order (upsell-first)** | See **§1.3** — P2 **S1–S5** shipped; **P5 thin spek** risk-accepted by user (GTM still parallel); rebrand must not gate attach; **do not** implement full SIEM |
 | **Not v1** | Full SIEM UI, nested multi-project, org billing dual-wallet, Windows depth, SOAR, hard brand cut blocking attach revenue |
 
 ### Positioning (one line)
@@ -97,15 +97,16 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 | **P2** | **Workspace v1** | B2B multi-user | orgs, memberships, invites, org-scoped scans, personal credits, backfill; JWT `org_id`; WS membership AuthZ; **S5** schedule cap per-org | Nested projects; org wallet; Wazuh; per-org ApiKey | **S1–S5 shipped** (#267 S1–S4 → then #270 S5 @ `6b600fb`; tip with Wave B `98756de`). Cap **10 enabled / org** (`MAX_SCHEDULES_PER_ORG`). Spek D1–D6; edge Alembic **`add_workspace_orgs`**. **Residual:** multi-member S5 + login/UI multi-org smoke (manual) |
 | **P3** | **Asset registry (light)** | Multi-target tiers | Named assets; scan pack; tier limits | Full CMDB; IoT; PMS | **Not started** |
 | **P4** | **Soft dual-brand** | Name trust | Sinexis strings, landing, SKU label | Hard cut / domain cutover blocking attach | **Shipped soft dual-brand on `main`** (#250); public host remains **`vs.appmedia.id`** (no hard cut) |
-| **P5** | **Guard MVP** (Wazuh thin) | Second upsell | Agent inventory, critical alerts, per-org enroll | Full SIEM, SOAR | **Parked** — only after Workspace stable + attach story / written risk accept |
+| **P5** | **Guard MVP** (Wazuh thin) | Second upsell | Agent inventory, critical alerts, per-org enroll; spek [`guard-v1.md`](specs/guard-v1.md) | Full SIEM, SOAR, raw-log UI, per-tenant managers | **S0 spek** — **risk-accepted** thin path (user 2026-08-10). **Code S1–S5** only on explicit implement. Mock Wazuh in CI; secrets/env only on deploy host |
 | **P6** | **Hospitality / pilot pack** | Beachhead A | Hotel runbooks, hybrid SLA | Logos-only builds | After attach pilot story works |
 
-**Priority rule for agents (post–P2 S1–S5 + Wave B ship):**
+**Priority rule for agents (post–P2 S1–S5 + Wave B + Guard S0 spek):**
 
-1. **Default next work is GTM execution** (human: finance / AM / ops) — **not** a new code epic.
-2. Code only on **explicit** user verb, **bugfix** (attach or workspace), **P3** after pain, or docs/ops hygiene.
-3. Ordering still true: P1 before Guard; P2 before Guard; P4 must not block attach revenue.
-4. **Never** start P5 by default. **Do not** re-implement P2 S1–S5 or Wave B “because docs were stale.”
+1. **Human default** remains **GTM execution** (finance / AM / ops) — parallel to eng; not blocked by Guard spek.
+2. **Guard code** only on **explicit** implement verb (or pointed slice in `guard-v1.md`); stay inside **thin DoD** (D1–D10 / non-goals).
+3. Other code: **bugfix** (attach/workspace), **P3** after pain, docs/ops hygiene.
+4. Ordering still true: P1/P2 before Guard code; P4 must not block attach revenue.
+5. **Do not** re-implement P2 S1–S5 or Wave B “because docs were stale.” **Do not** ship SIEM-scope PRs under “Guard.”
 
 ### 1.4 What *not* to prioritize for upsell
 
@@ -139,7 +140,7 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 
 **Shipped for workspace (P2 S1–S5):** org tables + backfill migration `add_workspace_orgs`; org API; JWT switch; SPA OrgSwitcher + Workspace Settings; worker schedule rows include `organization_id`; **S5** `MAX_SCHEDULES_PER_ORG` on create/re-enable.
 
-**Still absent (later epics):** nested Project, org wallet, per-org ApiKey, **asset registry product**, Wazuh/Guard, in-app subscription table, hard Sinexis domain cutover.
+**Still absent (later epics / not coded yet):** nested Project, org wallet, per-org ApiKey, **asset registry product**, **Guard/Wazuh implementation** (spek only until S1+), in-app subscription table, hard Sinexis domain cutover.
 
 **Commercial kit (docs, not in-app catalog):** `docs/commercial/sinexis-one-pager.md`, `sku-scan-secure-addon.md` (P0 lock), `am-wave1-email-id.md`.
 
@@ -182,7 +183,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 - [ ] AM **sends** wave-1 using email template; log CRM
 - [ ] Confirm live `pricing` domain/IP before each quote wave
 
-**Agent:** maintain commercial docs on request; **do not** open Guard/Wazuh feature branches; **do not** invent new list prices without user.
+**Agent:** maintain commercial docs on request; **do not** invent new list prices without user. Guard/Wazuh **feature** branches only after S0 spek on `main` (or same series) **and** explicit implement; keep thin scope.
 
 ### Phase B — Specs before code
 
@@ -191,9 +192,9 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | [`docs/specs/scan-attach-v1.md`](specs/scan-attach-v1.md) | **Implemented** (S1–S5 on main; keep as historical acceptance) | N/A for new attach features unless extending |
 | [`docs/specs/workspace-v1.md`](specs/workspace-v1.md) | **Approved** D1–D6; **S1–S5 implemented** on main (#267 + #270) | Residual smoke / bugs only with explicit verb |
 | `docs/specs/assets-v1.md` | Not written | P3 |
-| Guard design note | Not written | P5 — only after Workspace stable + attach story (or written risk) |
+| [`docs/specs/guard-v1.md`](specs/guard-v1.md) | **S0 draft** — D1–D10 locked defaults; **user risk-accepted** thin Guard | Implement S1+ only on explicit verb; mock manager in CI; no SIEM |
 
-**Agent:** wait for **explicit implement** even when spec exists. Prefer **draft spec** over silent coding for P3+.
+**Agent:** wait for **explicit implement** even when spec exists. Prefer **draft spec** over silent coding for P3+; Guard S0 is the exception already written — still no silent S1.
 
 ### Phase C1 / P1 — Scan Attach Loop (upsell engine) — **DONE**
 
@@ -232,13 +233,16 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 - DNS/TLS `sinexis.app` cutover = **later**, must not block GTM
 - Label attach offer **Sinexis Scan** (or agreed SKU name)
 
-### Phase E / P5 — Guard MVP
+### Phase E / P5 — Guard MVP (Wazuh thin)
 
-- After Workspace stable in prod **and** attach GTM motion real (or explicit user risk accept)
-- Wazuh engine; thin UI (agents, last-seen, critical alerts)
-- Per-org enroll tokens (redesign API keys)
-- Target **second upsell** for accounts that already buy security-ish lines
-- **Out of scope v1:** full SIEM, multi-cluster CCS unless required
+- **Risk accept (2026-08-10):** user chose thin Guard eng **in parallel** with open GTM (management latency); Workspace S1–S5 + attach already on `main`
+- **Spek:** [`docs/specs/guard-v1.md`](specs/guard-v1.md) — S0 docs; S1–S5 code slices
+- Wazuh as **sensor bus** behind SaaS: **one lab manager**, group-per-org, SaaS-proxied enroll, poll inventory + critical alerts (level ≥ 12)
+- Thin UI: agents, last-seen, critical alert cards — **no** raw logs / Discover
+- Per-org enroll tokens (**not** global `ApiKey`)
+- Target **second upsell** on colo/VPS attach accounts
+- **Out of scope v1:** full SIEM, SOAR, per-tenant managers, customer Wazuh dashboard, webhooks
+- **Agent:** implement only on explicit verb; refuse SIEM scope creep in PR
 
 ### Phase F / P6 — Hospitality / pilot pack
 
@@ -328,18 +332,30 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 - [ ] Org (or user) can CRUD named assets with scan targets
 - [ ] Scheduled pack can include multiple assets within tier limits
 
+### 5.4 Guard MVP (P5 thin) — from [`docs/specs/guard-v1.md`](specs/guard-v1.md)
+
+- [x] **S0** Spek + guide/handoff/README status (risk-accepted thin path)
+- [ ] Binding + tables + settings; mock Wazuh client
+- [ ] Admin enable Guard; enroll token create/revoke (hash at rest)
+- [ ] Enroll proxy assigns org group; agent appears in inventory (mock OK in CI)
+- [ ] Viewer lists agents + critical alerts **org-scoped** only (IDOR tests)
+- [ ] Poll/sync updates timestamps or sanitized error; no raw-log UI
+- [ ] SPA `/guard` + Sidebar; no secrets/IPs in git
+- [ ] **Non-goals hold:** no SIEM/Discover/SOAR/per-tenant manager in v1 PRs
+
 ---
 
 ## 6) Anti-goals (reject unless user explicitly expands scope)
 
 - Rewriting the whole app “as Sinexis monorepo” in one PR
-- Installing production Wazuh before Workspace **and** before a real attach loop strategy
+- Full SIEM / raw-log product under the name “Guard”
 - Nested projects + billing + Guard in one branch
 - Treating Prometheus app metrics as customer host monitoring
 - Using global `ApiKey` as multi-tenant agent identity without redesign
 - Waiting on CI in-session instead of moving to next task
 - Committing finance extracts or customer PII “for convenience”
 - Prioritizing rebrand cosmetics over billable schedule/report work when user goal is **upsell**
+- Putting Wazuh manager passwords or lab host addresses in public markdown
 
 ---
 
@@ -353,11 +369,13 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | “tulis spek workspace” | Update `docs/specs/workspace-v1.md` only (S1–S5 already shipped) |
 | “implement workspace” / “kerjakan fase workspace” | S1–S5 done — clarify **bug / residual** before coding |
 | “rebrand” / “sinexis.app” | Soft brand shipped; hard cut / DNS only on explicit ask; don’t invent Guard; don’t block attach GTM |
-| “wazuh” / “agent monitoring” | P2 S1–S5 on main; design P5 first — still **parked** by default |
+| “wazuh” / “agent monitoring” / “guard” | Point to [`docs/specs/guard-v1.md`](specs/guard-v1.md); **S0 spek** risk-accepted; **code** only on explicit implement — thin DoD only |
+| “tulis spek guard” / “update spek wazuh” | Edit `docs/specs/guard-v1.md` (+ guide if priority changes) |
+| “implement guard” / “kerjakan wazuh” | S1+ per spek slices; mock CI; no SIEM |
 | “deploy” | Prefer CI `deploy` on `main` or scripts on **edge**; verify health; coding host Docker off by default |
 | “update handoff / guide” | Docs PR only |
 
-**Locked answers (P0 — do not re-ask every session):** KPI = **attach ARPU primary**; renew = **AM**; billing v1 = **GMD invoice + app credit top-up**; dual-brand = **6–12 mo soft** (soft UI shipped); after P0/P1/P2-S1–S5 + Wave B = **GTM + optional P3 on pain** — **no** Guard default.
+**Locked answers (P0 — do not re-ask every session):** KPI = **attach ARPU primary**; renew = **AM**; billing v1 = **GMD invoice + app credit top-up**; dual-brand = **6–12 mo soft** (soft UI shipped); after P0/P1/P2-S1–S5 + Wave B = **GTM parallel** + **Guard thin** only with spek + explicit implement (risk-accepted 2026-08-10) — still **no** SIEM default.
 
 **Still open (human, off-repo):** concrete 10 SIDs, pilot #1 identity, finance service_id creation, live quote ± on IDR.
 
@@ -374,6 +392,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | E2E / admin logins | Script names only (`scripts/ensure_e2e_user.sh`); defaults via **env** | Email + password values |
 | Brand domains | `sinexis.app`, `sinexis.tech` (cutover status) | Registrar/DNS panel access |
 | Finance analysis | Aggregates only (no customer_id / paths) | Raw CSV location and contents |
+| Guard / Wazuh lab | Env var **names** + spek only (`docs/specs/guard-v1.md`) | Manager/indexer URL, user, password on deploy host |
 
 ---
 
@@ -382,7 +401,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | Doc | Role |
 |-----|------|
 | `AGENTS.md` | Git/PR session workflow |
-| `README.md` | Product as-shipped (VulnScanner scan SaaS + schedules ops pointer) |
+| `README.md` | Product as-shipped (scan SaaS + modules table; Guard spek pointer) |
 | `SECURITY.md` | Accepted residual dependency risks |
 | `docs/dependency-pins.md` | Redis/Celery/kombu pin matrix |
 | `scripts/smoke-broker.sh` | Broker/API smoke |
@@ -390,7 +409,8 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | `docs/commercial/*` | P0 one-pager, SKU lock, AM email |
 | `handoff.md` | Session snapshot + GTM checklist — **epic order** still this guide |
 | `docs/archive/handoff-scan-pending-2026.md` | **ARCHIVED** stuck-pending (re-verify) |
-| `docs/specs/*` | Specs (attach historical; workspace S1–S5 shipped; assets TBD) |
+| `docs/specs/guard-v1.md` | P5 Guard thin spek (S0) |
+| `docs/specs/*` | Attach historical; workspace S1–S5 shipped; assets TBD |
 
 ---
 
