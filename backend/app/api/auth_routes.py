@@ -24,6 +24,7 @@ from app.schemas.auth import (
     LoginResponse,
     LogoutAllResponse,
     MessageResponse,
+    OrgSummary,
     RefreshRequest,
     RegisterRequest,
     ResendVerificationRequest,
@@ -38,6 +39,7 @@ from app.services.auth import (
     create_access_token,
     create_refresh_token,
     decode_token,
+    get_active_org_id,
     get_current_user,
     hash_password,
     logout_all,
@@ -46,6 +48,31 @@ from app.services.auth import (
     verify_password,
 )
 from app.services.email import send_password_reset_email, send_verification_email
+from app.services.organization import (
+    OrganizationService,
+    ensure_personal_org,
+    resolve_default_org_id,
+)
+
+
+async def _user_response(
+    db: AsyncSession,
+    user: User,
+    *,
+    active_org_id: UUID | None = None,
+) -> UserResponse:
+    orgs_raw = await OrganizationService(db).list_my_orgs(user)
+    organizations = [OrgSummary.model_validate(o) for o in orgs_raw]
+    if active_org_id is None:
+        active_org_id = await resolve_default_org_id(db, user)
+    base = UserResponse.model_validate(user)
+    return base.model_copy(
+        update={
+            "active_org_id": active_org_id,
+            "organizations": organizations,
+        }
+    )
+
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +146,8 @@ async def register(
     )
     db.add(credit_log)
 
+    await ensure_personal_org(db, user)
+
     token_str = secrets.token_urlsafe(32)
     verification_token = EmailVerificationToken(
         user_id=user.id,
@@ -162,10 +191,20 @@ async def login(
 
     if password_needs_rehash(body.password, user.password_hash):
         user.password_hash = hash_password(body.password)
-        await db.commit()
+
+    personal = await ensure_personal_org(db, user)
+    active_org_id = await resolve_default_org_id(db, user) or personal.id
+    if user.last_active_organization_id != active_org_id:
+        user.last_active_organization_id = active_org_id
+    await db.commit()
 
     user_id_str = str(user.id)
-    access_token = create_access_token(user_id=user_id_str, email=user.email, is_admin=user.is_admin)
+    access_token = create_access_token(
+        user_id=user_id_str,
+        email=user.email,
+        is_admin=user.is_admin,
+        org_id=str(active_org_id),
+    )
     refresh_token = create_refresh_token(user_id=user_id_str)
 
     response.set_cookie(
@@ -179,11 +218,13 @@ async def login(
     )
 
     access_minutes = settings.jwt_access_expire_minutes
+    user_payload = await _user_response(db, user, active_org_id=active_org_id)
     return LoginResponse(
         access_token=access_token,
         refresh_token=refresh_token,
         expires_in=access_minutes * 60,
-        user=UserResponse.model_validate(user),
+        user=user_payload,
+        active_org_id=active_org_id,
     )
 
 
@@ -415,7 +456,18 @@ async def refresh(
     if old_jti is not None:
         await revoke_token(str(old_jti), user_id_str)
 
-    new_access_token = create_access_token(user_id=user_id_str, email=user.email, is_admin=user.is_admin)
+    personal = await ensure_personal_org(db, user)
+    active_org_id = await resolve_default_org_id(db, user) or personal.id
+    if user.last_active_organization_id != active_org_id:
+        user.last_active_organization_id = active_org_id
+        await db.commit()
+
+    new_access_token = create_access_token(
+        user_id=user_id_str,
+        email=user.email,
+        is_admin=user.is_admin,
+        org_id=str(active_org_id),
+    )
     new_refresh_token = create_refresh_token(user_id=user_id_str)
 
     refresh_days = settings.jwt_refresh_expire_days
@@ -526,8 +578,13 @@ async def change_password(
 
 
 @router.get("/me", response_model=UserResponse)
-async def me(current_user: User = Depends(get_current_user)) -> User:
-    return current_user
+async def me(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> UserResponse:
+    active = get_active_org_id(request)
+    return await _user_response(db, current_user, active_org_id=active)
 
 
 @router.post("/revoke", response_model=MessageResponse)

@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import time
+import uuid
 from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -670,6 +671,7 @@ class TestGetCurrentUser:
 
         self.mock_request = MagicMock()
         self.mock_db = AsyncMock()
+        self.mock_request.state = MagicMock()
 
         # Default: valid bearer token
         token = create_access_token(
@@ -679,10 +681,34 @@ class TestGetCurrentUser:
         self.valid_token = token
         self.mock_request.headers = {"Authorization": f"Bearer {token}"}
 
-        # Mock get_db dependency
         self._get_db_patch = patch.object(auth_mod, "get_db", return_value=self.mock_db)
         self._get_db_patch.start()
+
+        personal_org_id = uuid.UUID("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+        membership = MagicMock()
+        membership.role = "owner"
+        self._org_patches = [
+            patch(
+                "app.services.organization.resolve_default_org_id",
+                new_callable=AsyncMock,
+                return_value=personal_org_id,
+            ),
+            patch(
+                "app.services.organization.get_membership",
+                new_callable=AsyncMock,
+                return_value=membership,
+            ),
+            patch(
+                "app.services.organization.ensure_personal_org",
+                new_callable=AsyncMock,
+            ),
+        ]
+        for p in self._org_patches:
+            p.start()
+
         yield
+        for p in self._org_patches:
+            p.stop()
         self._get_db_patch.stop()
 
     def test_missing_authorization_header_returns_401(self):
@@ -823,9 +849,35 @@ class TestGetCurrentUserTokenType:
 
         self.mock_request = MagicMock()
         self.mock_db = AsyncMock()
+        self.mock_request.state = MagicMock()
         self._get_db_patch = patch.object(auth_mod, "get_db", return_value=self.mock_db)
         self._get_db_patch.start()
+
+        personal_org_id = uuid.UUID("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+        membership = MagicMock()
+        membership.role = "owner"
+        self._org_patches = [
+            patch(
+                "app.services.organization.resolve_default_org_id",
+                new_callable=AsyncMock,
+                return_value=personal_org_id,
+            ),
+            patch(
+                "app.services.organization.get_membership",
+                new_callable=AsyncMock,
+                return_value=membership,
+            ),
+            patch(
+                "app.services.organization.ensure_personal_org",
+                new_callable=AsyncMock,
+            ),
+        ]
+        for p in self._org_patches:
+            p.start()
+
         yield
+        for p in self._org_patches:
+            p.stop()
         self._get_db_patch.stop()
 
     def _make_token(self, type_val, sub=None, email=None, exp_delta=30, include_sub=True, include_email=True):

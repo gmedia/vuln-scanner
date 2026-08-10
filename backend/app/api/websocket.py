@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import logging
+from uuid import UUID
 
+import jwt
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from redis.asyncio import Redis
 from redis.exceptions import RedisError
@@ -12,6 +14,9 @@ from app.config import settings
 from app.database import async_session
 from app.models.api_key import ApiKey
 from app.models.scan_job import ScanJob
+from app.models.user import User
+from app.services.auth import decode_token
+from app.services.organization import get_membership, role_at_least
 from app.utils import hash_key
 
 logger = logging.getLogger(__name__)
@@ -50,15 +55,91 @@ async def validate_api_key(api_key: str | None) -> bool:
     if not api_key:
         return False
 
-    # Check against master key from settings
     if api_key == settings.api_key:
         return True
 
-    # Check against DB-stored keys
     key_hash = hash_key(api_key)
     async with async_session() as session:
         result = await session.execute(select(ApiKey).where(ApiKey.key_hash == key_hash, ApiKey.is_active.is_(True)))
         return result.scalar_one_or_none() is not None
+
+
+def _extract_bearer(websocket: WebSocket, token_query: str | None) -> str | None:
+    if token_query:
+        return token_query
+    authorization = websocket.headers.get("authorization") or websocket.headers.get("Authorization")
+    if not authorization:
+        return None
+    scheme, _, value = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not value:
+        return None
+    return value
+
+
+async def _authorize_ws_connection(
+    websocket: WebSocket,
+    job_id: str,
+    api_key: str | None,
+    token: str | None,
+) -> tuple[bool, str | None]:
+    bearer = _extract_bearer(websocket, token)
+    if bearer:
+        try:
+            payload = decode_token(bearer)
+        except jwt.PyJWTError:
+            await websocket.close(code=4001, reason="Unauthorized: invalid or expired token")
+            return False, None
+        if payload.get("type") != "access":
+            await websocket.close(code=4001, reason="Unauthorized: access token required")
+            return False, None
+        user_id_raw = payload.get("sub")
+        if not user_id_raw:
+            await websocket.close(code=4001, reason="Unauthorized: token missing subject")
+            return False, None
+        try:
+            user_id = UUID(str(user_id_raw))
+        except ValueError:
+            await websocket.close(code=4001, reason="Unauthorized: invalid user identifier")
+            return False, None
+
+        async with async_session() as session:
+            user_result = await session.execute(select(User.id).where(User.id == user_id))
+            if user_result.scalar_one_or_none() is None:
+                await websocket.close(code=4001, reason="Unauthorized: user not found")
+                return False, None
+
+            job_result = await session.execute(select(ScanJob).where(ScanJob.id == job_id))
+            job = job_result.scalar_one_or_none()
+            if job is None:
+                await websocket.close(code=4004, reason="Job not found")
+                return False, None
+
+            if job.user_id == user_id:
+                return True, f"jwt:{user_id}"
+
+            if job.organization_id is None:
+                await websocket.close(code=4003, reason="Forbidden: not authorized for this job")
+                return False, None
+
+            membership = await get_membership(session, job.organization_id, user_id)
+            if membership is None or not role_at_least(membership.role, "viewer"):
+                await websocket.close(code=4003, reason="Forbidden: not authorized for this job")
+                return False, None
+            return True, f"jwt:{user_id}"
+
+    if not await validate_api_key(api_key):
+        await websocket.close(code=4001, reason="Unauthorized: invalid or missing credentials")
+        return False, None
+
+    is_master_key = api_key == settings.api_key
+    if not is_master_key:
+        async with async_session() as session:
+            job_result = await session.execute(select(ScanJob.id).where(ScanJob.id == job_id))
+            if not job_result.scalar_one_or_none():
+                await websocket.close(code=4004, reason="Job not found")
+                return False, None
+
+    return True, f"key:{api_key or ''}"
 
 
 @router.websocket("/ws/scan/{job_id}")
@@ -66,23 +147,13 @@ async def scan_progress(
     websocket: WebSocket,
     job_id: str,
     api_key: str | None = Query(None, alias="api_key"),
+    token: str | None = Query(None, alias="token"),
 ) -> None:
     """WebSocket endpoint that streams scan progress updates for a given job ID."""
-    # Validate API key before accepting the connection
-    if not await validate_api_key(api_key):
-        await websocket.close(code=4001, reason="Unauthorized: invalid or missing API key")
+    authorized, identity = await _authorize_ws_connection(websocket, job_id, api_key, token)
+    if not authorized:
         return
 
-    # Defense-in-depth: verify the job exists (non-master keys must have valid job)
-    is_master_key = api_key == settings.api_key
-    if not is_master_key:
-        async with async_session() as session:
-            job_result = await session.execute(select(ScanJob.id).where(ScanJob.id == job_id))
-            if not job_result.scalar_one_or_none():
-                await websocket.close(code=4004, reason="Job not found")
-                return
-
-    # IP-based rate limiting
     client_ip = websocket.client.host if websocket.client else "unknown"
     key = f"{WS_RATE_LIMIT_PREFIX}:{client_ip}"
     try:
@@ -105,8 +176,8 @@ async def scan_progress(
         await websocket.close(code=4001, reason="Service temporarily unavailable")
         return
 
-    # Per-key rate limiting
-    key_hash = hashlib.sha256((api_key or "").encode()).hexdigest()
+    identity_raw = identity or "unknown"
+    key_hash = hashlib.sha256(identity_raw.encode()).hexdigest()
     key_rl_key = f"{WS_KEY_LIMIT_PREFIX}:{key_hash}"
     try:
         rl = await _get_ws_rate_limit_redis()

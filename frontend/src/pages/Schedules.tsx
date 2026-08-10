@@ -44,6 +44,8 @@ import {
   type ScheduleRunJob,
 } from "@/api/schedules";
 import type { ApiError } from "@/lib/utils";
+import { canMutateWorkspace } from "@/api/orgs";
+import { useAuthStore } from "@/store/authStore";
 
 export { mapScheduleError };
 
@@ -125,10 +127,7 @@ function ScheduleRunsPanel({ scheduleId }: { scheduleId: string }) {
             {job.status}
           </Badge>
           <span>{formatWhen(job.created_at ?? null)}</span>
-          <Link
-            to={`/scan/${job.id}`}
-            className="text-primary hover:underline"
-          >
+          <Link to={`/scan/${job.id}`} className="text-primary hover:underline">
             buka scan
           </Link>
         </li>
@@ -146,6 +145,8 @@ function Schedules() {
   const [formError, setFormError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [expandedRuns, setExpandedRuns] = useState<Record<string, boolean>>({});
+  const activeRole = useAuthStore((s) => s.activeRole);
+  const canCreate = canMutateWorkspace(activeRole());
 
   const prefillKey = `${searchParams.get("target") ?? ""}\0${searchParams.get("scan_type") ?? ""}`;
   const [prefillApplied, setPrefillApplied] = useState("");
@@ -183,9 +184,7 @@ function Schedules() {
       setFormError(null);
     },
     onError: (err: unknown) => {
-      setFormError(
-        mapScheduleError(apiDetail(err, "Gagal membuat jadwal")),
-      );
+      setFormError(mapScheduleError(apiDetail(err, "Gagal membuat jadwal")));
     },
   });
 
@@ -271,7 +270,10 @@ function Schedules() {
           </div>
           <Progress value={capPercent} className="h-1.5" />
           {atCap && (
-            <p className="flex items-start gap-2 text-xs text-amber-400" role="status">
+            <p
+              className="flex items-start gap-2 text-xs text-amber-400"
+              role="status"
+            >
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               Batas {MAX_ENABLED_SCHEDULES} jadwal aktif tercapai. Nonaktifkan
               satu jadwal sebelum membuat yang baru.
@@ -280,107 +282,114 @@ function Schedules() {
         </CardHeader>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm tracking-wide">Jadwal baru</CardTitle>
-          <CardDescription className="text-xs">
-            Scan domain/IP berulang (mingguan atau bulanan). Dipotong kredit
-            setiap kali dijalankan.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={onSubmit} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="sched-name">Label (opsional)</Label>
-                <Input
-                  id="sched-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Eksternal mingguan"
-                />
+      {canCreate ? (
+        <Card data-testid="schedule-create-card">
+          <CardHeader>
+            <CardTitle className="text-sm tracking-wide">Jadwal baru</CardTitle>
+            <CardDescription className="text-xs">
+              Scan domain/IP berulang (mingguan atau bulanan). Dipotong kredit
+              setiap kali dijalankan.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={onSubmit} className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="sched-name">Label (opsional)</Label>
+                  <Input
+                    id="sched-name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Eksternal mingguan"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tipe</Label>
+                  <Select
+                    value={scanType}
+                    onValueChange={(v) => setScanType(v as "domain" | "ip")}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="domain">Domain</SelectItem>
+                      <SelectItem value="ip">IP</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sched-target">Target</Label>
+                  <Input
+                    id="sched-target"
+                    value={target}
+                    onChange={(e) => setTarget(e.target.value)}
+                    placeholder={
+                      scanType === "ip" ? "203.0.113.10" : "example.com"
+                    }
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Frekuensi</Label>
+                  <Select
+                    value={cadence}
+                    onValueChange={(v) => setCadence(v as "weekly" | "monthly")}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="weekly">Mingguan</SelectItem>
+                      <SelectItem value="monthly">Bulanan</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="sched-notify">
+                    Email notifikasi (opsional)
+                  </Label>
+                  <Input
+                    id="sched-notify"
+                    type="email"
+                    value={notifyEmail}
+                    onChange={(e) => setNotifyEmail(e.target.value)}
+                    placeholder="default: email akun Anda"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Tipe</Label>
-                <Select
-                  value={scanType}
-                  onValueChange={(v) => setScanType(v as "domain" | "ip")}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="domain">Domain</SelectItem>
-                    <SelectItem value="ip">IP</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="sched-target">Target</Label>
-                <Input
-                  id="sched-target"
-                  value={target}
-                  onChange={(e) => setTarget(e.target.value)}
-                  placeholder={
-                    scanType === "ip" ? "203.0.113.10" : "example.com"
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Frekuensi</Label>
-                <Select
-                  value={cadence}
-                  onValueChange={(v) => setCadence(v as "weekly" | "monthly")}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="weekly">Mingguan</SelectItem>
-                    <SelectItem value="monthly">Bulanan</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="sched-notify">
-                  Email notifikasi (opsional)
-                </Label>
-                <Input
-                  id="sched-notify"
-                  type="email"
-                  value={notifyEmail}
-                  onChange={(e) => setNotifyEmail(e.target.value)}
-                  placeholder="default: email akun Anda"
-                />
-              </div>
-            </div>
-            {formError && (
-              <p className="text-sm text-destructive" role="alert">
-                {formError}
-              </p>
-            )}
-            <Button
-              type="submit"
-              disabled={createMut.isPending || atCap}
-              title={
-                atCap
-                  ? `Batas ${MAX_ENABLED_SCHEDULES} jadwal aktif tercapai`
-                  : undefined
-              }
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              {createMut.isPending ? "Membuat…" : "Buat jadwal"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+              {formError && (
+                <p className="text-sm text-destructive" role="alert">
+                  {formError}
+                </p>
+              )}
+              <Button
+                type="submit"
+                disabled={createMut.isPending || atCap}
+                title={
+                  atCap
+                    ? `Batas ${MAX_ENABLED_SCHEDULES} jadwal aktif tercapai`
+                    : undefined
+                }
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                {createMut.isPending ? "Membuat…" : "Buat jadwal"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      ) : (
+        <p
+          className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
+          data-testid="viewer-schedule-readonly"
+        >
+          Peran viewer — tidak dapat membuat atau mengubah jadwal.
+        </p>
+      )}
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm tracking-wide">
-            Jadwal Anda
-          </CardTitle>
+          <CardTitle className="text-sm tracking-wide">Jadwal Anda</CardTitle>
         </CardHeader>
         <CardContent>
           {actionError && (
@@ -422,7 +431,10 @@ function Schedules() {
                             {s.cadence === "weekly" ? "mingguan" : "bulanan"}
                           </span>
                           {!s.enabled && (
-                            <Badge variant="default" className="ml-2 text-[10px]">
+                            <Badge
+                              variant="default"
+                              className="ml-2 text-[10px]"
+                            >
                               nonaktif
                             </Badge>
                           )}
@@ -464,46 +476,49 @@ function Schedules() {
                             Eksekutif
                           </Button>
                         )}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={
-                            toggleMut.isPending ||
-                            (!s.enabled && atCap)
-                          }
-                          title={
-                            !s.enabled && atCap
-                              ? `Batas ${MAX_ENABLED_SCHEDULES} jadwal aktif tercapai`
-                              : undefined
-                          }
-                          onClick={() =>
-                            toggleMut.mutate({
-                              id: s.id,
-                              enabled: !s.enabled,
-                            })
-                          }
-                        >
-                          {s.enabled ? "Nonaktifkan" : "Aktifkan"}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          disabled={deleteMut.isPending}
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                `Hapus jadwal untuk ${s.target}?`,
-                              )
-                            ) {
-                              deleteMut.mutate(s.id);
+                        {canCreate && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={
+                              toggleMut.isPending || (!s.enabled && atCap)
                             }
-                          }}
-                          aria-label="Hapus jadwal"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                            title={
+                              !s.enabled && atCap
+                                ? `Batas ${MAX_ENABLED_SCHEDULES} jadwal aktif tercapai`
+                                : undefined
+                            }
+                            onClick={() =>
+                              toggleMut.mutate({
+                                id: s.id,
+                                enabled: !s.enabled,
+                              })
+                            }
+                          >
+                            {s.enabled ? "Nonaktifkan" : "Aktifkan"}
+                          </Button>
+                        )}
+                        {canCreate && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={deleteMut.isPending}
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  `Hapus jadwal untuk ${s.target}?`,
+                                )
+                              ) {
+                                deleteMut.mutate(s.id);
+                              }
+                            }}
+                            aria-label="Hapus jadwal"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
                       </div>
                     </div>
 

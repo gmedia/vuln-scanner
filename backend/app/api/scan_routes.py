@@ -22,7 +22,7 @@ from app.schemas.scan import (
     ScanJobResponse,
     ScanRequest,
 )
-from app.services.auth import get_current_user
+from app.services.auth import get_active_org_id, get_current_user
 from app.services.baseline_diff import get_scan_diff
 from app.services.executive_report import render_executive_html
 from app.services.scanner import ScannerService
@@ -168,7 +168,13 @@ async def start_ip_scan(
     if limit_response:
         return limit_response
     svc = ScannerService(db)
-    job = await svc.start_scan(user=current_user, scan_type="ip", target=req.target, ports=req.ports)
+    job = await svc.start_scan(
+        user=current_user,
+        scan_type="ip",
+        target=req.target,
+        ports=req.ports,
+        organization_id=get_active_org_id(request),
+    )
     return job
 
 
@@ -183,7 +189,12 @@ async def start_domain_scan(
     if limit_response:
         return limit_response
     svc = ScannerService(db)
-    job = await svc.start_scan(user=current_user, scan_type="domain", target=req.domain)
+    job = await svc.start_scan(
+        user=current_user,
+        scan_type="domain",
+        target=req.domain,
+        organization_id=get_active_org_id(request),
+    )
     return job
 
 
@@ -246,6 +257,7 @@ async def start_mobile_scan(
             target=safe_name,
             platform=platform,
             file_path=file_path,
+            organization_id=get_active_org_id(request),
         )
         return job
     except (HTTPException, OSError, CeleryError):
@@ -256,6 +268,7 @@ async def start_mobile_scan(
 
 @router.get("/scan/history", response_model=PaginatedResponse)
 async def get_scan_history(
+    request: Request,
     page: int = 1,
     limit: int = 20,
     scan_type: str | None = None,
@@ -264,7 +277,13 @@ async def get_scan_history(
 ) -> PaginatedResponse:
     """List scan jobs with pagination. Optionally filter by scan type."""
     svc = ScannerService(db)
-    return await svc.get_history(page=page, limit=limit, scan_type=scan_type, user_id=current_user.id)
+    return await svc.get_history(
+        page=page,
+        limit=limit,
+        scan_type=scan_type,
+        user_id=current_user.id,
+        organization_id=get_active_org_id(request),
+    )
 
 
 @router.get("/scan/{job_id}", response_model=ScanJobDetailResponse)

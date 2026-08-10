@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Sidebar from "@/components/layout/Sidebar";
 import { useScanStore } from "@/store/scanStore";
 import { useAuthStore } from "@/store/authStore";
@@ -15,10 +16,15 @@ vi.mock("@/store/creditStore", () => ({
 
 describe("Sidebar", () => {
   const renderSidebar = (open: boolean, onClose = vi.fn()) => {
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     return render(
-      <MemoryRouter>
-        <Sidebar open={open} onClose={onClose} />
-      </MemoryRouter>,
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <Sidebar open={open} onClose={onClose} />
+        </MemoryRouter>
+      </QueryClientProvider>,
     );
   };
 
@@ -35,6 +41,8 @@ describe("Sidebar", () => {
       accessToken: null,
       isLoading: false,
       error: null,
+      organizations: [],
+      activeOrgId: null,
     });
     vi.mocked(useCreditStore).mockReturnValue({
       credits: 0,
@@ -71,9 +79,9 @@ describe("Sidebar", () => {
     });
     renderSidebar(true);
     expect(screen.getByText("Admin overview")).toBeInTheDocument();
-    const adminLinks = screen.getAllByRole("link").filter((a) =>
-      a.getAttribute("href") === "/admin",
-    );
+    const adminLinks = screen
+      .getAllByRole("link")
+      .filter((a) => a.getAttribute("href") === "/admin");
     expect(adminLinks[0]).toHaveTextContent("Admin overview");
   });
 
@@ -81,7 +89,9 @@ describe("Sidebar", () => {
     useScanStore.setState({ activeJobId: "scan-abc" });
     renderSidebar(true);
     expect(screen.getByText("Active Scan")).toBeInTheDocument();
-    expect(screen.getByText("scan-abc".slice(0, 12) + "...")).toBeInTheDocument();
+    expect(
+      screen.getByText("scan-abc".slice(0, 12) + "..."),
+    ).toBeInTheDocument();
     expect(screen.getByText("In Progress")).toBeInTheDocument();
   });
 

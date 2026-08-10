@@ -17,7 +17,13 @@ vi.mock("@/api/auth", () => ({
   },
 }));
 
+vi.mock("@/api/orgs", () => ({
+  listOrgs: vi.fn(),
+  switchOrg: vi.fn(),
+}));
+
 import * as authApi from "@/api/auth";
+import * as orgsApi from "@/api/orgs";
 
 const mockedAuthApi = authApi as unknown as {
   login: ReturnType<typeof vi.fn>;
@@ -35,16 +41,24 @@ const mockedAuthApi = authApi as unknown as {
   };
 };
 
+const mockedOrgsApi = orgsApi as unknown as {
+  listOrgs: ReturnType<typeof vi.fn>;
+  switchOrg: ReturnType<typeof vi.fn>;
+};
+
 describe("authStore", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    mockedOrgsApi.listOrgs.mockRejectedValue(new Error("not implemented"));
     useAuthStore.setState({
       user: null,
       accessToken: null,
       isAuthenticated: false,
       isLoading: true,
       error: null,
+      organizations: [],
+      activeOrgId: null,
     });
   });
 
@@ -569,6 +583,67 @@ describe("authStore", () => {
       const promise = useAuthStore.getState().initialize();
       expect(useAuthStore.getState().isLoading).toBe(true);
       await promise;
+    });
+  });
+
+  describe("workspace orgs", () => {
+    it("applyMe stores organizations and active_org_id", () => {
+      useAuthStore.getState().applyMe({
+        id: "u1",
+        email: "a@example.com",
+        is_verified: true,
+        is_admin: false,
+        credits: 5,
+        created_at: "2025-01-01T00:00:00Z",
+        organizations: [
+          {
+            id: "org-a",
+            name: "Team A",
+            slug: "team-a",
+            role: "member",
+          },
+        ],
+        active_org_id: "org-a",
+      });
+      const state = useAuthStore.getState();
+      expect(state.organizations).toHaveLength(1);
+      expect(state.activeOrgId).toBe("org-a");
+      expect(state.activeRole()).toBe("member");
+      expect(state.isAuthenticated).toBe(true);
+    });
+
+    it("applyMe tolerates missing organizations", () => {
+      useAuthStore.getState().applyMe({
+        id: "u1",
+        email: "a@example.com",
+        is_verified: true,
+        created_at: "2025-01-01T00:00:00Z",
+      });
+      expect(useAuthStore.getState().organizations).toEqual([]);
+      expect(useAuthStore.getState().activeOrgId).toBeNull();
+      expect(useAuthStore.getState().activeRole()).toBeNull();
+    });
+
+    it("switchOrganization updates tokens and me", async () => {
+      mockedOrgsApi.switchOrg.mockResolvedValueOnce({
+        access_token: "switched",
+        refresh_token: "r2",
+      });
+      mockedAuthApi.getMe.mockResolvedValueOnce({
+        id: "u1",
+        email: "a@example.com",
+        is_verified: true,
+        credits: 3,
+        created_at: "2025-01-01T00:00:00Z",
+        organizations: [{ id: "org-b", name: "B", slug: "b", role: "admin" }],
+        active_org_id: "org-b",
+      });
+
+      const ok = await useAuthStore.getState().switchOrganization("org-b");
+      expect(ok).toBe(true);
+      expect(useAuthStore.getState().accessToken).toBe("switched");
+      expect(useAuthStore.getState().activeOrgId).toBe("org-b");
+      expect(useAuthStore.getState().activeRole()).toBe("admin");
     });
   });
 });

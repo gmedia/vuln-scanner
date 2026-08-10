@@ -1,5 +1,8 @@
 import { create } from "zustand";
 import * as authApi from "../api/auth";
+import type { OrgSummary } from "../api/auth";
+import * as orgsApi from "../api/orgs";
+import type { OrgMembershipSummary, OrgRole } from "../api/orgs";
 import { isAxiosError } from "axios";
 
 function extractError(err: unknown, fallback: string): string {
@@ -19,6 +22,29 @@ function extractError(err: unknown, fallback: string): string {
   return err instanceof Error ? err.message : fallback;
 }
 
+function mapOrgs(
+  orgs: OrgSummary[] | OrgMembershipSummary[] | undefined,
+): OrgMembershipSummary[] {
+  if (!orgs || !Array.isArray(orgs)) return [];
+  return orgs.map((o) => ({
+    id: o.id,
+    name: o.name,
+    slug: o.slug,
+    role: o.role as OrgRole,
+    kind: o.kind,
+  }));
+}
+
+function userFromMe(user: authApi.UserResponse) {
+  return {
+    id: user.id,
+    email: user.email,
+    is_verified: user.is_verified,
+    is_admin: user.is_admin ?? false,
+    credits: user.credits ?? 0,
+  };
+}
+
 interface User {
   id: string;
   email: string;
@@ -33,6 +59,8 @@ interface AuthStore {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  organizations: OrgMembershipSummary[];
+  activeOrgId: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   register: (
     email: string,
@@ -45,9 +73,7 @@ interface AuthStore {
   }>;
   logout: () => Promise<void>;
   verifyEmail: (token: string) => Promise<boolean>;
-  resendVerification: (
-    email: string,
-  ) => Promise<{
+  resendVerification: (email: string) => Promise<{
     ok: boolean;
     emailSent: boolean | null;
     message: string | null;
@@ -69,6 +95,10 @@ interface AuthStore {
   initialize: () => Promise<void>;
   setAccessToken: (token: string | null) => void;
   setCredits: (credits: number) => void;
+  applyMe: (user: authApi.UserResponse) => void;
+  switchOrganization: (organizationId: string) => Promise<boolean>;
+  loadOrganizations: () => Promise<void>;
+  activeRole: () => OrgRole | null;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -77,6 +107,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   isAuthenticated: false,
   isLoading: true,
   error: null,
+  organizations: [],
+  activeOrgId: null,
 
   setAccessToken: (token) => {
     if (token) {
@@ -94,6 +126,65 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
   },
 
+  applyMe: (user) => {
+    const organizations = mapOrgs(user.organizations);
+    const activeOrgId =
+      user.active_org_id ??
+      (organizations.length > 0 ? organizations[0].id : null);
+    set({
+      user: userFromMe(user),
+      organizations,
+      activeOrgId,
+      isAuthenticated: true,
+    });
+  },
+
+  activeRole: () => {
+    const { organizations, activeOrgId } = get();
+    if (!activeOrgId || organizations.length === 0) return null;
+    const match = organizations.find((o) => o.id === activeOrgId);
+    return match?.role ?? null;
+  },
+
+  loadOrganizations: async () => {
+    try {
+      const list = await orgsApi.listOrgs();
+      const { activeOrgId } = get();
+      const nextActive =
+        activeOrgId && list.some((o) => o.id === activeOrgId)
+          ? activeOrgId
+          : (list[0]?.id ?? null);
+      set({ organizations: list, activeOrgId: nextActive });
+    } catch {
+      void 0;
+    }
+  },
+
+  switchOrganization: async (organizationId) => {
+    set({ error: null });
+    try {
+      const res = await orgsApi.switchOrg(organizationId);
+      set({ accessToken: res.access_token });
+      localStorage.setItem("accessToken", res.access_token);
+      if (res.refresh_token) {
+        localStorage.setItem("refreshToken", res.refresh_token);
+      }
+      authApi.authApi.defaults.headers.common["Authorization"] =
+        `Bearer ${res.access_token}`;
+      const user = await authApi.getMe();
+      get().applyMe(user);
+      if (!user.organizations?.length) {
+        await get().loadOrganizations();
+        set({ activeOrgId: organizationId });
+      }
+      return true;
+    } catch (err) {
+      const message = extractError(err, "Gagal beralih organisasi");
+      set({ error: message });
+      return false;
+    }
+  },
+
   login: async (email, password) => {
     set({ isLoading: true, error: null });
     try {
@@ -103,17 +194,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       authApi.authApi.defaults.headers.common["Authorization"] =
         `Bearer ${loginRes.access_token}`;
       const user = await authApi.getMe();
-      set({
-        user: {
-          id: user.id,
-          email: user.email,
-          is_verified: user.is_verified,
-          is_admin: user.is_admin ?? false,
-          credits: user.credits ?? 0,
-        },
-        isAuthenticated: true,
-        isLoading: false,
-      });
+      get().applyMe(user);
+      if (!user.organizations?.length) {
+        await get().loadOrganizations();
+      }
+      set({ isLoading: false });
       return true;
     } catch (err) {
       const message = extractError(err, "Login gagal");
@@ -153,6 +238,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       accessToken: null,
       isAuthenticated: false,
       error: null,
+      organizations: [],
+      activeOrgId: null,
     });
   },
 
@@ -267,20 +354,20 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       authApi.authApi.defaults.headers.common["Authorization"] =
         `Bearer ${refreshRes.access_token}`;
       const user = await authApi.getMe();
-      set({
-        user: {
-          id: user.id,
-          email: user.email,
-          is_verified: user.is_verified,
-          is_admin: user.is_admin ?? false,
-          credits: user.credits ?? 0,
-        },
-        isAuthenticated: true,
-      });
+      get().applyMe(user);
+      if (!user.organizations?.length) {
+        await get().loadOrganizations();
+      }
       return true;
     } catch {
       delete authApi.authApi.defaults.headers.common["Authorization"];
-      set({ user: null, accessToken: null, isAuthenticated: false });
+      set({
+        user: null,
+        accessToken: null,
+        isAuthenticated: false,
+        organizations: [],
+        activeOrgId: null,
+      });
       return false;
     }
   },
@@ -290,8 +377,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   initialize: async () => {
     set({ isLoading: true });
 
-    // If globalSetup stored a token in localStorage, use it directly
-    // to avoid calling refreshAuth() (which hits rate limits in CI).
     const storedToken = localStorage.getItem("accessToken");
     if (storedToken) {
       set({ accessToken: storedToken });
@@ -299,20 +384,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         `Bearer ${storedToken}`;
       try {
         const user = await authApi.getMe();
-        set({
-          user: {
-            id: user.id,
-            email: user.email,
-            is_verified: user.is_verified,
-            is_admin: (user as { is_admin?: boolean }).is_admin ?? false,
-            credits: (user as { credits?: number }).credits ?? 0,
-          },
-          isAuthenticated: true,
-          isLoading: false,
-        });
+        get().applyMe(user);
+        if (!user.organizations?.length) {
+          await get().loadOrganizations();
+        }
+        set({ isLoading: false });
         return;
       } catch {
-        // Token expired or invalid — remove it and fall through to refreshAuth
         localStorage.removeItem("accessToken");
         set({ accessToken: null });
       }

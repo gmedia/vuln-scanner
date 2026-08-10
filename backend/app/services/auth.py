@@ -107,9 +107,14 @@ def password_needs_rehash(plain: str, hashed: str) -> bool:
         return False
 
 
-def create_access_token(user_id: str, email: str, is_admin: bool = False) -> str:
+def create_access_token(
+    user_id: str,
+    email: str,
+    is_admin: bool = False,
+    org_id: str | None = None,
+) -> str:
     expire = datetime.now(UTC) + timedelta(minutes=ACCESS_EXPIRE)
-    payload = {
+    payload: dict[str, Any] = {
         "sub": user_id,
         "email": email,
         "is_admin": is_admin,
@@ -117,6 +122,8 @@ def create_access_token(user_id: str, email: str, is_admin: bool = False) -> str
         "exp": expire,
         "jti": _uuid.uuid4().hex,
     }
+    if org_id is not None:
+        payload["org_id"] = org_id
     return str(jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM))
 
 
@@ -201,10 +208,33 @@ async def logout_all(user_id: str) -> int:
     return count
 
 
+def get_active_org_id(request: Request) -> UUID | None:
+    value = getattr(request.state, "active_org_id", None)
+    if value is None:
+        return None
+    if isinstance(value, UUID):
+        return value
+    try:
+        return UUID(str(value))
+    except ValueError:
+        return None
+
+
+def get_active_org_role(request: Request) -> str | None:
+    role = getattr(request.state, "org_role", None)
+    return str(role) if role is not None else None
+
+
 async def get_current_user(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> User:
+    from app.services.organization import (
+        ensure_personal_org,
+        get_membership,
+        resolve_default_org_id,
+    )
+
     authorization: str | None = request.headers.get("Authorization")
     if not authorization:
         raise HTTPException(
@@ -256,6 +286,39 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
         )
+
+    raw_org_id = payload.get("org_id")
+    active_org_id: UUID | None = None
+    org_role: str | None = None
+
+    if raw_org_id is not None and str(raw_org_id).strip():
+        try:
+            claimed_org = UUID(str(raw_org_id))
+        except ValueError as err:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid organization identifier in token",
+            ) from err
+        membership = await get_membership(db, claimed_org, user.id)
+        if membership is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token organization is not a current membership",
+            )
+        active_org_id = claimed_org
+        org_role = membership.role
+    else:
+        active_org_id = await resolve_default_org_id(db, user)
+        if active_org_id is None:
+            personal = await ensure_personal_org(db, user)
+            await db.commit()
+            active_org_id = personal.id
+        membership = await get_membership(db, active_org_id, user.id)
+        if membership is not None:
+            org_role = membership.role
+
+    request.state.active_org_id = active_org_id
+    request.state.org_role = org_role
 
     return user
 

@@ -8,6 +8,7 @@ import { useCreditStore } from "@/store/creditStore";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { BrandMark } from "@/components/brand/BrandMark";
+import OrgSwitcher from "@/components/workspace/OrgSwitcher";
 import { SCAN_TYPE_LABELS } from "@/lib/constants";
 
 interface HeaderProps {
@@ -36,7 +37,10 @@ function Header({ children }: HeaderProps) {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setDropdownOpen(false);
       }
     }
@@ -64,7 +68,7 @@ function Header({ children }: HeaderProps) {
         {activeJobId && (
           <div className="flex items-center gap-2">
             <span className="hidden text-xs text-muted-foreground sm:inline">
-              {scanType ? SCAN_TYPE_LABELS[scanType] ?? scanType : "Scan"}
+              {scanType ? (SCAN_TYPE_LABELS[scanType] ?? scanType) : "Scan"}
             </span>
             <Badge variant="running" className="text-[10px]">
               {progress}%
@@ -74,15 +78,22 @@ function Header({ children }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
+        {isAuthenticated && <OrgSwitcher className="hidden sm:block" />}
+
         {isAuthenticated && (
           <Link
             to="/credit-history"
             className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs text-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            title="Credit balance"
+            title="Your personal credit balance"
           >
             <Coins className="h-3.5 w-3.5 text-primary" aria-hidden />
-            <span className="text-muted-foreground hidden sm:inline">Credits</span>
-            <span className="font-mono font-bold text-primary tabular-nums" data-testid="header-credits">
+            <span className="text-muted-foreground hidden sm:inline">
+              Your credits
+            </span>
+            <span
+              className="font-mono font-bold text-primary tabular-nums"
+              data-testid="header-credits"
+            >
               {credits}
             </span>
           </Link>
@@ -105,7 +116,8 @@ function Header({ children }: HeaderProps) {
                 className="absolute right-0 top-full z-50 mt-1 w-56 rounded-md border border-border bg-card p-1 shadow-lg"
               >
                 <div className="px-3 py-2 text-xs text-muted-foreground">
-                  Signed in as <span className="text-foreground">{user.email}</span>
+                  Signed in as{" "}
+                  <span className="text-foreground">{user.email}</span>
                 </div>
                 <Button
                   variant="ghost"

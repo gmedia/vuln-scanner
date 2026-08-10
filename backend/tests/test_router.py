@@ -19,6 +19,7 @@ class TestApiRouter:
             "/api/auth",
             "/api/credits",
             "/api/admin",
+            "/api/orgs",
         }
 
         found = set()
