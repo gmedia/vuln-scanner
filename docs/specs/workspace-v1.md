@@ -1,9 +1,9 @@
 # Spec: Workspace v1 (P2)
 
-**Status:** **approved** (user 2026-08-10: D1–D6 defaults locked; implement verb given). Build order S1→S4 on `feat/workspace-org-membership`.
+**Status:** **approved** (D1–D6 locked 2026-08-10). **S1–S4 implemented** on `main` via #267 (`21dd317`); edge migration **`add_workspace_orgs`** applied. Residual: manual UI smoke; optional **S5** schedule cap per-org.
 **Goal:** multi-user B2B workspace so a hotel or company can share scans and schedules under one org, without rewriting billing or attaching Guard.
 **Epic:** P2 per [`docs/AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) §1.3, §3 Phase C2, §5.2.
-**Suggested later branch (after approval):** `feat/workspace-org-membership` (split PRs by slice if large). Spec-only branch may use `docs/workspace-v1-spec`.
+**Historical branch:** `feat/workspace-org-membership` (merged). New work: `fix/*` or `feat/workspace-s5-schedule-cap` only with explicit verb.
 
 ---
 

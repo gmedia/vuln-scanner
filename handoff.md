@@ -10,20 +10,34 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
-## Session snapshot (2026-08-09 — refresh against `main`)
+## Session snapshot (2026-08-10 — refresh against `main`)
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding)** | **`6185e01`** — post-P1 guide / GTM status (#248); re-`git pull` after reset |
-| **Open PRs** | Re-check `gh pr list` (often: P1 schedule polish, P4 dual-brand, Workspace spek, this handoff) |
+| **`main` tip (coding)** | **`21dd317`** — Workspace v1 S1–S4 (#267); re-`git pull` after reset |
+| **Open PRs** | Re-check `gh pr list` (often Dependabot only) |
 | **P1 Scan Attach (code)** | **S1–S5** on `main` (#235–#239) |
-| **P1 ops / production docs** | #240–#243 on main |
-| **P1 production** | **Closed (2026-08-08)** — edge smoke A (see below) |
+| **P1 production** | **Closed (2026-08-08)** — edge smoke A (below) |
+| **P2 Workspace** | **S1–S4 on `main`** (#267); spek approved D1–D6; edge Alembic **`add_workspace_orgs`** (CI deploy 2026-08-10) |
+| **P4 soft dual-brand** | **On `main`** (#250); host stays **`vs.appmedia.id`** |
 | **P0 commercial** | **Policy locked** (#245): Basic **300k** / Pro **650k** / Multi **2M**; credits **10/24/60**; AM renew; attach ARPU primary; pilot #1 multi-service, 1 mo sponsored |
 | **P0 GTM kit in git** | One-pager + SKU + **[`docs/commercial/am-wave1-email-id.md`](docs/commercial/am-wave1-email-id.md)** (#246) |
 | **Still human (not git)** | Finance **service_id** ×3; AM **10 CRM SIDs**; named **pilot #1**; AM **send** wave-1; ops **fulfill** first yes/pilot |
-| **Coding-host Docker** | All `vuln-*` **Exited**. Edge runs live stack |
-| **Engineering default** | **Dual-track OK:** GTM human + optional polish (P1 UX), soft dual-brand (P4), Workspace **spek only** until approve — **no** Guard/P5 by default |
+| **Coding-host Docker** | Prefer **off/minimal**. Edge runs live stack |
+| **Engineering default** | **GTM human** + optional Workspace **login/UI smoke** + bugfixes; **S5** / **P3** only on explicit verb — **no** Guard/P5 by default |
+
+### Edge public smoke — post-Workspace deploy (2026-08-10)
+
+No host IPs, SSH, or secrets in this file.
+
+| Check | Result |
+|-------|--------|
+| CI deploy after #267 | **success** (Actions push on `main`) |
+| Alembic (deploy log) | **`add_scan_schedules` → `add_workspace_orgs`** (backfill orgs/memberships) |
+| `GET /api/health` | **200** — DB + Redis connected |
+| SPA asset (at smoke) | `assets/index-8MKK5gW6.js` (re-check after later deploys) |
+| `GET /api/orgs` unauthenticated | **401** (route present) |
+| Login / OrgSwitcher / multi-user AuthZ | **Manual residual** — close when ops confirms UI |
 
 ### Edge on-host smoke A (2026-08-08) — P1 production DoD
 
@@ -31,36 +45,45 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 
 | Check | Result |
 |-------|--------|
-| Git tip on edge (at smoke) | **`6edd254`** (attach + ops docs; later docs-only SHAs OK to pull) |
+| Git tip on edge (at P1 smoke) | **`6edd254`** (later SHAs OK; tip now includes Workspace) |
 | Compose project label | **`vuln`** on this edge (always `docker inspect` — may differ per host) |
 | Containers | backend, frontend, workers, **celery_beat**, postgres, redis **healthy** |
-| Alembic | **`add_scan_schedules` (head)** |
+| Alembic (at P1 smoke) | was **`add_scan_schedules`**; **now head includes `add_workspace_orgs`** |
 | Beat | **`schedules.run_due` every 5m** |
 | Due + credits | Job **completed**, domain cost **2**, credits debit, `last_job_id` set, `next_run_at` advanced |
 | Zero credits | Schedule **`enabled=false`**, `last_error` insufficient credits, **no** new job |
-| Cleanup | Smoke schedules deleted; e2e credits restored |
-| Cap 10 | Remote proof: 10 OK / 11th **400** |
+| Cap 10 | Still **per user** until S5; remote proof historically 10 OK / 11th **400** |
 
 ### Remote smoke (public URL)
 
 | Check | Result |
 |-------|--------|
 | `GET /api/health` | **200** |
-| Schedules CRUD + cap 10 | **Pass** |
+| Schedules CRUD + cap 10 (per user) | **Pass** (P1) |
+| Workspace org API surface | Present (401 without JWT) |
 
 ### Deploy notes (edge)
 
 - Prefer [`scripts/deploy-services.sh`](scripts/deploy-services.sh); include **`celery_beat`**.
+- CI main still uses `scripts/deploy.sh` (known debt; deploy job succeeded for Workspace).
 - Match live `COMPOSE_PROJECT_NAME` via inspect (`vuln` vs `vuln-scanner`).
 - Never commit secrets, SSH targets, or production host addresses into the public repo.
 
 ### Smoke DoD (edge) — short
 
-1. `celery_beat` healthy; Alembic head includes `scan_schedules` / `last_error`.
+**P1 (closed):**
+
+1. `celery_beat` healthy; Alembic includes schedules / `last_error`.
 2. Due schedule + credits → job enqueued, credits deducted.
 3. Zero credits → schedule disabled, `last_error` set, no new job.
-4. 11th enabled / re-enable over cap → HTTP 400.
+4. 11th enabled / re-enable over cap → HTTP 400 (per **user** until S5).
 5. Diff / notify / executive OK when credits allow.
+
+**P2 residual (manual):**
+
+1. Alembic head **`add_workspace_orgs`** (done on edge 2026-08-10).
+2. Login → personal org + JWT `org_id` / OrgSwitcher.
+3. Shared scans per membership; no cross-org IDOR; WS membership OK.
 
 ---
 
@@ -87,16 +110,16 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 | P | Focus | State |
 |---|--------|--------|
 | **P0** | One-pager + SKU + AM kit | **Policy + templates in git**; **GTM execution open** |
-| **P1** | Scan Attach Loop | **Code + production smoke closed**; UX polish may still land in open PRs |
-| **P2** | Workspace v1 | **Spek draft** (review D1–D6) — no S1 code until user approve + implement verb |
+| **P1** | Scan Attach Loop | **Code + production smoke closed** |
+| **P2** | Workspace v1 | **S1–S4 shipped** (#267); residual UI smoke + optional **S5** cap per-org |
 | **P3** | Light asset registry | Later |
-| **P4** | Soft Sinexis dual-brand | Open PR path OK; **no domain cut** (`vs.appmedia.id`) |
+| **P4** | Soft Sinexis dual-brand | **Shipped soft** (#250); **no domain cut** |
 | **P5** | Guard (Wazuh thin) | **Parked** |
 | **P6** | Hospitality / pilot pack | After attach story works |
 
 **Priority rule:** If this stub, the archive, or old chat **disagrees** with the execution guide on *what to build next*, **the guide wins**, unless the user opens a stuck-job / worker incident.
 
-**When to call engineering again:** bug on schedule/credits/notify; revise commercial copy; **implement P2** only after spek approval + explicit verb; P4 soft brand without blocking GTM.
+**When to call engineering again:** bug on schedule/credits/notify/**workspace AuthZ**; revise commercial copy; **S5** / **P3** only on explicit verb; Guard only with written risk accept.
 
 ---
 
@@ -108,7 +131,7 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 | SKU + decision log | [`docs/commercial/sku-scan-secure-addon.md`](docs/commercial/sku-scan-secure-addon.md) |
 | AM wave-1 email (Bahasa) | [`docs/commercial/am-wave1-email-id.md`](docs/commercial/am-wave1-email-id.md) |
 | P1 engineering spec | [`docs/specs/scan-attach-v1.md`](docs/specs/scan-attach-v1.md) |
-| Workspace v1 spek (draft) | [`docs/specs/workspace-v1.md`](docs/specs/workspace-v1.md) (if present on branch/`main`) |
+| Workspace v1 spek (approved; S1–S4 shipped) | [`docs/specs/workspace-v1.md`](docs/specs/workspace-v1.md) |
 | Schedule ops / smoke | [`docs/scan-schedules-ops.md`](docs/scan-schedules-ops.md) |
 | Full execution guide | [`docs/AGENT_EXECUTION_GUIDE.md`](docs/AGENT_EXECUTION_GUIDE.md) |
 | Git / PR rules | [`AGENTS.md`](AGENTS.md) |

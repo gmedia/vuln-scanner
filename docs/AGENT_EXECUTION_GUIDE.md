@@ -2,10 +2,10 @@
 
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
-**Last updated:** 2026-08-09
-**Repo tip at write time:** `main` @ `da8cd36` (P0 commercial lock + AM email #245–#246; P1 attach on main earlier). Re-`git pull` after reset.
+**Last updated:** 2026-08-10
+**Repo tip at write time:** `main` @ `21dd317` (Workspace v1 S1–S4 #267; P4 soft dual-brand #250; P1 attach earlier). Re-`git pull` after reset.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
-**Phase snapshot:** **P0 policy locked in git** · **P1 Scan Attach shipped + production smoke closed** · **near-term work = GTM (finance/AM/ops)** · next **code** epic default = **none** until bug or explicit **P2 spec** (multi-user pain).
+**Phase snapshot:** **P0 policy locked** · **P1 attach shipped + edge smoke closed** · **P2 Workspace S1–S4 on `main` + edge deploy/Alembic** · **P4 soft dual-brand on `main`** · **near-term = GTM (finance/AM/ops) + optional Workspace login/UI smoke** · next **code** default = **none** (bugfix, S5 schedule-cap-per-org, or explicit P3 — **no** Guard by default).
 
 ---
 
@@ -17,7 +17,7 @@ gh pr list --state open --assignee @me
 
 GIT_MASTER=1 git fetch origin
 GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull origin main
-GIT_MASTER=1 git rev-parse --short HEAD   # expect ≥ da8cd36 or newer (re-pull)
+GIT_MASTER=1 git rev-parse --short HEAD   # expect ≥ 21dd317 or newer (re-pull)
 ```
 
 Then read, in order:
@@ -43,8 +43,8 @@ Then read, in order:
 | **Legacy name** | VulnScanner / `vs.appmedia.id` — keep as **Scan module** during soft dual-brand |
 | **Near-term commercial goal** | **Upsell** recurring Secure/Scan add-on on customers who **already** pay colo / VPS / cloud / hosting |
 | **Strategic beachhead** | Hotel / hospitality (Yogya relationships + any multi-property group already on GMD) |
-| **Modules** | **Scan + Attach loop** (shipped on prod) · **Workspace** (P2, not built) · **Assets** (P3) · **Guard** (P5, parked) |
-| **Build order (upsell-first)** | See **§1.3** — do **not** use “Workspace → rebrand → Guard only” as the sole plan; **do not** start P2/P5 by default now that P1 is live |
+| **Modules** | **Scan + Attach** (prod) · **Workspace S1–S4** (prod code + migration; UI smoke may still be manual) · **Assets** (P3) · **Guard** (P5, parked) |
+| **Build order (upsell-first)** | See **§1.3** — do **not** treat rebrand or Guard as the main plan; **do not** start P5 by default; P2 code is shipped — default eng = GTM + bugs |
 | **Not v1** | Full SIEM UI, nested multi-project, org billing dual-wallet, Windows depth, SOAR, hard brand cut blocking attach revenue |
 
 ### Positioning (one line)
@@ -90,22 +90,22 @@ Then read, in order:
 
 Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales/runbook may start before full UI.
 
-| P | Epic | Goal for upsell | In scope | Out of scope | **Status (2026-08-09)** |
+| P | Epic | Goal for upsell | In scope | Out of scope | **Status (2026-08-10)** |
 |---|------|-----------------|----------|--------------|-------------------------|
 | **P0** | **Commercial lock** (user-led + docs) | Something sales can quote | One-pager; **SKU** tiers/prices; SID *patterns*; AM email kit; defaults §1 | Guard coding; finance CSV in repo | **Policy locked in git** (#245–#246). **GTM still open:** finance `service_id`, 10 CRM SIDs, named pilot, AM send, ops fulfill |
 | **P1** | **Scan Attach Loop** | Recurring reason to pay monthly | **Scheduled** domain/IP; new critical/high notify; **baseline diff**; **executive HTML**; credits on schedule; cap 10 | Org rewrite; Wazuh; full rebrand | **Shipped on `main` + production smoke closed** (S1–S5, edge DoD) |
-| **P2** | **Workspace v1** | B2B multi-user | orgs, memberships, invites, org-scoped scans, personal credits, backfill; API keys toward per-org | Nested projects; org wallet; Wazuh | **Not started** — **spec first** (`workspace-v1.md` missing); only if multi-user blocks paid delivery |
+| **P2** | **Workspace v1** | B2B multi-user | orgs, memberships, invites, org-scoped scans, personal credits, backfill; JWT `org_id`; WS membership AuthZ | Nested projects; org wallet; Wazuh; per-org ApiKey | **S1–S4 shipped** (#267 → `21dd317`); spek [`workspace-v1.md`](specs/workspace-v1.md) **approved** D1–D6; edge Alembic **`add_workspace_orgs`**; public health OK. **Residual:** login/UI multi-org smoke (manual); **S5** schedule cap per-org (deferred) |
 | **P3** | **Asset registry (light)** | Multi-target tiers | Named assets; scan pack; tier limits | Full CMDB; IoT; PMS | **Not started** |
-| **P4** | **Soft dual-brand** | Name trust | Sinexis strings, landing, `sinexis.app`; SKU label | Hard cut blocking attach revenue | **Not started** (must not block attach GTM) |
-| **P5** | **Guard MVP** (Wazuh thin) | Second upsell | Agent inventory, critical alerts, per-org enroll | Full SIEM, SOAR | **Parked** — never before P2 (or written risk accept) |
+| **P4** | **Soft dual-brand** | Name trust | Sinexis strings, landing, SKU label | Hard cut / domain cutover blocking attach | **Shipped soft dual-brand on `main`** (#250); public host remains **`vs.appmedia.id`** (no hard cut) |
+| **P5** | **Guard MVP** (Wazuh thin) | Second upsell | Agent inventory, critical alerts, per-org enroll | Full SIEM, SOAR | **Parked** — only after Workspace stable + attach story / written risk accept |
 | **P6** | **Hospitality / pilot pack** | Beachhead A | Hotel runbooks, hybrid SLA | Logos-only builds | After attach pilot story works |
 
-**Priority rule for agents (post–P1 ship):**
+**Priority rule for agents (post–P2 S1–S4 ship):**
 
 1. **Default next work is GTM execution** (human: finance / AM / ops) — **not** a new code epic.
-2. Code only on **explicit** user verb, or **bugfix** on attach, or **draft/implement P2** after multi-user pain / approved spec.
-3. Historical rule still true for *ordering*: P1 before Guard; P2 before Guard; P4 must not block attach revenue.
-4. **Never** start P5 before P2 ships (or user accepts written risk). **Never** open P2/P5 “because P0/P1 docs finished.”
+2. Code only on **explicit** user verb, **bugfix** (attach or workspace), **S5** schedule-cap-per-org, **P3** after pain, or docs/ops hygiene.
+3. Ordering still true: P1 before Guard; P2 before Guard; P4 must not block attach revenue.
+4. **Never** start P5 by default. **Do not** re-implement P2 S1–S4 “because docs were stale.”
 
 ### 1.4 What *not* to prioritize for upsell
 
@@ -121,32 +121,37 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 
 **Stack:** SPA React/Vite + FastAPI + PostgreSQL + Redis + Celery (queues: `ip_scan`, `domain_scan`, `mobile_scan`, `dead_letter` + schedule due tick) + **celery_beat** + host nginx prod.
 
-**Domain model (still single-tenant user scope — no org yet):**
+**Domain model (Workspace S1–S4 on main):**
 
 | Entity | Scope | Notes |
 |--------|--------|------|
-| `User` | Global | `is_admin`, **personal** `credits` |
-| `ScanJob` | `user_id` only | Types: `ip` \| `domain` \| `apk` \| `ipa` |
+| `User` | Global | `is_admin` = **platform**; **personal** `credits` (no org wallet in v1) |
+| `Organization` / membership / invite | multi-user workspace | roles `owner` \| `admin` \| `member` \| `viewer`; personal org backfill on existing users + register |
+| `ScanJob` | `user_id` + **`organization_id`** | Types: `ip` \| `domain` \| `apk` \| `ipa`; list/detail AuthZ via org membership |
 | `ScanFinding` | via job | Vuln taxonomy; baseline **diff** across runs for attach |
 | `CreditLog` / **`pricing`** table | user / global | `credit_cost` per `scan_type` (edge smoke: domain **2**, IP **1** — re-confirm live) |
-| **`scan_schedules`** (P1) | `user_id` | Cadence weekly/monthly; `last_job_id`; `last_error`; **max 10 enabled**/user; debit credits on due; auto-disable if insufficient |
+| **`scan_schedules`** (P1 + org FK) | `user_id` + **`organization_id`** | Cap still **max 10 enabled / user** until **S5** (per-org); debit **schedule owner** credits on due |
 | `ApiKey` | **Global** M2M | **No** user/org FK — unfit for per-tenant agents as-is |
 
-**AuthZ:** JWT + optional `X-API-Key`. Scan/schedule isolation = owning `user_id`. Admin = **platform** superuser, not org/hotel admin.
+**AuthZ:** JWT (claim **`org_id`**, must match membership) + optional `X-API-Key`. Scan/schedule visibility = org membership + role (not only `user_id == me`). WebSocket job progress requires membership on job’s org. Admin = **platform** superuser, not org/hotel admin.
 
 **Shipped for attach (P1) — reuse, don’t rewrite:** schedule API + beat `schedules.run_due`, baseline diff, new critical/high notify, executive HTML, credit gate, ops notes `docs/scan-schedules-ops.md`.
 
-**Still absent (greenfield for later epics):** Organization, Project, Membership, invites, org-scoped keys, **asset registry product**, Wazuh/Guard pipeline, in-app subscription table, hard Sinexis UI cutover.
+**Shipped for workspace (P2 S1–S4):** org tables + backfill migration `add_workspace_orgs`; org API; JWT switch; SPA OrgSwitcher + Workspace Settings; worker schedule rows include `organization_id`.
+
+**Still absent (later epics):** nested Project, org wallet, per-org ApiKey, **asset registry product**, Wazuh/Guard, in-app subscription table, hard Sinexis domain cutover, **S5** per-org schedule cap.
 
 **Commercial kit (docs, not in-app catalog):** `docs/commercial/sinexis-one-pager.md`, `sku-scan-secure-addon.md` (P0 lock), `am-wave1-email-id.md`.
 
 **Key paths:**
 
-- Models / schedules: `backend/app/models/`, `backend/app/services/schedule.py`, `backend/app/schemas/schedule.py`
-- Auth: `backend/app/services/auth.py`
-- Scan ownership: `backend/app/services/scanner.py`
+- Models / schedules: `backend/app/models/` (incl. `organization.py`), `backend/app/services/schedule.py`, `backend/app/schemas/schedule.py`
+- Org workspace: `backend/app/services/organization.py`, `backend/app/api/org_routes.py`, `backend/alembic/versions/add_workspace_orgs.py`
+- Auth (JWT `org_id`): `backend/app/services/auth.py`
+- Scan / WS AuthZ: `backend/app/api/scan_routes.py`, `backend/app/api/websocket.py`
 - Routes: `backend/app/api/router.py`
 - Workers / beat: `workers/`, especially `workers/tasks/schedules.py`
+- SPA workspace: `frontend/src/api/orgs.ts`, `components/workspace/OrgSwitcher.tsx`, `pages/WorkspaceSettings.tsx`
 - SPA brand: `frontend/src/components/layout/Sidebar.tsx`, `Landing.tsx`, `index.html`
 - Prod edge: `nginx/vs.appmedia.id.conf`, public URL `https://vs.appmedia.id`
 - Deploy: prefer `scripts/deploy-services.sh` (non-destructive); include **celery_beat**
@@ -184,11 +189,11 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | Spec | Status | Before implementing |
 |------|--------|---------------------|
 | [`docs/specs/scan-attach-v1.md`](specs/scan-attach-v1.md) | **Implemented** (S1–S5 on main; keep as historical acceptance) | N/A for new attach features unless extending |
-| `docs/specs/workspace-v1.md` | **Not written** | **Required** before P2 code |
+| [`docs/specs/workspace-v1.md`](specs/workspace-v1.md) | **Approved** D1–D6; **S1–S4 implemented** on main (#267) | S5 / residual only with explicit verb |
 | `docs/specs/assets-v1.md` | Not written | P3 |
-| Guard design note | Not written | P5 — only after P2 (P1 already real) |
+| Guard design note | Not written | P5 — only after Workspace stable + attach story (or written risk) |
 
-**Agent:** wait for **explicit implement** even when spec exists. Prefer **draft spec** over silent coding for P2+.
+**Agent:** wait for **explicit implement** even when spec exists. Prefer **draft spec** over silent coding for P3+.
 
 ### Phase C1 / P1 — Scan Attach Loop (upsell engine) — **DONE**
 
@@ -196,23 +201,23 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 
 **Residual engineering:** bugfixes only; optional edge tip pull for docs-only SHAs; no second “implement P1” epic.
 
-**Do not** require Workspace for single-user attach (already true in prod). Org FK for schedules = P2 follow-up when Workspace lands.
+**Do not** require multi-user Workspace for single-user attach (still true). Schedule **cap per org** = **S5** follow-up (still per-user until then).
 
-### Phase C2 / P2 — Workspace v1
+### Phase C2 / P2 — Workspace v1 — **S1–S4 DONE** (2026-08-10)
 
-Suggested branch: `feat/workspace-org-membership` (split PRs if large).
+**Shipped on `main`:** #267 (`21dd317`); CI deploy run success; Alembic upgrade `add_scan_schedules` → **`add_workspace_orgs`** (orgs, memberships, invites, FK + backfill).
 
-Order:
+**In scope delivered:** personal org backfill; multi-org + JWT `org_id`; invites; org-scoped scan AuthZ; WS membership check; SPA switcher + settings; credits remain personal; **no** Guard.
 
-1. Alembic: org + membership + invite tables
-2. AuthZ helpers (membership checks; keep personal credits)
-3. API + backend tests
-4. Frontend: org switcher, members, invite
-5. Backfill personal orgs; attach historical `ScanJob`
-6. Move schedules/assets toward org FK when present
-7. PR(s); deploy with `deploy-services.sh`
+**Residual / not S1–S4:**
 
-**DoD:** two users in same org see shared scans per role; owner invites member; viewer read-only; **no Wazuh**.
+- Manual **login/UI** multi-org smoke on edge (public health + `/api/orgs` 401 already OK)
+- **S5:** migrate enabled-schedule cap from per-user → per-org (~10)
+- Per-org ApiKey, org wallet, nested projects — still out
+
+**DoD (product):** two users in same org see shared scans per role; owner invites member; viewer read-only; **no Wazuh**. Treat code+migration as shipped; close residual smoke when ops confirms UI.
+
+**Agent:** do **not** re-open full P2 implementation unless user asks for S5/bugs.
 
 ### Phase C3 / P3 — Asset registry (light)
 
@@ -220,16 +225,16 @@ Order:
 - Labels + target type; bulk “run pack”
 - Enforce tier limits if SKU defined
 
-### Phase D / P4 — Soft rebrand
+### Phase D / P4 — Soft rebrand — **soft dual-brand DONE** (#250)
 
-- Shell strings, email `From`, titles, landing → Sinexis
-- DNS/TLS `sinexis.app` when ready
+- Shell strings / titles / landing → **Sinexis** primary, VulnScanner as engine whisper
+- Public edge host still **`vs.appmedia.id`** (no hard domain cut)
+- DNS/TLS `sinexis.app` cutover = **later**, must not block GTM
 - Label attach offer **Sinexis Scan** (or agreed SKU name)
-- **Must not** block P1 revenue experiments
 
 ### Phase E / P5 — Guard MVP
 
-- After Workspace in prod (or explicit user risk accept)
+- After Workspace stable in prod **and** attach GTM motion real (or explicit user risk accept)
 - Wazuh engine; thin UI (agents, last-seen, critical alerts)
 - Per-org enroll tokens (redesign API keys)
 - Target **second upsell** for accounts that already buy security-ish lines
@@ -302,19 +307,22 @@ Order:
 - [x] Credits charged on schedule; insufficient → disable schedule
 - [x] Cap **10** enabled schedules/user
 - [x] No Wazuh in this epic
-- [ ] Optional later: PDF, org-scoped schedules (P2), in-app subscription
+- [ ] Optional later: PDF, in-app subscription
+- [ ] **S5:** enabled-schedule cap **per org** (still per-user until then)
 
-### 5.2 Workspace v1 (P2)
+### 5.2 Workspace v1 (P2) — **S1–S4 met in code + migration (2026-08-10)**
 
-- [ ] User can create an organization (hotel or company workspace)
-- [ ] Roles: `owner` \| `admin` \| `member` \| `viewer` enforced on API
-- [ ] Owner/admin can invite by email; existing user can accept; pending invite for unknown email
-- [ ] Scans list/detail/export/WebSocket respect **org membership** (not only job creator), per role
-- [ ] Backfill: every pre-migration user has a personal org; old jobs visible in that org
-- [ ] Platform admin (`is_admin`) still global; cannot read all orgs via hotel UI bugs
-- [ ] Credits behavior matches documented decision (default: personal balance unchanged)
-- [ ] Tests: authZ matrix + migration backfill
-- [ ] No Wazuh/agent code in this epic
+- [x] User can create an organization (hotel or company workspace)
+- [x] Roles: `owner` \| `admin` \| `member` \| `viewer` enforced on API
+- [x] Owner/admin can invite by email; existing user can accept; pending invite for unknown email
+- [x] Scans list/detail/export/WebSocket respect **org membership** (not only job creator), per role
+- [x] Backfill: every pre-migration user has a personal org; old jobs visible in that org
+- [x] Platform admin (`is_admin`) still global; not reused as org role
+- [x] Credits remain **personal** (D1)
+- [x] Tests: workspace AuthZ + schedule worker org column; migration on edge
+- [x] No Wazuh/agent code in this epic
+- [ ] Edge **login/UI** multi-org smoke (manual residual)
+- [ ] **S5** schedule cap per-org
 
 ### 5.3 Assets (P3) — sketch
 
@@ -342,16 +350,15 @@ Order:
 
 | User says | Agent does |
 |-----------|------------|
-| “lanjut” / “next” without spec | Re-read §1.3 + `handoff.md`; report **GTM open items** + P2–P6; **no** silent feature coding |
-| “upsell” / “attach” / “jadwal scan” | P1 is **shipped** — point at ops/commercial docs; fix bugs only if reported |
-| “tulis spek workspace” | Create/update `docs/specs/workspace-v1.md` only |
-| “implement workspace” / “kerjakan fase workspace” | Only with approved spec; branch + implement P2 |
-| “rebrand” / “sinexis.app” | P4 only; don’t invent Guard; don’t block attach GTM |
-| “wazuh” / “agent monitoring” | Confirm P2 done; design P5 first — P1 already done |
+| “lanjut” / “next” without spec | Re-read §1.3 + `handoff.md`; report **GTM open items** + residual P2 smoke / S5 / P3–P6; **no** silent feature coding |
+| “tulis spek workspace” | Update `docs/specs/workspace-v1.md` only (S1–S4 already shipped) |
+| “implement workspace” / “kerjakan fase workspace” | S1–S4 done — clarify **S5 / bug / residual** before coding |
+| “rebrand” / “sinexis.app” | Soft brand shipped; hard cut / DNS only on explicit ask; don’t invent Guard; don’t block attach GTM |
+| “wazuh” / “agent monitoring” | P2 S1–S4 on main; design P5 first — still **parked** by default |
 | “deploy” | Correct script on **edge**; verify health; coding host Docker off by default |
 | “update handoff / guide” | Docs PR only |
 
-**Locked answers (P0 — do not re-ask every session):** KPI = **attach ARPU primary**; renew = **AM**; billing v1 = **GMD invoice + app credit top-up**; dual-brand = **6–12 mo soft**; after P0/P1 = **GTM then P2 only on pain**.
+**Locked answers (P0 — do not re-ask every session):** KPI = **attach ARPU primary**; renew = **AM**; billing v1 = **GMD invoice + app credit top-up**; dual-brand = **6–12 mo soft** (soft UI shipped); after P0/P1/P2-S1–S4 = **GTM + optional S5/P3 on pain** — **no** Guard default.
 
 **Still open (human, off-repo):** concrete 10 SIDs, pilot #1 identity, finance service_id creation, live quote ± on IDR.
 
@@ -384,13 +391,13 @@ Order:
 | `docs/commercial/*` | P0 one-pager, SKU lock, AM email |
 | `handoff.md` | Session snapshot + GTM checklist — **epic order** still this guide |
 | `docs/archive/handoff-scan-pending-2026.md` | **ARCHIVED** stuck-pending (re-verify) |
-| `docs/specs/*` | Specs (attach historical; workspace/assets TBD) |
+| `docs/specs/*` | Specs (attach historical; workspace S1–S4 shipped; assets TBD) |
 
 ---
 
 ## 10) Agent one-liner
 
-> After reset: **boot §0 → §1.3 status (P0 locked, P1 shipped, GTM now, P2+ deferred) → no silent epics → bug/spec/implement only on explicit ask → no PII/SSH in git → Indonesian with user, `GIT_MASTER=1`, coding Docker off, edge for prod.**
+> After reset: **boot §0 → §1.3 (P0 locked, P1 + P2 S1–S4 + P4 soft on main, GTM now, no Guard default) → no silent epics → bug/S5/P3 only on explicit ask → no PII/SSH in git → Indonesian with user, `GIT_MASTER=1`, coding Docker off, edge for prod.**
 
 ---
 
