@@ -1,9 +1,9 @@
 # Spec: Guard v1 (P5 — Wazuh thin)
 
-**Status:** **draft approved for implementation planning** (2026-08-10). User **risk-accepted** thin Guard after Workspace S1–S5 + attach on `main`, despite open human GTM. **Code not implemented** until a later PR with explicit implement verb (or this epic’s S1+ slices).
+**Status:** **S1–S5 implemented on branch** `feat/guard-s1-s5-thin` (2026-08-10) — models, mock Wazuh client, API/AuthZ, enroll (middleware public path), workers, FE `/guard`, pytest. Live `HttpWazuhClient` still stub until deploy host secrets. S0 spek remains source of truth for D1–D10.
 **Goal:** second upsell surface — **agent inventory + critical alerts + per-org enroll** — without shipping a SIEM.
 **Epic:** P5 per [`docs/AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) §1.3, §3 Phase E, §5.3.
-**Branch convention:** `docs/guard-v1-spec` (this document + guide/handoff/README); implement on `feat/guard-*` only after S0 lands on `main` or user says implement on same PR series.
+**Branch convention:** S0 on `main` via docs PR; implement on `feat/guard-*`.
 
 ---
 

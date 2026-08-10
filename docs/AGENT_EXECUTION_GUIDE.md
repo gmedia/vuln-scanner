@@ -43,7 +43,7 @@ Then read, in order:
 | **Legacy name** | VulnScanner / `vs.appmedia.id` — keep as **Scan module** during soft dual-brand |
 | **Near-term commercial goal** | **Upsell** recurring Secure/Scan add-on on customers who **already** pay colo / VPS / cloud / hosting |
 | **Strategic beachhead** | Hotel / hospitality (Yogya relationships + any multi-property group already on GMD) |
-| **Modules** | **Scan + Attach** (prod, Wave B UX polish) · **Workspace S1–S5** (prod; residual multi-org/S5 smoke may still be manual) · **Assets** (P3) · **Guard** (P5 thin — **spek S0**; code S1+ on explicit verb) |
+| **Modules** | **Scan + Attach** (prod, Wave B UX polish) · **Workspace S1–S5** (prod; residual multi-org/S5 smoke may still be manual) · **Assets** (P3) · **Guard** (P5 thin — **S0 spek on main**; **S1–S5** on `feat/guard-s1-s5-thin`) |
 | **Build order (upsell-first)** | See **§1.3** — P2 **S1–S5** shipped; **P5 thin spek** risk-accepted by user (GTM still parallel); rebrand must not gate attach; **do not** implement full SIEM |
 | **Not v1** | Full SIEM UI, nested multi-project, org billing dual-wallet, Windows depth, SOAR, hard brand cut blocking attach revenue |
 
@@ -192,7 +192,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | [`docs/specs/scan-attach-v1.md`](specs/scan-attach-v1.md) | **Implemented** (S1–S5 on main; keep as historical acceptance) | N/A for new attach features unless extending |
 | [`docs/specs/workspace-v1.md`](specs/workspace-v1.md) | **Approved** D1–D6; **S1–S5 implemented** on main (#267 + #270) | Residual smoke / bugs only with explicit verb |
 | `docs/specs/assets-v1.md` | Not written | P3 |
-| [`docs/specs/guard-v1.md`](specs/guard-v1.md) | **S0 draft** — D1–D10 locked defaults; **user risk-accepted** thin Guard | Implement S1+ only on explicit verb; mock manager in CI; no SIEM |
+| [`docs/specs/guard-v1.md`](specs/guard-v1.md) | **S0 on main**; **S1–S5 code** on `feat/guard-s1-s5-thin` (mock Wazuh; live HTTP stub) | Merge PR then edge secrets; no SIEM |
 
 **Agent:** wait for **explicit implement** even when spec exists. Prefer **draft spec** over silent coding for P3+; Guard S0 is the exception already written — still no silent S1.
 
@@ -236,13 +236,13 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 ### Phase E / P5 — Guard MVP (Wazuh thin)
 
 - **Risk accept (2026-08-10):** user chose thin Guard eng **in parallel** with open GTM (management latency); Workspace S1–S5 + attach already on `main`
-- **Spek:** [`docs/specs/guard-v1.md`](specs/guard-v1.md) — S0 docs; S1–S5 code slices
+- **Spek:** [`docs/specs/guard-v1.md`](specs/guard-v1.md) — S0 docs on main; **S1–S5** implementation on feature branch (models, mock client, API, workers, FE `/guard`)
 - Wazuh as **sensor bus** behind SaaS: **one lab manager**, group-per-org, SaaS-proxied enroll, poll inventory + critical alerts (level ≥ 12)
 - Thin UI: agents, last-seen, critical alert cards — **no** raw logs / Discover
-- Per-org enroll tokens (**not** global `ApiKey`)
+- Per-org enroll tokens (**not** global `ApiKey`); `/api/guard/enroll` is middleware-public (token-gated)
 - Target **second upsell** on colo/VPS attach accounts
 - **Out of scope v1:** full SIEM, SOAR, per-tenant managers, customer Wazuh dashboard, webhooks
-- **Agent:** implement only on explicit verb; refuse SIEM scope creep in PR
+- **Agent:** refuse SIEM scope creep; live manager secrets only on deploy host
 
 ### Phase F / P6 — Hospitality / pilot pack
 
