@@ -3,9 +3,9 @@
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
 **Last updated:** 2026-08-10
-**Repo tip at write time:** `main` @ `31faa67` (docs tip #272 after Workspace **S5** #270 + Attach UX Wave B #271 @ `98756de`; S1–S4 #267; P4 soft #250; P1 attach earlier). Re-`git pull` after reset — tip may move when Guard spek merges.
+**Repo tip at write time:** `main` @ `28bc69e` (**#275** live `HttpWazuhClient` after Guard thin **#274** @ `f3f749c`; spek **#273**; docs tip #272 / Wave B #271 / Workspace S5 #270 earlier). Re-`git pull` after reset.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
-**Phase snapshot:** **P0 policy locked** · **P1 attach shipped + edge smoke closed** · **P2 Workspace S1–S5 on `main` + edge CI deploy** · **Attach UX Wave B on `main`** · **P4 soft dual-brand on `main`** · **P5 Guard spek S0** ([`docs/specs/guard-v1.md`](specs/guard-v1.md)) — **user risk-accepted thin Guard** (inventory + critical alerts + per-org enroll; **not** full SIEM) · **GTM human still open in parallel** · next **code** for Guard = only after explicit implement on S1+ (or approved slice); default without verb remains GTM/bugs — **do not** expand Guard into SIEM.
+**Phase snapshot:** **P0 policy locked** · **P1 attach shipped + edge smoke closed** · **P2 Workspace S1–S5 on `main`** · **Attach UX Wave B on `main`** · **P4 soft dual-brand on `main`** · **P5 Guard thin code on `main`** (#273–#275: mock + Http client, API, workers, FE `/guard`) — **not** full SIEM · **CI/default mock**; live Manager/Indexer **only on deploy host** after lab env · **GTM human still open in parallel** · next eng default = **no SIEM creep**; residual = edge deploy + live smoke (human) / bugs / Dependabot / explicit P3.
 
 ---
 
@@ -17,7 +17,7 @@ gh pr list --state open --assignee @me
 
 GIT_MASTER=1 git fetch origin
 GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull origin main
-GIT_MASTER=1 git rev-parse --short HEAD   # expect ≥ 31faa67 or newer (re-pull)
+GIT_MASTER=1 git rev-parse --short HEAD   # expect ≥ 28bc69e or newer (re-pull)
 ```
 
 Then read, in order:
@@ -43,8 +43,8 @@ Then read, in order:
 | **Legacy name** | VulnScanner / `vs.appmedia.id` — keep as **Scan module** during soft dual-brand |
 | **Near-term commercial goal** | **Upsell** recurring Secure/Scan add-on on customers who **already** pay colo / VPS / cloud / hosting |
 | **Strategic beachhead** | Hotel / hospitality (Yogya relationships + any multi-property group already on GMD) |
-| **Modules** | **Scan + Attach** (prod, Wave B UX polish) · **Workspace S1–S5** (prod; residual multi-org/S5 smoke may still be manual) · **Assets** (P3) · **Guard** (P5 thin — **S0 spek on main**; **S1–S5** on `feat/guard-s1-s5-thin`) |
-| **Build order (upsell-first)** | See **§1.3** — P2 **S1–S5** shipped; **P5 thin spek** risk-accepted by user (GTM still parallel); rebrand must not gate attach; **do not** implement full SIEM |
+| **Modules** | **Scan + Attach** (prod, Wave B UX polish) · **Workspace S1–S5** (prod; residual multi-org/S5 smoke may still be manual) · **Assets** (P3) · **Guard** (P5 thin — **S0–S5 + Http client on `main`** #273–#275; live lab pending human) |
+| **Build order (upsell-first)** | See **§1.3** — P2 **S1–S5** shipped; **P5 thin code on main** (mock CI; live host env human); GTM still parallel; rebrand must not gate attach; **do not** implement full SIEM |
 | **Not v1** | Full SIEM UI, nested multi-project, org billing dual-wallet, Windows depth, SOAR, hard brand cut blocking attach revenue |
 
 ### Positioning (one line)
@@ -97,16 +97,16 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 | **P2** | **Workspace v1** | B2B multi-user | orgs, memberships, invites, org-scoped scans, personal credits, backfill; JWT `org_id`; WS membership AuthZ; **S5** schedule cap per-org | Nested projects; org wallet; Wazuh; per-org ApiKey | **S1–S5 shipped** (#267 S1–S4 → then #270 S5 @ `6b600fb`; tip with Wave B `98756de`). Cap **10 enabled / org** (`MAX_SCHEDULES_PER_ORG`). Spek D1–D6; edge Alembic **`add_workspace_orgs`**. **Residual:** multi-member S5 + login/UI multi-org smoke (manual) |
 | **P3** | **Asset registry (light)** | Multi-target tiers | Named assets; scan pack; tier limits | Full CMDB; IoT; PMS | **Not started** |
 | **P4** | **Soft dual-brand** | Name trust | Sinexis strings, landing, SKU label | Hard cut / domain cutover blocking attach | **Shipped soft dual-brand on `main`** (#250); public host remains **`vs.appmedia.id`** (no hard cut) |
-| **P5** | **Guard MVP** (Wazuh thin) | Second upsell | Agent inventory, critical alerts, per-org enroll; spek [`guard-v1.md`](specs/guard-v1.md) | Full SIEM, SOAR, raw-log UI, per-tenant managers | **S0–S5 on `main`** (#273 spek, #274 thin code). **`HttpWazuhClient`** live path (Manager + Indexer); mock default for CI. Secrets only on deploy host; edge migrate + env still human |
+| **P5** | **Guard MVP** (Wazuh thin) | Second upsell | Agent inventory, critical alerts, per-org enroll; spek [`guard-v1.md`](specs/guard-v1.md) | Full SIEM, SOAR, raw-log UI, per-tenant managers | **S0–S5 + Http on `main`** (#273 spek, #274 thin, **#275** `HttpWazuhClient` @ `28bc69e`). Mock default CI (`GUARD_MOCK_WAZUH`). **Residual human:** edge pull/deploy tip, lab Manager/Indexer env, flip mock off, smoke enable→enroll→sync. **No** SIEM follow-ons without explicit scope |
 | **P6** | **Hospitality / pilot pack** | Beachhead A | Hotel runbooks, hybrid SLA | Logos-only builds | After attach pilot story works |
 
-**Priority rule for agents (post–P2 S1–S5 + Wave B + Guard S0 spek):**
+**Priority rule for agents (post–P2 S1–S5 + Wave B + Guard thin on main):**
 
-1. **Human default** remains **GTM execution** (finance / AM / ops) — parallel to eng; not blocked by Guard spek.
-2. **Guard code** only on **explicit** implement verb (or pointed slice in `guard-v1.md`); stay inside **thin DoD** (D1–D10 / non-goals).
-3. Other code: **bugfix** (attach/workspace), **P3** after pain, docs/ops hygiene.
-4. Ordering still true: P1/P2 before Guard code; P4 must not block attach revenue.
-5. **Do not** re-implement P2 S1–S5 or Wave B “because docs were stale.” **Do not** ship SIEM-scope PRs under “Guard.”
+1. **Human default** remains **GTM execution** (finance / AM / ops) + **edge Guard live path** (lab env, deploy tip, smoke) — parallel to eng.
+2. **Further Guard code** only on **explicit** implement verb; stay inside **thin DoD** (D1–D10 / non-goals). Prefer bugfixes from live smoke over new surfaces.
+3. Other code: **bugfix** (attach/workspace/Guard), **P3** after pain, docs/ops hygiene, Dependabot on request.
+4. Ordering still true: P1/P2 before Guard; P4 must not block attach revenue.
+5. **Do not** re-implement P2 S1–S5, Wave B, or Guard S1–S5/Http “because docs were stale.” **Do not** ship SIEM-scope PRs under “Guard.”
 
 ### 1.4 What *not* to prioritize for upsell
 
@@ -233,16 +233,17 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 - DNS/TLS `sinexis.app` cutover = **later**, must not block GTM
 - Label attach offer **Sinexis Scan** (or agreed SKU name)
 
-### Phase E / P5 — Guard MVP (Wazuh thin)
+### Phase E / P5 — Guard MVP (Wazuh thin) — **code DONE on main**; lab live pending
 
-- **Risk accept (2026-08-10):** user chose thin Guard eng **in parallel** with open GTM (management latency); Workspace S1–S5 + attach already on `main`
-- **Spek:** [`docs/specs/guard-v1.md`](specs/guard-v1.md) — S0–S5 on main (models, mock + **Http** client, API, workers, FE `/guard`)
-- Wazuh as **sensor bus** behind SaaS: **one lab manager**, group-per-org, SaaS-proxied enroll, poll inventory + critical alerts (level ≥ 12); live client uses Manager REST + Indexer `_search`
+- **Risk accept (2026-08-10):** user chose thin Guard eng **in parallel** with open GTM; Workspace S1–S5 + attach already on `main`
+- **Shipped:** #273 spek · #274 thin (models, mock, API, workers, FE `/guard`) · **#275** `HttpWazuhClient` (Manager JWT, groups, agents, enroll+key, Indexer critical search) @ `28bc69e`
+- **Runtime:** CI/default **`GUARD_MOCK_WAZUH=true`**. Live: deploy-host env only (`WAZUH_*`, mock false when lab ready) — **never** secrets in public markdown
+- Wazuh as **sensor bus**: **one lab manager**, group-per-org, SaaS-proxied enroll, poll inventory + critical alerts (level ≥ 12)
 - Thin UI: agents, last-seen, critical alert cards — **no** raw logs / Discover
 - Per-org enroll tokens (**not** global `ApiKey`); `/api/guard/enroll` is middleware-public (token-gated)
-- Target **second upsell** on colo/VPS attach accounts
+- **Next (human):** edge pull tip → deploy app services → lab env → smoke enable→enroll→sync → then optional eng harden from findings
 - **Out of scope v1:** full SIEM, SOAR, per-tenant managers, customer Wazuh dashboard, webhooks
-- **Agent:** refuse SIEM scope creep; live manager secrets only on deploy host
+- **Agent:** refuse SIEM scope creep; no new Guard epic without explicit verb
 
 ### Phase F / P6 — Hospitality / pilot pack
 
@@ -335,13 +336,15 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 ### 5.4 Guard MVP (P5 thin) — from [`docs/specs/guard-v1.md`](specs/guard-v1.md)
 
 - [x] **S0** Spek + guide/handoff/README status (risk-accepted thin path)
-- [ ] Binding + tables + settings; mock Wazuh client
-- [ ] Admin enable Guard; enroll token create/revoke (hash at rest)
-- [ ] Enroll proxy assigns org group; agent appears in inventory (mock OK in CI)
-- [ ] Viewer lists agents + critical alerts **org-scoped** only (IDOR tests)
-- [ ] Poll/sync updates timestamps or sanitized error; no raw-log UI
-- [ ] SPA `/guard` + Sidebar; no secrets/IPs in git
-- [ ] **Non-goals hold:** no SIEM/Discover/SOAR/per-tenant manager in v1 PRs
+- [x] Binding + tables + settings; mock Wazuh client (#274)
+- [x] Admin enable Guard; enroll token create/revoke (hash at rest)
+- [x] Enroll proxy assigns org group; agent appears in inventory (mock OK in CI)
+- [x] Viewer lists agents + critical alerts **org-scoped** only (IDOR tests)
+- [x] Poll/sync updates timestamps or sanitized error; no raw-log UI
+- [x] SPA `/guard` + Sidebar; no secrets/IPs in git
+- [x] **HttpWazuhClient** live path + unit tests (#275); factory still mock-by-default
+- [x] **Non-goals hold:** no SIEM/Discover/SOAR/per-tenant manager in v1 PRs
+- [ ] **Edge residual (human):** deploy tip, lab `WAZUH_*`, `GUARD_MOCK_WAZUH=false`, smoke enable→enroll→sync
 
 ---
 
@@ -409,14 +412,14 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | `docs/commercial/*` | P0 one-pager, SKU lock, AM email |
 | `handoff.md` | Session snapshot + GTM checklist — **epic order** still this guide |
 | `docs/archive/handoff-scan-pending-2026.md` | **ARCHIVED** stuck-pending (re-verify) |
-| `docs/specs/guard-v1.md` | P5 Guard thin spek (S0) |
+| `docs/specs/guard-v1.md` | P5 Guard thin spek + status (S0–S5 + Http on main) |
 | `docs/specs/*` | Attach historical; workspace S1–S5 shipped; assets TBD |
 
 ---
 
 ## 10) Agent one-liner
 
-> After reset: **boot §0 → §1.3 (P0 locked, P1 + P2 S1–S5 + Wave B + P4 soft on main, GTM now, no Guard default) → no silent epics → bug/P3 only on explicit ask → no PII/SSH in git → Indonesian with user, `GIT_MASTER=1`, coding Docker off, edge for prod.**
+> After reset: **boot §0 → §1.3 (P0–P2 + Wave B + P4 + P5 thin/Http on main @ ≥28bc69e; GTM + edge live Guard human; no SIEM default) → no silent epics → bug/P3 only on explicit ask → no PII/SSH in git → Indonesian with user, `GIT_MASTER=1`, coding Docker off, edge for prod.**
 
 ---
 
