@@ -18,6 +18,7 @@ def _row(
     timezone="UTC",
     next_run_at=None,
     last_job_id=None,
+    organization_id=None,
 ):
     return (
         schedule_id or uuid4(),
@@ -28,6 +29,7 @@ def _row(
         timezone,
         next_run_at or datetime.now(UTC),
         last_job_id,
+        organization_id,
     )
 
 
