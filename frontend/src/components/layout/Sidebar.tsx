@@ -35,6 +35,7 @@ const navItems = [
   { to: "/scan/domain", label: "Domain Scanner", icon: Globe },
   { to: "/scan/mobile", label: "Mobile Scanner", icon: Smartphone },
   { to: "/schedules", label: "Jadwal", icon: CalendarClock },
+  { to: "/guard", label: "Guard", icon: Shield },
 ];
 
 function Sidebar({ open, onClose }: SidebarProps) {

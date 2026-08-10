@@ -20,6 +20,7 @@ const MobileScanner = lazy(() => import("@/pages/MobileScanner"));
 const ScanDetail = lazy(() => import("@/pages/ScanDetail"));
 const CreditHistory = lazy(() => import("@/pages/credit/CreditHistory"));
 const Schedules = lazy(() => import("@/pages/Schedules"));
+const Guard = lazy(() => import("@/pages/Guard"));
 const Profile = lazy(() => import("@/pages/Profile"));
 const WorkspaceSettings = lazy(() => import("@/pages/WorkspaceSettings"));
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
@@ -82,6 +83,10 @@ function App() {
             <Route
               path="/schedules"
               element={<PageBoundary component={Schedules} />}
+            />
+            <Route
+              path="/guard"
+              element={<PageBoundary component={Guard} />}
             />
             <Route
               path="/profile"

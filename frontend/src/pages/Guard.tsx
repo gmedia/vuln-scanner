@@ -1,0 +1,345 @@
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Shield, RefreshCw, KeyRound, AlertTriangle } from "lucide-react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardDescription,
+} from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { Badge } from "@/components/ui/Badge";
+import {
+  canManageGuard,
+  createEnrollToken,
+  enableGuard,
+  getGuardStatus,
+  listEnrollTokens,
+  listGuardAgents,
+  listGuardAlerts,
+  syncGuard,
+} from "@/api/guard";
+import { useAuthStore } from "@/store/authStore";
+import type { ApiError } from "@/lib/utils";
+
+function formatWhen(iso: string | null): string {
+  if (!iso) return "—";
+  try {
+    return new Date(iso).toLocaleString("id-ID", {
+      timeZone: "Asia/Jakarta",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function apiDetail(err: unknown, fallback: string): string {
+  if (err && typeof err === "object" && "response" in err) {
+    const detail = (err as ApiError).response?.data?.detail;
+    if (typeof detail === "string" && detail.trim()) return detail;
+  }
+  return fallback;
+}
+
+function statusBadge(status: string) {
+  const s = status.toLowerCase();
+  if (s === "active") return <Badge className="bg-emerald-500/15 text-emerald-600">active</Badge>;
+  if (s === "disconnected")
+    return <Badge className="bg-amber-500/15 text-amber-700">disconnected</Badge>;
+  if (s === "pending") return <Badge className="bg-sky-500/15 text-sky-700">pending</Badge>;
+  return <Badge variant="secondary">{status}</Badge>;
+}
+
+export default function Guard() {
+  const queryClient = useQueryClient();
+  const activeRole = useAuthStore((s) => s.activeRole);
+  const canAdmin = canManageGuard(activeRole());
+  const [tokenLabel, setTokenLabel] = useState("");
+  const [rawToken, setRawToken] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const statusQ = useQuery({
+    queryKey: ["guard", "status"],
+    queryFn: getGuardStatus,
+  });
+  const agentsQ = useQuery({
+    queryKey: ["guard", "agents"],
+    queryFn: listGuardAgents,
+    enabled: !!statusQ.data?.enabled,
+  });
+  const alertsQ = useQuery({
+    queryKey: ["guard", "alerts"],
+    queryFn: () => listGuardAlerts(50),
+    enabled: !!statusQ.data?.enabled,
+  });
+  const tokensQ = useQuery({
+    queryKey: ["guard", "tokens"],
+    queryFn: listEnrollTokens,
+    enabled: !!statusQ.data?.enabled && canAdmin,
+  });
+
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: ["guard"] });
+  };
+
+  const enableMut = useMutation({
+    mutationFn: enableGuard,
+    onSuccess: () => {
+      setActionError(null);
+      invalidate();
+    },
+    onError: (e) => setActionError(apiDetail(e, "Gagal mengaktifkan Guard")),
+  });
+
+  const syncMut = useMutation({
+    mutationFn: syncGuard,
+    onSuccess: () => {
+      setActionError(null);
+      invalidate();
+    },
+    onError: (e) => setActionError(apiDetail(e, "Sinkronisasi gagal")),
+  });
+
+  const tokenMut = useMutation({
+    mutationFn: () => createEnrollToken(tokenLabel.trim() || undefined),
+    onSuccess: (data) => {
+      setRawToken(data.token);
+      setTokenLabel("");
+      setActionError(null);
+      invalidate();
+    },
+    onError: (e) => setActionError(apiDetail(e, "Gagal membuat token enroll")),
+  });
+
+  const enabled = statusQ.data?.enabled ?? false;
+
+  return (
+    <div className="space-y-6 p-4 md:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+            <Shield className="h-6 w-6 text-primary" />
+            Guard
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Inventori agen host + alert kritis (thin). Bukan SIEM penuh.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {canAdmin && !enabled && (
+            <Button
+              onClick={() => enableMut.mutate()}
+              disabled={enableMut.isPending}
+            >
+              Aktifkan Guard
+            </Button>
+          )}
+          {canAdmin && enabled && (
+            <Button
+              variant="outline"
+              onClick={() => syncMut.mutate()}
+              disabled={syncMut.isPending}
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Sync
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {actionError && (
+        <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          {actionError}
+        </div>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Status</CardTitle>
+          <CardDescription>Organisasi aktif · sinkron proyeksi Wazuh</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          {statusQ.isLoading ? (
+            <Skeleton className="h-16 w-full" />
+          ) : statusQ.isError ? (
+            <p className="text-destructive">Gagal memuat status Guard</p>
+          ) : (
+            <>
+              <div className="flex flex-wrap gap-3">
+                <span>
+                  State:{" "}
+                  <strong>{enabled ? "enabled" : "disabled"}</strong>
+                </span>
+                {statusQ.data?.degraded && (
+                  <Badge className="bg-amber-500/15 text-amber-800">degraded</Badge>
+                )}
+              </div>
+              {statusQ.data?.wazuh_group && (
+                <p className="text-muted-foreground">
+                  Group: <code className="text-xs">{statusQ.data.wazuh_group}</code>
+                </p>
+              )}
+              <p className="text-muted-foreground">
+                Inventory sync: {formatWhen(statusQ.data?.last_inventory_sync_at ?? null)}
+              </p>
+              <p className="text-muted-foreground">
+                Alert sync: {formatWhen(statusQ.data?.last_alert_sync_at ?? null)}
+              </p>
+              {statusQ.data?.last_sync_error && (
+                <p className="text-amber-700 dark:text-amber-400">
+                  Sync error: {statusQ.data.last_sync_error}
+                </p>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {!enabled && !statusQ.isLoading && (
+        <Card>
+          <CardContent className="py-8 text-center text-sm text-muted-foreground">
+            Aktifkan Guard (admin/owner), lalu pasang agen di VPS/colo dengan token enroll.
+          </CardContent>
+        </Card>
+      )}
+
+      {enabled && (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Agen</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {agentsQ.isLoading ? (
+                <Skeleton className="h-24 w-full" />
+              ) : (agentsQ.data?.length ?? 0) === 0 ? (
+                <p className="text-sm text-muted-foreground">Belum ada agen. Enroll host dulu.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="border-b text-muted-foreground">
+                      <tr>
+                        <th className="py-2 pr-3 font-medium">Name</th>
+                        <th className="py-2 pr-3 font-medium">Status</th>
+                        <th className="py-2 pr-3 font-medium">Last seen</th>
+                        <th className="py-2 font-medium">Version</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {agentsQ.data?.map((a) => (
+                        <tr key={a.id} className="border-b border-border/60">
+                          <td className="py-2 pr-3 font-medium">{a.name}</td>
+                          <td className="py-2 pr-3">{statusBadge(a.status)}</td>
+                          <td className="py-2 pr-3 text-muted-foreground">
+                            {formatWhen(a.last_keep_alive)}
+                          </td>
+                          <td className="py-2 text-muted-foreground">{a.version ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Alert kritis</CardTitle>
+              <CardDescription>Rule level tinggi · tanpa raw log</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {alertsQ.isLoading ? (
+                <Skeleton className="h-24 w-full" />
+              ) : (alertsQ.data?.length ?? 0) === 0 ? (
+                <p className="text-sm text-muted-foreground">Tidak ada alert kritis tersimpan.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {alertsQ.data?.map((al) => (
+                    <li
+                      key={al.id}
+                      className="rounded-md border border-border/80 px-3 py-2 text-sm"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="destructive">L{al.rule_level}</Badge>
+                        <span className="font-medium">{al.rule_description}</span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {formatWhen(al.occurred_at)}
+                        {al.agent_name ? ` · ${al.agent_name}` : ""}
+                        {al.rule_id ? ` · rule ${al.rule_id}` : ""}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+
+          {canAdmin && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <KeyRound className="h-4 w-4" />
+                  Enroll token
+                </CardTitle>
+                <CardDescription>
+                  Token multi-use sampai expired/revoke. Raw ditampilkan sekali.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                  <div className="flex-1 space-y-1">
+                    <Label htmlFor="enroll-label">Label (opsional)</Label>
+                    <Input
+                      id="enroll-label"
+                      value={tokenLabel}
+                      onChange={(e) => setTokenLabel(e.target.value)}
+                      placeholder="colo-edge"
+                    />
+                  </div>
+                  <Button
+                    onClick={() => tokenMut.mutate()}
+                    disabled={tokenMut.isPending}
+                  >
+                    Generate
+                  </Button>
+                </div>
+                {rawToken && (
+                  <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-xs">
+                    <p className="mb-1 font-medium text-foreground">
+                      Simpan sekarang — tidak ditampilkan lagi:
+                    </p>
+                    <code className="break-all">{rawToken}</code>
+                    <p className="mt-2 text-muted-foreground">
+                      POST /api/guard/enroll {"{"} token, agent_name {"}"} dari host
+                      install (bukan manager password).
+                    </p>
+                  </div>
+                )}
+                {tokensQ.isLoading ? (
+                  <Skeleton className="h-12 w-full" />
+                ) : (
+                  <ul className="space-y-1 text-sm text-muted-foreground">
+                    {(tokensQ.data ?? []).map((t) => (
+                      <li key={t.id}>
+                        {t.label || "token"} · exp {formatWhen(t.expires_at)}
+                        {t.revoked_at ? " · revoked" : ""}
+                        {t.used_at ? " · used" : ""}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
