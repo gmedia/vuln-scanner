@@ -1,6 +1,6 @@
 # Spec: Workspace v1 (P2)
 
-**Status:** **draft for approval** — engineering spec only. **Do not implement** until the user explicitly says `implement` / `kerjakan` / `buat` (or points at an approved acceptance slice).
+**Status:** **approved** (user 2026-08-10: D1–D6 defaults locked; implement verb given). Build order S1→S4 on `feat/workspace-org-membership`.
 **Goal:** multi-user B2B workspace so a hotel or company can share scans and schedules under one org, without rewriting billing or attaching Guard.
 **Epic:** P2 per [`docs/AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) §1.3, §3 Phase C2, §5.2.
 **Suggested later branch (after approval):** `feat/workspace-org-membership` (split PRs by slice if large). Spec-only branch may use `docs/workspace-v1-spec`.
@@ -313,10 +313,10 @@ Brand: soft dual-brand OK (VulnScanner shell / Sinexis copy). No hard cutover in
 
 ---
 
-## 13. Open decisions (D1–D6)
+## 13. Decisions (D1–D6) — **LOCKED** 2026-08-10
 
-| ID | Question | **Recommended default** |
-|----|----------|-------------------------|
+| ID | Question | **Locked default** |
+|----|----------|---------------------|
 | **D1** | Who is debited when member A runs a scan in org owned by B? | **Acting user A’s personal credits** |
 | **D2** | When does schedule cap become per-org 10? | **S5 follow-up** after FK+UI stable; keep per-user 10 until then |
 | **D3** | Can a user create multiple non-personal orgs? | **Yes**, modest cap (e.g. 5 orgs created) to limit abuse |
@@ -324,7 +324,7 @@ Brand: soft dual-brand OK (VulnScanner shell / Sinexis copy). No hard cutover in
 | **D5** | Nullable `organization_id` forever vs enforce NOT NULL? | **Backfill then app-required**; DB NOT NULL in a tightening migration after one release |
 | **D6** | Default org on login when multi-member? | **Last used** (server field or client localStorage + switch) else personal `kind=personal` else first membership |
 
-Resolve deviations in the implement PR description; update this spec status to **approved** when user signs off.
+User signed off on recommended defaults; implement on `feat/workspace-org-membership`.
 
 ---
 
@@ -420,4 +420,4 @@ Match patterns: Alembic, pytest, no bare `except`, no `as any`, **never commit o
 
 ---
 
-*Draft only. Implementation starts only on explicit user implement verb after approval.*
+*Approved. Implementation in progress on `feat/workspace-org-membership` (S1–S4).*
