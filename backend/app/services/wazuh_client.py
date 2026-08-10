@@ -362,11 +362,12 @@ class HttpWazuhClient(WazuhClient):
                 token = data.get("token")
             if not token:
                 token = body.get("token")
-        if not token or not isinstance(token, str):
+        if not isinstance(token, str) or not token:
             raise WazuhClientError("Wazuh manager auth missing token")
-        self._token = token
+        token_s: str = token
+        self._token = token_s
         self._token_acquired_at = now
-        return token
+        return token_s
 
     async def _manager_request(
         self,
