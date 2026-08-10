@@ -61,6 +61,11 @@ describe("Sidebar", () => {
     expect(screen.getByText("Domain Scanner")).toBeInTheDocument();
     expect(screen.getByText("Mobile Scanner")).toBeInTheDocument();
     expect(screen.getByText("Jadwal")).toBeInTheDocument();
+    expect(screen.getByText("User Guide")).toBeInTheDocument();
+    const guide = screen
+      .getAllByRole("link")
+      .find((a) => a.getAttribute("href") === "/guide");
+    expect(guide).toBeTruthy();
   });
 
   it("renames admin Dashboard to Admin overview", () => {

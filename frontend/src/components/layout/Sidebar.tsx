@@ -12,6 +12,7 @@ import {
   User,
   Coins,
   CalendarClock,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BRAND } from "@/lib/brand";
@@ -36,6 +37,7 @@ const navItems = [
   { to: "/scan/mobile", label: "Mobile Scanner", icon: Smartphone },
   { to: "/schedules", label: "Jadwal", icon: CalendarClock },
   { to: "/guard", label: "Guard", icon: Shield },
+  { to: "/guide", label: "User Guide", icon: BookOpen },
 ];
 
 function Sidebar({ open, onClose }: SidebarProps) {
