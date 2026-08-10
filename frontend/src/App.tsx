@@ -22,6 +22,7 @@ const CreditHistory = lazy(() => import("@/pages/credit/CreditHistory"));
 const Schedules = lazy(() => import("@/pages/Schedules"));
 const Guard = lazy(() => import("@/pages/Guard"));
 const Profile = lazy(() => import("@/pages/Profile"));
+const UserGuide = lazy(() => import("@/pages/UserGuide"));
 const WorkspaceSettings = lazy(() => import("@/pages/WorkspaceSettings"));
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
 const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
@@ -91,6 +92,10 @@ function App() {
             <Route
               path="/profile"
               element={<PageBoundary component={Profile} />}
+            />
+            <Route
+              path="/guide"
+              element={<PageBoundary component={UserGuide} />}
             />
             <Route
               path="/settings/workspace"
