@@ -97,7 +97,7 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 | **P2** | **Workspace v1** | B2B multi-user | orgs, memberships, invites, org-scoped scans, personal credits, backfill; JWT `org_id`; WS membership AuthZ; **S5** schedule cap per-org | Nested projects; org wallet; Wazuh; per-org ApiKey | **S1–S5 shipped** (#267 S1–S4 → then #270 S5 @ `6b600fb`; tip with Wave B `98756de`). Cap **10 enabled / org** (`MAX_SCHEDULES_PER_ORG`). Spek D1–D6; edge Alembic **`add_workspace_orgs`**. **Residual:** multi-member S5 + login/UI multi-org smoke (manual) |
 | **P3** | **Asset registry (light)** | Multi-target tiers | Named assets; scan pack; tier limits | Full CMDB; IoT; PMS | **Not started** |
 | **P4** | **Soft dual-brand** | Name trust | Sinexis strings, landing, SKU label | Hard cut / domain cutover blocking attach | **Shipped soft dual-brand on `main`** (#250); public host remains **`vs.appmedia.id`** (no hard cut) |
-| **P5** | **Guard MVP** (Wazuh thin) | Second upsell | Agent inventory, critical alerts, per-org enroll; spek [`guard-v1.md`](specs/guard-v1.md) | Full SIEM, SOAR, raw-log UI, per-tenant managers | **S0 spek** — **risk-accepted** thin path (user 2026-08-10). **Code S1–S5** only on explicit implement. Mock Wazuh in CI; secrets/env only on deploy host |
+| **P5** | **Guard MVP** (Wazuh thin) | Second upsell | Agent inventory, critical alerts, per-org enroll; spek [`guard-v1.md`](specs/guard-v1.md) | Full SIEM, SOAR, raw-log UI, per-tenant managers | **S0–S5 on `main`** (#273 spek, #274 thin code). **`HttpWazuhClient`** live path (Manager + Indexer); mock default for CI. Secrets only on deploy host; edge migrate + env still human |
 | **P6** | **Hospitality / pilot pack** | Beachhead A | Hotel runbooks, hybrid SLA | Logos-only builds | After attach pilot story works |
 
 **Priority rule for agents (post–P2 S1–S5 + Wave B + Guard S0 spek):**
@@ -236,8 +236,8 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 ### Phase E / P5 — Guard MVP (Wazuh thin)
 
 - **Risk accept (2026-08-10):** user chose thin Guard eng **in parallel** with open GTM (management latency); Workspace S1–S5 + attach already on `main`
-- **Spek:** [`docs/specs/guard-v1.md`](specs/guard-v1.md) — S0 docs on main; **S1–S5** implementation on feature branch (models, mock client, API, workers, FE `/guard`)
-- Wazuh as **sensor bus** behind SaaS: **one lab manager**, group-per-org, SaaS-proxied enroll, poll inventory + critical alerts (level ≥ 12)
+- **Spek:** [`docs/specs/guard-v1.md`](specs/guard-v1.md) — S0–S5 on main (models, mock + **Http** client, API, workers, FE `/guard`)
+- Wazuh as **sensor bus** behind SaaS: **one lab manager**, group-per-org, SaaS-proxied enroll, poll inventory + critical alerts (level ≥ 12); live client uses Manager REST + Indexer `_search`
 - Thin UI: agents, last-seen, critical alert cards — **no** raw logs / Discover
 - Per-org enroll tokens (**not** global `ApiKey`); `/api/guard/enroll` is middleware-public (token-gated)
 - Target **second upsell** on colo/VPS attach accounts
