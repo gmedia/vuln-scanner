@@ -149,6 +149,8 @@ function ScanDetail() {
                 variant="outline"
                 size="sm"
                 className="text-xs"
+                title="Raw JSON export"
+                aria-label="Download JSON export"
                 onClick={() => downloadFile(id, "json")}
               >
                 <Download className="mr-1 h-3.5 w-3.5" />
@@ -158,19 +160,23 @@ function ScanDetail() {
                 variant="outline"
                 size="sm"
                 className="text-xs"
+                title="Full technical HTML report"
+                aria-label="Download full HTML report"
                 onClick={() => downloadFile(id, "html")}
               >
                 <Download className="mr-1 h-3.5 w-3.5" />
-                HTML
+                HTML teknis
               </Button>
               <Button
-                variant="outline"
                 size="sm"
                 className="text-xs"
+                title="Ringkasan eksekutif untuk manajemen"
+                aria-label="Download executive HTML summary"
+                data-testid="export-executive"
                 onClick={() => downloadFile(id, "executive")}
               >
                 <Download className="mr-1 h-3.5 w-3.5" />
-                Eksekutif
+                Laporan eksekutif
               </Button>
             </>
           )}
@@ -185,7 +191,7 @@ function ScanDetail() {
 
       {scan.status === "failed" && <ScanError showIcon message={failMessage} />}
 
-      {scan.status === "completed" && diff && shouldShowDiffBadge(diff) && (
+      {scan.status === "completed" && diff && (
         <DiffBadgeStrip diff={diff} />
       )}
 
@@ -282,24 +288,40 @@ function ScanDetail() {
   );
 }
 
-function shouldShowDiffBadge(diff: ScanDiff): boolean {
-  return (
-    diff.compared_to_job_id != null ||
+function DiffBadgeStrip({ diff }: { diff: ScanDiff }) {
+  const hasBaseline = diff.compared_to_job_id != null;
+  const hasDelta =
     diff.new_critical > 0 ||
     diff.new_high > 0 ||
-    diff.resolved > 0
-  );
-}
+    diff.resolved > 0 ||
+    diff.worsened > 0;
 
-function DiffBadgeStrip({ diff }: { diff: ScanDiff }) {
+  if (!hasBaseline && !hasDelta) {
+    return (
+      <div
+        className="rounded-md border border-dashed border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground"
+        data-testid="scan-diff-no-baseline"
+        role="status"
+      >
+        Belum ada baseline — jadwalkan scan berulang untuk bandingkan critical/high
+        baru.
+      </div>
+    );
+  }
+
   return (
     <div
       className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2"
       data-testid="scan-diff-badge"
     >
       <span className="text-xs font-medium text-muted-foreground">
-        vs baseline
+        {hasBaseline ? "vs baseline" : "Perubahan temuan"}
       </span>
+      {!hasDelta && hasBaseline && (
+        <span className="text-xs text-muted-foreground" role="status">
+          Tidak ada critical/high baru dibanding run sebelumnya.
+        </span>
+      )}
       {diff.new_critical > 0 && (
         <Badge variant="critical" className="text-[10px]">
           +{diff.new_critical} critical

@@ -70,8 +70,10 @@ vi.mock("@/components/results/FindingsTable", () => ({
   default: ({ findings }: any) => <div data-testid="findings-table" data-findings-count={findings?.length} />,
 }));
 
-import { useScanDetail } from "@/hooks/useScan";
+import { useScanDetail, useScanDiff } from "@/hooks/useScan";
 import { downloadFile } from "@/api/scans";
+
+const mockUseScanDiff = useScanDiff as ReturnType<typeof vi.fn>;
 
 const baseScan = {
   id: "scan-1",
@@ -381,7 +383,10 @@ describe("ScanDetail", () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
       expect(screen.getByText("JSON")).toBeInTheDocument();
-      expect(screen.getByText("HTML")).toBeInTheDocument();
+      expect(screen.getByText("HTML teknis")).toBeInTheDocument();
+      expect(screen.getByTestId("export-executive")).toHaveTextContent(
+        /Laporan eksekutif/,
+      );
     });
 
     it("renders Re-scan link for IP scan type", () => {
@@ -413,8 +418,52 @@ describe("ScanDetail", () => {
     it("calls downloadFile with HTML on HTML button click", async () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
-      await userEvent.click(screen.getByText("HTML"));
+      await userEvent.click(screen.getByText("HTML teknis"));
       expect(downloadFile).toHaveBeenCalledWith("scan-1", "html");
+    });
+
+    it("calls downloadFile executive on executive button click", async () => {
+      mockUseScanDetailReturn({ data: baseScan as any });
+      renderPage();
+      await userEvent.click(screen.getByTestId("export-executive"));
+      expect(downloadFile).toHaveBeenCalledWith("scan-1", "executive");
+    });
+
+    it("shows no-baseline hint when diff has no baseline and no delta", () => {
+      mockUseScanDetailReturn({ data: baseScan as any });
+      mockUseScanDiff.mockReturnValue({
+        data: {
+          compared_to_job_id: null,
+          new_critical: 0,
+          new_high: 0,
+          resolved: 0,
+          worsened: 0,
+          unchanged: 0,
+        },
+        isLoading: false,
+        isError: false,
+      });
+      renderPage();
+      expect(screen.getByTestId("scan-diff-no-baseline")).toBeInTheDocument();
+    });
+
+    it("shows vs baseline strip when compared_to_job_id set", () => {
+      mockUseScanDetailReturn({ data: baseScan as any });
+      mockUseScanDiff.mockReturnValue({
+        data: {
+          compared_to_job_id: "prev-scan",
+          new_critical: 1,
+          new_high: 0,
+          resolved: 0,
+          worsened: 0,
+          unchanged: 2,
+        },
+        isLoading: false,
+        isError: false,
+      });
+      renderPage();
+      expect(screen.getByTestId("scan-diff-badge")).toBeInTheDocument();
+      expect(screen.getByText("vs baseline")).toBeInTheDocument();
     });
 
     it("renders running status without findings", () => {
