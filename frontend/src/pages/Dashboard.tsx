@@ -17,10 +17,16 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import {
-  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
 } from "@/components/ui/Select";
 import { SCAN_TYPE_LABELS } from "@/lib/constants";
 import type { ScanJob } from "@/api/scans";
+import { canMutateWorkspace } from "@/api/orgs";
+import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
 
 const PAGE_LIMIT = 20;
@@ -57,11 +63,13 @@ function Dashboard() {
   const [newScanOpen, setNewScanOpen] = useState(false);
   const newScanRef = useRef<HTMLDivElement>(null);
 
-  const { data: pageData, isLoading, isFetching } = useScanHistory(
-    page,
-    PAGE_LIMIT,
-    filter || undefined,
-  );
+  const {
+    data: pageData,
+    isLoading,
+    isFetching,
+  } = useScanHistory(page, PAGE_LIMIT, filter || undefined);
+  const activeRole = useAuthStore((s) => s.activeRole);
+  const canCreateScans = canMutateWorkspace(activeRole());
 
   const prevFilter = useRef(filter);
   useEffect(() => {
@@ -75,7 +83,10 @@ function Dashboard() {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (newScanRef.current && !newScanRef.current.contains(event.target as Node)) {
+      if (
+        newScanRef.current &&
+        !newScanRef.current.contains(event.target as Node)
+      ) {
         setNewScanOpen(false);
       }
     }
@@ -159,39 +170,53 @@ function Dashboard() {
           </div>
         </div>
 
-        <div ref={newScanRef} className="relative shrink-0">
-          <Button
-            size="lg"
-            className="w-full min-h-11 text-sm sm:w-auto"
-            onClick={() => setNewScanOpen((o) => !o)}
-            aria-expanded={newScanOpen}
-            aria-haspopup="menu"
-            data-testid="new-scan-cta"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            New scan
-            <ChevronDown className={cn("ml-2 h-3.5 w-3.5 transition-transform", newScanOpen && "rotate-180")} />
-          </Button>
-          {newScanOpen && (
-            <div
-              role="menu"
-              className="absolute right-0 z-20 mt-1 w-56 rounded-md border border-border bg-card p-1 shadow-lg"
+        {canCreateScans ? (
+          <div ref={newScanRef} className="relative shrink-0">
+            <Button
+              size="lg"
+              className="w-full min-h-11 text-sm sm:w-auto"
+              onClick={() => setNewScanOpen((o) => !o)}
+              aria-expanded={newScanOpen}
+              aria-haspopup="menu"
+              data-testid="new-scan-cta"
             >
-              {NEW_SCAN_OPTIONS.map((opt) => (
-                <Link
-                  key={opt.to}
-                  to={opt.to}
-                  role="menuitem"
-                  onClick={() => setNewScanOpen(false)}
-                  className="flex items-center gap-2 rounded-md px-3 py-2.5 text-xs text-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                >
-                  <opt.icon className="h-4 w-4 shrink-0" />
-                  {opt.label}
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
+              <Plus className="mr-2 h-4 w-4" />
+              New scan
+              <ChevronDown
+                className={cn(
+                  "ml-2 h-3.5 w-3.5 transition-transform",
+                  newScanOpen && "rotate-180",
+                )}
+              />
+            </Button>
+            {newScanOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 z-20 mt-1 w-56 rounded-md border border-border bg-card p-1 shadow-lg"
+              >
+                {NEW_SCAN_OPTIONS.map((opt) => (
+                  <Link
+                    key={opt.to}
+                    to={opt.to}
+                    role="menuitem"
+                    onClick={() => setNewScanOpen(false)}
+                    className="flex items-center gap-2 rounded-md px-3 py-2.5 text-xs text-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <opt.icon className="h-4 w-4 shrink-0" />
+                    {opt.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <p
+            className="text-xs text-muted-foreground"
+            data-testid="viewer-scan-readonly"
+          >
+            Peran viewer — hanya melihat riwayat
+          </p>
+        )}
       </div>
 
       <div>
@@ -246,13 +271,20 @@ function Dashboard() {
               Scan history
             </CardTitle>
             <div className="flex items-center gap-3">
-              <Select value={filter} onValueChange={(v) => setFilter(v === "" ? "" : v)}>
+              <Select
+                value={filter}
+                onValueChange={(v) => setFilter(v === "" ? "" : v)}
+              >
                 <SelectTrigger className="h-7 w-[130px] text-[11px]">
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
                   {FILTER_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value} className="text-[11px]">
+                    <SelectItem
+                      key={opt.value}
+                      value={opt.value}
+                      className="text-[11px]"
+                    >
                       {opt.label}
                     </SelectItem>
                   ))}
@@ -261,7 +293,9 @@ function Dashboard() {
               {totalScans > 0 && (
                 <span className="shrink-0 text-[10px] text-muted-foreground">
                   {scans.length} of {totalScans}
-                  {!allLoaded && totalScans > scans.length ? " · more available" : ""}
+                  {!allLoaded && totalScans > scans.length
+                    ? " · more available"
+                    : ""}
                 </span>
               )}
             </div>
@@ -278,20 +312,22 @@ function Dashboard() {
                 <div className="mb-3 rounded-full bg-muted p-3">
                   <Radar className="h-6 w-6 text-muted-foreground opacity-40" />
                 </div>
-                <p className="mb-1 text-sm text-foreground">
-                  No scans yet
-                </p>
+                <p className="mb-1 text-sm text-foreground">No scans yet</p>
                 <p className="mb-4 text-xs text-muted-foreground">
                   {filter
                     ? `No ${SCAN_TYPE_LABELS[filter]?.toLowerCase() ?? filter} scans found.`
-                    : "Start your first vulnerability scan."}
+                    : canCreateScans
+                      ? "Start your first vulnerability scan."
+                      : "Belum ada scan di workspace ini."}
                 </p>
-                <Button asChild size="sm" className="text-xs">
-                  <Link to="/scan/ip">
-                    <Plus className="mr-1.5 h-3.5 w-3.5" />
-                    New scan
-                  </Link>
-                </Button>
+                {canCreateScans && (
+                  <Button asChild size="sm" className="text-xs">
+                    <Link to="/scan/ip">
+                      <Plus className="mr-1.5 h-3.5 w-3.5" />
+                      New scan
+                    </Link>
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="divide-y divide-border">
@@ -299,7 +335,10 @@ function Dashboard() {
                   const crit = severityCount(scan.result_summary, "critical");
                   const high = severityCount(scan.result_summary, "high");
                   const med = severityCount(scan.result_summary, "medium");
-                  const findings = severityCount(scan.result_summary, "total_findings");
+                  const findings = severityCount(
+                    scan.result_summary,
+                    "total_findings",
+                  );
                   return (
                     <Link
                       key={scan.id}
@@ -312,7 +351,10 @@ function Dashboard() {
                             {scan.target}
                           </span>
                           <Badge
-                            variant={scan.status as "running" | "completed" | "failed" | "pending"}
+                            variant={
+                              scan.status as
+                                "running" | "completed" | "failed" | "pending"
+                            }
                             className="shrink-0 text-[9px] capitalize"
                           >
                             {scan.status}
@@ -334,8 +376,13 @@ function Dashboard() {
                               {(crit > 0 || high > 0 || med > 0) && (
                                 <span className="ml-1 text-muted-foreground/90">
                                   ({crit > 0 ? `${crit}C` : ""}
-                                  {high > 0 ? `${crit > 0 ? " " : ""}${high}H` : ""}
-                                  {med > 0 ? `${crit + high > 0 ? " " : ""}${med}M` : ""})
+                                  {high > 0
+                                    ? `${crit > 0 ? " " : ""}${high}H`
+                                    : ""}
+                                  {med > 0
+                                    ? `${crit + high > 0 ? " " : ""}${med}M`
+                                    : ""}
+                                  )
                                 </span>
                               )}
                             </span>
@@ -375,34 +422,36 @@ function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="py-3">
-            <CardTitle className="text-sm tracking-wide">
-              Quick actions
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {quickActions.map((action) => (
-              <Link key={action.to} to={action.to} className="block">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="w-full justify-start transition-all duration-200 hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
-                >
-                  <action.icon className="mr-3 h-4 w-4" />
-                  <div className="text-left">
-                    <span className="text-xs font-medium">
-                      {action.label}
-                    </span>
-                    <span className="mt-0.5 block text-[10px] text-muted-foreground">
-                      {action.desc}
-                    </span>
-                  </div>
-                </Button>
-              </Link>
-            ))}
-          </CardContent>
-        </Card>
+        {canCreateScans && (
+          <Card>
+            <CardHeader className="py-3">
+              <CardTitle className="text-sm tracking-wide">
+                Quick actions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {quickActions.map((action) => (
+                <Link key={action.to} to={action.to} className="block">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full justify-start transition-all duration-200 hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                  >
+                    <action.icon className="mr-3 h-4 w-4" />
+                    <div className="text-left">
+                      <span className="text-xs font-medium">
+                        {action.label}
+                      </span>
+                      <span className="mt-0.5 block text-[10px] text-muted-foreground">
+                        {action.desc}
+                      </span>
+                    </div>
+                  </Button>
+                </Link>
+              ))}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
