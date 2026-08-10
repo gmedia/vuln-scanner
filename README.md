@@ -2,7 +2,7 @@
 
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/gmedia/vuln-scanner)
 
-Web-based vulnerability scanner with 3 scan modes — IP, domain, and mobile (Android APK/AAB / iOS IPA) analysis. Deployed via Docker Compose with async task processing.
+Web-based vulnerability scanner (**VulnScanner** engine) under the **Sinexis** soft dual-brand: IP, domain, and mobile (Android APK/AAB / iOS IPA) analysis, **scheduled** attach scans, **multi-user workspaces**, and a planned **Guard** thin layer (Wazuh-backed agent inventory + critical alerts — **spec only** until implemented). Deployed via Docker Compose with async task processing.
 
 ## Architecture
 
@@ -198,6 +198,19 @@ curl http://localhost/api/scan/{id}/export?format=html \
 | `/health` | None | `GET` | DB + Redis health (`200` ok / `503` degraded) |
 | `/health/queues` | None | `GET` | Celery queue depths + `auto_failed` counters |
 | `/metrics` | API Key | `GET` | Prometheus metrics (requires `X-API-Key`) |
+
+### Product modules (shipped vs planned)
+
+| Module | Status | Notes |
+|--------|--------|--------|
+| Scan (IP / domain / mobile) | **Shipped** | Core engine |
+| Scan attach (schedules, baseline diff, executive HTML) | **Shipped** | Ops: [`docs/scan-schedules-ops.md`](docs/scan-schedules-ops.md) |
+| Workspace (orgs, roles, invites) | **Shipped** | Spek: [`docs/specs/workspace-v1.md`](docs/specs/workspace-v1.md) |
+| Soft dual-brand (Sinexis) | **Shipped** | Public host may still be `vs.appmedia.id` |
+| **Guard** (Wazuh thin) | **Spec S0** | Inventory + critical alerts + per-org enroll — **not** full SIEM. Spek: [`docs/specs/guard-v1.md`](docs/specs/guard-v1.md). No Guard API routes until a feature PR lands. |
+| Asset registry | Planned (P3) | Not started |
+
+Agent/session priority after reset: [`docs/AGENT_EXECUTION_GUIDE.md`](docs/AGENT_EXECUTION_GUIDE.md).
 
 ### Dependency pins & residual risks
 
