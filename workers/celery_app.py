@@ -38,6 +38,7 @@ celery_app.conf.update(
         "maintenance.fail_stale_pending": {"queue": "ip_scan"},
         "maintenance.fail_stale_running": {"queue": "ip_scan"},
         "schedules.run_due": {"queue": "ip_scan"},
+        "guard.sync_all": {"queue": "ip_scan"},
     },
     task_annotations={
         "ip_scan.run": {"rate_limit": "10/m"},
@@ -57,6 +58,10 @@ celery_app.conf.update(
             "task": "schedules.run_due",
             "schedule": 300.0,
         },
+        "guard-sync-all-every-5m": {
+            "task": "guard.sync_all",
+            "schedule": 300.0,
+        },
     },
 )
 
@@ -68,5 +73,6 @@ celery_app.autodiscover_tasks(
         "tasks.dead_letter",
         "tasks.maintenance",
         "tasks.schedules",
+        "tasks.guard",
     ]
 )
