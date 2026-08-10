@@ -6,7 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.schemas.scan import TARGET_PATTERN
 
-MAX_SCHEDULES_PER_USER = 10
+MAX_SCHEDULES_PER_ORG = 10
+MAX_SCHEDULES_PER_USER = MAX_SCHEDULES_PER_ORG
 
 
 class ScheduleCreate(BaseModel):

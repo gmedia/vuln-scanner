@@ -10,9 +10,33 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.scan_job import ScanJob
 from app.models.scan_schedule import ScanSchedule
 from app.models.user import User
-from app.schemas.schedule import MAX_SCHEDULES_PER_USER, ScheduleCreate, ScheduleResponse, ScheduleUpdate
+from app.schemas.schedule import MAX_SCHEDULES_PER_ORG, ScheduleCreate, ScheduleResponse, ScheduleUpdate
 from app.services.organization import get_membership, role_at_least
 from app.services.scanner import ScannerService
+
+
+async def _count_enabled_in_scope(
+    db: AsyncSession,
+    *,
+    organization_id: UUID | None,
+    user_id: UUID,
+    exclude_schedule_id: UUID | None = None,
+) -> int:
+    if organization_id is not None:
+        stmt = select(ScanSchedule).where(
+            ScanSchedule.organization_id == organization_id,
+            ScanSchedule.enabled.is_(True),
+        )
+    else:
+        stmt = select(ScanSchedule).where(
+            ScanSchedule.user_id == user_id,
+            ScanSchedule.organization_id.is_(None),
+            ScanSchedule.enabled.is_(True),
+        )
+    if exclude_schedule_id is not None:
+        stmt = stmt.where(ScanSchedule.id != exclude_schedule_id)
+    result = await db.execute(stmt)
+    return len(result.scalars().all())
 
 
 def compute_next_run_at(
@@ -123,15 +147,18 @@ class ScheduleService:
             if not role_at_least(membership.role, "member"):
                 raise HTTPException(status_code=403, detail="Insufficient organization role")
 
-        count_result = await self.db.execute(
-            select(ScanSchedule).where(ScanSchedule.user_id == user.id, ScanSchedule.enabled.is_(True))
-        )
-        enabled_count = len(count_result.scalars().all())
-        if body.enabled and enabled_count >= MAX_SCHEDULES_PER_USER:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Maximum {MAX_SCHEDULES_PER_USER} enabled schedules per user",
+        if body.enabled:
+            enabled_count = await _count_enabled_in_scope(
+                self.db,
+                organization_id=organization_id,
+                user_id=user.id,
             )
+            if enabled_count >= MAX_SCHEDULES_PER_ORG:
+                scope = "organization" if organization_id is not None else "user"
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Maximum {MAX_SCHEDULES_PER_ORG} enabled schedules per {scope}",
+                )
 
         next_run = compute_next_run_at(body.cadence, body.timezone)
         schedule = ScanSchedule(
@@ -165,18 +192,17 @@ class ScheduleService:
             raise HTTPException(status_code=403, detail="Insufficient organization role")
         data = body.model_dump(exclude_unset=True)
         if data.get("enabled") is True and not schedule.enabled:
-            count_result = await self.db.execute(
-                select(ScanSchedule).where(
-                    ScanSchedule.user_id == user_id,
-                    ScanSchedule.enabled.is_(True),
-                    ScanSchedule.id != schedule.id,
-                )
+            enabled_count = await _count_enabled_in_scope(
+                self.db,
+                organization_id=schedule.organization_id,
+                user_id=user_id,
+                exclude_schedule_id=schedule.id,
             )
-            enabled_count = len(count_result.scalars().all())
-            if enabled_count >= MAX_SCHEDULES_PER_USER:
+            if enabled_count >= MAX_SCHEDULES_PER_ORG:
+                scope = "organization" if schedule.organization_id is not None else "user"
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Maximum {MAX_SCHEDULES_PER_USER} enabled schedules per user",
+                    detail=f"Maximum {MAX_SCHEDULES_PER_ORG} enabled schedules per {scope}",
                 )
             schedule.last_error = None
         if "cadence" in data or "timezone" in data:

@@ -49,8 +49,8 @@ Manual start still returns **HTTP 402** with the same insufficient-credits messa
 
 ## Caps (abuse)
 
-- Global hard cap: **`MAX_SCHEDULES_PER_USER = 10`** enabled schedules per user (`backend/app/schemas/schedule.py`).
-- Enforced on **create** (when `enabled`) and on **PATCH re-enable**. Tiered Basic/Pro caps can replace this once billing entitlements exist.
+- Global hard cap: **`MAX_SCHEDULES_PER_ORG = 10`** enabled schedules per organization (`backend/app/schemas/schedule.py`; alias `MAX_SCHEDULES_PER_USER`). Personal/legacy null-org rows still count per user.
+- Enforced on **create** (when `enabled`) and on **PATCH re-enable** (shared pool for all members of the same org). Tiered Basic/Pro caps can replace this once billing entitlements exist.
 - Target validation matches manual scans (ip/domain only; no secrets in schedule rows).
 
 ## Env (relevant, non-secret)

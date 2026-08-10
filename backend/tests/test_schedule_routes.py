@@ -163,9 +163,9 @@ class TestScheduleCrud:
         assert resp.json() == []
 
     def test_create_rejects_over_enabled_cap(self, client):
-        from app.schemas.schedule import MAX_SCHEDULES_PER_USER
+        from app.schemas.schedule import MAX_SCHEDULES_PER_ORG
 
-        for i in range(MAX_SCHEDULES_PER_USER):
+        for i in range(MAX_SCHEDULES_PER_ORG):
             resp = client.post(
                 "/api/schedules",
                 headers=HEADERS,
@@ -190,10 +190,10 @@ class TestScheduleCrud:
         assert "Maximum" in over.json()["detail"]
 
     def test_reenable_rejects_over_enabled_cap(self, client):
-        from app.schemas.schedule import MAX_SCHEDULES_PER_USER
+        from app.schemas.schedule import MAX_SCHEDULES_PER_ORG
 
         ids: list[str] = []
-        for i in range(MAX_SCHEDULES_PER_USER):
+        for i in range(MAX_SCHEDULES_PER_ORG):
             resp = client.post(
                 "/api/schedules",
                 headers=HEADERS,
@@ -242,6 +242,189 @@ class TestScheduleCrud:
         )
         assert ok_enable.status_code == 200
         assert ok_enable.json()["enabled"] is True
+
+
+@pytest.mark.asyncio
+async def test_cap_is_shared_within_organization(db_session):
+    from httpx import ASGITransport, AsyncClient
+
+    from app.database import get_db
+    from app.main import app
+    from app.models.organization import Organization, OrganizationMembership
+    from app.schemas.schedule import MAX_SCHEDULES_PER_ORG
+    from app.services.auth import create_access_token
+
+    org_id = uuid.uuid4()
+    owner_id = uuid.uuid4()
+    member_id = uuid.uuid4()
+    member_email = f"member-{member_id.hex[:8]}@example.com"
+    db_session.add(
+        Organization(
+            id=org_id,
+            name="Cap Co",
+            slug=f"cap-co-{org_id.hex[:8]}",
+            kind="company",
+        )
+    )
+    db_session.add(
+        User(
+            id=owner_id,
+            email=f"owner-{owner_id.hex[:8]}@example.com",
+            password_hash="x",
+            is_verified=True,
+            credits=100,
+        )
+    )
+    db_session.add(
+        User(
+            id=member_id,
+            email=member_email,
+            password_hash="x",
+            is_verified=True,
+            credits=100,
+        )
+    )
+    await db_session.flush()
+    db_session.add(
+        OrganizationMembership(
+            id=uuid.uuid4(),
+            organization_id=org_id,
+            user_id=owner_id,
+            role="owner",
+        )
+    )
+    db_session.add(
+        OrganizationMembership(
+            id=uuid.uuid4(),
+            organization_id=org_id,
+            user_id=member_id,
+            role="member",
+        )
+    )
+    for i in range(MAX_SCHEDULES_PER_ORG):
+        db_session.add(
+            ScanSchedule(
+                id=uuid.uuid4(),
+                user_id=owner_id,
+                organization_id=org_id,
+                scan_type="domain",
+                target=f"shared-cap{i}.example.com",
+                cadence="weekly",
+                timezone="Asia/Jakarta",
+                next_run_at=datetime.now(UTC) + timedelta(days=1),
+                enabled=True,
+            )
+        )
+    await db_session.commit()
+
+    async def _db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = _db
+    app.middleware_stack = None
+    try:
+        token = create_access_token(
+            str(member_id),
+            member_email,
+            is_admin=False,
+            org_id=str(org_id),
+        )
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            over = await ac.post(
+                "/api/schedules",
+                headers={"Authorization": f"Bearer {token}", "X-E2E-Test": "1"},
+                json={
+                    "scan_type": "domain",
+                    "target": "member-over-cap.example.com",
+                    "cadence": "weekly",
+                },
+            )
+        assert over.status_code == 400, over.text
+        assert "Maximum" in over.json()["detail"]
+        assert "organization" in over.json()["detail"]
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_cap_isolated_across_organizations(db_session):
+    from httpx import ASGITransport, AsyncClient
+
+    from app.database import get_db
+    from app.main import app
+    from app.models.organization import Organization, OrganizationMembership
+    from app.schemas.schedule import MAX_SCHEDULES_PER_ORG
+    from app.services.auth import create_access_token
+
+    user_id = uuid.uuid4()
+    org_a = uuid.uuid4()
+    org_b = uuid.uuid4()
+    email = f"multi-{user_id.hex[:8]}@example.com"
+    db_session.add(
+        User(
+            id=user_id,
+            email=email,
+            password_hash="x",
+            is_verified=True,
+            credits=100,
+        )
+    )
+    for oid, name, slug in (
+        (org_a, "Org A", f"org-a-{org_a.hex[:8]}"),
+        (org_b, "Org B", f"org-b-{org_b.hex[:8]}"),
+    ):
+        db_session.add(Organization(id=oid, name=name, slug=slug, kind="company"))
+        db_session.add(
+            OrganizationMembership(
+                id=uuid.uuid4(),
+                organization_id=oid,
+                user_id=user_id,
+                role="owner",
+            )
+        )
+    for i in range(MAX_SCHEDULES_PER_ORG):
+        db_session.add(
+            ScanSchedule(
+                id=uuid.uuid4(),
+                user_id=user_id,
+                organization_id=org_a,
+                scan_type="domain",
+                target=f"orga-cap{i}.example.com",
+                cadence="weekly",
+                timezone="Asia/Jakarta",
+                next_run_at=datetime.now(UTC) + timedelta(days=1),
+                enabled=True,
+            )
+        )
+    await db_session.commit()
+
+    async def _db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = _db
+    app.middleware_stack = None
+    try:
+        token_b = create_access_token(
+            str(user_id),
+            email,
+            is_admin=False,
+            org_id=str(org_b),
+        )
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            ok = await ac.post(
+                "/api/schedules",
+                headers={"Authorization": f"Bearer {token_b}", "X-E2E-Test": "1"},
+                json={
+                    "scan_type": "domain",
+                    "target": "orgb-ok.example.com",
+                    "cadence": "weekly",
+                },
+            )
+        assert ok.status_code == 201, ok.text
+    finally:
+        app.dependency_overrides.clear()
 
     @pytest.mark.asyncio
     async def test_reenable_clears_last_error(self, client, db_session):

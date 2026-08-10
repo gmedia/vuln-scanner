@@ -91,7 +91,7 @@ export function mapScheduleError(detail: string | null | undefined): string {
     d.includes("maximum") &&
     (d.includes("10") || d.includes("enabled") || d.includes("schedule"))
   ) {
-    return `Batas ${MAX_ENABLED_SCHEDULES} jadwal aktif tercapai. Nonaktifkan satu dulu.`;
+    return `Batas ${MAX_ENABLED_SCHEDULES} jadwal aktif per organisasi tercapai. Nonaktifkan satu dulu.`;
   }
   if (d.includes("failed to dispatch")) {
     return "Gagal mengantrikan scan. Coba lagi nanti atau hubungi ops.";
