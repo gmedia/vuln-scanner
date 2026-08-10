@@ -1,9 +1,9 @@
 # Spec: Workspace v1 (P2)
 
-**Status:** **approved** (D1–D6 locked 2026-08-10). **S1–S4 implemented** on `main` via #267 (`21dd317`); edge migration **`add_workspace_orgs`** applied. Residual: manual UI smoke; optional **S5** schedule cap per-org.
+**Status:** **approved** (D1–D6 locked 2026-08-10). **S1–S5 implemented** on `main` (#267 S1–S4; **#270 S5**). Edge migration **`add_workspace_orgs`** applied. Residual: manual multi-org / multi-member S5 smoke.
 **Goal:** multi-user B2B workspace so a hotel or company can share scans and schedules under one org, without rewriting billing or attaching Guard.
 **Epic:** P2 per [`docs/AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) §1.3, §3 Phase C2, §5.2.
-**Historical branch:** `feat/workspace-org-membership` (merged). New work: `fix/*` or `feat/workspace-s5-schedule-cap` only with explicit verb.
+**Historical branches:** `feat/workspace-org-membership` (#267), `feat/s5-schedule-cap-per-org` (#270) — merged. New work: `fix/*` bugs or residual only with explicit verb.
 
 ---
 
@@ -15,7 +15,7 @@ Today the product is **single-user scoped**:
 |----------------|-------|------|
 | `User` | global row; personal `credits` | No shared workspace for a property or company team |
 | `ScanJob` | `user_id` only | Teammates cannot see each other’s jobs unless they share one login |
-| `ScanSchedule` | `user_id`; `organization_id` column exists **NULL, no FK** | Cap is **10 enabled schedules per user**; org share is reserved only |
+| `ScanSchedule` | `user_id` + **`organization_id` FK** (post-S1) | Cap is **10 enabled schedules per org** (**S5**); legacy null-org still per-user |
 | `ApiKey` | **global** M2M (`key_hash`, no user/org FK) | Unfit as multi-tenant agent identity |
 | AuthZ | JWT user id **or** platform API key; WebSocket often job-id + token without org membership | Cross-tenant **IDOR** risk once jobs are shared by id |
 
@@ -148,7 +148,7 @@ Index: `(organization_id, created_at DESC)`.
 | existing | | `user_id` required; `organization_id` already present **without FK** |
 | `organization_id` | UUID NULL FK organizations | add real FK + index; backfill from owner’s personal org |
 
-Cap migration (later slice): count enabled where `organization_id = ?` ≤ 10.
+Cap (**S5 shipped**): count enabled where `organization_id = ?` ≤ 10 (`MAX_SCHEDULES_PER_ORG`).
 
 ### 6.6 `users` (no credit column change)
 
@@ -279,9 +279,9 @@ Brand: soft dual-brand OK (VulnScanner shell / Sinexis copy). No hard cutover in
 | **S2 AuthZ** | membership helpers; JWT `org_id`; register auto-org; scan/schedule/WebSocket checks; pytest matrix | S1 | Wait |
 | **S3 API** | org/member/invite/switch routes; history/schedule filters; OpenAPI | S2 | Wait |
 | **S4 FE** | switcher, members, invite, role-gated CTAs | S3 | Wait |
-| **S5 (optional follow-up)** | schedule cap **per org** 10; toward per-org API keys | S3+ | Separate PR |
+| **S5** | schedule cap **per org** 10 (`MAX_SCHEDULES_PER_ORG`); FE quota copy | S3+ | **Done** (#270) |
 
-**Default build order after implement verb:** S1 → S2 → S3 → S4 (S5 optional).
+**Default build order (historical):** S1 → S2 → S3 → S4 → S5. **All shipped.** Per-org API keys remain later (not S5).
 
 **Deploy:** `./scripts/deploy-services.sh` with backend (Alembic) + frontend as needed; never volume-wipe postgres. Beat unchanged except schedule queries that filter org.
 
@@ -318,13 +318,13 @@ Brand: soft dual-brand OK (VulnScanner shell / Sinexis copy). No hard cutover in
 | ID | Question | **Locked default** |
 |----|----------|---------------------|
 | **D1** | Who is debited when member A runs a scan in org owned by B? | **Acting user A’s personal credits** |
-| **D2** | When does schedule cap become per-org 10? | **S5 follow-up** after FK+UI stable; keep per-user 10 until then |
+| **D2** | When does schedule cap become per-org 10? | **S5** after FK+UI stable (decision locked pre-ship; **implemented** #270 — was per-user 10 until S5) |
 | **D3** | Can a user create multiple non-personal orgs? | **Yes**, modest cap (e.g. 5 orgs created) to limit abuse |
 | **D4** | Invite to `owner` role? | **No** in v1; owner transfer is explicit separate action |
 | **D5** | Nullable `organization_id` forever vs enforce NOT NULL? | **Backfill then app-required**; DB NOT NULL in a tightening migration after one release |
 | **D6** | Default org on login when multi-member? | **Last used** (server field or client localStorage + switch) else personal `kind=personal` else first membership |
 
-User signed off on recommended defaults; implement on `feat/workspace-org-membership`.
+User signed off on recommended defaults; S1–S5 implemented on `main` (#267, #270).
 
 ---
 
@@ -382,11 +382,11 @@ Do not hardcode real e2e mailbox passwords in repo; use env (`E2E_*`).
 
 ## 17. Rollout
 
-1. **Approve this draft** (user).
-2. Implement S1–S4 on feature branches from latest `main`; conventional commits; PR per slice if large.
-3. Deploy backend migration first; verify backfill counts; then frontend switcher.
-4. Dogfood: two users, one org, shared scan + viewer login.
-5. Only then consider S5 cap-per-org and API key redesign notes for Guard.
+1. **Approve this draft** (user) — done.
+2. Implement S1–S5 on feature branches from latest `main` — **done** (#267, #270).
+3. Deploy backend migration first; verify backfill counts; then frontend switcher — **done** (edge Alembic + CI deploy).
+4. Dogfood residual: two users, one org, shared scan + viewer + **S5 shared cap** (manual).
+5. Later: API key redesign notes for Guard (not S5); P3 assets on pain.
 
 ---
 
@@ -396,7 +396,7 @@ Do not hardcode real e2e mailbox passwords in repo; use env (`E2E_*`).
 |------|------|
 | User / credits | `backend/app/models/user.py` |
 | ScanJob | `backend/app/models/scan_job.py` |
-| ScanSchedule (`organization_id` nullable, no FK yet) | `backend/app/models/scan_schedule.py` |
+| ScanSchedule (`organization_id` FK post-S1; cap per-org S5) | `backend/app/models/scan_schedule.py`, `schemas/schedule.py` |
 | ApiKey global | `backend/app/models/api_key.py` |
 | Auth | `backend/app/services/auth.py` |
 | Scanner ownership | `backend/app/services/scanner.py` |
@@ -420,4 +420,4 @@ Match patterns: Alembic, pytest, no bare `except`, no `as any`, **never commit o
 
 ---
 
-*Approved. Implementation in progress on `feat/workspace-org-membership` (S1–S4).*
+*Approved. S1–S5 shipped on `main` (#267, #270). Residual: multi-org / multi-member S5 smoke.*
