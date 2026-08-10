@@ -48,6 +48,14 @@ class TokenResponse(BaseModel):
     expires_in: int
 
 
+class OrgSummary(BaseModel):
+    id: uuid.UUID
+    name: str
+    slug: str
+    kind: str
+    role: str
+
+
 class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -57,6 +65,8 @@ class UserResponse(BaseModel):
     is_admin: bool
     credits: int
     created_at: datetime
+    active_org_id: uuid.UUID | None = None
+    organizations: list[OrgSummary] = Field(default_factory=list)
 
 
 class LoginResponse(BaseModel):
@@ -65,6 +75,7 @@ class LoginResponse(BaseModel):
     token_type: str = "bearer"
     expires_in: int
     user: UserResponse
+    active_org_id: uuid.UUID | None = None
 
 
 class VerifyEmailRequest(BaseModel):

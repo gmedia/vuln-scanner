@@ -1,5 +1,6 @@
 from app.models.credit_log import CreditLog
 from app.models.email_verification import EmailVerificationToken
+from app.models.organization import Organization, OrganizationInvite, OrganizationMembership
 from app.models.password_reset import PasswordResetToken
 from app.models.pricing import PricingConfig
 from app.models.scan_job import ScanJob
@@ -14,4 +15,7 @@ __all__ = [
     "ScanSchedule",
     "CreditLog",
     "PricingConfig",
+    "Organization",
+    "OrganizationMembership",
+    "OrganizationInvite",
 ]
