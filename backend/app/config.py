@@ -98,6 +98,19 @@ class Settings(BaseSettings):
     scan_submit_window: int = 3600  # seconds (1 hour)
     auth_rate_limit_window: int = 60  # seconds for auth endpoint limiters
 
+    guard_enabled: bool = True
+    guard_mock_wazuh: bool = False
+    guard_alert_min_level: int = 12
+    guard_enroll_token_ttl_hours: int = 24
+    wazuh_manager_url: str = ""
+    wazuh_manager_user: str = ""
+    wazuh_manager_password: str = ""
+    wazuh_indexer_url: str = ""
+    wazuh_indexer_user: str = ""
+    wazuh_indexer_password: str = ""
+    wazuh_verify_tls: bool = True
+    wazuh_agent_manager_host: str = ""
+
 
 settings = Settings()
 
