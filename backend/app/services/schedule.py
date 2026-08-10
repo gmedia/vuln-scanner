@@ -132,6 +132,8 @@ class ScheduleService:
                     status_code=400,
                     detail=f"Maximum {MAX_SCHEDULES_PER_USER} enabled schedules per user",
                 )
+            # Successful re-enable: clear prior credit/dispatch error so UI is not stuck.
+            schedule.last_error = None
         if "cadence" in data or "timezone" in data:
             cadence = data.get("cadence", schedule.cadence)
             timezone = data.get("timezone", schedule.timezone)

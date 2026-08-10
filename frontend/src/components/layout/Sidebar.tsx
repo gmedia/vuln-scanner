@@ -32,7 +32,7 @@ const navItems = [
   { to: "/scan/ip", label: "IP Scanner", icon: Radar },
   { to: "/scan/domain", label: "Domain Scanner", icon: Globe },
   { to: "/scan/mobile", label: "Mobile Scanner", icon: Smartphone },
-  { to: "/schedules", label: "Schedules", icon: CalendarClock },
+  { to: "/schedules", label: "Jadwal", icon: CalendarClock },
 ];
 
 function Sidebar({ open, onClose }: SidebarProps) {

@@ -28,6 +28,20 @@ export interface ScheduleCreatePayload {
   enabled?: boolean;
 }
 
+/** Recent jobs for a schedule target (backend matches user+type+target). */
+export interface ScheduleRunJob {
+  id: string;
+  scan_type: string;
+  target: string;
+  status: string;
+  progress?: number;
+  created_at?: string;
+  completed_at?: string | null;
+  credit_cost?: number;
+}
+
+export const MAX_ENABLED_SCHEDULES = 10;
+
 export async function listSchedules(): Promise<ScanSchedule[]> {
   const { data } = await api.get<ScanSchedule[]>("/api/schedules");
   return data;
@@ -53,4 +67,37 @@ export async function updateSchedule(
 
 export async function deleteSchedule(id: string): Promise<void> {
   await api.delete(`/api/schedules/${id}`);
+}
+
+export async function listScheduleRuns(
+  id: string,
+  limit = 10,
+): Promise<ScheduleRunJob[]> {
+  const { data } = await api.get<ScheduleRunJob[]>(
+    `/api/schedules/${id}/runs`,
+    { params: { limit } },
+  );
+  return data;
+}
+
+/** Map API/worker English errors to Bahasa for attach UX. */
+export function mapScheduleError(detail: string | null | undefined): string {
+  if (!detail) return "";
+  const d = detail.toLowerCase();
+  if (d.includes("insufficient credits")) {
+    return "Kredit tidak mencukupi. Jadwal dinonaktifkan otomatis.";
+  }
+  if (
+    d.includes("maximum") &&
+    (d.includes("10") || d.includes("enabled") || d.includes("schedule"))
+  ) {
+    return `Batas ${MAX_ENABLED_SCHEDULES} jadwal aktif tercapai. Nonaktifkan satu dulu.`;
+  }
+  if (d.includes("failed to dispatch")) {
+    return "Gagal mengantrikan scan. Coba lagi nanti atau hubungi ops.";
+  }
+  if (d.includes("target is required") || d.includes("field required")) {
+    return "Target wajib diisi";
+  }
+  return detail;
 }

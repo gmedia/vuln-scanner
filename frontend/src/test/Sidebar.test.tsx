@@ -52,6 +52,7 @@ describe("Sidebar", () => {
     expect(screen.getByText("IP Scanner")).toBeInTheDocument();
     expect(screen.getByText("Domain Scanner")).toBeInTheDocument();
     expect(screen.getByText("Mobile Scanner")).toBeInTheDocument();
+    expect(screen.getByText("Jadwal")).toBeInTheDocument();
   });
 
   it("renames admin Dashboard to Admin overview", () => {
