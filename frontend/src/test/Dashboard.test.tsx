@@ -99,11 +99,16 @@ describe("Dashboard", () => {
     expect(screen.getByText("New IP Scan")).toBeInTheDocument();
     expect(screen.getByText("New Domain Scan")).toBeInTheDocument();
     expect(screen.getByText("Upload APK/AAB/IPA")).toBeInTheDocument();
+    expect(screen.getByText("Jadwal scan")).toBeInTheDocument();
   });
 
   it("shows No scans yet when scan list is empty", () => {
     render(<Dashboard />);
     expect(screen.getByText("No scans yet")).toBeInTheDocument();
+    expect(screen.getByTestId("empty-schedules-link")).toHaveAttribute(
+      "href",
+      "/schedules",
+    );
   });
 
   it("shows loading skeletons when first loading", () => {

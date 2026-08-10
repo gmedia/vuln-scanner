@@ -10,6 +10,7 @@ import {
   ChevronDown,
   Loader2,
   Plus,
+  CalendarClock,
 } from "lucide-react";
 import { useScanHistory } from "@/hooks/useScan";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
@@ -152,6 +153,12 @@ function Dashboard() {
       icon: Smartphone,
       label: "Upload APK/AAB/IPA",
       desc: "Static analysis of mobile binaries",
+    },
+    {
+      to: "/schedules",
+      icon: CalendarClock,
+      label: "Jadwal scan",
+      desc: "Recurring domain/IP — Scan Attach",
     },
   ];
 
@@ -321,12 +328,20 @@ function Dashboard() {
                       : "Belum ada scan di workspace ini."}
                 </p>
                 {canCreateScans && (
-                  <Button asChild size="sm" className="text-xs">
-                    <Link to="/scan/ip">
-                      <Plus className="mr-1.5 h-3.5 w-3.5" />
-                      New scan
-                    </Link>
-                  </Button>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    <Button asChild size="sm" className="text-xs">
+                      <Link to="/scan/ip">
+                        <Plus className="mr-1.5 h-3.5 w-3.5" />
+                        New scan
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" size="sm" className="text-xs">
+                      <Link to="/schedules" data-testid="empty-schedules-link">
+                        <CalendarClock className="mr-1.5 h-3.5 w-3.5" />
+                        Atur jadwal
+                      </Link>
+                    </Button>
+                  </div>
                 )}
               </div>
             ) : (
