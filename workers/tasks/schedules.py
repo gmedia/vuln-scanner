@@ -72,7 +72,7 @@ def run_due_schedules(limit: int = 50) -> dict[str, Any]:
         rows = session.execute(
             text(
                 """
-                SELECT id, user_id, scan_type, target, cadence, timezone, next_run_at, last_job_id
+                SELECT id, user_id, scan_type, target, cadence, timezone, next_run_at, last_job_id, organization_id
                 FROM scan_schedules
                 WHERE enabled = true
                   AND next_run_at <= NOW()
@@ -93,6 +93,7 @@ def run_due_schedules(limit: int = 50) -> dict[str, Any]:
             timezone = row[5]
             next_run_at = row[6]
             last_job_id = row[7]
+            organization_id = row[8]
 
             if last_job_id:
                 st = session.execute(
@@ -165,9 +166,11 @@ def run_due_schedules(limit: int = 50) -> dict[str, Any]:
                 text(
                     """
                     INSERT INTO scan_jobs (
-                        id, scan_type, target, status, progress, user_id, credit_cost, created_at
+                        id, scan_type, target, status, progress, user_id, organization_id,
+                        credit_cost, created_at
                     ) VALUES (
-                        :id, :scan_type, :target, 'pending', 0, :user_id, :credit_cost, NOW()
+                        :id, :scan_type, :target, 'pending', 0, :user_id, :organization_id,
+                        :credit_cost, NOW()
                     )
                     """
                 ),
@@ -176,6 +179,7 @@ def run_due_schedules(limit: int = 50) -> dict[str, Any]:
                     "scan_type": scan_type,
                     "target": target,
                     "user_id": user_id,
+                    "organization_id": organization_id,
                     "credit_cost": credit_cost,
                 },
             )

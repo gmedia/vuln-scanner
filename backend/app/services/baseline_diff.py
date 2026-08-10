@@ -159,15 +159,26 @@ def _job_anchor(job: ScanJob) -> datetime:
     return job.completed_at if job.completed_at is not None else job.created_at
 
 
+async def _can_access_job(db: AsyncSession, job: ScanJob, user_id: UUID) -> bool:
+    if job.user_id == user_id:
+        return True
+    if job.organization_id is None:
+        return False
+    from app.services.organization import get_membership, role_at_least
+
+    membership = await get_membership(db, job.organization_id, user_id)
+    return membership is not None and role_at_least(membership.role, "viewer")
+
+
 async def get_scan_diff(db: AsyncSession, job_id: str, user_id: UUID) -> ScanDiffResponse:
     try:
         job_uuid = uuid.UUID(str(job_id))
     except ValueError:
         raise HTTPException(status_code=404, detail="Scan job not found") from None
 
-    result = await db.execute(select(ScanJob).where(ScanJob.id == job_uuid, ScanJob.user_id == user_id))
+    result = await db.execute(select(ScanJob).where(ScanJob.id == job_uuid))
     current_job = result.scalar_one_or_none()
-    if current_job is None:
+    if current_job is None or not await _can_access_job(db, current_job, user_id):
         raise HTTPException(status_code=404, detail="Scan job not found")
 
     if current_job.status != "completed":
@@ -176,12 +187,15 @@ async def get_scan_diff(db: AsyncSession, job_id: str, user_id: UUID) -> ScanDif
     current_anchor = _job_anchor(current_job)
 
     prior_q = select(ScanJob).where(
-        ScanJob.user_id == user_id,
         ScanJob.scan_type == current_job.scan_type,
         ScanJob.target == current_job.target,
         ScanJob.status == "completed",
         ScanJob.id != current_job.id,
     )
+    if current_job.organization_id is not None:
+        prior_q = prior_q.where(ScanJob.organization_id == current_job.organization_id)
+    else:
+        prior_q = prior_q.where(ScanJob.user_id == user_id)
     prior_result = await db.execute(prior_q)
     prior_candidates = list(prior_result.scalars().all())
     prior_candidates.sort(

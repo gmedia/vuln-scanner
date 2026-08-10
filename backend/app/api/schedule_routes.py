@@ -1,13 +1,13 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.user import User
 from app.schemas.scan import ScanJobResponse
 from app.schemas.schedule import ScheduleCreate, ScheduleResponse, ScheduleUpdate
-from app.services.auth import get_current_user
+from app.services.auth import get_active_org_id, get_current_user
 from app.services.schedule import ScheduleService
 
 router = APIRouter(prefix="/schedules", tags=["schedules"])
@@ -15,19 +15,28 @@ router = APIRouter(prefix="/schedules", tags=["schedules"])
 
 @router.get("", response_model=list[ScheduleResponse])
 async def list_schedules(
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[ScheduleResponse]:
-    return await ScheduleService(db).list_for_user(current_user.id)
+    return await ScheduleService(db).list_for_user(
+        current_user.id,
+        organization_id=get_active_org_id(request),
+    )
 
 
 @router.post("", response_model=ScheduleResponse, status_code=201)
 async def create_schedule(
+    request: Request,
     body: ScheduleCreate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> ScheduleResponse:
-    return await ScheduleService(db).create(current_user, body)
+    return await ScheduleService(db).create(
+        current_user,
+        body,
+        organization_id=get_active_org_id(request),
+    )
 
 
 @router.get("/{schedule_id}", response_model=ScheduleResponse)

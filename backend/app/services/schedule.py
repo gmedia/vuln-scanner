@@ -11,6 +11,7 @@ from app.models.scan_job import ScanJob
 from app.models.scan_schedule import ScanSchedule
 from app.models.user import User
 from app.schemas.schedule import MAX_SCHEDULES_PER_USER, ScheduleCreate, ScheduleResponse, ScheduleUpdate
+from app.services.organization import get_membership, role_at_least
 from app.services.scanner import ScannerService
 
 
@@ -70,14 +71,58 @@ class ScheduleService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def list_for_user(self, user_id: UUID) -> list[ScheduleResponse]:
-        result = await self.db.execute(
-            select(ScanSchedule).where(ScanSchedule.user_id == user_id).order_by(ScanSchedule.created_at.desc())
-        )
+    async def _can_read(self, schedule: ScanSchedule, user_id: UUID) -> bool:
+        if schedule.user_id == user_id:
+            return True
+        if schedule.organization_id is None:
+            return False
+        membership = await get_membership(self.db, schedule.organization_id, user_id)
+        return membership is not None and role_at_least(membership.role, "viewer")
+
+    async def _can_mutate(self, schedule: ScanSchedule, user_id: UUID) -> bool:
+        if schedule.organization_id is None:
+            return schedule.user_id == user_id
+        membership = await get_membership(self.db, schedule.organization_id, user_id)
+        if membership is None:
+            return False
+        if role_at_least(membership.role, "admin"):
+            return True
+        return bool(role_at_least(membership.role, "member") and schedule.user_id == user_id)
+
+    async def list_for_user(
+        self,
+        user_id: UUID,
+        organization_id: UUID | None = None,
+    ) -> list[ScheduleResponse]:
+        if organization_id is not None:
+            membership = await get_membership(self.db, organization_id, user_id)
+            if membership is None or not role_at_least(membership.role, "viewer"):
+                raise HTTPException(status_code=404, detail="Organization not found")
+            result = await self.db.execute(
+                select(ScanSchedule)
+                .where(ScanSchedule.organization_id == organization_id)
+                .order_by(ScanSchedule.created_at.desc())
+            )
+        else:
+            result = await self.db.execute(
+                select(ScanSchedule).where(ScanSchedule.user_id == user_id).order_by(ScanSchedule.created_at.desc())
+            )
         rows = result.scalars().all()
         return [ScheduleResponse.model_validate(r) for r in rows]
 
-    async def create(self, user: User, body: ScheduleCreate) -> ScheduleResponse:
+    async def create(
+        self,
+        user: User,
+        body: ScheduleCreate,
+        organization_id: UUID | None = None,
+    ) -> ScheduleResponse:
+        if organization_id is not None:
+            membership = await get_membership(self.db, organization_id, user.id)
+            if membership is None:
+                raise HTTPException(status_code=404, detail="Organization not found")
+            if not role_at_least(membership.role, "member"):
+                raise HTTPException(status_code=403, detail="Insufficient organization role")
+
         count_result = await self.db.execute(
             select(ScanSchedule).where(ScanSchedule.user_id == user.id, ScanSchedule.enabled.is_(True))
         )
@@ -92,6 +137,7 @@ class ScheduleService:
         schedule = ScanSchedule(
             id=uuid.uuid4(),
             user_id=user.id,
+            organization_id=organization_id,
             name=body.name,
             scan_type=body.scan_type,
             target=body.target,
@@ -107,16 +153,16 @@ class ScheduleService:
         return ScheduleResponse.model_validate(schedule)
 
     async def get_owned(self, schedule_id: UUID, user_id: UUID) -> ScanSchedule:
-        result = await self.db.execute(
-            select(ScanSchedule).where(ScanSchedule.id == schedule_id, ScanSchedule.user_id == user_id)
-        )
+        result = await self.db.execute(select(ScanSchedule).where(ScanSchedule.id == schedule_id))
         schedule = result.scalar_one_or_none()
-        if not schedule:
+        if schedule is None or not await self._can_read(schedule, user_id):
             raise HTTPException(status_code=404, detail="Schedule not found")
         return schedule
 
     async def update(self, schedule_id: UUID, user_id: UUID, body: ScheduleUpdate) -> ScheduleResponse:
         schedule = await self.get_owned(schedule_id, user_id)
+        if not await self._can_mutate(schedule, user_id):
+            raise HTTPException(status_code=403, detail="Insufficient organization role")
         data = body.model_dump(exclude_unset=True)
         if data.get("enabled") is True and not schedule.enabled:
             count_result = await self.db.execute(
@@ -132,7 +178,6 @@ class ScheduleService:
                     status_code=400,
                     detail=f"Maximum {MAX_SCHEDULES_PER_USER} enabled schedules per user",
                 )
-            # Successful re-enable: clear prior credit/dispatch error so UI is not stuck.
             schedule.last_error = None
         if "cadence" in data or "timezone" in data:
             cadence = data.get("cadence", schedule.cadence)
@@ -147,21 +192,22 @@ class ScheduleService:
 
     async def delete(self, schedule_id: UUID, user_id: UUID) -> None:
         schedule = await self.get_owned(schedule_id, user_id)
+        if not await self._can_mutate(schedule, user_id):
+            raise HTTPException(status_code=403, detail="Insufficient organization role")
         await self.db.delete(schedule)
         await self.db.commit()
 
     async def list_runs(self, schedule_id: UUID, user_id: UUID, limit: int = 20) -> list[ScanJob]:
         schedule = await self.get_owned(schedule_id, user_id)
-        result = await self.db.execute(
-            select(ScanJob)
-            .where(
-                ScanJob.user_id == user_id,
-                ScanJob.scan_type == schedule.scan_type,
-                ScanJob.target == schedule.target,
-            )
-            .order_by(ScanJob.created_at.desc())
-            .limit(limit)
+        query = select(ScanJob).where(
+            ScanJob.scan_type == schedule.scan_type,
+            ScanJob.target == schedule.target,
         )
+        if schedule.organization_id is not None:
+            query = query.where(ScanJob.organization_id == schedule.organization_id)
+        else:
+            query = query.where(ScanJob.user_id == user_id)
+        result = await self.db.execute(query.order_by(ScanJob.created_at.desc()).limit(limit))
         return list(result.scalars().all())
 
     async def run_due_now(self, schedule: ScanSchedule, user: User) -> ScanJob | None:
@@ -173,7 +219,12 @@ class ScheduleService:
 
         svc = ScannerService(self.db)
         try:
-            job = await svc.start_scan(user=user, scan_type=schedule.scan_type, target=schedule.target)
+            job = await svc.start_scan(
+                user=user,
+                scan_type=schedule.scan_type,
+                target=schedule.target,
+                organization_id=schedule.organization_id,
+            )
         except HTTPException as exc:
             schedule.last_error = str(exc.detail)
             schedule.updated_at = datetime.now(UTC)

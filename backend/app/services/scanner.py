@@ -16,6 +16,7 @@ from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.user import User
 from app.schemas.scan import PaginatedResponse, ScanFindingResponse, ScanJobDetailResponse, ScanJobResponse
+from app.services.organization import get_membership, role_at_least
 
 celery_app = Celery(
     "vuln_scanner",
@@ -50,7 +51,15 @@ class ScannerService:
         ports: str | None = None,
         platform: str | None = None,
         file_path: str | None = None,
+        organization_id: UUID | None = None,
     ) -> ScanJob:
+        if organization_id is not None:
+            membership = await get_membership(self.db, organization_id, user.id)
+            if membership is None:
+                raise HTTPException(status_code=404, detail="Organization not found")
+            if not role_at_least(membership.role, "member"):
+                raise HTTPException(status_code=403, detail="Insufficient organization role")
+
         result = await self.db.execute(select(PricingConfig).where(PricingConfig.scan_type == scan_type))
         pricing = result.scalar_one_or_none()
         if pricing:
@@ -59,7 +68,6 @@ class ScannerService:
             config_attr = settings.scan_type_pricing_map.get(scan_type, "")
             credit_cost = getattr(settings, config_attr, 0) if config_attr else 0
 
-        # Atomic check-and-deduct: only deduct if user has enough credits
         if credit_cost > 0:
             await self.db.execute(
                 text("UPDATE users SET credits = credits - :cost WHERE id = :uid AND credits >= :cost"),
@@ -81,6 +89,7 @@ class ScannerService:
             status="pending",
             progress=0,
             user_id=user.id,
+            organization_id=organization_id,
             credit_cost=credit_cost,
         )
         self.db.add(job)
@@ -151,11 +160,20 @@ class ScannerService:
             )
         raise ValueError(f"Unknown scan type: {scan_type}")
 
+    async def _can_access_job(self, job: ScanJob, user_id: UUID) -> bool:
+        if job.user_id == user_id:
+            return True
+        if job.organization_id is None:
+            return False
+        membership = await get_membership(self.db, job.organization_id, user_id)
+        return membership is not None and role_at_least(membership.role, "viewer")
+
     async def get_job(self, job_id: str, user_id: UUID) -> ScanJobDetailResponse | None:
-        query = select(ScanJob).where(ScanJob.id == job_id, ScanJob.user_id == user_id)
-        result = await self.db.execute(query)
+        result = await self.db.execute(select(ScanJob).where(ScanJob.id == job_id))
         job = result.scalar_one_or_none()
         if not job:
+            return None
+        if not await self._can_access_job(job, user_id):
             return None
 
         findings_result = await self.db.execute(select(ScanFinding).where(ScanFinding.job_id == job_id))
@@ -166,12 +184,12 @@ class ScannerService:
         return detail
 
     async def get_findings(self, job_id: str, user_id: UUID) -> list[ScanFindingResponse]:
-        # Verify job exists and belongs to user before returning findings
-        job_result = await self.db.execute(select(ScanJob.id).where(ScanJob.id == job_id, ScanJob.user_id == user_id))
-        if not job_result.scalar_one_or_none():
+        result = await self.db.execute(select(ScanJob).where(ScanJob.id == job_id))
+        job = result.scalar_one_or_none()
+        if job is None or not await self._can_access_job(job, user_id):
             raise HTTPException(status_code=404, detail="Scan job not found")
-        result = await self.db.execute(select(ScanFinding).where(ScanFinding.job_id == job_id))
-        findings = result.scalars().all()
+        findings_result = await self.db.execute(select(ScanFinding).where(ScanFinding.job_id == job_id))
+        findings = findings_result.scalars().all()
         return [ScanFindingResponse.model_validate(f) for f in findings]
 
     async def get_history(
@@ -180,6 +198,7 @@ class ScannerService:
         limit: int = 20,
         scan_type: str | None = None,
         user_id: UUID | None = None,
+        organization_id: UUID | None = None,
     ) -> PaginatedResponse:
         query = select(ScanJob)
         count_query = select(func.count(ScanJob.id))
@@ -190,7 +209,15 @@ class ScannerService:
             query = query.where(ScanJob.scan_type == scan_type)
             count_query = count_query.where(ScanJob.scan_type == scan_type)
 
-        if user_id is not None:
+        if organization_id is not None:
+            if user_id is None:
+                raise HTTPException(status_code=401, detail="Authentication required")
+            membership = await get_membership(self.db, organization_id, user_id)
+            if membership is None or not role_at_least(membership.role, "viewer"):
+                raise HTTPException(status_code=404, detail="Organization not found")
+            query = query.where(ScanJob.organization_id == organization_id)
+            count_query = count_query.where(ScanJob.organization_id == organization_id)
+        elif user_id is not None:
             query = query.where(ScanJob.user_id == user_id)
             count_query = count_query.where(ScanJob.user_id == user_id)
 
