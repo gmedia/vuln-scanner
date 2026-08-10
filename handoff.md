@@ -14,18 +14,18 @@
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding)** | **`31faa67`** — docs tip refresh (#272) after Attach UX Wave B (#271) + Workspace **S5** (#270); re-`git pull` after reset |
-| **Open PRs** | Re-check `gh pr list` (often Dependabot + docs Guard spek when open) |
+| **`main` tip (coding)** | **`28bc69e`** — Guard **HttpWazuhClient** (#275) after thin S1–S5 (#274); re-`git pull` after reset |
+| **Open PRs** | Re-check `gh pr list` (often Dependabot) |
 | **P1 Scan Attach (code)** | **S1–S5** on `main` (#235–#239) + **Wave B** SPA polish (#271) |
 | **P1 production** | **Closed (2026-08-08)** smoke A; Wave B **CI-deployed** with tip (2026-08-10) |
 | **P2 Workspace** | **S1–S5 on `main`** (#267 + #270); spek D1–D6; edge Alembic **`add_workspace_orgs`**; cap **10 enabled / org** |
 | **P4 soft dual-brand** | **On `main`** (#250); host stays **`vs.appmedia.id`** |
-| **P5 Guard** | **S0 spek** [`docs/specs/guard-v1.md`](docs/specs/guard-v1.md) — thin Wazuh (inventory + critical alerts + per-org enroll); **user risk-accepted**; **code S1+ not started** |
+| **P5 Guard** | **On `main`**: spek #273 · thin #274 · Http #275 — mock CI default; **edge lab + env + live smoke still human** |
 | **P0 commercial** | **Policy locked** (#245): Basic **300k** / Pro **650k** / Multi **2M**; credits **10/24/60**; AM renew; attach ARPU primary; pilot #1 multi-service, 1 mo sponsored |
 | **P0 GTM kit in git** | One-pager + SKU + **[`docs/commercial/am-wave1-email-id.md`](docs/commercial/am-wave1-email-id.md)** (#246) |
-| **Still human (not git)** | Finance **service_id** ×3; AM **10 CRM SIDs**; named **pilot #1**; AM **send** wave-1; ops **fulfill** first yes/pilot |
+| **Still human (not git)** | Finance **service_id** ×3; AM **10 CRM SIDs**; named **pilot #1**; AM **send** wave-1; ops **fulfill**; Guard lab Manager/Indexer + deploy tip smoke |
 | **Coding-host Docker** | Prefer **off/minimal**. Edge runs live stack (CI **deploy** job on `main`) |
-| **Engineering default** | **GTM human** (parallel) + residual multi-org/S5 smoke + bugfixes; **Guard code** only on explicit implement (thin DoD); **P3** on explicit verb |
+| **Engineering default** | **GTM + edge Guard live** (human) · no SIEM creep · bugfixes / Dependabot · further Guard only on explicit verb · **P3** on explicit verb |
 
 ### Edge public smoke — post-S5 + Wave B deploy (2026-08-10)
 
