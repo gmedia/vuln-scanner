@@ -258,6 +258,53 @@ async def admin_resend_verification(
     return MessageResponse(message="Verification email has been sent.", email_sent=True)
 
 
+@router.post("/users/{user_id}/force-verify", response_model=AdminUserItem)
+async def admin_force_verify_user(
+    request: Request,
+    user_id: uuid.UUID,
+    current_admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> AdminUserItem | Response:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        return limit_response
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if not user.is_verified:
+        user.is_verified = True
+        user.verified_at = datetime.now(UTC)
+        existing = await db.execute(select(EmailVerificationToken).where(EmailVerificationToken.user_id == user.id))
+        old_token = existing.scalar_one_or_none()
+        if old_token is not None:
+            await db.delete(old_token)
+        await db.commit()
+        await db.refresh(user)
+        logger.info(
+            "Admin %s force-verified user_id=%s",
+            current_admin.id,
+            user.id,
+        )
+    else:
+        await db.refresh(user)
+
+    scan_count_result = await db.execute(select(func.count(ScanJob.id)).where(ScanJob.user_id == user.id))
+    scan_count = scan_count_result.scalar() or 0
+
+    return AdminUserItem(
+        id=user.id,
+        email=user.email,
+        is_admin=user.is_admin,
+        is_verified=user.is_verified,
+        credits=user.credits,
+        scan_count=scan_count,
+        created_at=user.created_at,
+    )
+
+
 @router.get("/pricing", response_model=PricingListResponse)
 async def get_pricing(
     request: Request,

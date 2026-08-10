@@ -681,6 +681,83 @@ class TestAdminResendVerification:
 
 
 # ---------------------------------------------------------------------------
+# POST /api/admin/users/{user_id}/force-verify
+# ---------------------------------------------------------------------------
+
+
+class TestAdminForceVerify:
+    @pytest.mark.asyncio
+    async def test_force_verify_unverified_user(self, client, db_session):
+        from datetime import UTC, datetime, timedelta
+
+        from app.models.email_verification import EmailVerificationToken
+
+        user = User(
+            id=uuid.uuid4(),
+            email="force-verify@example.com",
+            password_hash=hash_password("TestPass1"),
+            is_verified=False,
+            credits=10,
+        )
+        db_session.add(user)
+        await db_session.commit()
+        await db_session.refresh(user)
+
+        pending = EmailVerificationToken(
+            user_id=user.id,
+            token="pending-verify-token",
+            expires_at=datetime.now(UTC) + timedelta(hours=12),
+        )
+        db_session.add(pending)
+        await db_session.commit()
+
+        resp = client.post(
+            f"/api/admin/users/{user.id}/force-verify",
+            headers=API_HEADERS,
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["is_verified"] is True
+        assert data["email"] == user.email
+
+        await db_session.refresh(user)
+        assert user.is_verified is True
+        assert user.verified_at is not None
+
+        token_result = await db_session.execute(
+            select(EmailVerificationToken).where(EmailVerificationToken.user_id == user.id)
+        )
+        assert token_result.scalar_one_or_none() is None
+
+    def test_force_verify_already_verified_idempotent(self, client, sample_user):
+        resp = client.post(
+            f"/api/admin/users/{sample_user.id}/force-verify",
+            headers=API_HEADERS,
+        )
+        assert resp.status_code == 200
+        assert resp.json()["is_verified"] is True
+
+    def test_force_verify_user_not_found(self, client):
+        fake_id = uuid.uuid4()
+        resp = client.post(
+            f"/api/admin/users/{fake_id}/force-verify",
+            headers=API_HEADERS,
+        )
+        assert resp.status_code == 404
+        assert resp.json()["detail"] == "User not found"
+
+    def test_force_verify_unauthorized_non_admin(self, admin_auth_client, db_session, sample_user):
+        user, token = asyncio.get_event_loop().run_until_complete(
+            _create_user_with_token(db_session, "regular-force-verify@example.com", is_admin=False)
+        )
+        resp = admin_auth_client.post(
+            f"/api/admin/users/{sample_user.id}/force-verify",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 403
+
+
+# ---------------------------------------------------------------------------
 # GET /api/admin/pricing
 # ---------------------------------------------------------------------------
 
