@@ -60,7 +60,7 @@ Commercial reality (upsell + hospitality): account managers need **owner + membe
 |-------|---------|
 | Org semantics | **Org ≈ one company or one hotel** (design partner may still be one org with many targets later via P3 assets) |
 | Credits | **Personal** balance on `User.credits`; debit the **acting user** who starts a scan or owns the schedule tick policy below |
-| Schedule cap | Today: **max 10 enabled / user**. Plan: **migrate to max 10 enabled / org** in a follow-up slice after org FK is real (not blocking S1 schema) |
+| Schedule cap | **max 10 enabled / org** (`MAX_SCHEDULES_PER_ORG`); members share one pool. Legacy null-org rows still cap per user |
 | Active org | SPA **org switcher**; server trusts **JWT `org_id`** (must match membership) |
 | On register | Create **personal org** (`slug` derived from email local-part + short suffix), membership `owner` |
 | Existing users | **Backfill** personal org + owner membership; set `organization_id` on their jobs/schedules |

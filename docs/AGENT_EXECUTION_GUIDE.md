@@ -94,7 +94,7 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 |---|------|-----------------|----------|--------------|-------------------------|
 | **P0** | **Commercial lock** (user-led + docs) | Something sales can quote | One-pager; **SKU** tiers/prices; SID *patterns*; AM email kit; defaults §1 | Guard coding; finance CSV in repo | **Policy locked in git** (#245–#246). **GTM still open:** finance `service_id`, 10 CRM SIDs, named pilot, AM send, ops fulfill |
 | **P1** | **Scan Attach Loop** | Recurring reason to pay monthly | **Scheduled** domain/IP; new critical/high notify; **baseline diff**; **executive HTML**; credits on schedule; cap 10 | Org rewrite; Wazuh; full rebrand | **Shipped on `main` + production smoke closed** (S1–S5, edge DoD) |
-| **P2** | **Workspace v1** | B2B multi-user | orgs, memberships, invites, org-scoped scans, personal credits, backfill; JWT `org_id`; WS membership AuthZ | Nested projects; org wallet; Wazuh; per-org ApiKey | **S1–S4 shipped** (#267 → `21dd317`); spek [`workspace-v1.md`](specs/workspace-v1.md) **approved** D1–D6; edge Alembic **`add_workspace_orgs`**; public health OK. **Residual:** login/UI multi-org smoke (manual); **S5** schedule cap per-org (deferred) |
+| **P2** | **Workspace v1** | B2B multi-user | orgs, memberships, invites, org-scoped scans, personal credits, backfill; JWT `org_id`; WS membership AuthZ; **S5** schedule cap per-org | Nested projects; org wallet; Wazuh; per-org ApiKey | **S1–S4 shipped** (#267 → `21dd317`); **S5** on branch `feat/s5-schedule-cap-per-org` (cap 10 enabled / org). Spek D1–D6; edge Alembic **`add_workspace_orgs`**. **Residual:** login/UI multi-org smoke (manual) |
 | **P3** | **Asset registry (light)** | Multi-target tiers | Named assets; scan pack; tier limits | Full CMDB; IoT; PMS | **Not started** |
 | **P4** | **Soft dual-brand** | Name trust | Sinexis strings, landing, SKU label | Hard cut / domain cutover blocking attach | **Shipped soft dual-brand on `main`** (#250); public host remains **`vs.appmedia.id`** (no hard cut) |
 | **P5** | **Guard MVP** (Wazuh thin) | Second upsell | Agent inventory, critical alerts, per-org enroll | Full SIEM, SOAR | **Parked** — only after Workspace stable + attach story / written risk accept |
@@ -305,10 +305,9 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 - [x] Diff / notify path for **new** high/critical vs prior run
 - [x] Management-oriented **executive HTML**
 - [x] Credits charged on schedule; insufficient → disable schedule
-- [x] Cap **10** enabled schedules/user
+- [x] Cap **10** enabled schedules (now **per org** via Workspace S5)
 - [x] No Wazuh in this epic
 - [ ] Optional later: PDF, in-app subscription
-- [ ] **S5:** enabled-schedule cap **per org** (still per-user until then)
 
 ### 5.2 Workspace v1 (P2) — **S1–S4 met in code + migration (2026-08-10)**
 
@@ -321,8 +320,8 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 - [x] Credits remain **personal** (D1)
 - [x] Tests: workspace AuthZ + schedule worker org column; migration on edge
 - [x] No Wazuh/agent code in this epic
+- [x] **S5** enabled-schedule cap **per org** (`MAX_SCHEDULES_PER_ORG = 10`)
 - [ ] Edge **login/UI** multi-org smoke (manual residual)
-- [ ] **S5** schedule cap per-org
 
 ### 5.3 Assets (P3) — sketch
 
