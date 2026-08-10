@@ -14,30 +14,32 @@
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding)** | **`21dd317`** — Workspace v1 S1–S4 (#267); re-`git pull` after reset |
+| **`main` tip (coding)** | **`98756de`** — Attach UX Wave B (#271) after Workspace **S5** (#270 `6b600fb`); re-`git pull` after reset |
 | **Open PRs** | Re-check `gh pr list` (often Dependabot only) |
-| **P1 Scan Attach (code)** | **S1–S5** on `main` (#235–#239) |
-| **P1 production** | **Closed (2026-08-08)** — edge smoke A (below) |
-| **P2 Workspace** | **S1–S4 on `main`** (#267); spek approved D1–D6; edge Alembic **`add_workspace_orgs`** (CI deploy 2026-08-10) |
+| **P1 Scan Attach (code)** | **S1–S5** on `main` (#235–#239) + **Wave B** SPA polish (#271) |
+| **P1 production** | **Closed (2026-08-08)** smoke A; Wave B **CI-deployed** with tip (2026-08-10) |
+| **P2 Workspace** | **S1–S5 on `main`** (#267 + #270); spek D1–D6; edge Alembic **`add_workspace_orgs`**; cap **10 enabled / org** |
 | **P4 soft dual-brand** | **On `main`** (#250); host stays **`vs.appmedia.id`** |
 | **P0 commercial** | **Policy locked** (#245): Basic **300k** / Pro **650k** / Multi **2M**; credits **10/24/60**; AM renew; attach ARPU primary; pilot #1 multi-service, 1 mo sponsored |
 | **P0 GTM kit in git** | One-pager + SKU + **[`docs/commercial/am-wave1-email-id.md`](docs/commercial/am-wave1-email-id.md)** (#246) |
 | **Still human (not git)** | Finance **service_id** ×3; AM **10 CRM SIDs**; named **pilot #1**; AM **send** wave-1; ops **fulfill** first yes/pilot |
-| **Coding-host Docker** | Prefer **off/minimal**. Edge runs live stack |
-| **Engineering default** | **GTM human** + optional Workspace **login/UI smoke** + bugfixes; **S5** / **P3** only on explicit verb — **no** Guard/P5 by default |
+| **Coding-host Docker** | Prefer **off/minimal**. Edge runs live stack (CI **deploy** job on `main`) |
+| **Engineering default** | **GTM human** + residual multi-org/S5 smoke + bugfixes; **P3** only on explicit verb — **no** Guard/P5 by default |
 
-### Edge public smoke — post-Workspace deploy (2026-08-10)
+### Edge public smoke — post-S5 + Wave B deploy (2026-08-10)
 
 No host IPs, SSH, or secrets in this file.
 
 | Check | Result |
 |-------|--------|
-| CI deploy after #267 | **success** (Actions push on `main`) |
-| Alembic (deploy log) | **`add_scan_schedules` → `add_workspace_orgs`** (backfill orgs/memberships) |
+| CI deploy after #270/#271 | **success** (Actions push on `main`, tip `98756de`) |
+| Alembic (deploy log) | head includes **`add_workspace_orgs`** |
 | `GET /api/health` | **200** — DB + Redis connected |
-| SPA asset (at smoke) | `assets/index-8MKK5gW6.js` (re-check after later deploys) |
+| SPA asset (at tip smoke) | `assets/index--pycNp6_.js` + Dashboard/ScanDetail/Schedules chunks (re-check after later deploys) |
+| Wave B strings in SPA | Jadwal scan / Atur jadwal; HTML teknis / Laporan eksekutif (bundle probe) |
+| S5 FE copy | Batas 10 jadwal aktif **per organisasi** |
 | `GET /api/orgs` unauthenticated | **401** (route present) |
-| Login / OrgSwitcher / multi-user AuthZ | **Manual residual** — close when ops confirms UI |
+| Multi-member S5 cap / OrgSwitcher UI | **Manual residual** — close when ops confirms |
 
 ### Edge on-host smoke A (2026-08-08) — P1 production DoD
 
@@ -52,14 +54,14 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 | Beat | **`schedules.run_due` every 5m** |
 | Due + credits | Job **completed**, domain cost **2**, credits debit, `last_job_id` set, `next_run_at` advanced |
 | Zero credits | Schedule **`enabled=false`**, `last_error` insufficient credits, **no** new job |
-| Cap 10 | Still **per user** until S5; remote proof historically 10 OK / 11th **400** |
+| Cap 10 | **Per org** after S5 (#270); remote proof historically 10 OK / 11th **400** (was per-user pre-S5) |
 
 ### Remote smoke (public URL)
 
 | Check | Result |
 |-------|--------|
 | `GET /api/health` | **200** |
-| Schedules CRUD + cap 10 (per user) | **Pass** (P1) |
+| Schedules CRUD + cap 10 (**per org** post-S5) | **Pass** unit + API surface; multi-member edge residual |
 | Workspace org API surface | Present (401 without JWT) |
 
 ### Deploy notes (edge)
@@ -76,7 +78,7 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 1. `celery_beat` healthy; Alembic includes schedules / `last_error`.
 2. Due schedule + credits → job enqueued, credits deducted.
 3. Zero credits → schedule disabled, `last_error` set, no new job.
-4. 11th enabled / re-enable over cap → HTTP 400 (per **user** until S5).
+4. 11th enabled / re-enable over cap → HTTP 400 (**per org** after S5).
 5. Diff / notify / executive OK when credits allow.
 
 **P2 residual (manual):**
@@ -84,6 +86,7 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 1. Alembic head **`add_workspace_orgs`** (done on edge 2026-08-10).
 2. Login → personal org + JWT `org_id` / OrgSwitcher.
 3. Shared scans per membership; no cross-org IDOR; WS membership OK.
+4. Two members same org share enabled-schedule **cap 10** (S5 DoD).
 
 ---
 
@@ -111,7 +114,7 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 |---|--------|--------|
 | **P0** | One-pager + SKU + AM kit | **Policy + templates in git**; **GTM execution open** |
 | **P1** | Scan Attach Loop | **Code + production smoke closed** |
-| **P2** | Workspace v1 | **S1–S4 shipped** (#267); residual UI smoke + optional **S5** cap per-org |
+| **P2** | Workspace v1 | **S1–S5 shipped** (#267 + #270); residual multi-org/S5 smoke |
 | **P3** | Light asset registry | Later |
 | **P4** | Soft Sinexis dual-brand | **Shipped soft** (#250); **no domain cut** |
 | **P5** | Guard (Wazuh thin) | **Parked** |
@@ -119,7 +122,7 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 
 **Priority rule:** If this stub, the archive, or old chat **disagrees** with the execution guide on *what to build next*, **the guide wins**, unless the user opens a stuck-job / worker incident.
 
-**When to call engineering again:** bug on schedule/credits/notify/**workspace AuthZ**; revise commercial copy; **S5** / **P3** only on explicit verb; Guard only with written risk accept.
+**When to call engineering again:** bug on schedule/credits/notify/**workspace AuthZ**; revise commercial copy; **P3** only on explicit verb; Guard only with written risk accept.
 
 ---
 
@@ -131,7 +134,7 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 | SKU + decision log | [`docs/commercial/sku-scan-secure-addon.md`](docs/commercial/sku-scan-secure-addon.md) |
 | AM wave-1 email (Bahasa) | [`docs/commercial/am-wave1-email-id.md`](docs/commercial/am-wave1-email-id.md) |
 | P1 engineering spec | [`docs/specs/scan-attach-v1.md`](docs/specs/scan-attach-v1.md) |
-| Workspace v1 spek (approved; S1–S4 shipped) | [`docs/specs/workspace-v1.md`](docs/specs/workspace-v1.md) |
+| Workspace v1 spek (approved; S1–S5 shipped) | [`docs/specs/workspace-v1.md`](docs/specs/workspace-v1.md) |
 | Schedule ops / smoke | [`docs/scan-schedules-ops.md`](docs/scan-schedules-ops.md) |
 | Full execution guide | [`docs/AGENT_EXECUTION_GUIDE.md`](docs/AGENT_EXECUTION_GUIDE.md) |
 | Git / PR rules | [`AGENTS.md`](AGENTS.md) |
