@@ -1,10 +1,11 @@
 # Spec: Asset registry v1 (P3 — light)
 
-**Status:** **draft spek only** — **do not implement** until user explicitly says implement / kerjakan / buat (or points at a checked acceptance slice).
+**Status:** **S0 draft on `main`** (via **#282**, tip ~`6d5e4bb`) — spek only. **Do not implement S1+** until user explicitly says implement / kerjakan / buat (or points at a checked acceptance slice) **and** §11 open questions are answered.
 **Goal:** light **named assets** so Multi-asset / Pro tiers can schedule and report against labeled targets without a full CMDB.
 **Epic:** P3 per [`docs/AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) §1.3, §5.3.
-**Depends:** P1 Scan Attach (schedules, baseline) · P2 Workspace (org membership, JWT `org_id`).
+**Depends:** P1 Scan Attach (schedules, baseline) · P2 Workspace (org membership, JWT `org_id`) · FE org-scoped React Query keys (**#282** residual).
 **Commercial:** tier target counts in [`docs/commercial/sku-scan-secure-addon.md`](../commercial/sku-scan-secure-addon.md) (Basic **1** · Pro **≤3** · Multi-asset **≤10**).
+**Not this epic:** Guard agents, full CMDB, IoT/PMS, SIEM.
 
 ---
 
