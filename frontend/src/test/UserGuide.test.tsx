@@ -60,6 +60,11 @@ describe("UserGuide", () => {
       1,
     );
     expect(document.body.textContent ?? "").toMatch(/api\/guard\/enroll/);
+    expect(document.body.textContent ?? "").toMatch(/wazuh-agent/i);
+    expect(document.body.textContent ?? "").toMatch(/systemctl/);
+    expect(document.body.textContent ?? "").toMatch(
+      /Instalasi runtime agen \(generik/,
+    );
     expect(screen.getByRole("link", { name: "IP Scanner" })).toHaveAttribute(
       "href",
       "/scan/ip",

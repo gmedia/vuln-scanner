@@ -103,5 +103,15 @@ describe("Guard host enroll UI", () => {
     expect(
       screen.getByRole("button", { name: "Salin curl" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByTestId("guard-agent-install-steps"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Instalasi agen di host \(generik\)/),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(/wazuh-agent/i).length).toBeGreaterThanOrEqual(
+      1,
+    );
+    expect(screen.getAllByText(/systemctl/i).length).toBeGreaterThanOrEqual(1);
   });
 });

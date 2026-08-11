@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   buildEnrollCurlExample,
+  GUARD_AGENT_INSTALL_INTRO,
+  GUARD_AGENT_INSTALL_STEPS,
   GUARD_HOST_SETUP_STEPS,
   resolveApiBaseUrl,
 } from "@/lib/guardEnrollHost";
@@ -45,5 +47,19 @@ describe("guardEnrollHost", () => {
     expect(blob).toMatch(/Sync/);
     expect(blob).toMatch(/agent_key/);
     expect(blob).not.toMatch(/103\./);
+  });
+
+  it("exposes generic agent install steps without secrets or lab IPs", () => {
+    expect(GUARD_AGENT_INSTALL_STEPS.length).toBeGreaterThanOrEqual(7);
+    expect(GUARD_AGENT_INSTALL_INTRO).toMatch(/install_hint/i);
+    const blob = GUARD_AGENT_INSTALL_STEPS.join(" ");
+    expect(blob).toMatch(/manager_host/);
+    expect(blob).toMatch(/wazuh-agent/i);
+    expect(blob).toMatch(/systemctl/);
+    expect(blob).toMatch(/agent_key/);
+    expect(blob).not.toMatch(/103\./);
+    expect(blob).toMatch(/Jangan buka password Manager/i);
+    expect(blob).not.toMatch(/@gmedia|@.*\.id\b/i);
+    expect(blob).not.toMatch(/\b\d{1,3}(?:\.\d{1,3}){3}\b/);
   });
 });

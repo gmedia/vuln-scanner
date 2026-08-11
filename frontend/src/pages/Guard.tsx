@@ -27,6 +27,8 @@ import { useAuthStore } from "@/store/authStore";
 import type { ApiError } from "@/lib/utils";
 import {
   buildEnrollCurlExample,
+  GUARD_AGENT_INSTALL_INTRO,
+  GUARD_AGENT_INSTALL_STEPS,
   GUARD_HOST_SETUP_STEPS,
   resolveApiBaseUrl,
 } from "@/lib/guardEnrollHost";
@@ -385,6 +387,19 @@ export default function Guard() {
                         <code className="text-foreground">install_hint</code> —
                         simpan di host saja. Bukan password Manager.
                       </p>
+                    </div>
+                    <div data-testid="guard-agent-install-steps">
+                      <p className="mb-1.5 font-medium text-foreground">
+                        Instalasi agen di host (generik)
+                      </p>
+                      <p className="mb-2 text-muted-foreground">
+                        {GUARD_AGENT_INSTALL_INTRO}
+                      </p>
+                      <ol className="list-decimal space-y-1.5 pl-4 text-muted-foreground">
+                        {GUARD_AGENT_INSTALL_STEPS.map((step) => (
+                          <li key={step.slice(0, 36)}>{step}</li>
+                        ))}
+                      </ol>
                     </div>
                   </div>
                 )}
