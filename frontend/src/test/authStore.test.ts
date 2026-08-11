@@ -645,5 +645,50 @@ describe("authStore", () => {
       expect(useAuthStore.getState().activeOrgId).toBe("org-b");
       expect(useAuthStore.getState().activeRole()).toBe("admin");
     });
+
+    it("switchOrganization sets accessToken and activeOrgId before getMe resolves", async () => {
+      useAuthStore.setState({
+        accessToken: "old-token",
+        activeOrgId: "org-a",
+        organizations: [
+          { id: "org-a", name: "A", slug: "a", role: "member" },
+          { id: "org-b", name: "B", slug: "b", role: "admin" },
+        ],
+      });
+
+      let resolveMe!: (v: authApi.UserResponse) => void;
+      const mePromise = new Promise<authApi.UserResponse>((resolve) => {
+        resolveMe = resolve;
+      });
+      mockedOrgsApi.switchOrg.mockResolvedValueOnce({
+        access_token: "switched-early",
+        refresh_token: "r2",
+      });
+      mockedAuthApi.getMe.mockReturnValueOnce(mePromise);
+
+      const switchPromise = useAuthStore.getState().switchOrganization("org-b");
+
+      await vi.waitFor(() => {
+        expect(useAuthStore.getState().accessToken).toBe("switched-early");
+        expect(useAuthStore.getState().activeOrgId).toBe("org-b");
+      });
+
+      resolveMe({
+        id: "u1",
+        email: "a@example.com",
+        is_verified: true,
+        credits: 3,
+        created_at: "2025-01-01T00:00:00Z",
+        organizations: [
+          { id: "org-a", name: "A", slug: "a", role: "member" },
+          { id: "org-b", name: "B", slug: "b", role: "admin" },
+        ],
+        active_org_id: "org-b",
+      });
+
+      const ok = await switchPromise;
+      expect(ok).toBe(true);
+      expect(useAuthStore.getState().activeRole()).toBe("admin");
+    });
   });
 });

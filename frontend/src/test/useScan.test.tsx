@@ -79,6 +79,7 @@ describe("useScanHistory", () => {
     expect(mockUseQuery).toHaveBeenCalledWith({
       queryKey: ["scan-history", "org-a", 2, 10, "ip"],
       queryFn: expect.any(Function),
+      enabled: true,
     });
   });
 
@@ -93,6 +94,7 @@ describe("useScanHistory", () => {
 describe("useScanDetail", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useAuthStore.setState({ activeOrgId: "org-a" });
   });
 
   it("is disabled when jobId is null", () => {
@@ -109,10 +111,12 @@ describe("useScanDetail", () => {
     );
   });
 
-  it("has scan-detail query key with jobId", () => {
+  it("has scan-detail query key with activeOrgId and jobId", () => {
     renderHook(() => useScanDetail("job-123"), { wrapper: Wrapper });
     expect(mockUseQuery).toHaveBeenCalledWith(
-      expect.objectContaining({ queryKey: ["scan-detail", "job-123"] }),
+      expect.objectContaining({
+        queryKey: ["scan-detail", "org-a", "job-123"],
+      }),
     );
   });
 });
@@ -120,6 +124,7 @@ describe("useScanDetail", () => {
 describe("useScanFindings", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useAuthStore.setState({ activeOrgId: "org-a" });
   });
 
   it("is disabled when jobId is null", () => {
@@ -129,10 +134,12 @@ describe("useScanFindings", () => {
     );
   });
 
-  it("has scan-findings query key with jobId", () => {
+  it("has scan-findings query key with activeOrgId and jobId", () => {
     renderHook(() => useScanFindings("job-123"), { wrapper: Wrapper });
     expect(mockUseQuery).toHaveBeenCalledWith(
-      expect.objectContaining({ queryKey: ["scan-findings", "job-123"] }),
+      expect.objectContaining({
+        queryKey: ["scan-findings", "org-a", "job-123"],
+      }),
     );
   });
 });

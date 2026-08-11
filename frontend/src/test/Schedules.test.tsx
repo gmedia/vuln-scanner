@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Schedules, { mapScheduleError } from "@/pages/Schedules";
+import { useAuthStore } from "@/store/authStore";
 
 const mockList = vi.fn();
 const mockCreate = vi.fn();
@@ -90,6 +91,18 @@ describe("Schedules page", () => {
     vi.clearAllMocks();
     mockList.mockResolvedValue([]);
     mockRuns.mockResolvedValue([]);
+    useAuthStore.setState({
+      activeOrgId: "org-a",
+      organizations: [
+        {
+          id: "org-a",
+          name: "Org A",
+          slug: "org-a",
+          role: "owner",
+          kind: "team",
+        },
+      ],
+    });
   });
 
   it("renders Bahasa Indonesia chrome", async () => {

@@ -77,9 +77,11 @@ function parseScanType(value: string | null): "domain" | "ip" {
 }
 
 function ScheduleRunsPanel({ scheduleId }: { scheduleId: string }) {
+  const activeOrgId = useAuthStore((s) => s.activeOrgId);
   const { data, isLoading, error } = useQuery({
-    queryKey: ["schedule-runs", scheduleId],
+    queryKey: ["schedule-runs", activeOrgId, scheduleId],
     queryFn: () => listScheduleRuns(scheduleId, 10),
+    enabled: !!activeOrgId && !!scheduleId,
   });
 
   if (isLoading) {
@@ -159,9 +161,11 @@ function Schedules() {
     setScanType(parseScanType(searchParams.get("scan_type")));
   }
 
+  const activeOrgId = useAuthStore((s) => s.activeOrgId);
   const { data, isLoading, error } = useQuery({
-    queryKey: ["schedules"],
+    queryKey: ["schedules", activeOrgId],
     queryFn: listSchedules,
+    enabled: !!activeOrgId,
   });
 
   const enabledCount = useMemo(
