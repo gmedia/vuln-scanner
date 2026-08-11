@@ -26,11 +26,26 @@ if [ -n "$MISSING" ]; then
 fi
 echo "[OK] All required env vars are set"
 
-# --- Warn about dev/default credentials ---
-for var in API_KEY SECRET_KEY; do
+PLACEHOLDER_FATAL=""
+for var in API_KEY SECRET_KEY JWT_SECRET; do
   eval "val=\"\$$var\""
   case "$val" in
-    dev-*|dev-api-key-*|dev-secret-key-*)
+    \<*\>|your-api-key-here|your-secret-key-here|your-jwt-secret-here|change-me|changeme)
+      echo "[ERROR] $var is still an .env.example placeholder — generate a real secret (openssl rand -hex 32)"
+      PLACEHOLDER_FATAL="$PLACEHOLDER_FATAL $var"
+      ;;
+  esac
+done
+if [ -n "$PLACEHOLDER_FATAL" ]; then
+  echo "FATAL: refusing to start with template secrets:$PLACEHOLDER_FATAL"
+  exit 1
+fi
+
+# --- Warn about dev/default credentials ---
+for var in API_KEY SECRET_KEY JWT_SECRET; do
+  eval "val=\"\$$var\""
+  case "$val" in
+    dev-*|dev-api-key-*|dev-secret-key-*|dev-jwt-*)
       echo "[WARN] $var is set to a development placeholder (${val%%????????????????}...). Generate a strong key."
       ;;
   esac
