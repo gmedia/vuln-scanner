@@ -15,30 +15,34 @@ export function useScanHistory(page = 1, limit = 20, scanType?: string) {
   return useQuery({
     queryKey: ["scan-history", activeOrgId, page, limit, scanType],
     queryFn: () => getScanHistory(page, limit, scanType),
+    enabled: !!activeOrgId,
   });
 }
 
 export function useScanDetail(jobId: string | null) {
+  const activeOrgId = useAuthStore((s) => s.activeOrgId);
   return useQuery({
-    queryKey: ["scan-detail", jobId],
+    queryKey: ["scan-detail", activeOrgId, jobId],
     queryFn: () => getScan(jobId!),
-    enabled: !!jobId,
+    enabled: !!jobId && !!activeOrgId,
   });
 }
 
 export function useScanFindings(jobId: string | null) {
+  const activeOrgId = useAuthStore((s) => s.activeOrgId);
   return useQuery({
-    queryKey: ["scan-findings", jobId],
+    queryKey: ["scan-findings", activeOrgId, jobId],
     queryFn: () => getScanFindings(jobId!),
-    enabled: !!jobId,
+    enabled: !!jobId && !!activeOrgId,
   });
 }
 
 export function useScanDiff(jobId: string | null, enabled = true) {
+  const activeOrgId = useAuthStore((s) => s.activeOrgId);
   return useQuery({
-    queryKey: ["scan-diff", jobId],
+    queryKey: ["scan-diff", activeOrgId, jobId],
     queryFn: () => getScanDiff(jobId!),
-    enabled: !!jobId && enabled,
+    enabled: !!jobId && !!activeOrgId && enabled,
   });
 }
 

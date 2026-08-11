@@ -63,6 +63,7 @@ function statusBadge(status: string) {
 export default function Guard() {
   const queryClient = useQueryClient();
   const activeRole = useAuthStore((s) => s.activeRole);
+  const activeOrgId = useAuthStore((s) => s.activeOrgId);
   const canAdmin = canManageGuard(activeRole());
   const [tokenLabel, setTokenLabel] = useState("");
   const [rawToken, setRawToken] = useState<string | null>(null);
@@ -80,23 +81,24 @@ export default function Guard() {
   );
 
   const statusQ = useQuery({
-    queryKey: ["guard", "status"],
+    queryKey: ["guard", activeOrgId, "status"],
     queryFn: getGuardStatus,
+    enabled: !!activeOrgId,
   });
   const agentsQ = useQuery({
-    queryKey: ["guard", "agents"],
+    queryKey: ["guard", activeOrgId, "agents"],
     queryFn: listGuardAgents,
-    enabled: !!statusQ.data?.enabled,
+    enabled: !!activeOrgId && !!statusQ.data?.enabled,
   });
   const alertsQ = useQuery({
-    queryKey: ["guard", "alerts"],
+    queryKey: ["guard", activeOrgId, "alerts"],
     queryFn: () => listGuardAlerts(50),
-    enabled: !!statusQ.data?.enabled,
+    enabled: !!activeOrgId && !!statusQ.data?.enabled,
   });
   const tokensQ = useQuery({
-    queryKey: ["guard", "tokens"],
+    queryKey: ["guard", activeOrgId, "tokens"],
     queryFn: listEnrollTokens,
-    enabled: !!statusQ.data?.enabled && canAdmin,
+    enabled: !!activeOrgId && !!statusQ.data?.enabled && canAdmin,
   });
 
   const invalidate = () => {

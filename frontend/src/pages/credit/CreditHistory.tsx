@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/Select";
 import { creditApi, type CreditLogItem } from "@/api/credits";
 import { useCreditStore } from "@/store/creditStore";
+import { useAuthStore } from "@/store/authStore";
 
 const PAGE_SIZE = 20;
 
@@ -45,14 +46,16 @@ function CreditHistory() {
 
   const credits = useCreditStore((s) => s.credits);
   const fetchBalance = useCreditStore((s) => s.fetchBalance);
+  const activeOrgId = useAuthStore((s) => s.activeOrgId);
 
   useEffect(() => {
     void fetchBalance();
-  }, [fetchBalance]);
+  }, [fetchBalance, activeOrgId]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["credit-history", page],
+    queryKey: ["credit-history", activeOrgId, page],
     queryFn: () => creditApi.getHistory({ page, page_size: PAGE_SIZE }),
+    enabled: !!activeOrgId,
   });
 
   const totalPages = Math.ceil((data?.total ?? 0) / PAGE_SIZE);
