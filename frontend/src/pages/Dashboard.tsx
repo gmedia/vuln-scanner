@@ -107,19 +107,21 @@ function Dashboard() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (!pageData || isFetching) return;
-    if (pageData.page !== page) return;
-    setPages((prev) => {
-      if (prev.length >= page) return prev;
-      const next = [...prev, pageData.items];
-      if (next.length * PAGE_LIMIT >= pageData.total) {
-        setAllLoaded(true);
-      }
-      return next;
-    });
-    setLoadingMore(false);
-  }, [pageData, isFetching, page, activeOrgId, filter]);
+  if (
+    pageData &&
+    !isFetching &&
+    pageData.page === page &&
+    pages.length < page
+  ) {
+    const next = [...pages, pageData.items];
+    setPages(next);
+    if (next.length * PAGE_LIMIT >= pageData.total) {
+      setAllLoaded(true);
+    }
+    if (loadingMore) {
+      setLoadingMore(false);
+    }
+  }
 
   const scans = pages.flat();
 
