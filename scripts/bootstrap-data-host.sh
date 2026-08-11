@@ -112,23 +112,24 @@ sudo systemctl enable postgresql
 sudo systemctl restart postgresql
 
 echo "=== redis ==="
-# Ubuntu redis: /etc/redis/redis.conf
+# Ubuntu redis: /etc/redis/redis.conf (dir often root-only — use sudo test, not bare -f)
 REDIS_CONF=/etc/redis/redis.conf
-if [[ -f "$REDIS_CONF" ]]; then
-  sudo sed -i 's/^bind .*/bind 0.0.0.0/' "$REDIS_CONF"
-  sudo sed -i 's/^protected-mode yes/protected-mode yes/' "$REDIS_CONF"
-  if sudo grep -q '^requirepass ' "$REDIS_CONF"; then
-    sudo sed -i "s/^requirepass .*/requirepass ${REDIS_PASSWORD}/" "$REDIS_CONF"
-  else
-    echo "requirepass ${REDIS_PASSWORD}" | sudo tee -a "$REDIS_CONF" >/dev/null
-  fi
-  # Comment out default bind 127.0.0.1 if duplicated weirdly
-  sudo systemctl enable redis-server
-  sudo systemctl restart redis-server
-else
+if ! sudo test -f "$REDIS_CONF"; then
   echo "error: $REDIS_CONF missing" >&2
   exit 1
 fi
+# Prefer IPv4 all-interfaces; strip IPv6-only bind lines that leave localhost-only listeners.
+sudo sed -i 's/^bind .*/bind 0.0.0.0/' "$REDIS_CONF"
+sudo sed -i 's/^protected-mode yes/protected-mode yes/' "$REDIS_CONF"
+if sudo grep -qE '^[[:space:]]*requirepass ' "$REDIS_CONF"; then
+  sudo sed -i "s/^[[:space:]]*requirepass .*/requirepass ${REDIS_PASSWORD}/" "$REDIS_CONF"
+elif sudo grep -qE '^[[:space:]]*#[[:space:]]*requirepass ' "$REDIS_CONF"; then
+  sudo sed -i "s|^[[:space:]]*#[[:space:]]*requirepass .*|requirepass ${REDIS_PASSWORD}|" "$REDIS_CONF"
+else
+  echo "requirepass ${REDIS_PASSWORD}" | sudo tee -a "$REDIS_CONF" >/dev/null
+fi
+sudo systemctl enable redis-server
+sudo systemctl restart redis-server
 
 umask 077
 cat > "$CRED_FILE" <<EOF
