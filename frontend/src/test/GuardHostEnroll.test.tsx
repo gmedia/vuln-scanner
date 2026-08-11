@@ -62,6 +62,8 @@ describe("Guard host enroll UI", () => {
       id: "tok1",
       label: "lab",
       expires_at: new Date().toISOString(),
+      revoked_at: null,
+      used_at: null,
       token: "raw-enroll-token-value-32chars!!",
       created_at: new Date().toISOString(),
     });
