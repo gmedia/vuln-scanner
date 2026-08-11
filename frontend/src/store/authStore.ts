@@ -164,13 +164,16 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     set({ error: null });
     try {
       const res = await orgsApi.switchOrg(organizationId);
-      set({ accessToken: res.access_token });
       localStorage.setItem("accessToken", res.access_token);
       if (res.refresh_token) {
         localStorage.setItem("refreshToken", res.refresh_token);
       }
       authApi.authApi.defaults.headers.common["Authorization"] =
         `Bearer ${res.access_token}`;
+      set({
+        accessToken: res.access_token,
+        activeOrgId: organizationId,
+      });
       const user = await authApi.getMe();
       get().applyMe(user);
       if (!user.organizations?.length) {
