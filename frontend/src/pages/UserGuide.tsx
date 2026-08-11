@@ -23,6 +23,8 @@ import {
 import { BRAND } from "@/lib/brand";
 import {
   buildEnrollCurlExample,
+  GUARD_AGENT_INSTALL_INTRO,
+  GUARD_AGENT_INSTALL_STEPS,
   GUARD_HOST_SETUP_STEPS,
 } from "@/lib/guardEnrollHost";
 
@@ -515,9 +517,18 @@ function UserGuide() {
               <code className="text-foreground">agent_id</code>,{" "}
               <code className="text-foreground">agent_key</code>,{" "}
               <code className="text-foreground">manager_host</code>,{" "}
-              <code className="text-foreground">install_hint</code>. Paket agen
-              per distro = runbook ops/penyedia (bukan di-repo sebagai target
-              lab).
+              <code className="text-foreground">install_hint</code>.
+            </li>
+            <li>
+              Instalasi runtime agen di host (generik, tanpa secret lab):
+              <p className="mt-2 text-sm text-muted-foreground">
+                {GUARD_AGENT_INSTALL_INTRO}
+              </p>
+              <ol className="mt-2 list-decimal space-y-1.5 pl-5">
+                {GUARD_AGENT_INSTALL_STEPS.map((step) => (
+                  <li key={step.slice(0, 40)}>{step}</li>
+                ))}
+              </ol>
             </li>
             <li>
               Klik <Ui>Sync</Ui> (admin) untuk memperbarui proyeksi. Lihat tabel{" "}
