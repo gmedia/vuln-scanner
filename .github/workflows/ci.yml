@@ -355,9 +355,11 @@ jobs:
               CELERY_RESULT_BACKEND=$(echo "$CELERY_RESULT_BACKEND" | sed "s|redis://|redis://:${REDIS_PASSWORD}@|")
             fi
 
+            # POSTGRES_HOST: Docker service name for single-host, or data-host for multi-host.
+            # REDIS_URL / CELERY_* should already target the same data plane.
             cat > .env << ENVEOF
-            DATABASE_URL=postgresql+asyncpg://${{ secrets.POSTGRES_USER || 'vuln_scanner' }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/${{ secrets.POSTGRES_DB || 'vuln_scanner' }}
-            DATABASE_URL_SYNC=postgresql://${{ secrets.POSTGRES_USER || 'vuln_scanner' }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/${{ secrets.POSTGRES_DB || 'vuln_scanner' }}
+            DATABASE_URL=postgresql+asyncpg://${{ secrets.POSTGRES_USER || 'vuln_scanner' }}:${{ secrets.POSTGRES_PASSWORD }}@${{ secrets.POSTGRES_HOST || 'postgres' }}:5432/${{ secrets.POSTGRES_DB || 'vuln_scanner' }}
+            DATABASE_URL_SYNC=postgresql://${{ secrets.POSTGRES_USER || 'vuln_scanner' }}:${{ secrets.POSTGRES_PASSWORD }}@${{ secrets.POSTGRES_HOST || 'postgres' }}:5432/${{ secrets.POSTGRES_DB || 'vuln_scanner' }}
             REDIS_URL=${REDIS_URL}
             CELERY_BROKER_URL=${CELERY_BROKER_URL}
             CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
@@ -382,6 +384,21 @@ jobs:
             APK_SCAN_CREDIT_COST=${{ secrets.APK_SCAN_CREDIT_COST }}
             IPA_SCAN_CREDIT_COST=${{ secrets.IPA_SCAN_CREDIT_COST }}
             NVD_API_KEY=${{ secrets.NVD_API_KEY }}
+            FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+            CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
+            COOKIE_SECURE=${{ secrets.COOKIE_SECURE || 'true' }}
+            GUARD_ENABLED=${{ secrets.GUARD_ENABLED || 'true' }}
+            GUARD_MOCK_WAZUH=${{ secrets.GUARD_MOCK_WAZUH || 'true' }}
+            GUARD_ALERT_MIN_LEVEL=${{ secrets.GUARD_ALERT_MIN_LEVEL || '12' }}
+            GUARD_ENROLL_TOKEN_TTL_HOURS=${{ secrets.GUARD_ENROLL_TOKEN_TTL_HOURS || '24' }}
+            WAZUH_MANAGER_URL=${{ secrets.WAZUH_MANAGER_URL }}
+            WAZUH_MANAGER_USER=${{ secrets.WAZUH_MANAGER_USER }}
+            WAZUH_MANAGER_PASSWORD=${{ secrets.WAZUH_MANAGER_PASSWORD }}
+            WAZUH_INDEXER_URL=${{ secrets.WAZUH_INDEXER_URL }}
+            WAZUH_INDEXER_USER=${{ secrets.WAZUH_INDEXER_USER }}
+            WAZUH_INDEXER_PASSWORD=${{ secrets.WAZUH_INDEXER_PASSWORD }}
+            WAZUH_VERIFY_TLS=${{ secrets.WAZUH_VERIFY_TLS || 'true' }}
+            WAZUH_AGENT_MANAGER_HOST=${{ secrets.WAZUH_AGENT_MANAGER_HOST }}
             ENVEOF
             echo ".env written from GitHub Secrets"
             chmod 600 .env

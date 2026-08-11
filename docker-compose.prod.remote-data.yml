@@ -1,0 +1,75 @@
+# Overlay for multi-host production: Postgres + Redis run on a dedicated data host.
+# App host uses this file so local postgres/redis containers are not started.
+#
+# Usage (app host):
+#   export REMOTE_DATA=1
+#   # or explicitly:
+#   docker compose -f docker-compose.prod.yml -f docker-compose.prod.remote-data.yml \
+#     up -d backend frontend worker_ip worker_domain worker_mobile worker_dead_letter celery_beat
+#
+# Requires .env DATABASE_URL / REDIS_URL / CELERY_* pointing at the data host
+# (hostname or IP — never commit real hosts/passwords to git).
+#
+# depends_on.required=false needs Docker Compose v2.20+ (optional deps when
+# postgres/redis are profile-gated off).
+
+services:
+  postgres:
+    profiles: ["local-data"]
+
+  redis:
+    profiles: ["local-data"]
+
+  backend:
+    depends_on:
+      postgres:
+        condition: service_started
+        required: false
+      redis:
+        condition: service_started
+        required: false
+
+  worker_ip:
+    depends_on:
+      postgres:
+        condition: service_started
+        required: false
+      redis:
+        condition: service_started
+        required: false
+
+  worker_domain:
+    depends_on:
+      postgres:
+        condition: service_started
+        required: false
+      redis:
+        condition: service_started
+        required: false
+
+  worker_mobile:
+    depends_on:
+      postgres:
+        condition: service_started
+        required: false
+      redis:
+        condition: service_started
+        required: false
+
+  worker_dead_letter:
+    depends_on:
+      postgres:
+        condition: service_started
+        required: false
+      redis:
+        condition: service_started
+        required: false
+
+  celery_beat:
+    depends_on:
+      postgres:
+        condition: service_started
+        required: false
+      redis:
+        condition: service_started
+        required: false
