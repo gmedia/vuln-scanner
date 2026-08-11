@@ -63,7 +63,21 @@ describe("UserGuide", () => {
     expect(document.body.textContent ?? "").toMatch(/wazuh-agent/i);
     expect(document.body.textContent ?? "").toMatch(/systemctl/);
     expect(document.body.textContent ?? "").toMatch(
-      /Instalasi runtime agen \(generik/,
+      /Instalasi runtime agen di host target/,
+    );
+    expect(
+      screen.getByTestId("guard-distro-install-commands"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Debian / Ubuntu")).toBeInTheDocument();
+    expect(
+      screen.getByText(/RHEL \/ CentOS \/ Rocky \/ AlmaLinux \/ Fedora/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/SLES \/ openSUSE/)).toBeInTheDocument();
+    expect(document.body.textContent ?? "").toMatch(
+      /apt-get install -y wazuh-agent/,
+    );
+    expect(document.body.textContent ?? "").toMatch(
+      /dnf install -y wazuh-agent/,
     );
     expect(screen.getByRole("link", { name: "IP Scanner" })).toHaveAttribute(
       "href",

@@ -25,6 +25,8 @@ import {
   buildEnrollCurlExample,
   GUARD_AGENT_INSTALL_INTRO,
   GUARD_AGENT_INSTALL_STEPS,
+  GUARD_DISTRO_INSTALL_FOOTER,
+  GUARD_DISTRO_INSTALL_GUIDES,
   GUARD_HOST_SETUP_STEPS,
 } from "@/lib/guardEnrollHost";
 
@@ -520,7 +522,8 @@ function UserGuide() {
               <code className="text-foreground">install_hint</code>.
             </li>
             <li>
-              Instalasi runtime agen di host (generik, tanpa secret lab):
+              Instalasi runtime agen di host target (per distro, tanpa secret
+              lab):
               <p className="mt-2 text-sm text-muted-foreground">
                 {GUARD_AGENT_INSTALL_INTRO}
               </p>
@@ -529,6 +532,33 @@ function UserGuide() {
                   <li key={step.slice(0, 40)}>{step}</li>
                 ))}
               </ol>
+              <div
+                className="mt-3 space-y-3"
+                data-testid="guard-distro-install-commands"
+              >
+                <p className="text-sm font-medium text-foreground">
+                  Perintah di host target (bedakan distro)
+                </p>
+                {GUARD_DISTRO_INSTALL_GUIDES.map((guide) => (
+                  <div
+                    key={guide.id}
+                    className="rounded-md border border-border bg-muted/30 p-3"
+                  >
+                    <p className="text-sm font-medium text-foreground">
+                      {guide.title}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {guide.blurb}
+                    </p>
+                    <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-all rounded-md border border-border bg-background/80 p-3 font-mono text-[11px] leading-relaxed text-foreground">
+                      {guide.commands.join("\n")}
+                    </pre>
+                  </div>
+                ))}
+                <p className="text-xs text-muted-foreground">
+                  {GUARD_DISTRO_INSTALL_FOOTER}
+                </p>
+              </div>
             </li>
             <li>
               Klik <Ui>Sync</Ui> (admin) untuk memperbarui proyeksi. Lihat tabel{" "}

@@ -29,6 +29,8 @@ import {
   buildEnrollCurlExample,
   GUARD_AGENT_INSTALL_INTRO,
   GUARD_AGENT_INSTALL_STEPS,
+  GUARD_DISTRO_INSTALL_FOOTER,
+  GUARD_DISTRO_INSTALL_GUIDES,
   GUARD_HOST_SETUP_STEPS,
   resolveApiBaseUrl,
 } from "@/lib/guardEnrollHost";
@@ -392,7 +394,7 @@ export default function Guard() {
                     </div>
                     <div data-testid="guard-agent-install-steps">
                       <p className="mb-1.5 font-medium text-foreground">
-                        Instalasi agen di host (generik)
+                        Instalasi agen di host (per distro)
                       </p>
                       <p className="mb-2 text-muted-foreground">
                         {GUARD_AGENT_INSTALL_INTRO}
@@ -402,6 +404,33 @@ export default function Guard() {
                           <li key={step.slice(0, 36)}>{step}</li>
                         ))}
                       </ol>
+                      <div
+                        className="mt-3 space-y-2"
+                        data-testid="guard-distro-install-commands"
+                      >
+                        <p className="font-medium text-foreground">
+                          Perintah host target per distro
+                        </p>
+                        {GUARD_DISTRO_INSTALL_GUIDES.map((guide) => (
+                          <div
+                            key={guide.id}
+                            className="rounded border border-border/60 bg-background/80 p-2"
+                          >
+                            <p className="font-medium text-foreground">
+                              {guide.title}
+                            </p>
+                            <p className="mt-0.5 text-muted-foreground">
+                              {guide.blurb}
+                            </p>
+                            <pre className="mt-1.5 overflow-x-auto whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-foreground">
+                              {guide.commands.join("\n")}
+                            </pre>
+                          </div>
+                        ))}
+                        <p className="text-muted-foreground">
+                          {GUARD_DISTRO_INSTALL_FOOTER}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 )}

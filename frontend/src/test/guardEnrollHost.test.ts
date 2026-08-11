@@ -3,6 +3,8 @@ import {
   buildEnrollCurlExample,
   GUARD_AGENT_INSTALL_INTRO,
   GUARD_AGENT_INSTALL_STEPS,
+  GUARD_DISTRO_INSTALL_FOOTER,
+  GUARD_DISTRO_INSTALL_GUIDES,
   GUARD_HOST_SETUP_STEPS,
   resolveApiBaseUrl,
 } from "@/lib/guardEnrollHost";
@@ -61,5 +63,28 @@ describe("guardEnrollHost", () => {
     expect(blob).toMatch(/Jangan buka password Manager/i);
     expect(blob).not.toMatch(/@gmedia|@.*\.id\b/i);
     expect(blob).not.toMatch(/\b\d{1,3}(?:\.\d{1,3}){3}\b/);
+  });
+
+  it("exposes distro-specific host commands without secrets or lab IPs", () => {
+    expect(GUARD_DISTRO_INSTALL_GUIDES.length).toBeGreaterThanOrEqual(3);
+    const ids = GUARD_DISTRO_INSTALL_GUIDES.map((g) => g.id);
+    expect(ids).toContain("debian-ubuntu");
+    expect(ids).toContain("rhel-family");
+    expect(ids).toContain("suse");
+    const blob = [
+      ...GUARD_DISTRO_INSTALL_GUIDES.flatMap((g) => [
+        g.title,
+        g.blurb,
+        ...g.commands,
+      ]),
+      GUARD_DISTRO_INSTALL_FOOTER,
+    ].join("\n");
+    expect(blob).toMatch(/apt-get install -y wazuh-agent/);
+    expect(blob).toMatch(/dnf install -y wazuh-agent/);
+    expect(blob).toMatch(/zypper install -y wazuh-agent/);
+    expect(blob).toMatch(/manage_agents/);
+    expect(blob).toMatch(/<MANAGER_HOST>/);
+    expect(blob).not.toMatch(/\b\d{1,3}(?:\.\d{1,3}){3}\b/);
+    expect(blob).not.toMatch(/@gmedia|password\s*=/i);
   });
 });
