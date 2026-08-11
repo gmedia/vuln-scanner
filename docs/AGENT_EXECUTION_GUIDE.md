@@ -2,10 +2,10 @@
 
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
-**Last updated:** 2026-08-10
-**Repo tip at write time:** `main` @ `28bc69e` (**#275** live `HttpWazuhClient` after Guard thin **#274** @ `f3f749c`; spek **#273**; docs tip #272 / Wave B #271 / Workspace S5 #270 earlier). Re-`git pull` after reset.
+**Last updated:** 2026-08-11
+**Repo tip at write time:** `main` @ `35c1262` (**#280** Dashboard org-switch stale fix; **#279** Guard host enroll guide; Guard thin **#274–#275**; spek **#273**). Open residual: **#281** generic Guard agent install (no secrets) when CI green; org-scoped React Query harden + **P3 draft spek** [`docs/specs/assets-v1.md`](specs/assets-v1.md). Re-`git pull` after reset.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
-**Phase snapshot:** **P0 policy locked** · **P1 attach shipped + edge smoke closed** · **P2 Workspace S1–S5 on `main`** · **Attach UX Wave B on `main`** · **P4 soft dual-brand on `main`** · **P5 Guard thin code on `main`** (#273–#275: mock + Http client, API, workers, FE `/guard`) — **not** full SIEM · **CI/default mock**; live Manager/Indexer **only on deploy host** after lab env · **GTM human still open in parallel** · next eng default = **no SIEM creep**; residual = edge deploy + live smoke (human) / bugs / Dependabot / explicit P3.
+**Phase snapshot:** **P0 policy locked** · **P1 attach shipped + edge smoke closed** · **P2 Workspace S1–S5 on `main`** · **Attach UX Wave B on `main`** · **P4 soft dual-brand on `main`** · **P5 Guard thin on `main`** (#273–#279 guide; **#281** install copy in flight) — **not** full SIEM · **CI/default mock** · **P3** draft spek only (no code until explicit verb) · **GTM human still open** · residual eng = org-switch/queryKey harden, bugs, Dependabot on request — **no SIEM creep**.
 
 ---
 
@@ -17,7 +17,7 @@ gh pr list --state open --assignee @me
 
 GIT_MASTER=1 git fetch origin
 GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull origin main
-GIT_MASTER=1 git rev-parse --short HEAD   # expect ≥ 28bc69e or newer (re-pull)
+GIT_MASTER=1 git rev-parse --short HEAD   # expect ≥ 35c1262 or newer (re-pull)
 ```
 
 Then read, in order:
@@ -95,7 +95,7 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 | **P0** | **Commercial lock** (user-led + docs) | Something sales can quote | One-pager; **SKU** tiers/prices; SID *patterns*; AM email kit; defaults §1 | Guard coding; finance CSV in repo | **Policy locked in git** (#245–#246). **GTM still open:** finance `service_id`, 10 CRM SIDs, named pilot, AM send, ops fulfill |
 | **P1** | **Scan Attach Loop** | Recurring reason to pay monthly | **Scheduled** domain/IP; new critical/high notify; **baseline diff**; **executive HTML**; credits on schedule; cap 10 | Org rewrite; Wazuh; full rebrand | **Shipped on `main` + production smoke closed** (S1–S5, edge DoD). **Wave B UX** (#271): Dashboard Jadwal CTAs, ScanDetail export labels, baseline empty copy — on tip `98756de` |
 | **P2** | **Workspace v1** | B2B multi-user | orgs, memberships, invites, org-scoped scans, personal credits, backfill; JWT `org_id`; WS membership AuthZ; **S5** schedule cap per-org | Nested projects; org wallet; Wazuh; per-org ApiKey | **S1–S5 shipped** (#267 S1–S4 → then #270 S5 @ `6b600fb`; tip with Wave B `98756de`). Cap **10 enabled / org** (`MAX_SCHEDULES_PER_ORG`). Spek D1–D6; edge Alembic **`add_workspace_orgs`**. **Residual:** multi-member S5 + login/UI multi-org smoke (manual) |
-| **P3** | **Asset registry (light)** | Multi-target tiers | Named assets; scan pack; tier limits | Full CMDB; IoT; PMS | **Not started** |
+| **P3** | **Asset registry (light)** | Multi-target tiers | Named assets; scan pack; tier limits | Full CMDB; IoT; PMS | **Draft spek** [`docs/specs/assets-v1.md`](specs/assets-v1.md) — **no implementation** until explicit verb |
 | **P4** | **Soft dual-brand** | Name trust | Sinexis strings, landing, SKU label | Hard cut / domain cutover blocking attach | **Shipped soft dual-brand on `main`** (#250); public host remains **`vs.appmedia.id`** (no hard cut) |
 | **P5** | **Guard MVP** (Wazuh thin) | Second upsell | Agent inventory, critical alerts, per-org enroll; spek [`guard-v1.md`](specs/guard-v1.md) | Full SIEM, SOAR, raw-log UI, per-tenant managers | **S0–S5 + Http on `main`** (#273 spek, #274 thin, **#275** `HttpWazuhClient` @ `28bc69e`). Mock default CI (`GUARD_MOCK_WAZUH`). **Residual human:** edge pull/deploy tip, lab Manager/Indexer env, flip mock off, smoke enable→enroll→sync. **No** SIEM follow-ons without explicit scope |
 | **P6** | **Hospitality / pilot pack** | Beachhead A | Hotel runbooks, hybrid SLA | Logos-only builds | After attach pilot story works |
@@ -140,7 +140,7 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 
 **Shipped for workspace (P2 S1–S5):** org tables + backfill migration `add_workspace_orgs`; org API; JWT switch; SPA OrgSwitcher + Workspace Settings; worker schedule rows include `organization_id`; **S5** `MAX_SCHEDULES_PER_ORG` on create/re-enable.
 
-**Still absent (later epics / not coded yet):** nested Project, org wallet, per-org ApiKey, **asset registry product**, **Guard/Wazuh implementation** (spek only until S1+), in-app subscription table, hard Sinexis domain cutover.
+**Still absent (later epics / not coded yet):** nested Project, org wallet, per-org ApiKey, **asset registry product** (P3 **draft spek only**), in-app subscription table, hard Sinexis domain cutover. **Guard thin code is on main** (not “spek only”); live lab residual is human.
 
 **Commercial kit (docs, not in-app catalog):** `docs/commercial/sinexis-one-pager.md`, `sku-scan-secure-addon.md` (P0 lock), `am-wave1-email-id.md`.
 
@@ -330,7 +330,8 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 
 ### 5.3 Assets (P3) — sketch
 
-- [ ] Org (or user) can CRUD named assets with scan targets
+- [ ] **S0** Draft spek [`docs/specs/assets-v1.md`](specs/assets-v1.md) (light registry; not CMDB)
+- [ ] Org can CRUD named assets with scan targets (S1+ — after explicit implement)
 - [ ] Scheduled pack can include multiple assets within tier limits
 
 ### 5.4 Guard MVP (P5 thin) — from [`docs/specs/guard-v1.md`](specs/guard-v1.md)
