@@ -111,6 +111,15 @@ fi
 
 export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-vuln}"
 COMPOSE=(docker compose -f docker-compose.prod.yml)
+# Multi-host: Postgres/Redis on a dedicated data host (see docs/multi-host-ops.md).
+if [[ "${REMOTE_DATA:-}" == "1" || "${REMOTE_DATA:-}" == "true" ]]; then
+  if [[ ! -f docker-compose.prod.remote-data.yml ]]; then
+    echo "error: REMOTE_DATA set but docker-compose.prod.remote-data.yml missing" >&2
+    exit 1
+  fi
+  COMPOSE+=(-f docker-compose.prod.remote-data.yml)
+  echo "NOTE: REMOTE_DATA=1 — local postgres/redis containers disabled"
+fi
 
 # Capture once. Avoid `cmd | grep -q` under `set -o pipefail`: when grep -q
 # exits early on a match, the producer gets SIGPIPE and the pipeline fails
