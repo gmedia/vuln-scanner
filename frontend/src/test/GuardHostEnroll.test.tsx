@@ -107,11 +107,19 @@ describe("Guard host enroll UI", () => {
       screen.getByTestId("guard-agent-install-steps"),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Instalasi agen di host \(generik\)/),
+      screen.getByText(/Instalasi agen di host \(per distro\)/),
     ).toBeInTheDocument();
     expect(screen.getAllByText(/wazuh-agent/i).length).toBeGreaterThanOrEqual(
       1,
     );
     expect(screen.getAllByText(/systemctl/i).length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getByTestId("guard-distro-install-commands"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Debian / Ubuntu")).toBeInTheDocument();
+    expect(screen.getByText(/SLES \/ openSUSE/)).toBeInTheDocument();
+    expect(document.body.textContent ?? "").toMatch(
+      /apt-get install -y wazuh-agent/,
+    );
   });
 });
