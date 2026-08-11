@@ -8,10 +8,12 @@ import {
   getScanDiff,
   getScanHistory,
 } from "@/api/scans";
+import { useAuthStore } from "@/store/authStore";
 
 export function useScanHistory(page = 1, limit = 20, scanType?: string) {
+  const activeOrgId = useAuthStore((s) => s.activeOrgId);
   return useQuery({
-    queryKey: ["scan-history", page, limit, scanType],
+    queryKey: ["scan-history", activeOrgId, page, limit, scanType],
     queryFn: () => getScanHistory(page, limit, scanType),
   });
 }
