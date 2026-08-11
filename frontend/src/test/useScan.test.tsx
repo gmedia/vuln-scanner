@@ -15,6 +15,7 @@ import {
   useStartDomainScan,
   useStartMobileScan,
 } from "@/hooks/useScan";
+import { useAuthStore } from "@/store/authStore";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const mockUseQuery = vi.hoisted(() => vi.fn());
@@ -70,12 +71,13 @@ function Wrapper({ children }: { children: ReactNode }) {
 describe("useScanHistory", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useAuthStore.setState({ activeOrgId: "org-a" });
   });
 
-  it("calls useQuery with scan-history key and params", () => {
+  it("calls useQuery with scan-history key including activeOrgId", () => {
     renderHook(() => useScanHistory(2, 10, "ip"), { wrapper: Wrapper });
     expect(mockUseQuery).toHaveBeenCalledWith({
-      queryKey: ["scan-history", 2, 10, "ip"],
+      queryKey: ["scan-history", "org-a", 2, 10, "ip"],
       queryFn: expect.any(Function),
     });
   });

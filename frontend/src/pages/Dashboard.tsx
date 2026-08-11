@@ -70,6 +70,7 @@ function Dashboard() {
     isFetching,
   } = useScanHistory(page, PAGE_LIMIT, filter || undefined);
   const activeRole = useAuthStore((s) => s.activeRole);
+  const activeOrgId = useAuthStore((s) => s.activeOrgId);
   const canCreateScans = canMutateWorkspace(activeRole());
 
   const prevFilter = useRef(filter);
@@ -81,6 +82,17 @@ function Dashboard() {
       prevFilter.current = filter;
     }
   }, [filter]);
+
+  const prevOrgId = useRef(activeOrgId);
+  useEffect(() => {
+    if (prevOrgId.current !== activeOrgId) {
+      setPage(1);
+      setPages([]);
+      setAllLoaded(false);
+      setLoadingMore(false);
+      prevOrgId.current = activeOrgId;
+    }
+  }, [activeOrgId]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
