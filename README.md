@@ -248,14 +248,16 @@ curl -sS -H "X-API-Key: $API_KEY" https://vs.appmedia.id/metrics | grep vuln_mai
 
 Production uses **host nginx** (not the compose nginx service). Config:
 
-- Template: [`nginx/vs.appmedia.id.conf`](nginx/vs.appmedia.id.conf) → `/etc/nginx/conf.d/vs.appmedia.id.conf`
+- Legacy host template: [`nginx/vs.appmedia.id.conf`](nginx/vs.appmedia.id.conf) → `/etc/nginx/conf.d/vs.appmedia.id.conf`
+- Public Sinexis / Cloudflare edge: [`nginx/sinexis.app.conf`](nginx/sinexis.app.conf) → `/etc/nginx/conf.d/sinexis.app.conf` (Origin CA or interim self-signed; see [`docs/multi-host-ops.md`](docs/multi-host-ops.md))
 - Frontend upstream: `127.0.0.1:5174` (compose publishes frontend on host `5174`)
 - Backend upstream: `127.0.0.1:8000`
 - Public routes: `/health`, `/health/queues`
 - API-key route: `/metrics` (auth enforced by FastAPI)
 
 ```bash
-sudo cp nginx/vs.appmedia.id.conf /etc/nginx/conf.d/vs.appmedia.id.conf
+# Example — Sinexis edge (adjust cert paths on host; never commit keys)
+sudo cp nginx/sinexis.app.conf /etc/nginx/conf.d/sinexis.app.conf
 sudo nginx -t && sudo systemctl reload nginx
 ```
 

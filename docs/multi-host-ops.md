@@ -61,10 +61,26 @@ Existing keys stay (API_KEY, JWT, SMTP, …). For remote data add/adjust:
 
 Workflow writes app-host `.env` with `POSTGRES_HOST` defaulting to Docker service name `postgres` for single-host backwards compatibility.
 
+## Public edge (Cloudflare + host nginx)
+
+Template (no secrets): [`nginx/sinexis.app.conf`](../nginx/sinexis.app.conf) → app host `/etc/nginx/conf.d/sinexis.app.conf`.
+
+| Step | Who | Notes |
+|------|-----|--------|
+| DNS A/AAAA proxied (orange) | Human | Apex + `www` if used |
+| Origin cert on app host | Human + ops | **Cloudflare Origin CA** preferred; self-signed OK only with SSL mode **Full** |
+| SSL/TLS mode | Human | **Full** while self-signed; **Full (strict)** after Origin CA (or trusted public CA) |
+| Automatic SSL/TLS | Optional | Cloudflare may upgrade gradually; it does **not** auto-downgrade if origin cert expires |
+| App CORS / frontend URL | Ops | `FRONTEND_URL` + `CORS_ORIGINS` = public `https://` origin |
+
+Do **not** use Flexible/Off for production login or API traffic.
+
+Optional harden (after Full strict stable): restrict app host 80/443 to Cloudflare IP ranges; nginx `real_ip` / Authenticated Origin Pulls.
+
 ## Firewall checklist
 
 - Data host: SSH + **5432/6379 only from app host CIDR**
-- App host: 80/443 public; SSH admin-only
+- App host: 80/443 public (or Cloudflare-only later); SSH admin-only
 - Guard host (later): 55000/9200 from app only; agent 1514/1515 as required
 
 ## Cross-region latency
