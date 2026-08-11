@@ -1,0 +1,105 @@
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import Guard from "@/pages/Guard";
+import { useAuthStore } from "@/store/authStore";
+import * as guardApi from "@/api/guard";
+
+vi.mock("@/api/guard", async () => {
+  const actual = await vi.importActual<typeof import("@/api/guard")>(
+    "@/api/guard",
+  );
+  return {
+    ...actual,
+    getGuardStatus: vi.fn(),
+    listGuardAgents: vi.fn(),
+    listGuardAlerts: vi.fn(),
+    listEnrollTokens: vi.fn(),
+    createEnrollToken: vi.fn(),
+    enableGuard: vi.fn(),
+    syncGuard: vi.fn(),
+  };
+});
+
+describe("Guard host enroll UI", () => {
+  beforeEach(() => {
+    useAuthStore.setState({
+      user: {
+        id: "u1",
+        email: "admin@example.test",
+        is_admin: false,
+        is_verified: true,
+        credits: 10,
+      } as never,
+      isAuthenticated: true,
+      accessToken: "t",
+      isLoading: false,
+      error: null,
+      organizations: [
+        {
+          id: "org1",
+          name: "Org",
+          slug: "org",
+          role: "admin",
+        } as never,
+      ],
+      activeOrgId: "org1",
+    });
+    vi.mocked(guardApi.getGuardStatus).mockResolvedValue({
+      enabled: true,
+      wazuh_group: "g",
+      last_inventory_sync_at: null,
+      last_alert_sync_at: null,
+      last_sync_error: null,
+      degraded: false,
+    });
+    vi.mocked(guardApi.listGuardAgents).mockResolvedValue([]);
+    vi.mocked(guardApi.listGuardAlerts).mockResolvedValue([]);
+    vi.mocked(guardApi.listEnrollTokens).mockResolvedValue([]);
+    vi.mocked(guardApi.createEnrollToken).mockResolvedValue({
+      id: "tok1",
+      label: "lab",
+      expires_at: new Date().toISOString(),
+      token: "raw-enroll-token-value-32chars!!",
+      created_at: new Date().toISOString(),
+    });
+  });
+
+  it("shows host steps and curl after Generate", async () => {
+    const user = userEvent.setup();
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <Guard />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Generate" })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Generate" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("guard-host-enroll-steps")).toBeInTheDocument();
+    });
+    expect(
+      screen.getByText(/Langkah host \(setelah token\)/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByText(/raw-enroll-token-value-32chars!!/).length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText(/api\/guard\/enroll/).length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getByRole("button", { name: "Salin curl" }),
+    ).toBeInTheDocument();
+  });
+});
