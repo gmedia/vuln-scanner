@@ -10,7 +10,17 @@ from typing import Any
 import redis
 from loguru import logger
 
-REDIS_URL = os.getenv("REDIS_URL", f"redis://:{os.getenv('REDIS_PASSWORD', '')}@redis:6379/0")
+
+def _resolve_redis_url() -> str:
+    for key in ("REDIS_URL", "CELERY_BROKER_URL", "CELERY_RESULT_BACKEND"):
+        value = os.getenv(key, "").strip()
+        if value:
+            return value
+    password = os.getenv("REDIS_PASSWORD", "")
+    return f"redis://:{password}@redis:6379/0"
+
+
+REDIS_URL = _resolve_redis_url()
 _redis_pool = redis.ConnectionPool.from_url(REDIS_URL, socket_connect_timeout=3, socket_timeout=3)
 CELERY_QUEUES = ["ip_scan", "domain_scan", "mobile_scan"]
 _start_time = time.monotonic()
