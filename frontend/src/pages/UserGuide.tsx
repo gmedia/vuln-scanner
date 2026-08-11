@@ -21,6 +21,10 @@ import {
   CardDescription,
 } from "@/components/ui/Card";
 import { BRAND } from "@/lib/brand";
+import {
+  buildEnrollCurlExample,
+  GUARD_HOST_SETUP_STEPS,
+} from "@/lib/guardEnrollHost";
 
 const toc = [
   { id: "mulai", label: "1. Mulai & login" },
@@ -461,7 +465,9 @@ function UserGuide() {
           />
           <p className="text-sm text-muted-foreground">
             Inventori agen + alert kritis per org. Bukan SIEM penuh / raw log.
-            Hanya admin/owner org yang mengaktifkan & membuat token.
+            Hanya admin/owner org yang mengaktifkan & membuat token. Setup host
+            di bawah bersifat generik (placeholder) — tanpa alamat lab/prod di
+            dokumen publik.
           </p>
           <Steps>
             <li>
@@ -478,11 +484,40 @@ function UserGuide() {
             <li>
               Setelah enabled, admin: kartu <Ui>Enroll token</Ui> → label
               opsional → <Ui>Generate</Ui>. Salin token mentah segera (hanya
-              sekali ditampilkan). Jangan tempel di chat/repo publik.
+              sekali ditampilkan). UI menampilkan blok{" "}
+              <Ui>Langkah host (setelah token)</Ui> + contoh curl — gunakan itu
+              di host. Jangan tempel token di chat/repo publik.
             </li>
             <li>
-              Pasang agent di host yang Anda kelola dengan token + instruksi
-              enroll dari UI/ops. Jangan enroll host pihak ketiga tanpa izin.
+              Di host target (aset yang Anda kuasai secara hukum), ikuti urutan:
+              <ol className="mt-2 list-decimal space-y-1.5 pl-5">
+                {GUARD_HOST_SETUP_STEPS.map((step) => (
+                  <li key={step.slice(0, 40)}>{step}</li>
+                ))}
+              </ol>
+            </li>
+            <li>
+              Contoh enroll dari host (ganti origin app & token; tanpa JWT):
+              <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-all rounded-md border border-border bg-muted/40 p-3 font-mono text-[11px] leading-relaxed text-foreground">
+                {buildEnrollCurlExample(
+                  "https://<APP_ORIGIN>",
+                  "<ENROLL_TOKEN>",
+                  "<AGENT_NAME>",
+                )}
+              </pre>
+              Endpoint publik org-bound lewat token:{" "}
+              <code className="text-foreground">POST /api/guard/enroll</code>{" "}
+              body{" "}
+              <code className="text-foreground">
+                {"{"} token, agent_name {"}"}
+              </code>
+              . Response:{" "}
+              <code className="text-foreground">agent_id</code>,{" "}
+              <code className="text-foreground">agent_key</code>,{" "}
+              <code className="text-foreground">manager_host</code>,{" "}
+              <code className="text-foreground">install_hint</code>. Paket agen
+              per distro = runbook ops/penyedia (bukan di-repo sebagai target
+              lab).
             </li>
             <li>
               Klik <Ui>Sync</Ui> (admin) untuk memperbarui proyeksi. Lihat tabel{" "}
@@ -492,6 +527,12 @@ function UserGuide() {
             <li>
               Viewer+: hanya melihat agent/alert setelah Guard enabled — tanpa
               generate token.
+            </li>
+            <li>
+              Troubleshooting singkat: enroll 4xx → token expired/revoked/salah
+              org; agen pending lama → cek koneksi host ke{" "}
+              <code className="text-foreground">manager_host</code> dari
+              response + Sync; jangan gunakan password Manager di host.
             </li>
           </Steps>
         </CardContent>

@@ -50,6 +50,16 @@ describe("UserGuide", () => {
     expect(screen.getByText("Start IP scan")).toBeInTheDocument();
     expect(screen.getByText("Buat jadwal")).toBeInTheDocument();
     expect(screen.getByText("Aktifkan Guard")).toBeInTheDocument();
+    expect(
+      screen.getAllByText(/POST \/api\/guard\/enroll/).length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getByText(/Langkah host \(setelah token\)/),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(/manager_host/).length).toBeGreaterThanOrEqual(
+      1,
+    );
+    expect(document.body.textContent ?? "").toMatch(/api\/guard\/enroll/);
     expect(screen.getByRole("link", { name: "IP Scanner" })).toHaveAttribute(
       "href",
       "/scan/ip",

@@ -25,6 +25,12 @@ import {
 } from "@/api/guard";
 import { useAuthStore } from "@/store/authStore";
 import type { ApiError } from "@/lib/utils";
+import {
+  buildEnrollCurlExample,
+  GUARD_HOST_SETUP_STEPS,
+  resolveApiBaseUrl,
+} from "@/lib/guardEnrollHost";
+
 
 function formatWhen(iso: string | null): string {
   if (!iso) return "—";
@@ -61,6 +67,17 @@ export default function Guard() {
   const [tokenLabel, setTokenLabel] = useState("");
   const [rawToken, setRawToken] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [curlCopied, setCurlCopied] = useState(false);
+
+  const apiBase = resolveApiBaseUrl(
+    import.meta.env.VITE_API_URL as string | undefined,
+    typeof window !== "undefined" ? window.location.origin : undefined,
+  );
+  const enrollCurl = buildEnrollCurlExample(
+    apiBase,
+    rawToken ?? "<ENROLL_TOKEN>",
+    "<AGENT_NAME>",
+  );
 
   const statusQ = useQuery({
     queryKey: ["guard", "status"],
@@ -311,15 +328,64 @@ export default function Guard() {
                   </Button>
                 </div>
                 {rawToken && (
-                  <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-xs">
-                    <p className="mb-1 font-medium text-foreground">
-                      Simpan sekarang — tidak ditampilkan lagi:
-                    </p>
-                    <code className="break-all">{rawToken}</code>
-                    <p className="mt-2 text-muted-foreground">
-                      POST /api/guard/enroll {"{"} token, agent_name {"}"} dari host
-                      install (bukan manager password).
-                    </p>
+                  <div
+                    className="space-y-3 rounded-md border border-primary/30 bg-primary/5 p-3 text-xs"
+                    data-testid="guard-host-enroll-steps"
+                  >
+                    <div>
+                      <p className="mb-1 font-medium text-foreground">
+                        Simpan sekarang — tidak ditampilkan lagi:
+                      </p>
+                      <code className="break-all">{rawToken}</code>
+                    </div>
+                    <div>
+                      <p className="mb-1.5 font-medium text-foreground">
+                        Langkah host (setelah token)
+                      </p>
+                      <ol className="list-decimal space-y-1.5 pl-4 text-muted-foreground">
+                        {GUARD_HOST_SETUP_STEPS.map((step) => (
+                          <li key={step.slice(0, 32)}>{step}</li>
+                        ))}
+                      </ol>
+                    </div>
+                    <div>
+                      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-medium text-foreground">
+                          Contoh curl enroll (tanpa JWT — token di body)
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() => {
+                            void navigator.clipboard
+                              ?.writeText(enrollCurl)
+                              .then(() => {
+                                setCurlCopied(true);
+                                window.setTimeout(
+                                  () => setCurlCopied(false),
+                                  2000,
+                                );
+                              })
+                              .catch(() => undefined);
+                          }}
+                        >
+                          {curlCopied ? "Disalin" : "Salin curl"}
+                        </Button>
+                      </div>
+                      <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded border border-border/60 bg-background/80 p-2 font-mono text-[11px] leading-relaxed text-foreground">
+                        {enrollCurl}
+                      </pre>
+                      <p className="mt-2 text-muted-foreground">
+                        Ganti <code className="text-foreground">&lt;AGENT_NAME&gt;</code>{" "}
+                        (unik). Response:{" "}
+                        <code className="text-foreground">agent_key</code>,{" "}
+                        <code className="text-foreground">manager_host</code>,{" "}
+                        <code className="text-foreground">install_hint</code> —
+                        simpan di host saja. Bukan password Manager.
+                      </p>
+                    </div>
                   </div>
                 )}
                 {tokensQ.isLoading ? (
