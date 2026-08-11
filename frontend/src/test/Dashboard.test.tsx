@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Dashboard from "@/pages/Dashboard";
+import { useAuthStore } from "@/store/authStore";
 
 let mockUseScanHistory: ReturnType<typeof vi.fn>;
 
@@ -44,6 +45,33 @@ vi.mock("react-router-dom", () => ({
 describe("Dashboard", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
+    useAuthStore.setState({
+      activeOrgId: "org-a",
+      organizations: [
+        {
+          id: "org-a",
+          name: "Org A",
+          slug: "org-a",
+          role: "owner",
+          kind: "team",
+        },
+        {
+          id: "org-b",
+          name: "Org B",
+          slug: "org-b",
+          role: "owner",
+          kind: "team",
+        },
+      ],
+      user: {
+        id: "u1",
+        email: "u@example.com",
+        is_verified: true,
+        is_admin: false,
+        credits: 10,
+      },
+      isAuthenticated: true,
+    });
     const mod = await import("@/hooks/useScan");
     mockUseScanHistory = mod.useScanHistory as ReturnType<typeof vi.fn>;
     mockHistoryData.items = [];
@@ -203,6 +231,67 @@ describe("Dashboard", () => {
     });
     render(<Dashboard />);
     expect(screen.getByText(/42 scan/)).toBeInTheDocument();
+  });
+
+  it("clears scan history UI when activeOrgId changes (same-route switch)", () => {
+    mockHistoryData.items = [
+      {
+        id: "scan-a",
+        target: "org-a.example.com",
+        scan_type: "domain",
+        status: "completed",
+        started_at: "2026-01-01T00:00:00Z",
+        result_summary: {
+          total_findings: 1,
+          critical: 0,
+          high: 0,
+          medium: 1,
+          low: 0,
+          info: 0,
+        },
+      },
+    ];
+    mockHistoryData.total = 1;
+    mockUseScanHistory.mockReturnValue({
+      data: mockHistoryData,
+      isLoading: false,
+      isFetching: false,
+    });
+
+    const { rerender } = render(<Dashboard />);
+    expect(screen.getByText("org-a.example.com")).toBeInTheDocument();
+
+    mockHistoryData.items = [
+      {
+        id: "scan-b",
+        target: "org-b.example.com",
+        scan_type: "domain",
+        status: "completed",
+        started_at: "2026-02-01T00:00:00Z",
+        result_summary: {
+          total_findings: 2,
+          critical: 1,
+          high: 0,
+          medium: 1,
+          low: 0,
+          info: 0,
+        },
+      },
+    ];
+    mockHistoryData.total = 1;
+    mockUseScanHistory.mockReturnValue({
+      data: { ...mockHistoryData, items: mockHistoryData.items },
+      isLoading: false,
+      isFetching: false,
+    });
+
+    act(() => {
+      useAuthStore.setState({ activeOrgId: "org-b" });
+    });
+    rerender(<Dashboard />);
+
+    expect(screen.queryByText("org-a.example.com")).not.toBeInTheDocument();
+    expect(screen.getByText("org-b.example.com")).toBeInTheDocument();
   });
 
   it("does not show NaN when result_summary is error-only (auto-failed)", () => {
