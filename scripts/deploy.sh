@@ -3,7 +3,26 @@ set -e
 
 DEPLOY_PATH="${1:?usage: $0 <deploy-path>}"
 cd "$DEPLOY_PATH"
-export COMPOSE_PROJECT_NAME=vuln
+export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-vuln}"
+
+if [ -f .env ]; then
+  set -a
+  # shellcheck disable=SC1091
+  . ./.env
+  set +a
+fi
+
+COMPOSE=(docker compose -f docker-compose.prod.yml)
+REMOTE_DATA_MODE=0
+if [ "${REMOTE_DATA:-}" = "1" ] || [ "${REMOTE_DATA:-}" = "true" ]; then
+  if [ ! -f docker-compose.prod.remote-data.yml ]; then
+    echo "=== FAILED — REMOTE_DATA set but docker-compose.prod.remote-data.yml missing ==="
+    exit 1
+  fi
+  COMPOSE+=(-f docker-compose.prod.remote-data.yml)
+  REMOTE_DATA_MODE=1
+  echo "NOTE: REMOTE_DATA=1 — multi-host overlay (no local postgres/redis containers)"
+fi
 
 git pull origin main
 
@@ -22,7 +41,7 @@ docker tag vuln-worker_mobile:latest vuln-worker_mobile:previous 2>/dev/null || 
 docker tag vuln-worker_dead_letter:latest vuln-worker_dead_letter:previous 2>/dev/null || true
 docker tag vuln-celery_beat:latest vuln-celery_beat:previous 2>/dev/null || true
 
-docker compose -f docker-compose.prod.yml build --no-cache
+"${COMPOSE[@]}" build --no-cache
 
 SHA=$(git rev-parse --short HEAD)
 docker tag vuln-backend:latest vuln-backend:$SHA
@@ -40,57 +59,69 @@ docker ps -a --format "{{.Names}} {{.Status}}" || true
 docker volume ls --format "{{.Name}}" | grep postgres || true
 
 echo "=== Bringing services down ==="
-docker compose -f docker-compose.prod.yml --project-name vuln-scanner down --volumes --remove-orphans 2>/dev/null || true
-docker compose -f docker-compose.prod.yml down --remove-orphans
-docker rm -f vuln-backend vuln-frontend vuln-redis vuln-postgres \
-  vuln-worker-ip vuln-worker-domain vuln-worker-mobile vuln-worker-dead-letter \
-  vuln-celery-beat 2>/dev/null || true
-docker volume rm -f vuln-scanner_postgres_data vuln-scanner_redis_data vuln-scanner_scan_data 2>/dev/null || true
+if [ "$REMOTE_DATA_MODE" -eq 1 ]; then
+  "${COMPOSE[@]}" --project-name vuln-scanner down --remove-orphans 2>/dev/null || true
+  "${COMPOSE[@]}" down --remove-orphans
+  docker rm -f vuln-backend vuln-frontend \
+    vuln-worker-ip vuln-worker-domain vuln-worker-mobile vuln-worker-dead-letter \
+    vuln-celery-beat 2>/dev/null || true
+else
+  "${COMPOSE[@]}" --project-name vuln-scanner down --volumes --remove-orphans 2>/dev/null || true
+  "${COMPOSE[@]}" down --remove-orphans
+  docker rm -f vuln-backend vuln-frontend vuln-redis vuln-postgres \
+    vuln-worker-ip vuln-worker-domain vuln-worker-mobile vuln-worker-dead-letter \
+    vuln-celery-beat 2>/dev/null || true
+  docker volume rm -f vuln-scanner_postgres_data vuln-scanner_redis_data vuln-scanner_scan_data 2>/dev/null || true
+fi
 
 echo "=== Remaining volumes ==="
 docker volume ls --format "{{.Name}}" | grep postgres || true
 
 echo "=== Starting services ==="
-docker compose -f docker-compose.prod.yml up -d || {
+"${COMPOSE[@]}" up -d || {
   echo "=== docker compose up -d FAILED — dumping logs ==="
   docker logs vuln-postgres --tail=100 2>&1 || true
   docker logs vuln-redis --tail=100 2>&1 || true
-  docker compose -f docker-compose.prod.yml logs --tail=100 2>&1 || true
+  "${COMPOSE[@]}" logs --tail=100 2>&1 || true
   exit 1
 }
 
-echo "Waiting for postgres..."
-for i in $(seq 1 30); do
-  if docker compose -f docker-compose.prod.yml exec -T postgres pg_isready -U "${POSTGRES_USER:-vuln_scanner}" 2>/dev/null; then
-    echo "postgres ready"
-    break
-  fi
-  echo "  attempt $i/30..."
-  sleep 2
-done
+if [ "$REMOTE_DATA_MODE" -eq 0 ]; then
+  echo "Waiting for postgres..."
+  for i in $(seq 1 30); do
+    if "${COMPOSE[@]}" exec -T postgres pg_isready -U "${POSTGRES_USER:-vuln_scanner}" 2>/dev/null; then
+      echo "postgres ready"
+      break
+    fi
+    echo "  attempt $i/30..."
+    sleep 2
+  done
 
-REDIS_PASSWORD=$(grep -E '^REDIS_PASSWORD=' .env | head -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
-if [ -z "$REDIS_PASSWORD" ]; then
-  echo "=== FAILED — REDIS_PASSWORD missing from .env ==="
-  exit 1
+  REDIS_PASSWORD=$(grep -E '^REDIS_PASSWORD=' .env | head -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+  if [ -z "$REDIS_PASSWORD" ]; then
+    echo "=== FAILED — REDIS_PASSWORD missing from .env ==="
+    exit 1
+  fi
+
+  echo "Waiting for redis..."
+  for i in $(seq 1 15); do
+    if "${COMPOSE[@]}" exec -T redis redis-cli -a "$REDIS_PASSWORD" ping 2>/dev/null | grep -q PONG; then
+      echo "redis ready"
+      break
+    fi
+    echo "  attempt $i/15..."
+    sleep 2
+  done
+else
+  echo "REMOTE_DATA=1 — skipping local postgres/redis readiness (data host)"
 fi
 
-echo "Waiting for redis..."
-for i in $(seq 1 15); do
-  if docker compose -f docker-compose.prod.yml exec -T redis redis-cli -a "$REDIS_PASSWORD" ping 2>/dev/null | grep -q PONG; then
-    echo "redis ready"
-    break
-  fi
-  echo "  attempt $i/15..."
-  sleep 2
-done
-
-if ! docker compose -f docker-compose.prod.yml ps --status running | grep -q backend; then
+if ! "${COMPOSE[@]}" ps --status running | grep -q backend; then
   echo "=== FAILED — dumping logs ==="
   docker logs vuln-backend --tail=100 2>&1 || true
   docker logs vuln-postgres --tail=100 2>&1 || true
   docker logs vuln-redis --tail=100 2>&1 || true
-  docker compose -f docker-compose.prod.yml logs --tail=100 2>&1 || true
+  "${COMPOSE[@]}" logs --tail=100 2>&1 || true
   exit 1
 fi
 
@@ -100,7 +131,7 @@ docker exec vuln-backend alembic upgrade head || {
   docker logs vuln-backend --tail=100 2>&1 || true
   docker logs vuln-postgres --tail=100 2>&1 || true
   docker logs vuln-redis --tail=100 2>&1 || true
-  docker compose -f docker-compose.prod.yml logs --tail=100 2>&1 || true
+  "${COMPOSE[@]}" logs --tail=100 2>&1 || true
   exit $rc
 }
 echo "Deploy completed — migration at $(docker exec vuln-backend alembic current 2>/dev/null | tail -1)"

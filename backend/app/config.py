@@ -8,6 +8,18 @@ logger = logging.getLogger(__name__)
 DEV_API_KEY_PREFIXES = ("dev-", "dev-api-key")
 DEV_SECRET_PREFIXES = ("dev-secret", "dev-secret-key")
 RECOMMENDED_STRENGTH = 32
+EXAMPLE_PLACEHOLDERS = frozenset(
+    {
+        "<your-api-key-here>",
+        "<your-secret-key-here>",
+        "<your-jwt-secret-here>",
+        "change-me",
+        "changeme",
+        "your-api-key-here",
+        "your-secret-key-here",
+        "your-jwt-secret-here",
+    }
+)
 
 _SENTINEL = "__UNSET__"
 
@@ -119,6 +131,15 @@ def _is_dev_value(val: str, prefixes: tuple[str, ...]) -> bool:
     return val.startswith(prefixes)
 
 
+def _is_example_placeholder(val: str) -> bool:
+    stripped = val.strip()
+    if not stripped:
+        return False
+    if stripped in EXAMPLE_PLACEHOLDERS:
+        return True
+    return stripped.startswith("<") and stripped.endswith(">") and len(stripped) >= 3
+
+
 def _warn_dev_value(name: str, val: str) -> None:
     logger.warning(
         "[SECURITY] %s is set to a development placeholder (%s…). "
@@ -129,19 +150,43 @@ def _warn_dev_value(name: str, val: str) -> None:
     )
 
 
+def _warn_example_placeholder(name: str) -> None:
+    logger.warning(
+        "[SECURITY] %s is still an .env.example placeholder (or angle-bracket template). "
+        'Generate a strong key: python3 -c "import secrets; print(secrets.token_hex(%d))"',
+        name,
+        RECOMMENDED_STRENGTH,
+    )
+
+
 def check_settings() -> None:
     """Validate security-critical settings and warn on insecure defaults."""
     if settings.api_key == _SENTINEL:
         logger.warning(
             "[SECURITY] API_KEY is not set.  All API requests will be rejected. Set the API_KEY environment variable."
         )
+    elif _is_example_placeholder(settings.api_key):
+        _warn_example_placeholder("API_KEY")
     elif _is_dev_value(settings.api_key, DEV_API_KEY_PREFIXES):
         _warn_dev_value("API_KEY", settings.api_key)
 
     if settings.secret_key == _SENTINEL:
         logger.warning("[SECURITY] SECRET_KEY is not set.  Set the SECRET_KEY environment variable.")
+    elif _is_example_placeholder(settings.secret_key):
+        _warn_example_placeholder("SECRET_KEY")
     elif _is_dev_value(settings.secret_key, DEV_SECRET_PREFIXES):
         _warn_dev_value("SECRET_KEY", settings.secret_key)
+
+    jwt = (settings.jwt_secret or "").strip()
+    if not jwt:
+        logger.warning(
+            "[SECURITY] JWT_SECRET is empty; JWT signing falls back to SECRET_KEY. "
+            "Set a dedicated JWT_SECRET in production."
+        )
+    elif _is_example_placeholder(jwt):
+        _warn_example_placeholder("JWT_SECRET")
+    elif _is_dev_value(jwt, ("dev-jwt", "dev-")):
+        _warn_dev_value("JWT_SECRET", jwt)
 
     if settings.cors_origins == "*":
         logger.warning("[SECURITY] CORS_ORIGINS is set to wildcard (*).  Restrict to specific origins.")

@@ -211,6 +211,8 @@ jobs:
           sed -i 's|DATABASE_URL=postgresql+asyncpg://vuln_scanner:<your-postgres-password>@postgres:5432/vuln_scanner|DATABASE_URL=postgresql+asyncpg://vuln_scanner:e2e-test-password@postgres:5432/vuln_scanner|' .env
           sed -i 's|DATABASE_URL_SYNC=postgresql://vuln_scanner:<your-postgres-password>@postgres:5432/vuln_scanner|DATABASE_URL_SYNC=postgresql://vuln_scanner:e2e-test-password@postgres:5432/vuln_scanner|' .env
           sed -i 's/API_KEY=<your-api-key-here>/API_KEY=e2e-test-api-key/' .env
+          sed -i 's/SECRET_KEY=<your-secret-key-here>/SECRET_KEY=e2e-secret-key/' .env
+          sed -i 's/JWT_SECRET=<your-jwt-secret-here>/JWT_SECRET=e2e-jwt-secret/' .env
 
       - name: Install frontend dependencies (pre-Docker — avoid root-owned node_modules)
         run: npm ci
@@ -371,6 +373,7 @@ jobs:
             SENTRY_DSN=${{ secrets.SENTRY_DSN }}
             SECRET_KEY=${{ secrets.SECRET_KEY }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
+            REMOTE_DATA=${{ secrets.REMOTE_DATA }}
             SMTP_HOST=${{ secrets.SMTP_HOST }}
             SMTP_PORT=${{ secrets.SMTP_PORT }}
             SMTP_USER=${{ secrets.SMTP_USER }}

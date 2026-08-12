@@ -9,6 +9,7 @@ from app.config import (
     RECOMMENDED_STRENGTH,
     _build_redis_url,
     _is_dev_value,
+    _is_example_placeholder,
     _warn_dev_value,
     check_settings,
     settings,
@@ -43,6 +44,22 @@ def test_is_dev_value_matches_prefix():
 def test_is_dev_value_rejects_non_dev():
     assert _is_dev_value("prod-secret", DEV_SECRET_PREFIXES) is False
     assert _is_dev_value("", DEV_SECRET_PREFIXES) is False
+
+
+# ── _is_example_placeholder ───────────────────────────────────────────────
+
+
+def test_is_example_placeholder_angle_brackets():
+    assert _is_example_placeholder("<your-api-key-here>") is True
+    assert _is_example_placeholder("<your-secret-key-here>") is True
+    assert _is_example_placeholder("<your-jwt-secret-here>") is True
+    assert _is_example_placeholder("  <your-api-key-here>  ") is True
+
+
+def test_is_example_placeholder_rejects_real_secrets():
+    assert _is_example_placeholder("sk_" + "a" * 64) is False
+    assert _is_example_placeholder("a" * 64) is False
+    assert _is_example_placeholder("") is False
 
 
 # ── _warn_dev_value ──────────────────────────────────────────────────────
@@ -83,11 +100,22 @@ def test_check_settings_api_key_strong(caplog, monkeypatch):
     """When API_KEY is a strong value, no warning is logged."""
     monkeypatch.setattr(settings, "api_key", "prod-key-strong-random-value")
     monkeypatch.setattr(settings, "secret_key", "strong-secret")
+    monkeypatch.setattr(settings, "jwt_secret", "strong-jwt-secret-value")
     monkeypatch.setattr(settings, "cors_origins", "http://localhost")
     caplog.set_level(logging.WARNING)
     check_settings()
     api_key_warnings = [rec for rec in caplog.records if "API_KEY" in rec.message]
     assert len(api_key_warnings) == 0
+
+
+def test_check_settings_api_key_example_placeholder(caplog, monkeypatch):
+    monkeypatch.setattr(settings, "api_key", "<your-api-key-here>")
+    monkeypatch.setattr(settings, "secret_key", "strong-secret")
+    monkeypatch.setattr(settings, "jwt_secret", "strong-jwt")
+    monkeypatch.setattr(settings, "cors_origins", "http://localhost")
+    caplog.set_level(logging.WARNING)
+    check_settings()
+    assert any("API_KEY" in rec.message and "env.example placeholder" in rec.message for rec in caplog.records)
 
 
 # ── check_settings: SECRET_KEY ────────────────────────────────────────────
@@ -127,11 +155,33 @@ def test_check_settings_secret_key_strong(caplog, monkeypatch):
     """When SECRET_KEY is a strong value, no warning is logged."""
     monkeypatch.setattr(settings, "api_key", "strong-key")
     monkeypatch.setattr(settings, "secret_key", "prod-secret-strong-random-value")
+    monkeypatch.setattr(settings, "jwt_secret", "strong-jwt-secret-value")
     monkeypatch.setattr(settings, "cors_origins", "http://localhost")
     caplog.set_level(logging.WARNING)
     check_settings()
     secret_key_warnings = [rec for rec in caplog.records if "SECRET_KEY" in rec.message]
     assert len(secret_key_warnings) == 0
+
+
+def test_check_settings_secret_and_jwt_example_placeholders(caplog, monkeypatch):
+    monkeypatch.setattr(settings, "api_key", "strong-key")
+    monkeypatch.setattr(settings, "secret_key", "<your-secret-key-here>")
+    monkeypatch.setattr(settings, "jwt_secret", "<your-jwt-secret-here>")
+    monkeypatch.setattr(settings, "cors_origins", "http://localhost")
+    caplog.set_level(logging.WARNING)
+    check_settings()
+    assert any("SECRET_KEY" in rec.message and "env.example placeholder" in rec.message for rec in caplog.records)
+    assert any("JWT_SECRET" in rec.message and "env.example placeholder" in rec.message for rec in caplog.records)
+
+
+def test_check_settings_jwt_secret_empty(caplog, monkeypatch):
+    monkeypatch.setattr(settings, "api_key", "strong-key")
+    monkeypatch.setattr(settings, "secret_key", "strong-secret")
+    monkeypatch.setattr(settings, "jwt_secret", "")
+    monkeypatch.setattr(settings, "cors_origins", "http://localhost")
+    caplog.set_level(logging.WARNING)
+    check_settings()
+    assert any("JWT_SECRET is empty" in rec.message for rec in caplog.records)
 
 
 # ── check_settings: CORS_ORIGINS ─────────────────────────────────────────
