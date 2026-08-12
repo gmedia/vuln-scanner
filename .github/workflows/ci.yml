@@ -341,6 +341,13 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ secrets.DEPLOY_PORT || 22 }}
+          # Jump via bastion (coding host): app host UFW allows SSH only from bastion.
+          proxy_host: ${{ secrets.DEPLOY_JUMP_HOST }}
+          proxy_username: ${{ secrets.DEPLOY_JUMP_USER }}
+          proxy_key: ${{ secrets.DEPLOY_JUMP_SSH_KEY }}
+          proxy_port: ${{ secrets.DEPLOY_JUMP_PORT || 22 }}
+          proxy_timeout: 60s
+          command_timeout: 30m
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
             REDIS_URL="${{ secrets.REDIS_URL }}"
@@ -408,19 +415,33 @@ jobs:
 
       - name: Deploy to production
         run: |
+          set -euo pipefail
           mkdir -p ~/.ssh
-          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
+          umask 077
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.DEPLOY_JUMP_SSH_KEY }}" > ~/.ssh/jump_key
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/jump_key
+          JUMP_HOST="${{ secrets.DEPLOY_JUMP_HOST }}"
+          JUMP_USER="${{ secrets.DEPLOY_JUMP_USER }}"
+          JUMP_PORT="${{ secrets.DEPLOY_JUMP_PORT || 22 }}"
+          DEPLOY_HOST="${{ secrets.DEPLOY_HOST }}"
+          DEPLOY_USER="${{ secrets.DEPLOY_USER }}"
+          DEPLOY_PORT="${{ secrets.DEPLOY_PORT || 22 }}"
+          DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+          # Tunnel through bastion: runner never needs direct SSH to app host.
+          PROXY_CMD="ssh -i $HOME/.ssh/jump_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p ${JUMP_PORT} -W %h:%p ${JUMP_USER}@${JUMP_HOST}"
           scp -i ~/.ssh/deploy_key \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
-            -P ${{ secrets.DEPLOY_PORT || 22 }} \
+            -o "ProxyCommand=${PROXY_CMD}" \
+            -P "${DEPLOY_PORT}" \
             scripts/deploy.sh \
-            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/tmp/deploy-vuln.sh
+            "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/deploy-vuln.sh"
           ssh -i ~/.ssh/deploy_key \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
-            -p ${{ secrets.DEPLOY_PORT || 22 }} \
-            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
-            "bash /tmp/deploy-vuln.sh ${{ secrets.DEPLOY_PATH }} 2>&1 | tee /tmp/deploy-vuln.log; EXIT=\${PIPESTATUS[0]}; if [ \$EXIT -ne 0 ]; then echo '=== Full deploy log ==='; cat /tmp/deploy-vuln.log; fi; exit \$EXIT"
-          rm -f ~/.ssh/deploy_key
+            -o "ProxyCommand=${PROXY_CMD}" \
+            -p "${DEPLOY_PORT}" \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "bash /tmp/deploy-vuln.sh ${DEPLOY_PATH} 2>&1 | tee /tmp/deploy-vuln.log; EXIT=\${PIPESTATUS[0]}; if [ \$EXIT -ne 0 ]; then echo '=== Full deploy log ==='; cat /tmp/deploy-vuln.log; fi; exit \$EXIT"
+          rm -f ~/.ssh/deploy_key ~/.ssh/jump_key
