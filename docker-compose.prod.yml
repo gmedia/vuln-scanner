@@ -109,6 +109,14 @@ services:
       DOMAIN_SCAN_CREDIT_COST: ${DOMAIN_SCAN_CREDIT_COST:-2}
       APK_SCAN_CREDIT_COST: ${APK_SCAN_CREDIT_COST:-3}
       IPA_SCAN_CREDIT_COST: ${IPA_SCAN_CREDIT_COST:-3}
+      OBJECT_STORAGE_BACKEND: ${OBJECT_STORAGE_BACKEND:-local}
+      COS_SECRET_ID: ${COS_SECRET_ID:-}
+      COS_SECRET_KEY: ${COS_SECRET_KEY:-}
+      COS_REGION: ${COS_REGION:-}
+      COS_BUCKET: ${COS_BUCKET:-}
+      COS_APP_ID: ${COS_APP_ID:-}
+      COS_ENDPOINT: ${COS_ENDPOINT:-}
+      COS_PREFIX: ${COS_PREFIX:-scans/}
     volumes:
       - scan_data:/tmp/scans
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
@@ -246,6 +254,14 @@ services:
       CELERY_MODE: worker
       CELERY_QUEUE: mobile_scan
       CELERY_CONCURRENCY: 1
+      OBJECT_STORAGE_BACKEND: ${OBJECT_STORAGE_BACKEND:-local}
+      COS_SECRET_ID: ${COS_SECRET_ID:-}
+      COS_SECRET_KEY: ${COS_SECRET_KEY:-}
+      COS_REGION: ${COS_REGION:-}
+      COS_BUCKET: ${COS_BUCKET:-}
+      COS_APP_ID: ${COS_APP_ID:-}
+      COS_ENDPOINT: ${COS_ENDPOINT:-}
+      COS_PREFIX: ${COS_PREFIX:-scans/}
     volumes:
       - scan_data:/tmp/scans
     healthcheck:
