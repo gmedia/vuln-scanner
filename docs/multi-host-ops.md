@@ -59,6 +59,22 @@ Existing keys stay (API_KEY, JWT, SMTP, …). For remote data add/adjust:
 | `FRONTEND_URL` / CORS via existing or host nginx | Public site origin |
 | Guard (later) | `GUARD_MOCK_WAZUH`, `WAZUH_*` — see `.env.example` |
 
+### SSH target + jump bastion
+
+App-host UFW should allow **SSH only from a bastion** (coding/ops host), not from the public internet. GitHub-hosted runners then cannot open TCP/22 to the app host directly. CI uses **ProxyJump** through the bastion:
+
+| Secret | Purpose |
+|--------|---------|
+| `DEPLOY_HOST` / `DEPLOY_USER` / `DEPLOY_PORT` / `DEPLOY_SSH_KEY` / `DEPLOY_PATH` | Final SSH target = **app host** (unchanged) |
+| `DEPLOY_JUMP_HOST` / `DEPLOY_JUMP_USER` / `DEPLOY_JUMP_PORT` / `DEPLOY_JUMP_SSH_KEY` | Bastion for appleboy `proxy_*` and `scp`/`ssh` `ProxyCommand` |
+
+Ops checklist (values only in secrets / private notes — never commit):
+
+1. Dedicated jump key on bastion `authorized_keys` (CI-only; not personal laptop keys if avoidable).
+2. App (and data/guard) host UFW: SSH from bastion CIDR(s) only.
+3. If bastion public IP rotates: update `DEPLOY_JUMP_HOST` and host UFW allowlists.
+4. Prefer bastion SSH locked down later (known admin + Actions egress patterns); do not reopen app SSH to the world for CI.
+
 Workflow writes app-host `.env` with `POSTGRES_HOST` defaulting to Docker service name `postgres` for single-host backwards compatibility.
 
 ## Public edge (Cloudflare + host nginx)
@@ -79,9 +95,10 @@ Optional harden (after Full strict stable): restrict app host 80/443 to Cloudfla
 
 ## Firewall checklist
 
-- Data host: SSH + **5432/6379 only from app host CIDR**
-- App host: 80/443 public (or Cloudflare-only later); SSH admin-only
-- Guard host (later): 55000/9200 from app only; agent 1514/1515 as required
+- Data host: SSH from bastion only; **5432/6379 only from app host CIDR**
+- App host: 80/443 Cloudflare-only (or public until CF ranges applied); SSH **bastion-only** (CI jump, not open world)
+- Bastion (coding host): optional UFW for SSH from admin + CI; hosts jump private key material
+- Guard host (later): SSH bastion-only; 55000/9200 from app only; agent 1514/1515 as required
 
 ## Cross-region latency
 
