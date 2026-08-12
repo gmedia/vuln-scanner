@@ -74,6 +74,15 @@ class Settings(BaseSettings):
 
     upload_dir: str = "/tmp/scans"
 
+    object_storage_backend: str = "local"
+    cos_secret_id: str = ""
+    cos_secret_key: str = ""
+    cos_region: str = ""
+    cos_bucket: str = ""
+    cos_app_id: str = ""
+    cos_endpoint: str = ""
+    cos_prefix: str = "scans/"
+
     @property
     def scan_type_pricing_map(self) -> dict[str, str]:
         return {

@@ -60,7 +60,9 @@ docker compose -f docker-compose.prod.yml -f docker-compose.prod.remote-data.yml
 
 Verify: worker containers `healthy`, logs show `Connected to redis` and `celery@… ready`, `GET /health` and `/health/queues` on the public edge still `ok`. CI deploy for the worker host is optional/manual until a second deploy target is wired.
 
-**Mobile stays on the app host** while `run_mobile_scan` uses a local `file_path` under `upload_dir` / compose `scan_data`. Moving mobile requires shared storage (object store or NFS) redesign — out of scope for simple worker scale-out.
+**Mobile** can use **Tencent COS** when `OBJECT_STORAGE_BACKEND=cos` (plus `COS_*` secrets). Backend uploads the package and enqueues `cos://<key>`; the mobile worker downloads to a temp path, scans, then deletes the object. With `local` (default), mobile still needs a shared `scan_data` volume on the same host as the API.
+
+Set the same `OBJECT_STORAGE_BACKEND` / `COS_*` on **app** and **mobile worker** hosts (CI deploy writes them into app `.env`). Keep buckets **private**; use a sub-user with object put/get/delete only.
 
 ## Data host bootstrap
 

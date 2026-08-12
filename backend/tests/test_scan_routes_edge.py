@@ -601,7 +601,10 @@ class TestStartScanDirectHandlers:
             patch("app.api.scan_routes.scan_submit_limiter", new_callable=AsyncMock) as mock_limiter,
             patch("app.api.scan_routes.ScannerService") as mock_svc_cls,
             patch("app.api.scan_routes.os.makedirs"),
-            patch("app.api.scan_routes.os.urandom", return_value=b"\x00" * 8),
+            patch(
+                "app.api.scan_routes.os.urandom",
+                side_effect=lambda n: b"\x00" * n,
+            ),
             patch("builtins.open"),
         ):
             mock_limiter.return_value = None

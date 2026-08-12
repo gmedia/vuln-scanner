@@ -233,22 +233,35 @@ async def start_mobile_scan(
     if platform == "ios" and not lower_name.endswith(".ipa"):
         raise HTTPException(status_code=400, detail="iOS uploads must use .ipa extension")
 
-    # Stream to a temp file while enforcing size limit
     os.makedirs(settings.upload_dir, exist_ok=True)
-    file_path = os.path.join(settings.upload_dir, f"{os.urandom(8).hex()}_{safe_name}")
+    staging_path = os.path.join(settings.upload_dir, f"{os.urandom(8).hex()}_{safe_name}")
 
     max_size = MOBILE_UPLOAD_MAX_SIZE
     total = 0
-    with open(file_path, "wb") as buffer:
+    with open(staging_path, "wb") as buffer:
         while chunk := await file.read(8192):
             total += len(chunk)
             if total > max_size:
                 buffer.close()
-                os.unlink(file_path)
+                os.unlink(staging_path)
                 raise HTTPException(status_code=413, detail="File exceeds 500 MB limit")
             buffer.write(chunk)
 
+    storage_ref = staging_path
     try:
+        from app.services.object_storage import (
+            ObjectStorageError,
+            build_object_key,
+            get_object_storage,
+        )
+
+        storage = get_object_storage()
+        object_key = build_object_key(safe_name)
+        storage_ref = storage.put_file(staging_path, object_key)
+        if storage_ref != staging_path:
+            with contextlib.suppress(OSError):
+                os.remove(staging_path)
+
         scan_type = "apk" if platform == "android" else "ipa"
         svc = ScannerService(db)
         job = await svc.start_scan(
@@ -256,13 +269,25 @@ async def start_mobile_scan(
             scan_type=scan_type,
             target=safe_name,
             platform=platform,
-            file_path=file_path,
+            file_path=storage_ref,
             organization_id=get_active_org_id(request),
         )
         return job
+    except ObjectStorageError as e:
+        with contextlib.suppress(Exception):
+            os.remove(staging_path)
+        raise HTTPException(status_code=502, detail=f"Object storage error: {e}") from e
     except (HTTPException, OSError, CeleryError):
         with contextlib.suppress(Exception):
-            os.remove(file_path)
+            if os.path.isfile(staging_path):
+                os.remove(staging_path)
+            if storage_ref != staging_path:
+                try:
+                    from app.services.object_storage import get_object_storage
+
+                    get_object_storage().delete(storage_ref)
+                except Exception:
+                    pass
         raise
 
 
