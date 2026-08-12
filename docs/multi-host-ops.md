@@ -7,11 +7,12 @@ Keep real inventory in a private ops note or password manager.
 
 | Role | Runs | Notes |
 |------|------|--------|
-| **App host** | backend, frontend, Celery workers, beat; host nginx TLS | `REMOTE_DATA=1` compose overlay |
-| **Data host** | PostgreSQL 16, Redis 8 (or distro Redis) | ufw: **only app host** → 5432/6379 |
+| **App host** | backend, frontend, **mobile** worker, dead-letter, beat; host nginx TLS | `REMOTE_DATA=1` compose overlay. Keep mobile here while uploads/`scan_data` are local paths. |
+| **Worker host** (optional scale-out) | `worker_ip`, `worker_domain` only | Same `.env` broker/DB as app; **no** public 80/443. Shared Redis = Celery queue. |
+| **Data host** | PostgreSQL 16, Redis 8 (or distro Redis) | ufw: **app + worker** host CIDRs → 5432/6379; **pg_hba** must allow those same client IPs for the app DB role |
 | **Guard host** (optional, later) | Wazuh Manager ± Indexer | API/Indexer only from app host; agent ports as needed |
 
-Early launch: app + data first; **Guard mock** on app host until Guard host is ready.
+Early launch: app + data first; **Guard mock** on app host until Guard host is ready. Split **ip/domain** workers to a worker host when app CPU is tight; leave **mobile + beat** on the app host until shared object storage exists for uploads.
 
 ## App host compose
 
@@ -27,6 +28,39 @@ export REMOTE_DATA=1
 ```
 
 Do **not** start `postgres`/`redis` containers on the app host when using remote data.
+
+## Worker host (ip + domain scale-out)
+
+On the **worker** VPS (after Docker install, bastion-only SSH, repo clone, `.env` copied from app with mode 600):
+
+```bash
+cd /path/to/vuln-scanner
+export COMPOSE_PROJECT_NAME=vuln   # match app project name if you share naming
+export REMOTE_DATA=1
+docker compose -f docker-compose.prod.yml -f docker-compose.prod.remote-data.yml \
+  up -d --build worker_ip worker_domain
+# Do not start backend/frontend/beat/mobile here unless you redesign file sharing.
+```
+
+Then on the **app** host, stop only the queues you moved:
+
+```bash
+export REMOTE_DATA=1 COMPOSE_PROJECT_NAME=vuln   # same as above
+docker compose -f docker-compose.prod.yml -f docker-compose.prod.remote-data.yml \
+  stop worker_ip worker_domain && \
+docker compose -f docker-compose.prod.yml -f docker-compose.prod.remote-data.yml \
+  rm -f worker_ip worker_domain
+```
+
+**Data host must allow the worker public IP** (not only the app host):
+
+1. **UFW** (or equivalent): allow TCP 5432 and 6379 from worker CIDR `/32` (same pattern as app).
+2. **PostgreSQL `pg_hba.conf`**: add a `host` line for the app DB/user from the worker `/32` with `scram-sha-256`, then `systemctl reload postgresql` (or equivalent). UFW alone is not enough if `pg_hba` is IP-allowlisted.
+3. Redis: password + network allowlist; workers use the same `CELERY_*` / `REDIS_URL` as the app.
+
+Verify: worker containers `healthy`, logs show `Connected to redis` and `celery@… ready`, `GET /health` and `/health/queues` on the public edge still `ok`. CI deploy for the worker host is optional/manual until a second deploy target is wired.
+
+**Mobile stays on the app host** while `run_mobile_scan` uses a local `file_path` under `upload_dir` / compose `scan_data`. Moving mobile requires shared storage (object store or NFS) redesign — out of scope for simple worker scale-out.
 
 ## Data host bootstrap
 
@@ -95,8 +129,9 @@ Optional harden (after Full strict stable): restrict app host 80/443 to Cloudfla
 
 ## Firewall checklist
 
-- Data host: SSH from bastion only; **5432/6379 only from app host CIDR**
+- Data host: SSH from bastion only; **5432/6379 from app + worker host CIDRs**; **pg_hba** entries for those same IPs
 - App host: 80/443 Cloudflare-only (or public until CF ranges applied); SSH **bastion-only** (CI jump, not open world)
+- Worker host: SSH bastion-only; **no** need for public HTTP; outbound to data 5432/6379 and any scan targets
 - Bastion (coding host): optional UFW for SSH from admin + CI; hosts jump private key material
 - Guard host (later): SSH bastion-only; 55000/9200 from app only; agent 1514/1515 as required
 
