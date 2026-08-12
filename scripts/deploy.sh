@@ -24,7 +24,20 @@ if [ "${REMOTE_DATA:-}" = "1" ] || [ "${REMOTE_DATA:-}" = "true" ]; then
   echo "NOTE: REMOTE_DATA=1 — multi-host overlay (no local postgres/redis containers)"
 fi
 
-git pull origin main
+# Transient egress to github.com:443 is common on some VPS paths — retry pull.
+_git_pull_ok=0
+for _attempt in 1 2 3 4 5; do
+  if git pull origin main; then
+    _git_pull_ok=1
+    break
+  fi
+  echo "WARN: git pull origin main failed (attempt ${_attempt}/5); retrying in $((_attempt * 5))s..."
+  sleep $((_attempt * 5))
+done
+if [ "$_git_pull_ok" -ne 1 ]; then
+  echo "=== FAILED — git pull origin main after 5 attempts (check egress to github.com:443) ==="
+  exit 1
+fi
 
 echo "=== Disk before cleanup ==="
 df -h / || true
