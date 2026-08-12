@@ -62,7 +62,65 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
         _update_status(session, job_id, "running", started_at=datetime.now(UTC))
         session.commit()
 
-        if not os.path.exists(file_path):
+        from app.services.object_storage import (
+            ObjectStorageError,
+            get_object_storage,
+            is_cos_ref,
+        )
+
+        storage = get_object_storage()
+        local_work_path = file_path
+        downloaded_temp = False
+        try:
+            if is_cos_ref(file_path) or not os.path.exists(file_path):
+                suffix = os.path.basename(file_path.replace("cos://", "")) or "package.bin"
+                local_work_path = os.path.join("/tmp/scans", f"work_{job_id}_{suffix}")
+                os.makedirs(os.path.dirname(local_work_path), exist_ok=True)
+                publish_progress(job_id, "download", 3, "Fetching package from object storage...")
+                storage.materialize(file_path, local_work_path)
+                downloaded_temp = True
+        except ObjectStorageError as e:
+            err_msg = f"File not found: {file_path} ({e})"
+            _update_status(
+                session,
+                job_id,
+                "failed",
+                completed_at=datetime.now(UTC),
+                result_summary={"error": err_msg},
+            )
+            _refund_credits(session, job_id, platform)
+            session.commit()
+            session.close()
+            publish_progress(job_id, "failed", 100, err_msg)
+            logger.error(
+                "Mobile scan file not found: job={job_id} path={path} retry={retry} err={error}",
+                job_id=job_id,
+                path=file_path,
+                retry=self.request.retries,
+                error=e,
+            )
+            if self.request.retries >= self.max_retries:
+                dead_letter_handler.delay(
+                    task_name="mobile_scan.run",
+                    args=[job_id, file_path, platform],
+                    kwargs={},
+                    exception_info=err_msg,
+                )
+                return {
+                    "job_id": job_id,
+                    "summary": {
+                        "total_findings": 0,
+                        "critical": 0,
+                        "high": 0,
+                        "medium": 0,
+                        "low": 0,
+                        "info": 0,
+                    },
+                    "error": "file not found",
+                }
+            raise self.retry(countdown=60 * (2**self.request.retries)) from e
+
+        if not os.path.exists(local_work_path):
             err_msg = f"File not found: {file_path}"
             _update_status(
                 session,
@@ -102,20 +160,20 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
                 }
             raise self.retry(countdown=60 * (2**self.request.retries))
 
-        file_size_mb = os.path.getsize(file_path) / (1024 * 1024)
+        file_size_mb = os.path.getsize(local_work_path) / (1024 * 1024)
         publish_progress(job_id, "extracting", 5, f"Analyzing file ({file_size_mb:.1f}MB)...")
 
         all_findings: list[ScanFinding] = []
         libraries: list[str] = []
-        analysis_path = file_path
+        analysis_path = local_work_path
         converted_apk_path: str | None = None
-        input_format = "aab" if platform == "android" and is_aab_path(file_path) else platform
+        input_format = "aab" if platform == "android" and is_aab_path(local_work_path) else platform
 
         try:
-            if platform == "android" and is_aab_path(file_path):
+            if platform == "android" and is_aab_path(local_work_path):
                 publish_progress(job_id, "aab_convert", 8, "Converting AAB to universal APK via bundletool...")
                 try:
-                    analysis_path = convert_aab_to_universal_apk(file_path)
+                    analysis_path = convert_aab_to_universal_apk(local_work_path)
                     converted_apk_path = analysis_path
                     publish_progress(
                         job_id,
@@ -149,7 +207,12 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
                     session.commit()
                     session.close()
                     with contextlib.suppress(OSError):
-                        os.remove(file_path)
+                        if downloaded_temp and os.path.isfile(local_work_path):
+                            os.remove(local_work_path)
+                        elif not is_cos_ref(file_path):
+                            os.remove(file_path)
+                    with contextlib.suppress(Exception):
+                        storage.delete(file_path)
                     return {
                         "job_id": job_id,
                         "summary": {
@@ -181,7 +244,7 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
             elif platform == "ios":
                 publish_progress(job_id, "plist", 15, "Parsing Info.plist...")
                 try:
-                    ipa_info, findings, libraries = analyze_ipa(file_path)
+                    ipa_info, findings, libraries = analyze_ipa(analysis_path)
                     all_findings.extend(findings)
                     publish_progress(
                         job_id,
@@ -259,9 +322,16 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
             )
 
             try:
-                os.remove(file_path)
+                if downloaded_temp and os.path.isfile(local_work_path):
+                    os.remove(local_work_path)
+                elif not is_cos_ref(file_path):
+                    os.remove(file_path)
             except OSError as e:
-                logger.warning("Failed to remove mobile scan file {path}: {error}", path=file_path, error=e)
+                logger.warning("Failed to remove mobile scan file {path}: {error}", path=local_work_path, error=e)
+            try:
+                storage.delete(file_path)
+            except Exception as e:
+                logger.warning("Failed to delete storage ref {ref}: {error}", ref=file_path, error=e)
 
             try:
                 r = redis.Redis(connection_pool=get_redis_pool())
@@ -273,7 +343,7 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
 
             return {"job_id": job_id, "summary": summary, "input_format": input_format}
         finally:
-            if converted_apk_path and converted_apk_path != file_path:
+            if converted_apk_path and converted_apk_path != local_work_path:
                 try:
                     parent = os.path.dirname(converted_apk_path)
                     if os.path.isfile(converted_apk_path):
