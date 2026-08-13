@@ -267,7 +267,6 @@ services:
       COS_ENDPOINT: ${COS_ENDPOINT:-}
       COS_PREFIX: ${COS_PREFIX:-scans/}
       COS_TIMEOUT_SEC: ${COS_TIMEOUT_SEC:-600}
-      AAPT2_PATH: /opt/bundletool/aapt2
       BUNDLETOOL_JAVA_TMPDIR: /tmp/bundletool-work
     volumes:
       - scan_data:/tmp/scans
