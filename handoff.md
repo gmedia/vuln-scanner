@@ -10,22 +10,23 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
-## Session snapshot (2026-08-10 — refresh against `main`)
+## Session snapshot (2026-08-13 — refresh against `main`)
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding)** | **`28bc69e`** — Guard **HttpWazuhClient** (#275) after thin S1–S5 (#274); re-`git pull` after reset |
-| **Open PRs** | Re-check `gh pr list` (often Dependabot) |
+| **`main` tip (coding)** | **`8546ef3`** — **#295** placeholder admin seed reject + drop; re-`git pull` after reset |
+| **Recent merges** | **#294** `/guide` sticky TOC; **#293** app-host skip ip/domain workers; **#292** AAB/large APK; **#291** ADMIN/E2E upsert |
+| **Open PRs** | Dependabot **#252–#266** — do not mass-merge |
 | **P1 Scan Attach (code)** | **S1–S5** on `main` (#235–#239) + **Wave B** SPA polish (#271) |
 | **P1 production** | **Closed (2026-08-08)** smoke A; Wave B **CI-deployed** with tip (2026-08-10) |
 | **P2 Workspace** | **S1–S5 on `main`** (#267 + #270); spek D1–D6; edge Alembic **`add_workspace_orgs`**; cap **10 enabled / org** |
-| **P4 soft dual-brand** | **On `main`** (#250); host stays **`vs.appmedia.id`** |
-| **P5 Guard** | **On `main`**: spek #273 · thin #274 · Http #275 — mock CI default; **edge lab + env + live smoke still human** |
+| **P4 soft dual-brand** | **On `main`** (#250); public host may be **`sinexis.app`** and/or legacy hostname — **no hard cut** |
+| **P5 Guard** | **On `main`**: spek #273 · thin #274 · Http #275 · guide #294 — mock CI default; **edge lab + env + live smoke still human** |
 | **P0 commercial** | **Policy locked** (#245): Basic **300k** / Pro **650k** / Multi **2M**; credits **10/24/60**; AM renew; attach ARPU primary; pilot #1 multi-service, 1 mo sponsored |
 | **P0 GTM kit in git** | One-pager + SKU + **[`docs/commercial/am-wave1-email-id.md`](docs/commercial/am-wave1-email-id.md)** (#246) |
-| **Still human (not git)** | Finance **service_id** ×3; AM **10 CRM SIDs**; named **pilot #1**; AM **send** wave-1; ops **fulfill**; Guard lab Manager/Indexer + deploy tip smoke |
+| **Still human (not git)** | Finance **service_id** ×3; AM **10 CRM SIDs**; named **pilot #1**; AM **send** wave-1; ops **fulfill**; **edge apply `8546ef3`** (Alembic `drop_placeholder_admin`, SPA, leftover workers); Guard lab Manager/Indexer + smoke |
 | **Coding-host Docker** | Prefer **off/minimal**. Edge runs live stack (CI **deploy** job on `main`) |
-| **Engineering default** | **GTM + edge Guard live** (human) · no SIEM creep · bugfixes / Dependabot · further Guard only on explicit verb · **P3** on explicit verb |
+| **Engineering default** | **GTM + edge apply tip** (human) · no SIEM creep · bugfixes / named Dependabot only · further Guard / **P3** only on explicit verb |
 
 ### Edge public smoke — post-S5 + Wave B deploy (2026-08-10)
 
@@ -116,9 +117,9 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 | **P0** | One-pager + SKU + AM kit | **Policy + templates in git**; **GTM execution open** |
 | **P1** | Scan Attach Loop | **Code + production smoke closed** |
 | **P2** | Workspace v1 | **S1–S5 shipped** (#267 + #270); residual multi-org/S5 smoke |
-| **P3** | Light asset registry | Later |
+| **P3** | Light asset registry | **Draft spek S0** (#282); S1+ on explicit verb + §11 |
 | **P4** | Soft Sinexis dual-brand | **Shipped soft** (#250); **no domain cut** |
-| **P5** | Guard (Wazuh thin) | **S0 spek** risk-accepted; code S1+ on implement verb — see [`guard-v1.md`](docs/specs/guard-v1.md) |
+| **P5** | Guard (Wazuh thin) | **S0–S5 + Http + guide on `main`**; live lab residual human — see [`guard-v1.md`](docs/specs/guard-v1.md) |
 | **P6** | Hospitality / pilot pack | After attach story works |
 
 **Priority rule:** If this stub, the archive, or old chat **disagrees** with the execution guide on *what to build next*, **the guide wins**, unless the user opens a stuck-job / worker incident.
