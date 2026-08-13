@@ -222,6 +222,8 @@ if contains backend "${SERVICES[@]}" && [[ "$SKIP_MIGRATE" -eq 0 ]]; then
     exit $rc
   }
   echo "migration: $(docker exec vuln-backend alembic current 2>/dev/null | tail -1)"
+  echo "=== upsert ADMIN_/E2E_ users from env ==="
+  docker exec vuln-backend python -m scripts.upsert_secret_users
 fi
 
 if contains frontend "${SERVICES[@]}"; then
