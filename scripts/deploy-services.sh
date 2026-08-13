@@ -34,8 +34,8 @@
 # Env: use the production env that already works on the edge host. A coding-host
 # .env may be incomplete vs live containers — do not blindly copy placeholders.
 #
-# Default services (when none listed): backend frontend worker_ip worker_domain
-#   worker_mobile worker_dead_letter celery_beat
+# Default services (when none listed): backend frontend worker_mobile
+#   worker_dead_letter celery_beat
 # Postgres and redis are NEVER rebuilt/recreated by this script.
 # Include celery_beat when rolling Scan Attach schedules (see docs/scan-schedules-ops.md).
 #
@@ -49,8 +49,6 @@ set -euo pipefail
 DEFAULT_SERVICES=(
   backend
   frontend
-  worker_ip
-  worker_domain
   worker_mobile
   worker_dead_letter
   celery_beat
