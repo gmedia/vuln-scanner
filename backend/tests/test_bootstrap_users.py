@@ -13,6 +13,7 @@ def test_credentials_usable() -> None:
     assert not credentials_usable("a@b.c", "short")
     assert not credentials_usable("a@b.c", "changeme")
     assert not credentials_usable("a@b.c", "<your-admin-password>")
+    assert not credentials_usable("<your-admin-email>", "str0ngPass!")
 
 
 @pytest.mark.asyncio

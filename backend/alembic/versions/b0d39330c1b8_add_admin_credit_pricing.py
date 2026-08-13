@@ -41,7 +41,15 @@ def _seed_pricing() -> None:
 def _seed_admin_user() -> None:
     admin_email = os.environ.get("ADMIN_EMAIL", "").strip()
     admin_password = os.environ.get("ADMIN_PASSWORD", "").strip()
-    if not admin_email or not admin_password:
+    if not admin_email or "@" not in admin_email:
+        return
+    if admin_email.startswith("<") and admin_email.endswith(">"):
+        return
+    if not admin_password or len(admin_password) < 8:
+        return
+    if admin_password.startswith("<") and admin_password.endswith(">"):
+        return
+    if admin_password.lower() in {"change_me", "changeme", "admin", "password", "123456"}:
         return
     digest = base64.b64encode(hashlib.sha256(admin_password.encode("utf-8")).digest())
     password_hash = bcrypt.hashpw(digest, bcrypt.gensalt()).decode("ascii")
