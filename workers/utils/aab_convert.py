@@ -17,7 +17,14 @@ DEFAULT_BUNDLETOOL_PATHS = (
     str(Path(__file__).resolve().parent.parent / "tools" / "bundletool.jar"),
 )
 
+DEFAULT_AAPT2_PATHS = (
+    "/opt/bundletool/aapt2",
+    "/usr/local/bin/aapt2",
+)
+
 BUNDLETOOL_TIMEOUT_SEC = int(os.environ.get("BUNDLETOOL_TIMEOUT_SEC", "300"))
+BUNDLETOOL_JAVA_TMPDIR = os.environ.get("BUNDLETOOL_JAVA_TMPDIR", "/tmp/bundletool-work")
+STDERR_LIMIT = 2000
 
 
 class AabConversionError(Exception):
@@ -34,6 +41,22 @@ def resolve_bundletool_jar() -> str | None:
         if candidate and os.path.isfile(candidate):
             return candidate
     return None
+
+
+def resolve_aapt2_binary() -> str | None:
+    candidates = (os.environ.get("AAPT2_PATH", ""), *DEFAULT_AAPT2_PATHS)
+    for candidate in candidates:
+        if candidate and os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return candidate
+    found = shutil.which("aapt2")
+    if found and os.access(found, os.X_OK):
+        return found
+    return None
+
+
+def _ensure_java_tmpdir() -> str:
+    os.makedirs(BUNDLETOOL_JAVA_TMPDIR, exist_ok=True)
+    return BUNDLETOOL_JAVA_TMPDIR
 
 
 def resolve_java_binary() -> str:
@@ -58,7 +81,8 @@ def convert_aab_to_universal_apk(aab_path: str, output_dir: str | None = None) -
         raise AabConversionError("bundletool.jar not found. Set BUNDLETOOL_JAR or install under /opt/bundletool/")
 
     java = resolve_java_binary()
-    work = output_dir or tempfile.mkdtemp(prefix="aab_convert_")
+    java_tmp = _ensure_java_tmpdir()
+    work = output_dir or tempfile.mkdtemp(prefix="aab_convert_", dir=java_tmp)
     os.makedirs(work, exist_ok=True)
 
     apks_path = os.path.join(work, "out.apks")
@@ -66,6 +90,7 @@ def convert_aab_to_universal_apk(aab_path: str, output_dir: str | None = None) -
 
     cmd = [
         java,
+        f"-Djava.io.tmpdir={java_tmp}",
         "-jar",
         jar,
         "build-apks",
@@ -73,6 +98,12 @@ def convert_aab_to_universal_apk(aab_path: str, output_dir: str | None = None) -
         f"--output={apks_path}",
         "--mode=universal",
     ]
+    aapt2 = resolve_aapt2_binary()
+    if aapt2:
+        cmd.append(f"--aapt2={aapt2}")
+        logger.info("bundletool using host aapt2: {path}", path=aapt2)
+    else:
+        logger.warning("No host aapt2 found; bundletool will extract its bundled binary into java.io.tmpdir")
     logger.info("Converting AAB to universal APK via bundletool")
 
     try:
@@ -89,7 +120,8 @@ def convert_aab_to_universal_apk(aab_path: str, output_dir: str | None = None) -
         raise AabConversionError(f"Failed to run bundletool: {exc}") from exc
 
     if result.returncode != 0:
-        err = (result.stderr or result.stdout or "").strip()[:500]
+        err = (result.stderr or result.stdout or "").strip()[:STDERR_LIMIT]
+        logger.error("bundletool stderr (exit {code}): {err}", code=result.returncode, err=err)
         raise AabConversionError(f"bundletool failed (exit {result.returncode}): {err}")
 
     if not os.path.isfile(apks_path):
