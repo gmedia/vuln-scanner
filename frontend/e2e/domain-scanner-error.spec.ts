@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 test.describe("Domain Scanner Error States", () => {
   test("shows validation error for empty domain", async ({ page }) => {

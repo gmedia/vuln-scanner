@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 test.describe("IP Scanner", () => {
   test("loads IP scanner page with form", async ({ page }) => {
