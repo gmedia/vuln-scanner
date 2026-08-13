@@ -24,7 +24,7 @@ export REMOTE_DATA=1
 ./scripts/deploy-services.sh
 # equivalent:
 # docker compose -f docker-compose.prod.yml -f docker-compose.prod.remote-data.yml \
-#   up -d backend frontend worker_ip worker_domain worker_mobile worker_dead_letter celery_beat
+#   up -d backend frontend worker_mobile worker_dead_letter celery_beat
 ```
 
 Do **not** start `postgres`/`redis` containers on the app host when using remote data.
