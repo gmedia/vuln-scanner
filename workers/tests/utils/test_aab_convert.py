@@ -1,6 +1,7 @@
 """Tests for AAB → universal APK conversion helpers."""
 
 import io
+import os
 import zipfile
 from pathlib import Path
 from unittest import mock
@@ -11,6 +12,7 @@ from utils.aab_convert import (
     AabConversionError,
     _extract_universal_apk,
     convert_aab_to_universal_apk,
+    extract_bundled_aapt2,
     is_aab_path,
     resolve_aapt2_binary,
     resolve_bundletool_jar,
@@ -96,6 +98,29 @@ class TestResolveAapt2Binary:
             mock.patch("utils.aab_convert.shutil.which", return_value=None),
         ):
             assert resolve_aapt2_binary() is None
+
+
+class TestExtractBundledAapt2:
+    def test_extracts_linux_member(self, tmp_path):
+        jar = tmp_path / "bundletool.jar"
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("linux/aapt2", b"\x7fELFaapt2")
+        jar.write_bytes(buf.getvalue())
+        dest_dir = tmp_path / "work"
+        dest_dir.mkdir()
+        path = extract_bundled_aapt2(str(jar), str(dest_dir))
+        assert path == str(dest_dir / "aapt2")
+        assert Path(path).read_bytes().startswith(b"\x7fELF")
+        assert os.access(path, os.X_OK)
+
+    def test_missing_member_returns_none(self, tmp_path):
+        jar = tmp_path / "bundletool.jar"
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("README", b"x")
+        jar.write_bytes(buf.getvalue())
+        assert extract_bundled_aapt2(str(jar), str(tmp_path / "w")) is None
 
 
 class TestConvertAabToUniversalApk:

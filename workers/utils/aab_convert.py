@@ -54,6 +54,26 @@ def resolve_aapt2_binary() -> str | None:
     return None
 
 
+def extract_bundled_aapt2(bundletool_jar: str, dest_dir: str) -> str | None:
+    dest = os.path.join(dest_dir, "aapt2")
+    if os.path.isfile(dest) and os.access(dest, os.X_OK):
+        return dest
+    try:
+        with zipfile.ZipFile(bundletool_jar) as zf:
+            names = [n for n in zf.namelist() if n == "linux/aapt2" or n.endswith("/linux/aapt2")]
+            if not names:
+                return None
+            os.makedirs(dest_dir, exist_ok=True)
+            with zf.open(names[0]) as src, open(dest, "wb") as out:
+                shutil.copyfileobj(src, out)
+        os.chmod(dest, 0o755)
+    except (OSError, zipfile.BadZipFile):
+        return None
+    if os.path.isfile(dest) and os.access(dest, os.X_OK):
+        return dest
+    return None
+
+
 def _ensure_java_tmpdir() -> str:
     os.makedirs(BUNDLETOOL_JAVA_TMPDIR, exist_ok=True)
     return BUNDLETOOL_JAVA_TMPDIR
@@ -98,12 +118,12 @@ def convert_aab_to_universal_apk(aab_path: str, output_dir: str | None = None) -
         f"--output={apks_path}",
         "--mode=universal",
     ]
-    aapt2 = resolve_aapt2_binary()
+    aapt2 = resolve_aapt2_binary() or extract_bundled_aapt2(jar, java_tmp)
     if aapt2:
         cmd.append(f"--aapt2={aapt2}")
-        logger.info("bundletool using host aapt2: {path}", path=aapt2)
+        logger.info("bundletool using aapt2: {path}", path=aapt2)
     else:
-        logger.warning("No host aapt2 found; bundletool will extract its bundled binary into java.io.tmpdir")
+        logger.warning("No aapt2 found; bundletool will extract into java.io.tmpdir")
     logger.info("Converting AAB to universal APK via bundletool")
 
     try:
