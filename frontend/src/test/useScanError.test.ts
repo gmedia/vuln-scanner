@@ -12,21 +12,25 @@ describe("useScanError", () => {
     expect(handleScanError(error)).toBe("Not enough credits");
   });
 
-  it("returns fallback when Axios error has no response", () => {
+  it("returns CDN hint when Axios error has no response", () => {
     const error = { isAxiosError: true };
-    expect(handleScanError(error)).toBe(
-      "Failed to start scan. Check your connection.",
-    );
+    expect(handleScanError(error)).toContain("interrupted");
   });
 
-  it("returns fallback when Axios error has no detail", () => {
+  it("returns timeout hint for 504 without detail", () => {
     const error = {
       isAxiosError: true,
-      response: { data: {} },
+      response: { status: 504, data: {} },
     };
-    expect(handleScanError(error)).toBe(
-      "Failed to start scan. Check your connection.",
-    );
+    expect(handleScanError(error)).toContain("timed out");
+  });
+
+  it("returns size hint for 413", () => {
+    const error = {
+      isAxiosError: true,
+      response: { status: 413, data: {} },
+    };
+    expect(handleScanError(error)).toContain("too large");
   });
 
   it("returns fallback for non-Axios Error", () => {

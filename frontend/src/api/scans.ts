@@ -108,6 +108,7 @@ export async function startMobileScan(
   formData.append("platform", platform);
   const { data } = await api.post<ScanJob>("/api/scan/mobile", formData, {
     headers: { "Content-Type": "multipart/form-data" },
+    timeout: 600_000,
   });
   return data;
 }
