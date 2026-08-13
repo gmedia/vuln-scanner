@@ -99,7 +99,11 @@ def test_tencent_host_and_put(tmp_path: Path) -> None:
     mock_client.put.assert_called_once()
     args, kwargs = mock_client.put.call_args
     assert "sinexis-123.cos.ap-singapore.myqcloud.com" in args[0]
-    assert kwargs["content"] == b"hello-cos"
+    body = kwargs["content"]
+    if hasattr(body, "name"):
+        assert Path(body.name).read_bytes() == b"hello-cos"
+    else:
+        assert body == b"hello-cos"
     assert "Authorization" in kwargs["headers"]
     assert "q-sign-algorithm=sha1" in kwargs["headers"]["Authorization"]
 

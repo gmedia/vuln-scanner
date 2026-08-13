@@ -1,6 +1,7 @@
 """Tests for AAB → universal APK conversion helpers."""
 
 import io
+import os
 import zipfile
 from pathlib import Path
 from unittest import mock
@@ -11,7 +12,9 @@ from utils.aab_convert import (
     AabConversionError,
     _extract_universal_apk,
     convert_aab_to_universal_apk,
+    extract_bundled_aapt2,
     is_aab_path,
+    resolve_aapt2_binary,
     resolve_bundletool_jar,
     resolve_java_binary,
 )
@@ -80,6 +83,46 @@ class TestExtractUniversalApk:
             _extract_universal_apk(str(apks), str(dest))
 
 
+class TestResolveAapt2Binary:
+    def test_prefers_env(self, monkeypatch, tmp_path):
+        bin_path = tmp_path / "aapt2"
+        bin_path.write_text("#!/bin/sh\n")
+        bin_path.chmod(0o755)
+        monkeypatch.setenv("AAPT2_PATH", str(bin_path))
+        assert resolve_aapt2_binary() == str(bin_path)
+
+    def test_missing_returns_none(self, monkeypatch):
+        monkeypatch.delenv("AAPT2_PATH", raising=False)
+        with (
+            mock.patch("utils.aab_convert.os.path.isfile", return_value=False),
+            mock.patch("utils.aab_convert.shutil.which", return_value=None),
+        ):
+            assert resolve_aapt2_binary() is None
+
+
+class TestExtractBundledAapt2:
+    def test_extracts_linux_member(self, tmp_path):
+        jar = tmp_path / "bundletool.jar"
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("linux/aapt2", b"\x7fELFaapt2")
+        jar.write_bytes(buf.getvalue())
+        dest_dir = tmp_path / "work"
+        dest_dir.mkdir()
+        path = extract_bundled_aapt2(str(jar), str(dest_dir))
+        assert path == str(dest_dir / "aapt2")
+        assert Path(path).read_bytes().startswith(b"\x7fELF")
+        assert os.access(path, os.X_OK)
+
+    def test_missing_member_returns_none(self, tmp_path):
+        jar = tmp_path / "bundletool.jar"
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("README", b"x")
+        jar.write_bytes(buf.getvalue())
+        assert extract_bundled_aapt2(str(jar), str(tmp_path / "w")) is None
+
+
 class TestConvertAabToUniversalApk:
     def test_missing_file(self):
         with pytest.raises(AabConversionError, match="not found"):
@@ -104,6 +147,8 @@ class TestConvertAabToUniversalApk:
         out_dir.mkdir()
 
         def fake_run(cmd, **kwargs):
+            assert any(a.startswith("-Djava.io.tmpdir=") for a in cmd)
+            assert any(a.startswith("--aapt2=") for a in cmd)
             output_arg = next(a for a in cmd if a.startswith("--output="))
             apks_path = output_arg.split("=", 1)[1]
             buf = io.BytesIO()
@@ -117,7 +162,11 @@ class TestConvertAabToUniversalApk:
             result.stdout = ""
             return result
 
+        aapt2 = tmp_path / "aapt2"
+        aapt2.write_text("#!/bin/sh\n")
+        aapt2.chmod(0o755)
         monkeypatch.setenv("BUNDLETOOL_JAR", str(jar))
+        monkeypatch.setenv("AAPT2_PATH", str(aapt2))
         with (
             mock.patch("utils.aab_convert.resolve_java_binary", return_value="/usr/bin/java"),
             mock.patch("utils.aab_convert.subprocess.run", side_effect=fake_run),

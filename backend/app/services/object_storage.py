@@ -105,7 +105,7 @@ class TencentCOSStorage(ObjectStorage):
         bucket: str,
         app_id: str = "",
         endpoint: str = "",
-        timeout: float = 120.0,
+        timeout: float = 600.0,
     ) -> None:
         if not secret_id or not secret_key:
             raise ObjectStorageError("COS_SECRET_ID and COS_SECRET_KEY are required")
@@ -187,22 +187,22 @@ class TencentCOSStorage(ObjectStorage):
         path = Path(local_path)
         if not path.is_file():
             raise ObjectStorageError(f"Cannot upload missing file: {local_path}")
-        data = path.read_bytes()
+        size = path.stat().st_size
         headers = {
             "Host": self.host,
             "Content-Type": content_type,
-            "Content-Length": str(len(data)),
+            "Content-Length": str(size),
         }
         headers["Authorization"] = self._sign("PUT", key, headers)
         url = self._object_url(key)
         try:
-            with httpx.Client(timeout=self.timeout) as client:
-                resp = client.put(url, content=data, headers=headers)
+            with path.open("rb") as body, httpx.Client(timeout=self.timeout) as client:
+                resp = client.put(url, content=body, headers=headers)
         except httpx.HTTPError as e:
             raise ObjectStorageError(f"COS put network error: {e}") from e
         if resp.status_code not in (200, 201):
             raise ObjectStorageError(f"COS put failed HTTP {resp.status_code}: {resp.text[:200]}")
-        logger.info("COS put ok key=%s bytes=%s", key, len(data))
+        logger.info("COS put ok key=%s bytes=%s", key, size)
         return f"{COS_KEY_PREFIX}{key}"
 
     def materialize(self, ref: str, dest_path: str) -> str:
@@ -270,5 +270,6 @@ def get_object_storage() -> ObjectStorage:
             bucket=settings.cos_bucket,
             app_id=settings.cos_app_id,
             endpoint=settings.cos_endpoint,
+            timeout=float(settings.cos_timeout_sec),
         )
     raise ObjectStorageError(f"Unknown OBJECT_STORAGE_BACKEND={backend!r} (use local|cos)")

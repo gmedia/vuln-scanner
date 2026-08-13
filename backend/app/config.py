@@ -84,6 +84,7 @@ class Settings(BaseSettings):
     cos_app_id: str = ""
     cos_endpoint: str = ""
     cos_prefix: str = "scans/"
+    cos_timeout_sec: float = 600.0
 
     @property
     def scan_type_pricing_map(self) -> dict[str, str]:
