@@ -2,10 +2,10 @@
 
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
-**Last updated:** 2026-08-11
-**Repo tip at write time:** `main` @ `6d5e4bb` (**#282** org-scoped React Query keys + **P3** draft spek [`docs/specs/assets-v1.md`](specs/assets-v1.md); **#281** Guard generic host agent install; **#280** Dashboard org-switch; **#279** enroll guide; Guard thin **#273–#275**). Open residual eng: **#283** User Guide/Guard host commands per Linux distro (when CI green); edge SPA deploy after merge; Dependabot (many PRs e2e-red — do not mass-merge). Re-`git pull` after reset.
+**Last updated:** 2026-08-13
+**Repo tip at write time:** `main` @ `8546ef3` (**#295** reject/drop placeholder admin seed; **#294** `/guide` sticky TOC + Guard distro accordion; **#293** app-host skip ip/domain workers; **#292** AAB/large APK upload; **#291** ADMIN/E2E upsert from secrets; **#283** merged via #294). Open residual: **edge deploy** of this tip (backend Alembic `drop_placeholder_admin`, SPA frontend, stop leftover ip/domain workers on app host, mobile worker recreate); **GTM human**; Dependabot #252–#266 — do not mass-merge. Re-`git pull` after reset.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
-**Phase snapshot:** **P0 policy locked** · **P1 attach shipped + edge smoke closed** · **P2 Workspace S1–S5 on `main`** · **Attach UX Wave B on `main`** · **P4 soft dual-brand on `main`** · **P5 Guard thin on `main`** (#273–#275 code; #279–#281 host/guide install; **#283** distro commands in flight) — **not** full SIEM · **CI/default mock** · **P3** draft spek on main (no S1+ code until explicit verb) · **GTM human still open** · residual eng = docs tip hygiene, #283, bugs, Dependabot only when CI green — **no SIEM creep**.
+**Phase snapshot:** **P0 policy locked** · **P1 attach shipped + edge smoke closed** · **P2 Workspace S1–S5 on `main`** · **Attach UX Wave B on `main`** · **P4 soft dual-brand on `main`** · **P5 Guard thin on `main`** (#273–#275 code; #279–#281 + **#294** host/guide) — **not** full SIEM · **CI/default mock** · **P3** draft spek on main (no S1+ code until explicit verb) · **GTM human still open** · residual eng = edge apply tip, bugs, Dependabot only when CI green + explicit — **no SIEM creep**.
 
 ---
 
@@ -17,7 +17,7 @@ gh pr list --state open --assignee @me
 
 GIT_MASTER=1 git fetch origin
 GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull origin main
-GIT_MASTER=1 git rev-parse --short HEAD   # expect ≥ 6d5e4bb or newer (re-pull)
+GIT_MASTER=1 git rev-parse --short HEAD   # expect ≥ 8546ef3 or newer (re-pull)
 ```
 
 Then read, in order:
@@ -97,16 +97,16 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 | **P2** | **Workspace v1** | B2B multi-user | orgs, memberships, invites, org-scoped scans, personal credits, backfill; JWT `org_id`; WS membership AuthZ; **S5** schedule cap per-org | Nested projects; org wallet; Wazuh; per-org ApiKey | **S1–S5 shipped** (#267 S1–S4 → then #270 S5 @ `6b600fb`; tip with Wave B `98756de`). Cap **10 enabled / org** (`MAX_SCHEDULES_PER_ORG`). Spek D1–D6; edge Alembic **`add_workspace_orgs`**. **Residual:** multi-member S5 + login/UI multi-org smoke (manual) |
 | **P3** | **Asset registry (light)** | Multi-target tiers | Named assets; scan pack; tier limits | Full CMDB; IoT; PMS | **Draft spek on `main`** via **#282** — [`docs/specs/assets-v1.md`](specs/assets-v1.md) (S0). **No S1+ code** until explicit verb; open questions §11 before coding |
 | **P4** | **Soft dual-brand** | Name trust | Sinexis strings, landing, SKU label | Hard cut / domain cutover blocking attach | **Shipped soft dual-brand on `main`** (#250); public host remains **`vs.appmedia.id`** (no hard cut) |
-| **P5** | **Guard MVP** (Wazuh thin) | Second upsell | Agent inventory, critical alerts, per-org enroll; spek [`guard-v1.md`](specs/guard-v1.md) | Full SIEM, SOAR, raw-log UI, per-tenant managers | **S0–S5 + Http on `main`** (#273–#275). Host/guide: **#279** enroll steps, **#281** generic install, **#283** (open) per-distro host commands. Mock default CI (`GUARD_MOCK_WAZUH`). **Residual human:** edge SPA after tip, lab Manager/Indexer env, flip mock off, smoke enable→enroll→sync. **No** SIEM follow-ons without explicit scope |
+| **P5** | **Guard MVP** (Wazuh thin) | Second upsell | Agent inventory, critical alerts, per-org enroll; spek [`guard-v1.md`](specs/guard-v1.md) | Full SIEM, SOAR, raw-log UI, per-tenant managers | **S0–S5 + Http on `main`** (#273–#275). Host/guide: **#279** enroll, **#281** generic install, **#294** sticky TOC + collapsed per-distro commands. Mock default CI (`GUARD_MOCK_WAZUH`). **Residual human:** edge SPA + backend tip, lab Manager/Indexer env, flip mock off, smoke enable→enroll→sync. **No** SIEM follow-ons without explicit scope |
 | **P6** | **Hospitality / pilot pack** | Beachhead A | Hotel runbooks, hybrid SLA | Logos-only builds | After attach pilot story works |
 
-**Priority rule for agents (post–#282 tip `6d5e4bb` + Guard thin + guide install on main):**
+**Priority rule for agents (post–#295 tip `8546ef3`):**
 
-1. **Human default** remains **GTM execution** (finance / AM / ops) + **edge Guard live path** (lab env, deploy tip, smoke) — parallel to eng.
-2. **Further Guard code** only on **explicit** implement verb; stay inside **thin DoD** (D1–D10 / non-goals). Prefer bugfixes from live smoke over new surfaces. Guide/host copy (distro commands) OK when user asks.
-3. Other code: **bugfix** (attach/workspace/Guard/org cache), **P3 S1+** only after explicit verb + §11 answers, docs/ops hygiene, Dependabot **only if CI green** (many open PRs currently e2e-fail — do not mass-merge).
+1. **Human default** remains **GTM execution** (finance / AM / ops) + **edge apply this tip** (Alembic `drop_placeholder_admin`, SPA `/guide`, leftover ip/domain workers, AAB worker) + **Guard live lab** — parallel to eng.
+2. **Further Guard code** only on **explicit** implement verb; stay inside **thin DoD** (D1–D10 / non-goals). Prefer bugfixes from live smoke over new surfaces.
+3. Other code: **bugfix** (attach/workspace/Guard/org cache), **P3 S1+** only after explicit verb + §11 answers, docs/ops hygiene, Dependabot **only if CI green + user names the PR** (do not mass-merge #252–#266).
 4. Ordering still true: P1/P2 before Guard; P4 must not block attach revenue.
-5. **Do not** re-implement P2 S1–S5, Wave B, Guard S1–S5/Http, or org-scoped query keys “because docs were stale.” **Do not** ship SIEM-scope PRs under “Guard.”
+5. **Do not** re-implement P2 S1–S5, Wave B, Guard S1–S5/Http, guide TOC, or placeholder-seed cleanup “because docs were stale.” **Do not** ship SIEM-scope PRs under “Guard.”
 
 ### 1.4 What *not* to prioritize for upsell
 
@@ -191,8 +191,8 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 |------|--------|---------------------|
 | [`docs/specs/scan-attach-v1.md`](specs/scan-attach-v1.md) | **Implemented** (S1–S5 on main; keep as historical acceptance) | N/A for new attach features unless extending |
 | [`docs/specs/workspace-v1.md`](specs/workspace-v1.md) | **Approved** D1–D6; **S1–S5 implemented** on main (#267 + #270) | Residual smoke / bugs only with explicit verb |
-| `docs/specs/assets-v1.md` | Not written | P3 |
-| [`docs/specs/guard-v1.md`](specs/guard-v1.md) | **S0 on main**; **S1–S5 code** on `feat/guard-s1-s5-thin` (mock Wazuh; live HTTP stub) | Merge PR then edge secrets; no SIEM |
+| [`docs/specs/assets-v1.md`](specs/assets-v1.md) | **Draft S0 on main** (#282) | P3 S1+ only after explicit implement + §11 |
+| [`docs/specs/guard-v1.md`](specs/guard-v1.md) | **S0–S5 + Http on `main`** (#273–#275); host/guide #279–#281 + #294 | Edge lab + secrets on deploy host only; no SIEM |
 
 **Agent:** wait for **explicit implement** even when spec exists. Prefer **draft spec** over silent coding for P3+; Guard S0 is the exception already written — still no silent S1.
 
@@ -236,7 +236,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 ### Phase E / P5 — Guard MVP (Wazuh thin) — **code DONE on main**; lab live pending
 
 - **Risk accept (2026-08-10):** user chose thin Guard eng **in parallel** with open GTM; Workspace S1–S5 + attach already on `main`
-- **Shipped:** #273 spek · #274 thin (models, mock, API, workers, FE `/guard`) · **#275** `HttpWazuhClient` (Manager JWT, groups, agents, enroll+key, Indexer critical search) @ `28bc69e`
+- **Shipped:** #273 spek · #274 thin (models, mock, API, workers, FE `/guard`) · **#275** `HttpWazuhClient` · **#294** User Guide TOC + collapsed distro commands
 - **Runtime:** CI/default **`GUARD_MOCK_WAZUH=true`**. Live: deploy-host env only (`WAZUH_*`, mock false when lab ready) — **never** secrets in public markdown
 - Wazuh as **sensor bus**: **one lab manager**, group-per-org, SaaS-proxied enroll, poll inventory + critical alerts (level ≥ 12)
 - Thin UI: agents, last-seen, critical alert cards — **no** raw logs / Discover
@@ -330,7 +330,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 
 ### 5.3 Assets (P3) — sketch
 
-- [ ] **S0** Draft spek [`docs/specs/assets-v1.md`](specs/assets-v1.md) (light registry; not CMDB)
+- [x] **S0** Draft spek [`docs/specs/assets-v1.md`](specs/assets-v1.md) (light registry; not CMDB) — #282
 - [ ] Org can CRUD named assets with scan targets (S1+ — after explicit implement)
 - [ ] Scheduled pack can include multiple assets within tier limits
 
@@ -420,7 +420,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 
 ## 10) Agent one-liner
 
-> After reset: **boot §0 → §1.3 (P0–P2 + Wave B + P4 + P5 thin/Http on main @ ≥28bc69e; GTM + edge live Guard human; no SIEM default) → no silent epics → bug/P3 only on explicit ask → no PII/SSH in git → Indonesian with user, `GIT_MASTER=1`, coding Docker off, edge for prod.**
+> After reset: **boot §0 → §1.3 (P0–P2 + Wave B + P4 + P5 thin/Http + guide #294 + seed #295 on main @ ≥8546ef3; GTM + edge apply tip human; no SIEM default) → no silent epics → bug/P3 only on explicit ask → no PII/SSH in git → Indonesian with user, `GIT_MASTER=1`, coding Docker off, edge for prod.**
 
 ---
 
