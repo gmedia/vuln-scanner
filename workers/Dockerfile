@@ -29,8 +29,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && curl -fsSL \
         "https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar" \
         -o /opt/bundletool/bundletool.jar \
-    && python3 -c "import zipfile,stat,os; z=zipfile.ZipFile('/opt/bundletool/bundletool.jar'); names=[n for n in z.namelist() if n.endswith('linux/aapt2')]; \
-raise SystemExit('linux/aapt2 not in bundletool.jar') if not names else None; dest='/opt/bundletool/aapt2'; open(dest,'wb').write(z.read(names[0])); os.chmod(dest, stat.S_IRWXU|stat.S_IRGRP|stat.S_IXGRP|stat.S_IROTH|stat.S_IXOTH)" \
     && apt-get purge -y curl \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
@@ -43,7 +41,6 @@ COPY backend/ /backend/
 
 ENV PYTHONPATH=/backend
 ENV BUNDLETOOL_JAR=/opt/bundletool/bundletool.jar
-ENV AAPT2_PATH=/opt/bundletool/aapt2
 ENV BUNDLETOOL_JAVA_TMPDIR=/tmp/bundletool-work
 
 RUN chmod +x /app/entrypoint.sh
