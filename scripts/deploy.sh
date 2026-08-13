@@ -148,3 +148,6 @@ docker exec vuln-backend alembic upgrade head || {
   exit $rc
 }
 echo "Deploy completed — migration at $(docker exec vuln-backend alembic current 2>/dev/null | tail -1)"
+
+echo "=== upsert ADMIN_/E2E_ users from env (password overwrite, no table wipe) ==="
+docker exec vuln-backend python -m scripts.upsert_secret_users

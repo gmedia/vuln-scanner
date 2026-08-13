@@ -66,6 +66,8 @@ class Settings(BaseSettings):
 
     admin_email: str = ""
     admin_password: str = ""
+    e2e_email: str = ""
+    e2e_password: str = ""
     default_register_credits: int = 30
     ip_scan_credit_cost: int = 1
     domain_scan_credit_cost: int = 2

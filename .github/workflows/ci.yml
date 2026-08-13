@@ -388,6 +388,8 @@ jobs:
             SMTP_FROM="${{ secrets.SMTP_FROM }}"
             ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
             ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
+            E2E_EMAIL=${{ secrets.E2E_EMAIL }}
+            E2E_PASSWORD=${{ secrets.E2E_PASSWORD }}
             DEFAULT_REGISTER_CREDITS=${{ secrets.DEFAULT_REGISTER_CREDITS }}
             IP_SCAN_CREDIT_COST=${{ secrets.IP_SCAN_CREDIT_COST }}
             DOMAIN_SCAN_CREDIT_COST=${{ secrets.DOMAIN_SCAN_CREDIT_COST }}
