@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 import { e2eEmail, e2ePassword } from "./credentials";
 
 const API_KEY = process.env.API_KEY || "dev-api-key-change-me";

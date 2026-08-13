@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 test.describe("Mobile Scanner Error States", () => {
   test("shows error for wrong file type on Android", async ({ page }) => {

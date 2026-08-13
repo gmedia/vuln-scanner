@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 test.describe("Scan Detail Page", () => {
   test("shows 404 for non-existent scan", async ({ page }) => {

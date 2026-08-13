@@ -1,4 +1,5 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
+import { e2eEmail } from "./credentials";
 
 test.describe("Admin — Users", () => {
   test("page loads with USER MANAGEMENT heading", async ({ page }) => {
@@ -52,7 +53,7 @@ test.describe("Admin — Users", () => {
       .catch(() => {});
 
     await expect(
-      page.locator("table").locator("text=e2e@vulnscan.dev"),
+      page.locator("table").locator(`text=${e2eEmail()}`),
     ).toBeVisible();
   });
 
@@ -67,7 +68,7 @@ test.describe("Admin — Users", () => {
 
     const adminBadge = page
       .locator("table tbody tr", {
-        has: page.locator("text=e2e@vulnscan.dev"),
+        has: page.locator(`text=${e2eEmail()}`),
       })
       .locator("td span:has-text('Admin')")
       .first();
@@ -96,15 +97,12 @@ test.describe("Admin — Users", () => {
       .catch(() => {});
 
     const searchInput = page.locator("input[placeholder='Search email...']");
-    await searchInput.fill("e2e");
-    await page.waitForTimeout(500);
-
-    const rows = page.locator("table tbody tr");
-    const rowCount = await rows.count();
-    expect(rowCount).toBeGreaterThanOrEqual(1);
-    await expect(
-      page.locator("table").locator("text=e2e@vulnscan.dev"),
-    ).toBeVisible();
+    const needle = e2eEmail();
+    const localPart = needle.split("@")[0] ?? needle;
+    await searchInput.fill(localPart);
+    await expect(page.locator("table").locator(`text=${needle}`)).toBeVisible({
+      timeout: 10_000,
+    });
   });
 
   test("search with no results shows empty state", async ({ page }) => {
