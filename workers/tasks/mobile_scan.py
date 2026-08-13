@@ -194,7 +194,7 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
                     )
                 except AabConversionError as e:
                     logger.error("AAB conversion failed for job {job_id}: {error}", job_id=job_id, error=e)
-                    err_msg = f"AAB conversion failed: {str(e)[:150]}"
+                    err_msg = f"AAB conversion failed: {str(e)[:500]}"
                     publish_progress(job_id, "aab_convert_error", 100, err_msg)
                     _update_status(
                         session,
