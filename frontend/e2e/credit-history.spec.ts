@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 test.describe("Credit History", () => {
   test("page loads with Credit history heading", async ({ page }) => {
