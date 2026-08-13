@@ -1,4 +1,9 @@
-import type { ComponentType, ReactNode } from "react";
+import {
+  useEffect,
+  useState,
+  type ComponentType,
+  type ReactNode,
+} from "react";
 import { Link } from "react-router-dom";
 import {
   BookOpen,
@@ -12,13 +17,12 @@ import {
   LayoutDashboard,
   LogIn,
   ListOrdered,
+  ChevronDown,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   Card,
-  CardHeader,
-  CardTitle,
   CardContent,
-  CardDescription,
 } from "@/components/ui/Card";
 import { BRAND } from "@/lib/brand";
 import {
@@ -77,10 +81,83 @@ function Ui({ children }: { children: ReactNode }) {
   );
 }
 
-function UserGuide() {
+function useActiveGuideSection() {
+  const [activeId, setActiveId] = useState<string>(toc[0].id);
+
+  useEffect(() => {
+    const nodes = toc
+      .map((item) => document.getElementById(item.id))
+      .filter((el): el is HTMLElement => el !== null);
+    if (nodes.length === 0 || typeof IntersectionObserver === "undefined") {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort(
+            (a, b) =>
+              a.boundingClientRect.top - b.boundingClientRect.top,
+          );
+        const first = visible[0]?.target.id;
+        if (first) {
+          setActiveId(first);
+        }
+      },
+      { rootMargin: "-20% 0px -60% 0px", threshold: [0, 0.25, 0.5] },
+    );
+    nodes.forEach((node) => observer.observe(node));
+    return () => observer.disconnect();
+  }, []);
+
+  return activeId;
+}
+
+function GuideTocLinks({
+  activeId,
+  onNavigate,
+}: {
+  activeId: string;
+  onNavigate?: () => void;
+}) {
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div>
+    <nav aria-label="Daftar isi panduan">
+      <ul className="space-y-0.5">
+        {toc.map((item) => {
+          const isActive = item.id === activeId;
+          return (
+            <li key={item.id}>
+              <a
+                href={`#${item.id}`}
+                onClick={onNavigate}
+                aria-current={isActive ? "true" : undefined}
+                className={cn(
+                  "block rounded-md px-2.5 py-1.5 text-sm transition-colors",
+                  isActive
+                    ? "bg-primary/10 font-medium text-primary"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                )}
+              >
+                {item.label}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
+
+function UserGuide() {
+  const activeId = useActiveGuideSection();
+  const [mobileTocOpen, setMobileTocOpen] = useState(false);
+  const activeLabel =
+    toc.find((item) => item.id === activeId)?.label ?? toc[0].label;
+
+  return (
+    <div className="mx-auto max-w-6xl">
+      <div className="mb-6 max-w-3xl">
         <div className="mb-1 flex items-center gap-2 text-primary">
           <BookOpen className="h-5 w-5" />
           <span className="text-xs font-medium uppercase tracking-wider">
@@ -97,29 +174,47 @@ function UserGuide() {
         </p>
       </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <ListOrdered className="h-4 w-4 text-primary" />
-            Daftar isi
-          </CardTitle>
-          <CardDescription>Ikuti urutan, atau lompat ke topik</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ul className="grid gap-1 sm:grid-cols-2">
-            {toc.map((item) => (
-              <li key={item.id}>
-                <a
-                  href={`#${item.id}`}
-                  className="text-sm text-primary hover:underline"
-                >
-                  {item.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
+      <div className="lg:hidden">
+        <details
+          className="group mb-6 rounded-lg border border-border bg-card"
+          open={mobileTocOpen}
+          onToggle={(event) =>
+            setMobileTocOpen((event.target as HTMLDetailsElement).open)
+          }
+        >
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-foreground [&::-webkit-details-marker]:hidden">
+            <span className="flex min-w-0 items-center gap-2">
+              <ListOrdered className="h-4 w-4 shrink-0 text-primary" />
+              <span className="truncate">
+                Daftar isi
+                <span className="ml-2 font-normal text-muted-foreground">
+                  · {activeLabel}
+                </span>
+              </span>
+            </span>
+            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="border-t border-border px-2 py-2">
+            <GuideTocLinks
+              activeId={activeId}
+              onNavigate={() => setMobileTocOpen(false)}
+            />
+          </div>
+        </details>
+      </div>
+
+      <div className="lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:items-start lg:gap-8">
+        <aside className="hidden lg:block">
+          <div className="sticky top-0 max-h-[calc(100vh-6rem)] overflow-y-auto pr-1">
+            <p className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <ListOrdered className="h-3.5 w-3.5 text-primary" />
+              Daftar isi
+            </p>
+            <GuideTocLinks activeId={activeId} />
+          </div>
+        </aside>
+
+        <div className="min-w-0 space-y-6">
 
       <Card>
         <CardContent className="space-y-3 pt-6">
@@ -533,27 +628,32 @@ function UserGuide() {
                 ))}
               </ol>
               <div
-                className="mt-3 space-y-3"
+                className="mt-3 space-y-2"
                 data-testid="guard-distro-install-commands"
               >
                 <p className="text-sm font-medium text-foreground">
                   Perintah di host target (bedakan distro)
                 </p>
                 {GUARD_DISTRO_INSTALL_GUIDES.map((guide) => (
-                  <div
+                  <details
                     key={guide.id}
-                    className="rounded-md border border-border bg-muted/30 p-3"
+                    className="group rounded-md border border-border bg-muted/30"
                   >
-                    <p className="text-sm font-medium text-foreground">
-                      {guide.title}
-                    </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {guide.blurb}
-                    </p>
-                    <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-all rounded-md border border-border bg-background/80 p-3 font-mono text-[11px] leading-relaxed text-foreground">
+                    <summary className="flex cursor-pointer list-none items-start justify-between gap-3 px-3 py-2.5 [&::-webkit-details-marker]:hidden">
+                      <span>
+                        <span className="block text-sm font-medium text-foreground">
+                          {guide.title}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-muted-foreground">
+                          {guide.blurb}
+                        </span>
+                      </span>
+                      <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+                    </summary>
+                    <pre className="mx-3 mb-3 overflow-x-auto whitespace-pre-wrap break-all rounded-md border border-border bg-background/80 p-3 font-mono text-[11px] leading-relaxed text-foreground">
                       {guide.commands.join("\n")}
                     </pre>
-                  </div>
+                  </details>
                 ))}
                 <p className="text-xs text-muted-foreground">
                   {GUARD_DISTRO_INSTALL_FOOTER}
@@ -608,6 +708,8 @@ function UserGuide() {
           </p>
         </CardContent>
       </Card>
+        </div>
+      </div>
     </div>
   );
 }

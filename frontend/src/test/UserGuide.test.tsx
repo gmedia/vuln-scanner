@@ -11,7 +11,7 @@ describe("UserGuide", () => {
       </MemoryRouter>,
     );
     expect(screen.getByRole("heading", { name: "User Guide" })).toBeInTheDocument();
-    expect(screen.getByText("Daftar isi")).toBeInTheDocument();
+    expect(screen.getAllByText("Daftar isi").length).toBeGreaterThanOrEqual(1);
     expect(
       screen.getByRole("heading", {
         name: "1. Mulai: daftar, login, workspace",
@@ -87,5 +87,11 @@ describe("UserGuide", () => {
       .getAllByRole("link")
       .filter((a) => a.getAttribute("href") === "/schedules");
     expect(scheduleLinks.length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByRole("navigation", { name: "Daftar isi panduan" }).length,
+    ).toBeGreaterThanOrEqual(1);
+    const debianBlock = screen.getByText("Debian / Ubuntu").closest("details");
+    expect(debianBlock).toBeTruthy();
+    expect(debianBlock).not.toHaveAttribute("open");
   });
 });
