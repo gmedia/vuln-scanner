@@ -91,7 +91,14 @@ echo "=== Remaining volumes ==="
 docker volume ls --format "{{.Name}}" | grep postgres || true
 
 echo "=== Starting services ==="
-"${COMPOSE[@]}" up -d || {
+if [ "$REMOTE_DATA_MODE" -eq 1 ]; then
+  APP_SERVICES=(backend frontend worker_mobile worker_dead_letter celery_beat)
+  echo "NOTE: REMOTE_DATA=1 — starting ${APP_SERVICES[*]} (not worker_ip/worker_domain)"
+  UP_ARGS=("${APP_SERVICES[@]}")
+else
+  UP_ARGS=()
+fi
+"${COMPOSE[@]}" up -d "${UP_ARGS[@]}" || {
   echo "=== docker compose up -d FAILED — dumping logs ==="
   docker logs vuln-postgres --tail=100 2>&1 || true
   docker logs vuln-redis --tail=100 2>&1 || true
