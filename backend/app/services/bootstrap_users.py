@@ -30,16 +30,23 @@ _WEAK_PASSWORDS = frozenset(
 )
 
 
+def is_template_placeholder(value: str) -> bool:
+    text = (value or "").strip()
+    return bool(text) and text.startswith("<") and text.endswith(">")
+
+
 def credentials_usable(email: str, password: str) -> bool:
     email = (email or "").strip()
     password = password or ""
     if not email or "@" not in email:
         return False
+    if is_template_placeholder(email):
+        return False
     if not password or len(password) < 8:
         return False
     if password.lower() in _WEAK_PASSWORDS:
         return False
-    return not (password.startswith("<") and password.endswith(">"))
+    return not is_template_placeholder(password)
 
 
 async def upsert_privileged_user(
