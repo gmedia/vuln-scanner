@@ -51,6 +51,11 @@ describe("UserGuide", () => {
     expect(screen.getByText("Buat jadwal")).toBeInTheDocument();
     expect(screen.getByText("Aktifkan Guard")).toBeInTheDocument();
     expect(
+      screen.getByRole("heading", {
+        name: "10. SIEM — cari event & kasus",
+      }),
+    ).toBeInTheDocument();
+    expect(
       screen.getAllByText(/POST \/api\/guard\/enroll/).length,
     ).toBeGreaterThanOrEqual(1);
     expect(

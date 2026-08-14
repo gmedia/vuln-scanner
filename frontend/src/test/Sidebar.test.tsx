@@ -61,6 +61,8 @@ describe("Sidebar", () => {
     expect(screen.getByText("Domain Scanner")).toBeInTheDocument();
     expect(screen.getByText("Mobile Scanner")).toBeInTheDocument();
     expect(screen.getByText("Jadwal")).toBeInTheDocument();
+    expect(screen.getByText("Guard")).toBeInTheDocument();
+    expect(screen.getByText("SIEM")).toBeInTheDocument();
     expect(screen.getByText("User Guide")).toBeInTheDocument();
     const guide = screen
       .getAllByRole("link")

@@ -21,6 +21,7 @@ const ScanDetail = lazy(() => import("@/pages/ScanDetail"));
 const CreditHistory = lazy(() => import("@/pages/credit/CreditHistory"));
 const Schedules = lazy(() => import("@/pages/Schedules"));
 const Guard = lazy(() => import("@/pages/Guard"));
+const Siem = lazy(() => import("@/pages/Siem"));
 const Profile = lazy(() => import("@/pages/Profile"));
 const UserGuide = lazy(() => import("@/pages/UserGuide"));
 const WorkspaceSettings = lazy(() => import("@/pages/WorkspaceSettings"));
@@ -88,6 +89,10 @@ function App() {
             <Route
               path="/guard"
               element={<PageBoundary component={Guard} />}
+            />
+            <Route
+              path="/siem"
+              element={<PageBoundary component={Siem} />}
             />
             <Route
               path="/profile"

@@ -12,6 +12,7 @@ import {
   Smartphone,
   CalendarClock,
   Shield,
+  Siren,
   Users,
   Coins,
   LayoutDashboard,
@@ -44,6 +45,7 @@ const toc = [
   { id: "workspace", label: "7. Workspace & undangan" },
   { id: "kredit", label: "8. Kredit" },
   { id: "guard", label: "9. Guard (runtime)" },
+  { id: "siem", label: "10. SIEM (cari + kasus)" },
   { id: "tips", label: "Tips & batasan" },
 ] as const;
 
@@ -674,6 +676,47 @@ function UserGuide() {
               org; agen pending lama → cek koneksi host ke{" "}
               <code className="text-foreground">manager_host</code> dari
               response + Sync; jangan gunakan password Manager di host.
+            </li>
+          </Steps>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="space-y-3 pt-6">
+          <SectionHeading
+            id="siem"
+            icon={Siren}
+            title="10. SIEM — cari event & kasus"
+          />
+          <p className="text-sm text-muted-foreground">
+            Modul terpisah dari Guard. Cari event terkontrol (bukan Discover /
+            dashboard Wazuh) dan buka kasus di aplikasi. Flag{" "}
+            <code className="text-foreground">SIEM_ENABLED</code> harus on di
+            lingkungan; jika off, halaman menampilkan modul belum aktif.
+          </p>
+          <Steps>
+            <li>
+              Pasang agen di{" "}
+              <Link to="/guard" className="text-primary hover:underline">
+                Guard
+              </Link>{" "}
+              dulu. Tanpa agen org, SIEM menampilkan salinan kosong.
+            </li>
+            <li>
+              Buka Sidebar →{" "}
+              <Link to="/siem" className="text-primary hover:underline">
+                SIEM
+              </Link>
+              . Filter waktu, min level, agen, teks <Ui>q</Ui>, lalu{" "}
+              <Ui>Cari</Ui>.
+            </li>
+            <li>
+              Klik baris hasil untuk detail terproyeksi (bukan raw log).
+              Member+ dapat <Ui>Buat kasus</Ui> dari event.
+            </li>
+            <li>
+              Owner/admin mengubah status kasus <Ui>open</Ui> / <Ui>ack</Ui> /{" "}
+              <Ui>closed</Ui>. Member+ menambah catatan (tanpa dump log mentah).
             </li>
           </Steps>
         </CardContent>
