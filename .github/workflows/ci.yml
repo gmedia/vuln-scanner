@@ -403,14 +403,7 @@ jobs:
             GUARD_MOCK_WAZUH=${{ secrets.GUARD_MOCK_WAZUH || 'true' }}
             GUARD_ALERT_MIN_LEVEL=${{ secrets.GUARD_ALERT_MIN_LEVEL || '12' }}
             GUARD_ENROLL_TOKEN_TTL_HOURS=${{ secrets.GUARD_ENROLL_TOKEN_TTL_HOURS || '24' }}
-            WAZUH_MANAGER_URL=${{ secrets.WAZUH_MANAGER_URL }}
-            WAZUH_MANAGER_USER=${{ secrets.WAZUH_MANAGER_USER }}
-            WAZUH_MANAGER_PASSWORD=${{ secrets.WAZUH_MANAGER_PASSWORD }}
-            WAZUH_INDEXER_URL=${{ secrets.WAZUH_INDEXER_URL }}
-            WAZUH_INDEXER_USER=${{ secrets.WAZUH_INDEXER_USER }}
-            WAZUH_INDEXER_PASSWORD=${{ secrets.WAZUH_INDEXER_PASSWORD }}
             WAZUH_VERIFY_TLS=${{ secrets.WAZUH_VERIFY_TLS || 'true' }}
-            WAZUH_AGENT_MANAGER_HOST=${{ secrets.WAZUH_AGENT_MANAGER_HOST }}
             SIEM_ENABLED=${{ secrets.SIEM_ENABLED || 'false' }}
             SIEM_SEARCH_MIN_LEVEL=${{ secrets.SIEM_SEARCH_MIN_LEVEL || '7' }}
             SIEM_MAX_LOOKBACK_HOURS=${{ secrets.SIEM_MAX_LOOKBACK_HOURS || '168' }}
@@ -425,6 +418,21 @@ jobs:
             COS_ENDPOINT=${{ secrets.COS_ENDPOINT }}
             COS_PREFIX=${{ secrets.COS_PREFIX || 'scans/' }}
             ENVEOF
+            # Do not write empty WAZUH_* — blank secrets would wipe host lab URLs/creds on every deploy.
+            append_if_set() {
+              local key="$1"
+              local val="$2"
+              if [ -n "$val" ]; then
+                printf '%s=%s\n' "$key" "$val" >> .env
+              fi
+            }
+            append_if_set WAZUH_MANAGER_URL "${{ secrets.WAZUH_MANAGER_URL }}"
+            append_if_set WAZUH_MANAGER_USER "${{ secrets.WAZUH_MANAGER_USER }}"
+            append_if_set WAZUH_MANAGER_PASSWORD "${{ secrets.WAZUH_MANAGER_PASSWORD }}"
+            append_if_set WAZUH_INDEXER_URL "${{ secrets.WAZUH_INDEXER_URL }}"
+            append_if_set WAZUH_INDEXER_USER "${{ secrets.WAZUH_INDEXER_USER }}"
+            append_if_set WAZUH_INDEXER_PASSWORD "${{ secrets.WAZUH_INDEXER_PASSWORD }}"
+            append_if_set WAZUH_AGENT_MANAGER_HOST "${{ secrets.WAZUH_AGENT_MANAGER_HOST }}"
             echo ".env written from GitHub Secrets"
             chmod 600 .env
 
