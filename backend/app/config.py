@@ -135,6 +135,12 @@ class Settings(BaseSettings):
     wazuh_verify_tls: bool = True
     wazuh_agent_manager_host: str = ""
 
+    siem_enabled: bool = False
+    siem_search_min_level: int = 7
+    siem_max_lookback_hours: int = 168
+    siem_include_full_log: bool = False
+    siem_max_page_size: int = 50
+
 
 settings = Settings()
 

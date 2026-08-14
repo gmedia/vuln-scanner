@@ -3,9 +3,9 @@
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
 **Last updated:** 2026-08-14
-**Repo tip at write time:** `main` @ `3714ea4` (**#300** compose `WAZUH_*`; **#299** Guard e2e A+B). Open residual: **Guard live lab** (mock off only on app host `.env`); leftover ip/domain workers; **GTM human**; Dependabot #252–#266 — do not mass-merge. **P7 SIEM S0** draft — no IPs/secrets. Re-`git pull` after reset. Never commit IPs/passwords/enroll keys.
+**Repo tip at write time:** `main` @ `3714ea4` (**#300** compose `WAZUH_*`; **#299** Guard e2e A+B). Open residual: **Guard live lab** (mock off only on app host `.env`); leftover ip/domain workers; **GTM human**; Dependabot #252–#266 — do not mass-merge. **P7 SIEM S0 locked** on `main` (`aa04e91` #301); **S1–S2** on `feat/siem-s1-s2`. No IPs/secrets. Re-`git pull` after reset. Never commit IPs/passwords/enroll keys.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
-**Phase snapshot:** **P0 policy locked** · **P1 attach shipped + edge smoke closed** · **P2 Workspace S1–S5 on `main`** · **Attach UX Wave B on `main`** · **P4 soft dual-brand on `main`** · **P5 Guard thin on `main`** (#273–#275 code; #279–#281 + **#294** host/guide) — **not** full SIEM · **CI/default mock** · **P3** draft spek on main (no S1+ code until explicit verb) · **P7 SIEM** draft spek [`docs/specs/siem-v1.md`](specs/siem-v1.md) (**S0 only** — no S1+ until explicit verb + isolation Qs) · **GTM human still open** · residual eng = edge apply tip, bugs, Dependabot only when CI green + explicit — **do not** implement SIEM under Guard PRs.
+**Phase snapshot:** **P0 policy locked** · **P1 attach shipped + edge smoke closed** · **P2 Workspace S1–S5 on `main`** · **Attach UX Wave B on `main`** · **P4 soft dual-brand on `main`** · **P5 Guard thin on `main`** (#273–#275 code; #279–#281 + **#294** host/guide) — **not** full SIEM · **CI/default mock** · **P3** draft spek on main (no S1+ code until explicit verb) · **P7 SIEM** spek locked [`docs/specs/siem-v1.md`](specs/siem-v1.md) (**S0 + S1–S2 in progress** — tables/query builder; no `/api/siem` until S3) · **GTM human still open** · residual eng = edge apply tip, bugs, Dependabot only when CI green + explicit — **do not** implement SIEM under Guard PRs.
 
 ---
 
@@ -43,9 +43,9 @@ Then read, in order:
 | **Legacy name** | VulnScanner / `vs.appmedia.id` — keep as **Scan module** during soft dual-brand |
 | **Near-term commercial goal** | **Upsell** recurring Secure/Scan add-on on customers who **already** pay colo / VPS / cloud / hosting |
 | **Strategic beachhead** | Hotel / hospitality (Yogya relationships + any multi-property group already on GMD) |
-| **Modules** | **Scan + Attach** (prod, Wave B UX polish) · **Workspace S1–S5** (prod; residual multi-org/S5 smoke may still be manual) · **Assets** (P3) · **Guard** (P5 thin on `main`; **live Manager/Indexer on Guard host `tc3`**, app `tc1`, lab agent `tc5` — see [`multi-host-ops.md`](multi-host-ops.md); CI stays mock) · **SIEM P7 S0 draft only** |
+| **Modules** | **Scan + Attach** (prod, Wave B UX polish) · **Workspace S1–S5** (prod; residual multi-org/S5 smoke may still be manual) · **Assets** (P3) · **Guard** (P5 thin on `main`; **live Manager/Indexer on Guard host `tc3`**, app `tc1`, lab agent `tc5` — see [`multi-host-ops.md`](multi-host-ops.md); CI stays mock) · **SIEM P7 S0 locked; S1–S2 in progress** |
 | **Build order (upsell-first)** | See **§1.3** — P2 **S1–S5** shipped; **P5 thin code on main** (mock CI; live host env human); GTM still parallel; rebrand must not gate attach; **P7 SIEM** = spek first, **never** as a Guard feature PR |
-| **Not v1 (unless P7 S1+ explicitly unlocked)** | Nested multi-project, org billing dual-wallet, Windows depth, SOAR, customer Wazuh dashboard, hard brand cut blocking attach revenue. **Full SIEM** is **P7 S0 draft only** — still **not** coded. |
+| **Not v1 (unless P7 S3+ unlocked)** | Nested multi-project, org billing dual-wallet, Windows depth, SOAR, customer Wazuh dashboard, hard brand cut blocking attach revenue. **Full SIEM API/SPA** still **not** coded. |
 
 ### Positioning (one line)
 
