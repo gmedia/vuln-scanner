@@ -64,6 +64,7 @@ async def siem_ws(db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch):
 
     owner = await _make_user(db_session, "s-owner@example.com")
     viewer = await _make_user(db_session, "s-viewer@example.com")
+    member = await _make_user(db_session, "s-member@example.com")
     outsider = await _make_user(db_session, "s-out@example.com")
 
     company = Organization(
@@ -77,6 +78,7 @@ async def siem_ws(db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch):
     await db_session.flush()
     await _add_member(db_session, company.id, owner, "owner")
     await _add_member(db_session, company.id, viewer, "viewer")
+    await _add_member(db_session, company.id, member, "member")
 
     group = wazuh_group_for_org(company.id)
     db_session.add(
@@ -113,6 +115,7 @@ async def siem_ws(db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch):
     return {
         "owner": owner,
         "viewer": viewer,
+        "member": member,
         "outsider": outsider,
         "org": company,
         "other": other,
@@ -140,6 +143,10 @@ async def test_siem_disabled_returns_404(db_session: AsyncSession, siem_ws, monk
         r = await client.get("/api/siem/status", headers=_auth(owner, org.id))
         assert r.status_code == 404
         r = await client.get("/api/siem/events", headers=_auth(owner, org.id))
+        assert r.status_code == 404
+        r = await client.get("/api/siem/cases", headers=_auth(owner, org.id))
+        assert r.status_code == 404
+        r = await client.post("/api/siem/cases", headers=_auth(owner, org.id), json={"title": "off"})
         assert r.status_code == 404
     app.dependency_overrides.clear()
 
@@ -250,4 +257,186 @@ async def test_siem_idor_cross_org(db_session: AsyncSession, siem_ws):
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         r = await client.get("/api/siem/events", headers=_auth(outsider, org.id))
         assert r.status_code in (401, 404)
+    app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_siem_cases_roles_and_seed(db_session: AsyncSession, siem_ws):
+    owner = siem_ws["owner"]
+    viewer = siem_ws["viewer"]
+    member = siem_ws["member"]
+    org = siem_ws["org"]
+    group = siem_ws["group"]
+    MockWazuhClient.seed_alert(
+        group,
+        external_id="evt-case",
+        rule_level=11,
+        rule_description="sudo abuse",
+        agent_wazuh_id="001",
+        agent_name="vps-edge-01",
+        occurred_at=datetime.now(UTC),
+    )
+    MockWazuhClient.seed_alert(
+        group,
+        external_id="evt-foreign",
+        rule_level=14,
+        rule_description="foreign leak",
+        agent_wazuh_id="999",
+        agent_name="other-host",
+        occurred_at=datetime.now(UTC),
+    )
+    transport = await _client(db_session)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        r = await client.post(
+            "/api/siem/cases",
+            headers=_auth(viewer, org.id),
+            json={"title": "viewer cannot create"},
+        )
+        assert r.status_code == 403
+
+        r = await client.post(
+            "/api/siem/cases",
+            headers=_auth(member, org.id),
+            json={"title": "sudo spike", "external_id": "evt-case"},
+        )
+        assert r.status_code == 201
+        case = r.json()
+        assert case["status"] == "open"
+        assert case["severity"] == 11
+        assert case["events"][0]["external_id"] == "evt-case"
+        assert all("full_log" not in ev for ev in case["events"])
+        cid = case["id"]
+
+        r = await client.post(
+            "/api/siem/cases",
+            headers=_auth(member, org.id),
+            json={"title": "leak", "external_id": "evt-foreign"},
+        )
+        assert r.status_code == 404
+
+        r = await client.post(
+            f"/api/siem/cases/{cid}/notes",
+            headers=_auth(member, org.id),
+            json={"body": "acked on call"},
+        )
+        assert r.status_code == 200
+        assert any(n["body"] == "acked on call" for n in r.json()["notes"])
+
+        r = await client.patch(
+            f"/api/siem/cases/{cid}",
+            headers=_auth(member, org.id),
+            json={"status": "ack"},
+        )
+        assert r.status_code == 403
+
+        r = await client.patch(
+            f"/api/siem/cases/{cid}",
+            headers=_auth(owner, org.id),
+            json={"status": "ack", "assignee_user_id": str(member.id)},
+        )
+        assert r.status_code == 200
+        assert r.json()["status"] == "ack"
+        assert r.json()["assignee_user_id"] == str(member.id)
+
+        r = await client.post(
+            f"/api/siem/cases/{cid}/notes",
+            headers=_auth(viewer, org.id),
+            json={"body": "viewer cannot note"},
+        )
+        assert r.status_code == 403
+
+        r = await client.post(
+            f"/api/siem/cases/{cid}/events",
+            headers=_auth(member, org.id),
+            json={"external_id": "evt-foreign"},
+        )
+        assert r.status_code == 404
+
+        r = await client.post(
+            "/api/siem/cases",
+            headers=_auth(member, org.id),
+            json={"title": "   "},
+        )
+        assert r.status_code == 400
+
+        r = await client.post(
+            "/api/siem/cases",
+            headers=_auth(member, org.id),
+            json={"title": "bad assignee", "assignee_user_id": str(siem_ws["outsider"].id)},
+        )
+        assert r.status_code == 400
+
+        r = await client.get("/api/siem/cases", headers=_auth(viewer, org.id))
+        assert r.status_code == 200
+        assert any(c["id"] == cid for c in r.json()["items"])
+    app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_siem_case_attach_event(db_session: AsyncSession, siem_ws):
+    member = siem_ws["member"]
+    org = siem_ws["org"]
+    group = siem_ws["group"]
+    MockWazuhClient.seed_alert(
+        group,
+        external_id="evt-attach",
+        rule_level=9,
+        rule_description="sudo retry",
+        agent_wazuh_id="001",
+        agent_name="vps-edge-01",
+        occurred_at=datetime.now(UTC),
+    )
+    transport = await _client(db_session)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        r = await client.post(
+            "/api/siem/cases",
+            headers=_auth(member, org.id),
+            json={"title": "empty then attach"},
+        )
+        assert r.status_code == 201
+        cid = r.json()["id"]
+
+        r = await client.post(
+            f"/api/siem/cases/{cid}/events",
+            headers=_auth(member, org.id),
+            json={"external_id": "evt-attach"},
+        )
+        assert r.status_code == 200
+        body = r.json()
+        assert body["severity"] == 9
+        assert [e["external_id"] for e in body["events"]] == ["evt-attach"]
+
+        r = await client.post(
+            f"/api/siem/cases/{cid}/events",
+            headers=_auth(member, org.id),
+            json={"external_id": "evt-attach"},
+        )
+        assert r.status_code == 200
+        assert len(r.json()["events"]) == 1
+    app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_siem_case_idor(db_session: AsyncSession, siem_ws):
+    member = siem_ws["member"]
+    outsider = siem_ws["outsider"]
+    org = siem_ws["org"]
+    other = siem_ws["other"]
+    transport = await _client(db_session)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        r = await client.post(
+            "/api/siem/cases",
+            headers=_auth(member, org.id),
+            json={"title": "org A case"},
+        )
+        assert r.status_code == 201
+        cid = r.json()["id"]
+
+        r = await client.get(f"/api/siem/cases/{cid}", headers=_auth(outsider, other.id))
+        assert r.status_code == 404
+        r = await client.get(f"/api/siem/cases/{cid}", headers=_auth(outsider, org.id))
+        assert r.status_code in (401, 404)
+        r = await client.get("/api/siem/cases", headers=_auth(outsider, other.id))
+        assert r.status_code == 200
+        assert r.json()["items"] == []
     app.dependency_overrides.clear()
