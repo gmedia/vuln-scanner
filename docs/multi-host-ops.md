@@ -10,9 +10,12 @@ Keep real inventory in a private ops note or password manager.
 | **App host** | backend, frontend, **mobile** worker, dead-letter, beat; host nginx TLS | `REMOTE_DATA=1` compose overlay. Keep mobile here while uploads/`scan_data` are local paths. |
 | **Worker host** (optional scale-out) | `worker_ip`, `worker_domain` only | Same `.env` broker/DB as app; **no** public 80/443. Shared Redis = Celery queue. |
 | **Data host** | PostgreSQL 16, Redis 8 (or distro Redis) | ufw: **app + worker** host CIDRs → 5432/6379; **pg_hba** must allow those same client IPs for the app DB role |
-| **Guard host** (optional, later) | Wazuh Manager ± Indexer | API/Indexer only from app host; agent ports as needed |
+| **Guard host** | Wazuh Manager + Indexer (all-in-one lab OK) | API `:55000` + Indexer `:9200` **only** from app host; agent `:1514`/`:1515` only from lab/agent hosts. Do **not** expose dashboard `:443` to the public internet unless ops explicitly needs it. |
+| **Guard lab agent** (optional) | `wazuh-agent` only | Enroll via app API (`GUARD_MOCK_WAZUH=false`). Never install an agent using a **mock** key. |
 
-Early launch: app + data first; **Guard mock** on app host until Guard host is ready. Split **ip/domain** workers to a worker host when app CPU is tight; leave **mobile + beat** on the app host until shared object storage exists for uploads.
+Lab shorthand (private SSH aliases — **never** put IPs in git): **app** = `tc1`, **data** = `tc2`, **Guard** = `tc3`, **ip/domain workers** = `tc4`, **agent VM** = `tc5`.
+
+Early launch used **Guard mock** on the app host. Live Manager/Indexer now lives on the Guard host; set `GUARD_MOCK_WAZUH=false` and `WAZUH_*` **only** in host `.env` (mode 600). Compose must pass those keys into `backend` (`docker-compose.prod.yml`). Split **ip/domain** workers to a worker host when app CPU is tight; leave **mobile + beat** on the app host until shared object storage exists for uploads.
 
 ## App host compose
 
@@ -93,7 +96,7 @@ Existing keys stay (API_KEY, JWT, SMTP, …). For remote data add/adjust:
 | `REDIS_URL` | Full URL including password, e.g. `redis://:PASS@DATA_HOST:6379/0` |
 | `CELERY_BROKER_URL` / `CELERY_RESULT_BACKEND` | Usually same Redis URL family |
 | `FRONTEND_URL` / CORS via existing or host nginx | Public site origin |
-| Guard (later) | `GUARD_MOCK_WAZUH`, `WAZUH_*` — see `.env.example` |
+| Guard | `GUARD_MOCK_WAZUH=false` on live lab; `WAZUH_MANAGER_*`, `WAZUH_INDEXER_*`, `WAZUH_AGENT_MANAGER_HOST`, `WAZUH_VERIFY_TLS` — see `.env.example`. Values stay in host `.env` / secrets, never in markdown. |
 
 ### SSH target + jump bastion
 
