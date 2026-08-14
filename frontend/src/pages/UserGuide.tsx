@@ -59,7 +59,7 @@ function SectionHeading({
   return (
     <h2
       id={id}
-      className="mb-3 flex scroll-mt-20 items-center gap-2 text-lg font-semibold text-foreground"
+      className="mb-3 flex scroll-mt-28 items-center gap-2 text-lg font-semibold text-foreground"
     >
       <Icon className="h-5 w-5 shrink-0 text-primary" />
       {title}
@@ -174,9 +174,9 @@ function UserGuide() {
         </p>
       </div>
 
-      <div className="lg:hidden">
+      <div className="sticky top-0 z-20 -mx-4 mb-6 bg-background/95 px-4 py-2 backdrop-blur-sm md:-mx-6 md:px-6 lg:hidden">
         <details
-          className="group mb-6 rounded-lg border border-border bg-card"
+          className="group rounded-lg border border-border bg-card shadow-sm"
           open={mobileTocOpen}
           onToggle={(event) =>
             setMobileTocOpen((event.target as HTMLDetailsElement).open)

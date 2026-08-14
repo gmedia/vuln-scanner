@@ -87,9 +87,13 @@ describe("UserGuide", () => {
       .getAllByRole("link")
       .filter((a) => a.getAttribute("href") === "/schedules");
     expect(scheduleLinks.length).toBeGreaterThanOrEqual(1);
-    expect(
-      screen.getAllByRole("navigation", { name: "Daftar isi panduan" }).length,
-    ).toBeGreaterThanOrEqual(1);
+    const tocNavs = screen.getAllByRole("navigation", {
+      name: "Daftar isi panduan",
+    });
+    expect(tocNavs.length).toBeGreaterThanOrEqual(1);
+    const mobileToc = tocNavs[0]?.closest("details");
+    expect(mobileToc).toBeTruthy();
+    expect(mobileToc?.parentElement).toHaveClass("sticky");
     const debianBlock = screen.getByText("Debian / Ubuntu").closest("details");
     expect(debianBlock).toBeTruthy();
     expect(debianBlock).not.toHaveAttribute("open");
