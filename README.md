@@ -208,7 +208,8 @@ curl http://localhost/api/scan/{id}/export?format=html \
 | Workspace (orgs, roles, invites) | **Shipped** | Spek: [`docs/specs/workspace-v1.md`](docs/specs/workspace-v1.md) |
 | Soft dual-brand (Sinexis) | **Shipped** | Public host may still be `vs.appmedia.id` |
 | **Guard** (Wazuh thin) | **Shipped on `main`** (#274–#275) | Inventory + critical alerts + per-org enroll — **not** full SIEM. Spek: [`docs/specs/guard-v1.md`](docs/specs/guard-v1.md). Mock Wazuh in CI; live Manager/Indexer env on **deploy host only** (lab smoke residual). |
-| Asset registry | Planned (P3) | Not started |
+| Asset registry | Planned (P3) | Draft spek [`docs/specs/assets-v1.md`](docs/specs/assets-v1.md) — no S1+ until explicit |
+| **SIEM** (search + cases) | **S0 draft (P7)** | Spek [`docs/specs/siem-v1.md`](docs/specs/siem-v1.md). **Not** coded. Separate from Guard `/guard`. No S1+ until explicit implement. |
 
 Agent/session priority after reset: [`docs/AGENT_EXECUTION_GUIDE.md`](docs/AGENT_EXECUTION_GUIDE.md).
 
