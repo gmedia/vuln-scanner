@@ -3,7 +3,7 @@
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
 **Last updated:** 2026-08-14
-**Repo tip at write time:** `main` @ `c8f9ed7` (**#299** Guard e2e A+B; **#298** `/guide` TOC; **#297** e2e auth). Open residual: Guard live lab (compose `WAZUH_*`); leftover workers; **GTM human**; Dependabot #252–#266 — do not mass-merge. **P7 SIEM S0** on this branch — no IPs/secrets. Re-`git pull` after reset.
+**Repo tip at write time:** `main` @ `3714ea4` (**#300** compose `WAZUH_*`; **#299** Guard e2e A+B). Open residual: **Guard live lab** (mock off only on app host `.env`); leftover ip/domain workers; **GTM human**; Dependabot #252–#266 — do not mass-merge. **P7 SIEM S0** draft — no IPs/secrets. Re-`git pull` after reset. Never commit IPs/passwords/enroll keys.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
 **Phase snapshot:** **P0 policy locked** · **P1 attach shipped + edge smoke closed** · **P2 Workspace S1–S5 on `main`** · **Attach UX Wave B on `main`** · **P4 soft dual-brand on `main`** · **P5 Guard thin on `main`** (#273–#275 code; #279–#281 + **#294** host/guide) — **not** full SIEM · **CI/default mock** · **P3** draft spek on main (no S1+ code until explicit verb) · **P7 SIEM** draft spek [`docs/specs/siem-v1.md`](specs/siem-v1.md) (**S0 only** — no S1+ until explicit verb + isolation Qs) · **GTM human still open** · residual eng = edge apply tip, bugs, Dependabot only when CI green + explicit — **do not** implement SIEM under Guard PRs.
 
@@ -17,7 +17,7 @@ gh pr list --state open --assignee @me
 
 GIT_MASTER=1 git fetch origin
 GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull origin main
-GIT_MASTER=1 git rev-parse --short HEAD   # expect ≥ 8546ef3 or newer (re-pull)
+GIT_MASTER=1 git rev-parse --short HEAD   # expect ≥ c8f9ed7 or newer (re-pull)
 ```
 
 Then read, in order:
@@ -43,9 +43,9 @@ Then read, in order:
 | **Legacy name** | VulnScanner / `vs.appmedia.id` — keep as **Scan module** during soft dual-brand |
 | **Near-term commercial goal** | **Upsell** recurring Secure/Scan add-on on customers who **already** pay colo / VPS / cloud / hosting |
 | **Strategic beachhead** | Hotel / hospitality (Yogya relationships + any multi-property group already on GMD) |
-| **Modules** | **Scan + Attach** (prod, Wave B UX polish) · **Workspace S1–S5** (prod; residual multi-org/S5 smoke may still be manual) · **Assets** (P3) · **Guard** (P5 thin — **S0–S5 + Http client on `main`** #273–#275; live lab pending human) |
+| **Modules** | **Scan + Attach** (prod, Wave B UX polish) · **Workspace S1–S5** (prod; residual multi-org/S5 smoke may still be manual) · **Assets** (P3) · **Guard** (P5 thin on `main`; **live Manager/Indexer on Guard host `tc3`**, app `tc1`, lab agent `tc5` — see [`multi-host-ops.md`](multi-host-ops.md); CI stays mock) · **SIEM P7 S0 draft only** |
 | **Build order (upsell-first)** | See **§1.3** — P2 **S1–S5** shipped; **P5 thin code on main** (mock CI; live host env human); GTM still parallel; rebrand must not gate attach; **P7 SIEM** = spek first, **never** as a Guard feature PR |
-| **Not v1 (unless P7 S1+ explicitly unlocked)** | Nested multi-project, org billing dual-wallet, Windows depth, SOAR, customer Wazuh dashboard, hard brand cut blocking attach revenue. **Full SIEM** is now **P7 S0 draft only** — still **not** coded. |
+| **Not v1 (unless P7 S1+ explicitly unlocked)** | Nested multi-project, org billing dual-wallet, Windows depth, SOAR, customer Wazuh dashboard, hard brand cut blocking attach revenue. **Full SIEM** is **P7 S0 draft only** — still **not** coded. |
 
 ### Positioning (one line)
 
@@ -97,7 +97,7 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 | **P2** | **Workspace v1** | B2B multi-user | orgs, memberships, invites, org-scoped scans, personal credits, backfill; JWT `org_id`; WS membership AuthZ; **S5** schedule cap per-org | Nested projects; org wallet; Wazuh; per-org ApiKey | **S1–S5 shipped** (#267 S1–S4 → then #270 S5 @ `6b600fb`; tip with Wave B `98756de`). Cap **10 enabled / org** (`MAX_SCHEDULES_PER_ORG`). Spek D1–D6; edge Alembic **`add_workspace_orgs`**. **Residual:** multi-member S5 + login/UI multi-org smoke (manual) |
 | **P3** | **Asset registry (light)** | Multi-target tiers | Named assets; scan pack; tier limits | Full CMDB; IoT; PMS | **Draft spek on `main`** via **#282** — [`docs/specs/assets-v1.md`](specs/assets-v1.md) (S0). **No S1+ code** until explicit verb; open questions §11 before coding |
 | **P4** | **Soft dual-brand** | Name trust | Sinexis strings, landing, SKU label | Hard cut / domain cutover blocking attach | **Shipped soft dual-brand on `main`** (#250); public host remains **`vs.appmedia.id`** (no hard cut) |
-| **P5** | **Guard MVP** (Wazuh thin) | Second upsell | Agent inventory, critical alerts, per-org enroll; spek [`guard-v1.md`](specs/guard-v1.md) | Full SIEM, SOAR, raw-log UI, per-tenant managers | **S0–S5 + Http on `main`** (#273–#275). E2E A+B **#299**. Host/guide: **#279** enroll, **#281** generic install, **#294** TOC. Mock default **CI**. **Live lab:** Manager+Indexer **`tc3`**; app **`tc1`** mock off + `WAZUH_*`; agent **`tc5`**. **Do not** add Discover/cases on `/guard` |
+| **P5** | **Guard MVP** (Wazuh thin) | Second upsell | Agent inventory, critical alerts, per-org enroll; spek [`guard-v1.md`](specs/guard-v1.md) | Full SIEM, SOAR, raw-log UI, per-tenant managers | **S0–S5 + Http on `main`** (#273–#275). E2E A+B **#299**. Host/guide: **#279** enroll, **#281** generic install, **#294** TOC. Mock default **CI** (`GUARD_MOCK_WAZUH=true`). **Live lab:** Manager+Indexer on **Guard host (`tc3`)**; app (`tc1`) `.env` `GUARD_MOCK_WAZUH=false` + `WAZUH_*` (compose must inject — do not assume `.env` auto-flows); agent VM **`tc5`**. **Do not** add Discover/cases on `/guard` |
 | **P6** | **Hospitality / pilot pack** | Beachhead A | Hotel runbooks, hybrid SLA | Logos-only builds | After attach pilot story works |
 | **P7** | **SIEM v1** (search + cases) | Analyst surface after Guard | Org-scoped Indexer search (structured), Postgres cases; spek [`siem-v1.md`](specs/siem-v1.md) | SOAR, customer Wazuh UI, raw DSL, Pattern B managers, merge into `scan_findings` | **S0 draft** — **no S1+ code** until explicit implement **and** spek §11 Q2. Route `/siem`; reuse `WAZUH_*` |
 
@@ -123,6 +123,8 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 ## 2) What the codebase is today (facts)
 
 **Stack:** SPA React/Vite + FastAPI + PostgreSQL + Redis + Celery (queues: `ip_scan`, `domain_scan`, `mobile_scan`, `dead_letter` + schedule due tick) + **celery_beat** + host nginx prod.
+
+**Live lab host roles** (SSH aliases only — **no IPs in git**): `tc1` app (backend/frontend/mobile/beat/DL); `tc2` Postgres+Redis; `tc3` Wazuh Manager+Indexer; `tc4` ip+domain workers; `tc5` Guard agent lab. Coding host ≠ edge. Detail: [`docs/multi-host-ops.md`](multi-host-ops.md).
 
 **Domain model (Workspace S1–S5 on main):**
 
@@ -423,7 +425,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 
 ## 10) Agent one-liner
 
-> After reset: **boot §0 → §1.3 (P0–P2 + Wave B + P4 + P5 thin/Http + guide #294 + seed #295 on main @ ≥8546ef3; GTM + edge apply tip human; no SIEM default) → no silent epics → bug/P3 only on explicit ask → no PII/SSH in git → Indonesian with user, `GIT_MASTER=1`, coding Docker off, edge for prod.**
+> After reset: **boot §0 → §1.3 (P0–P2 + Wave B + P4 + P5 thin + e2e #299 on main @ ≥c8f9ed7; live Guard = tc3 Manager + tc1 mock off + tc5 agent; GTM human; no SIEM) → no silent epics → no PII/SSH/IPs in git → Indonesian with user, `GIT_MASTER=1`, coding Docker off, edge for prod.**
 
 ---
 
