@@ -1,6 +1,6 @@
 # Spec: SIEM v1 (P7 — control-plane search + cases)
 
-**Status:** **S0 draft** — spek only. **Do not implement S1+** until the user explicitly says implement / kerjakan / buat (or points at a checked slice) **and** §11 open questions that block tenant isolation are answered.
+**Status:** **S0 locked + S1–S2 in progress** — §11 Q1/Q2/Q3/Q6 answered 2026-08-14. S3+ API/SPA still wait unless this series includes them.
 **Goal:** first **product SIEM surface** for orgs that already run **Guard thin** — org-scoped event search + incident cases — **without** giving tenants the Wazuh/OpenSearch dashboard or a full SOC platform.
 **Epic:** **P7** (new). Does **not** replace P5 Guard. Does **not** jump P3 Assets or GTM.
 **Depends:** P5 Guard thin on `main` ([`guard-v1.md`](guard-v1.md) D1–D10) · P2 Workspace (JWT `org_id`, membership) · live Manager+Indexer (lab `tc3`) for later smoke only.
@@ -242,11 +242,11 @@ Placeholders in `.env.example` only.
 
 Answer in this section before coding slices that depend on them.
 
-| # | Question | Blocks | Default if unanswered |
+| # | Question | Blocks | **Locked 2026-08-14** |
 |---|----------|--------|------------------------|
-| **Q1** | May API ever return `full_log` (even admin-only)? | Search DTO | **No** |
-| **Q2** | Tenant filter: agent-id allowlist only vs group/label only vs **both**? | Query builder | **Both** if Indexer fields reliable; else agent-id from `guard_agents` |
-| **Q3** | Route/nav: `/siem` vs `/detect` vs under Workspace? | FE | **`/siem`** |
+| **Q1** | May API ever return `full_log` (even admin-only)? | Search DTO | **No** — never in v1 responses |
+| **Q2** | Tenant filter | Query builder | **Both:** `agent.id` IN org `guard_agents` **and** group/label `org_*` when binding exists. Empty inventory → **zero hits** (no leak). |
+| **Q3** | Route/nav | FE | **`/siem`** (S5; not this slice) |
 | **Q4** | SKU: included in Secure or separate SIEM line? | Commercial copy only | **Do not invent price**; human P0 |
 | **Q5** | Retention: who pays Indexer disk if search lookback grows? | Ops | Keep **7d** product window |
 | **Q6** | Should viewer see search at all (noisy / legal)? | AuthZ | **Yes** (same as Guard viewer read) |
