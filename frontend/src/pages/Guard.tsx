@@ -21,6 +21,7 @@ import {
   listEnrollTokens,
   listGuardAgents,
   listGuardAlerts,
+  revokeEnrollToken,
   syncGuard,
 } from "@/api/guard";
 import { useAuthStore } from "@/store/authStore";
@@ -136,6 +137,15 @@ export default function Guard() {
       invalidate();
     },
     onError: (e) => setActionError(apiDetail(e, "Gagal membuat token enroll")),
+  });
+
+  const revokeMut = useMutation({
+    mutationFn: (id: string) => revokeEnrollToken(id),
+    onSuccess: () => {
+      setActionError(null);
+      invalidate();
+    },
+    onError: (e) => setActionError(apiDetail(e, "Gagal mencabut token enroll")),
   });
 
   const enabled = statusQ.data?.enabled ?? false;
@@ -439,10 +449,28 @@ export default function Guard() {
                 ) : (
                   <ul className="space-y-1 text-sm text-muted-foreground">
                     {(tokensQ.data ?? []).map((t) => (
-                      <li key={t.id}>
-                        {t.label || "token"} · exp {formatWhen(t.expires_at)}
-                        {t.revoked_at ? " · revoked" : ""}
-                        {t.used_at ? " · used" : ""}
+                      <li
+                        key={t.id}
+                        className="flex flex-wrap items-center justify-between gap-2"
+                        data-testid="guard-enroll-token-row"
+                      >
+                        <span>
+                          {t.label || "token"} · exp {formatWhen(t.expires_at)}
+                          {t.revoked_at ? " · revoked" : ""}
+                          {t.used_at ? " · used" : ""}
+                        </span>
+                        {!t.revoked_at && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs"
+                            disabled={revokeMut.isPending}
+                            onClick={() => revokeMut.mutate(t.id)}
+                          >
+                            Revoke
+                          </Button>
+                        )}
                       </li>
                     ))}
                   </ul>
