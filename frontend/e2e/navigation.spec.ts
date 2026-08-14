@@ -7,6 +7,8 @@ test.describe("Navigation", () => {
       "/scan/ip",
       "/scan/domain",
       "/scan/mobile",
+      "/guard",
+      "/guide",
       "/nonexistent",
     ];
     for (const route of routes) {
