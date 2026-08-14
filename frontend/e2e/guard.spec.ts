@@ -121,6 +121,36 @@ test.describe("Guard — Layer B mutations (CI / non-prod)", () => {
     expect(secretLen).toBeGreaterThan(8);
   });
 
+  test("revoke enroll token marks row revoked", async ({ page }) => {
+    await openGuard(page);
+    const state = await page.locator("text=State:").textContent();
+    if (!state?.includes("enabled")) {
+      const enableBtn = page.getByRole("button", { name: "Aktifkan Guard" });
+      if (await enableBtn.isVisible()) {
+        await enableBtn.click();
+        await expect(page.locator("text=State:")).toContainText("enabled", {
+          timeout: 20_000,
+        });
+      }
+    }
+
+    await expect(page.getByText("Enroll token")).toBeVisible();
+    const label = `e2e-revoke-${Date.now()}`;
+    await page.locator("#enroll-label").fill(label);
+    await page.getByRole("button", { name: "Generate" }).click();
+    await expect(page.getByTestId("guard-host-enroll-steps")).toBeVisible({
+      timeout: 20_000,
+    });
+
+    const row = page
+      .getByTestId("guard-enroll-token-row")
+      .filter({ hasText: label });
+    await expect(row).toBeVisible();
+    await row.getByRole("button", { name: "Revoke" }).click();
+    await expect(row).toContainText("revoked", { timeout: 20_000 });
+    await expect(row.getByRole("button", { name: "Revoke" })).toHaveCount(0);
+  });
+
   test("sync does not 5xx the page", async ({ page }) => {
     await openGuard(page);
     const state = await page.locator("text=State:").textContent();
