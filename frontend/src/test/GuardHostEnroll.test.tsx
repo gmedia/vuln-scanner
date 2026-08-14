@@ -20,6 +20,7 @@ vi.mock("@/api/guard", async () => {
     createEnrollToken: vi.fn(),
     enableGuard: vi.fn(),
     syncGuard: vi.fn(),
+    revokeEnrollToken: vi.fn(),
   };
 });
 
@@ -58,6 +59,7 @@ describe("Guard host enroll UI", () => {
     vi.mocked(guardApi.listGuardAgents).mockResolvedValue([]);
     vi.mocked(guardApi.listGuardAlerts).mockResolvedValue([]);
     vi.mocked(guardApi.listEnrollTokens).mockResolvedValue([]);
+    vi.mocked(guardApi.revokeEnrollToken).mockResolvedValue(undefined);
     vi.mocked(guardApi.createEnrollToken).mockResolvedValue({
       id: "tok1",
       label: "lab",
@@ -121,5 +123,35 @@ describe("Guard host enroll UI", () => {
     expect(document.body.textContent ?? "").toMatch(
       /apt-get install -y wazuh-agent/,
     );
+  });
+
+  it("revokes an active enroll token from the list", async () => {
+    const user = userEvent.setup();
+    vi.mocked(guardApi.listEnrollTokens).mockResolvedValue([
+      {
+        id: "tok-active",
+        label: "e2e-revoke",
+        expires_at: new Date().toISOString(),
+        revoked_at: null,
+        used_at: null,
+        created_at: new Date().toISOString(),
+      },
+    ]);
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <Guard />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    const revokeBtn = await screen.findByRole("button", { name: "Revoke" });
+    await user.click(revokeBtn);
+    await waitFor(() => {
+      expect(guardApi.revokeEnrollToken).toHaveBeenCalledWith("tok-active");
+    });
   });
 });
