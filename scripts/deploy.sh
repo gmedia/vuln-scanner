@@ -24,12 +24,30 @@ if [ "${REMOTE_DATA:-}" = "1" ] || [ "${REMOTE_DATA:-}" = "true" ]; then
   echo "NOTE: REMOTE_DATA=1 — multi-host overlay (no local postgres/redis containers)"
 fi
 
-# Transient egress to github.com:443 is common on some VPS paths — retry pull.
+# Host overlays on tracked files (often docker-compose.prod.yml) block pull.
+# Stash them first; pop after a successful pull. Do not treat dirty-tree as egress failure.
+_stash_ref=""
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+  echo "NOTE: stashing local tracked changes before git pull"
+  git stash push -m "deploy.sh auto-stash $(date -u +%Y%m%dT%H%M%SZ)" -- \
+    docker-compose.prod.yml docker-compose.prod.remote-data.yml || true
+  _stash_ref="$(git stash list | head -n1 | cut -d: -f1 || true)"
+fi
+
 _git_pull_ok=0
+_git_last_err=""
 for _attempt in 1 2 3 4 5; do
-  if git pull origin main; then
+  if _git_last_err="$(git pull origin main 2>&1)"; then
+    echo "$_git_last_err"
     _git_pull_ok=1
     break
+  fi
+  echo "$_git_last_err"
+  if echo "$_git_last_err" | grep -q "would be overwritten by merge"; then
+    echo "=== FAILED — dirty working tree still blocks git pull (not egress) ==="
+    echo "Inspect: git status --porcelain && git diff --stat"
+    echo "Then stash/commit/discard tracked overlays and re-run deploy."
+    exit 1
   fi
   echo "WARN: git pull origin main failed (attempt ${_attempt}/5); retrying in $((_attempt * 5))s..."
   sleep $((_attempt * 5))
@@ -37,6 +55,14 @@ done
 if [ "$_git_pull_ok" -ne 1 ]; then
   echo "=== FAILED — git pull origin main after 5 attempts (check egress to github.com:443) ==="
   exit 1
+fi
+
+if [ -n "$_stash_ref" ]; then
+  echo "NOTE: attempting git stash pop of deploy auto-stash"
+  if ! git stash pop; then
+    echo "WARN: stash pop conflicted or failed — stash kept. Review git stash list."
+    echo "Deploy continues on pulled main; re-apply overlay manually if still needed."
+  fi
 fi
 
 echo "=== Disk before cleanup ==="
