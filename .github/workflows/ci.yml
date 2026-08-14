@@ -411,6 +411,11 @@ jobs:
             WAZUH_INDEXER_PASSWORD=${{ secrets.WAZUH_INDEXER_PASSWORD }}
             WAZUH_VERIFY_TLS=${{ secrets.WAZUH_VERIFY_TLS || 'true' }}
             WAZUH_AGENT_MANAGER_HOST=${{ secrets.WAZUH_AGENT_MANAGER_HOST }}
+            SIEM_ENABLED=${{ secrets.SIEM_ENABLED || 'false' }}
+            SIEM_SEARCH_MIN_LEVEL=${{ secrets.SIEM_SEARCH_MIN_LEVEL || '7' }}
+            SIEM_MAX_LOOKBACK_HOURS=${{ secrets.SIEM_MAX_LOOKBACK_HOURS || '168' }}
+            SIEM_INCLUDE_FULL_LOG=${{ secrets.SIEM_INCLUDE_FULL_LOG || 'false' }}
+            SIEM_MAX_PAGE_SIZE=${{ secrets.SIEM_MAX_PAGE_SIZE || '50' }}
             OBJECT_STORAGE_BACKEND=${{ secrets.OBJECT_STORAGE_BACKEND || 'local' }}
             COS_SECRET_ID=${{ secrets.COS_SECRET_ID }}
             COS_SECRET_KEY=${{ secrets.COS_SECRET_KEY }}
