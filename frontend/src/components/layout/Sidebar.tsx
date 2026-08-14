@@ -13,6 +13,7 @@ import {
   Coins,
   CalendarClock,
   BookOpen,
+  Siren,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BRAND } from "@/lib/brand";
@@ -37,6 +38,7 @@ const navItems = [
   { to: "/scan/mobile", label: "Mobile Scanner", icon: Smartphone },
   { to: "/schedules", label: "Jadwal", icon: CalendarClock },
   { to: "/guard", label: "Guard", icon: Shield },
+  { to: "/siem", label: "SIEM", icon: Siren },
   { to: "/guide", label: "User Guide", icon: BookOpen },
 ];
 
