@@ -1,6 +1,6 @@
 # Spec: SIEM v1 (P7 — control-plane search + cases)
 
-**Status:** **S0 locked + S1–S2 in progress** — §11 Q1/Q2/Q3/Q6 answered 2026-08-14. S3+ API/SPA still wait unless this series includes them.
+**Status:** **S0–S5 on branch `feat/siem-s5-spa`** — API `/api/siem` + SPA `/siem` + Sidebar. CI default `SIEM_ENABLED=false` (404 / feature-off copy).
 **Goal:** first **product SIEM surface** for orgs that already run **Guard thin** — org-scoped event search + incident cases — **without** giving tenants the Wazuh/OpenSearch dashboard or a full SOC platform.
 **Epic:** **P7** (new). Does **not** replace P5 Guard. Does **not** jump P3 Assets or GTM.
 **Depends:** P5 Guard thin on `main` ([`guard-v1.md`](guard-v1.md) D1–D10) · P2 Workspace (JWT `org_id`, membership) · live Manager+Indexer (lab `tc3`) for later smoke only.
@@ -277,7 +277,7 @@ Answer in this section before coding slices that depend on them.
 | **S2** | Query builder + Indexer methods (mockable); **no** raw DSL | Wait |
 | **S3** | `/api/siem` + AuthZ + IDOR tests | Wait |
 | **S4** | Cases CRUD + notes | Wait (can follow S3) |
-| **S5** | SPA `/siem` + Sidebar | Wait |
+| **S5** | SPA `/siem` + Sidebar | **This PR** |
 
 **Build order:** S0 → S1 → S2 → S3 → S4 → S5.
 
@@ -321,7 +321,7 @@ User may override in this table before S1.
 - [ ] No S1+ code in the S0 PR
 - [ ] No lab IPs / secrets in the spek
 
-**DoD for a future S5 (not this PR):** viewer in org A cannot see org B hits; search works with mock; cases CRUD; SPA separate from `/guard`; flag off in CI default.
+**DoD S5:** SPA `/siem` + Sidebar distinct from Guard; search + cases UI; 404 = feature off; no “Open Wazuh dashboard”; flag off in CI default.
 
 ---
 
