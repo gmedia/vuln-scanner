@@ -41,6 +41,7 @@ from app.models.pricing import PricingConfig  # noqa: F401
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.scan_schedule import ScanSchedule  # noqa: F401
+from app.models.siem import SiemCase, SiemCaseEvent, SiemCaseNote  # noqa: F401
 from app.models.user import User
 
 # Counter-based incr so rate limiting tests work correctly

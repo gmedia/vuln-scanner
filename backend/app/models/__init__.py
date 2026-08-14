@@ -6,6 +6,7 @@ from app.models.password_reset import PasswordResetToken
 from app.models.pricing import PricingConfig
 from app.models.scan_job import ScanJob
 from app.models.scan_schedule import ScanSchedule
+from app.models.siem import SiemCase, SiemCaseEvent, SiemCaseNote
 from app.models.user import User
 
 __all__ = [
@@ -23,4 +24,7 @@ __all__ = [
     "GuardAgent",
     "GuardAlert",
     "GuardEnrollToken",
+    "SiemCase",
+    "SiemCaseEvent",
+    "SiemCaseNote",
 ]
