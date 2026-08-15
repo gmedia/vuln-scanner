@@ -410,14 +410,11 @@ class HttpWazuhClient(WazuhClient):
         try:
             await self._manager_request("POST", "/groups", json_body={"group_id": group_name})
         except WazuhClientError as exc:
-            if exc.status_code in (400, 409):
-                try:
-                    await self._manager_request("GET", f"/groups/{group_name}")
-                    return
-                except WazuhClientError:
-                    if exc.status_code == 409:
-                        return
-                    raise
+            # Wazuh 4.x has no `GET /groups/{name}` endpoint. A duplicate group is
+            # reported as HTTP 400 ("The group already exists"), which means the
+            # group is already present and usable — treat it as success.
+            if exc.status_code == 400:
+                return
             raise
 
     async def list_agents(self, group_name: str) -> list[WazuhAgentInfo]:
