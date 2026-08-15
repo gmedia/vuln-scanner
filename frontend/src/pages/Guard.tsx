@@ -204,7 +204,7 @@ export default function Guard() {
           ) : (
             <>
               <div className="flex flex-wrap gap-3">
-                <span>
+                <span data-testid="guard-state">
                   State:{" "}
                   <strong>{enabled ? "enabled" : "disabled"}</strong>
                 </span>
@@ -234,7 +234,7 @@ export default function Guard() {
       </Card>
 
       {!enabled && !statusQ.isLoading && (
-        <Card>
+        <Card data-testid="guard-disabled">
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
             Aktifkan Guard (admin/owner), lalu pasang agen di VPS/colo dengan token enroll.
           </CardContent>
@@ -243,7 +243,7 @@ export default function Guard() {
 
       {enabled && (
         <>
-          <Card>
+          <Card data-testid="guard-agents">
             <CardHeader>
               <CardTitle className="text-base">Agen</CardTitle>
             </CardHeader>
@@ -281,7 +281,7 @@ export default function Guard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-testid="guard-alerts">
             <CardHeader>
               <CardTitle className="text-base">Alert kritis</CardTitle>
               <CardDescription>Rule level tinggi · tanpa raw log</CardDescription>

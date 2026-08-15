@@ -27,18 +27,22 @@ async function openGuard(
   ).toBeVisible();
   await expect(page.getByText("Status", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("Gagal memuat status Guard")).toHaveCount(0);
-  await expect(page.locator("text=State:")).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId("guard-state")).toBeVisible({
+    timeout: 20_000,
+  });
 }
 
 test.describe("Guard — Layer A smoke", () => {
   test("page loads status card without crashing", async ({ page }) => {
     await openGuard(page);
-    await expect(page.locator("text=State:")).toContainText(/enabled|disabled/);
+    await expect(page.getByTestId("guard-state")).toContainText(
+      /enabled|disabled/,
+    );
   });
 
   test("sidebar links to Guard", async ({ page }) => {
     await page.goto("/dashboard");
-    await page.locator("aside").locator("a:has-text('Guard')").click();
+    await page.getByTestId("nav-guard").click();
     await expect(page).toHaveURL(/\/guard$/);
     await expect(
       page.getByRole("heading", { name: "Guard", exact: true }),
@@ -49,14 +53,12 @@ test.describe("Guard — Layer A smoke", () => {
     page,
   }) => {
     await openGuard(page);
-    const enabled = await page.locator("text=State:").textContent();
+    const enabled = await page.getByTestId("guard-state").textContent();
     if (enabled?.includes("enabled")) {
-      await expect(page.getByText("Agen", { exact: true })).toBeVisible();
-      await expect(page.getByText("Alert kritis")).toBeVisible();
+      await expect(page.getByTestId("guard-agents")).toBeVisible();
+      await expect(page.getByTestId("guard-alerts")).toBeVisible();
     } else {
-      await expect(
-        page.getByText("Aktifkan Guard (admin/owner)", { exact: false }),
-      ).toBeVisible();
+      await expect(page.getByTestId("guard-disabled")).toBeVisible();
     }
   });
 });
@@ -71,7 +73,7 @@ test.describe("Guard — Layer B mutations (CI / non-prod)", () => {
 
   test("admin can enable Guard when disabled", async ({ page }) => {
     await openGuard(page);
-    const state = await page.locator("text=State:").textContent();
+    const state = await page.getByTestId("guard-state").textContent();
     if (state?.includes("enabled")) {
       test.info().annotations.push({
         type: "note",
@@ -82,7 +84,7 @@ test.describe("Guard — Layer B mutations (CI / non-prod)", () => {
     const enableBtn = page.getByRole("button", { name: "Aktifkan Guard" });
     await expect(enableBtn).toBeVisible();
     await enableBtn.click();
-    await expect(page.locator("text=State:")).toContainText("enabled", {
+    await expect(page.getByTestId("guard-state")).toContainText("enabled", {
       timeout: 20_000,
     });
   });
@@ -91,12 +93,12 @@ test.describe("Guard — Layer B mutations (CI / non-prod)", () => {
     page,
   }) => {
     await openGuard(page);
-    const state = await page.locator("text=State:").textContent();
+    const state = await page.getByTestId("guard-state").textContent();
     if (!state?.includes("enabled")) {
       const enableBtn = page.getByRole("button", { name: "Aktifkan Guard" });
       if (await enableBtn.isVisible()) {
         await enableBtn.click();
-        await expect(page.locator("text=State:")).toContainText("enabled", {
+        await expect(page.getByTestId("guard-state")).toContainText("enabled", {
           timeout: 20_000,
         });
       }
@@ -123,12 +125,12 @@ test.describe("Guard — Layer B mutations (CI / non-prod)", () => {
 
   test("revoke enroll token marks row revoked", async ({ page }) => {
     await openGuard(page);
-    const state = await page.locator("text=State:").textContent();
+    const state = await page.getByTestId("guard-state").textContent();
     if (!state?.includes("enabled")) {
       const enableBtn = page.getByRole("button", { name: "Aktifkan Guard" });
       if (await enableBtn.isVisible()) {
         await enableBtn.click();
-        await expect(page.locator("text=State:")).toContainText("enabled", {
+        await expect(page.getByTestId("guard-state")).toContainText("enabled", {
           timeout: 20_000,
         });
       }
@@ -153,12 +155,12 @@ test.describe("Guard — Layer B mutations (CI / non-prod)", () => {
 
   test("sync does not 5xx the page", async ({ page }) => {
     await openGuard(page);
-    const state = await page.locator("text=State:").textContent();
+    const state = await page.getByTestId("guard-state").textContent();
     if (!state?.includes("enabled")) {
       const enableBtn = page.getByRole("button", { name: "Aktifkan Guard" });
       if (await enableBtn.isVisible()) {
         await enableBtn.click();
-        await expect(page.locator("text=State:")).toContainText("enabled", {
+        await expect(page.getByTestId("guard-state")).toContainText("enabled", {
           timeout: 20_000,
         });
       }

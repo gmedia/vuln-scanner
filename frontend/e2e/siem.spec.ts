@@ -35,7 +35,7 @@ test.describe("SIEM — Layer A smoke", () => {
 
   test("sidebar links to SIEM", async ({ page }) => {
     await page.goto("/dashboard");
-    await page.locator("aside").locator("a:has-text('SIEM')").click();
+    await page.getByTestId("nav-siem").click();
     await expect(page).toHaveURL(/\/siem$/);
     await expect(
       page.getByRole("heading", { name: "SIEM", exact: true }),
@@ -46,13 +46,9 @@ test.describe("SIEM — Layer A smoke", () => {
     page,
   }) => {
     await openSiem(page);
-    const off = page.getByText("Modul SIEM belum diaktifkan", {
-      exact: false,
-    });
-    const search = page.getByRole("heading", { name: "Cari event" });
-    const noAgents = page.getByText("Pasang agen di Guard dulu.", {
-      exact: true,
-    });
+    const off = page.getByTestId("siem-feature-off");
+    const search = page.getByTestId("siem-search");
+    const noAgents = page.getByTestId("siem-no-agents");
     await expect(off.or(search).or(noAgents).first()).toBeVisible({
       timeout: 20_000,
     });
@@ -73,11 +69,7 @@ test.describe("SIEM — Layer A smoke", () => {
     page,
   }) => {
     await openSiem(page);
-    if (
-      await page
-        .getByText("Modul SIEM belum diaktifkan", { exact: false })
-        .isVisible()
-    ) {
+    if (await page.getByTestId("siem-feature-off").isVisible()) {
       test.info().annotations.push({
         type: "note",
         description: "SIEM flag off — skip search click",
@@ -90,7 +82,9 @@ test.describe("SIEM — Layer A smoke", () => {
       "Internal Server Error",
     );
     await expect(
-      page.getByText("Tidak ada event.").or(page.locator("table tbody tr")),
+      page
+        .getByTestId("siem-events-empty")
+        .or(page.getByTestId("siem-event-row").first()),
     ).toBeVisible({ timeout: 20_000 });
   });
 });
@@ -107,11 +101,7 @@ test.describe("SIEM — Layer B mutations (CI / non-prod)", () => {
     page,
   }) => {
     await openSiem(page);
-    if (
-      await page
-        .getByText("Modul SIEM belum diaktifkan", { exact: false })
-        .isVisible()
-    ) {
+    if (await page.getByTestId("siem-feature-off").isVisible()) {
       test.info().annotations.push({
         type: "note",
         description: "SIEM flag off — skip case create",
@@ -119,10 +109,8 @@ test.describe("SIEM — Layer B mutations (CI / non-prod)", () => {
       return;
     }
     await page.getByRole("button", { name: "Cari", exact: true }).click();
-    const empty = page.getByText("Tidak ada event.");
-    const firstDataRow = page.locator("table tbody tr").filter({
-      hasNot: page.getByText("Tidak ada event."),
-    });
+    const empty = page.getByTestId("siem-events-empty");
+    const firstDataRow = page.getByTestId("siem-event-row");
     await expect(empty.or(firstDataRow.first())).toBeVisible({
       timeout: 20_000,
     });
