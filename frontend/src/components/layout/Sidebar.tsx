@@ -79,6 +79,13 @@ function Sidebar({ open, onClose }: SidebarProps) {
             to={item.to}
             end={item.to === "/dashboard"}
             onClick={onClose}
+            data-testid={
+              item.to === "/guard"
+                ? "nav-guard"
+                : item.to === "/siem"
+                  ? "nav-siem"
+                  : undefined
+            }
             className={({ isActive }) =>
               cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
