@@ -26,22 +26,11 @@ def _manager_router(request: httpx.Request) -> httpx.Response:
     if path.endswith("/groups") and method == "POST":
         body = json.loads(request.content.decode() or "{}")
         if body.get("group_id") == "org_exists":
-            return httpx.Response(409, json={"title": "Conflict", "detail": "exists"})
+            return httpx.Response(400, json={"title": "Bad Request", "detail": "The group already exists: org_exists"})
         return httpx.Response(200, json={"message": "created", "error": 0})
 
-    if "/groups/" in path and method == "GET" and path.count("/") >= 2:
-        return httpx.Response(
-            200,
-            json={
-                "data": {
-                    "affected_items": [{"name": path.rsplit("/", 1)[-1]}],
-                    "total_affected_items": 1,
-                    "total_failed_items": 0,
-                    "failed_items": [],
-                },
-                "error": 0,
-            },
-        )
+    if path.startswith("/groups/") and method == "GET":
+        return httpx.Response(404, json={"title": "Not Found", "detail": path})
 
     if path.endswith("/agents") and method == "GET":
         group = request.url.params.get("group")
