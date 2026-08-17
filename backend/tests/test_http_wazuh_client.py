@@ -184,6 +184,54 @@ async def test_enroll_agent(http_client: HttpWazuhClient, monkeypatch: pytest.Mo
 
 
 @pytest.mark.asyncio
+async def test_search_alerts_by_agent_ids_skips_group_term() -> None:
+    captured: list[dict] = []
+
+    def capture(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/_search"):
+            captured.append(json.loads(request.content.decode()))
+        return _indexer_router(request)
+
+    client = HttpWazuhClient(
+        manager_url="https://manager.test:55000",
+        manager_user="wazuh",
+        manager_password="secret",
+        indexer_url="https://indexer.test:9200",
+        indexer_user="admin",
+        indexer_password="secret",
+        verify_tls=False,
+        transport=httpx.MockTransport(capture),
+    )
+    alerts = await client.search_alerts(
+        group_name="org_abc",
+        min_level=7,
+        agent_ids=["009"],
+        limit=10,
+    )
+    assert len(alerts) == 1
+    assert captured
+    filters = captured[0]["query"]["bool"]["filter"]
+    assert {"terms": {"agent.id": ["009"]}} in filters
+    assert not any("agent.groups" in str(item) for item in filters)
+
+
+@pytest.mark.asyncio
+async def test_search_alerts_empty_agent_ids_returns_none() -> None:
+    client = HttpWazuhClient(
+        manager_url="https://manager.test:55000",
+        manager_user="wazuh",
+        manager_password="secret",
+        indexer_url="https://indexer.test:9200",
+        indexer_user="admin",
+        indexer_password="secret",
+        verify_tls=False,
+        transport=httpx.MockTransport(_indexer_router),
+    )
+    alerts = await client.search_alerts(group_name="org_abc", min_level=7, agent_ids=[])
+    assert alerts == []
+
+
+@pytest.mark.asyncio
 async def test_search_alerts(http_client: HttpWazuhClient) -> None:
     since = datetime(2026, 8, 1, tzinfo=UTC)
     alerts = await http_client.search_alerts(group_name="org_abc", min_level=12, since=since, limit=10)

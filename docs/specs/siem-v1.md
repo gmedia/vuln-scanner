@@ -76,7 +76,7 @@ Need a **controlled** search + case layer in the SaaS, still Pattern A (one mana
 |-------|---------|
 | **Topology** | Same as Guard **D1**: one shared manager + indexer; isolate by **group + SaaS agent inventory** |
 | **Query path** | SaaS builds Indexer query server-side from **structured** filters only |
-| **Tenant predicate** | `agent.id` **IN** org’s `guard_agents.wazuh_agent_id` **AND/OR** documented group/label filter — **both** if feasible; never trust client agent list alone |
+    | **Tenant predicate** | `agent.id` **IN** org’s `guard_agents.wazuh_agent_id` (server-side inventory only). Group/`agent.groups` is **not** required — live Indexer hits often omit groups. Guard alert search may still use group. Never trust a client agent list. |
 | **Min level (search)** | Default **7** (configurable `SIEM_SEARCH_MIN_LEVEL`); Guard list stays **12** |
 | **Max lookback** | **7 days** v1 (`SIEM_MAX_LOOKBACK_HOURS=168`) |
 | **Page size** | Max **50** |

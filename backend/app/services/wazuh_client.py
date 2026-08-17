@@ -75,6 +75,7 @@ class WazuhClient(ABC):
         min_level: int,
         since: datetime | None = None,
         limit: int = 100,
+        agent_ids: list[str] | None = None,
     ) -> list[WazuhAlertInfo]: ...
 
 
@@ -177,15 +178,22 @@ class MockWazuhClient(WazuhClient):
         min_level: int,
         since: datetime | None = None,
         limit: int = 100,
+        agent_ids: list[str] | None = None,
     ) -> list[WazuhAlertInfo]:
         with self._lock:
-            rows = list(self._alerts.get(group_name, []))
+            if agent_ids is not None:
+                rows = [row for bucket in self._alerts.values() for row in bucket]
+            else:
+                rows = list(self._alerts.get(group_name, []))
+        allowed = {str(a) for a in agent_ids} if agent_ids is not None else None
         out: list[WazuhAlertInfo] = []
         for r in rows:
             if int(r["rule_level"]) < min_level:
                 continue
             occurred = r["occurred_at"]
             if since is not None and occurred is not None and occurred < since:
+                continue
+            if allowed is not None and str(r.get("agent_wazuh_id") or "") not in allowed:
                 continue
             out.append(
                 WazuhAlertInfo(
@@ -504,14 +512,18 @@ class HttpWazuhClient(WazuhClient):
         min_level: int,
         since: datetime | None = None,
         limit: int = 100,
+        agent_ids: list[str] | None = None,
     ) -> list[WazuhAlertInfo]:
         if not self._indexer_url:
             raise WazuhClientError("WAZUH_INDEXER_URL is required for alert search")
         size = max(1, min(int(limit), 500))
-        filters: list[dict[str, Any]] = [
-            {"term": {"agent.groups": group_name}},
-            {"range": {"rule.level": {"gte": int(min_level)}}},
-        ]
+        filters: list[dict[str, Any]] = [{"range": {"rule.level": {"gte": int(min_level)}}}]
+        if agent_ids is not None:
+            if not agent_ids:
+                return []
+            filters.insert(0, {"terms": {"agent.id": [str(a) for a in agent_ids]}})
+        else:
+            filters.insert(0, {"term": {"agent.groups": group_name}})
         if since is not None:
             since_utc = since if since.tzinfo else since.replace(tzinfo=UTC)
             filters.append({"range": {"timestamp": {"gte": since_utc.astimezone(UTC).isoformat()}}})
