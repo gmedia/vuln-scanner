@@ -5,6 +5,7 @@
 
 ## Product / session continuity (MANDATORY after OpenCode reset)
 - Read **[`docs/AGENT_EXECUTION_GUIDE.md`](docs/AGENT_EXECUTION_GUIDE.md)** before feature work.
+- **Full prod e2e + Guard enroll/unenroll:** wipe lab agent `tc5` (and leftover Manager/`guard_agents` smoke rows) **first**. See guide **§4.1**. Playwright ≠ host enroll.
 - North star: **Sinexis** — security attach (upsell on colo/VPS + hospitality beachhead); repo still ships as VulnScanner scan SaaS.
 - Build order (detail in guide **§1.3**): **P0 SKU lock → P1 Scan Attach Loop → P2 Workspace → P3 assets → P4 soft rebrand → P5 Guard (Wazuh thin)**. Do not implement Guard/Wazuh in the same epic as Workspace; do not block upsell attach on rebrand.
 - Speak **Bahasa Indonesia** with the user unless they switch language.
