@@ -205,7 +205,7 @@ export default function Siem() {
       {statusQ.isLoading && <Skeleton className="h-24 w-full" />}
 
       {featureOff && (
-        <Card>
+        <Card data-testid="siem-feature-off">
           <CardContent className="pt-6 text-sm text-muted-foreground">
             Modul SIEM belum diaktifkan di lingkungan ini.
           </CardContent>
@@ -228,14 +228,14 @@ export default function Siem() {
           )}
 
           {agents.length === 0 && !agentsQ.isLoading && (
-            <Card>
+            <Card data-testid="siem-no-agents">
               <CardContent className="pt-6 text-sm text-muted-foreground">
                 Pasang agen di Guard dulu.
               </CardContent>
             </Card>
           )}
 
-          <Card>
+          <Card data-testid="siem-search">
             <CardHeader>
               <CardTitle>Cari event</CardTitle>
               <CardDescription>
@@ -341,7 +341,7 @@ export default function Siem() {
                     </thead>
                     <tbody>
                       {events.length === 0 && (
-                        <tr>
+                        <tr data-testid="siem-events-empty">
                           <td
                             colSpan={4}
                             className="py-4 text-muted-foreground"
@@ -353,6 +353,7 @@ export default function Siem() {
                       {events.map((ev) => (
                         <tr
                           key={ev.external_id}
+                          data-testid="siem-event-row"
                           className="cursor-pointer border-b border-border/60 hover:bg-accent/40"
                           onClick={() => setSelected(ev)}
                         >

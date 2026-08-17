@@ -133,7 +133,7 @@ describe("SIEM page", () => {
     vi.mocked(guardApi.listGuardAgents).mockResolvedValue([]);
     renderSiem();
     await waitFor(() => {
-      expect(screen.getByText("Pasang agen di Guard dulu.")).toBeInTheDocument();
+      expect(screen.getByTestId("siem-no-agents")).toBeInTheDocument();
     });
   });
 
@@ -143,9 +143,7 @@ describe("SIEM page", () => {
     });
     renderSiem();
     await waitFor(() => {
-      expect(
-        screen.getByText("Modul SIEM belum diaktifkan di lingkungan ini."),
-      ).toBeInTheDocument();
+      expect(screen.getByTestId("siem-feature-off")).toBeInTheDocument();
     });
     expect(siemApi.listSiemEvents).not.toHaveBeenCalled();
   });
