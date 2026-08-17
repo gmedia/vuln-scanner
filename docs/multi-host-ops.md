@@ -150,18 +150,29 @@ Keep `GUARD_MOCK_WAZUH=true` until Manager URL + credentials exist on the Guard 
 
 ### Lab agent enroll / unenroll smoke (`tc5`)
 
-Repeatable **host** cycle (not Playwright). Default SSH alias **`tc5`**. Does not print tokens/keys/IPs.
+Repeatable **host** cycle (not Playwright). Default SSH alias **`tc5`**. Do not print tokens, keys, or IPs.
+
+**Wipe first** when the user asks for a full prod e2e suite **including** enroll/unenroll, or a standalone enroll test. Leftover `client.keys` (old `003` / hostname `VM-0-4-ubuntu`) blocks import of the product-redeemed key. Auto-enrollment then creates a **different** Manager agent while the app id stays `never_connected`.
+
+1. Stop `wazuh-agent` on `tc5`; truncate `client.keys`; drop leftover `queue/rids/<id>` (keep `sender_counter`).
+2. From **app host `tc1`** (Manager `:55000` is not open to the bastion): `DELETE` smoke agents. **Never delete `000`.** After an explicit unbind, former lab id `003` may be deleted so enroll can reuse the VM.
+3. Delete leftover `guard_agents` rows in app DB (sync does **not** remove them).
+4. Prefer `<enrollment><enabled>no</enabled>` on `tc5` so the package does not self-register.
+5. Import with `manage_agents -i <key>` and confirm `y`. Do **not** rely on `-i /dev/stdin`.
 
 ```bash
 export GUARD_LAB_APP_BASE='https://<app-origin>'   # not public prod unless you override
 export GUARD_LAB_EMAIL='...'
 export GUARD_LAB_PASSWORD='...'
 export GUARD_LAB_AGENT_SSH=tc5
+# after wipe, 003 is not a live identity:
+export GUARD_LAB_PROTECTED_AGENT_IDS=000
 ./scripts/guard-lab-enroll-smoke.sh              # redeem + import key on tc5 + sync
 ./scripts/guard-lab-enroll-smoke.sh --api-only   # Manager pending agent only
-# later:
+# later (Manager DELETE must run on tc1 or via jump; bastion :55000 times out):
 export WAZUH_MANAGER_URL WAZUH_MANAGER_USER WAZUH_MANAGER_PASSWORD
-./scripts/guard-lab-enroll-smoke.sh --unenroll   # Manager DELETE; never 000/003
+./scripts/guard-lab-enroll-smoke.sh --unenroll
+# then delete the matching guard_agents row — product has no unenroll API
 ```
 
-Manual GitHub Action: **Guard lab enroll smoke** (`workflow_dispatch` only, `--api-only` on github-hosted). Full apply/stop needs a bastion with `Host tc5`. Protected Manager ids default `000,003`.
+Manual GitHub Action: **Guard lab enroll smoke** (`workflow_dispatch` only, `--api-only` on github-hosted). Full apply/stop needs a bastion with `Host tc5`. Script default protected ids are `000,003` — override to `000` after wipe.
