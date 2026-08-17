@@ -50,7 +50,7 @@ def test_build_indexer_query_empty_inventory_is_match_none() -> None:
     assert "full_log" not in str(body.get("_source", []))
 
 
-def test_build_indexer_query_requires_agent_and_group() -> None:
+def test_build_indexer_query_tenants_by_agent_id() -> None:
     body = build_indexer_query(
         group_name="org_aabb",
         allowed_agent_ids=["001", "002"],
@@ -63,7 +63,7 @@ def test_build_indexer_query_requires_agent_and_group() -> None:
     )
     filters = body["query"]["bool"]["filter"]
     assert {"terms": {"agent.id": ["001", "002"]}} in filters
-    assert {"term": {"agent.groups": "org_aabb"}} in filters
+    assert not any("agent.groups" in str(item) for item in filters)
     assert body["_source"] == [
         "rule.id",
         "rule.level",
@@ -107,3 +107,22 @@ async def test_search_org_events_drops_foreign_agent() -> None:
     )
     assert [h.agent_wazuh_id for h in hits] == ["001"]
     assert all("foreign" not in h.rule_description for h in hits)
+
+
+@pytest.mark.asyncio
+async def test_search_org_events_matches_inventory_without_group_bucket() -> None:
+    MockWazuhClient.reset()
+    client = MockWazuhClient()
+    MockWazuhClient.seed_alert(
+        "other_group",
+        agent_wazuh_id="009",
+        rule_level=10,
+        rule_description="integrity checksum",
+    )
+    hits = await search_org_events(
+        client,
+        group_name="org_lab",
+        allowed_agent_ids=["009"],
+        min_level=7,
+    )
+    assert [h.agent_wazuh_id for h in hits] == ["009"]

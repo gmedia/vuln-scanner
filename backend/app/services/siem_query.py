@@ -95,12 +95,11 @@ def build_indexer_query(
         return {"size": 0, "query": {"match_none": {}}}
     filters: list[dict[str, Any]] = [
         {"terms": {"agent.id": allowed_agent_ids}},
-        {"term": {"agent.groups": group_name}},
         {"range": {"rule.level": {"gte": min_level}}},
         {"range": {"timestamp": {"gte": start.isoformat(), "lte": end.isoformat()}}},
     ]
     if max_level is not None:
-        filters[2] = {"range": {"rule.level": {"gte": min_level, "lte": max_level}}}
+        filters[1] = {"range": {"rule.level": {"gte": min_level, "lte": max_level}}}
     must: list[dict[str, Any]] = []
     if q:
         must.append(
@@ -164,6 +163,7 @@ async def search_org_events(
         min_level=floor_level,
         since=start,
         limit=page * 4,
+        agent_ids=list(allowed),
     )
     out: list[SiemEventHit] = []
     for alert in raw:
