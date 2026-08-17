@@ -1,0 +1,56 @@
+name: Guard lab enroll smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_only:
+        description: "Skip SSH apply/stop on the lab agent host (API + Manager only)"
+        type: boolean
+        required: false
+        default: false
+      unenroll:
+        description: "Delete last smoked agent on Manager (uses runner state — usually run on bastion instead)"
+        type: boolean
+        required: false
+        default: false
+
+# Manual only. Does not run on push/PR. Secrets stay in GitHub; no IPs in this file.
+# Prefer running scripts/guard-lab-enroll-smoke.sh on the bastion (SSH Host tc5).
+# A GitHub-hosted runner can only do --api-only unless self-hosted + SSH is wired.
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v5
+      - name: Refuse unless lab secrets present
+        env:
+          APP: ${{ secrets.GUARD_LAB_APP_BASE }}
+          EMAIL: ${{ secrets.GUARD_LAB_EMAIL }}
+          PASS: ${{ secrets.GUARD_LAB_PASSWORD }}
+        run: |
+          test -n "$APP" || { echo "missing secret GUARD_LAB_APP_BASE"; exit 1; }
+          test -n "$EMAIL" || { echo "missing secret GUARD_LAB_EMAIL"; exit 1; }
+          test -n "$PASS" || { echo "missing secret GUARD_LAB_PASSWORD"; exit 1; }
+      - name: API enroll (no SSH from github-hosted)
+        env:
+          GUARD_LAB_APP_BASE: ${{ secrets.GUARD_LAB_APP_BASE }}
+          GUARD_LAB_EMAIL: ${{ secrets.GUARD_LAB_EMAIL }}
+          GUARD_LAB_PASSWORD: ${{ secrets.GUARD_LAB_PASSWORD }}
+          GUARD_LAB_ALLOW_PUBLIC_PROD: ${{ secrets.GUARD_LAB_ALLOW_PUBLIC_PROD }}
+        run: |
+          chmod +x scripts/guard-lab-enroll-smoke.sh
+          extra=()
+          extra+=(--api-only)
+          if [[ "${{ inputs.unenroll }}" == "true" ]]; then
+            extra+=(--unenroll)
+            export WAZUH_MANAGER_URL="${{ secrets.WAZUH_MANAGER_URL }}"
+            export WAZUH_MANAGER_USER="${{ secrets.WAZUH_MANAGER_USER }}"
+            export WAZUH_MANAGER_PASSWORD="${{ secrets.WAZUH_MANAGER_PASSWORD }}"
+            export WAZUH_VERIFY_TLS="${{ secrets.WAZUH_VERIFY_TLS }}"
+          fi
+          ./scripts/guard-lab-enroll-smoke.sh "${extra[@]}"

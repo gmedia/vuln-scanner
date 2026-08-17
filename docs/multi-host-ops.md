@@ -147,3 +147,21 @@ App and data in **different regions** adds RTT on every query. Acceptable for ea
 ## Guard
 
 Keep `GUARD_MOCK_WAZUH=true` until Manager URL + credentials exist on the Guard host and are wired into app `.env` / secrets. See `docs/specs/guard-v1.md`.
+
+### Lab agent enroll / unenroll smoke (`tc5`)
+
+Repeatable **host** cycle (not Playwright). Default SSH alias **`tc5`**. Does not print tokens/keys/IPs.
+
+```bash
+export GUARD_LAB_APP_BASE='https://<app-origin>'   # not public prod unless you override
+export GUARD_LAB_EMAIL='...'
+export GUARD_LAB_PASSWORD='...'
+export GUARD_LAB_AGENT_SSH=tc5
+./scripts/guard-lab-enroll-smoke.sh              # redeem + import key on tc5 + sync
+./scripts/guard-lab-enroll-smoke.sh --api-only   # Manager pending agent only
+# later:
+export WAZUH_MANAGER_URL WAZUH_MANAGER_USER WAZUH_MANAGER_PASSWORD
+./scripts/guard-lab-enroll-smoke.sh --unenroll   # Manager DELETE; never 000/003
+```
+
+Manual GitHub Action: **Guard lab enroll smoke** (`workflow_dispatch` only, `--api-only` on github-hosted). Full apply/stop needs a bastion with `Host tc5`. Protected Manager ids default `000,003`.
