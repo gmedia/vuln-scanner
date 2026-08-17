@@ -2,8 +2,9 @@
 
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
-**Last updated:** 2026-08-14
-**Repo tip at write time:** `main` @ `3714ea4` (**#300** compose `WAZUH_*`; **#299** Guard e2e A+B). Open residual: **Guard live lab** (mock off only on app host `.env`); leftover ip/domain workers; **GTM human**; Dependabot #252–#266 — do not mass-merge. **P7 SIEM S0 locked** on `main` (`aa04e91` #301); **S1–S2** on `feat/siem-s1-s2`. No IPs/secrets. Re-`git pull` after reset. Never commit IPs/passwords/enroll keys.
+**Last updated:** 2026-08-17
+**Repo tip at write time:** re-`git pull` after reset. Open residual: **Guard live lab** (mock off only on app host `.env`); leftover ip/domain workers; **GTM human**; Dependabot #252–#266 — do not mass-merge. No IPs/secrets. Never commit IPs/passwords/enroll keys.
+**Guard e2e rule:** if the user asks for a **full prod e2e suite including Guard enroll/unenroll**, **wipe `tc5` + leftover Manager/DB smoke rows first** — see **§4.1**. Do not skip this. Do not treat Playwright as enroll/unenroll.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
 **Phase snapshot:** **P0 policy locked** · **P1 attach shipped + edge smoke closed** · **P2 Workspace S1–S5 on `main`** · **Attach UX Wave B on `main`** · **P4 soft dual-brand on `main`** · **P5 Guard thin on `main`** (#273–#275 code; #279–#281 + **#294** host/guide) — **not** full SIEM · **CI/default mock** · **P3** draft spek on main (no S1+ code until explicit verb) · **P7 SIEM** spek locked [`docs/specs/siem-v1.md`](specs/siem-v1.md) (**S0 + S1–S2 in progress** — tables/query builder; no `/api/siem` until S3) · **GTM human still open** · residual eng = edge apply tip, bugs, Dependabot only when CI green + explicit — **do not** implement SIEM under Guard PRs.
 
@@ -246,9 +247,9 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 - Wazuh as **sensor bus**: **one lab manager**, group-per-org, SaaS-proxied enroll, poll inventory + critical alerts (level ≥ 12)
 - Thin UI: agents, last-seen, critical alert cards — **no** raw logs / Discover
 - Per-org enroll tokens (**not** global `ApiKey`); `/api/guard/enroll` is middleware-public (token-gated)
-- **Next (human):** edge pull tip → deploy app services → lab env → smoke enable→enroll→sync → then optional eng harden from findings
+- **Next (human / explicit test verb):** live enroll/unenroll on lab agent `tc5` — **always wipe first (§4.1)**
 - **Out of scope v1:** full SIEM, SOAR, per-tenant managers, customer Wazuh dashboard, webhooks
-- **Agent:** refuse SIEM scope creep; no new Guard epic without explicit verb
+- **Agent:** refuse SIEM scope creep; no new Guard epic without explicit verb. **Never** run host enroll against a `tc5` that still has a leftover `client.keys` identity.
 
 ### Phase F / P6 — Hospitality / pilot pack
 
@@ -304,6 +305,38 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 - Do **not** bump `redis` package past kombu `<6.5` without docs update
 - Do **not** block upsell attach work on perfect brand cutover
 
+### 4.1 Full prod e2e + Guard enroll/unenroll (MANDATORY)
+
+Trigger phrases (do **not** forget after reset):
+
+- “full suite e2e test prod termasuk enroll/unenroll guard”
+- “jalankan e2e termasuk enroll/unenroll”
+- “test enroll dan unenroll guard”
+
+**Two different suites — do not collapse them:**
+
+| Suite | What it is | What it is not |
+|-------|------------|----------------|
+| Playwright / frontend e2e | Browser against public origin (login, scan UI, Guard **pages**) | Host key import, Manager DELETE, `tc5` apply |
+| Guard lab cycle | `scripts/guard-lab-enroll-smoke.sh` + Manager API + SSH `tc5` | Playwright. There is **no** product unenroll API |
+
+**Always wipe `tc5` first.** A leftover local identity (historically `003` / hostname `VM-0-4-ubuntu`) makes `manage_agents -i` fail or auto-enroll a **new** Manager id while the product redeem id stays `never_connected`.
+
+Wipe order (aliases only — **no IPs** in commands committed here):
+
+1. **`tc5`:** `systemctl stop wazuh-agent`; empty `/var/ossec/etc/client.keys`; remove leftover `/var/ossec/queue/rids/<id>` except `sender_counter`. Confirm `manage_agents -l` → no agent.
+2. **Manager (from app host `tc1` only — `:55000` is not reachable from the bastion):** `DELETE /agents?agents_list=<id>&status=all&older_than=0s` for **smoke** ids. **Never delete `000`** (manager). After a wipe, old lab ids such as `003` are **not** sacred if the user asked to unbind `tc5` for enroll.
+3. **App DB `guard_agents`:** product `POST /api/guard/sync` **does not delete** rows. Remove leftover smoke ids (`001`/`004`/`005`/`007`/names `e2e-tc5-%`, `smoke-agent-%`, `lab-tc5`) via backend SQL on the app container. Confirm `GET /api/guard/agents` is empty (or only non-lab rows).
+4. **Disable auto-enrollment** on `tc5` (`<enrollment><enabled>no</enabled>`) or the host will register itself as `VM-0-4-ubuntu` and steal a new id (`006`/`008` …).
+5. **Then** redeem + apply. API key from `POST /api/guard/enroll` is the **import string** for `manage_agents -i <key>` with confirm `y`. Piping to `-i /dev/stdin` is **unreliable**.
+6. **Unenroll:** Manager DELETE from **`tc1`**, then wipe `tc5` keys again, then **delete the app DB row**. `--unenroll` from the bastion times out.
+
+Protected default in the smoke script is still `000,003`. After an explicit wipe of `tc5`, override with `GUARD_LAB_PROTECTED_AGENT_IDS=000` so a reused `003` slot is not treated as sacred.
+
+Public origin (`sinexis.app`) still needs `GUARD_LAB_ALLOW_PUBLIC_PROD=1`. Never print tokens, keys, or host IPs.
+
+Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
+
 ---
 
 ## 5) Acceptance criteria (drafts)
@@ -350,7 +383,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 - [x] SPA `/guard` + Sidebar; no secrets/IPs in git
 - [x] **HttpWazuhClient** live path + unit tests (#275); factory still mock-by-default
 - [x] **Non-goals hold:** no SIEM/Discover/SOAR/per-tenant manager in v1 PRs
-- [ ] **Edge residual (human):** deploy tip, lab `WAZUH_*`, `GUARD_MOCK_WAZUH=false`, smoke enable→enroll→sync
+- [ ] **Edge residual:** live enroll/unenroll on `tc5` after **wipe-first (§4.1)**; `GUARD_MOCK_WAZUH=false` on app host only
 
 ---
 
@@ -378,6 +411,8 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | “tulis spek workspace” | Update `docs/specs/workspace-v1.md` only (S1–S5 already shipped) |
 | “implement workspace” / “kerjakan fase workspace” | S1–S5 done — clarify **bug / residual** before coding |
 | “rebrand” / “sinexis.app” | Soft brand shipped; hard cut / DNS only on explicit ask; don’t invent Guard; don’t block attach GTM |
+| “full suite e2e” / “e2e prod termasuk enroll/unenroll” | Playwright **plus** Guard lab cycle. **Wipe `tc5` + Manager smoke + `guard_agents` first (§4.1).** Do not skip. Do not say “no lab VM”. |
+| “enroll/unenroll guard” / “eksekusi test enroll” | Same wipe-first rule. Script + Manager via `tc1`. Not Playwright. |
 | “wazuh” / “agent monitoring” / “guard” | Point to [`docs/specs/guard-v1.md`](specs/guard-v1.md); **S0 spek** risk-accepted; **code** only on explicit implement — thin DoD only |
 | “tulis spek guard” / “update spek wazuh” | Edit `docs/specs/guard-v1.md` (+ guide if priority changes) |
 | “implement guard” / “kerjakan wazuh” | S1+ per spek slices; mock CI; no SIEM |
@@ -418,6 +453,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | `docs/commercial/*` | P0 one-pager, SKU lock, AM email |
 | `handoff.md` | Session snapshot + GTM checklist — **epic order** still this guide |
 | `docs/archive/handoff-scan-pending-2026.md` | **ARCHIVED** stuck-pending (re-verify) |
+| `docs/multi-host-ops.md` | Lab roles + Guard enroll wipe-first |
 | `docs/specs/guard-v1.md` | P5 Guard thin spek + status (S0–S5 + Http on main) |
 | `docs/specs/*` | Attach historical; workspace S1–S5 shipped; assets TBD |
 
@@ -425,7 +461,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 
 ## 10) Agent one-liner
 
-> After reset: **boot §0 → §1.3 (P0–P2 + Wave B + P4 + P5 thin + e2e #299 on main @ ≥c8f9ed7; live Guard = tc3 Manager + tc1 mock off + tc5 agent; GTM human; no SIEM) → no silent epics → no PII/SSH/IPs in git → Indonesian with user, `GIT_MASTER=1`, coding Docker off, edge for prod.**
+> After reset: **boot §0 → §1.3 → if user asks full e2e + Guard enroll/unenroll, wipe `tc5` first (§4.1) → live Guard = tc3 Manager + tc1 mock off + tc5 agent → no silent epics → no PII/SSH/IPs in git → Indonesian with user, `GIT_MASTER=1`.**
 
 ---
 
