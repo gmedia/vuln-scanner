@@ -16,5 +16,5 @@ pytest-asyncio==1.4.0
 pytest-cov==7.1.0
 
 # Transitive dependency pins for CVE fixes
-langgraph-checkpoint==4.1.1
+langgraph-checkpoint==4.2.0
 langgraph-sdk==0.4.2
