@@ -210,7 +210,7 @@ if not found:
 apply_on_tc5() {
   log "apply key on SSH host ${GUARD_LAB_AGENT_SSH} (stdin; key not logged)"
   ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "${GUARD_LAB_AGENT_SSH}" \
-    "test -x /var/ossec/bin/manage_agents"
+    "sudo test -x /var/ossec/bin/manage_agents"
   if [[ -n "${MANAGER_HOST:-}" ]]; then
     ssh -o BatchMode=yes "${GUARD_LAB_AGENT_SSH}" \
       "sudo sed -i 's|<address>.*</address>|<address>${MANAGER_HOST}</address>|g' /var/ossec/etc/ossec.conf"
