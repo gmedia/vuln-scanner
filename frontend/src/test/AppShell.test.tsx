@@ -31,18 +31,18 @@ describe("AppShell", () => {
 
   it("renders sidebar toggle button with Menu icon", () => {
     renderShell();
-    const toggleButton = screen.getByRole("button", {
+    const toggles = screen.getAllByRole("button", {
       name: /toggle sidebar/i,
     });
-    expect(toggleButton).toBeInTheDocument();
-    // Menu icon is rendered inside the button
-    expect(toggleButton.querySelector("svg")).toBeInTheDocument();
+    expect(toggles.length).toBeGreaterThanOrEqual(1);
+    const trigger = toggles.find((el) => el.getAttribute("data-slot") === "sidebar-trigger");
+    expect(trigger).toBeDefined();
+    expect(trigger!.querySelector("svg")).toBeInTheDocument();
   });
 
-  it("sidebar overlay hidden by default when sidebarOpen is false", () => {
+  it("does not open the mobile sheet overlay by default", () => {
     renderShell();
-    const overlays = document.querySelectorAll(".bg-black\\/60");
-    expect(overlays.length).toBe(0);
+    expect(document.querySelector("[data-slot='sheet-overlay']")).toBeNull();
   });
 
   it("renders SINEXIS brand text in header", () => {
