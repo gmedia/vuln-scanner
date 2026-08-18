@@ -4,6 +4,14 @@ import type { ScanFinding } from "@/api/scans";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Skeleton } from "@/components/ui/Skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/Table";
 import { cn } from "@/lib/utils";
 import FindingDetail from "@/components/results/FindingDetail";
 
@@ -134,10 +142,10 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
         />
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/50">
+      <div className="rounded-lg border border-border">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50 hover:bg-muted/50">
               <Th
                 label="Severity"
                 sortKey="severity"
@@ -159,6 +167,9 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
                 dir={sortDir}
                 onClick={() => toggleSort("category")}
               />
+              <TableHead className="px-3 py-2.5 text-[10px] uppercase tracking-wider">
+                CVE
+              </TableHead>
               <Th
                 label="CVSS"
                 sortKey="cvss_score"
@@ -166,24 +177,28 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
                 dir={sortDir}
                 onClick={() => toggleSort("cvss_score")}
               />
-              <th className="px-3 py-2.5 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
+              <TableHead className="px-3 py-2.5 text-[10px] uppercase tracking-wider">
                 Saran aksi
-              </th>
-            </tr>
-          </thead>
-          <tbody>
+              </TableHead>
+              <TableHead className="w-8 px-3 py-2.5" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {sorted.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="p-8 text-center text-sm text-muted-foreground">
+              <TableRow className="hover:bg-transparent">
+                <TableCell
+                  colSpan={7}
+                  className="p-8 text-center text-sm text-muted-foreground"
+                >
                   No matching findings
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : (
               sorted.map((finding) => {
                 const isExpanded = expandedId === finding.id;
                 return (
                   <Fragment key={finding.id}>
-                    <tr
+                    <TableRow
                       onClick={() =>
                         setExpandedId((prev) =>
                           prev === finding.id ? null : finding.id,
@@ -191,11 +206,11 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
                       }
                       aria-expanded={isExpanded}
                       className={cn(
-                        "group cursor-pointer border-b border-border transition-colors hover:bg-muted/30",
+                        "group cursor-pointer hover:bg-muted/30",
                         isExpanded && "bg-muted/20",
                       )}
                     >
-                      <td className="px-3 py-2.5">
+                      <TableCell className="px-3 py-2.5">
                         <Badge
                           variant={
                             finding.severity as
@@ -209,14 +224,14 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
                         >
                           {finding.severity}
                         </Badge>
-                      </td>
-                      <td className="px-3 py-2.5 text-xs text-foreground max-w-[200px] truncate">
+                      </TableCell>
+                      <TableCell className="max-w-[200px] truncate px-3 py-2.5 text-xs text-foreground">
                         {finding.title}
-                      </td>
-                      <td className="px-3 py-2.5 text-xs text-muted-foreground">
+                      </TableCell>
+                      <TableCell className="px-3 py-2.5 text-xs text-muted-foreground">
                         {finding.category || "-"}
-                      </td>
-                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
+                      </TableCell>
+                      <TableCell className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
                         {finding.cve_id ? (
                           <a
                             href={`https://nvd.nist.gov/vuln/detail/${finding.cve_id}`}
@@ -230,8 +245,8 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
                         ) : (
                           "-"
                         )}
-                      </td>
-                      <td className="px-3 py-2.5">
+                      </TableCell>
+                      <TableCell className="px-3 py-2.5">
                         <div className="flex items-center gap-2">
                           <div className="h-1.5 w-12 overflow-hidden rounded-full bg-muted">
                             <div
@@ -253,8 +268,8 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
                             {finding.cvss_score?.toFixed(1) ?? "-"}
                           </span>
                         </div>
-                      </td>
-                      <td className="px-3 py-2.5 text-xs">
+                      </TableCell>
+                      <TableCell className="px-3 py-2.5 text-xs">
                         {finding.remediation ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
@@ -263,31 +278,31 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
-                      </td>
-                      <td className="px-3 py-2.5 text-center">
+                      </TableCell>
+                      <TableCell className="px-3 py-2.5 text-center">
                         {isExpanded ? (
                           <ChevronUp className="ml-auto h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
                         ) : (
                           <ChevronDown className="ml-auto h-3.5 w-3.5 text-muted-foreground transition-colors" />
                         )}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                     {isExpanded && (
-                      <tr
-                        className="border-b border-border bg-card/30 last:border-0"
+                      <TableRow
+                        className="bg-card/30 hover:bg-card/30"
                         data-testid={`finding-detail-row-${finding.id}`}
                       >
-                        <td colSpan={7} className="p-3">
+                        <TableCell colSpan={7} className="p-3">
                           <FindingDetail finding={finding} />
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     )}
                   </Fragment>
                 );
               })
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
@@ -307,9 +322,9 @@ function Th({
   onClick: () => void;
 }) {
   return (
-    <th
+    <TableHead
       onClick={onClick}
-      className="cursor-pointer px-3 py-2.5 text-left text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground select-none"
+      className="cursor-pointer select-none px-3 py-2.5 text-[10px] uppercase tracking-wider transition-colors hover:text-foreground"
     >
       <span className="inline-flex items-center gap-1">
         {label}
@@ -322,7 +337,7 @@ function Th({
           />
         )}
       </span>
-    </th>
+    </TableHead>
   );
 }
 

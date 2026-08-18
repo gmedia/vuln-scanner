@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import type { ScanFinding } from "@/api/scans";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { Separator } from "@/components/ui/Separator";
 
 interface FindingDetailProps {
@@ -19,33 +21,36 @@ function FindingDetail({ finding }: FindingDetailProps) {
   const [showRaw, setShowRaw] = useState(false);
 
   return (
-    <div className="rounded-lg border border-border bg-card/50 p-4 shadow-xs animate-in fade-in-0 slide-in-from-top-2">
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <Badge
-          variant={
-            finding.severity as "critical" | "high" | "medium" | "low" | "info"
-          }
-          className="text-[10px] capitalize"
-        >
-          {finding.severity}
-        </Badge>
-        {finding.cve_id && (
-          <a
-            href={`https://nvd.nist.gov/vuln/detail/${finding.cve_id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 font-mono text-[10px] text-primary hover:underline"
+    <Card className="bg-card/50 shadow-xs animate-in fade-in-0 slide-in-from-top-2">
+      <CardHeader className="pb-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge
+            variant={
+              finding.severity as "critical" | "high" | "medium" | "low" | "info"
+            }
+            className="text-[10px] capitalize"
           >
-            {finding.cve_id}
-            <ExternalLink className="h-3 w-3" />
-          </a>
-        )}
-        {finding.cvss_score !== null && (
-          <span className="font-mono text-xs tabular-nums text-muted-foreground">
-            CVSS {finding.cvss_score.toFixed(1)}
-          </span>
-        )}
-      </div>
+            {finding.severity}
+          </Badge>
+          {finding.cve_id && (
+            <a
+              href={`https://nvd.nist.gov/vuln/detail/${finding.cve_id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 font-mono text-[10px] text-primary hover:underline"
+            >
+              {finding.cve_id}
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          )}
+          {finding.cvss_score !== null && (
+            <span className="font-mono text-xs tabular-nums text-muted-foreground">
+              CVSS {finding.cvss_score.toFixed(1)}
+            </span>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
 
       {finding.description && (
         <div className="mb-4">
@@ -93,9 +98,12 @@ function FindingDetail({ finding }: FindingDetailProps) {
 
       <Separator className="my-3" />
 
-      <button
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
         onClick={() => setShowRaw(!showRaw)}
-        className="flex items-center gap-1 text-[10px] text-muted-foreground transition-colors hover:text-foreground"
+        className="h-auto px-0 text-[10px] text-muted-foreground hover:bg-transparent hover:text-foreground"
       >
         {showRaw ? (
           <ChevronUp className="h-3 w-3" />
@@ -103,7 +111,7 @@ function FindingDetail({ finding }: FindingDetailProps) {
           <ChevronDown className="h-3 w-3" />
         )}
         RAW DATA
-      </button>
+      </Button>
 
       {showRaw && (
         <pre className="mt-2 overflow-x-auto rounded-md bg-muted p-3 font-mono text-[10px] text-muted-foreground leading-relaxed">
@@ -112,7 +120,8 @@ function FindingDetail({ finding }: FindingDetailProps) {
             : "No raw data available for this finding."}
         </pre>
       )}
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
