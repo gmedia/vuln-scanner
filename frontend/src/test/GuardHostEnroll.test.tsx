@@ -148,7 +148,8 @@ describe("Guard host enroll UI", () => {
       </QueryClientProvider>,
     );
 
-    const revokeBtn = await screen.findByRole("button", { name: "Revoke" });
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const revokeBtn = await screen.findByRole("button", { name: "Cabut" });
     await user.click(revokeBtn);
     await waitFor(() => {
       expect(guardApi.revokeEnrollToken).toHaveBeenCalledWith("tok-active");
