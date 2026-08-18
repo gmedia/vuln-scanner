@@ -199,7 +199,10 @@ export default function Guard() {
           ) : (
             <>
               <div className="flex flex-wrap items-center gap-3">
-                <span data-testid="guard-state">
+                <span
+                  data-testid="guard-state"
+                  data-enabled={enabled ? "true" : "false"}
+                >
                   Status:{" "}
                   <strong>{enabled ? "aktif" : "nonaktif"}</strong>
                 </span>
