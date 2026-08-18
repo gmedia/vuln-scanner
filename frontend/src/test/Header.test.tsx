@@ -127,7 +127,7 @@ describe("Header", () => {
     renderWithRouter(<Header />);
     expect(screen.getByTestId("header-credits")).toHaveTextContent("42");
     expect(
-      screen.getByTitle("Your personal credit balance"),
+      screen.getByTitle("Saldo kredit pribadi"),
     ).toBeInTheDocument();
   });
 

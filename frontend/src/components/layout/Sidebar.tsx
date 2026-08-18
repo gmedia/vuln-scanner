@@ -10,7 +10,6 @@ import {
   DollarSign,
   History,
   User,
-  Coins,
   CalendarClock,
   BookOpen,
   Siren,
@@ -19,12 +18,11 @@ import { cn } from "@/lib/utils";
 import { BRAND } from "@/lib/brand";
 import { useScanStore } from "@/store/scanStore";
 import { useAuthStore } from "@/store/authStore";
-import { useCreditStore } from "@/store/creditStore";
 import { Separator } from "@/components/ui/Separator";
 import { Badge } from "@/components/ui/Badge";
 import { BrandMark } from "@/components/brand/BrandMark";
 import OrgSwitcher from "@/components/workspace/OrgSwitcher";
-import { useEffect } from "react";
+
 
 interface SidebarProps {
   open: boolean;
@@ -37,19 +35,24 @@ const navItems = [
   { to: "/scan/domain", label: "Domain Scanner", icon: Globe },
   { to: "/scan/mobile", label: "Mobile Scanner", icon: Smartphone },
   { to: "/schedules", label: "Jadwal", icon: CalendarClock },
-  { to: "/guard", label: "Guard", icon: Shield },
-  { to: "/siem", label: "SIEM", icon: Siren },
+  {
+    to: "/guard",
+    label: "Guard",
+    hint: "Agen host",
+    icon: Shield,
+  },
+  {
+    to: "/siem",
+    label: "SIEM",
+    hint: "Event org",
+    icon: Siren,
+  },
   { to: "/guide", label: "User Guide", icon: BookOpen },
 ];
 
 function Sidebar({ open, onClose }: SidebarProps) {
   const activeJobId = useScanStore((s) => s.activeJobId);
   const isAdmin = useAuthStore((s) => s.user?.is_admin ?? false);
-  const { credits, fetchBalance } = useCreditStore();
-
-  useEffect(() => {
-    fetchBalance();
-  }, [fetchBalance]);
 
   return (
     <aside
@@ -96,7 +99,14 @@ function Sidebar({ open, onClose }: SidebarProps) {
             }
           >
             <item.icon className="h-4 w-4 shrink-0" />
-            {item.label}
+            <span className="flex min-w-0 flex-col leading-tight">
+              <span>{item.label}</span>
+              {"hint" in item && item.hint ? (
+                <span className="text-[10px] font-normal text-muted-foreground">
+                  {item.hint}
+                </span>
+              ) : null}
+            </span>
           </NavLink>
         ))}
 
@@ -223,16 +233,7 @@ function Sidebar({ open, onClose }: SidebarProps) {
         </>
       )}
 
-      <div className="border-t border-border p-3 space-y-2">
-        <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2">
-          <span className="text-[10px] text-muted-foreground">
-            Your credits
-          </span>
-          <span className="flex items-center gap-1 font-mono text-xs font-bold tabular-nums text-primary">
-            <Coins className="h-3 w-3" />
-            {credits}
-          </span>
-        </div>
+      <div className="border-t border-border p-3">
         <p className="text-center text-[10px] text-muted-foreground">
           {BRAND.sidebarVersion}
         </p>
