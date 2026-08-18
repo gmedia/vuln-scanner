@@ -179,6 +179,7 @@ jobs:
     if: ${{ github.event_name != 'workflow_dispatch' || !inputs.skip_tests }}
     needs: [python-tests, frontend-typecheck, frontend-unit-tests, frontend-build, python-lint, python-typecheck, frontend-lint]
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     env:
       # Repo secrets (Settings → Secrets). Same values Playwright + seed must share.
       E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
@@ -247,6 +248,7 @@ jobs:
           done
 
       - name: Install Playwright with Chromium
+        timeout-minutes: 8
         run: npx playwright install --with-deps chromium
         working-directory: frontend
 
