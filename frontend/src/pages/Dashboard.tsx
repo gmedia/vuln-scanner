@@ -16,6 +16,14 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/Table";
 import { SCAN_TYPE_LABELS } from "@/lib/constants";
 import type { ScanJob } from "@/api/scans";
 import { canMutateWorkspace } from "@/api/orgs";
@@ -424,85 +432,93 @@ function Dashboard() {
                 Semua baris adalah target percobaan. Tampilkan untuk melihatnya.
               </p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full table-fixed text-left text-xs">
-                  <thead className="sticky top-0 bg-card text-[10px] uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="w-[36%] py-2 font-medium">Target</th>
-                      <th className="w-[12%] py-2 font-medium">Jenis</th>
-                      <th className="w-[16%] py-2 font-medium">Selesai</th>
-                      <th className="w-[24%] py-2 font-medium">Temuan</th>
-                      <th className="w-[12%] py-2 font-medium">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {displayed.map((scan) => {
-                      const crit = severityCount(scan.result_summary, "critical");
-                      const high = severityCount(scan.result_summary, "high");
-                      const med = severityCount(scan.result_summary, "medium");
-                      const showStatus =
-                        scan.status === "failed" ||
-                        scan.status === "running" ||
-                        scan.status === "pending";
-                      return (
-                        <tr key={scan.id} className="hover:bg-muted/40">
-                          <td className="py-2 pr-2">
-                            <Link
-                              to={`/scan/${scan.id}`}
-                              className="block truncate font-mono text-xs text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              <Table className="table-fixed text-xs">
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-[36%] text-[10px] uppercase tracking-wider">
+                      Target
+                    </TableHead>
+                    <TableHead className="w-[12%] text-[10px] uppercase tracking-wider">
+                      Jenis
+                    </TableHead>
+                    <TableHead className="w-[16%] text-[10px] uppercase tracking-wider">
+                      Selesai
+                    </TableHead>
+                    <TableHead className="w-[24%] text-[10px] uppercase tracking-wider">
+                      Temuan
+                    </TableHead>
+                    <TableHead className="w-[12%] text-[10px] uppercase tracking-wider">
+                      Status
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {displayed.map((scan) => {
+                    const crit = severityCount(scan.result_summary, "critical");
+                    const high = severityCount(scan.result_summary, "high");
+                    const med = severityCount(scan.result_summary, "medium");
+                    const showStatus =
+                      scan.status === "failed" ||
+                      scan.status === "running" ||
+                      scan.status === "pending";
+                    return (
+                      <TableRow key={scan.id}>
+                        <TableCell className="pr-2">
+                          <Link
+                            to={`/scan/${scan.id}`}
+                            className="block truncate font-mono text-xs text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                          >
+                            {scan.target}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {SCAN_TYPE_LABELS[scan.scan_type] ?? scan.scan_type}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {formatIdDate(scan.started_at)}
+                        </TableCell>
+                        <TableCell>
+                          {crit + high + med > 0 ? (
+                            <span className="flex flex-wrap gap-1">
+                              {crit > 0 && (
+                                <Badge variant="critical">{crit}C</Badge>
+                              )}
+                              {high > 0 && (
+                                <Badge variant="high">{high}H</Badge>
+                              )}
+                              {med > 0 && (
+                                <Badge variant="medium">{med}M</Badge>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {showStatus ? (
+                            <Badge
+                              variant={
+                                scan.status as
+                                  | "running"
+                                  | "completed"
+                                  | "failed"
+                                  | "pending"
+                              }
+                              className="capitalize"
                             >
-                              {scan.target}
-                            </Link>
-                          </td>
-                          <td className="py-2 text-muted-foreground">
-                            {SCAN_TYPE_LABELS[scan.scan_type] ?? scan.scan_type}
-                          </td>
-                          <td className="py-2 text-muted-foreground">
-                            {formatIdDate(scan.started_at)}
-                          </td>
-                          <td className="py-2">
-                            {crit + high + med > 0 ? (
-                              <span className="flex flex-wrap gap-1">
-                                {crit > 0 && (
-                                  <Badge variant="critical">{crit}C</Badge>
-                                )}
-                                {high > 0 && (
-                                  <Badge variant="high">{high}H</Badge>
-                                )}
-                                {med > 0 && (
-                                  <Badge variant="medium">{med}M</Badge>
-                                )}
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </td>
-                          <td className="py-2">
-                            {showStatus ? (
-                              <Badge
-                                variant={
-                                  scan.status as
-                                    | "running"
-                                    | "completed"
-                                    | "failed"
-                                    | "pending"
-                                }
-                                className="text-[9px] capitalize"
-                              >
-                                {scan.status === "failed"
-                                  ? "Gagal"
-                                  : scan.status === "running"
-                                    ? "Berjalan"
-                                    : "Antrian"}
-                              </Badge>
-                            ) : null}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                              {scan.status === "failed"
+                                ? "Gagal"
+                                : scan.status === "running"
+                                  ? "Berjalan"
+                                  : "Antrian"}
+                            </Badge>
+                          ) : null}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             )}
 
             {!isFirstLoad && totalScans > 0 && (
