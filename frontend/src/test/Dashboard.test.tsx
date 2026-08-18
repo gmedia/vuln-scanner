@@ -221,7 +221,7 @@ describe("Dashboard", () => {
     });
     render(<Dashboard />);
     expect(screen.getByText("stg3.dokfin.id")).toBeInTheDocument();
-    expect(screen.getByText("3 sedang")).toBeInTheDocument();
+    expect(screen.getByText("3M")).toBeInTheDocument();
     expect(screen.queryByText("completed")).not.toBeInTheDocument();
   });
 
@@ -378,5 +378,9 @@ describe("Dashboard", () => {
     expect(screen.queryByText("NaN")).not.toBeInTheDocument();
     expect(screen.getByText("Risiko terbuka").previousElementSibling?.textContent).toBe("1");
     expect(screen.getByText("Gagal")).toBeInTheDocument();
+    expect(screen.getByText("1C")).toBeInTheDocument();
+    expect(screen.getByText("2M")).toBeInTheDocument();
+    const jobs = screen.getByText("Pekerjaan terakhir").closest(".grid");
+    expect(jobs?.className).toMatch(/items-stretch/);
   });
 });
