@@ -23,7 +23,12 @@ async function openGuard(
     page.getByRole("heading", { name: "Guard", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText("Inventori agen host + alert kritis", { exact: false }),
+    page.getByText(
+      "Pasang agen di host, lalu pantau inventori dan alert kritis",
+      {
+        exact: false,
+      },
+    ),
   ).toBeVisible();
   await expect(page.getByText("Status", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("Gagal memuat status Guard")).toHaveCount(0);
