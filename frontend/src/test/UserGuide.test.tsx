@@ -10,47 +10,47 @@ describe("UserGuide", () => {
         <UserGuide />
       </MemoryRouter>,
     );
-    expect(screen.getByRole("heading", { name: "User Guide" })).toBeInTheDocument();
+     expect(screen.getByRole("heading", { name: "Panduan pengguna" })).toBeInTheDocument();
     expect(screen.getAllByText("Daftar isi").length).toBeGreaterThanOrEqual(1);
     expect(
       screen.getByRole("heading", {
-        name: "1. Mulai: daftar, login, workspace",
+        name: "Mulai: daftar, login, workspace",
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "2. Scan IP — langkah demi langkah",
+        name: "Scan IP — langkah demi langkah",
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "3. Scan Domain — langkah demi langkah",
+        name: "Scan Domain — langkah demi langkah",
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "4. Scan Mobile — langkah demi langkah",
+        name: "Scan Mobile — langkah demi langkah",
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "5. Baca hasil & unduh laporan" }),
+      screen.getByRole("heading", { name: "Baca hasil & unduh laporan" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "6. Jadwal scan berkala (Scan Attach)",
+        name: "Jadwal scan berkala (Scan Attach)",
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "7. Workspace & undangan",
+        name: "Workspace & undangan",
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "8. Kredit" }),
+      screen.getByRole("heading", { name: "Kredit" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "9. Guard (runtime thin) — step by step",
+        name: "Guard (runtime thin) — step by step",
       }),
     ).toBeInTheDocument();
     expect(screen.getByText("Start IP scan")).toBeInTheDocument();
@@ -58,12 +58,12 @@ describe("UserGuide", () => {
     expect(screen.getByText("Aktifkan Guard")).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "10. SIEM — cari event & kasus",
+        name: "SIEM — cari event & kasus",
       }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "11. Tips & batasan" }),
-    ).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: "Tips & batasan" }),
+      ).toBeInTheDocument();
     expect(
       screen.getAllByText(/POST \/api\/guard\/enroll/).length,
     ).toBeGreaterThanOrEqual(1);
