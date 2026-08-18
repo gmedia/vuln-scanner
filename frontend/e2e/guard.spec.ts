@@ -106,7 +106,7 @@ test.describe("Guard — Layer B mutations (CI / non-prod)", () => {
 
     await expect(page.getByText("Enroll token")).toBeVisible();
     await page.locator("#enroll-label").fill("e2e-ci");
-    await page.getByRole("button", { name: "Generate" }).click();
+    await page.getByRole("button", { name: "Buat token" }).click();
 
     const banner = page.getByTestId("guard-host-enroll-steps");
     await expect(banner).toBeVisible({ timeout: 20_000 });
@@ -139,7 +139,7 @@ test.describe("Guard — Layer B mutations (CI / non-prod)", () => {
     await expect(page.getByText("Enroll token")).toBeVisible();
     const label = `e2e-revoke-${Date.now()}`;
     await page.locator("#enroll-label").fill(label);
-    await page.getByRole("button", { name: "Generate" }).click();
+    await page.getByRole("button", { name: "Buat token" }).click();
     await expect(page.getByTestId("guard-host-enroll-steps")).toBeVisible({
       timeout: 20_000,
     });
@@ -148,9 +148,12 @@ test.describe("Guard — Layer B mutations (CI / non-prod)", () => {
       .getByTestId("guard-enroll-token-row")
       .filter({ hasText: label });
     await expect(row).toBeVisible();
-    await row.getByRole("button", { name: "Revoke" }).click();
-    await expect(row).toContainText("revoked", { timeout: 20_000 });
-    await expect(row.getByRole("button", { name: "Revoke" })).toHaveCount(0);
+    page.once("dialog", (d) => {
+      void d.accept();
+    });
+    await row.getByRole("button", { name: "Cabut" }).click();
+    await expect(row).toContainText("dicabut", { timeout: 20_000 });
+    await expect(row.getByRole("button", { name: "Cabut" })).toHaveCount(0);
   });
 
   test("sync does not 5xx the page", async ({ page }) => {
@@ -166,7 +169,7 @@ test.describe("Guard — Layer B mutations (CI / non-prod)", () => {
       }
     }
 
-    const syncBtn = page.getByRole("button", { name: "Sync" });
+    const syncBtn = page.getByRole("button", { name: "Sinkronkan" });
     await expect(syncBtn).toBeVisible();
     await syncBtn.click();
     await expect(syncBtn).toBeEnabled({ timeout: 20_000 });
