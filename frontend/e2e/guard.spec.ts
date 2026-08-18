@@ -36,7 +36,7 @@ test.describe("Guard — Layer A smoke", () => {
   test("page loads status card without crashing", async ({ page }) => {
     await openGuard(page);
     await expect(page.getByTestId("guard-state")).toContainText(
-      /aktif|nonaktif/,
+      /nyala|nonaktif/,
     );
   });
 
@@ -114,7 +114,7 @@ test.describe("Guard — Layer B mutations (CI / non-prod)", () => {
       }
     }
 
-    await expect(page.getByText("Enroll token")).toBeVisible();
+    await expect(page.getByText("Token enroll")).toBeVisible();
     await page.locator("#enroll-label").fill("e2e-ci");
     await page.getByRole("button", { name: "Buat token" }).click();
 
@@ -150,7 +150,7 @@ test.describe("Guard — Layer B mutations (CI / non-prod)", () => {
       }
     }
 
-    await expect(page.getByText("Enroll token")).toBeVisible();
+    await expect(page.getByText("Token enroll")).toBeVisible();
     const label = `e2e-revoke-${Date.now()}`;
     await page.locator("#enroll-label").fill(label);
     await page.getByRole("button", { name: "Buat token" }).click();
@@ -165,9 +165,9 @@ test.describe("Guard — Layer B mutations (CI / non-prod)", () => {
     page.once("dialog", (d) => {
       void d.accept();
     });
-    await row.getByRole("button", { name: "Cabut" }).click();
+    await row.getByRole("button", { name: /Cabut/ }).click();
     await expect(row).toContainText("dicabut", { timeout: 20_000 });
-    await expect(row.getByRole("button", { name: "Cabut" })).toHaveCount(0);
+    await expect(row.getByRole("button", { name: /Cabut/ })).toHaveCount(0);
   });
 
   test("sync does not 5xx the page", async ({ page }) => {

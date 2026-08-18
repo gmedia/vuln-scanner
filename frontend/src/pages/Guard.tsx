@@ -42,6 +42,11 @@ function formatWhen(iso: string | null): string {
   try {
     return new Date(iso).toLocaleString("id-ID", {
       timeZone: "Asia/Jakarta",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   } catch {
     return iso;
@@ -58,7 +63,7 @@ function apiDetail(err: unknown, fallback: string): string {
 
 function statusBadge(status: string) {
   const s = status.toLowerCase();
-  if (s === "active") return <Badge className="bg-emerald-500/15 text-emerald-600">aktif</Badge>;
+  if (s === "active") return <Badge className="bg-emerald-500/15 text-emerald-600">online</Badge>;
   if (s === "disconnected")
     return <Badge className="bg-amber-500/15 text-amber-700">terputus</Badge>;
   if (s === "pending") return <Badge className="bg-sky-500/15 text-sky-700">menunggu</Badge>;
@@ -153,7 +158,13 @@ export default function Guard() {
   const enabled = statusQ.data?.enabled ?? false;
 
   const tokens = tokensQ.data ?? [];
-  const visibleTokens = showAllTokens ? tokens : tokens.slice(0, 5);
+  const sortedTokens = [...tokens].sort((a, b) => {
+    const rank = (t: (typeof tokens)[number]) =>
+      t.revoked_at ? 2 : t.used_at ? 1 : 0;
+    return rank(a) - rank(b);
+  });
+  const visibleTokens = showAllTokens ? sortedTokens : sortedTokens.slice(0, 5);
+  const unusedCount = tokens.filter((t) => !t.revoked_at && !t.used_at).length;
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -165,7 +176,7 @@ export default function Guard() {
               Guard
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Inventori agen host + alert kritis (lapisan ringkas). Bukan SIEM penuh.
+              Pasang agen di host, lalu pantau inventori dan alert kritis.
             </p>
           </div>
           {canAdmin && !enabled && (
@@ -186,76 +197,71 @@ export default function Guard() {
         </div>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Status</CardTitle>
-          <CardDescription>Organisasi aktif · sinkron proyeksi Wazuh</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          {statusQ.isLoading ? (
-            <Skeleton className="h-16 w-full" />
-          ) : statusQ.isError ? (
-            <p className="text-destructive">Gagal memuat status Guard</p>
-          ) : (
-            <>
-              <div className="flex flex-wrap items-center gap-3">
-                <span
-                  data-testid="guard-state"
-                  data-enabled={enabled ? "true" : "false"}
-                >
-                  Status:{" "}
-                  <strong>{enabled ? "aktif" : "nonaktif"}</strong>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm">
+        {statusQ.isLoading ? (
+          <Skeleton className="h-6 w-48" />
+        ) : statusQ.isError ? (
+          <p className="text-destructive">Gagal memuat status Guard</p>
+        ) : (
+          <>
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <span
+                data-testid="guard-state"
+                data-enabled={enabled ? "true" : "false"}
+              >
+                Guard{" "}
+                <strong>{enabled ? "nyala" : "nonaktif"}</strong>
+              </span>
+              {statusQ.data?.degraded && (
+                <Badge className="bg-amber-500/15 text-amber-800">terdegradasi</Badge>
+              )}
+              {enabled && (
+                <span className="text-muted-foreground">
+                  {(alertsQ.data?.length ?? 0) === 0
+                    ? "0 alert kritis"
+                    : `${alertsQ.data?.length} alert kritis`}
                 </span>
-                {statusQ.data?.degraded && (
-                  <Badge className="bg-amber-500/15 text-amber-800">terdegradasi</Badge>
-                )}
-                {canAdmin && enabled && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 text-xs"
-                    onClick={() => syncMut.mutate()}
-                    disabled={syncMut.isPending}
-                  >
-                    <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                    Sinkronkan
-                  </Button>
-                )}
-              </div>
-              <p className="text-muted-foreground">
-                Sinkron inventori: {formatWhen(statusQ.data?.last_inventory_sync_at ?? null)}
-              </p>
-              <p className="text-muted-foreground">
-                Sinkron alert: {formatWhen(statusQ.data?.last_alert_sync_at ?? null)}
-              </p>
+              )}
+              <span className="text-muted-foreground">
+                Sinkron {formatWhen(statusQ.data?.last_inventory_sync_at ?? null)} WIB
+              </span>
               {statusQ.data?.last_sync_error && (
-                <p className="text-amber-700 dark:text-amber-400">
-                  Kesalahan sinkron: {statusQ.data.last_sync_error}
-                </p>
+                <span className="text-amber-700 dark:text-amber-400">
+                  {statusQ.data.last_sync_error}
+                </span>
               )}
               {statusQ.data?.wazuh_group && (
-                <div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-0 text-xs text-muted-foreground"
-                    onClick={() => setShowTechDetails((v) => !v)}
-                  >
-                    {showTechDetails ? "Sembunyikan detail teknis" : "Detail teknis"}
-                  </Button>
-                  {showTechDetails && (
-                    <p className="text-muted-foreground">
-                      Grup:{" "}
-                      <code className="text-xs">{statusQ.data.wazuh_group}</code>
-                    </p>
-                  )}
-                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-0 text-xs text-muted-foreground"
+                  onClick={() => setShowTechDetails((v) => !v)}
+                >
+                  {showTechDetails ? "Sembunyikan detail teknis" : "Detail teknis"}
+                </Button>
               )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+              {showTechDetails && statusQ.data?.wazuh_group && (
+                <code className="text-xs text-muted-foreground">
+                  {statusQ.data.wazuh_group}
+                </code>
+              )}
+            </div>
+            {canAdmin && enabled && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 shrink-0 text-xs"
+                onClick={() => syncMut.mutate()}
+                disabled={syncMut.isPending}
+              >
+                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                Sinkronkan
+              </Button>
+            )}
+          </>
+        )}
+      </div>
 
       {!enabled && !statusQ.isLoading && (
         <Card data-testid="guard-disabled">
@@ -267,102 +273,33 @@ export default function Guard() {
 
       {enabled && (
         <>
-          <Card data-testid="guard-agents">
-            <CardHeader>
-              <CardTitle className="text-base">Agen</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {agentsQ.isLoading ? (
-                <Skeleton className="h-24 w-full" />
-              ) : (agentsQ.data?.length ?? 0) === 0 ? (
-                <p className="text-sm text-muted-foreground">Belum ada agen. Enroll host dulu.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="border-b text-muted-foreground">
-                      <tr>
-                        <th className="py-2 pr-3 font-medium">Nama</th>
-                        <th className="py-2 pr-3 font-medium">Status</th>
-                        <th className="py-2 pr-3 font-medium">Terakhir terlihat</th>
-                        <th className="py-2 font-medium">Versi</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {agentsQ.data?.map((a) => (
-                        <tr key={a.id} className="border-b border-border/60">
-                          <td className="py-2 pr-3 font-medium">{a.name}</td>
-                          <td className="py-2 pr-3">{statusBadge(a.status)}</td>
-                          <td className="py-2 pr-3 text-muted-foreground">
-                            {formatWhen(a.last_keep_alive)}
-                          </td>
-                          <td className="py-2 text-muted-foreground">{a.version ?? "—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card data-testid="guard-alerts">
-            <CardHeader>
-              <CardTitle className="text-base">Alert kritis</CardTitle>
-              <CardDescription>Rule level tinggi · tanpa raw log</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {alertsQ.isLoading ? (
-                <Skeleton className="h-24 w-full" />
-              ) : (alertsQ.data?.length ?? 0) === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Tidak ada alert kritis tersimpan. Alert level tinggi akan muncul di sini.
-                </p>
-              ) : (
-                <ul className="space-y-3">
-                  {alertsQ.data?.map((al) => (
-                    <li
-                      key={al.id}
-                      className="rounded-md border border-border/80 px-3 py-2 text-sm"
-                    >
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="critical">L{al.rule_level}</Badge>
-                        <span className="font-medium">{al.rule_description}</span>
-                      </div>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {formatWhen(al.occurred_at)}
-                        {al.agent_name ? ` · ${al.agent_name}` : ""}
-                        {al.rule_id ? ` · rule ${al.rule_id}` : ""}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-
           {canAdmin && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <KeyRound className="h-4 w-4" />
-                  Enroll token
+                  Token enroll
                 </CardTitle>
                 <CardDescription>
-                  Token bisa dipakai ulang sampai kedaluwarsa atau dicabut. Nilai mentah hanya sekali.
+                  Secret token hanya ditampilkan sekali setelah dibuat. Bisa dipakai ulang sampai kedaluwarsa atau dicabut.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-                  <div className="flex-1 space-y-1">
+                <div className="flex max-w-xl flex-col gap-2 sm:flex-row sm:items-end sm:gap-2">
+                  <div className="min-w-0 flex-1 space-y-1">
                     <Label htmlFor="enroll-label">Label (opsional)</Label>
                     <Input
                       id="enroll-label"
                       value={tokenLabel}
                       onChange={(e) => setTokenLabel(e.target.value)}
-                      placeholder="edge-colo"
+                      placeholder="vps-colo-1"
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Nama host atau lokasi, supaya baris token mudah dikenali.
+                    </p>
                   </div>
                   <Button
+                    className="shrink-0"
                     onClick={() => tokenMut.mutate()}
                     disabled={tokenMut.isPending}
                   >
@@ -474,45 +411,55 @@ export default function Guard() {
                   <Skeleton className="h-12 w-full" />
                 ) : (
                   <>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead className="border-b text-muted-foreground">
-                        <tr>
-                          <th className="py-2 pr-3 font-medium">Label</th>
-                          <th className="py-2 pr-3 font-medium">Kedaluwarsa</th>
-                          <th className="py-2 pr-3 font-medium">Status</th>
-                          <th className="py-2 font-medium">Aksi</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {visibleTokens.map((t) => (
+                    <div className="overflow-x-auto">
+                      <table className="w-full table-fixed text-left text-sm">
+                        <thead className="border-b text-muted-foreground">
+                          <tr>
+                            <th className="w-[40%] py-1.5 pr-3 font-medium">Label</th>
+                            <th className="w-[28%] py-1.5 pr-3 font-medium">Kedaluwarsa</th>
+                            <th className="w-[18%] py-1.5 pr-3 font-medium">Status</th>
+                            <th className="w-[14%] py-1.5 font-medium">Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {visibleTokens.map((t) => (
                             <tr
                               key={t.id}
                               data-testid="guard-enroll-token-row"
                               className="border-b border-border/60"
                             >
-                              <td className="py-2 pr-3">{t.label || "token"}</td>
-                              <td className="py-2 pr-3 text-muted-foreground">
+                              <td className="max-w-0 py-1.5 pr-3">
+                                <span className="block truncate font-medium" title={t.label || t.id}>
+                                  {t.label || "token"}
+                                </span>
+                                <span className="block truncate font-mono text-[11px] text-muted-foreground" title={t.id}>
+                                  {t.id}
+                                </span>
+                              </td>
+                              <td className="py-1.5 pr-3 whitespace-nowrap text-muted-foreground">
                                 {formatWhen(t.expires_at)}
                               </td>
-                              <td className="py-2 pr-3">
+                              <td className="py-1.5 pr-3">
                                 {t.revoked_at ? (
                                   <Badge variant="info">dicabut</Badge>
                                 ) : t.used_at ? (
-                                  <Badge variant="info">terpakai</Badge>
+                                  <Badge className="border border-border bg-muted text-foreground">
+                                    terpakai
+                                  </Badge>
                                 ) : (
                                   <Badge className="bg-emerald-500/15 text-emerald-600">
-                                    aktif
+                                    siap pakai
                                   </Badge>
                                 )}
                               </td>
-                              <td className="py-2">
+                              <td className="py-1.5">
                                 {!t.revoked_at && (
                                   <Button
                                     type="button"
-                                    variant="ghost"
+                                    variant="outline"
                                     size="sm"
                                     className="h-8 text-xs text-destructive"
+                                    aria-label={`Cabut token ${t.label || t.id}`}
                                     disabled={revokeMut.isPending}
                                     onClick={() => {
                                       if (
@@ -529,28 +476,118 @@ export default function Guard() {
                                 )}
                               </td>
                             </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  {tokens.length > 5 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 text-xs"
-                      onClick={() => setShowAllTokens((v) => !v)}
-                    >
-                      {showAllTokens
-                        ? "Tampilkan lebih sedikit"
-                        : `Tampilkan ${tokens.length - 5} token lagi`}
-                    </Button>
-                  )}
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {tokens.length > 0 && (
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-2 text-xs text-muted-foreground">
+                        <span>
+                          {tokens.length} token · {unusedCount} berlaku
+                          {tokens.length > 5
+                            ? ` · menampilkan ${visibleTokens.length} dari ${tokens.length}`
+                            : ""}
+                        </span>
+                        {tokens.length > 5 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 text-xs text-primary"
+                            onClick={() => setShowAllTokens((v) => !v)}
+                          >
+                            {showAllTokens
+                              ? "Tampilkan lebih sedikit"
+                              : `Tampilkan ${tokens.length - 5} token lagi`}
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </>
                 )}
               </CardContent>
             </Card>
           )}
+
+          <Card data-testid="guard-agents">
+            <CardHeader>
+              <CardTitle className="text-base">Agen</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {agentsQ.isLoading ? (
+                <Skeleton className="h-24 w-full" />
+              ) : (agentsQ.data?.length ?? 0) === 0 ? (
+                <p className="text-sm text-muted-foreground">Belum ada agen. Enroll host dulu.</p>
+              ) : (
+                <div className="max-w-5xl overflow-x-auto">
+                  <table className="w-full table-fixed text-left text-sm">
+                    <thead className="border-b text-muted-foreground">
+                      <tr>
+                        <th className="w-[40%] py-1.5 pr-3 font-medium">Nama</th>
+                        <th className="w-[16%] py-1.5 pr-3 font-medium">Status</th>
+                        <th className="w-[28%] py-1.5 pr-3 font-medium">Terakhir terlihat</th>
+                        <th className="w-[16%] py-1.5 font-medium">Versi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {agentsQ.data?.map((a) => (
+                        <tr key={a.id} className="border-b border-border/60">
+                          <td className="max-w-0 truncate py-1.5 pr-3 font-mono text-xs font-medium" title={a.name}>
+                            {a.name}
+                          </td>
+                          <td className="py-1.5 pr-3">{statusBadge(a.status)}</td>
+                          <td className="py-1.5 pr-3 whitespace-nowrap text-muted-foreground">
+                            {formatWhen(a.last_keep_alive)}
+                          </td>
+                          <td className="truncate py-1.5 text-muted-foreground" title={a.version ?? undefined}>
+                            {a.version ?? "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card data-testid="guard-alerts">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Alert kritis</CardTitle>
+              <CardDescription>
+                Hanya rule level tinggi. Detail log di SIEM.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {alertsQ.isLoading ? (
+                <Skeleton className="h-12 w-full" />
+              ) : (alertsQ.data?.length ?? 0) === 0 ? (
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  0 alert kritis. Buka SIEM untuk pencarian event.
+                </p>
+              ) : (
+                <ul className="space-y-3">
+                  {alertsQ.data?.map((al) => (
+                    <li
+                      key={al.id}
+                      className="rounded-md border border-border/80 px-3 py-2 text-sm"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="critical">L{al.rule_level}</Badge>
+                        <span className="font-medium">{al.rule_description}</span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {formatWhen(al.occurred_at)}
+                        {al.agent_name ? ` · ${al.agent_name}` : ""}
+                        {al.rule_id ? ` · rule ${al.rule_id}` : ""}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
         </>
       )}
     </div>
