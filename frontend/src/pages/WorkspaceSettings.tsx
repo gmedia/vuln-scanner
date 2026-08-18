@@ -9,6 +9,7 @@ import {
   Trash2,
   UserPlus,
   Users,
+  AlertTriangle,
 } from "lucide-react";
 import {
   Card,
@@ -22,6 +23,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -234,9 +236,10 @@ function WorkspaceSettings() {
               </p>
             )}
             {acceptError && (
-              <p className="text-sm text-destructive" role="alert">
-                {acceptError}
-              </p>
+              <Alert variant="destructive" className="border-destructive/40">
+                <AlertTriangle />
+                <AlertDescription>{acceptError}</AlertDescription>
+              </Alert>
             )}
             <Button
               type="button"
@@ -288,9 +291,10 @@ function WorkspaceSettings() {
               </div>
             </div>
             {createError && (
-              <p className="text-sm text-destructive" role="alert">
-                {createError}
-              </p>
+              <Alert variant="destructive" className="border-destructive/40">
+                <AlertTriangle />
+                <AlertDescription>{createError}</AlertDescription>
+              </Alert>
             )}
             <Button
               type="submit"
@@ -400,9 +404,10 @@ function WorkspaceSettings() {
                   </div>
                 </div>
                 {formError && (
-                  <p className="text-sm text-destructive" role="alert">
-                    {formError}
-                  </p>
+                  <Alert variant="destructive" className="border-destructive/40">
+                    <AlertTriangle />
+                    <AlertDescription>{formError}</AlertDescription>
+                  </Alert>
                 )}
                 {formSuccess && (
                   <p className="text-sm text-primary" role="status">
