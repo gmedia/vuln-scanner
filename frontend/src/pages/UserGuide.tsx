@@ -141,7 +141,7 @@ function GuideTocLinks({
             <li key={item.id}>
               <Button
                 asChild
-                variant={isActive ? "secondary" : "ghost"}
+                variant={isActive ? "default" : "ghost"}
                 size="sm"
                 className={cn(
                   "h-auto w-full justify-start whitespace-normal px-2.5 py-1.5 text-left font-normal",
