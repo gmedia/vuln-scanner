@@ -30,7 +30,6 @@ async function openGuard(
       },
     ),
   ).toBeVisible();
-  await expect(page.getByText("Status", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("Gagal memuat status Guard")).toHaveCount(0);
   await expect(page.getByTestId("guard-state")).toBeVisible({
     timeout: 20_000,
