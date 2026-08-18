@@ -15,6 +15,21 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { Badge } from "@/components/ui/Badge";
 import { Textarea } from "@/components/ui/Textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/Select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/Table";
 import { listGuardAgents } from "@/api/guard";
 import {
   addSiemCaseNote,
@@ -337,19 +352,24 @@ export default function Siem() {
                 </div>
                 <div className="col-span-6 sm:col-span-4 xl:col-span-2">
                   <Label htmlFor="siem-agent">Agen</Label>
-                  <select
-                    id="siem-agent"
-                    className="flex h-10 w-full rounded-md border border-border bg-card px-3 py-2 text-sm"
-                    value={agentId}
-                    onChange={(e) => setAgentId(e.target.value)}
+                  <Select
+                    value={agentId || "__all__"}
+                    onValueChange={(value) =>
+                      setAgentId(value === "__all__" ? "" : value)
+                    }
                   >
-                    <option value="">Semua agen org</option>
-                    {agents.map((a) => (
-                      <option key={a.id} value={a.wazuh_agent_id}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger id="siem-agent" aria-label="Agen">
+                      <SelectValue placeholder="Semua agen org" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">Semua agen org</SelectItem>
+                      {agents.map((a) => (
+                        <SelectItem key={a.id} value={a.wazuh_agent_id}>
+                          {a.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="col-span-12 sm:col-span-8 xl:col-span-3">
                   <Label htmlFor="siem-q">Kotak pencarian</Label>
@@ -394,66 +414,61 @@ export default function Siem() {
                 <Skeleton className="h-32 w-full" />
               ) : (
                 <>
-                <div className="overflow-x-auto">
-                  <table className="w-full table-fixed text-left text-sm">
-                    <thead className="sticky top-0 z-[1] border-b border-border bg-card shadow-[0_1px_0_hsl(var(--border))]">
-                      <tr className="text-muted-foreground">
-                        <th className="w-[12rem] py-2 pr-3">Waktu (WIB)</th>
-                        <th className="w-[8rem] py-2 pr-3">Level</th>
-                        <th className="py-2 pr-3">Rule</th>
-                        <th className="w-[10rem] py-2">Agen</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {events.length === 0 && (
-                        <tr data-testid="siem-events-empty">
-                          <td
-                            colSpan={4}
-                            className="py-4 text-muted-foreground"
-                          >
-                            Tidak ada event.
-                          </td>
-                        </tr>
-                      )}
-                      {events.map((ev) => (
-                        <tr
-                          key={ev.external_id}
-                          data-testid="siem-event-row"
-                          className="cursor-pointer border-b border-border/60 hover:bg-accent/40"
-                          onClick={() => setSelected(ev)}
+                <Table className="table-fixed">
+                  <TableHeader className="sticky top-0 z-[1] bg-card shadow-[0_1px_0_hsl(var(--border))]">
+                    <TableRow>
+                      <TableHead className="w-[12rem]">Waktu (WIB)</TableHead>
+                      <TableHead className="w-[8rem]">Level</TableHead>
+                      <TableHead>Rule</TableHead>
+                      <TableHead className="w-[10rem]">Agen</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {events.length === 0 && (
+                      <TableRow data-testid="siem-events-empty">
+                        <TableCell colSpan={4} className="py-4 text-muted-foreground">
+                          Tidak ada event.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {events.map((ev) => (
+                      <TableRow
+                        key={ev.external_id}
+                        data-testid="siem-event-row"
+                        className="cursor-pointer"
+                        onClick={() => setSelected(ev)}
+                      >
+                        <TableCell className="whitespace-nowrap">
+                          {formatWhen(ev.occurred_at)}
+                        </TableCell>
+                        <TableCell>
+                          <LevelChip level={ev.rule_level} />
+                        </TableCell>
+                        <TableCell
+                          className="truncate"
+                          title={
+                            ev.rule_id
+                              ? `${ev.rule_description} · ${ev.rule_id}`
+                              : ev.rule_description
+                          }
                         >
-                          <td className="py-2 pr-3 whitespace-nowrap">
-                            {formatWhen(ev.occurred_at)}
-                          </td>
-                          <td className="py-2 pr-3">
-                            <LevelChip level={ev.rule_level} />
-                          </td>
-                          <td
-                            className="truncate py-2 pr-3"
-                            title={
-                              ev.rule_id
-                                ? `${ev.rule_description} · ${ev.rule_id}`
-                                : ev.rule_description
-                            }
-                          >
-                            {ev.rule_description}
-                            {ev.rule_id ? (
-                              <span className="ml-1 text-xs text-muted-foreground">
-                                #{ev.rule_id}
-                              </span>
-                            ) : null}
-                          </td>
-                          <td
-                            className="truncate py-2 font-mono text-xs"
-                            title={ev.agent_name ?? ev.agent_wazuh_id ?? undefined}
-                          >
-                            {ev.agent_name ?? ev.agent_wazuh_id ?? "—"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                          {ev.rule_description}
+                          {ev.rule_id ? (
+                            <span className="ml-1 text-xs text-muted-foreground">
+                              #{ev.rule_id}
+                            </span>
+                          ) : null}
+                        </TableCell>
+                        <TableCell
+                          className="truncate font-mono text-xs"
+                          title={ev.agent_name ?? ev.agent_wazuh_id ?? undefined}
+                        >
+                          {ev.agent_name ?? ev.agent_wazuh_id ?? "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
                 {allEvents.length > pageSize && (
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                     <span>
