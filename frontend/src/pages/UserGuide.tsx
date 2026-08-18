@@ -167,7 +167,7 @@ function UserGuide() {
           </span>
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          User Guide
+          Panduan pengguna
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Panduan step-by-step memakai {BRAND.product} (mesin VulnScanner). Label
@@ -205,7 +205,7 @@ function UserGuide() {
         </details>
       </div>
 
-      <div className="mx-auto w-full max-w-5xl lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:items-start lg:gap-8">
+      <div className="mx-auto w-full max-w-6xl lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-start lg:gap-8">
         <aside className="hidden lg:block">
           <div className="sticky top-0 max-h-[calc(100vh-6rem)] overflow-y-auto pr-1">
             <p className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -223,7 +223,7 @@ function UserGuide() {
           <SectionHeading
             id="mulai"
             icon={LogIn}
-            title="1. Mulai: daftar, login, workspace"
+            title="Mulai: daftar, login, workspace"
           />
           <Steps>
             <li>
@@ -261,7 +261,7 @@ function UserGuide() {
           <SectionHeading
             id="scan-ip"
             icon={Radar}
-            title="2. Scan IP — langkah demi langkah"
+            title="Scan IP — langkah demi langkah"
           />
           <Steps>
             <li>
@@ -311,7 +311,7 @@ function UserGuide() {
           <SectionHeading
             id="scan-domain"
             icon={Globe}
-            title="3. Scan Domain — langkah demi langkah"
+            title="Scan Domain — langkah demi langkah"
           />
           <Steps>
             <li>
@@ -345,7 +345,7 @@ function UserGuide() {
           <SectionHeading
             id="scan-mobile"
             icon={Smartphone}
-            title="4. Scan Mobile — langkah demi langkah"
+            title="Scan Mobile — langkah demi langkah"
           />
           <Steps>
             <li>
@@ -383,7 +383,7 @@ function UserGuide() {
           <SectionHeading
             id="hasil"
             icon={LayoutDashboard}
-            title="5. Baca hasil & unduh laporan"
+            title="Baca hasil & unduh laporan"
           />
           <Steps>
             <li>
@@ -426,7 +426,7 @@ function UserGuide() {
           <SectionHeading
             id="jadwal"
             icon={CalendarClock}
-            title="6. Jadwal scan berkala (Scan Attach)"
+            title="Jadwal scan berkala (Scan Attach)"
           />
           <p className="text-sm text-muted-foreground">
             Peran <Ui>viewer</Ui> hanya membaca — tidak bisa buat/ubah jadwal.
@@ -486,7 +486,7 @@ function UserGuide() {
           <SectionHeading
             id="workspace"
             icon={Users}
-            title="7. Workspace & undangan"
+            title="Workspace & undangan"
           />
           <Steps>
             <li>
@@ -528,7 +528,7 @@ function UserGuide() {
 
       <Card>
         <CardContent className="space-y-3 pt-6">
-          <SectionHeading id="kredit" icon={Coins} title="8. Kredit" />
+          <SectionHeading id="kredit" icon={Coins} title="Kredit" />
           <Steps>
             <li>
                Lihat saldo di header (chip Kredit).
@@ -563,7 +563,7 @@ function UserGuide() {
           <SectionHeading
             id="guard"
             icon={Shield}
-            title="9. Guard (runtime thin) — step by step"
+            title="Guard (runtime thin) — step by step"
           />
           <p className="text-sm text-muted-foreground">
             Inventori agen + alert kritis per org. Bukan SIEM penuh / raw log.
@@ -581,10 +581,11 @@ function UserGuide() {
             </li>
             <li>
               Kartu <Ui>Status</Ui>: pastikan org aktif benar. Jika{" "}
-              <Ui>nonaktif</Ui>, admin klik <Ui>Aktifkan Guard</Ui>.
+              <Ui>nonaktif</Ui>, admin klik <Ui>Aktifkan Guard</Ui>. Status
+              modul: <Ui>nyala</Ui> atau <Ui>nonaktif</Ui>.
             </li>
             <li>
-              Setelah enabled, admin: kartu <Ui>Enroll token</Ui> → label
+               Setelah nyala, admin: kartu <Ui>Token enroll</Ui> → label
                opsional → <Ui>Buat token</Ui>. Salin token mentah segera (hanya
               sekali ditampilkan). UI menampilkan blok{" "}
               <Ui>Langkah host (setelah token)</Ui> + contoh curl — gunakan itu
@@ -665,7 +666,7 @@ function UserGuide() {
             </li>
             <li>
                Klik <Ui>Sinkronkan</Ui> (admin) untuk memperbarui proyeksi. Lihat tabel{" "}
-               <Ui>Agen</Ui> (status aktif / terputus / menunggu) dan{" "}
+               <Ui>Agen</Ui> (status online / terputus / menunggu) dan{" "}
               <Ui>Alert kritis</Ui>.
             </li>
             <li>
@@ -687,7 +688,7 @@ function UserGuide() {
           <SectionHeading
             id="siem"
             icon={Siren}
-            title="10. SIEM — cari event & kasus"
+            title="SIEM — cari event & kasus"
           />
           <p className="text-sm text-muted-foreground">
             Modul terpisah dari Guard. Cari event terkontrol (bukan Discover /
@@ -708,8 +709,8 @@ function UserGuide() {
               <Link to="/siem" className="text-primary hover:underline">
                 SIEM
               </Link>
-              . Filter waktu, min level, agen, teks <Ui>q</Ui>, lalu{" "}
-              <Ui>Cari</Ui>.
+               . Filter waktu (WIB), min level, agen, kotak pencarian, lalu{" "}
+               <Ui>Terapkan</Ui>.
             </li>
             <li>
               Klik baris hasil untuk detail terproyeksi (bukan raw log).
@@ -726,7 +727,7 @@ function UserGuide() {
 
       <Card>
         <CardContent className="space-y-3 pt-6">
-          <SectionHeading id="tips" icon={BookOpen} title="11. Tips & batasan" />
+          <SectionHeading id="tips" icon={BookOpen} title="Tips & batasan" />
           <ol className="list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
             <li>Hanya scan / enroll aset yang Anda kuasai secara hukum.</li>
             <li>
