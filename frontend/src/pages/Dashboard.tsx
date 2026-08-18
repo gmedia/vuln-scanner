@@ -131,11 +131,12 @@ function Dashboard() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const scans = pageData?.items ?? [];
+  const scans = useMemo(() => pageData?.items ?? [], [pageData?.items]);
   const totalScans = pageData?.total ?? scans.length;
   const isFirstLoad = isLoading && !pageData;
 
-  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const [nowMs] = useState(() => Date.now());
+  const weekAgo = nowMs - 7 * 24 * 60 * 60 * 1000;
 
   const uniqueLatest = useMemo(() => latestPerTarget(scans), [scans]);
 
@@ -186,7 +187,7 @@ function Dashboard() {
   const failedJobs = scans.filter((s) => s.status === "failed");
   const staleAgents = agents.filter((a) => {
     if (!a.last_keep_alive) return a.status !== "active";
-    const age = Date.now() - new Date(a.last_keep_alive).getTime();
+    const age = nowMs - new Date(a.last_keep_alive).getTime();
     return age > 24 * 60 * 60 * 1000;
   });
   const criticalAlerts = alerts.filter((a) => a.rule_level >= 12);
