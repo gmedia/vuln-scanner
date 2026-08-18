@@ -123,8 +123,9 @@ describe("SIEM page", () => {
     });
     expect(screen.queryByText(/Open Wazuh dashboard/i)).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "SIEM" })).toBeInTheDocument();
-    expect(screen.getByText("Tinggi")).toBeInTheDocument();
-    expect(screen.getByLabelText("Cari")).toBeInTheDocument();
+    expect(screen.getByText("L10 · Tinggi")).toBeInTheDocument();
+    expect(screen.getByLabelText("Kotak pencarian")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Terapkan" })).toBeInTheDocument();
 
     await user.click(screen.getByText("Login failed"));
     expect(screen.getByTestId("siem-event-detail")).toBeInTheDocument();
