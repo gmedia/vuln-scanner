@@ -22,6 +22,7 @@ describe("AppShell", () => {
     renderShell();
     expect(screen.getByRole("banner")).toBeInTheDocument();
     expect(screen.getByRole("complementary")).toBeInTheDocument();
+    expect(document.querySelector("aside")).toBeInstanceOf(HTMLElement);
   });
 
   it("renders main content area", () => {
