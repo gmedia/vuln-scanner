@@ -123,6 +123,8 @@ describe("SIEM page", () => {
     });
     expect(screen.queryByText(/Open Wazuh dashboard/i)).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "SIEM" })).toBeInTheDocument();
+    expect(screen.getByText("Tinggi")).toBeInTheDocument();
+    expect(screen.getByLabelText("Cari")).toBeInTheDocument();
 
     await user.click(screen.getByText("Login failed"));
     expect(screen.getByTestId("siem-event-detail")).toBeInTheDocument();
