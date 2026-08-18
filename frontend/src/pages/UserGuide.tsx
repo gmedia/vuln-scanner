@@ -36,17 +36,17 @@ import {
 } from "@/lib/guardEnrollHost";
 
 const toc = [
-  { id: "mulai", label: "1. Mulai & login" },
-  { id: "scan-ip", label: "2. Scan IP (step-by-step)" },
-  { id: "scan-domain", label: "3. Scan Domain" },
-  { id: "scan-mobile", label: "4. Scan Mobile" },
-  { id: "hasil", label: "5. Baca hasil & unduh" },
-  { id: "jadwal", label: "6. Jadwal berkala" },
+  { id: "mulai", label: "1. Mulai: daftar, login, workspace" },
+  { id: "scan-ip", label: "2. Scan IP — langkah demi langkah" },
+  { id: "scan-domain", label: "3. Scan Domain — langkah demi langkah" },
+  { id: "scan-mobile", label: "4. Scan Mobile — langkah demi langkah" },
+  { id: "hasil", label: "5. Baca hasil & unduh laporan" },
+  { id: "jadwal", label: "6. Jadwal scan berkala (Scan Attach)" },
   { id: "workspace", label: "7. Workspace & undangan" },
   { id: "kredit", label: "8. Kredit" },
   { id: "guard", label: "9. Guard (runtime)" },
-  { id: "siem", label: "10. SIEM (cari + kasus)" },
-  { id: "tips", label: "Tips & batasan" },
+  { id: "siem", label: "10. SIEM — cari event & kasus" },
+  { id: "tips", label: "11. Tips & batasan" },
 ] as const;
 
 function SectionHeading({
@@ -205,7 +205,7 @@ function UserGuide() {
         </details>
       </div>
 
-      <div className="lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:items-start lg:gap-8">
+      <div className="mx-auto w-full max-w-5xl lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:items-start lg:gap-8">
         <aside className="hidden lg:block">
           <div className="sticky top-0 max-h-[calc(100vh-6rem)] overflow-y-auto pr-1">
             <p className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -236,8 +236,9 @@ function UserGuide() {
               bisa scan.
             </li>
             <li>
-              Login. Pastikan sidebar menampilkan saldo kredit dan menu navigasi
-              (Dashboard, scanner, Jadwal, Guard, dll.).
+               Login. Pastikan header menampilkan saldo kredit dan sidebar
+               menampilkan menu navigasi (Dashboard, scanner, Jadwal, Guard,
+               dll.).
             </li>
             <li>
               Jika Anda punya lebih dari satu organisasi, pilih workspace aktif
@@ -260,7 +261,7 @@ function UserGuide() {
           <SectionHeading
             id="scan-ip"
             icon={Radar}
-            title="2. Scan IP — step by step"
+            title="2. Scan IP — langkah demi langkah"
           />
           <Steps>
             <li>
@@ -310,7 +311,7 @@ function UserGuide() {
           <SectionHeading
             id="scan-domain"
             icon={Globe}
-            title="3. Scan Domain — step by step"
+            title="3. Scan Domain — langkah demi langkah"
           />
           <Steps>
             <li>
@@ -344,7 +345,7 @@ function UserGuide() {
           <SectionHeading
             id="scan-mobile"
             icon={Smartphone}
-            title="4. Scan Mobile — step by step"
+            title="4. Scan Mobile — langkah demi langkah"
           />
           <Steps>
             <li>
@@ -485,7 +486,7 @@ function UserGuide() {
           <SectionHeading
             id="workspace"
             icon={Users}
-            title="7. Workspace & undangan — step by step"
+            title="7. Workspace & undangan"
           />
           <Steps>
             <li>
@@ -527,10 +528,10 @@ function UserGuide() {
 
       <Card>
         <CardContent className="space-y-3 pt-6">
-          <SectionHeading id="kredit" icon={Coins} title="8. Kredit — step by step" />
+          <SectionHeading id="kredit" icon={Coins} title="8. Kredit" />
           <Steps>
             <li>
-              Lihat saldo di sidebar (atau area kredit akun).
+               Lihat saldo di header (chip Kredit).
             </li>
             <li>
               Sebelum scan, form menampilkan pratinjau biaya. Tombol start
@@ -580,22 +581,22 @@ function UserGuide() {
             </li>
             <li>
               Kartu <Ui>Status</Ui>: pastikan org aktif benar. Jika{" "}
-              <Ui>disabled</Ui>, admin klik <Ui>Aktifkan Guard</Ui>.
+              <Ui>nonaktif</Ui>, admin klik <Ui>Aktifkan Guard</Ui>.
             </li>
             <li>
               Setelah enabled, admin: kartu <Ui>Enroll token</Ui> → label
-              opsional → <Ui>Generate</Ui>. Salin token mentah segera (hanya
+               opsional → <Ui>Buat token</Ui>. Salin token mentah segera (hanya
               sekali ditampilkan). UI menampilkan blok{" "}
               <Ui>Langkah host (setelah token)</Ui> + contoh curl — gunakan itu
               di host. Jangan tempel token di chat/repo publik.
             </li>
             <li>
               Di host target (aset yang Anda kuasai secara hukum), ikuti urutan:
-              <ol className="mt-2 list-decimal space-y-1.5 pl-5">
-                {GUARD_HOST_SETUP_STEPS.map((step) => (
-                  <li key={step.slice(0, 40)}>{step}</li>
-                ))}
-              </ol>
+               <ul className="mt-2 list-disc space-y-1.5 pl-5">
+                 {GUARD_HOST_SETUP_STEPS.map((step) => (
+                   <li key={step.slice(0, 40)}>{step}</li>
+                 ))}
+               </ul>
             </li>
             <li>
               Contoh enroll dari host (ganti origin app & token; tanpa JWT):
@@ -624,11 +625,11 @@ function UserGuide() {
               <p className="mt-2 text-sm text-muted-foreground">
                 {GUARD_AGENT_INSTALL_INTRO}
               </p>
-              <ol className="mt-2 list-decimal space-y-1.5 pl-5">
-                {GUARD_AGENT_INSTALL_STEPS.map((step) => (
-                  <li key={step.slice(0, 40)}>{step}</li>
-                ))}
-              </ol>
+               <ul className="mt-2 list-disc space-y-1.5 pl-5">
+                 {GUARD_AGENT_INSTALL_STEPS.map((step) => (
+                   <li key={step.slice(0, 40)}>{step}</li>
+                 ))}
+               </ul>
               <div
                 className="mt-3 space-y-2"
                 data-testid="guard-distro-install-commands"
@@ -663,8 +664,8 @@ function UserGuide() {
               </div>
             </li>
             <li>
-              Klik <Ui>Sync</Ui> (admin) untuk memperbarui proyeksi. Lihat tabel{" "}
-              <Ui>Agen</Ui> (status active/disconnected/pending) dan{" "}
+               Klik <Ui>Sinkronkan</Ui> (admin) untuk memperbarui proyeksi. Lihat tabel{" "}
+               <Ui>Agen</Ui> (status aktif / terputus / menunggu) dan{" "}
               <Ui>Alert kritis</Ui>.
             </li>
             <li>
@@ -715,8 +716,9 @@ function UserGuide() {
               Member+ dapat <Ui>Buat kasus</Ui> dari event.
             </li>
             <li>
-              Owner/admin mengubah status kasus <Ui>open</Ui> / <Ui>ack</Ui> /{" "}
-              <Ui>closed</Ui>. Member+ menambah catatan (tanpa dump log mentah).
+               Owner/admin mengubah status kasus <Ui>terbuka</Ui> /{" "}
+               <Ui>diakui</Ui> / <Ui>ditutup</Ui>. Member+ menambah catatan
+               (tanpa dump log mentah).
             </li>
           </Steps>
         </CardContent>
@@ -724,8 +726,8 @@ function UserGuide() {
 
       <Card>
         <CardContent className="space-y-3 pt-6">
-          <SectionHeading id="tips" icon={BookOpen} title="Tips & batasan" />
-          <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+          <SectionHeading id="tips" icon={BookOpen} title="11. Tips & batasan" />
+          <ol className="list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
             <li>Hanya scan / enroll aset yang Anda kuasai secara hukum.</li>
             <li>
               Jangan menyimpan password, API key, atau alamat internal di ticket
@@ -745,7 +747,7 @@ function UserGuide() {
               </Link>
               .
             </li>
-          </ul>
+          </ol>
           <p className="pt-2 text-xs text-muted-foreground">
             {BRAND.footerLine}
           </p>
