@@ -3,24 +3,32 @@ import { describe, it, beforeEach, expect } from "vitest";
 import Landing from "@/pages/Landing";
 
 vi.mock("react-router-dom", () => ({
-  Link: ({ to, children }: any) => <a href={to}>{children}</a>,
+  Link: ({ to, children }: { to: string; children: React.ReactNode }) => (
+    <a href={to}>{children}</a>
+  ),
 }));
 
 vi.mock("@/components/ui/Button", () => ({
-  Button: ({ children, ...props }: any) => (
+  Button: ({ children, ...props }: { children: React.ReactNode }) => (
     <button {...props}>{children}</button>
   ),
 }));
 
 vi.mock("@/components/ui/Card", () => ({
-  Card: ({ children, ...props }: any) => (
+  Card: ({ children, ...props }: { children: React.ReactNode }) => (
     <div data-testid="card" {...props}>
       {children}
     </div>
   ),
-  CardHeader: ({ children }: any) => <div>{children}</div>,
-  CardTitle: ({ children }: any) => <h3>{children}</h3>,
-  CardContent: ({ children }: any) => <div>{children}</div>,
+  CardHeader: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  CardTitle: ({ children }: { children: React.ReactNode }) => (
+    <h3>{children}</h3>
+  ),
+  CardContent: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
 }));
 
 describe("Landing Page", () => {
@@ -28,19 +36,28 @@ describe("Landing Page", () => {
     render(<Landing />);
   });
 
-  it("renders Sinexis hero title and product line", () => {
-    expect(screen.getByRole("heading", { level: 1, name: "Sinexis" })).toBeInTheDocument();
+  it("renders Sinexis hero title and attach kicker", () => {
     expect(
-      screen.getByText("Sinexis Scan", { selector: "p.text-primary" }),
+      screen.getByRole("heading", { level: 1, name: "Sinexis" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Security attach for colo, VPS, and hospitality stacks",
+        {
+          selector: "p.text-primary",
+        },
+      ),
     ).toBeInTheDocument();
   });
 
-  it("renders dual-brand description text", () => {
+  it("renders attach-loop description without engine dump", () => {
     expect(
       screen.getByText(
-        /Security attach for teams that already run servers — Sinexis Scan, powered by the VulnScanner engine/,
+        /Find exposure on IP, domain, and mobile. Schedule attach scans/,
       ),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/VulnScanner engine/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/JWT auth/)).not.toBeInTheDocument();
   });
 
   it("renders brand logo in top nav", () => {
@@ -64,53 +81,36 @@ describe("Landing Page", () => {
     });
   });
 
-  it("renders trust line with real deploy facts", () => {
+  it("renders attach loop microcopy", () => {
     expect(
-      screen.getByText(/JWT auth · API key access · Docker Compose deploy/),
+      screen.getAllByText(/Scan → Attach → Workspace → Guard → SIEM/).length,
+    ).toBeGreaterThanOrEqual(1);
+  });
+
+  it("renders What ships section heading", () => {
+    expect(
+      screen.getByRole("heading", { level: 2, name: "What ships" }),
     ).toBeInTheDocument();
   });
 
-  it("renders Features section heading", () => {
-    expect(screen.getByText("Features")).toBeInTheDocument();
+  it("renders eight shipped-module cards", () => {
+    expect(screen.getByText("IP scan")).toBeInTheDocument();
+    expect(screen.getByText("Domain scan")).toBeInTheDocument();
+    expect(screen.getByText("Mobile scan")).toBeInTheDocument();
+    expect(screen.getByText("Scan Attach")).toBeInTheDocument();
+    expect(screen.getByText("Workspace")).toBeInTheDocument();
+    expect(screen.getByText("Guard")).toBeInTheDocument();
+    expect(screen.getByText("SIEM")).toBeInTheDocument();
+    expect(screen.getByText("Credits")).toBeInTheDocument();
+    expect(screen.getAllByTestId("card")).toHaveLength(8);
   });
 
-  it("renders IP Scanner feature card with correct title", () => {
-    expect(screen.getByText("IP Scanner")).toBeInTheDocument();
-  });
-
-  it("renders IP Scanner capability bullets", () => {
-    expect(screen.getByText("Port scan (nmap)")).toBeInTheDocument();
-    expect(screen.getByText("CVE lookup")).toBeInTheDocument();
-  });
-
-  it("renders Domain Scanner feature card with correct title", () => {
-    expect(screen.getByText("Domain Scanner")).toBeInTheDocument();
-  });
-
-  it("renders Domain Scanner capability bullets", () => {
-    expect(screen.getByText("DNS & subdomains")).toBeInTheDocument();
-    expect(screen.getByText("SSL/TLS analysis")).toBeInTheDocument();
-  });
-
-  it("renders Mobile Scanner feature card with correct title", () => {
-    expect(screen.getByText("Mobile Scanner")).toBeInTheDocument();
-  });
-
-  it("renders Mobile Scanner capability bullets", () => {
-    expect(screen.getByText("APK/AAB/IPA static analysis")).toBeInTheDocument();
-    expect(screen.getByText("Hardcoded secret scan")).toBeInTheDocument();
-  });
-
-  it("renders 3 feature cards", () => {
-    const cards = screen.getAllByTestId("card");
-    expect(cards).toHaveLength(3);
-  });
-
-  it("renders footer with dual-brand version text", () => {
+  it("renders footer without version dump", () => {
     const footer = document.querySelector("footer");
     expect(footer).toBeTruthy();
-    expect(footer!.textContent).toMatch(/Sinexis Scan v1\.2\.0/);
-    expect(footer!.textContent).toMatch(/powered by VulnScanner engine/i);
+    expect(footer!.textContent).toMatch(/Sinexis · Scan · Guard · SIEM/);
+    expect(footer!.textContent).not.toMatch(/v1\.2\.0/);
+    expect(footer!.textContent).not.toMatch(/VulnScanner/i);
   });
 
   it("uses sticky-footer shell so footer pins on tall viewports", () => {
