@@ -1,10 +1,13 @@
 import { Link } from "react-router-dom";
 import {
-  Crosshair,
   Radar,
   Globe,
   Smartphone,
+  CalendarClock,
+  Users,
   Shield,
+  Search,
+  Coins,
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -15,36 +18,47 @@ import { BRAND } from "@/lib/brand";
 const features = [
   {
     icon: Radar,
-    title: "IP Scanner",
-    description: "Port scanning with CVE lookup and severity scoring",
-    bullets: [
-      "Port scan (nmap)",
-      "Service/version detect",
-      "CVE lookup",
-      "Severity scoring",
-    ],
+    title: "IP scan",
+    description:
+      "Ports, services, and CVE severity on the hosts you already run.",
   },
   {
     icon: Globe,
-    title: "Domain Scanner",
-    description: "DNS, SSL/TLS, headers, and tech fingerprinting",
-    bullets: [
-      "DNS & subdomains",
-      "SSL/TLS analysis",
-      "Security headers",
-      "Tech fingerprint",
-    ],
+    title: "Domain scan",
+    description: "DNS, TLS, headers, and stack fingerprint for public sites.",
   },
   {
     icon: Smartphone,
-    title: "Mobile Scanner",
-    description: "APK/AAB/IPA static analysis and secret detection",
-    bullets: [
-      "APK/AAB/IPA static analysis",
-      "Permissions review",
-      "Exported components",
-      "Hardcoded secret scan",
-    ],
+    title: "Mobile scan",
+    description: "Static APK/AAB/IPA: permissions, exports, hardcoded secrets.",
+  },
+  {
+    icon: CalendarClock,
+    title: "Scan Attach",
+    description:
+      "Schedules, baseline diff, and executive HTML — not one-shot nmap.",
+  },
+  {
+    icon: Users,
+    title: "Workspace",
+    description:
+      "Org, roles, and invites so ops and owners share one scan trail.",
+  },
+  {
+    icon: Shield,
+    title: "Guard",
+    description:
+      "Thin Wazuh: agent inventory, critical alerts, per-org enroll.",
+  },
+  {
+    icon: Search,
+    title: "SIEM",
+    description: "Search + cases on the same workspace (not a second console).",
+  },
+  {
+    icon: Coins,
+    title: "Credits",
+    description: "Personal credit wallet; each scan type has a clear cost.",
   },
 ];
 
@@ -76,9 +90,6 @@ function Landing() {
       <main className="flex flex-1 flex-col">
         <section className="flex flex-col items-center px-4 pt-12 pb-10">
           <div className="text-center space-y-6 max-w-2xl">
-            <div className="flex items-center justify-center gap-3">
-              <Crosshair className="h-12 w-12 text-primary" />
-            </div>
             <div className="space-y-2">
               <h1 className="text-4xl sm:text-5xl font-bold tracking-wide text-foreground">
                 {BRAND.heroTitle}
@@ -108,20 +119,22 @@ function Landing() {
               </Link>
             </div>
             <p className="text-xs text-muted-foreground pt-1">
-              JWT auth · API key access · Docker Compose deploy
+              Scan → Attach → Workspace → Guard → SIEM
             </p>
           </div>
         </section>
 
         <section className="px-4 py-12 bg-card/50">
           <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-10">
-              <h2 className="text-lg font-bold tracking-wide text-foreground flex items-center justify-center gap-2">
-                <Shield className="h-5 w-5 text-primary" />
-                Features
+            <div className="text-center mb-10 space-y-2">
+              <p className="text-xs tracking-wide text-muted-foreground uppercase">
+                Scan → Attach → Workspace → Guard → SIEM
+              </p>
+              <h2 className="text-2xl font-bold tracking-wide text-foreground">
+                What ships
               </h2>
             </div>
-            <div className="grid gap-6 sm:grid-cols-3">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {features.map((feature) => (
                 <Card
                   key={feature.title}
@@ -133,18 +146,10 @@ function Landing() {
                       {feature.title}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <p className="text-xs text-muted-foreground">
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
                       {feature.description}
                     </p>
-                    <ul className="space-y-1.5 text-xs text-muted-foreground">
-                      {feature.bullets.map((bullet) => (
-                        <li key={bullet} className="flex items-start gap-2">
-                          <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary" />
-                          <span>{bullet}</span>
-                        </li>
-                      ))}
-                    </ul>
                   </CardContent>
                 </Card>
               ))}

@@ -6,14 +6,21 @@ test.describe("Landing", () => {
   test("page loads with Sinexis heading", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator("h1:has-text('Sinexis')")).toBeVisible();
-    await expect(page.locator("text=Sinexis Scan").first()).toBeVisible();
+    await expect(
+      page
+        .locator("text=Security attach for colo, VPS, and hospitality stacks")
+        .first(),
+    ).toBeVisible();
   });
 
-  test("shows dual-brand tagline text", async ({ page }) => {
+  test("shows attach-loop tagline", async ({ page }) => {
     await page.goto("/");
     await expect(
-      page.locator("text=powered by the VulnScanner engine"),
+      page.locator("text=Find exposure on IP, domain, and mobile"),
     ).toBeVisible();
+    await expect(
+      page.locator("text=powered by the VulnScanner engine"),
+    ).toHaveCount(0);
   });
 
   test("Get Started button links to register", async ({ page }) => {
@@ -30,43 +37,36 @@ test.describe("Landing", () => {
     await expect(signInLink.locator("text=Sign In")).toBeVisible();
   });
 
-  test("FEATURES section heading is visible", async ({ page }) => {
+  test("What ships section heading is visible", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("h2:has-text('Features')")).toBeVisible();
+    await expect(page.locator("h2:has-text('What ships')")).toBeVisible();
   });
 
-  test("renders IP Scanner feature card", async ({ page }) => {
+  test("renders IP scan feature card", async ({ page }) => {
     await page.goto("/");
-    const card = page.locator("text=IP Scanner");
-    await expect(card).toBeVisible();
+    await expect(page.locator("text=IP scan")).toBeVisible();
     await expect(
-      page.locator("text=Port scanning with CVE lookup and severity scoring"),
+      page.locator(
+        "text=Ports, services, and CVE severity on the hosts you already run.",
+      ),
     ).toBeVisible();
   });
 
-  test("renders Domain Scanner feature card", async ({ page }) => {
+  test("renders Guard and SIEM cards", async ({ page }) => {
     await page.goto("/");
-    const card = page.locator("text=Domain Scanner");
-    await expect(card).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Guard" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "SIEM" })).toBeVisible();
     await expect(
-      page.locator("text=DNS, SSL/TLS, headers, and tech fingerprinting"),
+      page.getByRole("heading", { name: "Scan Attach" }),
     ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Credits" })).toBeVisible();
   });
 
-  test("renders Mobile Scanner feature card", async ({ page }) => {
+  test("footer shows platform line without engine dump", async ({ page }) => {
     await page.goto("/");
-    const card = page.locator("text=Mobile Scanner");
-    await expect(card).toBeVisible();
-    await expect(
-      page.locator("text=APK/AAB/IPA static analysis and secret detection"),
-    ).toBeVisible();
-  });
-
-  test("footer shows dual-brand version", async ({ page }) => {
-    await page.goto("/");
-    await expect(page.locator("text=Sinexis Scan v1.2.0")).toBeVisible();
-    await expect(
-      page.locator("text=powered by VulnScanner engine"),
-    ).toBeVisible();
+    await expect(page.locator("footer")).toContainText(
+      "Sinexis · Scan · Guard · SIEM",
+    );
+    await expect(page.locator("footer")).not.toContainText("VulnScanner");
   });
 });
