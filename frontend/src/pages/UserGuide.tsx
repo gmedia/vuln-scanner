@@ -21,12 +21,14 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/Button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/Card";
+import { ScrollArea } from "@/components/ui/ScrollArea";
 import { BRAND } from "@/lib/brand";
 import {
   buildEnrollCurlExample,
@@ -137,19 +139,23 @@ function GuideTocLinks({
           const isActive = item.id === activeId;
           return (
             <li key={item.id}>
-              <a
-                href={`#${item.id}`}
-                onClick={onNavigate}
-                aria-current={isActive ? "true" : undefined}
+              <Button
+                asChild
+                variant={isActive ? "secondary" : "ghost"}
+                size="sm"
                 className={cn(
-                  "block rounded-md border-l-2 px-2.5 py-1.5 text-sm transition-colors",
-                  isActive
-                    ? "border-primary bg-primary font-medium text-primary-foreground"
-                    : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
+                  "h-auto w-full justify-start whitespace-normal px-2.5 py-1.5 text-left font-normal",
+                  isActive && "font-medium",
                 )}
               >
-                {item.label}
-              </a>
+                <a
+                  href={`#${item.id}`}
+                  onClick={onNavigate}
+                  aria-current={isActive ? "true" : undefined}
+                >
+                  {item.label}
+                </a>
+              </Button>
             </li>
           );
         })}
@@ -217,15 +223,17 @@ function UserGuide() {
           data-testid="guide-desktop-toc"
           className="hidden min-h-0 lg:block"
         >
-          <Card className="sticky top-4 max-h-[calc(100dvh-8rem)] overflow-y-auto">
+          <Card className="sticky top-4 flex max-h-[calc(100dvh-8rem)] flex-col overflow-hidden">
             <CardHeader className="py-3">
               <CardTitle className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 <ListOrdered className="h-3.5 w-3.5 text-primary" />
                 Daftar isi
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-0">
-              <GuideTocLinks activeId={activeId} />
+            <CardContent className="min-h-0 flex-1 pt-0">
+              <ScrollArea className="h-[min(28rem,calc(100dvh-12rem))]">
+                <GuideTocLinks activeId={activeId} />
+              </ScrollArea>
             </CardContent>
           </Card>
         </aside>
