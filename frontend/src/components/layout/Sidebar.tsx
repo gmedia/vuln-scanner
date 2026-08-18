@@ -1,6 +1,5 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import {
-  X,
   LayoutDashboard,
   Radar,
   Globe,
@@ -14,231 +13,199 @@ import {
   BookOpen,
   Siren,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { BRAND } from "@/lib/brand";
 import { useScanStore } from "@/store/scanStore";
 import { useAuthStore } from "@/store/authStore";
-import { Separator } from "@/components/ui/Separator";
 import { Badge } from "@/components/ui/Badge";
 import { BrandMark } from "@/components/brand/BrandMark";
 import OrgSwitcher from "@/components/workspace/OrgSwitcher";
+import {
+  Sidebar as SidebarPrimitive,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  useSidebar,
+} from "@/components/ui/sidebar";
 
-
-interface SidebarProps {
-  open: boolean;
-  onClose: () => void;
-}
-
-const navItems = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+const scanNav = [
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/scan/ip", label: "IP Scanner", icon: Radar },
   { to: "/scan/domain", label: "Domain Scanner", icon: Globe },
   { to: "/scan/mobile", label: "Mobile Scanner", icon: Smartphone },
   { to: "/schedules", label: "Jadwal", icon: CalendarClock },
+];
+
+const productNav = [
   {
     to: "/guard",
     label: "Guard",
     hint: "Agen host",
     icon: Shield,
+    testId: "nav-guard",
   },
   {
     to: "/siem",
     label: "SIEM",
     hint: "Event org",
     icon: Siren,
+    testId: "nav-siem",
   },
   { to: "/guide", label: "User Guide", icon: BookOpen },
 ];
 
-function Sidebar({ open, onClose }: SidebarProps) {
-  const activeJobId = useScanStore((s) => s.activeJobId);
-  const isAdmin = useAuthStore((s) => s.user?.is_admin ?? false);
+const accountNav = [
+  { to: "/credit-history", label: "Credit History", icon: History },
+  { to: "/profile", label: "Profile", icon: User },
+  { to: "/settings/workspace", label: "Workspace", icon: Users },
+];
+
+function pathActive(pathname: string, to: string, end?: boolean) {
+  if (end) return pathname === to;
+  return pathname === to || pathname.startsWith(`${to}/`);
+}
+
+function NavItem({
+  to,
+  label,
+  icon: Icon,
+  hint,
+  testId,
+  end,
+}: {
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  hint?: string;
+  testId?: string;
+  end?: boolean;
+}) {
+  const { setOpenMobile } = useSidebar();
+  const pathname = useLocation().pathname;
+  const isActive = pathActive(pathname, to, end);
 
   return (
-    <aside
-      className={cn(
-        "fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-card transition-transform duration-300 lg:static lg:translate-x-0",
-        open ? "translate-x-0" : "-translate-x-full",
-      )}
-    >
-      <div className="flex h-14 items-center justify-between border-b border-border px-4">
-        <BrandMark to="/" onClick={onClose} />
-        <button
-          onClick={onClose}
-          className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground lg:hidden"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-
-      <div className="border-b border-border px-3 py-2 sm:hidden">
-        <OrgSwitcher className="w-full" />
-      </div>
-
-      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.to === "/dashboard"}
-            onClick={onClose}
-            data-testid={
-              item.to === "/guard"
-                ? "nav-guard"
-                : item.to === "/siem"
-                  ? "nav-siem"
-                  : undefined
-            }
-            className={({ isActive }) =>
-              cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
-                isActive
-                  ? "bg-primary/10 text-primary [&>svg]:text-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
-              )
-            }
-          >
-            <item.icon className="h-4 w-4 shrink-0" />
-            <span className="flex min-w-0 flex-col leading-tight">
-              <span>{item.label}</span>
-              {"hint" in item && item.hint ? (
-                <span className="text-[10px] font-normal text-muted-foreground">
-                  {item.hint}
-                </span>
-              ) : null}
-            </span>
-          </NavLink>
-        ))}
-
+    <SidebarMenuItem>
+      <SidebarMenuButton asChild isActive={isActive} tooltip={label}>
         <NavLink
-          to="/credit-history"
-          onClick={onClose}
-          className={({ isActive }) =>
-            cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
-              isActive
-                ? "bg-primary/10 text-primary [&>svg]:text-primary"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground",
-            )
-          }
+          to={to}
+          end={end}
+          onClick={() => setOpenMobile(false)}
+          data-testid={testId}
         >
-          <History className="h-4 w-4 shrink-0" />
-          Credit History
+          <Icon />
+          <span className="flex min-w-0 flex-col leading-tight">
+            <span>{label}</span>
+            {hint ? (
+              <span className="text-[10px] font-normal text-muted-foreground">
+                {hint}
+              </span>
+            ) : null}
+          </span>
         </NavLink>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+}
 
-        <NavLink
-          to="/profile"
-          onClick={onClose}
-          className={({ isActive }) =>
-            cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
-              isActive
-                ? "bg-primary/10 text-primary [&>svg]:text-primary"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground",
-            )
-          }
-        >
-          <User className="h-4 w-4 shrink-0" />
-          Profile
-        </NavLink>
+function Sidebar() {
+  const activeJobId = useScanStore((s) => s.activeJobId);
+  const isAdmin = useAuthStore((s) => s.user?.is_admin ?? false);
+  const { setOpenMobile } = useSidebar();
 
-        <NavLink
-          to="/settings/workspace"
-          onClick={onClose}
-          className={({ isActive }) =>
-            cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
-              isActive
-                ? "bg-primary/10 text-primary [&>svg]:text-primary"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground",
-            )
-          }
-        >
-          <Users className="h-4 w-4 shrink-0" />
-          Workspace
-        </NavLink>
-
-        {isAdmin && (
-          <>
-            <Separator className="my-2" />
-            <p className="px-3 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-              Admin
+  return (
+    <SidebarPrimitive collapsible="icon" role="complementary">
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" asChild>
+              <BrandMark to="/" onClick={() => setOpenMobile(false)} />
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+        <div className="px-2 sm:hidden">
+          <OrgSwitcher className="w-full" />
+        </div>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Scan</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {scanNav.map((item) => (
+                <NavItem key={item.to} {...item} />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Attach</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {productNav.map((item) => (
+                <NavItem key={item.to} {...item} />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Account</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {accountNav.map((item) => (
+                <NavItem key={item.to} {...item} />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        {isAdmin ? (
+          <SidebarGroup>
+            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <NavItem
+                  to="/admin"
+                  label="Admin overview"
+                  icon={Shield}
+                  end
+                />
+                <NavItem to="/admin/users" label="Users" icon={Users} />
+                <NavItem
+                  to="/admin/pricing"
+                  label="Pricing"
+                  icon={DollarSign}
+                />
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : null}
+      </SidebarContent>
+      <SidebarFooter>
+        {activeJobId ? (
+          <div className="rounded-md bg-muted p-3 group-data-[collapsible=icon]:hidden">
+            <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+              Active Scan
             </p>
-            <NavLink
-              to="/admin"
-              end
-              onClick={onClose}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
-                  isActive
-                    ? "bg-primary/10 text-primary [&>svg]:text-primary"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                )
-              }
-            >
-              <Shield className="h-4 w-4 shrink-0" />
-              Admin overview
-            </NavLink>
-            <NavLink
-              to="/admin/users"
-              onClick={onClose}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
-                  isActive
-                    ? "bg-primary/10 text-primary [&>svg]:text-primary"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                )
-              }
-            >
-              <Users className="h-4 w-4 shrink-0" />
-              Users
-            </NavLink>
-            <NavLink
-              to="/admin/pricing"
-              onClick={onClose}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
-                  isActive
-                    ? "bg-primary/10 text-primary [&>svg]:text-primary"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                )
-              }
-            >
-              <DollarSign className="h-4 w-4 shrink-0" />
-              Pricing
-            </NavLink>
-          </>
-        )}
-      </nav>
-
-      {activeJobId && (
-        <>
-          <Separator />
-          <div className="p-3">
-            <div className="rounded-md bg-muted p-3">
-              <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-                Active Scan
-              </p>
-              <p className="truncate font-mono text-xs text-foreground">
-                {activeJobId.slice(0, 12)}...
-              </p>
-              <Badge variant="running" className="mt-2 text-[10px]">
-                In Progress
-              </Badge>
-            </div>
+            <p className="truncate font-mono text-xs text-foreground">
+              {activeJobId.slice(0, 12)}...
+            </p>
+            <Badge variant="running" className="mt-2 text-[10px]">
+              In Progress
+            </Badge>
           </div>
-        </>
-      )}
-
-      <div className="border-t border-border p-3">
-        <p className="text-center text-[10px] text-muted-foreground">
+        ) : null}
+        <p className="px-2 text-center text-[10px] text-muted-foreground group-data-[collapsible=icon]:hidden">
           {BRAND.sidebarVersion}
         </p>
-      </div>
-    </aside>
+      </SidebarFooter>
+      <SidebarRail />
+    </SidebarPrimitive>
   );
 }
 
