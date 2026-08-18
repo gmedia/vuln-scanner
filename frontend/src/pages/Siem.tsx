@@ -373,6 +373,7 @@ export default function Siem() {
               {eventsQ.isLoading ? (
                 <Skeleton className="h-32 w-full" />
               ) : (
+                <>
                 <div className="max-h-[28rem] overflow-auto">
                   <table className="w-full text-left text-sm">
                     <thead className="sticky top-0 z-[1] bg-card">
@@ -455,6 +456,7 @@ export default function Siem() {
                     </div>
                   </div>
                 )}
+                </>
               )}
             </CardContent>
           </Card>

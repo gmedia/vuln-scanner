@@ -470,6 +470,7 @@ export default function Guard() {
                 {tokensQ.isLoading ? (
                   <Skeleton className="h-12 w-full" />
                 ) : (
+                  <>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
                       <thead className="border-b text-muted-foreground">
@@ -542,6 +543,7 @@ export default function Guard() {
                         : `Tampilkan ${tokens.length - 5} token lagi`}
                     </Button>
                   )}
+                  </>
                 )}
               </CardContent>
             </Card>
