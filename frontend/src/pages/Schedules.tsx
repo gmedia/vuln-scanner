@@ -95,9 +95,10 @@ function ScheduleRunsPanel({ scheduleId }: { scheduleId: string }) {
   }
   if (error) {
     return (
-      <p className="mt-2 text-xs text-destructive" role="alert">
-        Gagal memuat riwayat scan
-      </p>
+      <Alert variant="destructive" className="mt-2 border-destructive/40 text-xs">
+        <AlertTriangle />
+        <AlertDescription>Gagal memuat riwayat scan</AlertDescription>
+      </Alert>
     );
   }
   if (!data || data.length === 0) {
@@ -532,27 +533,30 @@ function Schedules() {
                     </div>
 
                     {mappedErr && (
-                      <div
+                      <Alert
+                        variant={creditDisabled ? "default" : "destructive"}
                         className={
                           creditDisabled
-                            ? "rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
-                            : "text-xs text-destructive"
+                            ? "border-amber-500/40 bg-amber-500/10 text-xs text-amber-200"
+                            : "border-destructive/40 text-xs"
                         }
-                        role="alert"
                       >
-                        <p>{mappedErr}</p>
-                        {creditDisabled && (
-                          <p className="mt-1">
-                            <Link
-                              to="/credit-history"
-                              className="font-medium text-primary hover:underline"
-                            >
-                              Lihat riwayat kredit
-                            </Link>{" "}
-                            lalu aktifkan kembali setelah top-up.
-                          </p>
-                        )}
-                      </div>
+                        <AlertTriangle />
+                        <AlertDescription>
+                          <p>{mappedErr}</p>
+                          {creditDisabled && (
+                            <p className="mt-1">
+                              <Link
+                                to="/credit-history"
+                                className="font-medium text-primary hover:underline"
+                              >
+                                Lihat riwayat kredit
+                              </Link>{" "}
+                              lalu aktifkan kembali setelah top-up.
+                            </p>
+                          )}
+                        </AlertDescription>
+                      </Alert>
                     )}
 
                     <button
