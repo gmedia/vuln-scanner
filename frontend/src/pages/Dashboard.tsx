@@ -356,8 +356,8 @@ function Dashboard() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-12">
-        <Card className="flex flex-col lg:col-span-8">
+      <div className="grid items-stretch gap-6 lg:grid-cols-12">
+        <Card className="flex min-h-0 flex-col lg:col-span-8">
           <CardHeader className="flex flex-row items-center justify-between gap-4 py-3">
             <CardTitle
               id="pekerjaan-terakhir"
@@ -464,13 +464,13 @@ function Dashboard() {
                             {crit + high + med > 0 ? (
                               <span className="flex flex-wrap gap-1">
                                 {crit > 0 && (
-                                  <span className="text-red-400">{crit}C</span>
+                                  <Badge variant="critical">{crit}C</Badge>
                                 )}
                                 {high > 0 && (
-                                  <span className="text-orange-400">{high}H</span>
+                                  <Badge variant="high">{high}H</Badge>
                                 )}
                                 {med > 0 && (
-                                  <span className="text-yellow-400">{med} sedang</span>
+                                  <Badge variant="medium">{med}M</Badge>
                                 )}
                               </span>
                             ) : (
@@ -513,7 +513,7 @@ function Dashboard() {
           </CardContent>
         </Card>
 
-        <div className="space-y-4 lg:col-span-4">
+        <div className="flex h-full flex-col gap-4 lg:col-span-4">
           <Card>
             <CardHeader className="py-3">
               <CardTitle className="text-sm tracking-wide">Cakupan attach</CardTitle>
@@ -582,17 +582,17 @@ function StatCard({
 }) {
   return (
     <Card className={cn("border-border", className)}>
-      <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4">
+      <CardContent className="flex flex-col items-center justify-center p-3">
         {isLoading ? (
           <>
-            <Skeleton className="mb-2 h-8 w-16" />
+            <Skeleton className="mb-1 h-7 w-14" />
             <Skeleton className="h-3 w-12" />
           </>
         ) : (
           <>
             <span
               className={cn(
-                "font-mono text-2xl font-bold tracking-tight tabular-nums sm:text-3xl",
+                "font-mono text-xl font-bold tracking-tight tabular-nums sm:text-2xl",
                 valueClassName ?? "text-foreground",
               )}
             >
