@@ -104,10 +104,13 @@ describe("UserGuide", () => {
     const tocNavs = screen.getAllByRole("navigation", {
       name: "Daftar isi panduan",
     });
-    expect(tocNavs.length).toBeGreaterThanOrEqual(1);
+    expect(tocNavs.length).toBeGreaterThanOrEqual(2);
     const mobileToc = tocNavs[0]?.closest("details");
     expect(mobileToc).toBeTruthy();
     expect(mobileToc?.parentElement).toHaveClass("sticky");
+    const desktopToc = screen.getByTestId("guide-desktop-toc");
+    expect(desktopToc.querySelector(".sticky")).toBeTruthy();
+    expect(desktopToc.className).toMatch(/lg:block/);
     const debianBlock = screen.getByText("Debian / Ubuntu").closest("details");
     expect(debianBlock).toBeTruthy();
     expect(debianBlock).not.toHaveAttribute("open");
