@@ -3,38 +3,45 @@ import { test, expect } from "./fixtures";
 test.describe("Dashboard", () => {
   test("loads and shows all UI elements", async ({ page }) => {
     await page.goto("/dashboard");
-    await expect(page.locator("h2:has-text('DASHBOARD')")).toBeVisible();
+    await expect(page.locator("h2:has-text('Ringkasan')")).toBeVisible();
     await expect(page.locator("text=SINEXIS").first()).toBeVisible();
-    await expect(page.locator("text=Total Scans")).toBeVisible();
-    await expect(page.locator("text=Critical")).toBeVisible();
-    await expect(page.locator("text=High")).toBeVisible();
-    await expect(page.locator("text=Medium")).toBeVisible();
+    await expect(page.locator("text=Risiko terbuka")).toBeVisible();
+    await expect(page.locator("text=Jadwal").first()).toBeVisible();
+    await expect(page.locator("text=Kredit").first()).toBeVisible();
   });
 
-  test("shows quick action cards", async ({ page }) => {
+  test("shows Scan baru menu links", async ({ page }) => {
     await page.goto("/dashboard");
-    await expect(page.locator("text=New IP Scan")).toBeVisible();
-    await expect(page.locator("text=New Domain Scan")).toBeVisible();
-    await expect(page.locator("text=Upload APK/AAB/IPA")).toBeVisible();
+    await page.getByTestId("new-scan-cta").click();
+    await expect(page.getByRole("menuitem", { name: "Scan IP" })).toBeVisible();
+    await expect(
+      page.getByRole("menuitem", { name: "Scan domain" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("menuitem", { name: "Scan mobile" }),
+    ).toBeVisible();
   });
 
-  test("navigates to IP scanner via quick action", async ({ page }) => {
+  test("navigates to IP scanner via Scan baru", async ({ page }) => {
     await page.goto("/dashboard");
-    await page.locator("text=New IP Scan").click();
+    await page.getByTestId("new-scan-cta").click();
+    await page.getByRole("menuitem", { name: "Scan IP" }).click();
     await expect(page).toHaveURL("/scan/ip");
     await expect(page.locator("h2:has-text('IP scanner')")).toBeVisible();
   });
 
-  test("navigates to Domain scanner via quick action", async ({ page }) => {
+  test("navigates to Domain scanner via Scan baru", async ({ page }) => {
     await page.goto("/dashboard");
-    await page.locator("text=New Domain Scan").click();
+    await page.getByTestId("new-scan-cta").click();
+    await page.getByRole("menuitem", { name: "Scan domain" }).click();
     await expect(page).toHaveURL("/scan/domain");
     await expect(page.locator("h2:has-text('Domain scanner')")).toBeVisible();
   });
 
-  test("navigates to Mobile scanner via quick action", async ({ page }) => {
+  test("navigates to Mobile scanner via Scan baru", async ({ page }) => {
     await page.goto("/dashboard");
-    await page.locator("text=Upload APK/AAB/IPA").click();
+    await page.getByTestId("new-scan-cta").click();
+    await page.getByRole("menuitem", { name: "Scan mobile" }).click();
     await expect(page).toHaveURL("/scan/mobile");
     await expect(page.locator("h2:has-text('Mobile scanner')")).toBeVisible();
   });
@@ -51,7 +58,7 @@ test.describe("Dashboard", () => {
   }) => {
     await page.goto("/dashboard");
     await page.waitForSelector("a[href^='/scan/']", { timeout: 15_000 });
-    const firstScan = page.locator("a[href^='/scan/']").first();
+    const firstScan = page.locator("main a[href^='/scan/']").first();
     const href = await firstScan.getAttribute("href");
     await firstScan.click();
     await expect(page).toHaveURL(href!);
