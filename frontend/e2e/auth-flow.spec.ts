@@ -20,7 +20,7 @@ test.describe("Auth — Login", () => {
     await page.locator("input#password").fill(e2ePassword());
     await page.locator("button[type='submit']").click();
     await page.waitForURL("/dashboard", { timeout: 15_000 });
-    await expect(page.locator("h2:has-text('Dashboard')")).toBeVisible();
+    await expect(page.locator("h2:has-text('Ringkasan')")).toBeVisible();
   });
 
   test("login with invalid credentials shows error", async ({ page }) => {
