@@ -35,7 +35,7 @@ export const GUARD_HOST_SETUP_STEPS = [
   "Dari host, POST /api/guard/enroll dengan JSON { token, agent_name } — agent_name unik per mesin (1–63 karakter).",
   "Response berisi agent_id, agent_key, manager_host, install_hint. Simpan agent_key hanya di host.",
   "Lanjut blok instalasi agen di bawah (per distro + manager_host dari response). Jangan menebak IP Manager.",
-  "Start agen, lalu di dashboard Guard klik Sync. Cek tabel Agen (active/pending/disconnected) dan Alert kritis.",
+  "Start agen, lalu di dashboard Guard klik Sinkronkan. Cek tabel Agen (aktif/menunggu/terputus) dan Alert kritis.",
 ] as const;
 
 export const GUARD_AGENT_INSTALL_STEPS = [
@@ -45,7 +45,7 @@ export const GUARD_AGENT_INSTALL_STEPS = [
   "Setelah paket terpasang: set alamat Manager ke manager_host dari response (bukan tebakan). Path umum: /var/ossec/etc/ossec.conf — elemen <address> di blok client.",
   "Import kunci agen: gunakan agent_key (dan agent_id bila diminta tool) lewat utilitas resmi (sering: /var/ossec/bin/manage_agents atau import key), atau ikuti install_hint. Key file mode 600; jangan log ke CI.",
   "Aktifkan layanan: sudo systemctl daemon-reload && sudo systemctl enable --now wazuh-agent (nama unit bisa berbeda). Cek: systemctl status wazuh-agent.",
-  "Verifikasi di host: agen running; log lokal tanpa error auth berulang. Di app: Guard → Sync → status agen active (bukan pending lama). Alert kritis muncul setelah rule level memenuhi ambang (default ≥ 12).",
+  "Verifikasi di host: agen running; log lokal tanpa error auth berulang. Di app: Guard → Sinkronkan → status agen aktif (bukan menunggu lama). Alert kritis muncul setelah rule level memenuhi ambang (default ≥ 12).",
   "Larangan: password/user Manager Wazuh, API key global app, atau alamat internal lab di git/chat/screenshot publik. Enroll selalu lewat token SaaS + HTTPS ke origin app.",
 ] as const;
 

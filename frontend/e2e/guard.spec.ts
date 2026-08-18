@@ -36,7 +36,7 @@ test.describe("Guard — Layer A smoke", () => {
   test("page loads status card without crashing", async ({ page }) => {
     await openGuard(page);
     await expect(page.getByTestId("guard-state")).toContainText(
-      /enabled|disabled/,
+      /aktif|nonaktif/,
     );
   });
 
@@ -53,8 +53,10 @@ test.describe("Guard — Layer A smoke", () => {
     page,
   }) => {
     await openGuard(page);
-    const enabled = await page.getByTestId("guard-state").textContent();
-    if (enabled?.includes("enabled")) {
+    const enabled =
+      (await page.getByTestId("guard-state").getAttribute("data-enabled")) ===
+      "true";
+    if (enabled) {
       await expect(page.getByTestId("guard-agents")).toBeVisible();
       await expect(page.getByTestId("guard-alerts")).toBeVisible();
     } else {
@@ -73,8 +75,10 @@ test.describe("Guard — Layer B mutations (CI / non-prod)", () => {
 
   test("admin can enable Guard when disabled", async ({ page }) => {
     await openGuard(page);
-    const state = await page.getByTestId("guard-state").textContent();
-    if (state?.includes("enabled")) {
+    const alreadyOn =
+      (await page.getByTestId("guard-state").getAttribute("data-enabled")) ===
+      "true";
+    if (alreadyOn) {
       test.info().annotations.push({
         type: "note",
         description: "already enabled — skip enable click",
@@ -84,29 +88,35 @@ test.describe("Guard — Layer B mutations (CI / non-prod)", () => {
     const enableBtn = page.getByRole("button", { name: "Aktifkan Guard" });
     await expect(enableBtn).toBeVisible();
     await enableBtn.click();
-    await expect(page.getByTestId("guard-state")).toContainText("enabled", {
-      timeout: 20_000,
-    });
+    await expect(page.getByTestId("guard-state")).toHaveAttribute(
+      "data-enabled",
+      "true",
+      { timeout: 20_000 },
+    );
   });
 
   test("generate enroll token shows once-only banner without asserting secret", async ({
     page,
   }) => {
     await openGuard(page);
-    const state = await page.getByTestId("guard-state").textContent();
-    if (!state?.includes("enabled")) {
+    const tokenOn =
+      (await page.getByTestId("guard-state").getAttribute("data-enabled")) ===
+      "true";
+    if (!tokenOn) {
       const enableBtn = page.getByRole("button", { name: "Aktifkan Guard" });
       if (await enableBtn.isVisible()) {
         await enableBtn.click();
-        await expect(page.getByTestId("guard-state")).toContainText("enabled", {
-          timeout: 20_000,
-        });
+        await expect(page.getByTestId("guard-state")).toHaveAttribute(
+          "data-enabled",
+          "true",
+          { timeout: 20_000 },
+        );
       }
     }
 
     await expect(page.getByText("Enroll token")).toBeVisible();
     await page.locator("#enroll-label").fill("e2e-ci");
-    await page.getByRole("button", { name: "Generate" }).click();
+    await page.getByRole("button", { name: "Buat token" }).click();
 
     const banner = page.getByTestId("guard-host-enroll-steps");
     await expect(banner).toBeVisible({ timeout: 20_000 });
@@ -125,21 +135,25 @@ test.describe("Guard — Layer B mutations (CI / non-prod)", () => {
 
   test("revoke enroll token marks row revoked", async ({ page }) => {
     await openGuard(page);
-    const state = await page.getByTestId("guard-state").textContent();
-    if (!state?.includes("enabled")) {
+    const revokeOn =
+      (await page.getByTestId("guard-state").getAttribute("data-enabled")) ===
+      "true";
+    if (!revokeOn) {
       const enableBtn = page.getByRole("button", { name: "Aktifkan Guard" });
       if (await enableBtn.isVisible()) {
         await enableBtn.click();
-        await expect(page.getByTestId("guard-state")).toContainText("enabled", {
-          timeout: 20_000,
-        });
+        await expect(page.getByTestId("guard-state")).toHaveAttribute(
+          "data-enabled",
+          "true",
+          { timeout: 20_000 },
+        );
       }
     }
 
     await expect(page.getByText("Enroll token")).toBeVisible();
     const label = `e2e-revoke-${Date.now()}`;
     await page.locator("#enroll-label").fill(label);
-    await page.getByRole("button", { name: "Generate" }).click();
+    await page.getByRole("button", { name: "Buat token" }).click();
     await expect(page.getByTestId("guard-host-enroll-steps")).toBeVisible({
       timeout: 20_000,
     });
@@ -148,25 +162,32 @@ test.describe("Guard — Layer B mutations (CI / non-prod)", () => {
       .getByTestId("guard-enroll-token-row")
       .filter({ hasText: label });
     await expect(row).toBeVisible();
-    await row.getByRole("button", { name: "Revoke" }).click();
-    await expect(row).toContainText("revoked", { timeout: 20_000 });
-    await expect(row.getByRole("button", { name: "Revoke" })).toHaveCount(0);
+    page.once("dialog", (d) => {
+      void d.accept();
+    });
+    await row.getByRole("button", { name: "Cabut" }).click();
+    await expect(row).toContainText("dicabut", { timeout: 20_000 });
+    await expect(row.getByRole("button", { name: "Cabut" })).toHaveCount(0);
   });
 
   test("sync does not 5xx the page", async ({ page }) => {
     await openGuard(page);
-    const state = await page.getByTestId("guard-state").textContent();
-    if (!state?.includes("enabled")) {
+    const syncOn =
+      (await page.getByTestId("guard-state").getAttribute("data-enabled")) ===
+      "true";
+    if (!syncOn) {
       const enableBtn = page.getByRole("button", { name: "Aktifkan Guard" });
       if (await enableBtn.isVisible()) {
         await enableBtn.click();
-        await expect(page.getByTestId("guard-state")).toContainText("enabled", {
-          timeout: 20_000,
-        });
+        await expect(page.getByTestId("guard-state")).toHaveAttribute(
+          "data-enabled",
+          "true",
+          { timeout: 20_000 },
+        );
       }
     }
 
-    const syncBtn = page.getByRole("button", { name: "Sync" });
+    const syncBtn = page.getByRole("button", { name: "Sinkronkan" });
     await expect(syncBtn).toBeVisible();
     await syncBtn.click();
     await expect(syncBtn).toBeEnabled({ timeout: 20_000 });

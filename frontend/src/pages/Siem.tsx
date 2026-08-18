@@ -52,12 +52,41 @@ function apiDetail(err: unknown, fallback: string): string {
 
 function statusBadge(status: string) {
   if (status === "open")
-    return <Badge className="bg-sky-500/15 text-sky-700">open</Badge>;
+    return <Badge className="bg-sky-500/15 text-sky-700">terbuka</Badge>;
   if (status === "ack")
-    return <Badge className="bg-amber-500/15 text-amber-700">ack</Badge>;
+    return <Badge className="bg-amber-500/15 text-amber-700">diakui</Badge>;
   if (status === "closed")
-    return <Badge className="bg-emerald-500/15 text-emerald-600">closed</Badge>;
+    return <Badge className="bg-emerald-500/15 text-emerald-600">ditutup</Badge>;
   return <Badge variant="info">{status}</Badge>;
+}
+
+function caseStatusLabel(status: "open" | "ack" | "closed"): string {
+  if (status === "open") return "Terbuka";
+  if (status === "ack") return "Diakui";
+  return "Ditutup";
+}
+
+function severityForLevel(level: number): {
+  label: string;
+  className: string;
+} {
+  if (level >= 12)
+    return { label: "Kritis", className: "bg-red-500/15 text-red-700" };
+  if (level >= 7)
+    return { label: "Tinggi", className: "bg-amber-500/15 text-amber-800" };
+  if (level >= 4)
+    return { label: "Sedang", className: "bg-sky-500/15 text-sky-700" };
+  return { label: "Rendah", className: "bg-muted text-muted-foreground" };
+}
+
+function LevelChip({ level }: { level: number }) {
+  const sev = severityForLevel(level);
+  return (
+    <span className="inline-flex flex-wrap items-center gap-1">
+      <Badge variant="info">L{level}</Badge>
+      <Badge className={sev.className}>{sev.label}</Badge>
+    </span>
+  );
 }
 
 export default function Siem() {
@@ -70,9 +99,10 @@ export default function Siem() {
 
   const [since, setSince] = useState("");
   const [until, setUntil] = useState("");
-  const [minLevel, setMinLevel] = useState("");
+  const [minLevel, setMinLevel] = useState("7");
   const [agentId, setAgentId] = useState("");
   const [q, setQ] = useState("");
+  const [eventPage, setEventPage] = useState(0);
   const [applied, setApplied] = useState({
     since: "",
     until: "",
@@ -173,7 +203,14 @@ export default function Siem() {
   });
 
   const agents = agentsQ.data ?? [];
-  const events = eventsQ.data?.items ?? [];
+  const allEvents = eventsQ.data?.items ?? [];
+  const pageSize = 25;
+  const eventPageCount = Math.max(1, Math.ceil(allEvents.length / pageSize));
+  const safeEventPage = Math.min(eventPage, eventPageCount - 1);
+  const events = allEvents.slice(
+    safeEventPage * pageSize,
+    safeEventPage * pageSize + pageSize,
+  );
   const cases = casesQ.data?.items ?? [];
   const activeCase: SiemCase | undefined = cases.find(
     (c) => c.id === activeCaseId,
@@ -245,12 +282,13 @@ export default function Siem() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                 <div>
                   <Label htmlFor="siem-since">Sejak</Label>
                   <Input
                     id="siem-since"
                     type="datetime-local"
+                    lang="id-ID"
                     value={since}
                     onChange={(e) => setSince(e.target.value)}
                   />
@@ -260,6 +298,7 @@ export default function Siem() {
                   <Input
                     id="siem-until"
                     type="datetime-local"
+                    lang="id-ID"
                     value={until}
                     onChange={(e) => setUntil(e.target.value)}
                   />
@@ -271,6 +310,7 @@ export default function Siem() {
                     type="number"
                     min={0}
                     max={15}
+                    placeholder={String(statusQ.data?.search_min_level ?? 7)}
                     value={minLevel}
                     onChange={(e) => setMinLevel(e.target.value)}
                   />
@@ -286,13 +326,13 @@ export default function Siem() {
                     <option value="">Semua agen org</option>
                     {agents.map((a) => (
                       <option key={a.id} value={a.wazuh_agent_id}>
-                        {a.name} ({a.wazuh_agent_id})
+                        {a.name}
                       </option>
                     ))}
                   </select>
                 </div>
-                <div>
-                  <Label htmlFor="siem-q">Teks (q)</Label>
+                <div className="sm:col-span-2 xl:col-span-1">
+                  <Label htmlFor="siem-q">Cari</Label>
                   <Input
                     id="siem-q"
                     value={q}
@@ -301,21 +341,25 @@ export default function Siem() {
                     placeholder="rule / agen"
                   />
                 </div>
+                <div className="flex items-end">
+                  <Button
+                    className="w-full"
+                    onClick={() => {
+                      setEventPage(0);
+                      setApplied({
+                        since,
+                        until,
+                        min_level: minLevel,
+                        agent_id: agentId,
+                        q,
+                      });
+                    }}
+                  >
+                    <Search className="mr-2 h-4 w-4" />
+                    Terapkan
+                  </Button>
+                </div>
               </div>
-              <Button
-                onClick={() =>
-                  setApplied({
-                    since,
-                    until,
-                    min_level: minLevel,
-                    agent_id: agentId,
-                    q,
-                  })
-                }
-              >
-                <Search className="mr-2 h-4 w-4" />
-                Cari
-              </Button>
 
               {eventsQ.data?.degraded && (
                 <p className="text-sm text-amber-700">
@@ -329,9 +373,10 @@ export default function Siem() {
               {eventsQ.isLoading ? (
                 <Skeleton className="h-32 w-full" />
               ) : (
-                <div className="overflow-x-auto">
+                <>
+                <div className="max-h-[28rem] overflow-auto">
                   <table className="w-full text-left text-sm">
-                    <thead>
+                    <thead className="sticky top-0 z-[1] bg-card">
                       <tr className="border-b border-border text-muted-foreground">
                         <th className="py-2 pr-3">Waktu</th>
                         <th className="py-2 pr-3">Level</th>
@@ -360,7 +405,9 @@ export default function Siem() {
                           <td className="py-2 pr-3 whitespace-nowrap">
                             {formatWhen(ev.occurred_at)}
                           </td>
-                          <td className="py-2 pr-3">{ev.rule_level}</td>
+                          <td className="py-2 pr-3">
+                            <LevelChip level={ev.rule_level} />
+                          </td>
                           <td className="py-2 pr-3">
                             {ev.rule_description}
                             {ev.rule_id ? (
@@ -377,6 +424,39 @@ export default function Siem() {
                     </tbody>
                   </table>
                 </div>
+                {allEvents.length > pageSize && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                    <span>
+                      {allEvents.length} event · halaman {safeEventPage + 1}/
+                      {eventPageCount}
+                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={safeEventPage === 0}
+                        onClick={() => setEventPage((p) => Math.max(0, p - 1))}
+                      >
+                        Sebelumnya
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={safeEventPage >= eventPageCount - 1}
+                        onClick={() =>
+                          setEventPage((p) =>
+                            Math.min(eventPageCount - 1, p + 1),
+                          )
+                        }
+                      >
+                        Berikutnya
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                </>
               )}
             </CardContent>
           </Card>
@@ -471,19 +551,19 @@ export default function Siem() {
                   </div>
                   {canManage && (
                     <div className="flex flex-wrap gap-2">
-                      {(["open", "ack", "closed"] as const).map((st) => (
-                        <Button
-                          key={st}
-                          size="sm"
-                          variant="outline"
-                          disabled={patchMut.isPending}
-                          onClick={() =>
-                            patchMut.mutate({ id: activeCase.id, status: st })
-                          }
-                        >
-                          {st}
-                        </Button>
-                      ))}
+                       {(["open", "ack", "closed"] as const).map((st) => (
+                         <Button
+                           key={st}
+                           size="sm"
+                           variant="outline"
+                           disabled={patchMut.isPending}
+                           onClick={() =>
+                             patchMut.mutate({ id: activeCase.id, status: st })
+                           }
+                         >
+                           {caseStatusLabel(st)}
+                         </Button>
+                       ))}
                     </div>
                   )}
                   <div>

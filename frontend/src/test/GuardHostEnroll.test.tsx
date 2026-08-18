@@ -71,7 +71,7 @@ describe("Guard host enroll UI", () => {
     });
   });
 
-  it("shows host steps and curl after Generate", async () => {
+  it("shows host steps and curl after Buat token", async () => {
     const user = userEvent.setup();
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false } },
@@ -85,10 +85,10 @@ describe("Guard host enroll UI", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Generate" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Buat token" })).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: "Generate" }));
+    await user.click(screen.getByRole("button", { name: "Buat token" }));
 
     await waitFor(() => {
       expect(screen.getByTestId("guard-host-enroll-steps")).toBeInTheDocument();
@@ -148,7 +148,8 @@ describe("Guard host enroll UI", () => {
       </QueryClientProvider>,
     );
 
-    const revokeBtn = await screen.findByRole("button", { name: "Revoke" });
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const revokeBtn = await screen.findByRole("button", { name: "Cabut" });
     await user.click(revokeBtn);
     await waitFor(() => {
       expect(guardApi.revokeEnrollToken).toHaveBeenCalledWith("tok-active");

@@ -61,7 +61,7 @@ test.describe("SIEM — Layer A smoke", () => {
       page.getByRole("heading", { name: "Kasus", exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Cari", exact: true }),
+      page.getByRole("button", { name: "Terapkan", exact: true }),
     ).toBeVisible();
   });
 
@@ -76,7 +76,7 @@ test.describe("SIEM — Layer A smoke", () => {
       });
       return;
     }
-    await page.getByRole("button", { name: "Cari", exact: true }).click();
+    await page.getByRole("button", { name: "Terapkan", exact: true }).click();
     await expect(page.getByText("Gagal memuat status SIEM")).toHaveCount(0);
     await expect(page.locator("body")).not.toContainText(
       "Internal Server Error",
@@ -108,7 +108,7 @@ test.describe("SIEM — Layer B mutations (CI / non-prod)", () => {
       });
       return;
     }
-    await page.getByRole("button", { name: "Cari", exact: true }).click();
+    await page.getByRole("button", { name: "Terapkan", exact: true }).click();
     const empty = page.getByTestId("siem-events-empty");
     const firstDataRow = page.getByTestId("siem-event-row");
     await expect(empty.or(firstDataRow.first())).toBeVisible({
