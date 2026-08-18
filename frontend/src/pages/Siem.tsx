@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/Label";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Badge } from "@/components/ui/Badge";
 import { Textarea } from "@/components/ui/Textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { listGuardAgents } from "@/api/guard";
 import {
   addSiemCaseNote,
@@ -245,10 +246,10 @@ export default function Siem() {
       </div>
 
       {actionError && (
-        <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          {actionError}
-        </div>
+        <Alert variant="destructive" className="border-destructive/40">
+          <AlertTriangle />
+          <AlertDescription>{actionError}</AlertDescription>
+        </Alert>
       )}
 
       {!activeOrgId && (
@@ -274,10 +275,13 @@ export default function Siem() {
       {featureOn && (
         <>
           {statusQ.data?.degraded && (
-            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-sm text-amber-800">
-              Indexer terdegradasi
-              {statusQ.data.last_error ? `: ${statusQ.data.last_error}` : ""}.
-            </div>
+            <Alert className="border-amber-500/40 text-amber-800">
+              <AlertTriangle />
+              <AlertDescription>
+                Indexer terdegradasi
+                {statusQ.data.last_error ? `: ${statusQ.data.last_error}` : ""}.
+              </AlertDescription>
+            </Alert>
           )}
 
           {agents.length === 0 && !agentsQ.isLoading && (
