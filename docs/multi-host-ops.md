@@ -87,7 +87,11 @@ scp data-host:sinexis-data-credentials.env ./  # private machine only
 
 ## GitHub Actions deploy secrets (production environment)
 
-Existing keys stay (API_KEY, JWT, SMTP, …). For remote data add/adjust:
+Existing keys stay (API_KEY, JWT, SMTP, …). CI `deploy` reads **repository** Actions secrets (not only Environment `production`). A `workflow_dispatch` run does **not** write app-host `.env` — that job is `push` to `main` only.
+
+Each deploy **overwrites** app-host `.env` from those secrets. Host-only keys that are missing from GitHub are dropped. For live Guard/SIEM, set the `WAZUH_*` names below on the **repo** (empty values are skipped by `append_if_set`; missing names still wipe previous host lines). Never put URLs, users, or passwords in this file.
+
+For remote data add/adjust:
 
 | Secret | Purpose |
 |--------|---------|
