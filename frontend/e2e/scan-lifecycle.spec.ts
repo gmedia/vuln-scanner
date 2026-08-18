@@ -4,6 +4,16 @@ import { e2eEmail, e2ePassword } from "./credentials";
 const API_KEY = process.env.API_KEY || "dev-api-key-change-me";
 const BASE_URL = process.env.BASE_URL || "http://localhost:8000";
 
+async function revealLabTargets(
+  page: Parameters<Parameters<typeof test>[1]>[0]["page"],
+) {
+  const toggle = page.getByRole("button", {
+    name: /Target percobaan disembunyikan/,
+  });
+  await expect(toggle).toBeVisible({ timeout: 15_000 });
+  await toggle.click();
+}
+
 async function login(
   request: Parameters<Parameters<typeof test>[1]>[0]["request"],
 ) {
@@ -39,8 +49,8 @@ test.describe("Scan Lifecycle", () => {
       expect(body.status).toBe("pending");
       const scanId = body.id;
 
-      // Wait for the scan to appear in history
       await page.goto("/dashboard");
+      await revealLabTargets(page);
       await expect(page.locator(`a[href='/scan/${scanId}']`)).toBeVisible({
         timeout: 15_000,
       });
@@ -81,8 +91,8 @@ test.describe("Scan Lifecycle", () => {
         timeout: 15_000,
       });
 
-      // Scan should be reflected in dashboard history
       await page.goto("/dashboard");
+      await revealLabTargets(page);
       await expect(page.locator(`a[href='/scan/${scanId}']`)).toBeVisible({
         timeout: 15_000,
       });
