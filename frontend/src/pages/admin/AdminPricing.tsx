@@ -6,6 +6,14 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/Table";
 import { adminApi, type PricingItem } from "@/api/admin";
 
 function AdminPricing() {
@@ -79,71 +87,69 @@ function AdminPricing() {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Scan Type
-                    </th>
-                    <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Credit Cost
-                    </th>
-                    <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Updated
-                    </th>
-                    <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {pricing?.map((item) => (
-                    <tr key={item.id} className="group transition-colors hover:bg-muted/50">
-                      <td className="px-3 py-3">
-                        <Badge variant="default" className="text-[10px] uppercase">
-                          {item.scan_type}
-                        </Badge>
-                      </td>
-                      <td className="px-3 py-3">
-                        <Input
-                          type="number"
-                          min={0}
-                          value={editedCosts[item.scan_type] ?? item.credit_cost}
-                          onChange={(e) => handleCostChange(item.scan_type, e.target.value)}
-                          className="h-8 w-24 font-mono text-xs tabular-nums"
-                        />
-                      </td>
-                      <td className="px-3 py-3">
-                        <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                          {new Date(item.updated_at).toLocaleDateString()}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleSave(item)}
-                          disabled={!hasChanges(item) || saving === item.scan_type}
-                          className="text-xs"
-                        >
-                          {saving === item.scan_type ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : hasChanges(item) ? (
-                            <>
-                              <Check className="h-3 w-3 mr-1" />
-                              Save
-                            </>
-                          ) : (
-                            "Saved"
-                          )}
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-[10px] uppercase tracking-wider">
+                    Scan Type
+                  </TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-wider">
+                    Credit Cost
+                  </TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-wider">
+                    Updated
+                  </TableHead>
+                  <TableHead className="text-right text-[10px] uppercase tracking-wider">
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pricing?.map((item) => (
+                  <TableRow key={item.id} className="group">
+                    <TableCell>
+                      <Badge variant="default" className="text-[10px] uppercase">
+                        {item.scan_type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={editedCosts[item.scan_type] ?? item.credit_cost}
+                        onChange={(e) => handleCostChange(item.scan_type, e.target.value)}
+                        className="h-8 w-24 font-mono text-xs tabular-nums"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                        {new Date(item.updated_at).toLocaleDateString()}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSave(item)}
+                        disabled={!hasChanges(item) || saving === item.scan_type}
+                        className="text-xs"
+                      >
+                        {saving === item.scan_type ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : hasChanges(item) ? (
+                          <>
+                            <Check className="h-3 w-3 mr-1" />
+                            Save
+                          </>
+                        ) : (
+                          "Saved"
+                        )}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
