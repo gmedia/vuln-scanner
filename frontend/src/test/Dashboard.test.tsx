@@ -380,7 +380,9 @@ describe("Dashboard", () => {
     expect(screen.getByText("Gagal")).toBeInTheDocument();
     expect(screen.getByText("1C")).toBeInTheDocument();
     expect(screen.getByText("2M")).toBeInTheDocument();
-    const jobs = screen.getByText("Pekerjaan terakhir").closest(".grid");
+    const jobs = screen
+      .getByText("Pekerjaan terakhir")
+      .closest('[class*="lg:grid-cols-12"]');
     expect(jobs?.className).toMatch(/items-stretch/);
   });
 });

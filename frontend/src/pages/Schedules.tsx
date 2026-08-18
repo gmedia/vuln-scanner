@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/Label";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Badge } from "@/components/ui/Badge";
 import { Progress } from "@/components/ui/Progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -274,14 +275,13 @@ function Schedules() {
           </div>
           <Progress value={capPercent} className="h-1.5" />
           {atCap && (
-            <p
-              className="flex items-start gap-2 text-xs text-amber-400"
-              role="status"
-            >
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              Batas {MAX_ENABLED_SCHEDULES} jadwal aktif per organisasi
-              tercapai. Nonaktifkan satu jadwal sebelum membuat yang baru.
-            </p>
+            <Alert className="border-amber-500/40 text-amber-400" role="status">
+              <AlertTriangle />
+              <AlertDescription>
+                Batas {MAX_ENABLED_SCHEDULES} jadwal aktif per organisasi
+                tercapai. Nonaktifkan satu jadwal sebelum membuat yang baru.
+              </AlertDescription>
+            </Alert>
           )}
         </CardHeader>
       </Card>
@@ -363,9 +363,10 @@ function Schedules() {
                 </div>
               </div>
               {formError && (
-                <p className="text-sm text-destructive" role="alert">
-                  {formError}
-                </p>
+                <Alert variant="destructive" className="border-destructive/40">
+                  <AlertTriangle />
+                  <AlertDescription>{formError}</AlertDescription>
+                </Alert>
               )}
               <Button
                 type="submit"
@@ -397,9 +398,13 @@ function Schedules() {
         </CardHeader>
         <CardContent>
           {actionError && (
-            <p className="mb-3 text-sm text-destructive" role="alert">
-              {actionError}
-            </p>
+            <Alert
+              variant="destructive"
+              className="mb-3 border-destructive/40"
+            >
+              <AlertTriangle />
+              <AlertDescription>{actionError}</AlertDescription>
+            </Alert>
           )}
           {isLoading && (
             <div className="space-y-2">

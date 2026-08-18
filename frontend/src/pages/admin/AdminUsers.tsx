@@ -7,6 +7,14 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/Table";
 import { adminApi } from "@/api/admin";
 import type { AdminUserItem } from "@/api/admin";
 
@@ -89,44 +97,42 @@ function AdminUsers() {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Email
-                    </th>
-                    <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Role
-                    </th>
-                    <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Verified
-                    </th>
-                    <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Credits
-                    </th>
-                    <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Scans
-                    </th>
-                    <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Created
-                    </th>
-                    <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {data?.users.map((user) => (
-                    <UserRow
-                      key={user.id}
-                      user={user}
-                      onView={() => navigate(`/admin/users/${user.id}`)}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-[10px] uppercase tracking-wider">
+                    Email
+                  </TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-wider">
+                    Role
+                  </TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-wider">
+                    Verified
+                  </TableHead>
+                  <TableHead className="text-right text-[10px] uppercase tracking-wider">
+                    Credits
+                  </TableHead>
+                  <TableHead className="text-right text-[10px] uppercase tracking-wider">
+                    Scans
+                  </TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-wider">
+                    Created
+                  </TableHead>
+                  <TableHead className="text-right text-[10px] uppercase tracking-wider">
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data?.users.map((user) => (
+                  <UserRow
+                    key={user.id}
+                    user={user}
+                    onView={() => navigate(`/admin/users/${user.id}`)}
+                  />
+                ))}
+              </TableBody>
+            </Table>
           )}
 
           {!isLoading && totalPages > 1 && (
@@ -162,45 +168,45 @@ function AdminUsers() {
 
 function UserRow({ user, onView }: { user: AdminUserItem; onView: () => void }) {
   return (
-    <tr className="transition-colors hover:bg-muted/50">
-      <td className="px-3 py-3">
+    <TableRow>
+      <TableCell>
         <span
           className="block max-w-[200px] truncate font-mono text-xs text-foreground"
           title={user.email}
         >
           {user.email}
         </span>
-      </td>
-      <td className="px-3 py-3">
+      </TableCell>
+      <TableCell>
         <Badge
           variant={user.is_admin ? "completed" : "default"}
           className="text-[9px]"
         >
           {user.is_admin ? "Admin" : "User"}
         </Badge>
-      </td>
-      <td className="px-3 py-3">
+      </TableCell>
+      <TableCell>
         <Badge
           variant={user.is_verified ? "completed" : "pending"}
           className="text-[9px]"
         >
           {user.is_verified ? "Verified" : "Unverified"}
         </Badge>
-      </td>
-      <td className="px-3 py-3 text-right">
+      </TableCell>
+      <TableCell className="text-right">
         <span className="font-mono text-xs tabular-nums text-foreground">{user.credits}</span>
-      </td>
-      <td className="px-3 py-3 text-right">
+      </TableCell>
+      <TableCell className="text-right">
         <span className="font-mono text-xs tabular-nums text-muted-foreground">
           {user.scan_count}
         </span>
-      </td>
-      <td className="px-3 py-3">
+      </TableCell>
+      <TableCell>
         <span className="font-mono text-xs tabular-nums text-muted-foreground">
           {formatDate(user.created_at)}
         </span>
-      </td>
-      <td className="px-3 py-3 text-right">
+      </TableCell>
+      <TableCell className="text-right">
         <Button
           variant="ghost"
           size="sm"
@@ -210,8 +216,8 @@ function UserRow({ user, onView }: { user: AdminUserItem; onView: () => void }) 
           <Eye className="mr-1 h-3 w-3" />
           View
         </Button>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
 

@@ -1,12 +1,19 @@
 import type { ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { User, LogOut, ChevronDown, Coins } from "lucide-react";
 import { useScanStore } from "@/store/scanStore";
 import { useAuthStore } from "@/store/authStore";
 import { useCreditStore } from "@/store/creditStore";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { BrandMark } from "@/components/brand/BrandMark";
 import OrgSwitcher from "@/components/workspace/OrgSwitcher";
 import { SCAN_TYPE_LABELS } from "@/lib/constants";
@@ -17,8 +24,6 @@ interface HeaderProps {
 
 function Header({ children }: HeaderProps) {
   const navigate = useNavigate();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const activeJobId = useScanStore((s) => s.activeJobId);
   const scanType = useScanStore((s) => s.scanType);
@@ -35,21 +40,7 @@ function Header({ children }: HeaderProps) {
     }
   }, [isAuthenticated, fetchBalance]);
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   async function handleSignOut() {
-    setDropdownOpen(false);
     await logout();
     navigate("/login");
   }
@@ -100,37 +91,39 @@ function Header({ children }: HeaderProps) {
         )}
 
         {isAuthenticated && user && (
-          <div ref={dropdownRef} className="relative">
-            <button
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex min-h-9 items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <User className="h-4 w-4" />
-              <span className="hidden text-xs sm:inline">{user.email}</span>
-              <ChevronDown className="h-3 w-3" />
-            </button>
-
-            {dropdownOpen && (
-              <div
-                data-testid="user-menu"
-                className="absolute right-0 top-full z-50 mt-1 w-56 rounded-md border border-border bg-card p-1 shadow-lg"
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="flex min-h-9 items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                <div className="px-3 py-2 text-xs text-muted-foreground">
-                  Signed in as{" "}
-                  <span className="text-foreground">{user.email}</span>
-                </div>
-                <Button
-                  variant="ghost"
-                  data-testid="sign-out"
-                  onClick={handleSignOut}
-                  className="w-full justify-start px-3 py-2 text-xs text-red-400 hover:bg-red-400/10"
-                >
-                  <LogOut className="mr-2 h-3 w-3" />
-                  Sign Out
-                </Button>
-              </div>
-            )}
-          </div>
+                <User className="h-4 w-4" />
+                <span className="hidden text-xs sm:inline">{user.email}</span>
+                <ChevronDown className="h-3 w-3" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-56"
+              data-testid="user-menu"
+            >
+              <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                Signed in as{" "}
+                <span className="text-foreground">{user.email}</span>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                data-testid="sign-out"
+                onSelect={() => {
+                  void handleSignOut();
+                }}
+              >
+                <LogOut className="h-3 w-3" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
     </header>

@@ -9,6 +9,14 @@ import { Label } from "@/components/ui/Label";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { DatePicker } from "@/components/ui/DatePicker";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/Table";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -254,31 +262,29 @@ function CreditHistory() {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Date
-                    </th>
-                    <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Type
-                    </th>
-                    <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Amount
-                    </th>
-                    <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Description
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {filteredItems.map((item) => (
-                    <TransactionRow key={item.id} item={item} />
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-[10px] uppercase tracking-wider">
+                    Date
+                  </TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-wider">
+                    Type
+                  </TableHead>
+                  <TableHead className="text-right text-[10px] uppercase tracking-wider">
+                    Amount
+                  </TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-wider">
+                    Description
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredItems.map((item) => (
+                  <TransactionRow key={item.id} item={item} />
+                ))}
+              </TableBody>
+            </Table>
           )}
 
           {!isLoading && totalPages > 1 && (
@@ -318,20 +324,20 @@ function TransactionRow({ item }: { item: CreditLogItem }) {
   const isPositive = item.amount > 0;
 
   return (
-    <tr className="transition-colors hover:bg-muted/50">
-      <td className="px-3 py-3">
+    <TableRow>
+      <TableCell>
         <span className="font-mono text-xs tabular-nums text-muted-foreground">
           {new Date(item.created_at).toLocaleString()}
         </span>
-      </td>
-      <td className="px-3 py-3">
+      </TableCell>
+      <TableCell>
         <span
           className={`inline-flex items-center rounded px-2 py-0.5 font-mono text-[10px] uppercase ${TYPE_COLORS[item.type]}`}
         >
           {item.type}
         </span>
-      </td>
-      <td className="px-3 py-3 text-right">
+      </TableCell>
+      <TableCell className="text-right">
         <span
           className={`font-mono text-xs font-bold tabular-nums ${
             isPositive ? "text-green-400" : "text-red-400"
@@ -340,8 +346,8 @@ function TransactionRow({ item }: { item: CreditLogItem }) {
           {isPositive ? "+" : ""}
           {item.amount}
         </span>
-      </td>
-      <td className="px-3 py-3">
+      </TableCell>
+      <TableCell>
         {item.reference_id ? (
           <Link
             to={`/scan/${item.reference_id}`}
@@ -354,8 +360,8 @@ function TransactionRow({ item }: { item: CreditLogItem }) {
             {item.description || "—"}
           </span>
         )}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
 

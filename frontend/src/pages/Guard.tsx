@@ -13,6 +13,15 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Badge } from "@/components/ui/Badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/Table";
 import {
   canManageGuard,
   createEnrollToken,
@@ -191,10 +200,10 @@ export default function Guard() {
       </div>
 
       {actionError && (
-        <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          {actionError}
-        </div>
+        <Alert variant="destructive" className="border-destructive/40">
+          <AlertTriangle />
+          <AlertDescription>{actionError}</AlertDescription>
+        </Alert>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm">
@@ -411,75 +420,72 @@ export default function Guard() {
                   <Skeleton className="h-12 w-full" />
                 ) : (
                   <>
-                    <div className="overflow-x-auto">
-                      <table className="w-full table-fixed text-left text-sm">
-                        <thead className="border-b text-muted-foreground">
-                          <tr>
-                            <th className="w-[40%] py-1.5 pr-3 font-medium">Label</th>
-                            <th className="w-[28%] py-1.5 pr-3 font-medium">Kedaluwarsa</th>
-                            <th className="w-[18%] py-1.5 pr-3 font-medium">Status</th>
-                            <th className="w-[14%] py-1.5 font-medium">Aksi</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {visibleTokens.map((t) => (
-                            <tr
-                              key={t.id}
-                              data-testid="guard-enroll-token-row"
-                              className="border-b border-border/60"
-                            >
-                              <td className="max-w-0 py-1.5 pr-3">
-                                <span className="block truncate font-medium" title={t.label || t.id}>
-                                  {t.label || "token"}
-                                </span>
-                                <span className="block truncate font-mono text-[11px] text-muted-foreground" title={t.id}>
-                                  {t.id}
-                                </span>
-                              </td>
-                              <td className="py-1.5 pr-3 whitespace-nowrap text-muted-foreground">
-                                {formatWhen(t.expires_at)}
-                              </td>
-                              <td className="py-1.5 pr-3">
-                                {t.revoked_at ? (
-                                  <Badge variant="info">dicabut</Badge>
-                                ) : t.used_at ? (
-                                  <Badge className="border border-border bg-muted text-foreground">
-                                    terpakai
-                                  </Badge>
-                                ) : (
-                                  <Badge className="bg-emerald-500/15 text-emerald-600">
-                                    siap pakai
-                                  </Badge>
-                                )}
-                              </td>
-                              <td className="py-1.5">
-                                {!t.revoked_at && (
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-8 text-xs text-destructive"
-                                    aria-label={`Cabut token ${t.label || t.id}`}
-                                    disabled={revokeMut.isPending}
-                                    onClick={() => {
-                                      if (
-                                        window.confirm(
-                                          "Cabut token ini? Host tidak bisa enroll lagi dengan token tersebut.",
-                                        )
-                                      ) {
-                                        revokeMut.mutate(t.id);
-                                      }
-                                    }}
-                                  >
-                                    Cabut
-                                  </Button>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                    <Table className="table-fixed">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[40%]">Label</TableHead>
+                          <TableHead className="w-[28%]">Kedaluwarsa</TableHead>
+                          <TableHead className="w-[18%]">Status</TableHead>
+                          <TableHead className="w-[14%]">Aksi</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {visibleTokens.map((t) => (
+                          <TableRow
+                            key={t.id}
+                            data-testid="guard-enroll-token-row"
+                          >
+                            <TableCell className="max-w-0">
+                              <span className="block truncate font-medium" title={t.label || t.id}>
+                                {t.label || "token"}
+                              </span>
+                              <span className="block truncate font-mono text-[11px] text-muted-foreground" title={t.id}>
+                                {t.id}
+                              </span>
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap text-muted-foreground">
+                              {formatWhen(t.expires_at)}
+                            </TableCell>
+                            <TableCell>
+                              {t.revoked_at ? (
+                                <Badge variant="info">dicabut</Badge>
+                              ) : t.used_at ? (
+                                <Badge className="border border-border bg-muted text-foreground">
+                                  terpakai
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-emerald-500/15 text-emerald-600">
+                                  siap pakai
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {!t.revoked_at && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 text-xs text-destructive"
+                                  aria-label={`Cabut token ${t.label || t.id}`}
+                                  disabled={revokeMut.isPending}
+                                  onClick={() => {
+                                    if (
+                                      window.confirm(
+                                        "Cabut token ini? Host tidak bisa enroll lagi dengan token tersebut.",
+                                      )
+                                    ) {
+                                      revokeMut.mutate(t.id);
+                                    }
+                                  }}
+                                >
+                                  Cabut
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                     {tokens.length > 0 && (
                       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-2 text-xs text-muted-foreground">
                         <span>
@@ -519,33 +525,33 @@ export default function Guard() {
               ) : (agentsQ.data?.length ?? 0) === 0 ? (
                 <p className="text-sm text-muted-foreground">Belum ada agen. Enroll host dulu.</p>
               ) : (
-                <div className="max-w-5xl overflow-x-auto">
-                  <table className="w-full table-fixed text-left text-sm">
-                    <thead className="border-b text-muted-foreground">
-                      <tr>
-                        <th className="w-[40%] py-1.5 pr-3 font-medium">Nama</th>
-                        <th className="w-[16%] py-1.5 pr-3 font-medium">Status</th>
-                        <th className="w-[28%] py-1.5 pr-3 font-medium">Terakhir terlihat</th>
-                        <th className="w-[16%] py-1.5 font-medium">Versi</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                <div className="max-w-5xl">
+                  <Table className="table-fixed">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[40%]">Nama</TableHead>
+                        <TableHead className="w-[16%]">Status</TableHead>
+                        <TableHead className="w-[28%]">Terakhir terlihat</TableHead>
+                        <TableHead className="w-[16%]">Versi</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {agentsQ.data?.map((a) => (
-                        <tr key={a.id} className="border-b border-border/60">
-                          <td className="max-w-0 truncate py-1.5 pr-3 font-mono text-xs font-medium" title={a.name}>
+                        <TableRow key={a.id}>
+                          <TableCell className="max-w-0 truncate font-mono text-xs font-medium" title={a.name}>
                             {a.name}
-                          </td>
-                          <td className="py-1.5 pr-3">{statusBadge(a.status)}</td>
-                          <td className="py-1.5 pr-3 whitespace-nowrap text-muted-foreground">
+                          </TableCell>
+                          <TableCell>{statusBadge(a.status)}</TableCell>
+                          <TableCell className="whitespace-nowrap text-muted-foreground">
                             {formatWhen(a.last_keep_alive)}
-                          </td>
-                          <td className="truncate py-1.5 text-muted-foreground" title={a.version ?? undefined}>
+                          </TableCell>
+                          <TableCell className="truncate text-muted-foreground" title={a.version ?? undefined}>
                             {a.version ?? "—"}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               )}
             </CardContent>

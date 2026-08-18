@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -10,12 +10,26 @@ import {
   Plus,
   CalendarClock,
   Shield,
+  TriangleAlert,
 } from "lucide-react";
 import { useScanHistory } from "@/hooks/useScan";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardAction,
+} from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -88,8 +102,6 @@ function latestPerTarget(scans: ScanJob[]): ScanJob[] {
 
 function Dashboard() {
   const [hideInternal, setHideInternal] = useState(true);
-  const [newScanOpen, setNewScanOpen] = useState(false);
-  const newScanRef = useRef<HTMLDivElement>(null);
 
   const { data: pageData, isLoading, isFetching } = useScanHistory(
     1,
@@ -125,19 +137,6 @@ function Dashboard() {
     enabled: !!activeOrgId,
     retry: false,
   });
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        newScanRef.current &&
-        !newScanRef.current.contains(event.target as Node)
-      ) {
-        setNewScanOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const scans = useMemo(() => pageData?.items ?? [], [pageData?.items]);
   const totalScans = pageData?.total ?? scans.length;
@@ -267,45 +266,30 @@ function Dashboard() {
                 </Link>
               </Button>
             )}
-            <div ref={newScanRef} className="relative shrink-0">
-              <Button
-                size="lg"
-                variant={primaryIsJadwal ? "outline" : "default"}
-                className="w-full min-h-11 text-sm sm:w-auto"
-                onClick={() => setNewScanOpen((o) => !o)}
-                aria-expanded={newScanOpen}
-                aria-haspopup="menu"
-                data-testid="new-scan-cta"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Scan baru
-                <ChevronDown
-                  className={cn(
-                    "ml-2 h-3.5 w-3.5 transition-transform",
-                    newScanOpen && "rotate-180",
-                  )}
-                />
-              </Button>
-              {newScanOpen && (
-                <div
-                  role="menu"
-                  className="absolute right-0 z-20 mt-1 w-56 rounded-md border border-border bg-card p-1 shadow-lg"
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="lg"
+                  variant={primaryIsJadwal ? "outline" : "default"}
+                  className="w-full min-h-11 text-sm sm:w-auto"
+                  data-testid="new-scan-cta"
                 >
-                  {NEW_SCAN_OPTIONS.map((opt) => (
-                    <Link
-                      key={opt.to}
-                      to={opt.to}
-                      role="menuitem"
-                      onClick={() => setNewScanOpen(false)}
-                      className="flex items-center gap-2 rounded-md px-3 py-2.5 text-xs text-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Scan baru
+                  <ChevronDown className="ml-2 h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {NEW_SCAN_OPTIONS.map((opt) => (
+                  <DropdownMenuItem key={opt.to} asChild>
+                    <Link to={opt.to}>
                       <opt.icon className="h-4 w-4 shrink-0" />
                       {opt.label}
                     </Link>
-                  ))}
-                </div>
-              )}
-            </div>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         ) : (
           <p
@@ -318,20 +302,25 @@ function Dashboard() {
       </div>
 
       {attention.length > 0 && (
-        <div
-          className="space-y-1.5 rounded-md border border-red-600/40 bg-red-950/20 px-3 py-2"
+        <Alert
+          variant="destructive"
+          className="border-destructive/40"
           data-testid="attention-strip"
         >
-          {attention.map((a) => (
-            <Link
-              key={a.key}
-              to={a.to}
-              className="block text-xs text-red-200 hover:underline"
-            >
-              {a.text}
-            </Link>
-          ))}
-        </div>
+          <TriangleAlert />
+          <AlertTitle>Perhatian</AlertTitle>
+          <AlertDescription>
+            {attention.map((a) => (
+              <Link
+                key={a.key}
+                to={a.to}
+                className="block text-xs hover:underline"
+              >
+                {a.text}
+              </Link>
+            ))}
+          </AlertDescription>
+        </Alert>
       )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -366,15 +355,15 @@ function Dashboard() {
 
       <div className="grid items-stretch gap-6 lg:grid-cols-12">
         <Card className="flex min-h-0 flex-col lg:col-span-8">
-          <CardHeader className="flex flex-row items-center justify-between gap-4 py-3">
+          <CardHeader className="border-b pb-4">
             <CardTitle
               id="pekerjaan-terakhir"
               className="shrink-0 text-sm tracking-wide"
             >
               Pekerjaan terakhir
             </CardTitle>
-            <div className="flex items-center gap-3">
-              {hiddenInternalCount > 0 && (
+            {hiddenInternalCount > 0 && (
+              <CardAction>
                 <button
                   type="button"
                   className="text-[10px] text-muted-foreground underline-offset-2 hover:underline"
@@ -384,10 +373,10 @@ function Dashboard() {
                     ? `Target percobaan disembunyikan (${hiddenInternalCount})`
                     : "Sembunyikan target percobaan"}
                 </button>
-              )}
-            </div>
+              </CardAction>
+            )}
           </CardHeader>
-          <CardContent className="flex-1 pt-0">
+          <CardContent className="flex-1">
             {isFirstLoad || (isFetching && !pageData) ? (
               <div className="space-y-2">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -531,7 +520,7 @@ function Dashboard() {
 
         <div className="flex h-full flex-col gap-4 lg:col-span-4">
           <Card>
-            <CardHeader className="py-3">
+            <CardHeader className="pb-3">
               <CardTitle className="text-sm tracking-wide">Cakupan attach</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-xs">
@@ -559,7 +548,7 @@ function Dashboard() {
           </Card>
 
           <Card>
-            <CardHeader className="py-3">
+            <CardHeader className="pb-3">
               <CardTitle className="text-sm tracking-wide">Guard</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-xs">

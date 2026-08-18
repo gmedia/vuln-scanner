@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Header from "@/components/layout/Header";
@@ -162,5 +163,27 @@ describe("Header", () => {
   it("hides credits chip when not authenticated", () => {
     renderWithRouter(<Header />);
     expect(screen.queryByTestId("header-credits")).toBeNull();
+  });
+
+  it("opens user menu with Sign Out", async () => {
+    const user = userEvent.setup();
+    useAuthStore.setState({
+      isAuthenticated: true,
+      user: {
+        id: "u1",
+        email: "user@example.com",
+        is_verified: true,
+        is_admin: false,
+        credits: 10,
+      },
+      accessToken: "tok",
+      isLoading: false,
+      error: null,
+    });
+    renderWithRouter(<Header />);
+    await user.click(screen.getByRole("button", { name: /user@example.com/i }));
+    expect(screen.getByTestId("user-menu")).toBeInTheDocument();
+    expect(screen.getByTestId("sign-out")).toHaveTextContent("Sign Out");
+    expect(screen.getByText(/Signed in as/)).toBeInTheDocument();
   });
 });
