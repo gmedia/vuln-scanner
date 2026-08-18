@@ -71,7 +71,7 @@ describe("Guard host enroll UI", () => {
     });
   });
 
-  it("shows host steps and curl after Generate", async () => {
+  it("shows host steps and curl after Buat token", async () => {
     const user = userEvent.setup();
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false } },
@@ -85,10 +85,10 @@ describe("Guard host enroll UI", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Generate" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Buat token" })).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: "Generate" }));
+    await user.click(screen.getByRole("button", { name: "Buat token" }));
 
     await waitFor(() => {
       expect(screen.getByTestId("guard-host-enroll-steps")).toBeInTheDocument();

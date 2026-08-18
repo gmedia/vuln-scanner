@@ -46,7 +46,7 @@ describe("guardEnrollHost", () => {
     expect(GUARD_HOST_SETUP_STEPS).toHaveLength(6);
     const blob = GUARD_HOST_SETUP_STEPS.join(" ");
     expect(blob).toMatch(/enroll/i);
-    expect(blob).toMatch(/Sync/);
+    expect(blob).toMatch(/Sinkronkan/);
     expect(blob).toMatch(/agent_key/);
     expect(blob).not.toMatch(/103\./);
   });
