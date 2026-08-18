@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Sidebar from "@/components/layout/Sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { useScanStore } from "@/store/scanStore";
 import { useAuthStore } from "@/store/authStore";
 import { useCreditStore } from "@/store/creditStore";
@@ -15,14 +16,16 @@ vi.mock("@/store/creditStore", () => ({
 }));
 
 describe("Sidebar", () => {
-  const renderSidebar = (open: boolean, onClose = vi.fn()) => {
+  const renderSidebar = (_open = true) => {
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
     return render(
       <QueryClientProvider client={client}>
         <MemoryRouter>
-          <Sidebar open={open} onClose={onClose} />
+          <SidebarProvider defaultOpen>
+            <Sidebar />
+          </SidebarProvider>
         </MemoryRouter>
       </QueryClientProvider>,
     );
@@ -109,19 +112,11 @@ describe("Sidebar", () => {
     expect(screen.queryByText("Active Scan")).toBeNull();
   });
 
-  it("close button exists with X icon", () => {
+  it("renders a sidebar rail toggle", () => {
     renderSidebar(true);
-    const closeButton = screen.getByRole("button");
-    expect(closeButton).toBeInTheDocument();
-    expect(closeButton.querySelector("svg")).toBeInTheDocument();
-  });
-
-  it("calls onClose when close button is clicked", async () => {
-    const onClose = vi.fn();
-    renderSidebar(true, onClose);
-    const closeButton = screen.getByRole("button");
-    await closeButton.click();
-    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(
+      screen.getByRole("button", { name: /toggle sidebar/i }),
+    ).toBeInTheDocument();
   });
 
   it("renders version text at bottom", () => {
