@@ -36,6 +36,11 @@ function formatWhen(iso: string | null): string {
   try {
     return new Date(iso).toLocaleString("id-ID", {
       timeZone: "Asia/Jakarta",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   } catch {
     return iso;
@@ -71,21 +76,32 @@ function severityForLevel(level: number): {
   className: string;
 } {
   if (level >= 12)
-    return { label: "Kritis", className: "bg-red-500/15 text-red-700" };
+    return {
+      label: "Kritis",
+      className: "bg-red-600 text-white",
+    };
   if (level >= 7)
-    return { label: "Tinggi", className: "bg-amber-500/15 text-amber-800" };
+    return {
+      label: "Tinggi",
+      className: "bg-amber-600 text-white",
+    };
   if (level >= 4)
-    return { label: "Sedang", className: "bg-sky-500/15 text-sky-700" };
-  return { label: "Rendah", className: "bg-muted text-muted-foreground" };
+    return {
+      label: "Sedang",
+      className: "bg-sky-600 text-white",
+    };
+  return {
+    label: "Rendah",
+    className: "border border-border bg-muted text-foreground",
+  };
 }
 
 function LevelChip({ level }: { level: number }) {
   const sev = severityForLevel(level);
   return (
-    <span className="inline-flex flex-wrap items-center gap-1">
-      <Badge variant="info">L{level}</Badge>
-      <Badge className={sev.className}>{sev.label}</Badge>
-    </span>
+    <Badge className={sev.className}>
+      L{level} · {sev.label}
+    </Badge>
   );
 }
 
@@ -277,14 +293,14 @@ export default function Siem() {
               <CardTitle>Cari event</CardTitle>
               <CardDescription>
                 Filter terstruktur saja. Min level default{" "}
-                {statusQ.data?.search_min_level ?? 7}. Lookback maks{" "}
-                {statusQ.data?.max_lookback_hours ?? 168} jam.
+                {statusQ.data?.search_min_level ?? 7}. Rentang waktu maks{" "}
+                {statusQ.data?.max_lookback_hours ?? 168} jam (WIB).
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-                <div>
-                  <Label htmlFor="siem-since">Sejak</Label>
+              <div className="grid grid-cols-12 items-end gap-3">
+                <div className="col-span-12 sm:col-span-6 xl:col-span-2">
+                  <Label htmlFor="siem-since">Sejak (dd/mm/yyyy)</Label>
                   <Input
                     id="siem-since"
                     type="datetime-local"
@@ -293,8 +309,8 @@ export default function Siem() {
                     onChange={(e) => setSince(e.target.value)}
                   />
                 </div>
-                <div>
-                  <Label htmlFor="siem-until">Sampai</Label>
+                <div className="col-span-12 sm:col-span-6 xl:col-span-2">
+                  <Label htmlFor="siem-until">Sampai (dd/mm/yyyy)</Label>
                   <Input
                     id="siem-until"
                     type="datetime-local"
@@ -303,7 +319,7 @@ export default function Siem() {
                     onChange={(e) => setUntil(e.target.value)}
                   />
                 </div>
-                <div>
+                <div className="col-span-6 sm:col-span-4 xl:col-span-1">
                   <Label htmlFor="siem-level">Min level</Label>
                   <Input
                     id="siem-level"
@@ -315,7 +331,7 @@ export default function Siem() {
                     onChange={(e) => setMinLevel(e.target.value)}
                   />
                 </div>
-                <div>
+                <div className="col-span-6 sm:col-span-4 xl:col-span-2">
                   <Label htmlFor="siem-agent">Agen</Label>
                   <select
                     id="siem-agent"
@@ -331,19 +347,19 @@ export default function Siem() {
                     ))}
                   </select>
                 </div>
-                <div className="sm:col-span-2 xl:col-span-1">
-                  <Label htmlFor="siem-q">Cari</Label>
+                <div className="col-span-12 sm:col-span-8 xl:col-span-3">
+                  <Label htmlFor="siem-q">Kotak pencarian</Label>
                   <Input
                     id="siem-q"
                     value={q}
                     maxLength={128}
                     onChange={(e) => setQ(e.target.value)}
-                    placeholder="rule / agen"
+                    placeholder="rule atau agen"
                   />
                 </div>
-                <div className="flex items-end">
+                <div className="col-span-12 sm:col-span-4 xl:col-span-2">
                   <Button
-                    className="w-full"
+                    className="w-auto min-w-[8rem]"
                     onClick={() => {
                       setEventPage(0);
                       setApplied({
@@ -374,14 +390,14 @@ export default function Siem() {
                 <Skeleton className="h-32 w-full" />
               ) : (
                 <>
-                <div className="max-h-[28rem] overflow-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="sticky top-0 z-[1] bg-card">
-                      <tr className="border-b border-border text-muted-foreground">
-                        <th className="py-2 pr-3">Waktu</th>
-                        <th className="py-2 pr-3">Level</th>
+                <div className="overflow-x-auto">
+                  <table className="w-full table-fixed text-left text-sm">
+                    <thead className="sticky top-0 z-[1] border-b border-border bg-card shadow-[0_1px_0_hsl(var(--border))]">
+                      <tr className="text-muted-foreground">
+                        <th className="w-[12rem] py-2 pr-3">Waktu (WIB)</th>
+                        <th className="w-[8rem] py-2 pr-3">Level</th>
                         <th className="py-2 pr-3">Rule</th>
-                        <th className="py-2">Agen</th>
+                        <th className="w-[10rem] py-2">Agen</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -408,15 +424,25 @@ export default function Siem() {
                           <td className="py-2 pr-3">
                             <LevelChip level={ev.rule_level} />
                           </td>
-                          <td className="py-2 pr-3">
+                          <td
+                            className="truncate py-2 pr-3"
+                            title={
+                              ev.rule_id
+                                ? `${ev.rule_description} · ${ev.rule_id}`
+                                : ev.rule_description
+                            }
+                          >
                             {ev.rule_description}
                             {ev.rule_id ? (
                               <span className="ml-1 text-xs text-muted-foreground">
-                                ({ev.rule_id})
+                                #{ev.rule_id}
                               </span>
                             ) : null}
                           </td>
-                          <td className="py-2">
+                          <td
+                            className="truncate py-2 font-mono text-xs"
+                            title={ev.agent_name ?? ev.agent_wazuh_id ?? undefined}
+                          >
                             {ev.agent_name ?? ev.agent_wazuh_id ?? "—"}
                           </td>
                         </tr>
@@ -522,7 +548,9 @@ export default function Siem() {
               {casesQ.isLoading ? (
                 <Skeleton className="h-20 w-full" />
               ) : cases.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Belum ada kasus.</p>
+                <p className="text-sm text-muted-foreground">
+                  Belum ada kasus. Pilih event di tabel, lalu buat kasus.
+                </p>
               ) : (
                 <ul className="space-y-2">
                   {cases.map((c) => (
