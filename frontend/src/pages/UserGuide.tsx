@@ -24,6 +24,8 @@ import { cn } from "@/lib/utils";
 import {
   Card,
   CardContent,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/Card";
 import { BRAND } from "@/lib/brand";
 import {
@@ -61,7 +63,7 @@ function SectionHeading({
   return (
     <h2
       id={id}
-      className="mb-3 flex scroll-mt-28 items-center gap-2 text-lg font-semibold text-foreground"
+      className="mb-4 flex scroll-mt-24 items-center gap-2 text-xl font-semibold tracking-tight text-foreground"
     >
       <Icon className="h-5 w-5 shrink-0 text-primary" />
       {title}
@@ -94,6 +96,7 @@ function useActiveGuideSection() {
       return;
     }
 
+    const scrollRoot = nodes[0]?.closest("main") ?? null;
     const observer = new IntersectionObserver(
       (entries) => {
         const visible = entries
@@ -107,7 +110,11 @@ function useActiveGuideSection() {
           setActiveId(first);
         }
       },
-      { rootMargin: "-20% 0px -60% 0px", threshold: [0, 0.25, 0.5] },
+      {
+        root: scrollRoot,
+        rootMargin: "-12% 0px -55% 0px",
+        threshold: [0, 0.25, 0.5],
+      },
     );
     nodes.forEach((node) => observer.observe(node));
     return () => observer.disconnect();
@@ -135,10 +142,10 @@ function GuideTocLinks({
                 onClick={onNavigate}
                 aria-current={isActive ? "true" : undefined}
                 className={cn(
-                  "block rounded-md px-2.5 py-1.5 text-sm transition-colors",
+                  "block rounded-md border-l-2 px-2.5 py-1.5 text-sm transition-colors",
                   isActive
-                    ? "bg-primary/10 font-medium text-primary"
-                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                    ? "border-primary bg-primary font-medium text-primary-foreground"
+                    : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
                 )}
               >
                 {item.label}
@@ -205,18 +212,25 @@ function UserGuide() {
         </details>
       </div>
 
-      <div className="mx-auto w-full max-w-6xl lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-start lg:gap-8">
-        <aside className="hidden lg:block">
-          <div className="sticky top-0 max-h-[calc(100vh-6rem)] overflow-y-auto pr-1">
-            <p className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              <ListOrdered className="h-3.5 w-3.5 text-primary" />
-              Daftar isi
-            </p>
-            <GuideTocLinks activeId={activeId} />
-          </div>
+      <div className="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:items-stretch lg:gap-8">
+        <aside
+          data-testid="guide-desktop-toc"
+          className="hidden min-h-0 lg:block"
+        >
+          <Card className="sticky top-4 max-h-[calc(100dvh-8rem)] overflow-y-auto">
+            <CardHeader className="py-3">
+              <CardTitle className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <ListOrdered className="h-3.5 w-3.5 text-primary" />
+                Daftar isi
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <GuideTocLinks activeId={activeId} />
+            </CardContent>
+          </Card>
         </aside>
 
-        <div className="min-w-0 space-y-6">
+        <div className="min-w-0 space-y-8">
 
       <Card>
         <CardContent className="space-y-3 pt-6">
