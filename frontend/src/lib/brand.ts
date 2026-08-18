@@ -7,16 +7,16 @@ export const BRAND = {
   get versionLabel() {
     return `${this.product} v${this.version}`;
   },
-  metaTitle: "Sinexis Scan",
+  metaTitle: "Sinexis — Security attach for colo & VPS",
   metaDescription:
-    "Sinexis Scan — security attach scanning for IP, domain, and mobile. Powered by the VulnScanner engine.",
+    "Find exposure on IP, domain, and mobile. Schedule attach scans, share in a workspace, then run Guard and SIEM on the same account.",
   homeAriaLabel: "Sinexis home",
-  authSubtitle: "Sinexis Scan — vulnerability scanning for your stack",
+  authSubtitle:
+    "Sinexis — security attach for colo, VPS, and hospitality stacks",
   heroTitle: "Sinexis",
-  heroProduct: "Sinexis Scan",
+  heroProduct: "Security attach for colo, VPS, and hospitality stacks",
   heroSub:
-    "Security attach for teams that already run servers — Sinexis Scan, powered by the VulnScanner engine (IP, domain & mobile).",
-  footerLine:
-    "Sinexis Scan v1.2.0 · powered by VulnScanner engine · IP, domain & mobile",
+    "Find exposure on IP, domain, and mobile. Schedule attach scans, share in a workspace, then run Guard and SIEM on the same account — credits included.",
+  footerLine: "Sinexis · Scan · Guard · SIEM",
   sidebarVersion: "Sinexis Scan v1.2.0",
 } as const;
