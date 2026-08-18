@@ -35,11 +35,32 @@ vi.mock("@/hooks/useScan", () => ({
   })),
 }));
 
+vi.mock("@tanstack/react-query", async () => {
+  const actual = await vi.importActual<typeof import("@tanstack/react-query")>(
+    "@tanstack/react-query",
+  );
+  return {
+    ...actual,
+    useQuery: vi.fn(({ queryKey }: { queryKey: unknown[] }) => {
+      const key = String(queryKey[0]);
+      if (key === "schedules") return { data: [] };
+      if (key === "guard-agents") return { data: [] };
+      if (key === "guard-alerts") return { data: [] };
+      return { data: undefined };
+    }),
+  };
+});
+
 vi.mock("react-router-dom", () => ({
   Link: ({ to, children, ...props }: { to: string; children: React.ReactNode }) => (
     <a href={to} {...props}>{children}</a>
   ),
   useNavigate: vi.fn(() => vi.fn()),
+}));
+
+vi.mock("@/store/creditStore", () => ({
+  useCreditStore: (sel: (s: { credits: number; fetchBalance: () => Promise<void> }) => unknown) =>
+    sel({ credits: 6996, fetchBalance: vi.fn(async () => {}) }),
 }));
 
 describe("Dashboard", () => {
@@ -84,59 +105,55 @@ describe("Dashboard", () => {
     });
   });
 
-  it("renders the Dashboard heading", () => {
+  it("renders the Ringkasan heading", () => {
     render(<Dashboard />);
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
+    expect(screen.getByText("Ringkasan")).toBeInTheDocument();
   });
 
-  it("renders primary New scan CTA", () => {
+  it("renders primary Scan baru CTA", () => {
     render(<Dashboard />);
-    expect(screen.getByTestId("new-scan-cta")).toHaveTextContent("New scan");
+    expect(screen.getByTestId("new-scan-cta")).toHaveTextContent("Scan baru");
   });
 
-  it("opens New scan menu with scan type links", async () => {
+  it("opens Scan baru menu with scan type links", async () => {
     render(<Dashboard />);
     await userEvent.click(screen.getByTestId("new-scan-cta"));
-    expect(screen.getByRole("menuitem", { name: /IP scan/i })).toHaveAttribute("href", "/scan/ip");
-    expect(screen.getByRole("menuitem", { name: /Domain scan/i })).toHaveAttribute("href", "/scan/domain");
-    expect(screen.getByRole("menuitem", { name: /Mobile scan/i })).toHaveAttribute("href", "/scan/mobile");
+    expect(screen.getByRole("menuitem", { name: /Scan IP/i })).toHaveAttribute("href", "/scan/ip");
+    expect(screen.getByRole("menuitem", { name: /Scan domain/i })).toHaveAttribute("href", "/scan/domain");
+    expect(screen.getByRole("menuitem", { name: /Scan mobile/i })).toHaveAttribute("href", "/scan/mobile");
   });
 
-  it("renders findings-by-severity KPI labels", () => {
+  it("renders windowed KPI labels", () => {
     render(<Dashboard />);
-    expect(screen.getByText("Findings by severity")).toBeInTheDocument();
-    expect(screen.getByText("Total scans")).toBeInTheDocument();
-    expect(screen.getByText("Critical")).toBeInTheDocument();
-    expect(screen.getByText("High")).toBeInTheDocument();
-    expect(screen.getByText("Medium")).toBeInTheDocument();
-    expect(screen.getByText("Low + Info")).toBeInTheDocument();
+    expect(screen.getByText("Risiko terbuka")).toBeInTheDocument();
+    expect(screen.getByText("7 hari (C/H/M)")).toBeInTheDocument();
+    expect(screen.getAllByText("Jadwal").length).toBeGreaterThan(0);
+    expect(screen.getByText("Kredit")).toBeInTheDocument();
   });
 
-  it("renders Scan history section", () => {
+  it("renders Pekerjaan terakhir section", () => {
     render(<Dashboard />);
-    expect(screen.getByText("Scan history")).toBeInTheDocument();
+    expect(screen.getByText("Pekerjaan terakhir")).toBeInTheDocument();
   });
 
-  it("renders Quick actions section", () => {
+  it("does not render Quick actions dump", () => {
     render(<Dashboard />);
-    expect(screen.getByText("Quick actions")).toBeInTheDocument();
+    expect(screen.queryByText("Quick actions")).not.toBeInTheDocument();
+    expect(screen.queryByText("New IP Scan")).not.toBeInTheDocument();
   });
 
-  it("renders quick action links", () => {
+  it("shows Belum ada scan when list is empty", () => {
     render(<Dashboard />);
-    expect(screen.getByText("New IP Scan")).toBeInTheDocument();
-    expect(screen.getByText("New Domain Scan")).toBeInTheDocument();
-    expect(screen.getByText("Upload APK/AAB/IPA")).toBeInTheDocument();
-    expect(screen.getByText("Jadwal scan")).toBeInTheDocument();
-  });
-
-  it("shows No scans yet when scan list is empty", () => {
-    render(<Dashboard />);
-    expect(screen.getByText("No scans yet")).toBeInTheDocument();
+    expect(screen.getByText("Belum ada scan")).toBeInTheDocument();
     expect(screen.getByTestId("empty-schedules-link")).toHaveAttribute(
       "href",
       "/schedules",
     );
+  });
+
+  it("shows Atur jadwal as primary when no schedules", () => {
+    render(<Dashboard />);
+    expect(screen.getByTestId("primary-jadwal-cta")).toBeInTheDocument();
   });
 
   it("shows loading skeletons when first loading", () => {
@@ -146,7 +163,7 @@ describe("Dashboard", () => {
       isFetching: false,
     });
     render(<Dashboard />);
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
+    expect(screen.getByText("Ringkasan")).toBeInTheDocument();
   });
 
   it("renders scan items when history has data", () => {
@@ -174,12 +191,41 @@ describe("Dashboard", () => {
       isFetching: false,
     });
     render(<Dashboard />);
-    expect(screen.getByText("example.com")).toBeInTheDocument();
-    expect(screen.getByText("completed")).toBeInTheDocument();
-    expect(screen.getByText(/5 findings/)).toBeInTheDocument();
+    expect(screen.queryByText("example.com")).not.toBeInTheDocument();
+    expect(screen.getByText(/Target percobaan disembunyikan/)).toBeInTheDocument();
   });
 
-  it("displays correct scan type label for IP scans", () => {
+  it("shows real target after revealing lab rows", async () => {
+    mockHistoryData.items = [
+      {
+        id: "scan-1",
+        target: "stg3.dokfin.id",
+        scan_type: "domain",
+        status: "completed",
+        started_at: "2026-01-01T00:00:00Z",
+        result_summary: {
+          total_findings: 8,
+          critical: 0,
+          high: 0,
+          medium: 3,
+          low: 5,
+          info: 0,
+        },
+      },
+    ];
+    mockHistoryData.total = 1;
+    mockUseScanHistory.mockReturnValue({
+      data: mockHistoryData,
+      isLoading: false,
+      isFetching: false,
+    });
+    render(<Dashboard />);
+    expect(screen.getByText("stg3.dokfin.id")).toBeInTheDocument();
+    expect(screen.getByText("3 sedang")).toBeInTheDocument();
+    expect(screen.queryByText("completed")).not.toBeInTheDocument();
+  });
+
+  it("displays IP type label", () => {
     mockHistoryData.items = [
       {
         id: "scan-2",
@@ -201,7 +247,7 @@ describe("Dashboard", () => {
     expect(screen.getByText("IP Address")).toBeInTheDocument();
   });
 
-  it("shows load more button when more pages available", () => {
+  it("does not show Load more", () => {
     mockHistoryData.items = [
       {
         id: "scan-3",
@@ -219,10 +265,10 @@ describe("Dashboard", () => {
       isFetching: false,
     });
     render(<Dashboard />);
-    expect(screen.getByText("Load more")).toBeInTheDocument();
+    expect(screen.queryByText("Load more")).not.toBeInTheDocument();
   });
 
-  it("shows total scan count in history header", () => {
+  it("shows total scan count in subtitle", () => {
     mockHistoryData.total = 42;
     mockUseScanHistory.mockReturnValue({
       data: mockHistoryData,
@@ -230,14 +276,14 @@ describe("Dashboard", () => {
       isFetching: false,
     });
     render(<Dashboard />);
-    expect(screen.getByText(/42 scan/)).toBeInTheDocument();
+    expect(screen.getByText(/42 scan sekali jalan/)).toBeInTheDocument();
   });
 
-  it("clears scan history UI when activeOrgId changes (same-route switch)", () => {
+  it("clears scan history UI when activeOrgId changes", () => {
     mockHistoryData.items = [
       {
         id: "scan-a",
-        target: "org-a.example.com",
+        target: "org-a.example.net",
         scan_type: "domain",
         status: "completed",
         started_at: "2026-01-01T00:00:00Z",
@@ -259,12 +305,12 @@ describe("Dashboard", () => {
     });
 
     const { rerender } = render(<Dashboard />);
-    expect(screen.getByText("org-a.example.com")).toBeInTheDocument();
+    expect(screen.getByText("org-a.example.net")).toBeInTheDocument();
 
     mockHistoryData.items = [
       {
         id: "scan-b",
-        target: "org-b.example.com",
+        target: "org-b.example.net",
         scan_type: "domain",
         status: "completed",
         started_at: "2026-02-01T00:00:00Z",
@@ -290,15 +336,15 @@ describe("Dashboard", () => {
     });
     rerender(<Dashboard />);
 
-    expect(screen.queryByText("org-a.example.com")).not.toBeInTheDocument();
-    expect(screen.getByText("org-b.example.com")).toBeInTheDocument();
+    expect(screen.queryByText("org-a.example.net")).not.toBeInTheDocument();
+    expect(screen.getByText("org-b.example.net")).toBeInTheDocument();
   });
 
-  it("does not show NaN when result_summary is error-only (auto-failed)", () => {
+  it("does not show NaN when result_summary is error-only", () => {
     mockHistoryData.items = [
       {
         id: "scan-failed-1",
-        target: "stg3.example.com",
+        target: "stg3.example.net",
         scan_type: "domain",
         status: "failed",
         started_at: null,
@@ -308,7 +354,7 @@ describe("Dashboard", () => {
       },
       {
         id: "scan-ok-1",
-        target: "ok.example.com",
+        target: "ok.example.net",
         scan_type: "domain",
         status: "completed",
         started_at: "2026-01-01T00:00:00Z",
@@ -330,9 +376,7 @@ describe("Dashboard", () => {
     });
     render(<Dashboard />);
     expect(screen.queryByText("NaN")).not.toBeInTheDocument();
-    expect(screen.getByText("Critical").previousElementSibling?.textContent).toBe("1");
-    expect(screen.getByText("High").previousElementSibling?.textContent).toBe("0");
-    expect(screen.getByText("Medium").previousElementSibling?.textContent).toBe("2");
-    expect(screen.queryByText("undefined findings")).not.toBeInTheDocument();
+    expect(screen.getByText("Risiko terbuka").previousElementSibling?.textContent).toBe("1");
+    expect(screen.getByText("Gagal")).toBeInTheDocument();
   });
 });
