@@ -63,7 +63,7 @@ async function globalSetup(config: FullConfig) {
   await page.goto(`${baseURL}/dashboard`);
   // Wait for Dashboard to fully render (ensures initialize() → refreshAuth() completes
   // and accessToken is saved to localStorage before we capture storageState)
-  await page.waitForSelector("h2:has-text('DASHBOARD')", { timeout: 15_000 });
+  await page.waitForSelector("h2:has-text('Ringkasan')", { timeout: 15_000 });
   if (page.url().includes("/login")) {
     console.error("Auth verification failed: redirected to login");
     await browser.close();
