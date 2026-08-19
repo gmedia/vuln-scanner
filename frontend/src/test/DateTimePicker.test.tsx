@@ -24,7 +24,7 @@ describe("DateTimePicker", () => {
     );
   });
 
-  it("opens calendar and time input", async () => {
+  it("opens calendar and 24h hour/minute selects", async () => {
     const user = userEvent.setup();
     render(
       <DateTimePicker value="" onChange={() => {}} aria-label="Sejak" />,
@@ -32,6 +32,8 @@ describe("DateTimePicker", () => {
     await user.click(screen.getByRole("button", { name: "Sejak" }));
     expect(document.querySelector(".rdp-root")).toBeTruthy();
     expect(screen.getByLabelText("Jam (24 jam)")).toBeInTheDocument();
+    expect(screen.getByLabelText("Menit")).toBeInTheDocument();
+    expect(document.querySelector('input[type="time"]')).toBeNull();
   });
 
   it("clears value", async () => {

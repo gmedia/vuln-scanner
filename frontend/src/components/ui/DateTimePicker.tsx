@@ -4,8 +4,14 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./Button";
 import { Calendar } from "./Calendar";
-import { Input } from "./Input";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./Select";
 
 export interface DateTimePickerProps {
   value: string;
@@ -17,10 +23,23 @@ export interface DateTimePickerProps {
   "aria-label"?: string;
 }
 
+const HOURS = Array.from({ length: 24 }, (_, i) =>
+  String(i).padStart(2, "0"),
+);
+const MINUTES = Array.from({ length: 60 }, (_, i) =>
+  String(i).padStart(2, "0"),
+);
+
 function parseLocalDateTime(value: string): Date | undefined {
   if (!value) return undefined;
   const parsed = parse(value, "yyyy-MM-dd'T'HH:mm", new Date());
   return isValid(parsed) ? parsed : undefined;
+}
+
+function emitDateTime(date: Date, hour: string, minute: string): string {
+  const next = new Date(date);
+  next.setHours(Number(hour) || 0, Number(minute) || 0, 0, 0);
+  return format(next, "yyyy-MM-dd'T'HH:mm");
 }
 
 function DateTimePicker({
@@ -34,7 +53,9 @@ function DateTimePicker({
 }: DateTimePickerProps) {
   const [open, setOpen] = useState(false);
   const selected = parseLocalDateTime(value);
-  const timePart = selected ? format(selected, "HH:mm") : "00:00";
+  const [hour, minute] = (selected ? format(selected, "HH:mm") : "00:00").split(
+    ":",
+  );
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -68,34 +89,62 @@ function DateTimePicker({
               onChange("");
               return;
             }
-            const [h, m] = timePart.split(":");
-            date.setHours(Number(h) || 0, Number(m) || 0, 0, 0);
-            onChange(format(date, "yyyy-MM-dd'T'HH:mm"));
+            onChange(emitDateTime(date, hour, minute));
           }}
           defaultMonth={selected}
           autoFocus
         />
         <div className="flex items-center gap-2 border-t border-border p-2">
-          <Input
-            type="time"
-            step={60}
-            value={timePart}
-            aria-label="Jam (24 jam)"
-            className="h-8 w-[7.5rem]"
-            onChange={(e) => {
-              const t = e.target.value || "00:00";
-              const base = selected ?? new Date();
-              const [h, m] = t.split(":");
-              base.setHours(Number(h) || 0, Number(m) || 0, 0, 0);
-              onChange(format(base, "yyyy-MM-dd'T'HH:mm"));
-            }}
-          />
+          <div className="flex min-w-0 flex-1 items-center gap-1.5">
+            <Select
+              value={hour}
+              onValueChange={(h) => {
+                const base = selected ?? new Date();
+                onChange(emitDateTime(base, h, minute));
+              }}
+            >
+              <SelectTrigger
+                className="h-8 w-[4.5rem]"
+                aria-label="Jam (24 jam)"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="max-h-56">
+                {HOURS.map((h) => (
+                  <SelectItem key={h} value={h}>
+                    {h}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-muted-foreground" aria-hidden>
+              :
+            </span>
+            <Select
+              value={minute}
+              onValueChange={(m) => {
+                const base = selected ?? new Date();
+                onChange(emitDateTime(base, hour, m));
+              }}
+            >
+              <SelectTrigger className="h-8 w-[4.5rem]" aria-label="Menit">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="max-h-56">
+                {MINUTES.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {m}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           {value ? (
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="ml-auto text-xs text-muted-foreground"
+              className="shrink-0 text-xs text-muted-foreground"
               onClick={() => {
                 onChange("");
                 setOpen(false);

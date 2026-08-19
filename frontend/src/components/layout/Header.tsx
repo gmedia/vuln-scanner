@@ -70,7 +70,11 @@ function Header({ children }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
-        {isAuthenticated && <OrgSwitcher className="hidden sm:block" />}
+        {isAuthenticated && (
+          <div className="hidden sm:block">
+            <OrgSwitcher />
+          </div>
+        )}
 
         {isAuthenticated && (
           <Button
