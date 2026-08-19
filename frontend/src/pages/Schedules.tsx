@@ -66,6 +66,7 @@ import {
 } from "@/api/schedules";
 import type { ApiError } from "@/lib/utils";
 import { canMutateWorkspace } from "@/api/orgs";
+import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
 
 export { mapScheduleError };
@@ -208,6 +209,7 @@ function Schedules() {
       setTarget("");
       setNotifyEmail("");
       setFormError(null);
+      toast.success("Jadwal dibuat");
     },
     onError: (err: unknown) => {
       setFormError(mapScheduleError(apiDetail(err, "Gagal membuat jadwal")));
@@ -219,6 +221,7 @@ function Schedules() {
       updateSchedule(id, { enabled }),
     onSuccess: () => {
       setActionError(null);
+      toast.success("Status jadwal diubah");
       void qc.invalidateQueries({ queryKey: ["schedules"] });
     },
     onError: (err: unknown) => {
@@ -232,6 +235,7 @@ function Schedules() {
     mutationFn: deleteSchedule,
     onSuccess: () => {
       setActionError(null);
+      toast.success("Jadwal dihapus");
       void qc.invalidateQueries({ queryKey: ["schedules"] });
     },
     onError: (err: unknown) => {
