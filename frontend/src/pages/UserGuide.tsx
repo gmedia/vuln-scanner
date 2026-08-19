@@ -99,7 +99,7 @@ function useActiveGuideSection() {
     }
 
     const scrollRoot = nodes[0]?.closest("main") ?? null;
-    const observer = new IntersectionObserver(
+        const observer = new IntersectionObserver(
       (entries) => {
         const visible = entries
           .filter((entry) => entry.isIntersecting)
@@ -114,8 +114,8 @@ function useActiveGuideSection() {
       },
       {
         root: scrollRoot,
-        rootMargin: "-12% 0px -55% 0px",
-        threshold: [0, 0.25, 0.5],
+        rootMargin: "-80px 0px -60% 0px",
+        threshold: [0, 0.1, 0.25],
       },
     );
     nodes.forEach((node) => observer.observe(node));
@@ -141,11 +141,12 @@ function GuideTocLinks({
             <li key={item.id}>
               <Button
                 asChild
-                variant={isActive ? "default" : "ghost"}
+                variant="ghost"
                 size="sm"
                 className={cn(
                   "h-auto w-full justify-start whitespace-normal px-2.5 py-1.5 text-left font-normal",
-                  isActive && "font-medium",
+                  isActive &&
+                    "border-l-2 border-primary bg-muted font-medium text-foreground",
                 )}
               >
                 <a
@@ -230,7 +231,7 @@ function UserGuide() {
         </Card>
       </div>
 
-      <div className="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:items-stretch lg:gap-8">
+      <div className="lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:items-start lg:gap-8">
         <aside
           data-testid="guide-desktop-toc"
           className="hidden min-h-0 lg:block"

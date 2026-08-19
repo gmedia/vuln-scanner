@@ -177,7 +177,7 @@ export default function Guard() {
 
   return (
     <div className="space-y-6 p-4 md:p-6">
-      <div className="sticky top-0 z-10 -mx-4 mb-2 border-b border-border/60 bg-background/95 px-4 py-3 backdrop-blur-sm md:-mx-6 md:px-6">
+      <div className="mb-2 py-1">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
@@ -296,26 +296,28 @@ export default function Guard() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex max-w-xl flex-col gap-2 sm:flex-row sm:items-end sm:gap-2">
+                <div className="flex max-w-xl flex-col gap-2 sm:flex-row sm:items-start sm:gap-2">
                   <div className="min-w-0 flex-1 space-y-1">
                     <Label htmlFor="enroll-label">Label (opsional)</Label>
-                    <Input
-                      id="enroll-label"
-                      value={tokenLabel}
-                      onChange={(e) => setTokenLabel(e.target.value)}
-                      placeholder="vps-colo-1"
-                    />
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <Input
+                        id="enroll-label"
+                        value={tokenLabel}
+                        onChange={(e) => setTokenLabel(e.target.value)}
+                        placeholder="vps-colo-1"
+                      />
+                      <Button
+                        className="shrink-0"
+                        onClick={() => tokenMut.mutate()}
+                        disabled={tokenMut.isPending}
+                      >
+                        Buat token
+                      </Button>
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       Nama host atau lokasi, supaya baris token mudah dikenali.
                     </p>
                   </div>
-                  <Button
-                    className="shrink-0"
-                    onClick={() => tokenMut.mutate()}
-                    disabled={tokenMut.isPending}
-                  >
-                    Buat token
-                  </Button>
                 </div>
                 {rawToken && (
                   <div
@@ -527,7 +529,7 @@ export default function Guard() {
               ) : (agentsQ.data?.length ?? 0) === 0 ? (
                 <p className="text-sm text-muted-foreground">Belum ada agen. Enroll host dulu.</p>
               ) : (
-                <div className="max-w-5xl">
+                <div>
                   <Table className="table-fixed">
                     <TableHeader>
                       <TableRow>
