@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { Badge } from "@/components/ui/Badge";
 import { Textarea } from "@/components/ui/Textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import {
   Select,
   SelectContent,
@@ -308,6 +309,12 @@ export default function Siem() {
             </Card>
           )}
 
+          <Tabs defaultValue="search" className="w-full">
+            <TabsList>
+              <TabsTrigger value="search">Cari event</TabsTrigger>
+              <TabsTrigger value="cases">Kasus</TabsTrigger>
+            </TabsList>
+            <TabsContent value="search" className="space-y-4">
           <Card data-testid="siem-search">
             <CardHeader>
               <CardTitle>Cari event</CardTitle>
@@ -557,6 +564,8 @@ export default function Siem() {
             </Card>
           )}
 
+            </TabsContent>
+            <TabsContent value="cases">
           <Card>
             <CardHeader>
               <CardTitle>Kasus</CardTitle>
@@ -661,6 +670,8 @@ export default function Siem() {
               )}
             </CardContent>
           </Card>
+            </TabsContent>
+          </Tabs>
         </>
       )}
     </div>

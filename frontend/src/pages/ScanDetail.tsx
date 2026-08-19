@@ -25,6 +25,7 @@ import { SCAN_TYPE_LABELS } from "@/lib/constants";
 import SeverityChart from "@/components/results/SeverityChart";
 import FindingsTable from "@/components/results/FindingsTable";
 import { ScanError } from "@/components/scan/ScanError";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 
 function rescanPath(scanType: string): string {
   if (scanType === "domain") return "/scan/domain";
@@ -143,8 +144,131 @@ function ScanDetail() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-          {id && (
-            <>
+          <Button asChild size="sm" className="text-xs">
+            <Link to={reScanTo} data-testid="rescan-button">
+              <RefreshCw className="mr-1 h-3.5 w-3.5" />
+              Re-scan
+            </Link>
+          </Button>
+        </div>
+      </div>
+
+      {scan.status === "failed" && <ScanError showIcon message={failMessage} />}
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <QuickStat
+          icon={Crosshair}
+          label="Findings"
+          value={`${findingsCount}`}
+          emphasize
+        />
+        <QuickStat icon={Target} label="Target" value={scan.target} />
+        <QuickStat
+          icon={Shield}
+          label="Type"
+          value={SCAN_TYPE_LABELS[scan.scan_type] ?? scan.scan_type}
+        />
+        <QuickStat
+          icon={Clock}
+          label="Duration"
+          value={
+            duration != null
+              ? formatDuration(duration)
+              : scan.status === "running" || scan.status === "pending"
+                ? "In progress"
+                : "N/A"
+          }
+        />
+      </div>
+
+      <Tabs defaultValue="findings" className="w-full">
+        <TabsList>
+          <TabsTrigger value="findings">Temuan</TabsTrigger>
+          <TabsTrigger value="diff">Diff</TabsTrigger>
+          <TabsTrigger value="export">Ekspor</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="findings" className="space-y-5">
+          <Card>
+            <CardHeader className="py-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <CardTitle className="text-sm tracking-wide">
+                    Findings
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    {scan.findings?.length ?? 0} vulnerability findings detected
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <FindingsTable findings={scan.findings} isLoading={false} />
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-5 lg:grid-cols-3">
+            <Card className="lg:col-span-1">
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm tracking-wide">Severity</CardTitle>
+                <CardDescription className="text-xs">
+                  Distribution of {findingsCount} findings
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <SeverityChart summary={scan.result_summary} />
+              </CardContent>
+            </Card>
+
+            <Card className="lg:col-span-2">
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm tracking-wide">Scan info</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 pt-0">
+                <InfoRow label="Scan ID" value={scan.id} mono />
+                <InfoRow
+                  label="Created"
+                  value={new Date(scan.created_at).toLocaleString()}
+                />
+                {scan.started_at && (
+                  <InfoRow
+                    label="Started"
+                    value={new Date(scan.started_at).toLocaleString()}
+                  />
+                )}
+                {scan.completed_at && (
+                  <InfoRow
+                    label="Completed"
+                    value={new Date(scan.completed_at).toLocaleString()}
+                  />
+                )}
+                {scan.celery_task_id && (
+                  <InfoRow label="Task ID" value={scan.celery_task_id} mono />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {scan.status === "completed" &&
+            scan.findings &&
+            scan.findings.length > 0 && (
+              <RemediationCard findings={scan.findings} />
+            )}
+        </TabsContent>
+
+        <TabsContent value="diff">
+          {scan.status === "completed" && diff ? (
+            <DiffBadgeStrip diff={diff} />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Diff tersedia setelah scan selesai.
+            </p>
+          )}
+        </TabsContent>
+
+        <TabsContent value="export">
+          {id ? (
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -178,112 +302,12 @@ function ScanDetail() {
                 <Download className="mr-1 h-3.5 w-3.5" />
                 Laporan eksekutif
               </Button>
-            </>
-          )}
-          <Button asChild size="sm" className="text-xs">
-            <Link to={reScanTo} data-testid="rescan-button">
-              <RefreshCw className="mr-1 h-3.5 w-3.5" />
-              Re-scan
-            </Link>
-          </Button>
-        </div>
-      </div>
-
-      {scan.status === "failed" && <ScanError showIcon message={failMessage} />}
-
-      {scan.status === "completed" && diff && (
-        <DiffBadgeStrip diff={diff} />
-      )}
-
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <QuickStat
-          icon={Crosshair}
-          label="Findings"
-          value={`${findingsCount}`}
-          emphasize
-        />
-        <QuickStat icon={Target} label="Target" value={scan.target} />
-        <QuickStat
-          icon={Shield}
-          label="Type"
-          value={SCAN_TYPE_LABELS[scan.scan_type] ?? scan.scan_type}
-        />
-        <QuickStat
-          icon={Clock}
-          label="Duration"
-          value={
-            duration != null
-              ? formatDuration(duration)
-              : scan.status === "running" || scan.status === "pending"
-                ? "In progress"
-                : "N/A"
-          }
-        />
-      </div>
-
-      <Card>
-        <CardHeader className="py-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <CardTitle className="text-sm tracking-wide">Findings</CardTitle>
-              <CardDescription className="text-xs">
-                {scan.findings?.length ?? 0} vulnerability findings detected
-              </CardDescription>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <FindingsTable findings={scan.findings} isLoading={false} />
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-5 lg:grid-cols-3">
-        <Card className="lg:col-span-1">
-          <CardHeader className="py-3">
-            <CardTitle className="text-sm tracking-wide">Severity</CardTitle>
-            <CardDescription className="text-xs">
-              Distribution of {findingsCount} findings
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <SeverityChart summary={scan.result_summary} />
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-2">
-          <CardHeader className="py-3">
-            <CardTitle className="text-sm tracking-wide">Scan info</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 pt-0">
-            <InfoRow label="Scan ID" value={scan.id} mono />
-            <InfoRow
-              label="Created"
-              value={new Date(scan.created_at).toLocaleString()}
-            />
-            {scan.started_at && (
-              <InfoRow
-                label="Started"
-                value={new Date(scan.started_at).toLocaleString()}
-              />
-            )}
-            {scan.completed_at && (
-              <InfoRow
-                label="Completed"
-                value={new Date(scan.completed_at).toLocaleString()}
-              />
-            )}
-            {scan.celery_task_id && (
-              <InfoRow label="Task ID" value={scan.celery_task_id} mono />
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {scan.status === "completed" &&
-        scan.findings &&
-        scan.findings.length > 0 && (
-          <RemediationCard findings={scan.findings} />
-        )}
+          ) : (
+            <p className="text-sm text-muted-foreground">Tidak ada scan untuk diekspor.</p>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

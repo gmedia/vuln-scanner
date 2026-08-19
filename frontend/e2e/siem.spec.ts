@@ -58,7 +58,7 @@ test.describe("SIEM — Layer A smoke", () => {
     }
     await expect(search).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Kasus", exact: true }),
+      page.getByRole("tab", { name: "Kasus", exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Terapkan", exact: true }),

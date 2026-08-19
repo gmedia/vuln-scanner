@@ -379,9 +379,10 @@ describe("ScanDetail", () => {
       ).toBeTruthy();
     });
 
-    it("renders download buttons", () => {
+    it("renders download buttons", async () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
+      await userEvent.click(screen.getByRole("tab", { name: "Ekspor" }));
       expect(screen.getByText("JSON")).toBeInTheDocument();
       expect(screen.getByText("HTML teknis")).toBeInTheDocument();
       expect(screen.getByTestId("export-executive")).toHaveTextContent(
@@ -411,6 +412,7 @@ describe("ScanDetail", () => {
     it("calls downloadFile with JSON on JSON button click", async () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
+      await userEvent.click(screen.getByRole("tab", { name: "Ekspor" }));
       await userEvent.click(screen.getByText("JSON"));
       expect(downloadFile).toHaveBeenCalledWith("scan-1", "json");
     });
@@ -418,6 +420,7 @@ describe("ScanDetail", () => {
     it("calls downloadFile with HTML on HTML button click", async () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
+      await userEvent.click(screen.getByRole("tab", { name: "Ekspor" }));
       await userEvent.click(screen.getByText("HTML teknis"));
       expect(downloadFile).toHaveBeenCalledWith("scan-1", "html");
     });
@@ -425,11 +428,12 @@ describe("ScanDetail", () => {
     it("calls downloadFile executive on executive button click", async () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
+      await userEvent.click(screen.getByRole("tab", { name: "Ekspor" }));
       await userEvent.click(screen.getByTestId("export-executive"));
       expect(downloadFile).toHaveBeenCalledWith("scan-1", "executive");
     });
 
-    it("shows no-baseline hint when diff has no baseline and no delta", () => {
+    it("shows no-baseline hint when diff has no baseline and no delta", async () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       mockUseScanDiff.mockReturnValue({
         data: {
@@ -444,10 +448,11 @@ describe("ScanDetail", () => {
         isError: false,
       });
       renderPage();
+      await userEvent.click(screen.getByRole("tab", { name: "Diff" }));
       expect(screen.getByTestId("scan-diff-no-baseline")).toBeInTheDocument();
     });
 
-    it("shows vs baseline strip when compared_to_job_id set", () => {
+    it("shows vs baseline strip when compared_to_job_id set", async () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       mockUseScanDiff.mockReturnValue({
         data: {
@@ -462,6 +467,7 @@ describe("ScanDetail", () => {
         isError: false,
       });
       renderPage();
+      await userEvent.click(screen.getByRole("tab", { name: "Diff" }));
       expect(screen.getByTestId("scan-diff-badge")).toBeInTheDocument();
       expect(screen.getByText("vs baseline")).toBeInTheDocument();
     });
