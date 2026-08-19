@@ -1,6 +1,6 @@
 # Spec: shadcn/ui migration (SPA Sinexis / VulnScanner)
 
-**Status:** Wave A–D shipped (`main`, #347). Wave E Accordion in progress (`feat/shadcn-accordion-guide-guard`). Remaining waves: plan only until an explicit verb.
+**Status:** Wave A–E shipped (`main`, #348). Wave F sonner + chart in progress (`feat/shadcn-sonner-severity-chart`). Remaining waves: plan only until an explicit verb.
 **Surface:** in-app SPA (`sinexis.app` dashboard), not a new marketing site.
 **Depends:** kit already in `frontend/src/components/ui/` · sidebar-03 shipped · visual wave popover/calendar/Guard/Guide on `feat/shadcn-popover-calendar-guard-guide` (PR #341, may land after this doc).
 **Not this epic:** mass Dependabot, password-eye unless requested, Command palette, RHF `form`, hard rebrand, Guard/Wazuh features, SIEM query builder.
@@ -25,6 +25,7 @@ Default shadcn primitives already look correct. DIY markup (`window.confirm`, na
 | `export-executive`, `rescan-button` | `ScanDetail.tsx` |
 | `siem-since`, `siem-until` | `Siem.tsx` (`DateTimePicker` `id`) |
 | `guide-desktop-toc` | `UserGuide.tsx` |
+| `severity-chart-content`, `severity-legend` | `SeverityChart.tsx` |
 | `invite-email`, `invite-role`, `invite-submit`, `invite-form-card`, `members-list` | `WorkspaceSettings.tsx` |
 | `schedule-create-card` | `Schedules.tsx` |
 | `guard-state`, `guard-disabled`, `guard-host-enroll-steps`, `guard-agent-install-steps`, `guard-distro-install-commands`, `guard-enroll-token-row`, `guard-agents`, `guard-alerts` | `Guard.tsx` (+ Guide distro block) |
@@ -37,7 +38,7 @@ Card padding stays `p-6` / `pt-0`. Do not restyle kit files to “match screensh
 
 ### Installed under `frontend/src/components/ui/`
 
-accordion, alert, alert-dialog, Badge, Button, Calendar, Card, DatePicker, DateTimePicker, Dialog, dropdown-menu, Input, Label, Pagination, Popover, Progress, ScrollArea, Select, Separator, sheet, sidebar, Skeleton, Table, Tabs, Textarea, Tooltip, breadcrumb.
+accordion, alert, alert-dialog, Badge, Button, Calendar, Card, chart, DatePicker, DateTimePicker, Dialog, dropdown-menu, Input, Label, Pagination, Popover, Progress, ScrollArea, Select, Separator, sheet, sidebar, Skeleton, sonner, Table, Tabs, Textarea, Tooltip, breadcrumb.
 
 ### Installed but unused (or only tests / sidebar)
 
@@ -52,7 +53,7 @@ accordion, alert, alert-dialog, Badge, Button, Calendar, Card, DatePicker, DateT
 
 ### Not installed (official catalog ~46)
 
-avatar, carousel, chart, checkbox, collapsible, command, context-menu, drawer, form, hover-card, input-otp, menubar, navigation-menu, radio-group, resizable, slider, sonner, switch, toggle, toggle-group, aspect-ratio.
+avatar, carousel, checkbox, collapsible, command, context-menu, drawer, form, hover-card, input-otp, menubar, navigation-menu, radio-group, resizable, slider, switch, toggle, toggle-group, aspect-ratio.
 
 **Do not add** unless a wave below names them: carousel, menubar, context-menu, slider, aspect-ratio, input-otp (no 2FA), resizable, navigation-menu (sidebar-03 is enough).
 
@@ -103,7 +104,7 @@ Verify **locally** (`cd frontend && rtk vitest …` on touched tests) **before p
 
 ### Wave E — Accordion for long copy (M)
 
-**In progress:** `feat/shadcn-accordion-guide-guard`. **Add:** `Accordion.tsx`. Keep `guide-desktop-toc` (not Accordion). Keep `guard-distro-install-commands`. Update `UserGuide.test.tsx` (`closest("details")` → trigger `aria-expanded`).
+**Shipped:** `main` (#348). Accordion on UserGuide + Guard distro. Keep `guide-desktop-toc` (not Accordion). Keep `guard-distro-install-commands`.
 
 | Page | Today | After |
 |------|--------|--------|
@@ -114,11 +115,14 @@ User Guide **desktop TOC** stays Card + ScrollArea + `guide-desktop-toc`. Do not
 
 ### Wave F — feedback + charts (M)
 
+**In progress:** `feat/shadcn-sonner-severity-chart`. **Add:** `sonner` + `chart`. Do **not** add `next-themes` (SPA has no ThemeProvider — Toaster uses `theme="system"`). Do **not** keep CLI `card.tsx` (imports stay `@/components/ui/Card`). Skip AdminDashboard KPI.
+
 | Item | After |
 |------|--------|
-| Success/error after mutations | **sonner** (keep destructive `Alert` for page-level errors) |
-| `SeverityChart.tsx` Recharts pie | shadcn **chart** wrapper, keep `severity-chart-content` |
-| AdminDashboard KPI | optional small **chart**; no fake data |
+| Success after mutations (Workspace invite/revoke/org/accept, Profile email/password, Guard enable/sync/token, Schedules create/toggle/delete) | **sonner** `toast.success` |
+| Page-level / form-field errors | keep destructive `Alert` (not toast) |
+| `SeverityChart.tsx` Recharts pie | shadcn **ChartContainer** + `ChartTooltip`; freeze `severity-chart-content` |
+| AdminDashboard KPI | **skip** |
 
 ### Wave G — optional / skip unless asked
 
@@ -182,11 +186,11 @@ npx shadcn@latest add <component> --yes
 
 ---
 
-## 7) Suggested first PR after #345 merges
+## 7) Suggested first PR after #348 merges
 
-**Wave C only:** Table on WorkspaceSettings + Schedules lists.
+**Wave F only:** sonner + SeverityChart chart wrapper.
 
-Then Wave D (pagination) only with an explicit verb.
+Then Wave G only with an explicit verb.
 
 ---
 
