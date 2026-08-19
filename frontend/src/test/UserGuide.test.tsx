@@ -114,8 +114,10 @@ describe("UserGuide", () => {
     const desktopToc = screen.getByTestId("guide-desktop-toc");
     expect(desktopToc.querySelector(".sticky")).toBeTruthy();
     expect(desktopToc.className).toMatch(/lg:block/);
-    const debianBlock = screen.getByText("Debian / Ubuntu").closest("details");
-    expect(debianBlock).toBeTruthy();
-    expect(debianBlock).not.toHaveAttribute("open");
+    const debianTrigger = screen.getByRole("button", {
+      name: /Debian \/ Ubuntu/,
+    });
+    expect(debianTrigger).toHaveAttribute("aria-expanded", "false");
+    expect(debianTrigger).toHaveAttribute("data-state", "closed");
   });
 });

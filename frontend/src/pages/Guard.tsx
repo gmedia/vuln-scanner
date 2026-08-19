@@ -24,6 +24,12 @@ import {
   TableRow,
 } from "@/components/ui/Table";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/Accordion";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -409,22 +415,31 @@ export default function Guard() {
                         <p className="font-medium text-foreground">
                           Perintah host target per distro
                         </p>
-                        {GUARD_DISTRO_INSTALL_GUIDES.map((guide) => (
-                          <div
-                            key={guide.id}
-                            className="rounded border border-border/60 bg-background/80 p-2"
-                          >
-                            <p className="font-medium text-foreground">
-                              {guide.title}
-                            </p>
-                            <p className="mt-0.5 text-muted-foreground">
-                              {guide.blurb}
-                            </p>
-                            <pre className="mt-1.5 overflow-x-auto whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-foreground">
-                              {guide.commands.join("\n")}
-                            </pre>
-                          </div>
-                        ))}
+                        <Accordion type="single" collapsible className="w-full space-y-2">
+                          {GUARD_DISTRO_INSTALL_GUIDES.map((guide) => (
+                            <AccordionItem
+                              key={guide.id}
+                              value={guide.id}
+                              className="rounded border border-border/60 bg-background/80 px-2 last:border-b"
+                            >
+                              <AccordionTrigger>
+                                <span>
+                                  <span className="block font-medium text-foreground">
+                                    {guide.title}
+                                  </span>
+                                  <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
+                                    {guide.blurb}
+                                  </span>
+                                </span>
+                              </AccordionTrigger>
+                              <AccordionContent forceMount>
+                                <pre className="overflow-x-auto whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-foreground">
+                                  {guide.commands.join("\n")}
+                                </pre>
+                              </AccordionContent>
+                            </AccordionItem>
+                          ))}
+                        </Accordion>
                         <p className="text-muted-foreground">
                           {GUARD_DISTRO_INSTALL_FOOTER}
                         </p>
