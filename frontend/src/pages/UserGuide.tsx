@@ -98,8 +98,13 @@ function useActiveGuideSection() {
       return;
     }
 
-    const scrollRoot = nodes[0]?.closest("main") ?? null;
-        const observer = new IntersectionObserver(
+    const mainEl = nodes[0]?.closest("main");
+    const mainOverflows =
+      mainEl instanceof HTMLElement &&
+      mainEl.scrollHeight > mainEl.clientHeight + 1;
+    const scrollRoot = mainOverflows ? mainEl : null;
+
+    const observer = new IntersectionObserver(
       (entries) => {
         const visible = entries
           .filter((entry) => entry.isIntersecting)
@@ -110,11 +115,23 @@ function useActiveGuideSection() {
         const first = visible[0]?.target.id;
         if (first) {
           setActiveId(first);
+          return;
         }
+        const readingY = 56 + 24;
+        let bestId = toc[0].id;
+        let bestDist = Number.POSITIVE_INFINITY;
+        for (const node of nodes) {
+          const dist = Math.abs(node.getBoundingClientRect().top - readingY);
+          if (dist < bestDist) {
+            bestDist = dist;
+            bestId = node.id;
+          }
+        }
+        setActiveId(bestId);
       },
       {
         root: scrollRoot,
-        rootMargin: "-80px 0px -60% 0px",
+        rootMargin: "-56px 0px -50% 0px",
         threshold: [0, 0.1, 0.25],
       },
     );
@@ -236,15 +253,15 @@ function UserGuide() {
           data-testid="guide-desktop-toc"
           className="hidden min-h-0 lg:block"
         >
-          <Card className="sticky top-4 flex max-h-[calc(100dvh-8rem)] flex-col overflow-hidden">
+          <Card className="sticky top-16 flex max-h-[calc(100dvh-theme(spacing.14)-2rem)] flex-col overflow-hidden">
             <CardHeader className="py-3">
               <CardTitle className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 <ListOrdered className="h-3.5 w-3.5 text-primary" />
                 Daftar isi
               </CardTitle>
             </CardHeader>
-            <CardContent className="min-h-0 flex-1 pt-0">
-              <ScrollArea className="h-[min(28rem,calc(100dvh-12rem))]">
+            <CardContent className="flex min-h-0 flex-1 flex-col pt-0">
+              <ScrollArea className="h-full min-h-0 max-h-[calc(100dvh-theme(spacing.14)-6rem)]">
                 <GuideTocLinks activeId={activeId} />
               </ScrollArea>
             </CardContent>
