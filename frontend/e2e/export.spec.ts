@@ -54,6 +54,7 @@ test.describe("Export", () => {
     await expect(page.locator("h2:has-text('Scan details')")).toBeVisible({
       timeout: 15_000,
     });
+    await page.getByRole("tab", { name: "Ekspor" }).click();
 
     const jsonBtn = page.locator('button:has-text("JSON")');
     const htmlBtn = page.locator('button:has-text("HTML")');
