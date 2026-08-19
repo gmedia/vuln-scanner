@@ -190,32 +190,44 @@ function UserGuide() {
       </div>
 
       <div className="sticky top-0 z-20 -mx-4 mb-6 bg-background/95 px-4 py-2 backdrop-blur-sm md:-mx-6 md:px-6 lg:hidden">
-        <details
-          className="group rounded-lg border border-border bg-card shadow-sm"
-          open={mobileTocOpen}
-          onToggle={(event) =>
-            setMobileTocOpen((event.target as HTMLDetailsElement).open)
-          }
-        >
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-foreground [&::-webkit-details-marker]:hidden">
-            <span className="flex min-w-0 items-center gap-2">
-              <ListOrdered className="h-4 w-4 shrink-0 text-primary" />
-              <span className="truncate">
-                Daftar isi
-                <span className="ml-2 font-normal text-muted-foreground">
-                  · {activeLabel}
+        <Card>
+          <CardHeader className="p-0">
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-auto w-full justify-between gap-3 rounded-lg px-4 py-3 text-sm font-medium text-foreground hover:bg-transparent"
+              aria-expanded={mobileTocOpen}
+              onClick={() => setMobileTocOpen((open) => !open)}
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                <ListOrdered className="h-4 w-4 shrink-0 text-primary" />
+                <span className="truncate">
+                  Daftar isi
+                  <span className="ml-2 font-normal text-muted-foreground">
+                    · {activeLabel}
+                  </span>
                 </span>
               </span>
-            </span>
-            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
-          </summary>
-          <div className="border-t border-border px-2 py-2">
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+                  mobileTocOpen && "rotate-180",
+                )}
+              />
+            </Button>
+          </CardHeader>
+          <CardContent
+            className={cn(
+              "border-t border-border px-2 py-2",
+              !mobileTocOpen && "hidden",
+            )}
+          >
             <GuideTocLinks
               activeId={activeId}
               onNavigate={() => setMobileTocOpen(false)}
             />
-          </div>
-        </details>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:items-stretch lg:gap-8">
