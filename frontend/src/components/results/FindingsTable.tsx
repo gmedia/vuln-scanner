@@ -1,7 +1,16 @@
 import { Fragment, useState, useMemo } from "react";
-import { ChevronDown, ChevronUp, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, ListFilter, Search } from "lucide-react";
 import type { ScanFinding } from "@/api/scans";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/Input";
 import { Skeleton } from "@/components/ui/Skeleton";
 import {
@@ -31,10 +40,15 @@ const SEVERITY_ORDER: Record<string, number> = {
   info: 4,
 };
 
+const SEVERITY_FILTERS = ["critical", "high", "medium", "low", "info"] as const;
+
 function FindingsTable({ findings, isLoading }: FindingsTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>("severity");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [search, setSearch] = useState("");
+  const [severityFilter, setSeverityFilter] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const toggleSort = (key: SortKey) => {
@@ -48,16 +62,20 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
 
   const filtered = useMemo(() => {
     if (!findings) return [];
-    if (!search.trim()) return findings;
-    const q = search.toLowerCase();
-    return findings.filter(
-      (f) =>
+    const q = search.trim().toLowerCase();
+    return findings.filter((f) => {
+      if (severityFilter.size > 0 && !severityFilter.has(f.severity)) {
+        return false;
+      }
+      if (!q) return true;
+      return (
         f.title.toLowerCase().includes(q) ||
         (f.cve_id && f.cve_id.toLowerCase().includes(q)) ||
         (f.category && f.category.toLowerCase().includes(q)) ||
-        f.severity.toLowerCase().includes(q),
-    );
-  }, [findings, search]);
+        f.severity.toLowerCase().includes(q)
+      );
+    });
+  }, [findings, search, severityFilter]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
@@ -131,15 +149,52 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
 
   return (
     <div className="space-y-3">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="text"
-          placeholder="Filter findings..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
-        />
+      <div className="flex items-center gap-2">
+        <div className="relative min-w-0 flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Filter findings..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              aria-label="Filter by severity"
+            >
+              <ListFilter className="h-4 w-4" />
+              Severity
+              {severityFilter.size > 0 ? ` (${severityFilter.size})` : ""}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Severity</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {SEVERITY_FILTERS.map((sev) => (
+              <DropdownMenuCheckboxItem
+                key={sev}
+                checked={severityFilter.has(sev)}
+                onCheckedChange={(checked) => {
+                  setSeverityFilter((prev) => {
+                    const next = new Set(prev);
+                    if (checked) next.add(sev);
+                    else next.delete(sev);
+                    return next;
+                  });
+                }}
+                className="capitalize"
+              >
+                {sev}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="rounded-lg border border-border">

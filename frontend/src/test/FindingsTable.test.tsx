@@ -68,6 +68,21 @@ describe("FindingsTable", () => {
     expect(screen.getByText("No matching findings")).toBeInTheDocument();
   });
 
+  it("filters rows by severity checkbox in the dropdown", async () => {
+    const user = userEvent.setup();
+    const findings = [
+      mockFinding(),
+      mockFinding({ id: "2", title: "XSS Attack", severity: "high", cvss_score: 7.5 }),
+      mockFinding({ id: "3", title: "Open Redirect", severity: "medium", cvss_score: 5.0 }),
+    ];
+    render(<FindingsTable findings={findings} isLoading={false} />);
+    await user.click(screen.getByRole("button", { name: "Filter by severity" }));
+    await user.click(screen.getByRole("menuitemcheckbox", { name: "high" }));
+    expect(screen.queryByText("SQL Injection")).not.toBeInTheDocument();
+    expect(screen.getByText("XSS Attack")).toBeInTheDocument();
+    expect(screen.queryByText("Open Redirect")).not.toBeInTheDocument();
+  });
+
   it("renders severity badges for each finding", () => {
     const findings = [
       mockFinding(),
