@@ -1,6 +1,6 @@
 # Spec: shadcn/ui migration (SPA Sinexis / VulnScanner)
 
-**Status:** plan only — **do not implement** until an explicit verb (`implement` / `buat` / `kerjakan`) **and** CI on the current UI PR is green.
+**Status:** Wave A in progress (`feat/shadcn-alert-dialog-confirms`). Remaining waves: plan only until an explicit verb.
 **Surface:** in-app SPA (`sinexis.app` dashboard), not a new marketing site.
 **Depends:** kit already in `frontend/src/components/ui/` · sidebar-03 shipped · visual wave popover/calendar/Guard/Guide on `feat/shadcn-popover-calendar-guard-guide` (PR #341, may land after this doc).
 **Not this epic:** mass Dependabot, password-eye unless requested, Command palette, RHF `form`, hard rebrand, Guard/Wazuh features, SIEM query builder.
@@ -34,13 +34,13 @@ Card padding stays `p-6` / `pt-0`. Do not restyle kit files to “match screensh
 
 ### Installed under `frontend/src/components/ui/`
 
-alert, Badge, Button, Calendar, Card, DatePicker, DateTimePicker, Dialog, dropdown-menu, Input, Label, Popover, Progress, ScrollArea, Select, Separator, sheet, sidebar, Skeleton, Table, Tabs, Textarea, Tooltip, breadcrumb.
+alert, alert-dialog, Badge, Button, Calendar, Card, DatePicker, DateTimePicker, Dialog, dropdown-menu, Input, Label, Popover, Progress, ScrollArea, Select, Separator, sheet, sidebar, Skeleton, Table, Tabs, Textarea, Tooltip, breadcrumb.
 
 ### Installed but unused (or only tests / sidebar)
 
 | Primitive | Notes |
 |-----------|--------|
-| **Dialog** | Tests only — wire to confirms |
+| **Dialog** | Tests / generic modal — confirms use **alert-dialog** |
 | **Tabs** | Tests only — ScanDetail / SIEM / Guard |
 | **breadcrumb** | No page imports — AppShell optional |
 | **Tooltip** | Sidebar only |
@@ -49,7 +49,7 @@ alert, Badge, Button, Calendar, Card, DatePicker, DateTimePicker, Dialog, dropdo
 
 ### Not installed (official catalog ~46)
 
-accordion, alert-dialog, avatar, carousel, chart, checkbox, collapsible, command, context-menu, drawer, form, hover-card, input-otp, menubar, navigation-menu, pagination, radio-group, resizable, slider, sonner, switch, toggle, toggle-group, aspect-ratio.
+accordion, avatar, carousel, chart, checkbox, collapsible, command, context-menu, drawer, form, hover-card, input-otp, menubar, navigation-menu, pagination, radio-group, resizable, slider, sonner, switch, toggle, toggle-group, aspect-ratio.
 
 **Do not add** unless a wave below names them: carousel, menubar, context-menu, slider, aspect-ratio, input-otp (no 2FA), resizable, navigation-menu (sidebar-03 is enough).
 
@@ -65,8 +65,8 @@ Verify **locally** (`cd frontend && rtk vitest …` on touched tests) **before p
 
 | Target | Today | After |
 |--------|--------|--------|
-| Guard Cabut token | `window.confirm` | AlertDialog; keep `aria-label` / row testid |
-| Schedules delete | `window.confirm` | Same |
+| Guard Cabut token | ~~`window.confirm`~~ | AlertDialog; keep `aria-label` / row testid |
+| Schedules delete | ~~`window.confirm`~~ | Same |
 
 **Out of scope:** password visibility, org switcher.
 
