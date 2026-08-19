@@ -227,18 +227,24 @@ jobs:
           restore-keys: |
             playwright-chromium-${{ runner.os }}-
 
-      - name: Install Playwright with Chromium
-        timeout-minutes: 12
+      - name: Install Playwright OS deps
+        timeout-minutes: 3
+        continue-on-error: true
+        working-directory: frontend
+        run: sudo npx playwright install-deps chromium
+
+      - name: Install Playwright Chromium
+        timeout-minutes: 8
         working-directory: frontend
         run: |
           set -euo pipefail
-          # Install browsers before Compose so apt/CDN is not competing with image pulls.
+          # Bound each download so a hung CDN cannot eat the whole step timeout.
           for attempt in 1 2 3; do
-            echo "Playwright install attempt ${attempt}"
-            if npx playwright install --with-deps chromium; then
+            echo "Playwright chromium download attempt ${attempt}"
+            if timeout 120 npx playwright install chromium; then
               exit 0
             fi
-            echo "Playwright install failed (attempt ${attempt})"
+            echo "Playwright chromium download failed (attempt ${attempt})"
             sleep $((attempt * 5))
           done
           exit 1
