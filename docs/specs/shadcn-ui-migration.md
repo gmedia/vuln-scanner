@@ -1,6 +1,6 @@
 # Spec: shadcn/ui migration (SPA Sinexis / VulnScanner)
 
-**Status:** Wave A shipped (`main`). Wave B in progress (`feat/shadcn-tabs-scan-siem`). Remaining waves: plan only until an explicit verb.
+**Status:** Wave A + B shipped (`main`). Wave C in progress (`feat/shadcn-table-workspace-schedules`). Remaining waves: plan only until an explicit verb.
 **Surface:** in-app SPA (`sinexis.app` dashboard), not a new marketing site.
 **Depends:** kit already in `frontend/src/components/ui/` · sidebar-03 shipped · visual wave popover/calendar/Guard/Guide on `feat/shadcn-popover-calendar-guard-guide` (PR #341, may land after this doc).
 **Not this epic:** mass Dependabot, password-eye unless requested, Command palette, RHF `form`, hard rebrand, Guard/Wazuh features, SIEM query builder.
@@ -25,6 +25,8 @@ Default shadcn primitives already look correct. DIY markup (`window.confirm`, na
 | `export-executive`, `rescan-button` | `ScanDetail.tsx` |
 | `siem-since`, `siem-until` | `Siem.tsx` (`DateTimePicker` `id`) |
 | `guide-desktop-toc` | `UserGuide.tsx` |
+| `invite-email`, `invite-role`, `invite-submit`, `invite-form-card`, `members-list` | `WorkspaceSettings.tsx` |
+| `schedule-create-card` | `Schedules.tsx` |
 | `guard-state`, `guard-disabled`, `guard-host-enroll-steps`, `guard-agent-install-steps`, `guard-distro-install-commands`, `guard-enroll-token-row`, `guard-agents`, `guard-alerts` | `Guard.tsx` (+ Guide distro block) |
 
 Card padding stays `p-6` / `pt-0`. Do not restyle kit files to “match screenshots” with one-off opacity/glass.
@@ -42,7 +44,7 @@ alert, alert-dialog, Badge, Button, Calendar, Card, DatePicker, DateTimePicker, 
 | Primitive | Notes |
 |-----------|--------|
 | **Dialog** | Tests / generic modal — confirms use **alert-dialog** |
-| **Tabs** | ScanDetail + SIEM (Wave B); Guard optional skip |
+| **Tabs** | ScanDetail + SIEM shipped (Wave B); Guard optional skip |
 | **breadcrumb** | No page imports — AppShell optional |
 | **Tooltip** | Sidebar only |
 | **Sheet** | Mobile sidebar only |
@@ -83,12 +85,12 @@ Verify **locally** (`cd frontend && rtk vitest …` on touched tests) **before p
 
 ### Wave C — lists that are not Table (S)
 
-| Page | Today | After |
-|------|--------|--------|
-| WorkspaceSettings members/invites | `ul.divide-y` | `Table` or Card rows using Table primitives |
-| Schedules list | `ul.divide-y` | `Table` + Empty copy |
+**In progress:** `feat/shadcn-table-workspace-schedules`. Keep `invite-*`, `members-list`, `schedule-create-card`. Empty copy unchanged (`Belum ada anggota.` / `Tidak ada undangan tertunda.` / `Belum ada jadwal. Buat scan domain/IP mingguan atau bulanan di atas.`).
 
-Keep `invite-*`, `members-list`, `schedule-create-card`.
+| Page | After |
+|------|--------|
+| WorkspaceSettings members/invites | `Table` (`members-list`, `invites-list`) |
+| Schedules list | `Table` + empty copy outside table; AlertDialog Hapus stays |
 
 ### Wave D — pagination (S–M)
 
@@ -180,11 +182,11 @@ npx shadcn@latest add <component> --yes
 
 ---
 
-## 7) Suggested first PR after #341 merges
+## 7) Suggested first PR after #345 merges
 
-**Wave A only:** replace `window.confirm` with AlertDialog on Guard + Schedules.
+**Wave C only:** Table on WorkspaceSettings + Schedules lists.
 
-Then Wave B (Tabs) **or** Wave C (Table lists), not both in one PR.
+Then Wave D (pagination) only with an explicit verb.
 
 ---
 
