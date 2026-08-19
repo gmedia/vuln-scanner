@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Upload, Smartphone, Loader2, X, File, Check } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { Card, CardContent } from "@/components/ui/Card";
 import { useStartMobileScan } from "@/hooks/useScan";
 import { useScanError } from "@/hooks/useScanError";
 import { useScanCredit } from "@/hooks/useScanCredit";
@@ -187,7 +188,7 @@ function MobileUpload() {
       />
 
       {!file ? (
-        <div
+        <Card
           onDragOver={(e) => {
             e.preventDefault();
             setIsDragging(true);
@@ -195,12 +196,13 @@ function MobileUpload() {
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           className={cn(
-            "flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-all duration-200",
+            "border-2 border-dashed shadow-none transition-all duration-200",
             isDragging
               ? "border-primary bg-primary/5"
               : "border-muted-foreground/40 bg-muted/30",
           )}
         >
+          <CardContent className="flex flex-col items-center justify-center pt-6">
           <Upload
             className={cn(
               "mb-3 h-10 w-10 transition-colors",
@@ -225,9 +227,11 @@ function MobileUpload() {
           >
             Browse files
           </Button>
-        </div>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="flex items-center justify-between rounded-lg border border-border bg-muted/50 p-4">
+        <Card className="bg-muted/50 shadow-none">
+          <CardContent className="flex items-center justify-between pt-6">
           <div className="flex min-w-0 items-center gap-3">
             <File className="h-8 w-8 shrink-0 text-primary" />
             <div className="min-w-0">
@@ -246,7 +250,8 @@ function MobileUpload() {
           >
             <X className="h-4 w-4" />
           </Button>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {error && <ScanError message={error} showIcon />}

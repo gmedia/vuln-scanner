@@ -105,9 +105,12 @@ describe("UserGuide", () => {
       name: "Daftar isi panduan",
     });
     expect(tocNavs.length).toBeGreaterThanOrEqual(2);
-    const mobileToc = tocNavs[0]?.closest("details");
+    const mobileToc = tocNavs[0]?.closest("[data-slot='card']");
     expect(mobileToc).toBeTruthy();
     expect(mobileToc?.parentElement).toHaveClass("sticky");
+    expect(
+      screen.getByRole("button", { name: /Daftar isi/ }),
+    ).toHaveAttribute("aria-expanded", "false");
     const desktopToc = screen.getByTestId("guide-desktop-toc");
     expect(desktopToc.querySelector(".sticky")).toBeTruthy();
     expect(desktopToc.className).toMatch(/lg:block/);

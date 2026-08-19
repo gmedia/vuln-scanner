@@ -4,6 +4,7 @@ import { Building2, Check, ChevronDown, Loader2, Users } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/Button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,13 +55,15 @@ function OrgSwitcher({ className, compact = false }: OrgSwitcherProps) {
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           data-testid="org-switcher"
           aria-haspopup="listbox"
           disabled={switching}
           className={cn(
-            "flex min-h-9 max-w-[14rem] items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs text-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-60",
+            "h-9 max-w-[14rem] justify-start gap-1.5 bg-muted/40 px-2.5 text-xs text-foreground hover:text-primary",
             compact && "max-w-[10rem]",
             className,
           )}
@@ -82,7 +85,7 @@ function OrgSwitcher({ className, compact = false }: OrgSwitcherProps) {
             </span>
           )}
           <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
-        </button>
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
