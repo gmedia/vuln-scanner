@@ -9,6 +9,7 @@ import {
   CardDescription,
 } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { buttonVariants } from "@/components/ui/buttonVariants";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -22,6 +23,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   canManageGuard,
   createEnrollToken,
@@ -465,25 +477,42 @@ export default function Guard() {
                             </TableCell>
                             <TableCell>
                               {!t.revoked_at && (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 text-xs text-destructive"
-                                  aria-label={`Cabut token ${t.label || t.id}`}
-                                  disabled={revokeMut.isPending}
-                                  onClick={() => {
-                                    if (
-                                      window.confirm(
-                                        "Cabut token ini? Host tidak bisa enroll lagi dengan token tersebut.",
-                                      )
-                                    ) {
-                                      revokeMut.mutate(t.id);
-                                    }
-                                  }}
-                                >
-                                  Cabut
-                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-8 text-xs text-destructive"
+                                      aria-label={`Cabut token ${t.label || t.id}`}
+                                      disabled={revokeMut.isPending}
+                                    >
+                                      Cabut
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>
+                                        Cabut token enroll?
+                                      </AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Host tidak bisa enroll lagi dengan
+                                        token tersebut.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Batal</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        className={buttonVariants({
+                                          variant: "destructive",
+                                        })}
+                                        onClick={() => revokeMut.mutate(t.id)}
+                                      >
+                                        Cabut
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                               )}
                             </TableCell>
                           </TableRow>
