@@ -1,6 +1,6 @@
 # Spec: shadcn/ui migration (SPA Sinexis / VulnScanner)
 
-**Status:** Wave A–C shipped (`main`, #346). Wave D pagination in progress (`feat/shadcn-pagination-credit-admin`). Remaining waves: plan only until an explicit verb.
+**Status:** Wave A–D shipped (`main`, #347). Wave E Accordion in progress (`feat/shadcn-accordion-guide-guard`). Remaining waves: plan only until an explicit verb.
 **Surface:** in-app SPA (`sinexis.app` dashboard), not a new marketing site.
 **Depends:** kit already in `frontend/src/components/ui/` · sidebar-03 shipped · visual wave popover/calendar/Guard/Guide on `feat/shadcn-popover-calendar-guard-guide` (PR #341, may land after this doc).
 **Not this epic:** mass Dependabot, password-eye unless requested, Command palette, RHF `form`, hard rebrand, Guard/Wazuh features, SIEM query builder.
@@ -37,7 +37,7 @@ Card padding stays `p-6` / `pt-0`. Do not restyle kit files to “match screensh
 
 ### Installed under `frontend/src/components/ui/`
 
-alert, alert-dialog, Badge, Button, Calendar, Card, DatePicker, DateTimePicker, Dialog, dropdown-menu, Input, Label, Pagination, Popover, Progress, ScrollArea, Select, Separator, sheet, sidebar, Skeleton, Table, Tabs, Textarea, Tooltip, breadcrumb.
+accordion, alert, alert-dialog, Badge, Button, Calendar, Card, DatePicker, DateTimePicker, Dialog, dropdown-menu, Input, Label, Pagination, Popover, Progress, ScrollArea, Select, Separator, sheet, sidebar, Skeleton, Table, Tabs, Textarea, Tooltip, breadcrumb.
 
 ### Installed but unused (or only tests / sidebar)
 
@@ -52,7 +52,7 @@ alert, alert-dialog, Badge, Button, Calendar, Card, DatePicker, DateTimePicker, 
 
 ### Not installed (official catalog ~46)
 
-accordion, avatar, carousel, chart, checkbox, collapsible, command, context-menu, drawer, form, hover-card, input-otp, menubar, navigation-menu, radio-group, resizable, slider, sonner, switch, toggle, toggle-group, aspect-ratio.
+avatar, carousel, chart, checkbox, collapsible, command, context-menu, drawer, form, hover-card, input-otp, menubar, navigation-menu, radio-group, resizable, slider, sonner, switch, toggle, toggle-group, aspect-ratio.
 
 **Do not add** unless a wave below names them: carousel, menubar, context-menu, slider, aspect-ratio, input-otp (no 2FA), resizable, navigation-menu (sidebar-03 is enough).
 
@@ -94,7 +94,7 @@ Verify **locally** (`cd frontend && rtk vitest …` on touched tests) **before p
 
 ### Wave D — pagination (S–M)
 
-**Add:** `Pagination.tsx` (buttons, not `<a>` — freeze `getByRole('button', { name: /previous page/i })`).
+**Shipped:** #347. `Pagination.tsx` (buttons, not `<a>` — freeze `getByRole('button', { name: /previous page/i })`).
 
 | Page | After |
 |------|--------|
@@ -103,7 +103,7 @@ Verify **locally** (`cd frontend && rtk vitest …` on touched tests) **before p
 
 ### Wave E — Accordion for long copy (M)
 
-**Add:** `accordion` and/or `collapsible`.
+**In progress:** `feat/shadcn-accordion-guide-guard`. **Add:** `Accordion.tsx`. Keep `guide-desktop-toc` (not Accordion). Keep `guard-distro-install-commands`. Update `UserGuide.test.tsx` (`closest("details")` → trigger `aria-expanded`).
 
 | Page | Today | After |
 |------|--------|--------|

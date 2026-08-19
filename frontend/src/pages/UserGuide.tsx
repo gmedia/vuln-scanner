@@ -23,6 +23,12 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/Accordion";
+import {
   Card,
   CardContent,
   CardHeader,
@@ -690,27 +696,31 @@ function UserGuide() {
                 <p className="text-sm font-medium text-foreground">
                   Perintah di host target (bedakan distro)
                 </p>
-                {GUARD_DISTRO_INSTALL_GUIDES.map((guide) => (
-                  <details
-                    key={guide.id}
-                    className="group rounded-md border border-border bg-muted/30"
-                  >
-                    <summary className="flex cursor-pointer list-none items-start justify-between gap-3 px-3 py-2.5 [&::-webkit-details-marker]:hidden">
-                      <span>
-                        <span className="block text-sm font-medium text-foreground">
-                          {guide.title}
-                        </span>
-                        <span className="mt-0.5 block text-xs text-muted-foreground">
-                          {guide.blurb}
-                        </span>
-                      </span>
-                      <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
-                    </summary>
-                    <pre className="mx-3 mb-3 overflow-x-auto whitespace-pre-wrap break-all rounded-md border border-border bg-background/80 p-3 font-mono text-[11px] leading-relaxed text-foreground">
-                      {guide.commands.join("\n")}
-                    </pre>
-                  </details>
-                ))}
+                 <Accordion type="single" collapsible className="w-full space-y-2">
+                   {GUARD_DISTRO_INSTALL_GUIDES.map((guide) => (
+                     <AccordionItem
+                       key={guide.id}
+                       value={guide.id}
+                       className="rounded-md border border-border bg-muted/30 px-3 last:border-b"
+                     >
+                       <AccordionTrigger>
+                         <span>
+                           <span className="block text-sm font-medium text-foreground">
+                             {guide.title}
+                           </span>
+                           <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
+                             {guide.blurb}
+                           </span>
+                         </span>
+                       </AccordionTrigger>
+                       <AccordionContent forceMount>
+                         <pre className="mb-1 overflow-x-auto whitespace-pre-wrap break-all rounded-md border border-border bg-background/80 p-3 font-mono text-[11px] leading-relaxed text-foreground">
+                           {guide.commands.join("\n")}
+                         </pre>
+                       </AccordionContent>
+                     </AccordionItem>
+                   ))}
+                 </Accordion>
                 <p className="text-xs text-muted-foreground">
                   {GUARD_DISTRO_INSTALL_FOOTER}
                 </p>
