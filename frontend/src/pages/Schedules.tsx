@@ -19,6 +19,18 @@ import {
   CardDescription,
 } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { buttonVariants } from "@/components/ui/buttonVariants";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -510,24 +522,40 @@ function Schedules() {
                           </Button>
                         )}
                         {canCreate && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            disabled={deleteMut.isPending}
-                            onClick={() => {
-                              if (
-                                window.confirm(
-                                  `Hapus jadwal untuk ${s.target}?`,
-                                )
-                              ) {
-                                deleteMut.mutate(s.id);
-                              }
-                            }}
-                            aria-label="Hapus jadwal"
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                disabled={deleteMut.isPending}
+                                aria-label="Hapus jadwal"
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Hapus jadwal?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Hapus jadwal untuk {s.target}?
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Batal</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className={buttonVariants({
+                                    variant: "destructive",
+                                  })}
+                                  onClick={() => deleteMut.mutate(s.id)}
+                                >
+                                  Hapus
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         )}
                       </div>
                     </div>
