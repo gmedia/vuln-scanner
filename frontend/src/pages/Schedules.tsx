@@ -559,9 +559,11 @@ function Schedules() {
                       </Alert>
                     )}
 
-                    <button
+                    <Button
                       type="button"
-                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto px-0 text-xs text-muted-foreground hover:bg-transparent hover:text-foreground"
                       onClick={() => toggleRuns(s.id)}
                       aria-expanded={runsOpen}
                     >
@@ -571,7 +573,7 @@ function Schedules() {
                         <ChevronRight className="h-3.5 w-3.5" />
                       )}
                       Riwayat scan
-                    </button>
+                    </Button>
                     {runsOpen && <ScheduleRunsPanel scheduleId={s.id} />}
                   </li>
                 );

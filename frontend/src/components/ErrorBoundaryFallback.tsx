@@ -58,13 +58,15 @@ export function ErrorBoundaryFallback({
             </pre>
           )}
           {!isDev && (
-            <button
+            <Button
               type="button"
+              variant="link"
+              size="sm"
               onClick={() => setShowDetails((v) => !v)}
-              className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              className="h-auto px-0 text-xs text-muted-foreground"
             >
               {showDetails ? "Hide technical details" : "Show technical details"}
-            </button>
+            </Button>
           )}
         </CardContent>
         <CardFooter className="flex flex-wrap gap-2">

@@ -206,7 +206,8 @@ export default function Guard() {
         </Alert>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm">
+      <Card>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6 text-sm">
         {statusQ.isLoading ? (
           <Skeleton className="h-6 w-48" />
         ) : statusQ.isError ? (
@@ -270,7 +271,8 @@ export default function Guard() {
             )}
           </>
         )}
-      </div>
+        </CardContent>
+      </Card>
 
       {!enabled && !statusQ.isLoading && (
         <Card data-testid="guard-disabled">

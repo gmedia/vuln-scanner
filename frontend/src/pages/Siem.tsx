@@ -574,28 +574,29 @@ export default function Siem() {
                 <ul className="space-y-2">
                   {cases.map((c) => (
                     <li key={c.id}>
-                      <button
+                      <Button
                         type="button"
-                        className="flex w-full items-center justify-between rounded-md border border-border px-3 py-2 text-left text-sm hover:bg-accent/40"
+                        variant="outline"
+                        className="h-auto w-full justify-between px-3 py-2 text-left text-sm font-normal"
                         onClick={() => setActiveCaseId(c.id)}
                       >
                         <span>{c.title}</span>
                         {statusBadge(c.status)}
-                      </button>
+                      </Button>
                     </li>
                   ))}
                 </ul>
               )}
 
               {activeCase && (
-                <div
-                  className="space-y-3 rounded-md border border-border p-3"
-                  data-testid="siem-case-detail"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h3 className="font-medium">{activeCase.title}</h3>
-                    {statusBadge(activeCase.status)}
-                  </div>
+                <Card data-testid="siem-case-detail">
+                  <CardHeader className="pb-0">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <CardTitle className="text-base">{activeCase.title}</CardTitle>
+                      {statusBadge(activeCase.status)}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
                   {canManage && (
                     <div className="flex flex-wrap gap-2">
                        {(["open", "ack", "closed"] as const).map((st) => (
@@ -654,7 +655,8 @@ export default function Siem() {
                       </Button>
                     </div>
                   )}
-                </div>
+                  </CardContent>
+                </Card>
               )}
             </CardContent>
           </Card>

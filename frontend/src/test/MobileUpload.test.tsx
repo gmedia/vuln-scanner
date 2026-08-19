@@ -370,9 +370,9 @@ describe("MobileUpload", () => {
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [file] } });
     await waitFor(() => {
-      const errorContainer = document.querySelector(".bg-red-600\\/10");
+      const errorContainer = screen.getByRole("alert");
       expect(errorContainer).toBeInTheDocument();
-      const svg = errorContainer?.querySelector("svg.lucide");
+      const svg = errorContainer.querySelector("svg.lucide");
       expect(svg).toBeInTheDocument();
     });
   });

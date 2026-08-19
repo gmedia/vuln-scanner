@@ -364,15 +364,17 @@ function Dashboard() {
             </CardTitle>
             {hiddenInternalCount > 0 && (
               <CardAction>
-                <button
+                <Button
                   type="button"
-                  className="text-[10px] text-muted-foreground underline-offset-2 hover:underline"
+                  variant="link"
+                  size="sm"
+                  className="h-auto px-0 text-[10px] text-muted-foreground"
                   onClick={() => setHideInternal((v) => !v)}
                 >
                   {hideInternal
                     ? `Target percobaan disembunyikan (${hiddenInternalCount})`
                     : "Sembunyikan target percobaan"}
-                </button>
+                </Button>
               </CardAction>
             )}
           </CardHeader>
