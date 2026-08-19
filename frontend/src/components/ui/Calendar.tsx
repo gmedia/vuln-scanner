@@ -48,13 +48,13 @@ function Calendar({
         button_previous: cn(
           defaults.button_previous,
           buttonVariants({ variant: "outline" }),
-          "static size-7 shrink-0 bg-transparent p-0 opacity-60 hover:opacity-100",
+          "absolute left-1 top-0 size-7 bg-transparent p-0 opacity-60 hover:opacity-100",
           classNames?.button_previous,
         ),
         button_next: cn(
           defaults.button_next,
           buttonVariants({ variant: "outline" }),
-          "static size-7 shrink-0 bg-transparent p-0 opacity-60 hover:opacity-100",
+          "absolute right-1 top-0 size-7 bg-transparent p-0 opacity-60 hover:opacity-100",
           classNames?.button_next,
         ),
         month_grid: cn(

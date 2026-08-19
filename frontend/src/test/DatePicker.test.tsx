@@ -43,6 +43,10 @@ describe("DatePicker", () => {
     expect(root!.contains(next)).toBe(true);
     expect(prev).toHaveClass("size-7");
     expect(next).toHaveClass("size-7");
+    expect(prev).toHaveClass("absolute");
+    expect(next).toHaveClass("absolute");
+    expect(prev).toHaveClass("left-1");
+    expect(next).toHaveClass("right-1");
   });
 
   it("calls onChange with empty string when cleared", async () => {
