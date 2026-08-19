@@ -39,6 +39,7 @@ describe("SeverityChart", () => {
     );
     const svg = container.querySelector("svg");
     expect(svg).toBeInTheDocument();
+    expect(screen.getByTestId("severity-chart-content")).toBeInTheDocument();
   });
 
   it("applies custom className", () => {
