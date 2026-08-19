@@ -118,7 +118,7 @@ function useActiveGuideSection() {
           return;
         }
         const readingY = 56 + 24;
-        let bestId = toc[0].id;
+        let bestId: string = toc[0].id;
         let bestDist = Number.POSITIVE_INFINITY;
         for (const node of nodes) {
           const dist = Math.abs(node.getBoundingClientRect().top - readingY);
