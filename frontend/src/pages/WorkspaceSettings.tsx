@@ -25,6 +25,14 @@ import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/Table";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -339,22 +347,35 @@ function WorkspaceSettings() {
             <p className="text-sm text-muted-foreground">Belum ada anggota.</p>
           )}
           {membersQuery.data && membersQuery.data.length > 0 && (
-            <ul className="divide-y divide-border" data-testid="members-list">
-              {membersQuery.data.map((m) => (
-                <li
-                  key={m.user_id}
-                  className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm"
-                >
-                  <span className="truncate text-foreground">{m.email}</span>
-                  <Badge
-                    variant={roleBadgeVariant(m.role)}
-                    className="text-[10px] uppercase"
-                  >
-                    {m.role}
-                  </Badge>
-                </li>
-              ))}
-            </ul>
+            <Table className="text-sm" data-testid="members-list">
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-[10px] uppercase tracking-wider">
+                    Email
+                  </TableHead>
+                  <TableHead className="w-[28%] text-right text-[10px] uppercase tracking-wider">
+                    Peran
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {membersQuery.data.map((m) => (
+                  <TableRow key={m.user_id}>
+                    <TableCell className="truncate text-foreground">
+                      {m.email}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Badge
+                        variant={roleBadgeVariant(m.role)}
+                        className="text-[10px] uppercase"
+                      >
+                        {m.role}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
@@ -448,39 +469,52 @@ function WorkspaceSettings() {
                 </p>
               )}
               {invitesQuery.data && invitesQuery.data.length > 0 && (
-                <ul
-                  className="divide-y divide-border"
-                  data-testid="invites-list"
-                >
-                  {invitesQuery.data.map((inv) => (
-                    <li
-                      key={inv.id}
-                      className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-foreground">{inv.email}</p>
-                        <p className="font-mono text-[10px] text-muted-foreground">
+                <Table className="text-sm" data-testid="invites-list">
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="text-[10px] uppercase tracking-wider">
+                        Email
+                      </TableHead>
+                      <TableHead className="text-[10px] uppercase tracking-wider">
+                        Peran
+                      </TableHead>
+                      <TableHead className="w-[1%] text-right text-[10px] uppercase tracking-wider">
+                        Aksi
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {invitesQuery.data.map((inv) => (
+                      <TableRow key={inv.id}>
+                        <TableCell className="min-w-0">
+                          <p className="truncate text-foreground">
+                            {inv.email}
+                          </p>
+                        </TableCell>
+                        <TableCell className="font-mono text-[10px] text-muted-foreground">
                           {inv.role}
                           {inv.expires_at
                             ? ` · exp ${new Date(inv.expires_at).toLocaleDateString("id-ID")}`
                             : ""}
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        data-testid={`revoke-invite-${inv.id}`}
-                        className="text-destructive hover:bg-destructive/10"
-                        disabled={revokeMut.isPending}
-                        onClick={() => revokeMut.mutate(inv.id)}
-                      >
-                        <Trash2 className="mr-1 h-3.5 w-3.5" />
-                        Cabut
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            data-testid={`revoke-invite-${inv.id}`}
+                            className="text-destructive hover:bg-destructive/10"
+                            disabled={revokeMut.isPending}
+                            onClick={() => revokeMut.mutate(inv.id)}
+                          >
+                            <Trash2 className="mr-1 h-3.5 w-3.5" />
+                            Cabut
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
             </CardContent>
           </Card>
