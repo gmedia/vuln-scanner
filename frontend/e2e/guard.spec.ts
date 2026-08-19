@@ -166,10 +166,11 @@ test.describe("Guard — Layer B mutations (CI / non-prod)", () => {
       .getByTestId("guard-enroll-token-row")
       .filter({ hasText: label });
     await expect(row).toBeVisible();
-    page.once("dialog", (d) => {
-      void d.accept();
-    });
     await row.getByRole("button", { name: /Cabut/ }).click();
+    const dialog = page.getByRole("alertdialog");
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText("Cabut token enroll?")).toBeVisible();
+    await dialog.getByRole("button", { name: "Cabut" }).click();
     await expect(row).toContainText("dicabut", { timeout: 20_000 });
     await expect(row.getByRole("button", { name: /Cabut/ })).toHaveCount(0);
   });
