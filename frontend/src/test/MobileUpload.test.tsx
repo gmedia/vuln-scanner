@@ -221,7 +221,9 @@ describe("MobileUpload", () => {
 
   it("handles drag and drop", async () => {
     render(<MobileUpload />);
-    const dropZone = screen.getByText(/drop \.apk or \.aab file here/i).parentElement as HTMLElement;
+    const dropZone = screen
+      .getByText(/drop \.apk or \.aab file here/i)
+      .closest('[data-slot="card"]') as HTMLElement;
     const file = new File(["test"], "app.apk", { type: "application/vnd.android.package-archive" });
     const dataTransfer = { files: [file] };
     fireEvent.dragOver(dropZone);
@@ -234,7 +236,9 @@ describe("MobileUpload", () => {
 
   it("shows error when dropping invalid file", async () => {
     render(<MobileUpload />);
-    const dropZone = screen.getByText(/drop \.apk or \.aab file here/i).parentElement as HTMLElement;
+    const dropZone = screen
+      .getByText(/drop \.apk or \.aab file here/i)
+      .closest('[data-slot="card"]') as HTMLElement;
     const file = new File(["test"], "test.txt", { type: "text/plain" });
     const dataTransfer = { files: [file] };
     fireEvent.drop(dropZone, { dataTransfer });
@@ -245,7 +249,9 @@ describe("MobileUpload", () => {
 
   it("handles drag leave", async () => {
     render(<MobileUpload />);
-    const dropZone = screen.getByText(/drop \.apk or \.aab file here/i).parentElement as HTMLElement;
+    const dropZone = screen
+      .getByText(/drop \.apk or \.aab file here/i)
+      .closest('[data-slot="card"]') as HTMLElement;
     fireEvent.dragOver(dropZone);
     expect(dropZone).toHaveClass("border-primary");
     fireEvent.dragLeave(dropZone);
@@ -318,7 +324,9 @@ describe("MobileUpload", () => {
 
   it("drop zone has correct styling when dragging", () => {
     render(<MobileUpload />);
-    const dropZone = screen.getByText(/drop \.apk or \.aab file here/i).parentElement as HTMLElement;
+    const dropZone = screen
+      .getByText(/drop \.apk or \.aab file here/i)
+      .closest('[data-slot="card"]') as HTMLElement;
     fireEvent.dragOver(dropZone);
     expect(dropZone.className).toContain("border-primary");
     expect(dropZone.className).toContain("bg-primary/5");
@@ -326,7 +334,9 @@ describe("MobileUpload", () => {
 
   it("drop zone has correct styling when not dragging", () => {
     render(<MobileUpload />);
-    const dropZone = screen.getByText(/drop \.apk or \.aab file here/i).parentElement as HTMLElement;
+    const dropZone = screen
+      .getByText(/drop \.apk or \.aab file here/i)
+      .closest('[data-slot="card"]') as HTMLElement;
     expect(dropZone.className).toContain("border-muted-foreground/40");
   });
 
