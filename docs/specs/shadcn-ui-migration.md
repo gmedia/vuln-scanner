@@ -1,6 +1,6 @@
 # Spec: shadcn/ui migration (SPA Sinexis / VulnScanner)
 
-**Status:** Wave A in progress (`feat/shadcn-alert-dialog-confirms`). Remaining waves: plan only until an explicit verb.
+**Status:** Wave A shipped (`main`). Wave B in progress (`feat/shadcn-tabs-scan-siem`). Remaining waves: plan only until an explicit verb.
 **Surface:** in-app SPA (`sinexis.app` dashboard), not a new marketing site.
 **Depends:** kit already in `frontend/src/components/ui/` · sidebar-03 shipped · visual wave popover/calendar/Guard/Guide on `feat/shadcn-popover-calendar-guard-guide` (PR #341, may land after this doc).
 **Not this epic:** mass Dependabot, password-eye unless requested, Command palette, RHF `form`, hard rebrand, Guard/Wazuh features, SIEM query builder.
@@ -22,6 +22,7 @@ Default shadcn primitives already look correct. DIY markup (`window.confirm`, na
 | `user-menu`, `sign-out`, `header-credits` | `Header.tsx` |
 | `org-switcher`, `org-switcher-menu`, `org-option-*`, `org-members-link` | `OrgSwitcher.tsx` |
 | `new-scan-cta` | `Dashboard.tsx` |
+| `export-executive`, `rescan-button` | `ScanDetail.tsx` |
 | `siem-since`, `siem-until` | `Siem.tsx` (`DateTimePicker` `id`) |
 | `guide-desktop-toc` | `UserGuide.tsx` |
 | `guard-state`, `guard-disabled`, `guard-host-enroll-steps`, `guard-agent-install-steps`, `guard-distro-install-commands`, `guard-enroll-token-row`, `guard-agents`, `guard-alerts` | `Guard.tsx` (+ Guide distro block) |
@@ -41,7 +42,7 @@ alert, alert-dialog, Badge, Button, Calendar, Card, DatePicker, DateTimePicker, 
 | Primitive | Notes |
 |-----------|--------|
 | **Dialog** | Tests / generic modal — confirms use **alert-dialog** |
-| **Tabs** | Tests only — ScanDetail / SIEM / Guard |
+| **Tabs** | ScanDetail + SIEM (Wave B); Guard optional skip |
 | **breadcrumb** | No page imports — AppShell optional |
 | **Tooltip** | Sidebar only |
 | **Sheet** | Mobile sidebar only |
