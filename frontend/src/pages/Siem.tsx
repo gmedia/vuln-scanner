@@ -9,6 +9,7 @@ import {
   CardDescription,
 } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { DateTimePicker } from "@/components/ui/DateTimePicker";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -319,23 +320,23 @@ export default function Siem() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-12 items-end gap-3">
                 <div className="col-span-12 sm:col-span-6 xl:col-span-2">
-                  <Label htmlFor="siem-since">Sejak (dd/mm/yyyy)</Label>
-                  <Input
+                  <Label htmlFor="siem-since">Sejak (dd/mm/yyyy 24 jam)</Label>
+                  <DateTimePicker
                     id="siem-since"
-                    type="datetime-local"
-                    lang="id-ID"
                     value={since}
-                    onChange={(e) => setSince(e.target.value)}
+                    onChange={setSince}
+                    placeholder="dd/mm/yyyy HH:mm"
+                    aria-label="Sejak"
                   />
                 </div>
                 <div className="col-span-12 sm:col-span-6 xl:col-span-2">
-                  <Label htmlFor="siem-until">Sampai (dd/mm/yyyy)</Label>
-                  <Input
+                  <Label htmlFor="siem-until">Sampai (dd/mm/yyyy 24 jam)</Label>
+                  <DateTimePicker
                     id="siem-until"
-                    type="datetime-local"
-                    lang="id-ID"
                     value={until}
-                    onChange={(e) => setUntil(e.target.value)}
+                    onChange={setUntil}
+                    placeholder="dd/mm/yyyy HH:mm"
+                    aria-label="Sampai"
                   />
                 </div>
                 <div className="col-span-6 sm:col-span-4 xl:col-span-1">
