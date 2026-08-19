@@ -126,6 +126,8 @@ describe("SIEM page", () => {
     expect(screen.getByText("L10 · Tinggi")).toBeInTheDocument();
     expect(screen.getByLabelText("Kotak pencarian")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Terapkan" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Cari event" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Kasus" })).toBeInTheDocument();
 
     await user.click(screen.getByText("Login failed"));
     expect(screen.getByTestId("siem-event-detail")).toBeInTheDocument();
