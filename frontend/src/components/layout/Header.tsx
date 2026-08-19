@@ -6,6 +6,7 @@ import { useScanStore } from "@/store/scanStore";
 import { useAuthStore } from "@/store/authStore";
 import { useCreditStore } from "@/store/creditStore";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,35 +73,39 @@ function Header({ children }: HeaderProps) {
         {isAuthenticated && <OrgSwitcher className="hidden sm:block" />}
 
         {isAuthenticated && (
-          <Link
-            to="/credit-history"
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs text-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            title="Saldo kredit pribadi"
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 gap-1.5 bg-muted/40 px-2.5 text-xs text-foreground hover:text-primary"
+            asChild
           >
-            <Coins className="h-3.5 w-3.5 text-primary" aria-hidden />
-            <span className="text-muted-foreground hidden sm:inline">
+            <Link to="/credit-history" title="Saldo kredit pribadi">
+              <Coins className="h-3.5 w-3.5 text-primary" aria-hidden />
+              <span className="hidden text-muted-foreground sm:inline">
                 Kredit
-            </span>
-            <span
-              className="font-mono font-bold text-primary tabular-nums"
-              data-testid="header-credits"
-            >
-              {credits}
-            </span>
-          </Link>
+              </span>
+              <span
+                className="font-mono font-bold text-primary tabular-nums"
+                data-testid="header-credits"
+              >
+                {credits}
+              </span>
+            </Link>
+          </Button>
         )}
 
         {isAuthenticated && user && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button
+              <Button
                 type="button"
-                className="flex min-h-9 items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                variant="ghost"
+                className="h-9 gap-2 px-2 text-sm text-muted-foreground"
               >
                 <User className="h-4 w-4" />
                 <span className="hidden text-xs sm:inline">{user.email}</span>
                 <ChevronDown className="h-3 w-3" />
-              </button>
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
