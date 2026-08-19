@@ -248,6 +248,24 @@ body {
   }
 }
 
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
 /* Animation utility classes */
 @utility animate-in {
   animation: animate-in 200ms ease-out;
@@ -303,6 +321,14 @@ body {
 
 @utility slide-out-to-top-48\% {
   animation: slide-out-to-top-48\%200msease-out;
+}
+
+@utility animate-accordion-down {
+  animation: accordion-down 200ms ease-out;
+}
+
+@utility animate-accordion-up {
+  animation: accordion-up 200ms ease-out;
 }
 
 .dark {
