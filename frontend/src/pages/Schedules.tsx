@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -37,6 +37,14 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { Badge } from "@/components/ui/Badge";
 import { Progress } from "@/components/ui/Progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/Table";
 import {
   Select,
   SelectContent,
@@ -435,34 +443,72 @@ function Schedules() {
             </p>
           )}
           {!isLoading && data && data.length > 0 && (
-            <ul className="divide-y divide-border">
-              {data.map((s: ScanSchedule) => {
-                const runsOpen = !!expandedRuns[s.id];
-                const mappedErr = mapScheduleError(s.last_error);
-                const creditDisabled =
-                  !s.enabled && isCreditError(s.last_error);
+            <Table className="text-sm">
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-[10px] uppercase tracking-wider">
+                    Jadwal
+                  </TableHead>
+                  <TableHead className="hidden sm:table-cell text-[10px] uppercase tracking-wider">
+                    Berikutnya
+                  </TableHead>
+                  <TableHead className="w-[1%] text-right text-[10px] uppercase tracking-wider">
+                    Aksi
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.map((s: ScanSchedule) => {
+                  const runsOpen = !!expandedRuns[s.id];
+                  const mappedErr = mapScheduleError(s.last_error);
+                  const creditDisabled =
+                    !s.enabled && isCreditError(s.last_error);
 
-                return (
-                  <li key={s.id} className="space-y-2 py-3">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="min-w-0 space-y-0.5">
-                        <p className="truncate text-sm font-medium text-foreground">
-                          {s.name || s.target}
-                          <span className="ml-2 text-xs font-normal text-muted-foreground">
-                            {s.scan_type} ·{" "}
-                            {s.cadence === "weekly" ? "mingguan" : "bulanan"}
-                          </span>
-                          {!s.enabled && (
-                            <Badge
-                              variant="default"
-                              className="ml-2 text-[10px]"
-                            >
-                              nonaktif
-                            </Badge>
-                          )}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Berikutnya: {formatWhen(s.next_run_at)}
+                  return (
+                    <Fragment key={s.id}>
+                      <TableRow>
+                        <TableCell className="align-top">
+                          <div className="min-w-0 space-y-0.5">
+                            <p className="truncate text-sm font-medium text-foreground">
+                              {s.name || s.target}
+                              <span className="ml-2 text-xs font-normal text-muted-foreground">
+                                {s.scan_type} ·{" "}
+                                {s.cadence === "weekly"
+                                  ? "mingguan"
+                                  : "bulanan"}
+                              </span>
+                              {!s.enabled && (
+                                <Badge
+                                  variant="default"
+                                  className="ml-2 text-[10px]"
+                                >
+                                  nonaktif
+                                </Badge>
+                              )}
+                            </p>
+                            <p className="text-xs text-muted-foreground sm:hidden">
+                              Berikutnya: {formatWhen(s.next_run_at)}
+                              {s.last_job_id && (
+                                <>
+                                  {" · "}
+                                  <Link
+                                    to={`/scan/${s.last_job_id}`}
+                                    className="text-primary hover:underline"
+                                  >
+                                    scan terakhir
+                                  </Link>
+                                </>
+                              )}
+                            </p>
+                            {s.notify_email && (
+                              <p className="text-xs text-muted-foreground">
+                                Notifikasi: {s.notify_email}
+                              </p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden align-top text-xs text-muted-foreground sm:table-cell">
+                          {formatWhen(s.next_run_at)}
                           {s.last_job_id && (
                             <>
                               {" · "}
@@ -474,14 +520,9 @@ function Schedules() {
                               </Link>
                             </>
                           )}
-                        </p>
-                        {s.notify_email && (
-                          <p className="text-xs text-muted-foreground">
-                            Notifikasi: {s.notify_email}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex shrink-0 flex-wrap items-center gap-2">
+                        </TableCell>
+                        <TableCell className="align-top">
+                          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
                         {s.last_job_id && (
                           <Button
                             type="button"
@@ -557,56 +598,65 @@ function Schedules() {
                             </AlertDialogContent>
                           </AlertDialog>
                         )}
-                      </div>
-                    </div>
-
-                    {mappedErr && (
-                      <Alert
-                        variant={creditDisabled ? "default" : "destructive"}
-                        className={
-                          creditDisabled
-                            ? "border-amber-500/40 bg-amber-500/10 text-xs text-amber-200"
-                            : "border-destructive/40 text-xs"
-                        }
-                      >
-                        <AlertTriangle />
-                        <AlertDescription>
-                          <p>{mappedErr}</p>
-                          {creditDisabled && (
-                            <p className="mt-1">
-                              <Link
-                                to="/credit-history"
-                                className="font-medium text-primary hover:underline"
-                              >
-                                Lihat riwayat kredit
-                              </Link>{" "}
-                              lalu aktifkan kembali setelah top-up.
-                            </p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      <TableRow className="hover:bg-transparent">
+                        <TableCell colSpan={3} className="space-y-2 pt-0">
+                          {mappedErr && (
+                            <Alert
+                              variant={
+                                creditDisabled ? "default" : "destructive"
+                              }
+                              className={
+                                creditDisabled
+                                  ? "border-amber-500/40 bg-amber-500/10 text-xs text-amber-200"
+                                  : "border-destructive/40 text-xs"
+                              }
+                            >
+                              <AlertTriangle />
+                              <AlertDescription>
+                                <p>{mappedErr}</p>
+                                {creditDisabled && (
+                                  <p className="mt-1">
+                                    <Link
+                                      to="/credit-history"
+                                      className="font-medium text-primary hover:underline"
+                                    >
+                                      Lihat riwayat kredit
+                                    </Link>{" "}
+                                    lalu aktifkan kembali setelah top-up.
+                                  </p>
+                                )}
+                              </AlertDescription>
+                            </Alert>
                           )}
-                        </AlertDescription>
-                      </Alert>
-                    )}
 
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-auto px-0 text-xs text-muted-foreground hover:bg-transparent hover:text-foreground"
-                      onClick={() => toggleRuns(s.id)}
-                      aria-expanded={runsOpen}
-                    >
-                      {runsOpen ? (
-                        <ChevronDown className="h-3.5 w-3.5" />
-                      ) : (
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      )}
-                      Riwayat scan
-                    </Button>
-                    {runsOpen && <ScheduleRunsPanel scheduleId={s.id} />}
-                  </li>
-                );
-              })}
-            </ul>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-auto px-0 text-xs text-muted-foreground hover:bg-transparent hover:text-foreground"
+                            onClick={() => toggleRuns(s.id)}
+                            aria-expanded={runsOpen}
+                          >
+                            {runsOpen ? (
+                              <ChevronDown className="h-3.5 w-3.5" />
+                            ) : (
+                              <ChevronRight className="h-3.5 w-3.5" />
+                            )}
+                            Riwayat scan
+                          </Button>
+                          {runsOpen && (
+                            <ScheduleRunsPanel scheduleId={s.id} />
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    </Fragment>
+                  );
+                })}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
