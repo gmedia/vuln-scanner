@@ -191,6 +191,43 @@ describe("Schedules page", () => {
     expect(mockDownload).toHaveBeenCalledWith("job-1", "executive");
   });
 
+  it("confirms schedule delete in AlertDialog then calls delete", async () => {
+    mockList.mockResolvedValue([
+      { ...sampleSchedule, last_job_id: null },
+    ]);
+    mockDelete.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderAt();
+    await screen.findByText("Weekly external");
+    await user.click(screen.getByRole("button", { name: "Hapus jadwal" }));
+    expect(
+      await screen.findByRole("alertdialog"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Hapus jadwal untuk example.com/),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Hapus" }));
+    await waitFor(() =>
+      expect(mockDelete).toHaveBeenCalledWith("sched-1", expect.anything()),
+    );
+  });
+
+  it("cancels schedule delete without calling API", async () => {
+    mockList.mockResolvedValue([
+      { ...sampleSchedule, last_job_id: null },
+    ]);
+    const user = userEvent.setup();
+    renderAt();
+    await screen.findByText("Weekly external");
+    await user.click(screen.getByRole("button", { name: "Hapus jadwal" }));
+    await screen.findByRole("alertdialog");
+    await user.click(screen.getByRole("button", { name: "Batal" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument(),
+    );
+    expect(mockDelete).not.toHaveBeenCalled();
+  });
+
   it("surfaces toggle errors", async () => {
     mockList.mockResolvedValue([
       { ...sampleSchedule, enabled: false, last_job_id: null },

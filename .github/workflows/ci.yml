@@ -219,6 +219,36 @@ jobs:
         run: npm ci
         working-directory: frontend
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            playwright-chromium-${{ runner.os }}-
+
+      - name: Install Playwright OS deps
+        timeout-minutes: 3
+        continue-on-error: true
+        working-directory: frontend
+        run: sudo npx playwright install-deps chromium
+
+      - name: Install Playwright Chromium
+        timeout-minutes: 8
+        working-directory: frontend
+        run: |
+          set -euo pipefail
+          # Bound each download so a hung CDN cannot eat the whole step timeout.
+          for attempt in 1 2 3; do
+            echo "Playwright chromium download attempt ${attempt}"
+            if timeout 120 npx playwright install chromium; then
+              exit 0
+            fi
+            echo "Playwright chromium download failed (attempt ${attempt})"
+            sleep $((attempt * 5))
+          done
+          exit 1
+
       - name: Start full stack via Docker Compose
         run: docker compose -f docker-compose.yml up -d --wait
 
@@ -246,11 +276,6 @@ jobs:
             echo "  Warming route: $route"
             curl -s -o /dev/null -w "  → HTTP %{http_code}\n" "http://localhost:5173$route" || true
           done
-
-      - name: Install Playwright with Chromium
-        timeout-minutes: 8
-        run: npx playwright install --with-deps chromium
-        working-directory: frontend
 
       - name: Run Playwright E2E tests
         run: npx playwright test
