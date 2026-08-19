@@ -1,6 +1,6 @@
 # Spec: shadcn/ui migration (SPA Sinexis / VulnScanner)
 
-**Status:** Wave A–E shipped (`main`, #348). Wave F sonner + chart in progress (`feat/shadcn-sonner-severity-chart`). Remaining waves: plan only until an explicit verb.
+**Status:** Wave A–F shipped (`main`, #349). Remaining leftover: findings filter (checkbox + dropdown-menu). Wave G skip unless asked.
 **Surface:** in-app SPA (`sinexis.app` dashboard), not a new marketing site.
 **Depends:** kit already in `frontend/src/components/ui/` · sidebar-03 shipped · visual wave popover/calendar/Guard/Guide on `feat/shadcn-popover-calendar-guard-guide` (PR #341, may land after this doc).
 **Not this epic:** mass Dependabot, password-eye unless requested, Command palette, RHF `form`, hard rebrand, Guard/Wazuh features, SIEM query builder.
@@ -115,7 +115,7 @@ User Guide **desktop TOC** stays Card + ScrollArea + `guide-desktop-toc`. Do not
 
 ### Wave F — feedback + charts (M)
 
-**In progress:** `feat/shadcn-sonner-severity-chart`. **Add:** `sonner` + `chart`. Do **not** add `next-themes` (SPA has no ThemeProvider — Toaster uses `theme="system"`). Do **not** keep CLI `card.tsx` (imports stay `@/components/ui/Card`). Skip AdminDashboard KPI.
+**Shipped:** `main` (#349). `sonner` + `chart`. No `next-themes`. Imports stay `@/components/ui/Card`. AdminDashboard KPI skipped.
 
 | Item | After |
 |------|--------|
@@ -186,9 +186,9 @@ npx shadcn@latest add <component> --yes
 
 ---
 
-## 7) Suggested first PR after #348 merges
+## 7) Suggested first PR after #349 merges
 
-**Wave F only:** sonner + SeverityChart chart wrapper.
+**Findings filter only:** checkbox + dropdown-menu on ScanDetail. Freeze `export-executive`, `rescan-button`.
 
 Then Wave G only with an explicit verb.
 
