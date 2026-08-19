@@ -1,6 +1,6 @@
 # Spec: shadcn/ui migration (SPA Sinexis / VulnScanner)
 
-**Status:** Wave A + B shipped (`main`). Wave C in progress (`feat/shadcn-table-workspace-schedules`). Remaining waves: plan only until an explicit verb.
+**Status:** Wave A–C shipped (`main`, #346). Wave D pagination in progress (`feat/shadcn-pagination-credit-admin`). Remaining waves: plan only until an explicit verb.
 **Surface:** in-app SPA (`sinexis.app` dashboard), not a new marketing site.
 **Depends:** kit already in `frontend/src/components/ui/` · sidebar-03 shipped · visual wave popover/calendar/Guard/Guide on `feat/shadcn-popover-calendar-guard-guide` (PR #341, may land after this doc).
 **Not this epic:** mass Dependabot, password-eye unless requested, Command palette, RHF `form`, hard rebrand, Guard/Wazuh features, SIEM query builder.
@@ -37,7 +37,7 @@ Card padding stays `p-6` / `pt-0`. Do not restyle kit files to “match screensh
 
 ### Installed under `frontend/src/components/ui/`
 
-alert, alert-dialog, Badge, Button, Calendar, Card, DatePicker, DateTimePicker, Dialog, dropdown-menu, Input, Label, Popover, Progress, ScrollArea, Select, Separator, sheet, sidebar, Skeleton, Table, Tabs, Textarea, Tooltip, breadcrumb.
+alert, alert-dialog, Badge, Button, Calendar, Card, DatePicker, DateTimePicker, Dialog, dropdown-menu, Input, Label, Pagination, Popover, Progress, ScrollArea, Select, Separator, sheet, sidebar, Skeleton, Table, Tabs, Textarea, Tooltip, breadcrumb.
 
 ### Installed but unused (or only tests / sidebar)
 
@@ -52,7 +52,7 @@ alert, alert-dialog, Badge, Button, Calendar, Card, DatePicker, DateTimePicker, 
 
 ### Not installed (official catalog ~46)
 
-accordion, avatar, carousel, chart, checkbox, collapsible, command, context-menu, drawer, form, hover-card, input-otp, menubar, navigation-menu, pagination, radio-group, resizable, slider, sonner, switch, toggle, toggle-group, aspect-ratio.
+accordion, avatar, carousel, chart, checkbox, collapsible, command, context-menu, drawer, form, hover-card, input-otp, menubar, navigation-menu, radio-group, resizable, slider, sonner, switch, toggle, toggle-group, aspect-ratio.
 
 **Do not add** unless a wave below names them: carousel, menubar, context-menu, slider, aspect-ratio, input-otp (no 2FA), resizable, navigation-menu (sidebar-03 is enough).
 
@@ -85,7 +85,7 @@ Verify **locally** (`cd frontend && rtk vitest …` on touched tests) **before p
 
 ### Wave C — lists that are not Table (S)
 
-**In progress:** `feat/shadcn-table-workspace-schedules`. Keep `invite-*`, `members-list`, `schedule-create-card`. Empty copy unchanged (`Belum ada anggota.` / `Tidak ada undangan tertunda.` / `Belum ada jadwal. Buat scan domain/IP mingguan atau bulanan di atas.`).
+**Shipped:** #346. Keep `invite-*`, `members-list`, `schedule-create-card`. Empty copy unchanged (`Belum ada anggota.` / `Tidak ada undangan tertunda.` / `Belum ada jadwal. Buat scan domain/IP mingguan atau bulanan di atas.`).
 
 | Page | After |
 |------|--------|
@@ -94,12 +94,12 @@ Verify **locally** (`cd frontend && rtk vitest …` on touched tests) **before p
 
 ### Wave D — pagination (S–M)
 
-**Add:** `pagination`.
+**Add:** `Pagination.tsx` (buttons, not `<a>` — freeze `getByRole('button', { name: /previous page/i })`).
 
 | Page | After |
 |------|--------|
-| CreditHistory | shadcn Pagination under Table |
-| AdminUsers | Same if list is paged |
+| CreditHistory | shadcn Pagination under Table; keep `Page n of m`, `aria-label` Previous/Next page, hide when `totalPages <= 1` |
+| AdminUsers | Same; add matching `aria-label` |
 
 ### Wave E — Accordion for long copy (M)
 
