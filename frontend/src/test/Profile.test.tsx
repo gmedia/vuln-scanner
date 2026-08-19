@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import Profile from "@/pages/Profile";
 import { useAuthStore } from "@/store/authStore";
+import { Toaster } from "@/components/ui/sonner";
 
 let mockUpdateProfile: ReturnType<typeof vi.fn>;
 let mockChangePassword: ReturnType<typeof vi.fn>;
@@ -139,7 +140,12 @@ describe("Profile", () => {
     });
 
     it("shows success message after successful update", async () => {
-      render(<Profile />);
+      render(
+        <>
+          <Toaster />
+          <Profile />
+        </>,
+      );
       fireEvent.change(screen.getByPlaceholderText("new@example.com"), {
         target: { value: "new@example.com" },
       });
@@ -228,7 +234,12 @@ describe("Profile", () => {
     });
 
     it("shows success message after successful change", async () => {
-      render(<Profile />);
+      render(
+        <>
+          <Toaster />
+          <Profile />
+        </>,
+      );
       const passInputs = screen.getAllByPlaceholderText("••••••••");
       const newPassInput = screen.getByPlaceholderText(
         "Min 8 chars, uppercase, lowercase, digit",

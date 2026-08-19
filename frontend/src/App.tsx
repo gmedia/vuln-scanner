@@ -6,6 +6,7 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { ErrorBoundaryFallback } from "@/components/ErrorBoundaryFallback";
 import { PageBoundary } from "@/components/PageBoundary";
+import { Toaster } from "@/components/ui/sonner";
 
 const Landing = lazy(() => import("@/pages/Landing"));
 const Login = lazy(() => import("@/pages/Login"));
@@ -34,6 +35,7 @@ const NotFound = lazy(() => import("@/pages/NotFound"));
 function App() {
   return (
     <ErrorBoundary FallbackComponent={ErrorBoundaryFallback}>
+      <Toaster />
       <Routes>
         {/* Public routes — no AppShell wrapper */}
         <Route path="/" element={<PageBoundary component={Landing} />} />

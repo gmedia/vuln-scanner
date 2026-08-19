@@ -8,6 +8,22 @@ class ResizeObserverMock {
 }
 window.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver;
 
+if (typeof window.matchMedia !== "function") {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }),
+  });
+}
+
 // jsdom elements have 0 dimensions by default; give charts a usable size
 const originalGetBoundingClientRect = Element.prototype.getBoundingClientRect;
 Element.prototype.getBoundingClientRect = function () {

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { User, Loader2, CheckCircle, AlertCircle, Timer } from "lucide-react";
+import { User, Loader2, AlertCircle, Timer } from "lucide-react";
+import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
 import { useRateLimitCooldown } from "@/hooks/useRateLimitCooldown";
 import { Input } from "@/components/ui/Input";
@@ -31,6 +32,7 @@ function Profile() {
     const ok = await updateProfile(email, profilePassword);
     if (ok) {
       setProfileSuccess(true);
+      toast.success("Profile updated");
       setProfilePassword("");
       setEmail("");
     }
@@ -52,6 +54,7 @@ function Profile() {
     const ok = await changePassword(currentPassword, newPassword, confirmPassword);
     if (ok) {
       setPasswordSuccess(true);
+      toast.success("Password changed");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -108,12 +111,6 @@ function Profile() {
               <p className="flex items-center gap-1 text-xs text-amber-400">
                 <Timer className="h-3 w-3" />
                 Too many attempts. Wait {profileCooldown.cooldown}s
-              </p>
-            )}
-            {profileSuccess && (
-              <p className="flex items-center gap-1 text-xs text-green-400">
-                <CheckCircle className="h-3 w-3" />
-                Profile updated
               </p>
             )}
             {error && profileCooldown.cooldown === 0 && !profileSuccess && (
@@ -194,12 +191,6 @@ function Profile() {
               <p className="flex items-center gap-1 text-xs text-amber-400">
                 <Timer className="h-3 w-3" />
                 Too many attempts. Wait {passwordCooldown.cooldown}s
-              </p>
-            )}
-            {passwordSuccess && (
-              <p className="flex items-center gap-1 text-xs text-green-400">
-                <CheckCircle className="h-3 w-3" />
-                Password changed
               </p>
             )}
             {passwordError && passwordCooldown.cooldown === 0 && !passwordSuccess && (

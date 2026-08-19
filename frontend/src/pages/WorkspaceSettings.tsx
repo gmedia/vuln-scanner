@@ -51,6 +51,7 @@ import {
   type InviteRole,
 } from "@/api/orgs";
 import type { ApiError } from "@/lib/utils";
+import { toast } from "sonner";
 
 function apiDetail(err: unknown, fallback: string): string {
   if (err && typeof err === "object" && "response" in err) {
@@ -92,13 +93,11 @@ function WorkspaceSettings() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<InviteRole>("member");
   const [formError, setFormError] = useState<string | null>(null);
-  const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
   const [newOrgName, setNewOrgName] = useState("");
   const [newOrgSlug, setNewOrgSlug] = useState("");
   const [createError, setCreateError] = useState<string | null>(null);
 
-  const [acceptMsg, setAcceptMsg] = useState<string | null>(null);
   const [acceptError, setAcceptError] = useState<string | null>(null);
 
   const membersQuery = useQuery({
@@ -123,12 +122,11 @@ function WorkspaceSettings() {
       }),
     onSuccess: () => {
       setFormError(null);
-      setFormSuccess(`Undangan dikirim ke ${inviteEmail.trim()}`);
+      toast.success(`Undangan dikirim ke ${inviteEmail.trim()}`);
       setInviteEmail("");
       void qc.invalidateQueries({ queryKey: ["org-invites", orgId] });
     },
     onError: (err: unknown) => {
-      setFormSuccess(null);
       setFormError(apiDetail(err, "Gagal mengirim undangan"));
     },
   });
@@ -136,6 +134,7 @@ function WorkspaceSettings() {
   const revokeMut = useMutation({
     mutationFn: (inviteId: string) => revokeInvite(orgId!, inviteId),
     onSuccess: () => {
+      toast.success("Undangan dicabut");
       void qc.invalidateQueries({ queryKey: ["org-invites", orgId] });
     },
     onError: (err: unknown) => {
@@ -153,6 +152,7 @@ function WorkspaceSettings() {
       setCreateError(null);
       setNewOrgName("");
       setNewOrgSlug("");
+      toast.success("Organisasi dibuat");
       await loadOrganizations();
       await switchOrganization(org.id);
       void qc.invalidateQueries();
@@ -166,7 +166,7 @@ function WorkspaceSettings() {
     mutationFn: (token: string) => acceptInvite(token),
     onSuccess: async (res) => {
       setAcceptError(null);
-      setAcceptMsg(res.message ?? "Undangan diterima");
+      toast.success(res.message ?? "Undangan diterima");
       setSearchParams({});
       await loadOrganizations();
       if (res.organization_id) {
@@ -175,14 +175,12 @@ function WorkspaceSettings() {
       void qc.invalidateQueries();
     },
     onError: (err: unknown) => {
-      setAcceptMsg(null);
       setAcceptError(apiDetail(err, "Gagal menerima undangan"));
     },
   });
 
   function onInviteSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setFormSuccess(null);
     setFormError(null);
     if (!inviteEmail.trim()) {
       setFormError("Email wajib diisi");
@@ -238,11 +236,6 @@ function WorkspaceSettings() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {acceptMsg && (
-              <p className="text-sm text-primary" role="status">
-                {acceptMsg}
-              </p>
-            )}
             {acceptError && (
               <Alert variant="destructive" className="border-destructive/40">
                 <AlertTriangle />
@@ -429,11 +422,6 @@ function WorkspaceSettings() {
                     <AlertTriangle />
                     <AlertDescription>{formError}</AlertDescription>
                   </Alert>
-                )}
-                {formSuccess && (
-                  <p className="text-sm text-primary" role="status">
-                    {formSuccess}
-                  </p>
                 )}
                 <Button
                   type="submit"

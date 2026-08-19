@@ -53,6 +53,7 @@ import {
 } from "@/api/guard";
 import { useAuthStore } from "@/store/authStore";
 import type { ApiError } from "@/lib/utils";
+import { toast } from "sonner";
 import {
   buildEnrollCurlExample,
   GUARD_AGENT_INSTALL_INTRO,
@@ -148,6 +149,7 @@ export default function Guard() {
     mutationFn: enableGuard,
     onSuccess: () => {
       setActionError(null);
+      toast.success("Guard diaktifkan");
       invalidate();
     },
     onError: (e) => setActionError(apiDetail(e, "Gagal mengaktifkan Guard")),
@@ -157,6 +159,7 @@ export default function Guard() {
     mutationFn: syncGuard,
     onSuccess: () => {
       setActionError(null);
+      toast.success("Sinkronisasi selesai");
       invalidate();
     },
     onError: (e) => setActionError(apiDetail(e, "Sinkronisasi gagal")),
@@ -168,6 +171,7 @@ export default function Guard() {
       setRawToken(data.token);
       setTokenLabel("");
       setActionError(null);
+      toast.success("Token enroll dibuat");
       invalidate();
     },
     onError: (e) => setActionError(apiDetail(e, "Gagal membuat token enroll")),
@@ -177,6 +181,7 @@ export default function Guard() {
     mutationFn: (id: string) => revokeEnrollToken(id),
     onSuccess: () => {
       setActionError(null);
+      toast.success("Token enroll dicabut");
       invalidate();
     },
     onError: (e) => setActionError(apiDetail(e, "Gagal mencabut token enroll")),

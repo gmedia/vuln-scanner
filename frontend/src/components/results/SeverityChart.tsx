@@ -1,6 +1,12 @@
-import { PieChart, Pie, Cell, Label, Tooltip, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, Label } from "recharts";
 import { AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 
 const PIE_COLORS = {
   critical: "#ef4444",
@@ -19,6 +25,14 @@ const SEVERITY_LABELS = {
   low: "Low",
   info: "Info",
 } as const;
+
+const chartConfig = {
+  critical: { label: "Critical", color: PIE_COLORS.critical },
+  high: { label: "High", color: PIE_COLORS.high },
+  medium: { label: "Medium", color: PIE_COLORS.medium },
+  low: { label: "Low", color: PIE_COLORS.low },
+  info: { label: "Info", color: PIE_COLORS.info },
+} satisfies ChartConfig;
 
 interface SeverityChartProps {
   summary: {
@@ -72,8 +86,24 @@ function SeverityChart({ summary, className }: SeverityChartProps) {
 
   return (
     <div className={cn("w-full", className)} data-testid="severity-chart-content">
-      <ResponsiveContainer width="100%" height={220}>
+      <ChartContainer
+        config={chartConfig}
+        className="mx-auto aspect-square h-[220px] w-full"
+        initialDimension={{ width: 220, height: 220 }}
+      >
         <PieChart>
+          <ChartTooltip
+            cursor={false}
+            content={
+              <ChartTooltipContent
+                hideLabel
+                formatter={(value) => {
+                  const num = Number(value);
+                  return `${num} finding${num !== 1 ? "s" : ""}`;
+                }}
+              />
+            }
+          />
           <Pie
             data={pieData}
             cx="50%"
@@ -82,6 +112,7 @@ function SeverityChart({ summary, className }: SeverityChartProps) {
             outerRadius={88}
             paddingAngle={3}
             dataKey="value"
+            nameKey="name"
             strokeWidth={2}
             stroke="hsl(var(--card))"
           >
@@ -94,21 +125,8 @@ function SeverityChart({ summary, className }: SeverityChartProps) {
               className="fill-foreground font-mono text-2xl font-bold"
             />
           </Pie>
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "hsl(var(--card))",
-              border: "1px solid hsl(var(--border))",
-              borderRadius: "0.5rem",
-              fontFamily: "JetBrains Mono, monospace",
-              fontSize: "0.75rem",
-            }}
-            formatter={(value: unknown) => {
-              const num = Number(value);
-              return [`${num} finding${num !== 1 ? "s" : ""}`, ""];
-            }}
-          />
         </PieChart>
-      </ResponsiveContainer>
+      </ChartContainer>
 
       <ul
         className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2"
