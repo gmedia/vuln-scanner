@@ -131,6 +131,9 @@ describe("ForgotPassword", () => {
     await waitFor(() => {
       expect(screen.getByText("Sending reset link...")).toBeInTheDocument();
     });
+    await waitFor(() => {
+      expect(screen.getByText("Check Your Email")).toBeInTheDocument();
+    });
   });
 
   it("calls forgotPassword on form submit", async () => {
@@ -157,6 +160,9 @@ describe("ForgotPassword", () => {
 
     await waitFor(() => {
       expect(emailInput).toBeDisabled();
+    });
+    await waitFor(() => {
+      expect(screen.getByText("Check Your Email")).toBeInTheDocument();
     });
   });
 
