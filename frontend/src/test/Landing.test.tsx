@@ -114,7 +114,7 @@ describe("Landing Page", () => {
   });
 
   it("uses sticky-footer shell so footer pins on tall viewports", () => {
-    const root = document.querySelector(".min-h-screen.flex.flex-col");
+    const root = document.querySelector(".min-h-dvh.flex.flex-col");
     expect(root).toBeTruthy();
     const main = root!.querySelector("main");
     expect(main).toBeTruthy();
