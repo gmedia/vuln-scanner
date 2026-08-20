@@ -110,7 +110,7 @@ describe("UserGuide", () => {
     expect(tocNavs.length).toBeGreaterThanOrEqual(2);
     const mobileToc = tocNavs[0]?.closest("[data-slot='card']");
     expect(mobileToc).toBeTruthy();
-    expect(mobileToc?.parentElement).toHaveClass("sticky");
+    expect(mobileToc?.parentElement).toHaveClass("sticky", "top-14");
     expect(
       screen.getByRole("button", { name: /Daftar isi/ }),
     ).toHaveAttribute("aria-expanded", "false");
