@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import AuthLayout from "@/components/layout/AuthLayout";
+import { useTranslation } from "react-i18next";
 
 function maskSignupEmail(email: string): string {
   const at = email.lastIndexOf("@");
@@ -20,6 +21,8 @@ function maskSignupEmail(email: string): string {
 function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { t } = useTranslation("auth");
+  const { t: tc } = useTranslation("common");
   const { verifyEmail, resendVerification, isLoading, error } = useAuthStore();
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [resendEmail, setResendEmail] = useState(
@@ -71,8 +74,8 @@ function VerifyEmail() {
 
     return (
       <AuthLayout
-        title="Check your email"
-        subtitle="Open the link we sent to verify your account."
+        title={t("verifyTitle")}
+        subtitle={t("verifySubtitle")}
         maxWidth="sm"
       >
         <Card className="w-full">
@@ -80,12 +83,10 @@ function VerifyEmail() {
             <Mail className="h-10 w-10 text-primary mx-auto" />
             {signupHint && (
               <p className="text-sm text-foreground/90">
-                Sent to <span className="font-medium">{signupHint}</span>
+                {t("sentTo")} <span className="font-medium">{signupHint}</span>
               </p>
             )}
-            <p className="text-xs text-foreground/70">
-              Check spam or promotions if it is not in your inbox.
-            </p>
+            <p className="text-xs text-foreground/70">{t("checkSpamPromo")}</p>
 
             {!showResend ? (
               <button
@@ -93,30 +94,28 @@ function VerifyEmail() {
                 className="text-sm text-foreground/90 underline-offset-4 hover:text-primary hover:underline py-2"
                 onClick={() => setShowResend(true)}
               >
-                Didn&apos;t get it?
+                {t("didntGetIt")}
               </button>
             ) : (
               <form onSubmit={handleResend} className="space-y-3 text-left">
                 <p className="text-xs text-foreground/70 text-center">
-                  Enter your signup email to resend the link.
+                  {t("enterSignupEmail")}
                 </p>
 
                 <div className="min-h-[1.25rem]">
                   {cooldown > 0 && (
                     <p className="text-xs text-amber-400 text-center flex items-center justify-center gap-1">
                       <Timer className="h-3 w-3" />
-                      Too many attempts. Wait {cooldown}s
+                      {tc("waitSeconds", { seconds: cooldown })}
                     </p>
                   )}
                   {resendSuccess && cooldown === 0 && (
                     <p className="text-xs text-green-400 text-center">
-                      Verification email resent! Please check your inbox.
+                      {t("verifyResent")}
                     </p>
                   )}
                   {error && !resendSuccess && cooldown === 0 && (
-                    <p className="text-xs text-red-400 text-center">
-                      {error}
-                    </p>
+                    <p className="text-xs text-red-400 text-center">{error}</p>
                   )}
                 </div>
 
@@ -125,14 +124,14 @@ function VerifyEmail() {
                     htmlFor="email"
                     className="block text-xs text-foreground/80"
                   >
-                    Email
+                    {tc("email")}
                   </label>
                   <Input
                     id="email"
                     type="email"
                     value={resendEmail}
                     onChange={(e) => setResendEmail(e.target.value)}
-                    placeholder="your signup email"
+                    placeholder={t("signupEmailPlaceholder")}
                     required
                     disabled={isResending}
                   />
@@ -146,15 +145,15 @@ function VerifyEmail() {
                   {cooldown > 0 ? (
                     <>
                       <Timer className="mr-2 h-4 w-4" />
-                      Wait {cooldown}s
+                      {tc("waitButton", { seconds: cooldown })}
                     </>
                   ) : isResending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending...
+                      {t("sending")}
                     </>
                   ) : (
-                    "Resend Verification Email"
+                    t("resendVerificationTitle")
                   )}
                 </Button>
               </form>
@@ -162,7 +161,7 @@ function VerifyEmail() {
 
             <Link to="/login" className="block">
               <Button variant="outline" className="w-full text-sm">
-                Back to sign in
+                {t("backToSignInLower")}
               </Button>
             </Link>
           </CardContent>
@@ -175,10 +174,10 @@ function VerifyEmail() {
     <AuthLayout
       title={
         status === "success"
-          ? "Email verified"
+          ? t("emailVerified")
           : status === "error"
-            ? "Verification failed"
-            : "Verifying email"
+            ? t("verifyFailed")
+            : t("verifyingEmail")
       }
       maxWidth="sm"
     >
@@ -187,22 +186,20 @@ function VerifyEmail() {
           {status === "idle" && (
             <div className="flex flex-col items-center gap-3">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">
-                Verifying...
-              </p>
+              <p className="text-sm text-muted-foreground">{t("verifying")}</p>
             </div>
           )}
           {status === "success" && (
             <div className="flex flex-col items-center gap-3">
               <CheckCircle className="h-8 w-8 text-green-500" />
               <p className="text-sm text-muted-foreground">
-                Email verified successfully!
+                {t("emailVerifiedOk")}
               </p>
               <Button
                 onClick={() => navigate("/dashboard")}
                 className="w-full text-sm"
               >
-                Go to dashboard
+                {t("goToDashboard")}
               </Button>
             </div>
           )}
@@ -210,11 +207,11 @@ function VerifyEmail() {
             <div className="flex flex-col items-center gap-3">
               <XCircle className="h-8 w-8 text-destructive" />
               <p className="text-sm text-muted-foreground">
-                {error || "Verification failed. Please try again."}
+                {error || t("verifyFailedRetry")}
               </p>
               <Link to="/login" className="w-full">
                 <Button variant="outline" className="w-full text-sm">
-                  Back to sign in
+                  {t("backToSignInLower")}
                 </Button>
               </Link>
             </div>

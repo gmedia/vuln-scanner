@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import AuthLayout, {
   AUTH_SECONDARY_LINK,
 } from "@/components/layout/AuthLayout";
+import { useTranslation } from "react-i18next";
 
 function isUnverifiedError(message: string | null): boolean {
   if (!message) return false;
@@ -21,6 +22,8 @@ function isUnverifiedError(message: string | null): boolean {
 
 function Login() {
   const navigate = useNavigate();
+  const { t } = useTranslation("auth");
+  const { t: tc } = useTranslation("common");
   const { login, resendVerification, error, isAuthenticated, clearError } =
     useAuthStore();
   const [email, setEmail] = useState("");
@@ -62,34 +65,25 @@ function Login() {
     setIsResending(false);
     if (result.ok) {
       if (result.emailSent === false) {
-        setResendFeedback(
-          result.message ||
-            "Failed to send verification email. Please try again shortly.",
-        );
+        setResendFeedback(result.message || t("verifySendFailed"));
       } else {
-        setResendFeedback(
-          result.message || "Verification email sent. Please check your inbox.",
-        );
+        setResendFeedback(result.message || t("verifySent"));
       }
     } else {
-      setResendFeedback(
-        "Failed to resend verification email. Please try again.",
-      );
+      setResendFeedback(t("resendFailed"));
     }
   };
 
   const showResend = isUnverifiedError(error);
 
   return (
-    <AuthLayout title="Sign in">
+    <AuthLayout title={t("signInTitle")}>
       <Card className="w-full">
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="min-h-[1.25rem]">
               {error && (
-                <p className="text-xs text-red-400 text-center">
-                  {error}
-                </p>
+                <p className="text-xs text-red-400 text-center">{error}</p>
               )}
               {resendFeedback && (
                 <p className="text-xs text-primary text-center mt-1">
@@ -102,14 +96,14 @@ function Login() {
                 htmlFor="email"
                 className="block text-xs text-muted-foreground"
               >
-                Email
+                {tc("email")}
               </label>
               <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder={t("emailPlaceholder")}
                 required
                 disabled={isSubmitting}
               />
@@ -119,7 +113,7 @@ function Login() {
                 htmlFor="password"
                 className="block text-xs text-muted-foreground"
               >
-                Password
+                {tc("password")}
               </label>
               <div className="relative">
                 <Input
@@ -136,7 +130,9 @@ function Login() {
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground hover:text-foreground"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={
+                    showPassword ? tc("hidePassword") : tc("showPassword")
+                  }
                   tabIndex={-1}
                 >
                   {showPassword ? (
@@ -155,17 +151,17 @@ function Login() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
+                  {t("signingIn")}
                 </>
               ) : (
-                "Sign In"
+                tc("signIn")
               )}
             </Button>
           </form>
           {showResend && (
             <div className="mt-4 space-y-2">
               <p className="text-xs text-muted-foreground text-center">
-                Need a new verification link?
+                {t("needVerification")}
               </p>
               <Button
                 type="button"
@@ -177,23 +173,23 @@ function Login() {
                 {isResending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Resending...
+                    {t("resending")}
                   </>
                 ) : (
-                  "Resend verification email"
+                  t("resendVerification")
                 )}
               </Button>
             </div>
           )}
           <p className="mt-3 text-center">
             <Link to="/forgot-password" className={AUTH_SECONDARY_LINK}>
-              Forgot password?
+              {t("forgotPassword")}
             </Link>
           </p>
           <p className="mt-1 text-center text-sm text-foreground/80">
-            Don't have an account?{" "}
+            {t("noAccount")}{" "}
             <Link to="/register" className={AUTH_SECONDARY_LINK}>
-              Register
+              {t("register")}
             </Link>
           </p>
         </CardContent>

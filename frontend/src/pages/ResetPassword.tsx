@@ -15,10 +15,13 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import AuthLayout from "@/components/layout/AuthLayout";
+import { useTranslation } from "react-i18next";
 
 function ResetPassword() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
+  const { t } = useTranslation("auth");
+  const { t: tc } = useTranslation("common");
   const { resetPassword, error, clearError } = useAuthStore();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -37,25 +40,22 @@ function ResetPassword() {
 
   if (!token) {
     return (
-      <AuthLayout title="Invalid Reset Link">
+      <AuthLayout title={t("invalidReset")}>
         <Card className="w-full">
           <CardContent className="pt-6 text-center space-y-4">
             <AlertCircle className="h-12 w-12 text-red-400 mx-auto" />
             <p className="text-xs text-muted-foreground">
-              This password reset link is invalid or missing a token.
+              {t("invalidResetBody")}
             </p>
             <div className="space-y-2 pt-2">
               <Link to="/forgot-password" className="block">
                 <Button className="w-full text-sm">
-                  Request new link
+                  {t("requestNewLink")}
                 </Button>
               </Link>
               <Link to="/login" className="block">
-                <Button
-                  variant="outline"
-                  className="w-full text-sm"
-                >
-                  Back to sign in
+                <Button variant="outline" className="w-full text-sm">
+                  {t("backToSignInLower")}
                 </Button>
               </Link>
             </div>
@@ -70,11 +70,11 @@ function ResetPassword() {
     setValidationError(null);
 
     if (password.length < 8) {
-      setValidationError("Password must be at least 8 characters");
+      setValidationError(t("passwordMin"));
       return;
     }
     if (password !== confirmPassword) {
-      setValidationError("Passwords do not match");
+      setValidationError(t("passwordMismatch"));
       return;
     }
 
@@ -96,16 +96,15 @@ function ResetPassword() {
 
   if (success) {
     return (
-      <AuthLayout title="Password Reset Successful!">
+      <AuthLayout title={t("resetSuccess")}>
         <Card className="w-full">
           <CardContent className="pt-6 text-center space-y-4">
             <CheckCircle className="h-12 w-12 text-primary mx-auto" />
             <p className="text-xs text-muted-foreground">
-              Your password has been changed. You can now sign in with your new
-              password.
+              {t("resetSuccessBody")}
             </p>
             <Link to="/login">
-              <Button className="w-full text-sm mt-4">Sign In</Button>
+              <Button className="w-full text-sm mt-4">{tc("signIn")}</Button>
             </Link>
           </CardContent>
         </Card>
@@ -114,7 +113,7 @@ function ResetPassword() {
   }
 
   return (
-    <AuthLayout title="Set new password">
+    <AuthLayout title={t("setNewPassword")}>
       <Card className="w-full">
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -122,7 +121,7 @@ function ResetPassword() {
               {cooldown > 0 && (
                 <p className="text-xs text-amber-400 text-center flex items-center justify-center gap-1">
                   <Timer className="h-3 w-3" />
-                  Too many attempts. Wait {cooldown}s
+                  {tc("waitSeconds", { seconds: cooldown })}
                 </p>
               )}
               {(validationError || error) && cooldown === 0 && (
@@ -136,7 +135,7 @@ function ResetPassword() {
                 htmlFor="password"
                 className="block text-xs text-muted-foreground"
               >
-                New Password
+                {t("newPassword")}
               </label>
               <div className="relative">
                 <Input
@@ -153,7 +152,9 @@ function ResetPassword() {
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground hover:text-foreground"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={
+                    showPassword ? tc("hidePassword") : tc("showPassword")
+                  }
                   tabIndex={-1}
                 >
                   {showPassword ? (
@@ -169,7 +170,7 @@ function ResetPassword() {
                 htmlFor="confirmPassword"
                 className="block text-xs text-muted-foreground"
               >
-                Confirm Password
+                {tc("confirmPassword")}
               </label>
               <div className="relative">
                 <Input
@@ -188,8 +189,8 @@ function ResetPassword() {
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground hover:text-foreground"
                   aria-label={
                     showConfirmPassword
-                      ? "Hide confirm password"
-                      : "Show confirm password"
+                      ? tc("hideConfirmPassword")
+                      : tc("showConfirmPassword")
                   }
                   tabIndex={-1}
                 >
@@ -209,15 +210,15 @@ function ResetPassword() {
               {cooldown > 0 ? (
                 <>
                   <Timer className="mr-2 h-4 w-4" />
-                  Wait {cooldown}s
+                  {tc("waitButton", { seconds: cooldown })}
                 </>
               ) : isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Resetting password...
+                  {t("resetting")}
                 </>
               ) : (
-                "Reset Password"
+                t("resetPassword")
               )}
             </Button>
           </form>
