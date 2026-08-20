@@ -7,6 +7,7 @@ import {
   Shield,
   Wrench,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { ScanFinding } from "@/api/scans";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -18,6 +19,7 @@ interface FindingDetailProps {
 }
 
 function FindingDetail({ finding }: FindingDetailProps) {
+  const { t } = useTranslation("scan");
   const [showRaw, setShowRaw] = useState(false);
 
   return (
@@ -57,7 +59,7 @@ function FindingDetail({ finding }: FindingDetailProps) {
           <div className="mb-1.5 flex items-center gap-1.5">
             <Shield className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              Description
+              {t("findingDescription")}
             </span>
           </div>
           <p className="text-xs text-foreground leading-relaxed">
@@ -72,7 +74,7 @@ function FindingDetail({ finding }: FindingDetailProps) {
           <div className="mb-1.5 flex items-center gap-1.5">
             <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
             <span className="text-[10px] font-medium uppercase tracking-wider text-amber-500">
-              Risiko jika tidak ditindaklanjuti
+              {t("findingImpact")}
             </span>
           </div>
           <p className="text-xs text-foreground leading-relaxed">
@@ -87,7 +89,7 @@ function FindingDetail({ finding }: FindingDetailProps) {
           <div className="mb-1.5 flex items-center gap-1.5">
             <Wrench className="h-3.5 w-3.5 text-primary" />
             <span className="text-[10px] font-medium uppercase tracking-wider text-primary">
-              Saran aksi
+              {t("findingRemediation")}
             </span>
           </div>
           <p className="text-xs text-foreground leading-relaxed">
@@ -110,14 +112,14 @@ function FindingDetail({ finding }: FindingDetailProps) {
         ) : (
           <ChevronDown className="h-3 w-3" />
         )}
-        RAW DATA
+        {t("rawData")}
       </Button>
 
       {showRaw && (
         <pre className="mt-2 overflow-x-auto rounded-md bg-muted p-3 font-mono text-[10px] text-muted-foreground leading-relaxed">
           {finding.raw_data
             ? JSON.stringify(finding.raw_data, null, 2)
-            : "No raw data available for this finding."}
+            : t("noRawData")}
         </pre>
       )}
       </CardContent>
