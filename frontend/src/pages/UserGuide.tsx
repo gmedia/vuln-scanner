@@ -32,9 +32,17 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/Card";
-import { ScrollArea } from "@/components/ui/ScrollArea";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
 import { BRAND } from "@/lib/brand";
 import {
   buildEnrollCurlExample,
@@ -188,6 +196,46 @@ function GuideTocLinks({
   );
 }
 
+function GuideDesktopToc({ activeId }: { activeId: string }) {
+  return (
+    <nav aria-label="Daftar isi panduan">
+      <Sidebar
+        collapsible="none"
+        className="h-full w-full border-r bg-transparent"
+      >
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupLabel className="gap-2 text-xs font-medium uppercase tracking-wider">
+              <ListOrdered className="h-3.5 w-3.5 text-primary" />
+              Daftar isi
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {toc.map((item) => (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={item.id === activeId}
+                      className="h-auto whitespace-normal py-1.5"
+                    >
+                      <a
+                        href={`#${item.id}`}
+                        aria-current={item.id === activeId ? "true" : undefined}
+                      >
+                        {item.label}
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+      </Sidebar>
+    </nav>
+  );
+}
+
 function UserGuide() {
   const activeId = useActiveGuideSection();
   const [mobileTocOpen, setMobileTocOpen] = useState(false);
@@ -254,24 +302,14 @@ function UserGuide() {
         </Card>
       </div>
 
-      <div className="lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:items-start lg:gap-8">
+      <div className="lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-8">
         <aside
           data-testid="guide-desktop-toc"
-          className="hidden min-h-0 lg:block"
+          className="hidden lg:block"
         >
-          <Card className="sticky top-16 flex max-h-[calc(100dvh-theme(spacing.14)-2rem)] flex-col overflow-hidden">
-            <CardHeader className="py-3">
-              <CardTitle className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                <ListOrdered className="h-3.5 w-3.5 text-primary" />
-                Daftar isi
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex min-h-0 flex-1 flex-col pt-0">
-              <ScrollArea className="h-full min-h-0 max-h-[calc(100dvh-theme(spacing.14)-6rem)]">
-                <GuideTocLinks activeId={activeId} />
-              </ScrollArea>
-            </CardContent>
-          </Card>
+          <div className="sticky top-0 h-[calc(100svh-theme(spacing.14))] overflow-hidden">
+            <GuideDesktopToc activeId={activeId} />
+          </div>
         </aside>
 
         <div className="min-w-0 space-y-8">
