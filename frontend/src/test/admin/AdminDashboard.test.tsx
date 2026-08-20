@@ -141,6 +141,17 @@ describe("AdminDashboard", () => {
     expect(skeletons.length).toBe(0);
   });
 
+  it("renders KPI chart after stats load", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: mockStats,
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    renderPage();
+    expect(screen.getByTestId("admin-kpi-chart")).toBeInTheDocument();
+    expect(screen.getByText("Overview")).toBeInTheDocument();
+  });
+
   it("renders quick links to user management and pricing", () => {
     vi.mocked(useQuery).mockReturnValue({
       data: mockStats,

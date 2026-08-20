@@ -9,9 +9,20 @@ import {
   ArrowRight,
   Tag,
 } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { adminApi } from "@/api/admin";
+
+const kpiChartConfig = {
+  value: { label: "Count", color: "hsl(var(--primary))" },
+} satisfies ChartConfig;
 
 function AdminDashboard() {
   const { data: stats, isLoading } = useQuery({
@@ -147,6 +158,62 @@ function AdminDashboard() {
           ))}
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm tracking-wide">Overview</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <Skeleton className="h-[220px] w-full" />
+          ) : (
+            <div data-testid="admin-kpi-chart">
+              <ChartContainer
+                config={kpiChartConfig}
+                className="aspect-auto h-[220px] w-full"
+                initialDimension={{ width: 640, height: 220 }}
+              >
+                <BarChart
+                  data={[
+                    { name: "Users", value: stats?.total_users ?? 0 },
+                    { name: "Scans", value: stats?.total_scans ?? 0 },
+                    { name: "Findings", value: stats?.total_findings ?? 0 },
+                    {
+                      name: "Credits in",
+                      value: stats?.credits_distributed ?? 0,
+                    },
+                    { name: "Credits used", value: stats?.credits_used ?? 0 },
+                  ]}
+                  margin={{ left: 8, right: 8, top: 8, bottom: 0 }}
+                >
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="name"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    width={48}
+                    tickFormatter={(n) => Number(n).toLocaleString()}
+                  />
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent hideLabel />}
+                  />
+                  <Bar
+                    dataKey="value"
+                    fill="var(--color-value)"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ChartContainer>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
