@@ -6,7 +6,9 @@ import { useRateLimitCooldown } from "@/hooks/useRateLimitCooldown";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
-import AuthLayout from "@/components/layout/AuthLayout";
+import AuthLayout, {
+  AUTH_SECONDARY_LINK,
+} from "@/components/layout/AuthLayout";
 
 function ForgotPassword() {
   const { forgotPassword, error, clearError } = useAuthStore();
@@ -117,12 +119,12 @@ function ForgotPassword() {
               )}
             </Button>
           </form>
-          <p className="mt-6 text-center text-xs">
+          <p className="mt-4 text-center">
             <Link
               to="/login"
-              className="inline-flex items-center gap-1 text-foreground/80 hover:text-primary hover:underline"
+              className={`${AUTH_SECONDARY_LINK} gap-1`}
             >
-              <ArrowLeft className="h-3 w-3" />
+              <ArrowLeft className="h-3.5 w-3.5" />
               Back to sign in
             </Link>
           </p>
