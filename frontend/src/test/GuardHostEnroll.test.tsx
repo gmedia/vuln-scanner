@@ -155,5 +155,44 @@ describe("Guard host enroll UI", () => {
     await waitFor(() => {
       expect(guardApi.revokeEnrollToken).toHaveBeenCalledWith("tok-active");
     });
+    const enrollTable = screen.getByTestId("guard-enroll-token-row").closest("table");
+    expect(enrollTable).toBeTruthy();
+    expect(enrollTable?.className ?? "").toContain("min-w-[36rem]");
+    expect(enrollTable?.className ?? "").not.toContain("table-fixed");
+  });
+
+  it("keeps agent columns from table-fixed crush on a narrow layout", async () => {
+    vi.mocked(guardApi.listGuardAgents).mockResolvedValue([
+      {
+        id: "ag1",
+        organization_id: "org1",
+        wazuh_agent_id: "001",
+        name: "e2e-tc5-2026081-long-host-name",
+        status: "active",
+        ip: "10.0.0.1",
+        version: "4.7.0",
+        last_keep_alive: "2026-08-17T14:05:00Z",
+        synced_at: "2026-08-17T14:05:00Z",
+        created_at: "2026-08-17T14:05:00Z",
+      },
+    ]);
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <Guard />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByText("Terakhir terlihat")).toBeInTheDocument();
+    expect(screen.getByText("Versi")).toBeInTheDocument();
+    const agentsCard = screen.getByTestId("guard-agents");
+    const agentTable = agentsCard.querySelector("table");
+    expect(agentTable).toBeTruthy();
+    expect(agentTable?.className ?? "").toContain("min-w-[36rem]");
+    expect(agentTable?.className ?? "").not.toContain("table-fixed");
   });
 });
