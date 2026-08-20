@@ -14,6 +14,7 @@ import {
   Siren,
 } from "lucide-react";
 import { BRAND } from "@/lib/brand";
+import { useTranslation } from "react-i18next";
 import { useScanStore } from "@/store/scanStore";
 import { useAuthStore } from "@/store/authStore";
 import { Badge } from "@/components/ui/Badge";
@@ -35,35 +36,35 @@ import {
 } from "@/components/ui/sidebar";
 
 const scanNav = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/scan/ip", label: "IP Scanner", icon: Radar },
-  { to: "/scan/domain", label: "Domain Scanner", icon: Globe },
-  { to: "/scan/mobile", label: "Mobile Scanner", icon: Smartphone },
-  { to: "/schedules", label: "Jadwal", icon: CalendarClock },
+  { to: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard, end: true },
+  { to: "/scan/ip", labelKey: "ipScanner", icon: Radar },
+  { to: "/scan/domain", labelKey: "domainScanner", icon: Globe },
+  { to: "/scan/mobile", labelKey: "mobileScanner", icon: Smartphone },
+  { to: "/schedules", labelKey: "schedules", icon: CalendarClock },
 ];
 
 const productNav = [
   {
     to: "/guard",
-    label: "Guard",
-    hint: "Agen host",
+    labelKey: "guard",
+    hintKey: "guardHint",
     icon: Shield,
     testId: "nav-guard",
   },
   {
     to: "/siem",
-    label: "SIEM",
-    hint: "Event org",
+    labelKey: "siem",
+    hintKey: "siemHint",
     icon: Siren,
     testId: "nav-siem",
   },
-  { to: "/guide", label: "User Guide", icon: BookOpen },
+  { to: "/guide", labelKey: "guide", icon: BookOpen },
 ];
 
 const accountNav = [
-  { to: "/credit-history", label: "Credit History", icon: History },
-  { to: "/profile", label: "Profile", icon: User },
-  { to: "/settings/workspace", label: "Workspace", icon: Users },
+  { to: "/credit-history", labelKey: "creditHistory", icon: History },
+  { to: "/profile", labelKey: "profile", icon: User },
+  { to: "/settings/workspace", labelKey: "workspace", icon: Users },
 ];
 
 function pathActive(pathname: string, to: string, end?: boolean) {
@@ -73,19 +74,22 @@ function pathActive(pathname: string, to: string, end?: boolean) {
 
 function NavItem({
   to,
-  label,
+  labelKey,
   icon: Icon,
-  hint,
+  hintKey,
   testId,
   end,
 }: {
   to: string;
-  label: string;
+  labelKey: string;
   icon: typeof LayoutDashboard;
-  hint?: string;
+  hintKey?: string;
   testId?: string;
   end?: boolean;
 }) {
+  const { t } = useTranslation("nav");
+  const label = t(labelKey);
+  const hint = hintKey ? t(hintKey) : undefined;
   const { setOpenMobile } = useSidebar();
   const pathname = useLocation().pathname;
   const isActive = pathActive(pathname, to, end);
@@ -115,6 +119,7 @@ function NavItem({
 }
 
 function Sidebar() {
+  const { t } = useTranslation("nav");
   const activeJobId = useScanStore((s) => s.activeJobId);
   const isAdmin = useAuthStore((s) => s.user?.is_admin ?? false);
   const { setOpenMobile } = useSidebar();
@@ -135,7 +140,7 @@ function Sidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Scan</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("groupScan")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {scanNav.map((item) => (
@@ -145,7 +150,7 @@ function Sidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
         <SidebarGroup>
-          <SidebarGroupLabel>Attach</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("groupAttach")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {productNav.map((item) => (
@@ -155,7 +160,7 @@ function Sidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
         <SidebarGroup>
-          <SidebarGroupLabel>Account</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("groupAccount")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {accountNav.map((item) => (
@@ -166,19 +171,19 @@ function Sidebar() {
         </SidebarGroup>
         {isAdmin ? (
           <SidebarGroup>
-            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarGroupLabel>{t("groupAdmin")}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <NavItem
                   to="/admin"
-                  label="Admin overview"
+                  labelKey="adminOverview"
                   icon={Shield}
                   end
                 />
-                <NavItem to="/admin/users" label="Users" icon={Users} />
+                <NavItem to="/admin/users" labelKey="users" icon={Users} />
                 <NavItem
                   to="/admin/pricing"
-                  label="Pricing"
+                  labelKey="pricing"
                   icon={DollarSign}
                 />
               </SidebarMenu>
@@ -190,13 +195,13 @@ function Sidebar() {
         {activeJobId ? (
           <div className="rounded-md bg-muted p-3 group-data-[collapsible=icon]:hidden">
             <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-              Active Scan
+              {t("activeScan")}
             </p>
             <p className="truncate font-mono text-xs text-foreground">
               {activeJobId.slice(0, 12)}...
             </p>
             <Badge variant="running" className="mt-2 text-[10px]">
-              In Progress
+              {t("inProgress")}
             </Badge>
           </div>
         ) : null}

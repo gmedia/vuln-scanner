@@ -17,7 +17,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { BrandMark } from "@/components/brand/BrandMark";
 import OrgSwitcher from "@/components/workspace/OrgSwitcher";
+import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
 import { SCAN_TYPE_LABELS } from "@/lib/constants";
+import { useTranslation } from "react-i18next";
 
 interface HeaderProps {
   children?: ReactNode;
@@ -25,6 +27,8 @@ interface HeaderProps {
 
 function Header({ children }: HeaderProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { t: tNav } = useTranslation("nav");
 
   const activeJobId = useScanStore((s) => s.activeJobId);
   const scanType = useScanStore((s) => s.scanType);
@@ -70,6 +74,7 @@ function Header({ children }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
+        <LanguageSwitcher />
         {isAuthenticated && (
           <div className="hidden sm:block">
             <OrgSwitcher />
@@ -83,10 +88,10 @@ function Header({ children }: HeaderProps) {
             className="h-9 gap-1.5 bg-muted/40 px-2.5 text-xs text-foreground hover:text-primary"
             asChild
           >
-            <Link to="/credit-history" title="Saldo kredit pribadi">
+            <Link to="/credit-history" title={tNav("creditsTitle")}>
               <Coins className="h-3.5 w-3.5 text-primary" aria-hidden />
               <span className="hidden text-muted-foreground sm:inline">
-                Kredit
+                {t("credits")}
               </span>
               <span
                 className="font-mono font-bold text-primary tabular-nums"
@@ -117,7 +122,7 @@ function Header({ children }: HeaderProps) {
               data-testid="user-menu"
             >
               <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                Signed in as{" "}
+                {t("signedInAs")}{" "}
                 <span className="text-foreground">{user.email}</span>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -129,7 +134,7 @@ function Header({ children }: HeaderProps) {
                 }}
               >
                 <LogOut className="h-3 w-3" />
-                Sign Out
+                {t("signOut")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
