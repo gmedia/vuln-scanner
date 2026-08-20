@@ -8,7 +8,9 @@ test.describe("Landing", () => {
     await expect(page.locator("h1:has-text('Sinexis')")).toBeVisible();
     await expect(
       page
-        .locator("text=Security attach for colo, VPS, and hospitality stacks")
+        .locator(
+          "text=Security attach untuk colo, VPS, dan tumpukan hospitality",
+        )
         .first(),
     ).toBeVisible();
   });
@@ -16,7 +18,7 @@ test.describe("Landing", () => {
   test("shows attach-loop tagline", async ({ page }) => {
     await page.goto("/");
     await expect(
-      page.locator("text=Find exposure on IP, domain, and mobile"),
+      page.locator("text=Temukan paparan di IP, domain, dan mobile"),
     ).toBeVisible();
     await expect(
       page.locator("text=powered by the VulnScanner engine"),
@@ -27,27 +29,27 @@ test.describe("Landing", () => {
     await page.goto("/");
     const getStartedLink = page.locator("a[href='/register']").first();
     await expect(getStartedLink).toBeVisible();
-    await expect(getStartedLink.locator("text=Get Started")).toBeVisible();
+    await expect(getStartedLink.locator("text=Mulai")).toBeVisible();
   });
 
   test("Sign In button links to login", async ({ page }) => {
     await page.goto("/");
     const signInLink = page.locator("a[href='/login']").first();
     await expect(signInLink).toBeVisible();
-    await expect(signInLink.locator("text=Sign In")).toBeVisible();
+    await expect(signInLink.locator("text=Masuk")).toBeVisible();
   });
 
   test("What ships section heading is visible", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("h2:has-text('What ships')")).toBeVisible();
+    await expect(page.locator("h2:has-text('Yang tersedia')")).toBeVisible();
   });
 
   test("renders IP scan feature card", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("text=IP scan")).toBeVisible();
+    await expect(page.locator("text=Scan IP")).toBeVisible();
     await expect(
       page.locator(
-        "text=Ports, services, and CVE severity on the hosts you already run.",
+        "text=Port, layanan, dan tingkat keparahan CVE pada host yang sudah Anda jalankan.",
       ),
     ).toBeVisible();
   });
@@ -59,7 +61,7 @@ test.describe("Landing", () => {
     await expect(
       page.getByRole("heading", { name: "Scan Attach" }),
     ).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Credits" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Kredit" })).toBeVisible();
   });
 
   test("footer shows platform line without engine dump", async ({ page }) => {
