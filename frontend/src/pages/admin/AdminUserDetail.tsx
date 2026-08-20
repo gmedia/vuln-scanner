@@ -17,6 +17,7 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { adminApi } from "@/api/admin";
@@ -247,10 +248,11 @@ function AdminUserDetail() {
             <CardContent className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  <Label htmlFor="admin-credit-amount" className="mb-1.5 block">
                     Amount (+ or −)
-                  </label>
+                  </Label>
                   <Input
+                    id="admin-credit-amount"
                     type="number"
                     placeholder="e.g. 100 or -50"
                     value={amount}
@@ -259,10 +261,11 @@ function AdminUserDetail() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  <Label htmlFor="admin-credit-description" className="mb-1.5 block">
                     Description
-                  </label>
+                  </Label>
                   <Input
+                    id="admin-credit-description"
                     type="text"
                     placeholder="Reason for adjustment..."
                     value={description}

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Radar, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 import { useStartIpScan } from "@/hooks/useScan";
 import { useScanError } from "@/hooks/useScanError";
 import { useScanCredit } from "@/hooks/useScanCredit";
@@ -74,10 +75,11 @@ function IpScanForm() {
       {creditDisplay}
 
       <div>
-        <label className="mb-1.5 block text-xs font-medium text-foreground/70">
+        <Label htmlFor="ip-scan-target" className="mb-1.5 block text-foreground/70">
           Target IP address
-        </label>
+        </Label>
         <Input
+          id="ip-scan-target"
           type="text"
           placeholder="192.168.1.1"
           value={target}
@@ -92,10 +94,11 @@ function IpScanForm() {
       </div>
 
       <div>
-        <label className="mb-1.5 block text-xs font-medium text-foreground/70">
+        <Label htmlFor="ip-scan-ports" className="mb-1.5 block text-foreground/70">
           Port range
-        </label>
+        </Label>
         <Input
+          id="ip-scan-ports"
           type="text"
           placeholder="1-1000"
           value={ports}

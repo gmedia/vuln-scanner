@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Globe, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 import { useStartDomainScan } from "@/hooks/useScan";
 import { useScanError } from "@/hooks/useScanError";
 import { useScanCredit } from "@/hooks/useScanCredit";
@@ -69,10 +70,11 @@ function DomainScanForm() {
       {creditDisplay}
 
       <div>
-        <label className="mb-1.5 block text-xs font-medium text-foreground/70">
+        <Label htmlFor="domain-scan-target" className="mb-1.5 block text-foreground/70">
           Target domain
-        </label>
+        </Label>
         <Input
+          id="domain-scan-target"
           type="text"
           placeholder="example.com"
           value={domain}
