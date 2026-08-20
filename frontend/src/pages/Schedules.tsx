@@ -68,13 +68,14 @@ import type { ApiError } from "@/lib/utils";
 import { canMutateWorkspace } from "@/api/orgs";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
+import { useTranslation } from "react-i18next";
 
 export { mapScheduleError };
 
-function formatWhen(iso: string | null): string {
+function formatWhen(iso: string | null, locale: string): string {
   if (!iso) return "—";
   try {
-    return new Date(iso).toLocaleString("id-ID", {
+    return new Date(iso).toLocaleString(locale === "en" ? "en-US" : "id-ID", {
       timeZone: "Asia/Jakarta",
     });
   } catch {
@@ -99,6 +100,7 @@ function parseScanType(value: string | null): "domain" | "ip" {
 }
 
 function ScheduleRunsPanel({ scheduleId }: { scheduleId: string }) {
+  const { t, i18n } = useTranslation("schedules");
   const activeOrgId = useAuthStore((s) => s.activeOrgId);
   const { data, isLoading, error } = useQuery({
     queryKey: ["schedule-runs", activeOrgId, scheduleId],
@@ -118,14 +120,14 @@ function ScheduleRunsPanel({ scheduleId }: { scheduleId: string }) {
     return (
       <Alert variant="destructive" className="mt-2 border-destructive/40 text-xs">
         <AlertTriangle />
-        <AlertDescription>Gagal memuat riwayat scan</AlertDescription>
+        <AlertDescription>{t("runsLoadFailed")}</AlertDescription>
       </Alert>
     );
   }
   if (!data || data.length === 0) {
     return (
       <p className="mt-2 text-xs text-muted-foreground">
-        Belum ada scan dari target ini.
+        {t("noRuns")}
       </p>
     );
   }
@@ -151,9 +153,9 @@ function ScheduleRunsPanel({ scheduleId }: { scheduleId: string }) {
           >
             {job.status}
           </Badge>
-          <span>{formatWhen(job.created_at ?? null)}</span>
+          <span>{formatWhen(job.created_at ?? null, i18n.language)}</span>
           <Link to={`/scan/${job.id}`} className="text-primary hover:underline">
-            buka scan
+            {t("openScan")}
           </Link>
         </li>
       ))}
@@ -162,6 +164,7 @@ function ScheduleRunsPanel({ scheduleId }: { scheduleId: string }) {
 }
 
 function Schedules() {
+  const { t, i18n } = useTranslation("schedules");
   const qc = useQueryClient();
   const [searchParams] = useSearchParams();
   const [name, setName] = useState("");
@@ -209,10 +212,10 @@ function Schedules() {
       setTarget("");
       setNotifyEmail("");
       setFormError(null);
-      toast.success("Jadwal dibuat");
+      toast.success(t("toastCreated"));
     },
     onError: (err: unknown) => {
-      setFormError(mapScheduleError(apiDetail(err, "Gagal membuat jadwal")));
+      setFormError(mapScheduleError(apiDetail(err, t("errCreate"))));
     },
   });
 
@@ -221,12 +224,12 @@ function Schedules() {
       updateSchedule(id, { enabled }),
     onSuccess: () => {
       setActionError(null);
-      toast.success("Status jadwal diubah");
+      toast.success(t("toastToggled"));
       void qc.invalidateQueries({ queryKey: ["schedules"] });
     },
     onError: (err: unknown) => {
       setActionError(
-        mapScheduleError(apiDetail(err, "Gagal mengubah status jadwal")),
+        mapScheduleError(apiDetail(err, t("errToggle"))),
       );
     },
   });
@@ -235,12 +238,12 @@ function Schedules() {
     mutationFn: deleteSchedule,
     onSuccess: () => {
       setActionError(null);
-      toast.success("Jadwal dihapus");
+      toast.success(t("toastDeleted"));
       void qc.invalidateQueries({ queryKey: ["schedules"] });
     },
     onError: (err: unknown) => {
       setActionError(
-        mapScheduleError(apiDetail(err, "Gagal menghapus jadwal")),
+        mapScheduleError(apiDetail(err, t("errDelete"))),
       );
     },
   });
@@ -250,12 +253,12 @@ function Schedules() {
     setFormError(null);
     if (atCap) {
       setFormError(
-        `Batas ${MAX_ENABLED_SCHEDULES} jadwal aktif per organisasi tercapai. Nonaktifkan satu dulu.`,
+        t("capCreateBlocked", { max: MAX_ENABLED_SCHEDULES }),
       );
       return;
     }
     if (!target.trim()) {
-      setFormError("Target wajib diisi");
+      setFormError(t("targetRequired"));
       return;
     }
     const email = notifyEmail.trim();
@@ -284,7 +287,7 @@ function Schedules() {
         </Link>
         <CalendarClock className="h-6 w-6 text-primary" />
         <h2 className="text-lg font-bold tracking-wide text-foreground">
-          Jadwal scan
+          {t("title")}
         </h2>
       </div>
 
@@ -292,7 +295,7 @@ function Schedules() {
         <CardHeader className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle className="text-sm tracking-wide">
-              Kuota jadwal aktif
+              {t("quota")}
             </CardTitle>
             <span className="font-mono text-xs tabular-nums text-muted-foreground">
               {enabledCount}/{MAX_ENABLED_SCHEDULES}
@@ -303,8 +306,7 @@ function Schedules() {
             <Alert className="border-amber-500/40 text-amber-400" role="status">
               <AlertTriangle />
               <AlertDescription>
-                Batas {MAX_ENABLED_SCHEDULES} jadwal aktif per organisasi
-                tercapai. Nonaktifkan satu jadwal sebelum membuat yang baru.
+                {t("capReached", { max: MAX_ENABLED_SCHEDULES })}
               </AlertDescription>
             </Alert>
           )}
@@ -314,26 +316,25 @@ function Schedules() {
       {canCreate ? (
         <Card data-testid="schedule-create-card">
           <CardHeader>
-            <CardTitle className="text-sm tracking-wide">Jadwal baru</CardTitle>
+            <CardTitle className="text-sm tracking-wide">{t("newTitle")}</CardTitle>
             <CardDescription className="text-xs">
-              Scan domain/IP berulang (mingguan atau bulanan). Dipotong kredit
-              setiap kali dijalankan.
+              {t("newHint")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={onSubmit} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="sched-name">Label (opsional)</Label>
+                  <Label htmlFor="sched-name">{t("labelOptional")}</Label>
                   <Input
                     id="sched-name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Eksternal mingguan"
+                    placeholder={t("labelPlaceholder")}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Tipe</Label>
+                  <Label>{t("type")}</Label>
                   <Select
                     value={scanType}
                     onValueChange={(v) => setScanType(v as "domain" | "ip")}
@@ -342,13 +343,13 @@ function Schedules() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="domain">Domain</SelectItem>
-                      <SelectItem value="ip">IP</SelectItem>
+                      <SelectItem value="domain">{t("domain")}</SelectItem>
+                      <SelectItem value="ip">{t("ip")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sched-target">Target</Label>
+                  <Label htmlFor="sched-target">{t("target")}</Label>
                   <Input
                     id="sched-target"
                     value={target}
@@ -360,7 +361,7 @@ function Schedules() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Frekuensi</Label>
+                  <Label>{t("frequency")}</Label>
                   <Select
                     value={cadence}
                     onValueChange={(v) => setCadence(v as "weekly" | "monthly")}
@@ -369,21 +370,21 @@ function Schedules() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="weekly">Mingguan</SelectItem>
-                      <SelectItem value="monthly">Bulanan</SelectItem>
+                      <SelectItem value="weekly">{t("weekly")}</SelectItem>
+                      <SelectItem value="monthly">{t("monthly")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="sched-notify">
-                    Email notifikasi (opsional)
+                    {t("notifyOptional")}
                   </Label>
                   <Input
                     id="sched-notify"
                     type="email"
                     value={notifyEmail}
                     onChange={(e) => setNotifyEmail(e.target.value)}
-                    placeholder="default: email akun Anda"
+                    placeholder={t("notifyPlaceholder")}
                   />
                 </div>
               </div>
@@ -398,12 +399,12 @@ function Schedules() {
                 disabled={createMut.isPending || atCap}
                 title={
                   atCap
-                    ? `Batas ${MAX_ENABLED_SCHEDULES} jadwal aktif tercapai`
+                    ? t("capReachedShort", { max: MAX_ENABLED_SCHEDULES })
                     : undefined
                 }
               >
                 <Plus className="mr-2 h-4 w-4" />
-                {createMut.isPending ? "Membuat…" : "Buat jadwal"}
+                {createMut.isPending ? t("creating") : t("create")}
               </Button>
             </form>
           </CardContent>
@@ -413,13 +414,13 @@ function Schedules() {
           className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
           data-testid="viewer-schedule-readonly"
         >
-          Peran viewer — tidak dapat membuat atau mengubah jadwal.
+          {t("viewerReadonly")}
         </p>
       )}
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm tracking-wide">Jadwal Anda</CardTitle>
+          <CardTitle className="text-sm tracking-wide">{t("yours")}</CardTitle>
         </CardHeader>
         <CardContent>
           {actionError && (
@@ -438,12 +439,11 @@ function Schedules() {
             </div>
           )}
           {error && (
-            <p className="text-sm text-destructive">Gagal memuat jadwal</p>
+            <p className="text-sm text-destructive">{t("loadFailed")}</p>
           )}
           {!isLoading && data && data.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              Belum ada jadwal. Buat scan domain/IP mingguan atau bulanan di
-              atas.
+              {t("empty")}
             </p>
           )}
           {!isLoading && data && data.length > 0 && (
@@ -451,13 +451,13 @@ function Schedules() {
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="text-[10px] uppercase tracking-wider">
-                    Jadwal
+                    {t("colSchedule")}
                   </TableHead>
                   <TableHead className="hidden sm:table-cell text-[10px] uppercase tracking-wider">
-                    Berikutnya
+                    {t("colNext")}
                   </TableHead>
                   <TableHead className="w-[1%] text-right text-[10px] uppercase tracking-wider">
-                    Aksi
+                    {t("colActions")}
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -478,20 +478,22 @@ function Schedules() {
                               <span className="ml-2 text-xs font-normal text-muted-foreground">
                                 {s.scan_type} ·{" "}
                                 {s.cadence === "weekly"
-                                  ? "mingguan"
-                                  : "bulanan"}
+                                  ? t("weekly").toLowerCase()
+                                  : t("monthly").toLowerCase()}
                               </span>
                               {!s.enabled && (
                                 <Badge
                                   variant="default"
                                   className="ml-2 text-[10px]"
                                 >
-                                  nonaktif
+                                  {t("disabled")}
                                 </Badge>
                               )}
                             </p>
                             <p className="text-xs text-muted-foreground sm:hidden">
-                              Berikutnya: {formatWhen(s.next_run_at)}
+                              {t("nextPrefix", {
+                                when: formatWhen(s.next_run_at, i18n.language),
+                              })}
                               {s.last_job_id && (
                                 <>
                                   {" · "}
@@ -499,20 +501,20 @@ function Schedules() {
                                     to={`/scan/${s.last_job_id}`}
                                     className="text-primary hover:underline"
                                   >
-                                    scan terakhir
+                                    {t("lastScan")}
                                   </Link>
                                 </>
                               )}
                             </p>
                             {s.notify_email && (
                               <p className="text-xs text-muted-foreground">
-                                Notifikasi: {s.notify_email}
+                                {t("notify", { email: s.notify_email })}
                               </p>
                             )}
                           </div>
                         </TableCell>
                         <TableCell className="hidden align-top text-xs text-muted-foreground sm:table-cell">
-                          {formatWhen(s.next_run_at)}
+                          {formatWhen(s.next_run_at, i18n.language)}
                           {s.last_job_id && (
                             <>
                               {" · "}
@@ -520,7 +522,7 @@ function Schedules() {
                                 to={`/scan/${s.last_job_id}`}
                                 className="text-primary hover:underline"
                               >
-                                scan terakhir
+                                {t("lastScan")}
                               </Link>
                             </>
                           )}
@@ -537,10 +539,10 @@ function Schedules() {
                                 void downloadFile(s.last_job_id, "executive");
                               }
                             }}
-                            aria-label="Unduh laporan eksekutif"
+                            aria-label={t("execAria")}
                           >
                             <Download className="mr-1 h-3.5 w-3.5" />
-                            Eksekutif
+                            {t("executive")}
                           </Button>
                         )}
                         {canCreate && (
@@ -553,7 +555,9 @@ function Schedules() {
                             }
                             title={
                               !s.enabled && atCap
-                                ? `Batas ${MAX_ENABLED_SCHEDULES} jadwal aktif tercapai`
+                                ? t("capReachedShort", {
+                                    max: MAX_ENABLED_SCHEDULES,
+                                  })
                                 : undefined
                             }
                             onClick={() =>
@@ -563,7 +567,7 @@ function Schedules() {
                               })
                             }
                           >
-                            {s.enabled ? "Nonaktifkan" : "Aktifkan"}
+                            {s.enabled ? t("disable") : t("enable")}
                           </Button>
                         )}
                         {canCreate && (
@@ -574,7 +578,7 @@ function Schedules() {
                                 variant="ghost"
                                 size="sm"
                                 disabled={deleteMut.isPending}
-                                aria-label="Hapus jadwal"
+                                 aria-label={t("deleteAria")}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
@@ -582,21 +586,21 @@ function Schedules() {
                             <AlertDialogContent>
                               <AlertDialogHeader>
                                 <AlertDialogTitle>
-                                  Hapus jadwal?
+                                  {t("deleteTitle")}
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Hapus jadwal untuk {s.target}?
+                                  {t("deleteBody", { target: s.target })}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>Batal</AlertDialogCancel>
+                                <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
                                 <AlertDialogAction
                                   className={buttonVariants({
                                     variant: "destructive",
                                   })}
                                   onClick={() => deleteMut.mutate(s.id)}
                                 >
-                                  Hapus
+                                  {t("delete")}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -627,9 +631,9 @@ function Schedules() {
                                       to="/credit-history"
                                       className="font-medium text-primary hover:underline"
                                     >
-                                      Lihat riwayat kredit
+                                      {t("creditHistory")}
                                     </Link>{" "}
-                                    lalu aktifkan kembali setelah top-up.
+                                    {t("creditReenable")}
                                   </p>
                                 )}
                               </AlertDescription>
@@ -649,7 +653,7 @@ function Schedules() {
                             ) : (
                               <ChevronRight className="h-3.5 w-3.5" />
                             )}
-                            Riwayat scan
+                            {t("runHistory")}
                           </Button>
                           {runsOpen && (
                             <ScheduleRunsPanel scheduleId={s.id} />
