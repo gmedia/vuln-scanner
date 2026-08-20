@@ -456,13 +456,13 @@ export default function Guard() {
                   <Skeleton className="h-12 w-full" />
                 ) : (
                   <>
-                    <Table className="table-fixed">
+                    <Table className="min-w-[36rem]">
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="w-[40%]">Label</TableHead>
-                          <TableHead className="w-[28%]">Kedaluwarsa</TableHead>
-                          <TableHead className="w-[18%]">Status</TableHead>
-                          <TableHead className="w-[14%]">Aksi</TableHead>
+                          <TableHead className="min-w-[10rem]">Label</TableHead>
+                          <TableHead className="min-w-[9.5rem]">Kedaluwarsa</TableHead>
+                          <TableHead className="min-w-[7rem]">Status</TableHead>
+                          <TableHead className="min-w-[4.5rem]">Aksi</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -471,7 +471,7 @@ export default function Guard() {
                             key={t.id}
                             data-testid="guard-enroll-token-row"
                           >
-                            <TableCell className="max-w-0">
+                            <TableCell className="max-w-[14rem]">
                               <span className="block truncate font-medium" title={t.label || t.id}>
                                 {t.label || "token"}
                               </span>
@@ -579,26 +579,26 @@ export default function Guard() {
                 <p className="text-sm text-muted-foreground">Belum ada agen. Enroll host dulu.</p>
               ) : (
                 <div>
-                  <Table className="table-fixed">
+                  <Table className="min-w-[36rem]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[40%]">Nama</TableHead>
-                        <TableHead className="w-[16%]">Status</TableHead>
-                        <TableHead className="w-[28%]">Terakhir terlihat</TableHead>
-                        <TableHead className="w-[16%]">Versi</TableHead>
+                        <TableHead className="min-w-[10rem]">Nama</TableHead>
+                        <TableHead className="min-w-[6.5rem]">Status</TableHead>
+                        <TableHead className="min-w-[9.5rem]">Terakhir terlihat</TableHead>
+                        <TableHead className="min-w-[5rem]">Versi</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {agentsQ.data?.map((a) => (
                         <TableRow key={a.id}>
-                          <TableCell className="max-w-0 truncate font-mono text-xs font-medium" title={a.name}>
+                          <TableCell className="max-w-[14rem] truncate font-mono text-xs font-medium" title={a.name}>
                             {a.name}
                           </TableCell>
-                          <TableCell>{statusBadge(a.status)}</TableCell>
+                          <TableCell className="whitespace-nowrap">{statusBadge(a.status)}</TableCell>
                           <TableCell className="whitespace-nowrap text-muted-foreground">
                             {formatWhen(a.last_keep_alive)}
                           </TableCell>
-                          <TableCell className="truncate text-muted-foreground" title={a.version ?? undefined}>
+                          <TableCell className="max-w-[8rem] truncate text-muted-foreground" title={a.version ?? undefined}>
                             {a.version ?? "—"}
                           </TableCell>
                         </TableRow>
