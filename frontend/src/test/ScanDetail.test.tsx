@@ -349,7 +349,7 @@ describe("ScanDetail", () => {
     it("renders RemediationCard when findings have remediation", () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
-      expect(screen.getByText("Saran aksi tersedia")).toBeInTheDocument();
+      expect(screen.getByText("Suggested actions available")).toBeInTheDocument();
       const progress = screen.getByTestId("progress");
       expect(progress.dataset.value).toBe("67");
     });
@@ -382,11 +382,11 @@ describe("ScanDetail", () => {
     it("renders download buttons", async () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
-      await userEvent.click(screen.getByRole("tab", { name: "Ekspor" }));
+      await userEvent.click(screen.getByRole("tab", { name: "Export" }));
       expect(screen.getByText("JSON")).toBeInTheDocument();
-      expect(screen.getByText("HTML teknis")).toBeInTheDocument();
+      expect(screen.getByText("Technical HTML")).toBeInTheDocument();
       expect(screen.getByTestId("export-executive")).toHaveTextContent(
-        /Laporan eksekutif/,
+        /Executive report/,
       );
     });
 
@@ -412,7 +412,7 @@ describe("ScanDetail", () => {
     it("calls downloadFile with JSON on JSON button click", async () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
-      await userEvent.click(screen.getByRole("tab", { name: "Ekspor" }));
+      await userEvent.click(screen.getByRole("tab", { name: "Export" }));
       await userEvent.click(screen.getByText("JSON"));
       expect(downloadFile).toHaveBeenCalledWith("scan-1", "json");
     });
@@ -420,15 +420,15 @@ describe("ScanDetail", () => {
     it("calls downloadFile with HTML on HTML button click", async () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
-      await userEvent.click(screen.getByRole("tab", { name: "Ekspor" }));
-      await userEvent.click(screen.getByText("HTML teknis"));
+      await userEvent.click(screen.getByRole("tab", { name: "Export" }));
+      await userEvent.click(screen.getByText("Technical HTML"));
       expect(downloadFile).toHaveBeenCalledWith("scan-1", "html");
     });
 
     it("calls downloadFile executive on executive button click", async () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
-      await userEvent.click(screen.getByRole("tab", { name: "Ekspor" }));
+      await userEvent.click(screen.getByRole("tab", { name: "Export" }));
       await userEvent.click(screen.getByTestId("export-executive"));
       expect(downloadFile).toHaveBeenCalledWith("scan-1", "executive");
     });

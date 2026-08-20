@@ -26,6 +26,7 @@ import SeverityChart from "@/components/results/SeverityChart";
 import FindingsTable from "@/components/results/FindingsTable";
 import { ScanError } from "@/components/scan/ScanError";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
+import { useTranslation } from "react-i18next";
 
 function rescanPath(scanType: string): string {
   if (scanType === "domain") return "/scan/domain";
@@ -36,6 +37,7 @@ function rescanPath(scanType: string): string {
 }
 
 function ScanDetail() {
+  const { t } = useTranslation("scan");
   const { id } = useParams<{ id: string }>();
   const { data: scan, isLoading, isError } = useScanDetail(id ?? null);
   const { data: diff } = useScanDiff(
@@ -61,16 +63,15 @@ function ScanDetail() {
             <Crosshair className="h-8 w-8 text-red-400" />
           </div>
           <h2 className="mb-2 text-lg font-bold text-foreground">
-            SCAN NOT FOUND
+            {t("scanNotFound")}
           </h2>
           <p className="mb-6 text-sm text-muted-foreground">
-            The scan you&apos;re looking for doesn&apos;t exist or failed to
-            load.
+            {t("scanNotFoundHint")}
           </p>
           <Button variant="outline" asChild>
             <Link to="/dashboard">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
+              {t("backToDashboard")}
             </Link>
           </Button>
         </div>
@@ -105,7 +106,7 @@ function ScanDetail() {
     typeof scan.result_summary?.error === "string" &&
     scan.result_summary.error.trim()
       ? scan.result_summary.error
-      : "This scan failed. Credits were refunded if charged. Try Re-scan or contact support if it keeps failing.";
+      : t("failFallback");
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
@@ -116,12 +117,12 @@ function ScanDetail() {
             className="mt-0.5 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <ArrowLeft className="h-5 w-5" />
-            <span className="sr-only">Back to Dashboard</span>
+            <span className="sr-only">{t("backToDashboard")}</span>
           </Link>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg font-bold tracking-wide text-foreground">
-                Scan details
+                {t("scanDetails")}
               </h2>
               <Badge
                 variant={
@@ -137,7 +138,9 @@ function ScanDetail() {
             </p>
             {scan.completed_at && (
               <p className="mt-0.5 text-[11px] text-muted-foreground">
-                Finished {new Date(scan.completed_at).toLocaleString()}
+                {t("finishedAt", {
+                  when: new Date(scan.completed_at).toLocaleString(),
+                })}
               </p>
             )}
           </div>
@@ -147,7 +150,7 @@ function ScanDetail() {
           <Button asChild size="sm" className="text-xs">
             <Link to={reScanTo} data-testid="rescan-button">
               <RefreshCw className="mr-1 h-3.5 w-3.5" />
-              Re-scan
+              {t("rescan")}
             </Link>
           </Button>
         </div>
@@ -158,34 +161,34 @@ function ScanDetail() {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <QuickStat
           icon={Crosshair}
-          label="Findings"
+          label={t("findings")}
           value={`${findingsCount}`}
           emphasize
         />
-        <QuickStat icon={Target} label="Target" value={scan.target} />
+        <QuickStat icon={Target} label={t("target")} value={scan.target} />
         <QuickStat
           icon={Shield}
-          label="Type"
+          label={t("type")}
           value={SCAN_TYPE_LABELS[scan.scan_type] ?? scan.scan_type}
         />
         <QuickStat
           icon={Clock}
-          label="Duration"
+          label={t("duration")}
           value={
             duration != null
               ? formatDuration(duration)
               : scan.status === "running" || scan.status === "pending"
-                ? "In progress"
-                : "N/A"
+                ? t("inProgress")
+                : t("na")
           }
         />
       </div>
 
       <Tabs defaultValue="findings" className="w-full">
         <TabsList>
-          <TabsTrigger value="findings">Temuan</TabsTrigger>
-          <TabsTrigger value="diff">Diff</TabsTrigger>
-          <TabsTrigger value="export">Ekspor</TabsTrigger>
+          <TabsTrigger value="findings">{t("tabFindings")}</TabsTrigger>
+          <TabsTrigger value="diff">{t("tabDiff")}</TabsTrigger>
+          <TabsTrigger value="export">{t("tabExport")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="findings" className="space-y-5">
@@ -194,10 +197,12 @@ function ScanDetail() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <CardTitle className="text-sm tracking-wide">
-                    Findings
+                    {t("findings")}
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    {scan.findings?.length ?? 0} vulnerability findings detected
+                    {t("findingsDetected", {
+                      count: scan.findings?.length ?? 0,
+                    })}
                   </CardDescription>
                 </div>
               </div>
@@ -210,9 +215,9 @@ function ScanDetail() {
           <div className="grid gap-5 lg:grid-cols-3">
             <Card className="lg:col-span-1">
               <CardHeader className="py-3">
-                <CardTitle className="text-sm tracking-wide">Severity</CardTitle>
+                <CardTitle className="text-sm tracking-wide">{t("severity")}</CardTitle>
                 <CardDescription className="text-xs">
-                  Distribution of {findingsCount} findings
+                  {t("severityDist", { count: findingsCount })}
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
@@ -222,28 +227,28 @@ function ScanDetail() {
 
             <Card className="lg:col-span-2">
               <CardHeader className="py-3">
-                <CardTitle className="text-sm tracking-wide">Scan info</CardTitle>
+                <CardTitle className="text-sm tracking-wide">{t("scanInfo")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 pt-0">
-                <InfoRow label="Scan ID" value={scan.id} mono />
+                <InfoRow label={t("scanId")} value={scan.id} mono />
                 <InfoRow
-                  label="Created"
+                  label={t("created")}
                   value={new Date(scan.created_at).toLocaleString()}
                 />
                 {scan.started_at && (
                   <InfoRow
-                    label="Started"
+                    label={t("started")}
                     value={new Date(scan.started_at).toLocaleString()}
                   />
                 )}
                 {scan.completed_at && (
                   <InfoRow
-                    label="Completed"
+                    label={t("completed")}
                     value={new Date(scan.completed_at).toLocaleString()}
                   />
                 )}
                 {scan.celery_task_id && (
-                  <InfoRow label="Task ID" value={scan.celery_task_id} mono />
+                  <InfoRow label={t("taskId")} value={scan.celery_task_id} mono />
                 )}
               </CardContent>
             </Card>
@@ -261,7 +266,7 @@ function ScanDetail() {
             <DiffBadgeStrip diff={diff} />
           ) : (
             <p className="text-sm text-muted-foreground">
-              Diff tersedia setelah scan selesai.
+              {t("diffAfterComplete")}
             </p>
           )}
         </TabsContent>
@@ -273,38 +278,38 @@ function ScanDetail() {
                 variant="outline"
                 size="sm"
                 className="text-xs"
-                title="Raw JSON export"
-                aria-label="Download JSON export"
+                title={t("jsonTitle")}
+                aria-label={t("jsonAria")}
                 onClick={() => downloadFile(id, "json")}
               >
                 <Download className="mr-1 h-3.5 w-3.5" />
-                JSON
+                {t("json")}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 className="text-xs"
-                title="Full technical HTML report"
-                aria-label="Download full HTML report"
+                title={t("htmlTechTitle")}
+                aria-label={t("htmlTechAria")}
                 onClick={() => downloadFile(id, "html")}
               >
                 <Download className="mr-1 h-3.5 w-3.5" />
-                HTML teknis
+                {t("htmlTech")}
               </Button>
               <Button
                 size="sm"
                 className="text-xs"
-                title="Ringkasan eksekutif untuk manajemen"
-                aria-label="Download executive HTML summary"
+                title={t("execTitle")}
+                aria-label={t("execAria")}
                 data-testid="export-executive"
                 onClick={() => downloadFile(id, "executive")}
               >
                 <Download className="mr-1 h-3.5 w-3.5" />
-                Laporan eksekutif
+                {t("execReport")}
               </Button>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Tidak ada scan untuk diekspor.</p>
+            <p className="text-sm text-muted-foreground">{t("noExport")}</p>
           )}
         </TabsContent>
       </Tabs>
@@ -313,6 +318,7 @@ function ScanDetail() {
 }
 
 function DiffBadgeStrip({ diff }: { diff: ScanDiff }) {
+  const { t } = useTranslation("scan");
   const hasBaseline = diff.compared_to_job_id != null;
   const hasDelta =
     diff.new_critical > 0 ||
@@ -327,8 +333,7 @@ function DiffBadgeStrip({ diff }: { diff: ScanDiff }) {
         data-testid="scan-diff-no-baseline"
         role="status"
       >
-        Belum ada baseline — jadwalkan scan berulang untuk bandingkan critical/high
-        baru.
+        {t("noBaseline")}
       </div>
     );
   }
@@ -339,36 +344,36 @@ function DiffBadgeStrip({ diff }: { diff: ScanDiff }) {
       data-testid="scan-diff-badge"
     >
       <span className="text-xs font-medium text-muted-foreground">
-        {hasBaseline ? "vs baseline" : "Perubahan temuan"}
+        {hasBaseline ? t("vsBaseline") : t("findingChanges")}
       </span>
       {!hasDelta && hasBaseline && (
         <span className="text-xs text-muted-foreground" role="status">
-          Tidak ada critical/high baru dibanding run sebelumnya.
+          {t("noNewCritHigh")}
         </span>
       )}
       {diff.new_critical > 0 && (
         <Badge variant="critical" className="text-[10px]">
-          +{diff.new_critical} critical
+          {t("newCritical", { count: diff.new_critical })}
         </Badge>
       )}
       {diff.new_high > 0 && (
         <Badge variant="high" className="text-[10px]">
-          +{diff.new_high} high
+          {t("newHigh", { count: diff.new_high })}
         </Badge>
       )}
       {diff.resolved > 0 && (
         <Badge variant="success" className="text-[10px]">
-          {diff.resolved} resolved
+          {t("resolved", { count: diff.resolved })}
         </Badge>
       )}
       {diff.worsened > 0 && (
         <Badge variant="medium" className="text-[10px]">
-          {diff.worsened} worsened
+          {t("worsened", { count: diff.worsened })}
         </Badge>
       )}
       {diff.unchanged > 0 && (
         <Badge variant="default" className="text-[10px]">
-          {diff.unchanged} unchanged
+          {t("unchanged", { count: diff.unchanged })}
         </Badge>
       )}
     </div>
@@ -435,6 +440,7 @@ function InfoRow({
 }
 
 function RemediationCard({ findings }: { findings: ScanFinding[] }) {
+  const { t } = useTranslation("scan");
   const total = findings.length;
   const remediated = findings.filter((f) => f.remediation !== null).length;
   const pct = total > 0 ? Math.round((remediated / total) * 100) : 0;
@@ -449,7 +455,7 @@ function RemediationCard({ findings }: { findings: ScanFinding[] }) {
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-2">
               <p className="text-xs text-muted-foreground">
-                Saran aksi tersedia
+                {t("remediationAvailable")}
               </p>
               <p className="whitespace-nowrap font-mono text-sm font-semibold tabular-nums text-foreground">
                 {remediated}
