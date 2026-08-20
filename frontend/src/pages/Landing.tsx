@@ -64,8 +64,8 @@ const features = [
 
 function Landing() {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="border-b border-border">
+    <div className="min-h-dvh bg-background flex flex-col">
+      <header className="border-b border-border pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <BrandMark to="/" />
           <div className="flex items-center gap-3">
@@ -98,27 +98,27 @@ function Landing() {
                 {BRAND.heroProduct}
               </p>
             </div>
-            <p className="text-base sm:text-lg text-muted-foreground">
+            <p className="text-base sm:text-lg text-foreground/80">
               {BRAND.heroSub}
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
-              <Link to="/register">
-                <Button size="lg" className="text-sm">
+            <div className="flex w-full max-w-sm flex-col sm:max-w-none sm:flex-row items-stretch sm:items-center justify-center gap-3 pt-2 mx-auto">
+              <Link to="/register" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full text-sm min-h-11">
                   Get Started
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-              <Link to="/login">
+              <Link to="/login" className="w-full sm:w-auto">
                 <Button
                   variant="outline"
                   size="lg"
-                  className="text-sm border-muted-foreground/50 text-foreground hover:border-foreground/40 hover:bg-accent"
+                  className="w-full text-sm min-h-11 border-muted-foreground/50 text-foreground hover:border-foreground/40 hover:bg-accent"
                 >
                   Sign In
                 </Button>
               </Link>
             </div>
-            <p className="text-xs text-muted-foreground pt-1">
+            <p className="text-xs text-foreground/70 pt-1">
               Scan → Attach → Workspace → Guard → SIEM
             </p>
           </div>
@@ -147,7 +147,7 @@ function Landing() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-foreground/75">
                       {feature.description}
                     </p>
                   </CardContent>
@@ -160,7 +160,7 @@ function Landing() {
 
       <footer className="mt-auto shrink-0 border-t border-border py-6">
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-3 px-4 sm:flex-row sm:justify-between">
-          <p className="text-xs text-muted-foreground text-center sm:text-left">
+          <p className="text-xs text-foreground/70 text-center sm:text-left">
             {BRAND.footerLine}
           </p>
           <div className="flex items-center gap-4 text-xs">
