@@ -1,0 +1,20 @@
+{
+  "signIn": "Masuk",
+  "signOut": "Keluar",
+  "getStarted": "Mulai",
+  "email": "Email",
+  "password": "Kata sandi",
+  "confirmPassword": "Konfirmasi kata sandi",
+  "hidePassword": "Sembunyikan kata sandi",
+  "showPassword": "Tampilkan kata sandi",
+  "hideConfirmPassword": "Sembunyikan konfirmasi kata sandi",
+  "showConfirmPassword": "Tampilkan konfirmasi kata sandi",
+  "credits": "Kredit",
+  "language": "Bahasa",
+  "languageId": "ID",
+  "languageEn": "EN",
+  "signedInAs": "Masuk sebagai",
+  "waitSeconds": "Terlalu banyak percobaan. Tunggu {{seconds}} dtk",
+  "waitButton": "Tunggu {{seconds}} dtk",
+  "pipeline": "Scan → Attach → Workspace → Guard → SIEM"
+}
