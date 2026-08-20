@@ -40,4 +40,14 @@ describe("AuthLayout", () => {
     expect(screen.getByText("Welcome back")).toBeInTheDocument();
     expect(screen.getByText("Enter your credentials")).toBeInTheDocument();
   });
+
+  it("keeps the brand tagline hidden until the sm breakpoint", () => {
+    render(
+      <AuthLayout title="Sign in">
+        <div>form</div>
+      </AuthLayout>,
+    );
+    const tagline = screen.getByText(/colo, VPS, and hospitality/i);
+    expect(tagline).toHaveClass("hidden", "sm:block");
+  });
 });
