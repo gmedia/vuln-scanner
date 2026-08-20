@@ -105,14 +105,14 @@ describe("Dashboard", () => {
     });
   });
 
-  it("renders the Ringkasan heading", () => {
+  it("renders the Overview heading", () => {
     render(<Dashboard />);
-    expect(screen.getByText("Ringkasan")).toBeInTheDocument();
+    expect(screen.getByText("Overview")).toBeInTheDocument();
   });
 
-  it("renders primary Scan baru CTA", () => {
+  it("renders primary New scan CTA", () => {
     render(<Dashboard />);
-    expect(screen.getByTestId("new-scan-cta")).toHaveTextContent("Scan baru");
+    expect(screen.getByTestId("new-scan-cta")).toHaveTextContent("New scan");
   });
 
   it("opens Scan baru menu with scan type links", async () => {
@@ -125,15 +125,15 @@ describe("Dashboard", () => {
 
   it("renders windowed KPI labels", () => {
     render(<Dashboard />);
-    expect(screen.getByText("Risiko terbuka")).toBeInTheDocument();
-    expect(screen.getByText("7 hari (C/H/M)")).toBeInTheDocument();
-    expect(screen.getAllByText("Jadwal").length).toBeGreaterThan(0);
-    expect(screen.getByText("Kredit")).toBeInTheDocument();
+    expect(screen.getByText("Open risk")).toBeInTheDocument();
+    expect(screen.getByText("7 days (C/H/M)")).toBeInTheDocument();
+    expect(screen.getAllByText("Schedules").length).toBeGreaterThan(0);
+    expect(screen.getByText("Credits")).toBeInTheDocument();
   });
 
-  it("renders Pekerjaan terakhir section", () => {
+  it("renders Recent work section", () => {
     render(<Dashboard />);
-    expect(screen.getByText("Pekerjaan terakhir")).toBeInTheDocument();
+    expect(screen.getByText("Recent work")).toBeInTheDocument();
   });
 
   it("does not render Quick actions dump", () => {
@@ -142,9 +142,9 @@ describe("Dashboard", () => {
     expect(screen.queryByText("New IP Scan")).not.toBeInTheDocument();
   });
 
-  it("shows Belum ada scan when list is empty", () => {
+  it("shows No scans yet when list is empty", () => {
     render(<Dashboard />);
-    expect(screen.getByText("Belum ada scan")).toBeInTheDocument();
+    expect(screen.getByText("No scans yet")).toBeInTheDocument();
     expect(screen.getByTestId("empty-schedules-link")).toHaveAttribute(
       "href",
       "/schedules",
@@ -163,7 +163,7 @@ describe("Dashboard", () => {
       isFetching: false,
     });
     render(<Dashboard />);
-    expect(screen.getByText("Ringkasan")).toBeInTheDocument();
+    expect(screen.getByText("Overview")).toBeInTheDocument();
   });
 
   it("renders scan items when history has data", () => {
@@ -192,7 +192,7 @@ describe("Dashboard", () => {
     });
     render(<Dashboard />);
     expect(screen.queryByText("example.com")).not.toBeInTheDocument();
-    expect(screen.getByText(/Target percobaan disembunyikan/)).toBeInTheDocument();
+    expect(screen.getByText(/Lab targets hidden/)).toBeInTheDocument();
   });
 
   it("shows real target after revealing lab rows", async () => {
@@ -276,7 +276,7 @@ describe("Dashboard", () => {
       isFetching: false,
     });
     render(<Dashboard />);
-    expect(screen.getByText(/42 scan sekali jalan/)).toBeInTheDocument();
+    expect(screen.getByText(/42 one-off scans/)).toBeInTheDocument();
   });
 
   it("clears scan history UI when activeOrgId changes", () => {
@@ -376,12 +376,12 @@ describe("Dashboard", () => {
     });
     render(<Dashboard />);
     expect(screen.queryByText("NaN")).not.toBeInTheDocument();
-    expect(screen.getByText("Risiko terbuka").previousElementSibling?.textContent).toBe("1");
-    expect(screen.getByText("Gagal")).toBeInTheDocument();
+    expect(screen.getByText("Open risk").previousElementSibling?.textContent).toBe("1");
+    expect(screen.getByText("Failed")).toBeInTheDocument();
     expect(screen.getByText("1C")).toBeInTheDocument();
     expect(screen.getByText("2M")).toBeInTheDocument();
     const jobs = screen
-      .getByText("Pekerjaan terakhir")
+      .getByText("Recent work")
       .closest('[class*="lg:grid-cols-12"]');
     expect(jobs?.className).toMatch(/items-stretch/);
   });
