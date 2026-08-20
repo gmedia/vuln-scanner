@@ -59,6 +59,7 @@ export async function ensureLoggedIn(page: Page): Promise<void> {
       refreshToken?: string;
     }) => {
       window.localStorage.setItem("accessToken", at);
+      window.localStorage.setItem("sinexis.locale", "id");
       if (rt) {
         window.localStorage.setItem("refreshToken", rt);
       }

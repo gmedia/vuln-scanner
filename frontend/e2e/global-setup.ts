@@ -53,6 +53,7 @@ async function globalSetup(config: FullConfig) {
       refreshToken?: string;
     }) => {
       window.localStorage.setItem("accessToken", accessToken);
+      window.localStorage.setItem("sinexis.locale", "id");
       if (refreshToken) {
         window.localStorage.setItem("refreshToken", refreshToken);
       }
