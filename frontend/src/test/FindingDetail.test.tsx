@@ -56,7 +56,7 @@ describe("FindingDetail", () => {
   it("renders impact section with risk label when impact exists", () => {
     render(<FindingDetail finding={mockFinding()} />);
     expect(
-      screen.getByText("Risiko jika tidak ditindaklanjuti")
+      screen.getByText("Risk if not addressed")
     ).toBeInTheDocument();
     expect(
       screen.getByText(/If left unfixed, attackers can read or modify/)
@@ -66,13 +66,13 @@ describe("FindingDetail", () => {
   it("does NOT render impact section when impact is null", () => {
     render(<FindingDetail finding={mockFinding({ impact: null })} />);
     expect(
-      screen.queryByText("Risiko jika tidak ditindaklanjuti")
+      screen.queryByText("Risk if not addressed")
     ).not.toBeInTheDocument();
   });
 
   it("renders remediation section with 'Saran aksi' label when remediation exists", () => {
     render(<FindingDetail finding={mockFinding()} />);
-    expect(screen.getByText("Saran aksi")).toBeInTheDocument();
+    expect(screen.getByText("Suggested action")).toBeInTheDocument();
   });
 
   it("does NOT render remediation section when remediation is null", () => {
@@ -81,7 +81,7 @@ describe("FindingDetail", () => {
         finding={mockFinding({ remediation: null })}
       />
     );
-    expect(screen.queryByText("Saran aksi")).not.toBeInTheDocument();
+    expect(screen.queryByText("Suggested action")).not.toBeInTheDocument();
   });
 
   it("renders 'RAW DATA' toggle button", async () => {
