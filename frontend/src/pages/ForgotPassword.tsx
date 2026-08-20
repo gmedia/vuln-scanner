@@ -47,8 +47,11 @@ function ForgotPassword() {
         <Card className="w-full">
           <CardContent className="pt-6 text-center space-y-4">
             <CheckCircle className="h-12 w-12 text-primary mx-auto" />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-foreground/80">
               We've sent a password reset link to your email address.
+            </p>
+            <p className="text-xs text-foreground/70">
+              Check spam if it doesn&apos;t arrive in a few minutes.
             </p>
             <Link to="/login">
               <Button className="w-full text-sm mt-4">
@@ -89,16 +92,20 @@ function ForgotPassword() {
               >
                 Email
               </label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-                disabled={isSubmitting}
-              />
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your signup email"
+                  className="placeholder:text-muted-foreground/55"
+                  required
+                  disabled={isSubmitting}
+                />
             </div>
+            <p className="text-xs text-foreground/70">
+              Check spam if it doesn&apos;t arrive in a few minutes.
+            </p>
             <Button
               type="submit"
               className="w-full text-sm"

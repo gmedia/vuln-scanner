@@ -76,11 +76,15 @@ describe("VerifyEmail", () => {
       ).toBeInTheDocument();
     });
 
-    it("renders resend email form with labeled input and button", () => {
+    it("keeps resend collapsed until Didn't get it is opened", () => {
       render(<VerifyEmail />);
+      expect(
+        screen.queryByRole("button", { name: "Resend Verification Email" }),
+      ).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: /didn/i }));
       expect(screen.getByLabelText("Email")).toBeInTheDocument();
       expect(
-        screen.getByPlaceholderText("you@example.com"),
+        screen.getByPlaceholderText("your signup email"),
       ).toBeInTheDocument();
       expect(
         screen.getByRole("button", { name: "Resend Verification Email" }),
@@ -89,7 +93,8 @@ describe("VerifyEmail", () => {
 
     it("shows resend success message after successful resend", async () => {
       render(<VerifyEmail />);
-      const input = screen.getByPlaceholderText("you@example.com");
+      fireEvent.click(screen.getByRole("button", { name: /didn/i }));
+      const input = screen.getByPlaceholderText("your signup email");
       fireEvent.change(input, { target: { value: "user@example.com" } });
 
       fireEvent.click(
@@ -120,12 +125,14 @@ describe("VerifyEmail", () => {
       );
 
       render(<VerifyEmail />);
+      fireEvent.click(screen.getByRole("button", { name: /didn/i }));
       expect(screen.getByText("Rate limited")).toBeInTheDocument();
     });
 
     it("shows cooldown timer when cooldown > 0", () => {
       mockCooldown = 15;
       render(<VerifyEmail />);
+      fireEvent.click(screen.getByRole("button", { name: /didn/i }));
       expect(
         screen.getByText(/Too many attempts. Wait 15s/),
       ).toBeInTheDocument();
@@ -133,7 +140,8 @@ describe("VerifyEmail", () => {
 
     it("calls resendVerification on form submit", async () => {
       render(<VerifyEmail />);
-      const input = screen.getByPlaceholderText("you@example.com");
+      fireEvent.click(screen.getByRole("button", { name: /didn/i }));
+      const input = screen.getByPlaceholderText("your signup email");
       fireEvent.change(input, { target: { value: "user@example.com" } });
 
       fireEvent.click(
@@ -161,7 +169,8 @@ describe("VerifyEmail", () => {
           ),
       );
       render(<VerifyEmail />);
-      const input = screen.getByPlaceholderText("you@example.com");
+      fireEvent.click(screen.getByRole("button", { name: /didn/i }));
+      const input = screen.getByPlaceholderText("your signup email");
       fireEvent.change(input, { target: { value: "user@example.com" } });
 
       fireEvent.click(

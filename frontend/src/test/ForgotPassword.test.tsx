@@ -53,7 +53,9 @@ describe("ForgotPassword", () => {
 
   it("renders email input with correct placeholder", () => {
     render(<ForgotPassword />);
-    expect(screen.getByPlaceholderText("you@example.com")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("your signup email"),
+    ).toBeInTheDocument();
   });
 
   it("renders Send Reset Link button", () => {
@@ -93,7 +95,7 @@ describe("ForgotPassword", () => {
 
   it("shows success state after successful submit", async () => {
     render(<ForgotPassword />);
-    const emailInput = screen.getByPlaceholderText("you@example.com");
+    const emailInput = screen.getByPlaceholderText("your signup email");
     fireEvent.change(emailInput, { target: { value: "user@example.com" } });
 
     fireEvent.click(screen.getByRole("button", { name: "Send Reset Link" }));
@@ -105,7 +107,7 @@ describe("ForgotPassword", () => {
 
   it("success state has Back to Sign In link", async () => {
     render(<ForgotPassword />);
-    const emailInput = screen.getByPlaceholderText("you@example.com");
+    const emailInput = screen.getByPlaceholderText("your signup email");
     fireEvent.change(emailInput, { target: { value: "user@example.com" } });
 
     fireEvent.click(screen.getByRole("button", { name: "Send Reset Link" }));
@@ -121,7 +123,7 @@ describe("ForgotPassword", () => {
       () => new Promise((resolve) => setTimeout(() => resolve(true), 100)),
     );
     render(<ForgotPassword />);
-    const emailInput = screen.getByPlaceholderText("you@example.com");
+    const emailInput = screen.getByPlaceholderText("your signup email");
     fireEvent.change(emailInput, { target: { value: "user@example.com" } });
 
     fireEvent.click(screen.getByRole("button", { name: "Send Reset Link" }));
@@ -129,11 +131,14 @@ describe("ForgotPassword", () => {
     await waitFor(() => {
       expect(screen.getByText("Sending reset link...")).toBeInTheDocument();
     });
+    await waitFor(() => {
+      expect(screen.getByText("Check Your Email")).toBeInTheDocument();
+    });
   });
 
   it("calls forgotPassword on form submit", async () => {
     render(<ForgotPassword />);
-    const emailInput = screen.getByPlaceholderText("you@example.com");
+    const emailInput = screen.getByPlaceholderText("your signup email");
     fireEvent.change(emailInput, { target: { value: "user@example.com" } });
 
     fireEvent.click(screen.getByRole("button", { name: "Send Reset Link" }));
@@ -148,13 +153,16 @@ describe("ForgotPassword", () => {
       () => new Promise((resolve) => setTimeout(() => resolve(true), 100)),
     );
     render(<ForgotPassword />);
-    const emailInput = screen.getByPlaceholderText("you@example.com");
+    const emailInput = screen.getByPlaceholderText("your signup email");
     fireEvent.change(emailInput, { target: { value: "user@example.com" } });
 
     fireEvent.click(screen.getByRole("button", { name: "Send Reset Link" }));
 
     await waitFor(() => {
       expect(emailInput).toBeDisabled();
+    });
+    await waitFor(() => {
+      expect(screen.getByText("Check Your Email")).toBeInTheDocument();
     });
   });
 
