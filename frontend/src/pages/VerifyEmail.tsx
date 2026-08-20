@@ -8,6 +8,15 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import AuthLayout from "@/components/layout/AuthLayout";
 
+function maskSignupEmail(email: string): string {
+  const at = email.lastIndexOf("@");
+  if (at <= 0) return email;
+  const local = email.slice(0, at);
+  const domain = email.slice(at + 1);
+  const keep = local.slice(0, 1);
+  return `${keep}***@${domain}`;
+}
+
 function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -16,6 +25,7 @@ function VerifyEmail() {
   const [resendEmail, setResendEmail] = useState(
     () => searchParams.get("email") ?? "",
   );
+  const [showResend, setShowResend] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
   const { cooldown, startCooldown } = useRateLimitCooldown();
@@ -55,77 +65,100 @@ function VerifyEmail() {
       }
     };
 
+    const signupHint = resendEmail.trim()
+      ? maskSignupEmail(resendEmail.trim())
+      : null;
+
     return (
       <AuthLayout
         title="Check your email"
-        subtitle="We've sent a verification link to your email address. Click the link in the email to verify your account."
+        subtitle="Open the link we sent to verify your account."
         maxWidth="sm"
       >
         <Card className="w-full">
           <CardContent className="pt-6 text-center space-y-4">
             <Mail className="h-10 w-10 text-primary mx-auto" />
-
-            <form onSubmit={handleResend} className="space-y-3 text-left">
-              <p className="text-xs text-muted-foreground text-center">
-                Didn't receive the email? Enter your email to resend.
+            {signupHint && (
+              <p className="text-sm text-foreground/90">
+                Sent to <span className="font-medium">{signupHint}</span>
               </p>
+            )}
+            <p className="text-xs text-foreground/70">
+              Check spam or promotions if it is not in your inbox.
+            </p>
 
-              <div className="min-h-[1.25rem]">
-                {cooldown > 0 && (
-                  <p className="text-xs text-amber-400 text-center flex items-center justify-center gap-1">
-                    <Timer className="h-3 w-3" />
-                    Too many attempts. Wait {cooldown}s
-                  </p>
-                )}
-                {resendSuccess && cooldown === 0 && (
-                  <p className="text-xs text-green-400 text-center">
-                    Verification email resent! Please check your inbox.
-                  </p>
-                )}
-                {error && !resendSuccess && cooldown === 0 && (
-                  <p className="text-xs text-red-400 text-center">
-                    {error}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  htmlFor="email"
-                  className="block text-xs text-muted-foreground"
-                >
-                  Email
-                </label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={resendEmail}
-                  onChange={(e) => setResendEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                  disabled={isResending}
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full text-sm"
-                disabled={isResending || cooldown > 0}
+            {!showResend ? (
+              <button
+                type="button"
+                className="text-sm text-foreground/90 underline-offset-4 hover:text-primary hover:underline py-2"
+                onClick={() => setShowResend(true)}
               >
-                {cooldown > 0 ? (
-                  <>
-                    <Timer className="mr-2 h-4 w-4" />
-                    Wait {cooldown}s
-                  </>
-                ) : isResending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  "Resend Verification Email"
-                )}
-              </Button>
-            </form>
+                Didn&apos;t get it?
+              </button>
+            ) : (
+              <form onSubmit={handleResend} className="space-y-3 text-left">
+                <p className="text-xs text-foreground/70 text-center">
+                  Enter your signup email to resend the link.
+                </p>
+
+                <div className="min-h-[1.25rem]">
+                  {cooldown > 0 && (
+                    <p className="text-xs text-amber-400 text-center flex items-center justify-center gap-1">
+                      <Timer className="h-3 w-3" />
+                      Too many attempts. Wait {cooldown}s
+                    </p>
+                  )}
+                  {resendSuccess && cooldown === 0 && (
+                    <p className="text-xs text-green-400 text-center">
+                      Verification email resent! Please check your inbox.
+                    </p>
+                  )}
+                  {error && !resendSuccess && cooldown === 0 && (
+                    <p className="text-xs text-red-400 text-center">
+                      {error}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    htmlFor="email"
+                    className="block text-xs text-foreground/80"
+                  >
+                    Email
+                  </label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={resendEmail}
+                    onChange={(e) => setResendEmail(e.target.value)}
+                    placeholder="your signup email"
+                    required
+                    disabled={isResending}
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  variant="outline"
+                  className="w-full text-sm"
+                  disabled={isResending || cooldown > 0}
+                >
+                  {cooldown > 0 ? (
+                    <>
+                      <Timer className="mr-2 h-4 w-4" />
+                      Wait {cooldown}s
+                    </>
+                  ) : isResending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    "Resend Verification Email"
+                  )}
+                </Button>
+              </form>
+            )}
 
             <Link to="/login" className="block">
               <Button variant="outline" className="w-full text-sm">
