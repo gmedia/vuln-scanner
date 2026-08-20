@@ -1,6 +1,6 @@
 # Spec: shadcn/ui migration (SPA Sinexis / VulnScanner)
 
-**Status:** Wave A–F shipped (`main`, #349). Findings severity filter shipped (`main`, #351). Remaining: Wave G skip unless asked; AdminDashboard KPI optional.
+**Status:** Wave A–F shipped (`main`, #349). Findings filter #351. Admin KPI chart #353. Remaining: Wave G skip unless asked. No leftover UI kit debt.
 **Surface:** in-app SPA (`sinexis.app` dashboard), not a new marketing site.
 **Depends:** kit already in `frontend/src/components/ui/` · sidebar-03 shipped · visual wave popover/calendar/Guard/Guide on `feat/shadcn-popover-calendar-guard-guide` (PR #341, may land after this doc).
 **Not this epic:** mass Dependabot, password-eye unless requested, Command palette, RHF `form`, hard rebrand, Guard/Wazuh features, SIEM query builder.
@@ -115,14 +115,14 @@ User Guide **desktop TOC** stays Card + ScrollArea + `guide-desktop-toc`. Do not
 
 ### Wave F — feedback + charts (M)
 
-**Shipped:** `main` (#349). `sonner` + `chart`. No `next-themes`. Imports stay `@/components/ui/Card`. AdminDashboard KPI skipped.
+**Shipped:** `main` (#349). `sonner` + `chart`. No `next-themes`. Imports stay `@/components/ui/Card`. AdminDashboard KPI chart shipped (#353).
 
 | Item | After |
 |------|--------|
 | Success after mutations (Workspace invite/revoke/org/accept, Profile email/password, Guard enable/sync/token, Schedules create/toggle/delete) | **sonner** `toast.success` |
 | Page-level / form-field errors | keep destructive `Alert` (not toast) |
 | `SeverityChart.tsx` Recharts pie | shadcn **ChartContainer** + `ChartTooltip`; freeze `severity-chart-content` |
-| AdminDashboard KPI | **skip** |
+| AdminDashboard KPI | **shipped** #353 — number cards kept; `ChartContainer` + `BarChart`; `admin-kpi-chart` |
 
 Findings table severity filter (leftover after Wave F): **shipped** `main` (#351). Search copy frozen (`Filter findings...` / `No matching findings`). `DropdownMenuCheckboxItem`; empty `Set` = all severities. Freeze `export-executive`, `rescan-button`.
 
@@ -152,7 +152,7 @@ Findings table severity filter (leftover after Wave F): **shipped** `main` (#351
 | UserGuide / Guard distro | `<details>` | accordion | **High** — tests | M |
 | Mutations | Inline text | sonner | Low | S |
 | SeverityChart | Raw Recharts | chart | Low | M |
-| AdminDashboard | Number Cards | chart optional | Low | M |
+| AdminDashboard | Number Cards + bar | **shipped** #353 (`ChartContainer`) | — | M |
 | Filter findings | Text + severity dropdown | **shipped** #351 (`DropdownMenuCheckboxItem`) | — | S |
 | Header | lucide User | avatar (optional) | **High** | S |
 | OrgSwitcher | dropdown-menu | command — **no** | **High** | L |
@@ -188,12 +188,9 @@ npx shadcn@latest add <component> --yes
 
 ---
 
-## 7) Suggested first PR after #351 merges
+## 7) After #353
 
-**Docs-only leftover is this file.** Next product UI only with an explicit verb:
-
-- Optional: AdminDashboard KPI → `chart` (Low / M). Not P3/SIEM.
-- Wave G (avatar Header, breadcrumb, command, RHF, Switch Guard, password-eye): **skip** unless asked. Avatar/`command` freeze `user-menu` / `org-switcher*`.
+shadcn kit leftover **closed** (waves A–F, findings filter, admin KPI). Next UI only with an explicit verb. Wave G **skip** (avatar/`command` freeze `user-menu` / `org-switcher*`). Not P3/SIEM/Dependabot.
 
 ---
 
