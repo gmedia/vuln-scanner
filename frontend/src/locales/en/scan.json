@@ -86,5 +86,21 @@
   "resolved": "{{count}} resolved",
   "worsened": "{{count}} worsened",
   "unchanged": "{{count}} unchanged",
-  "remediationAvailable": "Suggested actions available"
+  "remediationAvailable": "Suggested actions available",
+  "findingDescription": "Description",
+  "findingImpact": "Risk if not addressed",
+  "findingRemediation": "Suggested action",
+  "rawData": "RAW DATA",
+  "noRawData": "No raw data available for this finding.",
+  "noFindings": "No findings detected",
+  "cleanResult": "This scan returned a clean result.",
+  "filterFindings": "Filter findings...",
+  "filterSeverity": "Filter by severity",
+  "colTitle": "Title",
+  "colCategory": "Category",
+  "colCve": "CVE",
+  "colCvss": "CVSS",
+  "colRemediation": "Suggested action",
+  "hasRemediation": "Has suggestion",
+  "noMatchingFindings": "No matching findings"
 }

@@ -86,5 +86,21 @@
   "resolved": "{{count}} resolved",
   "worsened": "{{count}} worsened",
   "unchanged": "{{count}} unchanged",
-  "remediationAvailable": "Saran aksi tersedia"
+  "remediationAvailable": "Saran aksi tersedia",
+  "findingDescription": "Deskripsi",
+  "findingImpact": "Risiko jika tidak ditindaklanjuti",
+  "findingRemediation": "Saran aksi",
+  "rawData": "DATA MENTAH",
+  "noRawData": "Tidak ada data mentah untuk temuan ini.",
+  "noFindings": "Tidak ada temuan",
+  "cleanResult": "Scan ini tidak menemukan kerentanan.",
+  "filterFindings": "Filter temuan...",
+  "filterSeverity": "Filter berdasarkan severity",
+  "colTitle": "Judul",
+  "colCategory": "Kategori",
+  "colCve": "CVE",
+  "colCvss": "CVSS",
+  "colRemediation": "Saran aksi",
+  "hasRemediation": "Ada saran",
+  "noMatchingFindings": "Tidak ada temuan yang cocok"
 }
