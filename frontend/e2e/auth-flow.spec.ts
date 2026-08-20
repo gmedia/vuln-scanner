@@ -6,7 +6,7 @@ test.describe("Auth — Login", () => {
 
   test("login page renders correctly", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.locator("h1")).toContainText("Sign in");
+    await expect(page.locator("h1")).toContainText("Masuk");
     await expect(page.locator("input#email")).toBeVisible();
     await expect(page.locator("input#password")).toBeVisible();
     await expect(page.locator("button[type='submit']")).toBeVisible();
@@ -50,7 +50,7 @@ test.describe("Auth — Register", () => {
 
   test("register page renders correctly", async ({ page }) => {
     await page.goto("/register");
-    await expect(page.locator("h1")).toContainText("Create account");
+    await expect(page.locator("h1")).toContainText("Buat akun");
     await expect(page.locator("input#email")).toBeVisible();
     await expect(page.locator("input#password")).toBeVisible();
     await expect(page.locator("input#confirmPassword")).toBeVisible();
@@ -94,7 +94,7 @@ test.describe("Auth — Register", () => {
     await page.locator("input#confirmPassword").fill("Str0ng!Pass123");
     await page.locator("button[type='submit']").click();
     await expect(
-      page.locator("h1:has-text('Registration Successful!')"),
+      page.locator("h1:has-text('Pendaftaran berhasil!')"),
     ).toBeVisible({ timeout: 15_000 });
   });
 });
@@ -112,7 +112,7 @@ test.describe("Auth — Logout", () => {
     await expect(signOutBtn).toBeVisible();
     await signOutBtn.click();
     await page.waitForURL("/login", { timeout: 10_000 });
-    await expect(page.locator("h1")).toContainText("Sign in");
+    await expect(page.locator("h1")).toContainText("Masuk");
   });
 
   test("protected route redirects to login when unauthenticated", async ({
@@ -126,7 +126,7 @@ test.describe("Auth — Logout", () => {
     const freshPage = await freshContext.newPage();
     await freshPage.goto("/dashboard");
     await freshPage.waitForURL("/login", { timeout: 10_000 });
-    await expect(freshPage.locator("h1")).toContainText("Sign in");
+    await expect(freshPage.locator("h1")).toContainText("Masuk");
     await freshContext.close();
   });
 });

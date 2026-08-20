@@ -40,7 +40,7 @@ test.describe("Navigation", () => {
 
   test("browser back and forward navigation", async ({ page }) => {
     await page.goto("/dashboard");
-    await page.locator("aside").locator("text=Domain Scanner").click();
+    await page.locator("aside").locator("text=Scanner domain").click();
     await expect(page).toHaveURL("/scan/domain");
 
     await page.goBack();

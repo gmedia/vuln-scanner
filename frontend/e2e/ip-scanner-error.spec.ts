@@ -30,7 +30,7 @@ test.describe("IP Scanner Error States", () => {
     await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, {
       timeout: 15_000,
     });
-    await expect(page.locator("h2:has-text('Scan details')")).toBeVisible({
+    await expect(page.locator("h2:has-text('Detail scan')")).toBeVisible({
       timeout: 15_000,
     });
   });

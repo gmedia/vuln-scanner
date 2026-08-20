@@ -16,59 +16,59 @@ test.describe("Verify Email", () => {
 
     test("shows Check Your Email card title", async ({ page }) => {
       await page.goto("/verify-email");
-      await expect(page.locator("text=Check your email")).toBeVisible();
+      await expect(page.locator("text=Periksa email Anda")).toBeVisible();
     });
 
     test("shows instructional text", async ({ page }) => {
       await page.goto("/verify-email");
       await expect(
-        page.locator("text=Open the link we sent to verify your account."),
+        page.locator("text=Buka tautan yang kami kirim untuk verifikasi akun."),
       ).toBeVisible();
     });
 
     test("Back to Login button is visible", async ({ page }) => {
       await page.goto("/verify-email");
       await expect(
-        page.locator("a[href='/login']").locator("text=Back to sign in"),
+        page.locator("a[href='/login']").locator("text=Kembali ke masuk"),
       ).toBeVisible();
     });
 
     test("resend email input has correct placeholder", async ({ page }) => {
       await page.goto("/verify-email");
-      await page.getByRole("button", { name: /didn/i }).click();
+      await page.getByRole("button", { name: /Tidak menerima email/i }).click();
       const emailInput = page.locator("input[type='email']");
       await expect(emailInput).toHaveAttribute(
         "placeholder",
-        "your signup email",
+        "email pendaftaran Anda",
       );
     });
 
     test("resend button is enabled when email is filled", async ({ page }) => {
       await page.goto("/verify-email");
-      await page.getByRole("button", { name: /didn/i }).click();
+      await page.getByRole("button", { name: /Tidak menerima email/i }).click();
       const emailInput = page.locator("input[type='email']");
       await emailInput.fill("test@example.com");
 
       const resendBtn = page.locator(
-        "button:has-text('Resend Verification Email')",
+        "button:has-text('Kirim ulang email verifikasi')",
       );
       await expect(resendBtn).not.toBeDisabled();
     });
 
     test("submitting resend form shows feedback", async ({ page }) => {
       await page.goto("/verify-email");
-      await page.getByRole("button", { name: /didn/i }).click();
+      await page.getByRole("button", { name: /Tidak menerima email/i }).click();
       const emailInput = page.locator("input[type='email']");
       await emailInput.fill(
         process.env.E2E_EMAIL?.trim() || "e2e@vulnscan.dev",
       );
 
       await page
-        .locator("button:has-text('Resend Verification Email')")
+        .locator("button:has-text('Kirim ulang email verifikasi')")
         .click();
 
       const feedback = page.locator(
-        "text=/Verification email resent|Too many attempts/",
+        "text=/Email verifikasi dikirim ulang|Terlalu banyak percobaan/",
       );
       await expect(feedback).toBeVisible({ timeout: 15_000 });
     });
@@ -84,7 +84,7 @@ test.describe("Verify Email", () => {
       });
 
       await expect(
-        page.getByRole("heading", { name: /Verification failed/i }),
+        page.getByRole("heading", { name: /Verifikasi gagal/i }),
       ).toBeVisible();
     });
 
@@ -92,7 +92,7 @@ test.describe("Verify Email", () => {
       await page.goto("/verify-email?token=invalid-token-value");
 
       await expect(
-        page.locator("a[href='/login']").locator("text=Back to sign in"),
+        page.locator("a[href='/login']").locator("text=Kembali ke masuk"),
       ).toBeVisible({ timeout: 15_000 });
     });
   });

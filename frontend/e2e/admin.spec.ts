@@ -34,10 +34,10 @@ test.describe("Admin — Access", () => {
     await page.goto("/dashboard");
     await expect(page.locator("aside")).toBeVisible();
     await expect(
-      page.locator("aside").locator("a:has-text('Users')"),
+      page.locator("aside").locator("a:has-text('Pengguna')"),
     ).toBeVisible({ timeout: 10_000 });
     await expect(
-      page.locator("aside").locator("a:has-text('Pricing')"),
+      page.locator("aside").locator("a:has-text('Harga')"),
     ).toBeVisible({ timeout: 10_000 });
   });
 });

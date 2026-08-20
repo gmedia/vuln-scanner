@@ -68,35 +68,31 @@ test.describe("Dashboard", () => {
     await page.goto("/dashboard");
     await expect(page.locator("aside")).toBeVisible();
     await expect(
-      page.locator("aside").locator("a:has-text('Dashboard')").first(),
+      page.locator("aside").locator("a:has-text('Dasbor')").first(),
     ).toBeVisible();
     await expect(
-      page.locator("aside").locator("a:has-text('IP Scanner')"),
+      page.locator("aside").locator("a:has-text('Scanner IP')"),
     ).toBeVisible();
     await expect(
-      page.locator("aside").locator("a:has-text('Domain Scanner')"),
+      page.locator("aside").locator("a:has-text('Scanner domain')"),
     ).toBeVisible();
     await expect(
-      page.locator("aside").locator("a:has-text('Mobile Scanner')"),
+      page.locator("aside").locator("a:has-text('Scanner mobile')"),
     ).toBeVisible();
   });
 
   test("sidebar nav items navigate to correct pages", async ({ page }) => {
     await page.goto("/dashboard");
-    await page.locator("aside").locator("a:has-text('IP Scanner')").click();
+    await page.locator("aside").locator("a:has-text('Scanner IP')").click();
     await expect(page).toHaveURL("/scan/ip");
 
-    await page.locator("aside").locator("a:has-text('Domain Scanner')").click();
+    await page.locator("aside").locator("a:has-text('Scanner domain')").click();
     await expect(page).toHaveURL("/scan/domain");
 
-    await page.locator("aside").locator("a:has-text('Mobile Scanner')").click();
+    await page.locator("aside").locator("a:has-text('Scanner mobile')").click();
     await expect(page).toHaveURL("/scan/mobile");
 
-    await page
-      .locator("aside")
-      .locator("a:has-text('Dashboard')")
-      .first()
-      .click();
+    await page.locator("aside").locator("a:has-text('Dasbor')").first().click();
     await expect(page).toHaveURL("/dashboard");
   });
 });
