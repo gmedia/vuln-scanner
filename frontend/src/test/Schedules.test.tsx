@@ -105,11 +105,11 @@ describe("Schedules page", () => {
     });
   });
 
-  it("renders Bahasa Indonesia chrome", async () => {
+  it("renders schedule chrome", async () => {
     renderAt();
-    expect(await screen.findByText("Jadwal scan")).toBeInTheDocument();
-    expect(screen.getByText("Jadwal baru")).toBeInTheDocument();
-    expect(screen.getByText(/Kuota jadwal aktif/)).toBeInTheDocument();
+    expect(await screen.findByText("Scan schedule")).toBeInTheDocument();
+    expect(screen.getByText("New schedule")).toBeInTheDocument();
+    expect(screen.getByText(/Active schedule quota/)).toBeInTheDocument();
     expect(screen.getByText("0/10")).toBeInTheDocument();
   });
 
@@ -131,7 +131,7 @@ describe("Schedules page", () => {
     expect(
       await screen.findByText(/Kredit tidak mencukupi/),
     ).toBeInTheDocument();
-    const link = screen.getByRole("link", { name: /Lihat riwayat kredit/i });
+    const link = screen.getByRole("link", { name: /View credit history/i });
     expect(link).toHaveAttribute("href", "/credit-history");
   });
 
@@ -148,10 +148,10 @@ describe("Schedules page", () => {
     );
     renderAt();
     expect(await screen.findByText("10/10")).toBeInTheDocument();
-    const submit = screen.getByRole("button", { name: /Buat jadwal/i });
+    const submit = screen.getByRole("button", { name: /Create schedule/i });
     expect(submit).toBeDisabled();
     expect(
-      screen.getByText(/Batas 10 jadwal aktif per organisasi/),
+      screen.getByText(/Limit 10 active schedules per organization/),
     ).toBeInTheDocument();
   });
 
@@ -174,9 +174,9 @@ describe("Schedules page", () => {
     const user = userEvent.setup();
     renderAt();
     await screen.findByText("Weekly external");
-    await user.click(screen.getByRole("button", { name: /Riwayat scan/i }));
+    await user.click(screen.getByRole("button", { name: /Scan history/i }));
     await waitFor(() => expect(mockRuns).toHaveBeenCalledWith("sched-1", 10));
-    const runLink = await screen.findByRole("link", { name: /buka scan/i });
+    const runLink = await screen.findByRole("link", { name: /open scan/i });
     expect(runLink).toHaveAttribute("href", "/scan/job-99");
   });
 
@@ -186,7 +186,7 @@ describe("Schedules page", () => {
     renderAt();
     await screen.findByText("Weekly external");
     await user.click(
-      screen.getByRole("button", { name: /Unduh laporan eksekutif/i }),
+      screen.getByRole("button", { name: /Download executive report/i }),
     );
     expect(mockDownload).toHaveBeenCalledWith("job-1", "executive");
   });
@@ -199,14 +199,14 @@ describe("Schedules page", () => {
     const user = userEvent.setup();
     renderAt();
     await screen.findByText("Weekly external");
-    await user.click(screen.getByRole("button", { name: "Hapus jadwal" }));
+    await user.click(screen.getByRole("button", { name: "Delete schedule" }));
     expect(
       await screen.findByRole("alertdialog"),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Hapus jadwal untuk example.com/),
+      screen.getByText(/Delete schedule for example.com/),
     ).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Hapus" }));
+    await user.click(screen.getByRole("button", { name: "Delete" }));
     await waitFor(() =>
       expect(mockDelete).toHaveBeenCalledWith("sched-1", expect.anything()),
     );
@@ -219,9 +219,9 @@ describe("Schedules page", () => {
     const user = userEvent.setup();
     renderAt();
     await screen.findByText("Weekly external");
-    await user.click(screen.getByRole("button", { name: "Hapus jadwal" }));
+    await user.click(screen.getByRole("button", { name: "Delete schedule" }));
     await screen.findByRole("alertdialog");
-    await user.click(screen.getByRole("button", { name: "Batal" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
     await waitFor(() =>
       expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument(),
     );
@@ -239,7 +239,7 @@ describe("Schedules page", () => {
     const user = userEvent.setup();
     renderAt();
     await screen.findByText("Weekly external");
-    await user.click(screen.getByRole("button", { name: /Aktifkan/i }));
+    await user.click(screen.getByRole("button", { name: /Enable/i }));
     await waitFor(() =>
       expect(screen.getByRole("alert")).toHaveTextContent(/Batas 10/),
     );

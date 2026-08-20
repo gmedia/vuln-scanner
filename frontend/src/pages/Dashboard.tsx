@@ -46,15 +46,16 @@ import { listGuardAgents, listGuardAlerts } from "@/api/guard";
 import { useAuthStore } from "@/store/authStore";
 import { useCreditStore } from "@/store/creditStore";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 const PAGE_LIMIT = 20;
 const RECENT_CAP = 8;
 
 const NEW_SCAN_OPTIONS = [
-  { to: "/scan/ip", label: "Scan IP", icon: Radar },
-  { to: "/scan/domain", label: "Scan domain", icon: Globe },
-  { to: "/scan/mobile", label: "Scan mobile", icon: Smartphone },
-] as const;
+  { to: "/scan/ip", labelKey: "scanIp" as const, icon: Radar },
+  { to: "/scan/domain", labelKey: "scanDomain" as const, icon: Globe },
+  { to: "/scan/mobile", labelKey: "scanMobile" as const, icon: Smartphone },
+];
 
 function severityCount(
   summary: ScanJob["result_summary"],
@@ -73,19 +74,19 @@ function isInternalTarget(target: string): boolean {
   return false;
 }
 
-function formatIdDate(iso: string | null | undefined): string {
+function formatIdDate(iso: string | null | undefined, locale: string): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("id-ID", {
+  return d.toLocaleDateString(locale === "en" ? "en-US" : "id-ID", {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
 }
 
-function formatCredits(n: number): string {
-  return n.toLocaleString("id-ID");
+function formatCredits(n: number, locale: string): string {
+  return n.toLocaleString(locale === "en" ? "en-US" : "id-ID");
 }
 
 function latestPerTarget(scans: ScanJob[]): ScanJob[] {
@@ -101,6 +102,7 @@ function latestPerTarget(scans: ScanJob[]): ScanJob[] {
 }
 
 function Dashboard() {
+  const { t, i18n } = useTranslation("scan");
   const [hideInternal, setHideInternal] = useState(true);
 
   const { data: pageData, isLoading, isFetching } = useScanHistory(
@@ -203,28 +205,28 @@ function Dashboard() {
   if (openRisk.critical + openRisk.high > 0) {
     attention.push({
       key: "risk",
-      text: `${openRisk.critical + openRisk.high} temuan Critical/High pada scan terakhir per target`,
+      text: t("attentionRisk", { count: openRisk.critical + openRisk.high }),
       to: "#pekerjaan-terakhir",
     });
   }
   if (failedJobs.length > 0) {
     attention.push({
       key: "fail",
-      text: `${failedJobs.length} scan gagal pada halaman ini`,
+      text: t("attentionFail", { count: failedJobs.length }),
       to: `/scan/${failedJobs[0].id}`,
     });
   }
   if (staleAgents.length > 0) {
     attention.push({
       key: "guard",
-      text: `${staleAgents.length} agen Guard tidak check-in > 24 jam`,
+      text: t("attentionGuardStale", { count: staleAgents.length }),
       to: "/guard",
     });
   }
   if (criticalAlerts.length > 0) {
     attention.push({
       key: "alert",
-      text: `${criticalAlerts.length} alert Guard level tinggi`,
+      text: t("attentionGuardAlert", { count: criticalAlerts.length }),
       to: "/guard",
     });
   }
@@ -239,12 +241,14 @@ function Dashboard() {
           <Crosshair className="h-6 w-6 text-primary" />
           <div>
             <h2 className="text-lg font-bold tracking-wide text-foreground">
-              Ringkasan
+              {t("summary")}
             </h2>
             <p className="text-[11px] text-muted-foreground">
               {enabledSchedules.length > 0
-                ? `${enabledSchedules.length} aset dengan jadwal aktif`
-                : `${totalScans} scan sekali jalan · belum ada attach`}
+                ? t("assetsWithActiveSchedules", {
+                    count: enabledSchedules.length,
+                  })
+                : t("oneOffScansNoAttach", { count: totalScans })}
             </p>
           </div>
         </div>
@@ -255,14 +259,14 @@ function Dashboard() {
               <Button asChild size="lg" className="min-h-11 text-sm">
                 <Link to="/schedules" data-testid="primary-jadwal-cta">
                   <CalendarClock className="mr-2 h-4 w-4" />
-                  Atur jadwal
+                  {t("setSchedule")}
                 </Link>
               </Button>
             ) : (
               <Button asChild variant="outline" size="lg" className="min-h-11 text-sm">
                 <Link to="/schedules">
                   <CalendarClock className="mr-2 h-4 w-4" />
-                  Atur jadwal
+                  {t("setSchedule")}
                 </Link>
               </Button>
             )}
@@ -275,7 +279,7 @@ function Dashboard() {
                   data-testid="new-scan-cta"
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Scan baru
+                  {t("newScan")}
                   <ChevronDown className="ml-2 h-3.5 w-3.5" />
                 </Button>
               </DropdownMenuTrigger>
@@ -284,7 +288,7 @@ function Dashboard() {
                   <DropdownMenuItem key={opt.to} asChild>
                     <Link to={opt.to}>
                       <opt.icon className="h-4 w-4 shrink-0" />
-                      {opt.label}
+                      {t(opt.labelKey)}
                     </Link>
                   </DropdownMenuItem>
                 ))}
@@ -296,7 +300,7 @@ function Dashboard() {
             className="text-xs text-muted-foreground"
             data-testid="viewer-scan-readonly"
           >
-            Peran viewer — hanya melihat riwayat
+            {t("viewerReadonly")}
           </p>
         )}
       </div>
@@ -308,7 +312,7 @@ function Dashboard() {
           data-testid="attention-strip"
         >
           <TriangleAlert />
-          <AlertTitle>Perhatian</AlertTitle>
+          <AlertTitle>{t("attention")}</AlertTitle>
           <AlertDescription>
             {attention.map((a) => (
               <Link
@@ -325,29 +329,29 @@ function Dashboard() {
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
-          label="Risiko terbuka"
+          label={t("openRisk")}
           value={openRisk.critical + openRisk.high}
           isLoading={isFirstLoad}
           className="border-red-600/30"
           valueClassName="text-red-400"
         />
         <StatCard
-          label="7 hari (C/H/M)"
+          label={t("weekChm")}
           value={`${weekCounts.critical}/${weekCounts.high}/${weekCounts.medium}`}
           isLoading={isFirstLoad}
           className="border-orange-500/30"
           valueClassName="text-orange-400"
         />
         <StatCard
-          label="Jadwal"
+          label={t("schedules")}
           value={`${enabledSchedules.length} / ${MAX_ENABLED_SCHEDULES}`}
           isLoading={false}
           className="border-primary/30"
           valueClassName="text-foreground"
         />
         <StatCard
-          label="Kredit"
-          value={formatCredits(credits)}
+          label={t("credits")}
+          value={formatCredits(credits, i18n.language)}
           isLoading={false}
           valueClassName="text-foreground"
         />
@@ -360,7 +364,7 @@ function Dashboard() {
               id="pekerjaan-terakhir"
               className="shrink-0 text-sm tracking-wide"
             >
-              Pekerjaan terakhir
+              {t("recentWork")}
             </CardTitle>
             {hiddenInternalCount > 0 && (
               <CardAction>
@@ -372,8 +376,8 @@ function Dashboard() {
                   onClick={() => setHideInternal((v) => !v)}
                 >
                   {hideInternal
-                    ? `Target percobaan disembunyikan (${hiddenInternalCount})`
-                    : "Sembunyikan target percobaan"}
+                    ? t("labTargetsHidden", { count: hiddenInternalCount })
+                    : t("hideLabTargets")}
                 </Button>
               </CardAction>
             )}
@@ -390,18 +394,18 @@ function Dashboard() {
                 <div className="mb-3 rounded-full bg-muted p-3">
                   <Radar className="h-6 w-6 text-muted-foreground opacity-40" />
                 </div>
-                <p className="mb-1 text-sm text-foreground">Belum ada scan</p>
+                <p className="mb-1 text-sm text-foreground">{t("noScansYet")}</p>
                 <p className="mb-4 text-xs text-muted-foreground">
                   {canCreateScans
-                    ? "Scan IP atau domain, atau pasang jadwal attach."
-                    : "Belum ada scan di workspace ini."}
+                    ? t("emptyCanCreate")
+                    : t("emptyCannotCreate")}
                 </p>
                 {canCreateScans && (
                   <div className="flex flex-wrap items-center justify-center gap-2">
                     <Button asChild size="sm" className="text-xs">
                       <Link to="/scan/ip">
                         <Plus className="mr-1.5 h-3.5 w-3.5" />
-                        Scan IP
+                        {t("scanIp")}
                       </Link>
                     </Button>
                     <Button
@@ -412,7 +416,7 @@ function Dashboard() {
                     >
                       <Link to="/schedules" data-testid="empty-schedules-link">
                         <CalendarClock className="mr-1.5 h-3.5 w-3.5" />
-                        Atur jadwal
+                        {t("setSchedule")}
                       </Link>
                     </Button>
                   </div>
@@ -420,26 +424,26 @@ function Dashboard() {
               </div>
             ) : displayed.length === 0 ? (
               <p className="py-8 text-center text-xs text-muted-foreground">
-                Semua baris adalah target percobaan. Tampilkan untuk melihatnya.
+                {t("allLabRows")}
               </p>
             ) : (
               <Table className="table-fixed text-xs">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="w-[36%] text-[10px] uppercase tracking-wider">
-                      Target
+                      {t("colTarget")}
                     </TableHead>
                     <TableHead className="w-[12%] text-[10px] uppercase tracking-wider">
-                      Jenis
+                      {t("colType")}
                     </TableHead>
                     <TableHead className="w-[16%] text-[10px] uppercase tracking-wider">
-                      Selesai
+                      {t("colFinished")}
                     </TableHead>
                     <TableHead className="w-[24%] text-[10px] uppercase tracking-wider">
-                      Temuan
+                      {t("colFindings")}
                     </TableHead>
                     <TableHead className="w-[12%] text-[10px] uppercase tracking-wider">
-                      Status
+                      {t("colStatus")}
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -466,7 +470,7 @@ function Dashboard() {
                           {SCAN_TYPE_LABELS[scan.scan_type] ?? scan.scan_type}
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {formatIdDate(scan.started_at)}
+                          {formatIdDate(scan.started_at, i18n.language)}
                         </TableCell>
                         <TableCell>
                           {crit + high + med > 0 ? (
@@ -498,10 +502,10 @@ function Dashboard() {
                               className="capitalize"
                             >
                               {scan.status === "failed"
-                                ? "Gagal"
+                                ? t("statusFailed")
                                 : scan.status === "running"
-                                  ? "Berjalan"
-                                  : "Antrian"}
+                                  ? t("statusRunning")
+                                  : t("statusQueued")}
                             </Badge>
                           ) : null}
                         </TableCell>
@@ -514,7 +518,7 @@ function Dashboard() {
 
             {!isFirstLoad && totalScans > 0 && (
               <p className="mt-3 text-right text-[11px] text-muted-foreground">
-                {totalScans} scan di workspace · menampilkan target unik terbaru
+                {t("workspaceScanCount", { count: totalScans })}
               </p>
             )}
           </CardContent>
@@ -523,19 +527,19 @@ function Dashboard() {
         <div className="flex h-full flex-col gap-4 lg:col-span-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm tracking-wide">Cakupan attach</CardTitle>
+              <CardTitle className="text-sm tracking-wide">{t("attachCoverage")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-xs">
               {enabledSchedules.length === 0 ? (
                 <p className="text-muted-foreground">
-                  Belum ada jadwal. Pilih IP/domain colo atau VPS, set mingguan.
+                  {t("noSchedulesHint")}
                 </p>
               ) : (
                 enabledSchedules.slice(0, 3).map((sch) => (
                   <div key={sch.id} className="border-b border-border pb-2 last:border-0">
                     <p className="font-mono text-foreground">{sch.target}</p>
                     <p className="text-[10px] text-muted-foreground">
-                      {sch.cadence} · berikutnya {formatIdDate(sch.next_run_at)}
+                      {sch.cadence} · {t("nextRun", { date: formatIdDate(sch.next_run_at, i18n.language) })}
                     </p>
                   </div>
                 ))
@@ -543,7 +547,7 @@ function Dashboard() {
               <Button asChild variant="outline" size="sm" className="w-full text-xs">
                 <Link to="/schedules">
                   <CalendarClock className="mr-1.5 h-3.5 w-3.5" />
-                  Kelola jadwal
+                  {t("manageSchedules")}
                 </Link>
               </Button>
             </CardContent>
@@ -551,19 +555,19 @@ function Dashboard() {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm tracking-wide">Guard</CardTitle>
+              <CardTitle className="text-sm tracking-wide">{t("guard")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-xs">
               <p className="text-muted-foreground">
-                {agents.length} agen
+                {t("agentsCount", { count: agents.length })}
                 {staleAgents.length > 0
-                  ? ` · ${staleAgents.length} stale`
+                  ? t("staleSuffix", { count: staleAgents.length })
                   : ""}
               </p>
               <Button asChild variant="outline" size="sm" className="w-full text-xs">
                 <Link to="/guard">
                   <Shield className="mr-1.5 h-3.5 w-3.5" />
-                  Buka Guard
+                  {t("openGuard")}
                 </Link>
               </Button>
             </CardContent>
