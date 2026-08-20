@@ -114,7 +114,7 @@ describe("NotFound", () => {
   it("renders within a flex container", async () => {
     render(<NotFound />);
     await waitFor(() => {
-      expect(document.querySelector(".flex.min-h-screen")).toBeInTheDocument();
+      expect(document.querySelector(".flex.min-h-dvh")).toBeInTheDocument();
     });
   });
 });

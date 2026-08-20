@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Crosshair, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { BrandMark } from "@/components/brand/BrandMark";
+import { BRAND } from "@/lib/brand";
 import { useAuthStore } from "@/store/authStore";
 
 function NotFound() {
@@ -21,19 +23,22 @@ function NotFound() {
     );
   }
 
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
+    return (
+    <div className="flex min-h-dvh flex-col items-center bg-background px-4 pb-10 pt-[max(1.25rem,env(safe-area-inset-top))] sm:justify-center sm:py-10">
       <div className="flex w-full max-w-lg flex-col items-center text-center">
-        <div className="mb-6 rounded-full bg-muted p-6">
-          <Crosshair className="h-14 w-14 text-primary/50" />
+        <div className="mb-6">
+          <BrandMark to="/" aria-label={BRAND.homeAriaLabel} />
         </div>
-        <h1 className="mb-2 font-mono text-8xl font-bold tracking-tighter text-primary/30">
+        <div className="mb-4 rounded-full bg-muted p-4">
+          <Crosshair className="h-10 w-10 text-primary/70" />
+        </div>
+        <h1 className="mb-2 font-mono text-7xl font-bold tracking-tighter text-foreground/85 sm:text-8xl">
           404
         </h1>
         <h2 className="mb-2 text-lg font-bold tracking-wide text-foreground">
           Page not found
         </h2>
-        <p className="mb-8 max-w-md text-center text-sm text-muted-foreground">
+        <p className="mb-6 max-w-md text-center text-sm text-foreground/75">
           The target you&apos;re looking for is out of scan range. Return to base
           and try again.
         </p>
