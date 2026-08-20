@@ -127,9 +127,7 @@ describe("Header", () => {
     });
     renderWithRouter(<Header />);
     expect(screen.getByTestId("header-credits")).toHaveTextContent("42");
-    expect(
-      screen.getByTitle("Saldo kredit pribadi"),
-    ).toBeInTheDocument();
+    expect(screen.getByTitle("Personal credit balance")).toBeInTheDocument();
   });
 
   it("shows org switcher when organizations present", () => {

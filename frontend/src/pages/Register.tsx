@@ -8,9 +8,12 @@ import { Card, CardContent } from "@/components/ui/Card";
 import AuthLayout, {
   AUTH_SECONDARY_LINK,
 } from "@/components/layout/AuthLayout";
+import { useTranslation } from "react-i18next";
 
 function Register() {
   const navigate = useNavigate();
+  const { t } = useTranslation("auth");
+  const { t: tc } = useTranslation("common");
   const { register, resendVerification, error, isAuthenticated, clearError } =
     useAuthStore();
   const [email, setEmail] = useState("");
@@ -51,11 +54,11 @@ function Register() {
     setValidationError(null);
 
     if (password.length < 8) {
-      setValidationError("Password must be at least 8 characters");
+      setValidationError(t("passwordMin"));
       return;
     }
     if (password !== confirmPassword) {
-      setValidationError("Passwords do not match");
+      setValidationError(t("passwordMismatch"));
       return;
     }
 
@@ -81,26 +84,19 @@ function Register() {
       setEmailSent(result.emailSent);
       setStatusMessage(result.message);
       if (result.emailSent === false) {
-        setResendFeedback(
-          result.message ||
-            "Failed to send verification email. Please try again shortly.",
-        );
+        setResendFeedback(result.message || t("verifySendFailed"));
       } else {
-        setResendFeedback(
-          result.message || "Verification email sent. Please check your inbox.",
-        );
+        setResendFeedback(result.message || t("verifySent"));
       }
     } else {
-      setResendFeedback(
-        "Failed to resend verification email. Please try again.",
-      );
+      setResendFeedback(t("resendFailed"));
     }
   };
 
   if (success) {
     const sendFailed = emailSent === false;
     return (
-      <AuthLayout title="Registration Successful!">
+      <AuthLayout title={t("registerSuccess")}>
         <Card className="w-full">
           <CardContent className="pt-6 text-center space-y-4">
             {sendFailed ? (
@@ -111,8 +107,8 @@ function Register() {
             <p className="text-xs text-muted-foreground">
               {statusMessage ||
                 (sendFailed
-                  ? "Account created, but the verification email could not be sent."
-                  : "Check your email to verify your account.")}
+                  ? t("registerEmailFailed")
+                  : t("registerCheckEmail"))}
             </p>
             {resendFeedback && (
               <p
@@ -133,16 +129,14 @@ function Register() {
               {isResending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Resending...
+                  {t("resending")}
                 </>
               ) : (
-                "Resend verification email"
+                t("resendVerification")
               )}
             </Button>
             <Link to="/login">
-              <Button className="w-full text-sm mt-2">
-                Go to Sign In
-              </Button>
+              <Button className="w-full text-sm mt-2">{t("goToSignIn")}</Button>
             </Link>
           </CardContent>
         </Card>
@@ -151,7 +145,7 @@ function Register() {
   }
 
   return (
-    <AuthLayout title="Create account">
+    <AuthLayout title={t("createAccount")}>
       <Card className="w-full">
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -167,14 +161,14 @@ function Register() {
                 htmlFor="email"
                 className="block text-xs text-muted-foreground"
               >
-                Email
+                {tc("email")}
               </label>
               <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder={t("emailPlaceholder")}
                 required
                 disabled={isSubmitting}
               />
@@ -184,7 +178,7 @@ function Register() {
                 htmlFor="password"
                 className="block text-xs text-muted-foreground"
               >
-                Password
+                {tc("password")}
               </label>
               <div className="relative">
                 <Input
@@ -201,7 +195,9 @@ function Register() {
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground hover:text-foreground"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={
+                    showPassword ? tc("hidePassword") : tc("showPassword")
+                  }
                   tabIndex={-1}
                 >
                   {showPassword ? (
@@ -217,7 +213,7 @@ function Register() {
                 htmlFor="confirmPassword"
                 className="block text-xs text-muted-foreground"
               >
-                Confirm Password
+                {tc("confirmPassword")}
               </label>
               <div className="relative">
                 <Input
@@ -236,8 +232,8 @@ function Register() {
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground hover:text-foreground"
                   aria-label={
                     showConfirmPassword
-                      ? "Hide confirm password"
-                      : "Show confirm password"
+                      ? tc("hideConfirmPassword")
+                      : tc("showConfirmPassword")
                   }
                   tabIndex={-1}
                 >
@@ -257,17 +253,17 @@ function Register() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating account...
+                  {t("creatingAccount")}
                 </>
               ) : (
-                "Create Account"
+                t("createAccountSubmit")
               )}
             </Button>
           </form>
           <p className="mt-4 text-center text-sm text-foreground/80">
-            Already have an account?{" "}
+            {t("alreadyHaveAccount")}{" "}
             <Link to="/login" className={AUTH_SECONDARY_LINK}>
-              Sign in
+              {t("signInTitle")}
             </Link>
           </p>
         </CardContent>

@@ -9,8 +9,11 @@ import { Card, CardContent } from "@/components/ui/Card";
 import AuthLayout, {
   AUTH_SECONDARY_LINK,
 } from "@/components/layout/AuthLayout";
+import { useTranslation } from "react-i18next";
 
 function ForgotPassword() {
+  const { t } = useTranslation("auth");
+  const { t: tc } = useTranslation("common");
   const { forgotPassword, error, clearError } = useAuthStore();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,19 +46,15 @@ function ForgotPassword() {
 
   if (success) {
     return (
-      <AuthLayout title="Check Your Email">
+      <AuthLayout title={t("checkEmailTitle")}>
         <Card className="w-full">
           <CardContent className="pt-6 text-center space-y-4">
             <CheckCircle className="h-12 w-12 text-primary mx-auto" />
-            <p className="text-xs text-foreground/80">
-              We've sent a password reset link to your email address.
-            </p>
-            <p className="text-xs text-foreground/70">
-              Check spam if it doesn&apos;t arrive in a few minutes.
-            </p>
+            <p className="text-xs text-foreground/80">{t("resetLinkSent")}</p>
+            <p className="text-xs text-foreground/70">{t("checkSpam")}</p>
             <Link to="/login">
               <Button className="w-full text-sm mt-4">
-                Back to Sign In
+                {t("backToSignIn")}
               </Button>
             </Link>
           </CardContent>
@@ -65,10 +64,7 @@ function ForgotPassword() {
   }
 
   return (
-    <AuthLayout
-      title="Forgot password"
-      subtitle="Enter your email and we'll send a reset link."
-    >
+    <AuthLayout title={t("forgotTitle")} subtitle={t("forgotSubtitle")}>
       <Card className="w-full">
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -76,13 +72,11 @@ function ForgotPassword() {
               {cooldown > 0 && (
                 <p className="text-xs text-amber-400 text-center flex items-center justify-center gap-1">
                   <Timer className="h-3 w-3" />
-                  Too many attempts. Wait {cooldown}s
+                  {tc("waitSeconds", { seconds: cooldown })}
                 </p>
               )}
               {error && cooldown === 0 && (
-                <p className="text-xs text-red-400 text-center">
-                  {error}
-                </p>
+                <p className="text-xs text-red-400 text-center">{error}</p>
               )}
             </div>
             <div className="space-y-2">
@@ -90,22 +84,20 @@ function ForgotPassword() {
                 htmlFor="email"
                 className="block text-xs text-muted-foreground"
               >
-                Email
+                {tc("email")}
               </label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your signup email"
-                  className="placeholder:text-muted-foreground/55"
-                  required
-                  disabled={isSubmitting}
-                />
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={t("signupEmailPlaceholder")}
+                className="placeholder:text-muted-foreground/55"
+                required
+                disabled={isSubmitting}
+              />
             </div>
-            <p className="text-xs text-foreground/70">
-              Check spam if it doesn&apos;t arrive in a few minutes.
-            </p>
+            <p className="text-xs text-foreground/70">{t("checkSpam")}</p>
             <Button
               type="submit"
               className="w-full text-sm"
@@ -114,25 +106,22 @@ function ForgotPassword() {
               {cooldown > 0 ? (
                 <>
                   <Timer className="mr-2 h-4 w-4" />
-                  Wait {cooldown}s
+                  {tc("waitButton", { seconds: cooldown })}
                 </>
               ) : isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending reset link...
+                  {t("sendingReset")}
                 </>
               ) : (
-                "Send Reset Link"
+                t("sendResetLink")
               )}
             </Button>
           </form>
           <p className="mt-4 text-center">
-            <Link
-              to="/login"
-              className={`${AUTH_SECONDARY_LINK} gap-1`}
-            >
+            <Link to="/login" className={`${AUTH_SECONDARY_LINK} gap-1`}>
               <ArrowLeft className="h-3.5 w-3.5" />
-              Back to sign in
+              {t("backToSignInLower")}
             </Link>
           </p>
         </CardContent>

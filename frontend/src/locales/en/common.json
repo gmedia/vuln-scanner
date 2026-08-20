@@ -1,0 +1,20 @@
+{
+  "signIn": "Sign In",
+  "signOut": "Sign Out",
+  "getStarted": "Get Started",
+  "email": "Email",
+  "password": "Password",
+  "confirmPassword": "Confirm Password",
+  "hidePassword": "Hide password",
+  "showPassword": "Show password",
+  "hideConfirmPassword": "Hide confirm password",
+  "showConfirmPassword": "Show confirm password",
+  "credits": "Credits",
+  "language": "Language",
+  "languageId": "ID",
+  "languageEn": "EN",
+  "signedInAs": "Signed in as",
+  "waitSeconds": "Too many attempts. Wait {{seconds}}s",
+  "waitButton": "Wait {{seconds}}s",
+  "pipeline": "Scan → Attach → Workspace → Guard → SIEM"
+}

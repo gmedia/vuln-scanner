@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { BRAND } from "@/lib/brand";
 import { BrandMark } from "@/components/brand/BrandMark";
+import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
 
 export const AUTH_SECONDARY_LINK =
   "inline-flex items-center justify-center py-2 text-sm text-foreground/90 hover:text-primary hover:underline";
@@ -24,6 +25,7 @@ function AuthLayout({
   subtitle,
   maxWidth = "md",
 }: AuthLayoutProps) {
+  const { t } = useTranslation("landing");
   return (
     <div className="relative flex min-h-dvh items-start justify-center bg-background px-4 pb-10 pt-[max(1.25rem,env(safe-area-inset-top))] sm:items-center sm:py-10">
       <div
@@ -36,10 +38,11 @@ function AuthLayout({
 
       <div className={cn("relative z-10 w-full", maxWidthClass[maxWidth])}>
         <div className="mb-5 flex flex-col items-center gap-1.5 text-center sm:mb-6">
-          <BrandMark to="/" aria-label={BRAND.homeAriaLabel} />
+          <BrandMark to="/" aria-label={t("homeAria")} />
           <p className="hidden text-xs text-muted-foreground sm:block">
-            {BRAND.authSubtitle}
+            {t("authSubtitle")}
           </p>
+          <LanguageSwitcher className="mt-2" />
         </div>
 
         {(title || subtitle) && (
