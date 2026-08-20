@@ -176,8 +176,10 @@ function GuideTocLinks({
                 size="sm"
                 className={cn(
                   "h-auto w-full justify-start whitespace-normal px-2.5 py-1.5 text-left font-normal",
-                  isActive &&
-                    "border-l-2 border-primary bg-muted font-medium text-foreground",
+                  "border-l-2",
+                  isActive
+                    ? "border-primary bg-muted font-medium text-foreground"
+                    : "border-transparent",
                 )}
               >
                 <a
@@ -261,19 +263,19 @@ function UserGuide() {
         </p>
       </div>
 
-      <div className="sticky top-0 z-20 -mx-4 mb-6 bg-background/95 px-4 py-2 backdrop-blur-sm md:-mx-6 md:px-6 lg:hidden">
+      <div className="sticky top-14 z-30 -mx-4 mb-6 bg-background px-4 py-2 md:-mx-6 md:px-6 lg:hidden">
         <Card>
           <CardHeader className="p-0">
             <Button
               type="button"
               variant="ghost"
-              className="h-auto w-full justify-between gap-3 rounded-lg px-4 py-3 text-sm font-medium text-foreground hover:bg-transparent"
+              className="h-auto w-full items-center justify-between gap-3 rounded-lg px-4 py-2.5 text-sm font-medium leading-none text-foreground hover:bg-transparent"
               aria-expanded={mobileTocOpen}
               onClick={() => setMobileTocOpen((open) => !open)}
             >
               <span className="flex min-w-0 items-center gap-2">
                 <ListOrdered className="h-4 w-4 shrink-0 text-primary" />
-                <span className="truncate">
+                <span className="truncate leading-none">
                   Daftar isi
                   <span className="ml-2 font-normal text-muted-foreground">
                     · {activeLabel}
@@ -307,7 +309,7 @@ function UserGuide() {
           data-testid="guide-desktop-toc"
           className="hidden lg:block"
         >
-          <div className="sticky top-0 h-[calc(100svh-theme(spacing.14))] overflow-hidden">
+          <div className="sticky top-14 h-[calc(100svh-theme(spacing.14)-theme(spacing.8))] overflow-y-auto">
             <GuideDesktopToc activeId={activeId} />
           </div>
         </aside>
