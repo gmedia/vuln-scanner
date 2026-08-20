@@ -1,6 +1,6 @@
 # Spec: shadcn/ui migration (SPA Sinexis / VulnScanner)
 
-**Status:** Wave A–F shipped (`main`, #349). Remaining leftover: findings filter (checkbox + dropdown-menu). Wave G skip unless asked.
+**Status:** Wave A–F shipped (`main`, #349). Findings severity filter shipped (`main`, #351). Remaining: Wave G skip unless asked; AdminDashboard KPI optional.
 **Surface:** in-app SPA (`sinexis.app` dashboard), not a new marketing site.
 **Depends:** kit already in `frontend/src/components/ui/` · sidebar-03 shipped · visual wave popover/calendar/Guard/Guide on `feat/shadcn-popover-calendar-guard-guide` (PR #341, may land after this doc).
 **Not this epic:** mass Dependabot, password-eye unless requested, Command palette, RHF `form`, hard rebrand, Guard/Wazuh features, SIEM query builder.
@@ -124,6 +124,8 @@ User Guide **desktop TOC** stays Card + ScrollArea + `guide-desktop-toc`. Do not
 | `SeverityChart.tsx` Recharts pie | shadcn **ChartContainer** + `ChartTooltip`; freeze `severity-chart-content` |
 | AdminDashboard KPI | **skip** |
 
+Findings table severity filter (leftover after Wave F): **shipped** `main` (#351). Search copy frozen (`Filter findings...` / `No matching findings`). `DropdownMenuCheckboxItem`; empty `Set` = all severities. Freeze `export-executive`, `rescan-button`.
+
 ### Wave G — optional / skip unless asked
 
 | Item | Why skip by default |
@@ -151,7 +153,7 @@ User Guide **desktop TOC** stays Card + ScrollArea + `guide-desktop-toc`. Do not
 | Mutations | Inline text | sonner | Low | S |
 | SeverityChart | Raw Recharts | chart | Low | M |
 | AdminDashboard | Number Cards | chart optional | Low | M |
-| Filter findings | Text Input only | checkbox + dropdown-menu | Med | S |
+| Filter findings | Text + severity dropdown | **shipped** #351 (`DropdownMenuCheckboxItem`) | — | S |
 | Header | lucide User | avatar (optional) | **High** | S |
 | OrgSwitcher | dropdown-menu | command — **no** | **High** | L |
 | Auth | Eye `<button>` | — skip | Med | S |
@@ -186,11 +188,12 @@ npx shadcn@latest add <component> --yes
 
 ---
 
-## 7) Suggested first PR after #349 merges
+## 7) Suggested first PR after #351 merges
 
-**Findings filter only:** checkbox + dropdown-menu on ScanDetail. Freeze `export-executive`, `rescan-button`.
+**Docs-only leftover is this file.** Next product UI only with an explicit verb:
 
-Then Wave G only with an explicit verb.
+- Optional: AdminDashboard KPI → `chart` (Low / M). Not P3/SIEM.
+- Wave G (avatar Header, breadcrumb, command, RHF, Switch Guard, password-eye): **skip** unless asked. Avatar/`command` freeze `user-menu` / `org-switcher*`.
 
 ---
 
