@@ -14,73 +14,42 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { BrandMark } from "@/components/brand/BrandMark";
 import { BRAND } from "@/lib/brand";
+import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
 
-const features = [
-  {
-    icon: Radar,
-    title: "IP scan",
-    description:
-      "Ports, services, and CVE severity on the hosts you already run.",
-  },
-  {
-    icon: Globe,
-    title: "Domain scan",
-    description: "DNS, TLS, headers, and stack fingerprint for public sites.",
-  },
-  {
-    icon: Smartphone,
-    title: "Mobile scan",
-    description: "Static APK/AAB/IPA: permissions, exports, hardcoded secrets.",
-  },
-  {
-    icon: CalendarClock,
-    title: "Scan Attach",
-    description:
-      "Schedules, baseline diff, and executive HTML — not one-shot nmap.",
-  },
-  {
-    icon: Users,
-    title: "Workspace",
-    description:
-      "Org, roles, and invites so ops and owners share one scan trail.",
-  },
-  {
-    icon: Shield,
-    title: "Guard",
-    description:
-      "Thin Wazuh: agent inventory, critical alerts, per-org enroll.",
-  },
-  {
-    icon: Search,
-    title: "SIEM",
-    description: "Search + cases on the same workspace (not a second console).",
-  },
-  {
-    icon: Coins,
-    title: "Credits",
-    description: "Personal credit wallet; each scan type has a clear cost.",
-  },
-];
+const featureKeys = [
+  { icon: Radar, titleKey: "featIp", descKey: "featIpDesc" },
+  { icon: Globe, titleKey: "featDomain", descKey: "featDomainDesc" },
+  { icon: Smartphone, titleKey: "featMobile", descKey: "featMobileDesc" },
+  { icon: CalendarClock, titleKey: "featAttach", descKey: "featAttachDesc" },
+  { icon: Users, titleKey: "featWorkspace", descKey: "featWorkspaceDesc" },
+  { icon: Shield, titleKey: "featGuard", descKey: "featGuardDesc" },
+  { icon: Search, titleKey: "featSiem", descKey: "featSiemDesc" },
+  { icon: Coins, titleKey: "featCredits", descKey: "featCreditsDesc" },
+] as const;
 
 function Landing() {
+  const { t } = useTranslation("landing");
+  const { t: tc } = useTranslation("common");
   return (
     <div className="min-h-dvh bg-background flex flex-col">
       <header className="border-b border-border pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <BrandMark to="/" />
           <div className="flex items-center gap-3">
+            <LanguageSwitcher />
             <Link to="/login">
               <Button
                 variant="outline"
                 size="sm"
                 className="text-xs border-muted-foreground/50 text-foreground hover:border-foreground/40 hover:bg-accent"
               >
-                Sign In
+                {tc("signIn")}
               </Button>
             </Link>
             <Link to="/register">
               <Button size="sm" className="text-xs">
-                Get Started
+                {tc("getStarted")}
               </Button>
             </Link>
           </div>
@@ -95,16 +64,16 @@ function Landing() {
                 {BRAND.heroTitle}
               </h1>
               <p className="text-lg sm:text-xl font-semibold tracking-wide text-primary">
-                {BRAND.heroProduct}
+                {t("heroProduct")}
               </p>
             </div>
             <p className="text-base sm:text-lg text-foreground/80">
-              {BRAND.heroSub}
+              {t("heroSub")}
             </p>
             <div className="flex w-full max-w-sm flex-col sm:max-w-none sm:flex-row items-stretch sm:items-center justify-center gap-3 pt-2 mx-auto">
               <Link to="/register" className="w-full sm:w-auto">
                 <Button size="lg" className="w-full text-sm min-h-11">
-                  Get Started
+                  {tc("getStarted")}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
@@ -114,13 +83,11 @@ function Landing() {
                   size="lg"
                   className="w-full text-sm min-h-11 border-muted-foreground/50 text-foreground hover:border-foreground/40 hover:bg-accent"
                 >
-                  Sign In
+                  {tc("signIn")}
                 </Button>
               </Link>
             </div>
-            <p className="text-xs text-foreground/70 pt-1">
-              Scan → Attach → Workspace → Guard → SIEM
-            </p>
+            <p className="text-xs text-foreground/70 pt-1">{tc("pipeline")}</p>
           </div>
         </section>
 
@@ -128,27 +95,27 @@ function Landing() {
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-10 space-y-2">
               <p className="text-xs tracking-wide text-muted-foreground uppercase">
-                Scan → Attach → Workspace → Guard → SIEM
+                {tc("pipeline")}
               </p>
               <h2 className="text-2xl font-bold tracking-wide text-foreground">
-                What ships
+                {t("whatShips")}
               </h2>
             </div>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {features.map((feature) => (
+              {featureKeys.map((feature) => (
                 <Card
-                  key={feature.title}
+                  key={feature.titleKey}
                   className="hover:border-primary/40 transition-colors"
                 >
                   <CardHeader>
                     <feature.icon className="h-8 w-8 text-primary mb-2" />
                     <CardTitle className="text-sm tracking-wide">
-                      {feature.title}
+                      {t(feature.titleKey)}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-foreground/75">
-                      {feature.description}
+                      {t(feature.descKey)}
                     </p>
                   </CardContent>
                 </Card>
@@ -168,13 +135,13 @@ function Landing() {
               to="/login"
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              Sign In
+              {tc("signIn")}
             </Link>
             <Link
               to="/register"
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              Get Started
+              {tc("getStarted")}
             </Link>
           </div>
         </div>
