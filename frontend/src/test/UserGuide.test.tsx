@@ -2,12 +2,15 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import UserGuide from "@/pages/UserGuide";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 describe("UserGuide", () => {
   it("renders title, toc, and step-by-step section headings", () => {
     render(
       <MemoryRouter>
-        <UserGuide />
+        <SidebarProvider>
+          <UserGuide />
+        </SidebarProvider>
       </MemoryRouter>,
     );
      expect(screen.getByRole("heading", { name: "Panduan pengguna" })).toBeInTheDocument();
@@ -112,8 +115,9 @@ describe("UserGuide", () => {
       screen.getByRole("button", { name: /Daftar isi/ }),
     ).toHaveAttribute("aria-expanded", "false");
     const desktopToc = screen.getByTestId("guide-desktop-toc");
-    expect(desktopToc.querySelector(".sticky")).toBeTruthy();
     expect(desktopToc.className).toMatch(/lg:block/);
+    expect(desktopToc.querySelector(".sticky")).toBeTruthy();
+    expect(desktopToc.querySelector("[data-slot='sidebar']")).toBeTruthy();
     const debianTrigger = screen.getByRole("button", {
       name: /Debian \/ Ubuntu/,
     });
