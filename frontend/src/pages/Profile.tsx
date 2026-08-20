@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
 import { useRateLimitCooldown } from "@/hooks/useRateLimitCooldown";
 import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 
@@ -120,12 +121,9 @@ function Profile() {
               </p>
             )}
             <div className="space-y-1">
-              <label
-                htmlFor="profile-email"
-                className="block text-xs text-muted-foreground"
-              >
+              <Label htmlFor="profile-email" className="block">
                 New email
-              </label>
+              </Label>
               <Input
                 id="profile-email"
                 type="email"
@@ -137,12 +135,9 @@ function Profile() {
               />
             </div>
             <div className="space-y-1">
-              <label
-                htmlFor="profile-password"
-                className="block text-xs text-muted-foreground"
-              >
+              <Label htmlFor="profile-password" className="block">
                 Current password
-              </label>
+              </Label>
               <Input
                 id="profile-password"
                 type="password"
@@ -200,12 +195,9 @@ function Profile() {
               </p>
             )}
             <div className="space-y-1">
-              <label
-                htmlFor="current-password"
-                className="block text-xs text-muted-foreground"
-              >
+              <Label htmlFor="current-password" className="block">
                 Current password
-              </label>
+              </Label>
               <Input
                 id="current-password"
                 type="password"
@@ -217,12 +209,9 @@ function Profile() {
               />
             </div>
             <div className="space-y-1">
-              <label
-                htmlFor="new-password"
-                className="block text-xs text-muted-foreground"
-              >
+              <Label htmlFor="new-password" className="block">
                 New password
-              </label>
+              </Label>
               <Input
                 id="new-password"
                 type="password"
@@ -234,12 +223,9 @@ function Profile() {
               />
             </div>
             <div className="space-y-1">
-              <label
-                htmlFor="confirm-password"
-                className="block text-xs text-muted-foreground"
-              >
+              <Label htmlFor="confirm-password" className="block">
                 Confirm new password
-              </label>
+              </Label>
               <Input
                 id="confirm-password"
                 type="password"
