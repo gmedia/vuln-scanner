@@ -359,7 +359,9 @@ describe("ScanDetail", () => {
         data: { ...baseScan, findings: [] } as any,
       });
       renderPage();
-      expect(screen.queryByText("Saran aksi tersedia")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Suggested actions available"),
+      ).not.toBeInTheDocument();
     });
 
     it("renders Findings card", () => {
