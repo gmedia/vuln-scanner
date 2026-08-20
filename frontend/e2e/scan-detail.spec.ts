@@ -6,7 +6,9 @@ test.describe("Scan Detail Page", () => {
     await expect(page.locator("h2:has-text('SCAN NOT FOUND')")).toBeVisible({
       timeout: 10_000,
     });
-    await expect(page.locator("a:has-text('Back to Dashboard')")).toBeVisible();
+    await expect(
+      page.locator("a:has-text('Kembali ke Dashboard')"),
+    ).toBeVisible();
   });
 
   test("back button on 404 returns to dashboard", async ({ page }) => {
@@ -14,7 +16,7 @@ test.describe("Scan Detail Page", () => {
     await expect(page.locator("h2:has-text('SCAN NOT FOUND')")).toBeVisible({
       timeout: 10_000,
     });
-    await page.locator("a:has-text('Back to Dashboard')").click();
+    await page.locator("a:has-text('Kembali ke Dashboard')").click();
     await expect(page).toHaveURL("/dashboard");
   });
 
@@ -38,7 +40,7 @@ test.describe("Scan Detail Page", () => {
     const href = await getFirstCompletedScanHref(page);
     test.skip(!href, "No completed scans found — run seed_e2e first");
     await page.goto(href!);
-    await expect(page.locator("h2:has-text('Scan details')")).toBeVisible({
+    await expect(page.locator("h2:has-text('Detail scan')")).toBeVisible({
       timeout: 15_000,
     });
   });
@@ -47,7 +49,7 @@ test.describe("Scan Detail Page", () => {
     const href = await getFirstCompletedScanHref(page);
     test.skip(!href, "No completed scans found — run seed_e2e first");
     await page.goto(href!);
-    await expect(page.locator("h3:has-text('SEVERITY')")).toBeVisible({
+    await expect(page.locator("h3:has-text('Severity')")).toBeVisible({
       timeout: 15_000,
     });
   });
@@ -56,7 +58,7 @@ test.describe("Scan Detail Page", () => {
     const href = await getFirstCompletedScanHref(page);
     test.skip(!href, "No completed scans found — run seed_e2e first");
     await page.goto(href!);
-    await expect(page.locator("h3:has-text('FINDINGS')")).toBeVisible({
+    await expect(page.locator("h3:has-text('Temuan')")).toBeVisible({
       timeout: 15_000,
     });
   });
@@ -65,7 +67,7 @@ test.describe("Scan Detail Page", () => {
     const href = await getFirstCompletedScanHref(page);
     test.skip(!href, "No completed scans found — run seed_e2e first");
     await page.goto(href!);
-    await expect(page.locator("h3:has-text('SCAN INFO')")).toBeVisible({
+    await expect(page.locator("h3:has-text('Info scan')")).toBeVisible({
       timeout: 15_000,
     });
   });
@@ -74,7 +76,7 @@ test.describe("Scan Detail Page", () => {
     const href = await getFirstCompletedScanHref(page);
     test.skip(!href, "No completed scans found — run seed_e2e first");
     await page.goto(href!);
-    await expect(page.locator("h2:has-text('Scan details')")).toBeVisible({
+    await expect(page.locator("h2:has-text('Detail scan')")).toBeVisible({
       timeout: 15_000,
     });
     await page.locator("a[href='/dashboard']").first().click();
