@@ -11,10 +11,14 @@ import enCommon from "@/locales/en/common.json";
 import enAuth from "@/locales/en/auth.json";
 import enLanding from "@/locales/en/landing.json";
 import enNav from "@/locales/en/nav.json";
+import enScan from "@/locales/en/scan.json";
+import enSchedules from "@/locales/en/schedules.json";
 import idCommon from "@/locales/id/common.json";
 import idAuth from "@/locales/id/auth.json";
 import idLanding from "@/locales/id/landing.json";
 import idNav from "@/locales/id/nav.json";
+import idScan from "@/locales/id/scan.json";
+import idSchedules from "@/locales/id/schedules.json";
 
 export const resources = {
   en: {
@@ -22,12 +26,16 @@ export const resources = {
     auth: enAuth,
     landing: enLanding,
     nav: enNav,
+    scan: enScan,
+    schedules: enSchedules,
   },
   id: {
     common: idCommon,
     auth: idAuth,
     landing: idLanding,
     nav: idNav,
+    scan: idScan,
+    schedules: idSchedules,
   },
 } as const;
 
@@ -60,7 +68,7 @@ void i18n.use(initReactI18next).init({
   lng: resolveInitialLocale(),
   fallbackLng: DEFAULT_LOCALE,
   defaultNS: "common",
-  ns: ["common", "auth", "landing", "nav"],
+  ns: ["common", "auth", "landing", "nav", "scan", "schedules"],
   interpolation: { escapeValue: false },
   returnNull: false,
 });
