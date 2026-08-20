@@ -5,7 +5,9 @@ import { useAuthStore } from "@/store/authStore";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
-import AuthLayout from "@/components/layout/AuthLayout";
+import AuthLayout, {
+  AUTH_SECONDARY_LINK,
+} from "@/components/layout/AuthLayout";
 
 function Register() {
   const navigate = useNavigate();
@@ -262,9 +264,9 @@ function Register() {
               )}
             </Button>
           </form>
-          <p className="mt-6 text-center text-xs text-muted-foreground">
+          <p className="mt-4 text-center text-sm text-foreground/80">
             Already have an account?{" "}
-            <Link to="/login" className="text-primary hover:underline">
+            <Link to="/login" className={AUTH_SECONDARY_LINK}>
               Sign in
             </Link>
           </p>
