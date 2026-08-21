@@ -5,6 +5,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
+import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +21,7 @@ interface OrgSwitcherProps {
 }
 
 function OrgSwitcher({ className, compact = false }: OrgSwitcherProps) {
+  const { t } = useTranslation("workspace");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -77,7 +79,7 @@ function OrgSwitcher({ className, compact = false }: OrgSwitcherProps) {
             />
           )}
           <span className="truncate font-medium">
-            {active?.name ?? "Workspace"}
+            {active?.name ?? t("title")}
           </span>
           {active?.role && (
             <span className="hidden shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[9px] uppercase tracking-wide text-muted-foreground sm:inline">
@@ -93,7 +95,7 @@ function OrgSwitcher({ className, compact = false }: OrgSwitcherProps) {
         data-testid="org-switcher-menu"
       >
         <DropdownMenuLabel className="text-[10px] font-normal uppercase tracking-wider text-muted-foreground">
-          Workspace
+          {t("title")}
         </DropdownMenuLabel>
         {organizations.map((org) => {
           const selected = org.id === (activeOrgId ?? active?.id);
@@ -125,7 +127,7 @@ function OrgSwitcher({ className, compact = false }: OrgSwitcherProps) {
           }}
         >
           <Users className="h-3.5 w-3.5" />
-          Members & invites
+          {t("membersAndInvites")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
