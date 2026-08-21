@@ -15,6 +15,7 @@ import enScan from "@/locales/en/scan.json";
 import enSchedules from "@/locales/en/schedules.json";
 import enWorkspace from "@/locales/en/workspace.json";
 import enGuard from "@/locales/en/guard.json";
+import enGuide from "@/locales/en/guide.json";
 import idCommon from "@/locales/id/common.json";
 import idAuth from "@/locales/id/auth.json";
 import idLanding from "@/locales/id/landing.json";
@@ -23,6 +24,7 @@ import idScan from "@/locales/id/scan.json";
 import idSchedules from "@/locales/id/schedules.json";
 import idWorkspace from "@/locales/id/workspace.json";
 import idGuard from "@/locales/id/guard.json";
+import idGuide from "@/locales/id/guide.json";
 
 export const resources = {
   en: {
@@ -34,6 +36,7 @@ export const resources = {
     schedules: enSchedules,
     workspace: enWorkspace,
     guard: enGuard,
+    guide: enGuide,
   },
   id: {
     common: idCommon,
@@ -44,6 +47,7 @@ export const resources = {
     schedules: idSchedules,
     workspace: idWorkspace,
     guard: idGuard,
+    guide: idGuide,
   },
 } as const;
 
@@ -85,6 +89,7 @@ void i18n.use(initReactI18next).init({
     "schedules",
     "workspace",
     "guard",
+    "guide",
   ],
   interpolation: { escapeValue: false },
   returnNull: false,
