@@ -15,6 +15,7 @@ class OrgCreateRequest(BaseModel):
 class OrgUpdateRequest(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=255)
     slug: str | None = Field(default=None, min_length=1, max_length=64)
+    sku: str | None = Field(default=None, pattern=r"^(basic|pro|multi)$")
 
 
 class OrgSwitchRequest(BaseModel):
@@ -28,6 +29,7 @@ class OrgMembershipResponse(BaseModel):
     name: str
     slug: str
     kind: str
+    sku: str = "multi"
     role: str
     created_at: datetime
 
@@ -39,6 +41,7 @@ class OrgDetailResponse(BaseModel):
     name: str
     slug: str
     kind: str
+    sku: str = "multi"
     created_by_user_id: uuid.UUID | None
     created_at: datetime
     updated_at: datetime

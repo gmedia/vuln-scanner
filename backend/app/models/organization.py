@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from app.models.user import User
 
 ORG_KINDS = ("personal", "company", "hotel")
+ORG_SKUS = ("basic", "pro", "multi")
 ORG_ROLES = ("owner", "admin", "member", "viewer")
 INVITE_STATUSES = ("pending", "accepted", "revoked", "expired")
 INVITE_ROLES = ("admin", "member", "viewer")
@@ -24,6 +25,7 @@ class Organization(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     slug: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     kind: Mapped[str] = mapped_column(String(20), nullable=False, default="personal")
+    sku: Mapped[str] = mapped_column(String(20), nullable=False, default="multi")
     created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
@@ -40,7 +42,10 @@ class Organization(Base):
     )
     created_by: Mapped["User | None"] = relationship(foreign_keys=[created_by_user_id])
 
-    __table_args__ = (CheckConstraint(f"kind IN {ORG_KINDS}", name="ck_organization_kind"),)
+    __table_args__ = (
+        CheckConstraint(f"kind IN {ORG_KINDS}", name="ck_organization_kind"),
+        CheckConstraint(f"sku IN {ORG_SKUS}", name="ck_organization_sku"),
+    )
 
 
 class OrganizationMembership(Base):

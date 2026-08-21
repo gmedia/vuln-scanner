@@ -2,13 +2,14 @@ import uuid
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, String, Text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 
 if TYPE_CHECKING:
+    from app.models.asset import ScanAsset
     from app.models.scan_job import ScanJob
     from app.models.user import User
 
@@ -20,6 +21,9 @@ class ScanSchedule(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     organization_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    asset_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("scan_assets.id", ondelete="SET NULL"), nullable=True, index=True
     )
     name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     scan_type: Mapped[str] = mapped_column(String(10), nullable=False)
@@ -41,8 +45,10 @@ class ScanSchedule(Base):
 
     user: Mapped["User"] = relationship(back_populates="scan_schedules")
     last_job: Mapped["ScanJob | None"] = relationship(foreign_keys=[last_job_id])
+    asset: Mapped["ScanAsset | None"] = relationship(back_populates="schedule")
 
     __table_args__ = (
         CheckConstraint("scan_type IN ('ip', 'domain')", name="ck_schedule_scan_type"),
         CheckConstraint("cadence IN ('weekly', 'monthly')", name="ck_schedule_cadence"),
+        Index("uq_scan_schedules_asset_id", "asset_id", unique=True),
     )

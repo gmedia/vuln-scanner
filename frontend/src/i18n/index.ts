@@ -17,6 +17,7 @@ import enWorkspace from "@/locales/en/workspace.json";
 import enGuard from "@/locales/en/guard.json";
 import enGuide from "@/locales/en/guide.json";
 import enSiem from "@/locales/en/siem.json";
+import enAssets from "@/locales/en/assets.json";
 import enAdmin from "@/locales/en/admin.json";
 import idCommon from "@/locales/id/common.json";
 import idAuth from "@/locales/id/auth.json";
@@ -28,6 +29,7 @@ import idWorkspace from "@/locales/id/workspace.json";
 import idGuard from "@/locales/id/guard.json";
 import idGuide from "@/locales/id/guide.json";
 import idSiem from "@/locales/id/siem.json";
+import idAssets from "@/locales/id/assets.json";
 import idAdmin from "@/locales/id/admin.json";
 
 export const resources = {
@@ -42,6 +44,7 @@ export const resources = {
     guard: enGuard,
     guide: enGuide,
     siem: enSiem,
+    assets: enAssets,
     admin: enAdmin,
   },
   id: {
@@ -55,6 +58,7 @@ export const resources = {
     guard: idGuard,
     guide: idGuide,
     siem: idSiem,
+    assets: idAssets,
     admin: idAdmin,
   },
 } as const;
@@ -99,6 +103,7 @@ void i18n.use(initReactI18next).init({
     "guard",
     "guide",
     "siem",
+    "assets",
     "admin",
   ],
   interpolation: { escapeValue: false },

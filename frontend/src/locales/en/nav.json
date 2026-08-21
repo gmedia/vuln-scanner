@@ -4,6 +4,7 @@
   "domainScanner": "Domain Scanner",
   "mobileScanner": "Mobile Scanner",
   "schedules": "Schedules",
+  "assets": "Assets",
   "guard": "Guard",
   "guardHint": "Host agents",
   "siem": "SIEM",

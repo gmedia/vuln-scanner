@@ -1,23 +1,22 @@
+from __future__ import annotations
+
 import re
 import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.models.asset import ASSET_SKU_LIMITS
 from app.schemas.scan import TARGET_PATTERN
 
-MAX_SCHEDULES_PER_ORG = 10
-MAX_SCHEDULES_PER_USER = MAX_SCHEDULES_PER_ORG
+MAX_ASSETS_MULTI = ASSET_SKU_LIMITS["multi"]
 
 
-class ScheduleCreate(BaseModel):
-    name: str | None = Field(default=None, max_length=255)
+class AssetCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
     scan_type: str = Field(..., pattern=r"^(ip|domain)$")
     target: str = Field(..., min_length=1, max_length=512)
-    cadence: str = Field(..., pattern=r"^(weekly|monthly)$")
-    timezone: str = Field(default="Asia/Jakarta", max_length=64)
-    notify_email: str | None = Field(default=None, max_length=255)
-    enabled: bool = True
+    notes: str | None = Field(default=None, max_length=4000)
 
     @field_validator("target")
     @classmethod
@@ -37,42 +36,44 @@ class ScheduleCreate(BaseModel):
             raise ValueError("target must be a valid IPv4 address or fully-qualified domain name")
         return raw
 
-
-class ScheduleUpdate(BaseModel):
-    name: str | None = Field(default=None, max_length=255)
-    target: str | None = Field(default=None, min_length=1, max_length=512)
-    cadence: str | None = Field(default=None, pattern=r"^(weekly|monthly)$")
-    timezone: str | None = Field(default=None, max_length=64)
-    notify_email: str | None = Field(default=None, max_length=255)
-    enabled: bool | None = None
-
-    @field_validator("target")
+    @field_validator("name")
     @classmethod
-    def validate_target(cls, v: str | None) -> str | None:
+    def strip_name(cls, v: str) -> str:
+        return v.strip()
+
+
+class AssetUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    notes: str | None = Field(default=None, max_length=4000)
+
+    @field_validator("name")
+    @classmethod
+    def strip_name(cls, v: str | None) -> str | None:
         if v is None:
             return v
-        raw = v.strip()
-        if not TARGET_PATTERN.match(raw):
-            raise ValueError("target must be a valid IPv4 address or fully-qualified domain name")
-        return raw
+        return v.strip()
 
 
-class ScheduleResponse(BaseModel):
+class AssetScheduleCreate(BaseModel):
+    cadence: str = Field(..., pattern=r"^(weekly|monthly)$")
+    timezone: str = Field(default="Asia/Jakarta", max_length=64)
+    notify_email: str | None = Field(default=None, max_length=255)
+    enabled: bool = True
+    name: str | None = Field(default=None, max_length=255)
+
+
+class AssetResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
-    user_id: uuid.UUID
-    name: str | None
+    organization_id: uuid.UUID
+    name: str
     scan_type: str
     target: str
-    cadence: str
-    timezone: str
-    next_run_at: datetime
-    last_run_at: datetime | None
-    last_job_id: uuid.UUID | None
-    enabled: bool
-    notify_email: str | None
-    last_error: str | None
+    notes: str | None
+    created_by: uuid.UUID
     created_at: datetime
     updated_at: datetime
-    asset_id: uuid.UUID | None = None
+    schedule_id: uuid.UUID | None = None
+    sku_limit: int | None = None
+    sku: str | None = None

@@ -1,0 +1,20 @@
+{
+  "title": "Assets",
+  "subtitle": "Named scan targets for this workspace (SKU cap).",
+  "empty": "No assets yet.",
+  "add": "Add asset",
+  "name": "Name",
+  "target": "Target",
+  "type": "Type",
+  "notes": "Notes",
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "schedule": "Create schedule",
+  "hasSchedule": "Scheduled",
+  "limitReached": "Asset limit reached for this SKU.",
+  "skuLabel": "SKU {{sku}} — {{count}} / {{limit}}",
+  "cadenceWeekly": "Weekly",
+  "cadenceMonthly": "Monthly",
+  "confirmDelete": "Delete this asset?"
+}
