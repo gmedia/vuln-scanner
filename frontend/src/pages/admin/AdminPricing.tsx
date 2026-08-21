@@ -15,8 +15,12 @@ import {
   TableRow,
 } from "@/components/ui/Table";
 import { adminApi, type PricingItem } from "@/api/admin";
+import { useTranslation } from "react-i18next";
+import { htmlLang, isAppLocale } from "@/i18n/locales";
+import i18n from "@/i18n";
 
 function AdminPricing() {
+  const { t } = useTranslation("admin");
   const queryClient = useQueryClient();
   const [editedCosts, setEditedCosts] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState<string | null>(null);
@@ -60,14 +64,14 @@ function AdminPricing() {
       <div className="flex items-center gap-3">
         <DollarSign className="h-6 w-6 text-primary" />
         <h2 className="text-lg font-bold tracking-wide text-foreground">
-          PRICING CONFIGURATION
+          {t("pricingTitle")}
         </h2>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="text-sm tracking-wide">
-            SCAN PRICING
+            {t("pricingCard")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -83,7 +87,7 @@ function AdminPricing() {
                 <DollarSign className="h-6 w-6 text-muted-foreground opacity-40" />
               </div>
               <p className="text-sm text-foreground">
-                No pricing configured
+                {t("pricingEmpty")}
               </p>
             </div>
           ) : (
@@ -91,16 +95,16 @@ function AdminPricing() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-[10px] uppercase tracking-wider">
-                    Scan Type
+                    {t("colScanType")}
                   </TableHead>
                   <TableHead className="text-[10px] uppercase tracking-wider">
-                    Credit Cost
+                    {t("colCreditCost")}
                   </TableHead>
                   <TableHead className="text-[10px] uppercase tracking-wider">
-                    Updated
+                    {t("colUpdated")}
                   </TableHead>
                   <TableHead className="text-right text-[10px] uppercase tracking-wider">
-                    Actions
+                    {t("colActions")}
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -123,7 +127,13 @@ function AdminPricing() {
                     </TableCell>
                     <TableCell>
                       <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                        {new Date(item.updated_at).toLocaleDateString()}
+                        {new Date(item.updated_at).toLocaleDateString(
+                          isAppLocale(i18n.language)
+                            ? htmlLang(i18n.language) === "en"
+                              ? "en-US"
+                              : "id-ID"
+                            : "id-ID",
+                        )}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
@@ -139,10 +149,10 @@ function AdminPricing() {
                         ) : hasChanges(item) ? (
                           <>
                             <Check className="h-3 w-3 mr-1" />
-                            Save
+                            {t("save")}
                           </>
                         ) : (
-                          "Saved"
+                          t("saved")
                         )}
                       </Button>
                     </TableCell>

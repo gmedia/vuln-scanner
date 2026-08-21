@@ -19,34 +19,36 @@ import {
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { adminApi } from "@/api/admin";
-
-const kpiChartConfig = {
-  value: { label: "Count", color: "hsl(var(--primary))" },
-} satisfies ChartConfig;
+import { useTranslation } from "react-i18next";
 
 function AdminDashboard() {
+  const { t } = useTranslation("admin");
   const { data: stats, isLoading } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: adminApi.getStats,
   });
 
+  const kpiChartConfig = {
+    value: { label: t("chartCount"), color: "hsl(var(--primary))" },
+  } satisfies ChartConfig;
+
   const countCards = [
     {
-      label: "Total users",
+      label: t("kpiUsers"),
       value: stats?.total_users ?? 0,
       icon: Users,
       color: "text-blue-400",
       bg: "bg-blue-500/10",
     },
     {
-      label: "Total scans",
+      label: t("kpiScans"),
       value: stats?.total_scans ?? 0,
       icon: Radar,
       color: "text-primary",
       bg: "bg-primary/10",
     },
     {
-      label: "Total findings",
+      label: t("kpiFindings"),
       value: stats?.total_findings ?? 0,
       icon: Shield,
       color: "text-orange-400",
@@ -56,14 +58,14 @@ function AdminDashboard() {
 
   const creditCards = [
     {
-      label: "Credits distributed",
+      label: t("kpiCreditsIn"),
       value: stats?.credits_distributed ?? 0,
       icon: Coins,
       color: "text-green-400",
       bg: "bg-green-500/10",
     },
     {
-      label: "Credits used",
+      label: t("kpiCreditsUsed"),
       value: stats?.credits_used ?? 0,
       icon: TrendingUp,
       color: "text-yellow-400",
@@ -74,14 +76,14 @@ function AdminDashboard() {
   const quickLinks = [
     {
       to: "/admin/users",
-      label: "User management",
-      desc: "Search, view, and adjust user accounts",
+      label: t("linkUsers"),
+      desc: t("linkUsersDesc"),
       icon: Users,
     },
     {
       to: "/admin/pricing",
-      label: "Pricing",
-      desc: "Configure scan credit costs",
+      label: t("linkPricing"),
+      desc: t("linkPricingDesc"),
       icon: Tag,
     },
   ];
@@ -92,10 +94,10 @@ function AdminDashboard() {
         <Shield className="h-6 w-6 text-primary" />
         <div>
           <h2 className="text-lg font-bold tracking-wide text-foreground">
-            Admin dashboard
+            {t("dashboardTitle")}
           </h2>
           <p className="text-[11px] text-muted-foreground">
-            All-time overview
+            {t("dashboardSubtitle")}
           </p>
         </div>
       </div>
@@ -161,7 +163,7 @@ function AdminDashboard() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm tracking-wide">Overview</CardTitle>
+          <CardTitle className="text-sm tracking-wide">{t("overview")}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -175,14 +177,14 @@ function AdminDashboard() {
               >
                 <BarChart
                   data={[
-                    { name: "Users", value: stats?.total_users ?? 0 },
-                    { name: "Scans", value: stats?.total_scans ?? 0 },
-                    { name: "Findings", value: stats?.total_findings ?? 0 },
+                    { name: t("chartUsers"), value: stats?.total_users ?? 0 },
+                    { name: t("chartScans"), value: stats?.total_scans ?? 0 },
+                    { name: t("chartFindings"), value: stats?.total_findings ?? 0 },
                     {
-                      name: "Credits in",
+                      name: t("chartCreditsIn"),
                       value: stats?.credits_distributed ?? 0,
                     },
-                    { name: "Credits used", value: stats?.credits_used ?? 0 },
+                    { name: t("chartCreditsUsed"), value: stats?.credits_used ?? 0 },
                   ]}
                   margin={{ left: 8, right: 8, top: 8, bottom: 0 }}
                 >
@@ -218,7 +220,7 @@ function AdminDashboard() {
       <Card>
         <CardHeader>
           <CardTitle className="text-sm tracking-wide">
-            Quick links
+            {t("quickLinks")}
           </CardTitle>
         </CardHeader>
         <CardContent>
