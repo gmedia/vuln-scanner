@@ -13,43 +13,45 @@ describe("UserGuide", () => {
         </SidebarProvider>
       </MemoryRouter>,
     );
-     expect(screen.getByRole("heading", { name: "Panduan pengguna" })).toBeInTheDocument();
-    expect(screen.getAllByText("Daftar isi").length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getByRole("heading", { name: "User guide" }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText("Contents").length).toBeGreaterThanOrEqual(1);
     expect(
       screen.getByRole("heading", {
-        name: "Mulai: daftar, login, workspace",
+        name: "Start: register, login, workspace",
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "Scan IP — langkah demi langkah",
+        name: "IP scan — step by step",
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "Scan Domain — langkah demi langkah",
+        name: "Domain scan — step by step",
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "Scan Mobile — langkah demi langkah",
+        name: "Mobile scan — step by step",
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Baca hasil & unduh laporan" }),
+      screen.getByRole("heading", { name: "Read results & download reports" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "Jadwal scan berkala (Scan Attach)",
+        name: "Recurring scan schedules (Scan Attach)",
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "Workspace & undangan",
+        name: "Workspace & invites",
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Kredit" }),
+      screen.getByRole("heading", { name: "Credits" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
@@ -61,12 +63,12 @@ describe("UserGuide", () => {
     expect(screen.getByText("Aktifkan Guard")).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "SIEM — cari event & kasus",
+        name: "SIEM — search events & cases",
       }),
     ).toBeInTheDocument();
-      expect(
-        screen.getByRole("heading", { name: "Tips & batasan" }),
-      ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Tips & limits" }),
+    ).toBeInTheDocument();
     expect(
       screen.getAllByText(/POST \/api\/guard\/enroll/).length,
     ).toBeGreaterThanOrEqual(1);
@@ -80,7 +82,7 @@ describe("UserGuide", () => {
     expect(document.body.textContent ?? "").toMatch(/wazuh-agent/i);
     expect(document.body.textContent ?? "").toMatch(/systemctl/);
     expect(document.body.textContent ?? "").toMatch(
-      /Instalasi runtime agen di host target/,
+      /Agent runtime install on the target host/,
     );
     expect(
       screen.getByTestId("guard-distro-install-commands"),
@@ -105,15 +107,16 @@ describe("UserGuide", () => {
       .filter((a) => a.getAttribute("href") === "/schedules");
     expect(scheduleLinks.length).toBeGreaterThanOrEqual(1);
     const tocNavs = screen.getAllByRole("navigation", {
-      name: "Daftar isi panduan",
+      name: "Guide table of contents",
     });
     expect(tocNavs.length).toBeGreaterThanOrEqual(2);
     const mobileToc = tocNavs[0]?.closest("[data-slot='card']");
     expect(mobileToc).toBeTruthy();
     expect(mobileToc?.parentElement).toHaveClass("sticky", "top-14");
-    expect(
-      screen.getByRole("button", { name: /Daftar isi/ }),
-    ).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("button", { name: /Contents/ })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
     const desktopToc = screen.getByTestId("guide-desktop-toc");
     expect(desktopToc.className).toMatch(/lg:block/);
     expect(desktopToc.querySelector(".sticky")).toBeTruthy();
