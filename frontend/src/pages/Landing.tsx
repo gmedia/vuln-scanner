@@ -15,6 +15,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { BrandMark } from "@/components/brand/BrandMark";
 import { BRAND } from "@/lib/brand";
 import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
+import ThemeSwitcher from "@/components/theme/ThemeSwitcher";
 import { useTranslation } from "react-i18next";
 
 const featureKeys = [
@@ -37,6 +38,7 @@ function Landing() {
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <BrandMark to="/" />
           <div className="flex items-center gap-3">
+            <ThemeSwitcher />
             <LanguageSwitcher />
             <Link to="/login">
               <Button

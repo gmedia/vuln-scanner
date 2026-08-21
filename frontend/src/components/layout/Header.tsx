@@ -18,6 +18,7 @@ import {
 import { BrandMark } from "@/components/brand/BrandMark";
 import OrgSwitcher from "@/components/workspace/OrgSwitcher";
 import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
+import ThemeSwitcher from "@/components/theme/ThemeSwitcher";
 import { SCAN_TYPE_LABELS } from "@/lib/constants";
 import { useTranslation } from "react-i18next";
 
@@ -74,6 +75,7 @@ function Header({ children }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
+        <ThemeSwitcher />
         <LanguageSwitcher />
         {isAuthenticated && (
           <div className="hidden sm:block">
