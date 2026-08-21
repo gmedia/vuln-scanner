@@ -90,7 +90,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --radius: 0.5rem;
+  --radius: 0.75rem;
   --font-sans:
     "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", sans-serif;
