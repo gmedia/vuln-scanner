@@ -25,6 +25,7 @@ class User(Base):
     verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
     credits: Mapped[int] = mapped_column(Integer, default=0)
+    locale: Mapped[str] = mapped_column(String(8), nullable=False, default="id", server_default="id")
     last_active_organization_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("organizations.id", ondelete="SET NULL", use_alter=True, name="fk_users_last_active_org"),
@@ -42,4 +43,7 @@ class User(Base):
         back_populates="user", cascade="all, delete-orphan"
     )
 
-    __table_args__ = (CheckConstraint("credits >= 0", name="ck_user_credits_non_negative"),)
+    __table_args__ = (
+        CheckConstraint("credits >= 0", name="ck_user_credits_non_negative"),
+        CheckConstraint("locale IN ('id', 'en')", name="ck_users_locale_id_en"),
+    )
