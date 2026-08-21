@@ -44,7 +44,7 @@ describe("Select", () => {
         </Select>
       );
       const trigger = screen.getByRole("combobox");
-      expect(trigger).toHaveClass("flex", "h-10", "w-full", "rounded-md", "border", "bg-card");
+      expect(trigger).toHaveClass("flex", "h-10", "w-full", "rounded-md", "border", "bg-input");
     });
   });
 
