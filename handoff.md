@@ -10,44 +10,51 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
-## Session snapshot (2026-08-20 — refresh against `main`)
+## Session snapshot (2026-08-21 — refresh against `main`)
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding)** | **`aa4ab50`** — **#362** Guide TOC sticky offset; re-`git pull` after reset |
-| **Recent merges (UI wave)** | **#356** Cluster A (auth/shell mobile) · **#357** C+D (verify/forgot) · **#358** 404 · **#359** landing CTAs · **#360** Guard enroll/agent tables `min-w` + scroll · **#361** nested Guide TOC sidebar · **#362** TOC `top-14` (user: CI main hijau, deploy OK) |
+| **`main` tip (coding)** | **`fa8d1b1`** — **#378** theme overlay no-shadow; user: **CI main hijau + auto-deploy**. Re-`git pull` after reset |
+| **Recent merges (i18n)** | **#367** Playwright locale id · **#368** finding labels · **#369** Workspace+Guard chrome · **#370** Guide catalogs · **#371** executive notify · **#372** user locale · **#373** SIEM+Admin S7 |
+| **Recent merges (theme / grok2api chrome)** | **#374** spek `theme-v1.md` · **#375** light/dark (`sinexis.theme`, default **dark**) · **#376** tokens/radius 12 / no-shadow Card-Dialog-Button / table density / Input `bg-input` / Card `p-4` / Guard island · **#377** Dashboard density · **#378** overlay flatten (dropdown/Select/Popover/Tooltip/Sheet/chart/Tabs) + scan forms drop `size="lg"` (CTA **hijau tetap**) + Header canvas `h-12 bg-background` + Select/Textarea inset + Schedules/CreditHistory empty islands |
+| **Theme DoD (user)** | Closer to grok2api **surface** (flat, density, islands, header canvas). **Keep** Sinexis `--primary` `hsl(142 71% 45%)`. **Out:** invert CTA BW; clone Models/Keys; **replace top header with grok2api sidebar**; Landing/`NotFound` `size="lg"`; commit PNG refs |
+| **Theme leftover (low impact — do not start unprompted)** | Alert cream light; Admin density; idle `sidebar.tsx` shadow; Landing lg |
 | **Open PRs** | Dependabot **#252–#266** and **#314–#324** — **do not mass-merge**; only a **named** PR if CI green |
 | **P1 Scan Attach (code)** | **S1–S5** on `main` (#235–#239) + **Wave B** SPA polish (#271) |
 | **P1 production** | **Closed (2026-08-08)** smoke A; later tips CI-deployed |
 | **P2 Workspace** | **S1–S5 on `main`** (#267 + #270); spek D1–D6; edge Alembic **`add_workspace_orgs`**; cap **10 enabled / org** |
 | **P4 soft dual-brand** | **On `main`** (#250); public **`sinexis.app`** and/or legacy hostname — **no hard cut** |
 | **P5 Guard** | **On `main`**: spek #273 · thin #274 · Http #275 · tables #360 · guide TOC #361/#362 — mock CI default; **edge lab + env + live smoke still human** |
-| **P7 SIEM** | Spek + S0–S5 code on `main` (#307 family); host flag `SIEM_ENABLED` (default false). **Do not** add Discover/cases on `/guard` |
+| **P7 SIEM** | Spek + S0–S5 code on `main` (#307); host flag `SIEM_ENABLED` (default false). **Do not** add Discover/cases on `/guard`. “S3+” in chat = API/cases/SPA slices — **already coded**; residual is **host flag + SKU human** |
+| **P3 Assets** | **Draft spek S0 only** ([`docs/specs/assets-v1.md`](docs/specs/assets-v1.md) #282). Named org-scoped scan targets (not CMDB, not Guard agents). **No S1+** until explicit verb **and** §11 answers (tier hard vs warn; `/assets` vs Workspace tab; many schedules per asset) |
 | **P0 commercial** | **Policy locked** (#245): Basic **300k** / Pro **650k** / Multi **2M**; credits **10/24/60**; AM renew; attach ARPU primary; pilot #1 multi-service, 1 mo sponsored |
 | **P0 GTM kit in git** | One-pager + SKU + **[`docs/commercial/am-wave1-email-id.md`](docs/commercial/am-wave1-email-id.md)** (#246) |
 | **Still human (not git)** | Finance **service_id** ×3; AM **10 CRM SIDs**; named **pilot #1**; AM **send** wave-1; ops **fulfill**; Guard lab Manager/Indexer + **wipe `tc5` before enroll e2e**; screenshot pack 08–18 needs **`E2E_PASSWORD` on e2e host** (do **not** invent on coding host) |
 | **Coding-host Docker** | Prefer **off/minimal**. Edge runs live stack (CI **deploy** job on `main`) |
-| **Engineering default** | **GTM human**. No new UI wave. No SIEM creep. **P3 / further Guard / named Dependabot** only on **explicit verb**. Guide/mobile polish **done** — do not re-implement TOC |
+| **Engineering default** | **GTM human** + optional **prod visual spot-check** (dark+light). Theme port **enough**. No SIEM creep on `/guard`. **P3 / further Guard / named Dependabot / more theme** only on **explicit verb** + target page |
 
 ### Next OpenCode session — do not start coding
 
-1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull` — tip should be **`aa4ab50`** or newer.
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull` — tip should be **`fa8d1b1`** or newer (#378).
 2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** (§1.3). This stub is **not** the backlog.
 3. Speak **Bahasa Indonesia** with the user; code/PR English; prefix git with `GIT_MASTER=1`.
-4. **Wait** for `implement` / `buat` / `kerjakan` / a named Dependabot PR / a screenshot zip.
+4. **Wait** for `implement` / `buat` / `kerjakan` / a named Dependabot PR / a **specific** UI gap (page + dark/light). Do **not** “lanjut mirip grok2api” without a target.
 
-**User-confirmed OK (do not redo):** mobile clusters A–F, Guard tables #360, Guide nested TOC #361, sticky `top-14` #362.
+**User-confirmed OK (do not redo):** mobile clusters A–F; Guard tables #360; Guide nested TOC #361; sticky offset #362; **i18n S0–S7**; **theme S0–#378** (tokens, density, islands, overlay, header canvas, inset Select/Input/Textarea). Default locale **`id`**. Default theme **dark**.
 
 **Skipped / blocked (do not fake):**
 
 - **Cluster B** `/terms` `/privacy` — no legal URL yet (not a checkbox).
 - **Wave G** skip.
 - Freeze testids: `user-menu`, `org-switcher*`, `export-executive`, `rescan-button`, `guard-state`, **`guide-desktop-toc`** (do not rename).
-- Scroll root: `SidebarInset` `max-h-svh overflow-y-auto` in `AppShell.tsx` (not `window`). TOC sticky must use **`top-14`** (header `h-14`). Nested TOC: `Sidebar` `collapsible="none"` **without** a second `SidebarProvider`.
+- Scroll root: `SidebarInset` `max-h-svh overflow-y-auto` in `AppShell.tsx` (not `window`). Nested TOC: `Sidebar` `collapsible="none"` **without** a second `SidebarProvider`.
+- **Header** is now **`h-12`** (`Header.tsx` #378) — Guide TOC sticky may still say `top-14`; **do not** “fix” unless user reports overlap.
+- grok2api **sidebar IA / Models / Keys** — **out**. CTA Scan **green** — **out** to invert.
+- PNG refs lived under `.sisyphus/ref-design/` (not git).
 
-**What AI may execute only if the user says so:** P3 Asset S1 (spek [`assets-v1.md`](docs/specs/assets-v1.md) — answer §11 first); one named Dependabot PR; P6 hospitality docs; a **bugfix** with repro/screenshots.
+**What AI may execute only if the user says so:** P3 Asset S1 (spek [`assets-v1.md`](docs/specs/assets-v1.md) — **answer §11 first**); enable SIEM on lab (`SIEM_ENABLED`, not new Guard UI); one named Dependabot PR; P6 hospitality docs; a **bugfix** with repro/screenshots; a **named** theme leftover (Alert cream / Admin density).
 
-**What AI must not start unprompted:** GTM; live Guard lab; invent `E2E_PASSWORD`; mass-merge Dependabot; Cluster B; Wave G; SIEM UI on `/guard`; re-polish Guide TOC.
+**What AI must not start unprompted:** GTM; live Guard lab; invent `E2E_PASSWORD`; mass-merge Dependabot; Cluster B; Wave G; SIEM UI on `/guard`; re-polish Guide TOC; more grok2api chrome; P3 S1 without §11.
 
 ### Edge public smoke — post-S5 + Wave B deploy (2026-08-10)
 
@@ -143,10 +150,11 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 | **P5** | Guard (Wazuh thin) | **S0–S5 + Http + tables + guide TOC on `main`**; live lab residual human — see [`guard-v1.md`](docs/specs/guard-v1.md) |
 | **P6** | Hospitality / pilot pack | After attach story works |
 | **P7** | SIEM v1 | **S0–S5 on `main`**; flag off by default; never as a Guard PR |
+| **UX** | i18n + theme grok2api chrome | **Shipped** #367–#378; stop polish unless named gap |
 
 **Priority rule:** If this stub, the archive, or old chat **disagrees** with the execution guide on *what to build next*, **the guide wins**, unless the user opens a stuck-job / worker incident.
 
-**When to call engineering again:** product **bug** with screenshot/repro; **P3 S1+** explicit verb + assets §11; **one** named Dependabot PR; **P6** docs; never “improve Guide TOC” unless new screenshots.
+**When to call engineering again:** product **bug** with screenshot/repro; **P3 S1+** explicit verb + assets §11; **one** named Dependabot PR; **P6** docs; named theme leftover; never “improve Guide TOC” or “lebih mirip grok2api” without a page + constraint.
 
 ---
 
@@ -162,6 +170,7 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 | Guard v1 spek (P5 thin) | [`docs/specs/guard-v1.md`](docs/specs/guard-v1.md) |
 | Assets v1 (P3 S0 draft) | [`docs/specs/assets-v1.md`](docs/specs/assets-v1.md) |
 | SIEM v1 (P7) | [`docs/specs/siem-v1.md`](docs/specs/siem-v1.md) |
+| Theme v1 (light/dark + grok2api chrome) | [`docs/specs/theme-v1.md`](docs/specs/theme-v1.md) |
 | Schedule ops / smoke | [`docs/scan-schedules-ops.md`](docs/scan-schedules-ops.md) |
 | Full execution guide | [`docs/AGENT_EXECUTION_GUIDE.md`](docs/AGENT_EXECUTION_GUIDE.md) |
 | Git / PR rules | [`AGENTS.md`](AGENTS.md) |
