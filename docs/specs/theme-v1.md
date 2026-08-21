@@ -117,7 +117,7 @@ Boot: if stored/default is dark → `document.documentElement.classList.add("dar
 | `--destructive` | keep readable on light | keep |
 | `--radius` | `0.75rem` (12px) both themes | same |
 
-Elevation: **hairline border only** (no `shadow-sm` / `shadow-lg` on Card, Dialog, AlertDialog, or primary Button). Primary CTA stays **green** (`bg-primary`), not inverted black/white.
+Elevation: **hairline border only** (no `shadow-sm` / `shadow-md` / `shadow-lg` on Card, Dialog, AlertDialog, Dropdown, Select, Popover, Tooltip, Sheet, chart tooltip, or primary Button). Primary CTA stays **green** (`bg-primary`), not inverted black/white. Auth header: `bg-background` + `h-12` (canvas, not card strip). Scan form submit: default size, still green.
 
 Density (grok2api-adjacent): table head `h-8` + `text-xs`; cells `px-3 py-1.5`; card padding `p-4`; inputs use `--input` wash. Guard empty agents/alerts: island panel + muted icon, **no** fake Connect CTA. Dashboard: `space-y-4` / `gap-4` (not 6); default-size header CTAs (not `size="lg"` / `min-h-11`); empty scans use the same island chrome **and keep** real Scan IP / schedule links.
 
