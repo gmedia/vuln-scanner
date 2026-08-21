@@ -24,11 +24,15 @@ import {
 } from "@/components/ui/Pagination";
 import { adminApi } from "@/api/admin";
 import type { AdminUserItem } from "@/api/admin";
+import { useTranslation } from "react-i18next";
+import { htmlLang, isAppLocale } from "@/i18n/locales";
+import i18n from "@/i18n";
 
 const PAGE_SIZE = 20;
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
+  const lng = isAppLocale(i18n.language) ? htmlLang(i18n.language) : "id";
+  return new Date(iso).toLocaleDateString(lng === "en" ? "en-US" : "id-ID", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -36,6 +40,7 @@ function formatDate(iso: string): string {
 }
 
 function AdminUsers() {
+  const { t } = useTranslation("admin");
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -54,23 +59,23 @@ function AdminUsers() {
         <Users className="h-6 w-6 text-primary" />
         <div>
           <h2 className="text-lg font-bold tracking-wide text-foreground">
-            User management
+            {t("usersTitle")}
           </h2>
           <p className="text-[11px] text-muted-foreground">
-            Search and manage registered accounts
+            {t("usersSubtitle")}
           </p>
         </div>
       </div>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <CardTitle className="text-sm tracking-wide">Users</CardTitle>
+          <CardTitle className="text-sm tracking-wide">{t("usersCard")}</CardTitle>
           <div className="flex items-center gap-3">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Search email..."
+                placeholder={t("searchEmail")}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -81,7 +86,7 @@ function AdminUsers() {
             </div>
             {data && data.total > 0 && (
               <span className="shrink-0 text-[10px] text-muted-foreground">
-                {data.total} total
+                {t("totalCount", { count: data.total })}
               </span>
             )}
           </div>
@@ -98,9 +103,9 @@ function AdminUsers() {
               <div className="mb-3 rounded-full bg-muted p-3">
                 <Users className="h-6 w-6 text-muted-foreground opacity-40" />
               </div>
-              <p className="text-sm text-foreground">No users found</p>
+              <p className="text-sm text-foreground">{t("usersEmpty")}</p>
               <p className="text-xs text-muted-foreground">
-                {search ? "Try a different search term." : "No users registered yet."}
+                {search ? t("usersEmptySearch") : t("usersEmptyNone")}
               </p>
             </div>
           ) : (
@@ -108,25 +113,25 @@ function AdminUsers() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-[10px] uppercase tracking-wider">
-                    Email
+                    {t("colEmail")}
                   </TableHead>
                   <TableHead className="text-[10px] uppercase tracking-wider">
-                    Role
+                    {t("colRole")}
                   </TableHead>
                   <TableHead className="text-[10px] uppercase tracking-wider">
-                    Verified
+                    {t("colVerified")}
                   </TableHead>
                   <TableHead className="text-right text-[10px] uppercase tracking-wider">
-                    Credits
+                    {t("colCredits")}
                   </TableHead>
                   <TableHead className="text-right text-[10px] uppercase tracking-wider">
-                    Scans
+                    {t("colScans")}
                   </TableHead>
                   <TableHead className="text-[10px] uppercase tracking-wider">
-                    Created
+                    {t("colCreated")}
                   </TableHead>
                   <TableHead className="text-right text-[10px] uppercase tracking-wider">
-                    Actions
+                    {t("colActions")}
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -153,7 +158,7 @@ function AdminUsers() {
                 </PaginationItem>
                 <PaginationItem>
                   <span className="px-2 text-xs text-muted-foreground">
-                    Page {page} of {totalPages}
+                    {t("pageOf", { page, total: totalPages })}
                   </span>
                 </PaginationItem>
                 <PaginationItem>
@@ -172,6 +177,7 @@ function AdminUsers() {
 }
 
 function UserRow({ user, onView }: { user: AdminUserItem; onView: () => void }) {
+  const { t } = useTranslation("admin");
   return (
     <TableRow>
       <TableCell>
@@ -187,7 +193,7 @@ function UserRow({ user, onView }: { user: AdminUserItem; onView: () => void }) 
           variant={user.is_admin ? "completed" : "default"}
           className="text-[9px]"
         >
-          {user.is_admin ? "Admin" : "User"}
+          {user.is_admin ? t("roleAdmin") : t("roleUser")}
         </Badge>
       </TableCell>
       <TableCell>
@@ -195,7 +201,7 @@ function UserRow({ user, onView }: { user: AdminUserItem; onView: () => void }) 
           variant={user.is_verified ? "completed" : "pending"}
           className="text-[9px]"
         >
-          {user.is_verified ? "Verified" : "Unverified"}
+          {user.is_verified ? t("verified") : t("unverified")}
         </Badge>
       </TableCell>
       <TableCell className="text-right">
@@ -219,7 +225,7 @@ function UserRow({ user, onView }: { user: AdminUserItem; onView: () => void }) 
           className="text-xs"
         >
           <Eye className="mr-1 h-3 w-3" />
-          View
+          {t("view")}
         </Button>
       </TableCell>
     </TableRow>

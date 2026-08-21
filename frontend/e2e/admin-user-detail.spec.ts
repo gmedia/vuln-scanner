@@ -9,7 +9,7 @@ async function goToFirstUserDetail(page: import("@playwright/test").Page) {
     })
     .catch(() => {});
 
-  const viewBtn = page.locator("button:has-text('View')").first();
+  const viewBtn = page.locator("button:has-text('Lihat')").first();
   await viewBtn.click({ force: true });
   await page.waitForURL(/\/admin\/users\/[a-f0-9-]+/, { timeout: 15_000 });
 }
@@ -24,7 +24,7 @@ test.describe("Admin — User Detail", () => {
       })
       .catch(() => {});
 
-    await expect(page.locator("h2:has-text('User details')")).toBeVisible();
+    await expect(page.locator("h2:has-text('Detail pengguna')")).toBeVisible();
   });
 
   test("Back button navigates to user list", async ({ page }) => {
@@ -36,9 +36,11 @@ test.describe("Admin — User Detail", () => {
       })
       .catch(() => {});
 
-    await page.locator("button:has-text('Back')").click();
+    await page.locator("button:has-text('Kembali')").click();
     await page.waitForURL("/admin/users", { timeout: 15_000 });
-    await expect(page.locator("h2:has-text('User management')")).toBeVisible();
+    await expect(
+      page.locator("h2:has-text('Manajemen pengguna')"),
+    ).toBeVisible();
   });
 
   test("PROFILE card title is visible", async ({ page }) => {
@@ -51,7 +53,7 @@ test.describe("Admin — User Detail", () => {
       .catch(() => {});
 
     await expect(
-      page.getByText("Profile", { exact: true }).first(),
+      page.getByText("Profil", { exact: true }).first(),
     ).toBeVisible();
   });
 
@@ -89,7 +91,7 @@ test.describe("Admin — User Detail", () => {
       })
       .catch(() => {});
 
-    const verifiedBadge = page.locator("text=/Verified|Unverified/");
+    const verifiedBadge = page.locator("text=/Terverifikasi|Belum verifikasi/");
     await expect(verifiedBadge.first()).toBeVisible();
   });
 
@@ -114,7 +116,7 @@ test.describe("Admin — User Detail", () => {
       })
       .catch(() => {});
 
-    await expect(page.locator("text=/Joined [A-Za-z]/")).toBeVisible();
+    await expect(page.locator("text=/Bergabung /")).toBeVisible();
   });
 
   test("scan count is visible", async ({ page }) => {
@@ -126,7 +128,7 @@ test.describe("Admin — User Detail", () => {
       })
       .catch(() => {});
 
-    await expect(page.locator("text=/\\d+ scans performed/")).toBeVisible();
+    await expect(page.locator("text=/\\d+ scan dilakukan/")).toBeVisible();
   });
 
   test("CREDIT ADJUSTMENT card is visible", async ({ page }) => {
@@ -139,7 +141,7 @@ test.describe("Admin — User Detail", () => {
       .catch(() => {});
 
     await expect(
-      page.getByRole("heading", { name: "Credit adjustment" }),
+      page.getByRole("heading", { name: "Penyesuaian kredit" }),
     ).toBeVisible();
   });
 
@@ -154,7 +156,7 @@ test.describe("Admin — User Detail", () => {
       })
       .catch(() => {});
 
-    const adjustBtn = page.locator("button:has-text('Adjust credits')");
+    const adjustBtn = page.locator("button:has-text('Sesuaikan kredit')");
     await expect(adjustBtn).toBeDisabled();
   });
 
@@ -167,10 +169,10 @@ test.describe("Admin — User Detail", () => {
       })
       .catch(() => {});
 
-    const amountInput = page.locator("label:has-text('Amount') + input");
+    const amountInput = page.locator("label:has-text('Jumlah') + input");
     await amountInput.fill("10");
 
-    const adjustBtn = page.locator("button:has-text('Adjust credits')");
+    const adjustBtn = page.locator("button:has-text('Sesuaikan kredit')");
     await expect(adjustBtn).not.toBeDisabled();
   });
 
@@ -183,18 +185,18 @@ test.describe("Admin — User Detail", () => {
       })
       .catch(() => {});
 
-    const amountInput = page.locator("label:has-text('Amount') + input");
+    const amountInput = page.locator("label:has-text('Jumlah') + input");
     await amountInput.fill("5");
 
     const descriptionInput = page.locator(
-      "label:has-text('Description') + input",
+      "label:has-text('Deskripsi') + input",
     );
     await descriptionInput.fill("e2e test credit");
 
-    await page.locator("button:has-text('Adjust credits')").click();
+    await page.locator("button:has-text('Sesuaikan kredit')").click();
 
     const feedback = page.locator(
-      "text=/Credits updated successfully|Failed to update credits/",
+      "text=/Kredit berhasil diperbarui|Gagal memperbarui kredit/",
     );
     await expect(feedback).toBeVisible({ timeout: 15_000 });
   });

@@ -105,22 +105,22 @@ describe("AdminPricing", () => {
       mockUseQueryReturn({ data: basePricing });
       mockUseMutationReturn();
       renderPage();
-      expect(screen.getByText("PRICING CONFIGURATION")).toBeInTheDocument();
+      expect(screen.getByText("Pricing configuration")).toBeInTheDocument();
     });
 
     it("renders SCAN PRICING card title", () => {
       mockUseQueryReturn({ data: basePricing });
       mockUseMutationReturn();
       renderPage();
-      expect(screen.getByText("SCAN PRICING")).toBeInTheDocument();
+      expect(screen.getByText("Scan pricing")).toBeInTheDocument();
     });
 
     it("renders table headers", () => {
       mockUseQueryReturn({ data: basePricing });
       mockUseMutationReturn();
       renderPage();
-      expect(screen.getByText("Scan Type")).toBeInTheDocument();
-      expect(screen.getByText("Credit Cost")).toBeInTheDocument();
+      expect(screen.getByText("Scan type")).toBeInTheDocument();
+      expect(screen.getByText("Credit cost")).toBeInTheDocument();
       expect(screen.getByText("Updated")).toBeInTheDocument();
       expect(screen.getByText("Actions")).toBeInTheDocument();
     });

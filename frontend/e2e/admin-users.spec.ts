@@ -4,12 +4,14 @@ import { e2eEmail } from "./credentials";
 test.describe("Admin — Users", () => {
   test("page loads with USER MANAGEMENT heading", async ({ page }) => {
     await page.goto("/admin/users");
-    await expect(page.locator("h2:has-text('User management')")).toBeVisible();
+    await expect(
+      page.locator("h2:has-text('Manajemen pengguna')"),
+    ).toBeVisible();
   });
 
   test("USERS card title is visible", async ({ page }) => {
     await page.goto("/admin/users");
-    await expect(page.locator("text=Users").first()).toBeVisible();
+    await expect(page.locator("text=Pengguna").first()).toBeVisible();
   });
 
   test("table headers are correct", async ({ page }) => {
@@ -22,12 +24,12 @@ test.describe("Admin — Users", () => {
       .catch(() => {});
 
     await expect(page.locator("th:has-text('Email')")).toBeVisible();
-    await expect(page.locator("th:has-text('Role')")).toBeVisible();
-    await expect(page.locator("th:has-text('Verified')")).toBeVisible();
-    await expect(page.locator("th:has-text('Credits')")).toBeVisible();
-    await expect(page.locator("th:has-text('Scans')")).toBeVisible();
-    await expect(page.locator("th:has-text('Created')")).toBeVisible();
-    await expect(page.locator("th:has-text('Actions')")).toBeVisible();
+    await expect(page.locator("th:has-text('Peran')")).toBeVisible();
+    await expect(page.locator("th:has-text('Verifikasi')")).toBeVisible();
+    await expect(page.locator("th:has-text('Kredit')")).toBeVisible();
+    await expect(page.locator("th:has-text('Scan')")).toBeVisible();
+    await expect(page.locator("th:has-text('Dibuat')")).toBeVisible();
+    await expect(page.locator("th:has-text('Aksi')")).toBeVisible();
   });
 
   test("user rows are visible in table", async ({ page }) => {
@@ -96,7 +98,7 @@ test.describe("Admin — Users", () => {
       })
       .catch(() => {});
 
-    const searchInput = page.locator("input[placeholder='Search email...']");
+    const searchInput = page.locator("input[placeholder='Cari email...']");
     const needle = e2eEmail();
     const localPart = needle.split("@")[0] ?? needle;
     await searchInput.fill(localPart);
@@ -114,11 +116,11 @@ test.describe("Admin — Users", () => {
       })
       .catch(() => {});
 
-    const searchInput = page.locator("input[placeholder='Search email...']");
+    const searchInput = page.locator("input[placeholder='Cari email...']");
     await searchInput.fill("nonexistent-user-xyz");
     await page.waitForTimeout(500);
 
-    await expect(page.locator("text=No users found")).toBeVisible();
+    await expect(page.locator("text=Pengguna tidak ditemukan")).toBeVisible();
   });
 
   test("clicking View navigates to user detail page", async ({ page }) => {
@@ -130,9 +132,9 @@ test.describe("Admin — Users", () => {
       })
       .catch(() => {});
 
-    const viewBtn = page.locator("button:has-text('View')").first();
+    const viewBtn = page.locator("button:has-text('Lihat')").first();
     await viewBtn.click({ force: true });
     await page.waitForURL(/\/admin\/users\/[a-f0-9-]+/, { timeout: 15_000 });
-    await expect(page.locator("h2:has-text('User details')")).toBeVisible();
+    await expect(page.locator("h2:has-text('Detail pengguna')")).toBeVisible();
   });
 });
