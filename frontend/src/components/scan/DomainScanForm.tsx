@@ -112,7 +112,6 @@ function DomainScanForm() {
       <Button
         onClick={handleSubmit}
         disabled={submitDisabled}
-        size="lg"
         className="w-full"
       >
         {startDomainScan.isPending ? (
