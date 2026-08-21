@@ -4,7 +4,7 @@
 **Goal:** Let operators switch the SPA between **dark** (current default) and **light** without a layout redesign, rebrand, or new product module.
 **Suggested epic label:** **P9** (after P8 i18n in [`docs/AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) §1.3). Does **not** jump ahead of GTM / P3 unless the user reorders.
 **Depends:** Tailwind v4 + shadcn tokens in `frontend/src/index.css` · `@custom-variant dark (&:is(.dark *))` already present · P8 i18n switcher pattern (`LanguageSwitcher` + `localStorage`).
-**Not this epic:** per-org theme · high-contrast a11y overhaul · custom brand palettes · PWA `theme-color` per-install · executive HTML / notify email restyle · Wazuh dashboard · SIEM feature work.
+**Not this epic:** per-org theme · high-contrast a11y overhaul · custom brand palettes · PWA `theme-color` per-install · executive HTML / notify email restyle · Wazuh dashboard · SIEM feature work · app sidebar replacing the top header.
 
 ---
 
@@ -115,6 +115,9 @@ Boot: if stored/default is dark → `document.documentElement.classList.add("dar
 | `--sidebar` | `hsl(0 0% 100%)` | `hsl(0 0% 4%)` (same family as canvas) |
 | `--primary` | **same green** `hsl(142 71% 45%)` | same |
 | `--destructive` | keep readable on light | keep |
+| `--radius` | `0.75rem` (12px) both themes | same |
+
+Elevation: **hairline border only** (no `shadow-sm` / `shadow-lg` on Card, Dialog, AlertDialog, or primary Button). Primary CTA stays **green** (`bg-primary`), not inverted black/white.
 
 Severity badge variants (`completed`, `pending`, `running`, finding colors): **audit** in S1; if they use `bg-emerald-500` etc. they may already work on both.
 
