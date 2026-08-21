@@ -353,6 +353,7 @@ async def get_scan_baseline_diff(
 async def export_scan(
     job_id: str,
     format: str = Query(default="json"),
+    lang: str | None = Query(default=None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse | HTMLResponse:
@@ -382,6 +383,7 @@ async def export_scan(
             job,
             diff=diff,
             account_email=getattr(current_user, "email", None),
+            lang=lang,
         )
         return HTMLResponse(
             content=body,

@@ -67,6 +67,33 @@ async def test_send_scan_diff_email_subject_and_link(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_send_scan_diff_email_en_subject(monkeypatch):
+    monkeypatch.setattr(email_module, "FRONTEND_URL", "https://example.test")
+    mock_smtp = AsyncMock()
+    mock_smtp.connect = AsyncMock()
+    mock_smtp.send_message = AsyncMock()
+    mock_smtp.quit = AsyncMock()
+
+    with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+        ok = await send_scan_diff_email(
+            "owner@example.com",
+            target="example.com",
+            job_id="job-abc",
+            new_critical=1,
+            new_high=2,
+            lang="en",
+        )
+
+    assert ok is True
+    sent = mock_smtp.send_message.call_args[0][0]
+    assert sent["Subject"] == "[Sinexis Scan] 3 new critical/high findings — example.com"
+    payload = sent.get_payload()
+    body = payload[0].get_payload(decode=True).decode("utf-8")
+    assert "New critical" in body
+    assert "temuan baru" not in body
+
+
+@pytest.mark.asyncio
 async def test_send_scan_diff_email_smtp_failure_returns_false(monkeypatch):
     from aiosmtplib.errors import SMTPException
 

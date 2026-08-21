@@ -7,6 +7,8 @@ from email.mime.text import MIMEText
 import aiosmtplib
 from aiosmtplib.errors import SMTPException
 
+from app.i18n import normalize_lang, t
+
 logger = logging.getLogger(__name__)
 
 SMTP_HOST = os.getenv("SMTP_HOST", "localhost")
@@ -142,37 +144,47 @@ async def send_scan_diff_email(
     new_high: int,
     resolved: int = 0,
     worsened: int = 0,
+    lang: str | None = None,
 ) -> bool:
+    locale = normalize_lang(lang)
     n_new = int(new_critical) + int(new_high)
     detail_link = f"{FRONTEND_URL}/scan/{job_id}"
-    subject = f"[Sinexis Scan] {n_new} temuan baru critical/high — {target}"
+    subject = t(locale, "notify", "subject", n=n_new, target=target)
+    heading = t(locale, "notify", "heading")
+    intro = t(locale, "notify", "intro", target=target, n=n_new)
+    li_crit = t(locale, "notify", "new_critical", n=int(new_critical))
+    li_high = t(locale, "notify", "new_high", n=int(new_high))
+    li_res = t(locale, "notify", "resolved", n=int(resolved))
+    li_worse = t(locale, "notify", "worsened", n=int(worsened))
+    open_detail = t(locale, "notify", "open_detail")
+    or_copy = t(locale, "notify", "or_copy")
+    footer = t(locale, "notify", "footer")
 
     html_body = f"""\
 <html>
 <body style="font-family: sans-serif; max-width: 520px; margin: 0 auto; padding: 24px;">
-  <h2 style="margin-bottom: 8px;">Sinexis Scan — temuan baru</h2>
+  <h2 style="margin-bottom: 8px;">{heading}</h2>
   <p style="color: #374151;">
-    Scan pada target <strong>{target}</strong> selesai dan menemukan
-    <strong>{n_new}</strong> temuan baru critical/high dibanding baseline sebelumnya.
+    {intro}
   </p>
   <ul style="color: #111827; line-height: 1.6;">
-    <li>Critical baru: <strong>{int(new_critical)}</strong></li>
-    <li>High baru: <strong>{int(new_high)}</strong></li>
-    <li>Resolved: {int(resolved)}</li>
-    <li>Worsened: {int(worsened)}</li>
+    <li>{li_crit}</li>
+    <li>{li_high}</li>
+    <li>{li_res}</li>
+    <li>{li_worse}</li>
   </ul>
   <p>
     <a href="{detail_link}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;
        text-decoration:none;border-radius:6px">
-      Buka detail scan
+      {open_detail}
     </a>
   </p>
   <p style="color: #6b7280; font-size: 14px;">
-    Atau salin tautan:<br>
+    {or_copy}<br>
     {detail_link}
   </p>
   <p style="color: #6b7280; font-size: 13px;">
-    Anda menerima email ini karena notifikasi scan (jadwal atau baseline diff) aktif.
+    {footer}
   </p>
 </body>
 </html>"""
