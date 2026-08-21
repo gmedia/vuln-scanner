@@ -1,6 +1,6 @@
 # Spec: Light / dark appearance — theme v1
 
-**Status:** **S1–S3 in progress** — tokens, switcher, sonner. Default remains **dark**.
+**Status:** **S1–S3 on `main`** (#375). Follow-up: surface tokens aligned to grok2api reference (neutral chrome invert; **primary stays green**).
 **Goal:** Let operators switch the SPA between **dark** (current default) and **light** without a layout redesign, rebrand, or new product module.
 **Suggested epic label:** **P9** (after P8 i18n in [`docs/AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) §1.3). Does **not** jump ahead of GTM / P3 unless the user reorders.
 **Depends:** Tailwind v4 + shadcn tokens in `frontend/src/index.css` · `@custom-variant dark (&:is(.dark *))` already present · P8 i18n switcher pattern (`LanguageSwitcher` + `localStorage`).
@@ -101,17 +101,19 @@ Boot: if stored/default is dark → `document.documentElement.classList.add("dar
 
 **Why not leave `:root` dark and only add `.light`:** Tailwind v4 custom variant is `dark (&:is(.dark *))`. Light-as-default-on-`:root` + `.dark` overrides matches shadcn docs and `class="dark"`.
 
-**Light palette sketch (lock in S1 with visual check, not sacred hex):**
+**Light / dark surfaces (grok2api-aligned, 2026-08-21):** invert **chrome only**. Semantic green / red / amber stay. Do **not** invert `--primary` to black/white (Scan/Attach CTAs stay brand green). Layout (top header vs grok2api sidebar) is **out**.
 
-| Token | Light (sketch) | Dark (today) |
-|-------|----------------|--------------|
-| `--background` | `hsl(0 0% 98%)` | `hsl(0 0% 4%)` |
-| `--foreground` | `hsl(0 0% 9%)` | `hsl(0 0% 93%)` |
-| `--card` | `hsl(0 0% 100%)` | `hsl(0 0% 9%)` |
-| `--muted` | `hsl(0 0% 96%)` | `hsl(0 0% 15%)` |
-| `--muted-foreground` | `hsl(0 0% 40%)` | `hsl(0 0% 60%)` |
-| `--border` / `--input` | `hsl(0 0% 90%)` | `hsl(0 0% 18%)` |
-| `--primary` | **same green** | same |
+| Token | Light | Dark |
+|-------|--------|------|
+| `--background` | `hsl(0 0% 98%)` (~`#FAFAFA`) | `hsl(0 0% 4%)` (~`#0A0A0A`) |
+| `--foreground` | `hsl(0 0% 7%)` | `hsl(0 0% 96%)` |
+| `--card` | `hsl(0 0% 100%)` | `hsl(0 0% 8%)` (~`#141414`) |
+| `--muted` | `hsl(0 0% 96%)` | `hsl(0 0% 12%)` |
+| `--muted-foreground` | `hsl(0 0% 45%)` | `hsl(0 0% 45%)` |
+| `--border` | `hsl(0 0% 90%)` (~`#E5E7EB`) | `hsl(0 0% 16%)` (~`#262626`) |
+| `--input` | `hsl(0 0% 94%)` (inset wash) | `hsl(0 0% 11%)` |
+| `--sidebar` | `hsl(0 0% 100%)` | `hsl(0 0% 4%)` (same family as canvas) |
+| `--primary` | **same green** `hsl(142 71% 45%)` | same |
 | `--destructive` | keep readable on light | keep |
 
 Severity badge variants (`completed`, `pending`, `running`, finding colors): **audit** in S1; if they use `bg-emerald-500` etc. they may already work on both.
