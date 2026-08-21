@@ -8,6 +8,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.i18n import DEFAULT_LOCALE, normalize_lang
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.scan_schedule import ScanSchedule
@@ -40,6 +41,7 @@ class NotifyDiffContext:
     diff: DiffResult
     has_baseline: bool
     schedule_id: str | None
+    locale: str = DEFAULT_LOCALE
 
 
 def resolve_notify_email(session: Session, job: ScanJob) -> str | None:
@@ -136,6 +138,9 @@ def build_notify_context(session: Session, job_id: str) -> NotifyDiffContext | N
     if not email_to:
         return None
 
+    owner = session.execute(select(User).where(User.id == job.user_id)).scalar_one_or_none()
+    locale = normalize_lang(getattr(owner, "locale", None) if owner is not None else DEFAULT_LOCALE)
+
     diff, has_baseline, _prior = compute_diff_sync(session, job)
     sched = session.execute(
         select(ScanSchedule).where(ScanSchedule.last_job_id == job.id).limit(1)
@@ -149,6 +154,7 @@ def build_notify_context(session: Session, job_id: str) -> NotifyDiffContext | N
         diff=diff,
         has_baseline=has_baseline,
         schedule_id=str(sched.id) if sched is not None else None,
+        locale=locale,
     )
 
 

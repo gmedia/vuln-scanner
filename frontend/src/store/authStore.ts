@@ -137,6 +137,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       activeOrgId,
       isAuthenticated: true,
     });
+    const locale = user.locale;
+    if (locale === "id" || locale === "en") {
+      void import("../i18n").then(({ default: i18n }) => {
+        if (i18n.language !== locale) {
+          void i18n.changeLanguage(locale);
+        }
+      });
+    }
   },
 
   activeRole: () => {

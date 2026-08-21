@@ -12,6 +12,7 @@ vi.mock("axios", () => {
     get: vi.fn(),
     post: vi.fn(),
     defaults: {},
+    patch: vi.fn(),
     interceptors: {
       request: { use: vi.fn() },
     },
@@ -42,12 +43,14 @@ import {
   verifyEmail,
   refreshToken,
   getMe,
+  patchMeLocale,
 } from "@/api/auth";
 import type { MessageResponse, LoginResponse, UserResponse } from "@/api/auth";
 
 const mockAxios = axios as unknown as ReturnType<typeof vi.fn> & {
   get: ReturnType<typeof vi.fn>;
   post: ReturnType<typeof vi.fn>;
+  patch: ReturnType<typeof vi.fn>;
 };
 
 describe("auth API", () => {
@@ -203,6 +206,24 @@ describe("auth API", () => {
 
       const result = await getMe();
       expect(result.is_verified).toBe(false);
+    });
+  });
+
+  describe("patchMeLocale", () => {
+    it("patches /api/auth/me with locale", async () => {
+      const mockResponse: UserResponse = {
+        id: "user-1",
+        email: "user@example.com",
+        is_verified: true,
+        created_at: "2025-01-01T00:00:00Z",
+        locale: "en",
+      };
+      mockAxios.patch.mockResolvedValueOnce({ data: mockResponse });
+      const result = await patchMeLocale("en");
+      expect(mockAxios.patch).toHaveBeenCalledWith("/api/auth/me", {
+        locale: "en",
+      });
+      expect(result.locale).toBe("en");
     });
   });
 });

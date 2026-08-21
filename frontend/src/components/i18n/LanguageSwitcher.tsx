@@ -1,6 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { isAppLocale, type AppLocale } from "@/i18n/locales";
+import { patchMeLocale } from "@/api/auth";
+import { useAuthStore } from "@/store/authStore";
 
 function LanguageSwitcher({ className }: { className?: string }) {
   const { i18n, t } = useTranslation("common");
@@ -30,6 +32,9 @@ function LanguageSwitcher({ className }: { className?: string }) {
           )}
           onClick={() => {
             void i18n.changeLanguage(locale);
+            if (useAuthStore.getState().isAuthenticated) {
+              void patchMeLocale(locale);
+            }
           }}
         >
           {locale === "id" ? t("languageId") : t("languageEn")}

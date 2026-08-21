@@ -81,6 +81,7 @@ export interface UserResponse {
   is_admin?: boolean;
   credits?: number;
   created_at: string;
+  locale?: string;
   organizations?: OrgSummary[];
   active_org_id?: string | null;
 }
@@ -192,5 +193,14 @@ export async function changePassword(
 
 export async function getMe(): Promise<UserResponse> {
   const { data } = await authApi.get<UserResponse>("/api/auth/me");
+  return data;
+}
+
+export async function patchMeLocale(
+  locale: "id" | "en",
+): Promise<UserResponse> {
+  const { data } = await authApi.patch<UserResponse>("/api/auth/me", {
+    locale,
+  });
   return data;
 }
