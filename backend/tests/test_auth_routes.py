@@ -2126,3 +2126,33 @@ class TestRefreshExtra2:
         )
         assert resp.status_code == 200
         assert "refresh_token" in resp.cookies
+
+
+class TestPatchMeLocale:
+    def test_patch_locale_en(self, auth_client, db_session):
+        import asyncio
+
+        user = asyncio.get_event_loop().run_until_complete(_create_verified_user(db_session))
+        token = create_access_token(user_id=str(user.id), email=user.email, is_admin=user.is_admin)
+        resp = auth_client.patch(
+            "/api/auth/me",
+            json={"locale": "en"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["locale"] == "en"
+
+        get_resp = auth_client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
+        assert get_resp.json()["locale"] == "en"
+
+    def test_patch_locale_invalid(self, auth_client, db_session):
+        import asyncio
+
+        user = asyncio.get_event_loop().run_until_complete(_create_verified_user(db_session))
+        token = create_access_token(user_id=str(user.id), email=user.email, is_admin=user.is_admin)
+        resp = auth_client.patch(
+            "/api/auth/me",
+            json={"locale": "fr"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 400

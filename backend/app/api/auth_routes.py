@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
+from app.i18n import normalize_lang
 from app.middleware.rate_limit import RateLimiter
 from app.models.credit_log import CreditLog
 from app.models.email_verification import EmailVerificationToken
@@ -31,6 +32,7 @@ from app.schemas.auth import (
     ResetPasswordRequest,
     RevokeRequest,
     TokenResponse,
+    UpdateLocaleRequest,
     UpdateProfileRequest,
     UserResponse,
     VerifyEmailRequest,
@@ -583,6 +585,26 @@ async def me(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> UserResponse:
+    active = get_active_org_id(request)
+    return await _user_response(db, current_user, active_org_id=active)
+
+
+@router.patch("/me", response_model=UserResponse)
+async def patch_me(
+    request: Request,
+    body: UpdateLocaleRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> UserResponse:
+    raw = body.locale.strip().lower()
+    if raw not in {"id", "en"}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="locale must be id or en",
+        )
+    current_user.locale = normalize_lang(raw)
+    await db.commit()
+    await db.refresh(current_user)
     active = get_active_org_id(request)
     return await _user_response(db, current_user, active_org_id=active)
 

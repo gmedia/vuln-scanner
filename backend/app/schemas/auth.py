@@ -65,8 +65,13 @@ class UserResponse(BaseModel):
     is_admin: bool
     credits: int
     created_at: datetime
+    locale: str = "id"
     active_org_id: uuid.UUID | None = None
     organizations: list[OrgSummary] = Field(default_factory=list)
+
+
+class UpdateLocaleRequest(BaseModel):
+    locale: str = Field(..., min_length=2, max_length=8)
 
 
 class LoginResponse(BaseModel):
