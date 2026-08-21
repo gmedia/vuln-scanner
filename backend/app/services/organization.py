@@ -190,6 +190,7 @@ class OrganizationService:
                     "name": org.name,
                     "slug": org.slug,
                     "kind": org.kind,
+                    "sku": org.sku,
                     "role": m.role,
                     "created_at": org.created_at,
                 }
@@ -268,6 +269,7 @@ class OrganizationService:
         *,
         name: str | None = None,
         slug: str | None = None,
+        sku: str | None = None,
     ) -> Organization:
         await require_membership(self.db, org_id, user.id, min_role="admin")
         result = await self.db.execute(select(Organization).where(Organization.id == org_id))
@@ -287,6 +289,10 @@ class OrganizationService:
             if clash.scalar_one_or_none() is not None:
                 raise HTTPException(status_code=409, detail="Slug already taken")
             org.slug = cleaned[:64]
+        if sku is not None:
+            if sku not in ("basic", "pro", "multi"):
+                raise HTTPException(status_code=400, detail="sku must be basic, pro, or multi")
+            org.sku = sku
         org.updated_at = datetime.now(UTC)
         await self.db.commit()
         await self.db.refresh(org)

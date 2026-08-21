@@ -66,7 +66,7 @@ async def update_org(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> OrgDetailResponse:
-    org = await OrganizationService(db).update_org(org_id, current_user, name=body.name, slug=body.slug)
+    org = await OrganizationService(db).update_org(org_id, current_user, name=body.name, slug=body.slug, sku=body.sku)
     return OrgDetailResponse.model_validate(org)
 
 
