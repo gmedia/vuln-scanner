@@ -19,7 +19,7 @@ function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
     <div
       data-slot="card-header"
       className={cn(
-        "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 p-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6",
+        "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 p-4 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-4",
         className,
       )}
       {...props}
@@ -54,7 +54,7 @@ function CardContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       data-slot="card-content"
-      className={cn("p-6 pt-0", className)}
+      className={cn("p-4 pt-0", className)}
       {...props}
     />
   );
@@ -64,7 +64,7 @@ function CardFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       data-slot="card-footer"
-      className={cn("flex items-center p-6 pt-0 [.border-t]:pt-6", className)}
+      className={cn("flex items-center p-4 pt-0 [.border-t]:pt-4", className)}
       {...props}
     />
   );
