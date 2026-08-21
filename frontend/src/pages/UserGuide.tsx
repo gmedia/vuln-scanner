@@ -87,11 +87,11 @@ function Steps({ children }: { children: ReactNode }) {
   );
 }
 
-function Ui({ children }: { children: ReactNode }) {
+function Ui({ children }: { children?: ReactNode }) {
   return <strong className="font-medium text-foreground">{children}</strong>;
 }
 
-function GuideCode({ children }: { children: ReactNode }) {
+function GuideCode({ children }: { children?: ReactNode }) {
   return <code>{children}</code>;
 }
 
