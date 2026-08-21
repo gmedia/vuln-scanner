@@ -54,6 +54,7 @@ import {
 import { useAuthStore } from "@/store/authStore";
 import type { ApiError } from "@/lib/utils";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import {
   buildEnrollCurlExample,
   GUARD_AGENT_INSTALL_INTRO,
@@ -63,7 +64,6 @@ import {
   GUARD_HOST_SETUP_STEPS,
   resolveApiBaseUrl,
 } from "@/lib/guardEnrollHost";
-
 
 function formatWhen(iso: string | null): string {
   if (!iso) return "—";
@@ -89,16 +89,27 @@ function apiDetail(err: unknown, fallback: string): string {
   return fallback;
 }
 
-function statusBadge(status: string) {
+function statusBadge(status: string, t: (key: string) => string) {
   const s = status.toLowerCase();
-  if (s === "active") return <Badge className="bg-emerald-500/15 text-emerald-600">online</Badge>;
+  if (s === "active")
+    return (
+      <Badge className="bg-emerald-500/15 text-emerald-600">
+        {t("online")}
+      </Badge>
+    );
   if (s === "disconnected")
-    return <Badge className="bg-amber-500/15 text-amber-700">terputus</Badge>;
-  if (s === "pending") return <Badge className="bg-sky-500/15 text-sky-700">menunggu</Badge>;
+    return (
+      <Badge className="bg-amber-500/15 text-amber-700">
+        {t("disconnected")}
+      </Badge>
+    );
+  if (s === "pending")
+    return <Badge className="bg-sky-500/15 text-sky-700">{t("pending")}</Badge>;
   return <Badge variant="info">{status}</Badge>;
 }
 
 export default function Guard() {
+  const { t } = useTranslation("guard");
   const queryClient = useQueryClient();
   const activeRole = useAuthStore((s) => s.activeRole);
   const activeOrgId = useAuthStore((s) => s.activeOrgId);
@@ -149,20 +160,20 @@ export default function Guard() {
     mutationFn: enableGuard,
     onSuccess: () => {
       setActionError(null);
-      toast.success("Guard diaktifkan");
+      toast.success(t("enabledToast"));
       invalidate();
     },
-    onError: (e) => setActionError(apiDetail(e, "Gagal mengaktifkan Guard")),
+    onError: (e) => setActionError(apiDetail(e, t("enableFail"))),
   });
 
   const syncMut = useMutation({
     mutationFn: syncGuard,
     onSuccess: () => {
       setActionError(null);
-      toast.success("Sinkronisasi selesai");
+      toast.success(t("syncDone"));
       invalidate();
     },
-    onError: (e) => setActionError(apiDetail(e, "Sinkronisasi gagal")),
+    onError: (e) => setActionError(apiDetail(e, t("syncFail"))),
   });
 
   const tokenMut = useMutation({
@@ -171,20 +182,20 @@ export default function Guard() {
       setRawToken(data.token);
       setTokenLabel("");
       setActionError(null);
-      toast.success("Token enroll dibuat");
+      toast.success(t("tokenCreated"));
       invalidate();
     },
-    onError: (e) => setActionError(apiDetail(e, "Gagal membuat token enroll")),
+    onError: (e) => setActionError(apiDetail(e, t("tokenCreateFail"))),
   });
 
   const revokeMut = useMutation({
     mutationFn: (id: string) => revokeEnrollToken(id),
     onSuccess: () => {
       setActionError(null);
-      toast.success("Token enroll dicabut");
+      toast.success(t("tokenRevoked"));
       invalidate();
     },
-    onError: (e) => setActionError(apiDetail(e, "Gagal mencabut token enroll")),
+    onError: (e) => setActionError(apiDetail(e, t("tokenRevokeFail"))),
   });
 
   const enabled = statusQ.data?.enabled ?? false;
@@ -205,10 +216,10 @@ export default function Guard() {
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
               <Shield className="h-6 w-6 text-primary" />
-              Guard
+              {t("title")}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Pasang agen di host, lalu pantau inventori dan alert kritis.
+              {t("subtitle")}
             </p>
           </div>
           {canAdmin && !enabled && (
@@ -216,7 +227,7 @@ export default function Guard() {
               onClick={() => enableMut.mutate()}
               disabled={enableMut.isPending}
             >
-              Aktifkan Guard
+              {t("enable")}
             </Button>
           )}
         </div>
@@ -231,76 +242,82 @@ export default function Guard() {
 
       <Card>
         <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6 text-sm">
-        {statusQ.isLoading ? (
-          <Skeleton className="h-6 w-48" />
-        ) : statusQ.isError ? (
-          <p className="text-destructive">Gagal memuat status Guard</p>
-        ) : (
-          <>
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <span
-                data-testid="guard-state"
-                data-enabled={enabled ? "true" : "false"}
-              >
-                Guard{" "}
-                <strong>{enabled ? "nyala" : "nonaktif"}</strong>
-              </span>
-              {statusQ.data?.degraded && (
-                <Badge className="bg-amber-500/15 text-amber-800">terdegradasi</Badge>
-              )}
-              {enabled && (
-                <span className="text-muted-foreground">
-                  {(alertsQ.data?.length ?? 0) === 0
-                    ? "0 alert kritis"
-                    : `${alertsQ.data?.length} alert kritis`}
-                </span>
-              )}
-              <span className="text-muted-foreground">
-                Sinkron {formatWhen(statusQ.data?.last_inventory_sync_at ?? null)} WIB
-              </span>
-              {statusQ.data?.last_sync_error && (
-                <span className="text-amber-700 dark:text-amber-400">
-                  {statusQ.data.last_sync_error}
-                </span>
-              )}
-              {statusQ.data?.wazuh_group && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-0 text-xs text-muted-foreground"
-                  onClick={() => setShowTechDetails((v) => !v)}
+          {statusQ.isLoading ? (
+            <Skeleton className="h-6 w-48" />
+          ) : statusQ.isError ? (
+            <p className="text-destructive">{t("loadStatusFail")}</p>
+          ) : (
+            <>
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <span
+                  data-testid="guard-state"
+                  data-enabled={enabled ? "true" : "false"}
                 >
-                  {showTechDetails ? "Sembunyikan detail teknis" : "Detail teknis"}
+                  {t("guardState")}{" "}
+                  <strong>{enabled ? t("enabledOn") : t("enabledOff")}</strong>
+                </span>
+                {statusQ.data?.degraded && (
+                  <Badge className="bg-amber-500/15 text-amber-800">
+                    {t("degraded")}
+                  </Badge>
+                )}
+                {enabled && (
+                  <span className="text-muted-foreground">
+                    {t("criticalAlertsCount", {
+                      count: alertsQ.data?.length ?? 0,
+                    })}
+                  </span>
+                )}
+                <span className="text-muted-foreground">
+                  {t("syncAt", {
+                    when: formatWhen(
+                      statusQ.data?.last_inventory_sync_at ?? null,
+                    ),
+                  })}
+                </span>
+                {statusQ.data?.last_sync_error && (
+                  <span className="text-amber-700 dark:text-amber-400">
+                    {statusQ.data.last_sync_error}
+                  </span>
+                )}
+                {statusQ.data?.wazuh_group && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-0 text-xs text-muted-foreground"
+                    onClick={() => setShowTechDetails((v) => !v)}
+                  >
+                    {showTechDetails ? t("hideTech") : t("showTech")}
+                  </Button>
+                )}
+                {showTechDetails && statusQ.data?.wazuh_group && (
+                  <code className="text-xs text-muted-foreground">
+                    {statusQ.data.wazuh_group}
+                  </code>
+                )}
+              </div>
+              {canAdmin && enabled && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 shrink-0 text-xs"
+                  onClick={() => syncMut.mutate()}
+                  disabled={syncMut.isPending}
+                >
+                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                  {t("sync")}
                 </Button>
               )}
-              {showTechDetails && statusQ.data?.wazuh_group && (
-                <code className="text-xs text-muted-foreground">
-                  {statusQ.data.wazuh_group}
-                </code>
-              )}
-            </div>
-            {canAdmin && enabled && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 shrink-0 text-xs"
-                onClick={() => syncMut.mutate()}
-                disabled={syncMut.isPending}
-              >
-                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                Sinkronkan
-              </Button>
-            )}
-          </>
-        )}
+            </>
+          )}
         </CardContent>
       </Card>
 
       {!enabled && !statusQ.isLoading && (
         <Card data-testid="guard-disabled">
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            Aktifkan Guard (admin/owner), lalu pasang agen di VPS/colo dengan token enroll.
+            {t("disabledHint")}
           </CardContent>
         </Card>
       )}
@@ -312,16 +329,14 @@ export default function Guard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <KeyRound className="h-4 w-4" />
-                  Token enroll
+                  {t("enrollTitle")}
                 </CardTitle>
-                <CardDescription>
-                  Secret token hanya ditampilkan sekali setelah dibuat. Bisa dipakai ulang sampai kedaluwarsa atau dicabut.
-                </CardDescription>
+                <CardDescription>{t("enrollDescription")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex max-w-xl flex-col gap-2 sm:flex-row sm:items-start sm:gap-2">
                   <div className="min-w-0 flex-1 space-y-1">
-                    <Label htmlFor="enroll-label">Label (opsional)</Label>
+                    <Label htmlFor="enroll-label">{t("labelOptional")}</Label>
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                       <Input
                         id="enroll-label"
@@ -334,11 +349,11 @@ export default function Guard() {
                         onClick={() => tokenMut.mutate()}
                         disabled={tokenMut.isPending}
                       >
-                        Buat token
+                        {t("createToken")}
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Nama host atau lokasi, supaya baris token mudah dikenali.
+                      {t("labelHint")}
                     </p>
                   </div>
                 </div>
@@ -349,13 +364,13 @@ export default function Guard() {
                   >
                     <div>
                       <p className="mb-1 font-medium text-foreground">
-                        Simpan sekarang — tidak ditampilkan lagi:
+                        {t("saveNow")}
                       </p>
                       <code className="break-all">{rawToken}</code>
                     </div>
                     <div>
                       <p className="mb-1.5 font-medium text-foreground">
-                        Langkah host (setelah token)
+                        {t("hostStepsTitle")}
                       </p>
                       <ol className="list-decimal space-y-1.5 pl-4 text-muted-foreground">
                         {GUARD_HOST_SETUP_STEPS.map((step) => (
@@ -366,7 +381,7 @@ export default function Guard() {
                     <div>
                       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
                         <p className="font-medium text-foreground">
-                          Contoh curl enroll (tanpa JWT — token di body)
+                          {t("curlExample")}
                         </p>
                         <Button
                           type="button"
@@ -386,24 +401,19 @@ export default function Guard() {
                               .catch(() => undefined);
                           }}
                         >
-                          {curlCopied ? "Disalin" : "Salin curl"}
+                          {curlCopied ? t("copied") : t("copyCurl")}
                         </Button>
                       </div>
                       <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded border border-border/60 bg-background/80 p-2 font-mono text-[11px] leading-relaxed text-foreground">
                         {enrollCurl}
                       </pre>
                       <p className="mt-2 text-muted-foreground">
-                        Ganti <code className="text-foreground">&lt;AGENT_NAME&gt;</code>{" "}
-                        (unik). Response:{" "}
-                        <code className="text-foreground">agent_key</code>,{" "}
-                        <code className="text-foreground">manager_host</code>,{" "}
-                        <code className="text-foreground">install_hint</code> —
-                        simpan di host saja. Bukan password Manager.
+                        {t("curlHint")}
                       </p>
                     </div>
                     <div data-testid="guard-agent-install-steps">
                       <p className="mb-1.5 font-medium text-foreground">
-                        Instalasi agen di host (per distro)
+                        {t("agentInstallTitle")}
                       </p>
                       <p className="mb-2 text-muted-foreground">
                         {GUARD_AGENT_INSTALL_INTRO}
@@ -418,9 +428,13 @@ export default function Guard() {
                         data-testid="guard-distro-install-commands"
                       >
                         <p className="font-medium text-foreground">
-                          Perintah host target per distro
+                          {t("distroCommands")}
                         </p>
-                        <Accordion type="single" collapsible className="w-full space-y-2">
+                        <Accordion
+                          type="single"
+                          collapsible
+                          className="w-full space-y-2"
+                        >
                           {GUARD_DISTRO_INSTALL_GUIDES.map((guide) => (
                             <AccordionItem
                               key={guide.id}
@@ -459,44 +473,60 @@ export default function Guard() {
                     <Table className="min-w-[36rem]">
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="min-w-[10rem]">Label</TableHead>
-                          <TableHead className="min-w-[9.5rem]">Kedaluwarsa</TableHead>
-                          <TableHead className="min-w-[7rem]">Status</TableHead>
-                          <TableHead className="min-w-[4.5rem]">Aksi</TableHead>
+                          <TableHead className="min-w-[10rem]">
+                            {t("colLabel")}
+                          </TableHead>
+                          <TableHead className="min-w-[9.5rem]">
+                            {t("colExpires")}
+                          </TableHead>
+                          <TableHead className="min-w-[7rem]">
+                            {t("colStatus")}
+                          </TableHead>
+                          <TableHead className="min-w-[4.5rem]">
+                            {t("colAction")}
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {visibleTokens.map((t) => (
+                        {visibleTokens.map((tok) => (
                           <TableRow
-                            key={t.id}
+                            key={tok.id}
                             data-testid="guard-enroll-token-row"
                           >
                             <TableCell className="max-w-[14rem]">
-                              <span className="block truncate font-medium" title={t.label || t.id}>
-                                {t.label || "token"}
+                              <span
+                                className="block truncate font-medium"
+                                title={tok.label || tok.id}
+                              >
+                                {tok.label || t("tokenFallback")}
                               </span>
-                              <span className="block truncate font-mono text-[11px] text-muted-foreground" title={t.id}>
-                                {t.id}
+                              <span
+                                className="block truncate font-mono text-[11px] text-muted-foreground"
+                                title={tok.id}
+                              >
+                                {tok.id}
                               </span>
                             </TableCell>
                             <TableCell className="whitespace-nowrap text-muted-foreground">
-                              {formatWhen(t.expires_at)}
+                              {formatWhen(tok.expires_at)}
                             </TableCell>
                             <TableCell>
-                              {t.revoked_at ? (
-                                <Badge variant="info">dicabut</Badge>
-                              ) : t.used_at ? (
+                              {tok.revoked_at ? (
+                                <Badge variant="info">
+                                  {t("statusRevoked")}
+                                </Badge>
+                              ) : tok.used_at ? (
                                 <Badge className="border border-border bg-muted text-foreground">
-                                  terpakai
+                                  {t("statusUsed")}
                                 </Badge>
                               ) : (
                                 <Badge className="bg-emerald-500/15 text-emerald-600">
-                                  siap pakai
+                                  {t("statusReady")}
                                 </Badge>
                               )}
                             </TableCell>
                             <TableCell>
-                              {!t.revoked_at && (
+                              {!tok.revoked_at && (
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <Button
@@ -504,31 +534,34 @@ export default function Guard() {
                                       variant="outline"
                                       size="sm"
                                       className="h-8 text-xs text-destructive"
-                                      aria-label={`Cabut token ${t.label || t.id}`}
+                                      aria-label={t("revokeTokenAria", {
+                                        label: tok.label || tok.id,
+                                      })}
                                       disabled={revokeMut.isPending}
                                     >
-                                      Cabut
+                                      {t("revoke")}
                                     </Button>
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader>
                                       <AlertDialogTitle>
-                                        Cabut token enroll?
+                                        {t("revokeConfirmTitle")}
                                       </AlertDialogTitle>
                                       <AlertDialogDescription>
-                                        Host tidak bisa enroll lagi dengan
-                                        token tersebut.
+                                        {t("revokeConfirmBody")}
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                      <AlertDialogCancel>Batal</AlertDialogCancel>
+                                      <AlertDialogCancel>
+                                        {t("cancel")}
+                                      </AlertDialogCancel>
                                       <AlertDialogAction
                                         className={buttonVariants({
                                           variant: "destructive",
                                         })}
-                                        onClick={() => revokeMut.mutate(t.id)}
+                                        onClick={() => revokeMut.mutate(tok.id)}
                                       >
-                                        Cabut
+                                        {t("revoke")}
                                       </AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
@@ -542,9 +575,15 @@ export default function Guard() {
                     {tokens.length > 0 && (
                       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-2 text-xs text-muted-foreground">
                         <span>
-                          {tokens.length} token · {unusedCount} berlaku
+                          {t("tokenSummary", {
+                            total: tokens.length,
+                            unused: unusedCount,
+                          })}
                           {tokens.length > 5
-                            ? ` · menampilkan ${visibleTokens.length} dari ${tokens.length}`
+                            ? t("tokenShowing", {
+                                visible: visibleTokens.length,
+                                total: tokens.length,
+                              })
                             : ""}
                         </span>
                         {tokens.length > 5 && (
@@ -556,8 +595,8 @@ export default function Guard() {
                             onClick={() => setShowAllTokens((v) => !v)}
                           >
                             {showAllTokens
-                              ? "Tampilkan lebih sedikit"
-                              : `Tampilkan ${tokens.length - 5} token lagi`}
+                              ? t("showFewer")
+                              : t("showMore", { count: tokens.length - 5 })}
                           </Button>
                         )}
                       </div>
@@ -570,35 +609,51 @@ export default function Guard() {
 
           <Card data-testid="guard-agents">
             <CardHeader>
-              <CardTitle className="text-base">Agen</CardTitle>
+              <CardTitle className="text-base">{t("agents")}</CardTitle>
             </CardHeader>
             <CardContent>
               {agentsQ.isLoading ? (
                 <Skeleton className="h-24 w-full" />
               ) : (agentsQ.data?.length ?? 0) === 0 ? (
-                <p className="text-sm text-muted-foreground">Belum ada agen. Enroll host dulu.</p>
+                <p className="text-sm text-muted-foreground">{t("noAgents")}</p>
               ) : (
                 <div>
                   <Table className="min-w-[36rem]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="min-w-[10rem]">Nama</TableHead>
-                        <TableHead className="min-w-[6.5rem]">Status</TableHead>
-                        <TableHead className="min-w-[9.5rem]">Terakhir terlihat</TableHead>
-                        <TableHead className="min-w-[5rem]">Versi</TableHead>
+                        <TableHead className="min-w-[10rem]">
+                          {t("colName")}
+                        </TableHead>
+                        <TableHead className="min-w-[6.5rem]">
+                          {t("colStatus")}
+                        </TableHead>
+                        <TableHead className="min-w-[9.5rem]">
+                          {t("colLastSeen")}
+                        </TableHead>
+                        <TableHead className="min-w-[5rem]">
+                          {t("colVersion")}
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {agentsQ.data?.map((a) => (
                         <TableRow key={a.id}>
-                          <TableCell className="max-w-[14rem] truncate font-mono text-xs font-medium" title={a.name}>
+                          <TableCell
+                            className="max-w-[14rem] truncate font-mono text-xs font-medium"
+                            title={a.name}
+                          >
                             {a.name}
                           </TableCell>
-                          <TableCell className="whitespace-nowrap">{statusBadge(a.status)}</TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {statusBadge(a.status, t)}
+                          </TableCell>
                           <TableCell className="whitespace-nowrap text-muted-foreground">
                             {formatWhen(a.last_keep_alive)}
                           </TableCell>
-                          <TableCell className="max-w-[8rem] truncate text-muted-foreground" title={a.version ?? undefined}>
+                          <TableCell
+                            className="max-w-[8rem] truncate text-muted-foreground"
+                            title={a.version ?? undefined}
+                          >
                             {a.version ?? "—"}
                           </TableCell>
                         </TableRow>
@@ -612,10 +667,8 @@ export default function Guard() {
 
           <Card data-testid="guard-alerts">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Alert kritis</CardTitle>
-              <CardDescription>
-                Hanya rule level tinggi. Detail log di SIEM.
-              </CardDescription>
+              <CardTitle className="text-base">{t("alertsTitle")}</CardTitle>
+              <CardDescription>{t("alertsDescription")}</CardDescription>
             </CardHeader>
             <CardContent>
               {alertsQ.isLoading ? (
@@ -623,7 +676,7 @@ export default function Guard() {
               ) : (alertsQ.data?.length ?? 0) === 0 ? (
                 <p className="flex items-center gap-2 text-sm text-muted-foreground">
                   <AlertTriangle className="h-4 w-4 shrink-0" />
-                  0 alert kritis. Buka SIEM untuk pencarian event.
+                  {t("noAlerts")}
                 </p>
               ) : (
                 <ul className="space-y-3">
@@ -634,7 +687,9 @@ export default function Guard() {
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge variant="critical">L{al.rule_level}</Badge>
-                        <span className="font-medium">{al.rule_description}</span>
+                        <span className="font-medium">
+                          {al.rule_description}
+                        </span>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {formatWhen(al.occurred_at)}

@@ -8,9 +8,8 @@ import { useAuthStore } from "@/store/authStore";
 import * as guardApi from "@/api/guard";
 
 vi.mock("@/api/guard", async () => {
-  const actual = await vi.importActual<typeof import("@/api/guard")>(
-    "@/api/guard",
-  );
+  const actual =
+    await vi.importActual<typeof import("@/api/guard")>("@/api/guard");
   return {
     ...actual,
     getGuardStatus: vi.fn(),
@@ -71,7 +70,7 @@ describe("Guard host enroll UI", () => {
     });
   });
 
-  it("shows host steps and curl after Buat token", async () => {
+  it("shows host steps and curl after Create token", async () => {
     const user = userEvent.setup();
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false } },
@@ -85,17 +84,17 @@ describe("Guard host enroll UI", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Buat token" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Create token" }),
+      ).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: "Buat token" }));
+    await user.click(screen.getByRole("button", { name: "Create token" }));
 
     await waitFor(() => {
       expect(screen.getByTestId("guard-host-enroll-steps")).toBeInTheDocument();
     });
-    expect(
-      screen.getByText(/Langkah host \(setelah token\)/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Host steps \(after token\)/)).toBeInTheDocument();
     expect(
       screen.getAllByText(/raw-enroll-token-value-32chars!!/).length,
     ).toBeGreaterThanOrEqual(1);
@@ -103,13 +102,11 @@ describe("Guard host enroll UI", () => {
       screen.getAllByText(/api\/guard\/enroll/).length,
     ).toBeGreaterThanOrEqual(1);
     expect(
-      screen.getByRole("button", { name: "Salin curl" }),
+      screen.getByRole("button", { name: "Copy curl" }),
     ).toBeInTheDocument();
+    expect(screen.getByTestId("guard-agent-install-steps")).toBeInTheDocument();
     expect(
-      screen.getByTestId("guard-agent-install-steps"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Instalasi agen di host \(per distro\)/),
+      screen.getByText(/Agent install on host \(per distro\)/),
     ).toBeInTheDocument();
     expect(screen.getAllByText(/wazuh-agent/i).length).toBeGreaterThanOrEqual(
       1,
@@ -148,14 +145,18 @@ describe("Guard host enroll UI", () => {
       </QueryClientProvider>,
     );
 
-    const revokeBtn = await screen.findByRole("button", { name: /Cabut token/ });
+    const revokeBtn = await screen.findByRole("button", {
+      name: /Revoke token/,
+    });
     await user.click(revokeBtn);
     expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Cabut" }));
+    await user.click(screen.getByRole("button", { name: "Revoke" }));
     await waitFor(() => {
       expect(guardApi.revokeEnrollToken).toHaveBeenCalledWith("tok-active");
     });
-    const enrollTable = screen.getByTestId("guard-enroll-token-row").closest("table");
+    const enrollTable = screen
+      .getByTestId("guard-enroll-token-row")
+      .closest("table");
     expect(enrollTable).toBeTruthy();
     expect(enrollTable?.className ?? "").toContain("min-w-[36rem]");
     expect(enrollTable?.className ?? "").not.toContain("table-fixed");
@@ -187,8 +188,8 @@ describe("Guard host enroll UI", () => {
       </QueryClientProvider>,
     );
 
-    expect(await screen.findByText("Terakhir terlihat")).toBeInTheDocument();
-    expect(screen.getByText("Versi")).toBeInTheDocument();
+    expect(await screen.findByText("Last seen")).toBeInTheDocument();
+    expect(screen.getByText("Version")).toBeInTheDocument();
     const agentsCard = screen.getByTestId("guard-agents");
     const agentTable = agentsCard.querySelector("table");
     expect(agentTable).toBeTruthy();

@@ -13,12 +13,16 @@ import enLanding from "@/locales/en/landing.json";
 import enNav from "@/locales/en/nav.json";
 import enScan from "@/locales/en/scan.json";
 import enSchedules from "@/locales/en/schedules.json";
+import enWorkspace from "@/locales/en/workspace.json";
+import enGuard from "@/locales/en/guard.json";
 import idCommon from "@/locales/id/common.json";
 import idAuth from "@/locales/id/auth.json";
 import idLanding from "@/locales/id/landing.json";
 import idNav from "@/locales/id/nav.json";
 import idScan from "@/locales/id/scan.json";
 import idSchedules from "@/locales/id/schedules.json";
+import idWorkspace from "@/locales/id/workspace.json";
+import idGuard from "@/locales/id/guard.json";
 
 export const resources = {
   en: {
@@ -28,6 +32,8 @@ export const resources = {
     nav: enNav,
     scan: enScan,
     schedules: enSchedules,
+    workspace: enWorkspace,
+    guard: enGuard,
   },
   id: {
     common: idCommon,
@@ -36,6 +42,8 @@ export const resources = {
     nav: idNav,
     scan: idScan,
     schedules: idSchedules,
+    workspace: idWorkspace,
+    guard: idGuard,
   },
 } as const;
 
@@ -68,7 +76,16 @@ void i18n.use(initReactI18next).init({
   lng: resolveInitialLocale(),
   fallbackLng: DEFAULT_LOCALE,
   defaultNS: "common",
-  ns: ["common", "auth", "landing", "nav", "scan", "schedules"],
+  ns: [
+    "common",
+    "auth",
+    "landing",
+    "nav",
+    "scan",
+    "schedules",
+    "workspace",
+    "guard",
+  ],
   interpolation: { escapeValue: false },
   returnNull: false,
 });
