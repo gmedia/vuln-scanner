@@ -119,7 +119,7 @@ Boot: if stored/default is dark → `document.documentElement.classList.add("dar
 
 Elevation: **hairline border only** (no `shadow-sm` / `shadow-lg` on Card, Dialog, AlertDialog, or primary Button). Primary CTA stays **green** (`bg-primary`), not inverted black/white.
 
-Density (grok2api-adjacent): table head `h-8` + `text-xs`; cells `px-3 py-1.5`; card padding `p-4`; inputs use `--input` wash. Guard empty agents/alerts: island panel + muted icon, **no** fake Connect CTA.
+Density (grok2api-adjacent): table head `h-8` + `text-xs`; cells `px-3 py-1.5`; card padding `p-4`; inputs use `--input` wash. Guard empty agents/alerts: island panel + muted icon, **no** fake Connect CTA. Dashboard: `space-y-4` / `gap-4` (not 6); default-size header CTAs (not `size="lg"` / `min-h-11`); empty scans use the same island chrome **and keep** real Scan IP / schedule links.
 
 Severity badge variants (`completed`, `pending`, `running`, finding colors): **audit** in S1; if they use `bg-emerald-500` etc. they may already work on both.
 
