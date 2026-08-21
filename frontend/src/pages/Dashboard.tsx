@@ -235,7 +235,7 @@ function Dashboard() {
   const primaryIsJadwal = canCreateScans && noJadwal;
 
   return (
-    <div className="w-full max-w-none space-y-6">
+    <div className="w-full max-w-none space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Crosshair className="h-6 w-6 text-primary" />
@@ -256,14 +256,14 @@ function Dashboard() {
         {canCreateScans ? (
           <div className="flex flex-wrap items-center gap-2">
             {primaryIsJadwal ? (
-              <Button asChild size="lg" className="min-h-11 text-sm">
+              <Button asChild className="text-sm">
                 <Link to="/schedules" data-testid="primary-jadwal-cta">
                   <CalendarClock className="mr-2 h-4 w-4" />
                   {t("setSchedule")}
                 </Link>
               </Button>
             ) : (
-              <Button asChild variant="outline" size="lg" className="min-h-11 text-sm">
+              <Button asChild variant="outline" className="text-sm">
                 <Link to="/schedules">
                   <CalendarClock className="mr-2 h-4 w-4" />
                   {t("setSchedule")}
@@ -273,9 +273,8 @@ function Dashboard() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
-                  size="lg"
                   variant={primaryIsJadwal ? "outline" : "default"}
-                  className="w-full min-h-11 text-sm sm:w-auto"
+                  className="w-full text-sm sm:w-auto"
                   data-testid="new-scan-cta"
                 >
                   <Plus className="mr-2 h-4 w-4" />
@@ -357,7 +356,7 @@ function Dashboard() {
         />
       </div>
 
-      <div className="grid items-stretch gap-6 lg:grid-cols-12">
+      <div className="grid items-stretch gap-4 lg:grid-cols-12">
         <Card className="flex min-h-0 flex-col lg:col-span-8">
           <CardHeader className="border-b pb-4">
             <CardTitle
@@ -390,18 +389,16 @@ function Dashboard() {
                 ))}
               </div>
             ) : scans.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="mb-3 rounded-full bg-muted p-3">
-                  <Radar className="h-6 w-6 text-muted-foreground opacity-40" />
-                </div>
-                <p className="mb-1 text-sm text-foreground">{t("noScansYet")}</p>
-                <p className="mb-4 text-xs text-muted-foreground">
+              <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center">
+                <Radar className="h-8 w-8 text-muted-foreground" />
+                <p className="text-sm text-foreground">{t("noScansYet")}</p>
+                <p className="text-xs text-muted-foreground">
                   {canCreateScans
                     ? t("emptyCanCreate")
                     : t("emptyCannotCreate")}
                 </p>
-                {canCreateScans && (
-                  <div className="flex flex-wrap items-center justify-center gap-2">
+                  {canCreateScans && (
+                  <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
                     <Button asChild size="sm" className="text-xs">
                       <Link to="/scan/ip">
                         <Plus className="mr-1.5 h-3.5 w-3.5" />
