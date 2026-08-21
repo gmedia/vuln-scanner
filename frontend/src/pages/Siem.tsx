@@ -48,6 +48,7 @@ import {
 } from "@/api/siem";
 import { useAuthStore } from "@/store/authStore";
 import type { ApiError } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 function formatWhen(iso: string | null): string {
   if (!iso) return "—";
@@ -73,49 +74,63 @@ function apiDetail(err: unknown, fallback: string): string {
   return fallback;
 }
 
-function statusBadge(status: string) {
+function statusBadge(status: string, t: (k: string) => string) {
   if (status === "open")
-    return <Badge className="bg-sky-500/15 text-sky-700">terbuka</Badge>;
+    return <Badge className="bg-sky-500/15 text-sky-700">{t("statusOpen")}</Badge>;
   if (status === "ack")
-    return <Badge className="bg-amber-500/15 text-amber-700">diakui</Badge>;
+    return <Badge className="bg-amber-500/15 text-amber-700">{t("statusAck")}</Badge>;
   if (status === "closed")
-    return <Badge className="bg-emerald-500/15 text-emerald-600">ditutup</Badge>;
+    return (
+      <Badge className="bg-emerald-500/15 text-emerald-600">{t("statusClosed")}</Badge>
+    );
   return <Badge variant="info">{status}</Badge>;
 }
 
-function caseStatusLabel(status: "open" | "ack" | "closed"): string {
-  if (status === "open") return "Terbuka";
-  if (status === "ack") return "Diakui";
-  return "Ditutup";
+function caseStatusLabel(
+  status: "open" | "ack" | "closed",
+  t: (k: string) => string,
+): string {
+  if (status === "open") return t("statusOpenBtn");
+  if (status === "ack") return t("statusAckBtn");
+  return t("statusClosedBtn");
 }
 
-function severityForLevel(level: number): {
+function severityForLevel(
+  level: number,
+  t: (k: string) => string,
+): {
   label: string;
   className: string;
 } {
   if (level >= 12)
     return {
-      label: "Kritis",
+      label: t("sevCritical"),
       className: "bg-red-600 text-white",
     };
   if (level >= 7)
     return {
-      label: "Tinggi",
+      label: t("sevHigh"),
       className: "bg-amber-600 text-white",
     };
   if (level >= 4)
     return {
-      label: "Sedang",
+      label: t("sevMedium"),
       className: "bg-sky-600 text-white",
     };
   return {
-    label: "Rendah",
+    label: t("sevLow"),
     className: "border border-border bg-muted text-foreground",
   };
 }
 
-function LevelChip({ level }: { level: number }) {
-  const sev = severityForLevel(level);
+function LevelChip({
+  level,
+  t,
+}: {
+  level: number;
+  t: (k: string) => string;
+}) {
+  const sev = severityForLevel(level, t);
   return (
     <Badge className={sev.className}>
       L{level} · {sev.label}
@@ -124,6 +139,7 @@ function LevelChip({ level }: { level: number }) {
 }
 
 export default function Siem() {
+  const { t } = useTranslation("siem");
   const queryClient = useQueryClient();
   const activeRole = useAuthStore((s) => s.activeRole);
   const activeOrgId = useAuthStore((s) => s.activeOrgId);
@@ -207,7 +223,7 @@ export default function Siem() {
       setActiveCaseId(c.id);
       invalidate();
     },
-    onError: (e) => setActionError(apiDetail(e, "Gagal membuat kasus")),
+    onError: (e) => setActionError(apiDetail(e, t("createCaseFail"))),
   });
 
   const patchMut = useMutation({
@@ -222,7 +238,7 @@ export default function Siem() {
       setActionError(null);
       invalidate();
     },
-    onError: (e) => setActionError(apiDetail(e, "Gagal mengubah kasus")),
+    onError: (e) => setActionError(apiDetail(e, t("patchCaseFail"))),
   });
 
   const noteMut = useMutation({
@@ -233,7 +249,7 @@ export default function Siem() {
       setActionError(null);
       invalidate();
     },
-    onError: (e) => setActionError(apiDetail(e, "Gagal menambah catatan")),
+    onError: (e) => setActionError(apiDetail(e, t("addNoteFail"))),
   });
 
   const agents = agentsQ.data ?? [];
@@ -255,10 +271,10 @@ export default function Siem() {
       <div>
         <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
           <Siren className="h-6 w-6 text-primary" />
-          SIEM
+          {t("title")}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Pencarian event terkontrol + kasus. Bukan dashboard Wazuh.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -270,7 +286,7 @@ export default function Siem() {
       )}
 
       {!activeOrgId && (
-        <p className="text-sm text-muted-foreground">Pilih organisasi dulu.</p>
+        <p className="text-sm text-muted-foreground">{t("pickOrg")}</p>
       )}
 
       {statusQ.isLoading && <Skeleton className="h-24 w-full" />}
@@ -278,14 +294,14 @@ export default function Siem() {
       {featureOff && (
         <Card data-testid="siem-feature-off">
           <CardContent className="pt-6 text-sm text-muted-foreground">
-            Modul SIEM belum diaktifkan di lingkungan ini.
+            {t("featureOff")}
           </CardContent>
         </Card>
       )}
 
       {statusQ.isError && !featureOff && (
         <p className="text-sm text-destructive">
-          {apiDetail(statusQ.error, "Gagal memuat status SIEM")}
+          {apiDetail(statusQ.error, t("loadStatusFail"))}
         </p>
       )}
 
@@ -295,7 +311,7 @@ export default function Siem() {
             <Alert className="border-amber-500/40 text-amber-800">
               <AlertTriangle />
               <AlertDescription>
-                Indexer terdegradasi
+                {t("indexerDegraded")}
                 {statusQ.data.last_error ? `: ${statusQ.data.last_error}` : ""}.
               </AlertDescription>
             </Alert>
@@ -304,50 +320,51 @@ export default function Siem() {
           {agents.length === 0 && !agentsQ.isLoading && (
             <Card data-testid="siem-no-agents">
               <CardContent className="pt-6 text-sm text-muted-foreground">
-                Pasang agen di Guard dulu.
+                {t("noAgents")}
               </CardContent>
             </Card>
           )}
 
           <Tabs defaultValue="search" className="w-full">
             <TabsList>
-              <TabsTrigger value="search">Cari event</TabsTrigger>
-              <TabsTrigger value="cases">Kasus</TabsTrigger>
+              <TabsTrigger value="search">{t("tabSearch")}</TabsTrigger>
+              <TabsTrigger value="cases">{t("tabCases")}</TabsTrigger>
             </TabsList>
             <TabsContent value="search" className="space-y-4">
           <Card data-testid="siem-search">
             <CardHeader>
-              <CardTitle>Cari event</CardTitle>
+              <CardTitle>{t("tabSearch")}</CardTitle>
               <CardDescription>
-                Filter terstruktur saja. Min level default{" "}
-                {statusQ.data?.search_min_level ?? 7}. Rentang waktu maks{" "}
-                {statusQ.data?.max_lookback_hours ?? 168} jam (WIB).
+                {t("searchHint", {
+                  minLevel: statusQ.data?.search_min_level ?? 7,
+                  hours: statusQ.data?.max_lookback_hours ?? 168,
+                })}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-12 items-end gap-3">
                 <div className="col-span-12 sm:col-span-6 xl:col-span-2">
-                  <Label htmlFor="siem-since">Sejak (dd/mm/yyyy 24 jam)</Label>
+                  <Label htmlFor="siem-since">{t("sinceLabel")}</Label>
                   <DateTimePicker
                     id="siem-since"
                     value={since}
                     onChange={setSince}
-                    placeholder="dd/mm/yyyy HH:mm"
-                    aria-label="Sejak"
+                    placeholder={t("datetimePlaceholder")}
+                    aria-label={t("since")}
                   />
                 </div>
                 <div className="col-span-12 sm:col-span-6 xl:col-span-2">
-                  <Label htmlFor="siem-until">Sampai (dd/mm/yyyy 24 jam)</Label>
+                  <Label htmlFor="siem-until">{t("untilLabel")}</Label>
                   <DateTimePicker
                     id="siem-until"
                     value={until}
                     onChange={setUntil}
-                    placeholder="dd/mm/yyyy HH:mm"
-                    aria-label="Sampai"
+                    placeholder={t("datetimePlaceholder")}
+                    aria-label={t("until")}
                   />
                 </div>
                 <div className="col-span-6 sm:col-span-4 xl:col-span-1">
-                  <Label htmlFor="siem-level">Min level</Label>
+                  <Label htmlFor="siem-level">{t("minLevel")}</Label>
                   <Input
                     id="siem-level"
                     type="number"
@@ -359,18 +376,18 @@ export default function Siem() {
                   />
                 </div>
                 <div className="col-span-6 sm:col-span-4 xl:col-span-2">
-                  <Label htmlFor="siem-agent">Agen</Label>
+                  <Label htmlFor="siem-agent">{t("agent")}</Label>
                   <Select
                     value={agentId || "__all__"}
                     onValueChange={(value) =>
                       setAgentId(value === "__all__" ? "" : value)
                     }
                   >
-                    <SelectTrigger id="siem-agent" aria-label="Agen">
-                      <SelectValue placeholder="Semua agen org" />
+                    <SelectTrigger id="siem-agent" aria-label={t("agent")}>
+                      <SelectValue placeholder={t("allAgents")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__all__">Semua agen org</SelectItem>
+                      <SelectItem value="__all__">{t("allAgents")}</SelectItem>
                       {agents.map((a) => (
                         <SelectItem key={a.id} value={a.wazuh_agent_id}>
                           {a.name}
@@ -380,13 +397,13 @@ export default function Siem() {
                   </Select>
                 </div>
                 <div className="col-span-12 sm:col-span-8 xl:col-span-3">
-                  <Label htmlFor="siem-q">Kotak pencarian</Label>
+                  <Label htmlFor="siem-q">{t("query")}</Label>
                   <Input
                     id="siem-q"
                     value={q}
                     maxLength={128}
                     onChange={(e) => setQ(e.target.value)}
-                    placeholder="rule atau agen"
+                    placeholder={t("queryPlaceholder")}
                   />
                 </div>
                 <div className="col-span-12 sm:col-span-4 xl:col-span-2">
@@ -404,14 +421,14 @@ export default function Siem() {
                     }}
                   >
                     <Search className="mr-2 h-4 w-4" />
-                    Terapkan
+                    {t("apply")}
                   </Button>
                 </div>
               </div>
 
               {eventsQ.data?.degraded && (
                 <p className="text-sm text-amber-700">
-                  Hasil parsial
+                  {t("partialResults")}
                   {eventsQ.data.last_error
                     ? `: ${eventsQ.data.last_error}`
                     : ""}
@@ -425,17 +442,17 @@ export default function Siem() {
                 <Table className="table-fixed">
                   <TableHeader className="sticky top-0 z-[1] bg-card shadow-[0_1px_0_hsl(var(--border))]">
                     <TableRow>
-                      <TableHead className="w-[12rem]">Waktu (WIB)</TableHead>
-                      <TableHead className="w-[8rem]">Level</TableHead>
-                      <TableHead>Rule</TableHead>
-                      <TableHead className="w-[10rem]">Agen</TableHead>
+                      <TableHead className="w-[12rem]">{t("colTime")}</TableHead>
+                      <TableHead className="w-[8rem]">{t("colLevel")}</TableHead>
+                      <TableHead>{t("colRule")}</TableHead>
+                      <TableHead className="w-[10rem]">{t("colAgent")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {events.length === 0 && (
                       <TableRow data-testid="siem-events-empty">
                         <TableCell colSpan={4} className="py-4 text-muted-foreground">
-                          Tidak ada event.
+                          {t("eventsEmpty")}
                         </TableCell>
                       </TableRow>
                     )}
@@ -450,7 +467,7 @@ export default function Siem() {
                           {formatWhen(ev.occurred_at)}
                         </TableCell>
                         <TableCell>
-                          <LevelChip level={ev.rule_level} />
+                          <LevelChip level={ev.rule_level} t={t} />
                         </TableCell>
                         <TableCell
                           className="truncate"
@@ -480,8 +497,11 @@ export default function Siem() {
                 {allEvents.length > pageSize && (
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                     <span>
-                      {allEvents.length} event · halaman {safeEventPage + 1}/
-                      {eventPageCount}
+                      {t("eventPager", {
+                        count: allEvents.length,
+                        page: safeEventPage + 1,
+                        pages: eventPageCount,
+                      })}
                     </span>
                     <div className="flex gap-2">
                       <Button
@@ -491,7 +511,7 @@ export default function Siem() {
                         disabled={safeEventPage === 0}
                         onClick={() => setEventPage((p) => Math.max(0, p - 1))}
                       >
-                        Sebelumnya
+                        {t("prev")}
                       </Button>
                       <Button
                         type="button"
@@ -504,7 +524,7 @@ export default function Siem() {
                           )
                         }
                       >
-                        Berikutnya
+                        {t("next")}
                       </Button>
                     </div>
                   </div>
@@ -517,30 +537,30 @@ export default function Siem() {
           {selected && (
             <Card data-testid="siem-event-detail">
               <CardHeader>
-                <CardTitle>Detail event</CardTitle>
+                <CardTitle>{t("eventDetail")}</CardTitle>
                 <CardDescription>{selected.external_id}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <p>
-                  <span className="text-muted-foreground">Level:</span>{" "}
+                  <span className="text-muted-foreground">{t("detailLevel")}</span>{" "}
                   {selected.rule_level}
                 </p>
                 <p>
-                  <span className="text-muted-foreground">Rule:</span>{" "}
+                  <span className="text-muted-foreground">{t("detailRule")}</span>{" "}
                   {selected.rule_description}
                 </p>
                 <p>
-                  <span className="text-muted-foreground">Agen:</span>{" "}
+                  <span className="text-muted-foreground">{t("detailAgent")}</span>{" "}
                   {selected.agent_name ?? selected.agent_wazuh_id ?? "—"}
                 </p>
                 <p>
-                  <span className="text-muted-foreground">Waktu:</span>{" "}
+                  <span className="text-muted-foreground">{t("detailTime")}</span>{" "}
                   {formatWhen(selected.occurred_at)}
                 </p>
                 {canCreate && (
                   <div className="flex flex-wrap items-end gap-2">
                     <div className="min-w-[12rem] flex-1">
-                      <Label htmlFor="siem-case-title">Judul kasus</Label>
+                      <Label htmlFor="siem-case-title">{t("caseTitle")}</Label>
                       <Input
                         id="siem-case-title"
                         value={caseTitle}
@@ -556,7 +576,7 @@ export default function Siem() {
                         })
                       }
                     >
-                      Buat kasus
+                      {t("createCase")}
                     </Button>
                   </div>
                 )}
@@ -568,9 +588,9 @@ export default function Siem() {
             <TabsContent value="cases">
           <Card>
             <CardHeader>
-              <CardTitle>Kasus</CardTitle>
+              <CardTitle>{t("tabCases")}</CardTitle>
               <CardDescription>
-                Kasus disimpan di aplikasi, bukan plugin Wazuh.
+                {t("casesHint")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -578,7 +598,7 @@ export default function Siem() {
                 <Skeleton className="h-20 w-full" />
               ) : cases.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Belum ada kasus. Pilih event di tabel, lalu buat kasus.
+                  {t("casesEmpty")}
                 </p>
               ) : (
                 <ul className="space-y-2">
@@ -591,7 +611,7 @@ export default function Siem() {
                         onClick={() => setActiveCaseId(c.id)}
                       >
                         <span>{c.title}</span>
-                        {statusBadge(c.status)}
+                        {statusBadge(c.status, t)}
                       </Button>
                     </li>
                   ))}
@@ -603,7 +623,7 @@ export default function Siem() {
                   <CardHeader className="pb-0">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <CardTitle className="text-base">{activeCase.title}</CardTitle>
-                      {statusBadge(activeCase.status)}
+                      {statusBadge(activeCase.status, t)}
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -619,13 +639,13 @@ export default function Siem() {
                              patchMut.mutate({ id: activeCase.id, status: st })
                            }
                          >
-                           {caseStatusLabel(st)}
+                            {caseStatusLabel(st, t)}
                          </Button>
                        ))}
                     </div>
                   )}
                   <div>
-                    <p className="mb-1 text-xs text-muted-foreground">Event</p>
+                    <p className="mb-1 text-xs text-muted-foreground">{t("events")}</p>
                     <ul className="space-y-1 text-sm">
                       {activeCase.events.map((ev) => (
                         <li key={ev.id}>
@@ -636,7 +656,7 @@ export default function Siem() {
                     </ul>
                   </div>
                   <div>
-                    <p className="mb-1 text-xs text-muted-foreground">Catatan</p>
+                    <p className="mb-1 text-xs text-muted-foreground">{t("notes")}</p>
                     <ul className="space-y-1 text-sm">
                       {activeCase.notes.map((n) => (
                         <li key={n.id}>{n.body}</li>
@@ -645,7 +665,7 @@ export default function Siem() {
                   </div>
                   {canCreate && (
                     <div className="space-y-2">
-                      <Label htmlFor="siem-note">Catatan baru</Label>
+                      <Label htmlFor="siem-note">{t("newNote")}</Label>
                       <Textarea
                         id="siem-note"
                         value={noteBody}
@@ -661,7 +681,7 @@ export default function Siem() {
                           })
                         }
                       >
-                        Tambah catatan
+                        {t("addNote")}
                       </Button>
                     </div>
                   )}
