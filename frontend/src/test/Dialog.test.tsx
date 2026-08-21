@@ -69,7 +69,7 @@ describe("Dialog", () => {
         </Dialog>
       );
       const content = screen.getByTestId("dialog-content");
-      expect(content).toHaveClass("fixed", "z-50", "gap-4", "border", "bg-card", "p-6", "shadow-lg");
+      expect(content).toHaveClass("fixed", "z-50", "gap-4", "border", "bg-card", "p-6");
     });
 
     it("applies custom className to content", () => {

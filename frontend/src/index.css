@@ -5,30 +5,30 @@
 :root {
   color-scheme: light;
   --background: hsl(0 0% 98%);
-  --foreground: hsl(0 0% 9%);
+  --foreground: hsl(0 0% 7%);
   --card: hsl(0 0% 100%);
-  --card-foreground: hsl(0 0% 9%);
+  --card-foreground: hsl(0 0% 7%);
   --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(0 0% 9%);
+  --popover-foreground: hsl(0 0% 7%);
   --primary: hsl(142 71% 45%);
   --primary-foreground: hsl(0 0% 4%);
   --secondary: hsl(0 0% 96%);
-  --secondary-foreground: hsl(0 0% 9%);
+  --secondary-foreground: hsl(0 0% 7%);
   --muted: hsl(0 0% 96%);
-  --muted-foreground: hsl(0 0% 40%);
+  --muted-foreground: hsl(0 0% 45%);
   --accent: hsl(0 0% 96%);
-  --accent-foreground: hsl(0 0% 9%);
+  --accent-foreground: hsl(0 0% 7%);
   --destructive: hsl(0 84% 50%);
   --destructive-foreground: hsl(0 0% 100%);
   --border: hsl(0 0% 90%);
-  --input: hsl(0 0% 90%);
+  --input: hsl(0 0% 94%);
   --ring: hsl(142 71% 45%);
   --sidebar: hsl(0 0% 100%);
-  --sidebar-foreground: hsl(0 0% 9%);
+  --sidebar-foreground: hsl(0 0% 7%);
   --sidebar-primary: hsl(142 71% 45%);
   --sidebar-primary-foreground: hsl(0 0% 4%);
   --sidebar-accent: hsl(0 0% 96%);
-  --sidebar-accent-foreground: hsl(0 0% 9%);
+  --sidebar-accent-foreground: hsl(0 0% 7%);
   --sidebar-border: hsl(0 0% 90%);
   --sidebar-ring: hsl(142 71% 45%);
   --scrollbar-track: hsl(0 0% 96%);
@@ -39,35 +39,35 @@
 .dark {
   color-scheme: dark;
   --background: hsl(0 0% 4%);
-  --foreground: hsl(0 0% 93%);
-  --card: hsl(0 0% 9%);
-  --card-foreground: hsl(0 0% 93%);
-  --popover: hsl(0 0% 9%);
-  --popover-foreground: hsl(0 0% 93%);
+  --foreground: hsl(0 0% 96%);
+  --card: hsl(0 0% 8%);
+  --card-foreground: hsl(0 0% 96%);
+  --popover: hsl(0 0% 8%);
+  --popover-foreground: hsl(0 0% 96%);
   --primary: hsl(142 71% 45%);
   --primary-foreground: hsl(0 0% 4%);
-  --secondary: hsl(0 0% 13%);
-  --secondary-foreground: hsl(0 0% 93%);
-  --muted: hsl(0 0% 15%);
-  --muted-foreground: hsl(0 0% 60%);
-  --accent: hsl(0 0% 15%);
-  --accent-foreground: hsl(0 0% 93%);
+  --secondary: hsl(0 0% 11%);
+  --secondary-foreground: hsl(0 0% 96%);
+  --muted: hsl(0 0% 12%);
+  --muted-foreground: hsl(0 0% 45%);
+  --accent: hsl(0 0% 12%);
+  --accent-foreground: hsl(0 0% 96%);
   --destructive: hsl(0 84% 60%);
-  --destructive-foreground: hsl(0 0% 93%);
-  --border: hsl(0 0% 18%);
-  --input: hsl(0 0% 18%);
+  --destructive-foreground: hsl(0 0% 96%);
+  --border: hsl(0 0% 16%);
+  --input: hsl(0 0% 11%);
   --ring: hsl(142 71% 45%);
-  --sidebar: hsl(0 0% 9%);
-  --sidebar-foreground: hsl(0 0% 93%);
+  --sidebar: hsl(0 0% 4%);
+  --sidebar-foreground: hsl(0 0% 96%);
   --sidebar-primary: hsl(142 71% 45%);
   --sidebar-primary-foreground: hsl(0 0% 4%);
-  --sidebar-accent: hsl(0 0% 15%);
-  --sidebar-accent-foreground: hsl(0 0% 93%);
-  --sidebar-border: hsl(0 0% 18%);
+  --sidebar-accent: hsl(0 0% 11%);
+  --sidebar-accent-foreground: hsl(0 0% 96%);
+  --sidebar-border: hsl(0 0% 16%);
   --sidebar-ring: hsl(142 71% 45%);
-  --scrollbar-track: hsl(0 0% 9%);
-  --scrollbar-thumb: hsl(0 0% 28%);
-  --scrollbar-thumb-hover: hsl(0 0% 40%);
+  --scrollbar-track: hsl(0 0% 8%);
+  --scrollbar-thumb: hsl(0 0% 26%);
+  --scrollbar-thumb-hover: hsl(0 0% 38%);
 }
 
 @theme inline {
@@ -90,7 +90,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --radius: 0.5rem;
+  --radius: 0.75rem;
   --font-sans:
     "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", sans-serif;
