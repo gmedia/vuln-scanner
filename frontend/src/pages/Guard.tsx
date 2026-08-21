@@ -615,7 +615,13 @@ export default function Guard() {
               {agentsQ.isLoading ? (
                 <Skeleton className="h-24 w-full" />
               ) : (agentsQ.data?.length ?? 0) === 0 ? (
-                <p className="text-sm text-muted-foreground">{t("noAgents")}</p>
+                <div
+                  className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-12 text-center"
+                  data-testid="guard-agents-empty"
+                >
+                  <Shield className="h-8 w-8 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">{t("noAgents")}</p>
+                </div>
               ) : (
                 <div>
                   <Table className="min-w-[36rem]">
@@ -674,10 +680,10 @@ export default function Guard() {
               {alertsQ.isLoading ? (
                 <Skeleton className="h-12 w-full" />
               ) : (alertsQ.data?.length ?? 0) === 0 ? (
-                <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <AlertTriangle className="h-4 w-4 shrink-0" />
-                  {t("noAlerts")}
-                </p>
+                <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center">
+                  <AlertTriangle className="h-8 w-8 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">{t("noAlerts")}</p>
+                </div>
               ) : (
                 <ul className="space-y-3">
                   {alertsQ.data?.map((al) => (
