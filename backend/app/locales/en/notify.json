@@ -1,0 +1,12 @@
+{
+  "subject": "[Sinexis Scan] {n} new critical/high findings — {target}",
+  "heading": "Sinexis Scan — new findings",
+  "intro": "The scan of <strong>{target}</strong> finished and found <strong>{n}</strong> new critical/high findings versus the previous baseline.",
+  "new_critical": "New critical: <strong>{n}</strong>",
+  "new_high": "New high: <strong>{n}</strong>",
+  "resolved": "Resolved: {n}",
+  "worsened": "Worsened: {n}",
+  "open_detail": "Open scan detail",
+  "or_copy": "Or copy this link:",
+  "footer": "You received this email because scan notifications (schedule or baseline diff) are enabled."
+}
