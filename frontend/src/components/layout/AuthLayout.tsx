@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/brand/BrandMark";
 import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
+import ThemeSwitcher from "@/components/theme/ThemeSwitcher";
 import { useTranslation } from "react-i18next";
 
 export const AUTH_SECONDARY_LINK =
@@ -42,7 +43,10 @@ function AuthLayout({
           <p className="hidden text-xs text-muted-foreground sm:block">
             {t("authSubtitle")}
           </p>
-          <LanguageSwitcher className="mt-2" />
+          <div className="mt-2 flex items-center gap-2">
+            <ThemeSwitcher />
+            <LanguageSwitcher />
+          </div>
         </div>
 
         {(title || subtitle) && (

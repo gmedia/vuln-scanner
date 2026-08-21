@@ -16,6 +16,23 @@
       content="Find exposure on IP, domain, and mobile. Schedule attach scans, share in a workspace, then run Guard and SIEM on the same account."
     />
     <meta name="theme-color" content="#0a0a0a" />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("sinexis.theme");
+          if (t !== "light" && t !== "dark") t = "dark";
+          var r = document.documentElement;
+          if (t === "dark") r.classList.add("dark");
+          else r.classList.remove("dark");
+          r.style.colorScheme = t;
+          var m = document.querySelector('meta[name="theme-color"]');
+          if (m)
+            m.setAttribute("content", t === "light" ? "#fafafa" : "#0a0a0a");
+        } catch (e) {
+          document.documentElement.classList.add("dark");
+        }
+      })();
+    </script>
     <title>Sinexis — Security attach for colo & VPS</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />

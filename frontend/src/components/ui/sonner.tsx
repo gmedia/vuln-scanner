@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import {
   CircleCheckIcon,
   InfoIcon,
@@ -6,11 +7,17 @@ import {
   TriangleAlertIcon,
 } from "lucide-react";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
+import { resolveTheme, subscribeTheme, type AppTheme } from "@/theme/theme";
 
 const Toaster = ({ ...props }: ToasterProps) => {
+  const theme: AppTheme = useSyncExternalStore(
+    subscribeTheme,
+    resolveTheme,
+    () => "dark",
+  );
   return (
     <Sonner
-      theme="system"
+      theme={theme}
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,
