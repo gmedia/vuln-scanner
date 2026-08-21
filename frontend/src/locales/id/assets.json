@@ -1,0 +1,20 @@
+{
+  "title": "Aset",
+  "subtitle": "Target scan bernama untuk workspace ini (batas SKU).",
+  "empty": "Belum ada aset.",
+  "add": "Tambah aset",
+  "name": "Nama",
+  "target": "Target",
+  "type": "Tipe",
+  "notes": "Catatan",
+  "save": "Simpan",
+  "cancel": "Batal",
+  "delete": "Hapus",
+  "schedule": "Buat jadwal",
+  "hasSchedule": "Ada jadwal",
+  "limitReached": "Batas aset untuk SKU ini tercapai.",
+  "skuLabel": "SKU {{sku}} — {{count}} / {{limit}}",
+  "cadenceWeekly": "Mingguan",
+  "cadenceMonthly": "Bulanan",
+  "confirmDelete": "Hapus aset ini?"
+}

@@ -64,6 +64,7 @@ describe("Sidebar", () => {
     expect(screen.getByText("Domain Scanner")).toBeInTheDocument();
     expect(screen.getByText("Mobile Scanner")).toBeInTheDocument();
     expect(screen.getByText("Schedules")).toBeInTheDocument();
+    expect(screen.getByText("Assets")).toBeInTheDocument();
     expect(screen.getByText("Guard")).toBeInTheDocument();
     expect(screen.getByText("Host agents")).toBeInTheDocument();
     expect(screen.getByText("SIEM")).toBeInTheDocument();

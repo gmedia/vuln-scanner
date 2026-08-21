@@ -21,6 +21,7 @@ const MobileScanner = lazy(() => import("@/pages/MobileScanner"));
 const ScanDetail = lazy(() => import("@/pages/ScanDetail"));
 const CreditHistory = lazy(() => import("@/pages/credit/CreditHistory"));
 const Schedules = lazy(() => import("@/pages/Schedules"));
+const Assets = lazy(() => import("@/pages/Assets"));
 const Guard = lazy(() => import("@/pages/Guard"));
 const Siem = lazy(() => import("@/pages/Siem"));
 const Profile = lazy(() => import("@/pages/Profile"));
@@ -89,13 +90,11 @@ function App() {
               element={<PageBoundary component={Schedules} />}
             />
             <Route
-              path="/guard"
-              element={<PageBoundary component={Guard} />}
+              path="/assets"
+              element={<PageBoundary component={Assets} />}
             />
-            <Route
-              path="/siem"
-              element={<PageBoundary component={Siem} />}
-            />
+            <Route path="/guard" element={<PageBoundary component={Guard} />} />
+            <Route path="/siem" element={<PageBoundary component={Siem} />} />
             <Route
               path="/profile"
               element={<PageBoundary component={Profile} />}

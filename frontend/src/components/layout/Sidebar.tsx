@@ -12,6 +12,7 @@ import {
   CalendarClock,
   BookOpen,
   Siren,
+  Server,
 } from "lucide-react";
 import { BRAND } from "@/lib/brand";
 import { useTranslation } from "react-i18next";
@@ -41,6 +42,7 @@ const scanNav = [
   { to: "/scan/domain", labelKey: "domainScanner", icon: Globe },
   { to: "/scan/mobile", labelKey: "mobileScanner", icon: Smartphone },
   { to: "/schedules", labelKey: "schedules", icon: CalendarClock },
+  { to: "/assets", labelKey: "assets", icon: Server, testId: "nav-assets" },
 ];
 
 const productNav = [
