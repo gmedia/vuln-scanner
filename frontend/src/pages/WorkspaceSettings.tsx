@@ -52,6 +52,7 @@ import {
 } from "@/api/orgs";
 import type { ApiError } from "@/lib/utils";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 function apiDetail(err: unknown, fallback: string): string {
   if (err && typeof err === "object" && "response" in err) {
@@ -71,6 +72,7 @@ function roleBadgeVariant(
 }
 
 function WorkspaceSettings() {
+  const { t, i18n } = useTranslation("workspace");
   const qc = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const inviteToken = searchParams.get("invite") ?? searchParams.get("token");
@@ -122,23 +124,23 @@ function WorkspaceSettings() {
       }),
     onSuccess: () => {
       setFormError(null);
-      toast.success(`Undangan dikirim ke ${inviteEmail.trim()}`);
+      toast.success(t("inviteSent", { email: inviteEmail.trim() }));
       setInviteEmail("");
       void qc.invalidateQueries({ queryKey: ["org-invites", orgId] });
     },
     onError: (err: unknown) => {
-      setFormError(apiDetail(err, "Gagal mengirim undangan"));
+      setFormError(apiDetail(err, t("inviteFail")));
     },
   });
 
   const revokeMut = useMutation({
     mutationFn: (inviteId: string) => revokeInvite(orgId!, inviteId),
     onSuccess: () => {
-      toast.success("Undangan dicabut");
+      toast.success(t("inviteRevoked"));
       void qc.invalidateQueries({ queryKey: ["org-invites", orgId] });
     },
     onError: (err: unknown) => {
-      setFormError(apiDetail(err, "Gagal mencabut undangan"));
+      setFormError(apiDetail(err, t("revokeFail")));
     },
   });
 
@@ -152,13 +154,13 @@ function WorkspaceSettings() {
       setCreateError(null);
       setNewOrgName("");
       setNewOrgSlug("");
-      toast.success("Organisasi dibuat");
+      toast.success(t("orgCreated"));
       await loadOrganizations();
       await switchOrganization(org.id);
       void qc.invalidateQueries();
     },
     onError: (err: unknown) => {
-      setCreateError(apiDetail(err, "Gagal membuat organisasi"));
+      setCreateError(apiDetail(err, t("orgCreateFail")));
     },
   });
 
@@ -166,7 +168,7 @@ function WorkspaceSettings() {
     mutationFn: (token: string) => acceptInvite(token),
     onSuccess: async (res) => {
       setAcceptError(null);
-      toast.success(res.message ?? "Undangan diterima");
+      toast.success(res.message ?? t("acceptSuccess"));
       setSearchParams({});
       await loadOrganizations();
       if (res.organization_id) {
@@ -175,7 +177,7 @@ function WorkspaceSettings() {
       void qc.invalidateQueries();
     },
     onError: (err: unknown) => {
-      setAcceptError(apiDetail(err, "Gagal menerima undangan"));
+      setAcceptError(apiDetail(err, t("acceptFail")));
     },
   });
 
@@ -183,11 +185,11 @@ function WorkspaceSettings() {
     e.preventDefault();
     setFormError(null);
     if (!inviteEmail.trim()) {
-      setFormError("Email wajib diisi");
+      setFormError(t("emailRequired"));
       return;
     }
     if (!orgId) {
-      setFormError("Tidak ada workspace aktif");
+      setFormError(t("noActiveWorkspace"));
       return;
     }
     inviteMut.mutate();
@@ -197,7 +199,7 @@ function WorkspaceSettings() {
     e.preventDefault();
     setCreateError(null);
     if (!newOrgName.trim()) {
-      setCreateError("Nama organisasi wajib");
+      setCreateError(t("orgNameRequired"));
       return;
     }
     createOrgMut.mutate();
@@ -215,12 +217,12 @@ function WorkspaceSettings() {
         <Users className="h-6 w-6 text-primary" />
         <div>
           <h2 className="text-lg font-bold tracking-wide text-foreground">
-            Workspace
+            {t("title")}
           </h2>
           <p className="text-[11px] text-muted-foreground">
             {activeOrg
-              ? `${activeOrg.name} · peran ${activeOrg.role}`
-              : "Anggota, undangan, dan organisasi"}
+              ? t("roleLine", { name: activeOrg.name, role: activeOrg.role })
+              : t("subtitleMembers")}
           </p>
         </div>
       </div>
@@ -229,10 +231,10 @@ function WorkspaceSettings() {
         <Card data-testid="accept-invite-card">
           <CardHeader>
             <CardTitle className="text-sm tracking-wide">
-              Terima undangan
+              {t("acceptTitle")}
             </CardTitle>
             <CardDescription className="text-xs">
-              Token undangan terdeteksi di URL.
+              {t("acceptDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -251,7 +253,7 @@ function WorkspaceSettings() {
               {acceptMut.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Terima undangan
+              {t("acceptButton")}
             </Button>
           </CardContent>
         </Card>
@@ -261,17 +263,17 @@ function WorkspaceSettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
             <Building2 className="h-4 w-4 text-primary" />
-            Buat organisasi
+            {t("createOrgTitle")}
           </CardTitle>
           <CardDescription className="text-xs">
-            Workspace hotel/perusahaan (bukan personal). Anda menjadi owner.
+            {t("createOrgDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onCreateOrg} className="space-y-3">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="org-name">Nama</Label>
+                <Label htmlFor="org-name">{t("orgName")}</Label>
                 <Input
                   id="org-name"
                   data-testid="create-org-name"
@@ -281,7 +283,7 @@ function WorkspaceSettings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="org-slug">Slug (opsional)</Label>
+                <Label htmlFor="org-slug">{t("orgSlug")}</Label>
                 <Input
                   id="org-slug"
                   data-testid="create-org-slug"
@@ -305,7 +307,7 @@ function WorkspaceSettings() {
               {createOrgMut.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Buat workspace
+              {t("createWorkspace")}
             </Button>
           </form>
         </CardContent>
@@ -313,17 +315,16 @@ function WorkspaceSettings() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm tracking-wide">Anggota</CardTitle>
+          <CardTitle className="text-sm tracking-wide">
+            {t("membersTitle")}
+          </CardTitle>
           <CardDescription className="text-xs">
-            Daftar membership di workspace aktif.
+            {t("membersDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {!orgId && (
-            <p className="text-sm text-muted-foreground">
-              Belum ada organisasi. Buat workspace atau tunggu backend workspace
-              aktif.
-            </p>
+            <p className="text-sm text-muted-foreground">{t("noOrgYet")}</p>
           )}
           {orgId && membersQuery.isLoading && (
             <div className="space-y-2">
@@ -333,21 +334,21 @@ function WorkspaceSettings() {
           )}
           {orgId && membersQuery.isError && (
             <p className="text-sm text-muted-foreground" role="status">
-              Anggota belum tersedia (API workspace mungkin belum live).
+              {t("membersUnavailable")}
             </p>
           )}
           {membersQuery.data && membersQuery.data.length === 0 && (
-            <p className="text-sm text-muted-foreground">Belum ada anggota.</p>
+            <p className="text-sm text-muted-foreground">{t("noMembers")}</p>
           )}
           {membersQuery.data && membersQuery.data.length > 0 && (
             <Table className="text-sm" data-testid="members-list">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="text-[10px] uppercase tracking-wider">
-                    Email
+                    {t("colEmail")}
                   </TableHead>
                   <TableHead className="w-[28%] text-right text-[10px] uppercase tracking-wider">
-                    Peran
+                    {t("colRole")}
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -379,17 +380,17 @@ function WorkspaceSettings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
                 <UserPlus className="h-4 w-4 text-primary" />
-                Undang anggota
+                {t("inviteTitle")}
               </CardTitle>
               <CardDescription className="text-xs">
-                Role: admin, member, atau viewer (bukan owner).
+                {t("inviteDescription")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={onInviteSubmit} className="space-y-3">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="invite-email">Email</Label>
+                    <Label htmlFor="invite-email">{t("colEmail")}</Label>
                     <Input
                       id="invite-email"
                       type="email"
@@ -401,7 +402,7 @@ function WorkspaceSettings() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Peran</Label>
+                    <Label>{t("inviteRole")}</Label>
                     <Select
                       value={inviteRole}
                       onValueChange={(v) => setInviteRole(v as InviteRole)}
@@ -410,15 +411,22 @@ function WorkspaceSettings() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="member">Member</SelectItem>
-                        <SelectItem value="viewer">Viewer</SelectItem>
+                        <SelectItem value="admin">{t("roleAdmin")}</SelectItem>
+                        <SelectItem value="member">
+                          {t("roleMember")}
+                        </SelectItem>
+                        <SelectItem value="viewer">
+                          {t("roleViewer")}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
                 {formError && (
-                  <Alert variant="destructive" className="border-destructive/40">
+                  <Alert
+                    variant="destructive"
+                    className="border-destructive/40"
+                  >
                     <AlertTriangle />
                     <AlertDescription>{formError}</AlertDescription>
                   </Alert>
@@ -432,7 +440,7 @@ function WorkspaceSettings() {
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
                   <Mail className="mr-2 h-4 w-4" />
-                  Kirim undangan
+                  {t("sendInvite")}
                 </Button>
               </form>
             </CardContent>
@@ -441,19 +449,19 @@ function WorkspaceSettings() {
           <Card>
             <CardHeader>
               <CardTitle className="text-sm tracking-wide">
-                Undangan tertunda
+                {t("pendingInvites")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {invitesQuery.isLoading && <Skeleton className="h-8 w-full" />}
               {invitesQuery.isError && (
                 <p className="text-sm text-muted-foreground">
-                  Daftar undangan belum tersedia.
+                  {t("invitesUnavailable")}
                 </p>
               )}
               {invitesQuery.data && invitesQuery.data.length === 0 && (
                 <p className="text-sm text-muted-foreground">
-                  Tidak ada undangan tertunda.
+                  {t("noPendingInvites")}
                 </p>
               )}
               {invitesQuery.data && invitesQuery.data.length > 0 && (
@@ -461,13 +469,13 @@ function WorkspaceSettings() {
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="text-[10px] uppercase tracking-wider">
-                        Email
+                        {t("colEmail")}
                       </TableHead>
                       <TableHead className="text-[10px] uppercase tracking-wider">
-                        Peran
+                        {t("colRole")}
                       </TableHead>
                       <TableHead className="w-[1%] text-right text-[10px] uppercase tracking-wider">
-                        Aksi
+                        {t("colAction")}
                       </TableHead>
                     </TableRow>
                   </TableHeader>
@@ -482,7 +490,13 @@ function WorkspaceSettings() {
                         <TableCell className="font-mono text-[10px] text-muted-foreground">
                           {inv.role}
                           {inv.expires_at
-                            ? ` · exp ${new Date(inv.expires_at).toLocaleDateString("id-ID")}`
+                            ? ` · ${t("expires", {
+                                date: new Date(
+                                  inv.expires_at,
+                                ).toLocaleDateString(
+                                  i18n.language === "en" ? "en-US" : "id-ID",
+                                ),
+                              })}`
                             : ""}
                         </TableCell>
                         <TableCell className="text-right">
@@ -496,7 +510,7 @@ function WorkspaceSettings() {
                             onClick={() => revokeMut.mutate(inv.id)}
                           >
                             <Trash2 className="mr-1 h-3.5 w-3.5" />
-                            Cabut
+                            {t("revoke")}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -510,9 +524,7 @@ function WorkspaceSettings() {
       )}
 
       {!canManage && orgId && role && (
-        <p className="text-xs text-muted-foreground">
-          Hanya owner/admin yang dapat mengundang anggota.
-        </p>
+        <p className="text-xs text-muted-foreground">{t("onlyAdminsInvite")}</p>
       )}
     </div>
   );
