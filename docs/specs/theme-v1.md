@@ -1,6 +1,6 @@
 # Spec: Light / dark appearance — theme v1
 
-**Status:** **S0 draft** — plan only. **Do not implement S1+** until the user explicitly says implement / kerjakan / buat (or points at a checked slice).
+**Status:** **S1–S3 in progress** — tokens, switcher, sonner. Default remains **dark**.
 **Goal:** Let operators switch the SPA between **dark** (current default) and **light** without a layout redesign, rebrand, or new product module.
 **Suggested epic label:** **P9** (after P8 i18n in [`docs/AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) §1.3). Does **not** jump ahead of GTM / P3 unless the user reorders.
 **Depends:** Tailwind v4 + shadcn tokens in `frontend/src/index.css` · `@custom-variant dark (&:is(.dark *))` already present · P8 i18n switcher pattern (`LanguageSwitcher` + `localStorage`).

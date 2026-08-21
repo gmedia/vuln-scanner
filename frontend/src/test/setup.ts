@@ -3,6 +3,9 @@ import i18n from "@/i18n";
 
 void i18n.changeLanguage("en");
 
+document.documentElement.classList.add("dark");
+document.documentElement.style.colorScheme = "dark";
+
 // Polyfills for jsdom (required by recharts ResponsiveContainer)
 class ResizeObserverMock {
   observe() {}

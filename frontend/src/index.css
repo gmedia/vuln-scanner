@@ -3,6 +3,41 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  color-scheme: light;
+  --background: hsl(0 0% 98%);
+  --foreground: hsl(0 0% 9%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(0 0% 9%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(0 0% 9%);
+  --primary: hsl(142 71% 45%);
+  --primary-foreground: hsl(0 0% 4%);
+  --secondary: hsl(0 0% 96%);
+  --secondary-foreground: hsl(0 0% 9%);
+  --muted: hsl(0 0% 96%);
+  --muted-foreground: hsl(0 0% 40%);
+  --accent: hsl(0 0% 96%);
+  --accent-foreground: hsl(0 0% 9%);
+  --destructive: hsl(0 84% 50%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsl(0 0% 90%);
+  --input: hsl(0 0% 90%);
+  --ring: hsl(142 71% 45%);
+  --sidebar: hsl(0 0% 100%);
+  --sidebar-foreground: hsl(0 0% 9%);
+  --sidebar-primary: hsl(142 71% 45%);
+  --sidebar-primary-foreground: hsl(0 0% 4%);
+  --sidebar-accent: hsl(0 0% 96%);
+  --sidebar-accent-foreground: hsl(0 0% 9%);
+  --sidebar-border: hsl(0 0% 90%);
+  --sidebar-ring: hsl(142 71% 45%);
+  --scrollbar-track: hsl(0 0% 96%);
+  --scrollbar-thumb: hsl(0 0% 72%);
+  --scrollbar-thumb-hover: hsl(0 0% 58%);
+}
+
+.dark {
+  color-scheme: dark;
   --background: hsl(0 0% 4%);
   --foreground: hsl(0 0% 93%);
   --card: hsl(0 0% 9%);
@@ -30,6 +65,9 @@
   --sidebar-accent-foreground: hsl(0 0% 93%);
   --sidebar-border: hsl(0 0% 18%);
   --sidebar-ring: hsl(142 71% 45%);
+  --scrollbar-track: hsl(0 0% 9%);
+  --scrollbar-thumb: hsl(0 0% 28%);
+  --scrollbar-thumb-hover: hsl(0 0% 40%);
 }
 
 @theme inline {
@@ -90,7 +128,7 @@ body {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: hsl(0 0% 28%) hsl(0 0% 9%);
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 *::-webkit-scrollbar {
@@ -99,18 +137,18 @@ body {
 }
 
 *::-webkit-scrollbar-track {
-  background: hsl(0 0% 9%);
+  background: var(--scrollbar-track);
   border-radius: 4px;
 }
 
 *::-webkit-scrollbar-thumb {
-  background: hsl(0 0% 28%);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
-  border: 2px solid hsl(0 0% 9%);
+  border: 2px solid var(--scrollbar-track);
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: hsl(0 0% 40%);
+  background: var(--scrollbar-thumb-hover);
 }
 
 *::-webkit-scrollbar-corner {
