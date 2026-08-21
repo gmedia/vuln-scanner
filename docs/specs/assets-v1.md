@@ -1,6 +1,6 @@
 # Spec: Asset registry v1 (P3 — light)
 
-**Status:** **S0 draft on `main`** (via **#282**, tip ~`6d5e4bb`) — spek only. **Do not implement S1+** until user explicitly says implement / kerjakan / buat (or points at a checked acceptance slice) **and** §11 open questions are answered.
+**Status:** **S1–S3 implemented** (P3 light registry: CRUD, SKU hard cap, `/assets` SPA, 1:1 schedule). §11 locked: hard block · top-level `/assets` · 1:1.
 **Goal:** light **named assets** so Multi-asset / Pro tiers can schedule and report against labeled targets without a full CMDB.
 **Epic:** P3 per [`docs/AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) §1.3, §5.3.
 **Depends:** P1 Scan Attach (schedules, baseline) · P2 Workspace (org membership, JWT `org_id`) · FE org-scoped React Query keys (**#282** residual).
@@ -154,9 +154,9 @@ Default order: **S0 → S1 → S2 → S3 → S4 → S5**.
 
 ## 11. Open questions (resolve before S1 code)
 
-1. Soft UI warn vs hard block when asset count exceeds commercial tier (Basic/Pro) while schedule cap still 10?
-2. Assets route top-level vs Workspace tab?
-3. Allow multiple schedules per asset (weekly + monthly) in v1?
+1. **Hard block** API+UI when asset count exceeds SKU (Basic 1 · Pro 3 · Multi 10). Schedule cap remains 10 enabled/org.
+2. **Top-level** SPA `/assets`.
+3. **1:1** — at most one schedule per `asset_id` (partial unique).
 
 ---
 
