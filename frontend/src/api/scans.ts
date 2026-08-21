@@ -146,8 +146,10 @@ export async function downloadFile(
   jobId: string,
   format: "json" | "html" | "executive",
 ): Promise<void> {
+  const stored = localStorage.getItem("sinexis.locale");
+  const lang = stored === "en" || stored === "id" ? stored : "id";
   const resp = await api.get(`/api/scan/${jobId}/export`, {
-    params: { format },
+    params: { format, ...(format === "executive" ? { lang } : {}) },
     responseType: "blob",
   });
   const ext =
