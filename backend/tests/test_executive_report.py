@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html as html_lib
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -129,6 +130,22 @@ def test_render_includes_cover_diff_top_no_raw_secret():
     assert "secret_should_not_appear" not in html_out
     assert "xyz" not in html_out
     assert "exploit" not in html_out.lower() or "bukan exploit" in html_out.lower()
+    assert 'lang="id"' in html_out
+
+
+def test_render_executive_html_en_chrome_keeps_finding_titles():
+    findings = [
+        _finding(severity="critical", title="Open admin", cvss=9.8),
+    ]
+    job = _job_detail(findings)
+    html_out = render_executive_html(job, lang="en")
+    plain = html_lib.unescape(html_out)
+    assert "Executive Report" in plain
+    assert 'lang="en"' in html_out
+    assert "What's new" in plain
+    assert "Open admin" in html_out
+    assert "Laporan Eksekutif" not in html_out
+    assert "Apa yang baru" not in html_out
 
 
 def test_plain_language_mentions_new_findings():
@@ -206,6 +223,47 @@ async def test_export_executive_api_with_diff(client, db_session, sample_user):
     assert "raw_data" not in body
     cd = resp.headers.get("content-disposition", "")
     assert "executive.html" in cd
+
+
+@pytest.mark.asyncio
+async def test_export_executive_api_lang_en(client, db_session, sample_user):
+    t1 = datetime.now(UTC) - timedelta(days=1)
+    current = ScanJob(
+        id=uuid.uuid4(),
+        scan_type="domain",
+        target="exec-en.example",
+        status="completed",
+        progress=100,
+        result_summary={"total_findings": 1, "critical": 1, "high": 0},
+        user_id=sample_user.id,
+        started_at=t1,
+        completed_at=t1,
+    )
+    db_session.add(current)
+    await db_session.commit()
+    finding = ScanFinding(
+        id=uuid.uuid4(),
+        job_id=current.id,
+        severity="critical",
+        category="ssl",
+        title="Cert expired critical",
+        description="Certificate validation failed",
+        remediation="Renew TLS certificate.",
+        raw_data={"path": "/"},
+    )
+    db_session.add(finding)
+    await db_session.commit()
+
+    resp = client.get(
+        f"/api/scan/{current.id}/export?format=executive&lang=en",
+        headers=HEADERS,
+    )
+    assert resp.status_code == 200
+    body = html_lib.unescape(resp.text)
+    assert "Executive Report" in body
+    assert "What's new" in body
+    assert "Cert expired critical" in body
+    assert "Laporan Eksekutif" not in body
 
 
 @pytest.mark.asyncio
