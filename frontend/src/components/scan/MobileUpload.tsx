@@ -261,7 +261,6 @@ function MobileUpload() {
       <Button
         onClick={handleSubmit}
         disabled={submitDisabled}
-        size="lg"
         className="w-full"
       >
         {startMobileScan.isPending ? (

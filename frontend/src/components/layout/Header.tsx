@@ -52,7 +52,7 @@ function Header({ children }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 border-b border-border bg-card px-4">
+    <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-4 border-b border-border bg-background px-4">
       {children}
       <div className="flex flex-1 items-center justify-between gap-3">
         <h1 className="lg:sr-only">
