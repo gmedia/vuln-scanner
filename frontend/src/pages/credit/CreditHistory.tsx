@@ -96,15 +96,15 @@ function CreditHistory() {
   const periodCredits = useMemo(
     () =>
       filteredItems
-        .filter((i) => i.amount > 0)
-        .reduce((sum, i) => sum + i.amount, 0),
+        .filter((i) => i.type !== "deduct")
+        .reduce((sum, i) => sum + Math.abs(i.amount), 0),
     [filteredItems],
   );
 
   const periodDebits = useMemo(
     () =>
       filteredItems
-        .filter((i) => i.amount < 0)
+        .filter((i) => i.type === "deduct")
         .reduce((sum, i) => sum + Math.abs(i.amount), 0),
     [filteredItems],
   );
@@ -119,7 +119,7 @@ function CreditHistory() {
   const resetPage = () => setPage(1);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center gap-3">
         <History className="h-6 w-6 text-primary" />
         <h2 className="text-lg font-bold tracking-wide text-foreground">
@@ -318,8 +318,14 @@ function CreditHistory() {
   );
 }
 
+function signedLedgerAmount(item: CreditLogItem): number {
+  const mag = Math.abs(item.amount);
+  return item.type === "deduct" ? -mag : mag;
+}
+
 function TransactionRow({ item }: { item: CreditLogItem }) {
-  const isPositive = item.amount > 0;
+  const signed = signedLedgerAmount(item);
+  const isPositive = signed > 0;
 
   return (
     <TableRow>
@@ -342,7 +348,7 @@ function TransactionRow({ item }: { item: CreditLogItem }) {
           }`}
         >
           {isPositive ? "+" : ""}
-          {item.amount}
+          {signed}
         </span>
       </TableCell>
       <TableCell>

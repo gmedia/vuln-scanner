@@ -315,6 +315,30 @@ describe("CreditHistory", () => {
     expect(screen.getByText("+100")).toBeInTheDocument();
   });
 
+  it("treats backend deduct with positive amount as debit", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: {
+        items: [
+          {
+            id: "d1",
+            amount: 50,
+            type: "deduct" as const,
+            description: "IP scan",
+            reference_id: null,
+            created_at: "2024-01-14T10:00:00Z",
+          },
+        ],
+        total: 1,
+      },
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    render(<CreditHistory />);
+    const debitCells = screen.getAllByText("-50");
+    expect(debitCells.length).toBeGreaterThanOrEqual(1);
+    expect(debitCells.every((el) => el.className.match(/text-red/))).toBe(true);
+  });
+
   it("displays negative amounts without + prefix", () => {
     vi.mocked(useQuery).mockReturnValue({
       data: { items: mockItems, total: 3 },
