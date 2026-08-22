@@ -59,6 +59,8 @@
   "descriptionPlaceholder": "Reason for adjustment...",
   "processing": "Processing...",
   "adjustCredits": "Adjust credits",
+  "confirmAdjust": "Confirm credit change",
+  "cancel": "Cancel",
   "creditsUpdateFail": "Failed to update credits",
   "creditsUpdateOk": "Credits updated successfully",
   "userNotFound": "User not found",

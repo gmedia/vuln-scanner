@@ -114,7 +114,9 @@ function Header({ children }: HeaderProps) {
                 className="h-9 gap-2 px-2 text-sm text-muted-foreground"
               >
                 <User className="h-4 w-4" />
-                <span className="hidden text-xs sm:inline">{user.email}</span>
+                <span className="hidden max-w-[14rem] truncate text-xs sm:inline">
+                  {user.email}
+                </span>
                 <ChevronDown className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>

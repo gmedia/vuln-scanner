@@ -60,7 +60,7 @@ function AdminPricing() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center gap-3">
         <DollarSign className="h-6 w-6 text-primary" />
         <h2 className="text-lg font-bold tracking-wide text-foreground">
@@ -152,7 +152,10 @@ function AdminPricing() {
                             {t("save")}
                           </>
                         ) : (
-                          t("saved")
+                          <>
+                            <Check className="h-3 w-3 mr-1 text-primary" />
+                            {t("saved")}
+                          </>
                         )}
                       </Button>
                     </TableCell>

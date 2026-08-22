@@ -210,7 +210,7 @@ export default function Guard() {
   const unusedCount = tokens.filter((t) => !t.revoked_at && !t.used_at).length;
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-6">
       <div className="mb-2 py-1">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>

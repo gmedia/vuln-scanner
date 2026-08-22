@@ -89,7 +89,7 @@ function AdminDashboard() {
   ];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Shield className="h-6 w-6 text-primary" />
         <div>
@@ -172,8 +172,8 @@ function AdminDashboard() {
             <div data-testid="admin-kpi-chart">
               <ChartContainer
                 config={kpiChartConfig}
-                className="aspect-auto h-[220px] w-full"
-                initialDimension={{ width: 640, height: 220 }}
+                className="aspect-auto h-[280px] w-full min-h-[220px]"
+                initialDimension={{ width: 960, height: 280 }}
               >
                 <BarChart
                   data={[

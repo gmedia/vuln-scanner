@@ -285,4 +285,27 @@ describe("AdminUserDetail", () => {
       ),
     ).toBeInTheDocument();
   });
+
+  it("requires a second click before mutating credits", async () => {
+    const mutate = vi.fn();
+    vi.mocked(useMutation).mockReturnValue({
+      mutate,
+      isPending: false,
+      isError: false,
+      isSuccess: false,
+    } as unknown as ReturnType<typeof useMutation>);
+    vi.mocked(useQuery).mockReturnValue({
+      data: mockUser,
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    renderPage();
+    await userEvent.type(screen.getByLabelText("Amount (+ or −)"), "10");
+    await userEvent.click(screen.getByRole("button", { name: "Adjust credits" }));
+    expect(mutate).not.toHaveBeenCalled();
+    await userEvent.click(
+      screen.getByRole("button", { name: "Confirm credit change" }),
+    );
+    expect(mutate).toHaveBeenCalled();
+  });
 });

@@ -59,6 +59,8 @@
   "descriptionPlaceholder": "Alasan penyesuaian...",
   "processing": "Memproses...",
   "adjustCredits": "Sesuaikan kredit",
+  "confirmAdjust": "Konfirmasi perubahan kredit",
+  "cancel": "Batal",
   "creditsUpdateFail": "Gagal memperbarui kredit",
   "creditsUpdateOk": "Kredit berhasil diperbarui",
   "userNotFound": "Pengguna tidak ditemukan",

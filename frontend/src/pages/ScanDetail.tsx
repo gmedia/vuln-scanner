@@ -47,7 +47,7 @@ function ScanDetail() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="space-y-6">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-40 w-full" />
         <Skeleton className="h-64 w-full" />
@@ -57,7 +57,7 @@ function ScanDetail() {
 
   if (isError || !scan) {
     return (
-      <div className="mx-auto max-w-4xl">
+      <div>
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="mb-4 rounded-full bg-red-600/10 p-4">
             <Crosshair className="h-8 w-8 text-red-400" />
@@ -109,7 +109,7 @@ function ScanDetail() {
       : t("failFallback");
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5">
+    <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-start gap-3">
           <Link
@@ -147,6 +147,16 @@ function ScanDetail() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          {(scan.scan_type === "ip" || scan.scan_type === "domain") && (
+            <Button asChild variant="outline" size="sm" className="text-xs">
+              <Link
+                to={`/schedules?target=${encodeURIComponent(scan.target)}&scan_type=${scan.scan_type}`}
+                data-testid="attach-schedule-button"
+              >
+                {t("setSchedule")}
+              </Link>
+            </Button>
+          )}
           <Button asChild size="sm" className="text-xs">
             <Link to={reScanTo} data-testid="rescan-button">
               <RefreshCw className="mr-1 h-3.5 w-3.5" />
