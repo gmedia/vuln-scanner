@@ -27,7 +27,7 @@
   "ip1": "Sidebar → <ip>IP Scanner</ip>. Judul halaman: <ui>IP scanner</ui>.",
   "ip2": "Cek pratinjau kredit di form (biaya scan IP). Saldo kurang → top-up dulu (lihat bagian Kredit).",
   "ip3": "Isi <ui>Target IP address</ui> (IPv4 yang Anda kuasai). Opsional: sesuaikan <ui>Port range</ui> (default <code>1-1000</code>, atau mis. <code>22,80,443</code>).",
-  "ip4": "Klik <ui>Start IP scan</ui>. Tunggu status <ui>Initializing scan…</ui> lalu Anda dialihkan ke <ui>Scan details</ui> (<code>/scan/&lt;id&gt;</code>).",
+  "ip4": "Klik <ui>Start IP scan</ui>. Tunggu status <ui>Initializing scan…</ui> lalu Anda dialihkan ke <ui>Scan details</ui> (<code>/scan/:id</code>).",
   "ip5": "Pantau badge status (<ui>pending</ui> / <ui>running</ui> → <ui>completed</ui> atau <ui>failed</ui>). Progress juga bisa terlihat di kartu <ui>Scan progress</ui> jika masih di halaman scanner.",
   "ip6": "Setelah <ui>completed</ui>, lanjut ke bagian <hasil>Baca hasil & unduh</hasil>.",
   "ipNote": "Cakupan tipikal: port/service (nmap), CVE OSV, severity, OS fingerprint bila tersedia.",

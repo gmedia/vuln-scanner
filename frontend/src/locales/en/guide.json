@@ -27,7 +27,7 @@
   "ip1": "Sidebar → <ip>IP Scanner</ip>. Page title: <ui>IP scanner</ui>.",
   "ip2": "Check the credit preview on the form (IP scan cost). Low balance → top up first (see Credits).",
   "ip3": "Fill <ui>Target IP address</ui> (an IPv4 you control). Optional: adjust <ui>Port range</ui> (default <code>1-1000</code>, or e.g. <code>22,80,443</code>).",
-  "ip4": "Click <ui>Start IP scan</ui>. Wait for <ui>Initializing scan…</ui> then you are redirected to <ui>Scan details</ui> (<code>/scan/&lt;id&gt;</code>).",
+  "ip4": "Click <ui>Start IP scan</ui>. Wait for <ui>Initializing scan…</ui> then you are redirected to <ui>Scan details</ui> (<code>/scan/:id</code>).",
   "ip5": "Watch the status badge (<ui>pending</ui> / <ui>running</ui> → <ui>completed</ui> or <ui>failed</ui>). Progress may also show on the <ui>Scan progress</ui> card if you stay on the scanner page.",
   "ip6": "After <ui>completed</ui>, continue to <hasil>Read results & download</hasil>.",
   "ipNote": "Typical coverage: ports/services (nmap), OSV CVEs, severity, OS fingerprint when available.",
