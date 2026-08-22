@@ -10,11 +10,11 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
-## Session snapshot (2026-08-21 — refresh against `main`)
+## Session snapshot (2026-08-22 — refresh against `main`)
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding)** | **`fa8d1b1`** — **#378** theme overlay no-shadow; user: **CI main hijau + auto-deploy**. Re-`git pull` after reset |
+| **`main` tip (coding)** | Re-`git pull`. **#380** P3 assets on `main`; CI/auto-deploy assumed green |
 | **Recent merges (i18n)** | **#367** Playwright locale id · **#368** finding labels · **#369** Workspace+Guard chrome · **#370** Guide catalogs · **#371** executive notify · **#372** user locale · **#373** SIEM+Admin S7 |
 | **Recent merges (theme / grok2api chrome)** | **#374** spek `theme-v1.md` · **#375** light/dark (`sinexis.theme`, default **dark**) · **#376** tokens/radius 12 / no-shadow Card-Dialog-Button / table density / Input `bg-input` / Card `p-4` / Guard island · **#377** Dashboard density · **#378** overlay flatten (dropdown/Select/Popover/Tooltip/Sheet/chart/Tabs) + scan forms drop `size="lg"` (CTA **hijau tetap**) + Header canvas `h-12 bg-background` + Select/Textarea inset + Schedules/CreditHistory empty islands |
 | **Theme DoD (user)** | Closer to grok2api **surface** (flat, density, islands, header canvas). **Keep** Sinexis `--primary` `hsl(142 71% 45%)`. **Out:** invert CTA BW; clone Models/Keys; **replace top header with grok2api sidebar**; Landing/`NotFound` `size="lg"`; commit PNG refs |
@@ -26,7 +26,7 @@
 | **P4 soft dual-brand** | **On `main`** (#250); public **`sinexis.app`** and/or legacy hostname — **no hard cut** |
 | **P5 Guard** | **On `main`**: spek #273 · thin #274 · Http #275 · tables #360 · guide TOC #361/#362 — mock CI default; **edge lab + env + live smoke still human** |
 | **P7 SIEM** | Spek + S0–S5 code on `main` (#307); host flag `SIEM_ENABLED` (default false). **Do not** add Discover/cases on `/guard`. “S3+” in chat = API/cases/SPA slices — **already coded**; residual is **host flag + SKU human** |
-| **P3 Assets** | **Draft spek S0 only** ([`docs/specs/assets-v1.md`](docs/specs/assets-v1.md) #282). Named org-scoped scan targets (not CMDB, not Guard agents). **No S1+** until explicit verb **and** §11 answers (tier hard vs warn; `/assets` vs Workspace tab; many schedules per asset) |
+| **P3 Assets** | **S1–S5 on `main`** (#380 + pack/docs). SPA `/assets`, SKU hard cap, 1:1 schedule. Residual: **edge Alembic smoke** ([`docs/scan-assets-ops.md`](docs/scan-assets-ops.md)) |
 | **P0 commercial** | **Policy locked** (#245): Basic **300k** / Pro **650k** / Multi **2M**; credits **10/24/60**; AM renew; attach ARPU primary; pilot #1 multi-service, 1 mo sponsored |
 | **P0 GTM kit in git** | One-pager + SKU + **[`docs/commercial/am-wave1-email-id.md`](docs/commercial/am-wave1-email-id.md)** (#246) |
 | **Still human (not git)** | Finance **service_id** ×3; AM **10 CRM SIDs**; named **pilot #1**; AM **send** wave-1; ops **fulfill**; Guard lab Manager/Indexer + **wipe `tc5` before enroll e2e**; screenshot pack 08–18 needs **`E2E_PASSWORD` on e2e host** (do **not** invent on coding host) |
@@ -35,7 +35,7 @@
 
 ### Next OpenCode session — do not start coding
 
-1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull` — tip should be **`fa8d1b1`** or newer (#378).
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull` — tip should include **#380** or newer.
 2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** (§1.3). This stub is **not** the backlog.
 3. Speak **Bahasa Indonesia** with the user; code/PR English; prefix git with `GIT_MASTER=1`.
 4. **Wait** for `implement` / `buat` / `kerjakan` / a named Dependabot PR / a **specific** UI gap (page + dark/light). Do **not** “lanjut mirip grok2api” without a target.
@@ -52,9 +52,9 @@
 - grok2api **sidebar IA / Models / Keys** — **out**. CTA Scan **green** — **out** to invert.
 - PNG refs lived under `.sisyphus/ref-design/` (not git).
 
-**What AI may execute only if the user says so:** P3 Asset S1 (spek [`assets-v1.md`](docs/specs/assets-v1.md) — **answer §11 first**); enable SIEM on lab (`SIEM_ENABLED`, not new Guard UI); one named Dependabot PR; P6 hospitality docs; a **bugfix** with repro/screenshots; a **named** theme leftover (Alert cream / Admin density).
+**What AI may execute only if the user says so:** P3 **bugs** / extra polish; enable SIEM on lab (`SIEM_ENABLED`, not new Guard UI); one named Dependabot PR; P6 hospitality docs; a **bugfix** with repro; a **named** theme leftover.
 
-**What AI must not start unprompted:** GTM; live Guard lab; invent `E2E_PASSWORD`; mass-merge Dependabot; Cluster B; Wave G; SIEM UI on `/guard`; re-polish Guide TOC; more grok2api chrome; P3 S1 without §11.
+**What AI must not start unprompted:** GTM execution (finance SIDs); live Guard lab; invent `E2E_PASSWORD`; mass-merge Dependabot; Cluster B; Wave G; SIEM UI on `/guard`; re-implement P3 S1–S5.
 
 ### Edge public smoke — post-S5 + Wave B deploy (2026-08-10)
 

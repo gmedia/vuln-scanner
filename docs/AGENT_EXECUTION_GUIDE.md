@@ -2,11 +2,11 @@
 
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
-**Last updated:** 2026-08-17
-**Repo tip at write time:** re-`git pull` after reset. Open residual: **Guard live lab** (mock off only on app host `.env`); leftover ip/domain workers; **GTM human**; Dependabot #252–#266 — do not mass-merge. **P7 SIEM S0 locked** on `main`; **S1–S2** may live on a SIEM branch. No IPs/secrets. Never commit IPs/passwords/enroll keys.
+**Last updated:** 2026-08-22
+**Repo tip at write time:** re-`git pull` after reset. **P3 assets S1–S5 on `main`** (#380 + follow-up). Open residual: **GTM human**; **Guard live lab**; leftover ip/domain workers; Dependabot — do not mass-merge. **P7 SIEM S0–S5 on `main`** (flag `SIEM_ENABLED` default false). No IPs/secrets. Never commit IPs/passwords/enroll keys.
 **Guard e2e rule:** if the user asks for a **full prod e2e suite including Guard enroll/unenroll**, **wipe `tc5` + leftover Manager/DB smoke rows first** — see **§4.1**. Do not skip this. Do not treat Playwright as enroll/unenroll.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
-**Phase snapshot:** **P0 policy locked** · **P1 attach shipped + edge smoke closed** · **P2 Workspace S1–S5 on `main`** · **Attach UX Wave B on `main`** · **P4 soft dual-brand on `main`** · **P5 Guard thin on `main`** (#273–#275 code; #279–#281 + **#294** host/guide) — **not** full SIEM · **CI/default mock** · **P3** draft spek on main (no S1+ code until explicit verb) · **P7 SIEM** spek locked [`docs/specs/siem-v1.md`](specs/siem-v1.md) (**S0 + S1–S2 in progress** — tables/query builder; no `/api/siem` until S3) · **GTM human still open** · residual eng = edge apply tip, bugs, Dependabot only when CI green + explicit — **do not** implement SIEM under Guard PRs.
+**Phase snapshot:** **P0 policy locked** · **P1 attach shipped** · **P2 Workspace S1–S5** · **P3 assets S1–S5 on `main`** (#380) · **P4 soft dual-brand** · **P5 Guard thin** (mock CI) · **P7 SIEM S0–S5 on `main`** (host flag default false) · **GTM human still open** · residual eng = edge Alembic `add_scan_assets` smoke, bugs, Dependabot only when named + CI green — **do not** implement SIEM under Guard PRs.
 
 ---
 
@@ -44,9 +44,9 @@ Then read, in order:
 | **Legacy name** | VulnScanner / `vs.appmedia.id` — keep as **Scan module** during soft dual-brand |
 | **Near-term commercial goal** | **Upsell** recurring Secure/Scan add-on on customers who **already** pay colo / VPS / cloud / hosting |
 | **Strategic beachhead** | Hotel / hospitality (Yogya relationships + any multi-property group already on GMD) |
-| **Modules** | **Scan + Attach** (prod, Wave B UX polish) · **Workspace S1–S5** (prod; residual multi-org/S5 smoke may still be manual) · **Assets** (P3) · **Guard** (P5 thin on `main`; **live Manager/Indexer on Guard host `tc3`**, app `tc1`, lab agent `tc5` — see [`multi-host-ops.md`](multi-host-ops.md); CI stays mock) · **SIEM P7 S0 locked; S1–S2 in progress** |
+| **Modules** | **Scan + Attach** · **Workspace S1–S5** · **Assets P3 S1–S5** · **Guard** thin (CI mock; live lab human) · **SIEM P7 S0–S5** (`SIEM_ENABLED` default false) |
 | **Build order (upsell-first)** | See **§1.3** — P2 **S1–S5** shipped; **P5 thin code on main** (mock CI; live host env human); GTM still parallel; rebrand must not gate attach; **P7 SIEM** = spek first, **never** as a Guard feature PR |
-| **Not v1 (unless P7 S3+ unlocked)** | Nested multi-project, org billing dual-wallet, Windows depth, SOAR, customer Wazuh dashboard, hard brand cut blocking attach revenue. **Full SIEM API/SPA** still **not** coded. |
+| **Not v1** | Nested multi-project, org billing dual-wallet, Windows depth, SOAR, customer Wazuh dashboard, hard brand cut blocking attach. SIEM stays **flag-off** on prod until explicit ops. |
 
 ### Positioning (one line)
 
@@ -96,7 +96,7 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 | **P0** | **Commercial lock** (user-led + docs) | Something sales can quote | One-pager; **SKU** tiers/prices; SID *patterns*; AM email kit; defaults §1 | Guard coding; finance CSV in repo | **Policy locked in git** (#245–#246). **GTM still open:** finance `service_id`, 10 CRM SIDs, named pilot, AM send, ops fulfill |
 | **P1** | **Scan Attach Loop** | Recurring reason to pay monthly | **Scheduled** domain/IP; new critical/high notify; **baseline diff**; **executive HTML**; credits on schedule; cap 10 | Org rewrite; Wazuh; full rebrand | **Shipped on `main` + production smoke closed** (S1–S5, edge DoD). **Wave B UX** (#271): Dashboard Jadwal CTAs, ScanDetail export labels, baseline empty copy — on tip `98756de` |
 | **P2** | **Workspace v1** | B2B multi-user | orgs, memberships, invites, org-scoped scans, personal credits, backfill; JWT `org_id`; WS membership AuthZ; **S5** schedule cap per-org | Nested projects; org wallet; Wazuh; per-org ApiKey | **S1–S5 shipped** (#267 S1–S4 → then #270 S5 @ `6b600fb`; tip with Wave B `98756de`). Cap **10 enabled / org** (`MAX_SCHEDULES_PER_ORG`). Spek D1–D6; edge Alembic **`add_workspace_orgs`**. **Residual:** multi-member S5 + login/UI multi-org smoke (manual) |
-| **P3** | **Asset registry (light)** | Multi-target tiers | Named assets; scan pack; tier limits | Full CMDB; IoT; PMS | **Draft spek on `main`** via **#282** — [`docs/specs/assets-v1.md`](specs/assets-v1.md) (S0). **No S1+ code** until explicit verb; open questions §11 before coding |
+| **P3** | **Asset registry (light)** | Multi-target tiers | Named assets; scan pack; SKU hard caps | Full CMDB; IoT; PMS | **S1–S5 on `main`** (#380 + pack/docs follow-up) — [`docs/specs/assets-v1.md`](specs/assets-v1.md). Hard cap Basic 1 / Pro 3 / Multi 10. SPA `/assets`. Residual: **edge Alembic + UI smoke** (human) |
 | **P4** | **Soft dual-brand** | Name trust | Sinexis strings, landing, SKU label | Hard cut / domain cutover blocking attach | **Shipped soft dual-brand on `main`** (#250); public host remains **`vs.appmedia.id`** (no hard cut) |
 | **P5** | **Guard MVP** (Wazuh thin) | Second upsell | Agent inventory, critical alerts, per-org enroll; spek [`guard-v1.md`](specs/guard-v1.md) | Full SIEM, SOAR, raw-log UI, per-tenant managers | **S0–S5 + Http on `main`** (#273–#275). E2E A+B **#299**. Host/guide: **#279** enroll, **#281** generic install, **#294** TOC. Mock default **CI** (`GUARD_MOCK_WAZUH=true`). **Live lab:** Manager+Indexer on **Guard host (`tc3`)**; app (`tc1`) `.env` `GUARD_MOCK_WAZUH=false` + `WAZUH_*` (compose must inject — do not assume `.env` auto-flows); agent VM **`tc5`**. **Do not** add Discover/cases on `/guard` |
 | **P6** | **Hospitality / pilot pack** | Beachhead A | Hotel runbooks, hybrid SLA | Logos-only builds | After attach pilot story works |
@@ -107,7 +107,7 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 1. **Human default** remains **GTM execution** (finance / AM / ops) + **edge apply this tip** (Alembic `drop_placeholder_admin`, SPA `/guide`, leftover ip/domain workers, AAB worker) + **Guard live lab** — parallel to eng.
 2. **Further Guard code** only on **explicit** implement verb; stay inside **thin DoD** (D1–D10 / non-goals). Prefer bugfixes from live smoke over new surfaces.
 3. **P7 SIEM** only after user **implement** + isolation questions; never as “improve /guard”.
-4. Other code: **bugfix** (attach/workspace/Guard/org cache), **P3 S1+** only after explicit verb + assets §11, docs/ops hygiene, Dependabot **only if CI green + user names the PR** (do not mass-merge #252–#266).
+4. Other code: **bugfix** (attach/workspace/assets/Guard/org cache), docs/ops hygiene, Dependabot **only if CI green + user names the PR** (do not mass-merge). **Do not** re-implement P3 S1–S5.
 5. Ordering still true: P1/P2 before Guard; P4 must not block attach revenue. P7 does **not** jump ahead of GTM/P3 unless user reorders.
 6. **Do not** re-implement P2 S1–S5, Wave B, Guard S1–S5/Http, guide TOC, or placeholder-seed cleanup “because docs were stale.” **Do not** ship SIEM-scope PRs under “Guard.”
 
@@ -145,7 +145,7 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 
 **Shipped for workspace (P2 S1–S5):** org tables + backfill migration `add_workspace_orgs`; org API; JWT switch; SPA OrgSwitcher + Workspace Settings; worker schedule rows include `organization_id`; **S5** `MAX_SCHEDULES_PER_ORG` on create/re-enable.
 
-**Still absent (later epics / not coded yet):** nested Project, org wallet, per-org ApiKey, **asset registry product** (P3 **draft spek only**), in-app subscription table, hard Sinexis domain cutover. **Guard thin code is on main** (not “spek only”); live lab residual is human.
+**Still absent (later epics / not coded yet):** nested Project, org wallet, per-org ApiKey, in-app subscription table, hard Sinexis domain cutover. **P3 assets** and **Guard thin** are on `main`; live Guard lab residual is human.
 
 **Commercial kit (docs, not in-app catalog):** `docs/commercial/sinexis-one-pager.md`, `sku-scan-secure-addon.md` (P0 lock), `am-wave1-email-id.md`.
 
@@ -196,11 +196,11 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 |------|--------|---------------------|
 | [`docs/specs/scan-attach-v1.md`](specs/scan-attach-v1.md) | **Implemented** (S1–S5 on main; keep as historical acceptance) | N/A for new attach features unless extending |
 | [`docs/specs/workspace-v1.md`](specs/workspace-v1.md) | **Approved** D1–D6; **S1–S5 implemented** on main (#267 + #270) | Residual smoke / bugs only with explicit verb |
-| [`docs/specs/assets-v1.md`](specs/assets-v1.md) | **Draft S0 on main** (#282) | P3 S1+ only after explicit implement + §11 |
+| [`docs/specs/assets-v1.md`](specs/assets-v1.md) | **S1–S5 implemented** (#380) | Residual smoke / bugs only |
 | [`docs/specs/guard-v1.md`](specs/guard-v1.md) | **S0–S5 + Http on `main`** (#273–#275); host/guide #279–#281 + #294 | Edge lab + secrets on deploy host only; no SIEM on `/guard` |
 | [`docs/specs/siem-v1.md`](specs/siem-v1.md) | **S0 draft** (this epic) | P7 S1+ only after explicit implement + §11 Q2 |
 
-**Agent:** wait for **explicit implement** even when spec exists. Prefer **draft spec** over silent coding for P3+; Guard S0 is the exception already written — still no silent S1.
+**Agent:** wait for **explicit implement** even when spec exists. Prefer **draft spec** over silent coding for new epics; P3 assets already shipped.
 
 ### Phase C1 / P1 — Scan Attach Loop (upsell engine) — **DONE**
 
@@ -226,11 +226,12 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 
 **Agent:** do **not** re-open full P2 implementation unless user asks for bugs / residual.
 
-### Phase C3 / P3 — Asset registry (light)
+### Phase C3 / P3 — Asset registry (light) — **S1–S5 DONE** (#380)
 
-- Assets belong to org (or user until org exists)
-- Labels + target type; bulk “run pack”
-- Enforce tier limits if SKU defined
+- Org-scoped `scan_assets`; SPA `/assets`; SKU **hard cap** Basic 1 / Pro 3 / Multi 10
+- 1:1 `scan_schedules.asset_id`; `POST /api/assets/{id}/schedules`; `GET /api/assets/pack`
+- **Residual (human):** edge Alembic `add_scan_assets` + `/assets` smoke — [`docs/scan-assets-ops.md`](scan-assets-ops.md)
+- **Out:** full CMDB, Guard merge, SIEM
 
 ### Phase D / P4 — Soft rebrand — **soft dual-brand DONE** (#250)
 
