@@ -12,7 +12,14 @@ from app.models.asset import ASSET_SKU_LIMITS, ScanAsset
 from app.models.organization import Organization
 from app.models.scan_schedule import ScanSchedule
 from app.models.user import User
-from app.schemas.asset import AssetCreate, AssetResponse, AssetScheduleCreate, AssetUpdate
+from app.schemas.asset import (
+    AssetCreate,
+    AssetPackItem,
+    AssetPackResponse,
+    AssetResponse,
+    AssetScheduleCreate,
+    AssetUpdate,
+)
 from app.schemas.schedule import ScheduleCreate, ScheduleResponse
 from app.services.organization import get_membership, require_membership, role_at_least
 from app.services.schedule import ScheduleService
@@ -152,6 +159,29 @@ class AssetService:
             raise HTTPException(status_code=403, detail="Insufficient organization role")
         await self.db.delete(asset)
         await self.db.commit()
+
+    async def pack(self, user: User, organization_id: UUID | None) -> AssetPackResponse:
+        if organization_id is None:
+            raise HTTPException(status_code=400, detail="Active organization required")
+        await require_membership(self.db, organization_id, user.id, min_role="viewer")
+        org = await self._org(organization_id)
+        items = await self.list_assets(user, organization_id)
+        return AssetPackResponse(
+            organization_id=organization_id,
+            sku=org.sku,
+            sku_limit=sku_asset_limit(org.sku),
+            count=len(items),
+            assets=[
+                AssetPackItem(
+                    id=a.id,
+                    name=a.name,
+                    scan_type=a.scan_type,
+                    target=a.target,
+                    schedule_id=a.schedule_id,
+                )
+                for a in items
+            ],
+        )
 
     async def create_schedule(
         self,

@@ -5,7 +5,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.user import User
-from app.schemas.asset import AssetCreate, AssetResponse, AssetScheduleCreate, AssetUpdate
+from app.schemas.asset import (
+    AssetCreate,
+    AssetPackResponse,
+    AssetResponse,
+    AssetScheduleCreate,
+    AssetUpdate,
+)
 from app.schemas.schedule import ScheduleResponse
 from app.services.asset import AssetService
 from app.services.auth import get_active_org_id, get_current_user
@@ -30,6 +36,15 @@ async def create_asset(
     db: AsyncSession = Depends(get_db),
 ) -> AssetResponse:
     return await AssetService(db).create(current_user, get_active_org_id(request), body)
+
+
+@router.get("/pack", response_model=AssetPackResponse)
+async def asset_pack(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> AssetPackResponse:
+    return await AssetService(db).pack(current_user, get_active_org_id(request))
 
 
 @router.get("/{asset_id}", response_model=AssetResponse)
