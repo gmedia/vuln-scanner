@@ -17,6 +17,7 @@ vi.mock("@/api/assets", async () => {
     createAsset: (...args: unknown[]) => mockCreate(...args),
     deleteAsset: vi.fn(),
     createAssetSchedule: vi.fn(),
+    fetchAssetPack: vi.fn(),
   };
 });
 

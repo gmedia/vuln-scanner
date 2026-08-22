@@ -16,5 +16,6 @@
   "skuLabel": "SKU {{sku}} — {{count}} / {{limit}}",
   "cadenceWeekly": "Mingguan",
   "cadenceMonthly": "Bulanan",
-  "confirmDelete": "Hapus aset ini?"
+  "confirmDelete": "Hapus aset ini?",
+  "pack": "Unduh pack JSON"
 }
