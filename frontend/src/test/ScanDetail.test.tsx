@@ -190,6 +190,16 @@ describe("ScanDetail", () => {
   });
 
   describe("loaded state", () => {
+    it("links attach schedule for IP scans", () => {
+      mockUseScanDetailReturn({ data: baseScan as any });
+      renderPage();
+      const attach = screen.getByTestId("attach-schedule-button");
+      expect(attach).toHaveAttribute(
+        "href",
+        "/schedules?target=192.168.1.1&scan_type=ip",
+      );
+    });
+
     it("renders Scan details heading", () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
