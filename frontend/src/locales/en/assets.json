@@ -16,5 +16,6 @@
   "skuLabel": "SKU {{sku}} — {{count}} / {{limit}}",
   "cadenceWeekly": "Weekly",
   "cadenceMonthly": "Monthly",
-  "confirmDelete": "Delete this asset?"
+  "confirmDelete": "Delete this asset?",
+  "pack": "Download pack JSON"
 }

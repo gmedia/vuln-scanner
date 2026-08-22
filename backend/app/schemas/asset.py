@@ -62,6 +62,22 @@ class AssetScheduleCreate(BaseModel):
     name: str | None = Field(default=None, max_length=255)
 
 
+class AssetPackItem(BaseModel):
+    id: uuid.UUID
+    name: str
+    scan_type: str
+    target: str
+    schedule_id: uuid.UUID | None = None
+
+
+class AssetPackResponse(BaseModel):
+    organization_id: uuid.UUID
+    sku: str | None
+    sku_limit: int
+    count: int
+    assets: list[AssetPackItem]
+
+
 class AssetResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

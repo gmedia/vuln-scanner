@@ -190,5 +190,10 @@ async def test_schedule_one_to_one(db_session: AsyncSession, ctx, mock_celery):
                 json={"cadence": "monthly"},
             )
             assert s2.status_code == 409
+            pack = await client.get("/api/assets/pack", headers=_auth(member, org.id))
+            assert pack.status_code == 200, pack.text
+            body = pack.json()
+            assert body["count"] == 1
+            assert body["assets"][0]["schedule_id"] == s1.json()["id"]
     finally:
         app.dependency_overrides.clear()

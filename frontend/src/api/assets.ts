@@ -47,6 +47,25 @@ export async function deleteAsset(id: string): Promise<void> {
   await api.delete(`/api/assets/${id}`);
 }
 
+export interface AssetPack {
+  organization_id: string;
+  sku: string | null;
+  sku_limit: number;
+  count: number;
+  assets: Array<{
+    id: string;
+    name: string;
+    scan_type: string;
+    target: string;
+    schedule_id: string | null;
+  }>;
+}
+
+export async function fetchAssetPack(): Promise<AssetPack> {
+  const { data } = await api.get<AssetPack>("/api/assets/pack");
+  return data;
+}
+
 export async function createAssetSchedule(
   id: string,
   payload: {

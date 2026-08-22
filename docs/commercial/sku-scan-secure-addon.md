@@ -34,7 +34,16 @@
 | **E3** | Cap 10 | **1 schedule ≈ 1 target** v1; Multi-asset ≤ **10** enabled schedules |
 | **E4** | Public repo | No customer SID/domain/PII/SSH in git |
 
-**Still open (ops execution, not policy):** pick the concrete **10 CRM SIDs** and **named pilot #1** in private CRM; create finance **service_id** records in billing system.
+**Still open (ops execution, not policy — never put SIDs/PII in git):**
+
+| Human item | Owner | Done when |
+|------------|--------|-----------|
+| Finance **three `service_id`** rows (Basic / Pro / Multi) — **do not** silent-bundle into VPS | Finance | Rows exist in billing; AM can quote |
+| AM **10 wave-1 SIDs** matching §5 patterns | AM | Private CRM list only |
+| Named **pilot #1** (multi-service / VPS+domain) | AM + ops | CRM name + 1 mo sponsored noted |
+| AM **sends** wave-1 using [`am-wave1-email-id.md`](am-wave1-email-id.md) | AM | CRM log of send date |
+| Ops **fulfill**: credits + `/assets` + 1:1 schedule | Ops | First executive HTML delivered |
+| Confirm live `pricing` domain/IP before quote wave | Ops | Screenshot/note in CRM (not git) |
 
 ---
 
@@ -54,7 +63,7 @@ Bundle with colo/VPS as **add-on line item**; do not reprice rack.
 |------|-----|---------|---------|--------|--------------|------------------------|
 | **Basic** | Single VPS or one public IP/domain | **1** domain **or** **1** IP | Monthly | New critical/high summary + job link | **10** | **300.000** |
 | **Pro** | Small corporate / busy VPS | **Up to 3** (mix domain/IP) | Weekly **or** monthly at signup | Full **baseline diff** + executive HTML | **24** | **650.000** |
-| **Multi-asset** | Multi-service / hotel group / multi-IP colo | **Up to 10** (P3 registry later; labeled list OK) | Weekly | Multi-target pack + executive export; hybrid review optional | **60** | **2.000.000** |
+| **Multi-asset** | Multi-service / hotel group / multi-IP colo | **Up to 10** named assets (`/assets` hard cap) | Weekly | Pack JSON (`GET /api/assets/pack`) + executive export; hybrid review optional | **60** | **2.000.000** |
 
 **Out of tier v1:** full SIEM, Windows depth, org wallet, unlimited targets, 24/7 SOC, Guard.
 
@@ -72,18 +81,19 @@ Bundle with colo/VPS as **add-on line item**; do not reprice rack.
 | Notify on **new** critical/high | Yes (simple) | Yes | Yes |
 | Baseline diff detail | Summary | Full | Full |
 | Executive HTML | One-pager | Full | Full + multi-target pack |
-| Named asset registry | Manual labels | Light | **P3** later |
+| Named asset registry | **Hard cap 1** (`/assets`) | **Hard cap 3** | **Hard cap 10** (#380) |
 | Workspace multi-user | No (P2 on pain) | No | Preferred after P2 |
 | Guard / Wazuh | No | No | Separate SKU later (P5 **parked**) |
 
 ### Fulfillment checklist (ops after sold)
 
 1. Top up **credits** for the period (match tier bundle A4, or pilot sponsored grant).
-2. Create **1…N schedules** (domain/IP, weekly/monthly) — hard cap **10 enabled**/user.
-3. Confirm **notify email** + beat/workers healthy (`docs/scan-schedules-ops.md`).
-4. After first completed run: buyer gets **executive HTML** + diff story (Bahasa).
-5. Renew in **CRM** (AM); no in-app subscription v1.
-6. Pilot #1 only: optional **human review** of critical findings 1×/month.
+2. Set org **`sku`** (`basic` / `pro` / `multi`) so `/assets` hard cap matches the sold tier.
+3. Create **named assets** on SPA `/assets`, then **Create schedule** (1:1) — enabled schedules still cap **10 / org**.
+4. Confirm **notify email** + beat/workers healthy (`docs/scan-schedules-ops.md`, `docs/scan-assets-ops.md`).
+5. After first completed run: buyer gets **executive HTML** + diff story (Bahasa). Optional `GET /api/assets/pack` JSON for Multi-asset.
+6. Renew in **CRM** (AM); no in-app subscription v1.
+7. Pilot #1 only: optional **human review** of critical findings 1×/month.
 
 ---
 

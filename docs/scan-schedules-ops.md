@@ -9,7 +9,7 @@ Short ops reference for scheduled scans (Scan Attach). No secrets; set values vi
 | **`celery_beat`** | Fires `schedules.run_due` every **5 minutes** (`workers/celery_app.py`). Without beat, schedules never enqueue. |
 | **`worker_ip` / `worker_domain`** (queues `ip_scan`, `domain_scan`) | Beat routes due work onto `ip_scan`; domain tasks still need a domain worker. Mobile is **not** scheduled in v1. |
 | **backend** | CRUD `/api/schedules`, credits, export. |
-| **DB migration** | Alembic head includes `scan_schedules` (incl. `last_error`). |
+| **DB migration** | Alembic head includes `scan_schedules` (incl. `last_error`) and, after P3, **`add_scan_assets`**. Named assets: [`scan-assets-ops.md`](scan-assets-ops.md). |
 
 ## Coding host vs production (edge)
 
