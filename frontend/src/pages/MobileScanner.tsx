@@ -17,7 +17,8 @@ function MobileScanner() {
   const hasResults = scanData?.status === "completed" && scanData.result_summary;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(16rem,0.8fr)]">
+      <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Link to="/dashboard" className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
           <ArrowLeft className="h-5 w-5" />
@@ -38,24 +39,6 @@ function MobileScanner() {
           <MobileUpload />
         </CardContent>
       </Card>
-
-      {!isScanning && !hasResults && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm tracking-wide">
-              What this scan covers
-            </CardTitle>
-          </CardHeader>
-          <CardContent data-testid="scan-coverage">
-            <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-              <li>Manifest and permission analysis</li>
-              <li>Exported component detection</li>
-              <li>Hardcoded secret scanning</li>
-              <li>Platform-specific binary checks (.apk / .aab / .ipa)</li>
-            </ul>
-          </CardContent>
-        </Card>
-      )}
 
       {isScanning && (
         <Card>
@@ -138,6 +121,24 @@ function MobileScanner() {
         </Card>
         );
       })()}
+      </div>
+      {!isScanning && !hasResults && (
+        <Card className="h-fit">
+          <CardHeader>
+            <CardTitle className="text-sm tracking-wide">
+              What this scan covers
+            </CardTitle>
+          </CardHeader>
+          <CardContent data-testid="scan-coverage">
+            <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+              <li>Manifest and permission analysis</li>
+              <li>Exported component detection</li>
+              <li>Hardcoded secret scanning</li>
+              <li>Platform-specific binary checks (.apk / .aab / .ipa)</li>
+            </ul>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
