@@ -194,6 +194,9 @@ test.describe("Admin — User Detail", () => {
     await descriptionInput.fill("e2e test credit");
 
     await page.locator("button:has-text('Sesuaikan kredit')").click();
+    await page
+      .locator("button:has-text('Konfirmasi perubahan kredit')")
+      .click();
 
     const feedback = page.locator(
       "text=/Kredit berhasil diperbarui|Gagal memperbarui kredit/",
