@@ -54,7 +54,7 @@ function AdminUsers() {
   const totalPages = Math.ceil((data?.total ?? 0) / PAGE_SIZE);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Users className="h-6 w-6 text-primary" />
         <div>
