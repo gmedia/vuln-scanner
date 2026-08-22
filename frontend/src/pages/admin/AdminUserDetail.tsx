@@ -43,6 +43,7 @@ function AdminUserDetail() {
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [copied, setCopied] = useState(false);
+  const [confirmAdjust, setConfirmAdjust] = useState(false);
 
   const { data: user, isLoading } = useQuery({
     queryKey: ["admin-user", id],
@@ -61,6 +62,7 @@ function AdminUserDetail() {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       setAmount("");
       setDescription("");
+      setConfirmAdjust(false);
     },
   });
 
@@ -71,6 +73,10 @@ function AdminUserDetail() {
   const handleSubmit = () => {
     const numAmount = parseInt(amount, 10);
     if (!numAmount || numAmount === 0) return;
+    if (!confirmAdjust) {
+      setConfirmAdjust(true);
+      return;
+    }
     updateCredits.mutate();
   };
 
@@ -86,7 +92,7 @@ function AdminUserDetail() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Button
           variant="ghost"
@@ -266,7 +272,10 @@ function AdminUserDetail() {
                     type="number"
                     placeholder={t("amountPlaceholder")}
                     value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    onChange={(e) => {
+                      setAmount(e.target.value);
+                      setConfirmAdjust(false);
+                    }}
                     className="font-mono"
                   />
                 </div>
@@ -283,22 +292,37 @@ function AdminUserDetail() {
                   />
                 </div>
               </div>
-              <Button
-                onClick={handleSubmit}
-                disabled={
-                  !amount || parseInt(amount, 10) === 0 || updateCredits.isPending
-                }
-                className="text-xs"
-              >
-                {updateCredits.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                    {t("processing")}
-                  </>
-                ) : (
-                  t("adjustCredits")
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  onClick={handleSubmit}
+                  disabled={
+                    !amount || parseInt(amount, 10) === 0 || updateCredits.isPending
+                  }
+                  className="text-xs"
+                >
+                  {updateCredits.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                      {t("processing")}
+                    </>
+                  ) : confirmAdjust ? (
+                    t("confirmAdjust")
+                  ) : (
+                    t("adjustCredits")
+                  )}
+                </Button>
+                {confirmAdjust && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => setConfirmAdjust(false)}
+                  >
+                    {t("cancel")}
+                  </Button>
                 )}
-              </Button>
+              </div>
               {updateCredits.isError && (
                 <div className="rounded-md border border-red-600/30 bg-red-600/10 px-3 py-2">
                   <p className="text-xs text-red-400">
