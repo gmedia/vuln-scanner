@@ -73,7 +73,7 @@ function Profile() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6 2xl:max-w-5xl">
       <div className="flex items-center gap-3">
         <User className="h-6 w-6 text-primary" />
         <div>
@@ -153,7 +153,8 @@ function Profile() {
             </div>
             <Button
               type="submit"
-              className="w-full text-sm sm:w-auto"
+              className="w-full sm:w-auto"
+              size="lg"
               disabled={isUpdatingProfile || profileCooldown.cooldown > 0}
             >
               {profileCooldown.cooldown > 0 ? (
@@ -238,7 +239,8 @@ function Profile() {
             </div>
             <Button
               type="submit"
-              className="w-full text-sm sm:w-auto"
+              className="w-full sm:w-auto"
+              size="lg"
               disabled={isChangingPassword || passwordCooldown.cooldown > 0}
             >
               {passwordCooldown.cooldown > 0 ? (
