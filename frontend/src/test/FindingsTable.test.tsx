@@ -51,9 +51,9 @@ describe("FindingsTable", () => {
       mockFinding({ id: "3", title: "Open Redirect", severity: "medium", cvss_score: 5.0 }),
     ];
     render(<FindingsTable findings={findings} isLoading={false} />);
-    expect(screen.getByText("SQL Injection")).toBeInTheDocument();
-    expect(screen.getByText("XSS Attack")).toBeInTheDocument();
-    expect(screen.getByText("Open Redirect")).toBeInTheDocument();
+    expect(screen.getAllByText("SQL Injection").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("XSS Attack").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Open Redirect").length).toBeGreaterThan(0);
   });
 
   it("shows 'No matching findings' when search filters everything out", async () => {
@@ -65,7 +65,7 @@ describe("FindingsTable", () => {
     render(<FindingsTable findings={findings} isLoading={false} />);
     const searchInput = screen.getByPlaceholderText("Filter findings...");
     await user.type(searchInput, "zzz_nonexistent_pattern_zzz");
-    expect(screen.getByText("No matching findings")).toBeInTheDocument();
+    expect(screen.getAllByText("No matching findings").length).toBeGreaterThan(0);
   });
 
   it("filters rows by severity checkbox in the dropdown", async () => {
@@ -79,7 +79,7 @@ describe("FindingsTable", () => {
     await user.click(screen.getByRole("button", { name: "Filter by severity" }));
     await user.click(screen.getByRole("menuitemcheckbox", { name: "high" }));
     expect(screen.queryByText("SQL Injection")).not.toBeInTheDocument();
-    expect(screen.getByText("XSS Attack")).toBeInTheDocument();
+    expect(screen.getAllByText("XSS Attack").length).toBeGreaterThan(0);
     expect(screen.queryByText("Open Redirect")).not.toBeInTheDocument();
   });
 
@@ -89,8 +89,8 @@ describe("FindingsTable", () => {
       mockFinding({ id: "2", title: "Info Issue", severity: "info", cvss_score: 0 }),
     ];
     render(<FindingsTable findings={findings} isLoading={false} />);
-    expect(screen.getByText("critical")).toBeInTheDocument();
-    expect(screen.getByText("info")).toBeInTheDocument();
+    expect(screen.getAllByText("critical").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("info").length).toBeGreaterThan(0);
   });
 
   it("expands detail directly under the clicked row, not below the table", async () => {
@@ -113,14 +113,14 @@ describe("FindingsTable", () => {
     ];
     render(<FindingsTable findings={findings} isLoading={false} />);
 
-    await user.click(screen.getByText("XSS Attack"));
+    await user.click(screen.getAllByText("XSS Attack")[0]);
 
     const detailRow = screen.getByTestId("finding-detail-row-2");
     expect(detailRow).toBeInTheDocument();
     expect(detailRow.querySelector("td")).toHaveAttribute("colspan", "7");
     expect(
-      screen.getByText("Reflected XSS in search"),
-    ).toBeInTheDocument();
+      screen.getAllByText("Reflected XSS in search").length,
+    ).toBeGreaterThan(0);
 
     const tbody = detailRow.closest("tbody");
     expect(tbody).not.toBeNull();
@@ -129,7 +129,7 @@ describe("FindingsTable", () => {
     expect(summaryIdx).toBeGreaterThanOrEqual(0);
     expect(rows[summaryIdx + 1]).toBe(detailRow);
 
-    await user.click(screen.getByText("XSS Attack"));
+    await user.click(screen.getAllByText("XSS Attack")[0]);
     expect(screen.queryByTestId("finding-detail-row-2")).not.toBeInTheDocument();
   });
 });

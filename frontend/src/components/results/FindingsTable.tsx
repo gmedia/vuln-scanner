@@ -197,7 +197,66 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
         </DropdownMenu>
       </div>
 
-      <div className="rounded-lg border border-border">
+      <div className="space-y-2 md:hidden">
+        {sorted.length === 0 ? (
+          <p className="p-8 text-center text-sm text-muted-foreground">
+            {t("noMatchingFindings")}
+          </p>
+        ) : (
+          sorted.map((finding) => {
+            const isExpanded = expandedId === finding.id;
+            return (
+              <div
+                key={finding.id}
+                className="rounded-lg border border-border bg-card p-3"
+              >
+                <button
+                  type="button"
+                  className="flex w-full min-h-11 items-start gap-2 text-left"
+                  onClick={() =>
+                    setExpandedId((prev) =>
+                      prev === finding.id ? null : finding.id,
+                    )
+                  }
+                >
+                  <Badge
+                    variant={
+                      finding.severity as
+                        | "critical"
+                        | "high"
+                        | "medium"
+                        | "low"
+                        | "info"
+                    }
+                    className="mt-0.5 shrink-0 text-[10px] capitalize"
+                  >
+                    {finding.severity}
+                  </Badge>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs font-medium text-foreground">
+                      {finding.title}
+                    </span>
+                    <span className="mt-0.5 block break-all text-[11px] text-muted-foreground">
+                      {finding.category || "-"}
+                    </span>
+                  </span>
+                  {isExpanded ? (
+                    <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  )}
+                </button>
+                {isExpanded ? (
+                  <div className="mt-3 border-t border-border pt-3">
+                    <FindingDetail finding={finding} />
+                  </div>
+                ) : null}
+              </div>
+            );
+          })
+        )}
+      </div>
+      <div className="hidden rounded-lg border border-border md:block">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
