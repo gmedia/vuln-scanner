@@ -451,7 +451,7 @@ export default function Siem() {
                   <TableBody>
                     {events.length === 0 && (
                       <TableRow data-testid="siem-events-empty">
-                        <TableCell colSpan={4} className="py-4 text-muted-foreground">
+                        <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
                           {t("eventsEmpty")}
                         </TableCell>
                       </TableRow>
