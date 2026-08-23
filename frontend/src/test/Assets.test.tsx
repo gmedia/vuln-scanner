@@ -45,6 +45,12 @@ describe("Assets page", () => {
     expect(mapAssetError("Asset limit for basic tier is 1")).toBe("limit");
   });
 
+  it("shows an empty state with a CTA", async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId("assets-empty")).toBeInTheDocument());
+    expect(screen.getByTestId("assets-empty-cta")).toBeInTheDocument();
+  });
+
   it("creates an asset", async () => {
     mockCreate.mockResolvedValue({
       id: "a1",
