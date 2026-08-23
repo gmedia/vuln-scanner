@@ -222,7 +222,7 @@ function GuideDesktopToc({
                     <SidebarMenuButton
                       asChild
                       isActive={id === activeId}
-                      className="h-auto whitespace-normal py-1.5"
+                      className="h-auto min-h-8 whitespace-normal py-1.5 text-left leading-snug"
                     >
                       <a
                         href={`#${id}`}
@@ -309,7 +309,7 @@ function UserGuide() {
 
       <div className="lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-8">
         <aside data-testid="guide-desktop-toc" className="hidden lg:block">
-          <div className="sticky top-16 max-h-[calc(100svh-5rem)] overflow-y-auto">
+          <div className="sticky top-16 max-h-[calc(100svh-5rem)] overflow-y-auto overscroll-contain pr-1">
             <GuideDesktopToc activeId={activeId} t={t} />
           </div>
         </aside>
