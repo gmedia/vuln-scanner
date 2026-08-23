@@ -75,7 +75,7 @@ function NotFound() {
                 size="lg"
                 className="border-border text-foreground"
               >
-                <Link to="/login">{ta("signInTitle")}</Link>
+                <Link to="/login">{ta("signInCta")}</Link>
               </Button>
             </>
           )}

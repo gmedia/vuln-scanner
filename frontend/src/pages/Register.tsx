@@ -263,7 +263,7 @@ function Register() {
           <p className="mt-4 text-center text-sm text-foreground/80">
             {t("alreadyHaveAccount")}{" "}
             <Link to="/login" className={AUTH_SECONDARY_LINK}>
-              {t("signInTitle")}
+              {t("signInCta")}
             </Link>
           </p>
         </CardContent>
