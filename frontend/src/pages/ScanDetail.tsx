@@ -148,7 +148,7 @@ function ScanDetail() {
 
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           {(scan.scan_type === "ip" || scan.scan_type === "domain") && (
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" size="lg">
               <Link
                 to={`/schedules?target=${encodeURIComponent(scan.target)}&scan_type=${scan.scan_type}`}
                 data-testid="attach-schedule-button"
@@ -157,7 +157,7 @@ function ScanDetail() {
               </Link>
             </Button>
           )}
-          <Button asChild>
+          <Button asChild size="lg">
             <Link to={reScanTo} data-testid="rescan-button">
               <RefreshCw className="mr-1 h-3.5 w-3.5" />
               {t("rescan")}
@@ -222,8 +222,8 @@ function ScanDetail() {
             </CardContent>
           </Card>
 
-          <div className="grid gap-5 lg:grid-cols-3 2xl:grid-cols-2">
-            <Card className="lg:col-span-1 2xl:col-span-1">
+          <div className="grid gap-5 lg:grid-cols-3">
+            <Card className="lg:col-span-1">
               <CardHeader className="py-3">
                 <CardTitle className="text-sm tracking-wide">{t("severity")}</CardTitle>
                 <CardDescription className="text-xs">
@@ -235,7 +235,7 @@ function ScanDetail() {
               </CardContent>
             </Card>
 
-            <Card className="lg:col-span-2 2xl:col-span-1">
+            <Card className="lg:col-span-2">
               <CardHeader className="py-3">
                 <CardTitle className="text-sm tracking-wide">{t("scanInfo")}</CardTitle>
               </CardHeader>
