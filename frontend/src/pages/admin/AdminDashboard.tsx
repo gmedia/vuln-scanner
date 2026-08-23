@@ -29,7 +29,8 @@ function AdminDashboard() {
   });
 
   const kpiChartConfig = {
-    value: { label: t("chartCount"), color: "hsl(var(--primary))" },
+    counts: { label: t("chartCount"), color: "hsl(142 71% 45%)" },
+    credits: { label: t("chartCredits"), color: "hsl(217 91% 60%)" },
   } satisfies ChartConfig;
 
   const countCards = [
@@ -177,16 +178,28 @@ function AdminDashboard() {
               >
                 <BarChart
                   data={[
-                    { name: t("chartUsers"), value: stats?.total_users ?? 0 },
-                    { name: t("chartScans"), value: stats?.total_scans ?? 0 },
-                    { name: t("chartFindings"), value: stats?.total_findings ?? 0 },
+                    {
+                      name: t("chartUsers"),
+                      counts: stats?.total_users ?? 0,
+                    },
+                    {
+                      name: t("chartScans"),
+                      counts: stats?.total_scans ?? 0,
+                    },
+                    {
+                      name: t("chartFindings"),
+                      counts: stats?.total_findings ?? 0,
+                    },
                     {
                       name: t("chartCreditsIn"),
-                      value: stats?.credits_distributed ?? 0,
+                      credits: stats?.credits_distributed ?? 0,
                     },
-                    { name: t("chartCreditsUsed"), value: stats?.credits_used ?? 0 },
+                    {
+                      name: t("chartCreditsUsed"),
+                      credits: stats?.credits_used ?? 0,
+                    },
                   ]}
-                  margin={{ left: 8, right: 8, top: 8, bottom: 0 }}
+                  margin={{ left: 12, right: 12, top: 8, bottom: 0 }}
                 >
                   <CartesianGrid vertical={false} />
                   <XAxis
@@ -196,9 +209,18 @@ function AdminDashboard() {
                     tickMargin={8}
                   />
                   <YAxis
+                    yAxisId="counts"
                     tickLine={false}
                     axisLine={false}
-                    width={48}
+                    width={56}
+                    tickFormatter={(n) => Number(n).toLocaleString()}
+                  />
+                  <YAxis
+                    yAxisId="credits"
+                    orientation="right"
+                    tickLine={false}
+                    axisLine={false}
+                    width={56}
                     tickFormatter={(n) => Number(n).toLocaleString()}
                   />
                   <ChartTooltip
@@ -206,8 +228,15 @@ function AdminDashboard() {
                     content={<ChartTooltipContent hideLabel />}
                   />
                   <Bar
-                    dataKey="value"
-                    fill="var(--color-value)"
+                    yAxisId="counts"
+                    dataKey="counts"
+                    fill="var(--color-counts)"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    yAxisId="credits"
+                    dataKey="credits"
+                    fill="var(--color-credits)"
                     radius={[4, 4, 0, 0]}
                   />
                 </BarChart>

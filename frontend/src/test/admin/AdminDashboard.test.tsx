@@ -94,7 +94,7 @@ describe("AdminDashboard", () => {
 
     renderPage();
     expect(screen.getByText("Total findings")).toBeInTheDocument();
-    expect(screen.getByText("12,000")).toBeInTheDocument();
+    expect(screen.getAllByText("12,000").length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders Credits distributed stat card when loaded", () => {
