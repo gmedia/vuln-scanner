@@ -30,6 +30,12 @@ describe("AppShell", () => {
     expect(screen.getByRole("main")).toBeInTheDocument();
   });
 
+  it("uses a wide content wrap for 2K layouts", () => {
+    renderShell();
+    const wrap = document.querySelector(".max-w-\\[90rem\\]");
+    expect(wrap).toBeInstanceOf(HTMLElement);
+  });
+
   it("renders sidebar toggle button with Menu icon", () => {
     renderShell();
     const toggles = screen.getAllByRole("button", {
