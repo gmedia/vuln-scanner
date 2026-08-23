@@ -624,19 +624,19 @@ export default function Guard() {
                 </div>
               ) : (
                 <div>
-                  <Table className="min-w-[36rem]">
+                  <Table className="min-w-[48rem]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="min-w-[10rem]">
+                        <TableHead className="min-w-[18rem]">
                           {t("colName")}
                         </TableHead>
-                        <TableHead className="min-w-[6.5rem]">
+                        <TableHead className="min-w-[7rem]">
                           {t("colStatus")}
                         </TableHead>
-                        <TableHead className="min-w-[9.5rem]">
+                        <TableHead className="min-w-[11rem]">
                           {t("colLastSeen")}
                         </TableHead>
-                        <TableHead className="min-w-[5rem]">
+                        <TableHead className="min-w-[6rem]">
                           {t("colVersion")}
                         </TableHead>
                       </TableRow>
@@ -645,7 +645,7 @@ export default function Guard() {
                       {agentsQ.data?.map((a) => (
                         <TableRow key={a.id}>
                           <TableCell
-                            className="min-w-[16rem] max-w-[min(40rem,50vw)] truncate font-mono text-xs font-medium"
+                            className="min-w-[18rem] max-w-[min(48rem,55vw)] truncate font-mono text-xs font-medium"
                             title={a.name}
                           >
                             {a.name}
