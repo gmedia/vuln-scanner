@@ -32,7 +32,9 @@ describe("AppShell", () => {
 
   it("uses a wide content wrap for 2K layouts", () => {
     renderShell();
-    const wrap = document.querySelector(".max-w-\\[90rem\\]");
+    const wrap = Array.from(document.querySelectorAll("div")).find((el) =>
+      el.className.includes("2xl:max-w-[120rem]"),
+    );
     expect(wrap).toBeInstanceOf(HTMLElement);
   });
 

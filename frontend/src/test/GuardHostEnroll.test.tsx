@@ -193,7 +193,7 @@ describe("Guard host enroll UI", () => {
     const agentsCard = screen.getByTestId("guard-agents");
     const agentTable = agentsCard.querySelector("table");
     expect(agentTable).toBeTruthy();
-    expect(agentTable?.className ?? "").toContain("min-w-[36rem]");
+    expect(agentTable?.className ?? "").toContain("min-w-[48rem]");
     expect(agentTable?.className ?? "").not.toContain("table-fixed");
   });
 });

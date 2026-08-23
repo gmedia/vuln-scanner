@@ -331,6 +331,7 @@ export default function Siem() {
               <TabsTrigger value="cases">{t("tabCases")}</TabsTrigger>
             </TabsList>
             <TabsContent value="search" className="space-y-4">
+          <div className="grid gap-4 2xl:grid-cols-[minmax(0,1.4fr)_minmax(20rem,0.8fr)] 2xl:items-start">
           <Card data-testid="siem-search">
             <CardHeader>
               <CardTitle>{t("tabSearch")}</CardTitle>
@@ -583,6 +584,7 @@ export default function Siem() {
               </CardContent>
             </Card>
           )}
+          </div>
 
             </TabsContent>
             <TabsContent value="cases">

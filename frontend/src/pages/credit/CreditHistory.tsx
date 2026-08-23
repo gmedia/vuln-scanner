@@ -343,8 +343,10 @@ function TransactionRow({ item }: { item: CreditLogItem }) {
       </TableCell>
       <TableCell className="text-right">
         <span
-          className={`font-mono text-xs font-bold tabular-nums ${
-            isPositive ? "text-green-400" : "text-red-400"
+          className={`inline-flex min-w-[4.5rem] items-center justify-end rounded-full px-2.5 py-0.5 font-mono text-xs font-bold tabular-nums ${
+            isPositive
+              ? "bg-green-600/15 text-green-700 dark:text-green-300"
+              : "bg-red-600/15 text-red-700 dark:text-red-300"
           }`}
         >
           {isPositive ? "+" : ""}

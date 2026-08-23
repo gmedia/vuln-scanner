@@ -448,7 +448,7 @@ function Schedules() {
             </div>
           )}
           {!isLoading && data && data.length > 0 && (
-            <Table className="text-sm">
+            <Table className="min-w-[40rem] text-sm">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="text-[10px] uppercase tracking-wider">

@@ -173,8 +173,8 @@ function AdminDashboard() {
             <div data-testid="admin-kpi-chart">
               <ChartContainer
                 config={kpiChartConfig}
-                className="aspect-auto h-[360px] w-full min-h-[280px]"
-                initialDimension={{ width: 1280, height: 360 }}
+                className="aspect-auto h-[420px] w-full min-h-[320px] 2xl:h-[480px]"
+                initialDimension={{ width: 1600, height: 420 }}
               >
                 <BarChart
                   data={[
@@ -258,7 +258,7 @@ function AdminDashboard() {
               <Link
                 key={link.to}
                 to={link.to}
-                className="group flex items-center gap-3 rounded-md border border-border bg-secondary/40 px-4 py-3 transition-colors hover:border-primary/40 hover:bg-secondary"
+                className="group flex min-h-16 items-center gap-3 rounded-md border border-border bg-secondary/40 px-5 py-4 transition-colors hover:border-primary/40 hover:bg-secondary"
               >
                 <div className="rounded-full bg-primary/10 p-2">
                   <link.icon className="h-4 w-4 text-primary" />

@@ -301,6 +301,7 @@ function WorkspaceSettings() {
             )}
             <Button
               type="submit"
+              size="lg"
               data-testid="create-org-submit"
               disabled={createOrgMut.isPending}
             >
@@ -433,6 +434,7 @@ function WorkspaceSettings() {
                 )}
                 <Button
                   type="submit"
+                  size="lg"
                   data-testid="invite-submit"
                   disabled={inviteMut.isPending}
                 >
