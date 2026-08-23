@@ -25,7 +25,7 @@ function LanguageSwitcher({ className }: { className?: string }) {
           data-testid={`locale-${locale}`}
           aria-pressed={current === locale}
           className={cn(
-            "px-2 py-1 min-h-8",
+            "min-h-11 min-w-11 px-2.5 py-1",
             current === locale
               ? "bg-muted text-foreground"
               : "text-muted-foreground hover:text-foreground",
