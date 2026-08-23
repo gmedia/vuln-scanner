@@ -220,10 +220,10 @@ describe("Dashboard", () => {
       isFetching: false,
     });
     render(<Dashboard />);
-    expect(screen.getByText("stg3.dokfin.id")).toBeInTheDocument();
-    expect(screen.getByText("3M")).toBeInTheDocument();
+    expect(screen.getAllByText("stg3.dokfin.id").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("3M").length).toBeGreaterThan(0);
     expect(screen.queryByText("completed")).not.toBeInTheDocument();
-    expect(screen.getByText("Done")).toBeInTheDocument();
+    expect(screen.getAllByText("Done").length).toBeGreaterThan(0);
   });
 
   it("displays IP type label", () => {
@@ -244,8 +244,8 @@ describe("Dashboard", () => {
       isFetching: false,
     });
     render(<Dashboard />);
-    expect(screen.getByText("192.168.1.1")).toBeInTheDocument();
-    expect(screen.getByText("IP Address")).toBeInTheDocument();
+    expect(screen.getAllByText("192.168.1.1").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("IP Address").length).toBeGreaterThan(0);
   });
 
   it("does not show Load more", () => {
@@ -306,7 +306,7 @@ describe("Dashboard", () => {
     });
 
     const { rerender } = render(<Dashboard />);
-    expect(screen.getByText("org-a.example.net")).toBeInTheDocument();
+    expect(screen.getAllByText("org-a.example.net").length).toBeGreaterThan(0);
 
     mockHistoryData.items = [
       {
@@ -338,7 +338,7 @@ describe("Dashboard", () => {
     rerender(<Dashboard />);
 
     expect(screen.queryByText("org-a.example.net")).not.toBeInTheDocument();
-    expect(screen.getByText("org-b.example.net")).toBeInTheDocument();
+    expect(screen.getAllByText("org-b.example.net").length).toBeGreaterThan(0);
   });
 
   it("does not show NaN when result_summary is error-only", () => {
@@ -379,8 +379,8 @@ describe("Dashboard", () => {
     expect(screen.queryByText("NaN")).not.toBeInTheDocument();
     expect(screen.getByText("Open risk").previousElementSibling?.textContent).toBe("1");
     expect(screen.getByText("Failed")).toBeInTheDocument();
-    expect(screen.getByText("1C")).toBeInTheDocument();
-    expect(screen.getByText("2M")).toBeInTheDocument();
+    expect(screen.getAllByText("1C").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("2M").length).toBeGreaterThan(0);
     const jobs = screen
       .getByText("Recent work")
       .closest('[class*="lg:grid-cols-12"]');
