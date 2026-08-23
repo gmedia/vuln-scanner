@@ -36,6 +36,7 @@
   "pendingInvites": "Undangan tertunda",
   "invitesUnavailable": "Daftar undangan belum tersedia.",
   "noPendingInvites": "Tidak ada undangan tertunda.",
+  "noPendingInvitesHint": "Gunakan formulir di atas untuk mengundang admin, member, atau viewer.",
   "colAction": "Aksi",
   "revoke": "Cabut",
   "inviteRevoked": "Undangan dicabut",

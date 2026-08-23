@@ -460,9 +460,17 @@ function WorkspaceSettings() {
                 </p>
               )}
               {invitesQuery.data && invitesQuery.data.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  {t("noPendingInvites")}
-                </p>
+                <div
+                  className="flex flex-col items-center justify-center gap-1 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center"
+                  data-testid="workspace-invites-empty"
+                >
+                  <p className="text-sm font-medium text-foreground">
+                    {t("noPendingInvites")}
+                  </p>
+                  <p className="max-w-md text-xs text-muted-foreground">
+                    {t("noPendingInvitesHint")}
+                  </p>
+                </div>
               )}
               {invitesQuery.data && invitesQuery.data.length > 0 && (
                 <Table className="text-sm" data-testid="invites-list">
