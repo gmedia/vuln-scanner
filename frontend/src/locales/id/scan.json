@@ -32,6 +32,7 @@
   "statusFailed": "Gagal",
   "statusRunning": "Berjalan",
   "statusQueued": "Antrian",
+  "statusOk": "Selesai",
   "workspaceScanCount": "{{count}} scan di workspace · menampilkan target unik terbaru",
   "attachCoverage": "Cakupan attach",
   "noSchedulesHint": "Belum ada jadwal. Pilih IP/domain colo atau VPS, set mingguan.",

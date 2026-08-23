@@ -223,6 +223,7 @@ describe("Dashboard", () => {
     expect(screen.getByText("stg3.dokfin.id")).toBeInTheDocument();
     expect(screen.getByText("3M")).toBeInTheDocument();
     expect(screen.queryByText("completed")).not.toBeInTheDocument();
+    expect(screen.getByText("Done")).toBeInTheDocument();
   });
 
   it("displays IP type label", () => {

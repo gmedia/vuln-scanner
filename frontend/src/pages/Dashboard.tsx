@@ -504,7 +504,11 @@ function Dashboard() {
                                   ? t("statusRunning")
                                   : t("statusQueued")}
                             </Badge>
-                          ) : null}
+                          ) : (
+                            <Badge variant="completed" className="capitalize">
+                              {t("statusOk")}
+                            </Badge>
+                          )}
                         </TableCell>
                       </TableRow>
                     );
@@ -521,12 +525,12 @@ function Dashboard() {
           </CardContent>
         </Card>
 
-        <div className="flex h-full flex-col gap-4 lg:col-span-4">
-          <Card>
+        <div className="flex h-full min-h-0 flex-col gap-4 lg:col-span-4">
+          <Card className="flex flex-1 flex-col">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm tracking-wide">{t("attachCoverage")}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 text-xs">
+            <CardContent className="flex flex-1 flex-col space-y-2 text-xs">
               {enabledSchedules.length === 0 ? (
                 <p className="text-muted-foreground">
                   {t("noSchedulesHint")}
@@ -550,11 +554,11 @@ function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="flex flex-1 flex-col">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm tracking-wide">{t("guard")}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 text-xs">
+            <CardContent className="flex flex-1 flex-col space-y-2 text-xs">
               <p className="text-muted-foreground">
                 {t("agentsCount", { count: agents.length })}
                 {staleAgents.length > 0
