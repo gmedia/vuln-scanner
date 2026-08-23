@@ -92,7 +92,7 @@ function AdminUserDetail() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-5xl space-y-6">
       <div className="flex items-center gap-3">
         <Button
           variant="ghost"
@@ -129,6 +129,7 @@ function AdminUserDetail() {
         </Card>
       ) : user ? (
         <>
+          <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
           <Card>
             <CardHeader>
               <CardTitle className="text-sm tracking-wide">
@@ -136,10 +137,10 @@ function AdminUserDetail() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center gap-3">
+              <div className="inline-flex max-w-full items-center gap-3">
                 <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span
-                  className="min-w-0 flex-1 break-all font-mono text-sm text-foreground"
+                  className="min-w-0 break-all font-mono text-sm text-foreground"
                   title={user.email}
                 >
                   {user.email}
@@ -262,7 +263,7 @@ function AdminUserDetail() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid max-w-xl gap-4">
                 <div>
                   <Label htmlFor="admin-credit-amount" className="mb-1.5 block">
                     {t("amount")}
@@ -276,7 +277,7 @@ function AdminUserDetail() {
                       setAmount(e.target.value);
                       setConfirmAdjust(false);
                     }}
-                    className="font-mono"
+                    className="max-w-[12rem] font-mono"
                   />
                 </div>
                 <div>
@@ -289,6 +290,7 @@ function AdminUserDetail() {
                     placeholder={t("descriptionPlaceholder")}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
+                    className="max-w-xl"
                   />
                 </div>
               </div>
@@ -339,6 +341,7 @@ function AdminUserDetail() {
               )}
             </CardContent>
           </Card>
+          </div>
         </>
       ) : (
         <Card>

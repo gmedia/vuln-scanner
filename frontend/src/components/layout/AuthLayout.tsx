@@ -16,9 +16,9 @@ interface AuthLayoutProps {
 }
 
 const maxWidthClass = {
-  sm: "max-w-sm",
-  md: "max-w-md",
-  lg: "max-w-lg",
+  sm: "max-w-sm 2xl:max-w-md",
+  md: "max-w-md 2xl:max-w-lg",
+  lg: "max-w-xl 2xl:max-w-2xl",
 } as const;
 
 function AuthLayout({

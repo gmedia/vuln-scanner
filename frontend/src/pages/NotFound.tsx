@@ -27,14 +27,14 @@ function NotFound() {
 
   return (
     <div className="flex min-h-dvh flex-col items-center bg-background px-4 pb-10 pt-[max(1.25rem,env(safe-area-inset-top))] sm:justify-center sm:py-10">
-      <div className="flex w-full max-w-2xl flex-col items-center rounded-xl border border-border bg-card px-8 py-12 text-center shadow-sm">
+      <div className="flex w-full max-w-3xl flex-col items-center rounded-xl border border-border bg-card px-10 py-16 text-center shadow-sm 2xl:max-w-4xl 2xl:px-16 2xl:py-20">
         <div className="mb-6">
           <BrandMark to="/" aria-label={t("homeAria")} />
         </div>
         <div className="mb-4 rounded-full bg-muted p-4">
           <Crosshair className="h-10 w-10 text-primary/70" />
         </div>
-        <h1 className="mb-2 font-mono text-7xl font-bold tracking-tighter text-foreground/85 sm:text-8xl">
+        <h1 className="mb-2 font-mono text-7xl font-bold tracking-tighter text-foreground/85 sm:text-8xl 2xl:text-9xl">
           404
         </h1>
         <h2 className="mb-2 text-lg font-bold tracking-wide text-foreground">

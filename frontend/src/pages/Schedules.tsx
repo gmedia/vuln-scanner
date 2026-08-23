@@ -277,7 +277,7 @@ function Schedules() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-6xl space-y-6">
       <div className="flex items-center gap-3">
         <Link
           to="/dashboard"

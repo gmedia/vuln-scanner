@@ -235,7 +235,7 @@ function Dashboard() {
   const primaryIsJadwal = canCreateScans && noJadwal;
 
   return (
-    <div className="w-full max-w-none space-y-4">
+    <div className="mx-auto w-full max-w-6xl space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Crosshair className="h-6 w-6 text-primary" />

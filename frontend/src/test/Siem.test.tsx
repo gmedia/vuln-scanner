@@ -128,6 +128,7 @@ describe("SIEM page", () => {
     expect(screen.getByRole("button", { name: "Apply" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Search events" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Cases" })).toBeInTheDocument();
+    expect(screen.getByTestId("siem-event-detail-empty")).toBeInTheDocument();
 
     await user.click(screen.getByText("Login failed"));
     expect(screen.getByTestId("siem-event-detail")).toBeInTheDocument();

@@ -60,7 +60,7 @@ function AdminPricing() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-4xl space-y-6">
       <div className="flex items-center gap-3">
         <DollarSign className="h-6 w-6 text-primary" />
         <h2 className="text-lg font-bold tracking-wide text-foreground">

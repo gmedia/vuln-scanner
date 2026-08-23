@@ -109,7 +109,7 @@ function ScanDetail() {
       : t("failFallback");
 
   return (
-    <div className="space-y-5">
+    <div className="mx-auto w-full max-w-6xl space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-start gap-3">
           <Link
@@ -202,6 +202,7 @@ function ScanDetail() {
         </TabsList>
 
         <TabsContent value="findings" className="space-y-5">
+          <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.6fr)_minmax(22rem,0.9fr)] 2xl:items-start">
           <Card>
             <CardHeader className="py-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -222,7 +223,7 @@ function ScanDetail() {
             </CardContent>
           </Card>
 
-          <div className="grid gap-5 lg:grid-cols-3">
+          <div className="grid gap-5 lg:grid-cols-3 2xl:grid-cols-1">
             <Card className="lg:col-span-1">
               <CardHeader className="py-3">
                 <CardTitle className="text-sm tracking-wide">{t("severity")}</CardTitle>
@@ -262,6 +263,7 @@ function ScanDetail() {
                 )}
               </CardContent>
             </Card>
+          </div>
           </div>
 
           {scan.status === "completed" &&
