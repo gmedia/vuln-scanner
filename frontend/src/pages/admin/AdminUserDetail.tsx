@@ -137,10 +137,10 @@ function AdminUserDetail() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="inline-flex max-w-full items-center gap-3">
-                <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <div className="flex w-full min-w-0 items-start gap-2">
+                <Mail className="mt-2.5 h-4 w-4 shrink-0 text-muted-foreground" />
                 <span
-                  className="min-w-0 break-all font-mono text-sm text-foreground"
+                  className="min-w-0 flex-1 break-all font-mono text-sm text-foreground"
                   title={user.email}
                 >
                   {user.email}
@@ -150,7 +150,7 @@ function AdminUserDetail() {
                   variant="ghost"
                   size="sm"
                   onClick={handleCopyEmail}
-                  className="shrink-0 text-xs"
+                  className="h-11 w-11 shrink-0 p-0 text-xs"
                   title={copied ? t("copied") : t("copyEmail")}
                   aria-label={copied ? t("copied") : t("copyEmail")}
                 >
