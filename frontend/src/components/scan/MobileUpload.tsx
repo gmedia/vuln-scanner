@@ -202,7 +202,7 @@ function MobileUpload() {
               : "border-muted-foreground/40 bg-muted/30",
           )}
         >
-          <CardContent className="flex flex-col items-center justify-center pt-6">
+          <CardContent className="flex min-h-[12rem] flex-col items-center justify-center pt-6">
           <Upload
             className={cn(
               "mb-3 h-10 w-10 transition-colors",
