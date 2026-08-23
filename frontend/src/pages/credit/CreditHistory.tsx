@@ -357,12 +357,12 @@ function TransactionRow({ item }: { item: CreditLogItem }) {
         {item.reference_id ? (
           <Link
             to={`/scan/${item.reference_id}`}
-            className="block max-w-[300px] truncate text-xs text-primary underline-offset-2 hover:underline"
+            className="block max-w-[300px] truncate text-xs text-primary underline-offset-2 hover:underline 2xl:max-w-none 2xl:overflow-visible 2xl:whitespace-normal"
           >
             {item.description || "View scan"}
           </Link>
         ) : (
-          <span className="block max-w-[300px] truncate text-xs text-foreground">
+          <span className="block max-w-[300px] truncate text-xs text-foreground 2xl:max-w-none 2xl:overflow-visible 2xl:whitespace-normal">
             {item.description || "—"}
           </span>
         )}

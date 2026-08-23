@@ -474,7 +474,7 @@ function Schedules() {
                       <TableRow>
                         <TableCell className="align-top">
                           <div className="min-w-0 space-y-0.5">
-                            <p className="truncate text-sm font-medium text-foreground">
+                            <p className="truncate text-sm font-medium text-foreground 2xl:overflow-visible 2xl:whitespace-normal">
                               {s.name || s.target}
                               <span className="ml-2 text-xs font-normal text-muted-foreground">
                                 {s.scan_type} ·{" "}
