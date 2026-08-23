@@ -35,7 +35,6 @@ test.describe("Verify Email", () => {
 
     test("resend email input has correct placeholder", async ({ page }) => {
       await page.goto("/verify-email");
-      await page.getByRole("button", { name: /Tidak menerima email/i }).click();
       const emailInput = page.locator("input[type='email']");
       await expect(emailInput).toHaveAttribute(
         "placeholder",
@@ -45,7 +44,6 @@ test.describe("Verify Email", () => {
 
     test("resend button is enabled when email is filled", async ({ page }) => {
       await page.goto("/verify-email");
-      await page.getByRole("button", { name: /Tidak menerima email/i }).click();
       const emailInput = page.locator("input[type='email']");
       await emailInput.fill("test@example.com");
 
@@ -57,7 +55,6 @@ test.describe("Verify Email", () => {
 
     test("submitting resend form shows feedback", async ({ page }) => {
       await page.goto("/verify-email");
-      await page.getByRole("button", { name: /Tidak menerima email/i }).click();
       const emailInput = page.locator("input[type='email']");
       await emailInput.fill(
         process.env.E2E_EMAIL?.trim() || "e2e@vulnscan.dev",
