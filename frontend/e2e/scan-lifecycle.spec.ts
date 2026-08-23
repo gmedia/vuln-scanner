@@ -51,13 +51,15 @@ test.describe("Scan Lifecycle", () => {
 
       await page.goto("/dashboard");
       await revealLabTargets(page);
-      const domainScanLink = page.locator(`a[href='/scan/${scanId}']`).first();
-      await expect(domainScanLink).toBeVisible({
+      const domainScanLink = page
+        .locator(`a[href='/scan/${scanId}']`)
+        .filter({ visible: true });
+      await expect(domainScanLink.first()).toBeVisible({
         timeout: 15_000,
       });
 
       // Navigate into scan detail
-      await domainScanLink.click();
+      await domainScanLink.first().click();
       await expect(page).toHaveURL(`/scan/${scanId}`);
       await expect(page.locator("h2:has-text('Detail scan')")).toBeVisible({
         timeout: 15_000,
@@ -95,7 +97,10 @@ test.describe("Scan Lifecycle", () => {
       await page.goto("/dashboard");
       await revealLabTargets(page);
       await expect(
-        page.locator(`a[href='/scan/${scanId}']`).first(),
+        page
+          .locator(`a[href='/scan/${scanId}']`)
+          .filter({ visible: true })
+          .first(),
       ).toBeVisible({
         timeout: 15_000,
       });
