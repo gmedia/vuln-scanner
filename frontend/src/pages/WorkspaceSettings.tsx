@@ -259,6 +259,7 @@ function WorkspaceSettings() {
         </Card>
       )}
 
+      <div className="grid gap-6 2xl:grid-cols-2">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
@@ -314,69 +315,7 @@ function WorkspaceSettings() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm tracking-wide">
-            {t("membersTitle")}
-          </CardTitle>
-          <CardDescription className="text-xs">
-            {t("membersDescription")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!orgId && (
-            <p className="text-sm text-muted-foreground">{t("noOrgYet")}</p>
-          )}
-          {orgId && membersQuery.isLoading && (
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-3/4" />
-            </div>
-          )}
-          {orgId && membersQuery.isError && (
-            <p className="text-sm text-muted-foreground" role="status">
-              {t("membersUnavailable")}
-            </p>
-          )}
-          {membersQuery.data && membersQuery.data.length === 0 && (
-            <p className="text-sm text-muted-foreground">{t("noMembers")}</p>
-          )}
-          {membersQuery.data && membersQuery.data.length > 0 && (
-            <Table className="text-sm" data-testid="members-list">
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-[10px] uppercase tracking-wider">
-                    {t("colEmail")}
-                  </TableHead>
-                  <TableHead className="w-[28%] text-right text-[10px] uppercase tracking-wider">
-                    {t("colRole")}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {membersQuery.data.map((m) => (
-                  <TableRow key={m.user_id}>
-                    <TableCell className="truncate text-foreground">
-                      {m.email}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Badge
-                        variant={roleBadgeVariant(m.role)}
-                        className="text-[10px] uppercase"
-                      >
-                        {m.role}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      {canManage && orgId && (
-        <>
+      {canManage && orgId ? (
           <Card data-testid="invite-form-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
@@ -447,7 +386,74 @@ function WorkspaceSettings() {
               </form>
             </CardContent>
           </Card>
+      ) : (
+        <div className="hidden 2xl:block" />
+      )}
+      </div>
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm tracking-wide">
+            {t("membersTitle")}
+          </CardTitle>
+          <CardDescription className="text-xs">
+            {t("membersDescription")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!orgId && (
+            <p className="text-sm text-muted-foreground">{t("noOrgYet")}</p>
+          )}
+          {orgId && membersQuery.isLoading && (
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-3/4" />
+            </div>
+          )}
+          {orgId && membersQuery.isError && (
+            <p className="text-sm text-muted-foreground" role="status">
+              {t("membersUnavailable")}
+            </p>
+          )}
+          {membersQuery.data && membersQuery.data.length === 0 && (
+            <p className="text-sm text-muted-foreground">{t("noMembers")}</p>
+          )}
+          {membersQuery.data && membersQuery.data.length > 0 && (
+            <Table className="text-sm" data-testid="members-list">
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-[10px] uppercase tracking-wider">
+                    {t("colEmail")}
+                  </TableHead>
+                  <TableHead className="w-[28%] text-right text-[10px] uppercase tracking-wider">
+                    {t("colRole")}
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {membersQuery.data.map((m) => (
+                  <TableRow key={m.user_id}>
+                    <TableCell className="truncate text-foreground">
+                      {m.email}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Badge
+                        variant={roleBadgeVariant(m.role)}
+                        className="text-[10px] uppercase"
+                      >
+                        {m.role}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {canManage && orgId && (
+        <>
           <Card>
             <CardHeader>
               <CardTitle className="text-sm tracking-wide">
