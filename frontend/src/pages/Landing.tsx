@@ -35,22 +35,24 @@ function Landing() {
   return (
     <div className="min-h-dvh bg-background flex flex-col">
       <header className="border-b border-border pt-[env(safe-area-inset-top)]">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+        <div className="mx-auto flex h-14 max-w-5xl min-w-0 items-center justify-between gap-2 overflow-x-hidden px-4">
           <BrandMark to="/" />
-          <div className="flex items-center gap-3">
-            <ThemeSwitcher />
-            <LanguageSwitcher />
+          <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
+            <div className="hidden sm:flex sm:items-center sm:gap-2">
+              <ThemeSwitcher />
+              <LanguageSwitcher />
+            </div>
             <Link to="/login">
               <Button
                 variant="outline"
                 size="sm"
-                className="text-xs border-muted-foreground/50 text-foreground hover:border-foreground/40 hover:bg-accent"
+                className="min-h-11 text-xs border-muted-foreground/50 text-foreground hover:border-foreground/40 hover:bg-accent"
               >
                 {tc("signIn")}
               </Button>
             </Link>
-            <Link to="/register">
-              <Button size="sm" className="text-xs">
+            <Link to="/register" className="hidden sm:inline">
+              <Button size="sm" className="min-h-11 text-xs">
                 {tc("getStarted")}
               </Button>
             </Link>
@@ -132,6 +134,10 @@ function Landing() {
           <p className="text-xs text-foreground/70 text-center sm:text-left">
             {BRAND.footerLine}
           </p>
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:hidden">
+            <ThemeSwitcher />
+            <LanguageSwitcher />
+          </div>
           <div className="flex items-center gap-4 text-xs">
             <Link
               to="/login"
