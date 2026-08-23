@@ -172,8 +172,8 @@ function AdminDashboard() {
             <div data-testid="admin-kpi-chart">
               <ChartContainer
                 config={kpiChartConfig}
-                className="aspect-auto h-[280px] w-full min-h-[220px]"
-                initialDimension={{ width: 960, height: 280 }}
+                className="aspect-auto h-[360px] w-full min-h-[280px]"
+                initialDimension={{ width: 1280, height: 360 }}
               >
                 <BarChart
                   data={[
