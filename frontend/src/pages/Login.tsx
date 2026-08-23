@@ -77,7 +77,7 @@ function Login() {
   const showResend = isUnverifiedError(error);
 
   return (
-    <AuthLayout title={t("signInTitle")}>
+    <AuthLayout title={t("signInTitle")} maxWidth="lg">
       <Card className="w-full">
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-4">
