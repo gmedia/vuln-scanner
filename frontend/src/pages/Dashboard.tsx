@@ -424,6 +424,7 @@ function Dashboard() {
                 {t("allLabRows")}
               </p>
             ) : (
+              <>
               <div className="space-y-2 md:hidden">
                 {displayed.map((scan) => {
                   const crit = severityCount(scan.result_summary, "critical");
@@ -571,6 +572,7 @@ function Dashboard() {
                 </TableBody>
               </Table>
               </div>
+              </>
             )}
 
             {!isFirstLoad && totalScans > 0 && (

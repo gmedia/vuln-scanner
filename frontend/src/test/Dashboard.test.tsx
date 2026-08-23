@@ -378,7 +378,7 @@ describe("Dashboard", () => {
     render(<Dashboard />);
     expect(screen.queryByText("NaN")).not.toBeInTheDocument();
     expect(screen.getByText("Open risk").previousElementSibling?.textContent).toBe("1");
-    expect(screen.getByText("Failed")).toBeInTheDocument();
+    expect(screen.getAllByText("Failed").length).toBeGreaterThan(0);
     expect(screen.getAllByText("1C").length).toBeGreaterThan(0);
     expect(screen.getAllByText("2M").length).toBeGreaterThan(0);
     const jobs = screen
