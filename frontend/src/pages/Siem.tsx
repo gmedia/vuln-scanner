@@ -331,7 +331,7 @@ export default function Siem() {
               <TabsTrigger value="cases">{t("tabCases")}</TabsTrigger>
             </TabsList>
             <TabsContent value="search" className="space-y-4">
-          <div className="grid gap-4 2xl:grid-cols-[minmax(0,1.4fr)_minmax(20rem,0.8fr)] 2xl:items-start">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.85fr)] xl:items-start">
           <Card data-testid="siem-search">
             <CardHeader>
               <CardTitle>{t("tabSearch")}</CardTitle>
@@ -535,8 +535,8 @@ export default function Siem() {
             </CardContent>
           </Card>
 
-          {selected && (
-            <Card data-testid="siem-event-detail">
+          {selected ? (
+            <Card data-testid="siem-event-detail" className="xl:sticky xl:top-4">
               <CardHeader>
                 <CardTitle>{t("eventDetail")}</CardTitle>
                 <CardDescription>{selected.external_id}</CardDescription>
@@ -582,6 +582,13 @@ export default function Siem() {
                   </div>
                 )}
               </CardContent>
+            </Card>
+          ) : (
+            <Card className="hidden xl:block" data-testid="siem-event-detail-empty">
+              <CardHeader>
+                <CardTitle>{t("eventDetail")}</CardTitle>
+                <CardDescription>{t("eventsEmpty")}</CardDescription>
+              </CardHeader>
             </Card>
           )}
           </div>
