@@ -104,7 +104,7 @@ function AdminDashboard() {
       </div>
 
       <div className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
           {countCards.map((card) => (
             <Card key={card.label} className="border-border">
               <CardContent className="flex flex-col items-center justify-center p-4">
@@ -132,7 +132,7 @@ function AdminDashboard() {
             </Card>
           ))}
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 2xl:contents">
           {creditCards.map((card) => (
             <Card key={card.label} className="border-border">
               <CardContent className="flex flex-col items-center justify-center p-4">
@@ -173,8 +173,8 @@ function AdminDashboard() {
             <div data-testid="admin-kpi-chart">
               <ChartContainer
                 config={kpiChartConfig}
-                className="aspect-auto h-[420px] w-full min-h-[320px] 2xl:h-[480px]"
-                initialDimension={{ width: 1600, height: 420 }}
+                className="aspect-auto h-[280px] w-full min-h-[220px] 2xl:h-[320px]"
+                initialDimension={{ width: 1600, height: 280 }}
               >
                 <BarChart
                   data={[

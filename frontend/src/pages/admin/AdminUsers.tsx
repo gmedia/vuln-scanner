@@ -182,7 +182,7 @@ function UserRow({ user, onView }: { user: AdminUserItem; onView: () => void }) 
     <TableRow>
       <TableCell>
         <span
-          className="block max-w-[200px] truncate font-mono text-xs text-foreground"
+          className="block max-w-[min(36rem,50vw)] truncate font-mono text-xs text-foreground 2xl:max-w-none 2xl:overflow-visible 2xl:whitespace-normal"
           title={user.email}
         >
           {user.email}

@@ -12,19 +12,20 @@ interface AuthLayoutProps {
   children: ReactNode;
   title?: string;
   subtitle?: string;
-  maxWidth?: "sm" | "md";
+  maxWidth?: "sm" | "md" | "lg";
 }
 
 const maxWidthClass = {
   sm: "max-w-sm",
   md: "max-w-md",
+  lg: "max-w-lg",
 } as const;
 
 function AuthLayout({
   children,
   title,
   subtitle,
-  maxWidth = "md",
+  maxWidth = "lg",
 }: AuthLayoutProps) {
   const { t } = useTranslation("landing");
   return (
@@ -50,14 +51,14 @@ function AuthLayout({
         </div>
 
         {(title || subtitle) && (
-          <div className="mb-4 space-y-1 text-center">
+          <div className="mb-4 space-y-1 rounded-xl border border-border bg-card px-6 py-5 text-center shadow-sm">
             {title && (
               <h1 className="text-lg font-semibold tracking-wide text-foreground">
                 {title}
               </h1>
             )}
             {subtitle && (
-              <p className="text-xs text-muted-foreground">{subtitle}</p>
+              <p className="text-sm text-muted-foreground">{subtitle}</p>
             )}
           </div>
         )}

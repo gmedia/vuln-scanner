@@ -76,12 +76,8 @@ describe("VerifyEmail", () => {
       ).toBeInTheDocument();
     });
 
-    it("keeps resend collapsed until Didn't get it is opened", () => {
+    it("shows the resend form by default", () => {
       render(<VerifyEmail />);
-      expect(
-        screen.queryByRole("button", { name: "Resend Verification Email" }),
-      ).not.toBeInTheDocument();
-      fireEvent.click(screen.getByRole("button", { name: /didn/i }));
       expect(screen.getByLabelText("Email")).toBeInTheDocument();
       expect(
         screen.getByPlaceholderText("your signup email"),
@@ -93,7 +89,6 @@ describe("VerifyEmail", () => {
 
     it("shows resend success message after successful resend", async () => {
       render(<VerifyEmail />);
-      fireEvent.click(screen.getByRole("button", { name: /didn/i }));
       const input = screen.getByPlaceholderText("your signup email");
       fireEvent.change(input, { target: { value: "user@example.com" } });
 
@@ -125,14 +120,12 @@ describe("VerifyEmail", () => {
       );
 
       render(<VerifyEmail />);
-      fireEvent.click(screen.getByRole("button", { name: /didn/i }));
       expect(screen.getByText("Rate limited")).toBeInTheDocument();
     });
 
     it("shows cooldown timer when cooldown > 0", () => {
       mockCooldown = 15;
       render(<VerifyEmail />);
-      fireEvent.click(screen.getByRole("button", { name: /didn/i }));
       expect(
         screen.getByText(/Too many attempts. Wait 15s/),
       ).toBeInTheDocument();
@@ -140,7 +133,6 @@ describe("VerifyEmail", () => {
 
     it("calls resendVerification on form submit", async () => {
       render(<VerifyEmail />);
-      fireEvent.click(screen.getByRole("button", { name: /didn/i }));
       const input = screen.getByPlaceholderText("your signup email");
       fireEvent.change(input, { target: { value: "user@example.com" } });
 
@@ -169,7 +161,6 @@ describe("VerifyEmail", () => {
           ),
       );
       render(<VerifyEmail />);
-      fireEvent.click(screen.getByRole("button", { name: /didn/i }));
       const input = screen.getByPlaceholderText("your signup email");
       fireEvent.change(input, { target: { value: "user@example.com" } });
 

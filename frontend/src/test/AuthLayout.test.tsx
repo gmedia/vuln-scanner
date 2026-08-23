@@ -41,6 +41,16 @@ describe("AuthLayout", () => {
     expect(screen.getByText("Enter your credentials")).toBeInTheDocument();
   });
 
+  it("uses a wider island at the default maxWidth", () => {
+    const { container } = render(
+      <AuthLayout title="Sign in">
+        <div>form</div>
+      </AuthLayout>,
+    );
+    const island = container.querySelector(".max-w-lg");
+    expect(island).toBeInstanceOf(HTMLElement);
+  });
+
   it("keeps the brand tagline hidden until the sm breakpoint", () => {
     render(
       <AuthLayout title="Sign in">

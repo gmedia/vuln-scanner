@@ -148,14 +148,11 @@ function AdminPricing() {
                           <Loader2 className="h-3 w-3 animate-spin" />
                         ) : hasChanges(item) ? (
                           <>
-                            <Check className="h-3 w-3 mr-1" />
+                            <Check className="mr-1 h-3 w-3" />
                             {t("save")}
                           </>
                         ) : (
-                          <>
-                            <Check className="h-3 w-3 mr-1 text-primary" />
-                            {t("saved")}
-                          </>
+                          t("saved")
                         )}
                       </Button>
                     </TableCell>

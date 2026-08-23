@@ -28,7 +28,7 @@ function VerifyEmail() {
   const [resendEmail, setResendEmail] = useState(
     () => searchParams.get("email") ?? "",
   );
-  const [showResend, setShowResend] = useState(false);
+  const [showResend, setShowResend] = useState(true);
   const [isResending, setIsResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
   const { cooldown, startCooldown } = useRateLimitCooldown();
@@ -76,7 +76,7 @@ function VerifyEmail() {
       <AuthLayout
         title={t("verifyTitle")}
         subtitle={t("verifySubtitle")}
-        maxWidth="sm"
+        maxWidth="lg"
       >
         <Card className="w-full">
           <CardContent className="pt-6 text-center space-y-4">
@@ -179,7 +179,7 @@ function VerifyEmail() {
             ? t("verifyFailed")
             : t("verifyingEmail")
       }
-      maxWidth="sm"
+      maxWidth="lg"
     >
       <Card className="w-full">
         <CardContent className="pt-6 text-center">
