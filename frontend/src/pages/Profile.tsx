@@ -153,7 +153,7 @@ function Profile() {
             </div>
             <Button
               type="submit"
-              className="w-full sm:w-auto"
+              className="min-h-11 w-full sm:w-auto"
               size="lg"
               disabled={isUpdatingProfile || profileCooldown.cooldown > 0}
             >
@@ -239,7 +239,7 @@ function Profile() {
             </div>
             <Button
               type="submit"
-              className="w-full sm:w-auto"
+              className="min-h-11 w-full sm:w-auto"
               size="lg"
               disabled={isChangingPassword || passwordCooldown.cooldown > 0}
             >
