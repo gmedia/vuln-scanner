@@ -78,25 +78,26 @@ export default function Assets() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            data-testid="assets-pack"
-            disabled={items.length === 0}
-            onClick={async () => {
-              const pack = await fetchAssetPack();
-              const blob = new Blob([JSON.stringify(pack, null, 2)], {
-                type: "application/json",
-              });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = "assets-pack.json";
-              a.click();
-              URL.revokeObjectURL(url);
-            }}
-          >
-            {t("pack")}
-          </Button>
+          {items.length > 0 ? (
+            <Button
+              variant="outline"
+              data-testid="assets-pack"
+              onClick={async () => {
+                const pack = await fetchAssetPack();
+                const blob = new Blob([JSON.stringify(pack, null, 2)], {
+                  type: "application/json",
+                });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "assets-pack.json";
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              {t("pack")}
+            </Button>
+          ) : null}
           <Button
             data-testid="assets-add"
             disabled={atCap}
@@ -177,7 +178,7 @@ export default function Assets() {
 
       {items.length === 0 && !list.isLoading ? (
         <Card data-testid="assets-empty">
-          <CardContent className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center">
+          <CardContent className="flex min-h-[16rem] flex-col items-center justify-center gap-2 px-6 py-16 text-center">
             <p className="text-sm font-medium text-foreground">{t("empty")}</p>
             <p className="max-w-md text-sm text-muted-foreground">
               {t("emptyHint")}

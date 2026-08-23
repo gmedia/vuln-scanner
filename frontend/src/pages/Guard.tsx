@@ -645,7 +645,7 @@ export default function Guard() {
                       {agentsQ.data?.map((a) => (
                         <TableRow key={a.id}>
                           <TableCell
-                            className="max-w-[22rem] truncate font-mono text-xs font-medium"
+                            className="min-w-[16rem] max-w-[min(40rem,50vw)] truncate font-mono text-xs font-medium"
                             title={a.name}
                           >
                             {a.name}

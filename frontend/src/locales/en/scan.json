@@ -32,6 +32,7 @@
   "statusFailed": "Failed",
   "statusRunning": "Running",
   "statusQueued": "Queued",
+  "statusOk": "Done",
   "workspaceScanCount": "{{count}} scans in workspace · showing latest unique targets",
   "attachCoverage": "Attach coverage",
   "noSchedulesHint": "No schedules yet. Pick a colo or VPS IP/domain, set weekly.",
