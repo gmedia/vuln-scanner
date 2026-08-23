@@ -91,6 +91,7 @@ function AdminPricing() {
               </p>
             </div>
           ) : (
+            <>
             <div className="space-y-3 md:hidden">
               {pricing?.map((item) => (
                 <div
@@ -133,7 +134,7 @@ function AdminPricing() {
                         {t("save")}
                       </>
                     ) : (
-                      t("save")
+                      t("saved")
                     )}
                   </Button>
                 </div>
@@ -210,6 +211,7 @@ function AdminPricing() {
               </TableBody>
             </Table>
             </div>
+            </>
           )}
         </CardContent>
       </Card>
