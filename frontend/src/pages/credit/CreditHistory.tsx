@@ -264,6 +264,7 @@ function CreditHistory() {
               </p>
             </div>
           ) : (
+            <>
             <div className="space-y-2 md:hidden">
               {filteredItems.map((item) => {
                 const signed = signedLedgerAmount(item);
@@ -325,6 +326,7 @@ function CreditHistory() {
               </TableBody>
             </Table>
             </div>
+            </>
           )}
 
           {!isLoading && totalPages > 1 && (

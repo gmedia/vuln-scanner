@@ -300,9 +300,9 @@ describe("CreditHistory", () => {
     } as ReturnType<typeof useQuery>);
 
     render(<CreditHistory />);
-    expect(screen.getByText("Bonus")).toBeInTheDocument();
-    expect(screen.getByText("IP scan")).toBeInTheDocument();
-    expect(screen.getByText("Refund")).toBeInTheDocument();
+    expect(screen.getAllByText("Bonus").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("IP scan").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Refund").length).toBeGreaterThan(0);
   });
 
   it("displays positive amounts with + prefix", () => {
@@ -312,7 +312,7 @@ describe("CreditHistory", () => {
     } as ReturnType<typeof useQuery>);
 
     render(<CreditHistory />);
-    expect(screen.getByText("+100")).toBeInTheDocument();
+    expect(screen.getAllByText("+100").length).toBeGreaterThan(0);
   });
 
   it("treats backend deduct with positive amount as debit", () => {
@@ -358,7 +358,7 @@ describe("CreditHistory", () => {
     } as ReturnType<typeof useQuery>);
 
     render(<CreditHistory />);
-    expect(screen.getByText("+25")).toBeInTheDocument();
+    expect(screen.getAllByText("+25").length).toBeGreaterThan(0);
   });
 
   it("renders type badges for each transaction", () => {
