@@ -179,8 +179,8 @@ describe("AdminUsers", () => {
     it("renders user rows in table", () => {
       mockUseQueryReturn({ data: { users: mockUsers, total: 2 } });
       renderPage();
-      expect(screen.getByText("admin@test.com")).toBeInTheDocument();
-      expect(screen.getByText("user@test.com")).toBeInTheDocument();
+      expect(screen.getAllByText("admin@test.com").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("user@test.com").length).toBeGreaterThan(0);
     });
 
     it("shows total count", () => {
@@ -192,13 +192,13 @@ describe("AdminUsers", () => {
     it("renders Admin badge for admin user", () => {
       mockUseQueryReturn({ data: { users: mockUsers, total: 2 } });
       renderPage();
-      expect(screen.getByText("Admin")).toBeInTheDocument();
+      expect(screen.getAllByText("Admin").length).toBeGreaterThan(0);
     });
 
     it("renders User badge for non-admin user", () => {
       mockUseQueryReturn({ data: { users: mockUsers, total: 2 } });
       renderPage();
-      expect(screen.getByText("User")).toBeInTheDocument();
+      expect(screen.getAllByText("User").length).toBeGreaterThan(0);
     });
 
     it("renders Verified and Unverified badges", () => {
@@ -207,33 +207,33 @@ describe("AdminUsers", () => {
       const verifiedBadges = screen
         .getAllByText("Verified")
         .filter((el) => el.getAttribute("data-variant") === "completed");
-      expect(verifiedBadges).toHaveLength(1);
-      const unverified = screen.getByText("Unverified");
-      expect(unverified).toBeInTheDocument();
-      expect(unverified).toHaveAttribute("data-variant", "pending");
+      expect(verifiedBadges.length).toBeGreaterThanOrEqual(1);
+      const unverified = screen.getAllByText("Unverified");
+      expect(unverified.length).toBeGreaterThan(0);
+      expect(unverified[0]).toHaveAttribute("data-variant", "pending");
     });
 
     it("renders credit values", () => {
       mockUseQueryReturn({ data: { users: mockUsers, total: 2 } });
       renderPage();
-      expect(screen.getByText("100")).toBeInTheDocument();
-      expect(screen.getByText("10")).toBeInTheDocument();
+      expect(screen.getAllByText("100").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("10").length).toBeGreaterThan(0);
     });
 
     it("renders scan counts", () => {
       mockUseQueryReturn({ data: { users: mockUsers, total: 2 } });
       renderPage();
-      expect(screen.getByText("42")).toBeInTheDocument();
-      expect(screen.getByText("3")).toBeInTheDocument();
+      expect(screen.getAllByText("42").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("3").length).toBeGreaterThan(0);
     });
 
     it("sets title tooltip on email cells", () => {
       mockUseQueryReturn({ data: { users: mockUsers, total: 2 } });
       renderPage();
-      expect(screen.getByText("admin@test.com")).toHaveAttribute(
-        "title",
-        "admin@test.com",
-      );
+      const titled = screen
+        .getAllByText("admin@test.com")
+        .find((el) => el.getAttribute("title") === "admin@test.com");
+      expect(titled).toBeTruthy();
     });
 
     it("navigates to user detail on View click", async () => {

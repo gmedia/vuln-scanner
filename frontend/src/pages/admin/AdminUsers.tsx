@@ -109,6 +109,7 @@ function AdminUsers() {
               </p>
             </div>
           ) : (
+            <>
             <div className="space-y-2 md:hidden">
               {data?.users.map((user) => (
                 <button
@@ -178,6 +179,7 @@ function AdminUsers() {
               </TableBody>
             </Table>
             </div>
+            </>
           )}
 
           {!isLoading && totalPages > 1 && (
