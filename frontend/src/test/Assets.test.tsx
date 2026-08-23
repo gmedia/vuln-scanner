@@ -49,6 +49,7 @@ describe("Assets page", () => {
     renderPage();
     await waitFor(() => expect(screen.getByTestId("assets-empty")).toBeInTheDocument());
     expect(screen.getByTestId("assets-empty-cta")).toBeInTheDocument();
+    expect(screen.queryByTestId("assets-pack")).not.toBeInTheDocument();
   });
 
   it("creates an asset", async () => {
