@@ -533,7 +533,7 @@ describe("CreditHistory", () => {
       screen.getByPlaceholderText("Search description"),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Filters apply to the current page"),
+      screen.getByText("Filters apply to loaded rows on this page"),
     ).toBeInTheDocument();
   });
 
