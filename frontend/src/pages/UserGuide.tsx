@@ -307,7 +307,7 @@ function UserGuide() {
         </Card>
       </div>
 
-      <div className="lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-8">
+      <div className="lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-8 2xl:grid-cols-[18rem_minmax(0,56rem)]">
         <aside data-testid="guide-desktop-toc" className="hidden lg:block">
           <div className="sticky top-16 max-h-[calc(100svh-5rem)] overflow-y-auto overscroll-contain pr-1">
             <GuideDesktopToc activeId={activeId} t={t} />
