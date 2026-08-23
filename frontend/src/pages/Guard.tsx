@@ -645,7 +645,7 @@ export default function Guard() {
                       {agentsQ.data?.map((a) => (
                         <TableRow key={a.id}>
                           <TableCell
-                            className="max-w-[14rem] truncate font-mono text-xs font-medium"
+                            className="max-w-[22rem] truncate font-mono text-xs font-medium"
                             title={a.name}
                           >
                             {a.name}
@@ -682,7 +682,10 @@ export default function Guard() {
               ) : (alertsQ.data?.length ?? 0) === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center">
                   <AlertTriangle className="h-8 w-8 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">{t("noAlerts")}</p>
+                  <p className="text-sm font-medium text-foreground">{t("noAlerts")}</p>
+                  <p className="max-w-md text-xs text-muted-foreground">
+                    {t("noAlertsHint")}
+                  </p>
                 </div>
               ) : (
                 <ul className="space-y-3">
