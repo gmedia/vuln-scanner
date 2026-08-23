@@ -139,7 +139,7 @@ function AdminUserDetail() {
               <div className="flex items-center gap-3">
                 <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span
-                  className="min-w-0 flex-1 truncate font-mono text-sm text-foreground"
+                  className="min-w-0 flex-1 break-all font-mono text-sm text-foreground"
                   title={user.email}
                 >
                   {user.email}
@@ -295,10 +295,10 @@ function AdminUserDetail() {
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   onClick={handleSubmit}
+                  size="lg"
                   disabled={
                     !amount || parseInt(amount, 10) === 0 || updateCredits.isPending
                   }
-                  className="text-xs"
                 >
                   {updateCredits.isPending ? (
                     <>
