@@ -59,6 +59,7 @@
   "alertsTitle": "Alert kritis",
   "alertsDescription": "Hanya rule level tinggi. Detail log di SIEM.",
   "noAlerts": "0 alert kritis. Buka SIEM untuk pencarian event.",
+  "noAlertsHint": "Guard hanya menampilkan rule level tinggi. Pencarian dan kasus ada di SIEM.",
   "online": "online",
   "disconnected": "terputus",
   "pending": "menunggu"

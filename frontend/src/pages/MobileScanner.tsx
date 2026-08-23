@@ -17,7 +17,7 @@ function MobileScanner() {
   const hasResults = scanData?.status === "completed" && scanData.result_summary;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(16rem,0.8fr)]">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(18rem,0.6fr)]">
       <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Link to="/dashboard" className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">

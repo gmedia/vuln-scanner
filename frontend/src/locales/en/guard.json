@@ -59,6 +59,7 @@
   "alertsTitle": "Critical alerts",
   "alertsDescription": "High-level rules only. Log detail lives in SIEM.",
   "noAlerts": "0 critical alerts. Open SIEM to search events.",
+  "noAlertsHint": "Guard only surfaces high-level rules. Search and cases live in SIEM.",
   "online": "online",
   "disconnected": "disconnected",
   "pending": "pending"

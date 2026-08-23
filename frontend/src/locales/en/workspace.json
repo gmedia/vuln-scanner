@@ -36,6 +36,7 @@
   "pendingInvites": "Pending invites",
   "invitesUnavailable": "Invite list is not available yet.",
   "noPendingInvites": "No pending invites.",
+  "noPendingInvitesHint": "Use the form above to invite an admin, member, or viewer.",
   "colAction": "Action",
   "revoke": "Revoke",
   "inviteRevoked": "Invite revoked",

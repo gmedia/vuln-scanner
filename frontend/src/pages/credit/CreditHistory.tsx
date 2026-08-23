@@ -222,7 +222,7 @@ function CreditHistory() {
           />
         </div>
         <p className="w-full text-xs text-muted-foreground">
-          Filters apply to the current page
+          Filters apply to loaded rows on this page
           {hasServerData && filtersActive
             ? ` · Showing ${filteredItems.length} of ${data?.items.length ?? 0}`
             : null}

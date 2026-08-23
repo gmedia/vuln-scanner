@@ -176,7 +176,22 @@ export default function Assets() {
       ) : null}
 
       {items.length === 0 && !list.isLoading ? (
-        <p className="text-sm text-muted-foreground">{t("empty")}</p>
+        <Card data-testid="assets-empty">
+          <CardContent className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center">
+            <p className="text-sm font-medium text-foreground">{t("empty")}</p>
+            <p className="max-w-md text-sm text-muted-foreground">
+              {t("emptyHint")}
+            </p>
+            <Button
+              className="mt-2"
+              data-testid="assets-empty-cta"
+              disabled={atCap}
+              onClick={() => setOpen(true)}
+            >
+              {t("emptyCta")}
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <ul className="space-y-3">
           {items.map((a: ScanAsset) => (
