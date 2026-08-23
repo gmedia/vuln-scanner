@@ -36,9 +36,9 @@ import { useAuthStore } from "@/store/authStore";
 const PAGE_SIZE = 20;
 
 const TYPE_COLORS: Record<string, string> = {
-  credit: "bg-green-600 text-green-100",
-  deduct: "bg-red-600 text-red-100",
-  refund: "bg-blue-600 text-blue-100",
+  credit: "bg-green-600/15 text-green-700 dark:text-green-300",
+  deduct: "bg-red-600/15 text-red-700 dark:text-red-300",
+  refund: "bg-blue-600/15 text-blue-700 dark:text-blue-300",
 };
 
 type FilterType = "all" | "credit" | "deduct" | "refund";
