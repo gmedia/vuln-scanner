@@ -264,6 +264,43 @@ function CreditHistory() {
               </p>
             </div>
           ) : (
+            <div className="space-y-2 md:hidden">
+              {filteredItems.map((item) => {
+                const signed = signedLedgerAmount(item);
+                const isPositive = signed > 0;
+                return (
+                  <div
+                    key={item.id}
+                    className="rounded-lg border border-border bg-card p-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span
+                        className={`inline-flex items-center rounded px-2 py-0.5 font-mono text-[10px] uppercase ${TYPE_COLORS[item.type]}`}
+                      >
+                        {item.type}
+                      </span>
+                      <span
+                        className={`font-mono text-xs font-bold tabular-nums ${
+                          isPositive
+                            ? "text-green-700 dark:text-green-300"
+                            : "text-red-700 dark:text-red-300"
+                        }`}
+                      >
+                        {isPositive ? "+" : ""}
+                        {signed}
+                      </span>
+                    </div>
+                    <p className="mt-2 break-words text-xs text-foreground">
+                      {item.description || "—"}
+                    </p>
+                    <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+                      {new Date(item.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -287,6 +324,7 @@ function CreditHistory() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
 
           {!isLoading && totalPages > 1 && (
