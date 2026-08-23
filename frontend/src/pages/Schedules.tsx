@@ -448,6 +448,7 @@ function Schedules() {
             </div>
           )}
           {!isLoading && data && data.length > 0 && (
+            <div className="overflow-x-auto">
             <Table className="min-w-[40rem] text-sm">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
@@ -666,6 +667,7 @@ function Schedules() {
                 })}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

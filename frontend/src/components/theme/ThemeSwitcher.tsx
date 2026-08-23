@@ -39,7 +39,7 @@ function ThemeSwitcher({ className }: { className?: string }) {
           data-testid={`theme-${theme}`}
           aria-pressed={current === theme}
           className={cn(
-            "px-2 py-1 min-h-8",
+            "min-h-11 min-w-11 px-2.5 py-1",
             current === theme
               ? "bg-muted text-foreground"
               : "text-muted-foreground hover:text-foreground",

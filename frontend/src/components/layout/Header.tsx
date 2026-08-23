@@ -52,7 +52,7 @@ function Header({ children }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-4 border-b border-border bg-background px-4">
+    <header className="sticky top-0 z-40 flex h-12 min-w-0 shrink-0 items-center gap-2 overflow-x-hidden border-b border-border bg-background px-3 sm:gap-4 sm:px-4">
       {children}
       <div className="flex flex-1 items-center justify-between gap-3">
         <h1 className="lg:sr-only">
@@ -74,9 +74,11 @@ function Header({ children }: HeaderProps) {
         )}
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-3">
-        <ThemeSwitcher />
-        <LanguageSwitcher />
+      <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
+        <div className="hidden md:flex md:items-center md:gap-2">
+          <ThemeSwitcher />
+          <LanguageSwitcher />
+        </div>
         {isAuthenticated && (
           <div className="hidden sm:block">
             <OrgSwitcher />

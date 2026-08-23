@@ -91,6 +91,56 @@ function AdminPricing() {
               </p>
             </div>
           ) : (
+            <>
+            <div className="space-y-3 md:hidden">
+              {pricing?.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-lg border border-border bg-card p-3 space-y-2"
+                >
+                  <Badge variant="default" className="text-[10px] uppercase">
+                    {item.scan_type}
+                  </Badge>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={editedCosts[item.scan_type] ?? item.credit_cost}
+                    onChange={(e) =>
+                      handleCostChange(item.scan_type, e.target.value)
+                    }
+                    className="h-11 w-full font-mono text-xs tabular-nums"
+                  />
+                  <p className="font-mono text-[11px] text-muted-foreground">
+                    {new Date(item.updated_at).toLocaleDateString(
+                      isAppLocale(i18n.language)
+                        ? htmlLang(i18n.language) === "en"
+                          ? "en-US"
+                          : "id-ID"
+                        : "id-ID",
+                    )}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSave(item)}
+                    disabled={!hasChanges(item) || saving === item.scan_type}
+                    className="min-h-11 w-full text-xs"
+                  >
+                    {saving === item.scan_type ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : hasChanges(item) ? (
+                      <>
+                        <Check className="mr-1 h-3 w-3" />
+                        {t("save")}
+                      </>
+                    ) : (
+                      t("saved")
+                    )}
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <div className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -160,6 +210,8 @@ function AdminPricing() {
                 ))}
               </TableBody>
             </Table>
+            </div>
+            </>
           )}
         </CardContent>
       </Card>

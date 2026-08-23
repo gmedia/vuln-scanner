@@ -44,7 +44,7 @@ function AuthLayout({
           <p className="hidden text-xs text-muted-foreground sm:block">
             {t("authSubtitle")}
           </p>
-          <div className="mt-2 flex items-center gap-2">
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
             <ThemeSwitcher />
             <LanguageSwitcher />
           </div>

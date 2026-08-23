@@ -419,6 +419,7 @@ function WorkspaceSettings() {
             <p className="text-sm text-muted-foreground">{t("noMembers")}</p>
           )}
           {membersQuery.data && membersQuery.data.length > 0 && (
+            <div className="overflow-x-auto">
             <Table className="text-sm" data-testid="members-list">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
@@ -448,6 +449,7 @@ function WorkspaceSettings() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -481,6 +483,7 @@ function WorkspaceSettings() {
                 </div>
               )}
               {invitesQuery.data && invitesQuery.data.length > 0 && (
+                <div className="overflow-x-auto">
                 <Table className="text-sm" data-testid="invites-list">
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
@@ -521,7 +524,7 @@ function WorkspaceSettings() {
                             variant="ghost"
                             size="sm"
                             data-testid={`revoke-invite-${inv.id}`}
-                            className="text-destructive hover:bg-destructive/10"
+                            className="min-h-11 text-destructive hover:bg-destructive/10"
                             disabled={revokeMut.isPending}
                             onClick={() => revokeMut.mutate(inv.id)}
                           >
@@ -533,6 +536,7 @@ function WorkspaceSettings() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>

@@ -271,7 +271,7 @@ function UserGuide() {
             <Button
               type="button"
               variant="ghost"
-              className="h-auto w-full items-center justify-between gap-3 rounded-lg px-4 py-2.5 text-sm font-medium leading-none text-foreground hover:bg-transparent"
+              className="h-auto min-h-11 w-full items-center justify-between gap-3 rounded-lg px-4 py-2.5 text-sm font-medium leading-none text-foreground hover:bg-transparent"
               aria-expanded={mobileTocOpen}
               onClick={() => setMobileTocOpen((open) => !open)}
             >

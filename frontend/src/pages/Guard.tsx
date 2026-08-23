@@ -470,6 +470,7 @@ export default function Guard() {
                   <Skeleton className="h-12 w-full" />
                 ) : (
                   <>
+                    <div className="overflow-x-auto">
                     <Table className="min-w-[36rem]">
                       <TableHeader>
                         <TableRow>
@@ -533,7 +534,7 @@ export default function Guard() {
                                       type="button"
                                       variant="outline"
                                       size="sm"
-                                      className="h-8 text-xs text-destructive"
+                                      className="min-h-11 text-xs text-destructive md:h-8 md:min-h-8"
                                       aria-label={t("revokeTokenAria", {
                                         label: tok.label || tok.id,
                                       })}
@@ -572,6 +573,7 @@ export default function Guard() {
                         ))}
                       </TableBody>
                     </Table>
+                    </div>
                     {tokens.length > 0 && (
                       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-2 text-xs text-muted-foreground">
                         <span>
@@ -624,6 +626,7 @@ export default function Guard() {
                 </div>
               ) : (
                 <div>
+                  <div className="overflow-x-auto">
                   <Table className="min-w-[48rem]">
                     <TableHeader>
                       <TableRow>
@@ -666,6 +669,7 @@ export default function Guard() {
                       ))}
                     </TableBody>
                   </Table>
+                  </div>
                 </div>
               )}
             </CardContent>

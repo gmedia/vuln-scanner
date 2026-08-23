@@ -109,6 +109,39 @@ function AdminUsers() {
               </p>
             </div>
           ) : (
+            <>
+            <div className="space-y-2 md:hidden">
+              {data?.users.map((user) => (
+                <button
+                  key={user.id}
+                  type="button"
+                  onClick={() => navigate(`/admin/users/${user.id}`)}
+                  className="w-full rounded-lg border border-border bg-card p-3 text-left min-h-11"
+                >
+                  <p className="break-all font-mono text-xs text-foreground">
+                    {user.email}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    <Badge
+                      variant={user.is_admin ? "completed" : "default"}
+                      className="text-[9px]"
+                    >
+                      {user.is_admin ? t("roleAdmin") : t("roleUser")}
+                    </Badge>
+                    <Badge
+                      variant={user.is_verified ? "completed" : "pending"}
+                      className="text-[9px]"
+                    >
+                      {user.is_verified ? t("verified") : t("unverified")}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {user.credits} · {user.scan_count} · {formatDate(user.created_at)}
+                  </p>
+                </button>
+              ))}
+            </div>
+            <div className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -145,6 +178,8 @@ function AdminUsers() {
                 ))}
               </TableBody>
             </Table>
+            </div>
+            </>
           )}
 
           {!isLoading && totalPages > 1 && (

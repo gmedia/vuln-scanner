@@ -424,6 +424,62 @@ function Dashboard() {
                 {t("allLabRows")}
               </p>
             ) : (
+              <>
+              <div className="space-y-2 md:hidden">
+                {displayed.map((scan) => {
+                  const crit = severityCount(scan.result_summary, "critical");
+                  const high = severityCount(scan.result_summary, "high");
+                  const med = severityCount(scan.result_summary, "medium");
+                  const showStatus =
+                    scan.status === "failed" ||
+                    scan.status === "running" ||
+                    scan.status === "pending";
+                  return (
+                    <Link
+                      key={scan.id}
+                      to={`/scan/${scan.id}`}
+                      className="block rounded-lg border border-border bg-card p-3 min-h-11"
+                    >
+                      <p className="break-all font-mono text-xs text-foreground">
+                        {scan.target}
+                      </p>
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        {SCAN_TYPE_LABELS[scan.scan_type] ?? scan.scan_type}
+                        {" · "}
+                        {formatIdDate(scan.started_at, i18n.language)}
+                      </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-1">
+                        {showStatus ? (
+                          <Badge
+                            variant={
+                              scan.status as
+                                | "running"
+                                | "completed"
+                                | "failed"
+                                | "pending"
+                            }
+                            className="capitalize"
+                          >
+                            {scan.status === "failed"
+                              ? t("statusFailed")
+                              : scan.status === "running"
+                                ? t("statusRunning")
+                                : t("statusQueued")}
+                          </Badge>
+                        ) : (
+                          <Badge variant="completed" className="capitalize">
+                            {t("statusOk")}
+                          </Badge>
+                        )}
+                        {crit > 0 && <Badge variant="critical">{crit}C</Badge>}
+                        {high > 0 && <Badge variant="high">{high}H</Badge>}
+                        {med > 0 && <Badge variant="medium">{med}M</Badge>}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+              <div className="hidden md:block">
               <Table className="table-fixed text-xs">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
@@ -515,6 +571,8 @@ function Dashboard() {
                   })}
                 </TableBody>
               </Table>
+              </div>
+              </>
             )}
 
             {!isFirstLoad && totalScans > 0 && (

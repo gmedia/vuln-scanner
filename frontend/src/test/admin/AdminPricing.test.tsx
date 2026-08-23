@@ -129,9 +129,9 @@ describe("AdminPricing", () => {
       mockUseQueryReturn({ data: basePricing });
       mockUseMutationReturn();
       renderPage();
-      expect(screen.getByText("ip")).toBeInTheDocument();
-      expect(screen.getByText("domain")).toBeInTheDocument();
-      expect(screen.getByText("mobile")).toBeInTheDocument();
+      expect(screen.getAllByText("ip").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("domain").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("mobile").length).toBeGreaterThan(0);
     });
 
     it("shows input fields with credit cost values", () => {
@@ -149,7 +149,7 @@ describe("AdminPricing", () => {
       mockUseMutationReturn();
       renderPage();
       const dates = screen.getAllByText("6/1/2025");
-      expect(dates.length).toBe(3);
+      expect(dates.length).toBeGreaterThanOrEqual(3);
     });
 
     it("shows Saved on all buttons initially", () => {
@@ -157,7 +157,7 @@ describe("AdminPricing", () => {
       mockUseMutationReturn();
       renderPage();
       const savedButtons = screen.getAllByText("Saved");
-      expect(savedButtons.length).toBe(3);
+      expect(savedButtons.length).toBeGreaterThanOrEqual(3);
     });
 
     it("shows Save button when cost changes", async () => {
@@ -167,7 +167,7 @@ describe("AdminPricing", () => {
       const inputs = screen.getAllByRole("spinbutton");
       await userEvent.clear(inputs[0]);
       await userEvent.type(inputs[0], "8");
-      expect(screen.getByText("Save")).toBeInTheDocument();
+      expect(screen.getAllByText("Save").length).toBeGreaterThan(0);
     });
 
     it("does not show Save when value matches original", async () => {
@@ -177,7 +177,9 @@ describe("AdminPricing", () => {
       const inputs = screen.getAllByRole("spinbutton");
       await userEvent.clear(inputs[0]);
       await userEvent.type(inputs[0], "5");
-      expect(screen.queryByText("Save")).not.toBeInTheDocument();
+      expect(
+        screen.queryAllByText("Save", { exact: true }).length,
+      ).toBe(0);
     });
 
     it("calls mutate on Save click", async () => {
@@ -188,7 +190,7 @@ describe("AdminPricing", () => {
       const inputs = screen.getAllByRole("spinbutton");
       await userEvent.clear(inputs[0]);
       await userEvent.type(inputs[0], "8");
-      await userEvent.click(screen.getByText("Save"));
+      await userEvent.click(screen.getAllByText("Save")[0]);
       expect(mockMutate).toHaveBeenCalledWith({
         scanType: "ip",
         creditCost: 8,
@@ -221,7 +223,7 @@ describe("AdminPricing", () => {
       const inputs = screen.getAllByRole("spinbutton");
       await userEvent.clear(inputs[0]);
       await userEvent.type(inputs[0], "8");
-      await userEvent.click(screen.getByText("Save"));
+      await userEvent.click(screen.getAllByText("Save")[0]);
       expect(mockMutate).toHaveBeenCalledWith({
         scanType: "ip",
         creditCost: 8,

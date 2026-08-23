@@ -21,6 +21,8 @@ import { useAuthStore } from "@/store/authStore";
 import { Badge } from "@/components/ui/Badge";
 import { BrandMark } from "@/components/brand/BrandMark";
 import OrgSwitcher from "@/components/workspace/OrgSwitcher";
+import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
+import ThemeSwitcher from "@/components/theme/ThemeSwitcher";
 import {
   Sidebar as SidebarPrimitive,
   SidebarContent,
@@ -194,6 +196,10 @@ function Sidebar() {
         ) : null}
       </SidebarContent>
       <SidebarFooter>
+        <div className="flex flex-wrap items-center gap-2 px-2 pb-1 md:hidden">
+          <ThemeSwitcher />
+          <LanguageSwitcher />
+        </div>
         {activeJobId ? (
           <div className="rounded-md bg-muted p-3 group-data-[collapsible=icon]:hidden">
             <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">

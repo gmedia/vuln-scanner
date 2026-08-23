@@ -119,18 +119,18 @@ describe("SIEM page", () => {
     renderSiem();
 
     await waitFor(() => {
-      expect(screen.getByText("Login failed")).toBeInTheDocument();
+      expect(screen.getAllByText("Login failed").length).toBeGreaterThan(0);
     });
     expect(screen.queryByText(/Open Wazuh dashboard/i)).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "SIEM" })).toBeInTheDocument();
-    expect(screen.getByText("L10 · High")).toBeInTheDocument();
+    expect(screen.getAllByText("L10 · High").length).toBeGreaterThan(0);
     expect(screen.getByLabelText("Search box")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Apply" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Search events" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Cases" })).toBeInTheDocument();
     expect(screen.getByTestId("siem-event-detail-empty")).toBeInTheDocument();
 
-    await user.click(screen.getByText("Login failed"));
+    await user.click(screen.getAllByText("Login failed")[0]);
     expect(screen.getByTestId("siem-event-detail")).toBeInTheDocument();
     expect(screen.getByText("evt-1")).toBeInTheDocument();
   });
