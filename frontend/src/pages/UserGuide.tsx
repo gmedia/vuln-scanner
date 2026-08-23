@@ -309,7 +309,7 @@ function UserGuide() {
 
       <div className="lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-8">
         <aside data-testid="guide-desktop-toc" className="hidden lg:block">
-          <div className="sticky top-14 h-[calc(100svh-theme(spacing.14)-theme(spacing.8))] overflow-y-auto">
+          <div className="sticky top-16 max-h-[calc(100svh-5rem)] overflow-y-auto">
             <GuideDesktopToc activeId={activeId} t={t} />
           </div>
         </aside>
