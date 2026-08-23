@@ -440,6 +440,45 @@ export default function Siem() {
                 <Skeleton className="h-32 w-full" />
               ) : (
                 <>
+                <div className="space-y-2 md:hidden">
+                  {events.length === 0 ? (
+                    <p
+                      data-testid="siem-events-empty"
+                      className="py-10 text-center text-muted-foreground"
+                    >
+                      {t("eventsEmpty")}
+                    </p>
+                  ) : (
+                    events.map((ev) => (
+                      <button
+                        key={ev.external_id}
+                        type="button"
+                        data-testid="siem-event-row"
+                        className="w-full rounded-lg border border-border bg-card p-3 text-left min-h-11"
+                        onClick={() => setSelected(ev)}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <LevelChip level={ev.rule_level} t={t} />
+                          <span className="shrink-0 text-[11px] text-muted-foreground">
+                            {formatWhen(ev.occurred_at)}
+                          </span>
+                        </div>
+                        <p className="mt-2 break-words text-sm text-foreground">
+                          {ev.rule_description}
+                          {ev.rule_id ? (
+                            <span className="ml-1 text-xs text-muted-foreground">
+                              #{ev.rule_id}
+                            </span>
+                          ) : null}
+                        </p>
+                        <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
+                          {ev.agent_name ?? ev.agent_wazuh_id ?? "—"}
+                        </p>
+                      </button>
+                    ))
+                  )}
+                </div>
+                <div className="hidden md:block">
                 <Table className="table-fixed">
                   <TableHeader className="sticky top-0 z-[1] bg-card shadow-[0_1px_0_hsl(var(--border))]">
                     <TableRow>
@@ -495,6 +534,7 @@ export default function Siem() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
                 {allEvents.length > pageSize && (
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                     <span>
