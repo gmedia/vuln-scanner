@@ -76,7 +76,7 @@ describe("MobileUpload", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /browse files/i }),
-    ).toBeInTheDocument();
+    ).toHaveClass("min-h-11");
   });
 
   it("sets aria-pressed on platform selection", async () => {
