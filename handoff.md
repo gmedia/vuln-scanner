@@ -27,6 +27,7 @@
 | **P5 Guard** | **On `main`**: spek #273 · thin #274 · Http #275 · tables #360 · guide TOC #361/#362 — mock CI default; **edge lab + env + live smoke still human** |
 | **P7 SIEM** | Spek + S0–S5 code on `main` (#307); host flag `SIEM_ENABLED` (default false). **Do not** add Discover/cases on `/guard`. “S3+” in chat = API/cases/SPA slices — **already coded**; residual is **host flag + SKU human** |
 | **P3 Assets** | **S1–S5 on `main`** (#380 + pack/docs). SPA `/assets`, SKU hard cap, 1:1 schedule. Residual: **edge Alembic smoke** ([`docs/scan-assets-ops.md`](docs/scan-assets-ops.md)) |
+| **P8 Uptime** | Spek [`docs/specs/uptime-v1.md`](docs/specs/uptime-v1.md). Branch `feat/uptime-v1`. Ops [`docs/uptime-ops.md`](docs/uptime-ops.md). |
 | **P0 commercial** | **Policy locked** (#245): Basic **300k** / Pro **650k** / Multi **2M**; credits **10/24/60**; AM renew; attach ARPU primary; pilot #1 multi-service, 1 mo sponsored |
 | **P0 GTM kit in git** | One-pager + SKU + **[`docs/commercial/am-wave1-email-id.md`](docs/commercial/am-wave1-email-id.md)** (#246) |
 | **Still human (not git)** | Finance **service_id** ×3; AM **10 CRM SIDs**; named **pilot #1**; AM **send** wave-1; ops **fulfill**; Guard lab Manager/Indexer + **wipe `tc5` before enroll e2e**; screenshot pack 08–18 needs **`E2E_PASSWORD` on e2e host** (do **not** invent on coding host) |
