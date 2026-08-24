@@ -45,7 +45,7 @@ test.describe("Mobile Scanner Error States", () => {
 
     // Switch to iOS — file should be cleared
     await page.locator("button:has-text('iOS (.ipa)')").click();
-    await expect(page.locator("text=Drop .ipa file here")).toBeVisible();
+    await expect(page.locator("text=Choose .ipa file")).toBeVisible();
 
     // Submit button should be disabled again
     await expect(

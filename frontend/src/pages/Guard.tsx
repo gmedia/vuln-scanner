@@ -89,6 +89,75 @@ function apiDetail(err: unknown, fallback: string): string {
   return fallback;
 }
 
+function tokenStatusBadge(
+  tok: { revoked_at: string | null; used_at: string | null },
+  t: (key: string) => string,
+) {
+  if (tok.revoked_at) {
+    return <Badge variant="info">{t("statusRevoked")}</Badge>;
+  }
+  if (tok.used_at) {
+    return (
+      <Badge className="border border-border bg-muted text-foreground">
+        {t("statusUsed")}
+      </Badge>
+    );
+  }
+  return (
+    <Badge className="bg-emerald-500/15 text-emerald-600">
+      {t("statusReady")}
+    </Badge>
+  );
+}
+
+function TokenRevokeButton({
+  tok,
+  t,
+  disabled,
+  onRevoke,
+}: {
+  tok: { id: string; label: string | null };
+  t: (key: string, options?: { label: string }) => string;
+  disabled: boolean;
+  onRevoke: (id: string) => void;
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="min-h-11 text-xs text-destructive md:h-8 md:min-h-8"
+          aria-label={t("revokeTokenAria", {
+            label: tok.label || tok.id,
+          })}
+          disabled={disabled}
+        >
+          {t("revoke")}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t("revokeConfirmTitle")}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {t("revokeConfirmBody")}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+          <AlertDialogAction
+            className={buttonVariants({ variant: "destructive" })}
+            onClick={() => onRevoke(tok.id)}
+          >
+            {t("revoke")}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 function statusBadge(status: string, t: (key: string) => string) {
   const s = status.toLowerCase();
   if (s === "active")
@@ -470,7 +539,43 @@ export default function Guard() {
                   <Skeleton className="h-12 w-full" />
                 ) : (
                   <>
-                    <div className="overflow-x-auto">
+                    <div className="space-y-2 md:hidden">
+                      {visibleTokens.map((tok) => (
+                        <div
+                          key={tok.id}
+                          className="rounded-lg border border-border bg-card p-3"
+                          data-testid="guard-enroll-token-card"
+                        >
+                          <p
+                            className="truncate font-medium"
+                            title={tok.label || tok.id}
+                          >
+                            {tok.label || t("tokenFallback")}
+                          </p>
+                          <p
+                            className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground"
+                            title={tok.id}
+                          >
+                            {tok.id}
+                          </p>
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            {t("colExpires")}: {formatWhen(tok.expires_at)}
+                          </p>
+                          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                            {tokenStatusBadge(tok, t)}
+                            {!tok.revoked_at && (
+                              <TokenRevokeButton
+                                tok={tok}
+                                t={t}
+                                disabled={revokeMut.isPending}
+                                onRevoke={(id) => revokeMut.mutate(id)}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="hidden overflow-x-auto md:block">
                     <Table className="min-w-[36rem]">
                       <TableHeader>
                         <TableRow>
@@ -511,62 +616,15 @@ export default function Guard() {
                             <TableCell className="whitespace-nowrap text-muted-foreground">
                               {formatWhen(tok.expires_at)}
                             </TableCell>
-                            <TableCell>
-                              {tok.revoked_at ? (
-                                <Badge variant="info">
-                                  {t("statusRevoked")}
-                                </Badge>
-                              ) : tok.used_at ? (
-                                <Badge className="border border-border bg-muted text-foreground">
-                                  {t("statusUsed")}
-                                </Badge>
-                              ) : (
-                                <Badge className="bg-emerald-500/15 text-emerald-600">
-                                  {t("statusReady")}
-                                </Badge>
-                              )}
-                            </TableCell>
+                            <TableCell>{tokenStatusBadge(tok, t)}</TableCell>
                             <TableCell>
                               {!tok.revoked_at && (
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      className="min-h-11 text-xs text-destructive md:h-8 md:min-h-8"
-                                      aria-label={t("revokeTokenAria", {
-                                        label: tok.label || tok.id,
-                                      })}
-                                      disabled={revokeMut.isPending}
-                                    >
-                                      {t("revoke")}
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>
-                                        {t("revokeConfirmTitle")}
-                                      </AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        {t("revokeConfirmBody")}
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>
-                                        {t("cancel")}
-                                      </AlertDialogCancel>
-                                      <AlertDialogAction
-                                        className={buttonVariants({
-                                          variant: "destructive",
-                                        })}
-                                        onClick={() => revokeMut.mutate(tok.id)}
-                                      >
-                                        {t("revoke")}
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
+                                <TokenRevokeButton
+                                  tok={tok}
+                                  t={t}
+                                  disabled={revokeMut.isPending}
+                                  onRevoke={(id) => revokeMut.mutate(id)}
+                                />
                               )}
                             </TableCell>
                           </TableRow>
@@ -626,7 +684,32 @@ export default function Guard() {
                 </div>
               ) : (
                 <div>
-                  <div className="overflow-x-auto">
+                  <div className="space-y-2 md:hidden">
+                    {agentsQ.data?.map((a) => (
+                      <div
+                        key={a.id}
+                        className="rounded-lg border border-border bg-card p-3"
+                        data-testid="guard-agent-card"
+                      >
+                        <p
+                          className="break-all font-mono text-xs font-medium"
+                          title={a.name}
+                        >
+                          {a.name}
+                        </p>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          {statusBadge(a.status, t)}
+                          <span className="text-xs text-muted-foreground">
+                            {a.version ?? "—"}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          {formatWhen(a.last_keep_alive)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="hidden overflow-x-auto md:block">
                   <Table className="min-w-[48rem]">
                     <TableHeader>
                       <TableRow>

@@ -81,7 +81,7 @@ function Landing() {
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-              <Link to="/login" className="w-full sm:w-auto">
+              <Link to="/login" className="hidden w-full sm:inline sm:w-auto">
                 <Button
                   variant="outline"
                   size="lg"
@@ -91,7 +91,6 @@ function Landing() {
                 </Button>
               </Link>
             </div>
-            <p className="text-xs text-foreground/70 pt-1">{tc("pipeline")}</p>
           </div>
         </section>
 
@@ -141,13 +140,13 @@ function Landing() {
           <div className="flex items-center gap-4 text-xs">
             <Link
               to="/login"
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
             >
               {tc("signIn")}
             </Link>
             <Link
               to="/register"
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
             >
               {tc("getStarted")}
             </Link>

@@ -52,7 +52,7 @@ function Header({ children }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-40 flex h-12 min-w-0 shrink-0 items-center gap-2 overflow-x-hidden border-b border-border bg-background px-3 sm:gap-4 sm:px-4">
+    <header className="sticky top-0 z-40 flex h-12 min-h-12 min-w-0 shrink-0 items-center gap-2 overflow-x-hidden border-b border-border bg-background px-3 pt-[env(safe-area-inset-top)] sm:gap-4 sm:px-4">
       {children}
       <div className="flex flex-1 items-center justify-between gap-3">
         <h1 className="lg:sr-only">
@@ -89,7 +89,7 @@ function Header({ children }: HeaderProps) {
           <Button
             variant="outline"
             size="sm"
-            className="h-9 gap-1.5 bg-muted/40 px-2.5 text-xs text-foreground hover:text-primary"
+            className="h-11 min-h-11 gap-1.5 bg-muted/40 px-2.5 text-xs text-foreground hover:text-primary"
             asChild
           >
             <Link to="/credit-history" title={tNav("creditsTitle")}>
@@ -113,7 +113,7 @@ function Header({ children }: HeaderProps) {
               <Button
                 type="button"
                 variant="ghost"
-                className="h-9 gap-2 px-2 text-sm text-muted-foreground"
+                className="h-11 min-h-11 gap-2 px-2 text-sm text-muted-foreground"
               >
                 <User className="h-4 w-4" />
                 <span className="hidden max-w-[14rem] truncate text-xs sm:inline">

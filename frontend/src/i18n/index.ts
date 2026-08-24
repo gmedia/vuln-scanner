@@ -108,6 +108,7 @@ void i18n.use(initReactI18next).init({
   ],
   interpolation: { escapeValue: false },
   returnNull: false,
+  compatibilityJSON: "v4",
 });
 
 if (typeof document !== "undefined") {

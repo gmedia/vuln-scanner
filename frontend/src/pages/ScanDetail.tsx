@@ -114,7 +114,7 @@ function ScanDetail() {
         <div className="flex min-w-0 items-start gap-3">
           <Link
             to="/dashboard"
-            className="mt-0.5 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="mt-0.5 inline-flex min-h-11 min-w-11 items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <ArrowLeft className="h-5 w-5" />
             <span className="sr-only">{t("backToDashboard")}</span>
@@ -208,13 +208,10 @@ function ScanDetail() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <CardTitle className="text-sm tracking-wide">
-                    {t("findings")}
-                  </CardTitle>
-                  <CardDescription className="text-xs">
                     {t("findingsDetected", {
                       count: scan.findings?.length ?? 0,
                     })}
-                  </CardDescription>
+                  </CardTitle>
                 </div>
               </div>
             </CardHeader>

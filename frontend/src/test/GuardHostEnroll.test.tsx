@@ -145,9 +145,11 @@ describe("Guard host enroll UI", () => {
       </QueryClientProvider>,
     );
 
-    const revokeBtn = await screen.findByRole("button", {
-      name: /Revoke token/,
-    });
+    const revokeBtn = (
+      await screen.findAllByRole("button", {
+        name: /Revoke token/,
+      })
+    )[0];
     await user.click(revokeBtn);
     expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Revoke" }));
@@ -160,6 +162,7 @@ describe("Guard host enroll UI", () => {
     expect(enrollTable).toBeTruthy();
     expect(enrollTable?.className ?? "").toContain("min-w-[36rem]");
     expect(enrollTable?.className ?? "").not.toContain("table-fixed");
+    expect(screen.getByTestId("guard-enroll-token-card")).toBeInTheDocument();
   });
 
   it("keeps agent columns from table-fixed crush on a narrow layout", async () => {

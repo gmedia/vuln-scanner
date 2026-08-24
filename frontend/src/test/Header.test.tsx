@@ -128,6 +128,7 @@ describe("Header", () => {
     renderWithRouter(<Header />);
     expect(screen.getByTestId("header-credits")).toHaveTextContent("42");
     expect(screen.getByTitle("Personal credit balance")).toBeInTheDocument();
+    expect(screen.getByTitle("Personal credit balance")).toHaveClass("min-h-11");
   });
 
   it("shows org switcher when organizations present", () => {
