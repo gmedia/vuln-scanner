@@ -13,6 +13,7 @@ import {
   BookOpen,
   Siren,
   Server,
+  Activity,
 } from "lucide-react";
 import { BRAND } from "@/lib/brand";
 import { useTranslation } from "react-i18next";
@@ -61,6 +62,13 @@ const productNav = [
     hintKey: "siemHint",
     icon: Siren,
     testId: "nav-siem",
+  },
+  {
+    to: "/uptime",
+    labelKey: "uptime",
+    hintKey: "uptimeHint",
+    icon: Activity,
+    testId: "nav-uptime",
   },
   { to: "/guide", labelKey: "guide", icon: BookOpen },
 ];

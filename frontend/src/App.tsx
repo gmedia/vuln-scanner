@@ -24,6 +24,7 @@ const Schedules = lazy(() => import("@/pages/Schedules"));
 const Assets = lazy(() => import("@/pages/Assets"));
 const Guard = lazy(() => import("@/pages/Guard"));
 const Siem = lazy(() => import("@/pages/Siem"));
+const Uptime = lazy(() => import("@/pages/Uptime"));
 const Profile = lazy(() => import("@/pages/Profile"));
 const UserGuide = lazy(() => import("@/pages/UserGuide"));
 const WorkspaceSettings = lazy(() => import("@/pages/WorkspaceSettings"));
@@ -95,6 +96,10 @@ function App() {
             />
             <Route path="/guard" element={<PageBoundary component={Guard} />} />
             <Route path="/siem" element={<PageBoundary component={Siem} />} />
+            <Route
+              path="/uptime"
+              element={<PageBoundary component={Uptime} />}
+            />
             <Route
               path="/profile"
               element={<PageBoundary component={Profile} />}

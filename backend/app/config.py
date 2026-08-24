@@ -141,6 +141,9 @@ class Settings(BaseSettings):
     siem_include_full_log: bool = False
     siem_max_page_size: int = 50
 
+    uptime_enabled: bool = True
+    uptime_allow_private: bool = False
+
 
 settings = Settings()
 

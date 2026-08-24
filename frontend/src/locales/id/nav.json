@@ -9,6 +9,8 @@
   "guardHint": "Agen host",
   "siem": "SIEM",
   "siemHint": "Event org",
+  "uptime": "Uptime",
+  "uptimeHint": "Probe HTTP/TCP",
   "guide": "Panduan",
   "creditHistory": "Riwayat kredit",
   "profile": "Profil",
