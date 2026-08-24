@@ -38,6 +38,14 @@ describe("AppShell", () => {
     expect(wrap).toBeInstanceOf(HTMLElement);
   });
 
+  it("pads the main column for the home indicator", () => {
+    renderShell();
+    const wrap = Array.from(document.querySelectorAll("div")).find((el) =>
+      el.className.includes("pb-[max(2.5rem,env(safe-area-inset-bottom))]"),
+    );
+    expect(wrap).toBeInstanceOf(HTMLElement);
+  });
+
   it("renders sidebar toggle button with Menu icon", () => {
     renderShell();
     const toggles = screen.getAllByRole("button", {

@@ -27,7 +27,7 @@ function NotFound() {
 
   return (
     <div className="flex min-h-dvh flex-col items-center bg-background px-4 pb-10 pt-[max(1.25rem,env(safe-area-inset-top))] sm:justify-center sm:py-10">
-      <div className="flex w-full max-w-3xl flex-col items-center rounded-xl border border-border bg-card px-10 py-16 text-center shadow-sm 2xl:max-w-4xl 2xl:px-16 2xl:py-20">
+      <div className="flex w-full max-w-3xl flex-col items-center rounded-xl border border-border bg-card px-10 py-16 text-center shadow-sm ring-1 ring-foreground/10 2xl:max-w-4xl 2xl:px-16 2xl:py-20">
         <div className="mb-6">
           <BrandMark to="/" aria-label={t("homeAria")} />
         </div>

@@ -199,4 +199,19 @@ describe("Guard host enroll UI", () => {
     expect(agentTable?.className ?? "").toContain("min-w-[48rem]");
     expect(agentTable?.className ?? "").not.toContain("table-fixed");
   });
+
+  it("sizes Sync for 44pt taps", async () => {
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <Guard />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    const sync = await screen.findByRole("button", { name: /sync/i });
+    expect(sync).toHaveClass("min-h-11");
+  });
 });

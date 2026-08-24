@@ -6,7 +6,7 @@ import ThemeSwitcher from "@/components/theme/ThemeSwitcher";
 import { useTranslation } from "react-i18next";
 
 export const AUTH_SECONDARY_LINK =
-  "inline-flex min-h-11 items-center justify-center py-2 text-sm text-foreground/90 hover:text-primary hover:underline";
+  "inline-flex min-h-11 min-w-11 items-center justify-center px-2 py-2 text-sm text-foreground hover:text-primary hover:underline";
 
 interface AuthLayoutProps {
   children: ReactNode;

@@ -144,7 +144,7 @@ function MobileUpload() {
             onClick={() => selectPlatform("android")}
             disabled={startMobileScan.isPending}
             className={cn(
-              "flex-1",
+              "min-h-11 flex-1 text-foreground",
               platform === "android" &&
                 "ring-2 ring-primary bg-primary/10 text-foreground",
             )}
@@ -164,7 +164,7 @@ function MobileUpload() {
             onClick={() => selectPlatform("ios")}
             disabled={startMobileScan.isPending}
             className={cn(
-              "flex-1",
+              "min-h-11 flex-1 text-foreground",
               platform === "ios" &&
                 "ring-2 ring-primary bg-primary/10 text-foreground",
             )}
@@ -219,6 +219,7 @@ function MobileUpload() {
             type="button"
             variant="outline"
             size="sm"
+            className="min-h-11 text-foreground"
             onClick={(e) => {
               e.stopPropagation();
               fileRef.current?.click();
@@ -261,7 +262,7 @@ function MobileUpload() {
       <Button
         onClick={handleSubmit}
         disabled={submitDisabled}
-        className="w-full sm:w-auto"
+        className="min-h-11 w-full sm:w-auto"
       >
         {startMobileScan.isPending ? (
           <>

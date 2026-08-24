@@ -117,4 +117,11 @@ describe("NotFound", () => {
       expect(document.querySelector(".flex.min-h-dvh")).toBeInTheDocument();
     });
   });
+
+  it("rings the card so it separates from the dark canvas", async () => {
+    const { container } = render(<NotFound />);
+    await screen.findByText("404");
+    const card = container.querySelector(".ring-1");
+    expect(card).toBeInstanceOf(HTMLElement);
+  });
 });

@@ -42,7 +42,7 @@ function Landing() {
               <ThemeSwitcher />
               <LanguageSwitcher />
             </div>
-            <Link to="/login">
+            <Link to="/login" className="hidden sm:inline">
               <Button
                 variant="outline"
                 size="sm"
@@ -81,7 +81,7 @@ function Landing() {
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-              <Link to="/login" className="hidden w-full sm:inline sm:w-auto">
+              <Link to="/login" className="w-full sm:w-auto">
                 <Button
                   variant="outline"
                   size="lg"

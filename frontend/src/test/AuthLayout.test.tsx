@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
-import { AuthLayout } from "@/components/layout/AuthLayout";
+import { AuthLayout, AUTH_SECONDARY_LINK } from "@/components/layout/AuthLayout";
 
 vi.mock("react-router-dom", () => ({
   Link: ({
@@ -60,5 +60,10 @@ describe("AuthLayout", () => {
     );
     const tagline = screen.getByText(/colo, VPS, and hospitality/i);
     expect(tagline).toHaveClass("hidden", "sm:block");
+  });
+
+  it("sizes secondary auth links for 44pt taps", () => {
+    expect(AUTH_SECONDARY_LINK).toMatch(/min-h-11/);
+    expect(AUTH_SECONDARY_LINK).toMatch(/min-w-11/);
   });
 });
