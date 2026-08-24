@@ -124,7 +124,7 @@ function AdminPricing() {
                     size="sm"
                     onClick={() => handleSave(item)}
                     disabled={!hasChanges(item) || saving === item.scan_type}
-                    className="min-h-11 w-full text-xs"
+                    className="min-h-11 w-full text-xs disabled:opacity-80"
                   >
                     {saving === item.scan_type ? (
                       <Loader2 className="h-3 w-3 animate-spin" />
