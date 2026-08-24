@@ -3,8 +3,18 @@ import { describe, it, beforeEach, expect } from "vitest";
 import Landing from "@/pages/Landing";
 
 vi.mock("react-router-dom", () => ({
-  Link: ({ to, children }: { to: string; children: React.ReactNode }) => (
-    <a href={to}>{children}</a>
+  Link: ({
+    to,
+    children,
+    className,
+  }: {
+    to: string;
+    children: React.ReactNode;
+    className?: string;
+  }) => (
+    <a href={to} className={className}>
+      {children}
+    </a>
   ),
 }));
 
@@ -79,6 +89,23 @@ describe("Landing Page", () => {
     links.forEach((link) => {
       expect(link).toHaveAttribute("href", "/login");
     });
+  });
+
+  it("keeps header Sign In off the mobile chrome", () => {
+    const header = document.querySelector("header");
+    expect(header).toBeTruthy();
+    const headerSignIn = Array.from(header!.querySelectorAll("a")).find((a) =>
+      a.getAttribute("href") === "/login",
+    );
+    expect(headerSignIn).toHaveClass("hidden", "sm:inline");
+  });
+
+  it("shows Sign In in the hero on mobile", () => {
+    const heroSignIn = Array.from(
+      document.querySelectorAll("main a[href='/login']"),
+    );
+    expect(heroSignIn.length).toBeGreaterThanOrEqual(1);
+    expect(heroSignIn[0]).not.toHaveClass("hidden");
   });
 
   it("renders attach loop microcopy", () => {
