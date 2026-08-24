@@ -1,0 +1,17 @@
+{
+  "title": "Uptime",
+  "subtitle": "Cek HTTP dan TCP dari luar untuk workspace ini (batas SKU).",
+  "empty": "Belum ada monitor.",
+  "add": "Tambah monitor",
+  "name": "Nama",
+  "target": "Target",
+  "type": "Tipe",
+  "save": "Simpan",
+  "cancel": "Batal",
+  "delete": "Hapus",
+  "pause": "Jeda",
+  "resume": "Lanjut",
+  "limitReached": "Batas kursi Uptime untuk SKU ini tercapai.",
+  "skuLabel": "SKU {{sku}} — {{count}} / {{limit}}",
+  "confirmDelete": "Hapus monitor ini?"
+}

@@ -1,0 +1,17 @@
+{
+  "title": "Uptime",
+  "subtitle": "Outside-in HTTP and TCP checks for this workspace (SKU cap).",
+  "empty": "No monitors yet.",
+  "add": "Add monitor",
+  "name": "Name",
+  "target": "Target",
+  "type": "Type",
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "pause": "Pause",
+  "resume": "Resume",
+  "limitReached": "Uptime seat limit reached for this SKU.",
+  "skuLabel": "SKU {{sku}} — {{count}} / {{limit}}",
+  "confirmDelete": "Delete this monitor?"
+}
