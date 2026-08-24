@@ -1,0 +1,14 @@
+{
+  "subject_down": "[Sinexis Uptime] DOWN — {name}",
+  "subject_up": "[Sinexis Uptime] UP — {name}",
+  "subject_tls": "[Sinexis Uptime] TLS warning — {name}",
+  "heading_down": "Monitor is down",
+  "heading_up": "Monitor is up",
+  "heading_tls": "TLS certificate warning",
+  "intro_down": "<strong>{name}</strong> ({target}) failed consecutive checks.",
+  "intro_up": "<strong>{name}</strong> ({target}) recovered.",
+  "intro_tls": "<strong>{name}</strong> ({target}): {detail}",
+  "open": "Open Uptime",
+  "or_copy": "Or copy this link:",
+  "footer": "You received this because an Uptime monitor is enabled for your workspace."
+}
