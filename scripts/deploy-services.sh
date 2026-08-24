@@ -35,7 +35,7 @@
 # .env may be incomplete vs live containers — do not blindly copy placeholders.
 #
 # Default services (when none listed): backend frontend worker_mobile
-#   worker_dead_letter celery_beat
+#   worker_uptime worker_dead_letter celery_beat
 # Postgres and redis are NEVER rebuilt/recreated by this script.
 # Include celery_beat when rolling Scan Attach schedules (see docs/scan-schedules-ops.md).
 #
@@ -50,6 +50,7 @@ DEFAULT_SERVICES=(
   backend
   frontend
   worker_mobile
+  worker_uptime
   worker_dead_letter
   celery_beat
 )

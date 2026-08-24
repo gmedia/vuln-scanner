@@ -6,7 +6,7 @@
 #   # or explicitly:
 # App host (do not start ip/domain — those belong on the worker host):
 #   docker compose -f docker-compose.prod.yml -f docker-compose.prod.remote-data.yml \
-#     up -d backend frontend worker_mobile worker_dead_letter celery_beat
+#     up -d backend frontend worker_mobile worker_uptime worker_dead_letter celery_beat
 # Worker host:
 #   docker compose -f docker-compose.prod.yml -f docker-compose.prod.remote-data.yml \
 #     up -d worker_ip worker_domain
@@ -52,6 +52,15 @@ services:
         required: false
 
   worker_mobile:
+    depends_on:
+      postgres:
+        condition: service_started
+        required: false
+      redis:
+        condition: service_started
+        required: false
+
+  worker_uptime:
     depends_on:
       postgres:
         condition: service_started

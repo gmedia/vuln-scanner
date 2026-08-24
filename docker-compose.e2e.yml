@@ -57,6 +57,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-e2e-jwt-secret}
       OSV_BASE_URL: https://api.osv.dev/v1
       MAX_UPLOAD_SIZE_MB: 500
+      UPTIME_ENABLED: ${UPTIME_ENABLED:-true}
     ports:
       - "8000:8000"
     volumes:
@@ -135,6 +136,29 @@ services:
       - ./backend:/backend
       - scan_data:/tmp/scans
     command: celery -A celery_app worker -Q mobile_scan --concurrency=1 --loglevel=info
+
+  worker_uptime:
+    build:
+      context: .
+      dockerfile: workers/Dockerfile
+    container_name: vuln-worker-uptime-e2e
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
+      DATABASE_URL_SYNC: postgresql://vuln_scanner:change_me_in_production@postgres:5432/vuln_scanner
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/0
+      CELERY_QUEUE: uptime_check
+      UPTIME_ENABLED: ${UPTIME_ENABLED:-true}
+    volumes:
+      - ./workers:/app
+      - ./backend:/backend
+    command: celery -A celery_app worker -Q uptime_check --concurrency=2 --loglevel=info
 
   frontend:
     build:
