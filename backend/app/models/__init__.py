@@ -8,6 +8,7 @@ from app.models.pricing import PricingConfig
 from app.models.scan_job import ScanJob
 from app.models.scan_schedule import ScanSchedule
 from app.models.siem import SiemCase, SiemCaseEvent, SiemCaseNote
+from app.models.uptime import UptimeEvent, UptimeMonitor, UptimeSample
 from app.models.user import User
 
 __all__ = [
@@ -29,4 +30,7 @@ __all__ = [
     "SiemCase",
     "SiemCaseEvent",
     "SiemCaseNote",
+    "UptimeMonitor",
+    "UptimeSample",
+    "UptimeEvent",
 ]
