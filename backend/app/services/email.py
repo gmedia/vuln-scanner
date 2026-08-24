@@ -196,3 +196,42 @@ async def send_scan_diff_email(
     msg.attach(MIMEText(html_body, "html", "utf-8"))
 
     return await _send_with_retry(msg, email_to, "Scan diff")
+
+
+async def send_uptime_email(
+    email_to: str,
+    *,
+    kind: str,
+    name: str,
+    target: str,
+    locale: str | None = None,
+    detail: str | None = None,
+) -> bool:
+    loc = normalize_lang(locale)
+    key = kind if kind in ("down", "up", "tls") else "down"
+    subject = t(loc, "uptime", f"subject_{key}", name=name)
+    heading = t(loc, "uptime", f"heading_{key}")
+    intro = t(loc, "uptime", f"intro_{key}", name=name, target=target, detail=detail or "")
+    open_label = t(loc, "uptime", "open")
+    or_copy = t(loc, "uptime", "or_copy")
+    footer = t(loc, "uptime", "footer")
+    link = f"{FRONTEND_URL}/uptime"
+    html_body = f"""\
+<html>
+<body style="font-family: sans-serif; max-width: 520px; margin: 0 auto; padding: 24px;">
+  <h2 style="margin-bottom: 8px;">{heading}</h2>
+  <p style="color: #374151;">{intro}</p>
+  <p>
+    <a href="{link}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;
+       text-decoration:none;border-radius:6px">{open_label}</a>
+  </p>
+  <p style="color: #6b7280; font-size: 14px;">{or_copy}<br>{link}</p>
+  <p style="color: #6b7280; font-size: 13px;">{footer}</p>
+</body>
+</html>"""
+    msg = MIMEMultipart("alternative")
+    msg["From"] = SMTP_FROM
+    msg["To"] = email_to
+    msg["Subject"] = subject
+    msg.attach(MIMEText(html_body, "html", "utf-8"))
+    return await _send_with_retry(msg, email_to, "Uptime")
