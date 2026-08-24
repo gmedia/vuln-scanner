@@ -128,7 +128,7 @@ function TokenRevokeButton({
           type="button"
           variant="outline"
           size="sm"
-          className="min-h-11 text-xs text-destructive md:h-8 md:min-h-8"
+          className="min-h-11 text-xs text-destructive"
           aria-label={t("revokeTokenAria", {
             label: tok.label || tok.id,
           })}
@@ -354,7 +354,7 @@ export default function Guard() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="h-7 px-0 text-xs text-muted-foreground"
+                    className="min-h-11 px-2 text-xs text-foreground"
                     onClick={() => setShowTechDetails((v) => !v)}
                   >
                     {showTechDetails ? t("hideTech") : t("showTech")}
@@ -367,13 +367,13 @@ export default function Guard() {
                 )}
               </div>
               {canAdmin && enabled && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 shrink-0 text-xs"
-                  onClick={() => syncMut.mutate()}
-                  disabled={syncMut.isPending}
-                >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="min-h-11 w-full shrink-0 text-xs sm:w-auto"
+                    onClick={() => syncMut.mutate()}
+                    disabled={syncMut.isPending}
+                  >
                   <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                   {t("sync")}
                 </Button>
@@ -456,7 +456,7 @@ export default function Guard() {
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="h-7 text-xs"
+                          className="min-h-11 text-xs"
                           onClick={() => {
                             void navigator.clipboard
                               ?.writeText(enrollCurl)
