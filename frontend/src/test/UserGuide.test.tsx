@@ -113,10 +113,12 @@ describe("UserGuide", () => {
     const mobileToc = tocNavs[0]?.closest("[data-slot='card']");
     expect(mobileToc).toBeTruthy();
     expect(mobileToc?.parentElement).toHaveClass("sticky", "top-14");
-    expect(screen.getByRole("button", { name: /Contents/ })).toHaveAttribute(
-      "aria-expanded",
-      "false",
-    );
+    const contentsToggle = screen.getByRole("button", { name: /Contents/ });
+    expect(contentsToggle).toHaveAttribute("aria-expanded", "false");
+    const tocLink = screen.getAllByRole("link", {
+      name: "1. Start: register, login, workspace",
+    })[0];
+    expect(tocLink.className).toMatch(/min-h-11/);
     const desktopToc = screen.getByTestId("guide-desktop-toc");
     expect(desktopToc.className).toMatch(/lg:block/);
     expect(desktopToc.querySelector(".sticky")).toBeTruthy();

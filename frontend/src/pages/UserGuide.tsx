@@ -173,7 +173,7 @@ function GuideTocLinks({
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  "h-auto w-full justify-start whitespace-normal px-2.5 py-1.5 text-left font-normal",
+                  "h-auto min-h-11 w-full justify-start whitespace-normal px-2.5 py-2 text-left font-normal",
                   "border-l-2",
                   isActive
                     ? "border-primary bg-muted font-medium text-foreground"
