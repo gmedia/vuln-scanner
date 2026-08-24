@@ -4,7 +4,7 @@ import asyncio
 import os
 import sys
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 from celery import shared_task
@@ -102,7 +102,7 @@ def check_one(monitor_id: str) -> dict[str, Any]:
             return {"ok": True, "state": monitor.state, "probe_ok": probe.ok}
 
     try:
-        return _run(_body())
+        return cast(dict[str, Any], _run(_body()))
     except Exception as exc:
         logger.exception("uptime.check failed: {error}", error=exc)
         return {"ok": False, "error": str(exc)[:200]}
