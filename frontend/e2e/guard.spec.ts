@@ -166,7 +166,8 @@ test.describe("Guard — Layer B mutations (CI / non-prod)", () => {
       .locator(
         '[data-testid="guard-enroll-token-row"], [data-testid="guard-enroll-token-card"]',
       )
-      .filter({ hasText: label });
+      .filter({ hasText: label })
+      .first();
     await expect(row).toBeVisible();
     await row.getByRole("button", { name: /Cabut/ }).click();
     const dialog = page.getByRole("alertdialog");
