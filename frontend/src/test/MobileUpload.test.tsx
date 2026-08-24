@@ -62,17 +62,17 @@ describe("MobileUpload", () => {
     expect(androidBtn).toBeInTheDocument();
     expect(androidBtn).toHaveAttribute("aria-pressed", "true");
     expect(
-      screen.getByText(/drop \.apk or \.aab file here/i),
+        screen.getByText(/choose \.apk or \.aab file/i),
     ).toBeInTheDocument();
   });
 
   it("renders drop zone with file type text and Browse files", () => {
     render(<MobileUpload />);
     expect(
-      screen.getByText(/drop \.apk or \.aab file here/i),
+        screen.getByText(/choose \.apk or \.aab file/i),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/or drag and drop \(max 500MB\)/i),
+        screen.getByText(/tap to browse, or drop a file \(max 500MB\)/i),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /browse files/i }),
@@ -121,7 +121,7 @@ describe("MobileUpload", () => {
     render(<MobileUpload />);
     const iosBtn = screen.getByRole("button", { name: /ios \(\.ipa\)/i });
     await user.click(iosBtn);
-    expect(screen.getByText(/drop \.ipa file here/i)).toBeInTheDocument();
+      expect(screen.getByText(/choose \.ipa file/i)).toBeInTheDocument();
   });
 
   it("shows error for wrong file type on Android platform", async () => {
@@ -186,7 +186,7 @@ describe("MobileUpload", () => {
     await user.click(clearBtn);
     await waitFor(() => {
       expect(screen.queryByText("test.apk")).not.toBeInTheDocument();
-      expect(screen.getByText(/drop \.apk or \.aab file here/i)).toBeInTheDocument();
+    expect(screen.getByText(/choose \.apk or \.aab file/i)).toBeInTheDocument();
     });
   });
 
@@ -203,7 +203,7 @@ describe("MobileUpload", () => {
     await user.click(iosBtn);
     await waitFor(() => {
       expect(screen.queryByText("test.apk")).not.toBeInTheDocument();
-      expect(screen.getByText(/drop \.ipa file here/i)).toBeInTheDocument();
+    expect(screen.getByText(/choose \.ipa file/i)).toBeInTheDocument();
     });
   });
 
@@ -222,7 +222,7 @@ describe("MobileUpload", () => {
   it("handles drag and drop", async () => {
     render(<MobileUpload />);
     const dropZone = screen
-      .getByText(/drop \.apk or \.aab file here/i)
+      .getByText(/choose \.apk or \.aab file/i)
       .closest('[data-slot="card"]') as HTMLElement;
     const file = new File(["test"], "app.apk", { type: "application/vnd.android.package-archive" });
     const dataTransfer = { files: [file] };
@@ -237,7 +237,7 @@ describe("MobileUpload", () => {
   it("shows error when dropping invalid file", async () => {
     render(<MobileUpload />);
     const dropZone = screen
-      .getByText(/drop \.apk or \.aab file here/i)
+      .getByText(/choose \.apk or \.aab file/i)
       .closest('[data-slot="card"]') as HTMLElement;
     const file = new File(["test"], "test.txt", { type: "text/plain" });
     const dataTransfer = { files: [file] };
@@ -250,7 +250,7 @@ describe("MobileUpload", () => {
   it("handles drag leave", async () => {
     render(<MobileUpload />);
     const dropZone = screen
-      .getByText(/drop \.apk or \.aab file here/i)
+      .getByText(/choose \.apk or \.aab file/i)
       .closest('[data-slot="card"]') as HTMLElement;
     fireEvent.dragOver(dropZone);
     expect(dropZone).toHaveClass("border-primary");
@@ -304,7 +304,7 @@ describe("MobileUpload", () => {
     render(<MobileUpload />);
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [] } });
-    expect(screen.getByText(/drop \.apk or \.aab file here/i)).toBeInTheDocument();
+    expect(screen.getByText(/choose \.apk or \.aab file/i)).toBeInTheDocument();
   });
 
   it("shows correct accept attribute for Android", () => {
@@ -325,7 +325,7 @@ describe("MobileUpload", () => {
   it("drop zone has correct styling when dragging", () => {
     render(<MobileUpload />);
     const dropZone = screen
-      .getByText(/drop \.apk or \.aab file here/i)
+      .getByText(/choose \.apk or \.aab file/i)
       .closest('[data-slot="card"]') as HTMLElement;
     fireEvent.dragOver(dropZone);
     expect(dropZone.className).toContain("border-primary");
@@ -335,7 +335,7 @@ describe("MobileUpload", () => {
   it("drop zone has correct styling when not dragging", () => {
     render(<MobileUpload />);
     const dropZone = screen
-      .getByText(/drop \.apk or \.aab file here/i)
+      .getByText(/choose \.apk or \.aab file/i)
       .closest('[data-slot="card"]') as HTMLElement;
     expect(dropZone.className).toContain("border-muted-foreground/40");
   });

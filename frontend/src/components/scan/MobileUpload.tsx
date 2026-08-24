@@ -210,10 +210,10 @@ function MobileUpload() {
             )}
           />
           <p className="mb-1 text-sm text-foreground">
-            Drop {platform === "android" ? ".apk or .aab" : ".ipa"} file here
+            Choose {platform === "android" ? ".apk or .aab" : ".ipa"} file
           </p>
           <p className="mb-3 text-xs text-muted-foreground">
-            or drag and drop (max 500MB)
+            Tap to browse, or drop a file (max 500MB)
           </p>
           <Button
             type="button"

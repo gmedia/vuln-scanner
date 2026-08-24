@@ -6,11 +6,9 @@ test.describe("Mobile Scanner", () => {
     await page.goto("/scan/mobile");
     await expect(page.locator("h2:has-text('Mobile scanner')")).toBeVisible();
     await expect(page.locator("text=Upload binary")).toBeVisible();
+    await expect(page.locator("text=Choose .apk or .aab file")).toBeVisible();
     await expect(
-      page.locator("text=Drop .apk or .aab file here"),
-    ).toBeVisible();
-    await expect(
-      page.locator("text=or drag and drop (max 500MB)"),
+      page.locator("text=Tap to browse, or drop a file (max 500MB)"),
     ).toBeVisible();
     await expect(page.locator("button:has-text('Browse files')")).toBeVisible();
     await expect(
@@ -29,19 +27,15 @@ test.describe("Mobile Scanner", () => {
   }) => {
     await page.goto("/scan/mobile");
     // Initially Android
-    await expect(
-      page.locator("text=Drop .apk or .aab file here"),
-    ).toBeVisible();
+    await expect(page.locator("text=Choose .apk or .aab file")).toBeVisible();
 
     // Switch to iOS
     await page.locator("button:has-text('iOS (.ipa)')").click();
-    await expect(page.locator("text=Drop .ipa file here")).toBeVisible();
+    await expect(page.locator("text=Choose .ipa file")).toBeVisible();
 
     // Switch back
     await page.locator("button:has-text('Android (.apk / .aab)')").click();
-    await expect(
-      page.locator("text=Drop .apk or .aab file here"),
-    ).toBeVisible();
+    await expect(page.locator("text=Choose .apk or .aab file")).toBeVisible();
   });
 
   test("submit button disabled when no file selected", async ({ page }) => {
@@ -104,9 +98,7 @@ test.describe("Mobile Scanner", () => {
       .filter({ has: page.locator("svg.lucide-x") })
       .last();
     await clearBtn.click();
-    await expect(
-      page.locator("text=Drop .apk or .aab file here"),
-    ).toBeVisible();
+    await expect(page.locator("text=Choose .apk or .aab file")).toBeVisible();
   });
 
   test("accepts .aab file selection on Android", async ({ page }) => {
