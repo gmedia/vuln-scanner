@@ -8,6 +8,7 @@ test.describe("Navigation", () => {
       "/scan/domain",
       "/scan/mobile",
       "/guard",
+      "/uptime",
       "/guide",
       "/nonexistent",
     ];
