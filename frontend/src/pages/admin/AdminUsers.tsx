@@ -54,7 +54,7 @@ function AdminUsers() {
   const totalPages = Math.ceil((data?.total ?? 0) / PAGE_SIZE);
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
+    <div className="w-full space-y-6">
       <div className="flex items-center gap-3">
         <Users className="h-6 w-6 text-primary" />
         <div>
@@ -142,28 +142,28 @@ function AdminUsers() {
               ))}
             </div>
             <div className="hidden md:block">
-            <Table>
+            <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-[10px] uppercase tracking-wider">
                     {t("colEmail")}
                   </TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[7rem] text-[10px] uppercase tracking-wider">
                     {t("colRole")}
                   </TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[7rem] text-[10px] uppercase tracking-wider">
                     {t("colVerified")}
                   </TableHead>
-                  <TableHead className="text-right text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[6rem] text-right text-[10px] uppercase tracking-wider">
                     {t("colCredits")}
                   </TableHead>
-                  <TableHead className="text-right text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[6rem] text-right text-[10px] uppercase tracking-wider">
                     {t("colScans")}
                   </TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[8rem] text-[10px] uppercase tracking-wider">
                     {t("colCreated")}
                   </TableHead>
-                  <TableHead className="text-right text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[6rem] whitespace-nowrap text-right text-[10px] uppercase tracking-wider">
                     {t("colActions")}
                   </TableHead>
                 </TableRow>
