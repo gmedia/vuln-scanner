@@ -60,7 +60,7 @@ function AdminPricing() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-6">
+    <div className="w-full space-y-6">
       <div className="flex items-center gap-3">
         <DollarSign className="h-6 w-6 text-primary" />
         <h2 className="text-lg font-bold tracking-wide text-foreground">
@@ -141,19 +141,19 @@ function AdminPricing() {
               ))}
             </div>
             <div className="hidden md:block">
-            <Table>
+            <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-[10px] uppercase tracking-wider">
                     {t("colScanType")}
                   </TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[10rem] text-[10px] uppercase tracking-wider">
                     {t("colCreditCost")}
                   </TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[10rem] text-[10px] uppercase tracking-wider">
                     {t("colUpdated")}
                   </TableHead>
-                  <TableHead className="text-right text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[8rem] whitespace-nowrap text-right text-[10px] uppercase tracking-wider">
                     {t("colActions")}
                   </TableHead>
                 </TableRow>
