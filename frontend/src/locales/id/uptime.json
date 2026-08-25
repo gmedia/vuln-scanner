@@ -13,5 +13,11 @@
   "resume": "Lanjut",
   "limitReached": "Batas kursi Uptime untuk SKU ini tercapai.",
   "skuLabel": "SKU {{sku}} — {{count}} / {{limit}}",
-  "confirmDelete": "Hapus monitor ini?"
+  "confirmDelete": "Hapus monitor ini?",
+  "emptyHint": "Tambah cek HTTP atau TCP dari luar untuk workspace ini.",
+  "emptyCta": "Tambah monitor pertama",
+  "interval": "Interval (detik)",
+  "keyword": "Kata kunci (opsional)",
+  "notify": "Email notifikasi",
+  "latency": "Latensi"
 }

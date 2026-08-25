@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import {
   createAsset,
@@ -211,6 +212,16 @@ export default function Assets() {
                     ) : null}
                   </div>
                   <div className="flex gap-2">
+                    {a.scan_type === "domain" ? (
+                      <Button variant="outline" size="sm" asChild>
+                        <Link
+                          to="/uptime"
+                          data-testid="assets-watch-http"
+                        >
+                          {t("watchHttp")}
+                        </Link>
+                      </Button>
+                    ) : null}
                     {!a.schedule_id ? (
                       <Button
                         variant="outline"
