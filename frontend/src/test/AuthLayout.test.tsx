@@ -47,9 +47,9 @@ describe("AuthLayout", () => {
         <div>form</div>
       </AuthLayout>,
     );
-    const island = container.querySelector(".max-w-xl");
+    const island = container.querySelector(".max-w-2xl");
     expect(island).toBeInstanceOf(HTMLElement);
-    expect(island).toHaveClass("2xl:max-w-2xl");
+    expect(island).toHaveClass("2xl:max-w-3xl");
   });
 
   it("keeps the brand tagline hidden until the sm breakpoint", () => {
