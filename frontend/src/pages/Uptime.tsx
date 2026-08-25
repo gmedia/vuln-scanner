@@ -44,9 +44,23 @@ export default function Uptime() {
       setTarget("");
       setOpen(false);
     },
-    onError: (err: { response?: { data?: { detail?: string } } }) => {
-      const detail = String(err.response?.data?.detail ?? "");
-      toast.error(mapUptimeError(detail) === "limit" ? t("limitReached") : detail);
+    onError: (err: { response?: { data?: { detail?: unknown } } }) => {
+      const raw = err.response?.data?.detail;
+      const detail =
+        typeof raw === "string"
+          ? raw
+          : Array.isArray(raw)
+            ? raw
+                .map((item) =>
+                  typeof item === "string"
+                    ? item
+                    : String((item as { msg?: string }).msg ?? item),
+                )
+                .join("; ")
+            : String(raw ?? "");
+      toast.error(
+        mapUptimeError(detail) === "limit" ? t("limitReached") : detail,
+      );
     },
   });
 
@@ -115,7 +129,11 @@ export default function Uptime() {
                 data-testid="uptime-target"
                 value={target}
                 onChange={(e) => setTarget(e.target.value)}
-                placeholder={checkType === "http" ? "https://example.com" : "example.com:443"}
+                placeholder={
+                  checkType === "http"
+                    ? "https://example.com"
+                    : "example.com:443"
+                }
               />
             </div>
             <div className="flex gap-2">
@@ -167,7 +185,9 @@ export default function Uptime() {
                   variant="outline"
                   size="sm"
                   data-testid="uptime-pause"
-                  onClick={() => pauseMut.mutate({ id: m.id, enabled: !m.enabled })}
+                  onClick={() =>
+                    pauseMut.mutate({ id: m.id, enabled: !m.enabled })
+                  }
                 >
                   {m.enabled ? t("pause") : t("resume")}
                 </Button>
