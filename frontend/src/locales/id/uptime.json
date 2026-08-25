@@ -19,5 +19,8 @@
   "interval": "Interval (detik)",
   "keyword": "Kata kunci (opsional)",
   "notify": "Email notifikasi",
-  "latency": "Latensi"
+  "latency": "Latensi",
+  "stateUp": "up",
+  "stateDown": "down",
+  "stateUnknown": "unknown"
 }
