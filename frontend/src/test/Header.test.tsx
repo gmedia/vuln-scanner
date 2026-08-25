@@ -62,10 +62,10 @@ describe("Header", () => {
     expect(screen.getByText("XIS")).toBeInTheDocument();
   });
 
-  it("uses a 44pt-tall header bar", () => {
+  it("uses a 48px-tall header bar", () => {
     renderWithRouter(<Header />);
     const header = screen.getByRole("banner");
-    expect(header).toHaveClass("h-14", "min-h-14");
+    expect(header).toHaveClass("h-12", "min-h-12");
   });
 
   it("renders children", () => {

@@ -29,16 +29,8 @@ function AuthLayout({
 }: AuthLayoutProps) {
   const { t } = useTranslation("landing");
   return (
-    <div className="relative flex min-h-dvh items-start justify-center bg-background px-4 pb-10 pt-[max(1.25rem,env(safe-area-inset-top))] sm:items-center sm:py-10">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 overflow-hidden"
-      >
-        <div className="absolute left-1/2 top-1/3 h-[28rem] w-[28rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/8 blur-3xl" />
-        <div className="absolute bottom-0 left-1/4 h-48 w-48 rounded-full bg-primary/5 blur-2xl" />
-      </div>
-
-      <div className={cn("relative z-10 w-full", maxWidthClass[maxWidth])}>
+    <div className="flex min-h-dvh items-start justify-center bg-background px-4 pb-10 pt-[max(1.25rem,env(safe-area-inset-top))] sm:items-center sm:py-10">
+      <div className={cn("w-full", maxWidthClass[maxWidth])}>
         <div className="mb-5 flex flex-col items-center gap-1.5 text-center sm:mb-6">
           <BrandMark to="/" aria-label={t("homeAria")} />
           <p className="hidden text-sm text-muted-foreground sm:block">
