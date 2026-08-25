@@ -84,6 +84,7 @@ class UptimeService:
             consecutive_fails=m.consecutive_fails,
             last_checked_at=m.last_checked_at,
             last_status_code=m.last_status_code,
+            last_latency_ms=m.last_latency_ms,
             last_error=m.last_error,
             next_check_at=m.next_check_at,
             notify_email=m.notify_email,
@@ -130,15 +131,17 @@ class UptimeService:
         count = int(count_result.scalar() or 0)
         if body.enabled and count >= limit:
             raise HTTPException(status_code=400, detail=f"Uptime seat limit for {org.sku} tier is {limit}")
-        existing = await self.db.execute(
-            select(UptimeMonitor.id).where(
-                UptimeMonitor.organization_id == organization_id,
-                UptimeMonitor.check_type == body.check_type,
-                UptimeMonitor.target == body.target,
+        if body.enabled:
+            existing = await self.db.execute(
+                select(UptimeMonitor.id).where(
+                    UptimeMonitor.organization_id == organization_id,
+                    UptimeMonitor.check_type == body.check_type,
+                    UptimeMonitor.target == body.target,
+                    UptimeMonitor.enabled.is_(True),
+                )
             )
-        )
-        if existing.scalar_one_or_none() is not None:
-            raise HTTPException(status_code=409, detail="Monitor already exists for this target")
+            if existing.scalar_one_or_none() is not None:
+                raise HTTPException(status_code=409, detail="Monitor already exists for this target")
         now = datetime.now(UTC)
         monitor = UptimeMonitor(
             id=uuid.uuid4(),
@@ -205,6 +208,17 @@ class UptimeService:
             )
             if int(count_result.scalar() or 0) >= limit:
                 raise HTTPException(status_code=400, detail=f"Uptime seat limit for {org.sku} tier is {limit}")
+            dup = await self.db.execute(
+                select(UptimeMonitor.id).where(
+                    UptimeMonitor.organization_id == monitor.organization_id,
+                    UptimeMonitor.check_type == monitor.check_type,
+                    UptimeMonitor.target == monitor.target,
+                    UptimeMonitor.enabled.is_(True),
+                    UptimeMonitor.id != monitor.id,
+                )
+            )
+            if dup.scalar_one_or_none() is not None:
+                raise HTTPException(status_code=409, detail="Monitor already exists for this target")
         for key, value in data.items():
             setattr(monitor, key, value)
         monitor.updated_at = datetime.now(UTC)
@@ -223,10 +237,18 @@ class UptimeService:
         await self.db.delete(monitor)
         await self.db.commit()
 
-    async def list_samples(self, user: User, organization_id: UUID | None, monitor_id: UUID) -> list[UptimeSample]:
+    async def list_samples(
+        self,
+        user: User,
+        organization_id: UUID | None,
+        monitor_id: UUID,
+        since: datetime | None = None,
+    ) -> list[UptimeSample]:
         self._enabled()
         monitor = await self._get_in_org(monitor_id, organization_id, user.id)
-        since = datetime.now(UTC) - timedelta(days=7)
+        floor = datetime.now(UTC) - timedelta(days=7)
+        if since is None or since < floor:
+            since = floor
         result = await self.db.execute(
             select(UptimeSample)
             .where(UptimeSample.monitor_id == monitor.id, UptimeSample.checked_at >= since)
@@ -234,6 +256,11 @@ class UptimeService:
             .limit(500)
         )
         return list(result.scalars().all())
+
+    async def pause(
+        self, user: User, organization_id: UUID | None, monitor_id: UUID, *, enabled: bool
+    ) -> UptimeMonitorResponse:
+        return await self.update(user, organization_id, monitor_id, UptimeMonitorUpdate(enabled=enabled))
 
     async def list_events(self, user: User, organization_id: UUID | None, monitor_id: UUID) -> list[UptimeEvent]:
         self._enabled()
@@ -257,6 +284,7 @@ class UptimeService:
         self.db.add(sample)
         monitor.last_checked_at = now
         monitor.last_status_code = result.status_code
+        monitor.last_latency_ms = result.latency_ms
         monitor.last_error = result.error
         monitor.next_check_at = now + timedelta(seconds=monitor.interval_seconds)
         prev = monitor.state
@@ -302,6 +330,8 @@ class UptimeService:
             )
             self.db.add(warn)
             monitor.last_tls_warn_at = now
+            if monitor.state != "down":
+                monitor.state = "degraded"
             if event is None:
                 event = warn
         monitor.updated_at = now
