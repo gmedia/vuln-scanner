@@ -112,7 +112,7 @@ def probe_http(
             err = None if ok else f"status {code}"
         if ok and keyword:
             body = resp.content[:BODY_LIMIT].decode("utf-8", errors="replace")
-            found = keyword in body
+            found = keyword.lower() in body.lower()
             if keyword_invert:
                 ok = not found
                 err = None if ok else "keyword present"

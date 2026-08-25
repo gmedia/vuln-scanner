@@ -16,6 +16,7 @@ export interface UptimeMonitor {
   consecutive_fails: number;
   last_checked_at: string | null;
   last_status_code: number | null;
+  last_latency_ms: number | null;
   last_error: string | null;
   next_check_at: string;
   notify_email: string | null;
@@ -32,6 +33,17 @@ export interface UptimeCreatePayload {
   check_type: "http" | "tcp";
   target: string;
   interval_seconds?: number;
+  keyword?: string;
+  notify_email?: string;
+}
+
+export interface UptimeSample {
+  id: string;
+  checked_at: string;
+  ok: boolean;
+  latency_ms: number | null;
+  status_code: number | null;
+  error: string | null;
 }
 
 export async function listMonitors(): Promise<UptimeMonitor[]> {
@@ -53,15 +65,20 @@ export async function deleteMonitor(id: string): Promise<void> {
   await api.delete(`/api/uptime/monitors/${id}`);
 }
 
-export async function pauseMonitor(
+export async function pauseMonitor(id: string): Promise<UptimeMonitor> {
+  const { data } = await api.post<UptimeMonitor>(
+    `/api/uptime/monitors/${id}/pause`,
+  );
+  return data;
+}
+
+export async function listSamples(
   id: string,
-  enabled: boolean,
-): Promise<UptimeMonitor> {
-  const { data } = await api.patch<UptimeMonitor>(
-    `/api/uptime/monitors/${id}`,
-    {
-      enabled,
-    },
+  from?: string,
+): Promise<UptimeSample[]> {
+  const { data } = await api.get<UptimeSample[]>(
+    `/api/uptime/monitors/${id}/samples`,
+    { params: from ? { from } : undefined },
   );
   return data;
 }

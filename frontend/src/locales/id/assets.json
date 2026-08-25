@@ -19,5 +19,6 @@
   "cadenceWeekly": "Mingguan",
   "cadenceMonthly": "Bulanan",
   "confirmDelete": "Hapus aset ini?",
-  "pack": "Unduh pack JSON"
+  "pack": "Unduh pack JSON",
+  "watchHttp": "Pantau HTTP aset ini"
 }

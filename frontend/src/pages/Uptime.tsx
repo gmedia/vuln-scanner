@@ -6,8 +6,10 @@ import {
   createMonitor,
   deleteMonitor,
   listMonitors,
+  listSamples,
   pauseMonitor,
   type UptimeMonitor,
+  type UptimeSample,
 } from "@/api/uptime";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -21,12 +23,45 @@ export function mapUptimeError(message: string): string {
   return message;
 }
 
+function Sparkline({ monitorId }: { monitorId: string }) {
+  const samples = useQuery({
+    queryKey: ["uptime-samples", monitorId],
+    queryFn: () => listSamples(monitorId),
+  });
+  const points = (samples.data ?? []).slice(0, 24).reverse();
+  if (points.length < 2) return null;
+  const w = 96;
+  const h = 24;
+  const maxLat = Math.max(...points.map((p: UptimeSample) => p.latency_ms ?? 1), 1);
+  const d = points
+    .map((p, i) => {
+      const x = (i / (points.length - 1)) * w;
+      const y = h - ((p.latency_ms ?? 0) / maxLat) * (h - 2) - 1;
+      return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+  return (
+    <svg
+      width={w}
+      height={h}
+      className="text-muted-foreground"
+      data-testid="uptime-sparkline"
+      aria-hidden
+    >
+      <path d={d} fill="none" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
 export default function Uptime() {
   const { t } = useTranslation("uptime");
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [target, setTarget] = useState("");
   const [checkType, setCheckType] = useState<"http" | "tcp">("http");
+  const [interval, setInterval] = useState("60");
+  const [keyword, setKeyword] = useState("");
+  const [notify, setNotify] = useState("");
   const [open, setOpen] = useState(false);
 
   const list = useQuery({ queryKey: ["uptime"], queryFn: listMonitors });
@@ -42,6 +77,9 @@ export default function Uptime() {
       void qc.invalidateQueries({ queryKey: ["uptime"] });
       setName("");
       setTarget("");
+      setKeyword("");
+      setNotify("");
+      setInterval("60");
       setOpen(false);
     },
     onError: (err: { response?: { data?: { detail?: unknown } } }) => {
@@ -70,8 +108,7 @@ export default function Uptime() {
   });
 
   const pauseMut = useMutation({
-    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
-      pauseMonitor(id, enabled),
+    mutationFn: (id: string) => pauseMonitor(id),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["uptime"] }),
   });
 
@@ -136,6 +173,39 @@ export default function Uptime() {
                 }
               />
             </div>
+            <div>
+              <Label htmlFor="up-interval">{t("interval")}</Label>
+              <Input
+                id="up-interval"
+                data-testid="uptime-interval"
+                type="number"
+                min={60}
+                max={900}
+                value={interval}
+                onChange={(e) => setInterval(e.target.value)}
+              />
+            </div>
+            {checkType === "http" ? (
+              <div>
+                <Label htmlFor="up-keyword">{t("keyword")}</Label>
+                <Input
+                  id="up-keyword"
+                  data-testid="uptime-keyword"
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                />
+              </div>
+            ) : null}
+            <div>
+              <Label htmlFor="up-notify">{t("notify")}</Label>
+              <Input
+                id="up-notify"
+                data-testid="uptime-notify"
+                type="email"
+                value={notify}
+                onChange={(e) => setNotify(e.target.value)}
+              />
+            </div>
             <div className="flex gap-2">
               <Button
                 data-testid="uptime-save"
@@ -145,6 +215,9 @@ export default function Uptime() {
                     name: name.trim(),
                     check_type: checkType,
                     target: target.trim(),
+                    interval_seconds: Number(interval) || 60,
+                    keyword: keyword.trim() || undefined,
+                    notify_email: notify.trim() || undefined,
                   })
                 }
               >
@@ -158,11 +231,24 @@ export default function Uptime() {
         </Card>
       ) : null}
 
-      {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground" data-testid="uptime-empty">
-          {t("empty")}
-        </p>
-      ) : (
+      {items.length === 0 && !list.isLoading ? (
+        <Card data-testid="uptime-empty">
+          <CardContent className="flex min-h-[16rem] flex-col items-center justify-center gap-2 px-6 py-16 text-center">
+            <p className="text-sm font-medium text-foreground">{t("empty")}</p>
+            <p className="max-w-md text-sm text-muted-foreground">
+              {t("emptyHint")}
+            </p>
+            <Button
+              className="mt-2"
+              data-testid="uptime-empty-cta"
+              disabled={atCap}
+              onClick={() => setOpen(true)}
+            >
+              {t("emptyCta")}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : items.length === 0 ? null : (
         <ul className="space-y-2">
           {items.map((m: UptimeMonitor) => (
             <li
@@ -175,19 +261,21 @@ export default function Uptime() {
                 <p className="text-xs text-muted-foreground">
                   {m.check_type} · {m.target} · {m.state}
                   {m.uptime_24h != null ? ` · ${m.uptime_24h}%` : ""}
+                  {m.last_latency_ms != null
+                    ? ` · ${t("latency")} ${m.last_latency_ms}ms`
+                    : ""}
                 </p>
                 {m.last_error ? (
                   <p className="text-xs text-destructive">{m.last_error}</p>
                 ) : null}
+                <Sparkline monitorId={m.id} />
               </div>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   data-testid="uptime-pause"
-                  onClick={() =>
-                    pauseMut.mutate({ id: m.id, enabled: !m.enabled })
-                  }
+                  onClick={() => pauseMut.mutate(m.id)}
                 >
                   {m.enabled ? t("pause") : t("resume")}
                 </Button>

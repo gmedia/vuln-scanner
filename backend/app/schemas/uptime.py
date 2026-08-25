@@ -135,6 +135,7 @@ class UptimeMonitorResponse(BaseModel):
     consecutive_fails: int
     last_checked_at: datetime | None
     last_status_code: int | None
+    last_latency_ms: int | None = None
     last_error: str | None
     next_check_at: datetime
     notify_email: str | None

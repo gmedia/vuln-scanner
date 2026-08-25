@@ -45,10 +45,13 @@ def run_due() -> dict[str, Any]:
         now = datetime.now(UTC)
         async with async_session() as db:
             result = await db.execute(
-                select(UptimeMonitor.id).where(
+                select(UptimeMonitor.id)
+                .where(
                     UptimeMonitor.enabled.is_(True),
                     UptimeMonitor.next_check_at <= now,
                 )
+                .order_by(UptimeMonitor.next_check_at.asc())
+                .limit(50)
             )
             return [str(row[0]) for row in result.all()]
 

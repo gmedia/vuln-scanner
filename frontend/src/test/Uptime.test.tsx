@@ -44,5 +44,6 @@ describe("Uptime page", () => {
     renderPage();
     await waitFor(() => expect(screen.getByTestId("uptime-empty")).toBeInTheDocument());
     expect(screen.getByTestId("uptime-add")).toBeInTheDocument();
+    expect(screen.getByTestId("uptime-empty-cta")).toBeInTheDocument();
   });
 });

@@ -1,6 +1,7 @@
+from datetime import datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -58,6 +59,19 @@ async def update_monitor(
     return await UptimeService(db).update(current_user, get_active_org_id(request), monitor_id, body)
 
 
+@router.post("/monitors/{monitor_id}/pause", response_model=UptimeMonitorResponse)
+async def pause_monitor(
+    request: Request,
+    monitor_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> UptimeMonitorResponse:
+    current = await UptimeService(db).get(current_user, get_active_org_id(request), monitor_id)
+    return await UptimeService(db).pause(
+        current_user, get_active_org_id(request), monitor_id, enabled=not current.enabled
+    )
+
+
 @router.delete("/monitors/{monitor_id}", status_code=204)
 async def delete_monitor(
     request: Request,
@@ -74,8 +88,9 @@ async def list_samples(
     monitor_id: UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    since: datetime | None = Query(default=None, alias="from"),
 ) -> list[UptimeSampleResponse]:
-    rows = await UptimeService(db).list_samples(current_user, get_active_org_id(request), monitor_id)
+    rows = await UptimeService(db).list_samples(current_user, get_active_org_id(request), monitor_id, since=since)
     return [UptimeSampleResponse.model_validate(r) for r in rows]
 
 

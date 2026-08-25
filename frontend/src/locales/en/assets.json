@@ -19,5 +19,6 @@
   "cadenceWeekly": "Weekly",
   "cadenceMonthly": "Monthly",
   "confirmDelete": "Delete this asset?",
-  "pack": "Download pack JSON"
+  "pack": "Download pack JSON",
+  "watchHttp": "Watch this asset over HTTP"
 }

@@ -57,6 +57,7 @@ class UptimeMonitor(Base):
     consecutive_fails: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_status_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    last_latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     next_check_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     notify_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -73,7 +74,6 @@ class UptimeMonitor(Base):
     asset: Mapped["ScanAsset | None"] = relationship()
 
     __table_args__ = (
-        UniqueConstraint("organization_id", "check_type", "target", name="uq_uptime_monitors_org_type_target"),
         UniqueConstraint("asset_id", name="uq_uptime_monitors_asset_id"),
         CheckConstraint("check_type IN ('http', 'tcp')", name="ck_uptime_check_type"),
         CheckConstraint("state IN ('unknown', 'up', 'down', 'degraded')", name="ck_uptime_state"),

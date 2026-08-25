@@ -13,5 +13,11 @@
   "resume": "Resume",
   "limitReached": "Uptime seat limit reached for this SKU.",
   "skuLabel": "SKU {{sku}} — {{count}} / {{limit}}",
-  "confirmDelete": "Delete this monitor?"
+  "confirmDelete": "Delete this monitor?",
+  "emptyHint": "Add an outside-in HTTP or TCP check for this workspace.",
+  "emptyCta": "Add your first monitor",
+  "interval": "Interval (seconds)",
+  "keyword": "Keyword (optional)",
+  "notify": "Notify email",
+  "latency": "Latency"
 }
