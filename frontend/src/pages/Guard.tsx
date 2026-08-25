@@ -576,7 +576,7 @@ export default function Guard() {
                       ))}
                     </div>
                     <div className="hidden overflow-x-auto md:block">
-                    <Table className="min-w-[36rem] table-fixed">
+                    <Table className="min-w-[36rem]">
                       <TableHeader>
                         <TableRow>
                           <TableHead className="min-w-[10rem]">
