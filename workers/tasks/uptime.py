@@ -80,7 +80,7 @@ def purge_old() -> dict[str, Any]:
         async with async_session() as db:
             counts = await purge_old_uptime_rows(db)
             await db.commit()
-            return counts
+            return cast(dict[str, int], counts)
 
     try:
         counts = _run(_body())

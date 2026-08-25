@@ -345,8 +345,8 @@ async def purge_old_uptime_rows(db: AsyncSession, *, now: datetime | None = None
     samples = await db.execute(delete(UptimeSample).where(UptimeSample.checked_at < stamp - timedelta(days=7)))
     events = await db.execute(delete(UptimeEvent).where(UptimeEvent.at < stamp - timedelta(days=90)))
     return {
-        "samples": int(samples.rowcount or 0),
-        "events": int(events.rowcount or 0),
+        "samples": int(getattr(samples, "rowcount", 0) or 0),
+        "events": int(getattr(events, "rowcount", 0) or 0),
     }
 
 
