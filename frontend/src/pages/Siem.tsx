@@ -296,7 +296,7 @@ export default function Siem() {
 
       {featureOff && (
         <Card data-testid="siem-feature-off">
-          <CardContent className="pt-6 text-sm text-muted-foreground">
+          <CardContent className="flex min-h-[24rem] items-center justify-center px-6 py-16 text-center text-sm text-muted-foreground 2xl:min-h-[32rem]">
             {t("featureOff")}
           </CardContent>
         </Card>
