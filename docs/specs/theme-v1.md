@@ -2,8 +2,8 @@
 
 **Status:** **S1–S3 on `main`** (#375). Follow-up: surface tokens aligned to grok2api reference (neutral chrome invert; **primary stays green**).
 **Goal:** Let operators switch the SPA between **dark** (current default) and **light** without a layout redesign, rebrand, or new product module.
-**Suggested epic label:** **P9** (after P8 i18n in [`docs/AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) §1.3). Does **not** jump ahead of GTM / P3 unless the user reorders.
-**Depends:** Tailwind v4 + shadcn tokens in `frontend/src/index.css` · `@custom-variant dark (&:is(.dark *))` already present · P8 i18n switcher pattern (`LanguageSwitcher` + `localStorage`).
+**Suggested epic label:** **P9** (after i18n S1–S7 and Uptime P8 in [`docs/AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) §1.3). Does **not** jump ahead of GTM unless the user reorders.
+**Depends:** Tailwind v4 + shadcn tokens in `frontend/src/index.css` · i18n switcher pattern (`LanguageSwitcher` + `localStorage`) **already on `main`**.
 **Not this epic:** per-org theme · high-contrast a11y overhaul · custom brand palettes · PWA `theme-color` per-install · executive HTML / notify email restyle · Wazuh dashboard · SIEM feature work · app sidebar replacing the top header.
 
 ---
