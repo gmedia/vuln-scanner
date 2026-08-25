@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 import pytest_asyncio
@@ -11,12 +11,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.main import app
 from app.models.organization import Organization, OrganizationMembership
-from app.models.uptime import UptimeMonitor
+from app.models.uptime import UptimeEvent, UptimeMonitor, UptimeSample
 from app.models.user import User
 from app.schemas.uptime import normalize_http_target, normalize_tcp_target
 from app.services.auth import create_access_token, hash_password
 from app.services.organization import ensure_personal_org
-from app.services.uptime import UptimeService
+from app.services.uptime import UptimeService, purge_old_uptime_rows
 from app.services.uptime_probe import ProbeResult
 
 
@@ -243,3 +243,63 @@ async def test_tls_sets_degraded(db_session: AsyncSession, ctx: dict) -> None:
     await db_session.refresh(monitor)
     assert monitor.state == "degraded"
     assert monitor.last_latency_ms == 5
+
+
+@pytest.mark.asyncio
+async def test_purge_old_uptime_rows(db_session: AsyncSession, ctx: dict) -> None:
+    org = ctx["org"]
+    owner = ctx["owner"]
+    monitor = UptimeMonitor(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        created_by=owner.id,
+        name="purge",
+        check_type="http",
+        target="https://example.com/purge",
+        interval_seconds=60,
+        timeout_seconds=10,
+        enabled=True,
+        state="up",
+        consecutive_fails=0,
+        next_check_at=datetime.now(UTC),
+        notify_email=owner.email,
+    )
+    db_session.add(monitor)
+    await db_session.flush()
+    old_sample = UptimeSample(
+        id=uuid.uuid4(),
+        monitor_id=monitor.id,
+        checked_at=datetime.now(UTC) - timedelta(days=8),
+        ok=True,
+        latency_ms=1,
+        status_code=200,
+        error=None,
+    )
+    fresh_sample = UptimeSample(
+        id=uuid.uuid4(),
+        monitor_id=monitor.id,
+        checked_at=datetime.now(UTC),
+        ok=True,
+        latency_ms=1,
+        status_code=200,
+        error=None,
+    )
+    old_event = UptimeEvent(
+        id=uuid.uuid4(),
+        monitor_id=monitor.id,
+        from_state="up",
+        to_state="down",
+        at=datetime.now(UTC) - timedelta(days=91),
+        notified=False,
+        detail=None,
+    )
+    db_session.add_all([old_sample, fresh_sample, old_event])
+    await db_session.commit()
+    counts = await purge_old_uptime_rows(db_session)
+    await db_session.commit()
+    assert counts["samples"] >= 1
+    assert counts["events"] >= 1
+    remaining = await db_session.get(UptimeSample, fresh_sample.id)
+    assert remaining is not None
+    gone = await db_session.get(UptimeSample, old_sample.id)
+    assert gone is None

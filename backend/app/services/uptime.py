@@ -335,12 +335,19 @@ class UptimeService:
             if event is None:
                 event = warn
         monitor.updated_at = now
-        cutoff = now - timedelta(days=7)
-        await self.db.execute(delete(UptimeSample).where(UptimeSample.checked_at < cutoff))
-        ev_cut = now - timedelta(days=90)
-        await self.db.execute(delete(UptimeEvent).where(UptimeEvent.at < ev_cut))
+        await purge_old_uptime_rows(self.db, now=now)
         await self.db.commit()
         return event
+
+
+async def purge_old_uptime_rows(db: AsyncSession, *, now: datetime | None = None) -> dict[str, int]:
+    stamp = now or datetime.now(UTC)
+    samples = await db.execute(delete(UptimeSample).where(UptimeSample.checked_at < stamp - timedelta(days=7)))
+    events = await db.execute(delete(UptimeEvent).where(UptimeEvent.at < stamp - timedelta(days=90)))
+    return {
+        "samples": int(samples.rowcount or 0),
+        "events": int(events.rowcount or 0),
+    }
 
 
 def run_probe(monitor: UptimeMonitor) -> ProbeResult:
