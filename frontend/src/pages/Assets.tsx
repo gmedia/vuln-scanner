@@ -69,7 +69,7 @@ export default function Assets() {
   });
 
   return (
-    <div className="space-y-6 p-6" data-testid="assets-page">
+    <div className="space-y-6" data-testid="assets-page">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">{t("title")}</h1>
