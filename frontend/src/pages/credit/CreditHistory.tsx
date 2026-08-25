@@ -246,7 +246,7 @@ function CreditHistory() {
               ))}
             </div>
           ) : !data || data.items.length === 0 ? (
-            <div className="flex min-h-[16rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center">
+            <div className="flex min-h-[24rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center 2xl:min-h-[32rem]">
               <History className="h-8 w-8 text-muted-foreground" />
               <p className="text-sm text-foreground">No transactions yet</p>
               <p className="text-xs text-muted-foreground">
@@ -254,7 +254,7 @@ function CreditHistory() {
               </p>
             </div>
           ) : filteredItems.length === 0 ? (
-            <div className="flex min-h-[16rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center">
+            <div className="flex min-h-[24rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center 2xl:min-h-[32rem]">
               <History className="h-8 w-8 text-muted-foreground" />
               <p className="text-sm text-foreground">
                 No matching transactions
@@ -305,16 +305,16 @@ function CreditHistory() {
             <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[22%] text-[10px] uppercase tracking-wider">
                     Date
                   </TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[14%] text-[10px] uppercase tracking-wider">
                     Type
                   </TableHead>
-                  <TableHead className="text-right text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[14%] text-right text-[10px] uppercase tracking-wider">
                     Amount
                   </TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[50%] text-[10px] uppercase tracking-wider">
                     Description
                   </TableHead>
                 </TableRow>

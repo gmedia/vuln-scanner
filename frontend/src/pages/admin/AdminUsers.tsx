@@ -145,25 +145,25 @@ function AdminUsers() {
             <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[28%] text-[10px] uppercase tracking-wider">
                     {t("colEmail")}
                   </TableHead>
-                  <TableHead className="w-[7rem] text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[12%] text-[10px] uppercase tracking-wider">
                     {t("colRole")}
                   </TableHead>
-                  <TableHead className="w-[7rem] text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[12%] text-[10px] uppercase tracking-wider">
                     {t("colVerified")}
                   </TableHead>
-                  <TableHead className="w-[6rem] text-right text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[12%] text-right text-[10px] uppercase tracking-wider">
                     {t("colCredits")}
                   </TableHead>
-                  <TableHead className="w-[6rem] text-right text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[10%] text-right text-[10px] uppercase tracking-wider">
                     {t("colScans")}
                   </TableHead>
-                  <TableHead className="w-[8rem] text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[14%] text-[10px] uppercase tracking-wider">
                     {t("colCreated")}
                   </TableHead>
-                  <TableHead className="w-[6rem] whitespace-nowrap text-right text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[12%] whitespace-nowrap text-right text-[10px] uppercase tracking-wider">
                     {t("colActions")}
                   </TableHead>
                 </TableRow>
