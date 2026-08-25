@@ -206,7 +206,7 @@ function WorkspaceSettings() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
+    <div className="w-full space-y-6">
       <div className="flex items-center gap-3">
         <Link
           to="/dashboard"
@@ -420,7 +420,7 @@ function WorkspaceSettings() {
           )}
           {membersQuery.data && membersQuery.data.length > 0 && (
             <div className="overflow-x-auto">
-            <Table className="text-sm" data-testid="members-list">
+            <Table className="table-fixed text-sm" data-testid="members-list">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="text-[10px] uppercase tracking-wider">
@@ -471,7 +471,7 @@ function WorkspaceSettings() {
               )}
               {invitesQuery.data && invitesQuery.data.length === 0 && (
                 <div
-                  className="flex flex-col items-center justify-center gap-1 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center"
+                  className="flex min-h-[16rem] flex-col items-center justify-center gap-1 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center"
                   data-testid="workspace-invites-empty"
                 >
                   <p className="text-sm font-medium text-foreground">
@@ -484,7 +484,7 @@ function WorkspaceSettings() {
               )}
               {invitesQuery.data && invitesQuery.data.length > 0 && (
                 <div className="overflow-x-auto">
-                <Table className="text-sm" data-testid="invites-list">
+                <Table className="table-fixed text-sm" data-testid="invites-list">
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="text-[10px] uppercase tracking-wider">
