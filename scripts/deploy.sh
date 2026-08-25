@@ -78,6 +78,7 @@ docker tag vuln-worker_ip:latest vuln-worker_ip:previous 2>/dev/null || true
 docker tag vuln-worker_domain:latest vuln-worker_domain:previous 2>/dev/null || true
 docker tag vuln-worker_mobile:latest vuln-worker_mobile:previous 2>/dev/null || true
 docker tag vuln-worker_dead_letter:latest vuln-worker_dead_letter:previous 2>/dev/null || true
+docker tag vuln-worker_uptime:latest vuln-worker_uptime:previous 2>/dev/null || true
 docker tag vuln-celery_beat:latest vuln-celery_beat:previous 2>/dev/null || true
 
 "${COMPOSE[@]}" build --no-cache
@@ -89,6 +90,7 @@ docker tag vuln-worker_ip:latest vuln-worker_ip:$SHA
 docker tag vuln-worker_domain:latest vuln-worker_domain:$SHA
 docker tag vuln-worker_mobile:latest vuln-worker_mobile:$SHA
 docker tag vuln-worker_dead_letter:latest vuln-worker_dead_letter:$SHA 2>/dev/null || true
+docker tag vuln-worker_uptime:latest vuln-worker_uptime:$SHA 2>/dev/null || true
 docker tag vuln-celery_beat:latest vuln-celery_beat:$SHA 2>/dev/null || true
 
 echo "Deploying commit: $SHA"
@@ -102,13 +104,13 @@ if [ "$REMOTE_DATA_MODE" -eq 1 ]; then
   "${COMPOSE[@]}" --project-name vuln-scanner down --remove-orphans 2>/dev/null || true
   "${COMPOSE[@]}" down --remove-orphans
   docker rm -f vuln-backend vuln-frontend \
-    vuln-worker-ip vuln-worker-domain vuln-worker-mobile vuln-worker-dead-letter \
+    vuln-worker-ip vuln-worker-domain vuln-worker-mobile vuln-worker-uptime vuln-worker-dead-letter \
     vuln-celery-beat 2>/dev/null || true
 else
   "${COMPOSE[@]}" --project-name vuln-scanner down --volumes --remove-orphans 2>/dev/null || true
   "${COMPOSE[@]}" down --remove-orphans
   docker rm -f vuln-backend vuln-frontend vuln-redis vuln-postgres \
-    vuln-worker-ip vuln-worker-domain vuln-worker-mobile vuln-worker-dead-letter \
+    vuln-worker-ip vuln-worker-domain vuln-worker-mobile vuln-worker-uptime vuln-worker-dead-letter \
     vuln-celery-beat 2>/dev/null || true
   docker volume rm -f vuln-scanner_postgres_data vuln-scanner_redis_data vuln-scanner_scan_data 2>/dev/null || true
 fi
@@ -118,7 +120,7 @@ docker volume ls --format "{{.Name}}" | grep postgres || true
 
 echo "=== Starting services ==="
 if [ "$REMOTE_DATA_MODE" -eq 1 ]; then
-  APP_SERVICES=(backend frontend worker_mobile worker_dead_letter celery_beat)
+  APP_SERVICES=(backend frontend worker_mobile worker_uptime worker_dead_letter celery_beat)
   echo "NOTE: REMOTE_DATA=1 — starting ${APP_SERVICES[*]} (not worker_ip/worker_domain)"
   UP_ARGS=("${APP_SERVICES[@]}")
 else
