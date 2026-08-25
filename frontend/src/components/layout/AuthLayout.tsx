@@ -16,9 +16,9 @@ interface AuthLayoutProps {
 }
 
 const maxWidthClass = {
-  sm: "max-w-sm 2xl:max-w-md",
-  md: "max-w-md 2xl:max-w-lg",
-  lg: "max-w-xl 2xl:max-w-2xl",
+  sm: "max-w-md 2xl:max-w-lg",
+  md: "max-w-lg 2xl:max-w-xl",
+  lg: "max-w-2xl 2xl:max-w-3xl",
 } as const;
 
 function AuthLayout({
@@ -41,7 +41,7 @@ function AuthLayout({
       <div className={cn("relative z-10 w-full", maxWidthClass[maxWidth])}>
         <div className="mb-5 flex flex-col items-center gap-1.5 text-center sm:mb-6">
           <BrandMark to="/" aria-label={t("homeAria")} />
-          <p className="hidden text-xs text-muted-foreground sm:block">
+          <p className="hidden text-sm text-muted-foreground sm:block">
             {t("authSubtitle")}
           </p>
           <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
@@ -53,7 +53,7 @@ function AuthLayout({
         {(title || subtitle) && (
           <div className="mb-4 space-y-1 px-1 text-center">
             {title && (
-              <h1 className="text-lg font-semibold tracking-wide text-foreground">
+              <h1 className="text-xl font-semibold tracking-wide text-foreground 2xl:text-2xl">
                 {title}
               </h1>
             )}

@@ -144,16 +144,16 @@ function AdminPricing() {
             <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[28%] text-[10px] uppercase tracking-wider">
                     {t("colScanType")}
                   </TableHead>
-                  <TableHead className="w-[10rem] text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[24%] text-[10px] uppercase tracking-wider">
                     {t("colCreditCost")}
                   </TableHead>
-                  <TableHead className="w-[10rem] text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[28%] text-[10px] uppercase tracking-wider">
                     {t("colUpdated")}
                   </TableHead>
-                  <TableHead className="w-[8rem] whitespace-nowrap text-right text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[20%] whitespace-nowrap text-right text-[10px] uppercase tracking-wider">
                     {t("colActions")}
                   </TableHead>
                 </TableRow>
@@ -172,7 +172,7 @@ function AdminPricing() {
                         min={0}
                         value={editedCosts[item.scan_type] ?? item.credit_cost}
                         onChange={(e) => handleCostChange(item.scan_type, e.target.value)}
-                        className="h-8 w-24 font-mono text-xs tabular-nums"
+                        className="h-8 w-full max-w-[8rem] font-mono text-xs tabular-nums"
                       />
                     </TableCell>
                     <TableCell>

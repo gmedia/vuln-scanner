@@ -242,7 +242,7 @@ export default function Uptime() {
 
       {items.length === 0 && !list.isLoading ? (
         <Card data-testid="uptime-empty">
-          <CardContent className="flex min-h-[16rem] flex-col items-center justify-center gap-2 px-6 py-16 text-center">
+          <CardContent className="flex min-h-[24rem] flex-col items-center justify-center gap-2 px-6 py-16 text-center 2xl:min-h-[32rem]">
             <p className="text-sm font-medium text-foreground">{t("empty")}</p>
             <p className="max-w-md text-sm text-muted-foreground">
               {t("emptyHint")}

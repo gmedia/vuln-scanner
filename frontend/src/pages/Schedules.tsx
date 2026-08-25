@@ -442,7 +442,7 @@ function Schedules() {
             <p className="text-sm text-destructive">{t("loadFailed")}</p>
           )}
           {!isLoading && data && data.length === 0 && (
-            <div className="flex min-h-[16rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center">
+            <div className="flex min-h-[24rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center 2xl:min-h-[32rem]">
               <CalendarClock className="h-8 w-8 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">{t("empty")}</p>
             </div>
@@ -452,13 +452,13 @@ function Schedules() {
             <Table className="min-w-[40rem] table-fixed text-sm">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[48%] text-[10px] uppercase tracking-wider">
                     {t("colSchedule")}
                   </TableHead>
-                  <TableHead className="hidden sm:table-cell text-[10px] uppercase tracking-wider">
+                  <TableHead className="hidden w-[32%] sm:table-cell text-[10px] uppercase tracking-wider">
                     {t("colNext")}
                   </TableHead>
-                  <TableHead className="w-[1%] text-right text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[20%] text-right text-[10px] uppercase tracking-wider">
                     {t("colActions")}
                   </TableHead>
                 </TableRow>

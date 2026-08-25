@@ -35,7 +35,7 @@ function Landing() {
   return (
     <div className="min-h-dvh bg-background flex flex-col">
       <header className="border-b border-border pt-[env(safe-area-inset-top)]">
-        <div className="mx-auto flex h-14 max-w-5xl min-w-0 items-center justify-between gap-2 overflow-x-hidden px-4">
+        <div className="mx-auto flex h-14 w-full max-w-6xl min-w-0 items-center justify-between gap-2 overflow-x-hidden px-4 2xl:max-w-[90rem]">
           <BrandMark to="/" />
           <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
             <div className="hidden sm:flex sm:items-center sm:gap-2">
@@ -62,7 +62,7 @@ function Landing() {
 
       <main className="flex flex-1 flex-col">
         <section className="flex flex-col items-center px-4 pt-12 pb-10">
-          <div className="text-center space-y-6 max-w-2xl">
+          <div className="mx-auto max-w-3xl space-y-6 text-center 2xl:max-w-4xl">
             <div className="space-y-2">
               <h1 className="text-4xl sm:text-5xl font-bold tracking-wide text-foreground">
                 {BRAND.heroTitle}
@@ -95,7 +95,7 @@ function Landing() {
         </section>
 
         <section className="px-4 py-12 bg-card/50">
-          <div className="max-w-5xl mx-auto">
+          <div className="mx-auto max-w-6xl 2xl:max-w-[90rem]">
             <div className="text-center mb-10 space-y-2">
               <p className="text-xs tracking-wide text-muted-foreground uppercase">
                 {tc("pipeline")}
@@ -129,7 +129,7 @@ function Landing() {
       </main>
 
       <footer className="mt-auto shrink-0 border-t border-border py-6">
-        <div className="mx-auto flex max-w-5xl flex-col items-center gap-3 px-4 sm:flex-row sm:justify-between">
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 px-4 sm:flex-row sm:justify-between 2xl:max-w-[90rem]">
           <p className="text-xs text-foreground/70 text-center sm:text-left">
             {BRAND.footerLine}
           </p>
