@@ -73,7 +73,7 @@ function Profile() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto w-full max-w-3xl space-y-6 2xl:max-w-4xl">
       <div className="flex items-center gap-3">
         <User className="h-6 w-6 text-primary" />
         <div>

@@ -109,7 +109,7 @@ function ScanDetail() {
       : t("failFallback");
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-5">
+    <div className="w-full space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-start gap-3">
           <Link
