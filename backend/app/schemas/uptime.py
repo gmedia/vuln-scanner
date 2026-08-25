@@ -19,7 +19,9 @@ from app.models.uptime import (
 _HOST_RE = re.compile(r"^[a-zA-Z0-9._\-]+$")
 
 
-def _is_blocked_ip(host: str) -> bool:
+def _is_blocked_ip(host: str, *, allow_private: bool = False) -> bool:
+    if allow_private:
+        return False
     try:
         ip = ipaddress.ip_address(host)
     except ValueError:
@@ -29,10 +31,14 @@ def _is_blocked_ip(host: str) -> bool:
     )
 
 
-def assert_public_host(host: str) -> None:
-    if host.lower() in ("localhost", "metadata.google.internal"):
+def assert_public_host(host: str, *, allow_private: bool | None = None) -> None:
+    from app.config import settings
+
+    if allow_private is None:
+        allow_private = settings.uptime_allow_private
+    if not allow_private and host.lower() in ("localhost", "metadata.google.internal"):
         raise ValueError("target host is not allowed")
-    if _is_blocked_ip(host):
+    if _is_blocked_ip(host, allow_private=allow_private):
         raise ValueError("private, loopback, and metadata addresses are not allowed")
 
 

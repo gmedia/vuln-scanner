@@ -26,7 +26,9 @@ class ProbeResult:
     tls_days_left: int | None = None
 
 
-def _blocked_ip(host: str) -> bool:
+def _blocked_ip(host: str, *, allow_private: bool = False) -> bool:
+    if allow_private:
+        return False
     try:
         ip = ipaddress.ip_address(host)
     except ValueError:
@@ -36,12 +38,16 @@ def _blocked_ip(host: str) -> bool:
     )
 
 
-def resolve_public(host: str) -> str:
+def resolve_public(host: str, *, allow_private: bool | None = None) -> str:
+    from app.config import settings
+
+    if allow_private is None:
+        allow_private = settings.uptime_allow_private
     infos = socket.getaddrinfo(host, None, type=socket.SOCK_STREAM)
     if not infos:
         raise ValueError("host did not resolve")
     addr = infos[0][4][0]
-    if _blocked_ip(str(addr)):
+    if _blocked_ip(str(addr), allow_private=allow_private):
         raise ValueError("resolved address is not allowed")
     return str(addr)
 
