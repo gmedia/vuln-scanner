@@ -250,7 +250,7 @@ function UserGuide() {
 
   return (
     <div>
-      <div className="mb-6 max-w-3xl">
+      <div className="mb-6 max-w-4xl 2xl:max-w-none">
         <div className="mb-1 flex items-center gap-2 text-primary">
           <BookOpen className="h-5 w-5" />
           <span className="text-xs font-medium uppercase tracking-wider">
@@ -307,7 +307,7 @@ function UserGuide() {
         </Card>
       </div>
 
-      <div className="lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-8 2xl:grid-cols-[18rem_minmax(0,56rem)]">
+      <div className="lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-8 2xl:grid-cols-[18rem_minmax(0,1fr)]">
         <aside data-testid="guide-desktop-toc" className="hidden lg:block">
           <div className="sticky top-16 max-h-[calc(100svh-5rem)] overflow-y-auto overscroll-contain pr-1">
             <GuideDesktopToc activeId={activeId} t={t} />
