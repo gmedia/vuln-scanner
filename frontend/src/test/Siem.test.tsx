@@ -128,11 +128,12 @@ describe("SIEM page", () => {
     expect(screen.getByRole("button", { name: "Apply" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Search events" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Cases" })).toBeInTheDocument();
-    expect(screen.getByTestId("siem-event-detail-empty")).toBeInTheDocument();
+    expect(screen.getByTestId("siem-event-detail")).toBeInTheDocument();
+    expect(screen.getByText("evt-1")).toBeInTheDocument();
+    expect(screen.getByTestId("siem-copy-id")).toBeInTheDocument();
 
     await user.click(screen.getAllByText("Login failed")[0]);
     expect(screen.getByTestId("siem-event-detail")).toBeInTheDocument();
-    expect(screen.getByText("evt-1")).toBeInTheDocument();
   });
 
   it("shows Guard-first empty copy when no agents", async () => {
