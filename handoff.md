@@ -10,11 +10,11 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
-## Session snapshot (2026-08-24 — refresh against `main`)
+## Session snapshot (2026-08-25 — refresh against `main`)
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding)** | Re-`git pull`. Tip **`1f83f4f`** = **#395** mobile wave9. CI/CD **green** (run `32706050571`) including **deploy** after SSH retry |
+| **`main` tip (coding)** | Re-`git pull`. Tip **`74c7718`** = **#401** uptime retention. CI/CD **green** including **deploy** |
 | **Recent merges (mobile visual)** | **#382–#387** 2K waves · **#388** mobile wave7 · **#394** wave8 · **#395** wave9 (landing hero Sign In; header `h-14`; AppShell home-indicator pad; Guard Sync/Revoke 44pt; MobileUpload chips; 404 ring; Guide TOC; auth secondary links; AdminPricing Saved) |
 | **Recent merges (i18n)** | **#367–#373** (locale id, findings, Workspace+Guard, Guide, notify, user locale, SIEM+Admin S7) |
 | **Recent merges (theme / grok2api chrome)** | **#374–#378** — `THEME_STORAGE_KEY=sinexis.theme`, default **dark**; overlay flatten; CTA **hijau tetap**. Wave9 **overrode** header height to **`h-14 min-h-14`** (44pt) |
@@ -27,7 +27,7 @@
 | **P5 Guard** | **On `main`**: spek #273 · thin #274 · Http #275 · tables #360 · guide TOC #361/#362 — mock CI default; **edge lab + env + live smoke still human** |
 | **P7 SIEM** | Spek + S0–S5 code on `main` (#307); host flag `SIEM_ENABLED` (default false). **Do not** add Discover/cases on `/guard` |
 | **P3 Assets** | **S1–S5 on `main`** (#380 + pack/docs). SPA `/assets`, SKU hard cap, 1:1 schedule. Residual: **edge Alembic smoke** ([`docs/scan-assets-ops.md`](docs/scan-assets-ops.md)) |
-| **P8 Uptime** | **S1–S5 + gaps on `main`** (#397–#400). Spek [`docs/specs/uptime-v1.md`](docs/specs/uptime-v1.md). Ops [`docs/uptime-ops.md`](docs/uptime-ops.md). Residual: edge Alembic **`uptime_v1_gaps`** + `worker_uptime` smoke (human). |
+| **P8 Uptime** | **S1–S5 + gaps + retention on `main`** (#397–#401). Spek [`docs/specs/uptime-v1.md`](docs/specs/uptime-v1.md). Ops [`docs/uptime-ops.md`](docs/uptime-ops.md). Residual: human UI/SMTP smoke (CI deploy includes `worker_uptime`). |
 | **P0 commercial** | **Policy locked** (#245): Basic **300k** / Pro **650k** / Multi **2M**; credits **10/24/60**; AM renew; attach ARPU primary; pilot #1 multi-service, 1 mo sponsored |
 | **P0 GTM kit in git** | One-pager + SKU + **[`docs/commercial/am-wave1-email-id.md`](docs/commercial/am-wave1-email-id.md)** (#246) |
 | **Still human (not git)** | Finance **service_id** ×3; AM **10 CRM SIDs**; named **pilot #1**; AM **send** wave-1; ops **fulfill**; Guard lab Manager/Indexer + **wipe `tc5` before enroll e2e**; screenshot pack needs **`E2E_PASSWORD` on e2e host** (do **not** invent on coding host) |
@@ -36,14 +36,14 @@
 
 ### Next OpenCode session — do not start coding
 
-1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull` — tip should be **`1f83f4f`** (**#395**) or newer.
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull` — tip should be **`74c7718`** (**#401**) or newer.
 2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** (§0 then **§1.3**). This stub is **not** the backlog. Guide wins on epic order.
 3. Speak **Bahasa Indonesia** with the user; code/PR English; prefix **every** git command with `GIT_MASTER=1`. Never work on `main`. Never force-push. Never commit secrets/IPs/enroll keys.
 4. **Wait** for `implement` / `buat` / `kerjakan` / `perbaiki` / a named Dependabot PR / a **specific** UI gap (page + viewport + dark/light).
 5. If the user asks to recapture: **mobile 390×844 only**, sequential visual-engineering / multimodal-looker (**one screenshot at a time**). Do **not** fire many parallel agents (OpenCode OOM/kill). Viewport was **not** 2K for the last review wave.
 6. First deploy of #395 failed SSH (`handshake failed: connection reset by peer` on Write .env). **Rerun `--failed` succeeded.** If deploy fails again, treat as **host SSH**, not frontend tests (unit/e2e were already green).
 
-**User-confirmed OK (do not redo):** mobile clusters A–F; Guard tables #360; Guide nested TOC #361; sticky offset #362; **i18n S0–S7**; **theme S0–#378**; **mobile visual wave7–9** (#388, #394, #395) unless recapture finds new gaps. Default locale **`id`**. Default theme **dark**. `THEME_STORAGE_KEY=sinexis.theme`.
+**User-confirmed OK (do not redo):** mobile clusters A–F; Guard tables #360; Guide nested TOC #361; sticky offset #362; **i18n S1–S7** (#367–#373); **theme S1–#378**; **uptime #397–#401**; **mobile visual wave7–9** (#388, #394, #395) unless recapture finds new gaps. Default locale **`id`**. Default theme **dark**. `THEME_STORAGE_KEY=sinexis.theme`. Do **not** treat `i18n-v1.md` header as S0.
 
 **Skipped / blocked (do not fake):**
 

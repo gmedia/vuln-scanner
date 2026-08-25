@@ -2,11 +2,11 @@
 
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
-**Last updated:** 2026-08-22
-**Repo tip at write time:** re-`git pull` after reset. **P3 assets S1–S5 on `main`** (#380 + follow-up). Open residual: **GTM human**; **Guard live lab**; leftover ip/domain workers; Dependabot — do not mass-merge. **P7 SIEM S0–S5 on `main`** (flag `SIEM_ENABLED` default false). No IPs/secrets. Never commit IPs/passwords/enroll keys.
+**Last updated:** 2026-08-25
+**Repo tip at write time:** re-`git pull` after reset. **P3 assets S1–S5** (#380). **P8 Uptime S1–S5 + retention** (#397–#401). **i18n S1–S7** (#367–#373). **theme S1–S3** (#375–#378). Open residual: **GTM human**; **Guard live lab**; Dependabot — do not mass-merge. **P7 SIEM S0–S5** (flag `SIEM_ENABLED` default false). No IPs/secrets. Never commit IPs/passwords/enroll keys.
 **Guard e2e rule:** if the user asks for a **full prod e2e suite including Guard enroll/unenroll**, **wipe `tc5` + leftover Manager/DB smoke rows first** — see **§4.1**. Do not skip this. Do not treat Playwright as enroll/unenroll.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
-**Phase snapshot:** **P0 policy locked** · **P1 attach shipped** · **P2 Workspace S1–S5** · **P3 assets S1–S5 on `main`** (#380) · **P4 soft dual-brand** · **P5 Guard thin** (mock CI) · **P7 SIEM S0–S5 on `main`** (host flag default false) · **GTM human still open** · residual eng = edge Alembic `add_scan_assets` smoke, bugs, Dependabot only when named + CI green — **do not** implement SIEM under Guard PRs.
+**Phase snapshot:** **P0 policy locked** · **P1 attach shipped** · **P2 Workspace S1–S5** · **P3 assets S1–S5** · **P4 soft dual-brand** · **P5 Guard thin** (mock CI) · **P7 SIEM S0–S5** (flag default false) · **P8 Uptime S1–S5 + #401** · **i18n S1–S7** · **theme S1–S3** · **GTM human still open** · **P6 hospitality pack** not coded · residual eng = bugs, Dependabot only when named + CI green — **do not** implement SIEM under Guard PRs. Do **not** re-implement i18n because this spek used to say S0.
 
 ---
 
@@ -101,7 +101,9 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 | **P5** | **Guard MVP** (Wazuh thin) | Second upsell | Agent inventory, critical alerts, per-org enroll; spek [`guard-v1.md`](specs/guard-v1.md) | Full SIEM, SOAR, raw-log UI, per-tenant managers | **S0–S5 + Http on `main`** (#273–#275). E2E A+B **#299**. Host/guide: **#279** enroll, **#281** generic install, **#294** TOC. Mock default **CI** (`GUARD_MOCK_WAZUH=true`). **Live lab:** Manager+Indexer on **Guard host (`tc3`)**; app (`tc1`) `.env` `GUARD_MOCK_WAZUH=false` + `WAZUH_*` (compose must inject — do not assume `.env` auto-flows); agent VM **`tc5`**. **Do not** add Discover/cases on `/guard` |
 | **P6** | **Hospitality / pilot pack** | Beachhead A | Hotel runbooks, hybrid SLA | Logos-only builds | After attach pilot story works |
 | **P7** | **SIEM v1** (search + cases) | Analyst surface after Guard | Org-scoped Indexer search (structured), Postgres cases; spek [`siem-v1.md`](specs/siem-v1.md) | SOAR, customer Wazuh UI, raw DSL, Pattern B managers, merge into `scan_findings` | **S0–S5 on `main`** (#307). Host flag: GitHub secret `SIEM_ENABLED` **and** compose/CI `.env` inject (default `false`) |
-| **P8** | **Uptime v1** (external probe) | Cheap attach “is the site up?” | HTTP+TCP, SKU seats, email down/up, SPA `/uptime`; spek [`uptime-v1.md`](specs/uptime-v1.md) | Status page, multi-region, webhooks, merge into Guard/SIEM/scan | **S1–S5 + gaps on `main`** (#397–#400). Flag `UPTIME_ENABLED` default true. Queue `uptime_check`. Residual: **edge Alembic `add_uptime_tables` + `uptime_v1_gaps` + `worker_uptime` smoke** (human). |
+| **P8** | **Uptime v1** (external probe) | Cheap attach “is the site up?” | HTTP+TCP, SKU seats, email down/up, SPA `/uptime`; spek [`uptime-v1.md`](specs/uptime-v1.md) | Status page, multi-region, webhooks, merge into Guard/SIEM/scan | **S1–S5 + gaps + retention on `main`** (#397–#401). Flag `UPTIME_ENABLED` default true. Queue `uptime_check`. CI `deploy.sh` starts `worker_uptime` on `REMOTE_DATA`. Residual: **human UI/SMTP smoke**. |
+| **P8-i18n** | **i18n id/en** | Dual language SPA | Catalogs, switcher, executive/notify locale, `users.locale` | Extra locales, CVE translation, legal pages | **S1–S7 on `main`** (#367–#373). Spek [`i18n-v1.md`](specs/i18n-v1.md) — **not** a second P8; do not re-implement. |
+| **P9** | **Theme light/dark** | Operator appearance | Tokens + switcher; default dark | Per-org theme, Wave G layout | **S1–S3 on `main`** (#375–#378). Spek [`theme-v1.md`](specs/theme-v1.md). |
 
 **Priority rule for agents (post–#295 tip `8546ef3`):**
 
@@ -115,7 +117,7 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 ### 1.4 What *not* to prioritize for upsell
 
 - Rebrand-only or domain cutover as the main “feature”
-- Windows depth / nested multi-project / org dual-wallet / SOAR / customer Wazuh dashboard (SIEM product search is **P7**, S0 only until implement)
+- Windows depth / nested multi-project / org dual-wallet / SOAR / customer Wazuh dashboard (SIEM product search is **P7**, already S0–S5; flag-off until ops)
 - Mobile APK/IPA as the **hero** attach SKU (engine stays; GMD base is server/domain)
 - Treating Yogya hotel **acquisition** count as the only success metric while colo/VPS attach is ignored
 - Global `ApiKey` as multi-tenant identity without redesign (blocks safe automation later)
