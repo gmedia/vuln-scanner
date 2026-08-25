@@ -94,6 +94,18 @@ async def test_ssrf_blocked():
 
 
 @pytest.mark.asyncio
+async def test_allow_private_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.config import settings
+    from app.services.uptime_probe import _blocked_ip
+
+    monkeypatch.setattr(settings, "uptime_allow_private", True)
+    assert normalize_http_target("http://10.0.0.1/health") == "http://10.0.0.1/health"
+    assert normalize_tcp_target("192.168.1.1:22") == "192.168.1.1:22"
+    assert _blocked_ip("10.0.0.1", allow_private=True) is False
+    assert _blocked_ip("10.0.0.1", allow_private=False) is True
+
+
+@pytest.mark.asyncio
 async def test_confirm_two_fails_then_up(db_session: AsyncSession, ctx: dict) -> None:
     org = ctx["org"]
     owner = ctx["owner"]
