@@ -175,3 +175,71 @@ async def test_crud_idor_and_sku(db_session: AsyncSession, ctx: dict) -> None:
             },
         )
         assert too_fast.status_code == 422
+        paused = await client.post(
+            f"/api/uptime/monitors/{mid}/pause",
+            headers=_auth(owner, org.id),
+        )
+        assert paused.status_code == 200
+        assert paused.json()["enabled"] is False
+        samples = await client.get(
+            f"/api/uptime/monitors/{mid}/samples",
+            headers=_auth(owner, org.id),
+            params={"from": "2020-01-01T00:00:00Z"},
+        )
+        assert samples.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_keyword_case_insensitive(monkeypatch: pytest.MonkeyPatch) -> None:
+    import app.services.uptime_probe as probe_mod
+
+    class _Resp:
+        status_code = 200
+        content = b"Hello WORLD"
+
+    class _Client:
+        def __init__(self, *a, **k):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def get(self, _url):
+            return _Resp()
+
+    monkeypatch.setattr(probe_mod.httpx, "Client", _Client)
+    monkeypatch.setattr(probe_mod, "resolve_public", lambda host, **k: "1.1.1.1")
+    r = probe_mod.probe_http("https://example.com/", 5, None, "hello world", False)
+    assert r.ok is True
+
+
+@pytest.mark.asyncio
+async def test_tls_sets_degraded(db_session: AsyncSession, ctx: dict) -> None:
+    org = ctx["org"]
+    owner = ctx["owner"]
+    monitor = UptimeMonitor(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        created_by=owner.id,
+        name="tls",
+        check_type="http",
+        target="https://example.com",
+        interval_seconds=60,
+        timeout_seconds=10,
+        enabled=True,
+        state="up",
+        consecutive_fails=0,
+        next_check_at=datetime.now(UTC),
+        notify_email=owner.email,
+    )
+    db_session.add(monitor)
+    await db_session.commit()
+    svc = UptimeService(db_session)
+    ok = ProbeResult(ok=True, latency_ms=5, status_code=200, error=None, tls_days_left=3)
+    await svc.apply_probe(monitor, ok)
+    await db_session.refresh(monitor)
+    assert monitor.state == "degraded"
+    assert monitor.last_latency_ms == 5
