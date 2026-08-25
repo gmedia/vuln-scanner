@@ -119,7 +119,7 @@ function CreditHistory() {
   const resetPage = () => setPage(1);
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
+    <div className="w-full space-y-6">
       <div className="flex items-center gap-3">
         <History className="h-6 w-6 text-primary" />
         <h2 className="text-lg font-bold tracking-wide text-foreground">
@@ -246,7 +246,7 @@ function CreditHistory() {
               ))}
             </div>
           ) : !data || data.items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center">
+            <div className="flex min-h-[16rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center">
               <History className="h-8 w-8 text-muted-foreground" />
               <p className="text-sm text-foreground">No transactions yet</p>
               <p className="text-xs text-muted-foreground">
@@ -254,7 +254,7 @@ function CreditHistory() {
               </p>
             </div>
           ) : filteredItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center">
+            <div className="flex min-h-[16rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center">
               <History className="h-8 w-8 text-muted-foreground" />
               <p className="text-sm text-foreground">
                 No matching transactions
@@ -302,7 +302,7 @@ function CreditHistory() {
               })}
             </div>
             <div className="hidden md:block">
-            <Table>
+            <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-[10px] uppercase tracking-wider">

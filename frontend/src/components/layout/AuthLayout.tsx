@@ -51,7 +51,7 @@ function AuthLayout({
         </div>
 
         {(title || subtitle) && (
-          <div className="mb-4 space-y-1 rounded-xl border border-border bg-card px-6 py-5 text-center shadow-sm">
+          <div className="mb-4 space-y-1 px-1 text-center">
             {title && (
               <h1 className="text-lg font-semibold tracking-wide text-foreground">
                 {title}

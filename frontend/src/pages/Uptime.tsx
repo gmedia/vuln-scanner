@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 
 export function mapUptimeError(message: string): string {
   if (/seat limit/i.test(message)) return "limit";
@@ -70,6 +71,8 @@ export default function Uptime() {
   const limit = items[0]?.sku_limit ?? 10;
   const enabledCount = items.filter((m) => m.enabled).length;
   const atCap = enabledCount >= limit;
+  const upCount = items.filter((m) => m.state === "up").length;
+  const downCount = items.filter((m) => m.state === "down").length;
 
   const createMut = useMutation({
     mutationFn: createMonitor,
@@ -113,7 +116,7 @@ export default function Uptime() {
   });
 
   return (
-    <div className="space-y-6 p-6" data-testid="uptime-page">
+    <div className="space-y-6" data-testid="uptime-page">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">{t("title")}</h1>
@@ -121,6 +124,12 @@ export default function Uptime() {
           <p className="mt-1 text-xs text-muted-foreground">
             {t("skuLabel", { sku, count: enabledCount, limit })}
           </p>
+          {items.length > 0 ? (
+            <p className="mt-2 flex flex-wrap gap-2 text-xs" data-testid="uptime-kpi">
+              <Badge variant="completed">{t("stateUp")} {upCount}</Badge>
+              <Badge variant="critical">{t("stateDown")} {downCount}</Badge>
+            </p>
+          ) : null}
         </div>
         <Button
           data-testid="uptime-add"
@@ -257,7 +266,24 @@ export default function Uptime() {
               data-testid="uptime-row"
             >
               <div>
-                <p className="font-medium">{m.name}</p>
+                <p className="flex items-center gap-2 font-medium">
+                  {m.name}
+                  <Badge
+                    variant={
+                      m.state === "up"
+                        ? "completed"
+                        : m.state === "down"
+                          ? "critical"
+                          : "info"
+                    }
+                  >
+                    {m.state === "up"
+                      ? t("stateUp")
+                      : m.state === "down"
+                        ? t("stateDown")
+                        : t("stateUnknown")}
+                  </Badge>
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {m.check_type} · {m.target} · {m.state}
                   {m.uptime_24h != null ? ` · ${m.uptime_24h}%` : ""}

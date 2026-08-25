@@ -19,5 +19,8 @@
   "interval": "Interval (seconds)",
   "keyword": "Keyword (optional)",
   "notify": "Notify email",
-  "latency": "Latency"
+  "latency": "Latency",
+  "stateUp": "up",
+  "stateDown": "down",
+  "stateUnknown": "unknown"
 }

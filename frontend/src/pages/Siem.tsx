@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Siren, AlertTriangle } from "lucide-react";
+import { Copy, Search, Siren, AlertTriangle } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -44,7 +44,6 @@ import {
   listSiemEvents,
   patchSiemCase,
   type SiemCase,
-  type SiemEvent,
 } from "@/api/siem";
 import { useAuthStore } from "@/store/authStore";
 import type { ApiError } from "@/lib/utils";
@@ -160,7 +159,7 @@ export default function Siem() {
     agent_id: "",
     q: "",
   });
-  const [selected, setSelected] = useState<SiemEvent | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [caseTitle, setCaseTitle] = useState("");
   const [activeCaseId, setActiveCaseId] = useState<string | null>(null);
   const [noteBody, setNoteBody] = useState("");
@@ -261,6 +260,10 @@ export default function Siem() {
     safeEventPage * pageSize,
     safeEventPage * pageSize + pageSize,
   );
+
+  const selected =
+    events.find((e) => e.external_id === selectedId) ?? events[0] ?? null;
+
   const cases = casesQ.data?.items ?? [];
   const activeCase: SiemCase | undefined = cases.find(
     (c) => c.id === activeCaseId,
@@ -455,7 +458,7 @@ export default function Siem() {
                         type="button"
                         data-testid="siem-event-row"
                         className="w-full rounded-lg border border-border bg-card p-3 text-left min-h-11"
-                        onClick={() => setSelected(ev)}
+                        onClick={() => setSelectedId(ev.external_id)}
                       >
                         <div className="flex items-center justify-between gap-2">
                           <LevelChip level={ev.rule_level} t={t} />
@@ -501,7 +504,7 @@ export default function Siem() {
                         key={ev.external_id}
                         data-testid="siem-event-row"
                         className="cursor-pointer"
-                        onClick={() => setSelected(ev)}
+                        onClick={() => setSelectedId(ev.external_id)}
                       >
                         <TableCell className="whitespace-nowrap">
                           {formatWhen(ev.occurred_at)}
@@ -579,7 +582,24 @@ export default function Siem() {
             <Card data-testid="siem-event-detail" className="xl:sticky xl:top-4">
               <CardHeader>
                 <CardTitle>{t("eventDetail")}</CardTitle>
-                <CardDescription>{selected.external_id}</CardDescription>
+                <CardDescription className="flex items-center gap-2">
+                  <span className="min-w-0 truncate font-mono text-xs">
+                    {selected.external_id}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    data-testid="siem-copy-id"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(selected.external_id);
+                    }}
+                    aria-label={t("copyId")}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <p>

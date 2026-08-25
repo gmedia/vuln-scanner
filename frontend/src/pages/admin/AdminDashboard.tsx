@@ -105,35 +105,7 @@ function AdminDashboard() {
 
       <div className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
-          {countCards.map((card) => (
-            <Card key={card.label} className="border-border">
-              <CardContent className="flex flex-col items-center justify-center p-4">
-                {isLoading ? (
-                  <>
-                    <Skeleton className="mb-2 h-8 w-16" />
-                    <Skeleton className="h-3 w-20" />
-                  </>
-                ) : (
-                  <>
-                    <div className={`mb-2 rounded-full p-2 ${card.bg}`}>
-                      <card.icon className={`h-4 w-4 ${card.color}`} />
-                    </div>
-                    <span
-                      className={`font-mono text-2xl font-bold tracking-tight tabular-nums ${card.color}`}
-                    >
-                      {card.value.toLocaleString()}
-                    </span>
-                    <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-                      {card.label}
-                    </span>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 2xl:contents">
-          {creditCards.map((card) => (
+          {[...countCards, ...creditCards].map((card) => (
             <Card key={card.label} className="border-border">
               <CardContent className="flex flex-col items-center justify-center p-4">
                 {isLoading ? (
@@ -162,6 +134,7 @@ function AdminDashboard() {
         </div>
       </div>
 
+      <div className="grid gap-4 2xl:grid-cols-2">
       <Card>
         <CardHeader>
           <CardTitle className="text-sm tracking-wide">{t("overview")}</CardTitle>
@@ -174,7 +147,7 @@ function AdminDashboard() {
               <ChartContainer
                 config={kpiChartConfig}
                 className="aspect-auto h-[280px] w-full min-h-[220px] 2xl:h-[320px]"
-                initialDimension={{ width: 1600, height: 280 }}
+                initialDimension={{ width: 800, height: 280 }}
               >
                 <BarChart
                   data={[
@@ -190,6 +163,53 @@ function AdminDashboard() {
                       name: t("chartFindings"),
                       counts: stats?.total_findings ?? 0,
                     },
+                  ]}
+                  margin={{ left: 12, right: 12, top: 8, bottom: 0 }}
+                >
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="name"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    width={56}
+                    tickFormatter={(n) => Number(n).toLocaleString()}
+                  />
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent hideLabel />}
+                  />
+                  <Bar
+                    dataKey="counts"
+                    fill="var(--color-counts)"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ChartContainer>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm tracking-wide">{t("chartCredits")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <Skeleton className="h-[220px] w-full" />
+          ) : (
+            <div data-testid="admin-credits-chart">
+              <ChartContainer
+                config={kpiChartConfig}
+                className="aspect-auto h-[280px] w-full min-h-[220px] 2xl:h-[320px]"
+                initialDimension={{ width: 800, height: 280 }}
+              >
+                <BarChart
+                  data={[
                     {
                       name: t("chartCreditsIn"),
                       credits: stats?.credits_distributed ?? 0,
@@ -209,15 +229,6 @@ function AdminDashboard() {
                     tickMargin={8}
                   />
                   <YAxis
-                    yAxisId="counts"
-                    tickLine={false}
-                    axisLine={false}
-                    width={56}
-                    tickFormatter={(n) => Number(n).toLocaleString()}
-                  />
-                  <YAxis
-                    yAxisId="credits"
-                    orientation="right"
                     tickLine={false}
                     axisLine={false}
                     width={56}
@@ -228,13 +239,6 @@ function AdminDashboard() {
                     content={<ChartTooltipContent hideLabel />}
                   />
                   <Bar
-                    yAxisId="counts"
-                    dataKey="counts"
-                    fill="var(--color-counts)"
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <Bar
-                    yAxisId="credits"
                     dataKey="credits"
                     fill="var(--color-credits)"
                     radius={[4, 4, 0, 0]}
@@ -245,6 +249,7 @@ function AdminDashboard() {
           )}
         </CardContent>
       </Card>
+      </div>
 
       <Card>
         <CardHeader>

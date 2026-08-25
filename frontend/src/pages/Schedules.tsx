@@ -277,7 +277,7 @@ function Schedules() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
+    <div className="w-full space-y-6">
       <div className="flex items-center gap-3">
         <Link
           to="/dashboard"
@@ -442,14 +442,14 @@ function Schedules() {
             <p className="text-sm text-destructive">{t("loadFailed")}</p>
           )}
           {!isLoading && data && data.length === 0 && (
-            <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center">
+            <div className="flex min-h-[16rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center">
               <CalendarClock className="h-8 w-8 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">{t("empty")}</p>
             </div>
           )}
           {!isLoading && data && data.length > 0 && (
             <div className="overflow-x-auto">
-            <Table className="min-w-[40rem] text-sm">
+            <Table className="min-w-[40rem] table-fixed text-sm">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="text-[10px] uppercase tracking-wider">
@@ -530,7 +530,7 @@ function Schedules() {
                           )}
                         </TableCell>
                         <TableCell className="align-top">
-                          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                          <div className="flex shrink-0 flex-nowrap items-center justify-end gap-2">
                         {s.last_job_id && (
                           <Button
                             type="button"

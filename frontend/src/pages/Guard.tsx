@@ -279,7 +279,7 @@ export default function Guard() {
   const unusedCount = tokens.filter((t) => !t.revoked_at && !t.used_at).length;
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
+    <div className="w-full space-y-6">
       <div className="mb-2 py-1">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -767,7 +767,7 @@ export default function Guard() {
               {alertsQ.isLoading ? (
                 <Skeleton className="h-12 w-full" />
               ) : (alertsQ.data?.length ?? 0) === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center">
+                <div className="flex min-h-[16rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center">
                   <AlertTriangle className="h-8 w-8 text-muted-foreground" />
                   <p className="text-sm font-medium text-foreground">{t("noAlerts")}</p>
                   <p className="max-w-md text-xs text-muted-foreground">
