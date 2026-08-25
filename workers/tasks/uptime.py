@@ -65,6 +65,31 @@ def run_due() -> dict[str, Any]:
     return {"ok": True, "dispatched": len(ids)}
 
 
+@shared_task(name="uptime.purge")  # type: ignore[misc]
+def purge_old() -> dict[str, Any]:
+    if os.environ.get("UPTIME_ENABLED", "true").lower() in ("0", "false", "no"):
+        return {"skipped": True, "reason": "UPTIME_ENABLED off"}
+    try:
+        from app.database import async_session
+        from app.services.uptime import purge_old_uptime_rows
+    except Exception as exc:
+        logger.exception("uptime.purge import failed: {error}", error=exc)
+        return {"ok": False, "error": str(exc)[:200]}
+
+    async def _body() -> dict[str, int]:
+        async with async_session() as db:
+            counts = await purge_old_uptime_rows(db)
+            await db.commit()
+            return counts
+
+    try:
+        counts = _run(_body())
+        return {"ok": True, **counts}
+    except Exception as exc:
+        logger.exception("uptime.purge failed: {error}", error=exc)
+        return {"ok": False, "error": str(exc)[:200]}
+
+
 @shared_task(name="uptime.check")  # type: ignore[misc]
 def check_one(monitor_id: str) -> dict[str, Any]:
     if os.environ.get("UPTIME_ENABLED", "true").lower() in ("0", "false", "no"):

@@ -41,6 +41,7 @@ celery_app.conf.update(
         "guard.sync_all": {"queue": "ip_scan"},
         "uptime.run_due": {"queue": "uptime_check"},
         "uptime.check": {"queue": "uptime_check"},
+        "uptime.purge": {"queue": "uptime_check"},
     },
     task_annotations={
         "ip_scan.run": {"rate_limit": "10/m"},
@@ -67,6 +68,10 @@ celery_app.conf.update(
         "uptime-run-due-every-15s": {
             "task": "uptime.run_due",
             "schedule": 15.0,
+        },
+        "uptime-purge-every-6h": {
+            "task": "uptime.purge",
+            "schedule": 21600.0,
         },
     },
 )
