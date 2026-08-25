@@ -118,10 +118,11 @@ describe("NotFound", () => {
     });
   });
 
-  it("rings the card so it separates from the dark canvas", async () => {
+  it("uses a hairline card so it separates from the canvas", async () => {
     const { container } = render(<NotFound />);
     await screen.findByText("404");
-    const card = container.querySelector(".ring-1");
+    const card = container.querySelector(".border-border");
     expect(card).toBeInstanceOf(HTMLElement);
+    expect(card).not.toHaveClass("shadow-sm");
   });
 });
