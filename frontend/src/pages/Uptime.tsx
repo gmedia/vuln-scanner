@@ -166,6 +166,7 @@ export default function Uptime() {
                 <Button
                   variant="outline"
                   size="sm"
+                  data-testid="uptime-pause"
                   onClick={() => pauseMut.mutate({ id: m.id, enabled: !m.enabled })}
                 >
                   {m.enabled ? t("pause") : t("resume")}
@@ -173,6 +174,7 @@ export default function Uptime() {
                 <Button
                   variant="outline"
                   size="sm"
+                  data-testid="uptime-delete"
                   onClick={() => {
                     if (window.confirm(t("confirmDelete"))) delMut.mutate(m.id);
                   }}
