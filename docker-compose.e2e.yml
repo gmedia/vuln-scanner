@@ -158,7 +158,7 @@ services:
     volumes:
       - ./workers:/app
       - ./backend:/backend
-    command: celery -A celery_app worker -Q uptime_check --concurrency=2 --loglevel=info
+    command: celery -A celery_app worker -Q uptime_check --concurrency=8 --loglevel=info
 
   frontend:
     build:
