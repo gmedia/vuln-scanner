@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Search, Siren, AlertTriangle } from "lucide-react";
 import {
@@ -44,7 +44,6 @@ import {
   listSiemEvents,
   patchSiemCase,
   type SiemCase,
-  type SiemEvent,
 } from "@/api/siem";
 import { useAuthStore } from "@/store/authStore";
 import type { ApiError } from "@/lib/utils";
@@ -160,7 +159,7 @@ export default function Siem() {
     agent_id: "",
     q: "",
   });
-  const [selected, setSelected] = useState<SiemEvent | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [caseTitle, setCaseTitle] = useState("");
   const [activeCaseId, setActiveCaseId] = useState<string | null>(null);
   const [noteBody, setNoteBody] = useState("");
@@ -262,15 +261,8 @@ export default function Siem() {
     safeEventPage * pageSize + pageSize,
   );
 
-  useEffect(() => {
-    if (events.length === 0) return;
-    setSelected((prev) => {
-      if (prev && events.some((e) => e.external_id === prev.external_id)) {
-        return prev;
-      }
-      return events[0];
-    });
-  }, [events]);
+  const selected =
+    events.find((e) => e.external_id === selectedId) ?? events[0] ?? null;
 
   const cases = casesQ.data?.items ?? [];
   const activeCase: SiemCase | undefined = cases.find(
@@ -466,7 +458,7 @@ export default function Siem() {
                         type="button"
                         data-testid="siem-event-row"
                         className="w-full rounded-lg border border-border bg-card p-3 text-left min-h-11"
-                        onClick={() => setSelected(ev)}
+                        onClick={() => setSelectedId(ev.external_id)}
                       >
                         <div className="flex items-center justify-between gap-2">
                           <LevelChip level={ev.rule_level} t={t} />
@@ -512,7 +504,7 @@ export default function Siem() {
                         key={ev.external_id}
                         data-testid="siem-event-row"
                         className="cursor-pointer"
-                        onClick={() => setSelected(ev)}
+                        onClick={() => setSelectedId(ev.external_id)}
                       >
                         <TableCell className="whitespace-nowrap">
                           {formatWhen(ev.occurred_at)}
