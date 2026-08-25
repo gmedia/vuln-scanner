@@ -1,6 +1,6 @@
 # Spec: Uptime Monitor v1 (P8 — external probe)
 
-**Status:** **S1–S5 on `main`** (#397) — Q1–Q8 locked (include seats, 60s, RFC1918 off unless `UPTIME_ALLOW_PRIVATE`, HTTP+TCP, email only, no status page, flag on, epic P8).
+**Status:** **S1–S5 + v1 gaps on `main`** (#397–#400) — Q1–Q8 locked (include seats, 60s, RFC1918 off unless `UPTIME_ALLOW_PRIVATE`, HTTP+TCP, email only, no status page, flag on, epic P8).
 **Goal:** sellable **external availability** checks on the same colo/VPS/domain already on Scan attach — “is the site/port up?” between weekly scans.
 **Epic:** **P8** (new). Does **not** replace P1 Scan, P3 Assets, P5 Guard, or P7 SIEM.
 **Depends:** P2 Workspace (JWT `org_id`, membership) · P3 `scan_assets` (optional FK) · existing SMTP (`app.services.email`) · Celery beat pattern (`schedules.run_due`).
@@ -280,4 +280,4 @@ Default order: **S0 → S1 → S2 → S3 → S4 → S5** (S4 can parallel S3 aft
 
 ---
 
-*S0 locked 2026-08-24. Implementation in progress on `feat/uptime-v1`.*
+*S0 locked 2026-08-24. S1–S5 + gaps on `main` (#397–#400). Residual: edge Alembic `uptime_v1_gaps` + worker smoke (human).*
