@@ -1,6 +1,7 @@
 import { ComponentType, Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { ErrorBoundaryFallback } from "@/components/ErrorBoundaryFallback";
+import { PageLoading } from "@/components/PageLoading";
 
 /**
  * Wraps a lazy-loaded page component with Suspense + ErrorBoundary.
@@ -14,7 +15,7 @@ export function PageBoundary({
 }) {
   return (
     <ErrorBoundary FallbackComponent={ErrorBoundaryFallback}>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<PageLoading />}>
         <Component />
       </Suspense>
     </ErrorBoundary>
