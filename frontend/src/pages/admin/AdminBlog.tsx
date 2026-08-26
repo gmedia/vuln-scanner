@@ -200,7 +200,13 @@ function AdminBlog() {
                     <TableCell className="font-mono text-xs">{p.slug}</TableCell>
                     <TableCell>{p.title}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">{p.status}</Badge>
+                      <Badge
+                        variant={
+                          p.status === "published" ? "success" : "pending"
+                        }
+                      >
+                        {p.status}
+                      </Badge>
                     </TableCell>
                     <TableCell className="space-x-2">
                       <Button

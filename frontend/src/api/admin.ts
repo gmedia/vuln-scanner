@@ -113,7 +113,7 @@ export interface BlogPostAdmin {
   excerpt: string;
   body_md: string;
   body_html: string;
-  locale: string;
+  locale: "id" | "en";
   status: string;
   published_at: string | null;
   author_user_id: string | null;
