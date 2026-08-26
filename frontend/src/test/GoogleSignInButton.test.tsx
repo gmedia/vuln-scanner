@@ -35,8 +35,6 @@ describe("GoogleSignInButton", () => {
       client_id: "cid.apps.googleusercontent.com",
     });
     render(<GoogleSignInButton />);
-    expect(
-      await screen.findByTestId("google-sign-in"),
-    ).toBeInTheDocument();
+    expect(await screen.findByTestId("google-sign-in")).toBeInTheDocument();
   });
 });
