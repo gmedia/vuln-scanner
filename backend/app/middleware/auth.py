@@ -28,6 +28,8 @@ EXCLUDED_PATHS = [
     "/redoc",
     "/api/auth/register",
     "/api/auth/login",
+    "/api/auth/google",
+    "/api/auth/google/config",
     "/api/auth/verify-email",
     "/api/auth/refresh",
     "/api/auth/forgot-password",

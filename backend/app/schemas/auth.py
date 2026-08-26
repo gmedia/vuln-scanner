@@ -41,6 +41,15 @@ class LoginRequest(BaseModel):
     password: str = Field(..., min_length=8, max_length=128, description="Password (min 8 characters)")
 
 
+class GoogleAuthRequest(BaseModel):
+    id_token: str = Field(..., min_length=20, max_length=4096)
+
+
+class GoogleAuthConfigResponse(BaseModel):
+    enabled: bool
+    client_id: str = ""
+
+
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str

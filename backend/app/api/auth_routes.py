@@ -21,6 +21,8 @@ from app.models.user import User
 from app.schemas.auth import (
     ChangePasswordRequest,
     ForgotPasswordRequest,
+    GoogleAuthConfigResponse,
+    GoogleAuthRequest,
     LoginRequest,
     LoginResponse,
     LogoutAllResponse,
@@ -50,6 +52,7 @@ from app.services.auth import (
     verify_password,
 )
 from app.services.email import send_password_reset_email, send_verification_email
+from app.services.google_oauth import verify_google_id_token
 from app.services.organization import (
     OrganizationService,
     ensure_personal_org,
@@ -97,9 +100,51 @@ async def _try_send_verification(email_to: str, token: str, *, context: str) -> 
     return sent
 
 
+async def _issue_login_response(
+    db: AsyncSession,
+    user: User,
+    response: Response,
+) -> LoginResponse:
+    personal = await ensure_personal_org(db, user)
+    active_org_id = await resolve_default_org_id(db, user) or personal.id
+    if user.last_active_organization_id != active_org_id:
+        user.last_active_organization_id = active_org_id
+    await db.commit()
+
+    user_id_str = str(user.id)
+    access_token = create_access_token(
+        user_id=user_id_str,
+        email=user.email,
+        is_admin=user.is_admin,
+        org_id=str(active_org_id),
+    )
+    refresh_token = create_refresh_token(user_id=user_id_str)
+
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite="strict",
+        max_age=settings.jwt_refresh_expire_days * 86400,
+        path="/api/auth",
+    )
+
+    access_minutes = settings.jwt_access_expire_minutes
+    user_payload = await _user_response(db, user, active_org_id=active_org_id)
+    return LoginResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        expires_in=access_minutes * 60,
+        user=user_payload,
+        active_org_id=active_org_id,
+    )
+
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 login_limiter = RateLimiter(max_requests=5, window_seconds=60, prefix="ratelimit:login")
+google_limiter = RateLimiter(max_requests=5, window_seconds=60, prefix="ratelimit:google")
 register_limiter = RateLimiter(max_requests=3, window_seconds=60, prefix="ratelimit:register")
 refresh_limiter = RateLimiter(max_requests=10, window_seconds=60, prefix="ratelimit:refresh")
 verify_email_limiter = RateLimiter(max_requests=5, window_seconds=60, prefix="ratelimit:verify_email")
@@ -194,40 +239,66 @@ async def login(
     if password_needs_rehash(body.password, user.password_hash):
         user.password_hash = hash_password(body.password)
 
-    personal = await ensure_personal_org(db, user)
-    active_org_id = await resolve_default_org_id(db, user) or personal.id
-    if user.last_active_organization_id != active_org_id:
-        user.last_active_organization_id = active_org_id
-    await db.commit()
+    return await _issue_login_response(db, user, response)
 
-    user_id_str = str(user.id)
-    access_token = create_access_token(
-        user_id=user_id_str,
-        email=user.email,
-        is_admin=user.is_admin,
-        org_id=str(active_org_id),
-    )
-    refresh_token = create_refresh_token(user_id=user_id_str)
 
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=settings.cookie_secure,
-        samesite="strict",
-        max_age=settings.jwt_refresh_expire_days * 86400,
-        path="/api/auth",
-    )
+@router.get("/google/config", response_model=GoogleAuthConfigResponse)
+async def google_auth_config() -> GoogleAuthConfigResponse:
+    client_id = settings.google_client_id.strip()
+    return GoogleAuthConfigResponse(enabled=bool(client_id), client_id=client_id)
 
-    access_minutes = settings.jwt_access_expire_minutes
-    user_payload = await _user_response(db, user, active_org_id=active_org_id)
-    return LoginResponse(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        expires_in=access_minutes * 60,
-        user=user_payload,
-        active_org_id=active_org_id,
-    )
+
+@router.post("/google", response_model=LoginResponse)
+async def google_auth(
+    body: GoogleAuthRequest,
+    request: Request,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+) -> LoginResponse | Response:
+    limit_response = await google_limiter(request)
+    if limit_response:
+        return limit_response
+
+    claims = await verify_google_id_token(body.id_token)
+    sub = claims["sub"]
+    email = claims["email"]
+
+    by_sub = await db.execute(select(User).where(User.google_sub == sub))
+    user = by_sub.scalar_one_or_none()
+    if user is None:
+        by_email = await db.execute(select(User).where(User.email == email))
+        user = by_email.scalar_one_or_none()
+        if user is not None:
+            if user.google_sub and user.google_sub != sub:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Email already linked to another Google account",
+                )
+            user.google_sub = sub
+            if user.is_verified is False:
+                user.is_verified = True
+                user.verified_at = datetime.now(UTC)
+        else:
+            user = User(
+                email=email,
+                password_hash=hash_password(secrets.token_urlsafe(32)),
+                is_verified=True,
+                verified_at=datetime.now(UTC),
+                credits=settings.default_register_credits,
+                google_sub=sub,
+            )
+            db.add(user)
+            await db.flush()
+            db.add(
+                CreditLog(
+                    user_id=user.id,
+                    amount=settings.default_register_credits,
+                    type="credit",
+                    description="Welcome bonus",
+                )
+            )
+
+    return await _issue_login_response(db, user, response)
 
 
 @router.post("/verify-email", response_model=MessageResponse)
