@@ -256,14 +256,14 @@ function Dashboard() {
         {canCreateScans ? (
           <div className="flex flex-wrap items-center gap-2">
             {primaryIsJadwal ? (
-              <Button asChild className="text-sm">
+              <Button asChild className="min-h-11 text-sm">
                 <Link to="/schedules" data-testid="primary-jadwal-cta">
                   <CalendarClock className="mr-2 h-4 w-4" />
                   {t("setSchedule")}
                 </Link>
               </Button>
             ) : (
-              <Button asChild variant="outline" className="text-sm">
+              <Button asChild variant="outline" className="min-h-11 text-sm">
                 <Link to="/schedules">
                   <CalendarClock className="mr-2 h-4 w-4" />
                   {t("setSchedule")}
@@ -274,7 +274,7 @@ function Dashboard() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant={primaryIsJadwal ? "outline" : "default"}
-                  className="w-full text-sm sm:w-auto"
+                  className="min-h-11 w-full text-sm sm:w-auto"
                   data-testid="new-scan-cta"
                 >
                   <Plus className="mr-2 h-4 w-4" />

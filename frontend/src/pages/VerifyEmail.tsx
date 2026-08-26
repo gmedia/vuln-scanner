@@ -138,8 +138,7 @@ function VerifyEmail() {
                 </div>
                 <Button
                   type="submit"
-                  variant="outline"
-                  className="w-full text-sm"
+                  className="min-h-11 w-full text-sm"
                   disabled={isResending || cooldown > 0}
                 >
                   {cooldown > 0 ? (
@@ -160,7 +159,7 @@ function VerifyEmail() {
             )}
 
             <Link to="/login" className="block">
-              <Button variant="outline" className="w-full text-sm">
+              <Button variant="outline" className="min-h-11 w-full text-sm">
                 {t("backToSignInLower")}
               </Button>
             </Link>
@@ -197,7 +196,7 @@ function VerifyEmail() {
               </p>
               <Button
                 onClick={() => navigate("/dashboard")}
-                className="w-full text-sm"
+                className="min-h-11 w-full text-sm"
               >
                 {t("goToDashboard")}
               </Button>
@@ -210,7 +209,7 @@ function VerifyEmail() {
                 {error || t("verifyFailedRetry")}
               </p>
               <Link to="/login" className="w-full">
-                <Button variant="outline" className="w-full text-sm">
+                <Button variant="outline" className="min-h-11 w-full text-sm">
                   {t("backToSignInLower")}
                 </Button>
               </Link>
