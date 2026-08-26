@@ -91,3 +91,14 @@ def is_publicly_visible(status: str, published_at: datetime | None, now: datetim
 
 def escape_text(value: str) -> str:
     return html.escape(value, quote=True)
+
+
+_MD_EMPHASIS_RE = re.compile(r"[*_`]+")
+
+
+def plain_excerpt(value: str, max_len: int = 280) -> str:
+    text = _MD_EMPHASIS_RE.sub("", value.replace("\n", " "))
+    text = re.sub(r"\s+", " ", text).strip()
+    if len(text) > max_len:
+        return text[: max_len - 1].rstrip() + "…"
+    return text

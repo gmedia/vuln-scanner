@@ -1,7 +1,13 @@
 from datetime import UTC, datetime, timedelta
 
 from app.config import settings
-from app.services.blog import BlogValidationError, is_publicly_visible, render_body_html, validate_slug
+from app.services.blog import (
+    BlogValidationError,
+    is_publicly_visible,
+    plain_excerpt,
+    render_body_html,
+    validate_slug,
+)
 
 API_HEADERS = {"X-API-Key": settings.api_key}
 
@@ -46,6 +52,11 @@ def test_public_list_empty(client):
     assert resp.json()["total"] == 0
 
 
+def test_plain_excerpt_strips_emphasis():
+    assert "**Uptime**" not in plain_excerpt("Cek **Uptime** dari luar")
+    assert "Uptime" in plain_excerpt("Cek **Uptime** dari luar")
+
+
 def test_public_html_index(client):
     resp = client.get("/blog")
     assert resp.status_code == 200
@@ -55,6 +66,10 @@ def test_public_html_index(client):
     assert "Belum ada artikel" in resp.text
     assert "brand-text" in resp.text
     assert 'rel="canonical"' in resp.text
+    assert "sinexis.theme" in resp.text
+    assert 'data-theme-set="dark"' in resp.text
+    assert 'class="rail"' in resp.text or "class='rail'" in resp.text
+    assert ".dark{" in resp.text
 
 
 def test_draft_not_public(client):
@@ -83,7 +98,7 @@ def test_publish_then_public(client):
         json={
             "slug": "hello-sinexis",
             "title": "Hello",
-            "excerpt": "intro",
+            "excerpt": "intro **bold** teaser",
             "body_md": "body **bold**",
             "locale": "id",
         },
@@ -102,6 +117,10 @@ def test_publish_then_public(client):
     page = client.get("/blog/hello-sinexis")
     assert page.status_code == 200
     assert "Hello" in page.text
+    assert "**bold**" not in page.text
+    index = client.get("/blog")
+    assert "**bold**" not in index.text
+    assert "bold teaser" in index.text
     sm = client.get("/blog/sitemap.xml")
     assert sm.status_code == 200
     assert "hello-sinexis" in sm.text
