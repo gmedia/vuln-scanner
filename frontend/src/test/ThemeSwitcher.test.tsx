@@ -13,7 +13,10 @@ describe("ThemeSwitcher", () => {
   it("toggles html.dark and persists sinexis.theme", async () => {
     const user = userEvent.setup();
     render(<ThemeSwitcher />);
-    expect(screen.getByTestId("theme-switcher")).toBeInTheDocument();
+    const group = screen.getByTestId("theme-switcher");
+    expect(group).toBeInTheDocument();
+    expect(group.className).toMatch(/overflow-hidden/);
+    expect(group.className).toMatch(/h-11/);
     await user.click(screen.getByTestId("theme-light"));
     expect(document.documentElement.classList.contains("dark")).toBe(false);
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("light");
