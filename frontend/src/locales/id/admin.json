@@ -19,6 +19,8 @@
   "linkUsersDesc": "Cari, lihat, dan sesuaikan akun",
   "linkPricing": "Harga",
   "linkPricingDesc": "Atur biaya kredit scan",
+  "linkBlog": "Blog",
+  "linkBlogDesc": "Tulis dan terbitkan artikel publik",
   "usersTitle": "Manajemen pengguna",
   "usersSubtitle": "Cari dan kelola akun terdaftar",
   "usersCard": "Pengguna",
@@ -72,5 +74,17 @@
   "colCreditCost": "Biaya kredit",
   "colUpdated": "Diperbarui",
   "save": "Simpan",
-  "saved": "Tersimpan"
+  "saved": "Tersimpan",
+  "blogTitle": "Blog",
+  "blogNew": "Artikel baru",
+  "blogEdit": "Ubah",
+  "blogList": "Artikel",
+  "blogEmpty": "Belum ada artikel",
+  "blogSlug": "Slug",
+  "blogTitleField": "Judul",
+  "blogExcerpt": "Ringkasan",
+  "blogBody": "Isi markdown",
+  "blogPublish": "Terbitkan",
+  "blogUnpublish": "Tarik",
+  "blogCancel": "Batal"
 }

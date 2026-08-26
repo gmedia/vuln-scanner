@@ -132,6 +132,11 @@ describe("Landing Page", () => {
     expect(screen.getAllByTestId("card")).toHaveLength(8);
   });
 
+  it("links public blog HTML island from the footer", () => {
+    const blog = screen.getByRole("link", { name: "Blog" });
+    expect(blog).toHaveAttribute("href", "/blog");
+  });
+
   it("renders footer without version dump", () => {
     const footer = document.querySelector("footer");
     expect(footer).toBeTruthy();

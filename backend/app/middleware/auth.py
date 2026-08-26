@@ -56,7 +56,14 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):  # type: ignore[no-untyped-def]
         """Authenticate request via X-API-Key header and enforce IP and key rate limits."""
-        if request.url.path in EXCLUDED_PATHS or request.url.path.startswith("/ws/"):
+        path = request.url.path
+        if (
+            path in EXCLUDED_PATHS
+            or path.startswith("/ws/")
+            or path.startswith("/api/blog")
+            or path == "/blog"
+            or path.startswith("/blog/")
+        ):
             return await call_next(request)
 
         if request.method == "OPTIONS":

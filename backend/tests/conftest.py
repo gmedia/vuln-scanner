@@ -28,6 +28,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from app.database import Base
 from app.models.api_key import ApiKey  # noqa: F401
 from app.models.asset import ScanAsset  # noqa: F401
+from app.models.blog import BlogPost  # noqa: F401
 from app.models.credit_log import CreditLog  # noqa: F401
 from app.models.cve_cache import CveCache  # noqa: F401
 from app.models.email_verification import EmailVerificationToken  # noqa: F401

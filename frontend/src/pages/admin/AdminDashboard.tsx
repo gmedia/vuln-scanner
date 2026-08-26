@@ -8,6 +8,7 @@ import {
   TrendingUp,
   ArrowRight,
   Tag,
+  FileText,
 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -86,6 +87,12 @@ function AdminDashboard() {
       label: t("linkPricing"),
       desc: t("linkPricingDesc"),
       icon: Tag,
+    },
+    {
+      to: "/admin/blog",
+      label: t("linkBlog"),
+      desc: t("linkBlogDesc"),
+      icon: FileText,
     },
   ];
 

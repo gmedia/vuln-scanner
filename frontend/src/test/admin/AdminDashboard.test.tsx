@@ -170,5 +170,7 @@ describe("AdminDashboard", () => {
       "href",
       "/admin/pricing",
     );
+    const blogLink = screen.getAllByRole("link").find((a) => a.getAttribute("href") === "/admin/blog");
+    expect(blogLink).toBeTruthy();
   });
 });

@@ -138,6 +138,12 @@ function Landing() {
             <LanguageSwitcher />
           </div>
           <div className="flex items-center gap-4 text-xs">
+            <a
+              href="/blog"
+              className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {t("blog")}
+            </a>
             <Link
               to="/login"
               className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
