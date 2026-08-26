@@ -1,6 +1,4 @@
-import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { useEffect, useRef, useState } from "react";
 import { getGoogleAuthConfig } from "@/api/auth";
 import { useAuthStore } from "@/store/authStore";
 import { useTranslation } from "react-i18next";
@@ -13,8 +11,24 @@ declare global {
           initialize: (cfg: {
             client_id: string;
             callback: (res: { credential?: string }) => void;
+            cancel_on_tap_outside?: boolean;
+            use_fedcm_for_prompt?: boolean;
           }) => void;
-          prompt: () => void;
+          renderButton: (
+            el: HTMLElement,
+            opts: {
+              theme?: string;
+              size?: string;
+              text?: string;
+              width?: number;
+              locale?: string;
+            },
+          ) => void;
+          prompt: (moment?: (n: {
+            isNotDisplayed: () => boolean;
+            isSkippedMoment: () => boolean;
+            isDismissedMoment: () => boolean;
+          }) => void) => void;
         };
       };
     };
@@ -47,11 +61,12 @@ function loadGis(): Promise<void> {
 }
 
 function GoogleSignInButton() {
-  const { t } = useTranslation("auth");
+  const { t, i18n } = useTranslation("auth");
   const loginWithGoogleToken = useAuthStore((s) => s.loginWithGoogleToken);
   const [enabled, setEnabled] = useState(false);
   const [clientId, setClientId] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [gisError, setGisError] = useState("");
+  const btnRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -70,55 +85,63 @@ function GoogleSignInButton() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!enabled || !clientId) {
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        await loadGis();
+        if (cancelled) {
+          return;
+        }
+        const id = window.google?.accounts?.id;
+        const el = btnRef.current;
+        if (!id || !el) {
+          setGisError(t("googleUnavailable"));
+          return;
+        }
+        id.initialize({
+          client_id: clientId,
+          cancel_on_tap_outside: true,
+          callback: (res) => {
+            const cred = res.credential;
+            if (!cred) {
+              return;
+            }
+            void loginWithGoogleToken(cred);
+          },
+        });
+        el.replaceChildren();
+        id.renderButton(el, {
+          theme: "outline",
+          size: "large",
+          text: "continue_with",
+          width: 320,
+          locale: i18n.language === "id" ? "id" : "en",
+        });
+      } catch {
+        if (!cancelled) {
+          setGisError(t("googleUnavailable"));
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, clientId, loginWithGoogleToken, i18n.language, t]);
+
   if (!enabled) {
     return null;
   }
 
-  const onClick = async () => {
-    setBusy(true);
-    try {
-      await loadGis();
-      const id = window.google?.accounts?.id;
-      if (!id) {
-        setBusy(false);
-        return;
-      }
-      id.initialize({
-        client_id: clientId,
-        callback: (res) => {
-          const cred = res.credential;
-          if (!cred) {
-            setBusy(false);
-            return;
-          }
-          void loginWithGoogleToken(cred).finally(() => setBusy(false));
-        },
-      });
-      id.prompt();
-    } catch {
-      setBusy(false);
-    }
-  };
-
   return (
-    <div className="space-y-3">
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full text-sm"
-        data-testid="google-sign-in"
-        disabled={busy}
-        onClick={() => void onClick()}
-      >
-        {busy ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            {t("googleSigningIn")}
-          </>
-        ) : (
-          t("continueWithGoogle")
-        )}
-      </Button>
+    <div className="space-y-3" data-testid="google-sign-in">
+      <div ref={btnRef} className="flex min-h-10 justify-center" />
+      {gisError ? (
+        <p className="text-center text-xs text-destructive">{gisError}</p>
+      ) : null}
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <span className="h-px flex-1 bg-border" />
         {t("orEmail")}
