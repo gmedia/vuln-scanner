@@ -154,6 +154,7 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 | **P5** | Guard (Wazuh thin) | **S0–S5 + Http + tables + guide TOC on `main`**; live lab residual human — see [`guard-v1.md`](docs/specs/guard-v1.md) |
 | **P6** | Hospitality / pilot pack | After attach story works |
 | **P7** | SIEM v1 | **S0–S5 on `main`**; flag off by default; never as a Guard PR |
+| **P10** | Public blog | **S0 spek** [`docs/specs/blog-v1.md`](docs/specs/blog-v1.md); Q1–Q6 locked; **no S1 code until implement** |
 | **UX** | i18n + theme grok2api chrome | **Shipped** #367–#378; stop polish unless named gap |
 
 **Priority rule:** If this stub, the archive, or old chat **disagrees** with the execution guide on *what to build next*, **the guide wins**, unless the user opens a stuck-job / worker incident.
@@ -172,6 +173,7 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 | P1 engineering spec | [`docs/specs/scan-attach-v1.md`](docs/specs/scan-attach-v1.md) |
 | Workspace v1 spek (approved; S1–S5 shipped) | [`docs/specs/workspace-v1.md`](docs/specs/workspace-v1.md) |
 | Guard v1 spek (P5 thin) | [`docs/specs/guard-v1.md`](docs/specs/guard-v1.md) |
+| Blog v1 (P10 S0) | [`docs/specs/blog-v1.md`](docs/specs/blog-v1.md) |
 | Assets v1 (P3 S1–S5 shipped) | [`docs/specs/assets-v1.md`](docs/specs/assets-v1.md) |
 | SIEM v1 (P7) | [`docs/specs/siem-v1.md`](docs/specs/siem-v1.md) |
 | Theme v1 (light/dark + grok2api chrome) | [`docs/specs/theme-v1.md`](docs/specs/theme-v1.md) |
