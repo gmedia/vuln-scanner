@@ -1,4 +1,5 @@
 from app.models.asset import ScanAsset
+from app.models.blog import BlogPost
 from app.models.credit_log import CreditLog
 from app.models.email_verification import EmailVerificationToken
 from app.models.guard import GuardAgent, GuardAlert, GuardEnrollToken, GuardOrgBinding
@@ -18,6 +19,7 @@ __all__ = [
     "ScanJob",
     "ScanSchedule",
     "ScanAsset",
+    "BlogPost",
     "CreditLog",
     "PricingConfig",
     "Organization",

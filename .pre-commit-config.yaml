@@ -15,7 +15,7 @@ repos:
         files: ^backend/.*\.py$
         args: [backend/, --config-file=backend/pyproject.toml, --disable-error-code=type-arg, --disable-error-code=no-any-return]
         additional_dependencies:
-          [fastapi==0.115.6, pydantic==2.10.3, pydantic-settings==2.7.1, sqlalchemy==2.0.36, httpx==0.28.1, types-redis==4.6.0.20241004]
+          [fastapi==0.115.6, pydantic==2.10.3, pydantic-settings==2.7.1, sqlalchemy==2.0.36, httpx==0.28.1, types-redis==4.6.0.20241004, bleach==6.4.0, markdown==3.8.2, types-bleach==6.2.0.20241123, types-Markdown==3.8.0.20250809]
         pass_filenames: false
       - id: mypy
         alias: mypy-workers

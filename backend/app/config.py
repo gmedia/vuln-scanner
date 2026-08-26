@@ -144,6 +144,8 @@ class Settings(BaseSettings):
     uptime_enabled: bool = True
     uptime_allow_private: bool = False
 
+    blog_enabled: bool = True
+
 
 settings = Settings()
 
