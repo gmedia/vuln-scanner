@@ -64,6 +64,7 @@ def test_public_html_index(client):
     assert "Blog" in resp.text
     assert "<h1>" in resp.text
     assert "Belum ada artikel" in resp.text
+    assert "page-intro" in resp.text or "Belum ada artikel" in resp.text
     assert "brand-text" in resp.text
     assert 'rel="canonical"' in resp.text
     assert "sinexis.theme" in resp.text
@@ -120,10 +121,13 @@ def test_publish_then_public(client):
     assert "Hello" in page.text
     assert "**bold**" not in page.text
     assert "lede excerpt" not in page.text
-    assert page.text.count("intro") == 1
+    body = page.text.split("<div class='body'>", 1)[-1].split("</div>", 1)[0]
+    assert body.count("intro") == 1
     index = client.get("/blog")
     assert "**bold**" not in index.text
     assert "bold teaser" in index.text
+    assert "class='card'" in index.text or 'class="card"' in index.text
+    assert "Baca artikel" in index.text
     sm = client.get("/blog/sitemap.xml")
     assert sm.status_code == 200
     assert "hello-sinexis" in sm.text
