@@ -46,9 +46,12 @@ describe("Landing Page", () => {
     render(<Landing />);
   });
 
-  it("renders Sinexis hero title and attach kicker", () => {
+  it("renders outcome headline and attach eyebrow", () => {
     expect(
-      screen.getByRole("heading", { level: 1, name: "Sinexis" }),
+      screen.getByRole("heading", {
+        level: 1,
+        name: /Find exposure on IP, domain, and mobile/i,
+      }),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
@@ -62,9 +65,7 @@ describe("Landing Page", () => {
 
   it("renders attach-loop description without engine dump", () => {
     expect(
-      screen.getByText(
-        /Find exposure on IP, domain, and mobile. Schedule attach scans/,
-      ),
+      screen.getByText(/Credits, workspace, assets, Guard, and uptime/),
     ).toBeInTheDocument();
     expect(screen.queryByText(/VulnScanner engine/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/JWT auth/)).not.toBeInTheDocument();
@@ -94,8 +95,8 @@ describe("Landing Page", () => {
   it("keeps header Sign In off the mobile chrome", () => {
     const header = document.querySelector("header");
     expect(header).toBeTruthy();
-    const headerSignIn = Array.from(header!.querySelectorAll("a")).find((a) =>
-      a.getAttribute("href") === "/login",
+    const headerSignIn = Array.from(header!.querySelectorAll("a")).find(
+      (a) => a.getAttribute("href") === "/login",
     );
     expect(headerSignIn).toHaveClass("hidden", "sm:inline");
   });
@@ -108,33 +109,54 @@ describe("Landing Page", () => {
     expect(heroSignIn[0]).not.toHaveClass("hidden");
   });
 
-  it("renders attach loop microcopy", () => {
+  it("renders attach loop microcopy without SIEM as a live step", () => {
     expect(
-      screen.getAllByText(/Scan → Attach → Workspace → Guard → SIEM/).length,
+      screen.getAllByText(/Scan → Attach → Workspace → Guard/).length,
     ).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText(/Guard → SIEM/)).not.toBeInTheDocument();
   });
 
-  it("renders What ships section heading", () => {
+  it("renders How it works and What you can use today", () => {
     expect(
-      screen.getByRole("heading", { level: 2, name: "What ships" }),
+      screen.getByRole("heading", { level: 2, name: "How it works" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        level: 2,
+        name: "What you can use today",
+      }),
     ).toBeInTheDocument();
   });
 
-  it("renders eight shipped-module cards", () => {
+  it("renders nine live-module cards without SIEM as shipped", () => {
     expect(screen.getByText("IP scan")).toBeInTheDocument();
     expect(screen.getByText("Domain scan")).toBeInTheDocument();
     expect(screen.getByText("Mobile scan")).toBeInTheDocument();
-    expect(screen.getByText("Scan Attach")).toBeInTheDocument();
-    expect(screen.getByText("Workspace")).toBeInTheDocument();
-    expect(screen.getByText("Guard")).toBeInTheDocument();
-    expect(screen.getByText("SIEM")).toBeInTheDocument();
+    expect(screen.getAllByText("Scan Attach").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Workspace").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("Assets")).toBeInTheDocument();
+    expect(screen.getAllByText("Guard").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("Uptime")).toBeInTheDocument();
     expect(screen.getByText("Credits")).toBeInTheDocument();
-    expect(screen.getAllByTestId("card")).toHaveLength(8);
+    expect(screen.getAllByTestId("card")).toHaveLength(9);
+    expect(
+      screen.queryByRole("heading", { name: "SIEM" }),
+    ).not.toBeInTheDocument();
   });
 
-  it("links public blog HTML island from the footer", () => {
-    const blog = screen.getByRole("link", { name: "Blog" });
-    expect(blog).toHaveAttribute("href", "/blog");
+  it("links public blog from header and footer", () => {
+    const blogs = screen.getAllByRole("link", { name: "Blog" });
+    expect(blogs.length).toBeGreaterThanOrEqual(2);
+    blogs.forEach((blog) => {
+      expect(blog).toHaveAttribute("href", "/blog");
+    });
+  });
+
+  it("renders FAQ", () => {
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Questions" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Is this a human pentest?")).toBeInTheDocument();
   });
 
   it("links terms and privacy HTML islands from the footer", () => {
