@@ -3,9 +3,11 @@ import { test, expect } from "@playwright/test";
 test.describe("Landing", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
-  test("page loads with Sinexis heading", async ({ page }) => {
+  test("page loads with outcome heading", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("h1:has-text('Sinexis')")).toBeVisible();
+    await expect(
+      page.locator("h1:has-text('Cek paparan IP, domain, dan mobile')"),
+    ).toBeVisible();
     await expect(
       page
         .locator(
@@ -18,7 +20,7 @@ test.describe("Landing", () => {
   test("shows attach-loop tagline", async ({ page }) => {
     await page.goto("/");
     await expect(
-      page.locator("text=Temukan paparan di IP, domain, dan mobile"),
+      page.locator("text=Kredit, workspace, aset, Guard, dan uptime"),
     ).toBeVisible();
     await expect(
       page.locator("text=powered by the VulnScanner engine"),
@@ -39,9 +41,11 @@ test.describe("Landing", () => {
     await expect(signInLink.locator("text=Masuk")).toBeVisible();
   });
 
-  test("What ships section heading is visible", async ({ page }) => {
+  test("What you can use today heading is visible", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("h2:has-text('Yang tersedia')")).toBeVisible();
+    await expect(
+      page.locator("h2:has-text('Yang bisa dipakai hari ini')"),
+    ).toBeVisible();
   });
 
   test("renders IP scan feature card", async ({ page }) => {
@@ -54,14 +58,18 @@ test.describe("Landing", () => {
     ).toBeVisible();
   });
 
-  test("renders Guard and SIEM cards", async ({ page }) => {
+  test("renders Guard, Assets, Uptime cards without SIEM as shipped", async ({
+    page,
+  }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "Guard" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "SIEM" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Aset" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Uptime" })).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Scan Attach" }),
     ).toBeVisible();
     await expect(page.getByRole("heading", { name: "Kredit" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "SIEM" })).toHaveCount(0);
   });
 
   test("footer shows platform line without engine dump", async ({ page }) => {
