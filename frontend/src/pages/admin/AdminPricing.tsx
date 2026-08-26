@@ -134,7 +134,7 @@ function AdminPricing() {
                         {t("save")}
                       </>
                     ) : (
-                      t("saved")
+                      <span className="text-muted-foreground">{t("saved")}</span>
                     )}
                   </Button>
                 </div>
