@@ -104,7 +104,7 @@ function Landing() {
                 {t("whatShips")}
               </h2>
             </div>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
               {featureKeys.map((feature) => (
                 <Card
                   key={feature.titleKey}

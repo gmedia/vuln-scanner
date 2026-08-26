@@ -131,10 +131,12 @@ function MobileScanner() {
           </CardHeader>
           <CardContent data-testid="scan-coverage">
             <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-              <li>Manifest and permission analysis</li>
-              <li>Exported component detection</li>
-              <li>Hardcoded secret scanning</li>
-              <li>Platform-specific binary checks (.apk / .aab / .ipa)</li>
+              <li className="break-words">Manifest and permission analysis</li>
+              <li className="break-words">Exported component detection</li>
+              <li className="break-words">Hardcoded secret scanning</li>
+              <li className="break-words">
+                Platform-specific binary checks (.apk / .aab / .ipa)
+              </li>
             </ul>
           </CardContent>
         </Card>
