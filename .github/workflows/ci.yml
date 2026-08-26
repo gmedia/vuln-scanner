@@ -424,6 +424,7 @@ jobs:
             IPA_SCAN_CREDIT_COST=${{ secrets.IPA_SCAN_CREDIT_COST }}
             NVD_API_KEY=${{ secrets.NVD_API_KEY }}
             FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+            # GIS id_token audience; empty secret hides Google sign-in
             GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
             CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
             COOKIE_SECURE=${{ secrets.COOKIE_SECURE || 'true' }}
