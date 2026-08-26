@@ -367,6 +367,12 @@ body {
   animation: accordion-up 200ms ease-out;
 }
 
+[data-testid="google-sign-in"] iframe {
+  width: 100% !important;
+  max-width: 100%;
+  display: block;
+}
+
 .dark {
   --sidebar: hsl(0 0% 9%);
   --sidebar-foreground: hsl(0 0% 93%);
