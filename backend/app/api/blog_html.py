@@ -11,7 +11,7 @@ from app.config import settings
 from app.database import get_db
 from app.middleware.rate_limit import RateLimiter
 from app.models.blog import BlogPost
-from app.services.blog import escape_text, is_publicly_visible
+from app.services.blog import escape_text, is_publicly_visible, plain_excerpt
 
 html_router = APIRouter(tags=["blog-html"])
 
@@ -27,6 +27,7 @@ _SHELL_CSS = """
 :root{
   --background:hsl(0 0% 98%);
   --foreground:hsl(0 0% 7%);
+  --muted:hsl(0 0% 96%);
   --muted-foreground:hsl(0 0% 45%);
   --border:hsl(0 0% 90%);
   --primary:hsl(142 71% 45%);
@@ -34,11 +35,21 @@ _SHELL_CSS = """
   --measure:42rem;
   --rail:72rem;
 }
+.dark{
+  color-scheme:dark;
+  --background:hsl(0 0% 4%);
+  --foreground:hsl(0 0% 96%);
+  --muted:hsl(0 0% 12%);
+  --muted-foreground:hsl(0 0% 45%);
+  --border:hsl(0 0% 16%);
+  --primary:hsl(142 71% 45%);
+  --primary-foreground:hsl(0 0% 4%);
+}
 *{box-sizing:border-box}
-html{color-scheme:light;background:var(--background)}
+html{color-scheme:light dark;background:var(--background)}
 body{
   margin:0;min-height:100dvh;display:flex;flex-direction:column;
-  font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
   color:var(--foreground);background:var(--background);line-height:1.6;
   letter-spacing:-0.011em;
 }
@@ -61,23 +72,29 @@ a:hover{color:var(--foreground)}
 }
 .brand-accent{color:var(--primary)}
 .header-actions{display:flex;align-items:center;gap:0.5rem;flex-shrink:0}
-.header-actions a{
+.header-actions a,.theme-switch button{
   display:inline-flex;align-items:center;min-height:2.75rem;padding:0 0.75rem;
   font-size:0.75rem;text-decoration:none;color:var(--foreground);
-  border:1px solid var(--border);border-radius:0.375rem;
+  border:1px solid var(--border);border-radius:0.375rem;background:transparent;
+  cursor:pointer;font-family:inherit;
 }
 .header-actions a.ghost{border-color:transparent;color:var(--muted-foreground)}
 .header-actions a.primary{
   background:var(--primary);color:var(--primary-foreground);border-color:transparent;
 }
 .header-actions a[aria-current="page"]{color:var(--foreground);font-weight:600}
-main{flex:1;width:min(var(--measure),calc(100% - 2rem));margin:0 auto;padding:3rem 0 4rem}
-h1{font-size:clamp(1.75rem,3vw,2.5rem);line-height:1.2;font-weight:700;
+.theme-switch{display:inline-flex;border:1px solid var(--border);border-radius:0.375rem;overflow:hidden}
+.theme-switch button{border:0;border-radius:0;font-size:0.6875rem;padding:0 0.6rem}
+.theme-switch button[aria-pressed="true"]{background:var(--muted)}
+main.rail{flex:1;width:min(var(--rail),calc(100% - 2rem));margin:0 auto;padding:2rem 0 3rem}
+main.measure{flex:1;width:min(var(--measure),calc(100% - 2rem));margin:0 auto;padding:3rem 0 4rem}
+h1{font-size:clamp(1.25rem,2.5vw,1.75rem);line-height:1.2;font-weight:700;
   letter-spacing:-0.02em;margin:0 0 0.75rem}
-h2{font-size:1.25rem;margin:0 0 0.35rem;font-weight:600}
+article h1{font-size:clamp(1.75rem,3vw,2.5rem)}
+h2{font-size:1.125rem;margin:0 0 0.35rem;font-weight:600}
 .eyebrow{font-size:0.75rem;font-weight:600;letter-spacing:0.04em;
   text-transform:uppercase;color:var(--primary);margin:0 0 0.75rem}
-.lede,.excerpt{color:var(--muted-foreground);font-size:1.05rem}
+.lede,.excerpt{color:var(--muted-foreground);font-size:0.9375rem}
 .cta-row{display:flex;flex-wrap:wrap;gap:0.75rem;margin-top:1.5rem}
 .cta{
   display:inline-flex;align-items:center;min-height:2.75rem;padding:0 1rem;
@@ -89,16 +106,21 @@ h2{font-size:1.25rem;margin:0 0 0.35rem;font-weight:600}
   color:var(--muted-foreground);text-decoration:none;font-size:0.875rem;
 }
 ol.index{list-style:none;margin:0;padding:0}
-ol.index li{padding:1.5rem 0;border-bottom:1px solid var(--border)}
+ol.index li{padding:1rem 0;border-bottom:1px solid var(--border)}
+ol.index li:hover{background:var(--muted)}
 ol.index time,article time,.meta{
   font-size:0.75rem;color:var(--muted-foreground);
 }
 ol.index a{color:var(--foreground);text-decoration:none}
 ol.index a:hover h2{color:var(--primary)}
+ol.index .excerpt{
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+  overflow:hidden;margin:0.25rem 0 0;
+}
 .body{margin-top:1.5rem;font-size:1.0625rem}
 .body h2{margin-top:2rem}
 .body pre{
-  font-family:ui-monospace,Menlo,monospace;background:hsl(0 0% 96%);
+  font-family:ui-monospace,Menlo,monospace;background:var(--muted);
   padding:1rem;overflow-x:auto;border-radius:0.375rem;
 }
 .body a{color:var(--primary)}
@@ -108,12 +130,61 @@ ol.index a:hover h2{color:var(--primary)}
 .site-footer p{margin:0;font-size:0.75rem;color:var(--muted-foreground)}
 .site-footer a{
   font-size:0.75rem;color:var(--muted-foreground);text-decoration:none;
-  min-height:2.75rem;display:inline-flex;align-items:center;
+  min-height:2.75rem;display:inline-flex;align-items:center;padding:0 0.35rem;
 }
 .site-footer a:hover{color:var(--foreground)}
+.site-footer a.primary{
+  background:var(--primary);color:var(--primary-foreground);border-radius:0.375rem;
+  padding:0 0.75rem;font-weight:600;
+}
 @media (max-width:640px){
   .header-actions a.sm-hide{display:none}
 }
+@media (min-width:768px){
+  ol.index li{
+    display:grid;grid-template-columns:minmax(10rem,18rem) 1fr;gap:0.75rem 1.5rem;
+    align-items:start;
+  }
+}
+"""
+
+_THEME_BOOT = """
+<script>
+(function(){
+  var k='sinexis.theme', t='dark';
+  try { var s=localStorage.getItem(k); if(s==='light'||s==='dark') t=s; } catch(e){}
+  document.documentElement.classList.toggle('dark', t==='dark');
+  document.documentElement.style.colorScheme=t;
+  var m=document.querySelector('meta[name="theme-color"]');
+  if(m) m.setAttribute('content', t==='dark' ? '#0a0a0a' : '#fafafa');
+})();
+</script>
+"""
+
+_THEME_FOOT = """
+<script>
+(function(){
+  var k='sinexis.theme';
+  function cur(){
+    try { var s=localStorage.getItem(k); if(s==='light'||s==='dark') return s; } catch(e){}
+    return 'dark';
+  }
+  function apply(t){
+    document.documentElement.classList.toggle('dark', t==='dark');
+    document.documentElement.style.colorScheme=t;
+    var m=document.querySelector('meta[name="theme-color"]');
+    if(m) m.setAttribute('content', t==='dark' ? '#0a0a0a' : '#fafafa');
+    try { localStorage.setItem(k, t); } catch(e){}
+    document.querySelectorAll('[data-theme-set]').forEach(function(b){
+      b.setAttribute('aria-pressed', b.getAttribute('data-theme-set')===t ? 'true' : 'false');
+    });
+  }
+  document.querySelectorAll('[data-theme-set]').forEach(function(b){
+    b.addEventListener('click', function(){ apply(b.getAttribute('data-theme-set')); });
+  });
+  apply(cur());
+})();
+</script>
 """
 
 
@@ -150,16 +221,19 @@ _CROSSHAIR_SVG = (
 )
 
 
-def _shell(title: str, canonical: str, inner: str, locale: str = "id") -> str:
+def _shell(title: str, canonical: str, inner: str, locale: str = "id", *, rail: bool = False) -> str:
+    main_class = "rail" if rail else "measure"
     return f"""<!DOCTYPE html>
 <html lang="{escape_text(locale)}">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#0a0a0a"/>
 <title>{escape_text(title)}</title>
 <link rel="canonical" href="{escape_text(canonical)}"/>
 <meta name="robots" content="index,follow"/>
 <style>{_SHELL_CSS}</style>
+{_THEME_BOOT}
 </head>
 <body>
 <header class="site-header">
@@ -171,11 +245,15 @@ def _shell(title: str, canonical: str, inner: str, locale: str = "id") -> str:
     <nav class="header-actions">
       <a class="ghost" href="/blog" aria-current="page">Blog</a>
       <a class="ghost sm-hide" href="/login">Sign in</a>
-      <a class="primary sm-hide" href="/register">Get started</a>
+      <a class="primary" href="/register">Get started</a>
+      <span class="theme-switch" role="group" aria-label="Theme">
+        <button type="button" data-theme-set="dark" aria-pressed="true">Dark</button>
+        <button type="button" data-theme-set="light" aria-pressed="false">Light</button>
+      </span>
     </nav>
   </div>
 </header>
-<main>
+<main class="{main_class}">
 {inner}
 </main>
 <footer class="site-footer">
@@ -184,10 +262,11 @@ def _shell(title: str, canonical: str, inner: str, locale: str = "id") -> str:
     <nav>
       <a href="/blog">Blog</a>
       <a href="/login">Sign in</a>
-      <a href="/register">Get started</a>
+      <a class="primary" href="/register">Get started</a>
     </nav>
   </div>
 </footer>
+{_THEME_FOOT}
 </body>
 </html>
 """
@@ -231,11 +310,11 @@ async def blog_index_html(
                 "<li>"
                 f"<time datetime='{escape_text(pub)}'>{escape_text(human)}</time>"
                 f"<a href='/blog/{escape_text(p.slug)}'><h2>{escape_text(p.title)}</h2></a>"
-                f"<p class='excerpt'>{escape_text(p.excerpt)}</p>"
+                f"<p class='excerpt'>{escape_text(plain_excerpt(p.excerpt))}</p>"
                 "</li>"
             )
         inner = "<h1>Blog</h1><ol class='index'>" + "".join(items) + "</ol>"
-    html = _shell("Blog — Sinexis", f"{CANONICAL_HOST}/blog", inner)
+    html = _shell("Blog — Sinexis", f"{CANONICAL_HOST}/blog", inner, rail=True)
     return HTMLResponse(
         html,
         headers={
@@ -292,7 +371,7 @@ async def blog_article_html(
         f"<h1>{escape_text(post.title)}</h1>"
         f"<p class='meta'><time datetime='{escape_text(pub)}'>{escape_text(human)}</time>"
         f" · {escape_text(post.locale)}</p>"
-        f"<p class='lede excerpt'>{escape_text(post.excerpt)}</p>"
+        f"<p class='lede excerpt'>{escape_text(plain_excerpt(post.excerpt))}</p>"
         f"<div class='body'>{post.body_html}</div>"
         f"<p class='back'><a href='/blog'>← Semua artikel</a></p>"
         f"</article>"
