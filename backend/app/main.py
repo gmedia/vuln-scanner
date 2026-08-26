@@ -7,6 +7,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 
+from app.api.blog_html import html_router as blog_html_router
 from app.api.router import api_router
 from app.config import check_settings, settings
 from app.middleware.auth import ApiKeyMiddleware
@@ -96,6 +97,7 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 
 
 app.include_router(api_router, prefix="/api")
+app.include_router(blog_html_router)
 
 
 @app.get("/health")

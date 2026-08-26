@@ -1,8 +1,10 @@
 from fastapi import APIRouter
 
+from app.api.admin_blog_routes import router as admin_blog_router
 from app.api.admin_routes import router as admin_router
 from app.api.asset_routes import router as asset_router
 from app.api.auth_routes import router as auth_router
+from app.api.blog_routes import router as blog_router
 from app.api.credit_routes import router as credit_router
 from app.api.guard_routes import router as guard_router
 from app.api.key_routes import router as key_router
@@ -22,6 +24,8 @@ api_router.include_router(key_router)
 api_router.include_router(auth_router)
 api_router.include_router(credit_router)
 api_router.include_router(admin_router)
+api_router.include_router(admin_blog_router)
+api_router.include_router(blog_router)
 api_router.include_router(org_router)
 api_router.include_router(guard_router)
 api_router.include_router(siem_router)
