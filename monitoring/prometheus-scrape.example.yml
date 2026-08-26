@@ -11,7 +11,7 @@ scrape_configs:
     # 1) Sidecar/proxy on 127.0.0.1 that adds X-API-Key and scrape that target
     # 2) Prometheus build/extension that supports custom scrape headers
     static_configs:
-      - targets: ["vs.appmedia.id"]
+      - targets: ["sinexis.app"]
         labels:
           service: vuln-scanner
           env: production

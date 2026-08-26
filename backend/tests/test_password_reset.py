@@ -691,7 +691,7 @@ class TestPasswordResetMimeMessage:
         sent_msg = mock_smtp.send_message.call_args[0][0]
         html_part = sent_msg.get_payload()[0]
         html_body = html_part.get_payload(decode=True).decode("utf-8")
-        assert "https://vs.appmedia.id/reset-password?token=token789" in html_body
+        assert "https://sinexis.app/reset-password?token=token789" in html_body
 
     @pytest.mark.asyncio
     async def test_html_content_type(self):

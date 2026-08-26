@@ -59,8 +59,8 @@ class Settings(BaseSettings):
     smtp_port: int = 587
     smtp_user: str = ""
     smtp_pass: str = ""
-    smtp_from: str = "Sinexis <noreply@vs.appmedia.id>"
-    frontend_url: str = "https://vs.appmedia.id"
+    smtp_from: str = "Sinexis <noreply@sinexis.app>"
+    frontend_url: str = "https://sinexis.app"
 
     sentry_dsn: str = ""
 
