@@ -12,7 +12,10 @@ describe("LanguageSwitcher", () => {
   it("toggles locale and restores en for tests", async () => {
     const user = userEvent.setup();
     render(<LanguageSwitcher />);
-    expect(screen.getByTestId("language-switcher")).toBeInTheDocument();
+    const group = screen.getByTestId("language-switcher");
+    expect(group).toBeInTheDocument();
+    expect(group.className).toMatch(/overflow-hidden/);
+    expect(group.className).toMatch(/h-11/);
     await user.click(screen.getByTestId("locale-id"));
     expect(i18n.language).toBe("id");
     await user.click(screen.getByTestId("locale-en"));
