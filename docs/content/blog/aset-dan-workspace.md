@@ -1,6 +1,6 @@
 # Aset dan workspace: nama target + satu tim
 
-Dua hal yang sering tertukar:
+Aset adalah nama target yang dicek; workspace adalah tim/perusahaan tempat orang diundang — dua hal yang sering tertukar.
 
 - **Aset** = barang yang dicek: “website booking”, “VPS produksi”, “IP colo rak A”.
 - **Workspace** = **perusahaan / hotel** tempat orang diundang. Satu org ≈ satu perusahaan di v1 (bukan banyak proyek bersarang).
