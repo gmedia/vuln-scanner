@@ -15,8 +15,8 @@ SMTP_HOST = os.getenv("SMTP_HOST", "localhost")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER", "")
 SMTP_PASS = os.getenv("SMTP_PASS", "")
-SMTP_FROM = os.getenv("SMTP_FROM", "Sinexis <noreply@vs.appmedia.id>")
-FRONTEND_URL = os.getenv("FRONTEND_URL", "https://vs.appmedia.id")
+SMTP_FROM = os.getenv("SMTP_FROM", "Sinexis <noreply@sinexis.app>")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://sinexis.app")
 
 _MAX_RETRIES = 3
 _RETRY_BACKOFF_BASE = 1  # seconds: 1s, 2s, 4s

@@ -140,7 +140,7 @@ class TestMimeMessageStructure:
         sent_msg = mock_smtp.send_message.call_args[0][0]
         html_part = sent_msg.get_payload()[0]
         html_body = html_part.get_payload(decode=True).decode("utf-8")
-        assert "https://vs.appmedia.id/verify-email?token=token789" in html_body
+        assert "https://sinexis.app/verify-email?token=token789" in html_body
 
     @pytest.mark.asyncio
     async def test_html_content_type(self):
@@ -569,7 +569,7 @@ class TestEmailEdgeCases:
         html_part = sent_msg.get_payload()[0]
         html_body = html_part.get_payload(decode=True).decode("utf-8")
         # Verify raw token appears in the href (not HTML-escaped as &lt; etc.)
-        assert f'href="https://vs.appmedia.id/verify-email?token={special_token}"' in html_body
+        assert f'href="https://sinexis.app/verify-email?token={special_token}"' in html_body
         # Also confirm it is NOT escaped
         assert "&lt;" not in html_body
         assert "&gt;" not in html_body
