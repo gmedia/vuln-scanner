@@ -6,9 +6,10 @@ import {
   CalendarClock,
   Users,
   Shield,
-  Search,
   Coins,
   ArrowRight,
+  Server,
+  Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
@@ -18,15 +19,30 @@ import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
 import ThemeSwitcher from "@/components/theme/ThemeSwitcher";
 import { useTranslation } from "react-i18next";
 
+const pipelineSteps = [
+  { titleKey: "stepScan", descKey: "stepScanDesc" },
+  { titleKey: "stepAttach", descKey: "stepAttachDesc" },
+  { titleKey: "stepWorkspace", descKey: "stepWorkspaceDesc" },
+  { titleKey: "stepGuard", descKey: "stepGuardDesc" },
+] as const;
+
 const featureKeys = [
   { icon: Radar, titleKey: "featIp", descKey: "featIpDesc" },
   { icon: Globe, titleKey: "featDomain", descKey: "featDomainDesc" },
   { icon: Smartphone, titleKey: "featMobile", descKey: "featMobileDesc" },
   { icon: CalendarClock, titleKey: "featAttach", descKey: "featAttachDesc" },
   { icon: Users, titleKey: "featWorkspace", descKey: "featWorkspaceDesc" },
+  { icon: Server, titleKey: "featAssets", descKey: "featAssetsDesc" },
   { icon: Shield, titleKey: "featGuard", descKey: "featGuardDesc" },
-  { icon: Search, titleKey: "featSiem", descKey: "featSiemDesc" },
+  { icon: Activity, titleKey: "featUptime", descKey: "featUptimeDesc" },
   { icon: Coins, titleKey: "featCredits", descKey: "featCreditsDesc" },
+] as const;
+
+const faqKeys = [
+  { q: "faqAuthQ", a: "faqAuthA" },
+  { q: "faqPentestQ", a: "faqPentestA" },
+  { q: "faqDataQ", a: "faqDataA" },
+  { q: "faqGuardQ", a: "faqGuardA" },
 ] as const;
 
 function Landing() {
@@ -38,6 +54,12 @@ function Landing() {
         <div className="mx-auto flex h-12 w-full max-w-6xl min-w-0 items-center justify-between gap-2 overflow-x-hidden px-4 2xl:max-w-[90rem]">
           <BrandMark to="/" />
           <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
+            <a
+              href="/blog"
+              className="hidden sm:inline-flex min-h-11 items-center text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {t("blog")}
+            </a>
             <div className="hidden sm:flex sm:items-center sm:gap-2">
               <ThemeSwitcher />
               <LanguageSwitcher />
@@ -61,16 +83,14 @@ function Landing() {
       </header>
 
       <main className="flex flex-1 flex-col">
-        <section className="flex flex-col items-center px-4 pt-12 pb-10">
+        <section className="flex flex-col items-center px-4 pt-16 pb-12 sm:pt-20">
           <div className="mx-auto max-w-3xl space-y-6 text-center 2xl:max-w-4xl">
-            <div className="space-y-2">
-              <h1 className="text-4xl sm:text-5xl font-bold tracking-wide text-foreground">
-                {BRAND.heroTitle}
-              </h1>
-              <p className="text-lg sm:text-xl font-semibold tracking-wide text-primary">
-                {t("heroProduct")}
-              </p>
-            </div>
+            <p className="text-xs font-medium uppercase tracking-wide text-primary">
+              {t("heroEyebrow")}
+            </p>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+              {t("heroHeadline")}
+            </h1>
             <p className="text-base sm:text-lg text-foreground/80">
               {t("heroSub")}
             </p>
@@ -94,17 +114,48 @@ function Landing() {
           </div>
         </section>
 
-        <section className="px-4 py-12 bg-card/50">
+        <section className="px-4 py-12">
           <div className="mx-auto max-w-6xl 2xl:max-w-[90rem]">
             <div className="text-center mb-10 space-y-2">
               <p className="text-xs tracking-wide text-muted-foreground uppercase">
                 {tc("pipeline")}
               </p>
               <h2 className="text-2xl font-bold tracking-wide text-foreground">
+                {t("howItWorks")}
+              </h2>
+            </div>
+            <ol className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {pipelineSteps.map((step, i) => (
+                <li
+                  key={step.titleKey}
+                  className="rounded-lg border border-border bg-card p-4 text-left"
+                >
+                  <p className="text-xs text-muted-foreground">
+                    {String(i + 1).padStart(2, "0")}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold tracking-wide">
+                    {t(step.titleKey)}
+                  </p>
+                  <p className="mt-2 text-sm text-foreground/75">
+                    {t(step.descKey)}
+                  </p>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-6 text-center text-xs text-muted-foreground">
+              {t("siemNote")}
+            </p>
+          </div>
+        </section>
+
+        <section className="px-4 py-12 bg-card/50">
+          <div className="mx-auto max-w-6xl 2xl:max-w-[90rem]">
+            <div className="text-center mb-10 space-y-2">
+              <h2 className="text-2xl font-bold tracking-wide text-foreground">
                 {t("whatShips")}
               </h2>
             </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
               {featureKeys.map((feature) => (
                 <Card
                   key={feature.titleKey}
@@ -124,6 +175,24 @@ function Landing() {
                 </Card>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="px-4 py-12">
+          <div className="mx-auto max-w-3xl 2xl:max-w-4xl">
+            <h2 className="mb-8 text-center text-2xl font-bold tracking-wide text-foreground">
+              {t("faqTitle")}
+            </h2>
+            <dl className="space-y-6">
+              {faqKeys.map((item) => (
+                <div key={item.q}>
+                  <dt className="text-sm font-semibold text-foreground">
+                    {t(item.q)}
+                  </dt>
+                  <dd className="mt-1 text-sm text-foreground/75">{t(item.a)}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
         </section>
       </main>
