@@ -61,6 +61,7 @@ class Settings(BaseSettings):
     smtp_pass: str = ""
     smtp_from: str = "Sinexis <noreply@sinexis.app>"
     frontend_url: str = "https://sinexis.app"
+    google_client_id: str = ""
 
     sentry_dsn: str = ""
 

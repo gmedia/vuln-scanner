@@ -62,6 +62,7 @@ interface AuthStore {
   organizations: OrgMembershipSummary[];
   activeOrgId: string | null;
   login: (email: string, password: string) => Promise<boolean>;
+  loginWithGoogleToken: (idToken: string) => Promise<boolean>;
   register: (
     email: string,
     password: string,
@@ -200,6 +201,28 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const loginRes = await authApi.login(email, password);
+      set({ accessToken: loginRes.access_token });
+      localStorage.setItem("accessToken", loginRes.access_token);
+      authApi.authApi.defaults.headers.common["Authorization"] =
+        `Bearer ${loginRes.access_token}`;
+      const user = await authApi.getMe();
+      get().applyMe(user);
+      if (!user.organizations?.length) {
+        await get().loadOrganizations();
+      }
+      set({ isLoading: false });
+      return true;
+    } catch (err) {
+      const message = extractError(err, "Login gagal");
+      set({ error: message, isLoading: false });
+      return false;
+    }
+  },
+
+  loginWithGoogleToken: async (idToken) => {
+    set({ isLoading: true, error: null });
+    try {
+      const loginRes = await authApi.loginWithGoogle(idToken);
       set({ accessToken: loginRes.access_token });
       localStorage.setItem("accessToken", loginRes.access_token);
       authApi.authApi.defaults.headers.common["Authorization"] =

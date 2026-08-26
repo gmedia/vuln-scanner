@@ -2156,3 +2156,64 @@ class TestPatchMeLocale:
             headers={"Authorization": f"Bearer {token}"},
         )
         assert resp.status_code == 400
+
+
+class TestGoogleAuth:
+    def test_config_disabled_when_no_client_id(self, auth_client, monkeypatch):
+        monkeypatch.setattr(settings, "google_client_id", "")
+        resp = auth_client.get("/api/auth/google/config")
+        assert resp.status_code == 200
+        assert resp.json() == {"enabled": False, "client_id": ""}
+
+    def test_google_503_when_unconfigured(self, auth_client, monkeypatch):
+        monkeypatch.setattr(settings, "google_client_id", "")
+        resp = auth_client.post("/api/auth/google", json={"id_token": "x" * 24})
+        assert resp.status_code == 503
+
+    def test_google_creates_user(self, auth_client, db_session, monkeypatch):
+        monkeypatch.setattr(settings, "google_client_id", "test-client.apps.googleusercontent.com")
+
+        async def _claims(_token: str) -> dict[str, str]:
+            return {"sub": "gid-1", "email": "gnew@example.com"}
+
+        with patch("app.api.auth_routes.verify_google_id_token", side_effect=_claims):
+            resp = auth_client.post("/api/auth/google", json={"id_token": "x" * 24})
+        assert resp.status_code == 200
+        body = resp.json()
+        assert "access_token" in body
+        assert body["user"]["email"] == "gnew@example.com"
+        assert body["user"]["is_verified"] is True
+
+        async def _count() -> int:
+            result = await db_session.execute(select(User).where(User.email == "gnew@example.com"))
+            user = result.scalar_one()
+            logs = await db_session.execute(select(CreditLog).where(CreditLog.user_id == user.id))
+            return len(list(logs.scalars()))
+
+        import asyncio
+
+        assert asyncio.get_event_loop().run_until_complete(_count()) == 1
+
+    def test_google_links_existing_email(self, auth_client, db_session, monkeypatch):
+        import asyncio
+
+        monkeypatch.setattr(settings, "google_client_id", "test-client.apps.googleusercontent.com")
+        user = asyncio.get_event_loop().run_until_complete(
+            _create_unverified_user(db_session, email="glink@example.com")
+        )
+
+        async def _claims(_token: str) -> dict[str, str]:
+            return {"sub": "gid-link", "email": "glink@example.com"}
+
+        with patch("app.api.auth_routes.verify_google_id_token", side_effect=_claims):
+            resp = auth_client.post("/api/auth/google", json={"id_token": "y" * 24})
+        assert resp.status_code == 200
+        assert resp.json()["user"]["is_verified"] is True
+
+        async def _reload():
+            await db_session.refresh(user)
+            return user.google_sub, user.is_verified
+
+        sub, verified = asyncio.get_event_loop().run_until_complete(_reload())
+        assert sub == "gid-link"
+        assert verified is True
