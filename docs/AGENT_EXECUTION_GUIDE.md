@@ -2,11 +2,11 @@
 
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
-**Last updated:** 2026-08-25
+**Last updated:** 2026-08-26
 **Repo tip at write time:** re-`git pull` after reset. **P3 assets S1–S5** (#380). **P8 Uptime S1–S5 + retention** (#397–#401). **i18n S1–S7** (#367–#373). **theme S1–S3** (#375–#378). Open residual: **GTM human**; **Guard live lab**; Dependabot — do not mass-merge. **P7 SIEM S0–S5** (flag `SIEM_ENABLED` default false). No IPs/secrets. Never commit IPs/passwords/enroll keys.
 **Guard e2e rule:** if the user asks for a **full prod e2e suite including Guard enroll/unenroll**, **wipe `tc5` + leftover Manager/DB smoke rows first** — see **§4.1**. Do not skip this. Do not treat Playwright as enroll/unenroll.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
-**Phase snapshot:** **P0 policy locked** · **P1 attach shipped** · **P2 Workspace S1–S5** · **P3 assets S1–S5** · **P4 soft dual-brand** · **P5 Guard thin** (mock CI) · **P7 SIEM S0–S5** (flag default false) · **P8 Uptime S1–S5 + #401** · **i18n S1–S7** · **theme S1–S3** · **GTM human still open** · **P6 hospitality pack** not coded · residual eng = bugs, Dependabot only when named + CI green — **do not** implement SIEM under Guard PRs. Do **not** re-implement i18n because this spek used to say S0.
+**Phase snapshot:** **P0 policy locked** · **P1 attach shipped** · **P2 Workspace S1–S5** · **P3 assets S1–S5** · **P4 soft dual-brand** · **P5 Guard thin** (mock CI) · **P7 SIEM S0–S5** (flag default false) · **P8 Uptime S1–S5 + #401** · **i18n S1–S7** · **theme S1–S3** · **P10 blog S0** · **GTM human still open** · **P6 hospitality pack** not coded · residual eng = bugs, Dependabot only when named + CI green — **do not** implement SIEM under Guard PRs. Do **not** re-implement i18n because this spek used to say S0. Do **not** implement blog S1+ without explicit verb.
 
 ---
 
@@ -104,6 +104,7 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 | **P8** | **Uptime v1** (external probe) | Cheap attach “is the site up?” | HTTP+TCP, SKU seats, email down/up, SPA `/uptime`; spek [`uptime-v1.md`](specs/uptime-v1.md) | Status page, multi-region, webhooks, merge into Guard/SIEM/scan | **S1–S5 + gaps + retention on `main`** (#397–#401). Flag `UPTIME_ENABLED` default true. Queue `uptime_check`. CI `deploy.sh` starts `worker_uptime` on `REMOTE_DATA`. Residual: **human UI/SMTP smoke**. |
 | **P8-i18n** | **i18n id/en** | Dual language SPA | Catalogs, switcher, executive/notify locale, `users.locale` | Extra locales, CVE translation, legal pages | **S1–S7 on `main`** (#367–#373). Spek [`i18n-v1.md`](specs/i18n-v1.md) — **not** a second P8; do not re-implement. |
 | **P9** | **Theme light/dark** | Operator appearance | Tokens + switcher; default dark | Per-org theme, Wave G layout | **S1–S3 on `main`** (#375–#378). Spek [`theme-v1.md`](specs/theme-v1.md). |
+| **P10** | **Public blog** (GTM content) | Trust / inbound copy without a deploy per post | Public `/blog`; platform-admin CMS; Markdown; SEO HTML island + path-only index | Comments, Next.js, org CMS, images, legal pages, Guard merge | **S0 spek** [`blog-v1.md`](specs/blog-v1.md). Q1–Q6 locked. **S1+ only on explicit implement.** |
 
 **Priority rule for agents (post–#295 tip `8546ef3`):**
 
@@ -201,7 +202,8 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | [`docs/specs/workspace-v1.md`](specs/workspace-v1.md) | **Approved** D1–D6; **S1–S5 implemented** on main (#267 + #270) | Residual smoke / bugs only with explicit verb |
 | [`docs/specs/assets-v1.md`](specs/assets-v1.md) | **S1–S5 implemented** (#380) | Residual smoke / bugs only |
 | [`docs/specs/guard-v1.md`](specs/guard-v1.md) | **S0–S5 + Http on `main`** (#273–#275); host/guide #279–#281 + #294 | Edge lab + secrets on deploy host only; no SIEM on `/guard` |
-| [`docs/specs/siem-v1.md`](specs/siem-v1.md) | **S0 draft** (this epic) | P7 S1+ only after explicit implement + §11 Q2 |
+| [`docs/specs/siem-v1.md`](specs/siem-v1.md) | **S0–S5 on `main`** (#307); prod flag human | Residual / flag only with explicit verb |
+| [`docs/specs/blog-v1.md`](specs/blog-v1.md) | **S0** (P10); Q1–Q6 locked | S1+ only after explicit implement |
 
 **Agent:** wait for **explicit implement** even when spec exists. Prefer **draft spec** over silent coding for new epics; P3 assets already shipped.
 
@@ -422,6 +424,8 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 | “implement guard” / “kerjakan wazuh” | S1+ per spek slices; mock CI; no SIEM |
 | “deploy” | Prefer CI `deploy` on `main` or scripts on **edge**; verify health; coding host Docker off by default |
 | “update handoff / guide” | Docs PR only |
+| “tulis spek blog” / “blog” | Point to [`docs/specs/blog-v1.md`](specs/blog-v1.md); S0 locked; **no** S1 until implement |
+| “implement blog” / “kerjakan blog” | S1+ per spek slices; platform admin only; no Guard merge |
 
 **Locked answers (P0 — do not re-ask every session):** KPI = **attach ARPU primary**; renew = **AM**; billing v1 = **GMD invoice + app credit top-up**; dual-brand = **6–12 mo soft** (soft UI shipped); after P0/P1/P2-S1–S5 + Wave B = **GTM parallel** + **Guard thin** only with spek + explicit implement (risk-accepted 2026-08-10) — still **no** SIEM default.
 
@@ -459,7 +463,8 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 | `docs/archive/handoff-scan-pending-2026.md` | **ARCHIVED** stuck-pending (re-verify) |
 | `docs/multi-host-ops.md` | Lab roles + Guard enroll wipe-first |
 | `docs/specs/guard-v1.md` | P5 Guard thin spek + status (S0–S5 + Http on main) |
-| `docs/specs/*` | Attach historical; workspace S1–S5 shipped; assets TBD |
+| `docs/specs/blog-v1.md` | P10 public blog S0 (CMS + SEO path) |
+| `docs/specs/*` | Attach/workspace/assets/uptime/i18n/theme shipped; blog S0 |
 
 ---
 
