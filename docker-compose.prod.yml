@@ -1,5 +1,5 @@
 # Production docker-compose — no nginx container (host nginx handles SSL + reverse proxy).
-# Host nginx (nginx/vs.appmedia.id.conf) proxies to 127.0.0.1:5174 (frontend) and :8000 (backend).
+# Host nginx (nginx/sinexis.app.conf) proxies to 127.0.0.1:5174 (frontend) and :8000 (backend).
 
 services:
   postgres:
@@ -99,9 +99,9 @@ services:
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-Sinexis <noreply@vs.appmedia.id>}
-      FRONTEND_URL: ${FRONTEND_URL:-https://vs.appmedia.id}
-      CORS_ORIGINS: ${CORS_ORIGINS:-https://vs.appmedia.id}
+      SMTP_FROM: ${SMTP_FROM:-Sinexis <noreply@sinexis.app>}
+      FRONTEND_URL: ${FRONTEND_URL:-https://sinexis.app}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://sinexis.app}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       E2E_EMAIL: ${E2E_EMAIL:-}
@@ -187,8 +187,8 @@ services:
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-Sinexis <noreply@vs.appmedia.id>}
-      FRONTEND_URL: ${FRONTEND_URL:-https://vs.appmedia.id}
+      SMTP_FROM: ${SMTP_FROM:-Sinexis <noreply@sinexis.app>}
+      FRONTEND_URL: ${FRONTEND_URL:-https://sinexis.app}
       CELERY_MODE: worker
       CELERY_QUEUE: ip_scan
       CELERY_CONCURRENCY: 2
@@ -233,8 +233,8 @@ services:
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-Sinexis <noreply@vs.appmedia.id>}
-      FRONTEND_URL: ${FRONTEND_URL:-https://vs.appmedia.id}
+      SMTP_FROM: ${SMTP_FROM:-Sinexis <noreply@sinexis.app>}
+      FRONTEND_URL: ${FRONTEND_URL:-https://sinexis.app}
       CELERY_MODE: worker
       CELERY_QUEUE: domain_scan
       CELERY_CONCURRENCY: 2
