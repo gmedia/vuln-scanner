@@ -63,6 +63,7 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
             or path.startswith("/api/blog")
             or path == "/blog"
             or path.startswith("/blog/")
+            or path in ("/terms", "/privacy")
         ):
             return await call_next(request)
 
