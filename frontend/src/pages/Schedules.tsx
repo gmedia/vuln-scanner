@@ -442,7 +442,7 @@ function Schedules() {
             <p className="text-sm text-destructive">{t("loadFailed")}</p>
           )}
           {!isLoading && data && data.length === 0 && (
-            <div className="flex min-h-[24rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center 2xl:min-h-[32rem]">
+            <div className="flex min-h-[12rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center sm:min-h-[24rem] 2xl:min-h-[32rem]">
               <CalendarClock className="h-8 w-8 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">{t("empty")}</p>
             </div>
