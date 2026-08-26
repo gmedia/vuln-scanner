@@ -129,9 +129,11 @@ describe("Schedules page", () => {
     ]);
     renderAt();
     expect(
-      await screen.findByText(/Kredit tidak mencukupi/),
-    ).toBeInTheDocument();
-    const link = screen.getByRole("link", { name: /View credit history/i });
+      (await screen.findAllByText(/Kredit tidak mencukupi/)).length,
+    ).toBeGreaterThan(0);
+    const link = screen.getAllByRole("link", {
+      name: /View credit history/i,
+    })[0];
     expect(link).toHaveAttribute("href", "/credit-history");
   });
 
@@ -173,10 +175,12 @@ describe("Schedules page", () => {
     ]);
     const user = userEvent.setup();
     renderAt();
-    await screen.findByText("Weekly external");
-    await user.click(screen.getByRole("button", { name: /Scan history/i }));
+    await screen.findAllByText("Weekly external");
+    await user.click(
+      screen.getAllByRole("button", { name: /Scan history/i })[0],
+    );
     await waitFor(() => expect(mockRuns).toHaveBeenCalledWith("sched-1", 10));
-    const runLink = await screen.findByRole("link", { name: /open scan/i });
+    const runLink = (await screen.findAllByRole("link", { name: /open scan/i }))[0];
     expect(runLink).toHaveAttribute("href", "/scan/job-99");
   });
 
@@ -184,9 +188,11 @@ describe("Schedules page", () => {
     mockList.mockResolvedValue([sampleSchedule]);
     const user = userEvent.setup();
     renderAt();
-    await screen.findByText("Weekly external");
+    await screen.findAllByText("Weekly external");
     await user.click(
-      screen.getByRole("button", { name: /Download executive report/i }),
+      screen.getAllByRole("button", {
+        name: /Download executive report/i,
+      })[0],
     );
     expect(mockDownload).toHaveBeenCalledWith("job-1", "executive");
   });
@@ -198,8 +204,10 @@ describe("Schedules page", () => {
     mockDelete.mockResolvedValue(undefined);
     const user = userEvent.setup();
     renderAt();
-    await screen.findByText("Weekly external");
-    await user.click(screen.getByRole("button", { name: "Delete schedule" }));
+    await screen.findAllByText("Weekly external");
+    await user.click(
+      screen.getAllByRole("button", { name: "Delete schedule" })[0],
+    );
     expect(
       await screen.findByRole("alertdialog"),
     ).toBeInTheDocument();
@@ -218,14 +226,24 @@ describe("Schedules page", () => {
     ]);
     const user = userEvent.setup();
     renderAt();
-    await screen.findByText("Weekly external");
-    await user.click(screen.getByRole("button", { name: "Delete schedule" }));
+    await screen.findAllByText("Weekly external");
+    await user.click(
+      screen.getAllByRole("button", { name: "Delete schedule" })[0],
+    );
     await screen.findByRole("alertdialog");
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     await waitFor(() =>
       expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument(),
     );
     expect(mockDelete).not.toHaveBeenCalled();
+  });
+
+  it("renders a stacked mobile list without a min-width table", async () => {
+    mockList.mockResolvedValue([sampleSchedule]);
+    renderAt();
+    await screen.findAllByText("Weekly external");
+    expect(screen.getByTestId("schedules-mobile-list")).toBeInTheDocument();
+    expect(document.querySelector(".min-w-\\[40rem\\]")).toBeNull();
   });
 
   it("surfaces toggle errors", async () => {
@@ -238,8 +256,8 @@ describe("Schedules page", () => {
     });
     const user = userEvent.setup();
     renderAt();
-    await screen.findByText("Weekly external");
-    await user.click(screen.getByRole("button", { name: /Enable/i }));
+    await screen.findAllByText("Weekly external");
+    await user.click(screen.getAllByRole("button", { name: /Enable/i })[0]);
     await waitFor(() =>
       expect(screen.getByRole("alert")).toHaveTextContent(/Batas 10/),
     );

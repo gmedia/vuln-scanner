@@ -99,6 +99,97 @@ function parseScanType(value: string | null): "domain" | "ip" {
   return value === "ip" ? "ip" : "domain";
 }
 
+function ScheduleRowActions({
+  schedule: s,
+  canCreate,
+  atCap,
+  togglePending,
+  deletePending,
+  onToggle,
+  onDelete,
+}: {
+  schedule: ScanSchedule;
+  canCreate: boolean;
+  atCap: boolean;
+  togglePending: boolean;
+  deletePending: boolean;
+  onToggle: (id: string, enabled: boolean) => void;
+  onDelete: (id: string) => void;
+}) {
+  const { t } = useTranslation("schedules");
+  return (
+    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+      {s.last_job_id && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="min-h-11 flex-1 sm:min-h-8 sm:flex-none"
+          onClick={() => {
+            if (s.last_job_id) {
+              void downloadFile(s.last_job_id, "executive");
+            }
+          }}
+          aria-label={t("execAria")}
+        >
+          <Download className="mr-1 h-3.5 w-3.5" />
+          {t("executive")}
+        </Button>
+      )}
+      {canCreate && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="min-h-11 flex-1 sm:min-h-8 sm:flex-none"
+          disabled={togglePending || (!s.enabled && atCap)}
+          title={
+            !s.enabled && atCap
+              ? t("capReachedShort", { max: MAX_ENABLED_SCHEDULES })
+              : undefined
+          }
+          onClick={() => onToggle(s.id, !s.enabled)}
+        >
+          {s.enabled ? t("disable") : t("enable")}
+        </Button>
+      )}
+      {canCreate && (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="min-h-11 sm:min-h-8"
+              disabled={deletePending}
+              aria-label={t("deleteAria")}
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("deleteBody", { target: s.target })}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                className={buttonVariants({ variant: "destructive" })}
+                onClick={() => onDelete(s.id)}
+              >
+                {t("delete")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+    </div>
+  );
+}
+
 function ScheduleRunsPanel({ scheduleId }: { scheduleId: string }) {
   const { t, i18n } = useTranslation("schedules");
   const activeOrgId = useAuthStore((s) => s.activeOrgId);
@@ -448,54 +539,161 @@ function Schedules() {
             </div>
           )}
           {!isLoading && data && data.length > 0 && (
-            <div className="overflow-x-auto">
-            <Table className="min-w-[40rem] table-fixed text-sm">
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-[48%] text-[10px] uppercase tracking-wider">
-                    {t("colSchedule")}
-                  </TableHead>
-                  <TableHead className="hidden w-[32%] sm:table-cell text-[10px] uppercase tracking-wider">
-                    {t("colNext")}
-                  </TableHead>
-                  <TableHead className="w-[20%] text-right text-[10px] uppercase tracking-wider">
-                    {t("colActions")}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              <ul className="space-y-3 sm:hidden" data-testid="schedules-mobile-list">
                 {data.map((s: ScanSchedule) => {
                   const runsOpen = !!expandedRuns[s.id];
                   const mappedErr = mapScheduleError(s.last_error);
                   const creditDisabled =
                     !s.enabled && isCreditError(s.last_error);
-
                   return (
-                    <Fragment key={s.id}>
-                      <TableRow>
-                        <TableCell className="align-top">
-                          <div className="min-w-0 space-y-0.5">
-                            <p className="truncate text-sm font-medium text-foreground 2xl:overflow-visible 2xl:whitespace-normal">
-                              {s.name || s.target}
-                              <span className="ml-2 text-xs font-normal text-muted-foreground">
-                                {s.scan_type} ·{" "}
-                                {s.cadence === "weekly"
-                                  ? t("weekly").toLowerCase()
-                                  : t("monthly").toLowerCase()}
-                              </span>
-                              {!s.enabled && (
-                                <Badge
-                                  variant="default"
-                                  className="ml-2 text-[10px]"
+                    <li
+                      key={s.id}
+                      className="rounded-lg border border-border p-3"
+                    >
+                      <p className="break-words text-sm font-medium text-foreground">
+                        {s.name || s.target}
+                        <span className="ml-2 text-xs font-normal text-muted-foreground">
+                          {s.scan_type} ·{" "}
+                          {s.cadence === "weekly"
+                            ? t("weekly").toLowerCase()
+                            : t("monthly").toLowerCase()}
+                        </span>
+                        {!s.enabled && (
+                          <Badge variant="default" className="ml-2 text-[10px]">
+                            {t("disabled")}
+                          </Badge>
+                        )}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {t("nextPrefix", {
+                          when: formatWhen(s.next_run_at, i18n.language),
+                        })}
+                      </p>
+                      {s.last_job_id && (
+                        <Link
+                          to={`/scan/${s.last_job_id}`}
+                          className="mt-1 inline-block text-xs text-primary hover:underline"
+                        >
+                          {t("lastScan")}
+                        </Link>
+                      )}
+                      {s.notify_email && (
+                        <p className="mt-1 break-all text-xs text-muted-foreground">
+                          {t("notify", { email: s.notify_email })}
+                        </p>
+                      )}
+                      <div className="mt-3">
+                        <ScheduleRowActions
+                          schedule={s}
+                          canCreate={canCreate}
+                          atCap={atCap}
+                          togglePending={toggleMut.isPending}
+                          deletePending={deleteMut.isPending}
+                          onToggle={(id, enabled) =>
+                            toggleMut.mutate({ id, enabled })
+                          }
+                          onDelete={(id) => deleteMut.mutate(id)}
+                        />
+                      </div>
+                      {mappedErr && (
+                        <Alert
+                          variant={creditDisabled ? "default" : "destructive"}
+                          className={
+                            creditDisabled
+                              ? "mt-3 border-amber-500/40 bg-amber-500/10 text-xs text-amber-200"
+                              : "mt-3 border-destructive/40 text-xs"
+                          }
+                        >
+                          <AlertTriangle />
+                          <AlertDescription>
+                            <p>{mappedErr}</p>
+                            {creditDisabled && (
+                              <p className="mt-1">
+                                <Link
+                                  to="/credit-history"
+                                  className="font-medium text-primary hover:underline"
                                 >
-                                  {t("disabled")}
-                                </Badge>
-                              )}
-                            </p>
-                            <p className="text-xs text-muted-foreground sm:hidden">
-                              {t("nextPrefix", {
-                                when: formatWhen(s.next_run_at, i18n.language),
-                              })}
+                                  {t("creditHistory")}
+                                </Link>{" "}
+                                {t("creditReenable")}
+                              </p>
+                            )}
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="mt-2 h-auto min-h-11 px-0 text-xs text-muted-foreground hover:bg-transparent hover:text-foreground"
+                        onClick={() => toggleRuns(s.id)}
+                        aria-expanded={runsOpen}
+                      >
+                        {runsOpen ? (
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        ) : (
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        )}
+                        {t("runHistory")}
+                      </Button>
+                      {runsOpen && <ScheduleRunsPanel scheduleId={s.id} />}
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="hidden sm:block">
+                <Table className="w-full table-fixed text-sm">
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-[40%] text-[10px] uppercase tracking-wider">
+                        {t("colSchedule")}
+                      </TableHead>
+                      <TableHead className="w-[32%] text-[10px] uppercase tracking-wider">
+                        {t("colNext")}
+                      </TableHead>
+                      <TableHead className="w-[28%] text-right text-[10px] uppercase tracking-wider">
+                        {t("colActions")}
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.map((s: ScanSchedule) => {
+                      const runsOpen = !!expandedRuns[s.id];
+                      const mappedErr = mapScheduleError(s.last_error);
+                      const creditDisabled =
+                        !s.enabled && isCreditError(s.last_error);
+                      return (
+                        <Fragment key={s.id}>
+                          <TableRow>
+                            <TableCell className="align-top">
+                              <div className="min-w-0 space-y-0.5">
+                                <p className="break-words text-sm font-medium text-foreground">
+                                  {s.name || s.target}
+                                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                                    {s.scan_type} ·{" "}
+                                    {s.cadence === "weekly"
+                                      ? t("weekly").toLowerCase()
+                                      : t("monthly").toLowerCase()}
+                                  </span>
+                                  {!s.enabled && (
+                                    <Badge
+                                      variant="default"
+                                      className="ml-2 text-[10px]"
+                                    >
+                                      {t("disabled")}
+                                    </Badge>
+                                  )}
+                                </p>
+                                {s.notify_email && (
+                                  <p className="break-all text-xs text-muted-foreground">
+                                    {t("notify", { email: s.notify_email })}
+                                  </p>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="align-top text-xs text-muted-foreground">
+                              {formatWhen(s.next_run_at, i18n.language)}
                               {s.last_job_id && (
                                 <>
                                   {" · "}
@@ -507,167 +705,78 @@ function Schedules() {
                                   </Link>
                                 </>
                               )}
-                            </p>
-                            {s.notify_email && (
-                              <p className="text-xs text-muted-foreground">
-                                {t("notify", { email: s.notify_email })}
-                              </p>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden align-top text-xs text-muted-foreground sm:table-cell">
-                          {formatWhen(s.next_run_at, i18n.language)}
-                          {s.last_job_id && (
-                            <>
-                              {" · "}
-                              <Link
-                                to={`/scan/${s.last_job_id}`}
-                                className="text-primary hover:underline"
-                              >
-                                {t("lastScan")}
-                              </Link>
-                            </>
-                          )}
-                        </TableCell>
-                        <TableCell className="align-top">
-                          <div className="flex shrink-0 flex-nowrap items-center justify-end gap-2">
-                        {s.last_job_id && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              if (s.last_job_id) {
-                                void downloadFile(s.last_job_id, "executive");
-                              }
-                            }}
-                            aria-label={t("execAria")}
-                          >
-                            <Download className="mr-1 h-3.5 w-3.5" />
-                            {t("executive")}
-                          </Button>
-                        )}
-                        {canCreate && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={
-                              toggleMut.isPending || (!s.enabled && atCap)
-                            }
-                            title={
-                              !s.enabled && atCap
-                                ? t("capReachedShort", {
-                                    max: MAX_ENABLED_SCHEDULES,
-                                  })
-                                : undefined
-                            }
-                            onClick={() =>
-                              toggleMut.mutate({
-                                id: s.id,
-                                enabled: !s.enabled,
-                              })
-                            }
-                          >
-                            {s.enabled ? t("disable") : t("enable")}
-                          </Button>
-                        )}
-                        {canCreate && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
+                            </TableCell>
+                            <TableCell className="align-top">
+                              <ScheduleRowActions
+                                schedule={s}
+                                canCreate={canCreate}
+                                atCap={atCap}
+                                togglePending={toggleMut.isPending}
+                                deletePending={deleteMut.isPending}
+                                onToggle={(id, enabled) =>
+                                  toggleMut.mutate({ id, enabled })
+                                }
+                                onDelete={(id) => deleteMut.mutate(id)}
+                              />
+                            </TableCell>
+                          </TableRow>
+                          <TableRow className="hover:bg-transparent">
+                            <TableCell colSpan={3} className="space-y-2 pt-0">
+                              {mappedErr && (
+                                <Alert
+                                  variant={
+                                    creditDisabled ? "default" : "destructive"
+                                  }
+                                  className={
+                                    creditDisabled
+                                      ? "border-amber-500/40 bg-amber-500/10 text-xs text-amber-200"
+                                      : "border-destructive/40 text-xs"
+                                  }
+                                >
+                                  <AlertTriangle />
+                                  <AlertDescription>
+                                    <p>{mappedErr}</p>
+                                    {creditDisabled && (
+                                      <p className="mt-1">
+                                        <Link
+                                          to="/credit-history"
+                                          className="font-medium text-primary hover:underline"
+                                        >
+                                          {t("creditHistory")}
+                                        </Link>{" "}
+                                        {t("creditReenable")}
+                                      </p>
+                                    )}
+                                  </AlertDescription>
+                                </Alert>
+                              )}
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                disabled={deleteMut.isPending}
-                                 aria-label={t("deleteAria")}
+                                className="h-auto px-0 text-xs text-muted-foreground hover:bg-transparent hover:text-foreground"
+                                onClick={() => toggleRuns(s.id)}
+                                aria-expanded={runsOpen}
                               >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  {t("deleteTitle")}
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  {t("deleteBody", { target: s.target })}
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                                <AlertDialogAction
-                                  className={buttonVariants({
-                                    variant: "destructive",
-                                  })}
-                                  onClick={() => deleteMut.mutate(s.id)}
-                                >
-                                  {t("delete")}
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                      <TableRow className="hover:bg-transparent">
-                        <TableCell colSpan={3} className="space-y-2 pt-0">
-                          {mappedErr && (
-                            <Alert
-                              variant={
-                                creditDisabled ? "default" : "destructive"
-                              }
-                              className={
-                                creditDisabled
-                                  ? "border-amber-500/40 bg-amber-500/10 text-xs text-amber-200"
-                                  : "border-destructive/40 text-xs"
-                              }
-                            >
-                              <AlertTriangle />
-                              <AlertDescription>
-                                <p>{mappedErr}</p>
-                                {creditDisabled && (
-                                  <p className="mt-1">
-                                    <Link
-                                      to="/credit-history"
-                                      className="font-medium text-primary hover:underline"
-                                    >
-                                      {t("creditHistory")}
-                                    </Link>{" "}
-                                    {t("creditReenable")}
-                                  </p>
+                                {runsOpen ? (
+                                  <ChevronDown className="h-3.5 w-3.5" />
+                                ) : (
+                                  <ChevronRight className="h-3.5 w-3.5" />
                                 )}
-                              </AlertDescription>
-                            </Alert>
-                          )}
-
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-auto px-0 text-xs text-muted-foreground hover:bg-transparent hover:text-foreground"
-                            onClick={() => toggleRuns(s.id)}
-                            aria-expanded={runsOpen}
-                          >
-                            {runsOpen ? (
-                              <ChevronDown className="h-3.5 w-3.5" />
-                            ) : (
-                              <ChevronRight className="h-3.5 w-3.5" />
-                            )}
-                            {t("runHistory")}
-                          </Button>
-                          {runsOpen && (
-                            <ScheduleRunsPanel scheduleId={s.id} />
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    </Fragment>
-                  );
-                })}
-              </TableBody>
-            </Table>
-            </div>
+                                {t("runHistory")}
+                              </Button>
+                              {runsOpen && (
+                                <ScheduleRunsPanel scheduleId={s.id} />
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        </Fragment>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
