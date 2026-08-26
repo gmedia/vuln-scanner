@@ -51,6 +51,9 @@ def test_public_html_index(client):
     assert resp.status_code == 200
     assert "text/html" in resp.headers.get("content-type", "")
     assert "Blog" in resp.text
+    assert "<h1>" in resp.text
+    assert "Briefing belum ada di rak" in resp.text
+    assert 'rel="canonical"' in resp.text
 
 
 def test_draft_not_public(client):
