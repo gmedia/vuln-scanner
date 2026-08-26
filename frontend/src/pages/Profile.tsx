@@ -103,81 +103,6 @@ function Profile() {
       <Card>
         <CardHeader>
           <CardTitle className="text-sm tracking-wide">
-            Update email
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleUpdateProfile} className="space-y-3">
-            {profileCooldown.cooldown > 0 && (
-              <p className="flex items-center gap-1 text-xs text-amber-400">
-                <Timer className="h-3 w-3" />
-                Too many attempts. Wait {profileCooldown.cooldown}s
-              </p>
-            )}
-            {error && profileCooldown.cooldown === 0 && !profileSuccess && (
-              <p className="flex items-center gap-1 text-xs text-red-400">
-                <AlertCircle className="h-3 w-3" />
-                {error}
-              </p>
-            )}
-            <div className="space-y-1">
-              <Label htmlFor="profile-email" className="block">
-                New email
-              </Label>
-              <Input
-                id="profile-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="new@example.com"
-                required
-                disabled={isUpdatingProfile}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="profile-password" className="block">
-                Current password
-              </Label>
-              <Input
-                id="profile-password"
-                type="password"
-                value={profilePassword}
-                onChange={(e) => setProfilePassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                disabled={isUpdatingProfile}
-              />
-              <p className="text-[10px] text-muted-foreground">
-                Password required to confirm
-              </p>
-            </div>
-            <Button
-              type="submit"
-              className="min-h-11 w-full sm:w-auto"
-              size="lg"
-              disabled={isUpdatingProfile || profileCooldown.cooldown > 0}
-            >
-              {profileCooldown.cooldown > 0 ? (
-                <>
-                  <Timer className="mr-2 h-4 w-4" />
-                  Wait {profileCooldown.cooldown}s
-                </>
-              ) : isUpdatingProfile ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Updating...
-                </>
-              ) : (
-                "Update email"
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm tracking-wide">
             Change password
           </CardTitle>
         </CardHeader>
@@ -255,6 +180,81 @@ function Profile() {
                 </>
               ) : (
                 "Change password"
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm tracking-wide">
+            Update email
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleUpdateProfile} className="space-y-3">
+            {profileCooldown.cooldown > 0 && (
+              <p className="flex items-center gap-1 text-xs text-amber-400">
+                <Timer className="h-3 w-3" />
+                Too many attempts. Wait {profileCooldown.cooldown}s
+              </p>
+            )}
+            {error && profileCooldown.cooldown === 0 && !profileSuccess && (
+              <p className="flex items-center gap-1 text-xs text-red-400">
+                <AlertCircle className="h-3 w-3" />
+                {error}
+              </p>
+            )}
+            <div className="space-y-1">
+              <Label htmlFor="profile-email" className="block">
+                New email
+              </Label>
+              <Input
+                id="profile-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="new@example.com"
+                required
+                disabled={isUpdatingProfile}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="profile-password" className="block">
+                Current password
+              </Label>
+              <Input
+                id="profile-password"
+                type="password"
+                value={profilePassword}
+                onChange={(e) => setProfilePassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                disabled={isUpdatingProfile}
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Password required to confirm
+              </p>
+            </div>
+            <Button
+              type="submit"
+              className="min-h-11 w-full sm:w-auto"
+              size="lg"
+              disabled={isUpdatingProfile || profileCooldown.cooldown > 0}
+            >
+              {profileCooldown.cooldown > 0 ? (
+                <>
+                  <Timer className="mr-2 h-4 w-4" />
+                  Wait {profileCooldown.cooldown}s
+                </>
+              ) : isUpdatingProfile ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                "Update email"
               )}
             </Button>
           </form>

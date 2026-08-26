@@ -136,7 +136,7 @@ function CreditHistory() {
             Current balance
           </p>
           <p className="mt-1 font-mono text-lg font-bold tabular-nums text-foreground">
-            {credits}
+            {credits.toLocaleString()}
           </p>
         </div>
         <div className="rounded-md border border-border bg-card px-4 py-3">
@@ -144,7 +144,7 @@ function CreditHistory() {
             Period credits
           </p>
           <p className="mt-1 font-mono text-lg font-bold tabular-nums text-green-400">
-            +{periodCredits}
+            +{periodCredits.toLocaleString()}
           </p>
         </div>
         <div className="rounded-md border border-border bg-card px-4 py-3">
@@ -152,14 +152,14 @@ function CreditHistory() {
             Period debits
           </p>
           <p className="mt-1 font-mono text-lg font-bold tabular-nums text-red-400">
-            -{periodDebits}
+            -{periodDebits.toLocaleString()}
           </p>
         </div>
       </div>
 
       <div
         data-testid="credit-history-filters"
-        className="flex flex-col gap-3 rounded-md border border-border bg-card p-4 sm:flex-row sm:flex-wrap sm:items-end"
+        className="grid grid-cols-2 gap-3 rounded-md border border-border bg-card p-3 sm:flex sm:flex-row sm:flex-wrap sm:items-end sm:p-4"
       >
         <div className="flex min-w-[140px] flex-1 flex-col gap-1.5">
           <Label htmlFor="credit-type-filter">Type</Label>
@@ -207,7 +207,7 @@ function CreditHistory() {
             aria-label="To"
           />
         </div>
-        <div className="flex min-w-[180px] flex-[2] flex-col gap-1.5">
+        <div className="col-span-2 flex min-w-[180px] flex-[2] flex-col gap-1.5">
           <Label htmlFor="credit-search">Search</Label>
           <Input
             id="credit-search"
@@ -221,7 +221,7 @@ function CreditHistory() {
             className="h-10"
           />
         </div>
-        <p className="w-full text-xs text-muted-foreground">
+        <p className="col-span-2 w-full text-xs text-muted-foreground">
           Filters apply to loaded rows on this page
           {hasServerData && filtersActive
             ? ` · Showing ${filteredItems.length} of ${data?.items.length ?? 0}`
@@ -288,7 +288,7 @@ function CreditHistory() {
                         }`}
                       >
                         {isPositive ? "+" : ""}
-                        {signed}
+                        {signed.toLocaleString()}
                       </span>
                     </div>
                     <p className="mt-2 break-words text-xs text-foreground">
@@ -390,7 +390,7 @@ function TransactionRow({ item }: { item: CreditLogItem }) {
           }`}
         >
           {isPositive ? "+" : ""}
-          {signed}
+          {signed.toLocaleString()}
         </span>
       </TableCell>
       <TableCell>
