@@ -251,7 +251,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 - Wazuh as **sensor bus**: **one lab manager**, group-per-org, SaaS-proxied enroll, poll inventory + critical alerts (level ≥ 12)
 - Thin UI: agents, last-seen, critical alert cards — **no** raw logs / Discover
 - Per-org enroll tokens (**not** global `ApiKey`); `/api/guard/enroll` is middleware-public (token-gated)
-- **Next (human / explicit test verb):** live enroll/unenroll on lab agent `tc5` — **always wipe first (§4.1)**
+- **Standing permission (user 2026-08-26, also in `AGENTS.md`):** agents **may run** live enroll/unenroll on lab agent `tc5` **without re-asking**. **Always wipe first (§4.1).** Not Playwright. Never print tokens/IPs.
 - **Out of scope v1:** full SIEM, SOAR, per-tenant managers, customer Wazuh dashboard, webhooks
 - **Agent:** refuse SIEM scope creep; no new Guard epic without explicit verb. **Never** run host enroll against a `tc5` that still has a leftover `client.keys` identity.
 
@@ -465,7 +465,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 
 ## 10) Agent one-liner
 
-> After reset: **boot §0 → §1.3 → if user asks full e2e + Guard enroll/unenroll, wipe `tc5` first (§4.1) → live Guard = tc3 Manager + tc1 mock off + tc5 agent → no silent epics → no PII/SSH/IPs in git → Indonesian with user, `GIT_MASTER=1`.**
+> After reset: **boot §0 → §1.3 → Guard live lab is standing-permitted (wipe `tc5` first §4.1; do not re-ask) → live Guard = tc3 Manager + tc1 mock off + tc5 agent → no silent epics → no PII/SSH/IPs in git → Indonesian with user, `GIT_MASTER=1`.**
 
 ---
 
