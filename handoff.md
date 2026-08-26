@@ -10,16 +10,16 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
-## Session snapshot (2026-08-26 — refresh against `main`)
+## Session snapshot (2026-08-26 — blog + schedules UI; refresh against `main`)
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding)** | Re-`git pull`. Tip **`4840a6c`** = **#406** mobile visual QA follow-up. CI/CD **green** including **deploy** |
-| **Recent merges (visual)** | **#403–#404** 2K density · **#405** grok chrome tokens (header **`h-12`**, primary hijau) · **#406** mobile P1/P2 (`min-h-11` Button CVA, Profile password-above-email, CreditHistory locale+filter grid, Guard stale i18n plurals). **Do not** recapture unprompted |
+| **`main` tip (coding)** | Re-`git pull`. Tip **`b6cac21`** = **#417** `PageLoading` skeleton. Also on main: **#411–#416** public blog (design system, layperson series, dark island, duplicate dek, language/theme clip+height, reading-list cards) |
+| **Recent merges (visual)** | **#403–#406** as before · **#411** blog Landing chrome · **#415** Language/Theme `overflow-hidden` + `h-11` · **#416** blog cards · **#417** `PageLoading` in `PageBoundary`. **Do not** recapture unprompted |
 | **Recent merges (i18n)** | **#367–#373** |
 | **Recent merges (theme / grok2api chrome)** | **#374–#378** + **#405**. `THEME_STORAGE_KEY=sinexis.theme`, default **dark**. **Keep** `--primary` `hsl(142 71% 45%)`. Header is **`h-12`** after #405 (wave9 `h-14` was later overridden — do **not** revert to `h-14` unless user asks) |
 | **Theme DoD (user)** | Closer to grok2api **surface**. **Out:** invert CTA BW; clone Models/Keys; grok2api sidebar IA; commit PNG refs |
-| **Open PRs** | **#407** docs standing Guard-lab permission (merge when CI green). Dependabot **#389–#393** + older — **do not mass-merge** |
+| **Open PRs** | **#418** `fix/schedules-mobile-table` — stack cards `<sm`, table `sm+`, no `min-w-[40rem]`; Vitest Schedules 13. Merge when CI green. Dependabot **#389–#393** + older — **do not mass-merge** |
 | **P1 Scan Attach** | **S1–S5** + Wave B; production smoke closed |
 | **P2 Workspace** | **S1–S5 on `main`**; residual **manual** multi-member / OrgSwitcher smoke (not a code epic) |
 | **P4 soft dual-brand** | **On `main`** (#250); public **`sinexis.app`** — **no hard cut** |
@@ -32,17 +32,27 @@
 | **Coding-host Docker** | Prefer **off/minimal**. Compose project on edge is **`vuln`** (not `vuln-scanner`) |
 | **Engineering default** | **Do not start coding.** No AI product-debt blocker before next epic. Next product epic if user asks: **P6 hospitality spek** (docs first). GTM parallel. Dependabot only when **named**. |
 
-### Next OpenCode session — do not start coding
+### Next OpenCode session
 
-1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull` — tip should be **`4840a6c`** (**#406**) or newer. If **#407** still open and CI green → squash-merge.
-2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** (§0 then **§1.3**) then **`AGENTS.md`** (Guard lab **standing permission**). This stub is **not** the backlog. Guide wins on epic order.
-3. Speak **Bahasa Indonesia** with the user; code/PR English; prefix **every** git command with `GIT_MASTER=1`. Never work on `main`. Never force-push. Never commit secrets/IPs/enroll keys.
-4. **Wait** for `implement` / `buat` / `kerjakan` / `perbaiki` / named Dependabot / named UI gap. User may continue a **new feature**; there is **no** mandatory AI residual PR first.
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull` — tip should be **`b6cac21`** (**#417**) or newer. If **#418** still open and CI green → squash-merge (`gh pr merge --squash`). Do **not** mass-merge Dependabot.
+2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** (§0 then **§1.3**) then **`AGENTS.md`**. This stub is **not** the backlog. Guide wins on epic order.
+3. Speak **Bahasa Indonesia** with the user; code/PR English; prefix **every** git command with `GIT_MASTER=1`. Never work on `main`. Never force-push. Never commit secrets/IPs/enroll keys. Never commit PNG screenshots (repo root `*-2k.png` / `*-mobile.png` are leftover captures — **untracked, do not add**).
+4. **If user continues UI polish:** next likely `/schedules` after #418 merge (verify on phone) or other SPA tables that still use `min-w-[40rem]` / `overflow-x-auto`. **Wait** for `implement` / `buat` / `kerjakan` / `perbaiki` unless they already scoped it.
 5. Recapture (2K or mobile) **only if asked**. Sequential visual-engineering / multimodal-looker (**one screenshot at a time**). Do **not** fire many parallel agents (OOM).
 6. **SIEM prod is on.** Do not “enable SIEM” again unless they asked to **turn it off**. Empty `/siem` without live agents is expected.
 7. **Guard live lab:** may execute (wipe-first §4.1) **without re-asking**. Public origin needs `GUARD_LAB_ALLOW_PUBLIC_PROD=1`. Wrong compose project name `vuln-scanner` conflicts with container `vuln-backend` — always `-p vuln`.
 
-**User-confirmed OK (do not redo):** mobile clusters A–F; Guard tables #360; Guide TOC #361/#362; **i18n S1–S7**; **theme S1–#378 + #405**; **uptime #397–#401**; **2K #403–#404**; **mobile QA #406**; grok chrome (user liked #405). Default locale **`id`**. Default theme **dark**. Do **not** treat `i18n-v1.md` as S0.
+### Last session (2026-08-26) — blog CMS + schedules mobile
+
+**Shipped on `main`:** public FastAPI `/blog` + `/admin/blog` (shadcn); design-system rule in `AGENTS.md` §11; layperson articles; dark island; Language/Theme clip; reading-list cards; `PageLoading` skeleton.
+
+**In flight:** **#418** — `frontend/src/pages/Schedules.tsx` mobile `<ul data-testid="schedules-mobile-list">` + desktop table; shared `ScheduleRowActions`; tests in `frontend/src/test/Schedules.test.tsx` use `*AllBy*` because both layouts stay in the DOM.
+
+**User standing:** Guard live lab OK; SIEM already on; do not invent E2E password; Palatino-as-brand **rejected** (blog must rhyme Landing).
+
+**Rejected / watch:** ruff E501 on long CSS in blog HTML; git hook HTML `←` in comments; freeze testids (`user-menu`, `org-switcher*`, `export-executive`, `rescan-button`, `guard-state`, `guide-desktop-toc`).
+
+**User-confirmed OK (do not redo):** mobile clusters A–F; Guard tables #360; Guide TOC #361/#362; **i18n S1–S7**; **theme S1–#378 + #405**; **uptime #397–#401**; **2K #403–#404**; **mobile QA #406**; grok chrome (user liked #405); **blog CMS #408–#417** (Landing chrome, not Palatino). Default locale **`id`**. Default theme **dark**. Do **not** treat `i18n-v1.md` as S0.
 
 **Skipped / blocked (do not fake):**
 
