@@ -144,6 +144,18 @@ function Landing() {
             >
               {t("blog")}
             </a>
+            <a
+              href="/terms"
+              className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {t("terms")}
+            </a>
+            <a
+              href="/privacy"
+              className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {t("privacy")}
+            </a>
             <Link
               to="/login"
               className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
