@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import AuthLayout, {
   AUTH_SECONDARY_LINK,
 } from "@/components/layout/AuthLayout";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { useTranslation } from "react-i18next";
 
 function isUnverifiedError(message: string | null): boolean {
@@ -80,6 +81,7 @@ function Login() {
     <AuthLayout title={t("signInTitle")} maxWidth="lg">
       <Card className="w-full">
         <CardContent className="pt-6">
+          <GoogleSignInButton />
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="min-h-[1.25rem]">
               {error && (
