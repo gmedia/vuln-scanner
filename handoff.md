@@ -10,40 +10,39 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
-## Session snapshot (2026-08-25 — refresh against `main`)
+## Session snapshot (2026-08-26 — refresh against `main`)
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding)** | Re-`git pull`. Tip **`74c7718`** = **#401** uptime retention. CI/CD **green** including **deploy** |
-| **Recent merges (mobile visual)** | **#382–#387** 2K waves · **#388** mobile wave7 · **#394** wave8 · **#395** wave9 (landing hero Sign In; header `h-14`; AppShell home-indicator pad; Guard Sync/Revoke 44pt; MobileUpload chips; 404 ring; Guide TOC; auth secondary links; AdminPricing Saved) |
-| **Recent merges (i18n)** | **#367–#373** (locale id, findings, Workspace+Guard, Guide, notify, user locale, SIEM+Admin S7) |
-| **Recent merges (theme / grok2api chrome)** | **#374–#378** — `THEME_STORAGE_KEY=sinexis.theme`, default **dark**; overlay flatten; CTA **hijau tetap**. Wave9 **overrode** header height to **`h-14 min-h-14`** (44pt) |
-| **Theme DoD (user)** | Closer to grok2api **surface**. **Keep** Sinexis `--primary` `hsl(142 71% 45%)`. **Out:** invert CTA BW; clone Models/Keys; replace header with grok2api sidebar; commit PNG refs |
-| **Open PRs** | Dependabot only (e.g. **#389–#393**, older **#314–#324**) — **do not mass-merge**; only a **named** PR if CI green |
-| **P1 Scan Attach (code)** | **S1–S5** on `main` (#235–#239) + **Wave B** SPA polish (#271) |
-| **P1 production** | **Closed (2026-08-08)** smoke A; later tips CI-deployed |
-| **P2 Workspace** | **S1–S5 on `main`** (#267 + #270); spek D1–D6; edge Alembic **`add_workspace_orgs`**; cap **10 enabled / org** |
-| **P4 soft dual-brand** | **On `main`** (#250); public **`sinexis.app`** and/or legacy hostname — **no hard cut** |
-| **P5 Guard** | **On `main`**: spek #273 · thin #274 · Http #275 · tables #360 · guide TOC #361/#362 — mock CI default; **edge lab + env + live smoke still human** |
-| **P7 SIEM** | Spek + S0–S5 code on `main` (#307); host flag `SIEM_ENABLED` (default false). **Do not** add Discover/cases on `/guard` |
-| **P3 Assets** | **S1–S5 on `main`** (#380 + pack/docs). SPA `/assets`, SKU hard cap, 1:1 schedule. Residual: **edge Alembic smoke** ([`docs/scan-assets-ops.md`](docs/scan-assets-ops.md)) |
-| **P8 Uptime** | **S1–S5 + gaps + retention on `main`** (#397–#401). Spek [`docs/specs/uptime-v1.md`](docs/specs/uptime-v1.md). Ops [`docs/uptime-ops.md`](docs/uptime-ops.md). Residual: human UI/SMTP smoke (CI deploy includes `worker_uptime`). |
-| **P0 commercial** | **Policy locked** (#245): Basic **300k** / Pro **650k** / Multi **2M**; credits **10/24/60**; AM renew; attach ARPU primary; pilot #1 multi-service, 1 mo sponsored |
-| **P0 GTM kit in git** | One-pager + SKU + **[`docs/commercial/am-wave1-email-id.md`](docs/commercial/am-wave1-email-id.md)** (#246) |
-| **Still human (not git)** | Finance **service_id** ×3; AM **10 CRM SIDs**; named **pilot #1**; AM **send** wave-1; ops **fulfill**; Guard lab Manager/Indexer + **wipe `tc5` before enroll e2e**; screenshot pack needs **`E2E_PASSWORD` on e2e host** (do **not** invent on coding host) |
-| **Coding-host Docker** | Prefer **off/minimal**. Edge runs live stack (CI **deploy** job on `main`) |
-| **Engineering default** | **Do not start coding.** Next QA if user asks: **recapture mobile 390×844 L+D on sinexis.app, one page at a time (OOM)**. GTM human. No SIEM creep on `/guard`. Dependabot only when **named**. |
+| **`main` tip (coding)** | Re-`git pull`. Tip **`4840a6c`** = **#406** mobile visual QA follow-up. CI/CD **green** including **deploy** |
+| **Recent merges (visual)** | **#403–#404** 2K density · **#405** grok chrome tokens (header **`h-12`**, primary hijau) · **#406** mobile P1/P2 (`min-h-11` Button CVA, Profile password-above-email, CreditHistory locale+filter grid, Guard stale i18n plurals). **Do not** recapture unprompted |
+| **Recent merges (i18n)** | **#367–#373** |
+| **Recent merges (theme / grok2api chrome)** | **#374–#378** + **#405**. `THEME_STORAGE_KEY=sinexis.theme`, default **dark**. **Keep** `--primary` `hsl(142 71% 45%)`. Header is **`h-12`** after #405 (wave9 `h-14` was later overridden — do **not** revert to `h-14` unless user asks) |
+| **Theme DoD (user)** | Closer to grok2api **surface**. **Out:** invert CTA BW; clone Models/Keys; grok2api sidebar IA; commit PNG refs |
+| **Open PRs** | **#407** docs standing Guard-lab permission (merge when CI green). Dependabot **#389–#393** + older — **do not mass-merge** |
+| **P1 Scan Attach** | **S1–S5** + Wave B; production smoke closed |
+| **P2 Workspace** | **S1–S5 on `main`**; residual **manual** multi-member / OrgSwitcher smoke (not a code epic) |
+| **P4 soft dual-brand** | **On `main`** (#250); public **`sinexis.app`** — **no hard cut** |
+| **P5 Guard** | Code on `main` (mock CI). **Standing permission (user 2026-08-26):** agents **may run live lab** wipe `tc5` → Manager cleanup from `tc1` → enroll/unenroll **without re-asking**. Still wipe-first **§4.1**; Playwright ≠ enroll; never print tokens/IPs. Recorded in `AGENTS.md` (PR **#407** if not yet on `main`) |
+| **P7 SIEM** | Code on `main` (#307). **User enabled prod 2026-08-26:** GitHub secret `SIEM_ENABLED=true` + app-host `.env` + `vuln-backend` running with flag **true**. `SIEM_INCLUDE_FULL_LOG` stays **false**. Search still needs Guard agents + Indexer (`tc3`) or UI is empty/degraded. **Do not** add Discover/cases on `/guard`. To disable: set secret + host `.env` back to `false` |
+| **P3 Assets** | **S1–S5 on `main`** (#380). Residual: **edge Alembic + `/assets` UI smoke** (human), not missing code |
+| **P8 Uptime** | **S1–S5 + gaps + retention** (#397–#401). Residual: **human UI/SMTP smoke** |
+| **P0 commercial** | Policy locked (#245): Basic **300k** / Pro **650k** / Multi **2M**; credits **10/24/60** |
+| **Still human (not git)** | Finance **service_id** ×3; AM **10 CRM SIDs**; named **pilot #1**; AM **send**; ops **fulfill**; Uptime SMTP; Workspace/Assets **click** smoke; screenshot pack **`E2E_PASSWORD` on e2e host** only |
+| **Coding-host Docker** | Prefer **off/minimal**. Compose project on edge is **`vuln`** (not `vuln-scanner`) |
+| **Engineering default** | **Do not start coding.** No AI product-debt blocker before next epic. Next product epic if user asks: **P6 hospitality spek** (docs first). GTM parallel. Dependabot only when **named**. |
 
 ### Next OpenCode session — do not start coding
 
-1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull` — tip should be **`74c7718`** (**#401**) or newer.
-2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** (§0 then **§1.3**). This stub is **not** the backlog. Guide wins on epic order.
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull` — tip should be **`4840a6c`** (**#406**) or newer. If **#407** still open and CI green → squash-merge.
+2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** (§0 then **§1.3**) then **`AGENTS.md`** (Guard lab **standing permission**). This stub is **not** the backlog. Guide wins on epic order.
 3. Speak **Bahasa Indonesia** with the user; code/PR English; prefix **every** git command with `GIT_MASTER=1`. Never work on `main`. Never force-push. Never commit secrets/IPs/enroll keys.
-4. **Wait** for `implement` / `buat` / `kerjakan` / `perbaiki` / a named Dependabot PR / a **specific** UI gap (page + viewport + dark/light).
-5. If the user asks to recapture: **mobile 390×844 only**, sequential visual-engineering / multimodal-looker (**one screenshot at a time**). Do **not** fire many parallel agents (OpenCode OOM/kill). Viewport was **not** 2K for the last review wave.
-6. First deploy of #395 failed SSH (`handshake failed: connection reset by peer` on Write .env). **Rerun `--failed` succeeded.** If deploy fails again, treat as **host SSH**, not frontend tests (unit/e2e were already green).
+4. **Wait** for `implement` / `buat` / `kerjakan` / `perbaiki` / named Dependabot / named UI gap. User may continue a **new feature**; there is **no** mandatory AI residual PR first.
+5. Recapture (2K or mobile) **only if asked**. Sequential visual-engineering / multimodal-looker (**one screenshot at a time**). Do **not** fire many parallel agents (OOM).
+6. **SIEM prod is on.** Do not “enable SIEM” again unless they asked to **turn it off**. Empty `/siem` without live agents is expected.
+7. **Guard live lab:** may execute (wipe-first §4.1) **without re-asking**. Public origin needs `GUARD_LAB_ALLOW_PUBLIC_PROD=1`. Wrong compose project name `vuln-scanner` conflicts with container `vuln-backend` — always `-p vuln`.
 
-**User-confirmed OK (do not redo):** mobile clusters A–F; Guard tables #360; Guide nested TOC #361; sticky offset #362; **i18n S1–S7** (#367–#373); **theme S1–#378**; **uptime #397–#401**; **mobile visual wave7–9** (#388, #394, #395) unless recapture finds new gaps. Default locale **`id`**. Default theme **dark**. `THEME_STORAGE_KEY=sinexis.theme`. Do **not** treat `i18n-v1.md` header as S0.
+**User-confirmed OK (do not redo):** mobile clusters A–F; Guard tables #360; Guide TOC #361/#362; **i18n S1–S7**; **theme S1–#378 + #405**; **uptime #397–#401**; **2K #403–#404**; **mobile QA #406**; grok chrome (user liked #405). Default locale **`id`**. Default theme **dark**. Do **not** treat `i18n-v1.md` as S0.
 
 **Skipped / blocked (do not fake):**
 
@@ -51,14 +50,16 @@
 - **Wave G** skip.
 - Freeze testids: `user-menu`, `org-switcher*`, `export-executive`, `rescan-button`, `guard-state`, **`guide-desktop-toc`** (do not rename).
 - Scroll root: `SidebarInset` `max-h-svh overflow-y-auto` in `AppShell.tsx` (not `window`). Nested TOC: `Sidebar` `collapsible="none"` **without** a second `SidebarProvider`.
-- **Header** is **`h-14 min-h-14`** after **#395** (44pt). Guide TOC sticky `top-14` matches; **do not** revert to `h-12`.
+- **Header** is **`h-12`** after **#405** (grok chrome). Do **not** restore wave9 `h-14` unless the user asks. Tap targets use **`min-h-11`** (#406).
 - grok2api **sidebar IA / Models / Keys** — **out**. CTA Scan **green** — **out** to invert.
 - PNG refs lived under `.sisyphus/ref-design/` (not git). Recapture PNGs under `/tmp/opencode/screenshots-mobile-wave9/` (not git).
 - **ONE COMMIT = FAILURE** for 3+ files. Atomic conventional commits. PR body: What / Files changed / Next steps.
 
-**What AI may execute only if the user says so:** recapture + visual review (sequential); fix **named** visual findings; P3 **bugs**; enable SIEM on lab (`SIEM_ENABLED`, not new Guard UI); **one** named Dependabot PR; P6 hospitality docs; a **bugfix** with repro.
+**What AI may execute without re-asking:** Guard **live lab** (wipe `tc5` first §4.1). SIEM flag already **on** — do not toggle unless asked.
 
-**What AI must not start unprompted:** GTM execution (finance SIDs); live Guard lab; invent `E2E_PASSWORD`; mass-merge Dependabot; Cluster B; Wave G; SIEM UI on `/guard`; re-implement P3 S1–S5; parallel screenshot/review agents; full prod Guard enroll without **wipe `tc5`** first (guide §4.1). Playwright ≠ host enroll.
+**What AI may execute only if the user says so:** recapture + visual review (sequential); P6 hospitality **spek**; **one** named Dependabot PR; Workspace/Assets **click** smoke; Uptime SMTP smoke; a **bugfix** with repro; **disable** SIEM.
+
+**What AI must not start unprompted:** GTM (finance SIDs); invent `E2E_PASSWORD`; mass-merge Dependabot; Cluster B; Wave G; SIEM UI on `/guard`; re-implement shipped S1–S5 epics; parallel screenshot agents; enroll without wipe `tc5`. Playwright ≠ host enroll.
 
 ### Edge public smoke — post-S5 + Wave B deploy (2026-08-10)
 
@@ -151,14 +152,15 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 | **P2** | Workspace v1 | **S1–S5 shipped** (#267 + #270); residual multi-org/S5 smoke |
 | **P3** | Light asset registry | **S1–S5 on `main`** (#380); residual edge Alembic + UI smoke |
 | **P4** | Soft Sinexis dual-brand | **Shipped soft** (#250); **no domain cut** |
-| **P5** | Guard (Wazuh thin) | **S0–S5 + Http + tables + guide TOC on `main`**; live lab residual human — see [`guard-v1.md`](docs/specs/guard-v1.md) |
-| **P6** | Hospitality / pilot pack | After attach story works |
-| **P7** | SIEM v1 | **S0–S5 on `main`**; flag off by default; never as a Guard PR |
-| **UX** | i18n + theme grok2api chrome | **Shipped** #367–#378; stop polish unless named gap |
+| **P5** | Guard (Wazuh thin) | Code on `main`; **live lab standing-permitted** (wipe-first) |
+| **P6** | Hospitality / pilot pack | **Not coded** — next epic if user asks (spek first) |
+| **P7** | SIEM v1 | Code on `main`; **prod flag ON** (2026-08-26); never as a Guard PR |
+| **P8** | Uptime | **Shipped** #397–#401; human SMTP residual |
+| **UX** | i18n + theme + visual | **Shipped** through **#406**; stop polish unless named gap |
 
 **Priority rule:** If this stub, the archive, or old chat **disagrees** with the execution guide on *what to build next*, **the guide wins**, unless the user opens a stuck-job / worker incident.
 
-**When to call engineering again:** **recapture mobile** after #395 deploy (user verb); product **bug** with screenshot/repro; **one** named Dependabot PR; **P6** docs; named theme leftover; never “improve Guide TOC” or “lebih mirip grok2api” without a page + constraint. **Do not** re-implement P3 S1–S5.
+**When to call engineering again:** user names a **new epic** (prefer **P6 spek**); product **bug** with repro; **one** named Dependabot PR; Guard lab run (already permitted); never unprompted recapture / grok2api redo / P3 re-implement.
 
 ---
 
