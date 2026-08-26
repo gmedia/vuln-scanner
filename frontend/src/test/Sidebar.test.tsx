@@ -98,6 +98,10 @@ describe("Sidebar", () => {
       .getAllByRole("link")
       .filter((a) => a.getAttribute("href") === "/admin");
     expect(adminLinks[0]).toHaveTextContent("Admin overview");
+    expect(screen.getByTestId("nav-admin-blog")).toHaveAttribute(
+      "href",
+      "/admin/blog",
+    );
   });
 
   it("shows active scan section when activeJobId is set", () => {

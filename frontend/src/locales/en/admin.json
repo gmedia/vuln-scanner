@@ -19,6 +19,8 @@
   "linkUsersDesc": "Search, view, and adjust user accounts",
   "linkPricing": "Pricing",
   "linkPricingDesc": "Configure scan credit costs",
+  "linkBlog": "Blog",
+  "linkBlogDesc": "Write and publish public articles",
   "usersTitle": "User management",
   "usersSubtitle": "Search and manage registered accounts",
   "usersCard": "Users",
@@ -72,5 +74,17 @@
   "colCreditCost": "Credit cost",
   "colUpdated": "Updated",
   "save": "Save",
-  "saved": "Saved"
+  "saved": "Saved",
+  "blogTitle": "Blog",
+  "blogNew": "New article",
+  "blogEdit": "Edit",
+  "blogList": "Articles",
+  "blogEmpty": "No articles yet",
+  "blogSlug": "Slug",
+  "blogTitleField": "Title",
+  "blogExcerpt": "Excerpt",
+  "blogBody": "Markdown body",
+  "blogPublish": "Publish",
+  "blogUnpublish": "Unpublish",
+  "blogCancel": "Cancel"
 }

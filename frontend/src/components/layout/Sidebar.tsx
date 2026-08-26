@@ -14,6 +14,7 @@ import {
   Siren,
   Server,
   Activity,
+  FileText,
 } from "lucide-react";
 import { BRAND } from "@/lib/brand";
 import { useTranslation } from "react-i18next";
@@ -197,6 +198,12 @@ function Sidebar() {
                   to="/admin/pricing"
                   labelKey="pricing"
                   icon={DollarSign}
+                />
+                <NavItem
+                  to="/admin/blog"
+                  labelKey="blog"
+                  icon={FileText}
+                  testId="nav-admin-blog"
                 />
               </SidebarMenu>
             </SidebarGroupContent>

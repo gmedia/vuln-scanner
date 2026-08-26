@@ -106,6 +106,67 @@ export async function updatePricing(
   return res;
 }
 
+export interface BlogPostAdmin {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  body_md: string;
+  body_html: string;
+  locale: string;
+  status: string;
+  published_at: string | null;
+  author_user_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BlogPostWrite {
+  slug: string;
+  title: string;
+  excerpt: string;
+  body_md: string;
+  locale: "id" | "en";
+}
+
+export async function listBlogPosts(): Promise<{
+  items: BlogPostAdmin[];
+  total: number;
+}> {
+  const { data } = await api.get("/api/admin/blog/posts");
+  return data;
+}
+
+export async function createBlogPost(
+  body: BlogPostWrite,
+): Promise<BlogPostAdmin> {
+  const { data } = await api.post("/api/admin/blog/posts", body);
+  return data;
+}
+
+export async function updateBlogPost(
+  id: string,
+  body: Partial<BlogPostWrite>,
+): Promise<BlogPostAdmin> {
+  const { data } = await api.patch(`/api/admin/blog/posts/${id}`, body);
+  return data;
+}
+
+export async function publishBlogPost(id: string): Promise<BlogPostAdmin> {
+  const { data } = await api.post(`/api/admin/blog/posts/${id}/publish`);
+  return data;
+}
+
+export async function unpublishBlogPost(
+  id: string,
+  status: "draft" | "archived" = "draft",
+): Promise<BlogPostAdmin> {
+  const { data } = await api.post(`/api/admin/blog/posts/${id}/unpublish`, {
+    status,
+  });
+  return data;
+}
+
 export const adminApi = {
   getStats: getAdminStats,
   getUsers: getAdminUsers,
@@ -114,4 +175,9 @@ export const adminApi = {
   resendVerification,
   getPricing,
   updatePricing,
+  listBlogPosts,
+  createBlogPost,
+  updateBlogPost,
+  publishBlogPost,
+  unpublishBlogPost,
 };
