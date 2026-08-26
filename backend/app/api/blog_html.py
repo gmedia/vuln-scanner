@@ -86,15 +86,16 @@ a:hover{color:var(--foreground)}
 .theme-switch{display:inline-flex;border:1px solid var(--border);border-radius:0.375rem;overflow:hidden}
 .theme-switch button{border:0;border-radius:0;font-size:0.6875rem;padding:0 0.6rem}
 .theme-switch button[aria-pressed="true"]{background:var(--muted)}
-main.rail{flex:1;width:min(var(--rail),calc(100% - 2rem));margin:0 auto;padding:2rem 0 3rem}
-main.measure{flex:1;width:min(var(--measure),calc(100% - 2rem));margin:0 auto;padding:3rem 0 4rem}
-h1{font-size:clamp(1.25rem,2.5vw,1.75rem);line-height:1.2;font-weight:700;
-  letter-spacing:-0.02em;margin:0 0 0.75rem}
-article h1{font-size:clamp(1.75rem,3vw,2.5rem)}
-h2{font-size:1.125rem;margin:0 0 0.35rem;font-weight:600}
-.eyebrow{font-size:0.75rem;font-weight:600;letter-spacing:0.04em;
-  text-transform:uppercase;color:var(--primary);margin:0 0 0.75rem}
-.lede,.excerpt{color:var(--muted-foreground);font-size:0.9375rem}
+main.rail{flex:1;width:min(var(--rail),calc(100% - 2rem));margin:0 auto;padding:2.5rem 0 4rem}
+main.measure{flex:1;width:min(var(--measure),calc(100% - 2rem));margin:0 auto;padding:3rem 0 4.5rem}
+.page-intro{margin:0 0 2rem;max-width:40rem}
+h1{font-size:clamp(1.75rem,3vw,2.25rem);line-height:1.15;font-weight:700;
+  letter-spacing:-0.03em;margin:0 0 0.75rem}
+article h1{font-size:clamp(1.85rem,3.2vw,2.75rem)}
+h2{font-size:1.125rem;margin:0 0 0.4rem;font-weight:600;letter-spacing:-0.02em}
+.eyebrow{font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;
+  text-transform:uppercase;color:var(--primary);margin:0 0 0.5rem}
+.lede,.excerpt{color:var(--muted-foreground);font-size:0.9375rem;line-height:1.55}
 .cta-row{display:flex;flex-wrap:wrap;gap:0.75rem;margin-top:1.5rem}
 .cta{
   display:inline-flex;align-items:center;min-height:2.75rem;padding:0 1rem;
@@ -105,26 +106,39 @@ h2{font-size:1.125rem;margin:0 0 0.35rem;font-weight:600}
   display:inline-flex;align-items:center;min-height:2.75rem;padding:0 0.75rem;
   color:var(--muted-foreground);text-decoration:none;font-size:0.875rem;
 }
-ol.index{list-style:none;margin:0;padding:0}
-ol.index li{padding:1rem 0;border-bottom:1px solid var(--border)}
-ol.index li:hover{background:var(--muted)}
+ol.index{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0.75rem}
+ol.index li{margin:0;padding:0;border:0}
+ol.index a.card{
+  display:block;color:var(--foreground);text-decoration:none;
+  border:1px solid var(--border);border-radius:0.5rem;padding:1.25rem 1.35rem;
+  background:transparent;transition:border-color .15s,background .15s;
+}
+ol.index a.card:hover{border-color:hsl(142 71% 45% / 0.45);background:var(--muted)}
+ol.index a.card:hover h2{color:var(--primary)}
+ol.index li:first-child a.card{padding:1.5rem 1.5rem}
+ol.index li:first-child h2{font-size:clamp(1.25rem,2vw,1.5rem)}
 ol.index time,article time,.meta{
-  font-size:0.75rem;color:var(--muted-foreground);
+  font-size:0.75rem;color:var(--muted-foreground);letter-spacing:0.02em;
 }
-ol.index a{color:var(--foreground);text-decoration:none}
-ol.index a:hover h2{color:var(--primary)}
 ol.index .excerpt{
-  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
-  overflow:hidden;margin:0.25rem 0 0;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;
+  overflow:hidden;margin:0.5rem 0 0;
 }
-.body{margin-top:1.5rem;font-size:1.0625rem}
-.body h2{margin-top:2rem}
+ol.index .read{
+  display:inline-flex;align-items:center;gap:0.35rem;margin-top:0.85rem;
+  font-size:0.8125rem;font-weight:600;color:var(--primary);
+}
+.body{margin-top:2rem;font-size:1.0625rem;line-height:1.75}
+.body p{margin:0 0 1.1rem}
+.body h2{margin:2.25rem 0 0.75rem;font-size:1.2rem}
+.body ul,.body ol{margin:0 0 1.1rem;padding-left:1.25rem}
+.body li{margin:0.35rem 0}
 .body pre{
   font-family:ui-monospace,Menlo,monospace;background:var(--muted);
-  padding:1rem;overflow-x:auto;border-radius:0.375rem;
+  padding:1rem;overflow-x:auto;border-radius:0.375rem;border:1px solid var(--border);
 }
 .body a{color:var(--primary)}
-.back{margin-top:2.5rem;font-size:0.875rem}
+.back{margin-top:2.5rem;font-size:0.875rem;display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center}
 .site-footer{margin-top:auto;border-top:1px solid var(--border);padding:1.5rem 0}
 .site-footer-inner{flex-wrap:wrap;gap:0.75rem 1rem}
 .site-footer p{margin:0;font-size:0.75rem;color:var(--muted-foreground)}
@@ -141,14 +155,7 @@ ol.index .excerpt{
   .header-actions a.sm-hide{display:none}
 }
 @media (min-width:768px){
-  ol.index li{
-    display:grid;grid-template-columns:7rem 1fr;gap:0.25rem 1.5rem;
-    grid-template-areas:"time title" ". excerpt";
-    align-items:start;
-  }
-  ol.index time{grid-area:time}
-  ol.index a{grid-area:title}
-  ol.index .excerpt{grid-area:excerpt;margin:0}
+  ol.index{gap:1rem}
 }
 """
 
@@ -312,12 +319,21 @@ async def blog_index_html(
             human = _human_date(p.published_at)
             items.append(
                 "<li>"
+                f"<a class='card' href='/blog/{escape_text(p.slug)}'>"
                 f"<time datetime='{escape_text(pub)}'>{escape_text(human)}</time>"
-                f"<a href='/blog/{escape_text(p.slug)}'><h2>{escape_text(p.title)}</h2></a>"
+                f"<h2>{escape_text(p.title)}</h2>"
                 f"<p class='excerpt'>{escape_text(plain_excerpt(p.excerpt))}</p>"
+                "<span class='read'>Baca artikel →</span>"
+                "</a>"
                 "</li>"
             )
-        inner = "<h1>Blog</h1><ol class='index'>" + "".join(items) + "</ol>"
+        inner = (
+            "<div class='page-intro'><p class='eyebrow'>Blog</p>"
+            "<h1>Catatan untuk yang sudah punya website</h1>"
+            "<p class='lede'>Scan, jadwal, kredit, workspace, Guard — bahasa awam, "
+            "bukan konsol ahli.</p></div>"
+            "<ol class='index'>" + "".join(items) + "</ol>"
+        )
     html = _shell("Blog — Sinexis", f"{CANONICAL_HOST}/blog", inner, rail=True)
     return HTMLResponse(
         html,
@@ -376,7 +392,8 @@ async def blog_article_html(
         f"<p class='meta'><time datetime='{escape_text(pub)}'>{escape_text(human)}</time>"
         f" · {escape_text(post.locale)}</p>"
         f"<div class='body'>{post.body_html}</div>"
-        f"<p class='back'><a href='/blog'>← Semua artikel</a></p>"
+        f"<p class='back'><a href='/blog'>← Semua artikel</a>"
+        f"<a class='cta' href='/register'>Get started</a></p>"
         f"</article>"
     )
     html = _shell(
