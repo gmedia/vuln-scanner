@@ -232,8 +232,19 @@ _CROSSHAIR_SVG = (
 )
 
 
-def _shell(title: str, canonical: str, inner: str, locale: str = "id", *, rail: bool = False) -> str:
+def _shell(
+    title: str,
+    canonical: str,
+    inner: str,
+    locale: str = "id",
+    *,
+    rail: bool = False,
+    current: str = "blog",
+) -> str:
     main_class = "rail" if rail else "measure"
+    blog_cur = ' aria-current="page"' if current == "blog" else ""
+    terms_cur = ' aria-current="page"' if current == "terms" else ""
+    privacy_cur = ' aria-current="page"' if current == "privacy" else ""
     return f"""<!DOCTYPE html>
 <html lang="{escape_text(locale)}" class="dark">
 <head>
@@ -254,7 +265,7 @@ def _shell(title: str, canonical: str, inner: str, locale: str = "id", *, rail: 
       <span class="brand-text">SINE<span class="brand-accent">XIS</span></span>
     </a>
     <nav class="header-actions">
-      <a class="ghost" href="/blog" aria-current="page">Blog</a>
+      <a class="ghost" href="/blog"{blog_cur}>Blog</a>
       <a class="ghost sm-hide" href="/login">Sign in</a>
       <a class="primary" href="/register">Get started</a>
       <span class="theme-switch" role="group" aria-label="Theme">
@@ -271,7 +282,9 @@ def _shell(title: str, canonical: str, inner: str, locale: str = "id", *, rail: 
   <div class="site-footer-inner">
     <p>Sinexis · Scan · Guard · SIEM</p>
     <nav>
-      <a href="/blog">Blog</a>
+      <a href="/blog"{blog_cur}>Blog</a>
+      <a href="/terms"{terms_cur}>Syarat</a>
+      <a href="/privacy"{privacy_cur}>Privasi</a>
       <a href="/login">Sign in</a>
       <a class="primary" href="/register">Get started</a>
     </nav>

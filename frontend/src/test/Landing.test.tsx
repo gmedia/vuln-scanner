@@ -137,6 +137,17 @@ describe("Landing Page", () => {
     expect(blog).toHaveAttribute("href", "/blog");
   });
 
+  it("links terms and privacy HTML islands from the footer", () => {
+    expect(screen.getByRole("link", { name: "Terms" })).toHaveAttribute(
+      "href",
+      "/terms",
+    );
+    expect(screen.getByRole("link", { name: "Privacy" })).toHaveAttribute(
+      "href",
+      "/privacy",
+    );
+  });
+
   it("renders footer without version dump", () => {
     const footer = document.querySelector("footer");
     expect(footer).toBeTruthy();

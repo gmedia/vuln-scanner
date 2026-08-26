@@ -24,5 +24,7 @@
   "notFoundBody": "The target you're looking for is out of scan range. Return to base and try again.",
   "returnDashboard": "Return to dashboard",
   "backHome": "Back to home",
-  "blog": "Blog"
+  "blog": "Blog",
+  "terms": "Terms",
+  "privacy": "Privacy"
 }
