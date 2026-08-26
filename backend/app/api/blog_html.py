@@ -142,9 +142,13 @@ ol.index .excerpt{
 }
 @media (min-width:768px){
   ol.index li{
-    display:grid;grid-template-columns:minmax(10rem,18rem) 1fr;gap:0.75rem 1.5rem;
+    display:grid;grid-template-columns:7rem 1fr;gap:0.25rem 1.5rem;
+    grid-template-areas:"time title" ". excerpt";
     align-items:start;
   }
+  ol.index time{grid-area:time}
+  ol.index a{grid-area:title}
+  ol.index .excerpt{grid-area:excerpt;margin:0}
 }
 """
 
@@ -224,7 +228,7 @@ _CROSSHAIR_SVG = (
 def _shell(title: str, canonical: str, inner: str, locale: str = "id", *, rail: bool = False) -> str:
     main_class = "rail" if rail else "measure"
     return f"""<!DOCTYPE html>
-<html lang="{escape_text(locale)}">
+<html lang="{escape_text(locale)}" class="dark">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -371,7 +375,6 @@ async def blog_article_html(
         f"<h1>{escape_text(post.title)}</h1>"
         f"<p class='meta'><time datetime='{escape_text(pub)}'>{escape_text(human)}</time>"
         f" · {escape_text(post.locale)}</p>"
-        f"<p class='lede excerpt'>{escape_text(plain_excerpt(post.excerpt))}</p>"
         f"<div class='body'>{post.body_html}</div>"
         f"<p class='back'><a href='/blog'>← Semua artikel</a></p>"
         f"</article>"

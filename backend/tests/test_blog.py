@@ -70,6 +70,7 @@ def test_public_html_index(client):
     assert 'data-theme-set="dark"' in resp.text
     assert 'class="rail"' in resp.text or "class='rail'" in resp.text
     assert ".dark{" in resp.text
+    assert 'class="dark"' in resp.text
 
 
 def test_draft_not_public(client):
@@ -99,7 +100,7 @@ def test_publish_then_public(client):
             "slug": "hello-sinexis",
             "title": "Hello",
             "excerpt": "intro **bold** teaser",
-            "body_md": "body **bold**",
+            "body_md": "intro **bold** teaser\n\nbody **bold**",
             "locale": "id",
         },
     )
@@ -118,6 +119,8 @@ def test_publish_then_public(client):
     assert page.status_code == 200
     assert "Hello" in page.text
     assert "**bold**" not in page.text
+    assert "lede excerpt" not in page.text
+    assert page.text.count("intro") == 1
     index = client.get("/blog")
     assert "**bold**" not in index.text
     assert "bold teaser" in index.text
