@@ -125,7 +125,7 @@ describe("Profile", () => {
       fireEvent.change(screen.getByPlaceholderText("new@example.com"), {
         target: { value: "new@example.com" },
       });
-      fireEvent.change(screen.getAllByPlaceholderText("••••••••")[0], {
+      fireEvent.change(document.getElementById("profile-password")!, {
         target: { value: "currentpass" },
       });
 
@@ -149,7 +149,7 @@ describe("Profile", () => {
       fireEvent.change(screen.getByPlaceholderText("new@example.com"), {
         target: { value: "new@example.com" },
       });
-      fireEvent.change(screen.getAllByPlaceholderText("••••••••")[0], {
+      fireEvent.change(document.getElementById("profile-password")!, {
         target: { value: "currentpass" },
       });
 
@@ -181,7 +181,7 @@ describe("Profile", () => {
       fireEvent.change(screen.getByPlaceholderText("new@example.com"), {
         target: { value: "new@example.com" },
       });
-      fireEvent.change(screen.getAllByPlaceholderText("••••••••")[0], {
+      fireEvent.change(document.getElementById("profile-password")!, {
         target: { value: "currentpass" },
       });
 
@@ -214,13 +214,15 @@ describe("Profile", () => {
 
     it("calls changePassword on submit", async () => {
       render(<Profile />);
-      const passInputs = screen.getAllByPlaceholderText("••••••••");
-      const newPassInput = screen.getByPlaceholderText(
-        "Min 8 chars, uppercase, lowercase, digit",
-      );
-      fireEvent.change(passInputs[1], { target: { value: "current" } });
-      fireEvent.change(newPassInput, { target: { value: "newpass123" } });
-      fireEvent.change(passInputs[2], { target: { value: "newpass123" } });
+      fireEvent.change(document.getElementById("current-password")!, {
+        target: { value: "current" },
+      });
+      fireEvent.change(document.getElementById("new-password")!, {
+        target: { value: "newpass123" },
+      });
+      fireEvent.change(document.getElementById("confirm-password")!, {
+        target: { value: "newpass123" },
+      });
 
       fireEvent.click(screen.getByRole("button", { name: "Change password" }));
 
@@ -240,13 +242,15 @@ describe("Profile", () => {
           <Profile />
         </>,
       );
-      const passInputs = screen.getAllByPlaceholderText("••••••••");
-      const newPassInput = screen.getByPlaceholderText(
-        "Min 8 chars, uppercase, lowercase, digit",
-      );
-      fireEvent.change(passInputs[1], { target: { value: "current" } });
-      fireEvent.change(newPassInput, { target: { value: "newpass123" } });
-      fireEvent.change(passInputs[2], { target: { value: "newpass123" } });
+      fireEvent.change(document.getElementById("current-password")!, {
+        target: { value: "current" },
+      });
+      fireEvent.change(document.getElementById("new-password")!, {
+        target: { value: "newpass123" },
+      });
+      fireEvent.change(document.getElementById("confirm-password")!, {
+        target: { value: "newpass123" },
+      });
 
       fireEvent.click(screen.getByRole("button", { name: "Change password" }));
 
@@ -260,13 +264,15 @@ describe("Profile", () => {
       mockError = "Invalid current password";
 
       render(<Profile />);
-      const passInputs = screen.getAllByPlaceholderText("••••••••");
-      const newPassInput = screen.getByPlaceholderText(
-        "Min 8 chars, uppercase, lowercase, digit",
-      );
-      fireEvent.change(passInputs[1], { target: { value: "wrong" } });
-      fireEvent.change(newPassInput, { target: { value: "newpass123" } });
-      fireEvent.change(passInputs[2], { target: { value: "newpass123" } });
+      fireEvent.change(document.getElementById("current-password")!, {
+        target: { value: "wrong" },
+      });
+      fireEvent.change(document.getElementById("new-password")!, {
+        target: { value: "newpass123" },
+      });
+      fireEvent.change(document.getElementById("confirm-password")!, {
+        target: { value: "newpass123" },
+      });
 
       fireEvent.click(screen.getByRole("button", { name: "Change password" }));
 
@@ -286,13 +292,15 @@ describe("Profile", () => {
         () => new Promise((resolve) => setTimeout(() => resolve(true), 100)),
       );
       render(<Profile />);
-      const passInputs = screen.getAllByPlaceholderText("••••••••");
-      const newPassInput = screen.getByPlaceholderText(
-        "Min 8 chars, uppercase, lowercase, digit",
-      );
-      fireEvent.change(passInputs[1], { target: { value: "current" } });
-      fireEvent.change(newPassInput, { target: { value: "newpass123" } });
-      fireEvent.change(passInputs[2], { target: { value: "newpass123" } });
+      fireEvent.change(document.getElementById("current-password")!, {
+        target: { value: "current" },
+      });
+      fireEvent.change(document.getElementById("new-password")!, {
+        target: { value: "newpass123" },
+      });
+      fireEvent.change(document.getElementById("confirm-password")!, {
+        target: { value: "newpass123" },
+      });
 
       fireEvent.click(screen.getByRole("button", { name: "Change password" }));
 
