@@ -22,13 +22,17 @@ declare global {
               text?: string;
               width?: number;
               locale?: string;
+              shape?: string;
+              type?: string;
             },
           ) => void;
-          prompt: (moment?: (n: {
-            isNotDisplayed: () => boolean;
-            isSkippedMoment: () => boolean;
-            isDismissedMoment: () => boolean;
-          }) => void) => void;
+          prompt: (
+            moment?: (n: {
+              isNotDisplayed: () => boolean;
+              isSkippedMoment: () => boolean;
+              isDismissedMoment: () => boolean;
+            }) => void,
+          ) => void;
         };
       };
     };
@@ -60,12 +64,19 @@ function loadGis(): Promise<void> {
   });
 }
 
+function gisTheme(): "filled_black" | "outline" {
+  return document.documentElement.classList.contains("dark")
+    ? "filled_black"
+    : "outline";
+}
+
 function GoogleSignInButton() {
   const { t, i18n } = useTranslation("auth");
   const loginWithGoogleToken = useAuthStore((s) => s.loginWithGoogleToken);
   const [enabled, setEnabled] = useState(false);
   const [clientId, setClientId] = useState("");
   const [gisError, setGisError] = useState("");
+  const wrapRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -90,7 +101,9 @@ function GoogleSignInButton() {
       return;
     }
     let cancelled = false;
-    void (async () => {
+    let observer: ResizeObserver | undefined;
+
+    const paint = async () => {
       try {
         await loadGis();
         if (cancelled) {
@@ -98,10 +111,15 @@ function GoogleSignInButton() {
         }
         const id = window.google?.accounts?.id;
         const el = btnRef.current;
-        if (!id || !el) {
+        const wrap = wrapRef.current;
+        if (!id || !el || !wrap) {
           setGisError(t("googleUnavailable"));
           return;
         }
+        const width = Math.max(
+          240,
+          Math.min(400, Math.floor(wrap.clientWidth)),
+        );
         id.initialize({
           client_id: clientId,
           cancel_on_tap_outside: true,
@@ -115,20 +133,40 @@ function GoogleSignInButton() {
         });
         el.replaceChildren();
         id.renderButton(el, {
-          theme: "outline",
+          type: "standard",
+          theme: gisTheme(),
           size: "large",
           text: "continue_with",
-          width: 320,
+          shape: "rectangular",
+          width,
           locale: i18n.language === "id" ? "id" : "en",
         });
+        setGisError("");
       } catch {
         if (!cancelled) {
           setGisError(t("googleUnavailable"));
         }
       }
-    })();
+    };
+
+    void paint();
+    const wrap = wrapRef.current;
+    if (wrap && typeof ResizeObserver !== "undefined") {
+      let last = wrap.clientWidth;
+      observer = new ResizeObserver(() => {
+        const next = wrap.clientWidth;
+        if (Math.abs(next - last) < 8) {
+          return;
+        }
+        last = next;
+        void paint();
+      });
+      observer.observe(wrap);
+    }
+
     return () => {
       cancelled = true;
+      observer?.disconnect();
     };
   }, [enabled, clientId, loginWithGoogleToken, i18n.language, t]);
 
@@ -137,8 +175,13 @@ function GoogleSignInButton() {
   }
 
   return (
-    <div className="space-y-3" data-testid="google-sign-in">
-      <div ref={btnRef} className="flex min-h-10 justify-center" />
+    <div className="mb-4 space-y-3" data-testid="google-sign-in">
+      <div ref={wrapRef} className="w-full">
+        <div
+          ref={btnRef}
+          className="flex h-10 w-full justify-center overflow-hidden rounded-md"
+        />
+      </div>
       {gisError ? (
         <p className="text-center text-xs text-destructive">{gisError}</p>
       ) : null}
