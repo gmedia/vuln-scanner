@@ -30,6 +30,10 @@ vi.mock("@/store/authStore", () => ({
   useAuthStore: vi.fn(() => defaultAuthState),
 }));
 
+vi.mock("@/components/auth/GoogleSignInButton", () => ({
+  default: () => null,
+}));
+
 vi.mock("@/store/creditStore", () => ({
   useCreditStore: vi.fn(() => ({
     credits: 100,

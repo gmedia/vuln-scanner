@@ -44,6 +44,8 @@ import {
   refreshToken,
   getMe,
   patchMeLocale,
+  getGoogleAuthConfig,
+  loginWithGoogle,
 } from "@/api/auth";
 import type { MessageResponse, LoginResponse, UserResponse } from "@/api/auth";
 
@@ -206,6 +208,32 @@ describe("auth API", () => {
 
       const result = await getMe();
       expect(result.is_verified).toBe(false);
+    });
+  });
+
+  describe("google auth", () => {
+    it("gets /api/auth/google/config", async () => {
+      mockAxios.get.mockResolvedValueOnce({
+        data: { enabled: true, client_id: "cid.apps.googleusercontent.com" },
+      });
+      const result = await getGoogleAuthConfig();
+      expect(mockAxios.get).toHaveBeenCalledWith("/api/auth/google/config");
+      expect(result.enabled).toBe(true);
+    });
+
+    it("posts id_token to /api/auth/google", async () => {
+      const mockResponse: LoginResponse = {
+        access_token: "access-g",
+        refresh_token: "refresh-g",
+        token_type: "bearer",
+        expires_in: 3600,
+      };
+      mockAxios.post.mockResolvedValueOnce({ data: mockResponse });
+      const result = await loginWithGoogle("id-token-value");
+      expect(mockAxios.post).toHaveBeenCalledWith("/api/auth/google", {
+        id_token: "id-token-value",
+      });
+      expect(result).toEqual(mockResponse);
     });
   });
 

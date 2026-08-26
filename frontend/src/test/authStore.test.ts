@@ -3,6 +3,7 @@ import { useAuthStore } from "@/store/authStore";
 
 vi.mock("@/api/auth", () => ({
   login: vi.fn(),
+  loginWithGoogle: vi.fn(),
   register: vi.fn(),
   verifyEmail: vi.fn(),
   resendVerification: vi.fn(),
@@ -27,6 +28,7 @@ import * as orgsApi from "@/api/orgs";
 
 const mockedAuthApi = authApi as unknown as {
   login: ReturnType<typeof vi.fn>;
+  loginWithGoogle: ReturnType<typeof vi.fn>;
   register: ReturnType<typeof vi.fn>;
   verifyEmail: ReturnType<typeof vi.fn>;
   resendVerification: ReturnType<typeof vi.fn>;
@@ -153,6 +155,21 @@ describe("authStore", () => {
       expect(state.isLoading).toBe(false);
       expect(state.error).toBeNull();
       expect(localStorage.getItem("accessToken")).toBe("access-xyz");
+    });
+
+    it("loginWithGoogleToken calls loginWithGoogle then getMe", async () => {
+      mockedAuthApi.loginWithGoogle.mockResolvedValueOnce(mockLoginResponse);
+      mockedAuthApi.getMe.mockResolvedValueOnce(mockUserResponse);
+
+      const result = await useAuthStore
+        .getState()
+        .loginWithGoogleToken("gis-id-token");
+
+      expect(mockedAuthApi.loginWithGoogle).toHaveBeenCalledWith(
+        "gis-id-token",
+      );
+      expect(result).toBe(true);
+      expect(useAuthStore.getState().isAuthenticated).toBe(true);
     });
 
     it("sets Authorization header after successful login", async () => {
