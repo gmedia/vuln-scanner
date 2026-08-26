@@ -25,104 +25,95 @@ CANONICAL_HOST = "https://sinexis.app"
 
 _SHELL_CSS = """
 :root{
-  --paper:hsl(0 0% 98%);
-  --ink:hsl(0 0% 7%);
-  --muted:hsl(0 0% 45%);
-  --rule:hsl(0 0% 90%);
-  --signal:hsl(142 71% 45%);
+  --background:hsl(0 0% 98%);
+  --foreground:hsl(0 0% 7%);
+  --muted-foreground:hsl(0 0% 45%);
+  --border:hsl(0 0% 90%);
+  --primary:hsl(142 71% 45%);
+  --primary-foreground:hsl(0 0% 4%);
   --measure:42rem;
-  --rail:min(90rem,100%);
+  --rail:72rem;
 }
 *{box-sizing:border-box}
-html{color-scheme:light;background:var(--paper)}
+html{color-scheme:light;background:var(--background)}
 body{
   margin:0;min-height:100dvh;display:flex;flex-direction:column;
-  font-family:"Iowan Old Style","Palatino Linotype",Palatino,"Times New Roman",serif;
-  color:var(--ink);background:
-    radial-gradient(1200px 500px at 12% -10%,hsl(142 20% 96%),transparent 55%),
-    repeating-linear-gradient(0deg,transparent,transparent 7px,hsl(0 0% 0%/0.03) 8px),
-    var(--paper);
-  line-height:1.65;
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  color:var(--foreground);background:var(--background);line-height:1.6;
+  letter-spacing:-0.011em;
 }
-a{color:var(--signal);text-underline-offset:0.18em}
-a:hover{color:var(--ink)}
-.masthead,.colophon{
-  width:min(var(--rail),100%);margin-inline:auto;padding:1rem 1.25rem;
+a{color:var(--primary);text-underline-offset:0.15em}
+a:hover{color:var(--foreground)}
+.site-header{border-bottom:1px solid var(--border)}
+.site-header-inner,.site-footer-inner{
+  width:min(var(--rail),100%);margin:0 auto;padding:0 1rem;
+  display:flex;align-items:center;justify-content:space-between;gap:0.75rem;
 }
-.masthead{
-  display:flex;flex-wrap:wrap;align-items:baseline;gap:0.75rem 1.25rem;
-  border-bottom:1px solid var(--rule);border-left:3px solid var(--signal);
+.site-header-inner{height:3rem}
+.brand{
+  display:inline-flex;align-items:center;gap:0.6rem;text-decoration:none;
+  color:var(--foreground);
 }
-.wordmark{
-  font-family:ui-monospace,"Cascadia Code","SF Mono",Menlo,monospace;
-  font-size:0.8rem;letter-spacing:0.28em;text-transform:uppercase;
-  color:var(--ink);text-decoration:none;font-weight:600;
+.brand svg{width:1.25rem;height:1.25rem;color:var(--primary);flex-shrink:0}
+.brand-text{
+  font-family:ui-monospace,"JetBrains Mono",Menlo,monospace;
+  font-size:0.875rem;font-weight:700;letter-spacing:0.08em;
 }
-.kicker{
-  font-family:ui-monospace,"Cascadia Code","SF Mono",Menlo,monospace;
-  font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--signal);
+.brand-accent{color:var(--primary)}
+.header-actions{display:flex;align-items:center;gap:0.5rem;flex-shrink:0}
+.header-actions a{
+  display:inline-flex;align-items:center;min-height:2.75rem;padding:0 0.75rem;
+  font-size:0.75rem;text-decoration:none;color:var(--foreground);
+  border:1px solid var(--border);border-radius:0.375rem;
 }
-.masthead nav{
-  margin-left:auto;font-family:ui-monospace,Menlo,monospace;font-size:0.75rem
+.header-actions a.ghost{border-color:transparent;color:var(--muted-foreground)}
+.header-actions a.primary{
+  background:var(--primary);color:var(--primary-foreground);border-color:transparent;
 }
-.masthead nav a{
-  color:var(--muted);text-decoration:none;margin-left:1rem;
-  min-height:44px;display:inline-flex;align-items:center
-}
-.masthead nav a[aria-current="page"]{
-  color:var(--ink);border-bottom:1px solid var(--ink)
-}
-.dateline{
-  width:100%;margin:0;font-family:ui-monospace,Menlo,monospace;
-  font-size:0.7rem;color:var(--muted);letter-spacing:0.04em
-}
+.header-actions a[aria-current="page"]{color:var(--foreground);font-weight:600}
 main{flex:1;width:min(var(--measure),calc(100% - 2rem));margin:0 auto;padding:3rem 0 4rem}
-h1{font-size:clamp(1.75rem,4vw,2.75rem);line-height:1.2;font-weight:600;margin:0 0 0.75rem}
-h2{font-size:1.35rem;margin:0 0 0.35rem;font-weight:600}
-.eyebrow{
-  font-family:ui-monospace,Menlo,monospace;font-size:0.7rem;
-  letter-spacing:0.16em;text-transform:uppercase;color:var(--signal);
-  margin:0 0 0.75rem
-}
-.lede,.excerpt{color:var(--muted);font-size:1.05rem}
-.empty-frame{
-  margin:2rem 0;min-height:8rem;border:1px dashed var(--rule);
-  display:grid;place-items:center;color:var(--signal);font-size:1.5rem;
-}
-.empty-frame::before{content:"◈"}
-.cta-row{display:flex;flex-wrap:wrap;gap:0.75rem 1.25rem;margin-top:1.5rem}
+h1{font-size:clamp(1.75rem,3vw,2.5rem);line-height:1.2;font-weight:700;
+  letter-spacing:-0.02em;margin:0 0 0.75rem}
+h2{font-size:1.25rem;margin:0 0 0.35rem;font-weight:600}
+.eyebrow{font-size:0.75rem;font-weight:600;letter-spacing:0.04em;
+  text-transform:uppercase;color:var(--primary);margin:0 0 0.75rem}
+.lede,.excerpt{color:var(--muted-foreground);font-size:1.05rem}
+.cta-row{display:flex;flex-wrap:wrap;gap:0.75rem;margin-top:1.5rem}
 .cta{
-  display:inline-flex;align-items:center;min-height:44px;padding:0 1rem;
-  background:var(--ink);color:var(--paper);text-decoration:none;
-  font-family:ui-monospace,Menlo,monospace;font-size:0.75rem;
-  letter-spacing:0.06em;text-transform:uppercase;
+  display:inline-flex;align-items:center;min-height:2.75rem;padding:0 1rem;
+  background:var(--primary);color:var(--primary-foreground);text-decoration:none;
+  font-size:0.875rem;font-weight:600;border-radius:0.375rem;
 }
-.cta:hover{background:var(--signal);color:var(--ink)}
 .cta-ghost{
-  display:inline-flex;align-items:center;min-height:44px;color:var(--muted);
-  font-family:ui-monospace,Menlo,monospace;font-size:0.75rem
+  display:inline-flex;align-items:center;min-height:2.75rem;padding:0 0.75rem;
+  color:var(--muted-foreground);text-decoration:none;font-size:0.875rem;
 }
 ol.index{list-style:none;margin:0;padding:0}
-ol.index li{padding:1.5rem 0;border-bottom:1px solid var(--rule)}
+ol.index li{padding:1.5rem 0;border-bottom:1px solid var(--border)}
 ol.index time,article time,.meta{
-  font-family:ui-monospace,Menlo,monospace;font-size:0.75rem;color:var(--muted);
+  font-size:0.75rem;color:var(--muted-foreground);
 }
-ol.index a{color:var(--ink);text-decoration:none}
-ol.index a:hover h2{color:var(--signal)}
+ol.index a{color:var(--foreground);text-decoration:none}
+ol.index a:hover h2{color:var(--primary)}
 .body{margin-top:1.5rem;font-size:1.0625rem}
 .body h2{margin-top:2rem}
-.body pre{font-family:ui-monospace,Menlo,monospace;background:hsl(0 0% 96%);padding:1rem;overflow-x:auto}
-.body a{color:var(--signal)}
-.back{margin-top:2.5rem;font-family:ui-monospace,Menlo,monospace;font-size:0.75rem}
-.colophon{
-  border-top:1px solid var(--rule);font-family:ui-monospace,Menlo,monospace;
-  font-size:0.7rem;color:var(--muted);
+.body pre{
+  font-family:ui-monospace,Menlo,monospace;background:hsl(0 0% 96%);
+  padding:1rem;overflow-x:auto;border-radius:0.375rem;
 }
-@media (max-width:480px){
-  .masthead nav{margin-left:0;width:100%}
-  .masthead nav a{margin-left:0;margin-right:1rem}
+.body a{color:var(--primary)}
+.back{margin-top:2.5rem;font-size:0.875rem}
+.site-footer{margin-top:auto;border-top:1px solid var(--border);padding:1.5rem 0}
+.site-footer-inner{flex-wrap:wrap;gap:0.75rem 1rem}
+.site-footer p{margin:0;font-size:0.75rem;color:var(--muted-foreground)}
+.site-footer a{
+  font-size:0.75rem;color:var(--muted-foreground);text-decoration:none;
+  min-height:2.75rem;display:inline-flex;align-items:center;
 }
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.site-footer a:hover{color:var(--foreground)}
+@media (max-width:640px){
+  .header-actions a.sm-hide{display:none}
+}
 """
 
 
@@ -146,6 +137,19 @@ def _human_date(value: datetime | None) -> str:
     return f"{value.day} {months[value.month - 1]} {value.year}"
 
 
+_CROSSHAIR_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" '
+    'stroke="currentColor" stroke-width="2" stroke-linecap="round" '
+    'stroke-linejoin="round" aria-hidden="true">'
+    '<circle cx="12" cy="12" r="10"/>'
+    '<line x1="22" x2="18" y1="12" y2="12"/>'
+    '<line x1="6" x2="2" y1="12" y2="12"/>'
+    '<line x1="12" x2="12" y1="6" y2="2"/>'
+    '<line x1="12" x2="12" y1="22" y2="18"/>'
+    "</svg>"
+)
+
+
 def _shell(title: str, canonical: str, inner: str, locale: str = "id") -> str:
     return f"""<!DOCTYPE html>
 <html lang="{escape_text(locale)}">
@@ -158,19 +162,32 @@ def _shell(title: str, canonical: str, inner: str, locale: str = "id") -> str:
 <style>{_SHELL_CSS}</style>
 </head>
 <body>
-<header class="masthead">
-  <a class="wordmark" href="/">Sinexis</a>
-  <span class="kicker">Briefing</span>
-  <nav>
-    <a href="/">Beranda</a>
-    <a href="/blog" aria-current="page">Blog</a>
-  </nav>
-  <p class="dateline">Security attach · colo/VPS · hospitality</p>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="Sinexis home">
+      {_CROSSHAIR_SVG}
+      <span class="brand-text">SINE<span class="brand-accent">XIS</span></span>
+    </a>
+    <nav class="header-actions">
+      <a class="ghost" href="/blog" aria-current="page">Blog</a>
+      <a class="ghost sm-hide" href="/login">Sign in</a>
+      <a class="primary sm-hide" href="/register">Get started</a>
+    </nav>
+  </div>
 </header>
 <main>
 {inner}
 </main>
-<footer class="colophon">Sinexis · sinexis.app/blog</footer>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>Sinexis · Scan · Guard · SIEM</p>
+    <nav>
+      <a href="/blog">Blog</a>
+      <a href="/login">Sign in</a>
+      <a href="/register">Get started</a>
+    </nav>
+  </div>
+</footer>
 </body>
 </html>
 """
@@ -200,12 +217,11 @@ async def blog_index_html(
     )
     posts = list(result.scalars().all())
     if not posts:
-        inner = """<p class="eyebrow">Edisi 00 · belum terbit</p>
-<h1>Briefing belum ada di rak.</h1>
-<p class="lede">Catatan publik soal security attach di colo/VPS dan hospitality — bukan changelog dashboard.</p>
-<div class="empty-frame" aria-hidden="true"></div>
-<p class="cta-row"><a class="cta" href="/">Kembali ke Sinexis</a>
-<a class="cta-ghost" href="/register">Mulai attach</a></p>"""
+        inner = """<p class="eyebrow">Blog</p>
+<h1>Belum ada artikel.</h1>
+<p class="lede">Catatan publik soal security attach di colo/VPS dan hospitality.</p>
+<p class="cta-row"><a class="cta" href="/register">Get started</a>
+<a class="cta-ghost" href="/">Kembali ke Sinexis</a></p>"""
     else:
         items = []
         for p in posts:
@@ -218,7 +234,7 @@ async def blog_index_html(
                 f"<p class='excerpt'>{escape_text(p.excerpt)}</p>"
                 "</li>"
             )
-        inner = "<h1>Briefing</h1><ol class='index'>" + "".join(items) + "</ol>"
+        inner = "<h1>Blog</h1><ol class='index'>" + "".join(items) + "</ol>"
     html = _shell("Blog — Sinexis", f"{CANONICAL_HOST}/blog", inner)
     return HTMLResponse(
         html,
@@ -272,13 +288,13 @@ async def blog_article_html(
     human = _human_date(post.published_at)
     inner = (
         f"<article data-testid='blog-article-title'>"
-        f"<p class='eyebrow'>Briefing</p>"
+        f"<p class='eyebrow'>Blog</p>"
         f"<h1>{escape_text(post.title)}</h1>"
         f"<p class='meta'><time datetime='{escape_text(pub)}'>{escape_text(human)}</time>"
         f" · {escape_text(post.locale)}</p>"
         f"<p class='lede excerpt'>{escape_text(post.excerpt)}</p>"
         f"<div class='body'>{post.body_html}</div>"
-        f"<p class='back'><a href='/blog'>← Semua briefing</a></p>"
+        f"<p class='back'><a href='/blog'>← Semua artikel</a></p>"
         f"</article>"
     )
     html = _shell(

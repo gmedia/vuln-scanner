@@ -84,6 +84,7 @@
   "blogTitleField": "Judul",
   "blogExcerpt": "Ringkasan",
   "blogBody": "Isi markdown",
+  "blogLocale": "Bahasa",
   "blogPublish": "Terbitkan",
   "blogUnpublish": "Tarik",
   "blogCancel": "Batal"

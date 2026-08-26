@@ -4,7 +4,15 @@ import { FileText, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import {
@@ -114,46 +122,68 @@ function AdminBlog() {
         </CardHeader>
         <CardContent>
           <form className="space-y-3" onSubmit={onSubmit}>
-            <Input
-              data-testid="blog-slug"
-              placeholder={t("blogSlug")}
-              value={form.slug}
-              onChange={(e) => setForm({ ...form, slug: e.target.value })}
-              required
-            />
-            <Input
-              data-testid="blog-title"
-              placeholder={t("blogTitleField")}
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              required
-            />
-            <Input
-              data-testid="blog-excerpt"
-              placeholder={t("blogExcerpt")}
-              value={form.excerpt}
-              onChange={(e) => setForm({ ...form, excerpt: e.target.value })}
-              required
-            />
-            <select
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-              data-testid="blog-locale"
-              value={form.locale}
-              onChange={(e) =>
-                setForm({ ...form, locale: e.target.value as "id" | "en" })
-              }
-            >
-              <option value="id">id</option>
-              <option value="en">en</option>
-            </select>
-            <Textarea
-              data-testid="blog-body"
-              placeholder={t("blogBody")}
-              value={form.body_md}
-              onChange={(e) => setForm({ ...form, body_md: e.target.value })}
-              rows={10}
-              required
-            />
+            <div className="space-y-2">
+              <Label htmlFor="blog-slug">{t("blogSlug")}</Label>
+              <Input
+                id="blog-slug"
+                data-testid="blog-slug"
+                placeholder={t("blogSlug")}
+                value={form.slug}
+                onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="blog-title">{t("blogTitleField")}</Label>
+              <Input
+                id="blog-title"
+                data-testid="blog-title"
+                placeholder={t("blogTitleField")}
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="blog-excerpt">{t("blogExcerpt")}</Label>
+              <Input
+                id="blog-excerpt"
+                data-testid="blog-excerpt"
+                placeholder={t("blogExcerpt")}
+                value={form.excerpt}
+                onChange={(e) => setForm({ ...form, excerpt: e.target.value })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{t("blogLocale")}</Label>
+              <Select
+                value={form.locale}
+                onValueChange={(v) =>
+                  setForm({ ...form, locale: v as "id" | "en" })
+                }
+              >
+                <SelectTrigger data-testid="blog-locale">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="id">id</SelectItem>
+                  <SelectItem value="en">en</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="blog-body">{t("blogBody")}</Label>
+              <Textarea
+                id="blog-body"
+                data-testid="blog-body"
+                placeholder={t("blogBody")}
+                value={form.body_md}
+                onChange={(e) => setForm({ ...form, body_md: e.target.value })}
+                rows={10}
+                required
+              />
+            </div>
             <div className="flex gap-2">
               <Button type="submit" disabled={busy} data-testid="blog-save">
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : t("save")}

@@ -56,3 +56,12 @@ Every PR description must include:
 - Multiple unrelated tasks in one PR
 - Empty PR descriptions
 - Force-push to shared branches
+
+## Design system (MANDATORY)
+
+Public marketing and in-app SPA share **one visual family**. Detail: `docs/AGENT_EXECUTION_GUIDE.md` §11 and `docs/specs/shadcn-ui-migration.md`.
+
+1. **Tokens** — copy `frontend/src/index.css` `:root` (`--background`, `--foreground`, `--primary` `hsl(142 71% 45%)`, `--border`, `--muted-foreground`). Do not invent a second palette (no `#0a7`, no Palatino-as-brand).
+2. **Public HTML islands** (`/blog`, future `/legal`, …) — **Landing chrome**, not a separate “editorial” skin: `h-12` header, BrandMark (`SINE` + `XIS` accent + crosshair), `max-w-6xl` / `2xl:max-w-[90rem]`, footer line + Sign in / Get started. Island stays FastAPI HTML (SEO); CSS must **rhyme** Landing, not Palatino briefing.
+3. **SPA pages** (dashboard, admin, auth) — primitives in `frontend/src/components/ui/` only. **No** native `<select>`, `<button>` (use `Button`), unlabeled inputs. New admin forms: `Label` + `Input`/`Textarea`/`Select`.
+4. **Do not** restyle kit files to match one screenshot. Frozen e2e testids stay.

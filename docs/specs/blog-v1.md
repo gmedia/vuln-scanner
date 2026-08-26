@@ -58,7 +58,7 @@
 
 1. Platform admin CRUD posts: title, slug, excerpt, Markdown body, locale, status.
 2. Public list + detail for **published** posts only (`status=published` and `published_at <= now()`).
-3. SPA chrome: `/blog`, `/blog/:slug` (Landing-like header: BrandMark, language, theme). Link from Landing.
+3. Public `/blog` is a FastAPI **HTML island** with **Landing chrome** (BrandMark, `h-12`, tokens). SPA hydrate / language / theme not required in v1. Link from Landing.
 4. Admin UI: `/admin/blog` under `AdminRoute` + Sidebar admin group.
 5. Markdown source of truth; HTML via server sanitize (`nh3` or equivalent allow-list) on save/publish. No raw HTML persist as source.
 6. SEO v1: FastAPI **HTML island** for `GET /blog` and `GET /blog/{slug}` (title, canonical, body text in first HTML). SPA may hydrate or sit behind the same URLs via nginx routing to backend for those paths.

@@ -2,7 +2,7 @@
 
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
-**Last updated:** 2026-08-25
+**Last updated:** 2026-08-26
 **Repo tip at write time:** re-`git pull` after reset. **P3 assets S1–S5** (#380). **P8 Uptime S1–S5 + retention** (#397–#401). **i18n S1–S7** (#367–#373). **theme S1–S3** (#375–#378). Open residual: **GTM human**; **Guard live lab**; Dependabot — do not mass-merge. **P7 SIEM S0–S5** (flag `SIEM_ENABLED` default false). No IPs/secrets. Never commit IPs/passwords/enroll keys.
 **Guard e2e rule:** if the user asks for a **full prod e2e suite including Guard enroll/unenroll**, **wipe `tc5` + leftover Manager/DB smoke rows first** — see **§4.1**. Do not skip this. Do not treat Playwright as enroll/unenroll.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
@@ -464,11 +464,27 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 | `docs/multi-host-ops.md` | Lab roles + Guard enroll wipe-first |
 | `docs/specs/guard-v1.md` | P5 Guard thin spek + status (S0–S5 + Http on main) |
 | `docs/specs/blog-v1.md` | P10 public blog (CMS + SEO path) |
+| `docs/specs/shadcn-ui-migration.md` | SPA kit; Wave A–F shipped |
 | `docs/specs/*` | Attach/workspace/assets/uptime/i18n/theme shipped; blog S1–S5 |
 
 ---
 
-## 10) Agent one-liner
+## 10) Design system (agent law)
+
+**Why:** `/blog` HTML island drifted into a Palatino “briefing” skin while Landing is Inter + BrandMark + shadcn tokens. Admin CMS used a native `<select>`. `AGENTS.md` had **no** design rule — that is now explicit.
+
+| Surface | Must |
+|---------|------|
+| **Landing `/`** | Source of truth for **public** chrome: `BrandMark`, `h-12` `border-b`, `max-w-6xl` / `2xl:max-w-[90rem]`, `Button`, theme/i18n, footer `BRAND.footerLine` + `/blog` + login/register |
+| **HTML islands** (`GET /blog`, `/blog/{slug}`) | Same **tokens + chrome geometry**. FastAPI string is OK for SEO; **not** a second brand. Header: wordmark `SINE`+`XIS` (primary accent) + home/blog/sign-in/get-started. Body: `font-sans` stack matching `--font-sans` (Inter, ui-sans-serif). Background `--background` `hsl(0 0% 98%)`, text `--foreground`, links/CTAs `--primary` `hsl(142 71% 45%)`. One `h1` including empty index. |
+| **In-app SPA** | `frontend/src/components/ui/*` only. New forms: `Label` + kit controls. **Forbidden:** native `<select>`, raw `<button>` for primary actions, placeholder-only fields with no `Label`. |
+| **Kit files** | Do not one-off restyle `components/ui` for a screenshot. See `docs/specs/shadcn-ui-migration.md`. |
+
+**Not required on the island:** React Router, ThemeSwitcher, LanguageSwitcher (no JS hydrate). Optional later: `blog.json` chrome if SPA wraps the same URLs.
+
+---
+
+## 11) Agent one-liner
 
 > After reset: **boot §0 → §1.3 → Guard live lab is standing-permitted (wipe `tc5` first §4.1; do not re-ask) → live Guard = tc3 Manager + tc1 mock off + tc5 agent → no silent epics → no PII/SSH/IPs in git → Indonesian with user, `GIT_MASTER=1`.**
 
