@@ -110,6 +110,25 @@ export async function login(
   return data;
 }
 
+export interface GoogleAuthConfig {
+  enabled: boolean;
+  client_id: string;
+}
+
+export async function getGoogleAuthConfig(): Promise<GoogleAuthConfig> {
+  const { data } = await authApi.get<GoogleAuthConfig>(
+    "/api/auth/google/config",
+  );
+  return data;
+}
+
+export async function loginWithGoogle(idToken: string): Promise<LoginResponse> {
+  const { data } = await authApi.post<LoginResponse>("/api/auth/google", {
+    id_token: idToken,
+  });
+  return data;
+}
+
 export async function verifyEmail(token: string): Promise<MessageResponse> {
   const { data } = await authApi.post<MessageResponse>(
     "/api/auth/verify-email",
