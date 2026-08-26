@@ -46,8 +46,8 @@ function NotFound() {
         <div className="flex flex-col items-center gap-3 sm:flex-row">
           {isAuthenticated ? (
             <>
-              <Button asChild size="lg">
-                <Link to="/dashboard">
+              <Button asChild size="lg" className="min-h-11">
+                <Link to="/dashboard" data-testid="returnDashboard">
                   <Crosshair className="mr-2 h-4 w-4" />
                   {t("returnDashboard")}
                 </Link>
@@ -58,13 +58,13 @@ function NotFound() {
                 size="lg"
                 className="border-border text-foreground"
               >
-                <Link to="/">{t("backHome")}</Link>
+                <Link to="/" data-testid="backHome">{t("backHome")}</Link>
               </Button>
             </>
           ) : (
             <>
-              <Button asChild size="lg">
-                <Link to="/">
+              <Button asChild size="lg" className="min-h-11">
+                <Link to="/" data-testid="backHome">
                   <Crosshair className="mr-2 h-4 w-4" />
                   {t("backHome")}
                 </Link>
