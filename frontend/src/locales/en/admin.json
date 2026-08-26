@@ -84,6 +84,7 @@
   "blogTitleField": "Title",
   "blogExcerpt": "Excerpt",
   "blogBody": "Markdown body",
+  "blogLocale": "Locale",
   "blogPublish": "Publish",
   "blogUnpublish": "Unpublish",
   "blogCancel": "Cancel"
