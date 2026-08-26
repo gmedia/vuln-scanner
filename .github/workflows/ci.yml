@@ -354,7 +354,7 @@ jobs:
           category: trivy-${{ matrix.dir }}
 
   deploy:
-    if: ${{ (github.event_name == 'push' && github.ref_name == 'main') && (github.event_name != 'workflow_dispatch' || !inputs.skip_deploy) }}
+    if: ${{ github.ref_name == 'main' && ((github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && !inputs.skip_deploy)) }}
     needs: [python-tests, frontend-typecheck, frontend-unit-tests, frontend-build, python-lint, python-typecheck, frontend-lint, e2e-tests]
     runs-on: ubuntu-latest
     environment: production
