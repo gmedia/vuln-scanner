@@ -25,7 +25,7 @@ function ThemeSwitcher({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "inline-flex items-center rounded-md border border-border text-[11px] font-medium",
+        "inline-flex h-11 min-h-11 items-stretch overflow-hidden rounded-md border border-border text-[11px] font-medium leading-none",
         className,
       )}
       role="group"
@@ -39,7 +39,7 @@ function ThemeSwitcher({ className }: { className?: string }) {
           data-testid={`theme-${theme}`}
           aria-pressed={current === theme}
           className={cn(
-            "min-h-11 min-w-11 px-2.5 py-1",
+            "h-full min-w-11 px-2.5",
             current === theme
               ? "bg-muted text-foreground"
               : "text-muted-foreground hover:text-foreground",

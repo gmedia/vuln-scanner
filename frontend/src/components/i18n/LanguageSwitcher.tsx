@@ -11,7 +11,7 @@ function LanguageSwitcher({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "inline-flex items-center rounded-md border border-border text-[11px] font-medium",
+        "inline-flex h-11 min-h-11 items-stretch overflow-hidden rounded-md border border-border text-[11px] font-medium leading-none",
         className,
       )}
       role="group"
@@ -25,7 +25,7 @@ function LanguageSwitcher({ className }: { className?: string }) {
           data-testid={`locale-${locale}`}
           aria-pressed={current === locale}
           className={cn(
-            "min-h-11 min-w-11 px-2.5 py-1",
+            "h-full min-w-11 px-2.5",
             current === locale
               ? "bg-muted text-foreground"
               : "text-muted-foreground hover:text-foreground",
