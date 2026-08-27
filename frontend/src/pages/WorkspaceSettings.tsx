@@ -496,7 +496,7 @@ function WorkspaceSettings() {
               )}
               {invitesQuery.data && invitesQuery.data.length === 0 && (
                 <div
-                  className="flex min-h-[12rem] flex-col items-center justify-center gap-1 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center md:min-h-[24rem] 2xl:min-h-[32rem]"
+                  className="flex min-h-[8rem] flex-col items-center justify-center gap-1 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
                   data-testid="workspace-invites-empty"
                 >
                   <p className="text-sm font-medium text-foreground">
