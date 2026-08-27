@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { Input } from "@/components/ui/Input";
@@ -10,6 +10,7 @@ import AuthLayout, {
 } from "@/components/layout/AuthLayout";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { useTranslation } from "react-i18next";
+import { captureInviteFromSearch, postAuthPath } from "@/lib/inviteToken";
 
 function isUnverifiedError(message: string | null): boolean {
   if (!message) return false;
@@ -23,6 +24,7 @@ function isUnverifiedError(message: string | null): boolean {
 
 function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t } = useTranslation("auth");
   const { t: tc } = useTranslation("common");
   const { login, resendVerification, error, isAuthenticated, clearError } =
@@ -35,8 +37,12 @@ function Login() {
   const [resendFeedback, setResendFeedback] = useState<string | null>(null);
 
   useEffect(() => {
+    captureInviteFromSearch(searchParams.toString());
+  }, [searchParams]);
+
+  useEffect(() => {
     if (isAuthenticated) {
-      navigate("/dashboard");
+      navigate(postAuthPath());
     }
   }, [isAuthenticated, navigate]);
 
@@ -52,7 +58,7 @@ function Login() {
     setIsSubmitting(true);
     const success = await login(email, password);
     if (success) {
-      navigate("/dashboard");
+      navigate(postAuthPath());
     } else {
       setIsSubmitting(false);
     }
@@ -189,7 +195,14 @@ function Login() {
           </p>
           <p className="mt-1 text-center text-sm text-foreground/80">
             {t("noAccount")}{" "}
-            <Link to="/register" className={AUTH_SECONDARY_LINK}>
+            <Link
+              to={
+                searchParams.get("invite")
+                  ? `/register?invite=${encodeURIComponent(searchParams.get("invite")!)}`
+                  : "/register"
+              }
+              className={AUTH_SECONDARY_LINK}
+            >
               {t("register")}
             </Link>
           </p>
