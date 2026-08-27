@@ -405,41 +405,258 @@ class StatusPageService:
         return self._to_response(page)
 
 
+_CROSSHAIR_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" '
+    'stroke="currentColor" stroke-width="2" stroke-linecap="round" '
+    'stroke-linejoin="round" aria-hidden="true">'
+    '<circle cx="12" cy="12" r="10"/>'
+    '<line x1="22" x2="18" y1="12" y2="12"/>'
+    '<line x1="6" x2="2" y1="12" y2="12"/>'
+    '<line x1="12" x2="12" y1="6" y2="2"/>'
+    '<line x1="12" x2="12" y1="22" y2="18"/>'
+    "</svg>"
+)
+
+_STATUS_CSS = """
+:root{
+  --background:hsl(0 0% 98%);--foreground:hsl(0 0% 7%);--muted:hsl(0 0% 96%);
+  --muted-foreground:hsl(0 0% 45%);--border:hsl(0 0% 90%);
+  --primary:hsl(142 71% 45%);--primary-foreground:hsl(0 0% 4%);
+  --ok:hsl(142 71% 38%);--warn:hsl(38 92% 42%);--bad:hsl(0 72% 51%);
+  --rail:72rem;
+}
+.dark{
+  color-scheme:dark;
+  --background:hsl(0 0% 4%);--foreground:hsl(0 0% 96%);--muted:hsl(0 0% 12%);
+  --muted-foreground:hsl(0 0% 45%);--border:hsl(0 0% 16%);
+  --primary:hsl(142 71% 45%);--primary-foreground:hsl(0 0% 4%);
+  --ok:hsl(142 71% 45%);--warn:hsl(38 92% 55%);--bad:hsl(0 72% 58%);
+}
+*{box-sizing:border-box}
+html{color-scheme:light dark;background:var(--background)}
+body{
+  margin:0;min-height:100dvh;display:flex;flex-direction:column;
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  color:var(--foreground);background:var(--background);line-height:1.55;letter-spacing:-0.011em;
+}
+a{color:var(--primary);text-underline-offset:0.15em}
+.site-header{border-bottom:1px solid var(--border)}
+.site-header-inner,.site-footer-inner{
+  width:min(var(--rail),100%);margin:0 auto;padding:0 1rem;
+  display:flex;align-items:center;justify-content:space-between;gap:0.75rem;
+}
+.site-header-inner{height:3rem}
+.brand{display:inline-flex;align-items:center;gap:0.6rem;text-decoration:none;color:var(--foreground)}
+.brand svg{width:1.25rem;height:1.25rem;color:var(--primary);flex-shrink:0}
+.brand-text{
+  font-family:ui-monospace,"JetBrains Mono",Menlo,monospace;
+  font-size:0.875rem;font-weight:700;letter-spacing:0.08em;
+}
+.brand-accent{color:var(--primary)}
+.header-actions{display:flex;align-items:center;gap:0.5rem}
+.header-actions a,.theme-switch button{
+  display:inline-flex;align-items:center;min-height:2.75rem;padding:0 0.75rem;
+  font-size:0.75rem;text-decoration:none;color:var(--foreground);
+  border:1px solid var(--border);border-radius:0.375rem;background:transparent;cursor:pointer;font-family:inherit;
+}
+.header-actions a.ghost{border-color:transparent;color:var(--muted-foreground)}
+.header-actions a.primary{background:var(--primary);color:var(--primary-foreground);border-color:transparent}
+.theme-switch{display:inline-flex;border:1px solid var(--border);border-radius:0.375rem;overflow:hidden}
+.theme-switch button{border:0;border-radius:0;font-size:0.6875rem;padding:0 0.6rem}
+.theme-switch button[aria-pressed="true"]{background:var(--muted)}
+main.rail{flex:1;width:min(var(--rail),calc(100% - 2rem));margin:0 auto;padding:2.5rem 0 4rem}
+.eyebrow{
+  font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;
+  text-transform:uppercase;color:var(--primary);margin:0 0 0.5rem;
+}
+h1{font-size:clamp(1.75rem,3vw,2.25rem);line-height:1.15;font-weight:700;letter-spacing:-0.03em;margin:0 0 1.25rem}
+.banner{
+  display:flex;align-items:center;gap:0.85rem;padding:1.1rem 1.25rem;border-radius:0.5rem;
+  border:1px solid var(--border);margin:0 0 1.75rem;background:var(--muted);
+}
+.banner .dot{width:0.65rem;height:0.65rem;border-radius:999px;flex-shrink:0;background:var(--ok)}
+.banner.operational .dot{background:var(--ok);box-shadow:0 0 0 4px hsl(142 71% 45% / 0.18)}
+.banner.degraded .dot,.banner.partial .dot{background:var(--warn);box-shadow:0 0 0 4px hsl(38 92% 50% / 0.18)}
+.banner.major .dot{background:var(--bad);box-shadow:0 0 0 4px hsl(0 72% 51% / 0.18)}
+.banner strong{font-size:1.05rem;letter-spacing:-0.02em}
+.banner span{display:block;font-size:0.8125rem;color:var(--muted-foreground);margin-top:0.15rem}
+.panel{border:1px solid var(--border);border-radius:0.5rem;overflow:hidden;margin:0 0 1.75rem}
+.panel h2{margin:0;padding:0.85rem 1.15rem;font-size:0.75rem;font-weight:600;letter-spacing:0.06em;
+  text-transform:uppercase;color:var(--muted-foreground);border-bottom:1px solid var(--border)}
+.comps{list-style:none;margin:0;padding:0}
+.comps li{display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  padding:0.9rem 1.15rem;border-bottom:1px solid var(--border)}
+.comps li:last-child{border-bottom:0}
+.pill{
+  font-size:0.75rem;font-weight:600;letter-spacing:0.02em;
+  padding:0.2rem 0.55rem;border-radius:999px;border:1px solid var(--border);
+}
+.pill.up{color:var(--ok);border-color:hsl(142 71% 45% / 0.35)}
+.pill.down{color:var(--bad);border-color:hsl(0 72% 51% / 0.4)}
+.pill.degraded{color:var(--warn);border-color:hsl(38 92% 50% / 0.4)}
+.pill.unknown{color:var(--muted-foreground)}
+.inc{padding:1.1rem 1.15rem;border-bottom:1px solid var(--border)}
+.inc:last-child{border-bottom:0}
+.inc h3{margin:0 0 0.35rem;font-size:1rem;letter-spacing:-0.02em}
+.inc .meta{font-size:0.75rem;color:var(--muted-foreground);margin:0 0 0.65rem}
+.inc p{margin:0 0 0.5rem;font-size:0.9375rem;color:var(--muted-foreground)}
+.inc p:last-child{margin-bottom:0}
+.empty{padding:1.15rem;color:var(--muted-foreground);font-size:0.875rem}
+.site-footer{margin-top:auto;border-top:1px solid var(--border);padding:1.5rem 0}
+.site-footer p{margin:0;font-size:0.75rem;color:var(--muted-foreground)}
+.site-footer a{font-size:0.75rem;color:var(--muted-foreground);text-decoration:none;min-height:2.75rem;
+  display:inline-flex;align-items:center;padding:0 0.35rem}
+.site-footer a:hover{color:var(--foreground)}
+.site-footer a.primary{
+  background:var(--primary);color:var(--primary-foreground);
+  border-radius:0.375rem;padding:0 0.75rem;font-weight:600;
+}
+.disclaimer{font-size:0.75rem;color:var(--muted-foreground);margin:0}
+@media (max-width:640px){.header-actions a.sm-hide{display:none}}
+"""
+
+_THEME_BOOT = """
+<script>
+(function(){
+  var k='sinexis.theme', t='dark';
+  try { var s=localStorage.getItem(k); if(s==='light'||s==='dark') t=s; } catch(e){}
+  document.documentElement.classList.toggle('dark', t==='dark');
+  document.documentElement.style.colorScheme=t;
+})();
+</script>
+"""
+
+_THEME_FOOT = """
+<script>
+(function(){
+  var k='sinexis.theme';
+  function cur(){
+    try { var s=localStorage.getItem(k); if(s==='light'||s==='dark') return s; } catch(e){}
+    return 'dark';
+  }
+  function apply(t){
+    document.documentElement.classList.toggle('dark', t==='dark');
+    document.documentElement.style.colorScheme=t;
+    try { localStorage.setItem(k, t); } catch(e){}
+    document.querySelectorAll('[data-theme-set]').forEach(function(b){
+      b.setAttribute('aria-pressed', b.getAttribute('data-theme-set')===t ? 'true' : 'false');
+    });
+  }
+  document.querySelectorAll('[data-theme-set]').forEach(function(b){
+    b.addEventListener('click', function(){ apply(b.getAttribute('data-theme-set')); });
+  });
+  apply(cur());
+})();
+</script>
+"""
+
+_STATE_LABEL = {"up": "Operational", "down": "Down", "degraded": "Degraded", "unknown": "Unknown"}
+_OVERALL_COPY = {
+    "operational": ("All systems operational", "Outside-in checks are succeeding."),
+    "degraded": ("Degraded performance", "Some checks are slower or flaky."),
+    "partial": ("Partial outage", "At least one component is down."),
+    "major": ("Major outage", "A critical incident or widespread outage is in progress."),
+}
+
+
 def render_status_html(page: StatusPageResponse) -> str:
-    banner = {
-        "operational": "All systems operational",
-        "degraded": "Degraded performance",
-        "partial": "Partial outage",
-        "major": "Major outage",
-    }.get(page.overall or "operational", "All systems operational")
-    comps = "".join(
-        f"<li><span>{_escape(c.display_name)}</span><strong>{_escape(c.state or 'unknown')}</strong></li>"
-        for c in page.components
+    overall = page.overall or "operational"
+    headline, sub = _OVERALL_COPY.get(overall, _OVERALL_COPY["operational"])
+    comps_inner = (
+        "".join(
+            (
+                "<li>"
+                f"<span>{_escape(c.display_name)}</span>"
+                f"<span class='pill {_escape(c.state or 'unknown')}'>"
+                f"{_escape(_STATE_LABEL.get(c.state or 'unknown', c.state or 'unknown'))}</span>"
+                "</li>"
+            )
+            for c in page.components
+        )
+        or "<p class='empty'>No components published.</p>"
     )
-    incs = "".join(
-        f"<article><h2>{_escape(i.title)}</h2><p>{_escape(i.status)} · {_escape(i.impact)}</p>"
-        + "".join(f"<p>{_escape(u.body)}</p>" for u in i.updates)
-        + "</article>"
-        for i in page.incidents
-    )
+    comps_block = f"<ul class='comps'>{comps_inner}</ul>" if page.components else comps_inner
+    open_incs = [i for i in page.incidents if i.status != "resolved"]
+    past_incs = [i for i in page.incidents if i.status == "resolved"]
+
+    def _inc_html(inc: StatusIncidentResponse) -> str:
+        updates = "".join(f"<p>{_escape(u.body)}</p>" for u in inc.updates)
+        started = inc.started_at.strftime("%d %b %Y %H:%M UTC") if inc.started_at else ""
+        return (
+            "<article class='inc'>"
+            f"<h3>{_escape(inc.title)}</h3>"
+            f"<p class='meta'>{_escape(inc.status)} · {_escape(inc.impact)}"
+            f"{' · ' + _escape(started) if started else ''}</p>"
+            f"{updates}"
+            "</article>"
+        )
+
+    open_block = "".join(_inc_html(i) for i in open_incs) or "<p class='empty'>No active incidents.</p>"
+    past_block = "".join(_inc_html(i) for i in past_incs[:8])
+    past_section = f"<section class='panel'><h2>Past incidents</h2>{past_block}</section>" if past_block else ""
     title = _escape(page.title)
     return f"""<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{title}</title>
-<meta name="robots" content="noindex">
-<style>
-:root{{--background:hsl(0 0% 4%);--foreground:hsl(0 0% 96%);--muted-foreground:hsl(0 0% 45%);
---border:hsl(0 0% 16%);--primary:hsl(142 71% 45%);}}
-body{{margin:0;font-family:ui-sans-serif,system-ui,sans-serif;background:var(--background);color:var(--foreground);
-max-width:42rem;margin-inline:auto;padding:2rem 1rem;}}
-h1{{font-size:1.5rem}} .banner{{border:1px solid var(--border);padding:1rem;border-radius:.5rem;margin:1rem 0}}
-ul{{list-style:none;padding:0}} li{{display:flex;justify-content:space-between;border-bottom:1px solid var(--border);
-padding:.75rem 0}} .foot{{color:var(--muted-foreground);font-size:.75rem;margin-top:2rem}}
-</style></head><body>
-<p class="eyebrow" style="color:var(--primary);letter-spacing:.08em;text-transform:uppercase;font-size:.7rem">Status</p>
-<h1>{title}</h1>
-<div class="banner">{_escape(banner)}</div>
-<ul>{comps}</ul>
-{incs}
-<p class="foot">Best-effort outside-in checks. Not an SLA.</p>
-</body></html>"""
+<html lang="en" class="dark">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#0a0a0a"/>
+<title>{title} · Status</title>
+<meta name="robots" content="noindex"/>
+<style>{_STATUS_CSS}</style>
+{_THEME_BOOT}
+</head>
+<body>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="Sinexis home">
+      {_CROSSHAIR_SVG}
+      <span class="brand-text">SINE<span class="brand-accent">XIS</span></span>
+    </a>
+    <nav class="header-actions">
+      <a class="ghost" href="/blog">Blog</a>
+      <a class="ghost sm-hide" href="/login">Sign in</a>
+      <a class="primary" href="/register">Get started</a>
+      <span class="theme-switch" role="group" aria-label="Theme">
+        <button type="button" data-theme-set="dark" aria-pressed="true">Dark</button>
+        <button type="button" data-theme-set="light" aria-pressed="false">Light</button>
+      </span>
+    </nav>
+  </div>
+</header>
+<main class="rail">
+  <p class="eyebrow">Status</p>
+  <h1>{title}</h1>
+  <div class="banner {_escape(overall)}">
+    <span class="dot" aria-hidden="true"></span>
+    <div>
+      <strong>{_escape(headline)}</strong>
+      <span>{_escape(sub)}</span>
+    </div>
+  </div>
+  <section class="panel">
+    <h2>Components</h2>
+    {comps_block}
+  </section>
+  <section class="panel">
+    <h2>Active incidents</h2>
+    {open_block}
+  </section>
+  {past_section}
+  <p class="disclaimer">Best-effort outside-in checks. Not an SLA. Monitor URLs and IPs are never shown.</p>
+</main>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>Sinexis · Scan · Guard · SIEM</p>
+    <nav>
+      <a href="/blog">Blog</a>
+      <a href="/terms">Syarat</a>
+      <a href="/privacy">Privasi</a>
+      <a href="/login">Sign in</a>
+      <a class="primary" href="/register">Get started</a>
+    </nav>
+  </div>
+</footer>
+{_THEME_FOOT}
+</body>
+</html>"""
