@@ -358,7 +358,7 @@ function Dashboard() {
 
       <div className="grid items-stretch gap-4 lg:grid-cols-12">
         <Card className="flex min-h-0 flex-col lg:col-span-8">
-          <CardHeader className="border-b pb-4">
+          <CardHeader className="pb-3">
             <CardTitle
               id="pekerjaan-terakhir"
               className="shrink-0 text-sm tracking-wide"
@@ -389,7 +389,7 @@ function Dashboard() {
                 ))}
               </div>
             ) : scans.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center">
+              <div className="flex flex-col items-center justify-center gap-2 px-2 py-8 text-center">
                 <Radar className="h-8 w-8 text-muted-foreground" />
                 <p className="text-sm text-foreground">{t("noScansYet")}</p>
                 <p className="text-xs text-muted-foreground">
