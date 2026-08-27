@@ -52,5 +52,10 @@
   "colUptime": "24h %",
   "colSpark": "24h",
   "colActions": "Actions",
-  "lastError": "Last error"
+  "lastError": "Last error",
+  "advanced": "Advanced",
+  "timeout": "Timeout (seconds)",
+  "expectStatus": "Expected HTTP status",
+  "expectStatusHint": "Empty = any 200–399. Set an exact code (e.g. 204).",
+  "edit": "Edit"
 }

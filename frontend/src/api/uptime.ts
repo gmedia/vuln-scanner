@@ -44,6 +44,8 @@ export interface UptimeCreatePayload {
   check_type: UptimeCheckType;
   target: string;
   interval_seconds?: number;
+  timeout_seconds?: number;
+  expect_status?: number | null;
   keyword?: string;
   keyword_invert?: boolean;
   http_method?: string;
@@ -53,6 +55,11 @@ export interface UptimeCreatePayload {
   expected_values?: string[];
   notify_email?: string;
 }
+
+export type UptimeUpdatePayload = Omit<
+  UptimeCreatePayload,
+  "check_type" | "target"
+>;
 
 export interface UptimeSample {
   id: string;
@@ -73,6 +80,17 @@ export async function createMonitor(
 ): Promise<UptimeMonitor> {
   const { data } = await api.post<UptimeMonitor>(
     "/api/uptime/monitors",
+    payload,
+  );
+  return data;
+}
+
+export async function updateMonitor(
+  id: string,
+  payload: UptimeUpdatePayload,
+): Promise<UptimeMonitor> {
+  const { data } = await api.patch<UptimeMonitor>(
+    `/api/uptime/monitors/${id}`,
     payload,
   );
   return data;

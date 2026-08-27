@@ -376,3 +376,57 @@ def test_probe_heartbeat_stale() -> None:
     assert probe_heartbeat(None, 60).ok is False
     assert probe_heartbeat(datetime.now(UTC), 60).ok is True
     assert probe_heartbeat(datetime.now(UTC) - timedelta(minutes=10), 60).ok is False
+
+
+@pytest.mark.asyncio
+async def test_timeout_bounds_and_patch_idor(db_session: AsyncSession, ctx: dict) -> None:
+    _bind_db(db_session)
+    owner, outsider, org = ctx["owner"], ctx["outsider"], ctx["org"]
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        too_long = await client.post(
+            "/api/uptime/monitors",
+            headers=_auth(owner, org.id),
+            json={
+                "name": "slow",
+                "check_type": "http",
+                "target": "https://example.com/health",
+                "timeout_seconds": 31,
+            },
+        )
+        assert too_long.status_code == 422
+        created = await client.post(
+            "/api/uptime/monitors",
+            headers=_auth(owner, org.id),
+            json={
+                "name": "ok-to",
+                "check_type": "http",
+                "target": "https://example.com/health",
+                "timeout_seconds": 20,
+                "expect_status": 204,
+            },
+        )
+        assert created.status_code == 201, created.text
+        mid = created.json()["id"]
+        assert created.json()["timeout_seconds"] == 20
+        assert created.json()["expect_status"] == 204
+        patched = await client.patch(
+            f"/api/uptime/monitors/{mid}",
+            headers=_auth(owner, org.id),
+            json={"timeout_seconds": 15},
+        )
+        assert patched.status_code == 200
+        assert patched.json()["timeout_seconds"] == 15
+        hidden = await client.patch(
+            f"/api/uptime/monitors/{mid}",
+            headers=_auth(outsider, None),
+            json={"timeout_seconds": 12},
+        )
+        assert hidden.status_code in (400, 403, 404)
+        await client.post(f"/api/uptime/monitors/{mid}/pause", headers=_auth(owner, org.id))
+        tcp = await client.post(
+            "/api/uptime/monitors",
+            headers=_auth(owner, org.id),
+            json={"name": "tcp1", "check_type": "tcp", "target": "example.com:443", "expect_status": 200},
+        )
+        assert tcp.status_code == 422

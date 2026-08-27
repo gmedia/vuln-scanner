@@ -21,6 +21,10 @@ test.describe("Uptime", () => {
   test("rejects private RFC1918 HTTP target", async ({ page }) => {
     await page.goto("/uptime");
     await page.getByTestId("uptime-add").click();
+    await expect(page.getByTestId("uptime-advanced")).toBeVisible();
+    await page.getByTestId("uptime-advanced").getByRole("button").click();
+    await expect(page.getByTestId("uptime-timeout")).toBeVisible();
+    await expect(page.getByTestId("uptime-expect-status")).toBeVisible();
     await page.getByTestId("uptime-name").fill("e2e-ssrf");
     await page.getByTestId("uptime-target").fill("http://10.0.0.1/health");
     const create = page.waitForResponse(

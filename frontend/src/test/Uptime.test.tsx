@@ -12,6 +12,7 @@ vi.mock("@/api/uptime", async () => {
     ...actual,
     listMonitors: (...args: unknown[]) => mockList(...args),
     createMonitor: vi.fn(),
+    updateMonitor: vi.fn(),
     deleteMonitor: vi.fn(),
     pauseMonitor: vi.fn(),
   };
@@ -81,6 +82,18 @@ describe("Uptime page", () => {
     await waitFor(() => expect(screen.getByTestId("uptime-kpi")).toBeInTheDocument());
     expect(screen.getByTestId("uptime-row")).toBeInTheDocument();
     expect(screen.getByTestId("uptime-filters")).toBeInTheDocument();
+    expect(screen.getByTestId("uptime-edit")).toBeInTheDocument();
+  });
+
+  it("opens advanced accordion on create", async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId("uptime-add")).toBeInTheDocument());
+    screen.getByTestId("uptime-add").click();
+    await waitFor(() => expect(screen.getByTestId("uptime-advanced")).toBeInTheDocument());
+    expect(screen.queryByTestId("uptime-timeout")).not.toBeInTheDocument();
+    screen.getByText(/advanced|lanjutan/i).click();
+    await waitFor(() => expect(screen.getByTestId("uptime-timeout")).toBeInTheDocument());
+    expect(screen.getByTestId("uptime-expect-status")).toBeInTheDocument();
   });
 
   it("polls while a monitor is still unknown", async () => {
