@@ -5,7 +5,7 @@ export const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-muted text-muted-foreground border border-border",
+        default: "bg-secondary text-secondary-foreground border border-border",
         critical: "bg-red-600/20 text-red-400 border border-red-600/40",
         high: "bg-orange-500/20 text-orange-400 border border-orange-500/40",
         medium: "bg-yellow-500/20 text-yellow-400 border border-yellow-500/40",
