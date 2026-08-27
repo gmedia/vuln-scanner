@@ -15,6 +15,13 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/Select";
 
 export function mapAssetError(message: string): string {
   if (/Asset limit/i.test(message)) return "limit";
@@ -126,16 +133,24 @@ export default function Assets() {
             </div>
             <div>
               <Label htmlFor="asset-type">{t("type")}</Label>
-              <select
-                id="asset-type"
-                data-testid="asset-type"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+              <Select
                 value={scanType}
-                onChange={(e) => setScanType(e.target.value as "ip" | "domain")}
+                onValueChange={(value) =>
+                  setScanType(value as "ip" | "domain")
+                }
               >
-                <option value="domain">domain</option>
-                <option value="ip">ip</option>
-              </select>
+                <SelectTrigger
+                  id="asset-type"
+                  data-testid="asset-type"
+                  aria-label={t("type")}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="domain">domain</SelectItem>
+                  <SelectItem value="ip">ip</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="asset-target">{t("target")}</Label>

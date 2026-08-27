@@ -81,7 +81,8 @@ test.describe("Uptime", () => {
     const name = `e2e-tcp-${Date.now()}`;
     await page.goto("/uptime");
     await page.getByTestId("uptime-add").click();
-    await page.getByTestId("uptime-type").selectOption("tcp");
+    await page.getByTestId("uptime-type").click();
+    await page.getByRole("option", { name: "tcp" }).click();
     await page.getByTestId("uptime-name").fill(name);
     await page.getByTestId("uptime-target").fill(tcp!);
     await page.getByTestId("uptime-save").click();

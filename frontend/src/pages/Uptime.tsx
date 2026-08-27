@@ -16,6 +16,13 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/Select";
 
 export function mapUptimeError(message: string): string {
   if (/seat limit/i.test(message)) return "limit";
@@ -164,16 +171,24 @@ export default function Uptime() {
             </div>
             <div>
               <Label htmlFor="up-type">{t("type")}</Label>
-              <select
-                id="up-type"
-                data-testid="uptime-type"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+              <Select
                 value={checkType}
-                onChange={(e) => setCheckType(e.target.value as "http" | "tcp")}
+                onValueChange={(value) =>
+                  setCheckType(value as "http" | "tcp")
+                }
               >
-                <option value="http">http</option>
-                <option value="tcp">tcp</option>
-              </select>
+                <SelectTrigger
+                  id="up-type"
+                  data-testid="uptime-type"
+                  aria-label={t("type")}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="http">http</SelectItem>
+                  <SelectItem value="tcp">tcp</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="up-target">{t("target")}</Label>
