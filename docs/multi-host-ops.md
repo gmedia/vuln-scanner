@@ -8,7 +8,7 @@ Keep real inventory in a private ops note or password manager.
 | Role | Runs | Notes |
 |------|------|--------|
 | **App host** | backend, frontend, **mobile** worker, dead-letter, beat; host nginx TLS | `REMOTE_DATA=1` compose overlay. Keep mobile here while uploads/`scan_data` are local paths. |
-| **Worker host** (optional scale-out) | `worker_ip`, `worker_domain` only | Same `.env` broker/DB as app; **no** public 80/443. Shared Redis = Celery queue. |
+| **Worker host** (optional scale-out) | `worker_ip`, `worker_domain` only | Same `.env` broker/DB as app; **no** public 80/443. Shared Redis = Celery queue. Worker image has **no FastAPI**: `guard.sync_all` (queue `ip_scan`) must import `app.services.guard_apply`, not `app.services.guard`. |
 | **Data host** | PostgreSQL 16, Redis 8 (or distro Redis) | ufw: **app + worker** host CIDRs → 5432/6379; **pg_hba** must allow those same client IPs for the app DB role |
 | **Guard host** | Wazuh Manager + Indexer (all-in-one lab OK) | API `:55000` + Indexer `:9200` **only** from app host; agent `:1514`/`:1515` only from lab/agent hosts. Do **not** expose dashboard `:443` to the public internet unless ops explicitly needs it. |
 | **Guard lab agent** (optional) | `wazuh-agent` only | Enroll via app API (`GUARD_MOCK_WAZUH=false`). Never install an agent using a **mock** key. |
