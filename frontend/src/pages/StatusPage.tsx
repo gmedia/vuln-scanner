@@ -183,7 +183,7 @@ export default function StatusPage() {
                   />
                 </div>
               </div>
-              <Button type="submit" data-testid="status-page-create">
+              <Button type="submit" data-testid="status-page-create" className="min-h-11 w-full sm:w-auto">
                 {t("create")}
               </Button>
             </form>
