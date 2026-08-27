@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import uuid
+from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
+from celery import Celery
+from celery.exceptions import CeleryError
 from fastapi import HTTPException
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,6 +29,27 @@ from app.services.uptime_probe import ProbeResult, probe_http, probe_tcp, tls_wa
 
 def sku_uptime_limit(sku: str | None) -> int:
     return UPTIME_SKU_LIMITS.get(sku or "multi", UPTIME_SKU_LIMITS["multi"])
+
+
+_celery = Celery(
+    "vuln_scanner",
+    broker=settings.celery_broker_url,
+    backend=settings.celery_result_backend,
+)
+_celery.conf.update(
+    task_serializer="json",
+    accept_content=["json"],
+    result_serializer="json",
+    timezone="UTC",
+    enable_utc=True,
+    task_routes={"uptime.check": {"queue": "uptime_check"}},
+    broker_connection_retry_on_startup=True,
+)
+
+
+def enqueue_uptime_check(monitor_id: UUID) -> None:
+    with suppress(CeleryError):
+        _celery.send_task("uptime.check", args=[str(monitor_id)], queue="uptime_check")
 
 
 class UptimeService:
@@ -165,6 +189,8 @@ class UptimeService:
         self.db.add(monitor)
         await self.db.commit()
         await self.db.refresh(monitor)
+        if monitor.enabled:
+            enqueue_uptime_check(monitor.id)
         return self._to_response(monitor, sku=org.sku)
 
     async def _get_in_org(self, monitor_id: UUID, organization_id: UUID | None, user_id: UUID) -> UptimeMonitor:
@@ -219,11 +245,16 @@ class UptimeService:
             )
             if dup.scalar_one_or_none() is not None:
                 raise HTTPException(status_code=409, detail="Monitor already exists for this target")
+        was_enabled = monitor.enabled
         for key, value in data.items():
             setattr(monitor, key, value)
         monitor.updated_at = datetime.now(UTC)
+        if monitor.enabled and not was_enabled:
+            monitor.next_check_at = datetime.now(UTC)
         await self.db.commit()
         await self.db.refresh(monitor)
+        if monitor.enabled and (not was_enabled or monitor.state == "unknown"):
+            enqueue_uptime_check(monitor.id)
         org = await self._org(monitor.organization_id)
         return self._to_response(monitor, sku=org.sku, uptime_24h=await self._uptime_24h(monitor.id))
 
