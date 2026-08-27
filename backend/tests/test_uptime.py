@@ -75,6 +75,17 @@ async def ctx(db_session: AsyncSession):
     return {"owner": owner, "member": member, "viewer": viewer, "outsider": outsider, "org": org}
 
 
+@pytest.fixture(autouse=True)
+def _stub_enqueue(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    seen: list[str] = []
+
+    def _capture(monitor_id: uuid.UUID) -> None:
+        seen.append(str(monitor_id))
+
+    monkeypatch.setattr("app.services.uptime.enqueue_uptime_check", _capture)
+    return seen
+
+
 def _bind_db(db_session: AsyncSession) -> None:
     async def override_get_db():
         yield db_session
@@ -141,7 +152,7 @@ async def test_confirm_two_fails_then_up(db_session: AsyncSession, ctx: dict) ->
 
 
 @pytest.mark.asyncio
-async def test_crud_idor_and_sku(db_session: AsyncSession, ctx: dict) -> None:
+async def test_crud_idor_and_sku(db_session: AsyncSession, ctx: dict, _stub_enqueue: list[str]) -> None:
     _bind_db(db_session)
     owner, viewer, outsider, org = ctx["owner"], ctx["viewer"], ctx["outsider"], ctx["org"]
     transport = ASGITransport(app=app)
@@ -153,6 +164,7 @@ async def test_crud_idor_and_sku(db_session: AsyncSession, ctx: dict) -> None:
         )
         assert created.status_code == 201, created.text
         mid = created.json()["id"]
+        assert mid in _stub_enqueue
         second = await client.post(
             "/api/uptime/monitors",
             headers=_auth(owner, org.id),

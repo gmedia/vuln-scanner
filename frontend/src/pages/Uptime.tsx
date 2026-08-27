@@ -65,7 +65,14 @@ export default function Uptime() {
   const [notify, setNotify] = useState("");
   const [open, setOpen] = useState(false);
 
-  const list = useQuery({ queryKey: ["uptime"], queryFn: listMonitors });
+  const list = useQuery({
+    queryKey: ["uptime"],
+    queryFn: listMonitors,
+    refetchInterval: (q) => {
+      const rows = q.state.data ?? [];
+      return rows.some((m) => m.enabled && m.state === "unknown") ? 4000 : false;
+    },
+  });
   const items = list.data ?? [];
   const sku = items[0]?.sku ?? "multi";
   const limit = items[0]?.sku_limit ?? 10;
