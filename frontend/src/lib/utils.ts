@@ -3,6 +3,7 @@ import { twMerge } from "tailwind-merge";
 
 export interface ApiError {
   response?: {
+    status?: number;
     data?: {
       detail?: string;
     };
