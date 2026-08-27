@@ -71,7 +71,7 @@ def purge_old() -> dict[str, Any]:
         return {"skipped": True, "reason": "UPTIME_ENABLED off"}
     try:
         from app.database import async_session
-        from app.services.uptime import purge_old_uptime_rows
+        from app.services.uptime_apply import purge_old_uptime_rows
     except Exception as exc:
         logger.exception("uptime.purge import failed: {error}", error=exc)
         return {"ok": False, "error": str(exc)[:200]}
@@ -99,7 +99,7 @@ def check_one(monitor_id: str) -> dict[str, Any]:
         from app.models.uptime import UptimeMonitor
         from app.models.user import User
         from app.services.email import send_uptime_email
-        from app.services.uptime import UptimeService, run_probe
+        from app.services.uptime_apply import apply_probe, run_probe
     except Exception as exc:
         logger.exception("uptime.check import failed: {error}", error=exc)
         return {"ok": False, "error": str(exc)[:200]}
@@ -111,7 +111,7 @@ def check_one(monitor_id: str) -> dict[str, Any]:
             if monitor is None or not monitor.enabled:
                 return {"ok": False, "reason": "missing"}
             probe = run_probe(monitor)
-            event = await UptimeService(db).apply_probe(monitor, probe)
+            event = await apply_probe(db, monitor, probe)
             if event is not None and monitor.notify_email:
                 kind = "tls" if event.to_state == "degraded" else ("down" if event.to_state == "down" else "up")
                 user_row = await db.execute(select(User).where(User.id == monitor.created_by))
