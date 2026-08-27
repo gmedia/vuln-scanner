@@ -70,6 +70,7 @@ const productNav = [
     hintKey: "uptimeHint",
     icon: Activity,
     testId: "nav-uptime",
+    end: true,
   },
   {
     to: "/uptime/status-page",

@@ -16,13 +16,13 @@ vi.mock("@/store/creditStore", () => ({
 }));
 
 describe("Sidebar", () => {
-  const renderSidebar = (_open = true) => {
+  const renderSidebar = (_open = true, initialPath = "/") => {
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
     return render(
       <QueryClientProvider client={client}>
-        <MemoryRouter>
+        <MemoryRouter initialEntries={[initialPath]}>
           <SidebarProvider defaultOpen>
             <Sidebar />
           </SidebarProvider>
@@ -129,6 +129,22 @@ describe("Sidebar", () => {
   it("renders version text at bottom", () => {
     renderSidebar(true);
     expect(screen.getByText("Sinexis Scan v1.2.0")).toBeInTheDocument();
+  });
+
+  it("does not mark Uptime active on Status page", () => {
+    renderSidebar(true, "/uptime/status-page");
+    const uptime = screen.getByTestId("nav-uptime");
+    const status = screen.getByTestId("nav-status-page");
+    expect(uptime.closest('[data-active="true"]')).toBeNull();
+    expect(status.closest('[data-active="true"]')).toBeTruthy();
+  });
+
+  it("marks Uptime active on /uptime only", () => {
+    renderSidebar(true, "/uptime");
+    const uptime = screen.getByTestId("nav-uptime");
+    const status = screen.getByTestId("nav-status-page");
+    expect(uptime.closest('[data-active="true"]')).toBeTruthy();
+    expect(status.closest('[data-active="true"]')).toBeNull();
   });
 
   it("renders brand SINEXIS in sidebar header", () => {
