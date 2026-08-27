@@ -9,6 +9,7 @@ from app.models.pricing import PricingConfig
 from app.models.scan_job import ScanJob
 from app.models.scan_schedule import ScanSchedule
 from app.models.siem import SiemCase, SiemCaseEvent, SiemCaseNote
+from app.models.status_page import StatusIncident, StatusIncidentUpdate, StatusPage, StatusPageComponent
 from app.models.uptime import UptimeEvent, UptimeMonitor, UptimeSample
 from app.models.user import User
 
@@ -35,4 +36,8 @@ __all__ = [
     "UptimeMonitor",
     "UptimeSample",
     "UptimeEvent",
+    "StatusPage",
+    "StatusPageComponent",
+    "StatusIncident",
+    "StatusIncidentUpdate",
 ]

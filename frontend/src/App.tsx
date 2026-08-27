@@ -25,6 +25,7 @@ const Assets = lazy(() => import("@/pages/Assets"));
 const Guard = lazy(() => import("@/pages/Guard"));
 const Siem = lazy(() => import("@/pages/Siem"));
 const Uptime = lazy(() => import("@/pages/Uptime"));
+const StatusPage = lazy(() => import("@/pages/StatusPage"));
 const Profile = lazy(() => import("@/pages/Profile"));
 const UserGuide = lazy(() => import("@/pages/UserGuide"));
 const WorkspaceSettings = lazy(() => import("@/pages/WorkspaceSettings"));
@@ -100,6 +101,10 @@ function App() {
             <Route
               path="/uptime"
               element={<PageBoundary component={Uptime} />}
+            />
+            <Route
+              path="/uptime/status-page"
+              element={<PageBoundary component={StatusPage} />}
             />
             <Route
               path="/profile"

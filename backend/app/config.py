@@ -144,6 +144,8 @@ class Settings(BaseSettings):
 
     uptime_enabled: bool = True
     uptime_allow_private: bool = False
+    status_page_enabled: bool = True
+    status_page_cname_target: str = "status-edge.sinexis.app"
 
     blog_enabled: bool = True
 

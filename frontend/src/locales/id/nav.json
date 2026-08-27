@@ -11,6 +11,8 @@
   "siemHint": "Event org",
   "uptime": "Uptime",
   "uptimeHint": "Probe HTTP/TCP",
+  "statusPage": "Halaman status",
+  "statusPageHint": "Status publik",
   "guide": "Panduan",
   "creditHistory": "Riwayat kredit",
   "profile": "Profil",

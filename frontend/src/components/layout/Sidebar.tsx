@@ -71,6 +71,13 @@ const productNav = [
     icon: Activity,
     testId: "nav-uptime",
   },
+  {
+    to: "/uptime/status-page",
+    labelKey: "statusPage",
+    hintKey: "statusPageHint",
+    icon: FileText,
+    testId: "nav-status-page",
+  },
   { to: "/guide", labelKey: "guide", icon: BookOpen },
 ];
 

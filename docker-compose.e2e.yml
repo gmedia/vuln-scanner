@@ -58,6 +58,7 @@ services:
       OSV_BASE_URL: https://api.osv.dev/v1
       MAX_UPLOAD_SIZE_MB: 500
       UPTIME_ENABLED: ${UPTIME_ENABLED:-true}
+      STATUS_PAGE_ENABLED: ${STATUS_PAGE_ENABLED:-true}
     ports:
       - "8000:8000"
     volumes:
