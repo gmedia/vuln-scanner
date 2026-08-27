@@ -52,5 +52,10 @@
   "colUptime": "24j %",
   "colSpark": "24j",
   "colActions": "Aksi",
-  "lastError": "Error terakhir"
+  "lastError": "Error terakhir",
+  "advanced": "Lanjutan",
+  "timeout": "Timeout (detik)",
+  "expectStatus": "Status HTTP yang diharapkan",
+  "expectStatusHint": "Kosong = 200–399. Isi kode persis (mis. 204).",
+  "edit": "Ubah"
 }
