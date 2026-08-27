@@ -116,6 +116,10 @@ async def test_status_page_crud_and_public_html(ctx, db_session: AsyncSession):
         assert "Acme" in pub.text
         assert "Website" in pub.text
         assert "example.com" not in pub.text
+        assert "All systems operational" in pub.text
+        assert "SINEXIS" in pub.text.replace(" ", "") or "SINE" in pub.text
+        assert "Components" in pub.text
+        assert 'class="site-header"' in pub.text
         hidden = await client.get("/status/missing", headers={"X-E2E-Test": "1"})
         assert hidden.status_code == 404
 
