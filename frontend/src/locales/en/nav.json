@@ -11,6 +11,8 @@
   "siemHint": "Org events",
   "uptime": "Uptime",
   "uptimeHint": "HTTP/TCP probes",
+  "statusPage": "Status page",
+  "statusPageHint": "Public status",
   "guide": "User Guide",
   "creditHistory": "Credit History",
   "profile": "Profile",
