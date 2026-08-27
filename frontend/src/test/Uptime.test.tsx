@@ -80,6 +80,7 @@ describe("Uptime page", () => {
     renderPage();
     await waitFor(() => expect(screen.getByTestId("uptime-kpi")).toBeInTheDocument());
     expect(screen.getByTestId("uptime-row")).toBeInTheDocument();
+    expect(screen.getByTestId("uptime-filters")).toBeInTheDocument();
   });
 
   it("polls while a monitor is still unknown", async () => {

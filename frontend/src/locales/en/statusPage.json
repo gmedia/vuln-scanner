@@ -21,5 +21,20 @@
   "status": "Status",
   "save": "Save",
   "empty": "No status page yet.",
-  "disclaimer": "Best-effort outside-in checks. Not an SLA."
+  "disclaimer": "Best-effort outside-in checks. Not an SLA.",
+  "openPublic": "Open public page",
+  "statPublished": "Visibility",
+  "visibilityOn": "Published",
+  "visibilityOff": "Unpublished",
+  "statComponents": "Components",
+  "hostnameStatus": "DNS status",
+  "components": "Components",
+  "noComponents": "No components yet. Map an Uptime monitor.",
+  "remove": "Remove",
+  "colActions": "Actions",
+  "incidentTitle": "Incident title",
+  "noIncidents": "No incidents posted.",
+  "stateUp": "up",
+  "stateDown": "down",
+  "stateUnknown": "unknown"
 }

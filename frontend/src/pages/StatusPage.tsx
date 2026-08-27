@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
+import { Badge } from "@/components/ui/Badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
   Select,
   SelectContent,
@@ -13,6 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/Select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/Table";
 import { listMonitors } from "@/api/uptime";
 import {
   addComponent,
@@ -24,6 +34,12 @@ import {
   upsertStatusPage,
   verifyHostname,
 } from "@/api/statusPage";
+
+function stateBadgeVariant(state: string | null) {
+  if (state === "up") return "completed" as const;
+  if (state === "down") return "critical" as const;
+  return "info" as const;
+}
 
 export default function StatusPage() {
   const { t } = useTranslation("statusPage");
@@ -100,51 +116,19 @@ export default function StatusPage() {
     return `${window.location.origin}${page.public_path}`;
   }, [page]);
 
+  const downCount =
+    page?.components.filter((c) => c.state === "down").length ?? 0;
+  const upCount = page?.components.filter((c) => c.state === "up").length ?? 0;
+
   return (
-    <div className="mx-auto max-w-3xl space-y-8 p-6" data-testid="status-page">
-      <div>
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-muted-foreground mt-1 text-sm">{t("subtitle")}</p>
-      </div>
-
-      {!page && (
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            createMut.mutate();
-          }}
-        >
-          <p className="text-sm" data-testid="status-page-empty">
-            {t("empty")}
-          </p>
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <Label htmlFor="sp-slug">{t("slug")}</Label>
-            <Input
-              id="sp-slug"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              required
-            />
-          </div>
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <Label htmlFor="sp-title">{t("pageTitle")}</Label>
-            <Input
-              id="sp-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-            />
-          </div>
-          <Button type="submit" data-testid="status-page-create">
-            {t("create")}
-          </Button>
-        </form>
-      )}
-
-      {page && (
-        <>
-          <div className="flex flex-wrap items-center gap-3">
+    <div className="space-y-6" data-testid="status-page">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
+        </div>
+        {page ? (
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant={page.published ? "outline" : "default"}
               onClick={() => publishMut.mutate(!page.published)}
@@ -152,186 +136,319 @@ export default function StatusPage() {
             >
               {page.published ? t("unpublish") : t("publish")}
             </Button>
-            <a
-              className="text-sm underline"
-              href={publicHref}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {t("publicUrl")}: {page.public_path}
-            </a>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <Label htmlFor="sp-host">{t("customHost")}</Label>
-              <Input
-                id="sp-host"
-                value={host || page.custom_hostname || ""}
-                onChange={(e) => setHost(e.target.value)}
-              />
-            </div>
-            <p className="text-muted-foreground text-sm">
-              {t("cnameHelp", { target: page.cname_target })}
-            </p>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => hostMut.mutate()}
-              >
-                {t("save")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => verifyMut.mutate()}
-              >
-                {t("verifyDns")}
-              </Button>
-              <span className="text-muted-foreground self-center text-sm">
-                {page.hostname_status}
-              </span>
-            </div>
-          </div>
-
-          <section className="space-y-3">
-            <h2 className="text-lg font-medium">{t("addComponent")}</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="flex min-w-0 flex-col gap-1.5">
-                <Label>{t("monitor")}</Label>
-                <Select value={monitorId} onValueChange={setMonitorId}>
-                  <SelectTrigger className="h-10 min-h-10">
-                    <SelectValue placeholder={t("monitor")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {monitors.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex min-w-0 flex-col gap-1.5">
-                <Label htmlFor="sp-dn">{t("displayName")}</Label>
-                <Input
-                  id="sp-dn"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                />
-              </div>
-            </div>
-            <Button
-              type="button"
-              disabled={!monitorId}
-              onClick={() => addCompMut.mutate()}
-            >
-              {t("addComponent")}
+            <Button variant="outline" asChild>
+              <a href={publicHref} target="_blank" rel="noreferrer">
+                {t("openPublic")}
+              </a>
             </Button>
-            <ul className="divide-border divide-y">
-              {page.components.map((c) => (
-                <li
-                  key={c.id}
-                  className="flex items-center justify-between py-2"
-                >
-                  <span>
-                    {c.display_name}{" "}
-                    <span className="text-muted-foreground text-sm">
-                      {c.state}
-                    </span>
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => delCompMut.mutate(c.id)}
-                  >
-                    ×
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          </section>
+          </div>
+        ) : null}
+      </div>
 
-          <section className="space-y-3">
-            <h2 className="text-lg font-medium">{t("incidents")}</h2>
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <Label htmlFor="sp-inc-title">{t("pageTitle")}</Label>
-              <Input
-                id="sp-inc-title"
-                value={incTitle}
-                onChange={(e) => setIncTitle(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="flex min-w-0 flex-col gap-1.5">
-                <Label>{t("impact")}</Label>
-                <Select value={incImpact} onValueChange={setIncImpact}>
-                  <SelectTrigger className="h-10 min-h-10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["none", "minor", "major", "critical"].map((v) => (
-                      <SelectItem key={v} value={v}>
-                        {v}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex min-w-0 flex-col gap-1.5">
-                <Label>{t("status")}</Label>
-                <Select value={incStatus} onValueChange={setIncStatus}>
-                  <SelectTrigger className="h-10 min-h-10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[
-                      "investigating",
-                      "identified",
-                      "monitoring",
-                      "resolved",
-                    ].map((v) => (
-                      <SelectItem key={v} value={v}>
-                        {v}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <Label htmlFor="sp-inc-body">{t("body")}</Label>
-              <Textarea
-                id="sp-inc-body"
-                value={incBody}
-                onChange={(e) => setIncBody(e.target.value)}
-              />
-            </div>
-            <Button
-              type="button"
-              disabled={!incTitle || !incBody}
-              onClick={() => incMut.mutate()}
+      {!page && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm tracking-wide">{t("create")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                createMut.mutate();
+              }}
             >
-              {t("newIncident")}
-            </Button>
-            <ul className="space-y-4">
-              {page.incidents.map((i) => (
-                <li key={i.id} className="border-border rounded-md border p-3">
-                  <p className="font-medium">{i.title}</p>
-                  <p className="text-muted-foreground text-sm">
-                    {i.status} · {i.impact}
-                  </p>
-                  <IncidentQuickUpdate
-                    incidentId={i.id}
-                    onDone={invalidate}
-                    addUpdate={addIncidentUpdate}
+              <p className="text-sm text-muted-foreground" data-testid="status-page-empty">
+                {t("empty")}
+              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label htmlFor="sp-slug">{t("slug")}</Label>
+                  <Input
+                    id="sp-slug"
+                    className="h-10 min-h-10"
+                    value={slug}
+                    onChange={(e) => setSlug(e.target.value)}
+                    required
                   />
-                </li>
-              ))}
-            </ul>
-          </section>
-          <p className="text-muted-foreground text-xs">{t("disclaimer")}</p>
+                </div>
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label htmlFor="sp-title">{t("pageTitle")}</Label>
+                  <Input
+                    id="sp-title"
+                    className="h-10 min-h-10"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+              <Button type="submit" data-testid="status-page-create">
+                {t("create")}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {page && (
+        <>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-md border border-border bg-card px-4 py-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                {t("statPublished")}
+              </p>
+              <p className="mt-1 text-lg font-semibold text-foreground">
+                {page.published ? t("visibilityOn") : t("visibilityOff")}
+              </p>
+            </div>
+            <div className="rounded-md border border-border bg-card px-4 py-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                {t("statComponents")}
+              </p>
+              <p className="mt-1 font-mono text-lg font-bold tabular-nums text-foreground">
+                {upCount} {t("stateUp")} · {downCount} {t("stateDown")}
+              </p>
+            </div>
+            <div className="rounded-md border border-border bg-card px-4 py-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                {t("publicUrl")}
+              </p>
+              <p className="mt-1 truncate font-mono text-sm text-foreground">
+                {page.public_path}
+              </p>
+            </div>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm tracking-wide">
+                {t("customHost")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label htmlFor="sp-host">{t("customHost")}</Label>
+                  <Input
+                    id="sp-host"
+                    className="h-10 min-h-10"
+                    value={host || page.custom_hostname || ""}
+                    onChange={(e) => setHost(e.target.value)}
+                  />
+                </div>
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label>{t("hostnameStatus")}</Label>
+                  <p className="flex h-10 min-h-10 items-center font-mono text-sm text-foreground">
+                    {page.hostname_status}
+                  </p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {t("cnameHelp", { target: page.cname_target })}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => hostMut.mutate()}
+                >
+                  {t("save")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => verifyMut.mutate()}
+                >
+                  {t("verifyDns")}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm tracking-wide">
+                {t("components")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 gap-3 rounded-md border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label>{t("monitor")}</Label>
+                  <Select value={monitorId} onValueChange={setMonitorId}>
+                    <SelectTrigger className="h-10 min-h-10">
+                      <SelectValue placeholder={t("monitor")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {monitors.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label htmlFor="sp-dn">{t("displayName")}</Label>
+                  <Input
+                    id="sp-dn"
+                    className="h-10 min-h-10"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                  />
+                </div>
+                <div className="flex min-w-0 flex-col justify-end gap-1.5">
+                  <Button
+                    type="button"
+                    className="h-10"
+                    disabled={!monitorId}
+                    onClick={() => addCompMut.mutate()}
+                  >
+                    {t("addComponent")}
+                  </Button>
+                </div>
+              </div>
+              {page.components.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t("noComponents")}</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("displayName")}</TableHead>
+                      <TableHead>{t("status")}</TableHead>
+                      <TableHead className="text-right">{t("colActions")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {page.components.map((c) => (
+                      <TableRow
+                        key={c.id}
+                        className={
+                          c.state === "down"
+                            ? "border-l-2 border-l-destructive"
+                            : undefined
+                        }
+                      >
+                        <TableCell className="font-medium">
+                          {c.display_name}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={stateBadgeVariant(c.state)}>
+                            {c.state ?? t("stateUnknown")}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive"
+                            onClick={() => delCompMut.mutate(c.id)}
+                          >
+                            {t("remove")}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm tracking-wide">
+                {t("incidents")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="flex min-w-0 flex-col gap-1.5 lg:col-span-2">
+                  <Label htmlFor="sp-inc-title">{t("incidentTitle")}</Label>
+                  <Input
+                    id="sp-inc-title"
+                    className="h-10 min-h-10"
+                    value={incTitle}
+                    onChange={(e) => setIncTitle(e.target.value)}
+                  />
+                </div>
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label>{t("impact")}</Label>
+                  <Select value={incImpact} onValueChange={setIncImpact}>
+                    <SelectTrigger className="h-10 min-h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["none", "minor", "major", "critical"].map((v) => (
+                        <SelectItem key={v} value={v}>
+                          {v}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label>{t("status")}</Label>
+                  <Select value={incStatus} onValueChange={setIncStatus}>
+                    <SelectTrigger className="h-10 min-h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[
+                        "investigating",
+                        "identified",
+                        "monitoring",
+                        "resolved",
+                      ].map((v) => (
+                        <SelectItem key={v} value={v}>
+                          {v}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2 lg:col-span-4">
+                  <Label htmlFor="sp-inc-body">{t("body")}</Label>
+                  <Textarea
+                    id="sp-inc-body"
+                    value={incBody}
+                    onChange={(e) => setIncBody(e.target.value)}
+                  />
+                </div>
+              </div>
+              <Button
+                type="button"
+                disabled={!incTitle || !incBody}
+                onClick={() => incMut.mutate()}
+              >
+                {t("newIncident")}
+              </Button>
+              {page.incidents.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t("noIncidents")}</p>
+              ) : (
+                <ul className="space-y-3">
+                  {page.incidents.map((i) => (
+                    <li
+                      key={i.id}
+                      className="rounded-md border border-border bg-card p-4"
+                    >
+                      <p className="font-medium text-foreground">{i.title}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {i.status} · {i.impact}
+                      </p>
+                      <IncidentQuickUpdate
+                        incidentId={i.id}
+                        onDone={invalidate}
+                        addUpdate={addIncidentUpdate}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+          <p className="text-xs text-muted-foreground">{t("disclaimer")}</p>
         </>
       )}
     </div>
@@ -359,8 +476,13 @@ function IncidentQuickUpdate({
   });
   return (
     <div className="mt-3 space-y-2">
-      <Textarea value={body} onChange={(e) => setBody(e.target.value)} />
-      <div className="flex gap-2">
+      <Label htmlFor={`inc-upd-${incidentId}`}>{t("body")}</Label>
+      <Textarea
+        id={`inc-upd-${incidentId}`}
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+      />
+      <div className="flex flex-wrap gap-2">
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="h-10 min-h-10 w-48">
             <SelectValue />
