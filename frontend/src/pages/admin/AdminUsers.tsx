@@ -124,13 +124,13 @@ function AdminUsers() {
                   <div className="mt-2 flex flex-wrap gap-1">
                     <Badge
                       variant={user.is_admin ? "completed" : "default"}
-                      className="text-[9px]"
+                      className="text-[11px]"
                     >
                       {user.is_admin ? t("roleAdmin") : t("roleUser")}
                     </Badge>
                     <Badge
                       variant={user.is_verified ? "completed" : "pending"}
-                      className="text-[9px]"
+                      className="text-[11px]"
                     >
                       {user.is_verified ? t("verified") : t("unverified")}
                     </Badge>
@@ -226,7 +226,7 @@ function UserRow({ user, onView }: { user: AdminUserItem; onView: () => void }) 
       <TableCell>
         <Badge
           variant={user.is_admin ? "completed" : "default"}
-          className="text-[9px]"
+          className="text-[11px]"
         >
           {user.is_admin ? t("roleAdmin") : t("roleUser")}
         </Badge>
@@ -234,7 +234,7 @@ function UserRow({ user, onView }: { user: AdminUserItem; onView: () => void }) 
       <TableCell>
         <Badge
           variant={user.is_verified ? "completed" : "pending"}
-          className="text-[9px]"
+          className="text-[11px]"
         >
           {user.is_verified ? t("verified") : t("unverified")}
         </Badge>
