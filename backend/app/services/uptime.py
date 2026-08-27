@@ -262,6 +262,8 @@ class UptimeService:
         ):
             raise HTTPException(status_code=403, detail="Insufficient organization role")
         data = body.model_dump(exclude_unset=True)
+        if "expect_status" in data and data["expect_status"] is not None and monitor.check_type != "http":
+            raise HTTPException(status_code=422, detail="HTTP options apply to HTTP only")
         if data.get("enabled") is True and not monitor.enabled:
             org = await self._org(monitor.organization_id)
             limit = sku_uptime_limit(org.sku)

@@ -116,6 +116,8 @@ async def test_status_page_crud_and_public_html(ctx, db_session: AsyncSession):
         assert "Acme" in pub.text
         assert "Website" in pub.text
         assert "example.com" not in pub.text
+        assert "timeout" not in pub.text.lower()
+        assert "Authorization" not in pub.text
         assert "All systems operational" in pub.text
         assert "SINEXIS" in pub.text.replace(" ", "") or "SINE" in pub.text
         assert "Components" in pub.text
