@@ -22,12 +22,21 @@ export default tseslint.config(
         "warn",
         { argsIgnorePattern: "^_" },
       ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "JSXOpeningElement[name.name='select']",
+          message:
+            "Use shadcn Select from @/components/ui/Select, not native <select>.",
+        },
+      ],
     },
   },
   {
     files: ["**/*.test.{ts,tsx}"],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
+      "no-restricted-syntax": "off",
     },
   },
 );

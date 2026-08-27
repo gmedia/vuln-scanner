@@ -63,5 +63,5 @@ Public marketing and in-app SPA share **one visual family**. Detail: `docs/AGENT
 
 1. **Tokens** — copy `frontend/src/index.css` `:root` (`--background`, `--foreground`, `--primary` `hsl(142 71% 45%)`, `--border`, `--muted-foreground`). Do not invent a second palette (no `#0a7`, no Palatino-as-brand).
 2. **Public HTML islands** (`/blog`, future `/legal`, …) — **Landing chrome**, not a separate “editorial” skin: `h-12` header, BrandMark (`SINE` + `XIS` accent + crosshair), `max-w-6xl` / `2xl:max-w-[90rem]`, footer line + Sign in / Get started. Island stays FastAPI HTML (SEO); CSS must **rhyme** Landing, not Palatino briefing.
-3. **SPA pages** (dashboard, admin, auth) — primitives in `frontend/src/components/ui/` only. **No** native `<select>`, `<button>` (use `Button`), unlabeled inputs. New admin forms: `Label` + `Input`/`Textarea`/`Select`.
+3. **SPA pages** (dashboard, admin, auth) — primitives in `frontend/src/components/ui/` only. **No** native `<select>` (eslint `no-restricted-syntax`; use `Select`). **No** native `<button>` for primary actions (use `Button`). Allowed native `<button>`: icon toggles (show password) and full-width list/card rows. Unlabeled inputs forbidden. New forms: `Label` + `Input`/`Textarea`/`Select`.
 4. **Do not** restyle kit files to match one screenshot. Frozen e2e testids stay.
