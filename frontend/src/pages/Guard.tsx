@@ -404,7 +404,7 @@ export default function Guard() {
 
       {!enabled && !statusQ.isLoading && (
         <Card data-testid="guard-disabled">
-          <CardContent className="flex min-h-[24rem] flex-col items-center justify-center px-6 py-16 text-center text-sm text-muted-foreground 2xl:min-h-[32rem]">
+          <CardContent className="flex min-h-[8rem] flex-col items-center justify-center px-6 py-8 text-center text-sm text-muted-foreground">
             {t("disabledHint")}
           </CardContent>
         </Card>
@@ -695,7 +695,7 @@ export default function Guard() {
                 <Skeleton className="h-24 w-full" />
               ) : (agentsQ.data?.length ?? 0) === 0 ? (
                 <div
-                  className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-12 text-center"
+                  className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
                   data-testid="guard-agents-empty"
                 >
                   <Shield className="h-8 w-8 text-muted-foreground" />
@@ -786,7 +786,7 @@ export default function Guard() {
               {alertsQ.isLoading ? (
                 <Skeleton className="h-12 w-full" />
               ) : (alertsQ.data?.length ?? 0) === 0 ? (
-                <div className="flex min-h-[24rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center 2xl:min-h-[32rem]">
+                <div className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
                   <AlertTriangle className="h-8 w-8 text-muted-foreground" />
                   <p className="text-sm font-medium text-foreground">{t("noAlerts")}</p>
                   <p className="max-w-md text-xs text-muted-foreground">
