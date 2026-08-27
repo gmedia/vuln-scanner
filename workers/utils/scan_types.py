@@ -20,6 +20,7 @@ class ScanFinding(TypedDict):
     cvss_score: NotRequired[float | None]
     remediation: NotRequired[str | None]
     impact: NotRequired[str | None]
+    attacker_benefit: NotRequired[str | None]
     raw_data: NotRequired[object | None]
     product: NotRequired[str]
     version: NotRequired[str]

@@ -23,6 +23,7 @@ class ScanFinding(Base):
     cvss_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     remediation: Mapped[str | None] = mapped_column(Text, nullable=True)
     impact: Mapped[str | None] = mapped_column(Text, nullable=True)
+    attacker_benefit: Mapped[str | None] = mapped_column(Text, nullable=True)
     raw_data: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True)
     found_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 

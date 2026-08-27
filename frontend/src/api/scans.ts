@@ -56,6 +56,7 @@ export interface ScanFinding {
   cvss_score: number | null;
   remediation: string | null;
   impact: string | null;
+  attacker_benefit: string | null;
   raw_data: Record<string, unknown> | null;
   found_at: string;
 }

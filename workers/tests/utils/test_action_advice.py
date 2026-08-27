@@ -2,9 +2,14 @@
 
 from utils.action_advice import (
     CATEGORY_ADVICE,
+    CATEGORY_ATTACKER_BENEFIT,
     CATEGORY_IMPACT,
     advice_for_category,
     advice_for_open_port,
+    attacker_benefit_for_category,
+    attacker_benefit_for_open_port,
+    ensure_attacker_benefit,
+    ensure_attacker_benefits,
     ensure_impact,
     ensure_impacts,
     ensure_remediation,
@@ -249,6 +254,8 @@ class TestEnsureImpact:
         assert finding.get("remediation")
         assert finding.get("impact")
         assert "debuggable" in finding["impact"].lower() or "debug" in finding["impact"].lower()
+        assert finding.get("attacker_benefit")
+        assert "debug" in finding["attacker_benefit"].lower()
 
     def test_ensure_impacts_batch(self):
         findings = [
@@ -280,3 +287,97 @@ class TestEnsureImpact:
         ensure_remediations(findings)
         assert findings[0].get("remediation")
         assert findings[0].get("impact")
+        assert findings[0].get("attacker_benefit")
+
+
+class TestAttackerBenefitForOpenPort:
+    def test_generic_port_uses_category(self):
+        benefit = attacker_benefit_for_open_port("Open port: 22/tcp (ssh)")
+        assert benefit == CATEGORY_ATTACKER_BENEFIT["open_port"]
+
+    def test_risky_port_redis(self):
+        benefit = attacker_benefit_for_open_port("Open port: 6379/tcp (redis)")
+        assert "Redis" in benefit
+        assert "AUTH" in benefit or "foothold" in benefit.lower()
+
+
+class TestAttackerBenefitForCategory:
+    def test_explicit_wins(self):
+        result = attacker_benefit_for_category(
+            "missing_header",
+            explicit="Custom attacker benefit text.",
+        )
+        assert result == "Custom attacker benefit text."
+
+    def test_category_template(self):
+        result = attacker_benefit_for_category("hardcoded_secret")
+        assert result is not None
+        assert "secret" in result.lower() or "binary" in result.lower() or "key" in result.lower()
+
+    def test_unknown_category(self):
+        assert attacker_benefit_for_category("not_a_real_category") is None
+
+
+class TestEnsureAttackerBenefit:
+    def test_fills_when_missing(self):
+        finding = {
+            "severity": "info",
+            "category": "open_port",
+            "title": "Open port: 80/tcp (http)",
+            "description": "Service: http",
+        }
+        ensure_attacker_benefit(finding)
+        assert finding.get("attacker_benefit")
+        assert "port" in finding["attacker_benefit"].lower() or "service" in finding["attacker_benefit"].lower()
+
+    def test_preserves_existing(self):
+        finding = {
+            "severity": "high",
+            "category": "vulnerability",
+            "title": "CVE-2024-1",
+            "description": "x",
+            "attacker_benefit": "Custom benefit text",
+        }
+        ensure_attacker_benefit(finding)
+        assert finding["attacker_benefit"] == "Custom benefit text"
+
+    def test_risky_port_in_ensure(self):
+        finding = {
+            "severity": "info",
+            "category": "open_port",
+            "title": "Open port: 445/tcp (microsoft-ds)",
+            "description": "SMB",
+        }
+        ensure_attacker_benefit(finding)
+        assert "SMB" in finding["attacker_benefit"]
+
+    def test_ensure_remediation_also_fills_attacker_benefit(self):
+        finding = {
+            "severity": "high",
+            "category": "android_debug",
+            "title": "Debuggable APK",
+            "description": "android:debuggable=true",
+        }
+        ensure_remediation(finding)
+        assert finding.get("remediation")
+        assert finding.get("impact")
+        assert finding.get("attacker_benefit")
+        assert "debug" in finding["attacker_benefit"].lower()
+
+    def test_ensure_attacker_benefits_batch(self):
+        findings = [
+            {
+                "severity": "info",
+                "category": "ip_address",
+                "title": "IP Address: 1.2.3.4",
+                "description": "Resolved",
+            },
+            {
+                "severity": "high",
+                "category": "hardcoded_secret",
+                "title": "Potential aws_access_key detected",
+                "description": "Found: AKIAxxxx",
+            },
+        ]
+        ensure_attacker_benefits(findings)
+        assert all(f.get("attacker_benefit") for f in findings)

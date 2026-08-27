@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronUp,
+  Eye,
   ExternalLink,
   Shield,
   Wrench,
@@ -79,6 +80,21 @@ function FindingDetail({ finding }: FindingDetailProps) {
           </div>
           <p className="text-xs text-foreground leading-relaxed">
             {finding.impact}
+          </p>
+        </div>
+      )}
+
+      {finding.attacker_benefit && (
+        <div className="mb-4">
+          <Separator className="mb-3" />
+          <div className="mb-1.5 flex items-center gap-1.5">
+            <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              {t("findingAttackerBenefit")}
+            </span>
+          </div>
+          <p className="text-xs text-foreground leading-relaxed">
+            {finding.attacker_benefit}
           </p>
         </div>
       )}

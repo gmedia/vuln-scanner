@@ -1,6 +1,7 @@
-"""Default action advice and impact templates for ScanFinding enrichment.
+"""Default action advice, impact, and attacker-benefit templates for ScanFinding enrichment.
 
-Fills ``remediation`` (saran aksi) and ``impact`` (risk if unfixed) when empty.
+Fills ``remediation`` (saran aksi), ``impact`` (risk if unfixed), and
+``attacker_benefit`` (what an attacker gains from knowing this) when empty.
 """
 
 from __future__ import annotations
@@ -87,6 +88,66 @@ _RISKY_PORT_IMPACT: dict[int, str] = {
     27017: (
         "If left unfixed, open MongoDB can allow unauthenticated reads/writes, mass data "
         "exfiltration, or ransomware-style collection wipes."
+    ),
+}
+
+_RISKY_PORT_ATTACKER_BENEFIT: dict[int, str] = {
+    21: (
+        "Knowing FTP is open tells an attacker they can try default or leaked credentials "
+        "and sniff file transfers on the path — no custom exploit required."
+    ),
+    23: (
+        "Telnet on the wire means login traffic is readable. An attacker who can sit on "
+        "the path learns credentials without breaking encryption."
+    ),
+    135: ("Exposed RPC lets an attacker enumerate services and match the host to known Windows remote-execution bugs."),
+    139: (
+        "NetBIOS exposure confirms file-sharing heritage and helps an attacker plan "
+        "SMB-based movement once they are on the LAN."
+    ),
+    445: (
+        "Internet-facing SMB is a high-value target: public advisories exist for remote "
+        "code execution and ransomware worms that scan this port."
+    ),
+    1433: (
+        "A reachable MSSQL port tells an attacker where to aim credential stuffing and "
+        "database-specific flaws against application data."
+    ),
+    1521: (
+        "An open Oracle listener is a map to a high-value data store; attackers look up "
+        "listener and TNS issues rather than guessing where data lives."
+    ),
+    3306: (
+        "MySQL/MariaDB on the network is a direct path to application data if auth is "
+        "weak — attackers do not need a web bug first."
+    ),
+    3389: (
+        "RDP on the internet is a known brute-force and session-takeover surface; "
+        "attackers script password sprays against this port at scale."
+    ),
+    5432: (
+        "PostgreSQL reachable from untrusted networks is a credential and data target "
+        "without needing application-layer access."
+    ),
+    5900: (
+        "VNC often lacks strong encryption. Knowing the port is open lets an attacker "
+        "try default passwords or hijack an existing desktop session."
+    ),
+    6379: (
+        "Unauthenticated Redis is a common foothold: attackers use it for remote "
+        "commands or as a cache dump — AUTH is frequently missing."
+    ),
+    9200: (
+        "Open Elasticsearch often holds indexed documents and credentials. Attackers "
+        "query it directly once they know the port is reachable."
+    ),
+    11211: (
+        "Memcached on the internet is useful for DDoS amplification and for reading "
+        "cached application objects if they are not isolated."
+    ),
+    27017: (
+        "MongoDB without auth is a well-known smash-and-grab: attackers dump or wipe "
+        "collections as soon as they confirm the port."
     ),
 }
 
@@ -249,6 +310,92 @@ CATEGORY_IMPACT: dict[str, str] = {
     ),
 }
 
+CATEGORY_ATTACKER_BENEFIT: dict[str, str] = {
+    "open_port": (
+        "An open port is a confirmed service to probe. Attackers use it to pick "
+        "credential attacks, version-specific bugs, or misconfiguration without guessing "
+        "what is listening."
+    ),
+    "os_detection": (
+        "OS fingerprint lets attackers filter exploit kits to that family and skip "
+        "payloads that would fail on a different kernel."
+    ),
+    "ip_address": (
+        "A published address is a concrete target. Attackers add it to scan lists and "
+        "look for staging or internal hosts that should not be public."
+    ),
+    "subdomain": (
+        "Each subdomain is another hostname to hijack, phish from, or find forgotten "
+        "apps on. Attackers treat unused names as cheap entry points."
+    ),
+    "ssl_issue": (
+        "Certificate problems signal users may click through warnings. Attackers can "
+        "more credibly run lookalike sites or intercept traffic on hostile networks."
+    ),
+    "ssl_cipher": (
+        "Weak TLS tells an attacker they can try protocol downgrade or older crypto "
+        "breaks against sessions instead of attacking the application."
+    ),
+    "missing_header": (
+        "Missing browser defenses (framing, XSS filters, mixed content) make "
+        "client-side attacks cheaper: attackers reuse public XSS or clickjacking recipes."
+    ),
+    "tech_detected": (
+        "A stack fingerprint maps the site to known CVEs. Attackers search version "
+        "strings against public advisories instead of fuzzing blindly."
+    ),
+    "android_manifest": (
+        "Package identity helps attackers find the same app in stores or prior APKs "
+        "and track whether a malicious update would look legitimate."
+    ),
+    "android_sdk": (
+        "An old SDK level tells attackers which platform bugs are still in play on devices that can install the app."
+    ),
+    "dangerous_permission": (
+        "Declared dangerous permissions are a shopping list: if the app is abused, "
+        "attackers know they may get camera, location, SMS, or storage without extra work."
+    ),
+    "android_permission": (
+        "Extra permissions increase what stolen app context can do. Attackers prefer "
+        "apps that already asked for more than they need."
+    ),
+    "android_debug": (
+        "A debuggable release build lets an attacker attach a debugger, inspect memory, "
+        "and pull secrets from a device they briefly control."
+    ),
+    "android_backup": (
+        "Backup enabled means ADB backup can dump local data. An attacker with brief "
+        "device access can extract tokens without reversing the APK."
+    ),
+    "android_cleartext": (
+        "Cleartext allowed means HTTP is in scope. Attackers on the same network can "
+        "read or alter API calls without breaking TLS."
+    ),
+    "exported_component": (
+        "An exported component is an IPC API other apps can call. Attackers write a "
+        "tiny companion app to trigger privileged flows or leak data."
+    ),
+    "ios_info": (
+        "Bundle and minimum-OS metadata help attackers know which devices still run "
+        "the app and which platform bugs still apply."
+    ),
+    "ios_ats": (
+        "Disabled ATS means the app may talk HTTP. Attackers on the path can intercept "
+        "or tamper with those connections."
+    ),
+    "ios_url_scheme": (
+        "Custom URL schemes can be claimed by another app. Attackers intercept deep links or tokens passed in URLs."
+    ),
+    "hardcoded_secret": (
+        "A secret in the binary can be extracted once and reused against backends, "
+        "billing APIs, or third-party services as the app."
+    ),
+    "vulnerability": (
+        "A named CVE or advisory gives attackers a public write-up to follow. They "
+        "do not need to invent a new bug — they apply the known issue to this host."
+    ),
+}
+
 
 def _open_port_number(title: str) -> int | None:
     match = re.search(r"Open port:\s*(\d+)/", title)
@@ -269,6 +416,13 @@ def impact_for_open_port(title: str, description: str = "") -> str:
     if port is not None and port in _RISKY_PORT_IMPACT:
         return _RISKY_PORT_IMPACT[port]
     return CATEGORY_IMPACT["open_port"]
+
+
+def attacker_benefit_for_open_port(title: str, description: str = "") -> str:
+    port = _open_port_number(title)
+    if port is not None and port in _RISKY_PORT_ATTACKER_BENEFIT:
+        return _RISKY_PORT_ATTACKER_BENEFIT[port]
+    return CATEGORY_ATTACKER_BENEFIT["open_port"]
 
 
 def advice_for_category(
@@ -299,6 +453,20 @@ def impact_for_category(
     return CATEGORY_IMPACT.get(category)
 
 
+def attacker_benefit_for_category(
+    category: str,
+    *,
+    title: str = "",
+    description: str = "",
+    explicit: str | None = None,
+) -> str | None:
+    if explicit and explicit.strip():
+        return explicit.strip()
+    if category == "open_port":
+        return attacker_benefit_for_open_port(title, description)
+    return CATEGORY_ATTACKER_BENEFIT.get(category)
+
+
 def ensure_remediation(finding: ScanFinding) -> ScanFinding:
     existing = finding.get("remediation")
     if not (existing and str(existing).strip()):
@@ -314,15 +482,28 @@ def ensure_remediation(finding: ScanFinding) -> ScanFinding:
 
 def ensure_impact(finding: ScanFinding) -> ScanFinding:
     existing = finding.get("impact")
+    if not (existing and str(existing).strip()):
+        impact = impact_for_category(
+            finding.get("category", ""),
+            title=finding.get("title", ""),
+            description=finding.get("description", ""),
+        )
+        if impact:
+            finding["impact"] = impact
+    return ensure_attacker_benefit(finding)
+
+
+def ensure_attacker_benefit(finding: ScanFinding) -> ScanFinding:
+    existing = finding.get("attacker_benefit")
     if existing and str(existing).strip():
         return finding
-    impact = impact_for_category(
+    benefit = attacker_benefit_for_category(
         finding.get("category", ""),
         title=finding.get("title", ""),
         description=finding.get("description", ""),
     )
-    if impact:
-        finding["impact"] = impact
+    if benefit:
+        finding["attacker_benefit"] = benefit
     return finding
 
 
@@ -335,4 +516,10 @@ def ensure_remediations(findings: list[ScanFinding]) -> list[ScanFinding]:
 def ensure_impacts(findings: list[ScanFinding]) -> list[ScanFinding]:
     for f in findings:
         ensure_impact(f)
+    return findings
+
+
+def ensure_attacker_benefits(findings: list[ScanFinding]) -> list[ScanFinding]:
+    for f in findings:
+        ensure_attacker_benefit(f)
     return findings
