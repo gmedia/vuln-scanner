@@ -10,36 +10,47 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
-## Session snapshot (2026-08-27 — P11 status page merged; refresh against `main`)
+## Session snapshot (2026-08-27 — Uptime v2 on `main`; refresh against `main`)
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding)** | Re-`git pull`. **#441** `feat: P11 public status page` **MERGED** (CI green). Tip = squash of `feat/status-page-v1`. Also on main: **#439** uptime worker no FastAPI; **#440** revert workspace-accept UI from **#438** (user preferred prior behavior) |
-| **Open PRs** | Dependabot only unless named — **do not mass-merge**. Confirm `gh pr list` after pull |
-| **P11 Status page** | **Code on `main` (#441).** Spek [`docs/specs/status-page-v1.md`](docs/specs/status-page-v1.md). Public `/status/{slug}` + Host custom; admin SPA `/uptime/status-page`; flag `STATUS_PAGE_ENABLED`; CNAME target `STATUS_PAGE_CNAME_TARGET` default `status-edge.sinexis.app`. Publish SKU `pro`/`multi`; custom host **`multi` only**. Alembic **`add_status_page_tables`**. **Residual ops:** Cloudflare for SaaS / catch-all vhost (not ACME in-app; not dynamic `server_name` in git). **Residual deploy:** inject env on app host + nginx `/status` (already in `nginx/*.conf`) + Alembic on edge |
-| **P8 Uptime** | **S1–S5 + gaps + retention** (#397–#401) + **#439** worker. Residual: **human UI/SMTP smoke**. Status page is **not** a substitute for probes |
+| **`main` tip (coding)** | Re-`git pull`. Tip **`ecf38e4`** squash **#451** `feat/uptime v2 check types`. Also on main this wave: **#450** spek, **#449** ops table, **#448** attacker_benefit, **#447** report HTML, **#446** public status redesign, **#445** Guard worker, **#444** sidebar Uptime vs Status, **#443** guide uptime/status/assets |
+| **Open PRs** | Dependabot only unless named — **do not mass-merge**. **#452** closed as duplicate of **#451**. Confirm `gh pr list` after pull |
+| **P8 Uptime v2** | **On `main` (#451).** Spek [`docs/specs/uptime-v2-check-types.md`](docs/specs/uptime-v2-check-types.md) (**#450**). Types: HTTP extras (method/headers/body) + keyword invert; heartbeat ingest `POST /api/uptime/heartbeat/{token}` (auth excluded); DNS A/AAAA; ping **501** unless `UPTIME_ICMP=1` (default **false**). Worker skips ping if flag off. Seats unchanged (Basic 1 / Pro 3 / Multi 10). **No UDP.** Alembic **`uptime_v2_check_types`**. Frozen e2e testids: `uptime-page\|add\|name\|type\|target\|save\|row\|delete\|pause` + `uptime-keyword-invert`, `uptime-heartbeat-url`. **Residual deploy:** Alembic on edge; leave ICMP off unless asked; human SMTP/UI smoke |
+| **P11 Status page** | **Code on `main` (#441 + #446 redesign).** Spek [`docs/specs/status-page-v1.md`](docs/specs/status-page-v1.md). Public `/status/{slug}` — display name + up/down/degraded/unknown **never** raw URL/IP. SPA `/uptime/status-page`. Flag `STATUS_PAGE_ENABLED`. **Residual ops:** CF for SaaS / catch-all vhost (not ACME). **#444:** Status sidebar must **not** mark Uptime active |
 | **P10 Blog** | **On `main`** (#408–#417). Landing chrome, not Palatino |
-| **Recent merges (visual / i18n / theme)** | i18n **#367–#373** · theme **#374–#378** + **#405** (`h-12`, `--primary` `hsl(142 71% 45%)`) · visual **#403–#406** · **#417** `PageLoading`. **Do not** recapture unprompted |
-| **P1 Scan Attach** | **S1–S5** + Wave B; production smoke closed |
+| **Recent merges (visual / i18n / theme)** | i18n **#367–#373** · theme **#374–#378** + **#405** (`h-12`, `--primary` `hsl(142 71% 45%)`) · visual **#403–#406** · **#417** `PageLoading`. **Do not** recapture unprompted. Root `*-2k.png` **untracked — do not add** |
+| **P1 Scan Attach** | **S1–S5** + Wave B; production smoke closed. Report HTML redesign **#447**. Finding **attacker_benefit** **#448** |
 | **P2 Workspace** | **S1–S5 on `main`**; residual **manual** multi-member / OrgSwitcher smoke. Invite-accept UI: **#431** shipped; **#438** reverted by **#440** — do **not** re-land #438 unless user asks |
 | **P4 soft dual-brand** | **On `main`** (#250); public **`sinexis.app`** — **no hard cut** |
-| **P5 Guard** | Code on `main` (mock CI). **Standing permission (user 2026-08-26):** live lab wipe `tc5` → Manager cleanup from `tc1` → enroll/unenroll **without re-asking**. Wipe-first **§4.1**; Playwright ≠ enroll; never print tokens/IPs |
+| **P5 Guard** | Code on `main` (mock CI). **Standing permission (user 2026-08-26):** live lab wipe `tc5` → Manager cleanup from `tc1` → enroll/unenroll **without re-asking**. Wipe-first **§4.1**; Playwright ≠ enroll; never print tokens/IPs. **#445** worker no FastAPI |
 | **P7 SIEM** | Code on `main` (#307). **Prod flag ON** (2026-08-26). `SIEM_INCLUDE_FULL_LOG` **false**. Empty `/siem` without agents+Indexer is expected. **Do not** add Discover/cases on `/guard` |
 | **P3 Assets** | **S1–S5 on `main`** (#380). Residual: **edge Alembic + `/assets` UI smoke** (human) |
 | **P0 commercial** | Policy locked (#245): Basic **300k** / Pro **650k** / Multi **2M**; credits **10/24/60** |
-| **Still human (not git)** | Finance **service_id** ×3; AM **10 CRM SIDs**; named **pilot #1**; AM **send**; ops **fulfill**; Uptime SMTP; Workspace/Assets **click** smoke; **P11** edge Alembic + `/status` smoke + CF SaaS if custom host; screenshot pack **`E2E_PASSWORD` on e2e host** only |
+| **Still human (not git)** | Finance **service_id** ×3; AM **10 CRM SIDs**; named **pilot #1**; AM **send**; ops **fulfill**; Uptime SMTP; Workspace/Assets **click** smoke; **P11** edge Alembic + `/status` smoke + CF SaaS if custom host; **Uptime v2** edge Alembic `uptime_v2_check_types`; screenshot pack **`E2E_PASSWORD` on e2e host** only |
 | **Coding-host Docker** | Prefer **off/minimal**. Compose project on edge is **`vuln`** (not `vuln-scanner`) |
-| **Engineering default** | **Do not start coding** until `implement` / `buat` / `kerjakan`. Next product epic if user asks: **P6 hospitality spek** (docs first) **or** P11 **deploy/smoke** / CF SaaS ops. GTM parallel. Dependabot only when **named**. |
+| **Engineering default** | **Do not start coding** until `implement` / `buat` / `kerjakan`. Next if user asks: **P6 hospitality spek** (docs first) **or** edge deploy/smoke (status + uptime v2 Alembic). GTM parallel. Dependabot only when **named**. |
 
 ### Next OpenCode session
 
-1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull` — expect **#441** on tip. `gh pr list --state open --assignee @me`. Do **not** mass-merge Dependabot.
-2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** (§0 then **§1.3**) then **`AGENTS.md`**. This stub is **not** the backlog. Guide wins on epic order. **P11** is shipped in git; guide table may still omit P11 until a docs PR.
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull` — expect **#451** on tip (`ecf38e4` or newer). `gh pr list --state open --assignee @me`. Do **not** mass-merge Dependabot. **#452** was a duplicate of **#451** — already closed.
+2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** (§0 then **§1.3**) then **`AGENTS.md`**. This stub is **not** the backlog. Guide wins on epic order.
 3. Speak **Bahasa Indonesia** with the user; code/PR English; prefix **every** git command with `GIT_MASTER=1`. Never work on `main`. Never force-push. Never commit secrets/IPs/enroll keys. Never commit PNG screenshots (repo root `*-2k.png` / `*-mobile.png` — **untracked, do not add**).
-4. **If user continues P11:** deploy residual only — Alembic `add_status_page_tables`, `STATUS_PAGE_*` on backend compose, host nginx `/status`, smoke publish on **pro** org, 403 on **basic**, HTML must **not** leak monitor URL/IP. Custom TLS = **ops Cloudflare for SaaS**, not app ACME.
-5. **If user continues product:** prefer **P6 hospitality spek** (docs first) or **Uptime SMTP smoke** — not status-page v2 (webhooks, auto-incidents, ACME).
-6. Recapture (2K or mobile) **only if asked**. Sequential visual-engineering (**one screenshot at a time**). Do **not** fire many parallel agents (OOM).
-7. **SIEM prod is on.** Do not re-enable. **Guard live lab:** may execute (wipe-first §4.1) **without re-asking**. Compose project **`-p vuln`**.
+4. **If user continues Uptime v2:** deploy residual only — Alembic `uptime_v2_check_types`, keep `UPTIME_ICMP=false` unless asked, smoke heartbeat ingest (204, no JWT), ping create → **501**, public status must not leak URL/IP/headers/token.
+5. **If user continues P11:** deploy residual — Alembic `add_status_page_tables`, `STATUS_PAGE_*` on backend compose, host nginx `/status`, smoke publish on **pro**, 403 on **basic**. Custom TLS = **ops Cloudflare for SaaS**, not app ACME.
+6. **If user continues product:** prefer **P6 hospitality spek** (docs first) or **Uptime SMTP smoke** — not status-page v2 (webhooks, auto-incidents, ACME) and not UDP.
+7. Recapture (2K or mobile) **only if asked**. Sequential visual-engineering (**one screenshot at a time**). Do **not** fire many parallel agents (OOM).
+8. **SIEM prod is on.** Do not re-enable. **Guard live lab:** may execute (wipe-first §4.1) **without re-asking**. Compose project **`-p vuln`**.
+
+### Last session (2026-08-27) — Uptime v2 check types
+
+**Shipped on `main`:** **#451** — Alembic `uptime_v2_check_types`; model/schema/probe/apply; heartbeat mint+ingest+rotate; DNS A/AAAA; ping behind `UPTIME_ICMP`; SPA form/filters/i18n; tests invert/heartbeat/ping 501. **#450** spek. **#452** duplicate PR — closed.
+
+**Also on main this wave:** **#449** ops table; **#448** attacker_benefit; **#447** report HTML; **#446** status HTML Landing chrome; **#445** Guard worker; **#444** sidebar; **#443** guide.
+
+**User standing:** Guard live lab OK; SIEM already on; do not invent E2E password; Palatino-as-brand **rejected**; **#438** behavior **rejected**; public status **never** leak monitor URL/IP; ICMP default **off**.
+
+**Rejected / watch:** worker must not import FastAPI/`app.services.uptime`; DNS via stdlib `getaddrinfo` (no `dnspython`); heartbeat grace `interval+60`; token SHA-256, one-time URL on create/rotate; `RateLimiter` via `__call__` not `.check`; Button from `@/components/ui/Button`; Alembic docstring required; **ONE COMMIT = FAILURE** for 3+ files.
 
 ### Last session (2026-08-27) — P11 status page
 
