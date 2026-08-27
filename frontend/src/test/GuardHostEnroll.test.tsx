@@ -214,4 +214,31 @@ describe("Guard host enroll UI", () => {
     const sync = await screen.findByRole("button", { name: /sync/i });
     expect(sync).toHaveClass("min-h-11");
   });
+
+  it("explains expired session instead of a vague Guard status fail", async () => {
+    vi.mocked(guardApi.getGuardStatus).mockRejectedValue({
+      response: {
+        status: 401,
+        data: { detail: "Invalid or expired token" },
+      },
+    });
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <Guard />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("guard-status-error")).toHaveTextContent(
+        /sign in again/i,
+      );
+    });
+    expect(
+      screen.queryByText("Could not load Guard status"),
+    ).not.toBeInTheDocument();
+  });
 });

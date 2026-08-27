@@ -144,6 +144,23 @@ describe("SIEM page", () => {
     });
   });
 
+  it("explains expired session instead of raw JWT detail", async () => {
+    vi.mocked(siemApi.getSiemStatus).mockRejectedValue({
+      response: {
+        status: 401,
+        data: { detail: "Invalid or expired token" },
+      },
+    });
+    renderSiem();
+    await waitFor(() => {
+      expect(screen.getByTestId("siem-status-error")).toHaveTextContent(
+        /sign in again/i,
+      );
+    });
+    expect(screen.queryByText("Invalid or expired token")).not.toBeInTheDocument();
+    expect(siemApi.listSiemEvents).not.toHaveBeenCalled();
+  });
+
   it("treats status 404 as feature off", async () => {
     vi.mocked(siemApi.getSiemStatus).mockRejectedValue({
       response: { status: 404, data: { detail: "Not found" } },
