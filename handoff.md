@@ -10,37 +10,46 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
-## Session snapshot (2026-08-26 — blog + schedules UI; refresh against `main`)
+## Session snapshot (2026-08-27 — P11 status page merged; refresh against `main`)
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding)** | Re-`git pull`. Tip **`b6cac21`** = **#417** `PageLoading` skeleton. Also on main: **#411–#416** public blog (design system, layperson series, dark island, duplicate dek, language/theme clip+height, reading-list cards) |
-| **Recent merges (visual)** | **#403–#406** as before · **#411** blog Landing chrome · **#415** Language/Theme `overflow-hidden` + `h-11` · **#416** blog cards · **#417** `PageLoading` in `PageBoundary`. **Do not** recapture unprompted |
-| **Recent merges (i18n)** | **#367–#373** |
-| **Recent merges (theme / grok2api chrome)** | **#374–#378** + **#405**. `THEME_STORAGE_KEY=sinexis.theme`, default **dark**. **Keep** `--primary` `hsl(142 71% 45%)`. Header is **`h-12`** after #405 (wave9 `h-14` was later overridden — do **not** revert to `h-14` unless user asks) |
-| **Theme DoD (user)** | Closer to grok2api **surface**. **Out:** invert CTA BW; clone Models/Keys; grok2api sidebar IA; commit PNG refs |
-| **Open PRs** | **#418** `fix/schedules-mobile-table` — stack cards `<sm`, table `sm+`, no `min-w-[40rem]`; Vitest Schedules 13. Merge when CI green. Dependabot **#389–#393** + older — **do not mass-merge** |
+| **`main` tip (coding)** | Re-`git pull`. **#441** `feat: P11 public status page` **MERGED** (CI green). Tip = squash of `feat/status-page-v1`. Also on main: **#439** uptime worker no FastAPI; **#440** revert workspace-accept UI from **#438** (user preferred prior behavior) |
+| **Open PRs** | Dependabot only unless named — **do not mass-merge**. Confirm `gh pr list` after pull |
+| **P11 Status page** | **Code on `main` (#441).** Spek [`docs/specs/status-page-v1.md`](docs/specs/status-page-v1.md). Public `/status/{slug}` + Host custom; admin SPA `/uptime/status-page`; flag `STATUS_PAGE_ENABLED`; CNAME target `STATUS_PAGE_CNAME_TARGET` default `status-edge.sinexis.app`. Publish SKU `pro`/`multi`; custom host **`multi` only**. Alembic **`add_status_page_tables`**. **Residual ops:** Cloudflare for SaaS / catch-all vhost (not ACME in-app; not dynamic `server_name` in git). **Residual deploy:** inject env on app host + nginx `/status` (already in `nginx/*.conf`) + Alembic on edge |
+| **P8 Uptime** | **S1–S5 + gaps + retention** (#397–#401) + **#439** worker. Residual: **human UI/SMTP smoke**. Status page is **not** a substitute for probes |
+| **P10 Blog** | **On `main`** (#408–#417). Landing chrome, not Palatino |
+| **Recent merges (visual / i18n / theme)** | i18n **#367–#373** · theme **#374–#378** + **#405** (`h-12`, `--primary` `hsl(142 71% 45%)`) · visual **#403–#406** · **#417** `PageLoading`. **Do not** recapture unprompted |
 | **P1 Scan Attach** | **S1–S5** + Wave B; production smoke closed |
-| **P2 Workspace** | **S1–S5 on `main`**; residual **manual** multi-member / OrgSwitcher smoke (not a code epic) |
+| **P2 Workspace** | **S1–S5 on `main`**; residual **manual** multi-member / OrgSwitcher smoke. Invite-accept UI: **#431** shipped; **#438** reverted by **#440** — do **not** re-land #438 unless user asks |
 | **P4 soft dual-brand** | **On `main`** (#250); public **`sinexis.app`** — **no hard cut** |
-| **P5 Guard** | Code on `main` (mock CI). **Standing permission (user 2026-08-26):** agents **may run live lab** wipe `tc5` → Manager cleanup from `tc1` → enroll/unenroll **without re-asking**. Still wipe-first **§4.1**; Playwright ≠ enroll; never print tokens/IPs. Recorded in `AGENTS.md` (PR **#407** if not yet on `main`) |
-| **P7 SIEM** | Code on `main` (#307). **User enabled prod 2026-08-26:** GitHub secret `SIEM_ENABLED=true` + app-host `.env` + `vuln-backend` running with flag **true**. `SIEM_INCLUDE_FULL_LOG` stays **false**. Search still needs Guard agents + Indexer (`tc3`) or UI is empty/degraded. **Do not** add Discover/cases on `/guard`. To disable: set secret + host `.env` back to `false` |
-| **P3 Assets** | **S1–S5 on `main`** (#380). Residual: **edge Alembic + `/assets` UI smoke** (human), not missing code |
-| **P8 Uptime** | **S1–S5 + gaps + retention** (#397–#401). Residual: **human UI/SMTP smoke** |
+| **P5 Guard** | Code on `main` (mock CI). **Standing permission (user 2026-08-26):** live lab wipe `tc5` → Manager cleanup from `tc1` → enroll/unenroll **without re-asking**. Wipe-first **§4.1**; Playwright ≠ enroll; never print tokens/IPs |
+| **P7 SIEM** | Code on `main` (#307). **Prod flag ON** (2026-08-26). `SIEM_INCLUDE_FULL_LOG` **false**. Empty `/siem` without agents+Indexer is expected. **Do not** add Discover/cases on `/guard` |
+| **P3 Assets** | **S1–S5 on `main`** (#380). Residual: **edge Alembic + `/assets` UI smoke** (human) |
 | **P0 commercial** | Policy locked (#245): Basic **300k** / Pro **650k** / Multi **2M**; credits **10/24/60** |
-| **Still human (not git)** | Finance **service_id** ×3; AM **10 CRM SIDs**; named **pilot #1**; AM **send**; ops **fulfill**; Uptime SMTP; Workspace/Assets **click** smoke; screenshot pack **`E2E_PASSWORD` on e2e host** only |
+| **Still human (not git)** | Finance **service_id** ×3; AM **10 CRM SIDs**; named **pilot #1**; AM **send**; ops **fulfill**; Uptime SMTP; Workspace/Assets **click** smoke; **P11** edge Alembic + `/status` smoke + CF SaaS if custom host; screenshot pack **`E2E_PASSWORD` on e2e host** only |
 | **Coding-host Docker** | Prefer **off/minimal**. Compose project on edge is **`vuln`** (not `vuln-scanner`) |
-| **Engineering default** | **Do not start coding.** No AI product-debt blocker before next epic. Next product epic if user asks: **P6 hospitality spek** (docs first). GTM parallel. Dependabot only when **named**. |
+| **Engineering default** | **Do not start coding** until `implement` / `buat` / `kerjakan`. Next product epic if user asks: **P6 hospitality spek** (docs first) **or** P11 **deploy/smoke** / CF SaaS ops. GTM parallel. Dependabot only when **named**. |
 
 ### Next OpenCode session
 
-1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull` — tip should be **`b6cac21`** (**#417**) or newer. If **#418** still open and CI green → squash-merge (`gh pr merge --squash`). Do **not** mass-merge Dependabot.
-2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** (§0 then **§1.3**) then **`AGENTS.md`**. This stub is **not** the backlog. Guide wins on epic order.
-3. Speak **Bahasa Indonesia** with the user; code/PR English; prefix **every** git command with `GIT_MASTER=1`. Never work on `main`. Never force-push. Never commit secrets/IPs/enroll keys. Never commit PNG screenshots (repo root `*-2k.png` / `*-mobile.png` are leftover captures — **untracked, do not add**).
-4. **If user continues UI polish:** next likely `/schedules` after #418 merge (verify on phone) or other SPA tables that still use `min-w-[40rem]` / `overflow-x-auto`. **Wait** for `implement` / `buat` / `kerjakan` / `perbaiki` unless they already scoped it.
-5. Recapture (2K or mobile) **only if asked**. Sequential visual-engineering / multimodal-looker (**one screenshot at a time**). Do **not** fire many parallel agents (OOM).
-6. **SIEM prod is on.** Do not “enable SIEM” again unless they asked to **turn it off**. Empty `/siem` without live agents is expected.
-7. **Guard live lab:** may execute (wipe-first §4.1) **without re-asking**. Public origin needs `GUARD_LAB_ALLOW_PUBLIC_PROD=1`. Wrong compose project name `vuln-scanner` conflicts with container `vuln-backend` — always `-p vuln`.
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull` — expect **#441** on tip. `gh pr list --state open --assignee @me`. Do **not** mass-merge Dependabot.
+2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** (§0 then **§1.3**) then **`AGENTS.md`**. This stub is **not** the backlog. Guide wins on epic order. **P11** is shipped in git; guide table may still omit P11 until a docs PR.
+3. Speak **Bahasa Indonesia** with the user; code/PR English; prefix **every** git command with `GIT_MASTER=1`. Never work on `main`. Never force-push. Never commit secrets/IPs/enroll keys. Never commit PNG screenshots (repo root `*-2k.png` / `*-mobile.png` — **untracked, do not add**).
+4. **If user continues P11:** deploy residual only — Alembic `add_status_page_tables`, `STATUS_PAGE_*` on backend compose, host nginx `/status`, smoke publish on **pro** org, 403 on **basic**, HTML must **not** leak monitor URL/IP. Custom TLS = **ops Cloudflare for SaaS**, not app ACME.
+5. **If user continues product:** prefer **P6 hospitality spek** (docs first) or **Uptime SMTP smoke** — not status-page v2 (webhooks, auto-incidents, ACME).
+6. Recapture (2K or mobile) **only if asked**. Sequential visual-engineering (**one screenshot at a time**). Do **not** fire many parallel agents (OOM).
+7. **SIEM prod is on.** Do not re-enable. **Guard live lab:** may execute (wipe-first §4.1) **without re-asking**. Compose project **`-p vuln`**.
+
+### Last session (2026-08-27) — P11 status page
+
+**Shipped on `main`:** **#441** — models + Alembic `add_status_page_tables`; `StatusPageService`; `/api/status-page`; public HTML `/status/{slug}` + Host; nginx `location ^~ /status`; SPA `/uptime/status-page`; i18n `statusPage`; env `STATUS_PAGE_ENABLED` / `STATUS_PAGE_CNAME_TARGET`. Tests: `backend/tests/test_status_page.py`, `frontend/src/test/StatusPage.test.tsx`.
+
+**Also on main this wave:** **#439** uptime worker; **#440** revert **#438**.
+
+**User standing:** Guard live lab OK; SIEM already on; do not invent E2E password; Palatino-as-brand **rejected**; **#438** behavior **rejected** (keep pre-#438 invite UI).
+
+**Rejected / watch:** `RateLimiter` via `__call__` not `.check`; Button from `@/components/ui/Button` (capital B); hostname_status `none|pending_dns|active|failed` (not `pending_tls`); Alembic docstring required; **ONE COMMIT = FAILURE** for 3+ files.
 
 ### Last session (2026-08-26) — blog CMS + schedules mobile
 
@@ -165,7 +174,9 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 | **P5** | Guard (Wazuh thin) | Code on `main`; **live lab standing-permitted** (wipe-first) |
 | **P6** | Hospitality / pilot pack | **Not coded** — next epic if user asks (spek first) |
 | **P7** | SIEM v1 | Code on `main`; **prod flag ON** (2026-08-26); never as a Guard PR |
-| **P8** | Uptime | **Shipped** #397–#401; human SMTP residual |
+| **P8** | Uptime | **Shipped** #397–#401 + #439; human SMTP residual |
+| **P10** | Public blog | **Shipped** #408–#417 |
+| **P11** | Status page | **Shipped** #441; residual **edge deploy + CF SaaS** (not ACME) |
 | **UX** | i18n + theme + visual | **Shipped** through **#406**; stop polish unless named gap |
 
 **Priority rule:** If this stub, the archive, or old chat **disagrees** with the execution guide on *what to build next*, **the guide wins**, unless the user opens a stuck-job / worker incident.
@@ -187,6 +198,7 @@ No host IPs, SSH, or secrets in this file. Access path is private ops only.
 | Assets v1 (P3 S1–S5 shipped) | [`docs/specs/assets-v1.md`](docs/specs/assets-v1.md) |
 | SIEM v1 (P7) | [`docs/specs/siem-v1.md`](docs/specs/siem-v1.md) |
 | Theme v1 (light/dark + grok2api chrome) | [`docs/specs/theme-v1.md`](docs/specs/theme-v1.md) |
+| Status page v1 (P11) | [`docs/specs/status-page-v1.md`](docs/specs/status-page-v1.md) |
 | Schedule ops / smoke | [`docs/scan-schedules-ops.md`](docs/scan-schedules-ops.md) |
 | Full execution guide | [`docs/AGENT_EXECUTION_GUIDE.md`](docs/AGENT_EXECUTION_GUIDE.md) |
 | Git / PR rules | [`AGENTS.md`](AGENTS.md) |
