@@ -76,7 +76,8 @@ function WorkspaceSettings() {
   const inviteFromUrl =
     searchParams.get("invite") ?? searchParams.get("token");
   persistInviteToken(inviteFromUrl);
-  const inviteToken = inviteFromUrl || readInviteToken();
+  const storedInvite = inviteFromUrl || readInviteToken();
+  const [tokenInput, setTokenInput] = useState(storedInvite ?? "");
 
   const organizations = useAuthStore((s) => s.organizations);
   const activeOrgId = useAuthStore((s) => s.activeOrgId);
@@ -235,37 +236,58 @@ function WorkspaceSettings() {
         </div>
       </div>
 
-      {inviteToken && (
-        <Card data-testid="accept-invite-card">
-          <CardHeader>
-            <CardTitle className="text-sm tracking-wide">
-              {t("acceptTitle")}
-            </CardTitle>
-            <CardDescription className="text-xs">
-              {t("acceptDescription")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {acceptError && (
-              <Alert variant="destructive" className="border-destructive/40">
-                <AlertTriangle />
-                <AlertDescription>{acceptError}</AlertDescription>
-              </Alert>
+      <Card id="accept-invite" data-testid="accept-invite-card">
+        <CardHeader>
+          <CardTitle className="text-sm tracking-wide">
+            {t("acceptTitle")}
+          </CardTitle>
+          <CardDescription className="text-xs">
+            {t("acceptDescription")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {acceptError && (
+            <Alert variant="destructive" className="border-destructive/40">
+              <AlertTriangle />
+              <AlertDescription>{acceptError}</AlertDescription>
+            </Alert>
+          )}
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Label htmlFor="accept-invite-token">{t("acceptTokenLabel")}</Label>
+            <Input
+              id="accept-invite-token"
+              data-testid="accept-invite-token"
+              value={tokenInput}
+              onChange={(e) => {
+                setTokenInput(e.target.value);
+                persistInviteToken(e.target.value);
+              }}
+              placeholder={t("acceptTokenPlaceholder")}
+              autoComplete="off"
+              className="h-10 min-h-10"
+            />
+          </div>
+          <Button
+            type="button"
+            data-testid="accept-invite-btn"
+            disabled={acceptMut.isPending}
+            onClick={() => {
+              const token = tokenInput.trim();
+              if (!token) {
+                setAcceptError(t("acceptTokenRequired"));
+                return;
+              }
+              persistInviteToken(token);
+              acceptMut.mutate(token);
+            }}
+          >
+            {acceptMut.isPending && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            <Button
-              type="button"
-              data-testid="accept-invite-btn"
-              disabled={acceptMut.isPending}
-              onClick={() => acceptMut.mutate(inviteToken)}
-            >
-              {acceptMut.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              {t("acceptButton")}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+            {t("acceptButton")}
+          </Button>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 2xl:grid-cols-2">
         <Card>
