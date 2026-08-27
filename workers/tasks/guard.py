@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 import sys
-from typing import Any
+from typing import Any, cast
 
 from celery import shared_task
 from loguru import logger
@@ -46,7 +46,7 @@ def sync_all_guard() -> dict[str, Any]:
             }
 
     try:
-        result = _run(_body())
+        result = cast(dict[str, Any], _run(_body()))
         logger.info("Guard sync_all result={result}", result=result)
         return result
     except Exception as exc:
