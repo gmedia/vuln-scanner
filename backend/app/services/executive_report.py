@@ -188,34 +188,95 @@ def render_executive_html(
 
     return f"""<!DOCTYPE html>
 <html lang="{html_lang}"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{page_title}</title>
 <style>
-body {{ font-family: -apple-system, system-ui, sans-serif; background: #f8fafc; color: #0f172a;
-  padding: 40px; max-width: 960px; margin: 0 auto; line-height: 1.5; }}
-h1 {{ color: #0f766e; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; }}
-h2 {{ color: #0f766e; margin-top: 28px; }}
-.cover {{ background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; }}
-.stats {{ display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }}
-.stat {{ background: #f1f5f9; border-radius: 8px; padding: 12px 16px; min-width: 88px; text-align: center; }}
-.stat .n {{ font-size: 22px; font-weight: 700; }}
-.stat .l {{ font-size: 12px; color: #64748b; text-transform: uppercase; }}
+:root {{
+  --background: hsl(0 0% 98%);
+  --foreground: hsl(0 0% 7%);
+  --muted: hsl(0 0% 96%);
+  --muted-foreground: hsl(0 0% 45%);
+  --border: hsl(0 0% 90%);
+  --primary: hsl(142 71% 45%);
+}}
+* {{ box-sizing: border-box; }}
+body {{
+  margin: 0; padding: 2rem 1.25rem; max-width: 60rem; margin-inline: auto;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--foreground); background: var(--background); line-height: 1.5;
+}}
+.brand {{
+  display: inline-flex; align-items: center; gap: 0.6rem; margin-bottom: 1.25rem;
+  text-decoration: none; color: var(--foreground);
+}}
+.brand svg {{ width: 1.25rem; height: 1.25rem; color: var(--primary); flex-shrink: 0; }}
+.brand-text {{
+  font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
+  font-size: 0.875rem; font-weight: 700; letter-spacing: 0.08em;
+}}
+.brand-accent {{ color: var(--primary); }}
+h1 {{
+  margin: 0 0 0.75rem; font-size: 1.375rem; font-weight: 650; letter-spacing: -0.02em;
+  color: var(--foreground); border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;
+}}
+h2 {{
+  margin: 1.75rem 0 0.5rem; font-size: 1.05rem; font-weight: 650; color: var(--foreground);
+}}
+.cover {{
+  background: #fff; border: 1px solid var(--border); border-radius: 0.5rem; padding: 1.25rem 1.5rem;
+}}
+.cover p {{ margin: 0.25rem 0; font-size: 0.875rem; }}
+.stats {{ display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; }}
+.stat {{
+  background: var(--muted); border: 1px solid var(--border); border-radius: 0.5rem;
+  padding: 0.75rem 1rem; min-width: 5.5rem; text-align: center;
+}}
+.stat .n {{ font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; }}
+.stat .l {{
+  font-size: 0.6875rem; color: var(--muted-foreground); text-transform: uppercase;
+  letter-spacing: 0.04em;
+}}
 .sev-critical {{ color: #dc2626; }} .sev-high {{ color: #ea580c; }}
 .sev-medium {{ color: #ca8a04; }} .sev-low {{ color: #2563eb; }} .sev-info {{ color: #64748b; }}
-table {{ width: 100%; border-collapse: collapse; margin-top: 10px; background: #fff; }}
-th {{ background: #0f766e; color: #fff; padding: 10px; text-align: left; font-size: 13px; }}
-td {{ padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-size: 14px; vertical-align: top; }}
-.badge {{ display: inline-block; padding: 2px 8px; border-radius: 4px;
-  font-size: 11px; font-weight: 600; color: #fff; }}
+table {{ width: 100%; border-collapse: collapse; margin-top: 0.5rem; background: #fff; }}
+th {{
+  background: var(--muted); color: var(--foreground); padding: 0.625rem 0.75rem;
+  text-align: left; font-size: 0.8125rem; font-weight: 650; border-bottom: 1px solid var(--border);
+}}
+td {{
+  padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); font-size: 0.875rem;
+  vertical-align: top;
+}}
+.badge {{
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 11px; font-weight: 600; color: #fff;
+}}
 .badge-critical {{ background: #dc2626; }}
 .badge-high {{ background: #ea580c; }}
 .badge-medium {{ background: #ca8a04; }}
 .badge-low {{ background: #2563eb; }}
 .badge-info {{ background: #64748b; }}
-.muted {{ color: #64748b; font-size: 13px; }}
-.next {{ background: #ecfdf5; border-left: 4px solid #0f766e; padding: 14px 16px; margin-top: 12px; }}
-.footer {{ margin-top: 40px; text-align: center; color: #94a3b8; font-size: 12px; }}
-code {{ font-size: 12px; background: #f1f5f9; padding: 1px 4px; border-radius: 3px; }}
+.muted {{ color: var(--muted-foreground); font-size: 13px; }}
+.next {{
+  background: hsl(142 40% 96%); border-left: 4px solid var(--primary);
+  padding: 0.875rem 1rem; margin-top: 0.75rem;
+}}
+.footer {{
+  margin-top: 2.5rem; text-align: center; color: var(--muted-foreground); font-size: 12px;
+  border-top: 1px solid var(--border); padding-top: 1rem;
+}}
+code {{ font-size: 12px; background: var(--muted); padding: 1px 4px; border-radius: 3px; }}
+@media print {{
+  body {{ padding: 0; max-width: none; }}
+  .cover {{ break-inside: avoid; }}
+}}
 </style></head><body>
+<a class="brand" href="https://sinexis.app">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+  aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
+</svg>
+<span class="brand-text">SINE<span class="brand-accent">XIS</span></span>
+</a>
 <header class="cover" id="cover">
 <h1>{html.escape(t(locale, "executive", "h1"))}</h1>
 <p><strong>{html.escape(t(locale, "executive", "label_target"))}</strong> {target}</p>
