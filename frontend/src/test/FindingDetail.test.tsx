@@ -17,6 +17,8 @@ function mockFinding(overrides: Partial<ScanFinding> = {}): ScanFinding {
     remediation: "Use parameterized queries",
     impact:
       "If left unfixed, attackers can read or modify database contents via SQL injection.",
+    attacker_benefit:
+      "A named SQL injection lets attackers read or change data using public techniques.",
     raw_data: { vector: "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" },
     found_at: "2024-01-01",
     ...overrides,
@@ -67,6 +69,25 @@ describe("FindingDetail", () => {
     render(<FindingDetail finding={mockFinding({ impact: null })} />);
     expect(
       screen.queryByText("Risk if not addressed")
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders attacker benefit section when present", () => {
+    render(<FindingDetail finding={mockFinding()} />);
+    expect(
+      screen.getByText("What an attacker gains from knowing this")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/named SQL injection/)
+    ).toBeInTheDocument();
+  });
+
+  it("does NOT render attacker benefit when null", () => {
+    render(
+      <FindingDetail finding={mockFinding({ attacker_benefit: null })} />
+    );
+    expect(
+      screen.queryByText("What an attacker gains from knowing this")
     ).not.toBeInTheDocument();
   });
 

@@ -92,6 +92,7 @@
   "remediationAvailable": "Suggested actions available",
   "findingDescription": "Description",
   "findingImpact": "Risk if not addressed",
+  "findingAttackerBenefit": "What an attacker gains from knowing this",
   "findingRemediation": "Suggested action",
   "rawData": "RAW DATA",
   "noRawData": "No raw data available for this finding.",

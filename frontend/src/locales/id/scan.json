@@ -92,6 +92,7 @@
   "remediationAvailable": "Saran aksi tersedia",
   "findingDescription": "Deskripsi",
   "findingImpact": "Risiko jika tidak ditindaklanjuti",
+  "findingAttackerBenefit": "Benefit bagi hacker jika tahu",
   "findingRemediation": "Saran aksi",
   "rawData": "DATA MENTAH",
   "noRawData": "Tidak ada data mentah untuk temuan ini.",

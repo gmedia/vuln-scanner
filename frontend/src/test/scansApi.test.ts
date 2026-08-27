@@ -172,6 +172,8 @@ describe("scans API", () => {
           cvss_score: 9.8,
           remediation: "Disable SSH",
           impact: "Exposed SSH can enable remote shell access.",
+          attacker_benefit:
+            "Open SSH is a known brute-force and key-guessing target.",
           raw_data: null,
           found_at: "2025-01-01T00:00:00Z",
         },

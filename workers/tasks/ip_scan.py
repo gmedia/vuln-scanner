@@ -224,6 +224,7 @@ def _save_findings(session: Any, job_id: str, findings: list[ScanFinding]) -> No
             cvss_score=f.get("cvss_score"),
             remediation=f.get("remediation"),
             impact=f.get("impact"),
+            attacker_benefit=f.get("attacker_benefit"),
             raw_data=f.get("raw_data"),
         )
         session.add(finding)
