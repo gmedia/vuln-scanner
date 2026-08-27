@@ -21,5 +21,20 @@
   "status": "Status",
   "save": "Simpan",
   "empty": "Belum ada halaman status.",
-  "disclaimer": "Pemeriksaan outside-in sebisanya. Bukan SLA."
+  "disclaimer": "Pemeriksaan outside-in sebisanya. Bukan SLA.",
+  "openPublic": "Buka halaman publik",
+  "statPublished": "Visibilitas",
+  "visibilityOn": "Terbit",
+  "visibilityOff": "Tidak terbit",
+  "statComponents": "Komponen",
+  "hostnameStatus": "Status DNS",
+  "components": "Komponen",
+  "noComponents": "Belum ada komponen. Petakan monitor Uptime.",
+  "remove": "Hapus",
+  "colActions": "Aksi",
+  "incidentTitle": "Judul insiden",
+  "noIncidents": "Belum ada insiden.",
+  "stateUp": "up",
+  "stateDown": "down",
+  "stateUnknown": "unknown"
 }
