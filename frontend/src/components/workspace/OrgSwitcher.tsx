@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Check, ChevronDown, Loader2, Users } from "lucide-react";
+import { Building2, Check, ChevronDown, Loader2, Mail, Users } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -128,6 +128,15 @@ function OrgSwitcher({ className, compact = false }: OrgSwitcherProps) {
         >
           <Users className="h-3.5 w-3.5" />
           {t("membersAndInvites")}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          data-testid="org-accept-invite-link"
+          onSelect={() => {
+            navigate("/settings/workspace#accept-invite");
+          }}
+        >
+          <Mail className="h-3.5 w-3.5" />
+          {t("acceptNav")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
