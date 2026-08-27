@@ -21,6 +21,10 @@ from app.models.guard import (
     wazuh_group_for_org,
 )
 from app.models.user import User
+from app.services.guard_apply import get_binding as apply_get_binding
+from app.services.guard_apply import sanitize_sync_error
+from app.services.guard_apply import sync_all_enabled as apply_sync_all_enabled
+from app.services.guard_apply import sync_org as apply_sync_org
 from app.services.organization import require_membership
 from app.services.wazuh_client import WazuhClient, get_wazuh_client
 
@@ -34,19 +38,6 @@ def hash_enroll_token(token: str) -> str:
 def generate_enroll_token() -> tuple[str, str]:
     raw = secrets.token_urlsafe(32)
     return raw, hash_enroll_token(raw)
-
-
-def _sanitize_sync_error(exc: BaseException) -> str:
-    msg = str(exc)[:400]
-    for secret in (
-        settings.wazuh_manager_password,
-        settings.wazuh_indexer_password,
-        settings.wazuh_manager_user,
-        settings.wazuh_indexer_user,
-    ):
-        if secret and secret in msg:
-            msg = msg.replace(secret, "[redacted]")
-    return msg
 
 
 class GuardService:
@@ -71,10 +62,7 @@ class GuardService:
         return organization_id
 
     async def get_binding(self, organization_id: UUID) -> GuardOrgBinding | None:
-        result = await self.db.execute(
-            select(GuardOrgBinding).where(GuardOrgBinding.organization_id == organization_id)
-        )
-        return result.scalar_one_or_none()
+        return await apply_get_binding(self.db, organization_id)
 
     async def status(self, user: User, organization_id: UUID | None) -> dict[str, object]:
         self._require_feature()
@@ -107,7 +95,7 @@ class GuardService:
             await self.client.ensure_group(group)
             sync_error = None
         except Exception as exc:
-            sync_error = _sanitize_sync_error(exc)
+            sync_error = sanitize_sync_error(exc)
         if binding is None:
             binding = GuardOrgBinding(
                 id=uuid.uuid4(),
@@ -245,7 +233,7 @@ class GuardService:
         except Exception as exc:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"Enroll proxy failed: {_sanitize_sync_error(exc)}",
+                detail=f"Enroll proxy failed: {sanitize_sync_error(exc)}",
             ) from exc
 
         row.used_at = now
@@ -277,95 +265,7 @@ class GuardService:
         }
 
     async def sync_org(self, organization_id: UUID) -> dict[str, object]:
-        binding = await self.get_binding(organization_id)
-        if binding is None or not binding.enabled:
-            return {"ok": False, "reason": "not_enabled"}
-        now = datetime.now(UTC)
-        try:
-            agents = await self.client.list_agents(binding.wazuh_group)
-            for info in agents:
-                existing = await self.db.execute(
-                    select(GuardAgent).where(
-                        GuardAgent.organization_id == organization_id,
-                        GuardAgent.wazuh_agent_id == info.agent_id,
-                    )
-                )
-                row = existing.scalar_one_or_none()
-                status_val = (
-                    info.status
-                    if info.status
-                    in (
-                        "active",
-                        "disconnected",
-                        "pending",
-                        "never_connected",
-                        "unknown",
-                    )
-                    else "unknown"
-                )
-                if row is None:
-                    self.db.add(
-                        GuardAgent(
-                            id=uuid.uuid4(),
-                            organization_id=organization_id,
-                            wazuh_agent_id=info.agent_id,
-                            name=info.name,
-                            status=status_val,
-                            ip=info.ip,
-                            version=info.version,
-                            last_keep_alive=info.last_keep_alive,
-                            synced_at=now,
-                        )
-                    )
-                else:
-                    row.name = info.name
-                    row.status = status_val
-                    row.ip = info.ip
-                    row.version = info.version
-                    row.last_keep_alive = info.last_keep_alive
-                    row.synced_at = now
-                    row.updated_at = now
-            binding.last_inventory_sync_at = now
-
-            alerts = await self.client.search_alerts(
-                group_name=binding.wazuh_group,
-                min_level=settings.guard_alert_min_level,
-                since=binding.last_alert_sync_at,
-                limit=200,
-            )
-            for a in alerts:
-                existing_a = await self.db.execute(
-                    select(GuardAlert).where(
-                        GuardAlert.organization_id == organization_id,
-                        GuardAlert.external_id == a.external_id,
-                    )
-                )
-                if existing_a.scalar_one_or_none() is not None:
-                    continue
-                self.db.add(
-                    GuardAlert(
-                        id=uuid.uuid4(),
-                        organization_id=organization_id,
-                        external_id=a.external_id,
-                        rule_id=a.rule_id,
-                        rule_level=a.rule_level,
-                        rule_description=(a.rule_description or "")[:512],
-                        agent_wazuh_id=a.agent_wazuh_id,
-                        agent_name=a.agent_name,
-                        occurred_at=a.occurred_at,
-                        synced_at=now,
-                    )
-                )
-            binding.last_alert_sync_at = now
-            binding.last_sync_error = None
-            binding.updated_at = now
-            await self.db.commit()
-            return {"ok": True, "agents": len(agents), "alerts": len(alerts)}
-        except Exception as exc:
-            binding.last_sync_error = _sanitize_sync_error(exc)
-            binding.updated_at = now
-            await self.db.commit()
-            return {"ok": False, "error": binding.last_sync_error}
+        return await apply_sync_org(self.db, organization_id, client=self.client)
 
     async def sync_for_user(self, user: User, organization_id: UUID | None) -> dict[str, object]:
         self._require_feature()
@@ -373,14 +273,4 @@ class GuardService:
         return await self.sync_org(org_id)
 
     async def sync_all_enabled(self) -> dict[str, Any]:
-        result = await self.db.execute(select(GuardOrgBinding).where(GuardOrgBinding.enabled.is_(True)))
-        bindings = list(result.scalars().all())
-        ok = 0
-        failed = 0
-        for b in bindings:
-            out = await self.sync_org(b.organization_id)
-            if out.get("ok"):
-                ok += 1
-            else:
-                failed += 1
-        return {"ok": ok, "failed": failed, "total": len(bindings)}
+        return await apply_sync_all_enabled(self.db, client=self.client)
