@@ -16,7 +16,8 @@ from app.models.user import User
 from app.schemas.uptime import normalize_http_target, normalize_tcp_target
 from app.services.auth import create_access_token, hash_password
 from app.services.organization import ensure_personal_org
-from app.services.uptime import UptimeService, purge_old_uptime_rows
+from app.services.uptime import UptimeService, enqueue_uptime_check
+from app.services.uptime_apply import purge_old_uptime_rows
 from app.services.uptime_probe import ProbeResult
 
 
@@ -315,3 +316,14 @@ async def test_purge_old_uptime_rows(db_session: AsyncSession, ctx: dict) -> Non
     assert remaining is not None
     gone = await db_session.get(UptimeSample, old_sample.id)
     assert gone is None
+
+
+def test_enqueue_logs_celery_error(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture) -> None:
+    from celery.exceptions import CeleryError
+
+    def _boom(*_a, **_k):
+        raise CeleryError("broker down")
+
+    monkeypatch.setattr("app.services.uptime._celery.send_task", _boom)
+    enqueue_uptime_check(uuid.uuid4())
+    assert "uptime enqueue failed" in caplog.text
