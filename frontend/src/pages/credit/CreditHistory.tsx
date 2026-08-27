@@ -250,7 +250,7 @@ function CreditHistory() {
               ))}
             </div>
           ) : !data || data.items.length === 0 ? (
-            <div className="flex min-h-[24rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center 2xl:min-h-[32rem]">
+            <div className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
               <History className="h-8 w-8 text-muted-foreground" />
               <p className="text-sm text-foreground">No transactions yet</p>
               <p className="text-xs text-muted-foreground">
@@ -258,7 +258,7 @@ function CreditHistory() {
               </p>
             </div>
           ) : filteredItems.length === 0 ? (
-            <div className="flex min-h-[24rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center 2xl:min-h-[32rem]">
+            <div className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
               <History className="h-8 w-8 text-muted-foreground" />
               <p className="text-sm text-foreground">
                 No matching transactions
