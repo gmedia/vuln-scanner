@@ -81,6 +81,21 @@ function formatWhen(iso: string | null): string {
   }
 }
 
+const AUTH_SESSION_DETAILS = new Set([
+  "Invalid or expired token",
+  "Missing Authorization header",
+  "Invalid Authorization header format. Expected: Bearer <token>",
+  "Invalid token type: access token required",
+]);
+
+function isAuthSessionError(err: unknown): boolean {
+  if (!err || typeof err !== "object" || !("response" in err)) return false;
+  const res = (err as ApiError).response;
+  if (res?.status === 401) return true;
+  const detail = res?.data?.detail;
+  return typeof detail === "string" && AUTH_SESSION_DETAILS.has(detail);
+}
+
 function apiDetail(err: unknown, fallback: string): string {
   if (err && typeof err === "object" && "response" in err) {
     const detail = (err as ApiError).response?.data?.detail;
@@ -314,7 +329,11 @@ export default function Guard() {
           {statusQ.isLoading ? (
             <Skeleton className="h-6 w-48" />
           ) : statusQ.isError ? (
-            <p className="text-destructive">{t("loadStatusFail")}</p>
+            <p className="text-destructive" data-testid="guard-status-error">
+              {isAuthSessionError(statusQ.error)
+                ? t("sessionExpired")
+                : t("loadStatusFail")}
+            </p>
           ) : (
             <>
               <div className="flex min-w-0 flex-wrap items-center gap-2">
