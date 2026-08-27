@@ -1,20 +1,19 @@
 from __future__ import annotations
 
+import logging
 import uuid
-from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from celery import Celery
 from celery.exceptions import CeleryError
 from fastapi import HTTPException
-from sqlalchemy import delete, func, select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models.organization import Organization
 from app.models.uptime import (
-    CONFIRM_FAILS,
     DEFAULT_INTERVAL_SECONDS,
     UPTIME_SKU_LIMITS,
     UptimeEvent,
@@ -24,7 +23,10 @@ from app.models.uptime import (
 from app.models.user import User
 from app.schemas.uptime import UptimeMonitorCreate, UptimeMonitorResponse, UptimeMonitorUpdate
 from app.services.organization import get_membership, require_membership, role_at_least
-from app.services.uptime_probe import ProbeResult, probe_http, probe_tcp, tls_warn_due
+from app.services.uptime_apply import apply_probe as persist_probe
+from app.services.uptime_probe import ProbeResult
+
+logger = logging.getLogger(__name__)
 
 
 def sku_uptime_limit(sku: str | None) -> int:
@@ -48,8 +50,10 @@ _celery.conf.update(
 
 
 def enqueue_uptime_check(monitor_id: UUID) -> None:
-    with suppress(CeleryError):
+    try:
         _celery.send_task("uptime.check", args=[str(monitor_id)], queue="uptime_check")
+    except CeleryError as exc:
+        logger.warning("uptime enqueue failed monitor_id=%s error=%s", monitor_id, exc)
 
 
 class UptimeService:
@@ -302,92 +306,4 @@ class UptimeService:
         return list(result.scalars().all())
 
     async def apply_probe(self, monitor: UptimeMonitor, result: ProbeResult) -> UptimeEvent | None:
-        now = datetime.now(UTC)
-        sample = UptimeSample(
-            id=uuid.uuid4(),
-            monitor_id=monitor.id,
-            checked_at=now,
-            ok=result.ok,
-            latency_ms=result.latency_ms,
-            status_code=result.status_code,
-            error=result.error,
-        )
-        self.db.add(sample)
-        monitor.last_checked_at = now
-        monitor.last_status_code = result.status_code
-        monitor.last_latency_ms = result.latency_ms
-        monitor.last_error = result.error
-        monitor.next_check_at = now + timedelta(seconds=monitor.interval_seconds)
-        prev = monitor.state
-        event: UptimeEvent | None = None
-        if result.ok:
-            monitor.consecutive_fails = 0
-            new_state = "up"
-            if prev != "up":
-                event = UptimeEvent(
-                    id=uuid.uuid4(),
-                    monitor_id=monitor.id,
-                    from_state=prev,
-                    to_state=new_state,
-                    at=now,
-                    notified=False,
-                    detail=None,
-                )
-                self.db.add(event)
-            monitor.state = new_state
-        else:
-            monitor.consecutive_fails += 1
-            if monitor.consecutive_fails >= CONFIRM_FAILS and prev != "down":
-                event = UptimeEvent(
-                    id=uuid.uuid4(),
-                    monitor_id=monitor.id,
-                    from_state=prev,
-                    to_state="down",
-                    at=now,
-                    notified=False,
-                    detail=result.error,
-                )
-                self.db.add(event)
-                monitor.state = "down"
-        if result.ok and tls_warn_due(monitor.last_tls_warn_at, result.tls_days_left):
-            warn = UptimeEvent(
-                id=uuid.uuid4(),
-                monitor_id=monitor.id,
-                from_state=monitor.state,
-                to_state="degraded",
-                at=now,
-                notified=False,
-                detail=f"TLS expires in {result.tls_days_left} days",
-            )
-            self.db.add(warn)
-            monitor.last_tls_warn_at = now
-            if monitor.state != "down":
-                monitor.state = "degraded"
-            if event is None:
-                event = warn
-        monitor.updated_at = now
-        await purge_old_uptime_rows(self.db, now=now)
-        await self.db.commit()
-        return event
-
-
-async def purge_old_uptime_rows(db: AsyncSession, *, now: datetime | None = None) -> dict[str, int]:
-    stamp = now or datetime.now(UTC)
-    samples = await db.execute(delete(UptimeSample).where(UptimeSample.checked_at < stamp - timedelta(days=7)))
-    events = await db.execute(delete(UptimeEvent).where(UptimeEvent.at < stamp - timedelta(days=90)))
-    return {
-        "samples": int(getattr(samples, "rowcount", 0) or 0),
-        "events": int(getattr(events, "rowcount", 0) or 0),
-    }
-
-
-def run_probe(monitor: UptimeMonitor) -> ProbeResult:
-    if monitor.check_type == "tcp":
-        return probe_tcp(monitor.target, monitor.timeout_seconds)
-    return probe_http(
-        monitor.target,
-        monitor.timeout_seconds,
-        monitor.expect_status,
-        monitor.keyword,
-        monitor.keyword_invert,
-    )
+        return await persist_probe(self.db, monitor, result)
