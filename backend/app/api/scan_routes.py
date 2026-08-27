@@ -79,19 +79,82 @@ SEVERITY_ICON_MAP = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low"
 
 PDF_TEMPLATE = (
     """<!DOCTYPE html>
-<html><head><meta charset="utf-8"><style>
-body {{ font-family: -apple-system, system-ui, sans-serif; background: #0a0a0a; color: #eee; padding: 40px; }}
-h1 {{ color: #22c55e; border-bottom: 2px solid #333; padding-bottom: 10px; }}
-h2 {{ color: #22c55e; margin-top: 30px; }}
-table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
-th {{ background: #1a1a1a; color: #22c55e; padding: 10px; text-align: left; }}
-td {{ padding: 8px 10px; border-bottom: 1px solid #333; }}
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vulnerability Scan Report</title>
+<style>
+:root {{
+  --background: hsl(0 0% 98%);
+  --foreground: hsl(0 0% 7%);
+  --muted: hsl(0 0% 96%);
+  --muted-foreground: hsl(0 0% 45%);
+  --border: hsl(0 0% 90%);
+  --primary: hsl(142 71% 45%);
+  --primary-foreground: hsl(0 0% 4%);
+}}
+* {{ box-sizing: border-box; }}
+body {{
+  margin: 0; padding: 2rem 1.25rem; max-width: 72rem; margin-inline: auto;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--foreground); background: var(--background); line-height: 1.5;
+}}
+.brand {{
+  display: inline-flex; align-items: center; gap: 0.6rem; margin-bottom: 1.25rem;
+  text-decoration: none; color: var(--foreground);
+}}
+.brand svg {{ width: 1.25rem; height: 1.25rem; color: var(--primary); flex-shrink: 0; }}
+.brand-text {{
+  font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
+  font-size: 0.875rem; font-weight: 700; letter-spacing: 0.08em;
+}}
+.brand-accent {{ color: var(--primary); }}
+.cover {{
+  background: #fff; border: 1px solid var(--border); border-radius: 0.5rem;
+  padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;
+}}
+h1 {{
+  margin: 0 0 0.75rem; font-size: 1.375rem; font-weight: 650; letter-spacing: -0.02em;
+  color: var(--foreground); border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;
+}}
+h2 {{
+  margin: 1.5rem 0 0.5rem; font-size: 1.05rem; font-weight: 650; color: var(--foreground);
+}}
+.meta p {{ margin: 0.25rem 0; color: var(--muted-foreground); font-size: 0.875rem; }}
+.meta strong {{ color: var(--foreground); font-weight: 600; }}
+.kpis {{
+  display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem;
+}}
+.kpi {{
+  background: var(--muted); border: 1px solid var(--border); border-radius: 0.5rem;
+  padding: 0.75rem 1rem; min-width: 5.5rem; text-align: center;
+}}
+.kpi .n {{ font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; }}
+.kpi .l {{
+  font-size: 0.6875rem; color: var(--muted-foreground); text-transform: uppercase;
+  letter-spacing: 0.04em;
+}}
+.kpi .n.sev-critical {{ color: #dc2626; }}
+.kpi .n.sev-high {{ color: #f97316; }}
+.kpi .n.sev-medium {{ color: #ca8a04; }}
+.kpi .n.sev-low {{ color: #3b82f6; }}
+.kpi .n.sev-info {{ color: #6b7280; }}
+table {{ width: 100%; border-collapse: collapse; margin-top: 0.5rem; background: #fff; }}
+th {{
+  background: var(--muted); color: var(--foreground); padding: 0.625rem 0.75rem;
+  text-align: left; font-size: 0.75rem; font-weight: 650; border-bottom: 1px solid var(--border);
+}}
+td {{
+  padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); font-size: 0.875rem;
+  vertical-align: top;
+}}
 .sev-critical {{ border-left: 4px solid #dc2626; }}
 .sev-high {{ border-left: 4px solid #f97316; }}
 .sev-medium {{ border-left: 4px solid #eab308; }}
 .sev-low {{ border-left: 4px solid #3b82f6; }}
 .sev-info {{ border-left: 4px solid #6b7280; }}
-.badge {{ display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }}
+.badge {{
+  display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;
+}}
 .badge-critical {{ background: #dc2626; color: #fff; }}
 .badge-high {{ background: #f97316; color: #fff; }}
 .badge-medium {{ background: #eab308; color: #000; }}
@@ -99,10 +162,24 @@ td {{ padding: 8px 10px; border-bottom: 1px solid #333; }}
 .badge-info {{ background: #6b7280; color: #fff; }}
 .finding-row {{ margin: 5px 0; }}
 .findings-array {{ margin: 20px 0; }}
-p {{ margin: 5px 0; color: #aaa; }}
-.footer {{ margin-top: 40px; text-align: center; color: #555; font-size: 12px; }}
+.footer {{
+  margin-top: 2.5rem; text-align: center; color: var(--muted-foreground); font-size: 12px;
+  border-top: 1px solid var(--border); padding-top: 1rem;
+}}
+@media print {{
+  body {{ padding: 0; max-width: none; }}
+  .cover {{ break-inside: avoid; }}
+}}
 </style></head><body>
+<a class="brand" href="https://sinexis.app">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+  aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
+</svg>
+<span class="brand-text">SINE<span class="brand-accent">XIS</span></span>
+</a>
+<div class="cover">
 <h1>Vulnerability Scan Report</h1>
+<div class="meta">
 <p><strong>Target:</strong> {target}</p>
 <p><strong>Scan Type:</strong> {scan_type}</p>
 <p><strong>Status:</strong> {status}</p>
@@ -113,6 +190,16 @@ p {{ margin: 5px 0; color: #aaa; }}
         "({critical} critical, {high} high, {medium} medium, {low} low, {info} info)</p>\n"
     )
     + """<p><strong>Exported:</strong> {exported_at}</p>
+</div>
+<div class="kpis">
+<div class="kpi"><div class="n">{total_findings}</div><div class="l">Total</div></div>
+<div class="kpi"><div class="n sev-critical">{critical}</div><div class="l">Critical</div></div>
+<div class="kpi"><div class="n sev-high">{high}</div><div class="l">High</div></div>
+<div class="kpi"><div class="n sev-medium">{medium}</div><div class="l">Medium</div></div>
+<div class="kpi"><div class="n sev-low">{low}</div><div class="l">Low</div></div>
+<div class="kpi"><div class="n sev-info">{info}</div><div class="l">Info</div></div>
+</div>
+</div>
 
 <h2>Findings</h2>
 <table>
