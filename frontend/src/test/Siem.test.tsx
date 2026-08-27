@@ -124,6 +124,7 @@ describe("SIEM page", () => {
     expect(screen.queryByText(/Open Wazuh dashboard/i)).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "SIEM" })).toBeInTheDocument();
     expect(screen.getAllByText("L10 · High").length).toBeGreaterThan(0);
+    expect(screen.getByTestId("siem-search-filters")).toBeInTheDocument();
     expect(screen.getByLabelText("Search box")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Apply" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Search events" })).toBeInTheDocument();

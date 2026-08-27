@@ -346,8 +346,11 @@ export default function Siem() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-12 items-end gap-3">
-                <div className="col-span-12 sm:col-span-6 xl:col-span-2">
+              <div
+                data-testid="siem-search-filters"
+                className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+              >
+                <div className="flex min-w-0 flex-col gap-1.5">
                   <Label htmlFor="siem-since">{t("sinceLabel")}</Label>
                   <DateTimePicker
                     id="siem-since"
@@ -357,7 +360,7 @@ export default function Siem() {
                     aria-label={t("since")}
                   />
                 </div>
-                <div className="col-span-12 sm:col-span-6 xl:col-span-2">
+                <div className="flex min-w-0 flex-col gap-1.5">
                   <Label htmlFor="siem-until">{t("untilLabel")}</Label>
                   <DateTimePicker
                     id="siem-until"
@@ -367,7 +370,7 @@ export default function Siem() {
                     aria-label={t("until")}
                   />
                 </div>
-                <div className="col-span-6 sm:col-span-4 xl:col-span-1">
+                <div className="flex min-w-0 flex-col gap-1.5">
                   <Label htmlFor="siem-level">{t("minLevel")}</Label>
                   <Input
                     id="siem-level"
@@ -377,9 +380,10 @@ export default function Siem() {
                     placeholder={String(statusQ.data?.search_min_level ?? 7)}
                     value={minLevel}
                     onChange={(e) => setMinLevel(e.target.value)}
+                    className="h-10 min-h-10"
                   />
                 </div>
-                <div className="col-span-6 sm:col-span-4 xl:col-span-2">
+                <div className="flex min-w-0 flex-col gap-1.5">
                   <Label htmlFor="siem-agent">{t("agent")}</Label>
                   <Select
                     value={agentId || "__all__"}
@@ -387,7 +391,11 @@ export default function Siem() {
                       setAgentId(value === "__all__" ? "" : value)
                     }
                   >
-                    <SelectTrigger id="siem-agent" aria-label={t("agent")}>
+                    <SelectTrigger
+                      id="siem-agent"
+                      aria-label={t("agent")}
+                      className="h-10 min-h-10"
+                    >
                       <SelectValue placeholder={t("allAgents")} />
                     </SelectTrigger>
                     <SelectContent>
@@ -400,7 +408,7 @@ export default function Siem() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="col-span-12 sm:col-span-8 xl:col-span-3">
+                <div className="flex min-w-0 flex-col gap-1.5">
                   <Label htmlFor="siem-q">{t("query")}</Label>
                   <Input
                     id="siem-q"
@@ -408,11 +416,12 @@ export default function Siem() {
                     maxLength={128}
                     onChange={(e) => setQ(e.target.value)}
                     placeholder={t("queryPlaceholder")}
+                    className="h-10 min-h-10"
                   />
                 </div>
-                <div className="col-span-12 sm:col-span-4 xl:col-span-2">
+                <div className="flex min-w-0 flex-col justify-end gap-1.5">
                   <Button
-                    className="w-auto min-w-[8rem]"
+                    className="h-10 min-h-10 w-full"
                     onClick={() => {
                       setEventPage(0);
                       setApplied({
