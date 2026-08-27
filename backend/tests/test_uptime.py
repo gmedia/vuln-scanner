@@ -220,13 +220,15 @@ async def test_keyword_case_insensitive(monkeypatch: pytest.MonkeyPatch) -> None
         def __exit__(self, *a):
             return False
 
-        def get(self, _url):
+        def request(self, _method, _url, content=None):
             return _Resp()
 
     monkeypatch.setattr(probe_mod.httpx, "Client", _Client)
     monkeypatch.setattr(probe_mod, "resolve_public", lambda host, **k: "1.1.1.1")
     r = probe_mod.probe_http("https://example.com/", 5, None, "hello world", False)
     assert r.ok is True
+    inverted = probe_mod.probe_http("https://example.com/", 5, None, "hello world", True)
+    assert inverted.ok is False
 
 
 @pytest.mark.asyncio
@@ -327,3 +329,50 @@ def test_enqueue_logs_celery_error(monkeypatch: pytest.MonkeyPatch, caplog: pyte
     monkeypatch.setattr("app.services.uptime._celery.send_task", _boom)
     enqueue_uptime_check(uuid.uuid4())
     assert "uptime enqueue failed" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_ping_disabled_returns_501(db_session: AsyncSession, ctx: dict) -> None:
+    _bind_db(db_session)
+    owner, org = ctx["owner"], ctx["org"]
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        res = await client.post(
+            "/api/uptime/monitors",
+            headers=_auth(owner, org.id),
+            json={"name": "icmp", "check_type": "ping", "target": "example.com"},
+        )
+        assert res.status_code == 501
+
+
+@pytest.mark.asyncio
+async def test_heartbeat_create_and_ingest(db_session: AsyncSession, ctx: dict) -> None:
+    _bind_db(db_session)
+    owner, org = ctx["owner"], ctx["org"]
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        created = await client.post(
+            "/api/uptime/monitors",
+            headers=_auth(owner, org.id),
+            json={"name": "cron", "check_type": "heartbeat", "target": ""},
+        )
+        assert created.status_code == 201, created.text
+        body = created.json()
+        token = body["heartbeat_token"]
+        assert token
+        assert body["heartbeat_url"]
+        assert "heartbeat_token_hash" not in body
+        ping = await client.post(f"/api/uptime/heartbeat/{token}")
+        assert ping.status_code == 204
+        listed = await client.get("/api/uptime/monitors", headers=_auth(owner, org.id))
+        row = next(m for m in listed.json() if m["id"] == body["id"])
+        assert row["last_heartbeat_at"] is not None
+        assert row.get("heartbeat_token") in (None, "")
+
+
+def test_probe_heartbeat_stale() -> None:
+    from app.services.uptime_probe import probe_heartbeat
+
+    assert probe_heartbeat(None, 60).ok is False
+    assert probe_heartbeat(datetime.now(UTC), 60).ok is True
+    assert probe_heartbeat(datetime.now(UTC) - timedelta(minutes=10), 60).ok is False

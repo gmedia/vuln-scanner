@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -103,3 +103,19 @@ async def list_events(
 ) -> list[UptimeEventResponse]:
     rows = await UptimeService(db).list_events(current_user, get_active_org_id(request), monitor_id)
     return [UptimeEventResponse.model_validate(r) for r in rows]
+
+
+@router.post("/monitors/{monitor_id}/rotate-token", response_model=UptimeMonitorResponse)
+async def rotate_heartbeat_token(
+    request: Request,
+    monitor_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> UptimeMonitorResponse:
+    return await UptimeService(db).rotate_heartbeat(current_user, get_active_org_id(request), monitor_id)
+
+
+@router.post("/heartbeat/{token}", status_code=204)
+async def ingest_heartbeat(token: str, db: AsyncSession = Depends(get_db)) -> Response:
+    await UptimeService(db).ingest_heartbeat(token)
+    return Response(status_code=204)
