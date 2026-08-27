@@ -44,7 +44,7 @@ function DatePicker({
           disabled={disabled}
           aria-label={ariaLabel}
           className={cn(
-            "h-10 w-full justify-start text-left font-normal",
+            "h-10 min-h-10 w-full justify-start border border-border bg-input px-3 text-left font-normal shadow-none hover:bg-input",
             !selected && "text-muted-foreground",
             className,
           )}
