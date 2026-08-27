@@ -25,14 +25,6 @@ import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/Table";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -419,37 +411,24 @@ function WorkspaceSettings() {
             <p className="text-sm text-muted-foreground">{t("noMembers")}</p>
           )}
           {membersQuery.data && membersQuery.data.length > 0 && (
-            <div className="overflow-x-auto">
-            <Table className="table-fixed text-sm" data-testid="members-list">
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-[10px] uppercase tracking-wider">
-                    {t("colEmail")}
-                  </TableHead>
-                  <TableHead className="w-[28%] text-right text-[10px] uppercase tracking-wider">
-                    {t("colRole")}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {membersQuery.data.map((m) => (
-                  <TableRow key={m.user_id}>
-                    <TableCell className="truncate text-foreground">
-                      {m.email}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Badge
-                        variant={roleBadgeVariant(m.role)}
-                        className="text-[10px] uppercase"
-                      >
-                        {m.role}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            </div>
+            <ul className="space-y-2" data-testid="members-list">
+              {membersQuery.data.map((m) => (
+                <li
+                  key={m.user_id}
+                  className="flex flex-col gap-2 rounded-lg border border-border px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:border-0 sm:px-0 sm:py-1"
+                >
+                  <p className="min-w-0 break-all text-sm text-foreground">
+                    {m.email}
+                  </p>
+                  <Badge
+                    variant={roleBadgeVariant(m.role)}
+                    className="w-fit text-[10px] uppercase"
+                  >
+                    {m.role}
+                  </Badge>
+                </li>
+              ))}
+            </ul>
           )}
         </CardContent>
       </Card>
@@ -471,7 +450,7 @@ function WorkspaceSettings() {
               )}
               {invitesQuery.data && invitesQuery.data.length === 0 && (
                 <div
-                  className="flex min-h-[24rem] flex-col items-center justify-center gap-1 rounded-xl border border-border bg-muted/40 px-6 py-10 text-center 2xl:min-h-[32rem]"
+                  className="flex min-h-[12rem] flex-col items-center justify-center gap-1 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center md:min-h-[24rem] 2xl:min-h-[32rem]"
                   data-testid="workspace-invites-empty"
                 >
                   <p className="text-sm font-medium text-foreground">
@@ -483,30 +462,17 @@ function WorkspaceSettings() {
                 </div>
               )}
               {invitesQuery.data && invitesQuery.data.length > 0 && (
-                <div className="overflow-x-auto">
-                <Table className="table-fixed text-sm" data-testid="invites-list">
-                  <TableHeader>
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className="text-[10px] uppercase tracking-wider">
-                        {t("colEmail")}
-                      </TableHead>
-                      <TableHead className="text-[10px] uppercase tracking-wider">
-                        {t("colRole")}
-                      </TableHead>
-                      <TableHead className="w-[1%] text-right text-[10px] uppercase tracking-wider">
-                        {t("colAction")}
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {invitesQuery.data.map((inv) => (
-                      <TableRow key={inv.id}>
-                        <TableCell className="min-w-0">
-                          <p className="truncate text-foreground">
-                            {inv.email}
-                          </p>
-                        </TableCell>
-                        <TableCell className="font-mono text-[10px] text-muted-foreground">
+                <ul className="space-y-3" data-testid="invites-list">
+                  {invitesQuery.data.map((inv) => (
+                    <li
+                      key={inv.id}
+                      className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="min-w-0 space-y-1">
+                        <p className="break-all text-sm text-foreground">
+                          {inv.email}
+                        </p>
+                        <p className="font-mono text-[10px] text-muted-foreground">
                           {inv.role}
                           {inv.expires_at
                             ? ` · ${t("expires", {
@@ -517,26 +483,23 @@ function WorkspaceSettings() {
                                 ),
                               })}`
                             : ""}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            data-testid={`revoke-invite-${inv.id}`}
-                            className="min-h-11 text-destructive hover:bg-destructive/10"
-                            disabled={revokeMut.isPending}
-                            onClick={() => revokeMut.mutate(inv.id)}
-                          >
-                            <Trash2 className="mr-1 h-3.5 w-3.5" />
-                            {t("revoke")}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                </div>
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        data-testid={`revoke-invite-${inv.id}`}
+                        className="w-full min-h-11 shrink-0 text-destructive hover:bg-destructive/10 sm:w-auto"
+                        disabled={revokeMut.isPending}
+                        onClick={() => revokeMut.mutate(inv.id)}
+                      >
+                        <Trash2 className="mr-1 h-3.5 w-3.5" />
+                        {t("revoke")}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
               )}
             </CardContent>
           </Card>
