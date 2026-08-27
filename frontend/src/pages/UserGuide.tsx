@@ -15,6 +15,9 @@ import {
   LogIn,
   ListOrdered,
   ChevronDown,
+  Server,
+  Activity,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -52,10 +55,13 @@ const TOC_IDS = [
   "scan-mobile",
   "hasil",
   "jadwal",
+  "aset",
   "workspace",
   "kredit",
   "guard",
   "siem",
+  "uptime",
+  "status-page",
   "tips",
 ] as const;
 
@@ -598,6 +604,39 @@ function UserGuide() {
 
           <Card>
             <CardContent className="space-y-3 pt-6">
+              <SectionHeading id="aset" icon={Server} title={t("hAset")} />
+              <p className="text-sm text-muted-foreground">{t("aIntro")}</p>
+              <Steps>
+                <li>
+                  <Trans
+                    i18nKey="a1"
+                    ns="guide"
+                    components={{
+                      ...transUi,
+                      as: (
+                        <Link
+                          to="/assets"
+                          className="text-primary hover:underline"
+                        />
+                      ),
+                    }}
+                  />
+                </li>
+                <li>
+                  <Trans i18nKey="a2" ns="guide" components={transUi} />
+                </li>
+                <li>
+                  <Trans i18nKey="a3" ns="guide" components={transUi} />
+                </li>
+                <li>
+                  <Trans i18nKey="a4" ns="guide" components={transUi} />
+                </li>
+              </Steps>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="space-y-3 pt-6">
               <SectionHeading
                 id="workspace"
                 icon={Users}
@@ -808,6 +847,79 @@ function UserGuide() {
                 </li>
                 <li>
                   <Trans i18nKey="s4" ns="guide" components={transUi} />
+                </li>
+              </Steps>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="space-y-3 pt-6">
+              <SectionHeading id="uptime" icon={Activity} title={t("hUptime")} />
+              <p className="text-sm text-muted-foreground">
+                <Trans i18nKey="uIntro" ns="guide" components={transUi} />
+              </p>
+              <Steps>
+                <li>
+                  <Trans
+                    i18nKey="u1"
+                    ns="guide"
+                    components={{
+                      ...transUi,
+                      up: (
+                        <Link
+                          to="/uptime"
+                          className="text-primary hover:underline"
+                        />
+                      ),
+                    }}
+                  />
+                </li>
+                <li>
+                  <Trans i18nKey="u2" ns="guide" components={transUi} />
+                </li>
+                <li>
+                  <Trans i18nKey="u3" ns="guide" components={transUi} />
+                </li>
+                <li>{t("u4")}</li>
+              </Steps>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="space-y-3 pt-6">
+              <SectionHeading
+                id="status-page"
+                icon={FileText}
+                title={t("hStatus")}
+              />
+              <p className="text-sm text-muted-foreground">
+                <Trans i18nKey="spIntro" ns="guide" components={transUi} />
+              </p>
+              <Steps>
+                <li>{t("sp1")}</li>
+                <li>
+                  <Trans
+                    i18nKey="sp2"
+                    ns="guide"
+                    components={{
+                      ...transUi,
+                      sp: (
+                        <Link
+                          to="/uptime/status-page"
+                          className="text-primary hover:underline"
+                        />
+                      ),
+                    }}
+                  />
+                </li>
+                <li>
+                  <Trans i18nKey="sp3" ns="guide" components={transUi} />
+                </li>
+                <li>
+                  <Trans i18nKey="sp4" ns="guide" components={transUi} />
+                </li>
+                <li>
+                  <Trans i18nKey="sp5" ns="guide" components={transUi} />
                 </li>
               </Steps>
             </CardContent>

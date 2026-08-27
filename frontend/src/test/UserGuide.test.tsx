@@ -47,6 +47,11 @@ describe("UserGuide", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
+        name: "Assets — named scan targets",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
         name: "Workspace & invites",
       }),
     ).toBeInTheDocument();
@@ -64,6 +69,16 @@ describe("UserGuide", () => {
     expect(
       screen.getByRole("heading", {
         name: "SIEM — search events & cases",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: "Uptime — HTTP/TCP probes",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: "Status page — public comms",
       }),
     ).toBeInTheDocument();
     expect(
@@ -106,6 +121,21 @@ describe("UserGuide", () => {
       .getAllByRole("link")
       .filter((a) => a.getAttribute("href") === "/schedules");
     expect(scheduleLinks.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole("link", { name: "Assets" })).toHaveAttribute(
+      "href",
+      "/assets",
+    );
+    expect(screen.getByRole("link", { name: "Uptime" })).toHaveAttribute(
+      "href",
+      "/uptime",
+    );
+    expect(screen.getByRole("link", { name: "Status page" })).toHaveAttribute(
+      "href",
+      "/uptime/status-page",
+    );
+    expect(screen.getByText("Add monitor")).toBeInTheDocument();
+    expect(screen.getByText("Create page")).toBeInTheDocument();
+    expect(screen.getByText("Add asset")).toBeInTheDocument();
     const tocNavs = screen.getAllByRole("navigation", {
       name: "Guide table of contents",
     });
