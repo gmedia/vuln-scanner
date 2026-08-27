@@ -1,6 +1,6 @@
 # Spec: Uptime Monitor v1 (P8 — external probe)
 
-**Status:** **S1–S5 + v1 gaps + retention on `main`** (#397–#401) — Q1–Q8 locked (include seats, 60s, RFC1918 off unless `UPTIME_ALLOW_PRIVATE`, HTTP+TCP, email only, no status page, flag on, epic P8). Purge 7d/90d, beat `uptime.purge`, `worker_uptime` on REMOTE_DATA CI deploy.
+**Status:** **S1–S5 + v1 gaps + retention on `main`** (#397–#401) — Q1–Q8 locked (include seats, 60s, RFC1918 off unless `UPTIME_ALLOW_PRIVATE`, HTTP+TCP, email only, no status page, flag on, epic P8). Purge 7d/90d, beat `uptime.purge`, `worker_uptime` on REMOTE_DATA CI deploy. **Check types beyond GET+TCP:** draft [`uptime-v2-check-types.md`](uptime-v2-check-types.md) — do not implement until that spec is named.
 **Goal:** sellable **external availability** checks on the same colo/VPS/domain already on Scan attach — “is the site/port up?” between weekly scans.
 **Epic:** **P8** (new). Does **not** replace P1 Scan, P3 Assets, P5 Guard, or P7 SIEM.
 **Depends:** P2 Workspace (JWT `org_id`, membership) · P3 `scan_assets` (optional FK) · existing SMTP (`app.services.email`) · Celery beat pattern (`schedules.run_due`).
