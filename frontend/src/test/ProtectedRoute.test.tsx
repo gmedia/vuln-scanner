@@ -16,8 +16,11 @@ vi.mock("@/store/authStore", () => ({
 }));
 
 vi.mock("react-router-dom", () => ({
-  Navigate: ({ to }: { to: string }) => <div data-testid="navigate" data-to={to} />,
+  Navigate: ({ to }: { to: string }) => (
+    <div data-testid="navigate" data-to={to} />
+  ),
   Outlet: () => <div data-testid="outlet">Outlet content</div>,
+  useLocation: () => ({ search: "", pathname: "/settings/workspace" }),
 }));
 
 vi.mock("lucide-react", () => ({

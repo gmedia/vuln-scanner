@@ -54,6 +54,7 @@ class MemberResponse(BaseModel):
     email: str | None = None
     role: str
     created_at: datetime
+    organization_id: uuid.UUID | None = None
 
 
 class MemberRoleUpdate(BaseModel):

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, Loader2, CheckCircle, AlertTriangle } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { Input } from "@/components/ui/Input";
@@ -10,9 +10,11 @@ import AuthLayout, {
 } from "@/components/layout/AuthLayout";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { useTranslation } from "react-i18next";
+import { captureInviteFromSearch, postAuthPath } from "@/lib/inviteToken";
 
 function Register() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t } = useTranslation("auth");
   const { t: tc } = useTranslation("common");
   const { register, resendVerification, error, isAuthenticated, clearError } =
@@ -39,8 +41,12 @@ function Register() {
   }, []);
 
   useEffect(() => {
+    captureInviteFromSearch(searchParams.toString());
+  }, [searchParams]);
+
+  useEffect(() => {
     if (isAuthenticated) {
-      navigate("/dashboard");
+      navigate(postAuthPath());
     }
   }, [isAuthenticated, navigate]);
 
@@ -264,7 +270,14 @@ function Register() {
           </form>
           <p className="mt-4 text-center text-sm text-foreground/80">
             {t("alreadyHaveAccount")}{" "}
-            <Link to="/login" className={AUTH_SECONDARY_LINK}>
+            <Link
+              to={
+                searchParams.get("invite")
+                  ? `/login?invite=${encodeURIComponent(searchParams.get("invite")!)}`
+                  : "/login"
+              }
+              className={AUTH_SECONDARY_LINK}
+            >
               {t("signInCta")}
             </Link>
           </p>

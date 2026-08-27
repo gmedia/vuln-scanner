@@ -1,10 +1,12 @@
 import { useEffect } from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { captureInviteFromSearch } from "@/lib/inviteToken";
 
 function ProtectedRoute() {
   const { isLoading, isAuthenticated, initialize } = useAuthStore();
+  const location = useLocation();
 
   useEffect(() => {
     initialize();
@@ -19,7 +21,9 @@ function ProtectedRoute() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    const token = captureInviteFromSearch(location.search);
+    const to = token ? `/login?invite=${encodeURIComponent(token)}` : "/login";
+    return <Navigate to={to} replace />;
   }
 
   return <Outlet />;

@@ -43,5 +43,9 @@
   "revokeFail": "Gagal mencabut undangan",
   "expires": "exp {{date}}",
   "onlyAdminsInvite": "Hanya owner/admin yang dapat mengundang anggota.",
-  "membersAndInvites": "Anggota & undangan"
+  "membersAndInvites": "Anggota & undangan",
+  "inviteLinkHint": "Bagikan tautan ini ke undangan. Mereka harus masuk dengan email yang sama.",
+  "copyInviteLink": "Salin tautan undangan",
+  "inviteLinkCopied": "Tautan undangan disalin",
+  "inviteLinkCopyFail": "Gagal menyalin tautan"
 }

@@ -36,6 +36,7 @@ export interface OrgInvite {
   created_at?: string;
   expires_at?: string | null;
   invited_by?: string | null;
+  token?: string | null;
 }
 
 export interface CreateOrgRequest {

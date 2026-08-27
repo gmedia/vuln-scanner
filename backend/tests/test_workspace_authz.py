@@ -293,3 +293,42 @@ async def test_list_orgs_and_switch(db_session, workspace):
             assert data["access_token"]
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_invite_create_returns_token_and_accept_sets_org(db_session, workspace):
+    from app.database import get_db
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            org_id = workspace["org"].id
+            owner = workspace["owner"]
+            invitee = workspace["outsider"]
+
+            create_r = await client.post(
+                f"/api/orgs/{org_id}/invites",
+                headers=_auth_header(owner, org_id),
+                json={"email": invitee.email, "role": "member"},
+            )
+            assert create_r.status_code == 201
+            body = create_r.json()
+            assert body["token"]
+            assert body["email"] == invitee.email
+
+            accept_r = await client.post(
+                "/api/invites/accept",
+                headers=_auth_header(invitee, invitee.last_active_organization_id),
+                json={"token": body["token"]},
+            )
+            assert accept_r.status_code == 200
+            accepted = accept_r.json()
+            assert accepted["organization_id"] == str(org_id)
+            assert accepted["role"] == "member"
+            assert accepted["user_id"] == str(invitee.id)
+    finally:
+        app.dependency_overrides.clear()
