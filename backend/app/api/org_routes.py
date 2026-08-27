@@ -205,4 +205,5 @@ async def accept_invite(
         email=current_user.email,
         role=m.role,
         created_at=m.created_at,
+        organization_id=m.organization_id,
     )
