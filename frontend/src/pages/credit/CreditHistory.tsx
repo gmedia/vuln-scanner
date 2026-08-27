@@ -159,9 +159,9 @@ function CreditHistory() {
 
       <div
         data-testid="credit-history-filters"
-        className="grid grid-cols-2 gap-3 rounded-md border border-border bg-card p-3 sm:flex sm:flex-row sm:flex-wrap sm:items-end sm:p-4"
+        className="grid grid-cols-1 gap-3 rounded-md border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4"
       >
-        <div className="flex min-w-[140px] flex-1 flex-col gap-1.5">
+        <div className="flex min-w-0 flex-col gap-1.5">
           <Label htmlFor="credit-type-filter">Type</Label>
           <Select
             value={typeFilter}
@@ -170,7 +170,11 @@ function CreditHistory() {
               resetPage();
             }}
           >
-            <SelectTrigger id="credit-type-filter" aria-label="Type">
+            <SelectTrigger
+              id="credit-type-filter"
+              aria-label="Type"
+              className="h-10 min-h-10"
+            >
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
@@ -181,7 +185,7 @@ function CreditHistory() {
             </SelectContent>
           </Select>
         </div>
-        <div className="flex min-w-[140px] flex-1 flex-col gap-1.5">
+        <div className="flex min-w-0 flex-col gap-1.5">
           <Label htmlFor="credit-date-from">From</Label>
           <DatePicker
             id="credit-date-from"
@@ -194,7 +198,7 @@ function CreditHistory() {
             aria-label="From"
           />
         </div>
-        <div className="flex min-w-[140px] flex-1 flex-col gap-1.5">
+        <div className="flex min-w-0 flex-col gap-1.5">
           <Label htmlFor="credit-date-to">To</Label>
           <DatePicker
             id="credit-date-to"
@@ -207,7 +211,7 @@ function CreditHistory() {
             aria-label="To"
           />
         </div>
-        <div className="col-span-2 flex min-w-[180px] flex-[2] flex-col gap-1.5">
+        <div className="flex min-w-0 flex-col gap-1.5">
           <Label htmlFor="credit-search">Search</Label>
           <Input
             id="credit-search"
@@ -218,10 +222,10 @@ function CreditHistory() {
               setSearch(e.target.value);
               resetPage();
             }}
-            className="h-10"
+            className="h-10 min-h-10"
           />
         </div>
-        <p className="col-span-2 w-full text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-4">
           Filters apply to loaded rows on this page
           {hasServerData && filtersActive
             ? ` · Showing ${filteredItems.length} of ${data?.items.length ?? 0}`
