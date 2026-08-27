@@ -113,6 +113,7 @@ class TestScanFindingResponseAllOptionalNone:
             cvss_score=None,
             remediation=None,
             impact=None,
+            attacker_benefit=None,
             raw_data=None,
             found_at=now,
         )
@@ -126,5 +127,6 @@ class TestScanFindingResponseAllOptionalNone:
         assert finding.cvss_score is None
         assert finding.remediation is None
         assert finding.impact is None
+        assert finding.attacker_benefit is None
         assert finding.raw_data is None
         assert finding.found_at == now
