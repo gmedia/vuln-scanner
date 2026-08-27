@@ -140,6 +140,8 @@ services:
       SIEM_MAX_PAGE_SIZE: ${SIEM_MAX_PAGE_SIZE:-50}
       UPTIME_ENABLED: ${UPTIME_ENABLED:-true}
       UPTIME_ALLOW_PRIVATE: ${UPTIME_ALLOW_PRIVATE:-false}
+      STATUS_PAGE_ENABLED: ${STATUS_PAGE_ENABLED:-true}
+      STATUS_PAGE_CNAME_TARGET: ${STATUS_PAGE_CNAME_TARGET:-status-edge.sinexis.app}
     volumes:
       - scan_data:/tmp/scans
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
