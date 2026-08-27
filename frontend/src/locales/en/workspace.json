@@ -43,5 +43,9 @@
   "revokeFail": "Could not revoke invite",
   "expires": "exp {{date}}",
   "onlyAdminsInvite": "Only owners/admins can invite members.",
-  "membersAndInvites": "Members & invites"
+  "membersAndInvites": "Members & invites",
+  "inviteLinkHint": "Share this link with the invitee. They must sign in with the same email.",
+  "copyInviteLink": "Copy invite link",
+  "inviteLinkCopied": "Invite link copied",
+  "inviteLinkCopyFail": "Could not copy link"
 }

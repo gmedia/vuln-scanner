@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -45,6 +45,12 @@ import {
 import type { ApiError } from "@/lib/utils";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import {
+  captureInviteFromSearch,
+  clearInviteToken,
+  publicInviteUrl,
+  readInviteToken,
+} from "@/lib/inviteToken";
 
 function apiDetail(err: unknown, fallback: string): string {
   if (err && typeof err === "object" && "response" in err) {
@@ -67,7 +73,15 @@ function WorkspaceSettings() {
   const { t, i18n } = useTranslation("workspace");
   const qc = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
-  const inviteToken = searchParams.get("invite") ?? searchParams.get("token");
+  const inviteFromUrl = searchParams.get("invite") ?? searchParams.get("token");
+  const [inviteToken, setInviteToken] = useState<string | null>(
+    () => inviteFromUrl || readInviteToken(),
+  );
+
+  useEffect(() => {
+    const captured = captureInviteFromSearch(searchParams.toString());
+    if (captured) setInviteToken(captured);
+  }, [searchParams]);
 
   const organizations = useAuthStore((s) => s.organizations);
   const activeOrgId = useAuthStore((s) => s.activeOrgId);
@@ -93,6 +107,7 @@ function WorkspaceSettings() {
   const [createError, setCreateError] = useState<string | null>(null);
 
   const [acceptError, setAcceptError] = useState<string | null>(null);
+  const [copiedInviteUrl, setCopiedInviteUrl] = useState<string | null>(null);
 
   const membersQuery = useQuery({
     queryKey: ["org-members", orgId],
@@ -114,10 +129,15 @@ function WorkspaceSettings() {
         email: inviteEmail.trim(),
         role: inviteRole,
       }),
-    onSuccess: () => {
+    onSuccess: (created) => {
       setFormError(null);
       toast.success(t("inviteSent", { email: inviteEmail.trim() }));
       setInviteEmail("");
+      if (created.token) {
+        const url = publicInviteUrl(created.token);
+        setCopiedInviteUrl(url);
+        void navigator.clipboard?.writeText(url).catch(() => undefined);
+      }
       void qc.invalidateQueries({ queryKey: ["org-invites", orgId] });
     },
     onError: (err: unknown) => {
@@ -161,6 +181,8 @@ function WorkspaceSettings() {
     onSuccess: async (res) => {
       setAcceptError(null);
       toast.success(res.message ?? t("acceptSuccess"));
+      clearInviteToken();
+      setInviteToken(null);
       setSearchParams({});
       await loadOrganizations();
       if (res.organization_id) {
@@ -252,62 +274,62 @@ function WorkspaceSettings() {
       )}
 
       <div className="grid gap-6 2xl:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
-            <Building2 className="h-4 w-4 text-primary" />
-            {t("createOrgTitle")}
-          </CardTitle>
-          <CardDescription className="text-xs">
-            {t("createOrgDescription")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={onCreateOrg} className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="org-name">{t("orgName")}</Label>
-                <Input
-                  id="org-name"
-                  data-testid="create-org-name"
-                  value={newOrgName}
-                  onChange={(e) => setNewOrgName(e.target.value)}
-                  placeholder="Hotel Example"
-                />
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
+              <Building2 className="h-4 w-4 text-primary" />
+              {t("createOrgTitle")}
+            </CardTitle>
+            <CardDescription className="text-xs">
+              {t("createOrgDescription")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={onCreateOrg} className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="org-name">{t("orgName")}</Label>
+                  <Input
+                    id="org-name"
+                    data-testid="create-org-name"
+                    value={newOrgName}
+                    onChange={(e) => setNewOrgName(e.target.value)}
+                    placeholder="Hotel Example"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="org-slug">{t("orgSlug")}</Label>
+                  <Input
+                    id="org-slug"
+                    data-testid="create-org-slug"
+                    value={newOrgSlug}
+                    onChange={(e) => setNewOrgSlug(e.target.value)}
+                    placeholder="hotel-example"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="org-slug">{t("orgSlug")}</Label>
-                <Input
-                  id="org-slug"
-                  data-testid="create-org-slug"
-                  value={newOrgSlug}
-                  onChange={(e) => setNewOrgSlug(e.target.value)}
-                  placeholder="hotel-example"
-                />
-              </div>
-            </div>
-            {createError && (
-              <Alert variant="destructive" className="border-destructive/40">
-                <AlertTriangle />
-                <AlertDescription>{createError}</AlertDescription>
-              </Alert>
-            )}
-            <Button
-              type="submit"
-              size="lg"
-              data-testid="create-org-submit"
-              disabled={createOrgMut.isPending}
-            >
-              {createOrgMut.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {createError && (
+                <Alert variant="destructive" className="border-destructive/40">
+                  <AlertTriangle />
+                  <AlertDescription>{createError}</AlertDescription>
+                </Alert>
               )}
-              {t("createWorkspace")}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+              <Button
+                type="submit"
+                size="lg"
+                data-testid="create-org-submit"
+                disabled={createOrgMut.isPending}
+              >
+                {createOrgMut.isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                {t("createWorkspace")}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
 
-      {canManage && orgId ? (
+        {canManage && orgId ? (
           <Card data-testid="invite-form-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
@@ -318,7 +340,37 @@ function WorkspaceSettings() {
                 {t("inviteDescription")}
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
+              {copiedInviteUrl && (
+                <div
+                  className="space-y-2 rounded-md border border-border bg-muted/40 p-3"
+                  data-testid="invite-link-box"
+                >
+                  <p className="text-xs text-muted-foreground">
+                    {t("inviteLinkHint")}
+                  </p>
+                  <p
+                    className="break-all font-mono text-[11px] text-foreground"
+                    data-testid="invite-link-url"
+                  >
+                    {copiedInviteUrl}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    data-testid="copy-invite-link"
+                    onClick={() => {
+                      void navigator.clipboard
+                        ?.writeText(copiedInviteUrl)
+                        .then(() => toast.success(t("inviteLinkCopied")))
+                        .catch(() => toast.error(t("inviteLinkCopyFail")));
+                    }}
+                  >
+                    {t("copyInviteLink")}
+                  </Button>
+                </div>
+              )}
               <form onSubmit={onInviteSubmit} className="space-y-3">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
@@ -378,9 +430,9 @@ function WorkspaceSettings() {
               </form>
             </CardContent>
           </Card>
-      ) : (
-        <div className="hidden 2xl:block" />
-      )}
+        ) : (
+          <div className="hidden 2xl:block" />
+        )}
       </div>
 
       <Card>
