@@ -41,8 +41,8 @@ function ThemeSwitcher({ className }: { className?: string }) {
           className={cn(
             "h-full min-w-11 px-2.5",
             current === theme
-              ? "bg-muted text-foreground"
-              : "text-muted-foreground hover:text-foreground",
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-accent hover:text-foreground",
           )}
           onClick={() => {
             setTheme(theme);
