@@ -21,7 +21,14 @@ from app.models.uptime import (
     UptimeSample,
 )
 from app.models.user import User
-from app.schemas.uptime import UptimeMonitorCreate, UptimeMonitorResponse, UptimeMonitorUpdate
+from app.schemas.uptime import (
+    HEARTBEAT_PLACEHOLDER,
+    UptimeMonitorCreate,
+    UptimeMonitorResponse,
+    UptimeMonitorUpdate,
+    hash_heartbeat_token,
+    mint_heartbeat_token,
+)
 from app.services.organization import get_membership, require_membership, role_at_least
 from app.services.uptime_apply import apply_probe as persist_probe
 from app.services.uptime_probe import ProbeResult
@@ -107,6 +114,13 @@ class UptimeService:
             expect_status=m.expect_status,
             keyword=m.keyword,
             keyword_invert=m.keyword_invert,
+            http_method=m.http_method or "GET",
+            request_headers=m.request_headers,
+            request_body=m.request_body,
+            heartbeat_token_prefix=m.heartbeat_token_prefix,
+            last_heartbeat_at=m.last_heartbeat_at,
+            dns_record=m.dns_record,
+            expected_values=m.expected_values,
             enabled=m.enabled,
             state=m.state,
             consecutive_fails=m.consecutive_fails,
@@ -157,6 +171,8 @@ class UptimeService:
             .where(UptimeMonitor.organization_id == organization_id, UptimeMonitor.enabled.is_(True))
         )
         count = int(count_result.scalar() or 0)
+        if body.check_type == "ping" and not settings.uptime_icmp:
+            raise HTTPException(status_code=501, detail="ICMP ping is disabled")
         if body.enabled and count >= limit:
             raise HTTPException(status_code=400, detail=f"Uptime seat limit for {org.sku} tier is {limit}")
         if body.enabled:
@@ -171,6 +187,13 @@ class UptimeService:
             if existing.scalar_one_or_none() is not None:
                 raise HTTPException(status_code=409, detail="Monitor already exists for this target")
         now = datetime.now(UTC)
+        token: str | None = None
+        token_hash: str | None = None
+        token_prefix: str | None = None
+        target = body.target
+        if body.check_type == "heartbeat":
+            token, token_hash, token_prefix = mint_heartbeat_token()
+            target = HEARTBEAT_PLACEHOLDER
         monitor = UptimeMonitor(
             id=uuid.uuid4(),
             organization_id=organization_id,
@@ -178,12 +201,19 @@ class UptimeService:
             asset_id=body.asset_id,
             name=body.name,
             check_type=body.check_type,
-            target=body.target,
+            target=target,
             interval_seconds=body.interval_seconds or DEFAULT_INTERVAL_SECONDS,
             timeout_seconds=body.timeout_seconds,
             expect_status=body.expect_status,
             keyword=body.keyword,
             keyword_invert=body.keyword_invert,
+            http_method=body.http_method if body.check_type == "http" else "GET",
+            request_headers=body.request_headers if body.check_type == "http" else None,
+            request_body=body.request_body if body.check_type == "http" else None,
+            heartbeat_token_hash=token_hash,
+            heartbeat_token_prefix=token_prefix,
+            dns_record=body.dns_record if body.check_type == "dns" else None,
+            expected_values=body.expected_values if body.check_type == "dns" else None,
             enabled=body.enabled,
             state="unknown",
             consecutive_fails=0,
@@ -195,7 +225,11 @@ class UptimeService:
         await self.db.refresh(monitor)
         if monitor.enabled:
             enqueue_uptime_check(monitor.id)
-        return self._to_response(monitor, sku=org.sku)
+        resp = self._to_response(monitor, sku=org.sku)
+        if token:
+            resp.heartbeat_token = token
+            resp.heartbeat_url = f"{settings.frontend_url.rstrip('/')}/api/uptime/heartbeat/{token}"
+        return resp
 
     async def _get_in_org(self, monitor_id: UUID, organization_id: UUID | None, user_id: UUID) -> UptimeMonitor:
         result = await self.db.execute(select(UptimeMonitor).where(UptimeMonitor.id == monitor_id))
@@ -261,6 +295,47 @@ class UptimeService:
             enqueue_uptime_check(monitor.id)
         org = await self._org(monitor.organization_id)
         return self._to_response(monitor, sku=org.sku, uptime_24h=await self._uptime_24h(monitor.id))
+
+    async def rotate_heartbeat(
+        self, user: User, organization_id: UUID | None, monitor_id: UUID
+    ) -> UptimeMonitorResponse:
+        self._enabled()
+        monitor = await self._get_in_org(monitor_id, organization_id, user.id)
+        membership = await get_membership(self.db, monitor.organization_id, user.id)
+        assert membership is not None
+        if not role_at_least(membership.role, "member"):
+            raise HTTPException(status_code=403, detail="Insufficient organization role")
+        if monitor.check_type != "heartbeat":
+            raise HTTPException(status_code=400, detail="Not a heartbeat monitor")
+        token, token_hash, token_prefix = mint_heartbeat_token()
+        monitor.heartbeat_token_hash = token_hash
+        monitor.heartbeat_token_prefix = token_prefix
+        monitor.updated_at = datetime.now(UTC)
+        await self.db.commit()
+        await self.db.refresh(monitor)
+        org = await self._org(monitor.organization_id)
+        resp = self._to_response(monitor, sku=org.sku, uptime_24h=await self._uptime_24h(monitor.id))
+        resp.heartbeat_token = token
+        resp.heartbeat_url = f"{settings.frontend_url.rstrip('/')}/api/uptime/heartbeat/{token}"
+        return resp
+
+    async def ingest_heartbeat(self, token: str) -> None:
+        self._enabled()
+        digest = hash_heartbeat_token(token)
+        result = await self.db.execute(
+            select(UptimeMonitor).where(
+                UptimeMonitor.check_type == "heartbeat",
+                UptimeMonitor.heartbeat_token_hash == digest,
+                UptimeMonitor.enabled.is_(True),
+            )
+        )
+        monitor = result.scalar_one_or_none()
+        if monitor is None:
+            raise HTTPException(status_code=404, detail="Unknown heartbeat token")
+        now = datetime.now(UTC)
+        monitor.last_heartbeat_at = now
+        monitor.updated_at = now
+        await self.db.commit()
 
     async def delete(self, user: User, organization_id: UUID | None, monitor_id: UUID) -> None:
         self._enabled()

@@ -12,7 +12,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -45,8 +45,16 @@ class UptimeMonitor(Base):
         UUID(as_uuid=True), ForeignKey("scan_assets.id", ondelete="SET NULL"), nullable=True
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    check_type: Mapped[str] = mapped_column(String(10), nullable=False)
+    check_type: Mapped[str] = mapped_column(String(16), nullable=False)
     target: Mapped[str] = mapped_column(Text, nullable=False)
+    http_method: Mapped[str] = mapped_column(String(8), nullable=False, default="GET")
+    request_headers: Mapped[dict[str, str] | None] = mapped_column(JSONB, nullable=True)
+    request_body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    heartbeat_token_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    heartbeat_token_prefix: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    last_heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    dns_record: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    expected_values: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
     interval_seconds: Mapped[int] = mapped_column(Integer, nullable=False, default=DEFAULT_INTERVAL_SECONDS)
     timeout_seconds: Mapped[int] = mapped_column(Integer, nullable=False, default=DEFAULT_TIMEOUT_SECONDS)
     expect_status: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -75,7 +83,10 @@ class UptimeMonitor(Base):
 
     __table_args__ = (
         UniqueConstraint("asset_id", name="uq_uptime_monitors_asset_id"),
-        CheckConstraint("check_type IN ('http', 'tcp')", name="ck_uptime_check_type"),
+        CheckConstraint(
+            "check_type IN ('http', 'tcp', 'heartbeat', 'dns', 'ping')",
+            name="ck_uptime_check_type",
+        ),
         CheckConstraint("state IN ('unknown', 'up', 'down', 'degraded')", name="ck_uptime_state"),
         CheckConstraint("interval_seconds >= 60 AND interval_seconds <= 900", name="ck_uptime_interval"),
         CheckConstraint("timeout_seconds >= 1 AND timeout_seconds <= 30", name="ck_uptime_timeout"),

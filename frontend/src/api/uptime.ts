@@ -1,16 +1,25 @@
 import api from "@/api/scans";
 
+export type UptimeCheckType = "http" | "tcp" | "heartbeat" | "dns" | "ping";
+
 export interface UptimeMonitor {
   id: string;
   organization_id: string;
   name: string;
-  check_type: "http" | "tcp" | string;
+  check_type: UptimeCheckType | string;
   target: string;
   interval_seconds: number;
   timeout_seconds: number;
   expect_status: number | null;
   keyword: string | null;
   keyword_invert: boolean;
+  http_method?: string;
+  request_headers?: Record<string, string> | null;
+  request_body?: string | null;
+  heartbeat_token_prefix?: string | null;
+  last_heartbeat_at?: string | null;
+  dns_record?: string | null;
+  expected_values?: string[] | null;
   enabled: boolean;
   state: string;
   consecutive_fails: number;
@@ -26,14 +35,22 @@ export interface UptimeMonitor {
   sku: string | null;
   sku_limit: number | null;
   uptime_24h: number | null;
+  heartbeat_url?: string | null;
+  heartbeat_token?: string | null;
 }
 
 export interface UptimeCreatePayload {
   name: string;
-  check_type: "http" | "tcp";
+  check_type: UptimeCheckType;
   target: string;
   interval_seconds?: number;
   keyword?: string;
+  keyword_invert?: boolean;
+  http_method?: string;
+  request_headers?: Record<string, string>;
+  request_body?: string;
+  dns_record?: string;
+  expected_values?: string[];
   notify_email?: string;
 }
 
@@ -68,6 +85,13 @@ export async function deleteMonitor(id: string): Promise<void> {
 export async function pauseMonitor(id: string): Promise<UptimeMonitor> {
   const { data } = await api.post<UptimeMonitor>(
     `/api/uptime/monitors/${id}/pause`,
+  );
+  return data;
+}
+
+export async function rotateHeartbeatToken(id: string): Promise<UptimeMonitor> {
+  const { data } = await api.post<UptimeMonitor>(
+    `/api/uptime/monitors/${id}/rotate-token`,
   );
   return data;
 }

@@ -110,6 +110,12 @@ def check_one(monitor_id: str) -> dict[str, Any]:
             monitor = result.scalar_one_or_none()
             if monitor is None or not monitor.enabled:
                 return {"ok": False, "reason": "missing"}
+            if monitor.check_type == "ping" and os.environ.get("UPTIME_ICMP", "false").lower() in (
+                "0",
+                "false",
+                "no",
+            ):
+                return {"skipped": True, "reason": "UPTIME_ICMP off"}
             probe = run_probe(monitor)
             event = await apply_probe(db, monitor, probe)
             if event is not None and monitor.notify_email:

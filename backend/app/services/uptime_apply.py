@@ -9,7 +9,15 @@ from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.uptime import CONFIRM_FAILS, UptimeEvent, UptimeMonitor, UptimeSample
-from app.services.uptime_probe import ProbeResult, probe_http, probe_tcp, tls_warn_due
+from app.services.uptime_probe import (
+    ProbeResult,
+    probe_dns,
+    probe_heartbeat,
+    probe_http,
+    probe_ping,
+    probe_tcp,
+    tls_warn_due,
+)
 
 
 async def purge_old_uptime_rows(db: AsyncSession, *, now: datetime | None = None) -> dict[str, int]:
@@ -25,12 +33,21 @@ async def purge_old_uptime_rows(db: AsyncSession, *, now: datetime | None = None
 def run_probe(monitor: UptimeMonitor) -> ProbeResult:
     if monitor.check_type == "tcp":
         return probe_tcp(monitor.target, monitor.timeout_seconds)
+    if monitor.check_type == "dns":
+        return probe_dns(monitor.target, monitor.timeout_seconds, monitor.dns_record, monitor.expected_values)
+    if monitor.check_type == "ping":
+        return probe_ping(monitor.target, monitor.timeout_seconds)
+    if monitor.check_type == "heartbeat":
+        return probe_heartbeat(monitor.last_heartbeat_at, monitor.interval_seconds)
     return probe_http(
         monitor.target,
         monitor.timeout_seconds,
         monitor.expect_status,
         monitor.keyword,
         monitor.keyword_invert,
+        method=monitor.http_method or "GET",
+        headers=monitor.request_headers,
+        body=monitor.request_body,
     )
 
 

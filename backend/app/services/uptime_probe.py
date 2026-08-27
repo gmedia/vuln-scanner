@@ -89,19 +89,25 @@ def probe_http(
     expect_status: int | None,
     keyword: str | None,
     keyword_invert: bool,
+    method: str = "GET",
+    headers: dict[str, str] | None = None,
+    body: str | None = None,
 ) -> ProbeResult:
     parsed = urlparse(target)
     host = parsed.hostname or ""
     start = time.perf_counter()
     try:
         resolve_public(host)
+        req_headers = {"User-Agent": USER_AGENT}
+        if headers:
+            req_headers.update(headers)
         with httpx.Client(
             timeout=timeout,
             follow_redirects=True,
             max_redirects=MAX_REDIRECTS,
-            headers={"User-Agent": USER_AGENT},
+            headers=req_headers,
         ) as client:
-            resp = client.get(target)
+            resp = client.request(method, target, content=body)
         latency = int((time.perf_counter() - start) * 1000)
         code = resp.status_code
         if expect_status is not None:
@@ -111,8 +117,8 @@ def probe_http(
             ok = 200 <= code < 400
             err = None if ok else f"status {code}"
         if ok and keyword:
-            body = resp.content[:BODY_LIMIT].decode("utf-8", errors="replace")
-            found = keyword.lower() in body.lower()
+            raw = resp.content[:BODY_LIMIT].decode("utf-8", errors="replace")
+            found = keyword.lower() in raw.lower()
             if keyword_invert:
                 ok = not found
                 err = None if ok else "keyword present"
@@ -126,6 +132,66 @@ def probe_http(
     except Exception as exc:
         latency = int((time.perf_counter() - start) * 1000)
         return ProbeResult(ok=False, latency_ms=latency, status_code=None, error=str(exc)[:200])
+
+
+def probe_dns(target: str, timeout: int, record: str | None, expected: list[str] | None) -> ProbeResult:
+    start = time.perf_counter()
+    rtype = (record or "A").upper()
+    try:
+        family = socket.AF_INET6 if rtype == "AAAA" else socket.AF_INET
+        infos = socket.getaddrinfo(target, None, family=family, type=socket.SOCK_STREAM)
+        if not infos:
+            raise ValueError("host did not resolve")
+        for info in infos:
+            addr = str(info[4][0])
+            if _blocked_ip(addr):
+                raise ValueError("resolved address is not allowed")
+        values = sorted({str(info[4][0]).lower() for info in infos})
+        latency = int((time.perf_counter() - start) * 1000)
+        if expected:
+            want = sorted(v.strip().rstrip(".").lower() for v in expected if v.strip())
+            ok = values == want
+            err = None if ok else "dns mismatch"
+            return ProbeResult(ok=ok, latency_ms=latency, status_code=None, error=err)
+        return ProbeResult(ok=True, latency_ms=latency, status_code=None, error=None)
+    except Exception as exc:
+        latency = int((time.perf_counter() - start) * 1000)
+        return ProbeResult(ok=False, latency_ms=latency, status_code=None, error=str(exc)[:200])
+
+
+def probe_ping(target: str, timeout: int) -> ProbeResult:
+    import subprocess
+
+    from app.config import settings
+
+    if not settings.uptime_icmp:
+        return ProbeResult(ok=False, latency_ms=None, status_code=None, error="ICMP ping is disabled")
+    start = time.perf_counter()
+    try:
+        ip = resolve_public(target)
+        proc = subprocess.run(
+            ["ping", "-c", "1", "-W", str(max(timeout, 1)), ip],
+            capture_output=True,
+            timeout=timeout + 2,
+            check=False,
+        )
+        latency = int((time.perf_counter() - start) * 1000)
+        ok = proc.returncode == 0
+        err = None if ok else "ping failed"
+        return ProbeResult(ok=ok, latency_ms=latency, status_code=None, error=err)
+    except Exception as exc:
+        latency = int((time.perf_counter() - start) * 1000)
+        return ProbeResult(ok=False, latency_ms=latency, status_code=None, error=str(exc)[:200])
+
+
+def probe_heartbeat(last_at: datetime | None, interval_seconds: int) -> ProbeResult:
+    grace = timedelta(seconds=interval_seconds + 60)
+    if last_at is None:
+        return ProbeResult(ok=False, latency_ms=None, status_code=None, error="waiting for heartbeat")
+    stamp = last_at if last_at.tzinfo else last_at.replace(tzinfo=UTC)
+    if datetime.now(UTC) - stamp > grace:
+        return ProbeResult(ok=False, latency_ms=None, status_code=None, error="heartbeat stale")
+    return ProbeResult(ok=True, latency_ms=None, status_code=None, error=None)
 
 
 def tls_warn_due(last_warn: datetime | None, days_left: int | None) -> bool:
