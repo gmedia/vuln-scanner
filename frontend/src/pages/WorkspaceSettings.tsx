@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -46,8 +46,8 @@ import type { ApiError } from "@/lib/utils";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import {
-  captureInviteFromSearch,
   clearInviteToken,
+  persistInviteToken,
   publicInviteUrl,
   readInviteToken,
 } from "@/lib/inviteToken";
@@ -73,15 +73,10 @@ function WorkspaceSettings() {
   const { t, i18n } = useTranslation("workspace");
   const qc = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
-  const inviteFromUrl = searchParams.get("invite") ?? searchParams.get("token");
-  const [inviteToken, setInviteToken] = useState<string | null>(
-    () => inviteFromUrl || readInviteToken(),
-  );
-
-  useEffect(() => {
-    const captured = captureInviteFromSearch(searchParams.toString());
-    if (captured) setInviteToken(captured);
-  }, [searchParams]);
+  const inviteFromUrl =
+    searchParams.get("invite") ?? searchParams.get("token");
+  persistInviteToken(inviteFromUrl);
+  const inviteToken = inviteFromUrl || readInviteToken();
 
   const organizations = useAuthStore((s) => s.organizations);
   const activeOrgId = useAuthStore((s) => s.activeOrgId);
@@ -182,7 +177,6 @@ function WorkspaceSettings() {
       setAcceptError(null);
       toast.success(res.message ?? t("acceptSuccess"));
       clearInviteToken();
-      setInviteToken(null);
       setSearchParams({});
       await loadOrganizations();
       if (res.organization_id) {
