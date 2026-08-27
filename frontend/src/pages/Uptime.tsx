@@ -8,7 +8,9 @@ import {
   listMonitors,
   listSamples,
   pauseMonitor,
+  updateMonitor,
   type UptimeCheckType,
+  type UptimeCreatePayload,
   type UptimeMonitor,
   type UptimeSample,
 } from "@/api/uptime";
@@ -32,6 +34,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/Accordion";
 
 export function mapUptimeError(message: string): string {
   if (/seat limit/i.test(message)) return "limit";
@@ -110,7 +118,10 @@ export default function Uptime() {
   const [expectedValues, setExpectedValues] = useState("");
   const [heartbeatUrl, setHeartbeatUrl] = useState<string | null>(null);
   const [notify, setNotify] = useState("");
+  const [timeoutSeconds, setTimeoutSeconds] = useState("10");
+  const [expectStatus, setExpectStatus] = useState("");
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<UptimeMonitor | null>(null);
   const [stateFilter, setStateFilter] = useState<StateFilter>("all");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [search, setSearch] = useState("");
@@ -147,23 +158,92 @@ export default function Uptime() {
   const filtersActive =
     stateFilter !== "all" || typeFilter !== "all" || Boolean(search.trim());
 
+  const resetForm = () => {
+    setName("");
+    setTarget("");
+    setCheckType("http");
+    setKeyword("");
+    setKeywordInvert(false);
+    setHttpMethod("GET");
+    setRequestHeaders("");
+    setRequestBody("");
+    setDnsRecord("A");
+    setExpectedValues("");
+    setNotify("");
+    setInterval("60");
+    setTimeoutSeconds("10");
+    setExpectStatus("");
+    setEditing(null);
+    setHeartbeatUrl(null);
+  };
+
+  const fillFromMonitor = (m: UptimeMonitor) => {
+    setName(m.name);
+    setTarget(m.target);
+    setCheckType((m.check_type as UptimeCheckType) || "http");
+    setInterval(String(m.interval_seconds));
+    setTimeoutSeconds(String(m.timeout_seconds ?? 10));
+    setExpectStatus(m.expect_status != null ? String(m.expect_status) : "");
+    setKeyword(m.keyword ?? "");
+    setKeywordInvert(Boolean(m.keyword_invert));
+    setHttpMethod(m.http_method ?? "GET");
+    setRequestHeaders(
+      m.request_headers ? JSON.stringify(m.request_headers) : "",
+    );
+    setRequestBody(m.request_body ?? "");
+    setDnsRecord(m.dns_record ?? "A");
+    setExpectedValues((m.expected_values ?? []).join(", "));
+    setNotify(m.notify_email ?? "");
+    setEditing(m);
+    setOpen(true);
+    setHeartbeatUrl(null);
+  };
+
+  const parseFormPayload = (): UptimeCreatePayload | null => {
+    let headers: Record<string, string> | undefined;
+    if (requestHeaders.trim()) {
+      try {
+        headers = JSON.parse(requestHeaders) as Record<string, string>;
+      } catch {
+        toast.error("Invalid headers JSON");
+        return null;
+      }
+    }
+    const timeout = Number(timeoutSeconds) || 10;
+    const expectRaw = expectStatus.trim();
+    const expectNum = expectRaw ? Number(expectRaw) : undefined;
+    return {
+      name: name.trim(),
+      check_type: checkType,
+      target:
+        checkType === "heartbeat" ? "heartbeat://pending" : target.trim(),
+      interval_seconds: Number(interval) || 60,
+      timeout_seconds: checkType === "heartbeat" ? undefined : timeout,
+      expect_status:
+        checkType === "http" && expectNum != null && !Number.isNaN(expectNum)
+          ? expectNum
+          : undefined,
+      keyword: keyword.trim() || undefined,
+      keyword_invert: keywordInvert,
+      http_method: checkType === "http" ? httpMethod : undefined,
+      request_headers: headers,
+      request_body: requestBody.trim() || undefined,
+      dns_record: checkType === "dns" ? dnsRecord : undefined,
+      expected_values: expectedValues.trim()
+        ? expectedValues.split(",").map((s) => s.trim())
+        : undefined,
+      notify_email: notify.trim() || undefined,
+    };
+  };
+
   const createMut = useMutation({
     mutationFn: createMonitor,
     onSuccess: (created) => {
-      if (created.heartbeat_url) setHeartbeatUrl(created.heartbeat_url);
+      const hb = created.heartbeat_url ?? null;
       void qc.invalidateQueries({ queryKey: ["uptime"] });
-      setName("");
-      setTarget("");
-      setKeyword("");
-      setKeywordInvert(false);
-      setHttpMethod("GET");
-      setRequestHeaders("");
-      setRequestBody("");
-      setDnsRecord("A");
-      setExpectedValues("");
-      setNotify("");
-      setInterval("60");
-      if (!created.heartbeat_url) setOpen(false);
+      resetForm();
+      if (!hb) setOpen(false);
+      else setHeartbeatUrl(hb);
     },
     onError: (err: { response?: { data?: { detail?: unknown } } }) => {
       const raw = err.response?.data?.detail;
@@ -195,6 +275,51 @@ export default function Uptime() {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["uptime"] }),
   });
 
+  const updateMut = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: UptimeCreatePayload;
+    }) => {
+      const { check_type, target, ...rest } = payload;
+      void check_type;
+      void target;
+      return updateMonitor(id, rest);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["uptime"] });
+      resetForm();
+      setOpen(false);
+    },
+    onError: (err: { response?: { data?: { detail?: unknown } } }) => {
+      const raw = err.response?.data?.detail;
+      const detail =
+        typeof raw === "string"
+          ? raw
+          : Array.isArray(raw)
+            ? raw
+                .map((item) =>
+                  typeof item === "string"
+                    ? item
+                    : String((item as { msg?: string }).msg ?? item),
+                )
+                .join("; ")
+            : String(raw ?? "");
+      toast.error(
+        mapUptimeError(detail) === "limit" ? t("limitReached") : detail,
+      );
+    },
+  });
+
+  const formBusy = createMut.isPending || updateMut.isPending;
+  const advancedDefault =
+    editing &&
+    (Number(timeoutSeconds) !== 10 || Boolean(expectStatus.trim()))
+      ? "advanced"
+      : undefined;
+
   const stateLabel = (state: string) => {
     if (state === "up") return t("stateUp");
     if (state === "down") return t("stateDown");
@@ -212,7 +337,15 @@ export default function Uptime() {
         <Button
           data-testid="uptime-add"
           disabled={atCap}
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => {
+            if (open) {
+              resetForm();
+              setOpen(false);
+            } else {
+              resetForm();
+              setOpen(true);
+            }
+          }}
         >
           {t("add")}
         </Button>
@@ -324,7 +457,7 @@ export default function Uptime() {
       {open ? (
         <Card>
           <CardHeader>
-            <CardTitle>{t("add")}</CardTitle>
+            <CardTitle>{editing ? t("edit") : t("add")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
@@ -340,6 +473,7 @@ export default function Uptime() {
               <Label htmlFor="up-type">{t("type")}</Label>
               <Select
                 value={checkType}
+                disabled={Boolean(editing)}
                 onValueChange={(value) =>
                   setCheckType(value as UptimeCheckType)
                 }
@@ -365,9 +499,10 @@ export default function Uptime() {
                 <Label htmlFor="up-target">{t("target")}</Label>
                 <Input
                   id="up-target"
-                  data-testid="uptime-target"
-                  value={target}
-                  onChange={(e) => setTarget(e.target.value)}
+                    data-testid="uptime-target"
+                    value={target}
+                    disabled={Boolean(editing)}
+                    onChange={(e) => setTarget(e.target.value)}
                   placeholder={
                     checkType === "http"
                       ? "https://example.com"
@@ -395,66 +530,121 @@ export default function Uptime() {
                 onChange={(e) => setInterval(e.target.value)}
               />
             </div>
-            {checkType === "http" ? (
-              <>
-                <div>
-                  <Label htmlFor="up-method">{t("httpMethod")}</Label>
-                  <Select
-                    value={httpMethod}
-                    onValueChange={setHttpMethod}
-                  >
-                    <SelectTrigger id="up-method" aria-label={t("httpMethod")}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="GET">GET</SelectItem>
-                      <SelectItem value="HEAD">HEAD</SelectItem>
-                      <SelectItem value="POST">POST</SelectItem>
-                      <SelectItem value="PUT">PUT</SelectItem>
-                      <SelectItem value="PATCH">PATCH</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="up-keyword">{t("keyword")}</Label>
-                  <Input
-                    id="up-keyword"
-                    data-testid="uptime-keyword"
-                    value={keyword}
-                    onChange={(e) => setKeyword(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    id="up-invert"
-                    data-testid="uptime-keyword-invert"
-                    type="checkbox"
-                    checked={keywordInvert}
-                    onChange={(e) => setKeywordInvert(e.target.checked)}
-                  />
-                  <Label htmlFor="up-invert">{t("keywordInvert")}</Label>
-                </div>
-                <div>
-                  <Label htmlFor="up-headers">{t("requestHeaders")}</Label>
-                  <Input
-                    id="up-headers"
-                    value={requestHeaders}
-                    onChange={(e) => setRequestHeaders(e.target.value)}
-                    placeholder='{"Accept":"application/json"}'
-                  />
-                </div>
-                {httpMethod !== "GET" && httpMethod !== "HEAD" ? (
-                  <div>
-                    <Label htmlFor="up-body">{t("requestBody")}</Label>
-                    <Input
-                      id="up-body"
-                      value={requestBody}
-                      onChange={(e) => setRequestBody(e.target.value)}
-                    />
-                  </div>
-                ) : null}
-              </>
-            ) : null}
+            <Accordion
+              type="single"
+              collapsible
+              key={editing?.id ?? "create"}
+              defaultValue={advancedDefault}
+              className="rounded-md border border-border px-3"
+              data-testid="uptime-advanced"
+            >
+              <AccordionItem value="advanced" className="border-b-0">
+                <AccordionTrigger>{t("advanced")}</AccordionTrigger>
+                <AccordionContent className="space-y-3">
+                  {checkType !== "heartbeat" ? (
+                    <div>
+                      <Label htmlFor="up-timeout">{t("timeout")}</Label>
+                      <Input
+                        id="up-timeout"
+                        data-testid="uptime-timeout"
+                        className="h-10 min-h-10"
+                        type="number"
+                        min={1}
+                        max={30}
+                        value={timeoutSeconds}
+                        onChange={(e) => setTimeoutSeconds(e.target.value)}
+                      />
+                    </div>
+                  ) : null}
+                  {checkType === "http" ? (
+                    <>
+                      <div>
+                        <Label htmlFor="up-expect-status">
+                          {t("expectStatus")}
+                        </Label>
+                        <Input
+                          id="up-expect-status"
+                          data-testid="uptime-expect-status"
+                          className="h-10 min-h-10"
+                          type="number"
+                          min={100}
+                          max={599}
+                          placeholder="200"
+                          value={expectStatus}
+                          onChange={(e) => setExpectStatus(e.target.value)}
+                        />
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {t("expectStatusHint")}
+                        </p>
+                      </div>
+                      <div>
+                        <Label htmlFor="up-method">{t("httpMethod")}</Label>
+                        <Select
+                          value={httpMethod}
+                          onValueChange={setHttpMethod}
+                        >
+                          <SelectTrigger
+                            id="up-method"
+                            className="h-10 min-h-10"
+                            aria-label={t("httpMethod")}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="GET">GET</SelectItem>
+                            <SelectItem value="HEAD">HEAD</SelectItem>
+                            <SelectItem value="POST">POST</SelectItem>
+                            <SelectItem value="PUT">PUT</SelectItem>
+                            <SelectItem value="PATCH">PATCH</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="up-keyword">{t("keyword")}</Label>
+                        <Input
+                          id="up-keyword"
+                          data-testid="uptime-keyword"
+                          className="h-10 min-h-10"
+                          value={keyword}
+                          onChange={(e) => setKeyword(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="up-invert"
+                          data-testid="uptime-keyword-invert"
+                          type="checkbox"
+                          checked={keywordInvert}
+                          onChange={(e) => setKeywordInvert(e.target.checked)}
+                        />
+                        <Label htmlFor="up-invert">{t("keywordInvert")}</Label>
+                      </div>
+                      <div>
+                        <Label htmlFor="up-headers">{t("requestHeaders")}</Label>
+                        <Input
+                          id="up-headers"
+                          className="h-10 min-h-10"
+                          value={requestHeaders}
+                          onChange={(e) => setRequestHeaders(e.target.value)}
+                          placeholder='{"Accept":"application/json"}'
+                        />
+                      </div>
+                      {httpMethod !== "GET" && httpMethod !== "HEAD" ? (
+                        <div>
+                          <Label htmlFor="up-body">{t("requestBody")}</Label>
+                          <Input
+                            id="up-body"
+                            className="h-10 min-h-10"
+                            value={requestBody}
+                            onChange={(e) => setRequestBody(e.target.value)}
+                          />
+                        </div>
+                      ) : null}
+                    </>
+                  ) : null}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
             {checkType === "dns" ? (
               <>
                 <div>
@@ -495,43 +685,27 @@ export default function Uptime() {
                 disabled={
                   !name.trim() ||
                   (checkType !== "heartbeat" && !target.trim()) ||
-                  createMut.isPending
+                  formBusy
                 }
                 onClick={() => {
-                  let headers: Record<string, string> | undefined;
-                  if (requestHeaders.trim()) {
-                    try {
-                      headers = JSON.parse(requestHeaders) as Record<
-                        string,
-                        string
-                      >;
-                    } catch {
-                      toast.error("Invalid headers JSON");
-                      return;
-                    }
+                  const payload = parseFormPayload();
+                  if (!payload) return;
+                  if (editing) {
+                    updateMut.mutate({ id: editing.id, payload });
+                  } else {
+                    createMut.mutate(payload);
                   }
-                  createMut.mutate({
-                    name: name.trim(),
-                    check_type: checkType,
-                    target:
-                      checkType === "heartbeat" ? "heartbeat://pending" : target.trim(),
-                    interval_seconds: Number(interval) || 60,
-                    keyword: keyword.trim() || undefined,
-                    keyword_invert: keywordInvert,
-                    http_method: checkType === "http" ? httpMethod : undefined,
-                    request_headers: headers,
-                    request_body: requestBody.trim() || undefined,
-                    dns_record: checkType === "dns" ? dnsRecord : undefined,
-                    expected_values: expectedValues.trim()
-                      ? expectedValues.split(",").map((s) => s.trim())
-                      : undefined,
-                    notify_email: notify.trim() || undefined,
-                  });
                 }}
               >
                 {t("save")}
               </Button>
-              <Button variant="outline" onClick={() => setOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  resetForm();
+                  setOpen(false);
+                }}
+              >
                 {t("cancel")}
               </Button>
             </div>
@@ -632,6 +806,14 @@ export default function Uptime() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            data-testid="uptime-edit"
+                            onClick={() => fillFromMonitor(m)}
+                          >
+                            {t("edit")}
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
