@@ -65,6 +65,21 @@ function formatWhen(iso: string | null): string {
   }
 }
 
+const AUTH_SESSION_DETAILS = new Set([
+  "Invalid or expired token",
+  "Missing Authorization header",
+  "Invalid Authorization header format. Expected: Bearer <token>",
+  "Invalid token type: access token required",
+]);
+
+function isAuthSessionError(err: unknown): boolean {
+  if (!err || typeof err !== "object" || !("response" in err)) return false;
+  const res = (err as ApiError).response;
+  if (res?.status === 401) return true;
+  const detail = res?.data?.detail;
+  return typeof detail === "string" && AUTH_SESSION_DETAILS.has(detail);
+}
+
 function apiDetail(err: unknown, fallback: string): string {
   if (err && typeof err === "object" && "response" in err) {
     const detail = (err as ApiError).response?.data?.detail;
@@ -303,8 +318,10 @@ export default function Siem() {
       )}
 
       {statusQ.isError && !featureOff && (
-        <p className="text-sm text-destructive">
-          {apiDetail(statusQ.error, t("loadStatusFail"))}
+        <p className="text-sm text-destructive" data-testid="siem-status-error">
+          {isAuthSessionError(statusQ.error)
+            ? t("sessionExpired")
+            : apiDetail(statusQ.error, t("loadStatusFail"))}
         </p>
       )}
 
