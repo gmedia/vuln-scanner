@@ -44,7 +44,7 @@ test.describe("Uptime", () => {
     page.on("dialog", (d) => d.accept());
     const leftovers = page
       .locator("main")
-      .getByRole("listitem")
+      .getByTestId("uptime-row")
       .filter({ hasText: /e2e-up-/ });
     while ((await leftovers.count()) > 0) {
       const n = await leftovers.count();
@@ -65,7 +65,7 @@ test.describe("Uptime", () => {
 
     const row = page
       .locator("main")
-      .getByRole("listitem")
+      .getByTestId("uptime-row")
       .filter({ hasText: name });
     await expect(row).toBeVisible({ timeout: 20_000 });
     await expect(row).toContainText(/http/i);
