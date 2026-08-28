@@ -2,15 +2,17 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import Uptime, { mapUptimeError } from "@/pages/Uptime";
+import Uptime, { explainUptimeError, mapUptimeError } from "@/pages/Uptime";
 
 const mockList = vi.fn();
+const mockSamples = vi.fn();
 
 vi.mock("@/api/uptime", async () => {
   const actual = await vi.importActual<typeof import("@/api/uptime")>("@/api/uptime");
   return {
     ...actual,
     listMonitors: (...args: unknown[]) => mockList(...args),
+    listSamples: (...args: unknown[]) => mockSamples(...args),
     createMonitor: vi.fn(),
     updateMonitor: vi.fn(),
     deleteMonitor: vi.fn(),
@@ -34,11 +36,22 @@ function renderPage() {
 describe("Uptime page", () => {
   beforeEach(() => {
     mockList.mockReset();
+    mockSamples.mockReset();
     mockList.mockResolvedValue([]);
+    mockSamples.mockResolvedValue([]);
   });
 
   it("maps sku limit errors", () => {
     expect(mapUptimeError("Uptime seat limit for basic tier is 1")).toBe("limit");
+  });
+
+  it("maps probe errors to operator hints", () => {
+    expect(explainUptimeError("[Errno 111] Connection refused")).toBe(
+      "hintRefused",
+    );
+    expect(explainUptimeError("status 403")).toBe("hint403");
+    expect(explainUptimeError("status 502")).toBe("hint5xx");
+    expect(explainUptimeError(null)).toBeNull();
   });
 
   it("shows empty state", async () => {
@@ -129,5 +142,57 @@ describe("Uptime page", () => {
     renderPage();
     await waitFor(() => expect(screen.getByTestId("uptime-row")).toBeInTheDocument());
     expect(mockList.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("opens check history for a down monitor", async () => {
+    mockList.mockResolvedValue([
+      {
+        id: "m1",
+        organization_id: "o1",
+        name: "web",
+        check_type: "http",
+        target: "https://example.com",
+        interval_seconds: 60,
+        timeout_seconds: 10,
+        expect_status: null,
+        keyword: null,
+        keyword_invert: false,
+        enabled: true,
+        state: "down",
+        consecutive_fails: 2,
+        last_checked_at: "2026-08-28T00:00:00Z",
+        last_status_code: 403,
+        last_latency_ms: 40,
+        last_error: "status 403",
+        next_check_at: "2026-08-28T00:01:00Z",
+        notify_email: null,
+        asset_id: null,
+        created_at: "2026-08-25T00:00:00Z",
+        updated_at: "2026-08-25T00:00:00Z",
+        sku: "multi",
+        sku_limit: 10,
+        uptime_24h: 80,
+      },
+    ]);
+    mockSamples.mockResolvedValue([
+      {
+        id: "s1",
+        checked_at: "2026-08-28T00:00:00Z",
+        ok: false,
+        latency_ms: 40,
+        status_code: 403,
+        error: "status 403",
+      },
+    ]);
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId("uptime-history")).toBeInTheDocument());
+    screen.getByTestId("uptime-history").click();
+    await waitFor(() =>
+      expect(screen.getByTestId("uptime-history-panel")).toBeInTheDocument(),
+    );
+    expect(screen.getByTestId("uptime-history-row")).toBeInTheDocument();
+    expect(
+      screen.getAllByText(/403 is a deny/i).length,
+    ).toBeGreaterThanOrEqual(1);
   });
 });

@@ -57,5 +57,18 @@
   "timeout": "Timeout (seconds)",
   "expectStatus": "Expected HTTP status",
   "expectStatusHint": "Empty = any 200–399. Set an exact code (e.g. 204).",
-  "edit": "Edit"
+  "edit": "Edit",
+  "history": "History",
+  "historyTitle": "Checks — {{name}}",
+  "historyEmpty": "No samples in the last 7 days.",
+  "colTime": "Time (UTC)",
+  "probeRule": "HTTP is up on 200–399 unless you set an expected status. User-Agent: SinexisUptime/1.0. Down after 2 failed ticks.",
+  "hintRefused": "TCP refused: origin is not listening or a firewall dropped the probe (not an HTTP status).",
+  "hintTimeout": "Probe timed out before a response. Origin may be slow or filtered.",
+  "hint403": "HTTP reached the host; 403 is a deny (WAF, geo, or auth). Allowlist SinexisUptime/1.0 or set expected status 403 if that is healthy.",
+  "hint401": "HTTP reached the host; 401 means auth is required. Add an Authorization header or expect 401 if that is healthy.",
+  "hint5xx": "Origin returned a server error. The site answered, but the application failed.",
+  "hintStatus": "HTTP completed but the status is outside 200–399 (or did not match expected status).",
+  "hintTls": "TLS handshake or certificate failed. The probe verifies certificates.",
+  "hintDns": "Hostname did not resolve from the probe network."
 }
