@@ -13,7 +13,7 @@
 |-------|---------|
 | Tenancy | 1 published page per org |
 | Platform URL | `https://sinexis.app/status/{slug}` |
-| Custom host | CNAME → `STATUS_PAGE_CNAME_TARGET` (default `status-edge.sinexis.app`) |
+| Custom host | CNAME → `STATUS_PAGE_CNAME_TARGET` (default `status-edge.sinexis.app`); public URL is **apex** `https://{custom}/` (`GET /status` by `Host`). `/status` on the custom host still works. Do not send visitors to `sinexis.app/status/{slug}` as the custom URL. |
 | TLS | Edge (Cloudflare); origin serves HTTP island on `/status` |
 | Incidents | Manual only |
 | Public data | Display name + `up/down/degraded/unknown` — **never** raw monitor URL/IP |

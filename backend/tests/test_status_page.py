@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -190,3 +191,41 @@ async def test_reserved_hostname(ctx, db_session: AsyncSession):
         )
         assert ok_host.status_code == 200, ok_host.text
         assert ok_host.json()["custom_hostname"] == "status-erp.appmedia.id"
+
+
+@pytest.mark.asyncio
+async def test_custom_host_root_and_status_path(ctx, db_session: AsyncSession):
+    from app.models.status_page import StatusPage
+
+    _bind_db(db_session)
+    org: Organization = ctx["org"]
+    org.sku = "multi"
+    await db_session.commit()
+    headers = _auth(ctx["owner"], org.id)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        r = await client.put(
+            "/api/status-page",
+            json={"slug": "erp", "title": "ERP"},
+            headers=headers,
+        )
+        assert r.status_code == 200, r.text
+        r = await client.patch(
+            "/api/status-page",
+            json={"custom_hostname": "status-erp.appmedia.id", "published": True},
+            headers=headers,
+        )
+        assert r.status_code == 200, r.text
+        page = (await db_session.execute(select(StatusPage).where(StatusPage.organization_id == org.id))).scalar_one()
+        page.hostname_status = "active"
+        await db_session.commit()
+
+        host_headers = {"Host": "status-erp.appmedia.id", "X-E2E-Test": "1"}
+        root = await client.get("/", headers=host_headers)
+        assert root.status_code == 200, root.text
+        assert "ERP" in root.text
+        by_path = await client.get("/status", headers=host_headers)
+        assert by_path.status_code == 200
+        assert "ERP" in by_path.text
+        platform_root = await client.get("/", headers={"Host": "sinexis.app", "X-E2E-Test": "1"})
+        assert platform_root.status_code == 404
