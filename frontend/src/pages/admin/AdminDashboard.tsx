@@ -144,7 +144,7 @@ function AdminDashboard() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <Skeleton className="h-[220px] w-full" />
+            <Skeleton className="aspect-auto h-[280px] w-full min-h-[220px] 2xl:h-[320px]" />
           ) : (
             <div data-testid="admin-kpi-chart">
               <ChartContainer
@@ -203,7 +203,7 @@ function AdminDashboard() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <Skeleton className="h-[220px] w-full" />
+            <Skeleton className="aspect-auto h-[280px] w-full min-h-[220px] 2xl:h-[320px]" />
           ) : (
             <div data-testid="admin-credits-chart">
               <ChartContainer
