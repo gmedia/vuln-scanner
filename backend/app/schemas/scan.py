@@ -114,6 +114,16 @@ class PaginatedResponse(BaseModel):
     pages: int
 
 
+class PaginatedFindingsResponse(BaseModel):
+    """Paginated findings for a single scan job (lean rows, no raw_data)."""
+
+    items: list[ScanFindingResponse]
+    total: int
+    page: int
+    limit: int
+    pages: int
+
+
 class ErrorResponse(BaseModel):
     """Standard API error response with a detail message."""
 

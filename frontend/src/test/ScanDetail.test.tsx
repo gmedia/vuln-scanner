@@ -18,6 +18,11 @@ vi.mock("@/hooks/useScan", () => ({
   useScanDetail: vi.fn(),
   useScanDiff: vi.fn(() => ({ data: undefined, isLoading: false, isError: false })),
   useScanFinding: vi.fn(() => ({ data: undefined, isFetching: false })),
+  useScanFindings: vi.fn(() => ({
+    data: { items: [], total: 0, page: 1, limit: 50, pages: 0 },
+    isLoading: false,
+    isError: false,
+  })),
 }));
 
 vi.mock("@/api/scans", async () => {
@@ -78,7 +83,7 @@ vi.mock("@/components/results/FindingsTable", () => ({
   default: ({ findings }: any) => <div data-testid="findings-table" data-findings-count={findings?.length} />,
 }));
 
-import { useScanDetail, useScanDiff } from "@/hooks/useScan";
+import { useScanDetail, useScanDiff, useScanFindings } from "@/hooks/useScan";
 import { downloadFile } from "@/api/scans";
 
 const mockUseScanDiff = useScanDiff as ReturnType<typeof vi.fn>;
@@ -156,6 +161,19 @@ function mockUseScanDetailReturn(overrides: Partial<ReturnType<typeof useScanDet
     isError: false,
     ...overrides,
   } as ReturnType<typeof useScanDetail>);
+  const scan = (overrides.data ?? undefined) as typeof baseScan | undefined;
+  const items = scan?.findings ?? [];
+  vi.mocked(useScanFindings).mockReturnValue({
+    data: {
+      items,
+      total: items.length,
+      page: 1,
+      limit: 50,
+      pages: items.length > 0 ? 1 : 0,
+    },
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useScanFindings>);
 }
 
 describe("ScanDetail", () => {

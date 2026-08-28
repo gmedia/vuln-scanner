@@ -179,11 +179,20 @@ describe("scans API", () => {
           found_at: "2025-01-01T00:00:00Z",
         },
       ];
-      mockAxios.get.mockResolvedValueOnce({ data: findings });
+      const page = {
+        items: findings,
+        total: 1,
+        page: 1,
+        limit: 50,
+        pages: 1,
+      };
+      mockAxios.get.mockResolvedValueOnce({ data: page });
 
       const result = await getScanFindings("scan-1");
-      expect(mockAxios.get).toHaveBeenCalledWith("/api/scan/scan-1/findings");
-      expect(result).toEqual(findings);
+      expect(mockAxios.get).toHaveBeenCalledWith("/api/scan/scan-1/findings", {
+        params: { page: 1, limit: 50 },
+      });
+      expect(result).toEqual(page);
     });
   });
 

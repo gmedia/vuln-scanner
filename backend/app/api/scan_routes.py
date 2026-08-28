@@ -15,6 +15,7 @@ from app.models.scan_job import ScanJob
 from app.models.user import User
 from app.schemas.scan import (
     DomainScanRequest,
+    PaginatedFindingsResponse,
     PaginatedResponse,
     ScanDiffResponse,
     ScanFindingResponse,
@@ -424,13 +425,16 @@ async def get_scan_finding(
     return await svc.get_finding(job_id, finding_id, user_id=current_user.id)
 
 
-@router.get("/scan/{job_id}/findings", response_model=list[ScanFindingResponse])
+@router.get("/scan/{job_id}/findings", response_model=PaginatedFindingsResponse)
 async def get_scan_findings(
-    job_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
-) -> list[ScanFindingResponse]:
+    job_id: str,
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> PaginatedFindingsResponse:
     svc = ScannerService(db)
-    findings = await svc.get_findings(job_id, user_id=current_user.id)
-    return findings
+    return await svc.get_findings(job_id, user_id=current_user.id, page=page, limit=limit)
 
 
 @router.get("/scan/{job_id}/diff", response_model=ScanDiffResponse)

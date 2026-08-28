@@ -698,12 +698,13 @@ class TestGetScanDirectHandlers:
 
             result = await get_scan_findings(
                 job_id=job_id,
+                page=1,
+                limit=50,
                 current_user=mock_user,
                 db=MagicMock(),
             )
 
         assert result is mock_findings
-        assert len(result) == 2
 
 
 class TestExportScanDirectHandlers:

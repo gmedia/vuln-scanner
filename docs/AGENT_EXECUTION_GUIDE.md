@@ -2,11 +2,11 @@
 
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
-**Last updated:** 2026-08-26
-**Repo tip at write time:** re-`git pull` after reset. **P3 assets S1–S5** (#380). **P8 Uptime S1–S5 + retention** (#397–#401). **i18n S1–S7** (#367–#373). **theme S1–S3** (#375–#378). Open residual: **GTM human**; **Guard live lab**; Dependabot — do not mass-merge. **P7 SIEM S0–S5** (flag `SIEM_ENABLED` default false). No IPs/secrets. Never commit IPs/passwords/enroll keys.
+**Last updated:** 2026-08-28
+**Repo tip at write time:** re-`git pull` after reset. Expect **`10e1716`** or newer (#476 findings index + lean GET). **P6 S1–S3**. **P11** status host SSL-gated Active + `statushost` credits. Open residual: **GTM human**; P11 SSL/pricing human; Dependabot — do not mass-merge. No IPs/secrets. Never commit IPs/passwords/enroll keys.
 **Guard e2e rule:** if the user asks for a **full prod e2e suite including Guard enroll/unenroll**, **wipe `tc5` + leftover Manager/DB smoke rows first** — see **§4.1**. Do not skip this. Do not treat Playwright as enroll/unenroll.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
-**Phase snapshot:** **P0 policy locked** · **P1 attach shipped** · **P2 Workspace S1–S5** · **P3 assets S1–S5** · **P4 soft dual-brand** · **P5 Guard thin** (mock CI) · **P7 SIEM S0–S5** (flag default false) · **P8 Uptime S1–S5 + #401** · **i18n S1–S7** · **theme S1–S3** · **GTM human still open** · **P6 hospitality S1** (Workspace checklist) · residual eng = bugs, Dependabot only when named + CI green — **do not** implement SIEM under Guard PRs. Do **not** re-implement i18n because this spek used to say S0.
+**Phase snapshot:** **P0 policy locked** · **P1 attach shipped** · **P2 Workspace S1–S5** · **P3 assets S1–S5** · **P4 soft dual-brand** · **P5 Guard thin** (mock CI; live `sx-erpstg` online — do not wipe) · **P6 hospitality S1–S3** · **P7 SIEM S0–S5** (prod flag ON; `SIEM_INCLUDE_FULL_LOG` false) · **P8 Uptime S1–S5 + v2** · **P11 status page** · **i18n S1–S7** · **theme S1–S3** · **GTM human still open** · residual eng = bugs, Dependabot only when named + CI green — **do not** implement SIEM under Guard PRs. Do **not** re-implement i18n because this spek used to say S0.
 
 ---
 
@@ -100,7 +100,7 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 | **P3** | **Asset registry (light)** | Multi-target tiers | Named assets; scan pack; SKU hard caps | Full CMDB; IoT; PMS | **S1–S5 on `main`** (#380 + pack/docs follow-up) — [`docs/specs/assets-v1.md`](specs/assets-v1.md). Hard cap Basic 1 / Pro 3 / Multi 10. SPA `/assets`. Residual: **edge Alembic + UI smoke** (human) |
 | **P4** | **Soft dual-brand** | Name trust | Sinexis strings, landing, SKU label | Hard cut / domain cutover blocking attach | **Shipped soft dual-brand on `main`** (#250); public host remains **`vs.appmedia.id`** (no hard cut) |
 | **P5** | **Guard MVP** (Wazuh thin) | Second upsell | Agent inventory, critical alerts, per-org enroll; spek [`guard-v1.md`](specs/guard-v1.md) | Full SIEM, SOAR, raw-log UI, per-tenant managers | **S0–S5 + Http on `main`** (#273–#275). E2E A+B **#299**. Host/guide: **#279** enroll, **#281** generic install, **#294** TOC. Mock default **CI** (`GUARD_MOCK_WAZUH=true`). **Live lab:** Manager+Indexer on **Guard host (`tc3`)**; app (`tc1`) `.env` `GUARD_MOCK_WAZUH=false` + `WAZUH_*` (compose must inject — do not assume `.env` auto-flows); agent VM **`tc5`**. **Do not** add Discover/cases on `/guard` |
-| **P6** | **Hospitality / pilot pack** | Beachhead A | Hotel runbooks, hybrid SLA | Logos-only builds | After attach pilot story works |
+| **P6** | **Hospitality / pilot pack** | Beachhead A | Hotel runbooks, hybrid SLA | Logos-only builds | **S1–S3 on `main`**: Workspace checklist, pack HTML, AM one-pager [`hospitality-am-one-pager.md`](commercial/hospitality-am-one-pager.md) |
 | **P7** | **SIEM v1** (search + cases) | Analyst surface after Guard | Org-scoped Indexer search (structured), Postgres cases; spek [`siem-v1.md`](specs/siem-v1.md) | SOAR, customer Wazuh UI, raw DSL, Pattern B managers, merge into `scan_findings` | **S0–S5 on `main`** (#307). Host flag: GitHub secret `SIEM_ENABLED` **and** compose/CI `.env` inject (default `false`) |
 | **P8** | **Uptime v1** (external probe) | Cheap attach “is the site up?” | HTTP+TCP, SKU seats, email down/up, SPA `/uptime`; spek [`uptime-v1.md`](specs/uptime-v1.md) | Status page, multi-region, webhooks, merge into Guard/SIEM/scan | **S1–S5 + gaps + retention on `main`** (#397–#401). **v2 check types** (#451). **Advanced settings S0 draft** [`uptime-advanced-settings.md`](specs/uptime-advanced-settings.md) — docs only; do not implement until named. Flag `UPTIME_ENABLED` default true. Residual: **human UI/SMTP smoke**. |
 | **P8-i18n** | **i18n id/en** | Dual language SPA | Catalogs, switcher, executive/notify locale, `users.locale` | Extra locales, CVE translation, legal pages | **S1–S7 on `main`** (#367–#373). Spek [`i18n-v1.md`](specs/i18n-v1.md) — **not** a second P8; do not re-implement. |
@@ -258,12 +258,13 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 - **Out of scope v1:** full SIEM, SOAR, per-tenant managers, customer Wazuh dashboard, webhooks
 - **Agent:** refuse SIEM scope creep; no new Guard epic without explicit verb. **Never** run host enroll against a `tc5` that still has a leftover `client.keys` identity.
 
-### Phase F / P6 — Hospitality / pilot pack — **S1 DONE** (Workspace checklist)
+### Phase F / P6 — Hospitality / pilot pack — **S1–S3 DONE**
 
 - Spec: [`docs/specs/hospitality-pilot-pack-v1.md`](specs/hospitality-pilot-pack-v1.md)
 - **S1:** copy-only checklist on `/settings/workspace` (`pilot-checklist`); links to assets / schedules / credit-history
+- **S2:** `GET /api/assets/pack?format=html` + SPA `assets-pack-html`
+- **S3:** AM one-pager [`docs/commercial/hospitality-am-one-pager.md`](commercial/hospitality-am-one-pager.md) (print to PDF; no binary in git)
 - Hybrid SLA stays 5 business days, not SOC; no Guard/SIEM in the card
-- **S2+** (pack HTML, AM PDF) blocked until named
 - Still no full property/IoT platform
 
 ### Later / backlog (not pre-feature blockers)

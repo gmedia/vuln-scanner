@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -8,8 +9,15 @@ import {
   Shield,
   Target,
 } from "lucide-react";
-import { useScanDetail, useScanDiff } from "@/hooks/useScan";
+import { useScanDetail, useScanDiff, useScanFindings } from "@/hooks/useScan";
 import { type ScanDiff, type ScanFinding, downloadFile } from "@/api/scans";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/Pagination";
 import {
   Card,
   CardHeader,
@@ -36,14 +44,25 @@ function rescanPath(scanType: string): string {
   return "/scan/ip";
 }
 
+const FINDINGS_PAGE_SIZE = 50;
+
 function ScanDetail() {
   const { t } = useTranslation("scan");
   const { id } = useParams<{ id: string }>();
+  const [findingsPage, setFindingsPage] = useState(1);
   const { data: scan, isLoading, isError } = useScanDetail(id ?? null);
+  const { data: findingsData, isLoading: findingsLoading } = useScanFindings(
+    id ?? null,
+    findingsPage,
+    FINDINGS_PAGE_SIZE,
+  );
   const { data: diff } = useScanDiff(
     id ?? null,
     !!scan && scan.status === "completed",
   );
+  const findings = findingsData?.items ?? [];
+  const findingsTotal = findingsData?.total ?? 0;
+  const findingsPages = findingsData?.pages ?? 0;
 
   if (isLoading) {
     return (
@@ -131,7 +150,7 @@ function ScanDetail() {
   };
 
   const findingsCount =
-    scan.result_summary?.total_findings ?? scan.findings?.length ?? 0;
+    scan.result_summary?.total_findings ?? findingsTotal;
   const reScanTo = rescanPath(scan.scan_type);
   const failMessage =
     typeof scan.result_summary?.error === "string" &&
@@ -240,14 +259,46 @@ function ScanDetail() {
                 <div>
                   <CardTitle className="text-sm tracking-wide">
                     {t("findingsDetected", {
-                      count: scan.findings?.length ?? 0,
+                      count: findingsTotal,
                     })}
                   </CardTitle>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <FindingsTable findings={scan.findings} isLoading={false} />
+              <FindingsTable
+                findings={findings}
+                isLoading={findingsLoading}
+              />
+              {findingsPages > 1 && (
+                <Pagination className="mt-4" data-testid="findings-pagination">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() =>
+                          setFindingsPage((p) => Math.max(1, p - 1))
+                        }
+                        disabled={findingsPage === 1}
+                      />
+                    </PaginationItem>
+                    <PaginationItem>
+                      <span className="px-2 font-mono text-xs tabular-nums text-muted-foreground">
+                        {findingsPage}/{findingsPages}
+                      </span>
+                    </PaginationItem>
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() =>
+                          setFindingsPage((p) =>
+                            Math.min(findingsPages, p + 1),
+                          )
+                        }
+                        disabled={findingsPage === findingsPages}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
             </CardContent>
           </Card>
 
@@ -294,11 +345,9 @@ function ScanDetail() {
           </div>
           </div>
 
-          {scan.status === "completed" &&
-            scan.findings &&
-            scan.findings.length > 0 && (
-              <RemediationCard findings={scan.findings} />
-            )}
+          {scan.status === "completed" && findings.length > 0 && (
+            <RemediationCard findings={findings} />
+          )}
         </TabsContent>
 
         <TabsContent value="diff">

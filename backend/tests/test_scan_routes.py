@@ -153,7 +153,6 @@ def test_get_scan_detail_not_found(client):
 # ── GET /api/scan/{id}/findings ────────────────────────────────────────────
 
 
-@pytest.mark.skip(reason="get_scan_findings missing @router.get decorator in source")
 @pytest.mark.asyncio
 async def test_get_scan_findings(client, db_session, sample_user):
     job = ScanJob(
@@ -182,9 +181,12 @@ async def test_get_scan_findings(client, db_session, sample_user):
     resp = client.get(f"/api/scan/{job.id}/findings", headers=HEADERS)
     assert resp.status_code == 200
     data = resp.json()
-    assert len(data) == 1
-    assert data[0]["title"] == "Open port 80"
-    assert data[0]["severity"] == "medium"
+    assert data["total"] == 1
+    assert data["page"] == 1
+    assert len(data["items"]) == 1
+    assert data["items"][0]["title"] == "Open port 80"
+    assert data["items"][0]["severity"] == "medium"
+    assert data["items"][0]["raw_data"] is None
 
 
 # ── GET /api/scan/history ──────────────────────────────────────────────────
@@ -1147,8 +1149,7 @@ async def test_get_scan_detail_omits_raw_data(client, db_session, sample_user):
     resp = client.get(f"/api/scan/{job.id}", headers=HEADERS)
     assert resp.status_code == 200
     data = resp.json()
-    assert data["findings"][0]["raw_data"] is None
-    assert data["findings"][0]["title"] == "Open SSH"
+    assert data["findings"] == []
 
 
 @pytest.mark.asyncio

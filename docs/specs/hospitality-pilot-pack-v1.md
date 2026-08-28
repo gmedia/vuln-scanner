@@ -1,6 +1,6 @@
 # Spec: Hospitality / pilot pack v1 (P6)
 
-**Status:** **S2 implemented** — asset pack HTML (`GET /api/assets/pack?format=html`) + SPA download. S3 AM PDF still blocked until named.
+**Status:** **S1–S3 implemented** — Workspace checklist, pack HTML, AM one-pager ([`hospitality-am-one-pager.md`](../commercial/hospitality-am-one-pager.md); print to PDF).
 **Goal:** Give AM/ops a **repeatable beachhead pack** for hotel / multi-property pilots without a logos-only marketing site or a new CMDB.
 **Epic:** P6 per [`docs/AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) §1.3.
 **Depends:** P0 SKU lock · P1 Scan Attach · P2 Workspace · P3 assets · P4 soft dual-brand. Guard (P5) and SIEM (P7) are **optional second SKUs**, not in this pack.
@@ -109,7 +109,7 @@ Copy this into **private CRM**, then fill names there.
 | **S0** | This spec | Docs |
 | **S1** | In-app “pilot checklist” on `/settings/workspace` (copy + links only) | **Shipped** |
 | **S2** | Pack HTML across assets (beyond JSON pack) | **Shipped** |
-| **S3** | Hospitality one-pager PDF for AM (commercial docs) | Docs |
+| **S3** | Hospitality one-pager PDF for AM (commercial docs) | **Shipped** (markdown → print PDF) |
 
 ### S1 acceptance
 
@@ -136,7 +136,15 @@ Copy this into **private CRM**, then fill names there.
 - [x] Hybrid SLA is bounded (pilot #1, 5 business days, no SOC).
 - [x] S1 product work — Workspace checklist.
 - [x] S2 pack HTML.
+- [x] S3 AM one-pager — [`docs/commercial/hospitality-am-one-pager.md`](../commercial/hospitality-am-one-pager.md).
+
+### S3 acceptance
+
+- [x] One A4-printable markdown; no PII / SIDs / IPs
+- [x] SKU table matches P0 lock; hotel language maps to assets / schedules / executive HTML
+- [x] Explicit non-promises: Guard, SIEM, SOC, org wallet
+- [x] Print is AM/ops (browser or pandoc); no binary PDF in git
 
 ---
 
-*S2 2026-08-28. Guide wins on epic order.*
+*S3 2026-08-28. Guide wins on epic order.*

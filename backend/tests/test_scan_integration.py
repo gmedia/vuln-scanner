@@ -40,7 +40,8 @@ def test_full_scan_lifecycle(client, mock_celery):
     resp = client.get(f"/api/scan/{job_id}/findings", headers=HEADERS)
     assert resp.status_code == 200
     findings = resp.json()
-    assert findings == []
+    assert findings["items"] == []
+    assert findings["total"] == 0
 
 
 # ── Scan history with jobs ─────────────────────────────────────────────────

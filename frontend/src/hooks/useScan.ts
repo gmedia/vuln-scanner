@@ -29,11 +29,11 @@ export function useScanDetail(jobId: string | null) {
   });
 }
 
-export function useScanFindings(jobId: string | null) {
+export function useScanFindings(jobId: string | null, page = 1, limit = 50) {
   const activeOrgId = useAuthStore((s) => s.activeOrgId);
   return useQuery({
-    queryKey: ["scan-findings", activeOrgId, jobId],
-    queryFn: () => getScanFindings(jobId!),
+    queryKey: ["scan-findings", activeOrgId, jobId, page, limit],
+    queryFn: () => getScanFindings(jobId!, page, limit),
     enabled: !!jobId && !!activeOrgId,
   });
 }
