@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import html
+import logging
 import socket
 from datetime import UTC, datetime
 from uuid import UUID
@@ -36,7 +37,16 @@ from app.schemas.status_page import (
     StatusPageResponse,
     StatusPageUpdate,
 )
+from app.services.cloudflare_custom_hostnames import (
+    CfHostname,
+    CloudflareCustomHostnames,
+    CloudflareHostnameError,
+    cf_configured,
+    map_hostname_status,
+)
 from app.services.organization import require_membership
+
+logger = logging.getLogger(__name__)
 
 
 def _cname_target() -> str:
@@ -156,9 +166,9 @@ class StatusPageService:
             custom_hostname=page.custom_hostname,
             hostname_status=page.hostname_status,
             cname_target=_cname_target(),
-            txt_name=None,
-            txt_value=None,
-            ssl_status=page.hostname_status if page.custom_hostname else None,
+            txt_name=page.txt_name,
+            txt_value=page.txt_value,
+            ssl_status=page.ssl_status,
             public_path=_public_path(page.slug),
             created_at=page.created_at,
             updated_at=page.updated_at,
@@ -262,6 +272,50 @@ class StatusPageService:
         page.custom_hostname = hostname
         page.hostname_status = "pending_txt"
 
+    def _apply_cf(self, page: StatusPage, cf: CfHostname) -> None:
+        page.cf_hostname_id = cf.id
+        page.txt_name = cf.txt_name
+        page.txt_value = cf.txt_value
+        page.ssl_status = cf.ssl_status
+        page.hostname_status = map_hostname_status(cf.ssl_status, cf.status)
+
+    def _clear_cf(self, page: StatusPage) -> None:
+        page.cf_hostname_id = None
+        page.txt_name = None
+        page.txt_value = None
+        page.ssl_status = None
+
+    async def _cf_ensure(self, hostname: str) -> CfHostname | None:
+        if settings.status_page_cf_stub_active or not cf_configured():
+            return None
+        client = CloudflareCustomHostnames()
+        try:
+            return await client.ensure(hostname)
+        finally:
+            await client.aclose()
+
+    async def _cf_get(self, cf_id: str, hostname: str) -> CfHostname | None:
+        if settings.status_page_cf_stub_active or not cf_configured():
+            return None
+        client = CloudflareCustomHostnames()
+        try:
+            if cf_id:
+                return await client.get(cf_id)
+            return await client.find_by_hostname(hostname)
+        finally:
+            await client.aclose()
+
+    async def _cf_delete(self, cf_id: str | None) -> None:
+        if not cf_id or settings.status_page_cf_stub_active or not cf_configured():
+            return
+        client = CloudflareCustomHostnames()
+        try:
+            await client.delete(cf_id)
+        except CloudflareHostnameError:
+            logger.warning("cloudflare custom hostname delete failed")
+        finally:
+            await client.aclose()
+
     async def attach_hostname(
         self, user: User, organization_id: UUID | None, body: StatusHostnameBody
     ) -> StatusPageResponse:
@@ -278,6 +332,12 @@ class StatusPageService:
         published = page.published
         await self._set_hostname(org, page, body.hostname)
         page.published = published
+        try:
+            cf = await self._cf_ensure(body.hostname)
+        except CloudflareHostnameError as exc:
+            raise HTTPException(status_code=502, detail="Cloudflare hostname create failed") from exc
+        if cf is not None:
+            self._apply_cf(page, cf)
         await self.db.commit()
         loaded = await self._page_for_org(organization_id)
         assert loaded is not None
@@ -296,7 +356,16 @@ class StatusPageService:
             raise HTTPException(status_code=404, detail="Status page not found")
         if not page.custom_hostname:
             raise HTTPException(status_code=400, detail="No custom hostname set")
+        old_cf_id = page.cf_hostname_id
         await self._set_hostname(org, page, body.hostname)
+        await self._cf_delete(old_cf_id)
+        self._clear_cf(page)
+        try:
+            cf = await self._cf_ensure(body.hostname)
+        except CloudflareHostnameError as exc:
+            raise HTTPException(status_code=502, detail="Cloudflare hostname create failed") from exc
+        if cf is not None:
+            self._apply_cf(page, cf)
         await self.db.commit()
         loaded = await self._page_for_org(organization_id)
         assert loaded is not None
@@ -310,8 +379,10 @@ class StatusPageService:
         page = await self._page_for_org(organization_id)
         if page is None:
             raise HTTPException(status_code=404, detail="Status page not found")
+        await self._cf_delete(page.cf_hostname_id)
         page.custom_hostname = None
         page.hostname_status = "none"
+        self._clear_cf(page)
         await self.db.commit()
         loaded = await self._page_for_org(organization_id)
         assert loaded is not None
@@ -327,6 +398,18 @@ class StatusPageService:
             raise HTTPException(status_code=400, detail="No custom hostname set")
         if settings.status_page_cf_stub_active:
             page.hostname_status = "active"
+            page.ssl_status = "active"
+        elif cf_configured():
+            try:
+                cf = await self._cf_get(page.cf_hostname_id or "", page.custom_hostname)
+            except CloudflareHostnameError as exc:
+                page.hostname_status = "failed"
+                await self.db.commit()
+                raise HTTPException(status_code=502, detail="Cloudflare hostname check failed") from exc
+            if cf is None:
+                page.hostname_status = "pending_txt"
+            else:
+                self._apply_cf(page, cf)
         else:
             page.hostname_status = "pending_txt"
         await self.db.commit()

@@ -239,6 +239,31 @@ async def test_hostname_attach_check_detach(ctx, db_session: AsyncSession):
 
 
 @pytest.mark.asyncio
+async def test_hostname_check_stub_active(ctx, db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch):
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "status_page_cf_stub_active", True)
+    _bind_db(db_session)
+    org: Organization = ctx["org"]
+    org.sku = "multi"
+    await db_session.commit()
+    headers = _auth(ctx["owner"], org.id)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.put("/api/status-page", json={"slug": "erp", "title": "ERP"}, headers=headers)
+        att = await client.post(
+            "/api/status-page/hostname",
+            json={"hostname": "status.example.com"},
+            headers=headers,
+        )
+        assert att.status_code == 201
+        chk = await client.post("/api/status-page/hostname/check", headers=headers)
+        assert chk.status_code == 200
+        assert chk.json()["hostname_status"] == "active"
+        assert chk.json()["ssl_status"] == "active"
+
+
+@pytest.mark.asyncio
 async def test_custom_host_root_and_status_path(ctx, db_session: AsyncSession):
     from app.models.status_page import StatusPage
 

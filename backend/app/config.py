@@ -148,6 +148,8 @@ class Settings(BaseSettings):
     status_page_enabled: bool = True
     status_page_cname_target: str = "status-edge.sinexis.app"
     status_page_cf_stub_active: bool = False
+    status_page_cf_api_token: str = ""
+    status_page_cf_zone_id: str = ""
 
     blog_enabled: bool = True
 

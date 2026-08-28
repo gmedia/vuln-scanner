@@ -1,7 +1,7 @@
 # Spec: Status custom hostname lifecycle (P11.x)
 
-**Status:** Draft — **docs only**. **Do not implement** until an explicit implement verb (`implement` / `buat` / `kerjakan`) **and** this spec is named.
-**Goal:** Make custom hostname onboarding **understandable** (buttons + states) and **operable** (TXT + CNAME, poll Cloudflare — not CNAME-only `dig`). Meter credits and CF API create/delete are **later slices**, not this file’s first implement.
+**Status:** First slice (UX + stub) and **P11.x-B** (CF create/delete + poll) in repo. **P11.x-C** credits not implemented.
+**Goal:** Make custom hostname onboarding **understandable** (buttons + states) and **operable** (TXT + CNAME, poll Cloudflare — not CNAME-only `dig`). Meter credits remain a **later slice**.
 **Epic:** **P11.x** follow-on to [`status-page-v1.md`](status-page-v1.md). Does **not** replace Uptime probes, Scan, Guard, or SIEM.
 **Depends:** P11 S1–S5 tables (`custom_hostname`, `hostname_status`); Cloudflare for SaaS on zone `sinexis.app`; origin nginx custom-host apex (PR #464).
 **Commercial:** still **not** a list-price SKU. Custom host remains **Multi** until a later meter slice. **Do not** hardcode “3 credits / month” in product copy.
@@ -58,7 +58,7 @@ Operators can type a hostname and click **Save** / **Verify DNS**. That mixes th
 
 | Slice | When |
 |-------|------|
-| **P11.x-B** CF API **create/delete** hostname on Pasang/Lepas | After UX states exist; token only on deploy host |
+| **P11.x-B** CF API **create/delete** hostname on Pasang/Lepas | In repo: `STATUS_PAGE_CF_API_TOKEN` + `STATUS_PAGE_CF_ZONE_ID` on deploy host; CI uses stub |
 | **P11.x-C** Meter: `N` credits / active hostname / calendar month; `N` from admin pricing; charge on **Active**, not on Save | After 1–2 live hostnames; grace before suspend |
 
 ---
