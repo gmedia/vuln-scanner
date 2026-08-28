@@ -33,6 +33,12 @@ vi.mock("@/api/uptime", () => ({
   listMonitors: vi.fn().mockResolvedValue([]),
 }));
 
+const pageFields = {
+  txt_name: null as string | null,
+  txt_value: null as string | null,
+  ssl_status: null as string | null,
+};
+
 function renderPage() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
@@ -71,6 +77,7 @@ describe("StatusPage admin", () => {
       custom_hostname: null,
       hostname_status: "none",
       cname_target: "status-edge.sinexis.app",
+      ...pageFields,
       public_path: "/status/erp-stg",
       created_at: "2026-01-01T00:00:00Z",
       updated_at: "2026-01-01T00:00:00Z",
@@ -87,6 +94,7 @@ describe("StatusPage admin", () => {
       custom_hostname: null,
       hostname_status: "none",
       cname_target: "status-edge.sinexis.app",
+      ...pageFields,
       public_path: "/status/erp-prod",
       created_at: "2026-01-01T00:00:00Z",
       updated_at: "2026-01-01T00:00:00Z",
