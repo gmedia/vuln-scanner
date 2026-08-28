@@ -339,8 +339,9 @@ export default function Siem() {
 
           {agents.length === 0 && !agentsQ.isLoading && (
             <Card data-testid="siem-no-agents">
-              <CardContent className="pt-6 text-sm text-muted-foreground">
-                {t("noAgents")}
+              <CardContent className="flex min-h-[8rem] flex-col items-center justify-center gap-2 px-6 py-8 text-center">
+                <Siren className="h-8 w-8 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">{t("noAgents")}</p>
               </CardContent>
             </Card>
           )}
