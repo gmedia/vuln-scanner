@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/Button";
 import { DateTimePicker } from "@/components/ui/DateTimePicker";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import { Badge } from "@/components/ui/Badge";
 import { Textarea } from "@/components/ui/Textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -307,7 +307,13 @@ export default function Siem() {
         <p className="text-sm text-muted-foreground">{t("pickOrg")}</p>
       )}
 
-      {statusQ.isLoading && <Skeleton className="h-24 w-full" />}
+      {statusQ.isLoading && (
+        <Card>
+          <CardContent className="flex min-h-[8rem] items-center px-6 py-8">
+            <TableRowSkeleton rows={2} className="w-full" />
+          </CardContent>
+        </Card>
+      )}
 
       {featureOff && (
         <Card data-testid="siem-feature-off">
@@ -467,7 +473,7 @@ export default function Siem() {
               )}
 
               {eventsQ.isLoading ? (
-                <Skeleton className="h-32 w-full" />
+                <TableRowSkeleton rows={6} />
               ) : (
                 <>
                 <div className="space-y-2 md:hidden">
@@ -691,7 +697,7 @@ export default function Siem() {
             </CardHeader>
             <CardContent className="space-y-4">
               {casesQ.isLoading ? (
-                <Skeleton className="h-20 w-full" />
+                <TableRowSkeleton rows={4} />
               ) : cases.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   {t("casesEmpty")}

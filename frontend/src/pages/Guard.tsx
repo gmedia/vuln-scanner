@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/Button";
 import { buttonVariants } from "@/components/ui/buttonVariants";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { Skeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import { Badge } from "@/components/ui/Badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -555,7 +555,7 @@ export default function Guard() {
                   </div>
                 )}
                 {tokensQ.isLoading ? (
-                  <Skeleton className="h-12 w-full" />
+                  <TableRowSkeleton rows={3} />
                 ) : (
                   <>
                     <div className="space-y-2 md:hidden">
@@ -692,7 +692,7 @@ export default function Guard() {
             </CardHeader>
             <CardContent>
               {agentsQ.isLoading ? (
-                <Skeleton className="h-24 w-full" />
+                <TableRowSkeleton rows={4} />
               ) : (agentsQ.data?.length ?? 0) === 0 ? (
                 <div
                   className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
@@ -784,7 +784,7 @@ export default function Guard() {
             </CardHeader>
             <CardContent>
               {alertsQ.isLoading ? (
-                <Skeleton className="h-12 w-full" />
+                <TableRowSkeleton rows={3} />
               ) : (alertsQ.data?.length ?? 0) === 0 ? (
                 <div className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
                   <AlertTriangle className="h-8 w-8 text-muted-foreground" />

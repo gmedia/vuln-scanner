@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
   Select,
   SelectContent,
@@ -724,10 +724,13 @@ export default function Uptime() {
 
       {list.isLoading && items.length === 0 ? (
         <Card>
-          <CardContent className="space-y-3 p-6">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-3/4" />
+          <CardHeader>
+            <CardTitle className="text-sm tracking-wide">
+              {t("tableTitle")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TableRowSkeleton rows={5} />
           </CardContent>
         </Card>
       ) : items.length === 0 ? (
