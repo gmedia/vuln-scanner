@@ -1,7 +1,7 @@
 # Spec: Status custom hostname lifecycle (P11.x)
 
-**Status:** First slice (UX + stub) and **P11.x-B** (CF create/delete + poll) in repo. **P11.x-C** credits not implemented.
-**Goal:** Make custom hostname onboarding **understandable** (buttons + states) and **operable** (TXT + CNAME, poll Cloudflare — not CNAME-only `dig`). Meter credits remain a **later slice**.
+**Status:** First slice (UX + stub), **P11.x-B** (CF create/delete + poll), and **P11.x-C** (debit on Active from admin pricing `statushost`) in repo.
+**Goal:** Make custom hostname onboarding **understandable** (buttons + states) and **operable** (TXT + CNAME, poll Cloudflare — not CNAME-only `dig`). Product `active` only when CF **SSL** is active.
 **Epic:** **P11.x** follow-on to [`status-page-v1.md`](status-page-v1.md). Does **not** replace Uptime probes, Scan, Guard, or SIEM.
 **Depends:** P11 S1–S5 tables (`custom_hostname`, `hostname_status`); Cloudflare for SaaS on zone `sinexis.app`; origin nginx custom-host apex (PR #464).
 **Commercial:** still **not** a list-price SKU. Custom host remains **Multi** until a later meter slice. **Do not** hardcode “3 credits / month” in product copy.
@@ -91,7 +91,7 @@ none ──Pasang──► pending_txt ──CF Active──► active
 |-------|---------|-------------------|
 | `none` | No hostname (or cleared) | 404 / not served |
 | `pending_txt` | Hostname stored; waiting TXT and/or SSL | **Must not** serve (avoid half-TLS) |
-| `active` | CF hostname **Active** + published | Serve status HTML at `/` |
+| `active` | CF **SSL** status **active** (hostname `status=active` alone is not enough) + published | Serve status HTML at `/` |
 | `failed` | CF error / validation timeout | Must not serve |
 | `suspended` | Later meter only | Must not serve |
 
@@ -153,12 +153,12 @@ Response adds optional `txt_name`, `txt_value`, `ssl_status` (never log values a
 
 ---
 
-## 7. Credits (P11.x-C — do not implement with first PR)
+## 7. Credits (P11.x-C)
 
-- Admin pricing key e.g. `status_hostname_monthly` default **unset** (treat as 0 until finance sets N).
-- Debit when entering **`active`**, then calendar month while `active`.
-- Do **not** debit `pending_txt`.
-- Insufficient credits: stay `pending_txt` or move `active` → `suspended` after **grace** (default 7 days) — grace is a later lock.
+- Admin pricing key **`statushost`** (≤10 chars). Seed `credit_cost=0`; finance sets N in admin. **Do not** hardcode 3 in UI.
+- Debit **N** from the acting user’s `users.credits` + `CreditLog` (`deduct`, `reference_id` = page id) on first transition into **`active`** (typically **Cek status** after SSL). Hostname **change** (`PUT`) resets to `pending_txt`; the next Active is a new debit.
+- Do **not** debit attach / Save / `pending_txt`. Do **not** refund on Lepas.
+- Insufficient credits: **402**, stay previous status (not Active). Calendar-month renew + `suspended` grace remain later.
 
 ---
 

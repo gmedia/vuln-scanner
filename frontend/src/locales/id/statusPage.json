@@ -18,7 +18,7 @@
   "detachHost": "Lepas",
   "checkHost": "Cek status",
   "txtCard": "Validasi TXT",
-  "txtPending": "Nama dan nilai TXT muncul setelah Cloudflare menerima hostname.",
+  "txtPending": "Nama dan nilai TXT muncul setelah Cloudflare menerima hostname. Pertahankan TXT sampai SSL aktif.",
   "addComponent": "Tambah komponen",
   "monitor": "Monitor",
   "displayName": "Nama tampilan",

@@ -18,7 +18,7 @@
   "detachHost": "Remove",
   "checkHost": "Check status",
   "txtCard": "TXT validation",
-  "txtPending": "TXT name and value appear after Cloudflare accepts the hostname.",
+  "txtPending": "TXT name and value appear after Cloudflare accepts the hostname. Keep the TXT until SSL is active.",
   "addComponent": "Add component",
   "monitor": "Monitor",
   "displayName": "Display name",
