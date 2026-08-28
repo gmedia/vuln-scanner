@@ -299,3 +299,13 @@ async def test_custom_host_root_and_status_path(ctx, db_session: AsyncSession):
         assert "ERP" in by_path.text
         platform_root = await client.get("/", headers={"Host": "sinexis.app", "X-E2E-Test": "1"})
         assert platform_root.status_code == 404
+        via_forwarded = await client.get(
+            "/",
+            headers={
+                "Host": "status-edge.sinexis.app",
+                "X-Forwarded-Host": "status-erp.appmedia.id",
+                "X-E2E-Test": "1",
+            },
+        )
+        assert via_forwarded.status_code == 200, via_forwarded.text
+        assert "ERP" in via_forwarded.text
