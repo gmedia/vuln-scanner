@@ -25,9 +25,10 @@ Then read, in order:
 
 1. This file — `docs/AGENT_EXECUTION_GUIDE.md` (**wins on product priority / epic order**)
 2. `AGENTS.md` — branch/PR/CI workflow
-3. Root `handoff.md` — **session snapshot + GTM checklist** (not a second roadmap; re-check this guide for *epic order*)
-4. `docs/dependency-pins.md` + `SECURITY.md` (accepted residual risks)
-5. Only if the user names an active **stuck-job / worker** incident: `docs/archive/handoff-scan-pending-2026.md` (historical — **re-verify**)
+3. [`docs/AGENT_PAGE_REGISTRY.md`](AGENT_PAGE_REGISTRY.md) — **all user-facing URLs** (SPA + HTML islands); recapture / e2e map
+4. Root `handoff.md` — **session snapshot + GTM checklist** (not a second roadmap; re-check this guide for *epic order*)
+5. `docs/dependency-pins.md` + `SECURITY.md` (accepted residual risks)
+6. Only if the user names an active **stuck-job / worker** incident: `docs/archive/handoff-scan-pending-2026.md` (historical — **re-verify**)
 
 **Priority rule:** If `handoff.md`, the archive, or any old session note **disagrees with this guide** on *what to build next*, **this guide wins**, unless the user explicitly scopes a stuck-job/ops incident.
 
@@ -453,6 +454,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 | Doc | Role |
 |-----|------|
 | `AGENTS.md` | Git/PR session workflow |
+| `docs/AGENT_PAGE_REGISTRY.md` | SPA + HTML island URL map for agents |
 | `README.md` | Product as-shipped (scan SaaS + modules table; Guard spek pointer) |
 | `SECURITY.md` | Accepted residual dependency risks |
 | `docs/dependency-pins.md` | Redis/Celery/kombu pin matrix |
