@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
@@ -443,10 +443,7 @@ function WorkspaceSettings() {
             <p className="text-sm text-muted-foreground">{t("noOrgYet")}</p>
           )}
           {orgId && membersQuery.isLoading && (
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-3/4" />
-            </div>
+            <TableRowSkeleton rows={3} />
           )}
           {orgId && membersQuery.isError && (
             <p className="text-sm text-muted-foreground" role="status">
@@ -488,7 +485,7 @@ function WorkspaceSettings() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {invitesQuery.isLoading && <Skeleton className="h-8 w-full" />}
+              {invitesQuery.isLoading && <TableRowSkeleton rows={2} />}
               {invitesQuery.isError && (
                 <p className="text-sm text-muted-foreground">
                   {t("invitesUnavailable")}
