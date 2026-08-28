@@ -28,7 +28,7 @@ _SHELL_CSS = """
   --background:hsl(0 0% 98%);
   --foreground:hsl(0 0% 7%);
   --muted:hsl(0 0% 96%);
-  --muted-foreground:hsl(0 0% 45%);
+  --muted-foreground:hsl(0 0% 32%);
   --border:hsl(0 0% 90%);
   --primary:hsl(142 71% 45%);
   --primary-foreground:hsl(0 0% 4%);
@@ -40,7 +40,7 @@ _SHELL_CSS = """
   --background:hsl(0 0% 4%);
   --foreground:hsl(0 0% 96%);
   --muted:hsl(0 0% 12%);
-  --muted-foreground:hsl(0 0% 45%);
+  --muted-foreground:hsl(0 0% 62%);
   --border:hsl(0 0% 16%);
   --primary:hsl(142 71% 45%);
   --primary-foreground:hsl(0 0% 4%);
@@ -85,11 +85,14 @@ a:hover{color:var(--foreground)}
 .header-actions a[aria-current="page"]{color:var(--foreground);font-weight:600}
 .theme-switch{display:inline-flex;border:1px solid var(--border);border-radius:0.375rem;overflow:hidden}
 .theme-switch button{border:0;border-radius:0;font-size:0.6875rem;padding:0 0.6rem}
-.theme-switch button[aria-pressed="true"]{background:var(--muted)}
+.theme-switch button[aria-pressed="true"]{
+  background:var(--primary);color:var(--primary-foreground);
+}
 main.rail{flex:1;width:min(var(--rail),calc(100% - 2rem));margin:0 auto;padding:2.5rem 0 4rem}
 main.measure{flex:1;width:min(var(--measure),calc(100% - 2rem));margin:0 auto;padding:3rem 0 4.5rem}
 .page-intro{margin:0 0 2rem;max-width:40rem}
-h1{font-size:clamp(1.75rem,3vw,2.25rem);line-height:1.15;font-weight:700;
+h1{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:clamp(1.75rem,3vw,2.25rem);line-height:1.15;font-weight:700;
   letter-spacing:-0.03em;margin:0 0 0.75rem}
 article h1{font-size:clamp(1.85rem,3.2vw,2.75rem)}
 h2{font-size:1.125rem;margin:0 0 0.4rem;font-weight:600;letter-spacing:-0.02em}
@@ -246,7 +249,7 @@ def _shell(
     terms_cur = ' aria-current="page"' if current == "terms" else ""
     privacy_cur = ' aria-current="page"' if current == "privacy" else ""
     return f"""<!DOCTYPE html>
-<html lang="{escape_text(locale)}" class="dark">
+<html lang="{escape_text(locale)}">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
