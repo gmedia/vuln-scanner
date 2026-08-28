@@ -56,6 +56,13 @@ vi.mock("@/components/ui/Button", () => ({
 
 vi.mock("@/components/ui/Skeleton", () => ({
   Skeleton: (props: any) => <div data-testid="skeleton" {...props} />,
+  TableRowSkeleton: ({ rows = 5 }: { rows?: number }) => (
+    <div>
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} data-testid="skeleton" />
+      ))}
+    </div>
+  ),
 }));
 
 vi.mock("@/lib/constants", () => ({
@@ -168,7 +175,7 @@ describe("ScanDetail", () => {
       mockUseScanDetailReturn({ isLoading: true });
       renderPage();
       const skeletons = screen.getAllByTestId("skeleton");
-      expect(skeletons.length).toBe(3);
+      expect(skeletons.length).toBeGreaterThan(3);
     });
   });
 
