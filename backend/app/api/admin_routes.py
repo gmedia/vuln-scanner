@@ -330,7 +330,7 @@ async def update_pricing(
     limit_response = await admin_limiter(request)
     if limit_response:
         return limit_response
-    if scan_type not in ("ip", "domain", "apk", "ipa"):
+    if scan_type not in ("ip", "domain", "apk", "ipa", "statushost"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid scan type")
 
     result = await db.execute(select(PricingConfig).where(PricingConfig.scan_type == scan_type))
