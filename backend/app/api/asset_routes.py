@@ -1,6 +1,7 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -14,6 +15,7 @@ from app.schemas.asset import (
 )
 from app.schemas.schedule import ScheduleResponse
 from app.services.asset import AssetService
+from app.services.asset_pack_html import render_asset_pack_html
 from app.services.auth import get_active_org_id, get_current_user
 
 router = APIRouter(prefix="/assets", tags=["assets"])
@@ -38,13 +40,29 @@ async def create_asset(
     return await AssetService(db).create(current_user, get_active_org_id(request), body)
 
 
-@router.get("/pack", response_model=AssetPackResponse)
+@router.get(
+    "/pack",
+    response_model=None,
+    responses={200: {"content": {"application/json": {}, "text/html": {}}}},
+)
 async def asset_pack(
     request: Request,
+    format: str = Query(default="json"),
+    lang: str | None = Query(default=None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> AssetPackResponse:
-    return await AssetService(db).pack(current_user, get_active_org_id(request))
+) -> AssetPackResponse | HTMLResponse:
+    pack = await AssetService(db).pack(current_user, get_active_org_id(request))
+    if format == "json":
+        return pack
+    if format == "html":
+        return HTMLResponse(
+            content=render_asset_pack_html(pack, lang=lang),
+            headers={
+                "Content-Disposition": 'attachment; filename="assets-pack.html"',
+            },
+        )
+    raise HTTPException(status_code=400, detail="format must be 'json' or 'html'")
 
 
 @router.get("/{asset_id}", response_model=AssetResponse)

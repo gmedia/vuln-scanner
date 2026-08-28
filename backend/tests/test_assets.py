@@ -195,5 +195,21 @@ async def test_schedule_one_to_one(db_session: AsyncSession, ctx, mock_celery):
             body = pack.json()
             assert body["count"] == 1
             assert body["assets"][0]["schedule_id"] == s1.json()["id"]
+            html_pack = await client.get(
+                "/api/assets/pack",
+                params={"format": "html", "lang": "en"},
+                headers=_auth(member, org.id),
+            )
+            assert html_pack.status_code == 200, html_pack.text
+            assert "text/html" in html_pack.headers.get("content-type", "")
+            assert "Asset pack" in html_pack.text
+            assert "sched.example" in html_pack.text
+            assert "SINE" in html_pack.text
+            bad = await client.get(
+                "/api/assets/pack",
+                params={"format": "pdf"},
+                headers=_auth(member, org.id),
+            )
+            assert bad.status_code == 400
     finally:
         app.dependency_overrides.clear()
