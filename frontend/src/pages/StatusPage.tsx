@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -53,7 +53,7 @@ export default function StatusPage() {
 
   const [slug, setSlug] = useState("");
   const [title, setTitle] = useState("");
-  const [editSlug, setEditSlug] = useState("");
+  const [editSlug, setEditSlug] = useState<string | null>(null);
   const [host, setHost] = useState("");
   const [monitorId, setMonitorId] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -62,9 +62,7 @@ export default function StatusPage() {
   const [incImpact, setIncImpact] = useState("minor");
   const [incStatus, setIncStatus] = useState("investigating");
 
-  useEffect(() => {
-    if (page?.slug) setEditSlug(page.slug);
-  }, [page?.slug]);
+  const slugDraft = editSlug ?? page?.slug ?? "";
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["status-page"] });
 
@@ -82,8 +80,9 @@ export default function StatusPage() {
     onSuccess: invalidate,
   });
   const slugMut = useMutation({
-    mutationFn: () => patchStatusPage({ slug: editSlug }),
+    mutationFn: () => patchStatusPage({ slug: slugDraft }),
     onSuccess: () => {
+      setEditSlug(null);
       invalidate();
       toast.success(t("savePublicUrl"));
     },
@@ -248,7 +247,7 @@ export default function StatusPage() {
                     id="sp-edit-slug"
                     data-testid="status-page-slug"
                     className="h-10 min-h-10"
-                    value={editSlug}
+                    value={slugDraft}
                     onChange={(e) => setEditSlug(e.target.value)}
                   />
                 </div>
