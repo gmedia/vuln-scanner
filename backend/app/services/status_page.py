@@ -95,6 +95,14 @@ class StatusPageService:
             raise HTTPException(status_code=404, detail="Organization not found")
         return org
 
+    async def _assert_slug_free(self, slug: str, page_id: UUID | None = None) -> None:
+        stmt = select(StatusPage).where(StatusPage.slug == slug)
+        if page_id is not None:
+            stmt = stmt.where(StatusPage.id != page_id)
+        clash = await self.db.execute(stmt)
+        if clash.scalar_one_or_none() is not None:
+            raise HTTPException(status_code=409, detail="slug already in use")
+
     async def _page_for_org(self, organization_id: UUID) -> StatusPage | None:
         result = await self.db.execute(
             select(StatusPage)
@@ -175,15 +183,15 @@ class StatusPageService:
             raise HTTPException(status_code=403, detail="Status page requires Pro or Multi SKU")
         existing = await self._page_for_org(organization_id)
         if existing is not None:
+            if body.slug != existing.slug:
+                await self._assert_slug_free(body.slug, existing.id)
             existing.title = body.title
             existing.slug = body.slug
             await self.db.commit()
             page = await self._page_for_org(organization_id)
             assert page is not None
             return self._to_response(page)
-        clash = await self.db.execute(select(StatusPage).where(StatusPage.slug == body.slug))
-        if clash.scalar_one_or_none() is not None:
-            raise HTTPException(status_code=409, detail="slug already in use")
+        await self._assert_slug_free(body.slug)
         page = StatusPage(
             organization_id=organization_id,
             created_by=user.id,
@@ -209,6 +217,9 @@ class StatusPageService:
             raise HTTPException(status_code=404, detail="Status page not found")
         if body.title is not None:
             page.title = body.title
+        if body.slug is not None and body.slug != page.slug:
+            await self._assert_slug_free(body.slug, page.id)
+            page.slug = body.slug
         if body.published is not None:
             if body.published and (org.sku or "basic") not in STATUS_PAGE_PUBLISH_SKUS:
                 raise HTTPException(status_code=403, detail="Status page requires Pro or Multi SKU")

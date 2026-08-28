@@ -58,6 +58,7 @@ export async function upsertStatusPage(payload: {
 
 export async function patchStatusPage(payload: {
   title?: string;
+  slug?: string;
   published?: boolean;
   custom_hostname?: string | null;
 }): Promise<StatusPage> {
