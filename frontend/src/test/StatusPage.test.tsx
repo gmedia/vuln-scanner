@@ -165,4 +165,33 @@ describe("StatusPage admin", () => {
       "status-erp.appmedia.id",
     );
   });
+
+  it("shows TXT card while hostname_status is pending_txt", async () => {
+    mockGet.mockResolvedValue({
+      id: "p1",
+      organization_id: "o1",
+      slug: "erp-stg",
+      title: "ERP",
+      published: true,
+      custom_hostname: "status.example.com",
+      hostname_status: "pending_txt",
+      cname_target: "customers.sinexis.app",
+      txt_name: "_cf-custom-hostname.status.example.com",
+      txt_value: "uuid-token",
+      ssl_status: "pending_validation",
+      public_path: "/status/erp-stg",
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+      components: [],
+      incidents: [],
+      overall: "operational",
+    });
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByText("TXT validation")).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByText(/_cf-custom-hostname.status.example.com/),
+    ).toBeInTheDocument();
+  });
 });

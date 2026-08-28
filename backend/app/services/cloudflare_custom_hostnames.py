@@ -41,7 +41,7 @@ def map_hostname_status(ssl_status: str | None, hostname_status: str | None) -> 
         return "failed"
     if "error" in ssl or "timed_out" in ssl:
         return "failed"
-    if ssl == "active" or host == "active":
+    if ssl == "active":
         return "active"
     return "pending_txt"
 

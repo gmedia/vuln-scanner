@@ -11,7 +11,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.main import app
+from app.models.credit_log import CreditLog
 from app.models.organization import Organization, OrganizationMembership
+from app.models.pricing import PricingConfig
 from app.models.uptime import UptimeMonitor
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
@@ -261,6 +263,51 @@ async def test_hostname_check_stub_active(ctx, db_session: AsyncSession, monkeyp
         assert chk.status_code == 200
         assert chk.json()["hostname_status"] == "active"
         assert chk.json()["ssl_status"] == "active"
+        chk2 = await client.post("/api/status-page/hostname/check", headers=headers)
+        assert chk2.status_code == 200
+        assert chk2.json()["hostname_status"] == "active"
+
+
+@pytest.mark.asyncio
+async def test_hostname_check_debits_pricing_once(ctx, db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch):
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "status_page_cf_stub_active", True)
+    db_session.add(PricingConfig(scan_type="statushost", credit_cost=4))
+    await db_session.commit()
+    _bind_db(db_session)
+    org: Organization = ctx["org"]
+    org.sku = "multi"
+    owner: User = ctx["owner"]
+    await db_session.commit()
+    headers = _auth(owner, org.id)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.put("/api/status-page", json={"slug": "erp", "title": "ERP"}, headers=headers)
+        att = await client.post(
+            "/api/status-page/hostname",
+            json={"hostname": "status.example.com"},
+            headers=headers,
+        )
+        assert att.status_code == 201
+        await db_session.refresh(owner)
+        credits_before = owner.credits
+        chk = await client.post("/api/status-page/hostname/check", headers=headers)
+        assert chk.status_code == 200
+        assert chk.json()["hostname_status"] == "active"
+        await db_session.refresh(owner)
+        assert owner.credits == credits_before - 4
+        logs = (await db_session.execute(select(CreditLog).where(CreditLog.user_id == owner.id))).scalars().all()
+        deducts = [row for row in logs if row.type == "deduct" and row.amount == 4]
+        assert len(deducts) == 1
+        chk2 = await client.post("/api/status-page/hostname/check", headers=headers)
+        assert chk2.status_code == 200
+        await db_session.refresh(owner)
+        assert owner.credits == credits_before - 4
+        gone = await client.delete("/api/status-page/hostname", headers=headers)
+        assert gone.status_code == 200
+        await db_session.refresh(owner)
+        assert owner.credits == credits_before - 4
 
 
 @pytest.mark.asyncio
