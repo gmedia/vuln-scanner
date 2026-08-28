@@ -20,5 +20,6 @@
   "cadenceMonthly": "Bulanan",
   "confirmDelete": "Hapus aset ini?",
   "pack": "Unduh pack JSON",
+  "packHtml": "Unduh pack HTML",
   "watchHttp": "Pantau HTTP aset ini"
 }

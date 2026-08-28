@@ -66,6 +66,14 @@ export async function fetchAssetPack(): Promise<AssetPack> {
   return data;
 }
 
+export async function fetchAssetPackHtml(lang?: string): Promise<Blob> {
+  const { data } = await api.get<Blob>("/api/assets/pack", {
+    params: { format: "html", lang },
+    responseType: "blob",
+  });
+  return data;
+}
+
 export async function createAssetSchedule(
   id: string,
   payload: {
