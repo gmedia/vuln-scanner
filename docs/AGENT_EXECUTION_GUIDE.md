@@ -6,7 +6,7 @@
 **Repo tip at write time:** re-`git pull` after reset. **P3 assets S1–S5** (#380). **P8 Uptime S1–S5 + retention** (#397–#401). **i18n S1–S7** (#367–#373). **theme S1–S3** (#375–#378). Open residual: **GTM human**; **Guard live lab**; Dependabot — do not mass-merge. **P7 SIEM S0–S5** (flag `SIEM_ENABLED` default false). No IPs/secrets. Never commit IPs/passwords/enroll keys.
 **Guard e2e rule:** if the user asks for a **full prod e2e suite including Guard enroll/unenroll**, **wipe `tc5` + leftover Manager/DB smoke rows first** — see **§4.1**. Do not skip this. Do not treat Playwright as enroll/unenroll.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
-**Phase snapshot:** **P0 policy locked** · **P1 attach shipped** · **P2 Workspace S1–S5** · **P3 assets S1–S5** · **P4 soft dual-brand** · **P5 Guard thin** (mock CI) · **P7 SIEM S0–S5** (flag default false) · **P8 Uptime S1–S5 + #401** · **i18n S1–S7** · **theme S1–S3** · **GTM human still open** · **P6 hospitality pack** not coded · residual eng = bugs, Dependabot only when named + CI green — **do not** implement SIEM under Guard PRs. Do **not** re-implement i18n because this spek used to say S0.
+**Phase snapshot:** **P0 policy locked** · **P1 attach shipped** · **P2 Workspace S1–S5** · **P3 assets S1–S5** · **P4 soft dual-brand** · **P5 Guard thin** (mock CI) · **P7 SIEM S0–S5** (flag default false) · **P8 Uptime S1–S5 + #401** · **i18n S1–S7** · **theme S1–S3** · **GTM human still open** · **P6 hospitality S1** (Workspace checklist) · residual eng = bugs, Dependabot only when named + CI green — **do not** implement SIEM under Guard PRs. Do **not** re-implement i18n because this spek used to say S0.
 
 ---
 
@@ -258,10 +258,12 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 - **Out of scope v1:** full SIEM, SOAR, per-tenant managers, customer Wazuh dashboard, webhooks
 - **Agent:** refuse SIEM scope creep; no new Guard epic without explicit verb. **Never** run host enroll against a `tc5` that still has a leftover `client.keys` identity.
 
-### Phase F / P6 — Hospitality / pilot pack
+### Phase F / P6 — Hospitality / pilot pack — **S1 DONE** (Workspace checklist)
 
-- Templates + runbooks; optional copy for GM
-- Hybrid managed checklist
+- Spec: [`docs/specs/hospitality-pilot-pack-v1.md`](specs/hospitality-pilot-pack-v1.md)
+- **S1:** copy-only checklist on `/settings/workspace` (`pilot-checklist`); links to assets / schedules / credit-history
+- Hybrid SLA stays 5 business days, not SOC; no Guard/SIEM in the card
+- **S2+** (pack HTML, AM PDF) blocked until named
 - Still no full property/IoT platform
 
 ### Later / backlog (not pre-feature blockers)
