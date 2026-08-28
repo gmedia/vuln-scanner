@@ -186,8 +186,8 @@ curl http://localhost/api/scan/{id}/export?format=html \
 | `/api/scan/domain` | JWT/Key | `POST` | Start domain scan |
 | `/api/scan/mobile` | JWT/Key | `POST` | Upload Android APK/AAB or iOS IPA for scan |
 | `/api/scan/history` | JWT | `GET` | Paginated scan history |
-| `/api/scan/{id}` | JWT | `GET` | Scan detail + findings |
-| `/api/scan/{id}/findings` | JWT | `GET` | Findings only |
+| `/api/scan/{id}` | JWT | `GET` | Scan detail (findings empty; use `/findings`) |
+| `/api/scan/{id}/findings` | JWT | `GET` | Paginated findings (`page`, `limit`) |
 | `/api/scan/{id}/export` | JWT | `GET` | Export as JSON or HTML |
 | `/api/credits/balance` | JWT | `GET` | Credit balance |
 | `/api/credits/eligibility/{type}` | JWT | `GET` | Check scan cost |
