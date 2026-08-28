@@ -101,4 +101,51 @@ describe("StatusPage admin", () => {
     await user.click(screen.getByTestId("status-page-save-slug"));
     expect(statusApi.patchStatusPage).toHaveBeenCalledWith({ slug: "erp-prod" });
   });
+
+  it("saves a custom hostname on the existing page", async () => {
+    const user = userEvent.setup();
+    mockGet.mockResolvedValue({
+      id: "p1",
+      organization_id: "o1",
+      slug: "erp-stg",
+      title: "ERP",
+      published: true,
+      custom_hostname: null,
+      hostname_status: "none",
+      cname_target: "status-edge.sinexis.app",
+      public_path: "/status/erp-stg",
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+      components: [],
+      incidents: [],
+      overall: "operational",
+    });
+    vi.mocked(statusApi.patchStatusPage).mockResolvedValue({
+      id: "p1",
+      organization_id: "o1",
+      slug: "erp-stg",
+      title: "ERP",
+      published: true,
+      custom_hostname: "status-erp.appmedia.id",
+      hostname_status: "pending_dns",
+      cname_target: "status-edge.sinexis.app",
+      public_path: "/status/erp-stg",
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+      components: [],
+      incidents: [],
+      overall: "operational",
+    });
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("status-page-host")).toBeInTheDocument(),
+    );
+    const input = screen.getByTestId("status-page-host");
+    await user.clear(input);
+    await user.type(input, "status-erp.appmedia.id");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(statusApi.patchStatusPage).toHaveBeenCalledWith({
+      custom_hostname: "status-erp.appmedia.id",
+    });
+  });
 });

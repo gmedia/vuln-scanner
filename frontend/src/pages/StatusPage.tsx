@@ -24,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/Table";
 import { listMonitors } from "@/api/uptime";
+import type { ApiError } from "@/lib/utils";
 import {
   addComponent,
   addIncidentUpdate,
@@ -34,6 +35,11 @@ import {
   upsertStatusPage,
   verifyHostname,
 } from "@/api/statusPage";
+
+function apiDetail(err: unknown, fallback: string): string {
+  const detail = (err as ApiError).response?.data?.detail;
+  return typeof detail === "string" && detail.trim() ? detail : fallback;
+}
 
 function stateBadgeVariant(state: string | null) {
   if (state === "up") return "completed" as const;
@@ -54,7 +60,7 @@ export default function StatusPage() {
   const [slug, setSlug] = useState("");
   const [title, setTitle] = useState("");
   const [editSlug, setEditSlug] = useState<string | null>(null);
-  const [host, setHost] = useState("");
+  const [host, setHost] = useState<string | null>(null);
   const [monitorId, setMonitorId] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [incTitle, setIncTitle] = useState("");
@@ -63,6 +69,7 @@ export default function StatusPage() {
   const [incStatus, setIncStatus] = useState("investigating");
 
   const slugDraft = editSlug ?? page?.slug ?? "";
+  const hostDraft = host ?? page?.custom_hostname ?? "";
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["status-page"] });
 
@@ -76,8 +83,14 @@ export default function StatusPage() {
     onSuccess: invalidate,
   });
   const hostMut = useMutation({
-    mutationFn: () => patchStatusPage({ custom_hostname: host || null }),
-    onSuccess: invalidate,
+    mutationFn: () =>
+      patchStatusPage({ custom_hostname: hostDraft.trim() || null }),
+    onSuccess: () => {
+      setHost(null);
+      invalidate();
+      toast.success(t("save"));
+    },
+    onError: (err) => toast.error(apiDetail(err, t("save"))),
   });
   const slugMut = useMutation({
     mutationFn: () => patchStatusPage({ slug: slugDraft }),
@@ -86,11 +99,15 @@ export default function StatusPage() {
       invalidate();
       toast.success(t("savePublicUrl"));
     },
-    onError: () => toast.error("Could not save public URL"),
+    onError: (err) => toast.error(apiDetail(err, "Could not save public URL")),
   });
   const verifyMut = useMutation({
     mutationFn: verifyHostname,
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate();
+      toast.success(t("verifyDns"));
+    },
+    onError: (err) => toast.error(apiDetail(err, t("verifyDns"))),
   });
   const addCompMut = useMutation({
     mutationFn: () =>
@@ -278,8 +295,9 @@ export default function StatusPage() {
                   <Label htmlFor="sp-host">{t("customHost")}</Label>
                   <Input
                     id="sp-host"
+                    data-testid="status-page-host"
                     className="h-10 min-h-10"
-                    value={host || page.custom_hostname || ""}
+                    value={hostDraft}
                     onChange={(e) => setHost(e.target.value)}
                   />
                 </div>
