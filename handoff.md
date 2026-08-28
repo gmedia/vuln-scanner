@@ -10,41 +10,44 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
-## Session snapshot (2026-08-28 — P11 custom host apex + hostname lifecycle)
+## Session snapshot (2026-08-28 — P11 SSL-gated Active + statushost credits)
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding)** | Re-`git pull`. Tip **`8379d16`** squash **#464** `feat: custom status hostname serves page at /`. Also on main: **#463** docs snapshot, **#462** uptime history, **#461** status slug |
-| **Open PRs** | **#466** `feat/status-hostname-lifecycle` — first slice API+SPA (stub CF). Typecheck/build/docker-scan green after `fb4ebd0`; wait e2e then squash-merge. **#465** `docs/status-hostname-lifecycle` — rebased onto #464 (`9e031e8`); merge after CI. Dependabot: **do not mass-merge** |
-| **P11 Status page** | **Apex on `main` (#464):** FastAPI `GET /` by custom `Host` → public HTML; nginx `location = /` + `default_server`. Custom URL = **`https://{host}/`**. Platform `https://sinexis.app/status/{slug}` unchanged. SKU custom host = **multi**. **Lifecycle first slice (#466, not merged):** Alembic `pending_dns`→`pending_txt` (+`suspended`); `POST/PUT/DELETE /api/status-page/hostname` + `POST .../hostname/check`; SPA Pasang/Perbarui/Lepas/Cek; i18n; `STATUS_PAGE_CF_STUB_ACTIVE` default false. **Not in #466:** CF Custom Hostnames write API (P11.x-B), credit meter (P11.x-C). Frozen e2e testids: `status-page`, `status-page-host`, `status-page-publish`, `status-page-create`, `status-page-slug`, `status-page-save-slug`. Public HTML **never** leak URL/IP/headers/token |
-| **P8 Uptime** | **v2 + history on `main` (#451, #462).** Residual: edge Alembic; ICMP **off**; SMTP smoke human |
+| **`main` tip (coding)** | Re-`git pull`. Tip **`c7398be`** squash **#471** `feat/status host ssl credits`. Also on main: **#470** apex nginx, **#469** CF env inject, **#468** CF create/poll/delete, **#467** docs, **#466** lifecycle API, **#465** spec, **#464** apex FastAPI |
+| **Open PRs** | None assigned. Dependabot: **do not mass-merge** |
+| **P11 Status page** | **Apex live:** `https://status-erp.appmedia.id/` → HTML **ERP Stg · Status** (not landing). Custom URL = **`https://{host}/`**. Platform `/status/{slug}` unchanged. SKU custom host = **multi**. CNAME `customers.sinexis.app` / `status-edge.sinexis.app`. **`appmedia.id` is not a CF zone.** **#471:** product `hostname_status=active` **only** if CF **SSL** `active`; else `pending_txt` (TXT card stays). **P11.x-C:** debit **N** from admin pricing key **`statushost`** (≤10 chars) on first transition to Active (and after hostname change). Seed **0**. No debit on attach/Save/`pending_txt`. No refund on detach. 402 → keep previous status. Frozen e2e testids: `status-page`, `status-page-host`, `status-page-publish`, `status-page-create`, `status-page-slug`, `status-page-save-slug`. Public HTML **never** leak URL/IP/headers/token |
+| **Edge ops** | Host SHA **`c7398be`**. Alembic **`status_host_pricing`** applied. Pricing row **`statushost` = 0**. Backend + frontend rolled (`COMPOSE_PROJECT_NAME=vuln`). GitHub secrets: `STATUS_PAGE_CF_API_TOKEN`, `STATUS_PAGE_CF_STUB_ACTIVE`, `STATUS_PAGE_CF_ZONE_ID` |
+| **P8 Uptime** | **v2 + history on `main` (#451, #462).** Residual: ICMP **off**; SMTP smoke human |
 | **P5 Guard** | **`sx-erpstg` online** — do **not** re-enroll/wipe. Do **not** open 1514 to `0.0.0.0/0`. Do **not** print IPs/keys. SSH aliases in `~/.ssh/config` only. Standing lab: wipe `tc5` first **§4.1**; Playwright ≠ enroll |
 | **P7 SIEM** | Prod flag **ON**. `SIEM_INCLUDE_FULL_LOG` **false**. Do **not** add Discover on `/guard` |
 | **P3 Assets** | S1–S5 on `main`. Residual: **`/assets` SSL on sinexis.app** (infra) |
-| **Still human** | Deploy host nginx `sinexis.app.conf` after #464; curl custom apex; GTM; Uptime SMTP |
-| **Engineering default** | **Do not start coding** until `implement` / `buat` / `kerjakan`. Next if asked: merge **#466** then **#465**; ops nginx; **not** CF API/credits unless named |
+| **Still human** | Admin → Pricing set **N** for `statushost`; SPA **Cek status** if SSL still pending; GTM; Uptime SMTP |
+| **Engineering default** | **Do not start coding** until `implement` / `buat` / `kerjakan`. P11.x-B/x-C **shipped**. Next if asked: human SSL/pricing; bugs only |
 
 ### Next OpenCode session
 
-1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. `gh pr list --state open --assignee @me`. If **#466** e2e green → `gh pr merge 466 --squash --delete-branch`. Then **#465** if mergeable. Do **not** mass-merge Dependabot.
-2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** (§0 then **§1.3**) then **`AGENTS.md`**. Spec: **`docs/specs/status-hostname-lifecycle.md`** (on #465 until merged).
-3. Speak **Bahasa Indonesia** with the user; code/PR English; prefix **every** git command with `GIT_MASTER=1`. Never work on `main`. Never force-push unless rebase of a docs PR already pushed. Never commit secrets/IPs/enroll keys/PNG screenshots.
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. Expect tip **`c7398be`** or newer. `gh pr list --state open --assignee @me`. Do **not** mass-merge Dependabot.
+2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** (§0 then **§1.3**) then **`AGENTS.md`**. Spec: **`docs/specs/status-hostname-lifecycle.md`** (§7 P11.x-C).
+3. Speak **Bahasa Indonesia** with the user; code/PR English; prefix **every** git command with `GIT_MASTER=1`. Never work on `main`. Never commit secrets/IPs/enroll keys/PNG screenshots.
 4. **Guard:** `sx-erpstg` **online** — do **not** re-enroll or wipe. Do **not** paste IP `tc1`. Do **not** open origin `:443` to the internet. Do **not** open 1514 world.
-5. **If user continues P11:** (a) confirm #466+#465 on `main`; (b) deploy nginx on **edge** host from `nginx/sinexis.app.conf`; (c) customer DNS: CNAME → `customers.sinexis.app` / `status-edge.sinexis.app` + TXT when CF API exists — **`appmedia.id` is not a CF zone**; (d) **do not** implement P11.x-B/x-C unless user says `kerjakan` on that slice.
+5. **If user continues P11:** (a) confirm live apex still status HTML; (b) user sets **N** on `statushost`; (c) **Cek status** until CF SSL `active`; (d) do **not** re-implement #464–#471.
 6. Recapture **only if asked**. Sequential visual-engineering. Do **not** fire many parallel screenshot agents (OOM).
 7. **SIEM prod is on.** **Guard live lab** (wipe-first §4.1) without re-asking. Compose **`-p vuln`**.
 
+### Last session (2026-08-28) — SSL-gated Active + statushost (#471)
+
+**Shipped on `main`:** **#471** — `map_hostname_status` requires CF SSL `active`; `_debit_hostname_if_activated`; Alembic seed `statushost` cost 0; admin PUT whitelist; tests; i18n TXT until SSL; spec P11.x-C.
+
+**Ops (not git):** edge `deploy-services.sh` backend then frontend; Alembic head `status_host_pricing`; live apex still ERP Stg HTML.
+
+**Do not:** hardcode 3 credits; widen `scan_type` column; refund on Lepas; debit on `pending_txt`; open origin 443; re-enroll `sx-erpstg`; commit PNGs.
+
+**User standing:** Guard live lab OK; SIEM on; never invent E2E password; Palatino **rejected**; public status **never** leak URL/IP; **kerjakan semua saran** (SSL + credits) done.
+
 ### Last session (2026-08-28) — custom host apex + hostname lifecycle
 
-**Shipped on `main`:** **#464** — custom Host `GET /` status HTML; nginx map + `location = /` → backend `/status`; tests.
-
-**Open:** **#466** — hostname attach/update/detach/check; `pending_txt`; SPA buttons; stub CF (`STATUS_PAGE_CF_STUB_ACTIVE`). **#465** — lifecycle spec (rebased after #464 conflict on `status-page-v1.md`).
-
-**Product lock:** TXT + poll CF (not CNAME-to-zone as TLS proof); split Pasang/Perbarui/Lepas/Cek; credits later (N admin, bill on Active); CF create/delete later.
-
-**Do not:** CF write API in same PR as first slice; credit meter; A-record origin; open origin 443; re-enroll `sx-erpstg`.
-
-**User standing:** Guard live lab OK; SIEM on; never invent E2E password; Palatino **rejected**; public status **never** leak URL/IP; **kerjakan** lifecycle first slice (done in #466).
+**Shipped on `main`:** **#464–#470** — apex FastAPI + nginx; CF Custom Hostnames; env inject; lifecycle API `pending_txt`; spec.
 
 ### Last session (2026-08-28) — Uptime history + Guard ERP stg
 
