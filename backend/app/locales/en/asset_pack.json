@@ -1,0 +1,18 @@
+{
+  "html_lang": "en",
+  "title": "Sinexis asset pack — workspace",
+  "h1": "Asset pack — Sinexis Scan",
+  "label_org": "Organization ID:",
+  "label_sku": "SKU:",
+  "label_count": "Assets:",
+  "exported": "Exported: {exported}",
+  "col_name": "Name",
+  "col_type": "Type",
+  "col_target": "Target",
+  "col_schedule": "Schedule",
+  "scheduled": "Yes",
+  "unscheduled": "No",
+  "empty": "No named assets in this workspace.",
+  "footer": "Sinexis Scan — named targets for this workspace. Not a CMDB or SIEM export.",
+  "note": "This pack lists scan assets only. Guard agents and SIEM cases are not included."
+}

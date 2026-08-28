@@ -1,0 +1,18 @@
+{
+  "html_lang": "id",
+  "title": "Pack aset Sinexis — workspace",
+  "h1": "Pack aset — Sinexis Scan",
+  "label_org": "ID organisasi:",
+  "label_sku": "SKU:",
+  "label_count": "Aset:",
+  "exported": "Diekspor: {exported}",
+  "col_name": "Nama",
+  "col_type": "Tipe",
+  "col_target": "Target",
+  "col_schedule": "Jadwal",
+  "scheduled": "Ada",
+  "unscheduled": "Tidak",
+  "empty": "Belum ada aset bernama di workspace ini.",
+  "footer": "Sinexis Scan — target bernama untuk workspace ini. Bukan ekspor CMDB atau SIEM.",
+  "note": "Pack ini hanya daftar aset scan. Agen Guard dan kasus SIEM tidak termasuk."
+}
