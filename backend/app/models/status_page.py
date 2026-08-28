@@ -41,6 +41,10 @@ class StatusPage(Base):
     published: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     custom_hostname: Mapped[str | None] = mapped_column(String(253), nullable=True)
     hostname_status: Mapped[str] = mapped_column(String(24), nullable=False, default="none")
+    cf_hostname_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    txt_name: Mapped[str | None] = mapped_column(String(253), nullable=True)
+    txt_value: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    ssl_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
