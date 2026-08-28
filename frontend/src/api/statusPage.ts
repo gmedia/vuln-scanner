@@ -35,6 +35,9 @@ export interface StatusPage {
   custom_hostname: string | null;
   hostname_status: string;
   cname_target: string;
+  txt_name: string | null;
+  txt_value: string | null;
+  ssl_status: string | null;
   public_path: string;
   created_at: string;
   updated_at: string;
@@ -66,9 +69,28 @@ export async function patchStatusPage(payload: {
   return data;
 }
 
-export async function verifyHostname(): Promise<StatusPage> {
+export async function attachHostname(hostname: string): Promise<StatusPage> {
+  const { data } = await api.post<StatusPage>("/api/status-page/hostname", {
+    hostname,
+  });
+  return data;
+}
+
+export async function replaceHostname(hostname: string): Promise<StatusPage> {
+  const { data } = await api.put<StatusPage>("/api/status-page/hostname", {
+    hostname,
+  });
+  return data;
+}
+
+export async function detachHostname(): Promise<StatusPage> {
+  const { data } = await api.delete<StatusPage>("/api/status-page/hostname");
+  return data;
+}
+
+export async function checkHostname(): Promise<StatusPage> {
   const { data } = await api.post<StatusPage>(
-    "/api/status-page/verify-hostname",
+    "/api/status-page/hostname/check",
   );
   return data;
 }

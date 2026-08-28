@@ -28,12 +28,15 @@ import type { ApiError } from "@/lib/utils";
 import {
   addComponent,
   addIncidentUpdate,
+  attachHostname,
+  checkHostname,
   createIncident,
   deleteComponent,
+  detachHostname,
   getStatusPage,
   patchStatusPage,
+  replaceHostname,
   upsertStatusPage,
-  verifyHostname,
 } from "@/api/statusPage";
 
 function apiDetail(err: unknown, fallback: string): string {
@@ -82,15 +85,32 @@ export default function StatusPage() {
     mutationFn: (published: boolean) => patchStatusPage({ published }),
     onSuccess: invalidate,
   });
-  const hostMut = useMutation({
-    mutationFn: () =>
-      patchStatusPage({ custom_hostname: hostDraft.trim() || null }),
+  const attachMut = useMutation({
+    mutationFn: () => attachHostname(hostDraft.trim()),
     onSuccess: () => {
       setHost(null);
       invalidate();
-      toast.success(t("save"));
+      toast.success(t("attachHost"));
     },
-    onError: (err) => toast.error(apiDetail(err, t("save"))),
+    onError: (err) => toast.error(apiDetail(err, t("attachHost"))),
+  });
+  const replaceMut = useMutation({
+    mutationFn: () => replaceHostname(hostDraft.trim()),
+    onSuccess: () => {
+      setHost(null);
+      invalidate();
+      toast.success(t("updateHost"));
+    },
+    onError: (err) => toast.error(apiDetail(err, t("updateHost"))),
+  });
+  const detachMut = useMutation({
+    mutationFn: detachHostname,
+    onSuccess: () => {
+      setHost(null);
+      invalidate();
+      toast.success(t("detachHost"));
+    },
+    onError: (err) => toast.error(apiDetail(err, t("detachHost"))),
   });
   const slugMut = useMutation({
     mutationFn: () => patchStatusPage({ slug: slugDraft }),
@@ -101,13 +121,13 @@ export default function StatusPage() {
     },
     onError: (err) => toast.error(apiDetail(err, "Could not save public URL")),
   });
-  const verifyMut = useMutation({
-    mutationFn: verifyHostname,
+  const checkMut = useMutation({
+    mutationFn: checkHostname,
     onSuccess: () => {
       invalidate();
-      toast.success(t("verifyDns"));
+      toast.success(t("checkHost"));
     },
-    onError: (err) => toast.error(apiDetail(err, t("verifyDns"))),
+    onError: (err) => toast.error(apiDetail(err, t("checkHost"))),
   });
   const addCompMut = useMutation({
     mutationFn: () =>
@@ -311,21 +331,56 @@ export default function StatusPage() {
               <p className="text-sm text-muted-foreground">
                 {t("cnameHelp", { target: page.cname_target })}
               </p>
+              {page.hostname_status === "pending_txt" ? (
+                <div className="space-y-1 rounded-md border border-border p-3 text-sm">
+                  <p className="font-medium">{t("txtCard")}</p>
+                  {page.txt_name ? (
+                    <p className="font-mono text-xs">
+                      {page.txt_name} → {page.txt_value}
+                    </p>
+                  ) : (
+                    <p className="text-muted-foreground">{t("txtPending")}</p>
+                  )}
+                </div>
+              ) : null}
               <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => hostMut.mutate()}
-                >
-                  {t("save")}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => verifyMut.mutate()}
-                >
-                  {t("verifyDns")}
-                </Button>
+                {page.custom_hostname ? (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={replaceMut.isPending || !hostDraft.trim()}
+                      onClick={() => replaceMut.mutate()}
+                    >
+                      {t("updateHost")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={detachMut.isPending}
+                      onClick={() => detachMut.mutate()}
+                    >
+                      {t("detachHost")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={checkMut.isPending}
+                      onClick={() => checkMut.mutate()}
+                    >
+                      {t("checkHost")}
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={attachMut.isPending || !hostDraft.trim()}
+                    onClick={() => attachMut.mutate()}
+                  >
+                    {t("attachHost")}
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

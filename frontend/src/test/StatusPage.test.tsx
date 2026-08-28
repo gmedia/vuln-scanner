@@ -18,7 +18,10 @@ vi.mock("@/api/statusPage", async () => {
     getStatusPage: (...args: unknown[]) => mockGet(...args),
     upsertStatusPage: vi.fn(),
     patchStatusPage: vi.fn(),
-    verifyHostname: vi.fn(),
+    attachHostname: vi.fn(),
+    replaceHostname: vi.fn(),
+    detachHostname: vi.fn(),
+    checkHostname: vi.fn(),
     addComponent: vi.fn(),
     deleteComponent: vi.fn(),
     createIncident: vi.fn(),
@@ -102,7 +105,7 @@ describe("StatusPage admin", () => {
     expect(statusApi.patchStatusPage).toHaveBeenCalledWith({ slug: "erp-prod" });
   });
 
-  it("saves a custom hostname on the existing page", async () => {
+  it("attaches a custom hostname on the existing page", async () => {
     const user = userEvent.setup();
     mockGet.mockResolvedValue({
       id: "p1",
@@ -113,6 +116,9 @@ describe("StatusPage admin", () => {
       custom_hostname: null,
       hostname_status: "none",
       cname_target: "status-edge.sinexis.app",
+      txt_name: null,
+      txt_value: null,
+      ssl_status: null,
       public_path: "/status/erp-stg",
       created_at: "2026-01-01T00:00:00Z",
       updated_at: "2026-01-01T00:00:00Z",
@@ -120,15 +126,18 @@ describe("StatusPage admin", () => {
       incidents: [],
       overall: "operational",
     });
-    vi.mocked(statusApi.patchStatusPage).mockResolvedValue({
+    vi.mocked(statusApi.attachHostname).mockResolvedValue({
       id: "p1",
       organization_id: "o1",
       slug: "erp-stg",
       title: "ERP",
       published: true,
       custom_hostname: "status-erp.appmedia.id",
-      hostname_status: "pending_dns",
+      hostname_status: "pending_txt",
       cname_target: "status-edge.sinexis.app",
+      txt_name: null,
+      txt_value: null,
+      ssl_status: "pending_txt",
       public_path: "/status/erp-stg",
       created_at: "2026-01-01T00:00:00Z",
       updated_at: "2026-01-01T00:00:00Z",
@@ -143,9 +152,9 @@ describe("StatusPage admin", () => {
     const input = screen.getByTestId("status-page-host");
     await user.clear(input);
     await user.type(input, "status-erp.appmedia.id");
-    await user.click(screen.getByRole("button", { name: "Save" }));
-    expect(statusApi.patchStatusPage).toHaveBeenCalledWith({
-      custom_hostname: "status-erp.appmedia.id",
-    });
+    await user.click(screen.getByRole("button", { name: "Attach" }));
+    expect(statusApi.attachHostname).toHaveBeenCalledWith(
+      "status-erp.appmedia.id",
+    );
   });
 });
