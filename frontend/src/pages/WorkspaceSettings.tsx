@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Building2,
+  ClipboardList,
   Loader2,
   Mail,
   Trash2,
@@ -263,6 +264,47 @@ function WorkspaceSettings() {
               )}
               {t("acceptButton")}
             </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {orgId && (
+        <Card data-testid="pilot-checklist">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
+              <ClipboardList className="h-4 w-4 text-primary" />
+              {t("pilotTitle")}
+            </CardTitle>
+            <CardDescription className="text-xs">
+              {t("pilotDescription")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <ol className="list-decimal space-y-2 pl-5 text-sm text-foreground">
+              <li>{t("pilotStepOrg")}</li>
+              <li>{t("pilotStepInvite")}</li>
+              <li>{t("pilotStepAssets")}</li>
+              <li>{t("pilotStepSchedules")}</li>
+              <li>{t("pilotStepCredits")}</li>
+              <li>{t("pilotStepReport")}</li>
+            </ol>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild variant="outline" size="sm">
+                <Link to="/assets" data-testid="pilot-link-assets">
+                  {t("pilotLinkAssets")}
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/schedules" data-testid="pilot-link-schedules">
+                  {t("pilotLinkSchedules")}
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/credit-history" data-testid="pilot-link-credits">
+                  {t("pilotLinkCredits")}
+                </Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
