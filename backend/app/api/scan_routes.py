@@ -413,11 +413,21 @@ async def get_scan(
     return job
 
 
+@router.get("/scan/{job_id}/findings/{finding_id}", response_model=ScanFindingResponse)
+async def get_scan_finding(
+    job_id: str,
+    finding_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ScanFindingResponse:
+    svc = ScannerService(db)
+    return await svc.get_finding(job_id, finding_id, user_id=current_user.id)
+
+
 @router.get("/scan/{job_id}/findings", response_model=list[ScanFindingResponse])
 async def get_scan_findings(
     job_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ) -> list[ScanFindingResponse]:
-    """Retrieve only the findings for a scan job."""
     svc = ScannerService(db)
     findings = await svc.get_findings(job_id, user_id=current_user.id)
     return findings
@@ -446,7 +456,7 @@ async def export_scan(
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse | HTMLResponse:
     svc = ScannerService(db)
-    job = await svc.get_job(job_id, user_id=current_user.id)
+    job = await svc.get_job(job_id, user_id=current_user.id, include_raw=True)
     if not job:
         raise HTTPException(status_code=404, detail="Scan job not found")
 

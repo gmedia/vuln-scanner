@@ -96,6 +96,7 @@
   "findingRemediation": "Suggested action",
   "rawData": "RAW DATA",
   "noRawData": "No raw data available for this finding.",
+  "loading": "Loading…",
   "noFindings": "No findings detected",
   "cleanResult": "This scan returned a clean result.",
   "filterFindings": "Filter findings...",

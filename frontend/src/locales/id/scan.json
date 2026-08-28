@@ -96,6 +96,7 @@
   "findingRemediation": "Saran aksi",
   "rawData": "DATA MENTAH",
   "noRawData": "Tidak ada data mentah untuk temuan ini.",
+  "loading": "Memuat…",
   "noFindings": "Tidak ada temuan",
   "cleanResult": "Scan ini tidak menemukan kerentanan.",
   "filterFindings": "Filter temuan...",

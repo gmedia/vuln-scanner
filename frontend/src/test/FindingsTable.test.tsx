@@ -1,8 +1,19 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import FindingsTable from "@/components/results/FindingsTable";
 import type { ScanFinding } from "@/api/scans";
+
+function renderTable(ui: ReactNode) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={client}>{ui}</QueryClientProvider>,
+  );
+}
 
 function mockFinding(overrides: Partial<ScanFinding> = {}): ScanFinding {
   return {
@@ -25,13 +36,13 @@ function mockFinding(overrides: Partial<ScanFinding> = {}): ScanFinding {
 
 describe("FindingsTable", () => {
   it("shows loading skeletons when isLoading=true", () => {
-    render(<FindingsTable findings={undefined} isLoading={true} />);
+    renderTable(<FindingsTable findings={undefined} isLoading={true} />);
     const skeletons = document.querySelectorAll(".animate-pulse");
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
   it("shows 'No findings detected' when findings is an empty array", () => {
-    render(<FindingsTable findings={[]} isLoading={false} />);
+    renderTable(<FindingsTable findings={[]} isLoading={false} />);
     expect(screen.getByText("No findings detected")).toBeInTheDocument();
   });
 
@@ -41,7 +52,7 @@ describe("FindingsTable", () => {
       mockFinding({ id: "2", title: "XSS Attack", severity: "high", cvss_score: 7.5 }),
       mockFinding({ id: "3", title: "Open Redirect", severity: "medium", cvss_score: 5.0 }),
     ];
-    render(<FindingsTable findings={findings} isLoading={false} />);
+    renderTable(<FindingsTable findings={findings} isLoading={false} />);
     expect(screen.getByPlaceholderText("Filter findings...")).toBeInTheDocument();
   });
 
@@ -51,7 +62,7 @@ describe("FindingsTable", () => {
       mockFinding({ id: "2", title: "XSS Attack", severity: "high", cvss_score: 7.5 }),
       mockFinding({ id: "3", title: "Open Redirect", severity: "medium", cvss_score: 5.0 }),
     ];
-    render(<FindingsTable findings={findings} isLoading={false} />);
+    renderTable(<FindingsTable findings={findings} isLoading={false} />);
     expect(screen.getAllByText("SQL Injection").length).toBeGreaterThan(0);
     expect(screen.getAllByText("XSS Attack").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Open Redirect").length).toBeGreaterThan(0);
@@ -63,7 +74,7 @@ describe("FindingsTable", () => {
       mockFinding(),
       mockFinding({ id: "2", title: "XSS Attack", severity: "high", cvss_score: 7.5 }),
     ];
-    render(<FindingsTable findings={findings} isLoading={false} />);
+    renderTable(<FindingsTable findings={findings} isLoading={false} />);
     const searchInput = screen.getByPlaceholderText("Filter findings...");
     await user.type(searchInput, "zzz_nonexistent_pattern_zzz");
     expect(screen.getAllByText("No matching findings").length).toBeGreaterThan(0);
@@ -76,7 +87,7 @@ describe("FindingsTable", () => {
       mockFinding({ id: "2", title: "XSS Attack", severity: "high", cvss_score: 7.5 }),
       mockFinding({ id: "3", title: "Open Redirect", severity: "medium", cvss_score: 5.0 }),
     ];
-    render(<FindingsTable findings={findings} isLoading={false} />);
+    renderTable(<FindingsTable findings={findings} isLoading={false} />);
     await user.click(screen.getByRole("button", { name: "Filter by severity" }));
     await user.click(screen.getByRole("menuitemcheckbox", { name: "high" }));
     expect(screen.queryByText("SQL Injection")).not.toBeInTheDocument();
@@ -89,7 +100,7 @@ describe("FindingsTable", () => {
       mockFinding(),
       mockFinding({ id: "2", title: "Info Issue", severity: "info", cvss_score: 0 }),
     ];
-    render(<FindingsTable findings={findings} isLoading={false} />);
+    renderTable(<FindingsTable findings={findings} isLoading={false} />);
     expect(screen.getAllByText("critical").length).toBeGreaterThan(0);
     expect(screen.getAllByText("info").length).toBeGreaterThan(0);
   });
@@ -112,7 +123,7 @@ describe("FindingsTable", () => {
         cvss_score: 5.0,
       }),
     ];
-    render(<FindingsTable findings={findings} isLoading={false} />);
+    renderTable(<FindingsTable findings={findings} isLoading={false} />);
 
     await user.click(screen.getAllByText("XSS Attack")[0]);
 

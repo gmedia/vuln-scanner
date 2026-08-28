@@ -1,8 +1,19 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import FindingDetail from "@/components/results/FindingDetail";
 import type { ScanFinding } from "@/api/scans";
+
+function renderDetail(ui: ReactNode) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={client}>{ui}</QueryClientProvider>,
+  );
+}
 
 function mockFinding(overrides: Partial<ScanFinding> = {}): ScanFinding {
   return {
@@ -27,12 +38,12 @@ function mockFinding(overrides: Partial<ScanFinding> = {}): ScanFinding {
 
 describe("FindingDetail", () => {
   it("renders severity badge", () => {
-    render(<FindingDetail finding={mockFinding()} />);
+    renderDetail(<FindingDetail finding={mockFinding()} />);
     expect(screen.getByText("critical")).toBeInTheDocument();
   });
 
   it("renders CVE ID as a link when present", () => {
-    render(<FindingDetail finding={mockFinding()} />);
+    renderDetail(<FindingDetail finding={mockFinding()} />);
     const cveLink = screen.getByText("CVE-2024-1234");
     expect(cveLink).toBeInTheDocument();
     expect(cveLink.tagName).toBe("A");
@@ -43,12 +54,12 @@ describe("FindingDetail", () => {
   });
 
   it("renders CVSS score", () => {
-    render(<FindingDetail finding={mockFinding()} />);
+    renderDetail(<FindingDetail finding={mockFinding()} />);
     expect(screen.getByText("CVSS 9.8")).toBeInTheDocument();
   });
 
   it("renders description section with 'Description' label", () => {
-    render(<FindingDetail finding={mockFinding()} />);
+    renderDetail(<FindingDetail finding={mockFinding()} />);
     expect(screen.getByText("Description")).toBeInTheDocument();
     expect(
       screen.getByText("SQL injection vulnerability in login form")
@@ -56,7 +67,7 @@ describe("FindingDetail", () => {
   });
 
   it("renders impact section with risk label when impact exists", () => {
-    render(<FindingDetail finding={mockFinding()} />);
+    renderDetail(<FindingDetail finding={mockFinding()} />);
     expect(
       screen.getByText("Risk if not addressed")
     ).toBeInTheDocument();
@@ -66,14 +77,14 @@ describe("FindingDetail", () => {
   });
 
   it("does NOT render impact section when impact is null", () => {
-    render(<FindingDetail finding={mockFinding({ impact: null })} />);
+    renderDetail(<FindingDetail finding={mockFinding({ impact: null })} />);
     expect(
       screen.queryByText("Risk if not addressed")
     ).not.toBeInTheDocument();
   });
 
   it("renders attacker benefit section when present", () => {
-    render(<FindingDetail finding={mockFinding()} />);
+    renderDetail(<FindingDetail finding={mockFinding()} />);
     expect(
       screen.getByText("What an attacker gains from knowing this")
     ).toBeInTheDocument();
@@ -83,7 +94,7 @@ describe("FindingDetail", () => {
   });
 
   it("does NOT render attacker benefit when null", () => {
-    render(
+    renderDetail(
       <FindingDetail finding={mockFinding({ attacker_benefit: null })} />
     );
     expect(
@@ -92,12 +103,12 @@ describe("FindingDetail", () => {
   });
 
   it("renders remediation section with 'Saran aksi' label when remediation exists", () => {
-    render(<FindingDetail finding={mockFinding()} />);
+    renderDetail(<FindingDetail finding={mockFinding()} />);
     expect(screen.getByText("Suggested action")).toBeInTheDocument();
   });
 
   it("does NOT render remediation section when remediation is null", () => {
-    render(
+    renderDetail(
       <FindingDetail
         finding={mockFinding({ remediation: null })}
       />
@@ -107,7 +118,7 @@ describe("FindingDetail", () => {
 
   it("renders 'RAW DATA' toggle button", async () => {
     const user = userEvent.setup();
-    render(<FindingDetail finding={mockFinding()} />);
+    renderDetail(<FindingDetail finding={mockFinding()} />);
     const toggleButton = screen.getByText("RAW DATA");
     expect(toggleButton).toBeInTheDocument();
     await user.click(toggleButton);

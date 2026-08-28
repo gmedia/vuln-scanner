@@ -124,6 +124,16 @@ export async function getScanFindings(jobId: string): Promise<ScanFinding[]> {
   return data;
 }
 
+export async function getScanFinding(
+  jobId: string,
+  findingId: string,
+): Promise<ScanFinding> {
+  const { data } = await api.get<ScanFinding>(
+    `/api/scan/${jobId}/findings/${findingId}`,
+  );
+  return data;
+}
+
 export async function getScanDiff(jobId: string): Promise<ScanDiff> {
   const { data } = await api.get<ScanDiff>(`/api/scan/${jobId}/diff`);
   return data;

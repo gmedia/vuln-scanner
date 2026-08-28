@@ -13,7 +13,10 @@ class ScanFinding(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     job_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("scan_jobs.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("scan_jobs.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     severity: Mapped[str] = mapped_column(String(10), nullable=False)
     category: Mapped[str | None] = mapped_column(String(50), nullable=True)
