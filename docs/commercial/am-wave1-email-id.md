@@ -16,7 +16,7 @@
 4. Catat di CRM: tanggal kirim, tier ditawarkan, next follow-up.
 5. Jika setuju: serahkan ke ops fulfillment (kredit + schedule) — checklist di SKU §3.
 
-**Jangan janjikan:** SIEM, “aman 100%”, Guard/Wazuh, unlimited scan, multi-user workspace (belum P2).
+**Jangan janjikan:** SIEM, “aman 100%”, Guard/Wazuh, unlimited scan, 24/7 SOC, nested multi-property. **Boleh sebut** undang rekan (Workspace sudah live) untuk Pro/Multi — kredit tetap personal, bukan org wallet.
 
 ---
 
