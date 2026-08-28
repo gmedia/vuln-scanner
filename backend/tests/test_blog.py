@@ -71,7 +71,7 @@ def test_public_html_index(client):
     assert 'data-theme-set="dark"' in resp.text
     assert 'class="rail"' in resp.text or "class='rail'" in resp.text
     assert ".dark{" in resp.text
-    assert 'class="dark"' in resp.text
+    assert "document.documentElement.classList.toggle('dark'" in resp.text
 
 
 def test_draft_not_public(client):

@@ -27,6 +27,7 @@ function AdminDashboard() {
   const { data: stats, isLoading } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: adminApi.getStats,
+    staleTime: 30_000,
   });
 
   const kpiChartConfig = {
@@ -115,26 +116,21 @@ function AdminDashboard() {
           {[...countCards, ...creditCards].map((card) => (
             <Card key={card.label} className="border-border">
               <CardContent className="flex flex-col items-center justify-center p-4">
-                {isLoading ? (
-                  <>
-                    <Skeleton className="mb-2 h-8 w-16" />
-                    <Skeleton className="h-3 w-20" />
-                  </>
+                <div className={`mb-2 rounded-full p-2 ${card.bg}`}>
+                  <card.icon className={`h-4 w-4 ${card.color}`} />
+                </div>
+                {isLoading && !stats ? (
+                  <Skeleton className="h-8 w-16" />
                 ) : (
-                  <>
-                    <div className={`mb-2 rounded-full p-2 ${card.bg}`}>
-                      <card.icon className={`h-4 w-4 ${card.color}`} />
-                    </div>
-                    <span
-                      className={`font-mono text-2xl font-bold tracking-tight tabular-nums ${card.color}`}
-                    >
-                      {card.value.toLocaleString()}
-                    </span>
-                    <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-                      {card.label}
-                    </span>
-                  </>
+                  <span
+                    className={`font-mono text-2xl font-bold tracking-tight tabular-nums ${card.color}`}
+                  >
+                    {card.value.toLocaleString()}
+                  </span>
                 )}
+                <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {card.label}
+                </span>
               </CardContent>
             </Card>
           ))}

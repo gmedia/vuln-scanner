@@ -3,6 +3,7 @@ import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import AuthLayout, {
@@ -91,7 +92,9 @@ function Login() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="min-h-[1.25rem]">
               {error && (
-                <p className="text-xs text-red-400 text-center">{error}</p>
+                <p className="text-center text-xs text-destructive" role="alert">
+                  {error}
+                </p>
               )}
               {resendFeedback && (
                 <p className="text-xs text-primary text-center mt-1">
@@ -100,12 +103,7 @@ function Login() {
               )}
             </div>
             <div className="space-y-2">
-              <label
-                htmlFor="email"
-                className="block text-xs text-muted-foreground"
-              >
-                {tc("email")}
-              </label>
+              <Label htmlFor="email">{tc("email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -117,12 +115,7 @@ function Login() {
               />
             </div>
             <div className="space-y-2">
-              <label
-                htmlFor="password"
-                className="block text-xs text-muted-foreground"
-              >
-                {tc("password")}
-              </label>
+              <Label htmlFor="password">{tc("password")}</Label>
               <div className="relative">
                 <Input
                   id="password"

@@ -88,5 +88,7 @@
   "blogPublish": "Publish",
   "blogUnpublish": "Unpublish",
   "blogCancel": "Cancel",
-  "blogStatus": "Status"
+  "blogStatus": "Status",
+  "blogPublished": "Published",
+  "blogDraft": "Draft"
 }

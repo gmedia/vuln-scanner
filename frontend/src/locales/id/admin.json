@@ -88,5 +88,7 @@
   "blogPublish": "Terbitkan",
   "blogUnpublish": "Tarik",
   "blogCancel": "Batal",
-  "blogStatus": "Status"
+  "blogStatus": "Status",
+  "blogPublished": "Terbit",
+  "blogDraft": "Draf"
 }

@@ -128,7 +128,7 @@ function NavItem({
           <span className="flex min-w-0 flex-col leading-tight">
             <span>{label}</span>
             {hint ? (
-              <span className="text-[10px] font-normal text-muted-foreground">
+              <span className="truncate text-[10px] font-normal text-foreground/70">
                 {hint}
               </span>
             ) : null}
@@ -236,7 +236,7 @@ function Sidebar() {
             </Badge>
           </div>
         ) : null}
-        <p className="px-2 text-center text-[10px] text-muted-foreground group-data-[collapsible=icon]:hidden">
+        <p className="px-2 text-center text-[10px] text-foreground/70 group-data-[collapsible=icon]:hidden">
           {BRAND.sidebarVersion}
         </p>
       </SidebarFooter>

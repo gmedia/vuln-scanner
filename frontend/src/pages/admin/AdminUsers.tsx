@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Users, Search, Eye } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
@@ -49,6 +49,7 @@ function AdminUsers() {
     queryKey: ["admin-users", page, search],
     queryFn: () =>
       adminApi.getUsers({ page, page_size: PAGE_SIZE, search: search || undefined }),
+    placeholderData: keepPreviousData,
   });
 
   const totalPages = Math.ceil((data?.total ?? 0) / PAGE_SIZE);
@@ -81,7 +82,8 @@ function AdminUsers() {
                   setSearch(e.target.value);
                   setPage(1);
                 }}
-                className="h-7 w-[180px] pl-7 text-xs"
+                className="h-10 min-h-10 w-[220px] pl-8 text-sm"
+                aria-label={t("searchEmail")}
               />
             </div>
             {data && data.total > 0 && (
@@ -92,7 +94,7 @@ function AdminUsers() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {isLoading && !data ? (
             <div className="space-y-3">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Skeleton key={i} className="h-12 w-full" />

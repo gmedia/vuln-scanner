@@ -65,7 +65,7 @@ function OrgSwitcher({ className, compact = false }: OrgSwitcherProps) {
           aria-haspopup="listbox"
           disabled={switching}
           className={cn(
-            "h-9 max-w-[14rem] justify-start gap-1.5 bg-muted/40 px-2.5 text-xs text-foreground hover:text-primary",
+            "h-9 max-w-[14rem] min-w-0 justify-start gap-1.5 bg-muted/40 px-2.5 text-xs text-foreground hover:text-primary",
             compact && "max-w-[10rem]",
             className,
           )}
@@ -78,7 +78,7 @@ function OrgSwitcher({ className, compact = false }: OrgSwitcherProps) {
               aria-hidden
             />
           )}
-          <span className="truncate font-medium">
+          <span className="min-w-0 flex-1 truncate text-left font-medium">
             {active?.name ?? t("title")}
           </span>
           {active?.role && (
