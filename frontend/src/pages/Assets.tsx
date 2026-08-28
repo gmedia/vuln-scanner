@@ -8,6 +8,7 @@ import {
   createAssetSchedule,
   deleteAsset,
   fetchAssetPack,
+  fetchAssetPackHtml,
   listAssets,
   type ScanAsset,
 } from "@/api/assets";
@@ -87,24 +88,41 @@ export default function Assets() {
         </div>
         <div className="flex gap-2">
           {items.length > 0 ? (
-            <Button
-              variant="outline"
-              data-testid="assets-pack"
-              onClick={async () => {
-                const pack = await fetchAssetPack();
-                const blob = new Blob([JSON.stringify(pack, null, 2)], {
-                  type: "application/json",
-                });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = "assets-pack.json";
-                a.click();
-                URL.revokeObjectURL(url);
-              }}
-            >
-              {t("pack")}
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                data-testid="assets-pack"
+                onClick={async () => {
+                  const pack = await fetchAssetPack();
+                  const blob = new Blob([JSON.stringify(pack, null, 2)], {
+                    type: "application/json",
+                  });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "assets-pack.json";
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                {t("pack")}
+              </Button>
+              <Button
+                variant="outline"
+                data-testid="assets-pack-html"
+                onClick={async () => {
+                  const blob = await fetchAssetPackHtml();
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "assets-pack.html";
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                {t("packHtml")}
+              </Button>
+            </>
           ) : null}
           <Button
             data-testid="assets-add"
