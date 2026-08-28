@@ -138,16 +138,12 @@ function MobileUpload() {
         <div className="flex gap-2">
           <Button
             type="button"
-            variant="outline"
             size="sm"
             aria-pressed={platform === "android"}
             onClick={() => selectPlatform("android")}
             disabled={startMobileScan.isPending}
-            className={cn(
-              "min-h-11 flex-1 text-foreground",
-              platform === "android" &&
-                "ring-2 ring-primary bg-primary/10 text-foreground",
-            )}
+            variant={platform === "android" ? "default" : "outline"}
+            className="min-h-11 flex-1"
           >
             {platform === "android" ? (
               <Check className="mr-1.5 h-4 w-4" aria-hidden />
@@ -158,16 +154,12 @@ function MobileUpload() {
           </Button>
           <Button
             type="button"
-            variant="outline"
             size="sm"
             aria-pressed={platform === "ios"}
             onClick={() => selectPlatform("ios")}
             disabled={startMobileScan.isPending}
-            className={cn(
-              "min-h-11 flex-1 text-foreground",
-              platform === "ios" &&
-                "ring-2 ring-primary bg-primary/10 text-foreground",
-            )}
+            variant={platform === "ios" ? "default" : "outline"}
+            className="min-h-11 flex-1"
           >
             {platform === "ios" ? (
               <Check className="mr-1.5 h-4 w-4" aria-hidden />
