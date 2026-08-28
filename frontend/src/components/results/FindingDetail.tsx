@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { Separator } from "@/components/ui/Separator";
+import { useScanFinding } from "@/hooks/useScan";
 
 interface FindingDetailProps {
   finding: ScanFinding;
@@ -22,6 +23,13 @@ interface FindingDetailProps {
 function FindingDetail({ finding }: FindingDetailProps) {
   const { t } = useTranslation("scan");
   const [showRaw, setShowRaw] = useState(false);
+  const needsRawFetch = finding.raw_data == null;
+  const { data: fullFinding, isFetching: rawLoading } = useScanFinding(
+    finding.job_id,
+    finding.id,
+    showRaw && needsRawFetch,
+  );
+  const rawPayload = fullFinding?.raw_data ?? finding.raw_data;
 
   return (
     <Card className="bg-card/50 shadow-xs animate-in fade-in-0 slide-in-from-top-2">
@@ -133,9 +141,11 @@ function FindingDetail({ finding }: FindingDetailProps) {
 
       {showRaw && (
         <pre className="mt-2 overflow-x-auto rounded-md bg-muted p-3 font-mono text-[10px] text-muted-foreground leading-relaxed">
-          {finding.raw_data
-            ? JSON.stringify(finding.raw_data, null, 2)
-            : t("noRawData")}
+          {rawLoading
+            ? t("loading")
+            : rawPayload
+              ? JSON.stringify(rawPayload, null, 2)
+              : t("noRawData")}
         </pre>
       )}
       </CardContent>
