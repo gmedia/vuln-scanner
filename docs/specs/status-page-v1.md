@@ -6,6 +6,7 @@
 **Depends:** P2 Workspace · P8 `uptime_monitors` · blog HTML-island pattern · host nginx.
 **Commercial:** not a new list-price SKU. **Publish:** org `sku` in `{pro, multi}`. **Custom hostname:** `multi` only.
 **Not this epic:** subscriber mailing list, Slack/webhooks, auto-open incidents from down, ACME in-app, nested pages, custom CSS/logo upload.
+**Hostname lifecycle (buttons, TXT, later CF API / credits):** [`status-hostname-lifecycle.md`](status-hostname-lifecycle.md). First slice (API + SPA, stub CF) is in-repo; CF write API and credits remain later.
 
 ## Locked defaults
 
