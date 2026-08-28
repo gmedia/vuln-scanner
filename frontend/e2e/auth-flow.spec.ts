@@ -28,7 +28,7 @@ test.describe("Auth — Login", () => {
     await page.locator("input#email").fill("wrong@example.com");
     await page.locator("input#password").fill("WrongPass123!");
     await page.locator("button[type='submit']").click();
-    await expect(page.locator(".text-red-400")).toBeVisible({
+    await expect(page.getByRole("alert")).toBeVisible({
       timeout: 10_000,
     });
   });
