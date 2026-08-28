@@ -17,7 +17,7 @@ function IpScanner() {
   const hasResults = scanData?.status === "completed" && scanData.result_summary;
 
   return (
-    <div className="grid w-full gap-6 lg:grid-cols-[minmax(0,32rem)_minmax(18rem,1fr)] 2xl:grid-cols-[minmax(0,36rem)_minmax(22rem,1fr)]">
+    <div className="grid w-full items-start gap-6 lg:grid-cols-2">
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <Link to="/dashboard" className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
@@ -123,7 +123,7 @@ function IpScanner() {
         })()}
       </div>
       {!isScanning && !hasResults && (
-        <Card className="h-fit">
+        <Card className="h-full">
           <CardHeader>
             <CardTitle className="text-sm tracking-wide">
               What this scan covers

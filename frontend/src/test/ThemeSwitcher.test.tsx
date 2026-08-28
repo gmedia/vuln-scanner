@@ -18,6 +18,7 @@ describe("ThemeSwitcher", () => {
     expect(group.className).toMatch(/overflow-hidden/);
     expect(group.className).toMatch(/h-11/);
     await user.click(screen.getByTestId("theme-light"));
+    expect(screen.getByTestId("theme-light").className).toMatch(/bg-primary/);
     expect(document.documentElement.classList.contains("dark")).toBe(false);
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("light");
     await user.click(screen.getByTestId("theme-dark"));

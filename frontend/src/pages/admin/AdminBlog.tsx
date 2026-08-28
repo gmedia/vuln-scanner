@@ -185,7 +185,7 @@ function AdminBlog() {
               />
             </div>
             <div className="flex gap-2">
-              <Button type="submit" disabled={busy} data-testid="blog-save">
+              <Button type="submit" disabled={busy} data-testid="blog-save" className="min-h-11 w-full sm:w-auto">
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : t("save")}
               </Button>
               {editingId ? (
@@ -220,7 +220,7 @@ function AdminBlog() {
                 <TableRow>
                   <TableHead>{t("blogSlug")}</TableHead>
                   <TableHead>{t("blogTitleField")}</TableHead>
-                  <TableHead>{t("colRole")}</TableHead>
+                  <TableHead>{t("blogStatus")}</TableHead>
                   <TableHead>{t("colActions")}</TableHead>
                 </TableRow>
               </TableHeader>

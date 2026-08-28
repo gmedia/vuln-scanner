@@ -7,7 +7,7 @@ describe("Badge", () => {
     render(<Badge>Default</Badge>);
     const badge = screen.getByText("Default");
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass("bg-muted");
+    expect(badge).toHaveClass("bg-secondary");
   });
 
   it.each([

@@ -13,6 +13,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/Accordion";
 import { BrandMark } from "@/components/brand/BrandMark";
 import { BRAND } from "@/lib/brand";
 import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
@@ -85,7 +91,7 @@ function Landing() {
       <main className="flex flex-1 flex-col">
         <section className="flex flex-col items-center px-4 pt-16 pb-12 sm:pt-20">
           <div className="mx-auto max-w-3xl space-y-6 text-center 2xl:max-w-4xl">
-            <p className="text-xs font-medium uppercase tracking-wide text-primary">
+            <p className="text-xs font-medium uppercase tracking-wide text-foreground">
               {t("heroEyebrow")}
             </p>
             <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
@@ -128,15 +134,15 @@ function Landing() {
               {pipelineSteps.map((step, i) => (
                 <li
                   key={step.titleKey}
-                  className="rounded-lg border border-border bg-card p-4 text-left"
+                  className="rounded-lg border border-border bg-card p-4 text-left shadow-sm"
                 >
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs font-medium text-foreground">
                     {String(i + 1).padStart(2, "0")}
                   </p>
-                  <p className="mt-1 text-sm font-semibold tracking-wide">
+                  <p className="mt-1 text-sm font-semibold tracking-wide text-foreground">
                     {t(step.titleKey)}
                   </p>
-                  <p className="mt-2 text-sm text-foreground/75">
+                  <p className="mt-2 text-sm text-foreground/80">
                     {t(step.descKey)}
                   </p>
                 </li>
@@ -183,16 +189,18 @@ function Landing() {
             <h2 className="mb-8 text-center text-2xl font-bold tracking-wide text-foreground">
               {t("faqTitle")}
             </h2>
-            <dl className="space-y-6">
+            <Accordion type="single" collapsible className="w-full rounded-lg border border-border bg-card px-4">
               {faqKeys.map((item) => (
-                <div key={item.q}>
-                  <dt className="text-sm font-semibold text-foreground">
+                <AccordionItem key={item.q} value={item.q}>
+                  <AccordionTrigger className="min-h-11 text-sm font-semibold text-foreground">
                     {t(item.q)}
-                  </dt>
-                  <dd className="mt-1 text-sm text-foreground/75">{t(item.a)}</dd>
-                </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm text-foreground/80">
+                    {t(item.a)}
+                  </AccordionContent>
+                </AccordionItem>
               ))}
-            </dl>
+            </Accordion>
           </div>
         </section>
       </main>

@@ -57,7 +57,7 @@ describe("Landing Page", () => {
       screen.getByText(
         "Security attach for colo, VPS, and hospitality stacks",
         {
-          selector: "p.text-primary",
+          selector: "p",
         },
       ),
     ).toBeInTheDocument();
@@ -156,7 +156,9 @@ describe("Landing Page", () => {
     expect(
       screen.getByRole("heading", { level: 2, name: "Questions" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Is this a human pentest?")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Is this a human pentest?" }),
+    ).toBeInTheDocument();
   });
 
   it("links terms and privacy HTML islands from the footer", () => {

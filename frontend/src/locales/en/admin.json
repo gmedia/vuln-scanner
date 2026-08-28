@@ -87,5 +87,6 @@
   "blogLocale": "Locale",
   "blogPublish": "Publish",
   "blogUnpublish": "Unpublish",
-  "blogCancel": "Cancel"
+  "blogCancel": "Cancel",
+  "blogStatus": "Status"
 }
