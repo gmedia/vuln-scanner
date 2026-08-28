@@ -34,6 +34,15 @@ class StatusPageCreate(BaseModel):
         return normalize_slug(v)
 
 
+class StatusHostnameBody(BaseModel):
+    hostname: str
+
+    @field_validator("hostname")
+    @classmethod
+    def _host(cls, v: str) -> str:
+        return normalize_hostname(v)
+
+
 class StatusPageUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=255)
     slug: str | None = None
@@ -137,6 +146,9 @@ class StatusPageResponse(BaseModel):
     custom_hostname: str | None
     hostname_status: str
     cname_target: str
+    txt_name: str | None = None
+    txt_value: str | None = None
+    ssl_status: str | None = None
     public_path: str
     created_at: datetime
     updated_at: datetime

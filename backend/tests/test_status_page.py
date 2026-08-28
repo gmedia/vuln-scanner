@@ -191,6 +191,51 @@ async def test_reserved_hostname(ctx, db_session: AsyncSession):
         )
         assert ok_host.status_code == 200, ok_host.text
         assert ok_host.json()["custom_hostname"] == "status-erp.appmedia.id"
+        assert ok_host.json()["hostname_status"] == "pending_txt"
+
+
+@pytest.mark.asyncio
+async def test_hostname_attach_check_detach(ctx, db_session: AsyncSession):
+    _bind_db(db_session)
+    org: Organization = ctx["org"]
+    org.sku = "multi"
+    await db_session.commit()
+    headers = _auth(ctx["owner"], org.id)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        r = await client.put(
+            "/api/status-page",
+            json={"slug": "erp", "title": "ERP"},
+            headers=headers,
+        )
+        assert r.status_code == 200
+        att = await client.post(
+            "/api/status-page/hostname",
+            json={"hostname": "status-erp.appmedia.id"},
+            headers=headers,
+        )
+        assert att.status_code == 201, att.text
+        assert att.json()["hostname_status"] == "pending_txt"
+        again = await client.post(
+            "/api/status-page/hostname",
+            json={"hostname": "status-erp.appmedia.id"},
+            headers=headers,
+        )
+        assert again.status_code == 409
+        chk = await client.post("/api/status-page/hostname/check", headers=headers)
+        assert chk.status_code == 200
+        assert chk.json()["hostname_status"] == "pending_txt"
+        upd = await client.put(
+            "/api/status-page/hostname",
+            json={"hostname": "status-ok.appmedia.id"},
+            headers=headers,
+        )
+        assert upd.status_code == 200
+        assert upd.json()["custom_hostname"] == "status-ok.appmedia.id"
+        gone = await client.delete("/api/status-page/hostname", headers=headers)
+        assert gone.status_code == 200
+        assert gone.json()["custom_hostname"] is None
+        assert gone.json()["hostname_status"] == "none"
 
 
 @pytest.mark.asyncio
