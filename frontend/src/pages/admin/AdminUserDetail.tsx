@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import { adminApi } from "@/api/admin";
 import { formatCredits } from "@/lib/utils";
 import { Trans, useTranslation } from "react-i18next";
@@ -118,15 +118,28 @@ function AdminUserDetail() {
       </div>
 
       {isLoading ? (
-        <Card>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              <Skeleton className="h-6 w-48" />
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-4 w-24" />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm tracking-wide">
+                {t("profile")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TableRowSkeleton rows={4} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm tracking-wide">
+                {t("creditAdjust")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TableRowSkeleton rows={3} />
+            </CardContent>
+          </Card>
+        </div>
       ) : user ? (
         <>
           <div className="grid gap-6 lg:grid-cols-2 lg:items-start">

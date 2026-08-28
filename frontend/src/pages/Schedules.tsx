@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import { Badge } from "@/components/ui/Badge";
 import { Progress } from "@/components/ui/Progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -201,9 +201,8 @@ function ScheduleRunsPanel({ scheduleId }: { scheduleId: string }) {
 
   if (isLoading) {
     return (
-      <div className="mt-2 space-y-1 pl-1">
-        <Skeleton className="h-6 w-full" />
-        <Skeleton className="h-6 w-3/4" />
+      <div className="mt-2 pl-1">
+        <TableRowSkeleton rows={2} />
       </div>
     );
   }
@@ -523,12 +522,7 @@ function Schedules() {
               <AlertDescription>{actionError}</AlertDescription>
             </Alert>
           )}
-          {isLoading && (
-            <div className="space-y-2">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          )}
+          {isLoading && <TableRowSkeleton rows={4} />}
           {error && (
             <p className="text-sm text-destructive">{t("loadFailed")}</p>
           )}

@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { Skeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   DropdownMenu,
@@ -383,11 +383,7 @@ function Dashboard() {
           </CardHeader>
           <CardContent className="flex-1">
             {isFirstLoad || (isFetching && !pageData) ? (
-              <div className="space-y-2">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Skeleton key={i} className="h-9 w-full" />
-                ))}
-              </div>
+              <TableRowSkeleton rows={6} />
             ) : scans.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-2 px-2 py-8 text-center">
                 <Radar className="h-8 w-8 text-muted-foreground" />

@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
   Table,
   TableBody,
@@ -211,7 +211,7 @@ function AdminBlog() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <Skeleton className="h-24 w-full" />
+            <TableRowSkeleton rows={5} />
           ) : !data?.items.length ? (
             <p className="text-sm text-muted-foreground">{t("blogEmpty")}</p>
           ) : (

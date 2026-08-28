@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/react";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { Skeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 
 describe("Skeleton", () => {
   it("renders with animate-pulse class", () => {
@@ -28,5 +28,14 @@ describe("Skeleton", () => {
     const { container } = render(<Skeleton>Loading...</Skeleton>);
     const skeleton = container.firstChild as HTMLElement;
     expect(skeleton).toHaveTextContent("Loading...");
+  });
+
+  it("TableRowSkeleton renders row count with busy status", () => {
+    const { container } = render(<TableRowSkeleton rows={3} />);
+    const region = container.querySelector('[role="status"]');
+    expect(region).toHaveAttribute("aria-busy", "true");
+    expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(
+      5,
+    );
   });
 });

@@ -85,6 +85,13 @@ vi.mock("@/components/ui/Badge", () => ({
 
 vi.mock("@/components/ui/Skeleton", () => ({
   Skeleton: (props: { [key: string]: unknown }) => <div data-testid="skeleton" {...props} />,
+  TableRowSkeleton: ({ rows = 5 }: { rows?: number }) => (
+    <div>
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} data-testid="skeleton" />
+      ))}
+    </div>
+  ),
 }));
 
 import { useQuery } from "@tanstack/react-query";
