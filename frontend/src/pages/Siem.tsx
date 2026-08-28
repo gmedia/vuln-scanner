@@ -366,7 +366,7 @@ export default function Siem() {
             <CardContent className="space-y-4">
               <div
                 data-testid="siem-search-filters"
-                className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+                className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
               >
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <Label htmlFor="siem-since">{t("sinceLabel")}</Label>
@@ -437,8 +437,12 @@ export default function Siem() {
                     className="h-10 min-h-10"
                   />
                 </div>
-                <div className="flex min-w-0 flex-col justify-end gap-1.5">
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label htmlFor="siem-apply" className="invisible select-none">
+                    {t("apply")}
+                  </Label>
                   <Button
+                    id="siem-apply"
                     className="h-10 min-h-10 w-full"
                     onClick={() => {
                       setEventPage(0);
