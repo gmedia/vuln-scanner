@@ -15,8 +15,17 @@ if TYPE_CHECKING:
 
 STATUS_PAGE_PUBLISH_SKUS = frozenset({"pro", "multi"})
 STATUS_PAGE_CUSTOM_HOST_SKUS = frozenset({"multi"})
-RESERVED_HOST_SUFFIXES = (".sinexis.app", ".appmedia.id")
-PLATFORM_HOSTS = frozenset({"sinexis.app", "www.sinexis.app", "vs.appmedia.id", "www.vs.appmedia.id"})
+RESERVED_HOST_SUFFIXES = (".sinexis.app",)
+PLATFORM_HOSTS = frozenset(
+    {
+        "sinexis.app",
+        "www.sinexis.app",
+        "appmedia.id",
+        "www.appmedia.id",
+        "vs.appmedia.id",
+        "www.vs.appmedia.id",
+    }
+)
 
 
 class StatusPage(Base):

@@ -177,3 +177,16 @@ async def test_reserved_hostname(ctx, db_session: AsyncSession):
             headers=headers,
         )
         assert bad.status_code == 400
+        apex = await client.patch(
+            "/api/status-page",
+            json={"custom_hostname": "vs.appmedia.id"},
+            headers=headers,
+        )
+        assert apex.status_code == 400
+        ok_host = await client.patch(
+            "/api/status-page",
+            json={"custom_hostname": "status-erp.appmedia.id"},
+            headers=headers,
+        )
+        assert ok_host.status_code == 200, ok_host.text
+        assert ok_host.json()["custom_hostname"] == "status-erp.appmedia.id"
