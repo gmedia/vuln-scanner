@@ -58,7 +58,7 @@ class StatusPage(Base):
         UniqueConstraint("slug", name="uq_status_pages_slug"),
         UniqueConstraint("custom_hostname", name="uq_status_pages_custom_hostname"),
         CheckConstraint(
-            "hostname_status IN ('none', 'pending_dns', 'active', 'failed')",
+            "hostname_status IN ('none', 'pending_txt', 'active', 'failed', 'suspended')",
             name="ck_status_pages_hostname_status",
         ),
     )
