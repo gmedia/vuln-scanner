@@ -147,6 +147,7 @@ class Settings(BaseSettings):
     uptime_icmp: bool = False
     status_page_enabled: bool = True
     status_page_cname_target: str = "status-edge.sinexis.app"
+    status_page_cf_stub_active: bool = False
 
     blog_enabled: bool = True
 
