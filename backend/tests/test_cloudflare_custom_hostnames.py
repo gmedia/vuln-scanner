@@ -13,6 +13,7 @@ from app.services.cloudflare_custom_hostnames import (
 def test_map_hostname_status() -> None:
     assert map_hostname_status("active", "pending") == "active"
     assert map_hostname_status("pending_validation", "pending") == "pending_txt"
+    assert map_hostname_status("pending_validation", "active") == "pending_txt"
     assert map_hostname_status("expired", "active") == "failed"
     assert map_hostname_status("validation_timed_out", "blocked") == "failed"
 
