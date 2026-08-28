@@ -27,8 +27,18 @@ PLATFORM_HOSTS = frozenset(
 )
 
 
+def _first_host(value: str | None) -> str:
+    if not value:
+        return ""
+    return value.split(",")[0].strip().split(":")[0].lower()
+
+
 def _request_host(request: Request) -> str:
-    return (request.headers.get("host") or "").split(":")[0].lower()
+    host = _first_host(request.headers.get("host"))
+    forwarded = _first_host(request.headers.get("x-forwarded-host"))
+    if host in PLATFORM_HOSTS and forwarded and forwarded not in PLATFORM_HOSTS:
+        return forwarded
+    return host
 
 
 async def _html_for_custom_host(request: Request, db: AsyncSession) -> HTMLResponse:
