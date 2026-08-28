@@ -11,6 +11,7 @@ from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.user import User
 from app.schemas.scan import (
+    PaginatedFindingsResponse,
     PaginatedResponse,
     ScanFindingResponse,
     ScanJobDetailResponse,
@@ -97,9 +98,7 @@ async def test_get_job_found(db_session, sample_job, sample_finding, sample_user
     assert result.scan_type == "ip"
     assert result.target == "192.168.1.1"
     assert result.status == "completed"
-    assert len(result.findings) == 1
-    assert result.findings[0].title == "Open port 22"
-    assert result.findings[0].severity == "high"
+    assert result.findings == []
 
 
 @pytest.mark.asyncio
@@ -112,13 +111,17 @@ async def test_get_job_not_found(db_session, sample_user):
 @pytest.mark.asyncio
 async def test_get_findings(db_session, sample_job, sample_finding, sample_user):
     svc = ScannerService(db_session)
-    findings = await svc.get_findings(str(sample_job.id), user_id=sample_user.id)
+    page = await svc.get_findings(str(sample_job.id), user_id=sample_user.id)
 
-    assert len(findings) == 1
-    assert isinstance(findings[0], ScanFindingResponse)
-    assert findings[0].title == "Open port 22"
-    assert findings[0].severity == "high"
-    assert findings[0].cvss_score == 7.5
+    assert isinstance(page, PaginatedFindingsResponse)
+    assert page.total == 1
+    assert page.page == 1
+    assert len(page.items) == 1
+    assert isinstance(page.items[0], ScanFindingResponse)
+    assert page.items[0].title == "Open port 22"
+    assert page.items[0].severity == "high"
+    assert page.items[0].cvss_score == 7.5
+    assert page.items[0].raw_data is None
 
 
 @pytest.mark.asyncio
@@ -267,8 +270,41 @@ async def test_get_findings_empty(db_session, sample_user):
     await db_session.commit()
 
     svc = ScannerService(db_session)
-    findings = await svc.get_findings(str(empty_job.id), user_id=sample_user.id)
-    assert findings == []
+    page = await svc.get_findings(str(empty_job.id), user_id=sample_user.id)
+    assert page.items == []
+    assert page.total == 0
+    assert page.pages == 0
+
+
+@pytest.mark.asyncio
+async def test_get_findings_paginates(db_session, sample_user):
+    job = ScanJob(
+        id=uuid.uuid4(),
+        scan_type="ip",
+        target="192.168.0.9",
+        status="completed",
+        progress=100,
+        user_id=sample_user.id,
+    )
+    db_session.add(job)
+    await db_session.commit()
+    for i in range(3):
+        db_session.add(
+            ScanFinding(
+                id=uuid.uuid4(),
+                job_id=job.id,
+                severity="low",
+                title=f"Finding {i}",
+            )
+        )
+    await db_session.commit()
+    svc = ScannerService(db_session)
+    page1 = await svc.get_findings(str(job.id), user_id=sample_user.id, page=1, limit=2)
+    page2 = await svc.get_findings(str(job.id), user_id=sample_user.id, page=2, limit=2)
+    assert page1.total == 3
+    assert page1.pages == 2
+    assert len(page1.items) == 2
+    assert len(page2.items) == 1
 
 
 @pytest.mark.asyncio
@@ -578,9 +614,7 @@ async def test_get_job_omits_raw_data(db_session, sample_user, sample_job):
     svc = ScannerService(db_session)
     detail = await svc.get_job(str(sample_job.id), user_id=sample_user.id)
     assert detail is not None
-    assert len(detail.findings) == 1
-    assert detail.findings[0].raw_data is None
-    assert detail.findings[0].title == "Open port 22"
+    assert detail.findings == []
 
 
 @pytest.mark.asyncio

@@ -16,7 +16,13 @@ from app.models.pricing import PricingConfig
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.user import User
-from app.schemas.scan import PaginatedResponse, ScanFindingResponse, ScanJobDetailResponse, ScanJobResponse
+from app.schemas.scan import (
+    PaginatedFindingsResponse,
+    PaginatedResponse,
+    ScanFindingResponse,
+    ScanJobDetailResponse,
+    ScanJobResponse,
+)
 from app.services.organization import get_membership, role_at_least
 
 celery_app = Celery(
@@ -184,19 +190,42 @@ class ScannerService:
         findings = findings_result.scalars().all()
 
         detail = ScanJobDetailResponse.model_validate(job)
-        detail.findings = [self._finding_response(f, include_raw=include_raw) for f in findings]
+        if include_raw:
+            detail.findings = [self._finding_response(f, include_raw=True) for f in findings]
+        else:
+            detail.findings = []
         return detail
 
-    async def get_findings(self, job_id: str, user_id: UUID) -> list[ScanFindingResponse]:
+    async def get_findings(
+        self,
+        job_id: str,
+        user_id: UUID,
+        *,
+        page: int = 1,
+        limit: int = 50,
+    ) -> PaginatedFindingsResponse:
         result = await self.db.execute(select(ScanJob).where(ScanJob.id == job_id))
         job = result.scalar_one_or_none()
         if job is None or not await self._can_access_job(job, user_id):
             raise HTTPException(status_code=404, detail="Scan job not found")
+        count_result = await self.db.execute(select(func.count(ScanFinding.id)).where(ScanFinding.job_id == job_id))
+        total = count_result.scalar() or 0
         findings_result = await self.db.execute(
-            select(ScanFinding).where(ScanFinding.job_id == job_id).options(defer(ScanFinding.raw_data))
+            select(ScanFinding)
+            .where(ScanFinding.job_id == job_id)
+            .options(defer(ScanFinding.raw_data))
+            .order_by(ScanFinding.found_at.desc(), ScanFinding.id.desc())
+            .offset((page - 1) * limit)
+            .limit(limit)
         )
         findings = findings_result.scalars().all()
-        return [self._finding_response(f, include_raw=False) for f in findings]
+        return PaginatedFindingsResponse(
+            items=[self._finding_response(f, include_raw=False) for f in findings],
+            total=total,
+            page=page,
+            limit=limit,
+            pages=math.ceil(total / limit) if total > 0 else 0,
+        )
 
     async def get_finding(self, job_id: str, finding_id: str, user_id: UUID) -> ScanFindingResponse:
         result = await self.db.execute(select(ScanJob).where(ScanJob.id == job_id))
@@ -213,10 +242,21 @@ class ScannerService:
 
     @staticmethod
     def _finding_response(finding: ScanFinding, *, include_raw: bool) -> ScanFindingResponse:
-        payload = ScanFindingResponse.model_validate(finding)
-        if not include_raw:
-            payload.raw_data = None
-        return payload
+        return ScanFindingResponse(
+            id=finding.id,
+            job_id=finding.job_id,
+            severity=finding.severity,
+            category=finding.category,
+            title=finding.title,
+            description=finding.description,
+            cve_id=finding.cve_id,
+            cvss_score=finding.cvss_score,
+            remediation=finding.remediation,
+            impact=finding.impact,
+            attacker_benefit=finding.attacker_benefit,
+            raw_data=finding.raw_data if include_raw else None,
+            found_at=finding.found_at,
+        )
 
     async def get_history(
         self,
