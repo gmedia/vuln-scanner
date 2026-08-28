@@ -57,5 +57,18 @@
   "timeout": "Timeout (detik)",
   "expectStatus": "Status HTTP yang diharapkan",
   "expectStatusHint": "Kosong = 200–399. Isi kode persis (mis. 204).",
-  "edit": "Ubah"
+  "edit": "Ubah",
+  "history": "Riwayat",
+  "historyTitle": "Cek — {{name}}",
+  "historyEmpty": "Tidak ada sampel dalam 7 hari terakhir.",
+  "colTime": "Waktu (UTC)",
+  "probeRule": "HTTP dianggap up pada 200–399 kecuali Anda set status yang diharapkan. User-Agent: SinexisUptime/1.0. Down setelah 2 tick gagal.",
+  "hintRefused": "TCP ditolak: origin tidak listen atau firewall memblokir probe (bukan status HTTP).",
+  "hintTimeout": "Probe habis waktu sebelum ada jawaban. Origin mungkin lambat atau difilter.",
+  "hint403": "HTTP sampai ke host; 403 = ditolak (WAF, geo, atau auth). Allowlist SinexisUptime/1.0 atau set expected status 403 jika itu memang sehat.",
+  "hint401": "HTTP sampai ke host; 401 = butuh auth. Tambah header Authorization atau expect 401 jika itu sehat.",
+  "hint5xx": "Origin mengembalikan error server. Situs menjawab, tetapi aplikasi gagal.",
+  "hintStatus": "HTTP selesai tetapi status di luar 200–399 (atau tidak cocok expected status).",
+  "hintTls": "Handshake TLS atau sertifikat gagal. Probe memverifikasi sertifikat.",
+  "hintDns": "Hostname tidak resolve dari jaringan probe."
 }

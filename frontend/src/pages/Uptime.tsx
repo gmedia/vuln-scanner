@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { TableRowSkeleton } from "@/components/ui/Skeleton";
+import { Skeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
   Select,
   SelectContent,
@@ -47,6 +47,35 @@ export function mapUptimeError(message: string): string {
   if (/already exists/i.test(message)) return "dup";
   if (/not allowed/i.test(message)) return "ssrf";
   return message;
+}
+
+export function explainUptimeError(
+  error: string | null | undefined,
+): string | null {
+  if (!error) return null;
+  const e = error.toLowerCase();
+  if (e.includes("111") || e.includes("connection refused")) return "hintRefused";
+  if (e.includes("timed out") || e.includes("timeout")) return "hintTimeout";
+  if (/\b403\b/.test(e)) return "hint403";
+  if (/\b401\b/.test(e)) return "hint401";
+  if (/\b5\d\d\b/.test(e)) return "hint5xx";
+  if (/status \d+/.test(e) || e.startsWith("expected ")) return "hintStatus";
+  if (
+    e.includes("certificate") ||
+    e.includes("ssl") ||
+    e.includes("tls")
+  ) {
+    return "hintTls";
+  }
+  if (
+    e.includes("name or service not known") ||
+    e.includes("getaddrinfo") ||
+    e.includes("nxdomain") ||
+    e.includes("did not resolve")
+  ) {
+    return "hintDns";
+  }
+  return null;
 }
 
 type StateFilter = "all" | "up" | "down" | "unknown" | "degraded";
@@ -126,6 +155,7 @@ export default function Uptime() {
   const [stateFilter, setStateFilter] = useState<StateFilter>("all");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [search, setSearch] = useState("");
+  const [historyId, setHistoryId] = useState<string | null>(null);
 
   const list = useQuery({
     queryKey: ["uptime"],
@@ -313,6 +343,14 @@ export default function Uptime() {
       );
     },
   });
+
+  const historyQuery = useQuery({
+    queryKey: ["uptime-samples", historyId],
+    queryFn: () => listSamples(historyId as string),
+    enabled: Boolean(historyId),
+  });
+  const historyMonitor = items.find((m) => m.id === historyId);
+  const historyRows = (historyQuery.data ?? []).slice(0, 24);
 
   const formBusy = createMut.isPending || updateMut.isPending;
   const advancedDefault =
@@ -798,12 +836,19 @@ export default function Uptime() {
                           {m.check_type} · {m.target}
                         </p>
                         {m.last_error ? (
-                          <p className="mt-1 max-w-md truncate text-xs text-destructive">
-                            <span className="text-muted-foreground">
-                              {t("lastError")}:{" "}
-                            </span>
-                            {m.last_error}
-                          </p>
+                          <div className="mt-1 max-w-md space-y-1">
+                            <p className="truncate text-xs text-destructive">
+                              <span className="text-muted-foreground">
+                                {t("lastError")}:{" "}
+                              </span>
+                              {m.last_error}
+                            </p>
+                            {explainUptimeError(m.last_error) ? (
+                              <p className="text-xs text-muted-foreground">
+                                {t(explainUptimeError(m.last_error) as string)}
+                              </p>
+                            ) : null}
+                          </div>
                         ) : null}
                       </TableCell>
                       <TableCell className="text-right font-mono tabular-nums">
@@ -819,6 +864,18 @@ export default function Uptime() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            data-testid="uptime-history"
+                            onClick={() =>
+                              setHistoryId((cur) =>
+                                cur === m.id ? null : m.id,
+                              )
+                            }
+                          >
+                            {t("history")}
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
@@ -858,6 +915,72 @@ export default function Uptime() {
           </CardContent>
         </Card>
       )}
+
+      {historyId && historyMonitor ? (
+        <Card data-testid="uptime-history-panel">
+          <CardHeader>
+            <CardTitle className="text-sm tracking-wide">
+              {t("historyTitle", { name: historyMonitor.name })}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-xs text-muted-foreground">{t("probeRule")}</p>
+            {historyQuery.isLoading ? (
+              <Skeleton className="h-24 w-full" />
+            ) : historyRows.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("historyEmpty")}</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("colTime")}</TableHead>
+                      <TableHead>{t("colStatus")}</TableHead>
+                      <TableHead className="text-right">{t("latency")}</TableHead>
+                      <TableHead>{t("lastError")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {historyRows.map((s) => (
+                      <TableRow key={s.id} data-testid="uptime-history-row">
+                        <TableCell className="whitespace-nowrap font-mono text-xs">
+                          {new Date(s.checked_at).toISOString().replace("T", " ").slice(0, 19)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={s.ok ? "completed" : "critical"}>
+                            {s.ok
+                              ? t("stateUp")
+                              : s.status_code != null
+                                ? String(s.status_code)
+                                : t("stateDown")}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-mono tabular-nums">
+                          {s.latency_ms != null ? `${s.latency_ms}ms` : "—"}
+                        </TableCell>
+                        <TableCell className="max-w-md text-xs">
+                          {s.error ? (
+                            <div className="space-y-0.5">
+                              <p className="truncate text-destructive">{s.error}</p>
+                              {explainUptimeError(s.error) ? (
+                                <p className="text-muted-foreground">
+                                  {t(explainUptimeError(s.error) as string)}
+                                </p>
+                              ) : null}
+                            </div>
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }
