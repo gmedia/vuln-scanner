@@ -113,6 +113,13 @@ vi.mock("@/components/ui/Skeleton", () => ({
   Skeleton: ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
     <div className={className} data-testid="skeleton" {...props} />
   ),
+  TableRowSkeleton: ({ rows = 5 }: { rows?: number }) => (
+    <div>
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} data-testid="skeleton" />
+      ))}
+    </div>
+  ),
 }));
 
 vi.mock("@/components/ui/Input", () => ({

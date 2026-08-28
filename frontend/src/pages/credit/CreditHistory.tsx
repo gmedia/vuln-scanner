@@ -5,7 +5,7 @@ import { History } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import { DatePicker } from "@/components/ui/DatePicker";
 import {
   Table,
@@ -244,11 +244,7 @@ function CreditHistory() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
+            <TableRowSkeleton rows={5} />
           ) : !data || data.items.length === 0 ? (
             <div className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
               <History className="h-8 w-8 text-muted-foreground" />
