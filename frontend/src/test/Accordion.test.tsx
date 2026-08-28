@@ -20,6 +20,9 @@ describe("Accordion", () => {
       </Accordion>,
     );
     const trigger = screen.getByRole("button", { name: "Debian / Ubuntu" });
+    expect(
+      screen.queryByRole("heading", { name: "Debian / Ubuntu" }),
+    ).not.toBeInTheDocument();
     expect(trigger).toHaveAttribute("data-state", "closed");
     expect(trigger).toHaveAttribute("aria-expanded", "false");
     await user.click(trigger);
