@@ -235,7 +235,9 @@ function AdminBlog() {
                           p.status === "published" ? "success" : "pending"
                         }
                       >
-                        {p.status}
+                        {p.status === "published"
+                          ? t("blogPublished")
+                          : t("blogDraft")}
                       </Badge>
                     </TableCell>
                     <TableCell className="space-x-2">
