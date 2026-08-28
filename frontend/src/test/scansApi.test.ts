@@ -36,6 +36,7 @@ import {
   startDomainScan,
   startMobileScan,
   getScan,
+  getScanFinding,
   getScanFindings,
   getScanHistory,
   getWsUrl,
@@ -183,6 +184,32 @@ describe("scans API", () => {
       const result = await getScanFindings("scan-1");
       expect(mockAxios.get).toHaveBeenCalledWith("/api/scan/scan-1/findings");
       expect(result).toEqual(findings);
+    });
+  });
+
+  describe("getScanFinding", () => {
+    it("gets a single finding with raw_data", async () => {
+      const finding: ScanFinding = {
+        id: "f-1",
+        job_id: "scan-1",
+        severity: "critical",
+        category: "vuln",
+        title: "Open SSH port",
+        description: "Port 22 is open",
+        cve_id: null,
+        cvss_score: null,
+        remediation: null,
+        impact: null,
+        attacker_benefit: null,
+        raw_data: { banner: "OpenSSH" },
+        found_at: "2025-01-01T00:00:00Z",
+      };
+      mockAxios.get.mockResolvedValueOnce({ data: finding });
+      const result = await getScanFinding("scan-1", "f-1");
+      expect(mockAxios.get).toHaveBeenCalledWith(
+        "/api/scan/scan-1/findings/f-1",
+      );
+      expect(result).toEqual(finding);
     });
   });
 

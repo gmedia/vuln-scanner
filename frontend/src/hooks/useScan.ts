@@ -4,6 +4,7 @@ import {
   startDomainScan,
   startMobileScan,
   getScan,
+  getScanFinding,
   getScanFindings,
   getScanDiff,
   getScanHistory,
@@ -34,6 +35,19 @@ export function useScanFindings(jobId: string | null) {
     queryKey: ["scan-findings", activeOrgId, jobId],
     queryFn: () => getScanFindings(jobId!),
     enabled: !!jobId && !!activeOrgId,
+  });
+}
+
+export function useScanFinding(
+  jobId: string | null,
+  findingId: string | null,
+  enabled = true,
+) {
+  const activeOrgId = useAuthStore((s) => s.activeOrgId);
+  return useQuery({
+    queryKey: ["scan-finding", activeOrgId, jobId, findingId],
+    queryFn: () => getScanFinding(jobId!, findingId!),
+    enabled: !!jobId && !!findingId && !!activeOrgId && enabled,
   });
 }
 

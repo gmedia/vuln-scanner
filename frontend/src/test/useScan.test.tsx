@@ -10,6 +10,7 @@ import {
 import {
   useScanHistory,
   useScanDetail,
+  useScanFinding,
   useScanFindings,
   useStartIpScan,
   useStartDomainScan,
@@ -139,6 +140,30 @@ describe("useScanFindings", () => {
     expect(mockUseQuery).toHaveBeenCalledWith(
       expect.objectContaining({
         queryKey: ["scan-findings", "org-a", "job-123"],
+      }),
+    );
+  });
+});
+
+describe("useScanFinding", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useAuthStore.setState({ activeOrgId: "org-a" });
+  });
+
+  it("is disabled when findingId is null", () => {
+    renderHook(() => useScanFinding("job-123", null), { wrapper: Wrapper });
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.objectContaining({ enabled: false }),
+    );
+  });
+
+  it("is enabled when job and finding ids are provided", () => {
+    renderHook(() => useScanFinding("job-123", "f-1"), { wrapper: Wrapper });
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        enabled: true,
+        queryKey: ["scan-finding", "org-a", "job-123", "f-1"],
       }),
     );
   });
