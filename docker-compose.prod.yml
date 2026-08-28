@@ -142,6 +142,9 @@ services:
       UPTIME_ALLOW_PRIVATE: ${UPTIME_ALLOW_PRIVATE:-false}
       STATUS_PAGE_ENABLED: ${STATUS_PAGE_ENABLED:-true}
       STATUS_PAGE_CNAME_TARGET: ${STATUS_PAGE_CNAME_TARGET:-status-edge.sinexis.app}
+      STATUS_PAGE_CF_API_TOKEN: ${STATUS_PAGE_CF_API_TOKEN:-}
+      STATUS_PAGE_CF_ZONE_ID: ${STATUS_PAGE_CF_ZONE_ID:-}
+      STATUS_PAGE_CF_STUB_ACTIVE: ${STATUS_PAGE_CF_STUB_ACTIVE:-false}
     volumes:
       - scan_data:/tmp/scans
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
