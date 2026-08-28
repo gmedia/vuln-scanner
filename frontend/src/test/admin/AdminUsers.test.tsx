@@ -15,6 +15,7 @@ vi.mock("react-router-dom", async () => {
 
 vi.mock("@tanstack/react-query", () => ({
   useQuery: vi.fn(),
+  keepPreviousData: (prev: unknown) => prev,
 }));
 
 vi.mock("@/api/admin", () => ({
