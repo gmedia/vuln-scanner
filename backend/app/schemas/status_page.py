@@ -36,8 +36,16 @@ class StatusPageCreate(BaseModel):
 
 class StatusPageUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=255)
+    slug: str | None = None
     published: bool | None = None
     custom_hostname: str | None = None
+
+    @field_validator("slug")
+    @classmethod
+    def _slug(cls, v: str | None) -> str | None:
+        if v is None or v.strip() == "":
+            return None
+        return normalize_slug(v)
 
     @field_validator("custom_hostname")
     @classmethod

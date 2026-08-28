@@ -124,6 +124,19 @@ async def test_status_page_crud_and_public_html(ctx, db_session: AsyncSession):
         assert 'class="site-header"' in pub.text
         hidden = await client.get("/status/missing", headers={"X-E2E-Test": "1"})
         assert hidden.status_code == 404
+        renamed = await client.patch(
+            "/api/status-page",
+            json={"slug": "acme-prod"},
+            headers=headers,
+        )
+        assert renamed.status_code == 200, renamed.text
+        assert renamed.json()["slug"] == "acme-prod"
+        assert renamed.json()["public_path"] == "/status/acme-prod"
+        old = await client.get("/status/acme-lab", headers={"X-E2E-Test": "1"})
+        assert old.status_code == 404
+        fresh = await client.get("/status/acme-prod", headers={"X-E2E-Test": "1"})
+        assert fresh.status_code == 200
+        assert "Acme" in fresh.text
 
 
 @pytest.mark.asyncio
