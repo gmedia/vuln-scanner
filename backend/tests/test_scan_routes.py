@@ -1122,6 +1122,78 @@ async def test_export_json_content_disposition_kill_199(client, db_session, samp
 # ── GET /health ────────────────────────────────────────────────────────────
 
 
+@pytest.mark.asyncio
+async def test_get_scan_detail_omits_raw_data(client, db_session, sample_user):
+    job = ScanJob(
+        id=uuid.uuid4(),
+        scan_type="ip",
+        target="10.0.0.1",
+        status="completed",
+        progress=100,
+        user_id=sample_user.id,
+    )
+    db_session.add(job)
+    await db_session.commit()
+    finding = ScanFinding(
+        id=uuid.uuid4(),
+        job_id=job.id,
+        severity="high",
+        title="Open SSH",
+        raw_data={"banner": "OpenSSH"},
+    )
+    db_session.add(finding)
+    await db_session.commit()
+
+    resp = client.get(f"/api/scan/{job.id}", headers=HEADERS)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["findings"][0]["raw_data"] is None
+    assert data["findings"][0]["title"] == "Open SSH"
+
+
+@pytest.mark.asyncio
+async def test_get_scan_finding_includes_raw_data(client, db_session, sample_user):
+    job = ScanJob(
+        id=uuid.uuid4(),
+        scan_type="ip",
+        target="10.0.0.1",
+        status="completed",
+        progress=100,
+        user_id=sample_user.id,
+    )
+    db_session.add(job)
+    await db_session.commit()
+    finding = ScanFinding(
+        id=uuid.uuid4(),
+        job_id=job.id,
+        severity="high",
+        title="Open SSH",
+        raw_data={"banner": "OpenSSH"},
+    )
+    db_session.add(finding)
+    await db_session.commit()
+
+    resp = client.get(f"/api/scan/{job.id}/findings/{finding.id}", headers=HEADERS)
+    assert resp.status_code == 200
+    assert resp.json()["raw_data"] == {"banner": "OpenSSH"}
+
+
+@pytest.mark.asyncio
+async def test_get_scan_finding_not_found(client, db_session, sample_user):
+    job = ScanJob(
+        id=uuid.uuid4(),
+        scan_type="ip",
+        target="10.0.0.1",
+        status="completed",
+        progress=100,
+        user_id=sample_user.id,
+    )
+    db_session.add(job)
+    await db_session.commit()
+    resp = client.get(f"/api/scan/{job.id}/findings/{uuid.uuid4()}", headers=HEADERS)
+    assert resp.status_code == 404
+
+
 def test_health_endpoint(client):
     resp = client.get("/health")
     # In test environment, DB (PostgreSQL) and Redis are not available,

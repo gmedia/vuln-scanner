@@ -7,6 +7,7 @@ from sqlalchemy import select
 
 from app.models.credit_log import CreditLog
 from app.models.pricing import PricingConfig
+from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.user import User
 from app.schemas.scan import (
@@ -558,3 +559,89 @@ async def test_start_scan_zero_cost_user_has_zero_credits(db_session, sample_use
     assert job.credit_cost == 0
     await db_session.refresh(sample_user)
     assert sample_user.credits == 0  # still 0
+
+
+@pytest.mark.asyncio
+async def test_get_job_omits_raw_data(db_session, sample_user, sample_job):
+    finding = ScanFinding(
+        id=uuid.uuid4(),
+        job_id=sample_job.id,
+        severity="high",
+        category="Network",
+        title="Open port 22",
+        description="SSH port is open",
+        raw_data={"banner": "OpenSSH", "port": 22},
+    )
+    db_session.add(finding)
+    await db_session.commit()
+
+    svc = ScannerService(db_session)
+    detail = await svc.get_job(str(sample_job.id), user_id=sample_user.id)
+    assert detail is not None
+    assert len(detail.findings) == 1
+    assert detail.findings[0].raw_data is None
+    assert detail.findings[0].title == "Open port 22"
+
+
+@pytest.mark.asyncio
+async def test_get_job_include_raw(db_session, sample_user, sample_job):
+    finding = ScanFinding(
+        id=uuid.uuid4(),
+        job_id=sample_job.id,
+        severity="high",
+        category="Network",
+        title="Open port 22",
+        raw_data={"banner": "OpenSSH"},
+    )
+    db_session.add(finding)
+    await db_session.commit()
+
+    svc = ScannerService(db_session)
+    detail = await svc.get_job(str(sample_job.id), user_id=sample_user.id, include_raw=True)
+    assert detail is not None
+    assert detail.findings[0].raw_data == {"banner": "OpenSSH"}
+
+
+@pytest.mark.asyncio
+async def test_get_finding_includes_raw(db_session, sample_user, sample_job):
+    finding = ScanFinding(
+        id=uuid.uuid4(),
+        job_id=sample_job.id,
+        severity="high",
+        category="Network",
+        title="Open port 22",
+        raw_data={"banner": "OpenSSH"},
+    )
+    db_session.add(finding)
+    await db_session.commit()
+
+    svc = ScannerService(db_session)
+    loaded = await svc.get_finding(str(sample_job.id), str(finding.id), user_id=sample_user.id)
+    assert loaded.raw_data == {"banner": "OpenSSH"}
+
+
+@pytest.mark.asyncio
+async def test_get_finding_wrong_job(db_session, sample_user, sample_job):
+    other_job = ScanJob(
+        id=uuid.uuid4(),
+        scan_type="ip",
+        target="10.0.0.9",
+        status="completed",
+        progress=100,
+        user_id=sample_user.id,
+    )
+    db_session.add(other_job)
+    finding = ScanFinding(
+        id=uuid.uuid4(),
+        job_id=sample_job.id,
+        severity="low",
+        title="x",
+        raw_data={"k": 1},
+    )
+    db_session.add(finding)
+    await db_session.commit()
+
+    svc = ScannerService(db_session)
+    with pytest.raises(HTTPException) as exc_info:
+        await svc.get_finding(str(other_job.id), str(finding.id), user_id=sample_user.id)
+    assert exc_info.value.status_code == 404

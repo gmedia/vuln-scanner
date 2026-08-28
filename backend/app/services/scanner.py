@@ -8,6 +8,7 @@ from celery.result import AsyncResult
 from fastapi import HTTPException
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import defer
 
 from app.config import settings
 from app.models.credit_log import CreditLog
@@ -168,7 +169,7 @@ class ScannerService:
         membership = await get_membership(self.db, job.organization_id, user_id)
         return membership is not None and role_at_least(membership.role, "viewer")
 
-    async def get_job(self, job_id: str, user_id: UUID) -> ScanJobDetailResponse | None:
+    async def get_job(self, job_id: str, user_id: UUID, *, include_raw: bool = False) -> ScanJobDetailResponse | None:
         result = await self.db.execute(select(ScanJob).where(ScanJob.id == job_id))
         job = result.scalar_one_or_none()
         if not job:
@@ -176,11 +177,14 @@ class ScannerService:
         if not await self._can_access_job(job, user_id):
             return None
 
-        findings_result = await self.db.execute(select(ScanFinding).where(ScanFinding.job_id == job_id))
+        findings_q = select(ScanFinding).where(ScanFinding.job_id == job_id)
+        if not include_raw:
+            findings_q = findings_q.options(defer(ScanFinding.raw_data))
+        findings_result = await self.db.execute(findings_q)
         findings = findings_result.scalars().all()
 
         detail = ScanJobDetailResponse.model_validate(job)
-        detail.findings = [ScanFindingResponse.model_validate(f) for f in findings]
+        detail.findings = [self._finding_response(f, include_raw=include_raw) for f in findings]
         return detail
 
     async def get_findings(self, job_id: str, user_id: UUID) -> list[ScanFindingResponse]:
@@ -188,9 +192,31 @@ class ScannerService:
         job = result.scalar_one_or_none()
         if job is None or not await self._can_access_job(job, user_id):
             raise HTTPException(status_code=404, detail="Scan job not found")
-        findings_result = await self.db.execute(select(ScanFinding).where(ScanFinding.job_id == job_id))
+        findings_result = await self.db.execute(
+            select(ScanFinding).where(ScanFinding.job_id == job_id).options(defer(ScanFinding.raw_data))
+        )
         findings = findings_result.scalars().all()
-        return [ScanFindingResponse.model_validate(f) for f in findings]
+        return [self._finding_response(f, include_raw=False) for f in findings]
+
+    async def get_finding(self, job_id: str, finding_id: str, user_id: UUID) -> ScanFindingResponse:
+        result = await self.db.execute(select(ScanJob).where(ScanJob.id == job_id))
+        job = result.scalar_one_or_none()
+        if job is None or not await self._can_access_job(job, user_id):
+            raise HTTPException(status_code=404, detail="Scan job not found")
+        finding_result = await self.db.execute(
+            select(ScanFinding).where(ScanFinding.id == finding_id, ScanFinding.job_id == job.id)
+        )
+        finding = finding_result.scalar_one_or_none()
+        if finding is None:
+            raise HTTPException(status_code=404, detail="Finding not found")
+        return self._finding_response(finding, include_raw=True)
+
+    @staticmethod
+    def _finding_response(finding: ScanFinding, *, include_raw: bool) -> ScanFindingResponse:
+        payload = ScanFindingResponse.model_validate(finding)
+        if not include_raw:
+            payload.raw_data = None
+        return payload
 
     async def get_history(
         self,
