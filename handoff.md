@@ -10,37 +10,41 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
-## Session snapshot (2026-08-27 — Uptime v2 on `main`; refresh against `main`)
+## Session snapshot (2026-08-28 — Uptime history + Guard ERP stg online)
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding)** | Re-`git pull`. Tip **`ecf38e4`** squash **#451** `feat/uptime v2 check types`. Also on main this wave: **#450** spek, **#449** ops table, **#448** attacker_benefit, **#447** report HTML, **#446** public status redesign, **#445** Guard worker, **#444** sidebar Uptime vs Status, **#443** guide uptime/status/assets |
-| **Open PRs** | Dependabot only unless named — **do not mass-merge**. **#452** closed as duplicate of **#451**. Confirm `gh pr list` after pull |
-| **P8 Uptime v2** | **On `main` (#451).** Spek [`docs/specs/uptime-v2-check-types.md`](docs/specs/uptime-v2-check-types.md) (**#450**). Types: HTTP extras (method/headers/body) + keyword invert; heartbeat ingest `POST /api/uptime/heartbeat/{token}` (auth excluded); DNS A/AAAA; ping **501** unless `UPTIME_ICMP=1` (default **false**). Worker skips ping if flag off. Seats unchanged (Basic 1 / Pro 3 / Multi 10). **No UDP.** Alembic **`uptime_v2_check_types`**. Frozen e2e testids: `uptime-page\|add\|name\|type\|target\|save\|row\|delete\|pause` + `uptime-keyword-invert`, `uptime-heartbeat-url`. **Residual deploy:** Alembic on edge; leave ICMP off unless asked; human SMTP/UI smoke |
-| **P11 Status page** | **Code on `main` (#441 + #446 redesign).** Spek [`docs/specs/status-page-v1.md`](docs/specs/status-page-v1.md). Public `/status/{slug}` — display name + up/down/degraded/unknown **never** raw URL/IP. SPA `/uptime/status-page`. Flag `STATUS_PAGE_ENABLED`. **Residual ops:** CF for SaaS / catch-all vhost (not ACME). **#444:** Status sidebar must **not** mark Uptime active |
-| **P10 Blog** | **On `main`** (#408–#417). Landing chrome, not Palatino |
-| **Recent merges (visual / i18n / theme)** | i18n **#367–#373** · theme **#374–#378** + **#405** (`h-12`, `--primary` `hsl(142 71% 45%)`) · visual **#403–#406** · **#417** `PageLoading`. **Do not** recapture unprompted. Root `*-2k.png` **untracked — do not add** |
-| **P1 Scan Attach** | **S1–S5** + Wave B; production smoke closed. Report HTML redesign **#447**. Finding **attacker_benefit** **#448** |
-| **P2 Workspace** | **S1–S5 on `main`**; residual **manual** multi-member / OrgSwitcher smoke. Invite-accept UI: **#431** shipped; **#438** reverted by **#440** — do **not** re-land #438 unless user asks |
-| **P4 soft dual-brand** | **On `main`** (#250); public **`sinexis.app`** — **no hard cut** |
-| **P5 Guard** | Code on `main` (mock CI). **Standing permission (user 2026-08-26):** live lab wipe `tc5` → Manager cleanup from `tc1` → enroll/unenroll **without re-asking**. Wipe-first **§4.1**; Playwright ≠ enroll; never print tokens/IPs. **#445** worker no FastAPI |
-| **P7 SIEM** | Code on `main` (#307). **Prod flag ON** (2026-08-26). `SIEM_INCLUDE_FULL_LOG` **false**. Empty `/siem` without agents+Indexer is expected. **Do not** add Discover/cases on `/guard` |
-| **P3 Assets** | **S1–S5 on `main`** (#380). Residual: **edge Alembic + `/assets` UI smoke** (human) |
-| **P0 commercial** | Policy locked (#245): Basic **300k** / Pro **650k** / Multi **2M**; credits **10/24/60** |
-| **Still human (not git)** | Finance **service_id** ×3; AM **10 CRM SIDs**; named **pilot #1**; AM **send**; ops **fulfill**; Uptime SMTP; Workspace/Assets **click** smoke; **P11** edge Alembic + `/status` smoke + CF SaaS if custom host; **Uptime v2** edge Alembic `uptime_v2_check_types`; screenshot pack **`E2E_PASSWORD` on e2e host** only |
-| **Coding-host Docker** | Prefer **off/minimal**. Compose project on edge is **`vuln`** (not `vuln-scanner`) |
-| **Engineering default** | **Do not start coding** until `implement` / `buat` / `kerjakan`. Next if user asks: **P6 hospitality spek** (docs first) **or** edge deploy/smoke (status + uptime v2 Alembic). GTM parallel. Dependabot only when **named**. |
+| **`main` tip (coding)** | Re-`git pull`. Tip **`33e7951`** squash **#462** `feat: uptime check history and operator error hints`. Also on main this wave: **#461** status slug/hostname, **#460** SIEM filters, **#459** skeletons, **#458** visual QA |
+| **Open PRs** | Dependabot only — **do not mass-merge**. Confirm `gh pr list` after pull |
+| **P8 Uptime** | **v2 on `main` (#451).** **History + `explainUptimeError` on `main` (#462).** HTTP up = **200–399** unless `expect_status`; UA `SinexisUptime/1.0`; confirm **2 fails**. Frozen e2e testids unchanged. **Residual:** edge Alembic if not applied; ICMP **off**; SMTP smoke human |
+| **P11 Status page** | **#441 + #446 + #461** (edit public slug / reserved hostname toast). Public `/status/{slug}` **never** leak URL/IP/headers/token. Residual: CF SaaS; island light recapture only if asked |
+| **P5 Guard** | Code on `main`. **Live (2026-08-28, user confirmed):** agent **`sx-erpstg` online** on `/guard` after Manager **4.14.7** + UFW allow **that host’s egress** on **1514/tcp 1515/tcp 1514/udp**. Lab **`tc5`** allow unchanged. **Do not** open 1514 to `0.0.0.0/0`. **Do not** print Manager/agent IPs, UFW sources, or enroll keys in chat/git. SSH aliases **`tc3`=Manager**, **`tc5`=lab agent**, **`tc1`=other** live in **`~/.ssh/config` only**. New enrolls: allow **that agent’s egress IP** on Manager UFW (same pattern as lab + ERP stg). Optional: `apt-mark hold wazuh-agent` on hosts. **Standing lab:** wipe `tc5` first **§4.1**; Playwright ≠ enroll |
+| **P7 SIEM** | Prod flag **ON**. `SIEM_INCLUDE_FULL_LOG` **false**. **#460** equal-column filters. Do **not** add Discover on `/guard` |
+| **P3 Assets** | S1–S5 on `main`. Residual: **`/assets` SSL on sinexis.app** (infra, not git) |
+| **P1 / P2 / P4 / P0 / P10** | Unchanged — attach, workspace, dual-brand, SKU, blog on `main` |
+| **Still human** | GTM finance/CRM; Uptime SMTP; Workspace/Assets click smoke; island light recapture; `/assets` SSL |
+| **Engineering default** | **Do not start coding** until `implement` / `buat` / `kerjakan`. Next if asked: **P6 hospitality spek** (docs first) or named bug. Dependabot only when **named**. |
 
 ### Next OpenCode session
 
-1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull` — expect **#451** on tip (`ecf38e4` or newer). `gh pr list --state open --assignee @me`. Do **not** mass-merge Dependabot. **#452** was a duplicate of **#451** — already closed.
-2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** (§0 then **§1.3**) then **`AGENTS.md`**. This stub is **not** the backlog. Guide wins on epic order.
-3. Speak **Bahasa Indonesia** with the user; code/PR English; prefix **every** git command with `GIT_MASTER=1`. Never work on `main`. Never force-push. Never commit secrets/IPs/enroll keys. Never commit PNG screenshots (repo root `*-2k.png` / `*-mobile.png` — **untracked, do not add**).
-4. **If user continues Uptime v2:** deploy residual only — Alembic `uptime_v2_check_types`, keep `UPTIME_ICMP=false` unless asked, smoke heartbeat ingest (204, no JWT), ping create → **501**, public status must not leak URL/IP/headers/token.
-5. **If user continues P11:** deploy residual — Alembic `add_status_page_tables`, `STATUS_PAGE_*` on backend compose, host nginx `/status`, smoke publish on **pro**, 403 on **basic**. Custom TLS = **ops Cloudflare for SaaS**, not app ACME.
-6. **If user continues product:** prefer **P6 hospitality spek** (docs first) or **Uptime SMTP smoke** — not status-page v2 (webhooks, auto-incidents, ACME) and not UDP.
-7. Recapture (2K or mobile) **only if asked**. Sequential visual-engineering (**one screenshot at a time**). Do **not** fire many parallel agents (OOM).
-8. **SIEM prod is on.** Do not re-enable. **Guard live lab:** may execute (wipe-first §4.1) **without re-asking**. Compose project **`-p vuln`**.
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull` — expect **#462** on tip (`33e7951` or newer). `gh pr list --state open --assignee @me`. Do **not** mass-merge Dependabot.
+2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** (§0 then **§1.3**) then **`AGENTS.md`**. This stub is **not** the backlog.
+3. Speak **Bahasa Indonesia** with the user; code/PR English; prefix **every** git command with `GIT_MASTER=1`. Never work on `main`. Never force-push. Never commit secrets/IPs/enroll keys/UFW source lists. Never commit PNG screenshots.
+4. **Guard:** `sx-erpstg` is **online** — do **not** re-enroll or wipe it. New hosts: UFW allow **their** egress on Manager 1514/1515; agent version **≤** manager (stack is **4.14.7**). Sync button on `/guard` is **owner/admin only** (`canManageGuard`); label i18n **Sinkronkan**. Celery `guard.sync_all` every 5m. Enroll writes `status=pending` until inventory match on `wazuh_agent_id`.
+5. **If user continues Uptime:** history already on `main` (#462). Residual deploy/SMTP only unless a new spek.
+6. **If user continues P11:** residual CF / `/status` smoke. Custom TLS = Cloudflare for SaaS, not ACME.
+7. Recapture **only if asked**. Sequential visual-engineering. Do **not** fire many parallel screenshot agents (OOM).
+8. **SIEM prod is on.** **Guard live lab** (wipe-first §4.1) without re-asking. Compose **`-p vuln`**.
+
+### Last session (2026-08-28) — Uptime history + Guard ERP stg
+
+**Shipped on `main`:** **#462** — Uptime check history panel + `explainUptimeError` (i18n); Skeleton import fix (`TS2552`). **#461** status slug. **#460** SIEM filters. **#459** skeletons.
+
+**Ops (not git):** Manager UFW allow ERP-stg egress → 1514/1515; Manager/indexer/dashboard **4.12.0 → 4.14.7** (agent was 4.14.7; Wazuh rejects newer agent). User: `nc` 1514/1515 succeeded; then version warning; after upgrade, agent **Active** on Manager; user: **`/guard` online** (sync button exists for admin/owner).
+
+**Do not:** paste IPs in md; open 1514 world; re-wipe `sx-erpstg`; treat Playwright as enroll.
+
+**User standing:** Guard live lab OK; SIEM on; never invent E2E password; Palatino **rejected**; public status **never** leak URL/IP.
 
 ### Last session (2026-08-27) — Uptime v2 check types
 
