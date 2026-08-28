@@ -47,5 +47,16 @@
   "inviteLinkHint": "Share this link with the invitee. They must sign in with the same email.",
   "copyInviteLink": "Copy invite link",
   "inviteLinkCopied": "Invite link copied",
-  "inviteLinkCopyFail": "Could not copy link"
+  "inviteLinkCopyFail": "Could not copy link",
+  "pilotTitle": "Pilot checklist",
+  "pilotDescription": "Scan attach for one org. Credits stay personal. Guard and SIEM are separate SKUs — do not bundle.",
+  "pilotStepOrg": "Confirm this workspace is the hotel or company (one org, not nested properties).",
+  "pilotStepInvite": "Invite IT as owner/admin and GM as viewer if they only need reports.",
+  "pilotStepAssets": "Name 1–3 assets (Basic/Pro). Multi-10 only after renew works.",
+  "pilotStepSchedules": "Enable a schedule (monthly Basic, weekly Pro+). Notify on new critical/high.",
+  "pilotStepCredits": "Top up personal credits so the schedule does not auto-disable.",
+  "pilotStepReport": "Send the Bahasa executive HTML. Hybrid review is 5 business days, not 24/7 SOC.",
+  "pilotLinkAssets": "Open assets",
+  "pilotLinkSchedules": "Open schedules",
+  "pilotLinkCredits": "Open credits"
 }
