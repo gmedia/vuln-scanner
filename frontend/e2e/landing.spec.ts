@@ -62,14 +62,24 @@ test.describe("Landing", () => {
     page,
   }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: "Guard" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Aset" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Uptime" })).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Scan Attach" }),
+      page.getByRole("heading", { name: "Guard", exact: true }),
     ).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Kredit" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "SIEM" })).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: "Aset", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Uptime", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Scan Attach", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Kredit", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "SIEM", exact: true }),
+    ).toHaveCount(0);
   });
 
   test("footer shows platform line without engine dump", async ({ page }) => {
