@@ -50,6 +50,7 @@ describe("Assets page", () => {
     await waitFor(() => expect(screen.getByTestId("assets-empty")).toBeInTheDocument());
     expect(screen.getByTestId("assets-empty-cta")).toBeInTheDocument();
     expect(screen.queryByTestId("assets-pack")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("assets-pack-html")).not.toBeInTheDocument();
   });
 
   it("creates an asset", async () => {
@@ -83,5 +84,23 @@ describe("Assets page", () => {
     await user.type(screen.getByTestId("asset-target"), "example.com");
     await user.click(screen.getByTestId("asset-save"));
     await waitFor(() => expect(mockCreate).toHaveBeenCalled());
+  });
+
+  it("shows pack JSON and HTML buttons when assets exist", async () => {
+    mockList.mockResolvedValue([
+      {
+        id: "a1",
+        name: "Web",
+        scan_type: "domain",
+        target: "example.com",
+        notes: null,
+        schedule_id: null,
+        sku: "multi",
+        sku_limit: 10,
+      },
+    ]);
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId("assets-pack")).toBeInTheDocument());
+    expect(screen.getByTestId("assets-pack-html")).toBeInTheDocument();
   });
 });

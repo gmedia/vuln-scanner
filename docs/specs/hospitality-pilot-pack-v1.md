@@ -1,6 +1,6 @@
 # Spec: Hospitality / pilot pack v1 (P6)
 
-**Status:** **S1 implemented** — in-app checklist copy on Workspace settings. S2+ still blocked until named.
+**Status:** **S2 implemented** — asset pack HTML (`GET /api/assets/pack?format=html`) + SPA download. S3 AM PDF still blocked until named.
 **Goal:** Give AM/ops a **repeatable beachhead pack** for hotel / multi-property pilots without a logos-only marketing site or a new CMDB.
 **Epic:** P6 per [`docs/AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) §1.3.
 **Depends:** P0 SKU lock · P1 Scan Attach · P2 Workspace · P3 assets · P4 soft dual-brand. Guard (P5) and SIEM (P7) are **optional second SKUs**, not in this pack.
@@ -108,7 +108,7 @@ Copy this into **private CRM**, then fill names there.
 |-------|-------------|-------|
 | **S0** | This spec | Docs |
 | **S1** | In-app “pilot checklist” on `/settings/workspace` (copy + links only) | **Shipped** |
-| **S2** | Pack HTML across assets (beyond JSON pack) | Only on implement |
+| **S2** | Pack HTML across assets (beyond JSON pack) | **Shipped** |
 | **S3** | Hospitality one-pager PDF for AM (commercial docs) | Docs |
 
 ### S1 acceptance
@@ -119,6 +119,14 @@ Copy this into **private CRM**, then fill names there.
 - No new API, no persisted checklist state, no Guard/SIEM CTAs.
 - Hidden when the user has no org.
 
+### S2 acceptance
+
+- [x] `GET /api/assets/pack?format=html` (default remains JSON)
+- [x] i18n catalogs `asset_pack` en/id; tokens match executive report family
+- [x] SPA `/assets` download HTML (`data-testid="assets-pack-html"`)
+- [x] No new tables; no Guard/SIEM rows in pack
+- [x] Tests: HTML 200 + invalid format 400; FE button when list non-empty
+
 ---
 
 ## 9. Acceptance (S0)
@@ -127,7 +135,8 @@ Copy this into **private CRM**, then fill names there.
 - [x] Hotel language maps to shipped modules.
 - [x] Hybrid SLA is bounded (pilot #1, 5 business days, no SOC).
 - [x] S1 product work — Workspace checklist.
+- [x] S2 pack HTML.
 
 ---
 
-*S1 2026-08-28. Guide wins on epic order.*
+*S2 2026-08-28. Guide wins on epic order.*
