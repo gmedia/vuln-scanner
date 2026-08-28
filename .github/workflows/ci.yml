@@ -462,6 +462,9 @@ jobs:
             append_if_set WAZUH_INDEXER_USER "${{ secrets.WAZUH_INDEXER_USER }}"
             append_if_set WAZUH_INDEXER_PASSWORD "${{ secrets.WAZUH_INDEXER_PASSWORD }}"
             append_if_set WAZUH_AGENT_MANAGER_HOST "${{ secrets.WAZUH_AGENT_MANAGER_HOST }}"
+            append_if_set STATUS_PAGE_CF_API_TOKEN "${{ secrets.STATUS_PAGE_CF_API_TOKEN }}"
+            append_if_set STATUS_PAGE_CF_ZONE_ID "${{ secrets.STATUS_PAGE_CF_ZONE_ID }}"
+            printf 'STATUS_PAGE_CF_STUB_ACTIVE=%s\n' "${{ secrets.STATUS_PAGE_CF_STUB_ACTIVE || 'false' }}" >> .env
             echo ".env written from GitHub Secrets"
             chmod 600 .env
 
