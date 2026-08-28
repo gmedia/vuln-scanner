@@ -139,7 +139,7 @@ describe("useScanFindings", () => {
     renderHook(() => useScanFindings("job-123"), { wrapper: Wrapper });
     expect(mockUseQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        queryKey: ["scan-findings", "org-a", "job-123"],
+        queryKey: ["scan-findings", "org-a", "job-123", 1, 50],
       }),
     );
   });

@@ -119,8 +119,15 @@ export async function getScan(jobId: string): Promise<ScanJobDetail> {
   return data;
 }
 
-export async function getScanFindings(jobId: string): Promise<ScanFinding[]> {
-  const { data } = await api.get<ScanFinding[]>(`/api/scan/${jobId}/findings`);
+export async function getScanFindings(
+  jobId: string,
+  page = 1,
+  limit = 50,
+): Promise<PaginatedResponse<ScanFinding>> {
+  const { data } = await api.get<PaginatedResponse<ScanFinding>>(
+    `/api/scan/${jobId}/findings`,
+    { params: { page, limit } },
+  );
   return data;
 }
 
