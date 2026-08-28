@@ -8,6 +8,8 @@
   "publish": "Terbitkan",
   "unpublish": "Batalkan terbit",
   "publicUrl": "URL publik",
+  "publicUrlHelp": "Mengganti slug mengubah /status/{slug}. URL lama tidak lagi aktif.",
+  "savePublicUrl": "Simpan URL publik",
   "customHost": "Hostname kustom",
   "cnameHelp": "Arahkan CNAME ke {{target}} lalu verifikasi DNS. TLS di edge (Cloudflare for SaaS).",
   "verifyDns": "Verifikasi DNS",

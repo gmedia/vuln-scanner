@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import * as statusApi from "@/api/statusPage";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import StatusPage from "@/pages/StatusPage";
@@ -53,5 +55,50 @@ describe("StatusPage admin", () => {
       expect(screen.getByTestId("status-page-empty")).toBeInTheDocument(),
     );
     expect(screen.getByTestId("status-page-create")).toBeInTheDocument();
+  });
+
+  it("lets an existing page change its public slug", async () => {
+    const user = userEvent.setup();
+    mockGet.mockResolvedValue({
+      id: "p1",
+      organization_id: "o1",
+      slug: "erp-stg",
+      title: "ERP",
+      published: true,
+      custom_hostname: null,
+      hostname_status: "none",
+      cname_target: "status-edge.sinexis.app",
+      public_path: "/status/erp-stg",
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+      components: [],
+      incidents: [],
+      overall: "operational",
+    });
+    vi.mocked(statusApi.patchStatusPage).mockResolvedValue({
+      id: "p1",
+      organization_id: "o1",
+      slug: "erp-prod",
+      title: "ERP",
+      published: true,
+      custom_hostname: null,
+      hostname_status: "none",
+      cname_target: "status-edge.sinexis.app",
+      public_path: "/status/erp-prod",
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+      components: [],
+      incidents: [],
+      overall: "operational",
+    });
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("status-page-slug")).toBeInTheDocument(),
+    );
+    const input = screen.getByTestId("status-page-slug");
+    await user.clear(input);
+    await user.type(input, "erp-prod");
+    await user.click(screen.getByTestId("status-page-save-slug"));
+    expect(statusApi.patchStatusPage).toHaveBeenCalledWith({ slug: "erp-prod" });
   });
 });

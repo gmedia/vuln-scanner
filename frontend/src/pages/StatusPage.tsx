@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -53,6 +53,7 @@ export default function StatusPage() {
 
   const [slug, setSlug] = useState("");
   const [title, setTitle] = useState("");
+  const [editSlug, setEditSlug] = useState("");
   const [host, setHost] = useState("");
   const [monitorId, setMonitorId] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -60,6 +61,10 @@ export default function StatusPage() {
   const [incBody, setIncBody] = useState("");
   const [incImpact, setIncImpact] = useState("minor");
   const [incStatus, setIncStatus] = useState("investigating");
+
+  useEffect(() => {
+    if (page?.slug) setEditSlug(page.slug);
+  }, [page?.slug]);
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["status-page"] });
 
@@ -75,6 +80,14 @@ export default function StatusPage() {
   const hostMut = useMutation({
     mutationFn: () => patchStatusPage({ custom_hostname: host || null }),
     onSuccess: invalidate,
+  });
+  const slugMut = useMutation({
+    mutationFn: () => patchStatusPage({ slug: editSlug }),
+    onSuccess: () => {
+      invalidate();
+      toast.success(t("savePublicUrl"));
+    },
+    onError: () => toast.error("Could not save public URL"),
   });
   const verifyMut = useMutation({
     mutationFn: verifyHostname,
@@ -219,6 +232,40 @@ export default function StatusPage() {
               </p>
             </div>
           </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm tracking-wide">
+                {t("publicUrl")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">{t("publicUrlHelp")}</p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label htmlFor="sp-edit-slug">{t("slug")}</Label>
+                  <Input
+                    id="sp-edit-slug"
+                    data-testid="status-page-slug"
+                    className="h-10 min-h-10"
+                    value={editSlug}
+                    onChange={(e) => setEditSlug(e.target.value)}
+                  />
+                </div>
+                <div className="flex min-w-0 flex-col justify-end gap-1.5">
+                  <Button
+                    type="button"
+                    className="h-10 min-h-10 w-full"
+                    data-testid="status-page-save-slug"
+                    disabled={slugMut.isPending}
+                    onClick={() => slugMut.mutate()}
+                  >
+                    {t("savePublicUrl")}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>

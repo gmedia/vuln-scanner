@@ -8,6 +8,8 @@
   "publish": "Publish",
   "unpublish": "Unpublish",
   "publicUrl": "Public URL",
+  "publicUrlHelp": "Changing the slug updates /status/{slug}. The old URL stops working.",
+  "savePublicUrl": "Save public URL",
   "customHost": "Custom hostname",
   "cnameHelp": "Point a CNAME to {{target}} then verify DNS. TLS is provisioned at the edge (Cloudflare for SaaS).",
   "verifyDns": "Verify DNS",
