@@ -7,6 +7,7 @@ from app.database import get_db
 from app.models.user import User
 from app.schemas.status_page import (
     StatusComponentCreate,
+    StatusHostnameBody,
     StatusIncidentCreate,
     StatusIncidentUpdateCreate,
     StatusPageCreate,
@@ -48,13 +49,51 @@ async def patch_page(
     return await StatusPageService(db).update(current_user, get_active_org_id(request), body)
 
 
+@router.post("/hostname", response_model=StatusPageResponse, status_code=201)
+async def attach_hostname(
+    request: Request,
+    body: StatusHostnameBody,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> StatusPageResponse:
+    return await StatusPageService(db).attach_hostname(current_user, get_active_org_id(request), body)
+
+
+@router.put("/hostname", response_model=StatusPageResponse)
+async def replace_hostname(
+    request: Request,
+    body: StatusHostnameBody,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> StatusPageResponse:
+    return await StatusPageService(db).replace_hostname(current_user, get_active_org_id(request), body)
+
+
+@router.delete("/hostname", response_model=StatusPageResponse)
+async def detach_hostname(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> StatusPageResponse:
+    return await StatusPageService(db).detach_hostname(current_user, get_active_org_id(request))
+
+
+@router.post("/hostname/check", response_model=StatusPageResponse)
+async def check_hostname(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> StatusPageResponse:
+    return await StatusPageService(db).check_hostname(current_user, get_active_org_id(request))
+
+
 @router.post("/verify-hostname", response_model=StatusPageResponse)
 async def verify_hostname(
     request: Request,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> StatusPageResponse:
-    return await StatusPageService(db).verify_hostname(current_user, get_active_org_id(request))
+    return await StatusPageService(db).check_hostname(current_user, get_active_org_id(request))
 
 
 @router.post("/components", response_model=StatusPageResponse, status_code=201)

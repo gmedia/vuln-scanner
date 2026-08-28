@@ -27,6 +27,7 @@ from app.models.user import User
 from app.schemas.status_page import (
     StatusComponentCreate,
     StatusComponentResponse,
+    StatusHostnameBody,
     StatusIncidentCreate,
     StatusIncidentResponse,
     StatusIncidentUpdateCreate,
@@ -155,6 +156,9 @@ class StatusPageService:
             custom_hostname=page.custom_hostname,
             hostname_status=page.hostname_status,
             cname_target=_cname_target(),
+            txt_name=None,
+            txt_value=None,
+            ssl_status=page.hostname_status if page.custom_hostname else None,
             public_path=_public_path(page.slug),
             created_at=page.created_at,
             updated_at=page.updated_at,
@@ -240,13 +244,80 @@ class StatusPageService:
                 if other.scalar_one_or_none() is not None:
                     raise HTTPException(status_code=409, detail="hostname already in use")
                 page.custom_hostname = body.custom_hostname
-                page.hostname_status = "pending_dns"
+                page.hostname_status = "pending_txt"
         await self.db.commit()
         loaded = await self._page_for_org(organization_id)
         assert loaded is not None
         return self._to_response(loaded)
 
-    async def verify_hostname(self, user: User, organization_id: UUID | None) -> StatusPageResponse:
+    async def _set_hostname(self, org: Organization, page: StatusPage, hostname: str) -> None:
+        if (org.sku or "basic") not in STATUS_PAGE_CUSTOM_HOST_SKUS:
+            raise HTTPException(status_code=403, detail="Custom domain requires Multi SKU")
+        assert_custom_hostname(hostname)
+        other = await self.db.execute(
+            select(StatusPage).where(StatusPage.custom_hostname == hostname, StatusPage.id != page.id)
+        )
+        if other.scalar_one_or_none() is not None:
+            raise HTTPException(status_code=409, detail="hostname already in use")
+        page.custom_hostname = hostname
+        page.hostname_status = "pending_txt"
+
+    async def attach_hostname(
+        self, user: User, organization_id: UUID | None, body: StatusHostnameBody
+    ) -> StatusPageResponse:
+        self._enabled()
+        if organization_id is None:
+            raise HTTPException(status_code=400, detail="Active organization required")
+        await require_membership(self.db, organization_id, user.id, min_role="member")
+        org = await self._org(organization_id)
+        page = await self._page_for_org(organization_id)
+        if page is None:
+            raise HTTPException(status_code=404, detail="Status page not found")
+        if page.custom_hostname:
+            raise HTTPException(status_code=409, detail="hostname already attached; use update")
+        published = page.published
+        await self._set_hostname(org, page, body.hostname)
+        page.published = published
+        await self.db.commit()
+        loaded = await self._page_for_org(organization_id)
+        assert loaded is not None
+        return self._to_response(loaded)
+
+    async def replace_hostname(
+        self, user: User, organization_id: UUID | None, body: StatusHostnameBody
+    ) -> StatusPageResponse:
+        self._enabled()
+        if organization_id is None:
+            raise HTTPException(status_code=400, detail="Active organization required")
+        await require_membership(self.db, organization_id, user.id, min_role="member")
+        org = await self._org(organization_id)
+        page = await self._page_for_org(organization_id)
+        if page is None:
+            raise HTTPException(status_code=404, detail="Status page not found")
+        if not page.custom_hostname:
+            raise HTTPException(status_code=400, detail="No custom hostname set")
+        await self._set_hostname(org, page, body.hostname)
+        await self.db.commit()
+        loaded = await self._page_for_org(organization_id)
+        assert loaded is not None
+        return self._to_response(loaded)
+
+    async def detach_hostname(self, user: User, organization_id: UUID | None) -> StatusPageResponse:
+        self._enabled()
+        if organization_id is None:
+            raise HTTPException(status_code=400, detail="Active organization required")
+        await require_membership(self.db, organization_id, user.id, min_role="member")
+        page = await self._page_for_org(organization_id)
+        if page is None:
+            raise HTTPException(status_code=404, detail="Status page not found")
+        page.custom_hostname = None
+        page.hostname_status = "none"
+        await self.db.commit()
+        loaded = await self._page_for_org(organization_id)
+        assert loaded is not None
+        return self._to_response(loaded)
+
+    async def check_hostname(self, user: User, organization_id: UUID | None) -> StatusPageResponse:
         self._enabled()
         if organization_id is None:
             raise HTTPException(status_code=400, detail="Active organization required")
@@ -254,12 +325,17 @@ class StatusPageService:
         page = await self._page_for_org(organization_id)
         if page is None or not page.custom_hostname:
             raise HTTPException(status_code=400, detail="No custom hostname set")
-        ok = verify_cname(page.custom_hostname)
-        page.hostname_status = "active" if ok else "failed"
+        if settings.status_page_cf_stub_active:
+            page.hostname_status = "active"
+        else:
+            page.hostname_status = "pending_txt"
         await self.db.commit()
         loaded = await self._page_for_org(organization_id)
         assert loaded is not None
         return self._to_response(loaded)
+
+    async def verify_hostname(self, user: User, organization_id: UUID | None) -> StatusPageResponse:
+        return await self.check_hostname(user, organization_id)
 
     async def add_component(
         self, user: User, organization_id: UUID | None, body: StatusComponentCreate
