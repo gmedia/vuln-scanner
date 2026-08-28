@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { TableRowSkeleton } from "@/components/ui/Skeleton";
+import { Skeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
   Select,
   SelectContent,
