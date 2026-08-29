@@ -12,7 +12,7 @@ from app.database import get_db
 from app.middleware.rate_limit import RateLimiter
 from app.models.credit_log import CreditLog
 from app.models.email_verification import EmailVerificationToken
-from app.models.hpp import HPP_KEYS, HppRate
+from app.models.hpp import HPP_KEYS, HPP_OVERHEAD_SINGLETON_ID, HppOverhead, HppRate
 from app.models.pricing import PricingConfig
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
@@ -22,6 +22,8 @@ from app.schemas.admin import (
     AdminUserItem,
     AdminUserList,
     CreditUpdateRequest,
+    HppOverheadItem,
+    HppOverheadUpdateRequest,
     HppRateItem,
     HppRateListResponse,
     HppRateUpdateRequest,
@@ -416,6 +418,10 @@ async def get_hpp_report(
     for k in HPP_KEYS:
         rates.setdefault(k, 0)
 
+    overhead_result = await db.execute(select(HppOverhead).where(HppOverhead.id == HPP_OVERHEAD_SINGLETON_ID))
+    overhead_row = overhead_result.scalar_one_or_none()
+    overhead_idr = int(overhead_row.amount_idr) if overhead_row else 0
+
     job_counts_result = await db.execute(
         select(ScanJob.scan_type, func.count(ScanJob.id))
         .where(ScanJob.status == "completed", ScanJob.completed_at >= start, ScanJob.completed_at <= end)
@@ -433,16 +439,51 @@ async def get_hpp_report(
     )
     statushost_count = int(host_count_result.scalar() or 0)
 
-    lines: list[HppReportLine] = []
+    counts: dict[str, int] = {}
     total_count = 0
     total_hpp = 0
     for key in HPP_KEYS:
         count = statushost_count if key == "statushost" else job_counts.get(key, 0)
+        counts[key] = count
+        total_count += count
+        total_hpp += count * rates[key]
+
+    allocated = 0
+    remaining_keys = [k for k in HPP_KEYS if counts[k] > 0]
+    last_key = remaining_keys[-1] if remaining_keys else None
+    share_by_key: dict[str, int] = {k: 0 for k in HPP_KEYS}
+    if total_count > 0 and overhead_idr > 0:
+        for key in remaining_keys:
+            if key == last_key:
+                share_by_key[key] = overhead_idr - allocated
+            else:
+                share = (overhead_idr * counts[key]) // total_count
+                share_by_key[key] = share
+                allocated += share
+
+    lines: list[HppReportLine] = []
+    total_fully = 0
+    for key in HPP_KEYS:
+        count = counts[key]
         rate = rates[key]
         hpp = count * rate
-        lines.append(HppReportLine(key=key, count=count, rate_idr=rate, hpp_idr=hpp))
-        total_count += count
-        total_hpp += hpp
+        share = share_by_key[key]
+        fully = hpp + share
+        unit = (fully // count) if count else 0
+        lines.append(
+            HppReportLine(
+                key=key,
+                count=count,
+                rate_idr=rate,
+                hpp_idr=hpp,
+                overhead_share_idr=share,
+                fully_loaded_hpp_idr=fully,
+                fully_loaded_unit_idr=unit,
+            )
+        )
+        total_fully += fully
+
+    unallocated = overhead_idr if total_count == 0 else 0
 
     pricing_result = await db.execute(select(PricingConfig))
     credit_cost = {p.scan_type: p.credit_cost for p in pricing_result.scalars().all()}
@@ -476,8 +517,61 @@ async def get_hpp_report(
         lines=lines,
         total_count=total_count,
         total_hpp_idr=total_hpp,
+        overhead_idr=overhead_idr,
+        total_fully_loaded_hpp_idr=total_fully,
+        unallocated_overhead_idr=unallocated,
         sku_estimates=sku_estimates,
     )
+
+
+@router.get("/hpp/overhead", response_model=HppOverheadItem)
+async def get_hpp_overhead(
+    request: Request,
+    current_admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> HppOverheadItem | Response:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        return limit_response
+    result = await db.execute(select(HppOverhead).where(HppOverhead.id == HPP_OVERHEAD_SINGLETON_ID))
+    row = result.scalar_one_or_none()
+    if row is None:
+        now = datetime.now(UTC)
+        row = HppOverhead(id=HPP_OVERHEAD_SINGLETON_ID, amount_idr=0, updated_at=now)
+        db.add(row)
+        await db.commit()
+        await db.refresh(row)
+    return HppOverheadItem.model_validate(row)
+
+
+@router.put("/hpp/overhead", response_model=HppOverheadItem)
+async def update_hpp_overhead(
+    request: Request,
+    body: HppOverheadUpdateRequest,
+    current_admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> HppOverheadItem | Response:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        return limit_response
+    result = await db.execute(select(HppOverhead).where(HppOverhead.id == HPP_OVERHEAD_SINGLETON_ID))
+    row = result.scalar_one_or_none()
+    now = datetime.now(UTC)
+    if row:
+        row.amount_idr = body.amount_idr
+        row.updated_at = now
+        row.updated_by = current_admin.id
+    else:
+        row = HppOverhead(
+            id=HPP_OVERHEAD_SINGLETON_ID,
+            amount_idr=body.amount_idr,
+            updated_at=now,
+            updated_by=current_admin.id,
+        )
+        db.add(row)
+    await db.commit()
+    await db.refresh(row)
+    return HppOverheadItem.model_validate(row)
 
 
 @router.put("/hpp/{key}", response_model=HppRateItem)
