@@ -33,6 +33,7 @@ const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
 const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
 const AdminUserDetail = lazy(() => import("@/pages/admin/AdminUserDetail"));
 const AdminPricing = lazy(() => import("@/pages/admin/AdminPricing"));
+const AdminHpp = lazy(() => import("@/pages/admin/AdminHpp"));
 const AdminBlog = lazy(() => import("@/pages/admin/AdminBlog"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -140,6 +141,10 @@ function App() {
               <Route
                 path="/admin/pricing"
                 element={<PageBoundary component={AdminPricing} />}
+              />
+              <Route
+                path="/admin/hpp"
+                element={<PageBoundary component={AdminHpp} />}
               />
               <Route
                 path="/admin/blog"

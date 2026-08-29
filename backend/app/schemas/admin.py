@@ -49,3 +49,47 @@ class PricingUpdateRequest(BaseModel):
 
 class PricingListResponse(BaseModel):
     items: list[PricingItem]
+
+
+class HppRateItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    key: str = Field(..., max_length=20)
+    amount_idr: int
+    updated_at: datetime
+    updated_by: uuid.UUID | None = None
+
+
+class HppRateUpdateRequest(BaseModel):
+    amount_idr: int = Field(..., ge=0)
+
+
+class HppRateListResponse(BaseModel):
+    items: list[HppRateItem]
+
+
+class HppReportLine(BaseModel):
+    key: str
+    count: int
+    rate_idr: int
+    hpp_idr: int
+
+
+class HppSkuEstimate(BaseModel):
+    sku: str
+    list_idr: int
+    credits_per_month: int
+    label: str
+    hpp_if_all_ip_idr: int | None
+    hpp_if_all_domain_idr: int | None
+    margin_if_all_ip_idr: int | None
+    margin_if_all_domain_idr: int | None
+
+
+class HppReportResponse(BaseModel):
+    from_date: datetime
+    to_date: datetime
+    lines: list[HppReportLine]
+    total_count: int
+    total_hpp_idr: int
+    sku_estimates: list[HppSkuEstimate]

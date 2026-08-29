@@ -3,6 +3,7 @@ from app.models.blog import BlogPost
 from app.models.credit_log import CreditLog
 from app.models.email_verification import EmailVerificationToken
 from app.models.guard import GuardAgent, GuardAlert, GuardEnrollToken, GuardOrgBinding
+from app.models.hpp import HppRate
 from app.models.organization import Organization, OrganizationInvite, OrganizationMembership
 from app.models.password_reset import PasswordResetToken
 from app.models.pricing import PricingConfig
@@ -23,6 +24,7 @@ __all__ = [
     "BlogPost",
     "CreditLog",
     "PricingConfig",
+    "HppRate",
     "Organization",
     "OrganizationMembership",
     "OrganizationInvite",
