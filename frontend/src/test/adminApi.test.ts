@@ -13,10 +13,12 @@ vi.mock("@/api/scans", () => ({
 }));
 
 import {
+  createHppCost,
   getHppOverhead,
   getHppRates,
   getHppReport,
   getPricing,
+  listHppCosts,
   normalizePricingList,
   resendVerification,
   updateHppOverhead,
@@ -157,6 +159,39 @@ describe("hpp admin api", () => {
     });
     expect(mockPut).toHaveBeenCalledWith("/api/admin/hpp/overhead", {
       amount_idr: 50000,
+    });
+  });
+
+  it("listHppCosts and createHppCost", async () => {
+    mockGet.mockResolvedValue({ data: { items: [] } });
+    await expect(listHppCosts({ from: "2026-08-01" })).resolves.toEqual([]);
+    expect(mockGet).toHaveBeenCalledWith("/api/admin/hpp/costs", {
+      params: { from: "2026-08-01" },
+    });
+    mockPost.mockResolvedValue({
+      data: {
+        id: "c1",
+        incurred_on: "2026-08-01T00:00:00Z",
+        amount_idr: 40,
+        category: "opex",
+        note: "CF",
+        created_at: "2026-08-01T00:00:00Z",
+        created_by: null,
+      },
+    });
+    await expect(
+      createHppCost({
+        incurred_on: "2026-08-01",
+        amount_idr: 40,
+        category: "opex",
+        note: "CF",
+      }),
+    ).resolves.toMatchObject({ amount_idr: 40 });
+    expect(mockPost).toHaveBeenCalledWith("/api/admin/hpp/costs", {
+      incurred_on: "2026-08-01",
+      amount_idr: 40,
+      category: "opex",
+      note: "CF",
     });
   });
 });

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Calculator, Loader2, Check } from "lucide-react";
+import { Calculator, Loader2, Check, Trash2 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -8,6 +8,13 @@ import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import { DatePicker } from "@/components/ui/DatePicker";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/Select";
 import {
   Table,
   TableBody,
@@ -35,6 +42,10 @@ function AdminHpp() {
   const [savingOverhead, setSavingOverhead] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [costDate, setCostDate] = useState("");
+  const [costAmount, setCostAmount] = useState("");
+  const [costCategory, setCostCategory] = useState<"opex" | "variable">("opex");
+  const [costNote, setCostNote] = useState("");
 
   const { data: rates, isLoading: ratesLoading } = useQuery({
     queryKey: ["admin-hpp"],
@@ -56,6 +67,11 @@ function AdminHpp() {
     queryFn: () => adminApi.getHppReport(reportParams),
   });
 
+  const { data: costLines, isLoading: costsLoading } = useQuery({
+    queryKey: ["admin-hpp-costs", dateFrom, dateTo],
+    queryFn: () => adminApi.listHppCosts(reportParams),
+  });
+
   const updateOverhead = useMutation({
     mutationFn: (amountIdr: number) =>
       adminApi.updateHppOverhead({ amount_idr: amountIdr }),
@@ -66,6 +82,30 @@ function AdminHpp() {
     },
     onError: () => {
       setSavingOverhead(false);
+    },
+  });
+
+  const createCost = useMutation({
+    mutationFn: () =>
+      adminApi.createHppCost({
+        incurred_on: costDate,
+        amount_idr: parseInt(costAmount, 10) || 0,
+        category: costCategory,
+        note: costNote,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-hpp-costs"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-hpp-report"] });
+      setCostAmount("");
+      setCostNote("");
+    },
+  });
+
+  const deleteCost = useMutation({
+    mutationFn: (id: string) => adminApi.deleteHppCost(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-hpp-costs"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-hpp-report"] });
     },
   });
 
@@ -291,6 +331,139 @@ function AdminHpp() {
                 )}
               </Button>
             </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card data-testid="hpp-costs-card">
+        <CardHeader>
+          <CardTitle className="text-sm tracking-wide">
+            {t("hppCostsCard")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-[11px] text-muted-foreground">
+            {t("hppCostsHint")}
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="hpp-cost-date">{t("hppCostDate")}</Label>
+              <DatePicker
+                id="hpp-cost-date"
+                value={costDate}
+                onChange={setCostDate}
+                placeholder={t("hppCostDate")}
+                aria-label={t("hppCostDate")}
+              />
+            </div>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="hpp-cost-amount">{t("hppCostAmount")}</Label>
+              <Input
+                id="hpp-cost-amount"
+                type="number"
+                min={0}
+                value={costAmount}
+                onChange={(e) => setCostAmount(e.target.value)}
+                className="h-10 min-h-10 font-mono text-xs tabular-nums"
+              />
+            </div>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="hpp-cost-category">{t("hppCostCategory")}</Label>
+              <Select
+                value={costCategory}
+                onValueChange={(v) =>
+                  setCostCategory(v as "opex" | "variable")
+                }
+              >
+                <SelectTrigger id="hpp-cost-category" className="h-10 min-h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="opex">{t("hppCostOpex")}</SelectItem>
+                  <SelectItem value="variable">
+                    {t("hppCostVariable")}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="hpp-cost-note">{t("hppCostNote")}</Label>
+              <Input
+                id="hpp-cost-note"
+                value={costNote}
+                onChange={(e) => setCostNote(e.target.value)}
+                className="h-10 min-h-10"
+                maxLength={200}
+              />
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-fit text-xs"
+            disabled={!costDate || createCost.isPending}
+            onClick={() => createCost.mutate()}
+          >
+            {createCost.isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              t("hppCostAdd")
+            )}
+          </Button>
+          {costsLoading ? (
+            <TableRowSkeleton rows={2} />
+          ) : !costLines?.length ? (
+            <p className="text-sm text-muted-foreground">{t("hppCostsEmpty")}</p>
+          ) : (
+            <Table className="table-fixed">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-[10px] uppercase tracking-wider">
+                    {t("hppCostDate")}
+                  </TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-wider">
+                    {t("hppCostCategory")}
+                  </TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-wider">
+                    {t("hppColAmount")}
+                  </TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-wider">
+                    {t("hppCostNote")}
+                  </TableHead>
+                  <TableHead className="w-[4rem]" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {costLines.map((line) => (
+                  <TableRow key={line.id}>
+                    <TableCell className="font-mono text-xs tabular-nums">
+                      {new Date(line.incurred_on).toLocaleDateString(locale)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="default" className="text-[10px] uppercase">
+                        {line.category}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs tabular-nums">
+                      {formatIdr(line.amount_idr)}
+                    </TableCell>
+                    <TableCell className="truncate text-xs text-muted-foreground">
+                      {line.note || "—"}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={t("hppCostDelete")}
+                        onClick={() => deleteCost.mutate(line.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
