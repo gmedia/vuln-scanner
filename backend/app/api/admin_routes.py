@@ -1,7 +1,7 @@
 import logging
 import secrets
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy import func, select, text
@@ -12,6 +12,7 @@ from app.database import get_db
 from app.middleware.rate_limit import RateLimiter
 from app.models.credit_log import CreditLog
 from app.models.email_verification import EmailVerificationToken
+from app.models.hpp import HPP_KEYS, HppRate
 from app.models.pricing import PricingConfig
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
@@ -21,6 +22,12 @@ from app.schemas.admin import (
     AdminUserItem,
     AdminUserList,
     CreditUpdateRequest,
+    HppRateItem,
+    HppRateListResponse,
+    HppRateUpdateRequest,
+    HppReportLine,
+    HppReportResponse,
+    HppSkuEstimate,
     PricingItem,
     PricingListResponse,
     PricingUpdateRequest,
@@ -350,3 +357,152 @@ async def update_pricing(
     await db.refresh(pricing)
 
     return PricingItem.model_validate(pricing)
+
+
+_SKU_LIST: tuple[tuple[str, int, int], ...] = (
+    ("basic", 300_000, 10),
+    ("pro", 650_000, 24),
+    ("multi", 2_000_000, 60),
+)
+
+
+def _month_bounds_utc() -> tuple[datetime, datetime]:
+    now = datetime.now(UTC)
+    start = datetime(now.year, now.month, 1, tzinfo=UTC)
+    if now.month == 12:
+        end = datetime(now.year + 1, 1, 1, tzinfo=UTC) - timedelta(microseconds=1)
+    else:
+        end = datetime(now.year, now.month + 1, 1, tzinfo=UTC) - timedelta(microseconds=1)
+    return start, end
+
+
+def _parse_report_range(from_date: date | None, to_date: date | None) -> tuple[datetime, datetime]:
+    default_from, default_to = _month_bounds_utc()
+    start = datetime.combine(from_date, time.min, tzinfo=UTC) if from_date else default_from
+    end = datetime.combine(to_date, time.max.replace(microsecond=999999), tzinfo=UTC) if to_date else default_to
+    if start > end:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="from must be on or before to")
+    return start, end
+
+
+@router.get("/hpp", response_model=HppRateListResponse)
+async def get_hpp_rates(
+    request: Request,
+    current_admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> HppRateListResponse | Response:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        return limit_response
+    result = await db.execute(select(HppRate).order_by(HppRate.key))
+    items = result.scalars().all()
+    return HppRateListResponse(items=[HppRateItem.model_validate(item) for item in items])
+
+
+@router.get("/hpp/report", response_model=HppReportResponse)
+async def get_hpp_report(
+    request: Request,
+    current_admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+    from_date: date | None = Query(default=None, alias="from"),
+    to_date: date | None = Query(default=None, alias="to"),
+) -> HppReportResponse | Response:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        return limit_response
+    start, end = _parse_report_range(from_date, to_date)
+    rates_result = await db.execute(select(HppRate))
+    rates = {r.key: r.amount_idr for r in rates_result.scalars().all()}
+    for k in HPP_KEYS:
+        rates.setdefault(k, 0)
+
+    job_counts_result = await db.execute(
+        select(ScanJob.scan_type, func.count(ScanJob.id))
+        .where(ScanJob.status == "completed", ScanJob.completed_at >= start, ScanJob.completed_at <= end)
+        .group_by(ScanJob.scan_type)
+    )
+    job_counts = {row[0]: int(row[1]) for row in job_counts_result.all()}
+
+    host_count_result = await db.execute(
+        select(func.count(CreditLog.id)).where(
+            CreditLog.type == "deduct",
+            CreditLog.created_at >= start,
+            CreditLog.created_at <= end,
+            CreditLog.description.like("Status hostname:%"),
+        )
+    )
+    statushost_count = int(host_count_result.scalar() or 0)
+
+    lines: list[HppReportLine] = []
+    total_count = 0
+    total_hpp = 0
+    for key in HPP_KEYS:
+        count = statushost_count if key == "statushost" else job_counts.get(key, 0)
+        rate = rates[key]
+        hpp = count * rate
+        lines.append(HppReportLine(key=key, count=count, rate_idr=rate, hpp_idr=hpp))
+        total_count += count
+        total_hpp += hpp
+
+    pricing_result = await db.execute(select(PricingConfig))
+    credit_cost = {p.scan_type: p.credit_cost for p in pricing_result.scalars().all()}
+    ip_credits = max(int(credit_cost.get("ip") or 0), 0)
+    domain_credits = max(int(credit_cost.get("domain") or 0), 0)
+    ip_rate = rates["ip"]
+    domain_rate = rates["domain"]
+
+    sku_estimates: list[HppSkuEstimate] = []
+    for sku, list_idr, credits in _SKU_LIST:
+        ip_jobs = (credits // ip_credits) if ip_credits else None
+        domain_jobs = (credits // domain_credits) if domain_credits else None
+        hpp_ip = (ip_jobs * ip_rate) if ip_jobs is not None else None
+        hpp_domain = (domain_jobs * domain_rate) if domain_jobs is not None else None
+        sku_estimates.append(
+            HppSkuEstimate(
+                sku=sku,
+                list_idr=list_idr,
+                credits_per_month=credits,
+                label="estimasi",
+                hpp_if_all_ip_idr=hpp_ip,
+                hpp_if_all_domain_idr=hpp_domain,
+                margin_if_all_ip_idr=(list_idr - hpp_ip) if hpp_ip is not None else None,
+                margin_if_all_domain_idr=(list_idr - hpp_domain) if hpp_domain is not None else None,
+            )
+        )
+
+    return HppReportResponse(
+        from_date=start,
+        to_date=end,
+        lines=lines,
+        total_count=total_count,
+        total_hpp_idr=total_hpp,
+        sku_estimates=sku_estimates,
+    )
+
+
+@router.put("/hpp/{key}", response_model=HppRateItem)
+async def update_hpp_rate(
+    request: Request,
+    key: str,
+    body: HppRateUpdateRequest,
+    current_admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> HppRateItem | Response:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        return limit_response
+    if key not in HPP_KEYS:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid HPP key")
+    result = await db.execute(select(HppRate).where(HppRate.key == key))
+    row = result.scalar_one_or_none()
+    now = datetime.now(UTC)
+    if row:
+        row.amount_idr = body.amount_idr
+        row.updated_at = now
+        row.updated_by = current_admin.id
+    else:
+        row = HppRate(key=key, amount_idr=body.amount_idr, updated_at=now, updated_by=current_admin.id)
+        db.add(row)
+    await db.commit()
+    await db.refresh(row)
+    return HppRateItem.model_validate(row)

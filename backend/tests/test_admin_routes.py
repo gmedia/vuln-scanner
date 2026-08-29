@@ -10,6 +10,7 @@ from app.database import get_db
 from app.main import app
 from app.models.api_key import ApiKey
 from app.models.credit_log import CreditLog
+from app.models.hpp import HppRate
 from app.models.pricing import PricingConfig
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
@@ -1057,3 +1058,92 @@ class TestAdminRateLimits:
             assert resp.status_code == 200
         resp = client.put("/api/admin/pricing/ip", json={"credit_cost": 10}, headers=API_HEADERS)
         assert resp.status_code == 429
+
+
+class TestAdminHpp:
+    def test_get_hpp_empty(self, client):
+        resp = client.get("/api/admin/hpp", headers=API_HEADERS)
+        assert resp.status_code == 200
+        assert resp.json()["items"] == []
+
+    @pytest.mark.asyncio
+    async def test_put_and_get_hpp(self, client, db_session):
+        resp = client.put("/api/admin/hpp/ip", json={"amount_idr": 1500}, headers=API_HEADERS)
+        assert resp.status_code == 200
+        assert resp.json()["key"] == "ip"
+        assert resp.json()["amount_idr"] == 1500
+        listed = client.get("/api/admin/hpp", headers=API_HEADERS)
+        assert listed.status_code == 200
+        assert listed.json()["items"][0]["amount_idr"] == 1500
+
+    def test_put_invalid_key(self, client):
+        resp = client.put("/api/admin/hpp/uptime", json={"amount_idr": 1}, headers=API_HEADERS)
+        assert resp.status_code == 400
+
+    def test_put_negative_rejected(self, client):
+        resp = client.put("/api/admin/hpp/ip", json={"amount_idr": -1}, headers=API_HEADERS)
+        assert resp.status_code == 422
+
+    def test_hpp_unauthorized(self, admin_auth_client, db_session):
+        user, token = asyncio.get_event_loop().run_until_complete(
+            _create_user_with_token(db_session, "regular-hpp@example.com", is_admin=False)
+        )
+        resp = admin_auth_client.get("/api/admin/hpp", headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_report_jobs_times_rate(self, client, db_session, sample_user):
+        from datetime import UTC, datetime
+
+        db_session.add(HppRate(key="ip", amount_idr=1000, updated_at=datetime.now(UTC)))
+        db_session.add(HppRate(key="domain", amount_idr=2000, updated_at=datetime.now(UTC)))
+        job = ScanJob(
+            id=uuid.uuid4(),
+            scan_type="ip",
+            target="203.0.113.10",
+            status="completed",
+            user_id=sample_user.id,
+            credit_cost=1,
+            completed_at=datetime.now(UTC),
+        )
+        db_session.add(job)
+        db_session.add(
+            PricingConfig(id=uuid.uuid4(), scan_type="ip", credit_cost=1),
+        )
+        db_session.add(
+            PricingConfig(id=uuid.uuid4(), scan_type="domain", credit_cost=2),
+        )
+        await db_session.commit()
+        resp = client.get("/api/admin/hpp/report", headers=API_HEADERS)
+        assert resp.status_code == 200
+        data = resp.json()
+        ip_line = next(x for x in data["lines"] if x["key"] == "ip")
+        assert ip_line["count"] == 1
+        assert ip_line["hpp_idr"] == 1000
+        assert data["total_hpp_idr"] == 1000
+        assert data["sku_estimates"][0]["label"] == "estimasi"
+        assert data["sku_estimates"][0]["sku"] == "basic"
+
+    @pytest.mark.asyncio
+    async def test_report_statushost_from_credit_logs(self, client, db_session, sample_user):
+        from datetime import UTC, datetime
+
+        db_session.add(HppRate(key="statushost", amount_idr=500, updated_at=datetime.now(UTC)))
+        db_session.add(
+            CreditLog(
+                user_id=sample_user.id,
+                amount=1,
+                type="deduct",
+                description="Status hostname: example.test",
+            )
+        )
+        await db_session.commit()
+        resp = client.get("/api/admin/hpp/report", headers=API_HEADERS)
+        assert resp.status_code == 200
+        line = next(x for x in resp.json()["lines"] if x["key"] == "statushost")
+        assert line["count"] == 1
+        assert line["hpp_idr"] == 500
+
+    def test_report_bad_range(self, client):
+        resp = client.get("/api/admin/hpp/report?from=2026-08-10&to=2026-08-01", headers=API_HEADERS)
+        assert resp.status_code == 400
