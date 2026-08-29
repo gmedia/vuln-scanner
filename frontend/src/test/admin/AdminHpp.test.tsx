@@ -89,7 +89,9 @@ vi.mock("@/components/ui/Skeleton", () => ({
 }));
 
 vi.mock("@/components/ui/Select", () => ({
-  Select: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
+  Select: ({ children }: { children?: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
   SelectTrigger: ({ children }: { children?: React.ReactNode }) => (
     <div>{children}</div>
   ),

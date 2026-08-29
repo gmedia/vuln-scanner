@@ -371,9 +371,7 @@ function AdminHpp() {
               <Label htmlFor="hpp-cost-category">{t("hppCostCategory")}</Label>
               <Select
                 value={costCategory}
-                onValueChange={(v) =>
-                  setCostCategory(v as "opex" | "variable")
-                }
+                onValueChange={(v) => setCostCategory(v as "opex" | "variable")}
               >
                 <SelectTrigger id="hpp-cost-category" className="h-10 min-h-10">
                   <SelectValue />
@@ -413,7 +411,9 @@ function AdminHpp() {
           {costsLoading ? (
             <TableRowSkeleton rows={2} />
           ) : !costLines?.length ? (
-            <p className="text-sm text-muted-foreground">{t("hppCostsEmpty")}</p>
+            <p className="text-sm text-muted-foreground">
+              {t("hppCostsEmpty")}
+            </p>
           ) : (
             <Table className="table-fixed">
               <TableHeader>
@@ -440,7 +440,10 @@ function AdminHpp() {
                       {new Date(line.incurred_on).toLocaleDateString(locale)}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="default" className="text-[10px] uppercase">
+                      <Badge
+                        variant="default"
+                        className="text-[10px] uppercase"
+                      >
                         {line.category}
                       </Badge>
                     </TableCell>
