@@ -7,6 +7,7 @@ import {
   Shield,
   Users,
   DollarSign,
+  Calculator,
   History,
   User,
   CalendarClock,
@@ -206,6 +207,12 @@ function Sidebar() {
                   to="/admin/pricing"
                   labelKey="pricing"
                   icon={DollarSign}
+                />
+                <NavItem
+                  to="/admin/hpp"
+                  labelKey="hpp"
+                  icon={Calculator}
+                  testId="nav-admin-hpp"
                 />
                 <NavItem
                   to="/admin/blog"

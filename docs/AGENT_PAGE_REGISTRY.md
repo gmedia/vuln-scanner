@@ -85,6 +85,7 @@ Nav groups match Sidebar: **Scan** · **Attach** · **Account** · **Admin** (ad
 | `/admin/users` | `pages/admin/AdminUsers.tsx` | Admin | | `admin/AdminUsers.test.tsx`, `e2e/admin-users.spec.ts` |
 | `/admin/users/:id` | `pages/admin/AdminUserDetail.tsx` | — | | `admin/AdminUserDetail.test.tsx`, `e2e/admin-user-detail.spec.ts` |
 | `/admin/pricing` | `pages/admin/AdminPricing.tsx` | Admin | | — |
+| `/admin/hpp` | `pages/admin/AdminHpp.tsx` | Admin | IDR unit rates + report; not credit pricing. `nav-admin-hpp`. | `admin/AdminHpp.test.tsx` |
 | `/admin/blog` | `pages/admin/AdminBlog.tsx` | Admin | CMS; `nav-admin-blog`. Locale key `blogStatus`. | — |
 
 ---

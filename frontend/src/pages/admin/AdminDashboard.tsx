@@ -9,6 +9,7 @@ import {
   ArrowRight,
   Tag,
   FileText,
+  Calculator,
 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -88,6 +89,12 @@ function AdminDashboard() {
       label: t("linkPricing"),
       desc: t("linkPricingDesc"),
       icon: Tag,
+    },
+    {
+      to: "/admin/hpp",
+      label: t("linkHpp"),
+      desc: t("linkHppDesc"),
+      icon: Calculator,
     },
     {
       to: "/admin/blog",
