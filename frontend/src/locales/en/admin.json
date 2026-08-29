@@ -110,5 +110,13 @@
   "hppSkuHint": "Estimasi — list price vs HPP if all credits were IP or domain scans.",
   "hppListPrice": "List price",
   "hppIfAllIp": "HPP if all IP",
-  "hppIfAllDomain": "HPP if all domain"
+  "hppIfAllDomain": "HPP if all domain",
+  "hppOverheadCard": "Monthly overhead",
+  "hppOverheadHint": "Rent and Cloudflare (IDR / month). Allocated by unit volume in the report range — not mixed into unit rates.",
+  "hppOverheadAmount": "Amount (IDR / month)",
+  "hppColOverheadShare": "Overhead share",
+  "hppColFullyLoaded": "Fully loaded",
+  "hppColFullyUnit": "Fully loaded / unit",
+  "hppFullyTotal": "Fully loaded total",
+  "hppUnallocated": "Unallocated overhead (no volume in range)"
 }

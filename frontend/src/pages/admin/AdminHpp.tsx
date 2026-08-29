@@ -16,10 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
-import {
-  adminApi,
-  type HppRateItem,
-} from "@/api/admin";
+import { adminApi, type HppRateItem } from "@/api/admin";
 import { useTranslation } from "react-i18next";
 import { htmlLang, isAppLocale } from "@/i18n/locales";
 import i18n from "@/i18n";
@@ -34,12 +31,19 @@ function AdminHpp() {
   const queryClient = useQueryClient();
   const [edited, setEdited] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState<string | null>(null);
+  const [overheadEdit, setOverheadEdit] = useState<number | null>(null);
+  const [savingOverhead, setSavingOverhead] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
   const { data: rates, isLoading: ratesLoading } = useQuery({
     queryKey: ["admin-hpp"],
     queryFn: adminApi.getHppRates,
+  });
+
+  const { data: overhead, isLoading: overheadLoading } = useQuery({
+    queryKey: ["admin-hpp-overhead"],
+    queryFn: adminApi.getHppOverhead,
   });
 
   const reportParams =
@@ -50,6 +54,19 @@ function AdminHpp() {
   const { data: report, isLoading: reportLoading } = useQuery({
     queryKey: ["admin-hpp-report", dateFrom, dateTo],
     queryFn: () => adminApi.getHppReport(reportParams),
+  });
+
+  const updateOverhead = useMutation({
+    mutationFn: (amountIdr: number) =>
+      adminApi.updateHppOverhead({ amount_idr: amountIdr }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-hpp-overhead"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-hpp-report"] });
+      setSavingOverhead(false);
+    },
+    onError: () => {
+      setSavingOverhead(false);
+    },
   });
 
   const updateRate = useMutation({
@@ -96,19 +113,25 @@ function AdminHpp() {
           <h2 className="text-lg font-bold tracking-wide text-foreground">
             {t("hppTitle")}
           </h2>
-          <p className="text-[11px] text-muted-foreground">{t("hppSubtitle")}</p>
+          <p className="text-[11px] text-muted-foreground">
+            {t("hppSubtitle")}
+          </p>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm tracking-wide">{t("hppRatesCard")}</CardTitle>
+          <CardTitle className="text-sm tracking-wide">
+            {t("hppRatesCard")}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {ratesLoading ? (
             <TableRowSkeleton rows={5} />
           ) : !rates?.length ? (
-            <p className="text-sm text-muted-foreground">{t("hppRatesEmpty")}</p>
+            <p className="text-sm text-muted-foreground">
+              {t("hppRatesEmpty")}
+            </p>
           ) : (
             <div className="hidden md:block">
               <Table className="table-fixed">
@@ -132,7 +155,10 @@ function AdminHpp() {
                   {rates.map((item) => (
                     <TableRow key={item.key}>
                       <TableCell>
-                        <Badge variant="default" className="text-[10px] uppercase">
+                        <Badge
+                          variant="default"
+                          className="text-[10px] uppercase"
+                        >
                           {item.key}
                         </Badge>
                       </TableCell>
@@ -142,7 +168,9 @@ function AdminHpp() {
                           min={0}
                           aria-label={item.key}
                           value={edited[item.key] ?? item.amount_idr}
-                          onChange={(e) => handleChange(item.key, e.target.value)}
+                          onChange={(e) =>
+                            handleChange(item.key, e.target.value)
+                          }
                           className="h-8 w-full max-w-[10rem] font-mono text-xs tabular-nums"
                         />
                       </TableCell>
@@ -167,7 +195,9 @@ function AdminHpp() {
                               {t("save")}
                             </>
                           ) : (
-                            <span className="text-muted-foreground">{t("saved")}</span>
+                            <span className="text-muted-foreground">
+                              {t("saved")}
+                            </span>
                           )}
                         </Button>
                       </TableCell>
@@ -211,6 +241,60 @@ function AdminHpp() {
         </CardContent>
       </Card>
 
+      <Card data-testid="hpp-overhead-card">
+        <CardHeader>
+          <CardTitle className="text-sm tracking-wide">
+            {t("hppOverheadCard")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-[11px] text-muted-foreground">
+            {t("hppOverheadHint")}
+          </p>
+          {overheadLoading ? (
+            <TableRowSkeleton rows={1} />
+          ) : (
+            <div className="flex min-w-0 flex-col gap-1.5 sm:max-w-xs">
+              <Label htmlFor="hpp-overhead-amount">
+                {t("hppOverheadAmount")}
+              </Label>
+              <Input
+                id="hpp-overhead-amount"
+                type="number"
+                min={0}
+                aria-label={t("hppOverheadAmount")}
+                value={overheadEdit ?? overhead?.amount_idr ?? 0}
+                onChange={(e) =>
+                  setOverheadEdit(parseInt(e.target.value, 10) || 0)
+                }
+                className="h-10 min-h-10 font-mono text-xs tabular-nums"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-fit text-xs"
+                disabled={
+                  savingOverhead ||
+                  overheadEdit === null ||
+                  overheadEdit === (overhead?.amount_idr ?? 0)
+                }
+                onClick={() => {
+                  if (overheadEdit === null) return;
+                  setSavingOverhead(true);
+                  updateOverhead.mutate(overheadEdit);
+                }}
+              >
+                {savingOverhead ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  t("save")
+                )}
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <div
         data-testid="hpp-report-filters"
         className="grid grid-cols-1 gap-3 rounded-md border border-border bg-card p-4 sm:grid-cols-2"
@@ -239,7 +323,9 @@ function AdminHpp() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm tracking-wide">{t("hppReportCard")}</CardTitle>
+          <CardTitle className="text-sm tracking-wide">
+            {t("hppReportCard")}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {reportLoading ? (
@@ -251,22 +337,54 @@ function AdminHpp() {
                 <span className="font-mono tabular-nums text-foreground">
                   {formatIdr(report?.total_hpp_idr ?? 0)}
                 </span>{" "}
+                IDR · {t("hppFullyTotal")}:{" "}
+                <span className="font-mono tabular-nums text-foreground">
+                  {formatIdr(report?.total_fully_loaded_hpp_idr ?? 0)}
+                </span>{" "}
                 IDR · {report?.total_count ?? 0} {t("hppUnits")}
               </p>
+              {(report?.unallocated_overhead_idr ?? 0) > 0 ? (
+                <p className="mb-3 text-xs text-muted-foreground">
+                  {t("hppUnallocated")}:{" "}
+                  <span className="font-mono tabular-nums">
+                    {formatIdr(report?.unallocated_overhead_idr)}
+                  </span>
+                </p>
+              ) : null}
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-[10px] uppercase">{t("hppColKey")}</TableHead>
-                    <TableHead className="text-[10px] uppercase">{t("hppColCount")}</TableHead>
-                    <TableHead className="text-[10px] uppercase">{t("hppColAmount")}</TableHead>
-                    <TableHead className="text-[10px] uppercase">{t("hppColHpp")}</TableHead>
+                    <TableHead className="text-[10px] uppercase">
+                      {t("hppColKey")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase">
+                      {t("hppColCount")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase">
+                      {t("hppColAmount")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase">
+                      {t("hppColHpp")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase">
+                      {t("hppColOverheadShare")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase">
+                      {t("hppColFullyLoaded")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase">
+                      {t("hppColFullyUnit")}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {report?.lines.map((line) => (
                     <TableRow key={line.key}>
                       <TableCell>
-                        <Badge variant="default" className="text-[10px] uppercase">
+                        <Badge
+                          variant="default"
+                          className="text-[10px] uppercase"
+                        >
                           {line.key}
                         </Badge>
                       </TableCell>
@@ -279,6 +397,15 @@ function AdminHpp() {
                       <TableCell className="font-mono text-xs tabular-nums">
                         {formatIdr(line.hpp_idr)}
                       </TableCell>
+                      <TableCell className="font-mono text-xs tabular-nums">
+                        {formatIdr(line.overhead_share_idr)}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs tabular-nums">
+                        {formatIdr(line.fully_loaded_hpp_idr)}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs tabular-nums">
+                        {formatIdr(line.fully_loaded_unit_idr)}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -289,8 +416,12 @@ function AdminHpp() {
       </Card>
 
       <div>
-        <h3 className="mb-2 text-sm font-semibold tracking-wide">{t("hppSkuTitle")}</h3>
-        <p className="mb-3 text-[11px] text-muted-foreground">{t("hppSkuHint")}</p>
+        <h3 className="mb-2 text-sm font-semibold tracking-wide">
+          {t("hppSkuTitle")}
+        </h3>
+        <p className="mb-3 text-[11px] text-muted-foreground">
+          {t("hppSkuHint")}
+        </p>
         <div className="grid gap-3 sm:grid-cols-3">
           {report?.sku_estimates.map((sku) => (
             <Card key={sku.sku} data-testid={`hpp-sku-${sku.sku}`}>
@@ -300,7 +431,9 @@ function AdminHpp() {
               <CardContent className="space-y-1 text-xs">
                 <p>
                   {t("hppListPrice")}:{" "}
-                  <span className="font-mono tabular-nums">{formatIdr(sku.list_idr)}</span>
+                  <span className="font-mono tabular-nums">
+                    {formatIdr(sku.list_idr)}
+                  </span>
                 </p>
                 <p>
                   {t("hppIfAllIp")}:{" "}
