@@ -345,9 +345,9 @@ async def blog_index_html(
             )
         inner = (
             "<div class='page-intro'><p class='eyebrow'>Blog</p>"
-            "<h1>Catatan untuk yang sudah punya website</h1>"
-            "<p class='lede'>Scan, jadwal, kredit, workspace, Guard — bahasa awam, "
-            "bukan konsol ahli.</p></div>"
+            "<h1>Tulisan buat yang situsnya sudah jalan</h1>"
+            "<p class='lede'>Cek berkala, jadwal, kuota, tim, alarm di server — "
+            "dijelaskan biasa, tanpa jebakan istilah konsol.</p></div>"
             "<ol class='index'>" + "".join(items) + "</ol>"
         )
     html = _shell("Blog — Sinexis", f"{CANONICAL_HOST}/blog", inner, rail=True)
