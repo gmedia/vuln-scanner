@@ -7,6 +7,7 @@ import AdminRoute from "@/components/auth/AdminRoute";
 import { ErrorBoundaryFallback } from "@/components/ErrorBoundaryFallback";
 import { PageBoundary } from "@/components/PageBoundary";
 import { LandingLoading } from "@/components/LandingLoading";
+import { AuthLoading } from "@/components/AuthLoading";
 import { Toaster } from "@/components/ui/sonner";
 
 const Landing = lazy(() => import("@/pages/Landing"));
@@ -50,22 +51,44 @@ function App() {
             <PageBoundary component={Landing} fallback={<LandingLoading />} />
           }
         />
-        <Route path="/login" element={<PageBoundary component={Login} />} />
+        <Route
+          path="/login"
+          element={
+            <PageBoundary component={Login} fallback={<AuthLoading />} />
+          }
+        />
         <Route
           path="/register"
-          element={<PageBoundary component={Register} />}
+          element={
+            <PageBoundary
+              component={Register}
+              fallback={<AuthLoading fields={3} />}
+            />
+          }
         />
         <Route
           path="/verify-email"
-          element={<PageBoundary component={VerifyEmail} />}
+          element={
+            <PageBoundary component={VerifyEmail} fallback={<AuthLoading />} />
+          }
         />
         <Route
           path="/forgot-password"
-          element={<PageBoundary component={ForgotPassword} />}
+          element={
+            <PageBoundary
+              component={ForgotPassword}
+              fallback={<AuthLoading />}
+            />
+          }
         />
         <Route
           path="/reset-password"
-          element={<PageBoundary component={ResetPassword} />}
+          element={
+            <PageBoundary
+              component={ResetPassword}
+              fallback={<AuthLoading />}
+            />
+          }
         />
 
         {/* Protected routes — wrapped in AppShell */}
