@@ -167,6 +167,66 @@ export async function unpublishBlogPost(
   return data;
 }
 
+export interface HppRateItem {
+  key: string;
+  amount_idr: number;
+  updated_at: string;
+  updated_by: string | null;
+}
+
+export interface HppReportLine {
+  key: string;
+  count: number;
+  rate_idr: number;
+  hpp_idr: number;
+}
+
+export interface HppSkuEstimate {
+  sku: string;
+  list_idr: number;
+  credits_per_month: number;
+  label: string;
+  hpp_if_all_ip_idr: number | null;
+  hpp_if_all_domain_idr: number | null;
+  margin_if_all_ip_idr: number | null;
+  margin_if_all_domain_idr: number | null;
+}
+
+export interface HppReportResponse {
+  from_date: string;
+  to_date: string;
+  lines: HppReportLine[];
+  total_count: number;
+  total_hpp_idr: number;
+  sku_estimates: HppSkuEstimate[];
+}
+
+export async function getHppRates(): Promise<HppRateItem[]> {
+  const { data } = await api.get<{ items: HppRateItem[] }>("/api/admin/hpp");
+  return data.items ?? [];
+}
+
+export async function updateHppRate(
+  key: string,
+  data: { amount_idr: number },
+): Promise<HppRateItem> {
+  const { data: res } = await api.put<HppRateItem>(
+    `/api/admin/hpp/${key}`,
+    data,
+  );
+  return res;
+}
+
+export async function getHppReport(params?: {
+  from?: string;
+  to?: string;
+}): Promise<HppReportResponse> {
+  const { data } = await api.get<HppReportResponse>("/api/admin/hpp/report", {
+    params,
+  });
+  return data;
+}
+
 export const adminApi = {
   getStats: getAdminStats,
   getUsers: getAdminUsers,
@@ -175,6 +235,9 @@ export const adminApi = {
   resendVerification,
   getPricing,
   updatePricing,
+  getHppRates,
+  updateHppRate,
+  getHppReport,
   listBlogPosts,
   createBlogPost,
   updateBlogPost,

@@ -13,9 +13,12 @@ vi.mock("@/api/scans", () => ({
 }));
 
 import {
+  getHppRates,
+  getHppReport,
   getPricing,
   normalizePricingList,
   resendVerification,
+  updateHppRate,
   type PricingItem,
 } from "@/api/admin";
 
@@ -60,6 +63,72 @@ describe("getPricing", () => {
   it("accepts a bare array response", async () => {
     mockGet.mockResolvedValue({ data: sample });
     await expect(getPricing()).resolves.toEqual(sample);
+  });
+});
+
+describe("hpp admin api", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("getHppRates unwraps items", async () => {
+    mockGet.mockResolvedValue({
+      data: {
+        items: [
+          {
+            key: "ip",
+            amount_idr: 0,
+            updated_at: "2026-08-01T00:00:00Z",
+            updated_by: null,
+          },
+        ],
+      },
+    });
+    await expect(getHppRates()).resolves.toEqual([
+      {
+        key: "ip",
+        amount_idr: 0,
+        updated_at: "2026-08-01T00:00:00Z",
+        updated_by: null,
+      },
+    ]);
+    expect(mockGet).toHaveBeenCalledWith("/api/admin/hpp");
+  });
+
+  it("updateHppRate puts amount_idr", async () => {
+    mockPut.mockResolvedValue({
+      data: {
+        key: "ip",
+        amount_idr: 1500,
+        updated_at: "2026-08-01T00:00:00Z",
+        updated_by: null,
+      },
+    });
+    await expect(
+      updateHppRate("ip", { amount_idr: 1500 }),
+    ).resolves.toMatchObject({
+      amount_idr: 1500,
+    });
+    expect(mockPut).toHaveBeenCalledWith("/api/admin/hpp/ip", {
+      amount_idr: 1500,
+    });
+  });
+
+  it("getHppReport passes from/to params", async () => {
+    mockGet.mockResolvedValue({
+      data: {
+        from_date: "a",
+        to_date: "b",
+        lines: [],
+        total_count: 0,
+        total_hpp_idr: 0,
+        sku_estimates: [],
+      },
+    });
+    await getHppReport({ from: "2026-08-01", to: "2026-08-31" });
+    expect(mockGet).toHaveBeenCalledWith("/api/admin/hpp/report", {
+      params: { from: "2026-08-01", to: "2026-08-31" },
+    });
   });
 });
 
