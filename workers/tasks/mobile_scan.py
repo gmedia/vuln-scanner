@@ -12,7 +12,7 @@ from typing import Any
 
 import redis
 from celery import shared_task
-from celery.exceptions import Retry
+from celery.exceptions import Retry, SoftTimeLimitExceeded
 from loguru import logger
 from sqlalchemy import update
 
@@ -22,6 +22,7 @@ from utils.cve_lookup import extract_cvss, format_vuln_finding, lookup_service_c
 from utils.database import get_sync_session
 from utils.mobile_utils import analyze_apk, analyze_ipa
 from utils.redis_helpers import get_redis_pool
+from utils.scan_fail import fail_job_no_retry
 from utils.scan_types import ScanFinding, TaskResult
 from utils.severity import compute_severity_summary, sort_findings_by_severity
 
@@ -34,6 +35,9 @@ def publish_progress(job_id: str, step: str, progress: int, message: str) -> Non
             f"scan_progress:{job_id}",
             json.dumps({"type": "progress", "step": step, "progress": progress, "message": message}),
         )
+        from utils.scan_fail import persist_job_progress
+
+        persist_job_progress(job_id, progress)
     except (redis.RedisError, TypeError, ValueError) as e:
         logger.warning("Redis publish failed for job {job_id} step {step}: {error}", job_id=job_id, step=step, error=e)
 
@@ -354,6 +358,16 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
                     logger.warning("Failed to clean converted APK {path}: {error}", path=converted_apk_path, error=e)
     except Retry:
         raise
+    except SoftTimeLimitExceeded:
+        err_msg = "scan timed out (soft limit 600s)"
+        fail_job_no_retry(job_id, platform, err_msg)
+        publish_progress(job_id, "failed", 100, err_msg)
+        logger.error("Mobile scan soft timeout: job={job_id}", job_id=job_id)
+        return {
+            "job_id": job_id,
+            "summary": {"total_findings": 0, "critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0},
+            "error": err_msg,
+        }
     except Exception as e:  # Broad catch at task top-level — inner exceptions already handled
         err_msg = f"Mobile scan failed: {str(e)[:200]}"
         try:
