@@ -13,11 +13,13 @@ vi.mock("@/api/scans", () => ({
 }));
 
 import {
+  getHppOverhead,
   getHppRates,
   getHppReport,
   getPricing,
   normalizePricingList,
   resendVerification,
+  updateHppOverhead,
   updateHppRate,
   type PricingItem,
 } from "@/api/admin";
@@ -128,6 +130,33 @@ describe("hpp admin api", () => {
     await getHppReport({ from: "2026-08-01", to: "2026-08-31" });
     expect(mockGet).toHaveBeenCalledWith("/api/admin/hpp/report", {
       params: { from: "2026-08-01", to: "2026-08-31" },
+    });
+  });
+
+  it("getHppOverhead and updateHppOverhead", async () => {
+    mockGet.mockResolvedValue({
+      data: {
+        amount_idr: 0,
+        updated_at: "2026-08-01T00:00:00Z",
+        updated_by: null,
+      },
+    });
+    await expect(getHppOverhead()).resolves.toMatchObject({ amount_idr: 0 });
+    expect(mockGet).toHaveBeenCalledWith("/api/admin/hpp/overhead");
+    mockPut.mockResolvedValue({
+      data: {
+        amount_idr: 50000,
+        updated_at: "2026-08-01T00:00:00Z",
+        updated_by: null,
+      },
+    });
+    await expect(
+      updateHppOverhead({ amount_idr: 50000 }),
+    ).resolves.toMatchObject({
+      amount_idr: 50000,
+    });
+    expect(mockPut).toHaveBeenCalledWith("/api/admin/hpp/overhead", {
+      amount_idr: 50000,
     });
   });
 });

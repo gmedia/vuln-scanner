@@ -17,6 +17,7 @@
 | S3 | SKU list-price overlay labeled **estimasi** (not invoice truth) |
 | Page | `/admin/hpp` — **not** mixed into `/admin/pricing` |
 | Seed | All rates **0** — no real COGS in git |
+| Overhead | Monthly opex (rent/CF) in `hpp_overhead` singleton; **not** mixed into `amount_idr`. Report allocates by unit count in range. |
 | Auth | `get_current_admin` + existing admin rate limiter |
 
 SKU list prices (from `docs/commercial/sku-scan-secure-addon.md`, working list):

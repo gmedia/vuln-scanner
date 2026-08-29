@@ -110,5 +110,13 @@
   "hppSkuHint": "Estimasi — harga list vs HPP jika semua kredit dipakai scan IP atau domain.",
   "hppListPrice": "Harga list",
   "hppIfAllIp": "HPP jika semua IP",
-  "hppIfAllDomain": "HPP jika semua domain"
+  "hppIfAllDomain": "HPP jika semua domain",
+  "hppOverheadCard": "Overhead bulanan",
+  "hppOverheadHint": "Sewa dan Cloudflare (IDR / bulan). Dialokasikan menurut volume unit di rentang laporan — tidak dicampur ke tarif satuan.",
+  "hppOverheadAmount": "Nominal (IDR / bulan)",
+  "hppColOverheadShare": "Bagian overhead",
+  "hppColFullyLoaded": "Fully loaded",
+  "hppColFullyUnit": "Fully loaded / unit",
+  "hppFullyTotal": "Total fully loaded",
+  "hppUnallocated": "Overhead belum dialokasi (tidak ada volume di rentang)"
 }

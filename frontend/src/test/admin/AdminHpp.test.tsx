@@ -13,6 +13,8 @@ vi.mock("@/api/admin", () => ({
     getHppRates: vi.fn(),
     updateHppRate: vi.fn(),
     getHppReport: vi.fn(),
+    getHppOverhead: vi.fn(),
+    updateHppOverhead: vi.fn(),
   },
 }));
 
@@ -25,7 +27,9 @@ vi.mock("@/components/ui/Card", () => ({
   CardHeader: ({ children }: { children?: React.ReactNode }) => (
     <div>{children}</div>
   ),
-  CardTitle: ({ children }: { children?: React.ReactNode }) => <h3>{children}</h3>,
+  CardTitle: ({ children }: { children?: React.ReactNode }) => (
+    <h3>{children}</h3>
+  ),
   CardContent: ({ children }: { children?: React.ReactNode }) => (
     <div>{children}</div>
   ),
@@ -66,7 +70,9 @@ vi.mock("@/components/ui/Label", () => ({
 }));
 
 vi.mock("@/components/ui/Badge", () => ({
-  Badge: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,
+  Badge: ({ children }: { children?: React.ReactNode }) => (
+    <span>{children}</span>
+  ),
 }));
 
 vi.mock("@/components/ui/Skeleton", () => ({
@@ -99,16 +105,24 @@ vi.mock("@/components/ui/DatePicker", () => ({
 }));
 
 vi.mock("@/components/ui/Table", () => ({
-  Table: ({ children }: { children?: React.ReactNode }) => <table>{children}</table>,
+  Table: ({ children }: { children?: React.ReactNode }) => (
+    <table>{children}</table>
+  ),
   TableHeader: ({ children }: { children?: React.ReactNode }) => (
     <thead>{children}</thead>
   ),
   TableBody: ({ children }: { children?: React.ReactNode }) => (
     <tbody>{children}</tbody>
   ),
-  TableRow: ({ children }: { children?: React.ReactNode }) => <tr>{children}</tr>,
-  TableHead: ({ children }: { children?: React.ReactNode }) => <th>{children}</th>,
-  TableCell: ({ children }: { children?: React.ReactNode }) => <td>{children}</td>,
+  TableRow: ({ children }: { children?: React.ReactNode }) => (
+    <tr>{children}</tr>
+  ),
+  TableHead: ({ children }: { children?: React.ReactNode }) => (
+    <th>{children}</th>
+  ),
+  TableCell: ({ children }: { children?: React.ReactNode }) => (
+    <td>{children}</td>
+  ),
 }));
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -129,9 +143,22 @@ const rates = [
 const report = {
   from_date: "2026-08-01T00:00:00Z",
   to_date: "2026-08-31T23:59:59Z",
-  lines: [{ key: "ip", count: 2, rate_idr: 1000, hpp_idr: 2000 }],
+  lines: [
+    {
+      key: "ip",
+      count: 2,
+      rate_idr: 1000,
+      hpp_idr: 2000,
+      overhead_share_idr: 100,
+      fully_loaded_hpp_idr: 2100,
+      fully_loaded_unit_idr: 1050,
+    },
+  ],
   total_count: 2,
   total_hpp_idr: 2000,
+  overhead_idr: 100,
+  total_fully_loaded_hpp_idr: 2100,
+  unallocated_overhead_idr: 0,
   sku_estimates: [
     {
       sku: "basic",
@@ -158,6 +185,16 @@ describe("AdminHpp", () => {
       if (key === "admin-hpp") {
         return { data: [], isLoading: false } as never;
       }
+      if (key === "admin-hpp-overhead") {
+        return {
+          data: {
+            amount_idr: 0,
+            updated_at: "2026-08-01T00:00:00Z",
+            updated_by: null,
+          },
+          isLoading: false,
+        } as never;
+      }
       return { data: report, isLoading: false } as never;
     });
     render(<AdminHpp />);
@@ -172,12 +209,23 @@ describe("AdminHpp", () => {
       if (key === "admin-hpp") {
         return { data: rates, isLoading: false } as never;
       }
+      if (key === "admin-hpp-overhead") {
+        return {
+          data: {
+            amount_idr: 100,
+            updated_at: "2026-08-01T00:00:00Z",
+            updated_by: null,
+          },
+          isLoading: false,
+        } as never;
+      }
       return { data: report, isLoading: false } as never;
     });
     render(<AdminHpp />);
     expect(screen.getByText("HPP")).toBeInTheDocument();
     expect(screen.getAllByDisplayValue(1000).length).toBeGreaterThan(0);
     expect(screen.getByTestId("hpp-report-filters")).toBeInTheDocument();
+    expect(screen.getByTestId("hpp-overhead-card")).toBeInTheDocument();
     expect(screen.getByTestId("hpp-sku-basic")).toBeInTheDocument();
     expect(screen.getByText("estimasi")).toBeInTheDocument();
   });

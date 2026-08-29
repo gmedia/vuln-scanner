@@ -1120,7 +1120,11 @@ class TestAdminHpp:
         ip_line = next(x for x in data["lines"] if x["key"] == "ip")
         assert ip_line["count"] == 1
         assert ip_line["hpp_idr"] == 1000
+        assert ip_line["overhead_share_idr"] == 0
+        assert ip_line["fully_loaded_hpp_idr"] == 1000
         assert data["total_hpp_idr"] == 1000
+        assert data["overhead_idr"] == 0
+        assert data["total_fully_loaded_hpp_idr"] == 1000
         assert data["sku_estimates"][0]["label"] == "estimasi"
         assert data["sku_estimates"][0]["sku"] == "basic"
 
@@ -1147,3 +1151,54 @@ class TestAdminHpp:
     def test_report_bad_range(self, client):
         resp = client.get("/api/admin/hpp/report?from=2026-08-10&to=2026-08-01", headers=API_HEADERS)
         assert resp.status_code == 400
+
+    @pytest.mark.asyncio
+    async def test_overhead_put_and_report_share(self, client, db_session, sample_user):
+        from datetime import UTC, datetime
+
+        db_session.add(HppRate(key="ip", amount_idr=1000, updated_at=datetime.now(UTC)))
+        db_session.add(HppRate(key="domain", amount_idr=2000, updated_at=datetime.now(UTC)))
+        db_session.add(
+            ScanJob(
+                id=uuid.uuid4(),
+                scan_type="ip",
+                target="203.0.113.11",
+                status="completed",
+                user_id=sample_user.id,
+                credit_cost=1,
+                completed_at=datetime.now(UTC),
+            )
+        )
+        db_session.add(
+            ScanJob(
+                id=uuid.uuid4(),
+                scan_type="domain",
+                target="example.test",
+                status="completed",
+                user_id=sample_user.id,
+                credit_cost=1,
+                completed_at=datetime.now(UTC),
+            )
+        )
+        await db_session.commit()
+        put = client.put("/api/admin/hpp/overhead", json={"amount_idr": 100}, headers=API_HEADERS)
+        assert put.status_code == 200
+        assert put.json()["amount_idr"] == 100
+        got = client.get("/api/admin/hpp/overhead", headers=API_HEADERS)
+        assert got.status_code == 200
+        assert got.json()["amount_idr"] == 100
+        resp = client.get("/api/admin/hpp/report", headers=API_HEADERS)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["overhead_idr"] == 100
+        assert data["total_count"] == 2
+        assert data["unallocated_overhead_idr"] == 0
+        shares = {x["key"]: x["overhead_share_idr"] for x in data["lines"]}
+        assert shares["ip"] + shares["domain"] == 100
+        ip_line = next(x for x in data["lines"] if x["key"] == "ip")
+        assert ip_line["fully_loaded_hpp_idr"] == ip_line["hpp_idr"] + ip_line["overhead_share_idr"]
+        assert data["total_fully_loaded_hpp_idr"] == data["total_hpp_idr"] + 100
+
+    def test_overhead_negative_rejected(self, client):
+        resp = client.put("/api/admin/hpp/overhead", json={"amount_idr": -1}, headers=API_HEADERS)
+        assert resp.status_code == 422

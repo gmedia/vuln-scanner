@@ -174,11 +174,20 @@ export interface HppRateItem {
   updated_by: string | null;
 }
 
+export interface HppOverheadItem {
+  amount_idr: number;
+  updated_at: string;
+  updated_by: string | null;
+}
+
 export interface HppReportLine {
   key: string;
   count: number;
   rate_idr: number;
   hpp_idr: number;
+  overhead_share_idr: number;
+  fully_loaded_hpp_idr: number;
+  fully_loaded_unit_idr: number;
 }
 
 export interface HppSkuEstimate {
@@ -198,6 +207,9 @@ export interface HppReportResponse {
   lines: HppReportLine[];
   total_count: number;
   total_hpp_idr: number;
+  overhead_idr: number;
+  total_fully_loaded_hpp_idr: number;
+  unallocated_overhead_idr: number;
   sku_estimates: HppSkuEstimate[];
 }
 
@@ -227,6 +239,21 @@ export async function getHppReport(params?: {
   return data;
 }
 
+export async function getHppOverhead(): Promise<HppOverheadItem> {
+  const { data } = await api.get<HppOverheadItem>("/api/admin/hpp/overhead");
+  return data;
+}
+
+export async function updateHppOverhead(data: {
+  amount_idr: number;
+}): Promise<HppOverheadItem> {
+  const { data: res } = await api.put<HppOverheadItem>(
+    "/api/admin/hpp/overhead",
+    data,
+  );
+  return res;
+}
+
 export const adminApi = {
   getStats: getAdminStats,
   getUsers: getAdminUsers,
@@ -238,6 +265,8 @@ export const adminApi = {
   getHppRates,
   updateHppRate,
   getHppReport,
+  getHppOverhead,
+  updateHppOverhead,
   listBlogPosts,
   createBlogPost,
   updateBlogPost,

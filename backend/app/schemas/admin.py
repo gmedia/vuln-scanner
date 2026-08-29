@@ -68,11 +68,26 @@ class HppRateListResponse(BaseModel):
     items: list[HppRateItem]
 
 
+class HppOverheadItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    amount_idr: int
+    updated_at: datetime
+    updated_by: uuid.UUID | None = None
+
+
+class HppOverheadUpdateRequest(BaseModel):
+    amount_idr: int = Field(..., ge=0)
+
+
 class HppReportLine(BaseModel):
     key: str
     count: int
     rate_idr: int
     hpp_idr: int
+    overhead_share_idr: int
+    fully_loaded_hpp_idr: int
+    fully_loaded_unit_idr: int
 
 
 class HppSkuEstimate(BaseModel):
@@ -92,4 +107,7 @@ class HppReportResponse(BaseModel):
     lines: list[HppReportLine]
     total_count: int
     total_hpp_idr: int
+    overhead_idr: int
+    total_fully_loaded_hpp_idr: int
+    unallocated_overhead_idr: int
     sku_estimates: list[HppSkuEstimate]
