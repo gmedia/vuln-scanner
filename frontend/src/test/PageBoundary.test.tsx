@@ -14,4 +14,16 @@ describe("PageBoundary", () => {
     expect(screen.getByTestId("page-loading")).toBeInTheDocument();
     expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
   });
+
+  it("uses a custom fallback when provided", () => {
+    const Never = lazy(() => new Promise<{ default: () => null }>(() => {}));
+    render(
+      <PageBoundary
+        component={Never}
+        fallback={<div data-testid="custom-fallback" />}
+      />,
+    );
+    expect(screen.getByTestId("custom-fallback")).toBeInTheDocument();
+    expect(screen.queryByTestId("page-loading")).not.toBeInTheDocument();
+  });
 });

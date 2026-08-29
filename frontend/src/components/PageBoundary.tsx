@@ -1,4 +1,4 @@
-import { ComponentType, Suspense } from "react";
+import { ComponentType, ReactNode, Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { ErrorBoundaryFallback } from "@/components/ErrorBoundaryFallback";
 import { PageLoading } from "@/components/PageLoading";
@@ -10,12 +10,14 @@ import { PageLoading } from "@/components/PageLoading";
  */
 export function PageBoundary({
   component: Component,
+  fallback,
 }: {
   component: ComponentType<unknown>;
+  fallback?: ReactNode;
 }) {
   return (
     <ErrorBoundary FallbackComponent={ErrorBoundaryFallback}>
-      <Suspense fallback={<PageLoading />}>
+      <Suspense fallback={fallback ?? <PageLoading />}>
         <Component />
       </Suspense>
     </ErrorBoundary>
