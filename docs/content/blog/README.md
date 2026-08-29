@@ -16,3 +16,5 @@ Canonical public URLs: `https://sinexis.app/blog/:slug`
 | `guard-dan-siem` | Guard vs SIEM (honest scope) |
 
 Publish via admin JWT (`POST /api/admin/blog/posts` then `.../publish`). Idempotent on slug (409 if exists).
+
+**Live `/blog` is the database.** Editing these files does not change production until an admin updates the matching slug (or recreates the post). Keep copy layperson Bahasa; no prices, IPs, or images.

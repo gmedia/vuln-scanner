@@ -1,29 +1,23 @@
 # Guard dan SIEM: setelah Scan, bukan pengganti Scan
 
-Dua nama yang mudah tertukar. Keduanya **bukan** paket Scan hari pertama.
+Dua nama gampang ketuker. Keduanya **bukan** paket Scan hari pertama.
 
-## Guard (agen di server)
+## Guard
 
-**Guard** memasang **agen tipis** di VPS/colo Anda. Yang dijual di v1: **inventaris mesin** + **alert kritis** (bukan “semua log dunia”).
+Agen tipis di VPS atau colo. Yang dijual sekarang: inventaris mesin + alert kritis. Bukan “semua log dunia.” Bukan dashboard Wazuh penuh buat pelanggan. Bukan SOAR.
 
-Analogi: Scan melihat toko dari trotoar. Guard adalah **alarm di dalam** yang berbunyi untuk kejadian serius.
+Scan lihat toko dari trotoar. Guard alarm di dalam, bunyi untuk yang serius.
 
-Syarat sehat: Anda **sudah** nyaman dengan Scan berkala. Guard adalah **upsell kedua**. Bukan dashboard Wazuh penuh untuk pelanggan. Bukan SOAR.
+Syarat sehat: Anda sudah nyaman dengan Scan berkala. Guard upsell kedua. Pasang/lepas agen urusan lab dan ops — bukan tombol “install dari artikel blog.”
 
-Enroll/unenroll agen adalah operasi lab/ops — bukan tombol “install dari artikel blog”.
+## SIEM
 
-## SIEM (cari peristiwa + kasus)
+Di Sinexis: cari peristiwa organisasi + kasus di workspace yang sama. Bukan konsol kedua. Bukan ganti Guard.
 
-**SIEM** di Sinexis: **pencarian** peristiwa organisasi + **kasus** di workspace yang sama. Bukan konsol kedua, bukan ganti Guard.
+Di banyak lingkungan modul ini masih dimatikan sampai ada yang siap baca kasus. Jangan janji SIEM di email penjualan gelombang pertama.
 
-Di produksi, modul ini bisa **mati** (`SIEM_ENABLED` default off) sampai ops menyalakan. Jangan janjikan SIEM di email AM wave-1.
+## Urutan yang tidak memalukan
 
-## Urutan yang jujur
+Domain dan/atau IP masuk Scan plus jadwal. Kredit dan aset sesuai paket. Uptime kalau Anda peduli web down. Baru Guard di host yang sama. SIEM hanya jika modulnya hidup dan ada orang yang benar-benar baca kasus.
 
-1. Domain dan/atau IP masuk Scan + jadwal
-2. Kredit dan aset sesuai paket
-3. Uptime jika Anda peduli “web down”
-4. Baru Guard di host yang sama
-5. SIEM hanya jika flag hidup dan ada yang membaca kasus
-
-Kalau Anda cuma punya website + hosting: mulai dari **scan domain + jadwal**. Guard/SIEM boleh dibaca, jangan dibeli lebih dulu daripada kebiasaan laporan bulanan.
+Website + hosting saja: mulai **scan domain + jadwal**. Guard dan SIEM boleh dibaca. Jangan dibeli lebih dulu daripada kebiasaan laporan bulanan.

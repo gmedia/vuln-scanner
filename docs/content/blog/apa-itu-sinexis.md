@@ -1,32 +1,23 @@
 # Apa itu Sinexis?
 
-Sinexis adalah **add-on keamanan** untuk orang yang sudah punya website, domain, hosting, VPS, atau server colo. Bukan pengganti hosting. Bukan janji “kebal diretas”.
+Kalau website atau VPS Anda sudah jalan, Sinexis bukan “hosting baru”. Ini add-on: kami cek permukaan yang kelihatan dari internet, lalu kasih tahu kalau ada yang berubah.
 
-Bayangkan toko yang sudah sewa ruko. Sinexis tidak membangun rukonya. Sinexis **mengecek pintu, jendela, dan papan nama** secara teratur, lalu memberitahu jika ada yang berubah.
+Analogi paling jujur: Anda sudah sewa ruko. Kami tidak bangun gedungnya. Kami lihat pintu, jendela, dan papan nama — rutin, bukan sekali pas buka toko.
 
-## Untuk siapa
+## Siapa yang biasanya pakai
 
-- Pemilik bisnis yang domain-nya sudah jalan di hosting atau VPS
-- Tim kecil yang punya satu atau beberapa server menghadap internet
-- Hotel / perusahaan yang ingin laporan sederhana, bukan konsol ahli
+Pemilik usaha yang domain-nya sudah di hosting atau VPS. Tim kecil dengan satu-dua server menghadap internet. Hotel atau kantor yang maunya laporan singkat, bukan konsol penuh istilah.
 
-## Yang Sinexis lakukan (bahasa awam)
+## Yang benar-benar ada di produk
 
-1. **Scan** — periksa permukaan publik: website (domain) dan/atau alamat server (IP).
-2. **Jadwal (Scan Attach)** — ulangi pemeriksaan tiap minggu atau bulan, bandingkan dengan hasil sebelumnya.
-3. **Kredit** — setiap pemeriksaan memakai kuota yang jelas, seperti pulsa.
-4. **Workspace** — undang rekan (IT, pemilik, viewer) ke satu akun perusahaan.
-5. **Aset** — beri nama target: “website utama”, “VPS produksi”.
-6. **Uptime** — cek dari luar: situs atau port masih nyala atau tidak.
-7. **Guard** — agen di server untuk alert kritis (bukan dashboard log penuh).
-8. **SIEM** — pencarian peristiwa + kasus di workspace yang sama (modul lanjutan).
+Scan dulu: website (domain) dan/atau alamat server (IP). Kalau mau kebiasaan, hidupkan jadwal (Scan Attach) supaya tiap minggu atau bulan ada perbandingan dengan hasil sebelumnya.
 
-Scan aplikasi HP (APK/IPA) ada di mesin, tapi **bukan** cerita utama untuk pembeli hosting/VPS.
+Tiap pemeriksaan makan kredit, kira-kira seperti pulsa. Workspace untuk undang rekan. Aset supaya target punya nama, bukan string yang diketik ulang. Uptime cuma jawab “masih nyala dari luar atau tidak.” Guard itu agen tipis di server untuk alert yang serius — bukan tumpukan log. SIEM (cari peristiwa + kasus) ada sebagai modul terpisah, dan di banyak lingkungan masih dimatikan ops.
 
-## Yang tidak kami janjikan
+Scan file HP (APK/IPA) memang ada di mesin. Itu bukan cerita utama kalau yang Anda beli adalah hosting atau VPS.
 
-- Mengganti firewall, antivirus, atau backup
-- “Aman 100%”
-- Membaca semua log server seperti SOC besar
+## Yang tidak kami jual sebagai janji
 
-Kalau Anda sudah bayar colo atau VPS, Sinexis adalah **pemeriksaan berkala permukaan yang menghadap internet** — supaya ada alasan jelas untuk ditinjau tiap bulan, bukan nmap sekali lalu lupa.
+Bukan pengganti firewall, antivirus, atau backup. Bukan “aman 100%.” Bukan SOC yang baca semua log.
+
+Intinya: kalau Anda sudah bayar colo atau VPS, ini pemeriksaan berkala permukaan publik. Ada alasan untuk ditinjau tiap bulan — bukan nmap sekali, screenshot, lalu lupa.
