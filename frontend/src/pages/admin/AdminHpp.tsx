@@ -314,7 +314,7 @@ function AdminHpp() {
                     {formatIdr(sku.hpp_if_all_domain_idr)}
                   </span>
                 </p>
-                <Badge variant="outline" className="text-[10px]">
+                <Badge variant="info" className="text-[10px]">
                   {sku.label}
                 </Badge>
               </CardContent>

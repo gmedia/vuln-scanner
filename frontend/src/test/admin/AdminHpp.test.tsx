@@ -153,8 +153,9 @@ describe("AdminHpp", () => {
   });
 
   it("shows empty rates copy", () => {
-    vi.mocked(useQuery).mockImplementation((opts: { queryKey: unknown[] }) => {
-      if (opts.queryKey[0] === "admin-hpp") {
+    vi.mocked(useQuery).mockImplementation((opts) => {
+      const key = (opts.queryKey as readonly unknown[])[0];
+      if (key === "admin-hpp") {
         return { data: [], isLoading: false } as never;
       }
       return { data: report, isLoading: false } as never;
@@ -166,8 +167,9 @@ describe("AdminHpp", () => {
   });
 
   it("renders rates, report total, and estimasi SKU", () => {
-    vi.mocked(useQuery).mockImplementation((opts: { queryKey: unknown[] }) => {
-      if (opts.queryKey[0] === "admin-hpp") {
+    vi.mocked(useQuery).mockImplementation((opts) => {
+      const key = (opts.queryKey as readonly unknown[])[0];
+      if (key === "admin-hpp") {
         return { data: rates, isLoading: false } as never;
       }
       return { data: report, isLoading: false } as never;
