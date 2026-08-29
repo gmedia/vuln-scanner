@@ -2,8 +2,8 @@
 
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
-**Last updated:** 2026-08-28
-**Repo tip at write time:** re-`git pull` after reset. Expect **`10e1716`** or newer (#476 findings index + lean GET). **P6 S1–S3**. **P11** status host SSL-gated Active + `statushost` credits. Open residual: **GTM human**; P11 SSL/pricing human; Dependabot — do not mass-merge. No IPs/secrets. Never commit IPs/passwords/enroll keys.
+**Last updated:** 2026-08-29
+**Repo tip at write time:** re-`git pull` after reset. Expect **`ff82389`** or newer (#477 findings pagination + P6 S3 AM one-pager). **P6 S1–S3**. **P11** status host SSL-gated Active + `statushost` credits. Open residual: **GTM human**; P11 SSL/pricing human; Dependabot — do not mass-merge. No IPs/secrets. Never commit IPs/passwords/enroll keys.
 **Guard e2e rule:** if the user asks for a **full prod e2e suite including Guard enroll/unenroll**, **wipe `tc5` + leftover Manager/DB smoke rows first** — see **§4.1**. Do not skip this. Do not treat Playwright as enroll/unenroll.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
 **Phase snapshot:** **P0 policy locked** · **P1 attach shipped** · **P2 Workspace S1–S5** · **P3 assets S1–S5** · **P4 soft dual-brand** · **P5 Guard thin** (mock CI; live `sx-erpstg` online — do not wipe) · **P6 hospitality S1–S3** · **P7 SIEM S0–S5** (prod flag ON; `SIEM_INCLUDE_FULL_LOG` false) · **P8 Uptime S1–S5 + v2** · **P11 status page** · **i18n S1–S7** · **theme S1–S3** · **GTM human still open** · residual eng = bugs, Dependabot only when named + CI green — **do not** implement SIEM under Guard PRs. Do **not** re-implement i18n because this spek used to say S0.
@@ -18,7 +18,7 @@ gh pr list --state open --assignee @me
 
 GIT_MASTER=1 git fetch origin
 GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull origin main
-GIT_MASTER=1 git rev-parse --short HEAD   # expect ≥ c8f9ed7 or newer (re-pull)
+GIT_MASTER=1 git rev-parse --short HEAD   # expect ≥ ff82389 or newer (re-pull)
 ```
 
 Then read, in order:

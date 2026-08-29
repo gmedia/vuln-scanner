@@ -10,19 +10,19 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
-## Session snapshot (2026-08-28 — findings pagination + P6 S3)
+## Session snapshot (2026-08-29 — #477 on main)
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding)** | Re-`git pull`. Tip **`10e1716`** squash **#476** findings index + lean GET. Branch **`feat/findings-pagination-p6-s3`** (this wave) |
-| **Open PRs** | This branch when pushed. Dependabot: **do not mass-merge** |
-| **Findings API** | `GET /scan/{id}/findings` → `PaginatedFindingsResponse` (`page`/`limit`, lean `raw_data`). `GET /scan/{id}` `findings=[]` unless export `include_raw` |
-| **P6 hospitality** | **S1–S3** — checklist, pack HTML, AM one-pager `docs/commercial/hospitality-am-one-pager.md` |
+| **`main` tip (coding)** | Re-`git pull`. Tip **`ff82389`** squash **#477** findings pagination + P6 S3. CI main green. |
+| **Open PRs** | None assigned. Dependabot: **do not mass-merge** |
+| **Findings API** | `GET /scan/{id}/findings` → `PaginatedFindingsResponse` (`page`/`limit`, lean `raw_data`). `GET /scan/{id}` `findings=[]` unless export `include_raw`. SPA ScanDetail paginates `/findings`. |
+| **P6 hospitality** | **S1–S3 on `main`** — checklist, pack HTML, AM one-pager `docs/commercial/hospitality-am-one-pager.md` |
 | **P11 Status page** | Apex live; SSL-gated Active; `statushost` credits. Frozen e2e testids unchanged |
 | **P5 Guard** | **`sx-erpstg` online** — do **not** re-enroll/wipe |
 | **P7 SIEM** | Prod flag **ON**. `SIEM_INCLUDE_FULL_LOG` **false** |
-| **Still human** | GTM; P11 SSL/pricing; Uptime SMTP |
-| **Engineering default** | **Do not start coding** until `implement` / `buat` / `kerjakan` |
+| **Still human** | GTM; P11 SSL/pricing; Uptime SMTP; findings pagination smoke on prod ScanDetail |
+| **Engineering default** | **Do not start coding** until `implement` / `buat` / `kerjakan`. Next agent: bugs named by user, or one Dependabot PR if named. |
 
 ### Next OpenCode session
 
