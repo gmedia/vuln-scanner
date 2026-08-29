@@ -1202,3 +1202,57 @@ class TestAdminHpp:
     def test_overhead_negative_rejected(self, client):
         resp = client.put("/api/admin/hpp/overhead", json={"amount_idr": -1}, headers=API_HEADERS)
         assert resp.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_cost_journal_adds_to_overhead_pool(self, client, db_session, sample_user):
+        from datetime import UTC, datetime
+
+        db_session.add(HppRate(key="ip", amount_idr=1000, updated_at=datetime.now(UTC)))
+        db_session.add(
+            ScanJob(
+                id=uuid.uuid4(),
+                scan_type="ip",
+                target="203.0.113.12",
+                status="completed",
+                user_id=sample_user.id,
+                credit_cost=1,
+                completed_at=datetime.now(UTC),
+            )
+        )
+        await db_session.commit()
+        created = client.post(
+            "/api/admin/hpp/costs",
+            json={
+                "incurred_on": datetime.now(UTC).date().isoformat(),
+                "amount_idr": 40,
+                "category": "opex",
+                "note": "CF",
+            },
+            headers=API_HEADERS,
+        )
+        assert created.status_code == 201
+        line_id = created.json()["id"]
+        listed = client.get("/api/admin/hpp/costs", headers=API_HEADERS)
+        assert listed.status_code == 200
+        assert listed.json()["items"][0]["amount_idr"] == 40
+        client.put("/api/admin/hpp/overhead", json={"amount_idr": 10}, headers=API_HEADERS)
+        resp = client.get("/api/admin/hpp/report", headers=API_HEADERS)
+        data = resp.json()
+        assert data["journal_opex_idr"] == 40
+        assert data["journal_variable_idr"] == 0
+        assert data["overhead_idr"] == 50
+        ip_line = next(x for x in data["lines"] if x["key"] == "ip")
+        assert ip_line["overhead_share_idr"] == 50
+        gone = client.delete(f"/api/admin/hpp/costs/{line_id}", headers=API_HEADERS)
+        assert gone.status_code == 204
+        after = client.get("/api/admin/hpp/report", headers=API_HEADERS).json()
+        assert after["journal_opex_idr"] == 0
+        assert after["overhead_idr"] == 10
+
+    def test_cost_invalid_category(self, client):
+        resp = client.post(
+            "/api/admin/hpp/costs",
+            json={"incurred_on": "2026-08-01", "amount_idr": 1, "category": "invoice", "note": ""},
+            headers=API_HEADERS,
+        )
+        assert resp.status_code == 422

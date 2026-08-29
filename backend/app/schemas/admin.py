@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -80,6 +80,29 @@ class HppOverheadUpdateRequest(BaseModel):
     amount_idr: int = Field(..., ge=0)
 
 
+class HppCostLineItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    incurred_on: datetime
+    amount_idr: int
+    category: str
+    note: str
+    created_at: datetime
+    created_by: uuid.UUID | None = None
+
+
+class HppCostLineCreateRequest(BaseModel):
+    incurred_on: date
+    amount_idr: int = Field(..., ge=0)
+    category: str = Field(..., pattern="^(opex|variable)$")
+    note: str = Field(default="", max_length=200)
+
+
+class HppCostLineListResponse(BaseModel):
+    items: list[HppCostLineItem]
+
+
 class HppReportLine(BaseModel):
     key: str
     count: int
@@ -108,6 +131,8 @@ class HppReportResponse(BaseModel):
     total_count: int
     total_hpp_idr: int
     overhead_idr: int
+    journal_opex_idr: int
+    journal_variable_idr: int
     total_fully_loaded_hpp_idr: int
     unallocated_overhead_idr: int
     sku_estimates: list[HppSkuEstimate]

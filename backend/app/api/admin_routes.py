@@ -12,7 +12,14 @@ from app.database import get_db
 from app.middleware.rate_limit import RateLimiter
 from app.models.credit_log import CreditLog
 from app.models.email_verification import EmailVerificationToken
-from app.models.hpp import HPP_KEYS, HPP_OVERHEAD_SINGLETON_ID, HppOverhead, HppRate
+from app.models.hpp import (
+    HPP_COST_CATEGORIES,
+    HPP_KEYS,
+    HPP_OVERHEAD_SINGLETON_ID,
+    HppCostLine,
+    HppOverhead,
+    HppRate,
+)
 from app.models.pricing import PricingConfig
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
@@ -22,6 +29,9 @@ from app.schemas.admin import (
     AdminUserItem,
     AdminUserList,
     CreditUpdateRequest,
+    HppCostLineCreateRequest,
+    HppCostLineItem,
+    HppCostLineListResponse,
     HppOverheadItem,
     HppOverheadUpdateRequest,
     HppRateItem,
@@ -420,7 +430,20 @@ async def get_hpp_report(
 
     overhead_result = await db.execute(select(HppOverhead).where(HppOverhead.id == HPP_OVERHEAD_SINGLETON_ID))
     overhead_row = overhead_result.scalar_one_or_none()
-    overhead_idr = int(overhead_row.amount_idr) if overhead_row else 0
+    singleton_overhead = int(overhead_row.amount_idr) if overhead_row else 0
+
+    journal_result = await db.execute(
+        select(HppCostLine.category, func.coalesce(func.sum(HppCostLine.amount_idr), 0))
+        .where(
+            HppCostLine.incurred_on >= start,
+            HppCostLine.incurred_on <= end,
+        )
+        .group_by(HppCostLine.category)
+    )
+    journal_sums = {row[0]: int(row[1]) for row in journal_result.all()}
+    journal_opex = journal_sums.get("opex", 0)
+    journal_variable = journal_sums.get("variable", 0)
+    overhead_idr = singleton_overhead + journal_opex + journal_variable
 
     job_counts_result = await db.execute(
         select(ScanJob.scan_type, func.count(ScanJob.id))
@@ -518,6 +541,8 @@ async def get_hpp_report(
         total_count=total_count,
         total_hpp_idr=total_hpp,
         overhead_idr=overhead_idr,
+        journal_opex_idr=journal_opex,
+        journal_variable_idr=journal_variable,
         total_fully_loaded_hpp_idr=total_fully,
         unallocated_overhead_idr=unallocated,
         sku_estimates=sku_estimates,
@@ -572,6 +597,73 @@ async def update_hpp_overhead(
     await db.commit()
     await db.refresh(row)
     return HppOverheadItem.model_validate(row)
+
+
+@router.get("/hpp/costs", response_model=HppCostLineListResponse)
+async def list_hpp_costs(
+    request: Request,
+    current_admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+    from_date: date | None = Query(default=None, alias="from"),
+    to_date: date | None = Query(default=None, alias="to"),
+) -> HppCostLineListResponse | Response:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        return limit_response
+    start, end = _parse_report_range(from_date, to_date)
+    result = await db.execute(
+        select(HppCostLine)
+        .where(HppCostLine.incurred_on >= start, HppCostLine.incurred_on <= end)
+        .order_by(HppCostLine.incurred_on.desc(), HppCostLine.created_at.desc())
+    )
+    items = result.scalars().all()
+    return HppCostLineListResponse(items=[HppCostLineItem.model_validate(item) for item in items])
+
+
+@router.post("/hpp/costs", response_model=HppCostLineItem, status_code=status.HTTP_201_CREATED)
+async def create_hpp_cost(
+    request: Request,
+    body: HppCostLineCreateRequest,
+    current_admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> HppCostLineItem | Response:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        return limit_response
+    if body.category not in HPP_COST_CATEGORIES:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid category")
+    now = datetime.now(UTC)
+    incurred = datetime.combine(body.incurred_on, time.min, tzinfo=UTC)
+    row = HppCostLine(
+        incurred_on=incurred,
+        amount_idr=body.amount_idr,
+        category=body.category,
+        note=body.note.strip(),
+        created_at=now,
+        created_by=current_admin.id,
+    )
+    db.add(row)
+    await db.commit()
+    await db.refresh(row)
+    return HppCostLineItem.model_validate(row)
+
+
+@router.delete("/hpp/costs/{line_id}", status_code=204)
+async def delete_hpp_cost(
+    request: Request,
+    line_id: uuid.UUID,
+    current_admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Rate limit exceeded")
+    result = await db.execute(select(HppCostLine).where(HppCostLine.id == line_id))
+    row = result.scalar_one_or_none()
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cost line not found")
+    await db.delete(row)
+    await db.commit()
 
 
 @router.put("/hpp/{key}", response_model=HppRateItem)
