@@ -6,6 +6,7 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { ErrorBoundaryFallback } from "@/components/ErrorBoundaryFallback";
 import { PageBoundary } from "@/components/PageBoundary";
+import { LandingLoading } from "@/components/LandingLoading";
 import { Toaster } from "@/components/ui/sonner";
 
 const Landing = lazy(() => import("@/pages/Landing"));
@@ -43,7 +44,12 @@ function App() {
       <Toaster />
       <Routes>
         {/* Public routes — no AppShell wrapper */}
-        <Route path="/" element={<PageBoundary component={Landing} />} />
+        <Route
+          path="/"
+          element={
+            <PageBoundary component={Landing} fallback={<LandingLoading />} />
+          }
+        />
         <Route path="/login" element={<PageBoundary component={Login} />} />
         <Route
           path="/register"
