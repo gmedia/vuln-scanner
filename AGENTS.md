@@ -22,6 +22,16 @@ gh pr list --state open --assignee @me
 - CI red → `git checkout <branch>` → fix → push
 - Then: `git checkout main && git pull`, confirm tip, open `docs/AGENT_EXECUTION_GUIDE.md`
 
+## CI deploy vs Alembic (do not confuse)
+
+When **`main` CI is green including the `deploy` job**, production already ran **`scripts/deploy.sh`**, which **`git pull`s `main`**, rebuilds, and **`docker exec vuln-backend alembic upgrade head`**. That is the prod migration path.
+
+- **Do not** tell the user to SSH and run Alembic “next” after a successful `main` deploy. Schema for that SHA (e.g. `hpp_rates`) is already applied if deploy succeeded.
+- **Do not** treat “CI green” as tests-only: on `push` to `main`, workflow **CI/CD** includes **deploy** (unless `workflow_dispatch` `skip_deploy`).
+- Residual after deploy is **product/ops** (fill HPP rates in `/admin/hpp`, GTM, live SSL/SMTP smoke) — not a second migration.
+- Manual Alembic only if **deploy failed**, user asked for a **host without CI**, or they used **`deploy-services.sh --skip-migrate`**. Prefer `deploy-services.sh` (non-destructive) for routine app deploys; it also migrates when `backend` is in the service list and `--skip-migrate` is unset.
+- Never print deploy hosts, SSH ports, or secrets.
+
 ## Branch & Commit Rules
 - **Every task = own branch**: `feat/<desc>` or `fix/<desc>` from latest `main`
 - **NEVER work on main**
