@@ -1,27 +1,21 @@
 # Scan domain: cek website yang sudah online
 
-Domain adalah nama yang diketik pengunjung (contoh: toko Anda di internet). Di belakangnya ada hosting atau VPS. **Scan domain** Sinexis memeriksa **sisi yang terlihat dari internet**, bukan folder di komputer Anda.
+Domain itu nama yang diketik pengunjung. Di belakangnya hosting atau VPS. Scan domain Sinexis melihat sisi itu dari internet — bukan folder di laptop Anda, bukan “kami masuk server lalu beresin plugin.”
 
-## Apa yang dicek
+## Yang biasanya muncul di hasil
 
-- **DNS** — apakah nama domain mengarah ke tempat yang masuk akal
-- **Sertifikat (TLS/HTTPS)** — gembok di browser: masih valid atau hampir kedaluwarsa
-- **Header keamanan** — “aturan lalu lintas” yang browser harapkan dari situs
-- **Sidik jari teknologi** — stack yang terlihat dari luar (bukan audit kode sumber)
-- **Subdomain publik** — nama lain yang tercatat di catatan publik (crt.sh), jika ada
+DNS: nama masih mengarah ke tempat yang masuk akal, atau sudah nyasar. Gembok HTTPS: sertifikat masih hidup atau hampir habis. Header keamanan: aturan yang browser harapkan dari situs. Dari luar kadang kelihatan stack-nya (bukan audit kode). Subdomain yang tercatat di catatan publik (crt.sh) ikut kelihatan kalau ada.
 
-Ini **bukan** meretas situs Anda. Ini pemeriksaan postur: apa yang orang luar bisa lihat.
+Ini pemeriksaan postur. Bukan pentest “kami coba bobol.”
 
-## Kapan relevan
+## Kapan ini berguna
 
-Anda punya website di hosting bersama, VPS, atau cloud. Pengunjung memakai HTTPS. Anda ingin tahu jika sertifikat, header, atau catatan DNS berubah tanpa Anda sadar.
+Situs sudah live, orang pakai HTTPS, dan Anda tidak sempat cek manual tiap bulan. Yang sering lolos: sertifikat hampir kedaluwarsa, header berubah setelah migrasi, DNS tersenggol tanpa ada yang sadar.
 
-## Yang tidak termasuk
+Mulai dari **satu domain yang benar-benar dipakai pelanggan**. Jangan masukkan semua subdomain percobaan ke paket kecil.
 
-- Memperbaiki plugin WordPress secara otomatis
-- Scan virus file di disk hosting
-- Jaminan “tidak bisa diretas”
+## Yang tidak terjadi otomatis
 
-Hasilnya masuk dasbor Sinexis. Kalau Anda pasang **jadwal**, perubahan penting dibanding bulan lalu bisa dikirim email — itu modul Scan Attach, dibahas di artikel terpisah.
+Plugin WordPress tidak kami perbaiki. File di disk hosting tidak kami scan virus. Tidak ada jaminan “tidak bisa diretas.”
 
-Mulai dari **satu domain publik** yang benar-benar dipakai pelanggan. Jangan campur semua subdomain percobaan di paket kecil.
+Hasilnya di dasbor. Kalau jadwal hidup, perubahan yang serius dibanding bulan lalu bisa ke email — itu Scan Attach, artikel terpisah.

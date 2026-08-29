@@ -1,30 +1,21 @@
 # Uptime: apakah website atau port masih nyala?
 
-Scan keamanan menjawab: “pintu dan gembok masih wajar?” **Uptime** menjawab pertanyaan lain: **“dari internet, situs atau port itu masih merespons?”**
+Scan keamanan nanya: pintu dan gembok masih wajar? Uptime nanya hal lain: **dari internet, situs atau port itu masih merespons?**
 
-AM sering ditanya “kenapa web down?” Uptime adalah cek **dari luar**, berkala (orde menit, bukan sebulan sekali).
+AM sering kena “kenapa web down?” Ini cek dari luar, berkala — orde menit, bukan sebulan sekali.
 
-## Analogi
+Scan = inspeksi kunci dan jendela. Uptime = lampu toko masih nyala pas lewat jalan. Berguna dua-duanya. Satu tidak menggantikan yang lain.
 
-Scan = inspeksi kunci dan jendela. Uptime = apakah lampu toko masih menyala saat lewat jalan.
+## Yang dicek
 
-Keduanya berguna. Yang satu tidak menggantikan yang lain.
+HTTP(S): halaman publik jawab atau tidak. TCP: port tertentu di VPS masih terima koneksi. Status turun lalu naik bisa kirim email. Ini bukan analisis CVE.
 
-## Apa yang dicek
+## Paket dan flag
 
-- **HTTP(S)** — halaman publik menjawab atau tidak
-- **TCP** — port tertentu (misalnya layanan di VPS) masih menerima koneksi
+Di spek, kursi uptime **termasuk** add-on Scan — bukan baris harga terpisah. Kalau menu uptime tidak muncul di akun, tanya yang urus lingkungan — jangan janji di chat pelanggan.
 
-Saat status **turun** lalu **naik**, sistem bisa mengirim email. Ini bukan analisis CVE.
+## Bukan uptime
 
-## Paket
+Tidak ganti hosting otomatis. Bukan SLA legal 99,99% (itu kontrak infra). Bukan pengganti Scan Attach.
 
-Di spek produk, kursi uptime **termasuk** di add-on Scan — bukan baris harga terpisah di list kerja. Fitur bisa dilindungi flag (`UPTIME_ENABLED`); jika mati di lingkungan Anda, tanya ops.
-
-## Yang bukan uptime
-
-- Mengganti hosting otomatis
-- SLA legal 99,99% (itu kontrak infra, bukan modul ini)
-- Mengganti Scan Attach
-
-Pakai uptime pada **URL atau port yang sama** dengan yang Anda scan. Jangan monitor puluhan URL percobaan di akun kecil.
+Pakai URL atau port yang **sama** dengan yang Anda scan. Jangan monitor puluhan URL percobaan di akun kecil.

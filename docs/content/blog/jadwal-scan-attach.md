@@ -1,26 +1,21 @@
 # Scan Attach: jadwal, perubahan, dan laporan untuk atasan
 
-Scan sekali itu seperti cek kesehatan sekali. **Scan Attach** adalah janji berulang: Sinexis menjalankan scan domain dan/atau IP **tiap minggu atau bulan**, lalu menjawab: **apa yang baru dan lebih berbahaya dibanding kemarin?**
+Scan sekali itu cek kesehatan sekali. Scan Attach itu janji berulang: domain dan/atau IP dicek tiap minggu atau bulan, lalu pertanyaannya sederhana — **apa yang baru dan lebih berbahaya dibanding kemarin?**
 
-Itu alasan add-on ini ditagih berulang — bukan hobi nmap.
+Itu alasan add-on ditagih berulang. Bukan hobi nmap.
 
-## Yang Anda dapat
+## Yang terasa di operasional
 
-1. **Jadwal** — pilih ritme (bulanan atau mingguan, sesuai paket). Maksimal sejumlah jadwal per organisasi (batas produk).
-2. **Baseline** — hasil sebelumnya jadi acuan. Yang penting: temuan **critical/high baru**, bukan dump ribuan baris.
-3. **Email** — pemberitahuan jika muncul temuan baru yang serius (paket sederhana vs diff lengkap tergantung tier).
-4. **Laporan HTML** — ringkasan yang bisa diteruskan ke pemilik / GM, dalam Bahasa Indonesia.
+Anda pilih ritme (bulanan atau mingguan, sesuai paket). Ada batas jumlah jadwal per organisasi — itu batas produk, bukan “unlimited kalau minta.”
 
-## Alur sederhana
+Hasil sebelumnya jadi acuan. Yang kami utamakan: temuan critical/high **baru**, bukan dump ribuan baris. Email kalau muncul yang serius (kelengkapan diff tergantung paket). Ada laporan HTML ringkas, Bahasa Indonesia, yang masuk akal diteruskan ke pemilik atau GM.
 
-Anda (atau AM) menunjuk domain atau IP → isi kredit → hidupkan jadwal → siklus pertama jalan → bulan berikutnya Anda lihat **diff**, bukan PDF acak.
+Alurnya tidak mistis: tunjuk domain atau IP, pastikan kredit ada, hidupkan jadwal, siklus pertama jalan, bulan berikutnya Anda baca **selisih**, bukan PDF acak.
 
-Jika kredit habis, jadwal **berhenti sendiri**. Isi ulang atau naik paket, lalu hidupkan lagi.
+Kredit habis → jadwal berhenti sendiri. Isi ulang atau naik paket, lalu hidupkan lagi.
 
-## Yang bukan Scan Attach
+## Bukan ini
 
-- SIEM / “aman 100%”
-- Guard (agen di dalam server) — upsell terpisah
-- Unlimited scan
+Bukan SIEM. Bukan “aman 100%.” Bukan Guard (agen di dalam server) — itu upsell lain. Bukan unlimited scan.
 
-Bagi pembeli colo/VPS: ini modul yang paling dekat dengan “kenapa saya bayar tiap bulan”. Scan sekali di dasbor tetap ada; **attach** yang membuatnya jadi kebiasaan.
+Untuk pembeli colo/VPS, modul ini yang paling dekat dengan “kenapa saya bayar tiap bulan.” Scan sekali di dasbor tetap ada; attach yang bikin jadi kebiasaan.
