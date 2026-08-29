@@ -15,6 +15,9 @@ vi.mock("@/api/admin", () => ({
     getHppReport: vi.fn(),
     getHppOverhead: vi.fn(),
     updateHppOverhead: vi.fn(),
+    listHppCosts: vi.fn(),
+    createHppCost: vi.fn(),
+    deleteHppCost: vi.fn(),
   },
 }));
 
@@ -82,6 +85,22 @@ vi.mock("@/components/ui/Skeleton", () => ({
         <div key={i} data-testid="skeleton" />
       ))}
     </div>
+  ),
+}));
+
+vi.mock("@/components/ui/Select", () => ({
+  Select: ({ children }: { children?: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  SelectTrigger: ({ children }: { children?: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  SelectValue: () => null,
+  SelectContent: ({ children }: { children?: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  SelectItem: ({ children }: { children?: React.ReactNode }) => (
+    <div>{children}</div>
   ),
 }));
 
@@ -157,6 +176,8 @@ const report = {
   total_count: 2,
   total_hpp_idr: 2000,
   overhead_idr: 100,
+  journal_opex_idr: 0,
+  journal_variable_idr: 0,
   total_fully_loaded_hpp_idr: 2100,
   unallocated_overhead_idr: 0,
   sku_estimates: [
@@ -195,6 +216,9 @@ describe("AdminHpp", () => {
           isLoading: false,
         } as never;
       }
+      if (key === "admin-hpp-costs") {
+        return { data: [], isLoading: false } as never;
+      }
       return { data: report, isLoading: false } as never;
     });
     render(<AdminHpp />);
@@ -219,6 +243,9 @@ describe("AdminHpp", () => {
           isLoading: false,
         } as never;
       }
+      if (key === "admin-hpp-costs") {
+        return { data: [], isLoading: false } as never;
+      }
       return { data: report, isLoading: false } as never;
     });
     render(<AdminHpp />);
@@ -226,6 +253,7 @@ describe("AdminHpp", () => {
     expect(screen.getAllByDisplayValue(1000).length).toBeGreaterThan(0);
     expect(screen.getByTestId("hpp-report-filters")).toBeInTheDocument();
     expect(screen.getByTestId("hpp-overhead-card")).toBeInTheDocument();
+    expect(screen.getByTestId("hpp-costs-card")).toBeInTheDocument();
     expect(screen.getByTestId("hpp-sku-basic")).toBeInTheDocument();
     expect(screen.getByText("estimasi")).toBeInTheDocument();
   });

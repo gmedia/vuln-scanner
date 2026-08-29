@@ -208,9 +208,21 @@ export interface HppReportResponse {
   total_count: number;
   total_hpp_idr: number;
   overhead_idr: number;
+  journal_opex_idr: number;
+  journal_variable_idr: number;
   total_fully_loaded_hpp_idr: number;
   unallocated_overhead_idr: number;
   sku_estimates: HppSkuEstimate[];
+}
+
+export interface HppCostLineItem {
+  id: string;
+  incurred_on: string;
+  amount_idr: number;
+  category: "opex" | "variable";
+  note: string;
+  created_at: string;
+  created_by: string | null;
 }
 
 export async function getHppRates(): Promise<HppRateItem[]> {
@@ -254,6 +266,34 @@ export async function updateHppOverhead(data: {
   return res;
 }
 
+export async function listHppCosts(params?: {
+  from?: string;
+  to?: string;
+}): Promise<HppCostLineItem[]> {
+  const { data } = await api.get<{ items: HppCostLineItem[] }>(
+    "/api/admin/hpp/costs",
+    { params },
+  );
+  return data.items ?? [];
+}
+
+export async function createHppCost(body: {
+  incurred_on: string;
+  amount_idr: number;
+  category: "opex" | "variable";
+  note: string;
+}): Promise<HppCostLineItem> {
+  const { data } = await api.post<HppCostLineItem>(
+    "/api/admin/hpp/costs",
+    body,
+  );
+  return data;
+}
+
+export async function deleteHppCost(id: string): Promise<void> {
+  await api.delete(`/api/admin/hpp/costs/${id}`);
+}
+
 export const adminApi = {
   getStats: getAdminStats,
   getUsers: getAdminUsers,
@@ -267,6 +307,9 @@ export const adminApi = {
   getHppReport,
   getHppOverhead,
   updateHppOverhead,
+  listHppCosts,
+  createHppCost,
+  deleteHppCost,
   listBlogPosts,
   createBlogPost,
   updateBlogPost,

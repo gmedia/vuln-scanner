@@ -118,5 +118,16 @@
   "hppColFullyLoaded": "Fully loaded",
   "hppColFullyUnit": "Fully loaded / unit",
   "hppFullyTotal": "Total fully loaded",
-  "hppUnallocated": "Overhead belum dialokasi (tidak ada volume di rentang)"
+  "hppUnallocated": "Overhead belum dialokasi (tidak ada volume di rentang)",
+  "hppCostsCard": "Jurnal beban",
+  "hppCostsHint": "Biaya produksi per tanggal (sewa, Cloudflare, API). Dijumlahkan ke pool overhead laporan di rentang yang dipilih — bukan invoice.",
+  "hppCostsEmpty": "Tidak ada baris beban di rentang ini.",
+  "hppCostDate": "Tanggal",
+  "hppCostAmount": "Nominal (IDR)",
+  "hppCostCategory": "Kategori",
+  "hppCostOpex": "Opex",
+  "hppCostVariable": "Variabel",
+  "hppCostNote": "Catatan",
+  "hppCostAdd": "Tambah baris",
+  "hppCostDelete": "Hapus baris"
 }

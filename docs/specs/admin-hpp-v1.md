@@ -18,6 +18,7 @@
 | Page | `/admin/hpp` — **not** mixed into `/admin/pricing` |
 | Seed | All rates **0** — no real COGS in git |
 | Overhead | Monthly opex (rent/CF) in `hpp_overhead` singleton; **not** mixed into `amount_idr`. Report allocates by unit count in range. |
+| Cost journal | `hpp_cost_lines`: dated IDR rows (`opex` \| `variable`). Report pool = singleton + journal sums in range. Not AP invoices. |
 | Auth | `get_current_admin` + existing admin rate limiter |
 
 SKU list prices (from `docs/commercial/sku-scan-secure-addon.md`, working list):
@@ -49,7 +50,10 @@ Table `hpp_rates`:
 |--------|------|--------|
 | GET | `/api/admin/hpp` | `{ items: [{ key, amount_idr, updated_at, updated_by }] }` |
 | PUT | `/api/admin/hpp/{key}` | Body `{ amount_idr }` |
-| GET | `/api/admin/hpp/report?from=&to=` | ISO date (inclusive). Default: current UTC month. |
+| GET | `/api/admin/hpp/report?from=&to=` | ISO date (inclusive). Default: current UTC month. Pool = singleton overhead + journal. |
+| GET | `/api/admin/hpp/costs?from=&to=` | Journal lines in range |
+| POST | `/api/admin/hpp/costs` | `{ incurred_on, amount_idr, category, note }` |
+| DELETE | `/api/admin/hpp/costs/{id}` | 204 |
 
 Report rows: per key `count`, `rate_idr`, `hpp_idr` (= count × rate). Totals. Statushost count = `credit_logs` with `type=deduct` and description prefix `Status hostname:` in range.
 

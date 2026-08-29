@@ -118,5 +118,16 @@
   "hppColFullyLoaded": "Fully loaded",
   "hppColFullyUnit": "Fully loaded / unit",
   "hppFullyTotal": "Fully loaded total",
-  "hppUnallocated": "Unallocated overhead (no volume in range)"
+  "hppUnallocated": "Unallocated overhead (no volume in range)",
+  "hppCostsCard": "Cost journal",
+  "hppCostsHint": "Production costs by date (rent, Cloudflare, APIs). Summed into the report overhead pool for the selected range — not invoices.",
+  "hppCostsEmpty": "No cost lines in this range.",
+  "hppCostDate": "Date",
+  "hppCostAmount": "Amount (IDR)",
+  "hppCostCategory": "Category",
+  "hppCostOpex": "Opex",
+  "hppCostVariable": "Variable",
+  "hppCostNote": "Note",
+  "hppCostAdd": "Add line",
+  "hppCostDelete": "Delete line"
 }
