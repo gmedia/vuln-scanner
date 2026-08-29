@@ -8,10 +8,16 @@ sys.path.insert(0, "/home/ubuntu/vuln-scanner/workers")
 os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5432/test")
 os.environ.setdefault("DATABASE_URL_SYNC", "postgresql://test:test@localhost:5432/test")
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from celery.exceptions import Retry
+
+
+@pytest.fixture(autouse=True)
+def _noop_persist_job_progress():
+    with patch("utils.scan_fail.persist_job_progress"):
+        yield
 
 
 @pytest.fixture
