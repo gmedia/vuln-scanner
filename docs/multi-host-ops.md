@@ -215,3 +215,22 @@ SaaS **does not** SSH. Admin `GET /api/host/waf/sites/{id}/snippet` returns a ti
 - `HOST_WAF_ENABLED` stays **false** in git. Lab flag is host `.env` only.
 
 S5 (live disposable vhost smoke) is a later slice.
+
+### Host WAF lab smoke (S5)
+
+API cycle: login → Guard agent → create **fixture** site (`/var/www/host-waf-fixture`) → upsert protect/mock → fetch snippet (must warn against `sinexis.app` edge) → simulate block → list events → delete site. **Not** Playwright. **Does not** wipe `tc5`, enroll Guard, or SSH to `tc5`.
+
+`--apply-vhost` is optional and **requires** `HOST_WAF_LAB_VHOST_SSH` pointing at a **disposable** lab alias. The script **refuses** `tc5` and ERP-like names. It copies the snippet to `/tmp/sinexis-host-waf-lab.conf` on that host — operator still includes it on a lab vhost. Never `nginx/sinexis.app.conf`.
+
+```bash
+export GUARD_LAB_APP_BASE='https://<app-origin>'
+export GUARD_LAB_EMAIL='...'
+export GUARD_LAB_PASSWORD='...'
+# optional: HOST_WAF_LAB_AGENT_UUID=<guard_agents.id>
+./scripts/host-waf-lab-smoke.sh
+# optional disposable vhost (not tc5, not ERP):
+# export HOST_WAF_LAB_VHOST_SSH=<lab-alias>
+# ./scripts/host-waf-lab-smoke.sh --apply-vhost
+```
+
+Public origin still needs `HOST_WAF_LAB_ALLOW_PUBLIC_PROD=1` or `GUARD_LAB_ALLOW_PUBLIC_PROD=1`. `HOST_WAF_ENABLED` stays **false** in git.
