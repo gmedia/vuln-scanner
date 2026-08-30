@@ -10,6 +10,39 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
+## Session snapshot (2026-08-30 — HPP copy #489; journal #488)
+
+| Item | State |
+|------|--------|
+| **`main` tip (coding)** | Re-`git pull`. Expect squash **#489** (HPP page copy) after **#488** journal (`694bdb8`) + **#487** overhead. CI main + deploy ran for #488; #489 merged 2026-08-30. |
+| **Open PRs** | None assigned after #489. Dependabot: **do not mass-merge** |
+| **Admin HPP** | `/admin/hpp`: unit rates + monthly overhead singleton + cost journal + date-range report + SKU overlay **estimasi**. Spec: `docs/specs/admin-hpp-v1.md` |
+| **Pricing vs HPP** | Pricing = credits/scan. HPP = IDR production cost. **Not mixed.** Overlay uses `credit_cost` only as job-count estimate. |
+| **Overhead vs journal** | Singleton `hpp_overhead` = one monthly IDR, **always** in pool (no date filter). Journal `hpp_cost_lines` = dated `opex`\|`variable` rows; **only in report range**. Pool = singleton + journal sums. Do not double-count rent. |
+| **opex vs variable** | Labels only — same pool math. opex ≈ rent/CF; variable ≈ API usage. |
+| **SKU overlay** | Auto on every report load. Hardcoded Basic/Pro/Multi list IDR + credits. `HPP if all IP/domain` = `(credits // credit_cost) * hpp_rate`. **No** overhead/journal/volume. Not invoices. |
+| **Copy (#489)** | Subtitle + `hppRatesHint` + `hppReportHint` + `linkHppDesc` (id+en). Vitest asserts EN strings. |
+| **Prod sample (not real COGS)** | Seeded via tc1 docker — replace with real numbers (human). Do not commit amounts as “truth”. |
+| **Still human** | Real COGS; GTM; Dependabot named-only |
+| **Engineering default** | **Do not start coding** until `implement` / `buat` / `kerjakan`. Next: ops COGS, or bugs named by user. |
+
+### Next OpenCode session
+
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. `gh pr list --state open --assignee @me`. Do **not** mass-merge Dependabot.
+2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** then **`AGENTS.md`**. HPP spec: **`docs/specs/admin-hpp-v1.md`**.
+3. Speak **Bahasa Indonesia**; prefix git with `GIT_MASTER=1`. Never work on `main`. Never commit secrets/IPs.
+4. **Do not** tell the user to SSH Alembic after a green **main** deploy job — `scripts/deploy.sh` already migrates.
+5. **Guard:** `sx-erpstg` **online** — do **not** re-enroll/wipe unless user asks full Guard e2e (then wipe `tc5` first §4.1).
+6. HPP residual is **ops** (real rates/journal), not more UI unless user asks.
+
+### Last session (2026-08-30) — HPP explain + copy
+
+**Shipped:** **#487** overhead; **#488** journal; **#489** Pricing↔HPP copy on `/admin/hpp`.
+
+**Explained to user (no extra code):** overhead vs journal; opex vs variable (same pool); SKU overlay auto/estimasi.
+
+**Do not:** mix Pricing into HPP rates; treat overlay as invoice; double-count singleton + journal rent; mass-merge Dependabot; manual Alembic after successful main deploy.
+
 ## Session snapshot (2026-08-29 — #477 on main)
 
 | Item | State |
