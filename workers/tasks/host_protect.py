@@ -32,14 +32,14 @@ def run_host_scan(scan_id: str) -> dict[str, Any]:
         return {"skipped": True, "reason": "HOST_PROTECT_ENABLED off"}
     try:
         from app.database import async_session
-        from app.services.host_scan_runner import run_mock_host_scan
+        from app.services.host_scan_runner import run_host_scan_job
     except Exception as exc:
         logger.exception("Host Protect import failed: {error}", error=exc)
         return {"ok": False, "error": str(exc)[:200]}
 
     async def _body() -> dict[str, Any]:
         async with async_session() as db:
-            return cast(dict[str, Any], await run_mock_host_scan(db, UUID(scan_id)))
+            return cast(dict[str, Any], await run_host_scan_job(db, UUID(scan_id)))
 
     try:
         result = cast(dict[str, Any], _run(_body()))

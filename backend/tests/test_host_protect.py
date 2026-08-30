@@ -19,7 +19,7 @@ from app.models.organization import Organization, OrganizationMembership
 from app.models.siem import SiemCase
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
-from app.services.host_scan_runner import run_mock_host_scan
+from app.services.host_scan_runner import run_host_scan_job, run_mock_host_scan
 from app.services.organization import ensure_personal_org
 
 
@@ -496,3 +496,32 @@ def test_jail_rel_path_rejects_traversal():
     with pytest.raises(ValueError):
         jail_rel_path("/var/www/html", "ok/../../etc/passwd")
     assert jail_rel_path("/var/www/html", "wp-content/uploads/cache.php").endswith("cache.php")
+
+
+@pytest.mark.asyncio
+async def test_host_scan_job_mock_when_root_missing(db_session: AsyncSession, ctx):
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    site = HostSite(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        guard_agent_id=agent.id,
+        name="MissingRoot",
+        root_path="/var/www/host-protect-not-on-worker",
+        created_by=owner.id,
+    )
+    scan = HostScan(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        status="queued",
+        trigger="manual",
+    )
+    db_session.add(site)
+    db_session.add(scan)
+    await db_session.commit()
+    out = await run_host_scan_job(db_session, scan.id)
+    assert out["ok"] is True
+    assert out["engine"] == "mock"
+    assert out["hit_count"] == 1
