@@ -3,7 +3,7 @@
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
 **Last updated:** 2026-08-30
-**Repo tip at write time:** re-`git pull` after reset. Expect **`c315463`** or newer (#505 Host Protect S4–S5). **P12 S0–S5**. Open residual: **GTM human**; Host Protect **IDR/`service_id`**; Dependabot — do not mass-merge. No IPs/secrets. Never commit IPs/passwords/enroll keys.
+**Repo tip at write time:** re-`git pull` after reset. Expect **`b212968`** or newer (#506 Host Protect S5 docs). **P12 S0–S5**. Open residual: **GTM human**; Host Protect **IDR/`service_id`**; lab smoke script; Dependabot — do not mass-merge. No IPs/secrets. Never commit IPs/passwords/enroll keys.
 **Guard e2e rule:** if the user asks for a **full prod e2e suite including Guard enroll/unenroll**, **wipe `tc5` + leftover Manager/DB smoke rows first** — see **§4.1**. Do not skip this. Do not treat Playwright as enroll/unenroll.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
 **Phase snapshot:** **P0 policy locked** · **P1 attach shipped** · **P2 Workspace S1–S5** · **P3 assets S1–S5** · **P4 soft dual-brand** · **P5 Guard thin** (mock CI; live `sx-erpstg` online — do not wipe) · **P6 hospitality S1–S3** · **P7 SIEM S0–S5** (prod flag ON; `SIEM_INCLUDE_FULL_LOG` false) · **P8 Uptime S1–S5 + v2** · **P11 status page** · **P12 Host Protect S0–S5** (#501–#505; flag default off; IDR unset) · **i18n S1–S7** · **theme S1–S3** · **GTM human still open** · residual eng = bugs, Dependabot only when named + CI green — **do not** implement SIEM under Guard PRs. Do **not** re-implement i18n or Host Protect S1–S5 because docs used to say S0.
@@ -106,7 +106,7 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 | **P8-i18n** | **i18n id/en** | Dual language SPA | Catalogs, switcher, executive/notify locale, `users.locale` | Extra locales, CVE translation, legal pages | **S1–S7 on `main`** (#367–#373). Spek [`i18n-v1.md`](specs/i18n-v1.md) — **not** a second P8; do not re-implement. |
 | **P9** | **Theme light/dark** | Operator appearance | Tokens + switcher; default dark | Per-org theme, Wave G layout | **S1–S3 on `main`** (#375–#378). Spek [`theme-v1.md`](specs/theme-v1.md). |
 | **P10** | **Public blog** (GTM content) | Trust / inbound copy without a deploy per post | Public `/blog`; platform-admin CMS; Markdown; SEO HTML island + path-only index | Comments, Next.js, org CMS, images, legal pages, Guard merge | Spek [`blog-v1.md`](specs/blog-v1.md). Q1–Q6 locked. **S1–S5 in PR #409.** |
-| **P12** | **Host Protect** (on-box web malware) | Attach for VPS/colo that want “Imunify-like” **without** cloning Imunify | Named web paths on Guard agent; YARA/Clam mock+real; hits; opt-in quarantine; SPA `/host`; spek [`host-protect-v1.md`](specs/host-protect-v1.md) | PHP PD, KernelCare, WAF, cPanel plugin, shared-UID farm, Imunify IP | **S0–S5 on `main`** (#501–#505). Flag default **off**. SKU working [`sku-host-protect.md`](commercial/sku-host-protect.md) — **IDR unset**. Do **not** re-implement S1–S5. Do **not** ship under `/guard`. **S6+** only on explicit verb. |
+| **P12** | **Host Protect** (on-box web malware) | Attach for VPS/colo that want “Imunify-like” **without** cloning Imunify | Named web paths on Guard agent; YARA/Clam mock+real; hits; opt-in quarantine; SPA `/host`; spek [`host-protect-v1.md`](specs/host-protect-v1.md) | PHP PD, KernelCare, WAF, cPanel plugin, shared-UID farm, Imunify IP | **S0–S5 on `main`** (#501–#505; docs #506). Flag default **off**. SKU working [`sku-host-protect.md`](commercial/sku-host-protect.md) — **IDR unset**. Lab smoke: [`scripts/host-protect-lab-smoke.sh`](../scripts/host-protect-lab-smoke.sh) (fixture path; not Playwright; do not wipe ERP). Do **not** re-implement S1–S5. Do **not** ship under `/guard`. **S6+** only on explicit verb. |
 
 **Priority rule for agents (post–#295 tip `8546ef3`):**
 
@@ -206,7 +206,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | [`docs/specs/guard-v1.md`](specs/guard-v1.md) | **S0–S5 + Http on `main`** (#273–#275); host/guide #279–#281 + #294 | Edge lab + secrets on deploy host only; no SIEM on `/guard` |
 | [`docs/specs/siem-v1.md`](specs/siem-v1.md) | **S0–S5 on `main`** (#307) | Flag-off until ops |
 | [`docs/specs/blog-v1.md`](specs/blog-v1.md) | **S0 + S1–S5** (PR #409) | Public `/blog` HTML island; admin CMS |
-| [`docs/specs/host-protect-v1.md`](specs/host-protect-v1.md) | **S0 draft** | P12; SKU working not P0 lock; no S1 code until implement verb |
+| [`docs/specs/host-protect-v1.md`](specs/host-protect-v1.md) | **S0–S5 shipped** | P12; SKU IDR unset; lab [`scripts/host-protect-lab-smoke.sh`](../scripts/host-protect-lab-smoke.sh); S6+ only on explicit verb |
 
 **Agent:** wait for **explicit implement** even when spec exists. Prefer **draft spec** over silent coding for new epics; P3 assets already shipped.
 
