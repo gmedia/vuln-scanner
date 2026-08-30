@@ -226,7 +226,7 @@ function Sidebar() {
         ) : null}
       </SidebarContent>
       <SidebarFooter>
-        <div className="flex flex-wrap items-center gap-2 px-2 pb-1 md:hidden">
+        <div className="flex min-h-11 flex-wrap items-center gap-2 px-2 pb-1 md:hidden [&_button[aria-pressed=true]]:!bg-secondary [&_button[aria-pressed=true]]:!text-secondary-foreground">
           <ThemeSwitcher />
           <LanguageSwitcher />
         </div>
