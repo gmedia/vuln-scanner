@@ -12,6 +12,7 @@ from app.models.host_protect import HostSite
 from app.models.host_waf import HostWafEvent, HostWafPolicy
 from app.models.user import User
 from app.schemas.host_waf import HostWafEventResponse, HostWafPolicyResponse, HostWafPolicyUpsert
+from app.services.host_handoff import handoff_waf_block
 from app.services.organization import require_membership
 
 
@@ -132,6 +133,8 @@ class HostWafService:
             http_status=403 if action == "block" else 200,
         )
         self.db.add(event)
+        await self.db.flush()
+        await handoff_waf_block(self.db, event, site, user)
         await self.db.commit()
         await self.db.refresh(event)
         return HostWafEventResponse.model_validate(event)
