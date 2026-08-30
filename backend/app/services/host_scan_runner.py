@@ -8,7 +8,9 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.host_protect import HostHit, HostScan, HostSite
+from app.models.host_protect import HostHit, HostQuarantineEvent, HostScan, HostSite
+from app.services.host_handoff import CRITICAL_CLASSES, handoff_critical_hit
+from app.services.host_path import jail_rel_path, quarantine_basename
 
 MOCK_HITS: tuple[dict[str, str], ...] = (
     {
@@ -49,6 +51,7 @@ async def run_mock_host_scan(db: AsyncSession, scan_id: UUID) -> dict[str, Any]:
             )
         )
         hit = existing.scalar_one_or_none()
+        is_new = hit is None
         if hit is None:
             hit = HostHit(
                 id=uuid.uuid4(),
@@ -62,9 +65,29 @@ async def run_mock_host_scan(db: AsyncSession, scan_id: UUID) -> dict[str, Any]:
                 status="open",
             )
             db.add(hit)
+            await db.flush()
         else:
             hit.last_seen_at = now
             hit.scan_id = scan.id
+        if is_new and hit.hit_class in CRITICAL_CLASSES:
+            await handoff_critical_hit(db, hit, site)
+        if is_new and site.auto_quarantine and hit.hit_class in CRITICAL_CLASSES:
+            try:
+                jail_rel_path(site.root_path, hit.rel_path)
+                jail_ok = True
+            except ValueError:
+                jail_ok = False
+            if jail_ok:
+                hit.status = "quarantined"
+                db.add(
+                    HostQuarantineEvent(
+                        organization_id=hit.organization_id,
+                        hit_id=hit.id,
+                        actor_user_id=site.created_by,
+                        action="quarantine",
+                        dest_basename=quarantine_basename(str(hit.id), hit.rel_path),
+                    )
+                )
         hit_count += 1
 
     scan.status = "completed"
