@@ -7,7 +7,7 @@
 #
 #   export GUARD_LAB_APP_BASE GUARD_LAB_EMAIL GUARD_LAB_PASSWORD
 #   ./scripts/host-protect-lab-smoke.sh
-#   ./scripts/host-protect-lab-smoke.sh --prepare-fixture   # mkdir allowlisted path on SSH alias
+#   ./scripts/host-protect-lab-smoke.sh --prepare-fixture   # mkdir allowlisted path (SSH alias)
 #   ./scripts/host-protect-lab-smoke.sh --keep-site
 #
 # Requires HOST_PROTECT_ENABLED on the API. Fixture path must be under
@@ -126,9 +126,25 @@ login() {
 
 prepare_fixture() {
   require_cmd ssh
-  log "mkdir fixture on SSH alias ${GUARD_LAB_AGENT_SSH} (path not a customer docroot)"
-  ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "${GUARD_LAB_AGENT_SSH}" \
-    "sudo mkdir -p '${ROOT_PATH}/wp-content/uploads' && sudo chmod 755 '${ROOT_PATH}' '${ROOT_PATH}/wp-content' '${ROOT_PATH}/wp-content/uploads'"
+  local hosts=()
+  local h
+  # App host (tc1) often cannot resolve the agent SSH alias; bastion can.
+  # Prefer an explicit fixture host, then GUARD_LAB_AGENT_SSH (default tc5).
+  if [[ -n "${HOST_PROTECT_LAB_FIXTURE_SSH:-}" ]]; then
+    hosts+=("${HOST_PROTECT_LAB_FIXTURE_SSH}")
+  fi
+  hosts+=("${GUARD_LAB_AGENT_SSH}")
+  log "mkdir fixture (allowlisted path; not a customer docroot)"
+  for h in "${hosts[@]}"; do
+    [[ -n "$h" ]] || continue
+    if ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new "$h" \
+      "sudo mkdir -p '${ROOT_PATH}/wp-content/uploads' && sudo chmod 755 '${ROOT_PATH}' '${ROOT_PATH}/wp-content' '${ROOT_PATH}/wp-content/uploads'"; then
+      log "fixture mkdir ok (SSH alias used; not printed as IP)"
+      return 0
+    fi
+    log "SSH alias failed (try HOST_PROTECT_LAB_FIXTURE_SSH from a host that resolves the agent)"
+  done
+  die "could not mkdir fixture — run --prepare-fixture from a bastion that has Host ${GUARD_LAB_AGENT_SSH}, or set HOST_PROTECT_LAB_FIXTURE_SSH"
 }
 
 pick_agent() {
@@ -240,16 +256,18 @@ hits_and_actions() {
     log "no hits (mock may need worker; still a valid smoke if scan completed)"
     return 0
   fi
-  log "POST quarantine/restore/ignore on first hit"
+  # Ignore is allowed only while status is open. After restore the row is
+  # restored — ignore then 400 (product, not a smoke bug).
+  log "POST ignore then quarantine then restore on first hit"
+  blob="$(curl_api POST "/api/host/hits/${hit_id}/ignore" '{}')"
+  split_body_code "$blob"
+  [[ "$HTTP_CODE" == "200" ]] || die "ignore HTTP ${HTTP_CODE}"
   blob="$(curl_api POST "/api/host/hits/${hit_id}/quarantine" '{}')"
   split_body_code "$blob"
   [[ "$HTTP_CODE" == "200" ]] || die "quarantine HTTP ${HTTP_CODE}"
   blob="$(curl_api POST "/api/host/hits/${hit_id}/restore" '{}')"
   split_body_code "$blob"
   [[ "$HTTP_CODE" == "200" ]] || die "restore HTTP ${HTTP_CODE}"
-  blob="$(curl_api POST "/api/host/hits/${hit_id}/ignore" '{}')"
-  split_body_code "$blob"
-  [[ "$HTTP_CODE" == "200" ]] || die "ignore HTTP ${HTTP_CODE}"
 }
 
 delete_site() {
