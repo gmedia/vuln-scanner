@@ -139,6 +139,7 @@ Prefix `/api/host/waf`. JWT + org. Flag off → **404**.
 | **S3** | Optional SIEM case on mock block | no `full_log` |
 | **S4** | Coraza/nginx **generator** + ops runbook | **not** auto-SSH to `tc5`; lab vhost only |
 | **S5** | Live lab smoke (disposable vhost) | `scripts/host-waf-lab-smoke.sh`; never ERP/`tc5`; no edge nginx |
+| **S5b** | SPA copy snippet | `host-waf-copy-snippet`; toast warns against sinexis.app edge |
 
 ---
 
