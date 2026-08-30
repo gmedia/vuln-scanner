@@ -67,3 +67,20 @@ export async function simulateHostWaf(siteId: string): Promise<HostWafEvent> {
   );
   return data;
 }
+
+export interface HostWafSnippet {
+  site_id: string;
+  engine: string;
+  mode: string;
+  filename: string;
+  content: string;
+}
+
+export async function fetchHostWafSnippet(
+  siteId: string,
+): Promise<HostWafSnippet> {
+  const { data } = await api.get<HostWafSnippet>(
+    `/api/host/waf/sites/${siteId}/snippet`,
+  );
+  return data;
+}
