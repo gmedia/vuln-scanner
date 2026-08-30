@@ -119,7 +119,7 @@ function IpScanForm() {
       <Button
         onClick={handleSubmit}
         disabled={submitDisabled}
-        className="w-full sm:w-auto"
+        className="w-full"
       >
         {startIpScan.isPending ? (
           <>
