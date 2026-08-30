@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -14,6 +15,7 @@ from app.main import app
 from app.models.guard import GuardAgent
 from app.models.host_protect import HostSite
 from app.models.organization import Organization, OrganizationMembership
+from app.models.siem import SiemCase, SiemCaseNote
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
 from app.services.organization import ensure_personal_org
@@ -264,5 +266,67 @@ async def test_engine_coraza_rejected(db_session: AsyncSession, ctx):
                 json={"mode": "detect", "engine": "coraza", "paranoia": 1},
             )
             assert r.status_code == 422
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_protect_simulate_opens_siem_case(db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "siem_enabled", True)
+    _bind_db(db_session)
+    org = ctx["org"]
+    owner: User = ctx["owner"]
+    member: User = ctx["member"]
+    site: HostSite = ctx["site"]
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            await client.put(
+                f"/api/host/waf/sites/{site.id}/policy",
+                headers=_auth(owner, org.id),
+                json={"mode": "protect", "engine": "mock", "paranoia": 1},
+            )
+            blocked = await client.post(
+                f"/api/host/waf/sites/{site.id}/simulate",
+                headers=_auth(member, org.id),
+            )
+            assert blocked.status_code == 201
+            assert blocked.json()["action"] == "block"
+            assert "full_log" not in blocked.json()
+        cases = (await db_session.execute(select(SiemCase).where(SiemCase.organization_id == org.id))).scalars().all()
+        assert len(cases) == 1
+        assert "Host WAF block" in cases[0].title
+        notes = (
+            (await db_session.execute(select(SiemCaseNote).where(SiemCaseNote.case_id == cases[0].id))).scalars().all()
+        )
+        assert notes
+        assert "full_log" not in notes[0].body
+        assert "No request body" in notes[0].body
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_detect_simulate_skips_siem(db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "siem_enabled", True)
+    _bind_db(db_session)
+    org = ctx["org"]
+    owner: User = ctx["owner"]
+    member: User = ctx["member"]
+    site: HostSite = ctx["site"]
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            await client.put(
+                f"/api/host/waf/sites/{site.id}/policy",
+                headers=_auth(owner, org.id),
+                json={"mode": "detect", "engine": "mock", "paranoia": 1},
+            )
+            sim = await client.post(
+                f"/api/host/waf/sites/{site.id}/simulate",
+                headers=_auth(member, org.id),
+            )
+            assert sim.status_code == 201
+            assert sim.json()["action"] == "log"
+        cases = (await db_session.execute(select(SiemCase).where(SiemCase.organization_id == org.id))).scalars().all()
+        assert cases == []
     finally:
         app.dependency_overrides.clear()
