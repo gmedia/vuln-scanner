@@ -122,9 +122,10 @@ Prefix `/api/host/waf`. JWT + org. Flag off → **404**.
 | Method | Path | Role | Notes |
 |--------|------|------|--------|
 | GET | `/policies` | viewer+ | join site name |
-| PUT | `/sites/{site_id}/policy` | admin+ | upsert; reject `engine=coraza` until S4 |
+| PUT | `/sites/{site_id}/policy` | admin+ | upsert; `engine` `mock` \| `coraza` \| `nginx_modsec` (S4+) |
 | GET | `/events` | viewer+ | `site_id` filter, limit 100 |
-| POST | `/sites/{site_id}/simulate` | member+ | mock only: insert one event if mode ≠ off |
+| POST | `/sites/{site_id}/simulate` | member+ | mock event if mode ≠ off (still synthetic; engine field is for snippet) |
+| GET | `/sites/{site_id}/snippet` | admin+ | generated nginx/Coraza include; **no** listen IP; never for `sinexis.app` edge |
 
 ---
 

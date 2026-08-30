@@ -203,3 +203,15 @@ export GUARD_LAB_PASSWORD='...'
 ```
 
 Public origin still needs `HOST_PROTECT_LAB_ALLOW_PUBLIC_PROD=1` or `GUARD_LAB_ALLOW_PUBLIC_PROD=1`. Never print tokens or IPs. Flag on a public origin exposes `/host` to logged-in users — ops decision, not this script.
+
+### Host WAF snippet (S4) — tenant VPS / lab vhost only
+
+SaaS **does not** SSH. Admin `GET /api/host/waf/sites/{id}/snippet` returns a tiny ModSecurity/Coraza starter. Copy it onto the **customer VPS** or a **disposable lab vhost**.
+
+- Do **not** include the snippet in `nginx/sinexis.app.conf` or any app-edge vhost.
+- Do **not** auto-apply to `tc5` / live ERP.
+- `SecRequestBodyAccess Off` — never log request bodies.
+- CRS overlay is ops-owned; this generator is not Imunify and not a CRS dump.
+- `HOST_WAF_ENABLED` stays **false** in git. Lab flag is host `.env` only.
+
+S5 (live disposable vhost smoke) is a later slice.

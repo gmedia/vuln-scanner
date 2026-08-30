@@ -13,9 +13,9 @@ class HostWafPolicyUpsert(BaseModel):
 
     @field_validator("engine")
     @classmethod
-    def s1_mock_only(cls, v: str) -> str:
-        if v != "mock":
-            raise ValueError("only engine=mock is allowed until Host WAF S4")
+    def allowed_engines(cls, v: str) -> str:
+        if v not in ("mock", "coraza", "nginx_modsec"):
+            raise ValueError("engine must be mock, coraza, or nginx_modsec")
         return v
 
 
@@ -47,3 +47,11 @@ class HostWafEventResponse(BaseModel):
     path: str
     http_status: int | None
     created_at: datetime
+
+
+class HostWafSnippetResponse(BaseModel):
+    site_id: uuid.UUID
+    engine: str
+    mode: str
+    filename: str
+    content: str
