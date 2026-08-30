@@ -16,7 +16,7 @@
 | **H4** | List IDR / mo | **Unset** — owner lock required | **Open** |
 | **H5** | vs Imunify | **Beside** on cPanel farms; **attach** on GMD VPS/colo without panel suite. Not a CloudLinux replacement pitch | Working |
 | **H6** | Cleanup | Quarantine/restore in-app; reconstruct = **hybrid ticket**. No silent PHP rewrite | Working |
-| **H7** | WAF | **Not** in v1 SKU | Working |
+| **H7** | WAF | **Not** in Host Protect **file** v1. **P13 Host WAF** = separate control plane; working: **detect** on Pro/Multi, **protect** Multi+; IDR unset | Working |
 | **H8** | Guard prerequisite | Host Protect v1 **requires** Guard agent on the VM | Working |
 | **H9** | Finance `service_id` | New rows **after** IDR lock; **do not** silent-bundle into VPS or Scan | Open |
 | **H10** | Public repo | No customer paths/SIDs/PII | Locked (hygiene) |
@@ -29,7 +29,7 @@
 |------|-----|---------------|------|------------|-----|
 | **Host Basic** | One VPS, one site | **1** | Scheduled + manual | Manual admin | No |
 | **Host Pro** | Small corporate VPS | **≤3** | Daily default | Manual + optional auto for webshell/backdoor | No |
-| **Host Multi** | Multi-site VPS / small farm | **≤10** | Daily | Same as Pro | No (S6+) |
+| **Host Multi** | Multi-site VPS / small farm | **≤10** | Daily | Same as Pro | **P13 detect** working; protect later |
 
 **Out of SKU v1:** Imunify replacement, shared-host thousands of UIDs, KernelCare, PHP PD, email anti-spam product.
 

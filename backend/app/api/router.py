@@ -8,6 +8,7 @@ from app.api.blog_routes import router as blog_router
 from app.api.credit_routes import router as credit_router
 from app.api.guard_routes import router as guard_router
 from app.api.host_routes import router as host_router
+from app.api.host_waf_routes import router as host_waf_router
 from app.api.key_routes import router as key_router
 from app.api.org_routes import router as org_router
 from app.api.scan_routes import router as scan_router
@@ -32,6 +33,7 @@ api_router.include_router(org_router)
 api_router.include_router(guard_router)
 api_router.include_router(siem_router)
 api_router.include_router(host_router)
+api_router.include_router(host_waf_router)
 api_router.include_router(asset_router)
 api_router.include_router(uptime_router)
 api_router.include_router(status_page_router)
