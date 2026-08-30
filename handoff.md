@@ -10,6 +10,33 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
+## Session snapshot (2026-08-30 — visual QA §D + AppShell chips)
+
+| Item | State |
+|------|--------|
+| **`main` tip (coding)** | Re-`git pull`. Tip **`9edc756`** squash **#499** Sidebar chips. Also on main: **#498** Mobile CTA, **#497** Domain CTA, **#496** IP CTA, **#495** Assets empty outline, **#494** Header chips, **#493** AuthLayout, **#492** Landing, **#491** page registry. |
+| **Open PRs** | Visual-QA PRs **merged**. Dependabot: **do not mass-merge** |
+| **Recapture** | Prod **`https://sinexis.app`** (not `vs.appmedia.id` — SSL mismatch). Script `/tmp/opencode/recapture-registry.mjs`. PNG **`/tmp/opencode/recapture/`** (~104 files) + local auth **`/tmp/opencode/recapture-local/`**. **Do not git-add PNGs.** |
+| **E2E auth** | `E2E_EMAIL` / `E2E_PASSWORD` from **tc1 env** → `/tmp/opencode/e2e.env` (chmod 600). Default mailbox `e2e@vulnscan.dev`. **Never print password.** Do **not** `POST /register` for that mailbox. SPA: `localStorage` `accessToken` + `refreshToken`; theme `sinexis.theme`. |
+| **Chip vs CTA** | Selected Dark/EN must **not** be primary green. Pattern: wrapper `[&_button[aria-pressed=true]]:!bg-secondary` + `!text-secondary-foreground` + `min-h-11`. **Do not** restyle `ThemeSwitcher.tsx` / `LanguageSwitcher.tsx` globally. Landing + AuthLayout + Header + Sidebar shipped. |
+| **Scan CTAs** | IP / Domain / Mobile start buttons **`w-full`** (removed `sm:w-auto`). |
+| **Assets** | Header **Add asset** stays primary; empty `assets-empty-cta` is **outline**. |
+| **Admin review** | `/admin`, `/admin/users`, `/admin/pricing`, `/admin/hpp`, `/admin/blog` reviewed from prod PNG. HPP Category is **shadcn Select** (screenshot looked native). No admin visual PR. Blog table row padding = nit only. |
+| **Pass without PR** | Dashboard, schedules, credit-history filter, uptime, guard, SIEM, profile, workspace, guide, 404, status-page empty. 2k empty canvas is expected, not a kit bug. |
+| **Investor / omset** | User asked admin revenue/valuation pages — **do not implement**. HPP ≠ omset. No finance dumps in git. |
+| **Still human** | Merge already on main; optional recapture after deploy; GTM; real HPP COGS; Dependabot named-only |
+| **Engineering default** | **Do not start coding** until `implement` / `buat` / `kerjakan`. Next: recapture lokal after SPA deploy **if asked**, or bugs named by user. Sequential visual-engineering only (OOM). |
+
+### Next OpenCode session
+
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. Expect **`9edc756`** or newer. `gh pr list --state open --assignee @me`. Do **not** mass-merge Dependabot.
+2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** then **`AGENTS.md`**. Routes: **`docs/AGENT_PAGE_REGISTRY.md`**.
+3. Speak **Bahasa Indonesia**; prefix git with `GIT_MASTER=1`. Never work on `main`. Never commit secrets/IPs/PNGs/`.tmp-*`.
+4. **Do not** tell the user to SSH Alembic after a green **main** deploy job — `scripts/deploy.sh` already migrates.
+5. **Guard:** `sx-erpstg` **online** — do **not** re-enroll/wipe unless user asks full Guard e2e (then wipe `tc5` first §4.1). Playwright ≠ enroll.
+6. Recapture **only if asked**. One page at a time. Origin **`https://sinexis.app`**. Creds from tc1 env, never invent password.
+7. Visual leftover (optional, only if user asks): recapture AppShell chips + scan CTAs on prod after deploy; blog table padding nit.
+
 ## Session snapshot (2026-08-30 — HPP copy #489; journal #488)
 
 | Item | State |
