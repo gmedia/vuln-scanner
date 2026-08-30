@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
+  fetchHostWafSnippet,
   isHostWafDisabledError,
   listHostWafEvents,
   listHostWafPolicies,
@@ -80,6 +81,17 @@ export default function HostWafPanel({ sites }: { sites: HostSite[] }) {
     },
   });
 
+  const copyMut = useMutation({
+    mutationFn: async () => {
+      const snip = await fetchHostWafSnippet(selected);
+      await navigator.clipboard.writeText(snip.content);
+    },
+    onSuccess: () => toast.success(t("wafCopyOk")),
+    onError: (err: { response?: { data?: { detail?: string } } }) => {
+      toast.error(String(err.response?.data?.detail ?? t("wafCopyFail")));
+    },
+  });
+
   if (featureOff) {
     return (
       <div data-testid="host-waf-panel">
@@ -141,14 +153,24 @@ export default function HostWafPanel({ sites }: { sites: HostSite[] }) {
               </Select>
             </div>
           </div>
-          <Button
-            variant="outline"
-            data-testid="host-waf-simulate"
-            disabled={!selected || mode === "off" || simMut.isPending}
-            onClick={() => simMut.mutate()}
-          >
-            {t("wafSimulate")}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              data-testid="host-waf-simulate"
+              disabled={!selected || mode === "off" || simMut.isPending}
+              onClick={() => simMut.mutate()}
+            >
+              {t("wafSimulate")}
+            </Button>
+            <Button
+              variant="outline"
+              data-testid="host-waf-copy-snippet"
+              disabled={!selected || copyMut.isPending}
+              onClick={() => copyMut.mutate()}
+            >
+              {t("wafCopySnippet")}
+            </Button>
+          </div>
         </>
       )}
       <h3 className="text-sm font-medium">{t("wafEvents")}</h3>

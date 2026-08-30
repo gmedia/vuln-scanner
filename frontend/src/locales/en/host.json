@@ -51,5 +51,8 @@
   "wafColRule": "Rule",
   "wafColMethod": "Method",
   "wafSaveFail": "Failed to save WAF policy",
-  "wafSimFail": "Failed to simulate WAF request"
+  "wafSimFail": "Failed to simulate WAF request",
+  "wafCopySnippet": "Copy nginx snippet",
+  "wafCopyOk": "Snippet copied. Do not paste onto sinexis.app edge nginx.",
+  "wafCopyFail": "Failed to copy WAF snippet"
 }

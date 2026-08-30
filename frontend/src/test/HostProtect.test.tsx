@@ -36,6 +36,7 @@ vi.mock("@/api/hostWaf", async () => {
     listHostWafEvents: vi.fn(),
     upsertHostWafPolicy: vi.fn(),
     simulateHostWaf: vi.fn(),
+    fetchHostWafSnippet: vi.fn(),
   };
 });
 
@@ -90,6 +91,13 @@ describe("Host Protect page", () => {
     vi.mocked(hostApi.listHostHits).mockResolvedValue([]);
     vi.mocked(hostWafApi.listHostWafPolicies).mockResolvedValue([]);
     vi.mocked(hostWafApi.listHostWafEvents).mockResolvedValue([]);
+    vi.mocked(hostWafApi.fetchHostWafSnippet).mockResolvedValue({
+      site_id: "s1",
+      engine: "mock",
+      mode: "off",
+      filename: "sinexis-host-waf.conf",
+      content: "# do not paste onto sinexis.app\n",
+    });
     vi.mocked(guardApi.listGuardAgents).mockResolvedValue([
       {
         id: "a1",
@@ -216,6 +224,50 @@ describe("Host Protect page", () => {
       expect(screen.getByTestId("host-waf-panel")).toBeInTheDocument(),
     );
     expect(screen.getByTestId("host-waf-events-empty")).toBeInTheDocument();
+  });
+
+  it("copies WAF snippet to clipboard", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    if (!navigator.clipboard) {
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: { writeText },
+      });
+    } else {
+      vi.spyOn(navigator.clipboard, "writeText").mockImplementation(writeText);
+    }
+    vi.mocked(hostApi.listHostSites).mockResolvedValue([
+      {
+        id: "s1",
+        organization_id: "org1",
+        guard_agent_id: "a1",
+        asset_id: null,
+        name: "Web",
+        root_path: "/var/www/html",
+        cms_hint: "wordpress",
+        enabled: true,
+        auto_quarantine: false,
+        created_by: "u1",
+        created_at: "2026-08-30T00:00:00Z",
+        updated_at: "2026-08-30T00:00:00Z",
+        sku: "multi",
+        sku_limit: 10,
+      },
+    ]);
+    const user = userEvent.setup();
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByTestId("host-tab-waf")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("host-tab-waf"));
+    await waitFor(() =>
+      expect(screen.getByTestId("host-waf-copy-snippet")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("host-waf-copy-snippet"));
+    await waitFor(() =>
+      expect(hostWafApi.fetchHostWafSnippet).toHaveBeenCalledWith("s1"),
+    );
+    expect(writeText).toHaveBeenCalled();
   });
 
   it("treats WAF list 404 as feature off", async () => {

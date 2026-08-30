@@ -51,5 +51,8 @@
   "wafColRule": "Aturan",
   "wafColMethod": "Metode",
   "wafSaveFail": "Gagal menyimpan kebijakan WAF",
-  "wafSimFail": "Gagal mensimulasikan permintaan WAF"
+  "wafSimFail": "Gagal mensimulasikan permintaan WAF",
+  "wafCopySnippet": "Salin snippet nginx",
+  "wafCopyOk": "Snippet disalin. Jangan tempel ke nginx edge sinexis.app.",
+  "wafCopyFail": "Gagal menyalin snippet WAF"
 }
