@@ -34,6 +34,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
+import HostWafPanel from "@/components/host/HostWafPanel";
 import { useAuthStore } from "@/store/authStore";
 
 export function mapHostError(message: string): string {
@@ -94,7 +96,9 @@ export default function HostProtect() {
     onError: (err: { response?: { data?: { detail?: string } } }) => {
       const detail = String(err.response?.data?.detail ?? "");
       toast.error(
-        mapHostError(detail) === "limit" ? t("limitReached") : detail || t("createFail"),
+        mapHostError(detail) === "limit"
+          ? t("limitReached")
+          : detail || t("createFail"),
       );
     },
   });
@@ -138,7 +142,10 @@ export default function HostProtect() {
     return (
       <div className="space-y-6" data-testid="host-page">
         <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground" data-testid="host-feature-off">
+        <p
+          className="text-sm text-muted-foreground"
+          data-testid="host-feature-off"
+        >
           {t("featureOff")}
         </p>
       </div>
@@ -165,7 +172,10 @@ export default function HostProtect() {
       </div>
 
       {agents.length === 0 && !agentsQ.isLoading ? (
-        <p className="text-sm text-muted-foreground" data-testid="host-no-agents">
+        <p
+          className="text-sm text-muted-foreground"
+          data-testid="host-no-agents"
+        >
           {t("noAgents")}
         </p>
       ) : null}
@@ -248,7 +258,7 @@ export default function HostProtect() {
                   createMut.mutate({
                     name: name.trim(),
                     root_path: rootPath.trim(),
-                     guard_agent_id: selectedAgentId,
+                    guard_agent_id: selectedAgentId,
                     cms_hint: cmsHint,
                   })
                 }
@@ -263,128 +273,150 @@ export default function HostProtect() {
         </Card>
       ) : null}
 
-      {items.length === 0 && !sitesQ.isLoading ? (
-        <Card data-testid="host-empty">
-          <CardContent className="flex min-h-[8rem] flex-col items-center justify-center gap-2 px-6 py-8 text-center">
-            <p className="text-sm font-medium text-foreground">{t("empty")}</p>
-            <p className="max-w-md text-sm text-muted-foreground">
-              {t("emptyHint")}
-            </p>
-            <Button
-              variant="outline"
-              className="mt-2"
-              data-testid="host-empty-cta"
-              disabled={atCap || agents.length === 0}
-              onClick={() => setOpen(true)}
-            >
-              {t("emptyCta")}
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <ul className="space-y-3">
-          {items.map((s: HostSite) => (
-            <li key={s.id}>
-              <Card>
-                <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
-                  <div>
-                    <p className="font-medium">{s.name}</p>
-                    <p className="text-sm text-muted-foreground">{s.root_path}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      data-testid="host-scan"
-                      onClick={() => scanMut.mutate(s.id)}
-                    >
-                      {t("scanNow")}
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => {
-                        if (window.confirm(t("confirmDelete")))
-                          delMut.mutate(s.id);
-                      }}
-                    >
-                      {t("delete")}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <div>
-        <h2 className="mb-2 text-lg font-medium">{t("hitsTitle")}</h2>
-        {(hitsQ.data ?? []).length === 0 ? (
-          <p className="text-sm text-muted-foreground" data-testid="host-hits-empty">
-            {t("hitsEmpty")}
-          </p>
-        ) : (
-          <Table data-testid="host-hits">
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("colPath")}</TableHead>
-                <TableHead>{t("colClass")}</TableHead>
-                <TableHead>{t("colEngine")}</TableHead>
-                <TableHead>{t("colStatus")}</TableHead>
-                <TableHead />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(hitsQ.data ?? []).map((h) => (
-                <TableRow key={h.id}>
-                  <TableCell>{h.rel_path}</TableCell>
-                  <TableCell>{h.class}</TableCell>
-                  <TableCell>{h.engine}</TableCell>
-                  <TableCell>{h.status}</TableCell>
-                  <TableCell className="flex flex-wrap gap-2">
-                    {(h.status === "open" || h.status === "restored") && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        data-testid="host-quarantine"
-                        onClick={() => qMut.mutate(h.id)}
-                      >
-                        {t("quarantine")}
-                      </Button>
-                    )}
-                    {h.status === "quarantined" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        data-testid="host-restore"
-                        onClick={() => rMut.mutate(h.id)}
-                      >
-                        {t("restore")}
-                      </Button>
-                    )}
-                    {h.status === "open" && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        data-testid="host-ignore"
-                        onClick={() => iMut.mutate(h.id)}
-                      >
-                        {t("ignore")}
-                      </Button>
-                    )}
-                    {(h.class === "webshell" || h.class === "backdoor") && (
-                      <Button size="sm" variant="ghost" asChild>
-                        <a href="/siem">{t("openSiem")}</a>
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
+      <Tabs defaultValue="malware">
+        <TabsList>
+          <TabsTrigger value="malware" data-testid="host-tab-malware">
+            {t("tabMalware")}
+          </TabsTrigger>
+          <TabsTrigger value="waf" data-testid="host-tab-waf">
+            {t("tabWaf")}
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="malware" className="space-y-6">
+          {items.length === 0 && !sitesQ.isLoading ? (
+            <Card data-testid="host-empty">
+              <CardContent className="flex min-h-[8rem] flex-col items-center justify-center gap-2 px-6 py-8 text-center">
+                <p className="text-sm font-medium text-foreground">
+                  {t("empty")}
+                </p>
+                <p className="max-w-md text-sm text-muted-foreground">
+                  {t("emptyHint")}
+                </p>
+                <Button
+                  variant="outline"
+                  className="mt-2"
+                  data-testid="host-empty-cta"
+                  disabled={atCap || agents.length === 0}
+                  onClick={() => setOpen(true)}
+                >
+                  {t("emptyCta")}
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <ul className="space-y-3">
+              {items.map((s: HostSite) => (
+                <li key={s.id}>
+                  <Card>
+                    <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
+                      <div>
+                        <p className="font-medium">{s.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {s.root_path}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          data-testid="host-scan"
+                          onClick={() => scanMut.mutate(s.id)}
+                        >
+                          {t("scanNow")}
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            if (window.confirm(t("confirmDelete")))
+                              delMut.mutate(s.id);
+                          }}
+                        >
+                          {t("delete")}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </li>
               ))}
-            </TableBody>
-          </Table>
-        )}
-      </div>
+            </ul>
+          )}
+
+          <div>
+            <h2 className="mb-2 text-lg font-medium">{t("hitsTitle")}</h2>
+            {(hitsQ.data ?? []).length === 0 ? (
+              <p
+                className="text-sm text-muted-foreground"
+                data-testid="host-hits-empty"
+              >
+                {t("hitsEmpty")}
+              </p>
+            ) : (
+              <Table data-testid="host-hits">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("colPath")}</TableHead>
+                    <TableHead>{t("colClass")}</TableHead>
+                    <TableHead>{t("colEngine")}</TableHead>
+                    <TableHead>{t("colStatus")}</TableHead>
+                    <TableHead />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(hitsQ.data ?? []).map((h) => (
+                    <TableRow key={h.id}>
+                      <TableCell>{h.rel_path}</TableCell>
+                      <TableCell>{h.class}</TableCell>
+                      <TableCell>{h.engine}</TableCell>
+                      <TableCell>{h.status}</TableCell>
+                      <TableCell className="flex flex-wrap gap-2">
+                        {(h.status === "open" || h.status === "restored") && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            data-testid="host-quarantine"
+                            onClick={() => qMut.mutate(h.id)}
+                          >
+                            {t("quarantine")}
+                          </Button>
+                        )}
+                        {h.status === "quarantined" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            data-testid="host-restore"
+                            onClick={() => rMut.mutate(h.id)}
+                          >
+                            {t("restore")}
+                          </Button>
+                        )}
+                        {h.status === "open" && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            data-testid="host-ignore"
+                            onClick={() => iMut.mutate(h.id)}
+                          >
+                            {t("ignore")}
+                          </Button>
+                        )}
+                        {(h.class === "webshell" || h.class === "backdoor") && (
+                          <Button size="sm" variant="ghost" asChild>
+                            <a href="/siem">{t("openSiem")}</a>
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </TabsContent>
+        <TabsContent value="waf">
+          <HostWafPanel sites={items} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

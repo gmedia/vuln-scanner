@@ -6,12 +6,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import HostProtect, { mapHostError } from "@/pages/HostProtect";
 import { useAuthStore } from "@/store/authStore";
 import * as hostApi from "@/api/hostProtect";
+import * as hostWafApi from "@/api/hostWaf";
 import * as guardApi from "@/api/guard";
 
 vi.mock("@/api/hostProtect", async () => {
-  const actual = await vi.importActual<typeof import("@/api/hostProtect")>(
-    "@/api/hostProtect",
-  );
+  const actual =
+    await vi.importActual<typeof import("@/api/hostProtect")>(
+      "@/api/hostProtect",
+    );
   return {
     ...actual,
     listHostSites: vi.fn(),
@@ -25,10 +27,21 @@ vi.mock("@/api/hostProtect", async () => {
   };
 });
 
+vi.mock("@/api/hostWaf", async () => {
+  const actual =
+    await vi.importActual<typeof import("@/api/hostWaf")>("@/api/hostWaf");
+  return {
+    ...actual,
+    listHostWafPolicies: vi.fn(),
+    listHostWafEvents: vi.fn(),
+    upsertHostWafPolicy: vi.fn(),
+    simulateHostWaf: vi.fn(),
+  };
+});
+
 vi.mock("@/api/guard", async () => {
-  const actual = await vi.importActual<typeof import("@/api/guard")>(
-    "@/api/guard",
-  );
+  const actual =
+    await vi.importActual<typeof import("@/api/guard")>("@/api/guard");
   return {
     ...actual,
     listGuardAgents: vi.fn(),
@@ -75,6 +88,8 @@ describe("Host Protect page", () => {
     });
     vi.mocked(hostApi.listHostSites).mockResolvedValue([]);
     vi.mocked(hostApi.listHostHits).mockResolvedValue([]);
+    vi.mocked(hostWafApi.listHostWafPolicies).mockResolvedValue([]);
+    vi.mocked(hostWafApi.listHostWafEvents).mockResolvedValue([]);
     vi.mocked(guardApi.listGuardAgents).mockResolvedValue([
       {
         id: "a1",
@@ -102,7 +117,9 @@ describe("Host Protect page", () => {
     );
     expect(screen.getByTestId("host-page")).toBeInTheDocument();
     expect(screen.getByTestId("host-empty-cta")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Host Protect" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Host Protect" }),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/Open Wazuh/i)).not.toBeInTheDocument();
   });
 
@@ -180,9 +197,39 @@ describe("Host Protect page", () => {
     });
     const user = userEvent.setup();
     renderHost();
-    await waitFor(() => expect(screen.getByTestId("host-quarantine")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByTestId("host-quarantine")).toBeInTheDocument(),
+    );
     await user.click(screen.getByTestId("host-quarantine"));
     await waitFor(() => expect(hostApi.quarantineHostHit).toHaveBeenCalled());
     expect(vi.mocked(hostApi.quarantineHostHit).mock.calls[0][0]).toBe("h1");
+  });
+
+  it("opens WAF tab with frozen host-waf-panel testid", async () => {
+    const user = userEvent.setup();
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByTestId("host-tab-waf")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("host-tab-waf"));
+    await waitFor(() =>
+      expect(screen.getByTestId("host-waf-panel")).toBeInTheDocument(),
+    );
+    expect(screen.getByTestId("host-waf-events-empty")).toBeInTheDocument();
+  });
+
+  it("treats WAF list 404 as feature off", async () => {
+    vi.mocked(hostWafApi.listHostWafPolicies).mockRejectedValue({
+      response: { status: 404, data: { detail: "Not found" } },
+    });
+    const user = userEvent.setup();
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByTestId("host-tab-waf")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("host-tab-waf"));
+    await waitFor(() =>
+      expect(screen.getByTestId("host-waf-off")).toBeInTheDocument(),
+    );
   });
 });
