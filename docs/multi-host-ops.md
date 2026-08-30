@@ -180,3 +180,21 @@ export WAZUH_MANAGER_URL WAZUH_MANAGER_USER WAZUH_MANAGER_PASSWORD
 ```
 
 Manual GitHub Action: **Guard lab enroll smoke** (`workflow_dispatch` only, `--api-only` on github-hosted). Full apply/stop needs a bastion with `Host tc5`. Script default protected ids are `000,003` — override to `000` after wipe.
+
+### Host Protect lab smoke (after Guard enroll)
+
+API cycle only: create a **fixture** site (default `/var/www/host-protect-fixture`), enqueue mock scan, optional quarantine/restore/ignore, delete site. **Not** Playwright. **Does not** wipe `tc5` or enroll Guard. **Do not** use live ERP (`sx-erpstg`) as `root_path`.
+
+Requires `HOST_PROTECT_ENABLED` on the API under test. Leave **prod** flag off until this smoke passes.
+
+```bash
+export GUARD_LAB_APP_BASE='https://<app-origin>'
+export GUARD_LAB_EMAIL='...'
+export GUARD_LAB_PASSWORD='...'
+# optional: HOST_PROTECT_LAB_ROOT_PATH=/var/www/host-protect-fixture
+# optional: HOST_PROTECT_LAB_AGENT_UUID=<guard_agents.id>
+./scripts/host-protect-lab-smoke.sh --prepare-fixture   # mkdir on SSH alias (default tc5)
+./scripts/host-protect-lab-smoke.sh
+```
+
+Public origin still needs `HOST_PROTECT_LAB_ALLOW_PUBLIC_PROD=1` or `GUARD_LAB_ALLOW_PUBLIC_PROD=1`. Never print tokens or IPs.

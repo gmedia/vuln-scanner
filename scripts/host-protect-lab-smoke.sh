@@ -1,0 +1,278 @@
+#!/usr/bin/env bash
+# Repeatable Host Protect API smoke against an enrolled Guard agent.
+#
+# Not Playwright. Does not enroll/unenroll Guard. Does not wipe tc5.
+# Default refuses sinexis.app / vs.appmedia.id.
+# Never prints tokens, passwords, or host IPs.
+#
+#   export GUARD_LAB_APP_BASE GUARD_LAB_EMAIL GUARD_LAB_PASSWORD
+#   ./scripts/host-protect-lab-smoke.sh
+#   ./scripts/host-protect-lab-smoke.sh --prepare-fixture   # mkdir allowlisted path on SSH alias
+#   ./scripts/host-protect-lab-smoke.sh --keep-site
+#
+# Requires HOST_PROTECT_ENABLED on the API. Fixture path must be under
+# /var/www, /srv/www, or /home — default /var/www/host-protect-fixture.
+# Do not point at live ERP (sx-erpstg) or customer docroots.
+
+set -euo pipefail
+
+PREPARE_FIXTURE=0
+KEEP_SITE=0
+for arg in "$@"; do
+  case "$arg" in
+    --prepare-fixture) PREPARE_FIXTURE=1 ;;
+    --keep-site) KEEP_SITE=1 ;;
+    -h|--help)
+      sed -n '2,16p' "$0"
+      exit 0
+      ;;
+    *)
+      echo "error: unknown argument: $arg" >&2
+      exit 2
+      ;;
+  esac
+done
+
+GUARD_LAB_APP_BASE="${GUARD_LAB_APP_BASE:-}"
+GUARD_LAB_EMAIL="${GUARD_LAB_EMAIL:-${E2E_EMAIL:-}}"
+GUARD_LAB_PASSWORD="${GUARD_LAB_PASSWORD:-${E2E_PASSWORD:-}}"
+GUARD_LAB_AGENT_SSH="${GUARD_LAB_AGENT_SSH:-tc5}"
+VERIFY_TLS="${GUARD_LAB_VERIFY_TLS:-1}"
+ROOT_PATH="${HOST_PROTECT_LAB_ROOT_PATH:-/var/www/host-protect-fixture}"
+SITE_NAME="${HOST_PROTECT_LAB_SITE_NAME:-lab-host-protect-fixture}"
+POLL_SECONDS="${HOST_PROTECT_LAB_POLL_SECONDS:-45}"
+AGENT_UUID="${HOST_PROTECT_LAB_AGENT_UUID:-}"
+
+log() { echo "=== $* ==="; }
+die() { echo "error: $*" >&2; exit 1; }
+
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || die "missing command: $1"
+}
+
+is_public_prod_base() {
+  local host
+  host="$(python3 -c 'import os,urllib.parse; print(urllib.parse.urlparse(os.environ.get("GUARD_LAB_APP_BASE","")).hostname or "")')"
+  case "$host" in
+    sinexis.app|*.sinexis.app|vs.appmedia.id|*.vs.appmedia.id)
+      return 0
+      ;;
+  esac
+  return 1
+}
+
+json_get() {
+  local raw="$1"
+  local expr="$2"
+  GUARD_JSON_RAW="$raw" python3 -c "import json,os; o=json.loads(os.environ['GUARD_JSON_RAW']); print($expr)"
+}
+
+curl_api() {
+  local method="$1"
+  local path="$2"
+  local data="${3:-}"
+  local args=(-sS -X "$method" --max-time 30)
+  if [[ "$VERIFY_TLS" == "0" ]]; then
+    args+=(-k)
+  fi
+  if [[ -n "${ACCESS_TOKEN:-}" ]]; then
+    args+=(-H "Authorization: Bearer ${ACCESS_TOKEN}")
+  fi
+  if [[ -n "$data" ]]; then
+    args+=(-H "Content-Type: application/json" -d "$data")
+  fi
+  args+=(-w $'\n%{http_code}' "${GUARD_LAB_APP_BASE}${path}")
+  curl "${args[@]}"
+}
+
+split_body_code() {
+  local blob="$1"
+  HTTP_BODY="$(printf '%s' "$blob" | sed '$d')"
+  HTTP_CODE="$(printf '%s' "$blob" | tail -n1)"
+}
+
+require_cmd curl
+require_cmd python3
+
+[[ -n "$GUARD_LAB_APP_BASE" ]] || die "GUARD_LAB_APP_BASE is required"
+[[ -n "$GUARD_LAB_EMAIL" ]] || die "GUARD_LAB_EMAIL (or E2E_EMAIL) is required"
+[[ -n "$GUARD_LAB_PASSWORD" ]] || die "GUARD_LAB_PASSWORD (or E2E_PASSWORD) is required"
+
+GUARD_LAB_APP_BASE="${GUARD_LAB_APP_BASE%/}"
+export GUARD_LAB_APP_BASE
+
+if is_public_prod_base && [[ "${HOST_PROTECT_LAB_ALLOW_PUBLIC_PROD:-${GUARD_LAB_ALLOW_PUBLIC_PROD:-0}}" != "1" ]]; then
+  die "refusing public prod origin (override: HOST_PROTECT_LAB_ALLOW_PUBLIC_PROD=1 or GUARD_LAB_ALLOW_PUBLIC_PROD=1)"
+fi
+
+case "$ROOT_PATH" in
+  /var/www/*|/srv/www/*|/home/*) ;;
+  *) die "HOST_PROTECT_LAB_ROOT_PATH must be under /var/www, /srv/www, or /home" ;;
+esac
+if [[ "$ROOT_PATH" == *..* ]]; then
+  die "HOST_PROTECT_LAB_ROOT_PATH must not contain .."
+fi
+
+login() {
+  log "login (email only; password not printed)"
+  local payload blob
+  payload="$(GUARD_LAB_EMAIL="$GUARD_LAB_EMAIL" GUARD_LAB_PASSWORD="$GUARD_LAB_PASSWORD" python3 -c 'import json,os; print(json.dumps({"email":os.environ["GUARD_LAB_EMAIL"],"password":os.environ["GUARD_LAB_PASSWORD"]}))')"
+  blob="$(curl_api POST /api/auth/login "$payload")"
+  split_body_code "$blob"
+  [[ "$HTTP_CODE" == "200" ]] || die "login failed HTTP ${HTTP_CODE}"
+  ACCESS_TOKEN="$(json_get "$HTTP_BODY" "o.get('access_token') or o.get('accessToken') or ''")"
+  [[ -n "$ACCESS_TOKEN" ]] || die "login response missing access_token"
+}
+
+prepare_fixture() {
+  require_cmd ssh
+  log "mkdir fixture on SSH alias ${GUARD_LAB_AGENT_SSH} (path not a customer docroot)"
+  ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "${GUARD_LAB_AGENT_SSH}" \
+    "sudo mkdir -p '${ROOT_PATH}/wp-content/uploads' && sudo chmod 755 '${ROOT_PATH}' '${ROOT_PATH}/wp-content' '${ROOT_PATH}/wp-content/uploads'"
+}
+
+pick_agent() {
+  log "GET /api/guard/agents"
+  local blob
+  blob="$(curl_api GET /api/guard/agents)"
+  split_body_code "$blob"
+  [[ "$HTTP_CODE" == "200" ]] || die "guard agents HTTP ${HTTP_CODE} (is Guard enabled?)"
+  AGENT_ID="$(AGENT_UUID="$AGENT_UUID" python3 -c "
+import json,os,sys
+rows=json.loads(sys.argv[1])
+want=os.environ.get('AGENT_UUID','').strip()
+if not isinstance(rows, list):
+    sys.exit(2)
+if want:
+    for r in rows:
+        if str(r.get('id'))==want:
+            print(r['id']); sys.exit(0)
+    sys.exit(3)
+if not rows:
+    sys.exit(4)
+print(rows[0]['id'])
+" "$HTTP_BODY")" || {
+    case $? in
+      3) die "HOST_PROTECT_LAB_AGENT_UUID not in agent list" ;;
+      4) die "no Guard agents — enroll first (scripts/guard-lab-enroll-smoke.sh); Playwright is not enroll" ;;
+      *) die "could not parse guard agents" ;;
+    esac
+  }
+  log "using guard_agent_id=${AGENT_ID}"
+}
+
+ensure_host_flag() {
+  log "GET /api/host/sites (flag check)"
+  local blob
+  blob="$(curl_api GET /api/host/sites)"
+  split_body_code "$blob"
+  if [[ "$HTTP_CODE" == "404" ]]; then
+    die "Host Protect API 404 — HOST_PROTECT_ENABLED is off (leave prod off until this smoke passes)"
+  fi
+  [[ "$HTTP_CODE" == "200" ]] || die "host sites HTTP ${HTTP_CODE}"
+}
+
+create_site() {
+  log "POST /api/host/sites name=${SITE_NAME}"
+  local payload blob
+  payload="$(SITE_NAME="$SITE_NAME" AGENT_ID="$AGENT_ID" ROOT_PATH="$ROOT_PATH" python3 -c 'import json,os; print(json.dumps({
+    "name": os.environ["SITE_NAME"],
+    "guard_agent_id": os.environ["AGENT_ID"],
+    "root_path": os.environ["ROOT_PATH"],
+    "cms_hint": "wordpress",
+    "auto_quarantine": False,
+  }))')"
+  blob="$(curl_api POST /api/host/sites "$payload")"
+  split_body_code "$blob"
+  [[ "$HTTP_CODE" == "201" || "$HTTP_CODE" == "200" ]] || die "create site HTTP ${HTTP_CODE} (body redacted)"
+  SITE_ID="$(json_get "$HTTP_BODY" "str(o.get('id') or '')")"
+  [[ -n "$SITE_ID" ]] || die "create site missing id"
+  log "site_id=${SITE_ID}"
+}
+
+enqueue_scan() {
+  log "POST /api/host/sites/${SITE_ID}/scan"
+  local blob
+  blob="$(curl_api POST "/api/host/sites/${SITE_ID}/scan" '{}')"
+  split_body_code "$blob"
+  [[ "$HTTP_CODE" == "201" || "$HTTP_CODE" == "200" ]] || die "enqueue scan HTTP ${HTTP_CODE}"
+  SCAN_ID="$(json_get "$HTTP_BODY" "str(o.get('id') or '')")"
+  [[ -n "$SCAN_ID" ]] || die "scan missing id"
+}
+
+poll_scan() {
+  log "poll scans up to ${POLL_SECONDS}s"
+  local i blob status hit_count
+  for ((i = 0; i < POLL_SECONDS; i += 3)); do
+    blob="$(curl_api GET "/api/host/sites/${SITE_ID}/scans")"
+    split_body_code "$blob"
+    [[ "$HTTP_CODE" == "200" ]] || die "list scans HTTP ${HTTP_CODE}"
+    read -r status hit_count <<<"$(SCAN_ID="$SCAN_ID" python3 -c "
+import json,os,sys
+rows=json.loads(sys.argv[1])
+sid=os.environ['SCAN_ID']
+for r in rows:
+    if str(r.get('id'))==sid:
+        print(r.get('status') or '', r.get('hit_count') if r.get('hit_count') is not None else 0)
+        break
+else:
+    print('missing', 0)
+" "$HTTP_BODY")"
+    log "scan status=${status} hit_count=${hit_count}"
+    case "$status" in
+      completed|failed) return 0 ;;
+    esac
+    sleep 3
+  done
+  die "scan did not finish within ${POLL_SECONDS}s"
+}
+
+hits_and_actions() {
+  log "GET /api/host/hits?site_id=${SITE_ID}"
+  local blob hit_id
+  blob="$(curl_api GET "/api/host/hits?site_id=${SITE_ID}")"
+  split_body_code "$blob"
+  [[ "$HTTP_CODE" == "200" ]] || die "hits HTTP ${HTTP_CODE}"
+  HIT_COUNT="$(json_get "$HTTP_BODY" "len(o) if isinstance(o, list) else 0")"
+  log "hit_rows=${HIT_COUNT}"
+  hit_id="$(json_get "$HTTP_BODY" "(o[0].get('id') if isinstance(o, list) and o else '') or ''")"
+  if [[ -z "$hit_id" ]]; then
+    log "no hits (mock may need worker; still a valid smoke if scan completed)"
+    return 0
+  fi
+  log "POST quarantine/restore/ignore on first hit"
+  blob="$(curl_api POST "/api/host/hits/${hit_id}/quarantine" '{}')"
+  split_body_code "$blob"
+  [[ "$HTTP_CODE" == "200" ]] || die "quarantine HTTP ${HTTP_CODE}"
+  blob="$(curl_api POST "/api/host/hits/${hit_id}/restore" '{}')"
+  split_body_code "$blob"
+  [[ "$HTTP_CODE" == "200" ]] || die "restore HTTP ${HTTP_CODE}"
+  blob="$(curl_api POST "/api/host/hits/${hit_id}/ignore" '{}')"
+  split_body_code "$blob"
+  [[ "$HTTP_CODE" == "200" ]] || die "ignore HTTP ${HTTP_CODE}"
+}
+
+delete_site() {
+  if [[ "$KEEP_SITE" -eq 1 ]]; then
+    log "keep site ${SITE_ID} (--keep-site)"
+    return 0
+  fi
+  log "DELETE /api/host/sites/${SITE_ID}"
+  local blob
+  blob="$(curl_api DELETE "/api/host/sites/${SITE_ID}")"
+  split_body_code "$blob"
+  [[ "$HTTP_CODE" == "204" || "$HTTP_CODE" == "200" ]] || die "delete site HTTP ${HTTP_CODE}"
+}
+
+login
+if [[ "$PREPARE_FIXTURE" -eq 1 ]]; then
+  prepare_fixture
+fi
+ensure_host_flag
+pick_agent
+create_site
+enqueue_scan
+poll_scan
+hits_and_actions
+delete_site
+log "done. Host Protect lab smoke finished (no tokens printed)."

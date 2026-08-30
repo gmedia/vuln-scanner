@@ -267,3 +267,5 @@ No raw file download of malware samples in v1 (exfil risk). Optional later: plat
 ## 14. Success (product)
 
 v1 is successful when an org with an enrolled VPS can: **name a web root**, **run a scan**, **see a webshell hit**, **quarantine and restore**, without SSH — and AM can describe it as **Sinexis Host Protect**, not “Imunify but worse.”
+
+Lab (not Playwright): [`scripts/host-protect-lab-smoke.sh`](../../scripts/host-protect-lab-smoke.sh) after Guard enroll. Fixture path only — never `sx-erpstg`. See [`docs/multi-host-ops.md`](../multi-host-ops.md) § Host Protect lab smoke.
