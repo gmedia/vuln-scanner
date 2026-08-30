@@ -235,3 +235,50 @@ async def send_uptime_email(
     msg["Subject"] = subject
     msg.attach(MIMEText(html_body, "html", "utf-8"))
     return await _send_with_retry(msg, email_to, "Uptime")
+
+
+async def send_host_protect_email(
+    email_to: str,
+    *,
+    site_name: str,
+    hit_class: str,
+    rel_path: str,
+    rule_id: str,
+    hit_id: str,
+    locale: str | None = None,
+) -> bool:
+    loc = normalize_lang(locale)
+    subject = t(loc, "host_notify", "subject", hit_class=hit_class, site=site_name)
+    heading = t(loc, "host_notify", "heading")
+    intro = t(loc, "host_notify", "intro", hit_class=hit_class, site=site_name)
+    path_line = t(loc, "host_notify", "path", rel_path=rel_path)
+    rule_line = t(loc, "host_notify", "rule", rule_id=rule_id)
+    hit_line = t(loc, "host_notify", "hit", hit_id=hit_id)
+    open_label = t(loc, "host_notify", "open")
+    or_copy = t(loc, "host_notify", "or_copy")
+    footer = t(loc, "host_notify", "footer")
+    link = f"{FRONTEND_URL}/host"
+    html_body = f"""\
+<html>
+<body style="font-family: sans-serif; max-width: 520px; margin: 0 auto; padding: 24px;">
+  <h2 style="margin-bottom: 8px;">{heading}</h2>
+  <p style="color: #374151;">{intro}</p>
+  <ul style="color: #111827; line-height: 1.6;">
+    <li>{path_line}</li>
+    <li>{rule_line}</li>
+    <li>{hit_line}</li>
+  </ul>
+  <p>
+    <a href="{link}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;
+       text-decoration:none;border-radius:6px">{open_label}</a>
+  </p>
+  <p style="color: #6b7280; font-size: 14px;">{or_copy}<br>{link}</p>
+  <p style="color: #6b7280; font-size: 13px;">{footer}</p>
+</body>
+</html>"""
+    msg = MIMEMultipart("alternative")
+    msg["From"] = SMTP_FROM
+    msg["To"] = email_to
+    msg["Subject"] = subject
+    msg.attach(MIMEText(html_body, "html", "utf-8"))
+    return await _send_with_retry(msg, email_to, "Host Protect")
