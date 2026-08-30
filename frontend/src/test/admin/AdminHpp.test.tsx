@@ -250,6 +250,21 @@ describe("AdminHpp", () => {
     });
     render(<AdminHpp />);
     expect(screen.getByText("HPP")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Production cost (IDR). Pricing = credits/scan. Not mixed.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Variable cost per scan type (not list price). Pricing sets credits.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "HPP = rate × volume. Fully loaded = HPP + overhead pool share (singleton + journal).",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getAllByDisplayValue(1000).length).toBeGreaterThan(0);
     expect(screen.getByTestId("hpp-report-filters")).toBeInTheDocument();
     expect(screen.getByTestId("hpp-overhead-card")).toBeInTheDocument();
