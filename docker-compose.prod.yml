@@ -202,6 +202,9 @@ services:
       HOST_PROTECT_ENABLED: ${HOST_PROTECT_ENABLED:-false}
     volumes:
       - scan_data:/tmp/scans
+      # Lab-only local walk (S6). Host dir is empty unless ops plants a fixture.
+      # Not a customer docroot. Agent FS (tc5) is not this mount.
+      - ${HOST_PROTECT_LAB_BIND:-/var/www/host-protect-fixture}:/var/www/host-protect-fixture:ro
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/ready')"]
       interval: 5s

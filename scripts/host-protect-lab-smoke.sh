@@ -250,7 +250,11 @@ hits_and_actions() {
   split_body_code "$blob"
   [[ "$HTTP_CODE" == "200" ]] || die "hits HTTP ${HTTP_CODE}"
   HIT_COUNT="$(json_get "$HTTP_BODY" "len(o) if isinstance(o, list) else 0")"
-  log "hit_rows=${HIT_COUNT}"
+  HIT_ENGINE="$(json_get "$HTTP_BODY" "(o[0].get('engine') if isinstance(o, list) and o else '') or ''")"
+  log "hit_rows=${HIT_COUNT} engine=${HIT_ENGINE}"
+  if [[ -n "${HOST_PROTECT_LAB_EXPECT_ENGINE:-}" && "$HIT_ENGINE" != "${HOST_PROTECT_LAB_EXPECT_ENGINE}" ]]; then
+    die "expected engine=${HOST_PROTECT_LAB_EXPECT_ENGINE} got engine=${HIT_ENGINE}"
+  fi
   hit_id="$(json_get "$HTTP_BODY" "(o[0].get('id') if isinstance(o, list) and o else '') or ''")"
   if [[ -z "$hit_id" ]]; then
     log "no hits (mock may need worker; still a valid smoke if scan completed)"
