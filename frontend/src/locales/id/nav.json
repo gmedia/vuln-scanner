@@ -9,6 +9,8 @@
   "guardHint": "Agen host",
   "siem": "SIEM",
   "siemHint": "Event org",
+  "hostProtect": "Host Protect",
+  "hostProtectHint": "Malware on-box",
   "uptime": "Uptime",
   "uptimeHint": "Probe HTTP/TCP",
   "statusPage": "Halaman status",

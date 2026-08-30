@@ -9,6 +9,8 @@
   "guardHint": "Host agents",
   "siem": "SIEM",
   "siemHint": "Org events",
+  "hostProtect": "Host Protect",
+  "hostProtectHint": "On-box malware",
   "uptime": "Uptime",
   "uptimeHint": "HTTP/TCP probes",
   "statusPage": "Status page",
