@@ -75,7 +75,9 @@ function Header({ children }: HeaderProps) {
       </div>
 
       <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
-        <div className="hidden md:flex md:items-center md:gap-2">
+        <div
+          className="hidden min-h-11 md:flex md:items-center md:gap-2 [&_button[aria-pressed=true]]:!bg-secondary [&_button[aria-pressed=true]]:!text-secondary-foreground"
+        >
           <ThemeSwitcher />
           <LanguageSwitcher />
         </div>
