@@ -199,6 +199,7 @@ services:
       CELERY_MODE: worker
       CELERY_QUEUE: ip_scan
       CELERY_CONCURRENCY: 2
+      HOST_PROTECT_ENABLED: ${HOST_PROTECT_ENABLED:-false}
     volumes:
       - scan_data:/tmp/scans
     healthcheck:
@@ -409,6 +410,7 @@ services:
       CELERY_MODE: beat
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
       UPTIME_ENABLED: ${UPTIME_ENABLED:-true}
+      HOST_PROTECT_ENABLED: ${HOST_PROTECT_ENABLED:-false}
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import os; os.stat('/tmp/celerybeat-schedule')\""]
       interval: 30s

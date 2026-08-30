@@ -268,4 +268,4 @@ No raw file download of malware samples in v1 (exfil risk). Optional later: plat
 
 v1 is successful when an org with an enrolled VPS can: **name a web root**, **run a scan**, **see a webshell hit**, **quarantine and restore**, without SSH — and AM can describe it as **Sinexis Host Protect**, not “Imunify but worse.”
 
-Lab (not Playwright): [`scripts/host-protect-lab-smoke.sh`](../../scripts/host-protect-lab-smoke.sh) after Guard enroll. Fixture path only — never `sx-erpstg`. See [`docs/multi-host-ops.md`](../multi-host-ops.md) § Host Protect lab smoke.
+Lab (not Playwright): [`scripts/host-protect-lab-smoke.sh`](../../scripts/host-protect-lab-smoke.sh) after Guard enroll. Fixture path only — never `sx-erpstg`. Ignore **before** quarantine (ignore is `open` only). `HOST_PROTECT_ENABLED` must reach **`worker_ip`** (and beat for `run_due`), not only the API. See [`docs/multi-host-ops.md`](../multi-host-ops.md) § Host Protect lab smoke.
