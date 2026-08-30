@@ -33,6 +33,7 @@ from app.models.credit_log import CreditLog  # noqa: F401
 from app.models.cve_cache import CveCache  # noqa: F401
 from app.models.email_verification import EmailVerificationToken  # noqa: F401
 from app.models.guard import GuardAgent, GuardAlert, GuardEnrollToken, GuardOrgBinding  # noqa: F401
+from app.models.host_protect import HostHit, HostQuarantineEvent, HostScan, HostSite  # noqa: F401
 from app.models.hpp import HppCostLine, HppOverhead, HppRate  # noqa: F401
 from app.models.organization import (  # noqa: F401
     Organization,

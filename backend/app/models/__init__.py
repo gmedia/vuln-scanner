@@ -3,6 +3,7 @@ from app.models.blog import BlogPost
 from app.models.credit_log import CreditLog
 from app.models.email_verification import EmailVerificationToken
 from app.models.guard import GuardAgent, GuardAlert, GuardEnrollToken, GuardOrgBinding
+from app.models.host_protect import HostHit, HostQuarantineEvent, HostScan, HostSite
 from app.models.hpp import HppCostLine, HppOverhead, HppRate
 from app.models.organization import Organization, OrganizationInvite, OrganizationMembership
 from app.models.password_reset import PasswordResetToken
@@ -34,6 +35,10 @@ __all__ = [
     "GuardAgent",
     "GuardAlert",
     "GuardEnrollToken",
+    "HostSite",
+    "HostScan",
+    "HostHit",
+    "HostQuarantineEvent",
     "SiemCase",
     "SiemCaseEvent",
     "SiemCaseNote",

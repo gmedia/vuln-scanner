@@ -137,6 +137,7 @@ class Settings(BaseSettings):
     wazuh_agent_manager_host: str = ""
 
     siem_enabled: bool = False
+    host_protect_enabled: bool = False
     siem_search_min_level: int = 7
     siem_max_lookback_hours: int = 168
     siem_include_full_log: bool = False
