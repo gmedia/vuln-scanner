@@ -11,8 +11,14 @@ from app.config import settings
 from app.models.host_protect import HostSite
 from app.models.host_waf import HostWafEvent, HostWafPolicy
 from app.models.user import User
-from app.schemas.host_waf import HostWafEventResponse, HostWafPolicyResponse, HostWafPolicyUpsert
+from app.schemas.host_waf import (
+    HostWafEventResponse,
+    HostWafPolicyResponse,
+    HostWafPolicyUpsert,
+    HostWafSnippetResponse,
+)
 from app.services.host_handoff import handoff_waf_block
+from app.services.host_waf_render import render_coraza_include, render_nginx_modsec
 from app.services.organization import require_membership
 
 
@@ -138,3 +144,28 @@ class HostWafService:
         await self.db.commit()
         await self.db.refresh(event)
         return HostWafEventResponse.model_validate(event)
+
+    async def snippet(self, user: User, organization_id: UUID | None, site_id: UUID) -> HostWafSnippetResponse:
+        self._require_feature()
+        org_id = await self._require_org(user, organization_id, min_role="admin")
+        site = await self._site(org_id, site_id)
+        policy = (
+            await self.db.execute(select(HostWafPolicy).where(HostWafPolicy.site_id == site.id))
+        ).scalar_one_or_none()
+        if policy is None:
+            raise HTTPException(status_code=400, detail="WAF policy is missing")
+        if policy.engine == "coraza":
+            content = render_coraza_include(policy, site)
+            filename = "sinexis-host-waf-coraza.conf"
+        else:
+            content = render_nginx_modsec(policy, site)
+            filename = "sinexis-host-waf-modsec.conf"
+        if "sinexis.app" in content.lower() and "do not paste onto sinexis.app" not in content.lower():
+            raise HTTPException(status_code=500, detail="refusing edge-bound snippet")
+        return HostWafSnippetResponse(
+            site_id=site.id,
+            engine=policy.engine,
+            mode=policy.mode,
+            filename=filename,
+            content=content,
+        )

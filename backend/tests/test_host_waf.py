@@ -253,10 +253,11 @@ async def test_simulate_without_policy(db_session: AsyncSession, ctx):
 
 
 @pytest.mark.asyncio
-async def test_engine_coraza_rejected(db_session: AsyncSession, ctx):
+async def test_engine_coraza_snippet(db_session: AsyncSession, ctx):
     _bind_db(db_session)
     org = ctx["org"]
     owner: User = ctx["owner"]
+    viewer: User = ctx["viewer"]
     site: HostSite = ctx["site"]
     try:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -265,7 +266,42 @@ async def test_engine_coraza_rejected(db_session: AsyncSession, ctx):
                 headers=_auth(owner, org.id),
                 json={"mode": "detect", "engine": "coraza", "paranoia": 1},
             )
-            assert r.status_code == 422
+            assert r.status_code == 200
+            assert r.json()["engine"] == "coraza"
+            denied = await client.get(
+                f"/api/host/waf/sites/{site.id}/snippet",
+                headers=_auth(viewer, org.id),
+            )
+            assert denied.status_code == 403
+            snip = await client.get(
+                f"/api/host/waf/sites/{site.id}/snippet",
+                headers=_auth(owner, org.id),
+            )
+            assert snip.status_code == 200
+            body = snip.json()
+            assert body["filename"] == "sinexis-host-waf-coraza.conf"
+            assert "do not paste onto sinexis.app" in body["content"]
+            assert "listen" not in body["content"].lower()
+            assert "SecRequestBodyAccess Off" in body["content"]
+            assert "mock.sqli.1" in body["content"]
+            missing = await client.get(
+                f"/api/host/waf/sites/{ctx['other_site'].id}/snippet",
+                headers=_auth(owner, org.id),
+            )
+            assert missing.status_code == 404
+            nginx_put = await client.put(
+                f"/api/host/waf/sites/{site.id}/policy",
+                headers=_auth(owner, org.id),
+                json={"mode": "protect", "engine": "nginx_modsec", "paranoia": 1},
+            )
+            assert nginx_put.status_code == 200
+            nginx_snip = await client.get(
+                f"/api/host/waf/sites/{site.id}/snippet",
+                headers=_auth(owner, org.id),
+            )
+            assert nginx_snip.status_code == 200
+            assert nginx_snip.json()["filename"] == "sinexis-host-waf-modsec.conf"
+            assert "SecRuleEngine On" in nginx_snip.json()["content"]
     finally:
         app.dependency_overrides.clear()
 
