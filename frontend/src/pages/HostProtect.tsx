@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -77,10 +77,7 @@ export default function HostProtect() {
   const limit = items[0]?.sku_limit ?? 10;
   const atCap = items.length >= limit;
   const agents = agentsQ.data ?? [];
-
-  useEffect(() => {
-    if (!agentId && agents[0]) setAgentId(agents[0].id);
-  }, [agentId, agents]);
+  const selectedAgentId = agentId || agents[0]?.id || "";
 
   const createMut = useMutation({
     mutationFn: createHostSite,
@@ -183,7 +180,7 @@ export default function HostProtect() {
             </div>
             <div>
               <Label htmlFor="host-agent">{t("guardAgent")}</Label>
-              <Select value={agentId} onValueChange={setAgentId}>
+              <Select value={selectedAgentId} onValueChange={setAgentId}>
                 <SelectTrigger
                   id="host-agent"
                   data-testid="host-agent"
@@ -228,14 +225,14 @@ export default function HostProtect() {
                 disabled={
                   !name.trim() ||
                   !rootPath.trim() ||
-                  !agentId ||
+                  !selectedAgentId ||
                   createMut.isPending
                 }
                 onClick={() =>
                   createMut.mutate({
                     name: name.trim(),
                     root_path: rootPath.trim(),
-                    guard_agent_id: agentId,
+                     guard_agent_id: selectedAgentId,
                     cms_hint: cmsHint,
                   })
                 }
