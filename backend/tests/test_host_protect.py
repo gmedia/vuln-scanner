@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
+from unittest.mock import MagicMock
 
 import pytest
 import pytest_asyncio
@@ -12,9 +13,11 @@ from app.config import settings
 from app.database import get_db
 from app.main import app
 from app.models.guard import GuardAgent
+from app.models.host_protect import HostScan, HostSite
 from app.models.organization import Organization, OrganizationMembership
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
+from app.services.host_scan_runner import run_mock_host_scan
 from app.services.organization import ensure_personal_org
 
 
@@ -112,7 +115,7 @@ async def test_flag_off_404(db_session: AsyncSession, ctx, monkeypatch: pytest.M
 
 
 @pytest.mark.asyncio
-async def test_site_crud_and_scan_enqueue(db_session: AsyncSession, ctx):
+async def test_site_crud_and_scan_enqueue(db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch):
     _bind_db(db_session)
     org = ctx["org"]
     owner: User = ctx["owner"]
@@ -142,6 +145,9 @@ async def test_site_crud_and_scan_enqueue(db_session: AsyncSession, ctx):
             )
             assert patched.status_code == 200
             assert patched.json()["name"] == "Web 2"
+            mock_result = MagicMock()
+            mock_result.id = "hp-task"
+            monkeypatch.setattr("app.services.host_protect._celery.send_task", MagicMock(return_value=mock_result))
             scan = await client.post(f"/api/host/sites/{sid}/scan", headers=_auth(member, org.id))
             assert scan.status_code == 201, scan.text
             assert scan.json()["status"] == "queued"
@@ -263,5 +269,45 @@ async def test_basic_sku_hard_cap(db_session: AsyncSession, ctx):
             )
             assert second.status_code == 400
             assert "limit" in second.json()["detail"].lower()
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_mock_scan_writes_hit(db_session: AsyncSession, ctx):
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    site = HostSite(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        guard_agent_id=agent.id,
+        name="Mock",
+        root_path="/var/www/html",
+        created_by=owner.id,
+    )
+    scan = HostScan(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        status="queued",
+        trigger="manual",
+    )
+    db_session.add(site)
+    db_session.add(scan)
+    await db_session.commit()
+    out = await run_mock_host_scan(db_session, scan.id)
+    assert out["ok"] is True
+    assert out["hit_count"] == 1
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            hits = await client.get("/api/host/hits", headers=_auth(owner, org.id))
+            assert hits.status_code == 200
+            body = hits.json()
+            assert len(body) == 1
+            assert body[0]["engine"] == "mock"
+            assert body[0]["class"] == "webshell"
+            assert body[0]["rel_path"] == "wp-content/uploads/cache.php"
     finally:
         app.dependency_overrides.clear()

@@ -4,6 +4,8 @@ import uuid
 from datetime import UTC, datetime
 from uuid import UUID
 
+from celery import Celery
+from celery.exceptions import CeleryError
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,6 +18,20 @@ from app.models.organization import Organization
 from app.models.user import User
 from app.schemas.host_protect import HostHitResponse, HostScanResponse, HostSiteCreate, HostSiteResponse, HostSiteUpdate
 from app.services.organization import get_membership, require_membership, role_at_least
+
+_celery = Celery(
+    "vuln_scanner",
+    broker=settings.celery_broker_url,
+    backend=settings.celery_result_backend,
+)
+_celery.conf.update(
+    task_serializer="json",
+    accept_content=["json"],
+    result_serializer="json",
+    timezone="UTC",
+    enable_utc=True,
+    broker_connection_retry_on_startup=True,
+)
 
 
 def sku_site_limit(sku: str | None) -> int:
@@ -186,6 +202,15 @@ class HostProtectService:
             trigger="manual",
         )
         self.db.add(scan)
+        await self.db.flush()
+        try:
+            _celery.send_task("host_protect.run_scan", args=[str(scan.id)], queue="ip_scan")
+        except CeleryError:
+            scan.status = "failed"
+            scan.error = "dispatch failed"
+            await self.db.commit()
+            await self.db.refresh(scan)
+            return HostScanResponse.model_validate(scan)
         await self.db.commit()
         await self.db.refresh(scan)
         return HostScanResponse.model_validate(scan)
