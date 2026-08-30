@@ -29,5 +29,9 @@
   "colStatus": "Status",
   "noAgents": "Pasang agen Guard dulu, lalu daftarkan situs di sini.",
   "createFail": "Gagal membuat situs",
-  "scanFail": "Gagal mengantrikan scan"
+  "scanFail": "Gagal mengantrikan scan",
+  "quarantine": "Karantina",
+  "restore": "Pulihkan",
+  "ignore": "Abaikan",
+  "openSiem": "Buka SIEM"
 }

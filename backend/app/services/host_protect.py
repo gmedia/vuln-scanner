@@ -13,10 +13,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.models.asset import ScanAsset
 from app.models.guard import GuardAgent
-from app.models.host_protect import HOST_SITE_SKU_LIMITS, HostHit, HostScan, HostSite
+from app.models.host_protect import (
+    HOST_SITE_SKU_LIMITS,
+    HostHit,
+    HostQuarantineEvent,
+    HostScan,
+    HostSite,
+)
 from app.models.organization import Organization
 from app.models.user import User
 from app.schemas.host_protect import HostHitResponse, HostScanResponse, HostSiteCreate, HostSiteResponse, HostSiteUpdate
+from app.services.host_path import jail_rel_path, quarantine_basename
 from app.services.organization import get_membership, require_membership, role_at_least
 
 _celery = Celery(
@@ -260,3 +267,103 @@ class HostProtectService:
             )
             for h in hits
         ]
+
+    async def _get_hit(self, hit_id: UUID, organization_id: UUID | None, user_id: UUID) -> HostHit:
+        result = await self.db.execute(select(HostHit).where(HostHit.id == hit_id))
+        hit = result.scalar_one_or_none()
+        if hit is None:
+            raise HTTPException(status_code=404, detail="Hit not found")
+        membership = await get_membership(self.db, hit.organization_id, user_id)
+        if membership is None or not role_at_least(membership.role, "viewer"):
+            raise HTTPException(status_code=404, detail="Hit not found")
+        if organization_id is not None and hit.organization_id != organization_id:
+            raise HTTPException(status_code=404, detail="Hit not found")
+        return hit
+
+    def _require_admin(self, membership_role: str) -> None:
+        if not role_at_least(membership_role, "admin"):
+            raise HTTPException(status_code=403, detail="Insufficient organization role")
+
+    def _hit_response(self, h: HostHit) -> HostHitResponse:
+        return HostHitResponse(
+            id=h.id,
+            organization_id=h.organization_id,
+            site_id=h.site_id,
+            scan_id=h.scan_id,
+            rel_path=h.rel_path,
+            hit_class=h.hit_class,
+            engine=h.engine,
+            rule_id=h.rule_id,
+            status=h.status,
+            sha256=h.sha256,
+            first_seen_at=h.first_seen_at,
+            last_seen_at=h.last_seen_at,
+        )
+
+    async def quarantine_hit(self, user: User, organization_id: UUID | None, hit_id: UUID) -> HostHitResponse:
+        self._require_feature()
+        hit = await self._get_hit(hit_id, organization_id, user.id)
+        membership = await get_membership(self.db, hit.organization_id, user.id)
+        assert membership is not None
+        self._require_admin(membership.role)
+        if hit.status not in ("open", "restored"):
+            raise HTTPException(status_code=400, detail="Hit cannot be quarantined")
+        site = await self._get_site(hit.site_id, organization_id, user.id)
+        try:
+            jail_rel_path(site.root_path, hit.rel_path)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        dest = quarantine_basename(str(hit.id), hit.rel_path)
+        hit.status = "quarantined"
+        self.db.add(
+            HostQuarantineEvent(
+                organization_id=hit.organization_id,
+                hit_id=hit.id,
+                actor_user_id=user.id,
+                action="quarantine",
+                dest_basename=dest,
+            )
+        )
+        await self.db.commit()
+        await self.db.refresh(hit)
+        return self._hit_response(hit)
+
+    async def restore_hit(self, user: User, organization_id: UUID | None, hit_id: UUID) -> HostHitResponse:
+        self._require_feature()
+        hit = await self._get_hit(hit_id, organization_id, user.id)
+        membership = await get_membership(self.db, hit.organization_id, user.id)
+        assert membership is not None
+        self._require_admin(membership.role)
+        if hit.status != "quarantined":
+            raise HTTPException(status_code=400, detail="Hit is not quarantined")
+        site = await self._get_site(hit.site_id, organization_id, user.id)
+        try:
+            jail_rel_path(site.root_path, hit.rel_path)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        hit.status = "restored"
+        self.db.add(
+            HostQuarantineEvent(
+                organization_id=hit.organization_id,
+                hit_id=hit.id,
+                actor_user_id=user.id,
+                action="restore",
+                dest_basename=quarantine_basename(str(hit.id), hit.rel_path),
+            )
+        )
+        await self.db.commit()
+        await self.db.refresh(hit)
+        return self._hit_response(hit)
+
+    async def ignore_hit(self, user: User, organization_id: UUID | None, hit_id: UUID) -> HostHitResponse:
+        self._require_feature()
+        hit = await self._get_hit(hit_id, organization_id, user.id)
+        membership = await get_membership(self.db, hit.organization_id, user.id)
+        assert membership is not None
+        self._require_admin(membership.role)
+        if hit.status != "open":
+            raise HTTPException(status_code=400, detail="Only open hits can be ignored")
+        hit.status = "ignored"
+        await self.db.commit()
+        await self.db.refresh(hit)
+        return self._hit_response(hit)

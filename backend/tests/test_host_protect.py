@@ -7,18 +7,24 @@ from unittest.mock import MagicMock
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
 from app.main import app
 from app.models.guard import GuardAgent
-from app.models.host_protect import HostScan, HostSite
+from app.models.host_protect import HostHit, HostQuarantineEvent, HostScan, HostSite
 from app.models.organization import Organization, OrganizationMembership
+from app.models.siem import SiemCase
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
 from app.services.host_scan_runner import run_mock_host_scan
 from app.services.organization import ensure_personal_org
+
+
+async def _async_ok(*_a: object, **_k: object) -> bool:
+    return True
 
 
 async def _make_user(db: AsyncSession, email: str) -> User:
@@ -311,3 +317,182 @@ async def test_mock_scan_writes_hit(db_session: AsyncSession, ctx):
             assert body[0]["rel_path"] == "wp-content/uploads/cache.php"
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_critical_hit_creates_siem_case_when_enabled(
+    db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(settings, "siem_enabled", True)
+    monkeypatch.setattr("app.services.host_handoff.send_host_protect_email", _async_ok)
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    site = HostSite(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        guard_agent_id=agent.id,
+        name="Mock",
+        root_path="/var/www/html",
+        created_by=owner.id,
+    )
+    scan = HostScan(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        status="queued",
+        trigger="manual",
+    )
+    db_session.add(site)
+    db_session.add(scan)
+    await db_session.commit()
+    out = await run_mock_host_scan(db_session, scan.id)
+    assert out["ok"] is True
+    cases = (await db_session.execute(select(SiemCase).where(SiemCase.organization_id == org.id))).scalars().all()
+    assert len(cases) == 1
+    assert "webshell" in cases[0].title
+    assert "full_log" not in (cases[0].title or "")
+
+
+@pytest.mark.asyncio
+async def test_siem_off_does_not_fail_scan(db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "siem_enabled", False)
+    monkeypatch.setattr("app.services.host_handoff.send_host_protect_email", _async_ok)
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    site = HostSite(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        guard_agent_id=agent.id,
+        name="Mock",
+        root_path="/var/www/html",
+        created_by=owner.id,
+    )
+    scan = HostScan(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        status="queued",
+        trigger="manual",
+    )
+    db_session.add(site)
+    db_session.add(scan)
+    await db_session.commit()
+    out = await run_mock_host_scan(db_session, scan.id)
+    assert out["ok"] is True
+    cases = (await db_session.execute(select(SiemCase).where(SiemCase.organization_id == org.id))).scalars().all()
+    assert cases == []
+
+
+@pytest.mark.asyncio
+async def test_quarantine_restore_ignore_roles(db_session: AsyncSession, ctx):
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    viewer: User = ctx["viewer"]
+    outsider: User = ctx["outsider"]
+    agent: GuardAgent = ctx["agent"]
+    site = HostSite(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        guard_agent_id=agent.id,
+        name="Q",
+        root_path="/var/www/html",
+        created_by=owner.id,
+    )
+    hit = HostHit(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        rel_path="wp-content/uploads/cache.php",
+        hit_class="webshell",
+        engine="mock",
+        rule_id="mock.webshell.php",
+        status="open",
+    )
+    db_session.add(site)
+    db_session.add(hit)
+    await db_session.commit()
+    hid = str(hit.id)
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            denied = await client.post(f"/api/host/hits/{hid}/quarantine", headers=_auth(viewer, org.id))
+            assert denied.status_code == 403
+            steal = await client.post(
+                f"/api/host/hits/{hid}/quarantine",
+                headers=_auth(outsider, outsider.last_active_organization_id),
+            )
+            assert steal.status_code == 404
+            ok = await client.post(f"/api/host/hits/{hid}/quarantine", headers=_auth(owner, org.id))
+            assert ok.status_code == 200, ok.text
+            assert ok.json()["status"] == "quarantined"
+            restored = await client.post(f"/api/host/hits/{hid}/restore", headers=_auth(owner, org.id))
+            assert restored.status_code == 200
+            assert restored.json()["status"] == "restored"
+            hit2 = HostHit(
+                id=uuid.uuid4(),
+                organization_id=org.id,
+                site_id=site.id,
+                rel_path="wp-content/uploads/other.php",
+                hit_class="malware",
+                engine="mock",
+                rule_id="mock.other",
+                status="open",
+            )
+            db_session.add(hit2)
+            await db_session.commit()
+            ign = await client.post(f"/api/host/hits/{hit2.id}/ignore", headers=_auth(owner, org.id))
+            assert ign.status_code == 200
+            assert ign.json()["status"] == "ignored"
+    finally:
+        app.dependency_overrides.clear()
+    events = (
+        (await db_session.execute(select(HostQuarantineEvent).where(HostQuarantineEvent.hit_id == hit.id)))
+        .scalars()
+        .all()
+    )
+    assert len(events) == 2
+    assert all("/" not in (e.dest_basename or "") for e in events)
+
+
+@pytest.mark.asyncio
+async def test_auto_quarantine_skips_suspicious(db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr("app.services.host_handoff.send_host_protect_email", _async_ok)
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    site = HostSite(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        guard_agent_id=agent.id,
+        name="Auto",
+        root_path="/var/www/html",
+        auto_quarantine=True,
+        created_by=owner.id,
+    )
+    scan = HostScan(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        status="queued",
+        trigger="manual",
+    )
+    db_session.add(site)
+    db_session.add(scan)
+    await db_session.commit()
+    await run_mock_host_scan(db_session, scan.id)
+    hits = (await db_session.execute(select(HostHit).where(HostHit.site_id == site.id))).scalars().all()
+    assert len(hits) == 1
+    assert hits[0].status == "quarantined"
+    assert hits[0].hit_class == "webshell"
+
+
+def test_jail_rel_path_rejects_traversal():
+    from app.services.host_path import jail_rel_path
+
+    with pytest.raises(ValueError):
+        jail_rel_path("/var/www/html", "../etc/passwd")
+    with pytest.raises(ValueError):
+        jail_rel_path("/var/www/html", "ok/../../etc/passwd")
+    assert jail_rel_path("/var/www/html", "wp-content/uploads/cache.php").endswith("cache.php")

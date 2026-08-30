@@ -90,3 +90,18 @@ export async function listHostHits(params?: {
   const { data } = await api.get<HostHit[]>("/api/host/hits", { params });
   return data;
 }
+
+export async function quarantineHostHit(id: string): Promise<HostHit> {
+  const { data } = await api.post<HostHit>(`/api/host/hits/${id}/quarantine`);
+  return data;
+}
+
+export async function restoreHostHit(id: string): Promise<HostHit> {
+  const { data } = await api.post<HostHit>(`/api/host/hits/${id}/restore`);
+  return data;
+}
+
+export async function ignoreHostHit(id: string): Promise<HostHit> {
+  const { data } = await api.post<HostHit>(`/api/host/hits/${id}/ignore`);
+  return data;
+}

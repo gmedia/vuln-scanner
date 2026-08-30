@@ -98,3 +98,33 @@ async def list_hits(
         hit_status=hit_status,
         hit_class=hit_class,
     )
+
+
+@router.post("/hits/{hit_id}/quarantine", response_model=HostHitResponse)
+async def quarantine_hit(
+    request: Request,
+    hit_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> HostHitResponse:
+    return await HostProtectService(db).quarantine_hit(current_user, get_active_org_id(request), hit_id)
+
+
+@router.post("/hits/{hit_id}/restore", response_model=HostHitResponse)
+async def restore_hit(
+    request: Request,
+    hit_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> HostHitResponse:
+    return await HostProtectService(db).restore_hit(current_user, get_active_org_id(request), hit_id)
+
+
+@router.post("/hits/{hit_id}/ignore", response_model=HostHitResponse)
+async def ignore_hit(
+    request: Request,
+    hit_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> HostHitResponse:
+    return await HostProtectService(db).ignore_hit(current_user, get_active_org_id(request), hit_id)

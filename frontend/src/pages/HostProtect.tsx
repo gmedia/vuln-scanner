@@ -8,8 +8,11 @@ import {
   deleteHostSite,
   enqueueHostScan,
   isHostProtectDisabledError,
+  ignoreHostHit,
   listHostHits,
   listHostSites,
+  quarantineHostHit,
+  restoreHostHit,
   type HostSite,
 } from "@/api/hostProtect";
 import { Button } from "@/components/ui/Button";
@@ -107,6 +110,19 @@ export default function HostProtect() {
     onError: (err: { response?: { data?: { detail?: string } } }) => {
       toast.error(String(err.response?.data?.detail ?? t("scanFail")));
     },
+  });
+
+  const qMut = useMutation({
+    mutationFn: quarantineHostHit,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["host"] }),
+  });
+  const rMut = useMutation({
+    mutationFn: restoreHostHit,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["host"] }),
+  });
+  const iMut = useMutation({
+    mutationFn: ignoreHostHit,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["host"] }),
   });
 
   if (!activeOrgId) {
@@ -316,6 +332,7 @@ export default function HostProtect() {
                 <TableHead>{t("colClass")}</TableHead>
                 <TableHead>{t("colEngine")}</TableHead>
                 <TableHead>{t("colStatus")}</TableHead>
+                <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -325,6 +342,43 @@ export default function HostProtect() {
                   <TableCell>{h.class}</TableCell>
                   <TableCell>{h.engine}</TableCell>
                   <TableCell>{h.status}</TableCell>
+                  <TableCell className="flex flex-wrap gap-2">
+                    {(h.status === "open" || h.status === "restored") && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        data-testid="host-quarantine"
+                        onClick={() => qMut.mutate(h.id)}
+                      >
+                        {t("quarantine")}
+                      </Button>
+                    )}
+                    {h.status === "quarantined" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        data-testid="host-restore"
+                        onClick={() => rMut.mutate(h.id)}
+                      >
+                        {t("restore")}
+                      </Button>
+                    )}
+                    {h.status === "open" && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        data-testid="host-ignore"
+                        onClick={() => iMut.mutate(h.id)}
+                      >
+                        {t("ignore")}
+                      </Button>
+                    )}
+                    {(h.class === "webshell" || h.class === "backdoor") && (
+                      <Button size="sm" variant="ghost" asChild>
+                        <a href="/siem">{t("openSiem")}</a>
+                      </Button>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
