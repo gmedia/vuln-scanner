@@ -66,4 +66,42 @@ describe("AuthLayout", () => {
     expect(AUTH_SECONDARY_LINK).toMatch(/min-h-11/);
     expect(AUTH_SECONDARY_LINK).toMatch(/min-w-11/);
   });
+
+  it("keeps theme and locale switcher testids", () => {
+    render(
+      <AuthLayout title="Sign in">
+        <div>form</div>
+      </AuthLayout>,
+    );
+    expect(screen.getByTestId("theme-switcher")).toBeInTheDocument();
+    expect(screen.getByTestId("language-switcher")).toBeInTheDocument();
+  });
+
+  it("styles selected chips as secondary, not primary CTA", () => {
+    render(
+      <AuthLayout title="Sign in">
+        <div>form</div>
+      </AuthLayout>,
+    );
+    const theme = screen.getByTestId("theme-switcher");
+    const row = theme.parentElement;
+    expect(row?.className).toContain(
+      "[&_button[aria-pressed=true]]:!bg-secondary",
+    );
+    expect(row?.className).toContain(
+      "[&_button[aria-pressed=true]]:!text-secondary-foreground",
+    );
+  });
+
+  it("stacks switchers full-width on xs with 44px min height", () => {
+    render(
+      <AuthLayout title="Sign in">
+        <div>form</div>
+      </AuthLayout>,
+    );
+    const theme = screen.getByTestId("theme-switcher");
+    const locale = screen.getByTestId("language-switcher");
+    expect(theme).toHaveClass("min-h-11", "w-full", "sm:w-auto");
+    expect(locale).toHaveClass("min-h-11", "w-full", "sm:w-auto");
+  });
 });

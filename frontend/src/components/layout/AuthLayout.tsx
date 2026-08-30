@@ -36,9 +36,14 @@ function AuthLayout({
           <p className="hidden text-sm text-muted-foreground sm:block">
             {t("authSubtitle")}
           </p>
-          <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-            <ThemeSwitcher />
-            <LanguageSwitcher />
+          <div
+            className={cn(
+              "mt-2 flex w-full flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center",
+              "[&_button[aria-pressed=true]]:!bg-secondary [&_button[aria-pressed=true]]:!text-secondary-foreground",
+            )}
+          >
+            <ThemeSwitcher className="h-11 min-h-11 w-full sm:w-auto" />
+            <LanguageSwitcher className="h-11 min-h-11 w-full sm:w-auto" />
           </div>
         </div>
 
