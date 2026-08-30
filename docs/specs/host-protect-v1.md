@@ -225,7 +225,7 @@ No raw file download of malware samples in v1 (exfil risk). Optional later: plat
 | **S5** | Quarantine/restore + audit; auto-quarantine default off | tests for path jail | **#505** |
 | **S6** | Local signature walk (in-repo `.yar` strings) + mock fallback | pytest engine + job fallback; no Imunify DB; no WAF | this PR |
 
-**S6+ still out:** Coraza/CRS; CrowdSec/Wazuh AR; panel plugin; PHP PD; agent SSH/wodle file move.
+**S6+ HTTP WAF** is **P13**, not a Host Protect malware slice: [`host-waf-v1.md`](host-waf-v1.md). Still out of P12: CrowdSec/Wazuh AR; panel plugin; PHP PD; agent SSH/wodle file move.
 
 ---
 
