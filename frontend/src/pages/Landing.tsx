@@ -66,7 +66,7 @@ function Landing() {
             >
               {t("blog")}
             </a>
-            <div className="hidden sm:flex sm:items-center sm:gap-2">
+            <div className="hidden sm:flex sm:items-center sm:gap-2 [&_button[aria-pressed=true]]:!bg-secondary [&_button[aria-pressed=true]]:!text-secondary-foreground">
               <ThemeSwitcher />
               <LanguageSwitcher />
             </div>
@@ -91,13 +91,13 @@ function Landing() {
       <main className="flex flex-1 flex-col">
         <section className="flex flex-col items-center px-4 pt-16 pb-12 sm:pt-20">
           <div className="mx-auto max-w-3xl space-y-6 text-center 2xl:max-w-4xl">
-            <p className="text-xs font-medium uppercase tracking-wide text-foreground">
+            <p className="text-balance text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {t("heroEyebrow")}
             </p>
             <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
               {t("heroHeadline")}
             </h1>
-            <p className="text-base sm:text-lg text-foreground/80">
+            <p className="text-pretty text-base text-muted-foreground sm:text-lg">
               {t("heroSub")}
             </p>
             <div className="flex w-full max-w-sm flex-col sm:max-w-none sm:flex-row items-stretch sm:items-center justify-center gap-3 pt-2 mx-auto">
@@ -134,21 +134,21 @@ function Landing() {
               {pipelineSteps.map((step, i) => (
                 <li
                   key={step.titleKey}
-                  className="rounded-lg border border-border bg-card p-4 text-left shadow-sm"
+                  className="flex h-full min-h-[8.5rem] flex-col rounded-lg border border-border bg-card p-4 text-left shadow-sm"
                 >
-                  <p className="text-xs font-medium text-foreground">
+                  <p className="text-xs font-medium text-muted-foreground">
                     {String(i + 1).padStart(2, "0")}
                   </p>
                   <p className="mt-1 text-sm font-semibold tracking-wide text-foreground">
                     {t(step.titleKey)}
                   </p>
-                  <p className="mt-2 text-sm text-foreground/80">
+                  <p className="mt-2 flex-1 text-pretty text-sm leading-relaxed text-muted-foreground">
                     {t(step.descKey)}
                   </p>
                 </li>
               ))}
             </ol>
-            <p className="mt-6 text-center text-xs text-muted-foreground">
+            <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">
               {t("siemNote")}
             </p>
           </div>
@@ -174,7 +174,7 @@ function Landing() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-foreground/75">
+                    <p className="text-sm leading-relaxed text-muted-foreground">
                       {t(feature.descKey)}
                     </p>
                   </CardContent>
@@ -195,7 +195,7 @@ function Landing() {
                   <AccordionTrigger className="min-h-11 text-sm font-semibold text-foreground">
                     {t(item.q)}
                   </AccordionTrigger>
-                  <AccordionContent className="text-sm text-foreground/80">
+                  <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
                     {t(item.a)}
                   </AccordionContent>
                 </AccordionItem>
@@ -207,45 +207,45 @@ function Landing() {
 
       <footer className="mt-auto shrink-0 border-t border-border py-6">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 px-4 sm:flex-row sm:justify-between 2xl:max-w-[90rem]">
-          <p className="text-xs text-foreground/70 text-center sm:text-left">
+          <p className="text-center text-xs text-muted-foreground sm:text-left">
             {BRAND.footerLine}
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:hidden">
-            <ThemeSwitcher />
-            <LanguageSwitcher />
+          <div className="flex w-full flex-col items-stretch gap-2 sm:hidden [&_button]:min-h-11 [&_button]:min-w-11 [&_button[aria-pressed=true]]:!bg-secondary [&_button[aria-pressed=true]]:!text-secondary-foreground">
+            <ThemeSwitcher className="h-11 min-h-11 w-full justify-stretch [&_button]:flex-1" />
+            <LanguageSwitcher className="h-11 min-h-11 w-full justify-stretch [&_button]:flex-1" />
           </div>
-          <div className="flex items-center gap-4 text-xs">
+          <nav className="flex w-full flex-col items-stretch gap-1 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-4">
             <a
               href="/blog"
-              className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
+              className="inline-flex min-h-11 items-center justify-center px-2 text-xs text-muted-foreground transition-colors hover:text-foreground sm:justify-start sm:px-0"
             >
               {t("blog")}
             </a>
             <a
               href="/terms"
-              className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
+              className="inline-flex min-h-11 items-center justify-center px-2 text-xs text-muted-foreground transition-colors hover:text-foreground sm:justify-start sm:px-0"
             >
               {t("terms")}
             </a>
             <a
               href="/privacy"
-              className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
+              className="inline-flex min-h-11 items-center justify-center px-2 text-xs text-muted-foreground transition-colors hover:text-foreground sm:justify-start sm:px-0"
             >
               {t("privacy")}
             </a>
             <Link
               to="/login"
-              className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
+              className="inline-flex min-h-11 items-center justify-center px-2 text-xs text-muted-foreground transition-colors hover:text-foreground sm:justify-start sm:px-0"
             >
               {tc("signIn")}
             </Link>
             <Link
               to="/register"
-              className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
+              className="inline-flex min-h-11 items-center justify-center px-2 text-xs text-muted-foreground transition-colors hover:text-foreground sm:justify-start sm:px-0"
             >
               {tc("getStarted")}
             </Link>
-          </div>
+          </nav>
         </div>
       </footer>
     </div>
