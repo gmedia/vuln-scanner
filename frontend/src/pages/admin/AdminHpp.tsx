@@ -166,6 +166,9 @@ function AdminHpp() {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          <p className="mb-3 text-[11px] text-muted-foreground">
+            {t("hppRatesHint")}
+          </p>
           {ratesLoading ? (
             <TableRowSkeleton rows={5} />
           ) : !rates?.length ? (
@@ -504,6 +507,9 @@ function AdminHpp() {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          <p className="mb-3 text-[11px] text-muted-foreground">
+            {t("hppReportHint")}
+          </p>
           {reportLoading ? (
             <TableRowSkeleton rows={5} />
           ) : (
