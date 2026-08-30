@@ -2,7 +2,7 @@
 
 **Purpose:** After session reset, know **every user-facing URL**, who owns it (SPA vs FastAPI HTML), auth, chrome, and where to recapture / e2e. Source of truth for **routes** is `frontend/src/App.tsx` plus FastAPI HTML routers. This file is a **map**, not a backlog — epic order still [`AGENT_EXECUTION_GUIDE.md`](AGENT_EXECUTION_GUIDE.md).
 
-**Last updated:** 2026-08-28
+**Last updated:** 2026-08-30
 **Do not** put production hosts/ports, emails, passwords, enroll keys, or customer IPs here.
 
 ---
@@ -74,8 +74,8 @@ Nav groups match Sidebar: **Scan** · **Attach** · **Account** · **Admin** (ad
 |------|-----------|-----|-------|-------|
 | `/credit-history` | `pages/credit/CreditHistory.tsx` | Account | **Filter-bar reference** (equal `gap-3`, `h-10`) | `e2e/credit-history.spec.ts` |
 | `/profile` | `pages/Profile.tsx` | Account | | `Profile.test.tsx`, `e2e/profile.spec.ts` |
-| `/settings/workspace` | `pages/WorkspaceSettings.tsx` | Account | Org members, invites | — |
-| `/org/members` | **same** `WorkspaceSettings.tsx` | — | Alias route; keep in sync | — |
+| `/settings/workspace` | `pages/WorkspaceSettings.tsx` | Account | Org members, invites, P6 pilot checklist | `WorkspaceSettings.test.tsx` |
+| `/org/members` | **same** `WorkspaceSettings.tsx` | — | Alias route; keep in sync | same |
 
 ### Admin (`AdminRoute`)
 
@@ -84,9 +84,9 @@ Nav groups match Sidebar: **Scan** · **Attach** · **Account** · **Admin** (ad
 | `/admin` | `pages/admin/AdminDashboard.tsx` | Admin | `end: true` | `admin/AdminDashboard.test.tsx`, `e2e/admin.spec.ts` |
 | `/admin/users` | `pages/admin/AdminUsers.tsx` | Admin | | `admin/AdminUsers.test.tsx`, `e2e/admin-users.spec.ts` |
 | `/admin/users/:id` | `pages/admin/AdminUserDetail.tsx` | — | | `admin/AdminUserDetail.test.tsx`, `e2e/admin-user-detail.spec.ts` |
-| `/admin/pricing` | `pages/admin/AdminPricing.tsx` | Admin | | — |
-| `/admin/hpp` | `pages/admin/AdminHpp.tsx` | Admin | IDR unit rates + report; not credit pricing. `nav-admin-hpp`. | `admin/AdminHpp.test.tsx` |
-| `/admin/blog` | `pages/admin/AdminBlog.tsx` | Admin | CMS; `nav-admin-blog`. Locale key `blogStatus`. | — |
+| `/admin/pricing` | `pages/admin/AdminPricing.tsx` | Admin | Credit `credit_cost` per scan type + `statushost`. **Not** IDR COGS. | `admin/AdminPricing.test.tsx` |
+| `/admin/hpp` | `pages/admin/AdminHpp.tsx` | Admin | IDR unit rates + monthly overhead + cost journal + date-range report + SKU overlay **estimasi**. Not mixed with Pricing. `nav-admin-hpp`. Spec: `docs/specs/admin-hpp-v1.md`. | `admin/AdminHpp.test.tsx` |
+| `/admin/blog` | `pages/admin/AdminBlog.tsx` | Admin | CMS; `nav-admin-blog`. Locale key `blogStatus`. | `admin/AdminBlog.test.tsx` |
 
 ---
 
@@ -96,13 +96,14 @@ Served by backend; nginx must **not** send these to the SPA. Chrome: Landing rhy
 
 | Path | Router | Flag | Notes | Tests |
 |------|--------|------|-------|-------|
-| `/blog` | `app/api/blog_html.py` | `BLOG_ENABLED` | Index; one `h1` even if empty | `backend/tests/test_blog.py` |
+| `/blog` | `app/api/blog_html.py` | `BLOG_ENABLED` | Index; also `/blog/`; one `h1` even if empty | `backend/tests/test_blog.py` |
 | `/blog/{slug}` | same | `BLOG_ENABLED` | Article; slug `sitemap.xml` reserved | same |
 | `/blog/sitemap.xml` | same | `BLOG_ENABLED` | XML | same |
 | `/terms` | `app/api/legal_html.py` | — | Legal; Landing footer links | `backend/tests/test_legal_html.py` |
 | `/privacy` | same | — | Legal | same |
-| `/status/{slug}` | `app/api/status_html.py` | `STATUS_PAGE_ENABLED` | **Public** status. No target URL/IP/headers/token in HTML. | status page tests |
-| `/status` | same | `STATUS_PAGE_ENABLED` | Host-based; **404** on platform hosts (`sinexis.app`, `www`, `vs.appmedia.id`, localhost) | same |
+| `/status/{slug}` | `app/api/status_html.py` | `STATUS_PAGE_ENABLED` | **Public** status. No target URL/IP/headers/token in HTML. | `backend/tests/test_status_page.py`, `StatusPage.test.tsx` |
+| `/status` | same | `STATUS_PAGE_ENABLED` | Host-based; **404** on platform hosts (`sinexis.app`, `www`, `vs.appmedia.id`, `status-edge` / `customers.sinexis.app`, localhost) | same |
+| `/` (custom status host only) | same `status_root_by_host` | `STATUS_PAGE_ENABLED` | Apex on **non-platform** Host (e.g. customer hostname). Same 404 rules as `/status`. Not the SPA landing. | same |
 
 JSON APIs (`/api/...`) are **not** pages — do not screenshot.
 
@@ -119,7 +120,7 @@ Minimum authenticated set (2k + mobile, light + dark) after a chrome/token chang
 5. `/schedules` `/assets`
 6. `/guard` `/siem` `/uptime` `/uptime/status-page`
 7. `/credit-history` `/profile` `/settings/workspace` `/guide`
-8. Admin: `/admin` `/admin/users` `/admin/pricing` `/admin/blog`
+8. Admin: `/admin` `/admin/users` `/admin/pricing` `/admin/hpp` `/admin/blog`
 
 Auth for prod visual: `E2E_EMAIL` / `E2E_PASSWORD` from **tc1 env** — never commit. Do not `POST /register` for the shared mailbox.
 
