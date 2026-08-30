@@ -1,6 +1,6 @@
 # Spec: Host Protect v1 (P12 — on-box web malware control plane)
 
-**Status:** **S5 shipped on `main`** (2026-08-30) — #501 (S0) · #502 (S1) · #503 (S2) · #504 (S3) · #505 (S4–S5). Flag `HOST_PROTECT_ENABLED` default **false**. **S6+** still out of this series. SKU list IDR remains **unset**.
+**Status:** **S5 shipped on `main`** (2026-08-30) — #501–#505. **S6** = in-repo signature walk on a **local** allowlisted `root_path` (`engine=yara`); **mock** if the path is not on the worker (CI / remote agent FS). Flag default **false**. WAF/Coraza/cPanel remain **out**. SKU list IDR **unset**.
 **Goal:** first **on-host web malware** surface for orgs that already run **Guard thin** — named web paths, scheduled file/YARA (or Clam) scan, incidents in product, **opt-in quarantine** — **without** cloning Imunify360 (no PHP Proactive Defense, no KernelCare, no cPanel plugin in v1).
 **Epic:** **P12**. Does **not** replace P5 Guard, P7 SIEM, or P1 Scan attach. Does **not** jump GTM / Scan SKU lock.
 **Depends:** P2 Workspace (JWT `org_id`) · P3 Assets (optional link) · P5 Guard enroll (agent on VPS) · P7 SIEM cases (incident hand-off).
@@ -223,8 +223,9 @@ No raw file download of malware samples in v1 (exfil risk). Optional later: plat
 | **S3** | SPA `/host` + i18n | vitest; frozen testids | **#504** |
 | **S4** | Hits → SIEM case + email for webshell/backdoor | no `full_log`; no `scan_findings` | **#505** |
 | **S5** | Quarantine/restore + audit; auto-quarantine default off | tests for path jail | **#505** |
+| **S6** | Local signature walk (in-repo `.yar` strings) + mock fallback | pytest engine + job fallback; no Imunify DB; no WAF | this PR |
 
-**S6+ (out of this PR series):** Coraza/CRS opt-in; CrowdSec/Wazuh active-response brute WP; panel plugin; PHP PD research spike.
+**S6+ still out:** Coraza/CRS; CrowdSec/Wazuh AR; panel plugin; PHP PD; agent SSH/wodle file move.
 
 ---
 
