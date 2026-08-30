@@ -26,6 +26,7 @@ const Schedules = lazy(() => import("@/pages/Schedules"));
 const Assets = lazy(() => import("@/pages/Assets"));
 const Guard = lazy(() => import("@/pages/Guard"));
 const Siem = lazy(() => import("@/pages/Siem"));
+const HostProtect = lazy(() => import("@/pages/HostProtect"));
 const Uptime = lazy(() => import("@/pages/Uptime"));
 const StatusPage = lazy(() => import("@/pages/StatusPage"));
 const Profile = lazy(() => import("@/pages/Profile"));
@@ -128,6 +129,7 @@ function App() {
             />
             <Route path="/guard" element={<PageBoundary component={Guard} />} />
             <Route path="/siem" element={<PageBoundary component={Siem} />} />
+            <Route path="/host" element={<PageBoundary component={HostProtect} />} />
             <Route
               path="/uptime"
               element={<PageBoundary component={Uptime} />}
