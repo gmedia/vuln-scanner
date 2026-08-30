@@ -39,7 +39,7 @@ def run_host_scan(scan_id: str) -> dict[str, Any]:
 
     async def _body() -> dict[str, Any]:
         async with async_session() as db:
-            return await run_mock_host_scan(db, UUID(scan_id))
+            return cast(dict[str, Any], await run_mock_host_scan(db, UUID(scan_id)))
 
     try:
         result = cast(dict[str, Any], _run(_body()))
