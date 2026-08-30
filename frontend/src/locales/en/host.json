@@ -29,5 +29,9 @@
   "colStatus": "Status",
   "noAgents": "Install a Guard agent first, then register a site here.",
   "createFail": "Failed to create site",
-  "scanFail": "Failed to enqueue scan"
+  "scanFail": "Failed to enqueue scan",
+  "quarantine": "Quarantine",
+  "restore": "Restore",
+  "ignore": "Ignore",
+  "openSiem": "Open SIEM"
 }
