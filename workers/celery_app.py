@@ -42,6 +42,8 @@ celery_app.conf.update(
         "uptime.run_due": {"queue": "uptime_check"},
         "uptime.check": {"queue": "uptime_check"},
         "uptime.purge": {"queue": "uptime_check"},
+        "host_protect.run_scan": {"queue": "ip_scan"},
+        "host_protect.run_due": {"queue": "ip_scan"},
     },
     task_annotations={
         "ip_scan.run": {"rate_limit": "10/m"},
@@ -73,6 +75,10 @@ celery_app.conf.update(
             "task": "uptime.purge",
             "schedule": 21600.0,
         },
+        "host-protect-run-due-daily": {
+            "task": "host_protect.run_due",
+            "schedule": 86400.0,
+        },
     },
 )
 
@@ -86,5 +92,6 @@ celery_app.autodiscover_tasks(
         "tasks.schedules",
         "tasks.guard",
         "tasks.uptime",
+        "tasks.host_protect",
     ]
 )
