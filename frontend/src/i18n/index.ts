@@ -17,6 +17,7 @@ import enWorkspace from "@/locales/en/workspace.json";
 import enGuard from "@/locales/en/guard.json";
 import enGuide from "@/locales/en/guide.json";
 import enSiem from "@/locales/en/siem.json";
+import enHost from "@/locales/en/host.json";
 import enAssets from "@/locales/en/assets.json";
 import enUptime from "@/locales/en/uptime.json";
 import enStatusPage from "@/locales/en/statusPage.json";
@@ -31,6 +32,7 @@ import idWorkspace from "@/locales/id/workspace.json";
 import idGuard from "@/locales/id/guard.json";
 import idGuide from "@/locales/id/guide.json";
 import idSiem from "@/locales/id/siem.json";
+import idHost from "@/locales/id/host.json";
 import idAssets from "@/locales/id/assets.json";
 import idUptime from "@/locales/id/uptime.json";
 import idStatusPage from "@/locales/id/statusPage.json";
@@ -48,6 +50,7 @@ export const resources = {
     guard: enGuard,
     guide: enGuide,
     siem: enSiem,
+    host: enHost,
     assets: enAssets,
     uptime: enUptime,
     statusPage: enStatusPage,
@@ -64,6 +67,7 @@ export const resources = {
     guard: idGuard,
     guide: idGuide,
     siem: idSiem,
+    host: idHost,
     assets: idAssets,
     uptime: idUptime,
     statusPage: idStatusPage,
@@ -111,6 +115,7 @@ void i18n.use(initReactI18next).init({
     "guard",
     "guide",
     "siem",
+    "host",
     "assets",
     "uptime",
     "statusPage",
