@@ -256,18 +256,35 @@ hits_and_actions() {
     log "no hits (mock may need worker; still a valid smoke if scan completed)"
     return 0
   fi
-  # Ignore is allowed only while status is open. After restore the row is
-  # restored — ignore then 400 (product, not a smoke bug).
-  log "POST ignore then quarantine then restore on first hit"
-  blob="$(curl_api POST "/api/host/hits/${hit_id}/ignore" '{}')"
-  split_body_code "$blob"
-  [[ "$HTTP_CODE" == "200" ]] || die "ignore HTTP ${HTTP_CODE}"
+  log "POST quarantine then restore on first hit"
   blob="$(curl_api POST "/api/host/hits/${hit_id}/quarantine" '{}')"
   split_body_code "$blob"
   [[ "$HTTP_CODE" == "200" ]] || die "quarantine HTTP ${HTTP_CODE}"
   blob="$(curl_api POST "/api/host/hits/${hit_id}/restore" '{}')"
   split_body_code "$blob"
   [[ "$HTTP_CODE" == "200" ]] || die "restore HTTP ${HTTP_CODE}"
+  blob="$(curl_api GET "/api/host/hits?site_id=${SITE_ID}")"
+  split_body_code "$blob"
+  [[ "$HTTP_CODE" == "200" ]] || die "hits refresh HTTP ${HTTP_CODE}"
+  ignore_id="$(HIT_ID="$hit_id" python3 -c "
+import json,os,sys
+rows=json.loads(sys.argv[1])
+skip=os.environ.get('HIT_ID','')
+if not isinstance(rows, list):
+    raise SystemExit(0)
+for r in rows:
+    if str(r.get('id'))!=skip and r.get('status')=='open':
+        print(r['id'])
+        break
+" "$HTTP_BODY")"
+  if [[ -n "$ignore_id" ]]; then
+    log "POST ignore on a second open hit"
+    blob="$(curl_api POST "/api/host/hits/${ignore_id}/ignore" '{}')"
+    split_body_code "$blob"
+    [[ "$HTTP_CODE" == "200" ]] || die "ignore HTTP ${HTTP_CODE}"
+  else
+    log "skip ignore (single-hit mock; ignore needs a remaining open row)"
+  fi
 }
 
 delete_site() {
