@@ -218,6 +218,7 @@ export default function Assets() {
               {t("emptyHint")}
             </p>
             <Button
+              variant="outline"
               className="mt-2"
               data-testid="assets-empty-cta"
               disabled={atCap}
