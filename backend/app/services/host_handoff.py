@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models.host_protect import HostHit, HostSite
+from app.models.host_waf import HostWafEvent
 from app.models.siem import SiemCase, SiemCaseNote
 from app.models.user import User
 from app.services.email import send_host_protect_email
@@ -15,6 +16,7 @@ from app.services.email import send_host_protect_email
 logger = logging.getLogger(__name__)
 
 CRITICAL_CLASSES = frozenset({"webshell", "backdoor"})
+WAF_SIEM_TOKENS = ("sqli", "rce")
 
 
 def _note_body(hit: HostHit) -> str:
@@ -71,3 +73,47 @@ async def handoff_critical_hit(db: AsyncSession, hit: HostHit, site: HostSite) -
         except Exception:
             logger.exception("Host Protect email failed for hit %s", hit.id)
     return case_id
+
+
+def _waf_note(event: HostWafEvent) -> str:
+    return (
+        f"Host WAF event {event.id}\n"
+        f"action={event.action}\n"
+        f"rule_id={event.rule_id}\n"
+        f"method={event.method}\n"
+        f"path={event.path}\n"
+        "No request body attached."
+    )
+
+
+def _waf_rule_is_handoff(rule_id: str) -> bool:
+    low = rule_id.lower()
+    return any(tok in low for tok in WAF_SIEM_TOKENS)
+
+
+async def handoff_waf_block(db: AsyncSession, event: HostWafEvent, site: HostSite, actor: User) -> UUID | None:
+    if event.action != "block" or not _waf_rule_is_handoff(event.rule_id):
+        return None
+    if not settings.siem_enabled:
+        return None
+    try:
+        title = f"Host WAF block: {site.name}"[:255]
+        case = SiemCase(
+            organization_id=event.organization_id,
+            title=title,
+            status="open",
+            created_by_user_id=actor.id,
+        )
+        db.add(case)
+        await db.flush()
+        db.add(
+            SiemCaseNote(
+                case_id=case.id,
+                author_user_id=actor.id,
+                body=_waf_note(event)[:8000],
+            )
+        )
+        return case.id
+    except Exception:
+        logger.exception("SIEM hand-off failed for host waf event %s", event.id)
+        return None
