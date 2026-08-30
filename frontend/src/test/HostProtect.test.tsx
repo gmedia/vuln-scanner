@@ -19,6 +19,9 @@ vi.mock("@/api/hostProtect", async () => {
     deleteHostSite: vi.fn(),
     enqueueHostScan: vi.fn(),
     listHostHits: vi.fn(),
+    quarantineHostHit: vi.fn(),
+    restoreHostHit: vi.fn(),
+    ignoreHostHit: vi.fn(),
   };
 });
 
@@ -142,5 +145,44 @@ describe("Host Protect page", () => {
       expect(screen.getByTestId("host-feature-off")).toBeInTheDocument();
     });
     expect(hostApi.listHostHits).not.toHaveBeenCalled();
+  });
+
+  it("quarantines an open hit", async () => {
+    vi.mocked(hostApi.listHostHits).mockResolvedValue([
+      {
+        id: "h1",
+        organization_id: "org1",
+        site_id: "s1",
+        scan_id: null,
+        rel_path: "wp-content/uploads/cache.php",
+        class: "webshell",
+        engine: "mock",
+        rule_id: "mock.webshell.php",
+        status: "open",
+        sha256: null,
+        first_seen_at: "2026-08-30T00:00:00Z",
+        last_seen_at: "2026-08-30T00:00:00Z",
+      },
+    ]);
+    vi.mocked(hostApi.quarantineHostHit).mockResolvedValue({
+      id: "h1",
+      organization_id: "org1",
+      site_id: "s1",
+      scan_id: null,
+      rel_path: "wp-content/uploads/cache.php",
+      class: "webshell",
+      engine: "mock",
+      rule_id: "mock.webshell.php",
+      status: "quarantined",
+      sha256: null,
+      first_seen_at: "2026-08-30T00:00:00Z",
+      last_seen_at: "2026-08-30T00:00:00Z",
+    });
+    const user = userEvent.setup();
+    renderHost();
+    await waitFor(() => expect(screen.getByTestId("host-quarantine")).toBeInTheDocument());
+    await user.click(screen.getByTestId("host-quarantine"));
+    await waitFor(() => expect(hostApi.quarantineHostHit).toHaveBeenCalled());
+    expect(vi.mocked(hostApi.quarantineHostHit).mock.calls[0][0]).toBe("h1");
   });
 });
