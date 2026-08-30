@@ -183,9 +183,11 @@ Manual GitHub Action: **Guard lab enroll smoke** (`workflow_dispatch` only, `--a
 
 ### Host Protect lab smoke (after Guard enroll)
 
-API cycle only: create a **fixture** site (default `/var/www/host-protect-fixture`), enqueue mock scan, optional quarantine/restore/ignore, delete site. **Not** Playwright. **Does not** wipe `tc5` or enroll Guard. **Do not** use live ERP (`sx-erpstg`) as `root_path`.
+API cycle only: create a **fixture** site (default `/var/www/host-protect-fixture`), enqueue mock scan, **ignore then quarantine then restore** (ignore is only valid while the hit is `open`), delete site. **Not** Playwright. **Does not** wipe `tc5` or enroll Guard. **Do not** use live ERP (`sx-erpstg`) as `root_path`.
 
-Requires `HOST_PROTECT_ENABLED` on the API under test. Leave **prod** flag off until this smoke passes.
+Requires `HOST_PROTECT_ENABLED` on the **API and `worker_ip`** (compose interpolates the same env). Beat also reads the flag for `host_protect.run_due`. After a Host Protect merge, deploy **`worker_ip`** on the scan host to the same SHA as app `main` — otherwise the task is missing or skips.
+
+`--prepare-fixture` SSHs to `HOST_PROTECT_LAB_FIXTURE_SSH` if set, else `GUARD_LAB_AGENT_SSH` (default `tc5`). Run it from a host that **resolves** that alias (often the bastion, not the app host).
 
 ```bash
 export GUARD_LAB_APP_BASE='https://<app-origin>'
@@ -193,8 +195,9 @@ export GUARD_LAB_EMAIL='...'
 export GUARD_LAB_PASSWORD='...'
 # optional: HOST_PROTECT_LAB_ROOT_PATH=/var/www/host-protect-fixture
 # optional: HOST_PROTECT_LAB_AGENT_UUID=<guard_agents.id>
-./scripts/host-protect-lab-smoke.sh --prepare-fixture   # mkdir on SSH alias (default tc5)
+# optional: HOST_PROTECT_LAB_FIXTURE_SSH=<ssh-alias-that-resolves-agent>
+./scripts/host-protect-lab-smoke.sh --prepare-fixture
 ./scripts/host-protect-lab-smoke.sh
 ```
 
-Public origin still needs `HOST_PROTECT_LAB_ALLOW_PUBLIC_PROD=1` or `GUARD_LAB_ALLOW_PUBLIC_PROD=1`. Never print tokens or IPs.
+Public origin still needs `HOST_PROTECT_LAB_ALLOW_PUBLIC_PROD=1` or `GUARD_LAB_ALLOW_PUBLIC_PROD=1`. Never print tokens or IPs. Flag on a public origin exposes `/host` to logged-in users — ops decision, not this script.
