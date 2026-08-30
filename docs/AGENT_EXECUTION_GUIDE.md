@@ -2,7 +2,7 @@
 
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
-**Last updated:** 2026-08-29
+**Last updated:** 2026-08-30
 **Repo tip at write time:** re-`git pull` after reset. Expect **`ff82389`** or newer (#477 findings pagination + P6 S3 AM one-pager). **P6 S1–S3**. **P11** status host SSL-gated Active + `statushost` credits. Open residual: **GTM human**; P11 SSL/pricing human; Dependabot — do not mass-merge. No IPs/secrets. Never commit IPs/passwords/enroll keys.
 **Guard e2e rule:** if the user asks for a **full prod e2e suite including Guard enroll/unenroll**, **wipe `tc5` + leftover Manager/DB smoke rows first** — see **§4.1**. Do not skip this. Do not treat Playwright as enroll/unenroll.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
@@ -106,6 +106,7 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 | **P8-i18n** | **i18n id/en** | Dual language SPA | Catalogs, switcher, executive/notify locale, `users.locale` | Extra locales, CVE translation, legal pages | **S1–S7 on `main`** (#367–#373). Spek [`i18n-v1.md`](specs/i18n-v1.md) — **not** a second P8; do not re-implement. |
 | **P9** | **Theme light/dark** | Operator appearance | Tokens + switcher; default dark | Per-org theme, Wave G layout | **S1–S3 on `main`** (#375–#378). Spek [`theme-v1.md`](specs/theme-v1.md). |
 | **P10** | **Public blog** (GTM content) | Trust / inbound copy without a deploy per post | Public `/blog`; platform-admin CMS; Markdown; SEO HTML island + path-only index | Comments, Next.js, org CMS, images, legal pages, Guard merge | Spek [`blog-v1.md`](specs/blog-v1.md). Q1–Q6 locked. **S1–S5 in PR #409.** |
+| **P12** | **Host Protect** (on-box web malware) | Attach for VPS/colo that want “Imunify-like” **without** cloning Imunify | Named web paths on Guard agent; YARA/Clam mock+real; hits; opt-in quarantine; SPA `/host`; spek [`host-protect-v1.md`](specs/host-protect-v1.md) | PHP PD, KernelCare, WAF, cPanel plugin, shared-UID farm, Imunify IP | **S0 draft** (docs). SKU working [`sku-host-protect.md`](commercial/sku-host-protect.md) — **IDR unset**. Do **not** implement S1+ until explicit verb. Do **not** ship under `/guard`. |
 
 **Priority rule for agents (post–#295 tip `8546ef3`):**
 
@@ -205,6 +206,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | [`docs/specs/guard-v1.md`](specs/guard-v1.md) | **S0–S5 + Http on `main`** (#273–#275); host/guide #279–#281 + #294 | Edge lab + secrets on deploy host only; no SIEM on `/guard` |
 | [`docs/specs/siem-v1.md`](specs/siem-v1.md) | **S0–S5 on `main`** (#307) | Flag-off until ops |
 | [`docs/specs/blog-v1.md`](specs/blog-v1.md) | **S0 + S1–S5** (PR #409) | Public `/blog` HTML island; admin CMS |
+| [`docs/specs/host-protect-v1.md`](specs/host-protect-v1.md) | **S0 draft** | P12; SKU working not P0 lock; no S1 code until implement verb |
 
 **Agent:** wait for **explicit implement** even when spec exists. Prefer **draft spec** over silent coding for new epics; P3 assets already shipped.
 
