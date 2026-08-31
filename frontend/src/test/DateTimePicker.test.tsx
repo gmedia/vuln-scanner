@@ -19,9 +19,10 @@ describe("DateTimePicker", () => {
         aria-label="Sejak"
       />,
     );
-    expect(screen.getByRole("button", { name: "Sejak" })).toHaveTextContent(
-      "06/08/2026 14:30",
-    );
+    const trigger = screen.getByRole("button", { name: "Sejak" });
+    expect(trigger).toHaveTextContent("06/08/2026 14:30");
+    expect(trigger.className).toContain("overflow-hidden");
+    expect(trigger.querySelector(".truncate")).toBeTruthy();
   });
 
   it("opens calendar and 24h hour/minute selects", async () => {
