@@ -10,6 +10,30 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
+## Session snapshot (2026-08-31 — Host Protect S7–S12 + SKU/HPP #538)
+
+| Item | State |
+|------|--------|
+| **`main` tip (coding)** | Re-`git pull`. Tip **`dcfc743`** squash **#538** Host Protect working-list IDR + HPP `hostscan`. Before that: **#537** S12 Clam, **#536** S11 quarantine, **#535** S10 YARA, **#534** S9 ingest, **#533** S7 honesty gate, **#532** S7–S12 spek, **#531** prod flag ON. |
+| **Open PRs** | None from this wave. Dependabot: **do not mass-merge**. |
+| **Host Protect** | **S0–S12 on `main`**. Honest on-box: missing worker roots → `unreachable_root`, **not** mock hits. SPA `/host`. Prod compose `HOST_PROTECT_ENABLED` default **true**; local/CI **false**. Quarantine ≠ reconstruct. Not Imunify clone. |
+| **HPP `hostscan`** | Alembic `add_hpp_hostscan` (revises `add_host_agent_ingest`). Seed **0** in git. Report counts `host_scans` with `status=completed` + `finished_at` in range. Fill real COGS in **`/admin/hpp`** after deploy — never commit amounts as truth. |
+| **Working list IDR** | Host Basic **150.000** · Pro **350.000** · Multi **900.000** / mo in `docs/commercial/sku-host-protect.md`. **Not** finance/invoice lock. `service_id` still **open**. |
+| **Lab `tc5`** | Runbook in `docs/multi-host-ops.md` (env-only tokens; aliases only). **Not executed** this session. Wipe Guard `tc5` first §4.1 if live smoke. Playwright ≠ enroll. Do **not** wipe `sx-erpstg`. |
+| **Host WAF** | P13 S0–S5 shipped. Per-site mode still **off**. **Never** paste snippet onto `sinexis.app` edge nginx. |
+| **Untracked** | Many `*-2k.png` / `.tmp-*` on coding host — **never git-add**. |
+| **Still human** | GTM; Host Protect **invoice lock**; fill HPP `hostscan`; optional live `tc5` helper smoke. |
+| **Engineering default** | **Do not start coding** until `implement` / `buat` / `kerjakan`. Do **not** invent P14 Coraza without spec. Do **not** poll CI. |
+
+### Next OpenCode session
+
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. Expect **`dcfc743`** or newer. `gh pr list --state open --assignee @me`. Do **not** mass-merge Dependabot. Do **not** poll CI.
+2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** then **`AGENTS.md`**. Protect: **`docs/specs/host-protect-v1.md`**. HPP: **`docs/specs/admin-hpp-v1.md`**. SKU: **`docs/commercial/sku-host-protect.md`**. Lab: **`docs/multi-host-ops.md`**.
+3. Speak **Bahasa Indonesia**; prefix git with `GIT_MASTER=1`. Never work on `main`. Never commit secrets/IPs/PNGs.
+4. **Do not** tell the user to SSH Alembic after a green **main** deploy — `scripts/deploy.sh` already migrates (`add_hpp_hostscan` included if deploy succeeded).
+5. **Guard:** `sx-erpstg` **online** — do **not** re-enroll/wipe unless user asks full Guard e2e (wipe `tc5` first §4.1). Playwright ≠ enroll.
+6. Optional (only if user picks): live **tc5** Host Protect helper (wipe-first); GTM/`service_id` lock; fill `/admin/hpp` `hostscan`; named Dependabot; SPA `/host` bugs.
+
 ## Session snapshot (2026-08-31 — /guide Host WAF copy)
 
 | Item | State |
