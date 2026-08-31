@@ -74,7 +74,7 @@ function Landing() {
             >
               {t("blog")}
             </a>
-            <div className="hidden sm:flex sm:items-center sm:gap-2 [&_button[aria-pressed=true]]:!bg-secondary [&_button[aria-pressed=true]]:!text-secondary-foreground">
+            <div className="hidden sm:flex sm:items-center sm:gap-2">
               <ThemeSwitcher />
               <LanguageSwitcher />
             </div>
@@ -107,7 +107,7 @@ function Landing() {
                 <SheetHeader>
                   <SheetTitle>{tc("menu", { defaultValue: "Menu" })}</SheetTitle>
                 </SheetHeader>
-                <nav className="flex flex-col gap-3 px-4 pb-6 [&_button[aria-pressed=true]]:!bg-secondary [&_button[aria-pressed=true]]:!text-secondary-foreground">
+                <nav className="flex flex-col gap-3 px-4 pb-6">
                   <a
                     href="/blog"
                     className="inline-flex min-h-11 items-center text-sm text-foreground"
@@ -256,7 +256,7 @@ function Landing() {
           <p className="text-center text-xs text-muted-foreground sm:text-left">
             {BRAND.footerLine}
           </p>
-          <div className="flex w-full flex-col items-stretch gap-2 sm:hidden [&_button]:min-h-11 [&_button]:min-w-11 [&_button[aria-pressed=true]]:!bg-secondary [&_button[aria-pressed=true]]:!text-secondary-foreground">
+          <div className="flex w-full flex-col items-stretch gap-2 sm:hidden [&_button]:min-h-11 [&_button]:min-w-11">
             <ThemeSwitcher className="h-11 min-h-11 w-full justify-stretch [&_button]:flex-1" />
             <LanguageSwitcher className="h-11 min-h-11 w-full justify-stretch [&_button]:flex-1" />
           </div>
@@ -285,12 +285,9 @@ function Landing() {
             >
               {tc("signIn")}
             </Link>
-            <Link
-              to="/register"
-              className="inline-flex min-h-11 items-center justify-center px-2 text-sm text-foreground transition-colors hover:text-primary sm:justify-start sm:px-0"
-            >
-              {tc("getStarted")}
-            </Link>
+            <Button asChild size="sm" className="min-h-11 text-xs sm:w-auto">
+              <Link to="/register">{tc("getStarted")}</Link>
+            </Button>
           </nav>
         </div>
       </footer>
