@@ -57,6 +57,7 @@ Nav groups match Sidebar: **Scan** · **Attach** · **Account** · **Admin** (ad
 | `/scan/:id` | `pages/ScanDetail.tsx` | — | Job detail; not in sidebar | `ScanDetail.test.tsx`, `e2e/scan-detail.spec.ts`, `e2e/export.spec.ts` |
 | `/schedules` | `pages/Schedules.tsx` | Scan | Attach loop | `Schedules.test.tsx` |
 | `/assets` | `pages/Assets.tsx` | Scan | `data-testid=nav-assets` | `Assets.test.tsx` |
+| `/host` | `pages/HostProtect.tsx` | Scan | Host Protect (malware + WAF tabs). Flag `HOST_PROTECT` / `HOST_WAF`. Not Guard enroll. | `HostProtect.test.tsx` |
 
 ### Attach / product
 
@@ -117,7 +118,7 @@ Minimum authenticated set (2k + mobile, light + dark) after a chrome/token chang
 2. `/login`
 3. `/dashboard`
 4. `/scan/ip` `/scan/domain` `/scan/mobile`
-5. `/schedules` `/assets`
+5. `/schedules` `/assets` `/host`
 6. `/guard` `/siem` `/uptime` `/uptime/status-page`
 7. `/credit-history` `/profile` `/settings/workspace` `/guide`
 8. Admin: `/admin` `/admin/users` `/admin/pricing` `/admin/hpp` `/admin/blog`
