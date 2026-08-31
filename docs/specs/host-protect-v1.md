@@ -253,7 +253,7 @@ No raw file download of malware samples in v1 (exfil risk). Optional later: plat
 2. Else: `host_scans.status=failed`, `error=unreachable_root` (sanitized), no hit rows, no SIEM/email.
 3. SPA: never a green completed scan with a toy webshell when the agent did not scan.
 
-**JSON ingest (frozen S9):** `scan_id`, `agent_id`, `engine` (`yara`\|`needles`), findings[]: `rel_path`, `class`, `rule_id`, `sha256`. Header `X-Host-Agent-Token`. **No** file bytes, **no** `full_log`.
+**JSON ingest (frozen S9, S12 adds `clam`):** `scan_id`, `agent_id`, `engine` (`yara`\|`needles`\|`clam`), findings[]: `rel_path`, `class`, `rule_id`, `sha256`. Header `X-Host-Agent-Token`. **No** file bytes, **no** `full_log`. Clam hits only when `clamscan`/`clamdscan` is on PATH; no CVD in git.
 
 **Packaging:** add-on that **Depends** `wazuh-agent`. **No** second enroll, **no** unsigned “Sinexis agent” that replaces Wazuh. `curl | bash` is not v1.
 
