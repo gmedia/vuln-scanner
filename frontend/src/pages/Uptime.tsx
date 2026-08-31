@@ -807,6 +807,7 @@ export default function Uptime() {
                 {t("filterEmpty")}
               </p>
             ) : (
+              <>
               <div className="space-y-2 p-3 md:hidden">
                 {filtered.map((m: UptimeMonitor) => (
                   <div
@@ -979,6 +980,7 @@ export default function Uptime() {
                 </TableBody>
               </Table>
               </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -1043,7 +1045,7 @@ export default function Uptime() {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+              </Table>
               </div>
             )}
           </CardContent>
