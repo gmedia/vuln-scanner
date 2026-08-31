@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import hashlib
 import os
 import re
+import shutil
+import subprocess
 from pathlib import Path
 
 from app.services.host_path import jail_rel_path, validate_root_path
@@ -96,4 +99,66 @@ def scan_local_root(root_path: str, pack: list[dict[str, object]] | None = None)
                             "rule_id": str(spec["rule_id"]),
                         }
                     )
+    return hits
+
+
+def clam_binary() -> str | None:
+    return shutil.which("clamdscan") or shutil.which("clamscan")
+
+
+def scan_clam(root_path: str, *, timeout: int = 120) -> list[dict[str, str]]:
+    binary = clam_binary()
+    if binary is None:
+        return []
+    root = validate_root_path(root_path)
+    if not os.path.isdir(root):
+        return []
+    cmd = [binary, "--no-summary", "-r", root]
+    if os.path.basename(binary) == "clamdscan":
+        cmd.insert(1, "--fdpass")
+    try:
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    hits: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for line in (proc.stdout or "").splitlines():
+        if not line.endswith(" FOUND"):
+            continue
+        left, _, sig = line.rpartition(":")
+        path = left.strip()
+        rule = sig.strip().removesuffix(" FOUND").strip()
+        if not path.startswith(root + os.sep) and path != root:
+            continue
+        rel = os.path.relpath(path, root).replace(os.sep, "/")
+        try:
+            jail_rel_path(root, rel)
+        except ValueError:
+            continue
+        if rel in seen:
+            continue
+        seen.add(rel)
+        safe_rule = re.sub(r"[^\w.\-]+", "_", rule)[:80] or "hit"
+        digest = ""
+        try:
+            h = hashlib.sha256()
+            with open(path, "rb") as fh:
+                h.update(fh.read(_MAX_BYTES))
+            digest = h.hexdigest()
+        except OSError:
+            digest = ""
+        item = {
+            "rel_path": rel,
+            "hit_class": "malware",
+            "rule_id": f"clam.{safe_rule}",
+        }
+        if digest:
+            item["sha256"] = digest
+        hits.append(item)
     return hits
