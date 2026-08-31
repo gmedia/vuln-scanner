@@ -1,6 +1,6 @@
 # Spec: Host Protect v1 (P12 — on-box web malware control plane)
 
-**Status:** **S5 shipped on `main`** (2026-08-30) — #501–#505. **S6** = in-repo signature walk on a **local** allowlisted `root_path` (`engine=yara`); **mock** if the path is not on the worker (CI / remote agent FS). Prod compose default **true** (API). Local/CI **false**. WAF/Coraza/cPanel remain **out**. SKU list IDR **unset**.
+**Status:** **S0–S6 shipped on `main`** (#501–#511). Control plane + worker-local YARA walk. Prod compose default **true** (API/worker). Local/CI **false**. **S7–S12** = honest on-box scan (docs 2026-08-31). S7 honesty gate (no mock persist when root missing) is **#533**. WAF/Coraza/cPanel remain **out**. SKU list IDR **unset**.
 **Goal:** first **on-host web malware** surface for orgs that already run **Guard thin** — named web paths, scheduled file/YARA (or Clam) scan, incidents in product, **opt-in quarantine** — **without** cloning Imunify360 (no PHP Proactive Defense, no KernelCare, no cPanel plugin in v1).
 **Epic:** **P12**. Does **not** replace P5 Guard, P7 SIEM, or P1 Scan attach. Does **not** jump GTM / Scan SKU lock.
 **Depends:** P2 Workspace (JWT `org_id`) · P3 Assets (optional link) · P5 Guard enroll (agent on VPS) · P7 SIEM cases (incident hand-off).
@@ -76,6 +76,9 @@ Need a **thin control plane**: register web paths on an enrolled host, scan on a
 | **WebShield CAPTCHA / L7 anti-bot** | Edge/CDN later |
 | **Imunify Email / outbound spam queue product** | Out |
 | **Herd CloudAV / sample upload to third parties** | Privacy; optional later with DPA |
+| **Second enroll daemon (`sinexis-scan` systemd)** | D1: one `wazuh-agent` per VM; helper is add-on only |
+| **Wazuh AR/wodle as findings bus** | Locked: POST JSON to FastAPI (Q7=A). AR = later escalation only |
+| **SaaS SSH / bind-mount customer FS** | Worker never sees VPS disks |
 | **Windows / IIS** | Linux agent first |
 | **Discover / raw logs on `/guard`** | SIEM stays on `/siem` |
 | **Merge into `scan_findings`** | Separate domain |
@@ -90,7 +93,7 @@ Need a **thin control plane**: register web paths on an enrolled host, scan on a
 | **D1** | Topology | **One Guard agent per VM**; sites are paths **on that agent**. No shared-kernel multi-tenant scanner in v1. |
 | **D2** | Positioning | **Attach beside** Imunify where panel already has it; **primary** on GMD VPS/colo without Imunify. |
 | **D3** | Cleanup | **Quarantine + restore** only. **No** automatic in-place clean. Auto-quarantine **off** until org admin enables. |
-| **D4** | Scanner | Pluggable: **mock** (CI) · **YARA** (preferred signatures we maintain) · optional **ClamAV** if present on image. Do not vendor Imunify DB. |
+| **D4** | Scanner | Pluggable: **mock** (CI/lab **only**, `HOST_PROTECT_ALLOW_MOCK`) · **YARA/needles** on the **agent VM** (S10) · optional **ClamAV** **S12** if binary present. Do not vendor Imunify DB. |
 | **D5** | Schedule | Beat-driven per site; default **daily**; cap concurrent scans per org (e.g. 2). |
 | **D6** | Path policy | Absolute POSIX path; must be under an **allowlist prefix** configured per agent (e.g. `/var/www`, `/home/*/public_html` pattern **server-side**). Reject `..`, NUL, non-UTF8, symlink escape (resolve + prefix check). |
 | **D7** | Flag | Prod compose default **true** (API + `worker_ip` + beat). Local/CI **false**. API/SPA **404** / feature-off copy when false. |
@@ -110,8 +113,8 @@ Need a **thin control plane**: register web paths on an enrolled host, scan on a
 | **Org member** | On-demand scan |
 | **Org admin / owner** | CRUD sites, quarantine/restore, auto-quarantine flag |
 | **Platform admin** | Flag/ops; not automatic all-org file access via UI bugs |
-| **SaaS worker** | Dispatches scan job to agent channel (Wazuh wodle / existing Guard worker pattern) |
-| **Host agent** | Runs scanner as constrained user; cannot scan outside allowlist |
+| **SaaS worker** | Enqueues scan; **does not** read customer disks. After S10: waits for agent ingest or fails `unreachable_root` |
+| **Host helper** | Add-on on the **same VM** as `wazuh-agent`; YARA/needles in jail; **POST JSON** to SaaS (not a second enroll daemon) |
 | **AM / hybrid** | Tickets for reconstruct; not in-app SOAR |
 
 ---
@@ -132,12 +135,14 @@ Need a **thin control plane**: register web paths on an enrolled host, scan on a
               host_hits                                  │
               host_quarantine                            │
                                            │
-                                           ▼
-                                    Agent on VPS
-                                    (YARA/Clam in jail)
+                                            ▼
+                              wazuh-agent (enroll + inventory)
+                              + Host Protect helper (Depends wazuh-agent)
+                              POST JSON findings → FastAPI ingest
+                              (YARA/needles in path jail; no file bytes)
 ```
 
-Wazuh remains **transport + inventory**. Product APIs are org-scoped only. Scanner results **project** into Postgres; do not require tenants to query Indexer for file hits.
+Wazuh remains **enroll + inventory + liveness**. **Results bus (locked 2026-08-31):** helper **POST JSON** to FastAPI — **not** Wazuh AR/wodle as the findings pipe, **not** Indexer as product store, **not** a second long-running `sinexis-scan` daemon. Product APIs stay org-scoped. Do not require tenants to query Indexer for file hits.
 
 ---
 
@@ -213,7 +218,7 @@ No raw file download of malware samples in v1 (exfil risk). Optional later: plat
 
 ---
 
-## 10. Slices (S0–S5)
+## 10. Slices (S0–S6 shipped; S7–S12 planned)
 
 | S | Deliverable | DoD | **Git** |
 |---|----------------|-----|---------|
@@ -223,9 +228,38 @@ No raw file download of malware samples in v1 (exfil risk). Optional later: plat
 | **S3** | SPA `/host` + i18n | vitest; frozen testids | **#504** |
 | **S4** | Hits → SIEM case + email for webshell/backdoor | no `full_log`; no `scan_findings` | **#505** |
 | **S5** | Quarantine/restore + audit; auto-quarantine default off | tests for path jail | **#505** |
-| **S6** | Local signature walk (in-repo `.yar` strings) + mock fallback | pytest engine + job fallback; no Imunify DB; no WAF | this PR |
+| **S6** | Local signature walk (in-repo `.yar` strings) + mock fallback | pytest engine + job fallback; no Imunify DB; no WAF | **#511** |
 
-**S6+ HTTP WAF** is **P13**, not a Host Protect malware slice: [`host-waf-v1.md`](host-waf-v1.md). Still out of P12: CrowdSec/Wazuh AR; panel plugin; PHP PD; agent SSH/wodle file move.
+**S6+ HTTP WAF** is **P13**, not a Host Protect malware slice: [`host-waf-v1.md`](host-waf-v1.md).
+
+### 10.1 Honest on-box (S7–S12) — owner lock 2026-08-31
+
+**Q7–Q11** (session): results = **POST JSON to SaaS**; epic 1 = **scan on-box, quarantine disk later**; package = **add-on Depends `wazuh-agent`**; engine = **YARA/needles only**; missing path = **fail closed in prod**, mock **only** CI/lab.
+
+| S | Deliverable | DoD (agent-executable) | Out of this slice |
+|---|----------------|------------------------|-------------------|
+| **S7** Honesty gate | Never persist `MOCK_HITS` on public origin. `HOST_PROTECT_ALLOW_MOCK` for CI/lab only. Failed scan `unreachable_root`, `hit_count=0`, no SIEM. SPA copy: path not on agent. | `rg MOCK_HITS` + pytest: mock flag off + missing dir → **zero** `cache.php` rows; SIEM not called. Flag-on + `run_mock_host_scan` still 1 fixture hit. | New engine, `.deb`, Clam |
+| **S8** Spek/contract (this docs wave) | JSON ingest shape, token rules, jail, non-goals, AM copy | This section merged; **0** `backend/` `workers/` `frontend/` in the docs PR | App code |
+| **S9** Ingest API | `POST /api/host/agent/results` (name freeze in implement PR). Per-agent hashed token (**not** global `ApiKey`, **not** user JWT). Cap findings size. Bind `scan_id` + `guard_agent_id` + org. | pytest IDOR: org A token cannot write org B `host_hits`. Oversize → 413. Replay/expired token → 401. | Wodle as bus |
+| **S10** On-box YARA | Helper script + drop-in (unit or cron); `Depends: wazuh-agent`; allowlist `/var/www` `/srv/www` `/home`; timeout/nice; same in-repo needles; `yara` CLI **optional** if on PATH. POST to S9. | Lab **tc5 fixture** (not worker bind, not ERP): needle hit on that disk. CI green **without** Clam/yara packages. Path outside jail → non-zero, no POST. | Clam, Windows, second systemd agent |
+| **S11** On-disk quarantine | `mv` inside jail to `/var/lib/sinexis/quarantine/<site-id>/` (0700, noexec, not under docroot); restore reverse; audit `dest_basename`. Fail command → **do not** set `quarantined`. Auto still off. | Lab quarantine then restore on fixture. pytest jail. | Auto-clean PHP |
+| **S12** Clam optional | Extra `engine=clam` hits **iff** `clamscan`/`clamdscan` present | Skip if binary absent; no CVD in git | Required Clam in CI image |
+
+**Honest-scan epic (implement later):** S7 + S9 + S10. **S11** separate PR. **S8** is this documentation.
+
+**Mock policy (locked):**
+
+1. Persist `engine=mock` / `MOCK_HITS` **only** when `HOST_PROTECT_ALLOW_MOCK=true` **and** origin is not public (`sinexis.app` / `vs.appmedia.id`).
+2. Else: `host_scans.status=failed`, `error=unreachable_root` (sanitized), no hit rows, no SIEM/email.
+3. SPA: never a green completed scan with a toy webshell when the agent did not scan.
+
+**JSON ingest (illustrative — freeze in S9 PR):** `scan_id`, `agent_id`, `engine` (`yara`\|`needles`), findings[]: `rel_path`, `class`, `rule_id`, `sha256`. **No** file bytes, **no** `full_log`.
+
+**Packaging:** add-on that **Depends** `wazuh-agent`. **No** second enroll, **no** unsigned “Sinexis agent” that replaces Wazuh. `curl | bash` is not v1.
+
+**Lab:** fixture on **Guard agent (`tc5`)**, not worker FS, never `sx-erpstg`. Wipe-first only for full Guard e2e. No IPs/tokens in git.
+
+**AM (until S10 lab + H4/H9):** do **not** say “kami scan malware di VPS Anda” after S7-only. After S10 lab: pilot on named folder. Invoice only after IDR lock.
 
 ---
 
@@ -239,6 +273,11 @@ No raw file download of malware samples in v1 (exfil risk). Optional later: plat
 | **Q4** | YARA pack source | In-repo **minimal** rules + ops-private extra later; no Imunify DB |
 | **Q5** | cPanel plugin timeline | **Not S1–S5** |
 | **Q6** | Auto-quarantine for `suspicious` | **Never** auto; only `webshell`/`backdoor` if org enables |
+| **Q7** | Results transport | **POST JSON to SaaS** (locked 2026-08-31). Not AR/wodle bus |
+| **Q8** | First honest epic | **On-box scan**; disk quarantine = **S11** |
+| **Q9** | Package | **Add-on Depends `wazuh-agent`**, not dual daemon |
+| **Q10** | Engine v1 | **YARA/needles**; Clam = **S12** |
+| **Q11** | Missing agent path | **Fail closed** in prod; mock **CI/lab flag only** |
 
 ---
 
@@ -256,7 +295,7 @@ No raw file download of malware samples in v1 (exfil risk). Optional later: plat
 
 ## 13. Agent implementation notes
 
-- S1–S5 already on `main`. Further Host Protect work = **S6+** or bugfix only, on a new branch from latest `main`; never implement on `main`.
+- S0–S6 already on `main`. **S7–S12** are specified here; **do not implement** app code until the user says `implement` / `buat` / `kerjakan`. New branch from latest `main`; never implement on `main`.
 - Atomic conventional commits; **ONE COMMIT = FAILURE** for 3+ unrelated files.
 - Prefix git with `GIT_MASTER=1`.
 - Do not print tokens/IPs. Do not commit PNG recaptures.
