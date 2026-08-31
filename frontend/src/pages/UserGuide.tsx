@@ -255,7 +255,7 @@ function UserGuide() {
   const activeLabel = t(`toc.${activeId}`);
 
   return (
-    <div>
+    <div className="pb-8">
       <div className="mb-6 max-w-4xl 2xl:max-w-none">
         <div className="mb-1 flex items-center gap-2 text-primary">
           <BookOpen className="h-5 w-5" />

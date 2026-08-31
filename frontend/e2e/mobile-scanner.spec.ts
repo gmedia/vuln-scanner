@@ -7,9 +7,8 @@ test.describe("Mobile Scanner", () => {
     await expect(page.locator("h2:has-text('Mobile scanner')")).toBeVisible();
     await expect(page.locator("text=Upload binary")).toBeVisible();
     await expect(page.locator("text=Choose .apk or .aab file")).toBeVisible();
-    await expect(
-      page.locator("text=Tap to browse, or drop a file (max 500MB)"),
-    ).toBeVisible();
+    await expect(page.locator("text=Click or drop")).toBeVisible();
+    await expect(page.locator("text=(max 500MB)")).toBeVisible();
     await expect(page.locator("button:has-text('Browse files')")).toBeVisible();
     await expect(
       page.locator("button:has-text('Start mobile scan')"),

@@ -15,6 +15,8 @@ import {
   restoreHostHit,
   type HostSite,
 } from "@/api/hostProtect";
+import { Link } from "react-router-dom";
+import { Shield } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -142,12 +144,21 @@ export default function HostProtect() {
     return (
       <div className="space-y-6" data-testid="host-page">
         <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p
-          className="text-sm text-muted-foreground"
-          data-testid="host-feature-off"
-        >
-          {t("featureOff")}
-        </p>
+        <Card>
+          <CardContent className="flex min-h-[12rem] flex-col items-center justify-center gap-3 px-6 py-10 text-center">
+            <Shield className="h-10 w-10 text-foreground/50" aria-hidden />
+            <p className="text-sm font-medium text-foreground">{t("title")}</p>
+            <p
+              className="max-w-md text-sm text-muted-foreground"
+              data-testid="host-feature-off"
+            >
+              {t("featureOff")}
+            </p>
+            <Button variant="outline" asChild>
+              <Link to="/guide">Guide</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }

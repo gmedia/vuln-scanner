@@ -35,18 +35,20 @@ _SHELL_CSS = """
   --measure:42rem;
   --rail:72rem;
 }
-.dark{
-  color-scheme:dark;
-  --background:hsl(0 0% 4%);
-  --foreground:hsl(0 0% 96%);
-  --muted:hsl(0 0% 12%);
-  --muted-foreground:hsl(0 0% 62%);
-  --border:hsl(0 0% 16%);
-  --primary:hsl(142 71% 45%);
-  --primary-foreground:hsl(0 0% 4%);
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme:dark;
+    --background:hsl(0 0% 4%);
+    --foreground:hsl(0 0% 96%);
+    --muted:hsl(0 0% 12%);
+    --muted-foreground:hsl(0 0% 72%);
+    --border:hsl(0 0% 22%);
+    --primary:hsl(142 71% 45%);
+    --primary-foreground:hsl(0 0% 4%);
+  }
 }
 *{box-sizing:border-box}
-html{color-scheme:light dark;background:var(--background)}
+html{color-scheme:light;background:var(--background)}
 body{
   margin:0;min-height:100dvh;display:flex;flex-direction:column;
   font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -72,7 +74,7 @@ a:hover{color:var(--foreground)}
 }
 .brand-accent{color:var(--primary)}
 .header-actions{display:flex;align-items:center;gap:0.5rem;flex-shrink:0}
-.header-actions a,.theme-switch button{
+.header-actions a{
   display:inline-flex;align-items:center;min-height:2.75rem;padding:0 0.75rem;
   font-size:0.75rem;text-decoration:none;color:var(--foreground);
   border:1px solid var(--border);border-radius:0.375rem;background:transparent;
@@ -83,11 +85,6 @@ a:hover{color:var(--foreground)}
   background:var(--primary);color:var(--primary-foreground);border-color:transparent;
 }
 .header-actions a[aria-current="page"]{color:var(--foreground);font-weight:600}
-.theme-switch{display:inline-flex;border:1px solid var(--border);border-radius:0.375rem;overflow:hidden}
-.theme-switch button{border:0;border-radius:0;font-size:0.6875rem;padding:0 0.6rem}
-.theme-switch button[aria-pressed="true"]{
-  background:var(--primary);color:var(--primary-foreground);
-}
 main.rail{flex:1;width:min(var(--rail),calc(100% - 2rem));margin:0 auto;padding:2.5rem 0 4rem}
 main.measure{flex:1;width:min(var(--measure),calc(100% - 2rem));margin:0 auto;padding:3rem 0 4.5rem}
 .page-intro{margin:0 0 2rem;max-width:40rem}
@@ -162,45 +159,6 @@ ol.index .read{
 }
 """
 
-_THEME_BOOT = """
-<script>
-(function(){
-  var k='sinexis.theme', t='dark';
-  try { var s=localStorage.getItem(k); if(s==='light'||s==='dark') t=s; } catch(e){}
-  document.documentElement.classList.toggle('dark', t==='dark');
-  document.documentElement.style.colorScheme=t;
-  var m=document.querySelector('meta[name="theme-color"]');
-  if(m) m.setAttribute('content', t==='dark' ? '#0a0a0a' : '#fafafa');
-})();
-</script>
-"""
-
-_THEME_FOOT = """
-<script>
-(function(){
-  var k='sinexis.theme';
-  function cur(){
-    try { var s=localStorage.getItem(k); if(s==='light'||s==='dark') return s; } catch(e){}
-    return 'dark';
-  }
-  function apply(t){
-    document.documentElement.classList.toggle('dark', t==='dark');
-    document.documentElement.style.colorScheme=t;
-    var m=document.querySelector('meta[name="theme-color"]');
-    if(m) m.setAttribute('content', t==='dark' ? '#0a0a0a' : '#fafafa');
-    try { localStorage.setItem(k, t); } catch(e){}
-    document.querySelectorAll('[data-theme-set]').forEach(function(b){
-      b.setAttribute('aria-pressed', b.getAttribute('data-theme-set')===t ? 'true' : 'false');
-    });
-  }
-  document.querySelectorAll('[data-theme-set]').forEach(function(b){
-    b.addEventListener('click', function(){ apply(b.getAttribute('data-theme-set')); });
-  });
-  apply(cur());
-})();
-</script>
-"""
-
 
 def _human_date(value: datetime | None) -> str:
     if value is None:
@@ -253,12 +211,11 @@ def _shell(
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<meta name="theme-color" content="#0a0a0a"/>
+<meta name="theme-color" content="#fafafa"/>
 <title>{escape_text(title)}</title>
 <link rel="canonical" href="{escape_text(canonical)}"/>
 <meta name="robots" content="index,follow"/>
 <style>{_SHELL_CSS}</style>
-{_THEME_BOOT}
 </head>
 <body>
 <header class="site-header">
@@ -271,10 +228,6 @@ def _shell(
       <a class="ghost" href="/blog"{blog_cur}>Blog</a>
       <a class="ghost sm-hide" href="/login">Sign in</a>
       <a class="primary" href="/register">Get started</a>
-      <span class="theme-switch" role="group" aria-label="Theme">
-        <button type="button" data-theme-set="dark" aria-pressed="true">Dark</button>
-        <button type="button" data-theme-set="light" aria-pressed="false">Light</button>
-      </span>
     </nav>
   </div>
 </header>
@@ -293,7 +246,6 @@ def _shell(
     </nav>
   </div>
 </footer>
-{_THEME_FOOT}
 </body>
 </html>
 """

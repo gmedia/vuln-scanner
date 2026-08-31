@@ -155,15 +155,19 @@ function AdminBlog() {
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label>{t("blogLocale")}</Label>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="blog-locale">{t("blogLocale")}</Label>
               <Select
                 value={form.locale}
                 onValueChange={(v) =>
                   setForm({ ...form, locale: v as "id" | "en" })
                 }
               >
-                <SelectTrigger data-testid="blog-locale">
+                <SelectTrigger
+                  id="blog-locale"
+                  data-testid="blog-locale"
+                  className="h-10 w-full"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

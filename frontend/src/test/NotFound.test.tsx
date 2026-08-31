@@ -118,6 +118,13 @@ describe("NotFound", () => {
     });
   });
 
+  it("renders theme and language switchers", async () => {
+    render(<NotFound />);
+    await screen.findByText("404");
+    expect(screen.getByTestId("theme-switcher")).toBeInTheDocument();
+    expect(screen.getByTestId("language-switcher")).toBeInTheDocument();
+  });
+
   it("uses a hairline card so it separates from the canvas", async () => {
     const { container } = render(<NotFound />);
     await screen.findByText("404");

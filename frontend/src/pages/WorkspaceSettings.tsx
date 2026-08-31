@@ -288,7 +288,7 @@ function WorkspaceSettings() {
               <li>{t("pilotStepCredits")}</li>
               <li>{t("pilotStepReport")}</li>
             </ol>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <Button asChild variant="outline" size="sm">
                 <Link to="/assets" data-testid="pilot-link-assets">
                   {t("pilotLinkAssets")}
@@ -507,7 +507,11 @@ function WorkspaceSettings() {
                   </p>
                   <Badge
                     variant={roleBadgeVariant(m.role)}
-                    className="w-fit text-[10px] uppercase"
+                    className={
+                      m.role === "owner"
+                        ? "w-fit border-primary bg-primary text-[10px] uppercase text-primary-foreground"
+                        : "w-fit text-[10px] uppercase"
+                    }
                   >
                     {m.role}
                   </Badge>

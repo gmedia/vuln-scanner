@@ -78,8 +78,8 @@ describe("Assets page", () => {
     ]);
     const user = userEvent.setup();
     renderPage();
-    await waitFor(() => expect(mockList).toHaveBeenCalled());
-    await user.click(screen.getByTestId("assets-add"));
+    await waitFor(() => expect(screen.getByTestId("assets-empty-cta")).toBeInTheDocument());
+    await user.click(screen.getByTestId("assets-empty-cta"));
     await user.type(screen.getByTestId("asset-name"), "Web");
     await user.type(screen.getByTestId("asset-target"), "example.com");
     await user.click(screen.getByTestId("asset-save"));

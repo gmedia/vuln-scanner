@@ -47,9 +47,9 @@ describe("AuthLayout", () => {
         <div>form</div>
       </AuthLayout>,
     );
-    const island = container.querySelector(".max-w-2xl");
+    const island = container.querySelector(".max-w-3xl");
     expect(island).toBeInstanceOf(HTMLElement);
-    expect(island).toHaveClass("2xl:max-w-3xl");
+    expect(island).toHaveClass("2xl:max-w-4xl");
   });
 
   it("keeps the brand tagline hidden until the sm breakpoint", () => {
@@ -93,7 +93,7 @@ describe("AuthLayout", () => {
     );
   });
 
-  it("stacks switchers full-width on xs with 44px min height", () => {
+  it("keeps switchers in a compact row with 44px min height", () => {
     render(
       <AuthLayout title="Sign in">
         <div>form</div>
@@ -101,7 +101,8 @@ describe("AuthLayout", () => {
     );
     const theme = screen.getByTestId("theme-switcher");
     const locale = screen.getByTestId("language-switcher");
-    expect(theme).toHaveClass("min-h-11", "w-full", "sm:w-auto");
-    expect(locale).toHaveClass("min-h-11", "w-full", "sm:w-auto");
+    expect(theme).toHaveClass("min-h-11", "w-auto");
+    expect(locale).toHaveClass("min-h-11", "w-auto");
+    expect(theme.parentElement).toHaveClass("flex-row");
   });
 });

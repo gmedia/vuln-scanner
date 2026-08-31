@@ -10,9 +10,17 @@ import {
   ArrowRight,
   Server,
   Activity,
+  Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import {
   Accordion,
   AccordionContent,
@@ -84,6 +92,44 @@ function Landing() {
                 {tc("getStarted")}
               </Button>
             </Link>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="min-h-11 min-w-11 sm:hidden"
+                  aria-label={tc("menu", { defaultValue: "Menu" })}
+                >
+                  <Menu className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-72 sm:max-w-sm">
+                <SheetHeader>
+                  <SheetTitle>{tc("menu", { defaultValue: "Menu" })}</SheetTitle>
+                </SheetHeader>
+                <nav className="flex flex-col gap-3 px-4 pb-6 [&_button[aria-pressed=true]]:!bg-secondary [&_button[aria-pressed=true]]:!text-secondary-foreground">
+                  <a
+                    href="/blog"
+                    className="inline-flex min-h-11 items-center text-sm text-foreground"
+                  >
+                    {t("blog")}
+                  </a>
+                  <ThemeSwitcher className="w-full" />
+                  <LanguageSwitcher className="w-full" />
+                  <Link to="/login">
+                    <Button
+                      variant="outline"
+                      className="w-full min-h-11 border-muted-foreground/50 text-foreground"
+                    >
+                      {tc("signIn")}
+                    </Button>
+                  </Link>
+                  <Link to="/register">
+                    <Button className="w-full min-h-11">{tc("getStarted")}</Button>
+                  </Link>
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>
@@ -165,7 +211,7 @@ function Landing() {
               {featureKeys.map((feature) => (
                 <Card
                   key={feature.titleKey}
-                  className="hover:border-primary/40 transition-colors"
+                  className="h-full hover:border-primary/40 transition-colors"
                 >
                   <CardHeader>
                     <feature.icon className="h-8 w-8 text-primary mb-2" />
@@ -185,7 +231,7 @@ function Landing() {
         </section>
 
         <section className="px-4 py-12">
-          <div className="mx-auto max-w-3xl 2xl:max-w-4xl">
+          <div className="mx-auto max-w-6xl 2xl:max-w-[90rem]">
             <h2 className="mb-8 text-center text-2xl font-bold tracking-wide text-foreground">
               {t("faqTitle")}
             </h2>
@@ -217,31 +263,31 @@ function Landing() {
           <nav className="flex w-full flex-col items-stretch gap-1 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-4">
             <a
               href="/blog"
-              className="inline-flex min-h-11 items-center justify-center px-2 text-xs text-muted-foreground transition-colors hover:text-foreground sm:justify-start sm:px-0"
+              className="inline-flex min-h-11 items-center justify-center px-2 text-sm text-foreground transition-colors hover:text-primary sm:justify-start sm:px-0"
             >
               {t("blog")}
             </a>
             <a
               href="/terms"
-              className="inline-flex min-h-11 items-center justify-center px-2 text-xs text-muted-foreground transition-colors hover:text-foreground sm:justify-start sm:px-0"
+              className="inline-flex min-h-11 items-center justify-center px-2 text-sm text-foreground transition-colors hover:text-primary sm:justify-start sm:px-0"
             >
               {t("terms")}
             </a>
             <a
               href="/privacy"
-              className="inline-flex min-h-11 items-center justify-center px-2 text-xs text-muted-foreground transition-colors hover:text-foreground sm:justify-start sm:px-0"
+              className="inline-flex min-h-11 items-center justify-center px-2 text-sm text-foreground transition-colors hover:text-primary sm:justify-start sm:px-0"
             >
               {t("privacy")}
             </a>
             <Link
               to="/login"
-              className="inline-flex min-h-11 items-center justify-center px-2 text-xs text-muted-foreground transition-colors hover:text-foreground sm:justify-start sm:px-0"
+              className="inline-flex min-h-11 items-center justify-center px-2 text-sm text-foreground transition-colors hover:text-primary sm:justify-start sm:px-0"
             >
               {tc("signIn")}
             </Link>
             <Link
               to="/register"
-              className="inline-flex min-h-11 items-center justify-center px-2 text-xs text-muted-foreground transition-colors hover:text-foreground sm:justify-start sm:px-0"
+              className="inline-flex min-h-11 items-center justify-center px-2 text-sm text-foreground transition-colors hover:text-primary sm:justify-start sm:px-0"
             >
               {tc("getStarted")}
             </Link>

@@ -6,7 +6,7 @@ def test_terms_html_public(client):
     assert 'rel="canonical"' in resp.text
     assert "https://sinexis.app/terms" in resp.text
     assert 'href="/privacy"' in resp.text
-    assert "sinexis.theme" in resp.text
+    assert "sinexis.theme" not in resp.text
     assert "bukan nasihat hukum" in resp.text
     assert 'aria-current="page"' in resp.text
 

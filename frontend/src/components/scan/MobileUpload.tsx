@@ -205,13 +205,15 @@ function MobileUpload() {
             Choose {platform === "android" ? ".apk or .aab" : ".ipa"} file
           </p>
           <p className="mb-3 text-xs text-muted-foreground">
-            Tap to browse, or drop a file (max 500MB)
+            <span className="sm:hidden">Tap to browse</span>
+            <span className="hidden sm:inline">Click or drop</span>
+            {" "}
+            (max 500MB)
           </p>
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="min-h-11 text-foreground"
             onClick={(e) => {
               e.stopPropagation();
               fileRef.current?.click();

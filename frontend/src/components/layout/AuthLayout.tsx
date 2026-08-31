@@ -16,9 +16,9 @@ interface AuthLayoutProps {
 }
 
 const maxWidthClass = {
-  sm: "max-w-md 2xl:max-w-lg",
-  md: "max-w-lg 2xl:max-w-xl",
-  lg: "max-w-2xl 2xl:max-w-3xl",
+  sm: "max-w-xl 2xl:max-w-2xl",
+  md: "max-w-2xl 2xl:max-w-3xl",
+  lg: "max-w-3xl 2xl:max-w-4xl",
 } as const;
 
 function AuthLayout({
@@ -38,12 +38,12 @@ function AuthLayout({
           </p>
           <div
             className={cn(
-              "mt-2 flex w-full flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center",
+              "mt-2 flex w-full flex-row flex-wrap items-center justify-center gap-2",
               "[&_button[aria-pressed=true]]:!bg-secondary [&_button[aria-pressed=true]]:!text-secondary-foreground",
             )}
           >
-            <ThemeSwitcher className="h-11 min-h-11 w-full sm:w-auto" />
-            <LanguageSwitcher className="h-11 min-h-11 w-full sm:w-auto" />
+            <ThemeSwitcher className="h-11 min-h-11 w-auto" />
+            <LanguageSwitcher className="h-11 min-h-11 w-auto" />
           </div>
         </div>
 
@@ -55,7 +55,7 @@ function AuthLayout({
               </h1>
             )}
             {subtitle && (
-              <p className="text-sm text-muted-foreground">{subtitle}</p>
+              <p className="text-sm text-foreground/80">{subtitle}</p>
             )}
           </div>
         )}

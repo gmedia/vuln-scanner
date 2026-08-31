@@ -103,7 +103,7 @@ function Header({ children }: HeaderProps) {
                 className="font-mono font-bold text-primary tabular-nums"
                 data-testid="header-credits"
               >
-                {credits}
+                {credits.toLocaleString()}
               </span>
             </Link>
           </Button>
@@ -118,7 +118,7 @@ function Header({ children }: HeaderProps) {
                 className="h-11 min-h-11 gap-2 px-2 text-sm text-muted-foreground"
               >
                 <User className="h-4 w-4" />
-                <span className="hidden max-w-[14rem] truncate text-xs sm:inline">
+                <span className="hidden max-w-[10rem] truncate text-xs sm:inline">
                   {user.email}
                 </span>
                 <ChevronDown className="h-3 w-3" />

@@ -67,11 +67,11 @@ def test_public_html_index(client):
     assert "page-intro" in resp.text or "Belum ada artikel" in resp.text
     assert "brand-text" in resp.text
     assert 'rel="canonical"' in resp.text
-    assert "sinexis.theme" in resp.text
-    assert 'data-theme-set="dark"' in resp.text
+    assert "sinexis.theme" not in resp.text
+    assert "data-theme-set" not in resp.text
+    assert "theme-switch" not in resp.text
     assert 'class="rail"' in resp.text or "class='rail'" in resp.text
-    assert ".dark{" in resp.text
-    assert "document.documentElement.classList.toggle('dark'" in resp.text
+    assert "prefers-color-scheme" in resp.text
 
 
 def test_draft_not_public(client):
