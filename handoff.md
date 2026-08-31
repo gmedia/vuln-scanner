@@ -10,6 +10,31 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
+## Session snapshot (2026-08-31 — blog human copy + Host Protect on)
+
+| Item | State |
+|------|--------|
+| **`main` tip (coding)** | Re-`git pull`. Tip **`d1389ef`** squash **#525** blog human copy. Before that: **#524** `HOST_PROTECT_ENABLED` CI inject (`6f12892`), **#523** status-page CRUD, **#522** SIEM datetime. |
+| **Open PRs** | None assigned. Dependabot only — **do not mass-merge**. |
+| **Blog (live DB)** | All **8** published posts **PATCH**ed via admin JWT on **loopback** (public `/api/auth/login` hit CF 403). Bodies match `docs/content/blog/*.md`. Index **H1/lede** is **code** (`backend/app/api/blog_html.py`) — live after **#525 deploy**. New copy: H1 **Catatan buat yang situsnya sudah jalan**; lede **Scan berkala, jadwal, kredit, tim, dan alarm di server — bahasa biasa, tanpa istilah konsol.** If public `/blog` still shows **Tulisan buat…**, wait for main **deploy** job (do not SSH Alembic). |
+| **Blog slugs** | `apa-itu-sinexis`, `scan-domain-website`, `scan-ip-server`, `jadwal-scan-attach`, `kredit-dan-paket`, `aset-dan-workspace`, `uptime-situs-nyala`, `guard-dan-siem`. Seed ≠ live until PATCH. |
+| **Host Protect** | Prod **on**: host `.env` `HOST_PROTECT_ENABLED=true` (backend + celery_beat + worker_ip). GitHub secret set. **#524** injects flag in CI `.env` like SIEM. Git default still **false**. `GET /api/host/sites` **200**, empty list. **`HOST_WAF_ENABLED` still off.** |
+| **Status page** | **#523** on main: edit title, incident edit/delete. |
+| **SIEM** | **#522** on main (datetime filter). Prod flag ON; `SIEM_INCLUDE_FULL_LOG` false. |
+| **Untracked** | Many `*-2k.png` / `.tmp-*` on coding host — **never git-add**. |
+| **Still human** | GTM; Host Protect/WAF **IDR/`service_id`**; real HPP COGS. Optional recapture `/blog` PNGs after deploy. |
+| **Engineering default** | **Do not start coding** until `implement` / `buat` / `kerjakan`. Do **not** invent P14 Coraza without spec. Do **not** paste WAF onto `sinexis.app` edge. |
+
+### Next OpenCode session
+
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. Expect **`d1389ef`** or newer. `gh pr list --state open --assignee @me`. Do **not** mass-merge Dependabot.
+2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** then **`AGENTS.md`**.
+3. Speak **Bahasa Indonesia**; prefix git with `GIT_MASTER=1`. Never work on `main`. Never commit secrets/IPs/PNGs.
+4. **Do not** tell the user to SSH Alembic after a green **main** deploy — `scripts/deploy.sh` already migrates.
+5. Confirm public `https://sinexis.app/blog` H1 is **Catatan buat…** (not **Tulisan buat…**). If old, wait for deploy of `#525`.
+6. **Guard:** `sx-erpstg` **online** — do **not** re-enroll/wipe unless user asks full Guard e2e (wipe `tc5` first §4.1). Playwright ≠ enroll.
+7. Optional (only if user picks): recapture blog PNGs; GTM/IDR; named Dependabot; SPA `/host` bugs.
+
 ## Session snapshot (2026-08-31 — P13 Host WAF shipped + lab ops)
 
 | Item | State |
