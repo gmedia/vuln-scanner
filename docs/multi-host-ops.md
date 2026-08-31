@@ -212,7 +212,8 @@ SaaS **does not** SSH. Admin `GET /api/host/waf/sites/{id}/snippet` returns a ti
 - Do **not** auto-apply to `tc5` / live ERP.
 - `SecRequestBodyAccess Off` — never log request bodies.
 - CRS overlay is ops-owned; this generator is not Imunify and not a CRS dump.
-- `HOST_WAF_ENABLED` stays **false** in git. Lab flag is host `.env` only.
+- Prod compose default **`HOST_WAF_ENABLED=true`** (SaaS control plane). Per-site mode stays **off** until an admin chooses detect. Lab/local compose still default false.
+- Do **not** paste the snippet onto `sinexis.app` edge.
 
 S5 (live disposable vhost smoke) is a later slice.
 
@@ -233,4 +234,4 @@ export GUARD_LAB_PASSWORD='...'
 # ./scripts/host-waf-lab-smoke.sh --apply-vhost
 ```
 
-Public origin still needs `HOST_WAF_LAB_ALLOW_PUBLIC_PROD=1` or `GUARD_LAB_ALLOW_PUBLIC_PROD=1`. `HOST_WAF_ENABLED` stays **false** in git.
+Public origin still needs `HOST_WAF_LAB_ALLOW_PUBLIC_PROD=1` or `GUARD_LAB_ALLOW_PUBLIC_PROD=1`. Prod API flag may be on; that is **not** edge WAF.
