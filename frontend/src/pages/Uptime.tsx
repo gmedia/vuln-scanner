@@ -407,7 +407,13 @@ export default function Uptime() {
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
               {t("statDown")}
             </p>
-            <p className="mt-1 font-mono text-lg font-bold tabular-nums text-destructive">
+            <p
+              className={
+                downCount > 0
+                  ? "mt-1 font-mono text-lg font-bold tabular-nums text-destructive"
+                  : "mt-1 font-mono text-lg font-bold tabular-nums text-muted-foreground"
+              }
+            >
               {downCount}
             </p>
           </div>
@@ -801,7 +807,69 @@ export default function Uptime() {
                 {t("filterEmpty")}
               </p>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="space-y-2 p-3 md:hidden">
+                {filtered.map((m: UptimeMonitor) => (
+                  <div
+                    key={m.id}
+                    className="rounded-lg border border-border bg-card p-3 text-left"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="min-w-0 break-all font-medium text-foreground">
+                        {m.name}
+                      </p>
+                      <Badge variant={stateBadgeVariant(m.state)}>
+                        {stateLabel(m.state)}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
+                      {m.check_type} · {m.target}
+                    </p>
+                    <p className="mt-1 font-mono text-xs tabular-nums text-muted-foreground">
+                      {m.uptime_24h != null ? `${m.uptime_24h}%` : "—"}
+                      {m.last_latency_ms != null
+                        ? ` · ${m.last_latency_ms}ms`
+                        : ""}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setHistoryId((cur) => (cur === m.id ? null : m.id))
+                        }
+                      >
+                        {t("history")}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fillFromMonitor(m)}
+                      >
+                        {t("edit")}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => pauseMut.mutate(m.id)}
+                      >
+                        {m.enabled ? t("pause") : t("resume")}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-destructive"
+                        onClick={() => {
+                          if (window.confirm(t("confirmDelete")))
+                            delMut.mutate(m.id);
+                        }}
+                      >
+                        {t("delete")}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="hidden overflow-x-auto md:block">
               <Table>
                 <TableHeader>
                   <TableRow>
