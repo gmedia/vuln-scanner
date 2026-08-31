@@ -24,6 +24,26 @@ vi.mock("@/components/ui/Button", () => ({
   ),
 }));
 
+vi.mock("@/components/ui/sheet", () => ({
+  Sheet: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  SheetTrigger: ({
+    children,
+    asChild,
+  }: {
+    children: React.ReactNode;
+    asChild?: boolean;
+  }) => (asChild ? <>{children}</> : <button type="button">{children}</button>),
+  SheetContent: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  SheetHeader: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  SheetTitle: ({ children }: { children: React.ReactNode }) => (
+    <h2>{children}</h2>
+  ),
+}));
+
 vi.mock("@/components/ui/Card", () => ({
   Card: ({ children, ...props }: { children: React.ReactNode }) => (
     <div data-testid="card" {...props}>
@@ -99,6 +119,14 @@ describe("Landing Page", () => {
       (a) => a.getAttribute("href") === "/login",
     );
     expect(headerSignIn).toHaveClass("hidden", "sm:inline");
+  });
+
+  it("exposes a mobile menu trigger in the header", () => {
+    const header = document.querySelector("header");
+    expect(header).toBeTruthy();
+    const menu = header!.querySelector("button[aria-label]");
+    expect(menu).toBeTruthy();
+    expect(menu).toHaveClass("sm:hidden");
   });
 
   it("shows Sign In in the hero on mobile", () => {
