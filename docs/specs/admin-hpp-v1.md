@@ -11,7 +11,7 @@
 | Topic | Decision |
 |-------|----------|
 | Currency | **IDR integer** only |
-| Unit | One **completed** scan job (`ip` / `domain` / `apk` / `ipa`) **or** one **statushost** activation debit |
+| Unit | One **completed** scan job (`ip` / `domain` / `apk` / `ipa`) **or** one **statushost** activation debit **or** one **completed** Host Protect scan (`hostscan`) |
 | Out of v1 | Uptime probes, Guard agents, SIEM |
 | S1–S2 | HPP rates + job × rate report only |
 | S3 | SKU list-price overlay labeled **estimasi** (not invoice truth) |
@@ -37,7 +37,7 @@ Table `hpp_rates`:
 
 | Column | Type |
 |--------|------|
-| `key` | PK `varchar(20)` — `ip` \| `domain` \| `apk` \| `ipa` \| `statushost` |
+| `key` | PK `varchar(20)` — `ip` \| `domain` \| `apk` \| `ipa` \| `statushost` \| `hostscan` |
 | `amount_idr` | `int` ≥ 0 |
 | `updated_at` | timestamptz |
 | `updated_by` | UUID FK users, nullable |
@@ -55,7 +55,7 @@ Table `hpp_rates`:
 | POST | `/api/admin/hpp/costs` | `{ incurred_on, amount_idr, category, note }` |
 | DELETE | `/api/admin/hpp/costs/{id}` | 204 |
 
-Report rows: per key `count`, `rate_idr`, `hpp_idr` (= count × rate). Totals. Statushost count = `credit_logs` with `type=deduct` and description prefix `Status hostname:` in range.
+Report rows: per key `count`, `rate_idr`, `hpp_idr` (= count × rate). Totals. Statushost count = `credit_logs` with `type=deduct` and description prefix `Status hostname:` in range. Hostscan count = `host_scans` with `status=completed` and `finished_at` in range. Seed `hostscan` **0** — no real COGS in git.
 
 S3 overlay: for each SKU, **estimasi** HPP if monthly credits were burned entirely as IP jobs vs entirely as domain jobs (using current `pricing.credit_cost` and `hpp_rates`). Labelled estimasi.
 

@@ -1148,6 +1148,67 @@ class TestAdminHpp:
         assert line["count"] == 1
         assert line["hpp_idr"] == 500
 
+    @pytest.mark.asyncio
+    async def test_report_hostscan_from_completed_scans(self, client, db_session, sample_user):
+        from datetime import UTC, datetime
+
+        from app.models.guard import GuardAgent
+        from app.models.host_protect import HostScan, HostSite
+        from app.models.organization import Organization, OrganizationMembership
+
+        org = Organization(
+            id=uuid.uuid4(),
+            name="hpp-hostscan-org",
+            slug=f"hpp-hostscan-{uuid.uuid4().hex[:8]}",
+            kind="company",
+            sku="multi",
+            created_by_user_id=sample_user.id,
+        )
+        db_session.add(org)
+        db_session.add(
+            OrganizationMembership(
+                organization_id=org.id,
+                user_id=sample_user.id,
+                role="owner",
+            )
+        )
+        agent = GuardAgent(
+            id=uuid.uuid4(),
+            organization_id=org.id,
+            wazuh_agent_id="001",
+            name="hpp-lab",
+            status="active",
+        )
+        db_session.add(agent)
+        await db_session.flush()
+        site = HostSite(
+            id=uuid.uuid4(),
+            organization_id=org.id,
+            guard_agent_id=agent.id,
+            name="fixture",
+            root_path="/var/www/host-protect-fixture",
+            created_by=sample_user.id,
+        )
+        db_session.add(site)
+        await db_session.flush()
+        db_session.add(HppRate(key="hostscan", amount_idr=250, updated_at=datetime.now(UTC)))
+        db_session.add(
+            HostScan(
+                id=uuid.uuid4(),
+                organization_id=org.id,
+                site_id=site.id,
+                status="completed",
+                trigger="manual",
+                finished_at=datetime.now(UTC),
+            )
+        )
+        await db_session.commit()
+        resp = client.get("/api/admin/hpp/report", headers=API_HEADERS)
+        assert resp.status_code == 200
+        line = next(x for x in resp.json()["lines"] if x["key"] == "hostscan")
+        assert line["count"] == 1
+        assert line["hpp_idr"] == 250
+
     def test_report_bad_range(self, client):
         resp = client.get("/api/admin/hpp/report?from=2026-08-10&to=2026-08-01", headers=API_HEADERS)
         assert resp.status_code == 400
