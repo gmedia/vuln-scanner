@@ -142,9 +142,23 @@ def yara_available() -> bool:
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Sinexis Host Protect on-box scan helper")
-    p.add_argument("--root", required=True, help="Absolute web root on this VM")
-    p.add_argument("--scan-id", required=True)
-    p.add_argument("--agent-id", required=True)
+    p.add_argument(
+        "action",
+        nargs="?",
+        default="scan",
+        choices=("scan", "quarantine", "restore"),
+    )
+    p.add_argument("--root", default="", help="Absolute web root on this VM")
+    p.add_argument("--scan-id", default="")
+    p.add_argument("--agent-id", default="")
+    p.add_argument("--rel-path", default="")
+    p.add_argument("--site-id", default="")
+    p.add_argument("--hit-id", default="")
+    p.add_argument("--dest-basename", default="")
+    p.add_argument(
+        "--quarantine-root",
+        default=os.environ.get("SINEXIS_QUARANTINE_ROOT", "/var/lib/sinexis/quarantine"),
+    )
     p.add_argument("--api-base", default=os.environ.get("SINEXIS_API_BASE", ""))
     p.add_argument("--token", default=os.environ.get("SINEXIS_HOST_AGENT_TOKEN", ""))
     p.add_argument("--rules-dir", default=str(DEFAULT_RULES))
@@ -152,6 +166,82 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--dry-run", action="store_true", help="Scan only; do not POST")
     p.add_argument("--json-out", default="", help="Write findings JSON to path")
     return p.parse_args(argv)
+
+
+def _jail_rel(root: str, rel: str) -> str:
+    rel = (rel or "").strip().lstrip("/")
+    if not rel or _NUL in rel or ".." in rel.split("/"):
+        raise ValueError("bad rel")
+    joined = os.path.normpath(os.path.join(root, rel))
+    if joined != root and not joined.startswith(root + "/"):
+        raise ValueError("escape")
+    return joined
+
+
+def _qdir(site_id: str, qroot: str) -> str:
+    root = os.path.normpath(qroot)
+    if not root.startswith("/") or ".." in root.split("/"):
+        raise ValueError("bad qroot")
+    if any(root == p or root.startswith(p + "/") for p in ALLOWED_PREFIXES):
+        raise ValueError("qroot under web")
+    sid = (site_id or "").strip()
+    if not re.match(r"^[\w\-]+$", sid):
+        raise ValueError("bad site")
+    dest = os.path.normpath(os.path.join(root, sid))
+    if dest != root and not dest.startswith(root + "/"):
+        raise ValueError("escape")
+    return dest
+
+
+def _basename_ok(name: str) -> bool:
+    return bool(re.match(r"^[\w.\-]+$", name or "")) and "/" not in name
+
+
+def run_quarantine(args: argparse.Namespace) -> int:
+    try:
+        root = validate_root_path(args.root)
+        src = _jail_rel(root, args.rel_path)
+        dest_dir = _qdir(args.site_id, args.quarantine_root)
+        dest_bn = args.dest_basename or ""
+        if not _basename_ok(dest_bn):
+            raise ValueError("bad dest")
+    except ValueError:
+        return 2
+    if not os.path.isfile(src):
+        return 6
+    try:
+        os.makedirs(dest_dir, mode=0o700, exist_ok=True)
+        os.chmod(dest_dir, 0o700)
+        dest = os.path.join(dest_dir, dest_bn)
+        if os.path.lexists(dest):
+            return 6
+        os.rename(src, dest)
+    except OSError:
+        return 6
+    return 0
+
+
+def run_restore(args: argparse.Namespace) -> int:
+    try:
+        root = validate_root_path(args.root)
+        original = _jail_rel(root, args.rel_path)
+        dest_dir = _qdir(args.site_id, args.quarantine_root)
+        dest_bn = args.dest_basename or ""
+        if not _basename_ok(dest_bn):
+            raise ValueError("bad dest")
+    except ValueError:
+        return 2
+    src = os.path.join(dest_dir, dest_bn)
+    if not os.path.isfile(src):
+        return 6
+    try:
+        os.makedirs(os.path.dirname(original), exist_ok=True)
+        if os.path.lexists(original):
+            return 6
+        os.rename(src, original)
+    except OSError:
+        return 6
+    return 0
 
 
 def post_results(api_base: str, token: str, payload: dict[str, object], timeout: int) -> int:
@@ -175,6 +265,12 @@ def post_results(api_base: str, token: str, payload: dict[str, object], timeout:
 
 def run(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    if args.action == "quarantine":
+        return run_quarantine(args)
+    if args.action == "restore":
+        return run_restore(args)
+    if not args.scan_id or not args.agent_id:
+        return 4
     try:
         root = validate_root_path(args.root)
     except ValueError:

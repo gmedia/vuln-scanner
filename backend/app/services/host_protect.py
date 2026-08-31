@@ -23,7 +23,13 @@ from app.models.host_protect import (
 from app.models.organization import Organization
 from app.models.user import User
 from app.schemas.host_protect import HostHitResponse, HostScanResponse, HostSiteCreate, HostSiteResponse, HostSiteUpdate
-from app.services.host_path import jail_rel_path, quarantine_basename
+from app.services.host_path import (
+    jail_rel_path,
+    move_to_quarantine,
+    quarantine_basename,
+    quarantine_dir,
+    restore_from_quarantine,
+)
 from app.services.organization import get_membership, require_membership, role_at_least
 
 _celery = Celery(
@@ -310,10 +316,15 @@ class HostProtectService:
             raise HTTPException(status_code=400, detail="Hit cannot be quarantined")
         site = await self._get_site(hit.site_id, organization_id, user.id)
         try:
-            jail_rel_path(site.root_path, hit.rel_path)
+            src = jail_rel_path(site.root_path, hit.rel_path)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         dest = quarantine_basename(str(hit.id), hit.rel_path)
+        qdir = quarantine_dir(str(site.id), base=settings.host_protect_quarantine_root)
+        try:
+            move_to_quarantine(src, qdir, dest)
+        except OSError as exc:
+            raise HTTPException(status_code=400, detail="quarantine command failed") from exc
         hit.status = "quarantined"
         self.db.add(
             HostQuarantineEvent(
@@ -338,9 +349,15 @@ class HostProtectService:
             raise HTTPException(status_code=400, detail="Hit is not quarantined")
         site = await self._get_site(hit.site_id, organization_id, user.id)
         try:
-            jail_rel_path(site.root_path, hit.rel_path)
+            original = jail_rel_path(site.root_path, hit.rel_path)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+        dest = quarantine_basename(str(hit.id), hit.rel_path)
+        qdir = quarantine_dir(str(site.id), base=settings.host_protect_quarantine_root)
+        try:
+            restore_from_quarantine(qdir, dest, original)
+        except OSError as exc:
+            raise HTTPException(status_code=400, detail="restore command failed") from exc
         hit.status = "restored"
         self.db.add(
             HostQuarantineEvent(
@@ -348,7 +365,7 @@ class HostProtectService:
                 hit_id=hit.id,
                 actor_user_id=user.id,
                 action="restore",
-                dest_basename=quarantine_basename(str(hit.id), hit.rel_path),
+                dest_basename=dest,
             )
         )
         await self.db.commit()
