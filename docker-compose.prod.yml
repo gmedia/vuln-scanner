@@ -138,7 +138,7 @@ services:
       SIEM_MAX_LOOKBACK_HOURS: ${SIEM_MAX_LOOKBACK_HOURS:-168}
       SIEM_INCLUDE_FULL_LOG: ${SIEM_INCLUDE_FULL_LOG:-false}
       SIEM_MAX_PAGE_SIZE: ${SIEM_MAX_PAGE_SIZE:-50}
-      HOST_PROTECT_ENABLED: ${HOST_PROTECT_ENABLED:-false}
+      HOST_PROTECT_ENABLED: ${HOST_PROTECT_ENABLED:-true}
       HOST_WAF_ENABLED: ${HOST_WAF_ENABLED:-true}
       UPTIME_ENABLED: ${UPTIME_ENABLED:-true}
       UPTIME_ALLOW_PRIVATE: ${UPTIME_ALLOW_PRIVATE:-false}
@@ -200,7 +200,7 @@ services:
       CELERY_MODE: worker
       CELERY_QUEUE: ip_scan
       CELERY_CONCURRENCY: 2
-      HOST_PROTECT_ENABLED: ${HOST_PROTECT_ENABLED:-false}
+      HOST_PROTECT_ENABLED: ${HOST_PROTECT_ENABLED:-true}
     volumes:
       - scan_data:/tmp/scans
       # Lab-only local walk (S6). Host dir is empty unless ops plants a fixture.
@@ -414,7 +414,7 @@ services:
       CELERY_MODE: beat
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
       UPTIME_ENABLED: ${UPTIME_ENABLED:-true}
-      HOST_PROTECT_ENABLED: ${HOST_PROTECT_ENABLED:-false}
+      HOST_PROTECT_ENABLED: ${HOST_PROTECT_ENABLED:-true}
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import os; os.stat('/tmp/celerybeat-schedule')\""]
       interval: 30s
