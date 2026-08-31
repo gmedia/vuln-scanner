@@ -1,0 +1,14 @@
+Source: sinexis-host-protect
+Section: admin
+Priority: optional
+Maintainer: Sinexis <ops@sinexis.app>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+
+Package: sinexis-host-protect
+Architecture: all
+Depends: wazuh-agent, python3
+Description: Sinexis Host Protect on-box helper (YARA/needles)
+ Add-on for an enrolled wazuh-agent VM. Walks allowlisted web roots and
+ POSTs JSON findings to the Sinexis Host Protect ingest API.
+ Not a second enroll daemon.
