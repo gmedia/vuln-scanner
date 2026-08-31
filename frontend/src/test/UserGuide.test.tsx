@@ -82,6 +82,17 @@ describe("UserGuide", () => {
       }),
     ).toBeInTheDocument();
     expect(
+      screen.getByRole("heading", {
+        name: "Host Protect — on-box malware",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Host Protect" })).toHaveAttribute(
+      "href",
+      "/host",
+    );
+    expect(document.body.textContent ?? "").toMatch(/quarantine/i);
+    expect(document.body.textContent ?? "").toMatch(/reconstruct/i);
+    expect(
       screen.getByRole("heading", { name: "Tips & limits" }),
     ).toBeInTheDocument();
     expect(
