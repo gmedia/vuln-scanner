@@ -88,9 +88,10 @@ describe("IpScanForm", () => {
     expect(input).toHaveValue("1-1000");
   });
 
-  it("displays available credits", () => {
+  it("shows scan cost preview without a duplicate credits chip", () => {
     render(<IpScanForm />);
-    expect(screen.getByTestId("credit-display")).toBeInTheDocument();
+    expect(screen.getByTestId("scan-cost-preview")).toBeInTheDocument();
+    expect(screen.queryByTestId("credit-display")).not.toBeInTheDocument();
   });
 
   it("clears error when typing in target input", () => {

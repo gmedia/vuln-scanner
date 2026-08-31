@@ -20,7 +20,6 @@ function IpScanForm() {
   const handleScanError = useScanError();
   const setActiveScan = useScanStore((s) => s.setActiveScan);
   const {
-    creditDisplay,
     costPreview,
     checkAndDeduct,
     refreshAfterScan,
@@ -72,8 +71,6 @@ function IpScanForm() {
 
   return (
     <div className="space-y-4">
-      {creditDisplay}
-
       <div>
         <Label htmlFor="ip-scan-target" className="mb-1.5 block text-foreground/70">
           Target IP address
