@@ -181,7 +181,7 @@ function GoogleSignInButton() {
       {gisError ? (
         <p className="text-center text-xs text-destructive">{gisError}</p>
       ) : null}
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <div className="flex items-center gap-2 text-xs text-foreground/80">
         <span className="h-px flex-1 bg-border" />
         {t("orEmail")}
         <span className="h-px flex-1 bg-border" />
