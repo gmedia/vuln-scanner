@@ -76,7 +76,7 @@ If sales wants “one security page,” that is **tabs on `/host`**, not a new s
 
 | Topic | Default |
 |-------|---------|
-| Flag | `HOST_WAF_ENABLED=false` |
+| Flag | Prod compose default **true** (API). Local/CI **false**. Per-site mode still **off**. |
 | Mode | `off` |
 | Engine S1–S3 | **mock** (insert 0–1 synthetic event on “simulate”) |
 | Engine S4 | Coraza **or** nginx snippet **generated**; install = **hybrid/ops** on VPS |
