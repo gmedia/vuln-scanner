@@ -2,11 +2,11 @@
 
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
-**Last updated:** 2026-08-30
-**Repo tip at write time:** re-`git pull` after reset. Expect **`54eaa32`** or newer (#507 Host Protect lab smoke). **P12 S0–S5**. Open residual: **GTM human**; Host Protect **IDR/`service_id`** (human); Dependabot — do not mass-merge. No IPs/secrets. Never commit IPs/passwords/enroll keys.
+**Last updated:** 2026-08-31
+**Repo tip at write time:** re-`git pull` after reset. Expect **`25a293b`** or newer (#517 Host WAF copy snippet). **P12 Host Protect S0–S6** + **P13 Host WAF S0–S5 + SPA copy**. Flags `HOST_PROTECT_ENABLED` / `HOST_WAF_ENABLED` default **false**. Open residual: **GTM human**; Host Protect **IDR/`service_id`** (human); Dependabot — do not mass-merge. No IPs/secrets. Never commit IPs/passwords/enroll keys. Never paste WAF onto `sinexis.app` edge nginx.
 **Guard e2e rule:** if the user asks for a **full prod e2e suite including Guard enroll/unenroll**, **wipe `tc5` + leftover Manager/DB smoke rows first** — see **§4.1**. Do not skip this. Do not treat Playwright as enroll/unenroll.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
-**Phase snapshot:** **P0 policy locked** · **P1 attach shipped** · **P2 Workspace S1–S5** · **P3 assets S1–S5** · **P4 soft dual-brand** · **P5 Guard thin** (mock CI; live `sx-erpstg` online — do not wipe) · **P6 hospitality S1–S3** · **P7 SIEM S0–S5** (prod flag ON; `SIEM_INCLUDE_FULL_LOG` false) · **P8 Uptime S1–S5 + v2** · **P11 status page** · **P12 Host Protect S0–S5** (#501–#505; flag default off; IDR unset) · **i18n S1–S7** · **theme S1–S3** · **GTM human still open** · residual eng = bugs, Dependabot only when named + CI green — **do not** implement SIEM under Guard PRs. Do **not** re-implement i18n or Host Protect S1–S5 because docs used to say S0.
+**Phase snapshot:** **P0 policy locked** · **P1 attach shipped** · **P2 Workspace S1–S5** · **P3 assets S1–S5** · **P4 soft dual-brand** · **P5 Guard thin** (mock CI; live `sx-erpstg` online — do not wipe) · **P6 hospitality S1–S3** · **P7 SIEM S0–S5** (prod flag ON; `SIEM_INCLUDE_FULL_LOG` false) · **P8 Uptime S1–S5 + v2** · **P11 status page** · **P12 Host Protect S0–S6** · **P13 Host WAF S0–S5** (#512–#517; flags default off; IDR unset) · **i18n S1–S7** · **theme S1–S3** · **GTM human still open** · residual eng = bugs, Dependabot only when named + CI green — **do not** implement SIEM under Guard PRs. Do **not** re-implement i18n or Host Protect S1–S5 because docs used to say S0.
 
 ---
 
@@ -207,7 +207,8 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | [`docs/specs/guard-v1.md`](specs/guard-v1.md) | **S0–S5 + Http on `main`** (#273–#275); host/guide #279–#281 + #294 | Edge lab + secrets on deploy host only; no SIEM on `/guard` |
 | [`docs/specs/siem-v1.md`](specs/siem-v1.md) | **S0–S5 on `main`** (#307) | Flag-off until ops |
 | [`docs/specs/blog-v1.md`](specs/blog-v1.md) | **S0 + S1–S5** (PR #409) | Public `/blog` HTML island; admin CMS |
-| [`docs/specs/host-protect-v1.md`](specs/host-protect-v1.md) | **S0–S5 shipped** | P12; SKU IDR unset; lab [`scripts/host-protect-lab-smoke.sh`](../scripts/host-protect-lab-smoke.sh); S6+ only on explicit verb |
+| [`docs/specs/host-protect-v1.md`](specs/host-protect-v1.md) | **S0–S6 shipped** | P12; SKU IDR unset; lab [`scripts/host-protect-lab-smoke.sh`](../scripts/host-protect-lab-smoke.sh) |
+| [`docs/specs/host-waf-v1.md`](specs/host-waf-v1.md) | **S0–S5 + SPA copy shipped** (#512–#517) | P13; `HOST_WAF_ENABLED` default false; lab [`scripts/host-waf-lab-smoke.sh`](../scripts/host-waf-lab-smoke.sh); never ERP/`tc5`/edge nginx |
 
 **Agent:** wait for **explicit implement** even when spec exists. Prefer **draft spec** over silent coding for new epics; P3 assets already shipped.
 
