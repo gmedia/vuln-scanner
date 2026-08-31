@@ -119,3 +119,94 @@ def test_post_called_on_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
 def test_yara_optional_without_binary(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(helper.shutil, "which", lambda _n: None)
     assert helper.yara_available() is False
+
+
+def test_quarantine_restore_jail(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(helper, "ALLOWED_PREFIXES", (str(tmp_path / "www"),))
+    web = tmp_path / "www"
+    uploads = web / "wp-content" / "uploads"
+    uploads.mkdir(parents=True)
+    src = uploads / "cache.php"
+    src.write_text("evil", encoding="utf-8")
+    qroot = tmp_path / "libq"
+    rc = helper.run(
+        [
+            "quarantine",
+            "--root",
+            str(web),
+            "--rel-path",
+            "wp-content/uploads/cache.php",
+            "--site-id",
+            "site-a",
+            "--dest-basename",
+            "abcd1234_cache.php",
+            "--quarantine-root",
+            str(qroot),
+        ]
+    )
+    assert rc == 0
+    assert not src.exists()
+    dest = qroot / "site-a" / "abcd1234_cache.php"
+    assert dest.is_file()
+    assert oct(dest.parent.stat().st_mode)[-3:] == "700"
+    rc2 = helper.run(
+        [
+            "restore",
+            "--root",
+            str(web),
+            "--rel-path",
+            "wp-content/uploads/cache.php",
+            "--site-id",
+            "site-a",
+            "--dest-basename",
+            "abcd1234_cache.php",
+            "--quarantine-root",
+            str(qroot),
+        ]
+    )
+    assert rc2 == 0
+    assert src.is_file()
+    assert not dest.exists()
+
+
+def test_quarantine_outside_jail(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(helper, "ALLOWED_PREFIXES", ("/var/www",))
+    rc = helper.run(
+        [
+            "quarantine",
+            "--root",
+            "/tmp/not-www",
+            "--rel-path",
+            "x.php",
+            "--site-id",
+            "s1",
+            "--dest-basename",
+            "aa_x.php",
+            "--quarantine-root",
+            str(tmp_path / "q"),
+        ]
+    )
+    assert rc == 2
+
+
+def test_quarantine_missing_file_no_move(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(helper, "ALLOWED_PREFIXES", (str(tmp_path / "www"),))
+    web = tmp_path / "www"
+    web.mkdir()
+    rc = helper.run(
+        [
+            "quarantine",
+            "--root",
+            str(web),
+            "--rel-path",
+            "gone.php",
+            "--site-id",
+            "s1",
+            "--dest-basename",
+            "aa_gone.php",
+            "--quarantine-root",
+            str(tmp_path / "q"),
+        ]
+    )
+    assert rc == 6
+    assert not (tmp_path / "q" / "s1").exists() or not any((tmp_path / "q" / "s1").iterdir())
