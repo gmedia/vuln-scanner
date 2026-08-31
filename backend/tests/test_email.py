@@ -6,7 +6,11 @@ import pytest
 from aiosmtplib.errors import SMTPException
 
 import app.services.email as email_module
-from app.services.email import send_password_reset_email, send_verification_email
+from app.services.email import (
+    send_host_protect_email,
+    send_password_reset_email,
+    send_verification_email,
+)
 
 # ---------------------------------------------------------------------------
 # Successful sends
@@ -670,3 +674,34 @@ class TestRetryLoop:
 
         assert results == [True, True, True]
         assert mock_smtp.send_message.await_count == 3
+
+
+class TestSendHostProtectEmail:
+    @pytest.mark.asyncio
+    async def test_body_has_host_link_not_file_bytes(self, monkeypatch):
+        monkeypatch.setattr(email_module, "FRONTEND_URL", "https://app.example.test")
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            ok = await send_host_protect_email(
+                "owner@example.com",
+                site_name="Shop",
+                hit_class="webshell",
+                rel_path="wp-content/uploads/cache.php",
+                rule_id="mock.webshell.php",
+                hit_id="11111111-1111-1111-1111-111111111111",
+                locale="en",
+            )
+
+        assert ok is True
+        sent_msg = mock_smtp.send_message.call_args[0][0]
+        html = sent_msg.get_payload()[0].get_payload(decode=True).decode("utf-8")
+        assert "https://app.example.test/host" in html
+        assert "webshell" in html
+        assert "cache.php" in html
+        assert "<?php" not in html
+        assert "eval(" not in html
+        assert sent_msg["Subject"]
