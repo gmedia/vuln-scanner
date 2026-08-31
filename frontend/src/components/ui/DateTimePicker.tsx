@@ -67,17 +67,15 @@ function DateTimePicker({
           disabled={disabled}
           aria-label={ariaLabel}
           className={cn(
-            "h-10 min-h-10 w-full justify-start border border-border bg-input px-3 text-left font-normal shadow-none hover:bg-input",
+            "h-10 min-h-10 w-full min-w-0 justify-start overflow-hidden border border-border bg-input px-3 text-left font-normal shadow-none hover:bg-input",
             !selected && "text-muted-foreground",
             className,
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4 shrink-0 opacity-60" />
-          {selected ? (
-            format(selected, "dd/MM/yyyy HH:mm")
-          ) : (
-            <span>{placeholder}</span>
-          )}
+          <span className="min-w-0 truncate tabular-nums">
+            {selected ? format(selected, "dd/MM/yyyy HH:mm") : placeholder}
+          </span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
