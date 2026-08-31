@@ -177,7 +177,7 @@ function AdminHpp() {
             </p>
           ) : (
             <div className="hidden md:block">
-              <Table className="table-fixed">
+            <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[28%] text-[10px] uppercase tracking-wider">
@@ -453,7 +453,7 @@ function AdminHpp() {
                     <TableCell className="font-mono text-xs tabular-nums">
                       {formatIdr(line.amount_idr)}
                     </TableCell>
-                    <TableCell className="truncate text-xs text-muted-foreground">
+                    <TableCell className="max-w-[20rem] whitespace-normal break-words text-xs text-muted-foreground">
                       {line.note || "—"}
                     </TableCell>
                     <TableCell>
