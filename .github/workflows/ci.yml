@@ -438,6 +438,7 @@ jobs:
             SIEM_MAX_LOOKBACK_HOURS=${{ secrets.SIEM_MAX_LOOKBACK_HOURS || '168' }}
             SIEM_INCLUDE_FULL_LOG=${{ secrets.SIEM_INCLUDE_FULL_LOG || 'false' }}
             SIEM_MAX_PAGE_SIZE=${{ secrets.SIEM_MAX_PAGE_SIZE || '50' }}
+            HOST_PROTECT_ENABLED=${{ secrets.HOST_PROTECT_ENABLED || 'false' }}
             OBJECT_STORAGE_BACKEND=${{ secrets.OBJECT_STORAGE_BACKEND || 'local' }}
             COS_SECRET_ID=${{ secrets.COS_SECRET_ID }}
             COS_SECRET_KEY=${{ secrets.COS_SECRET_KEY }}
