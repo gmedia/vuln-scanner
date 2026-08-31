@@ -134,3 +134,18 @@ export async function addIncidentUpdate(
   );
   return data;
 }
+
+export async function patchIncident(
+  incidentId: string,
+  payload: { title?: string; impact?: string },
+): Promise<StatusPage> {
+  const { data } = await api.patch<StatusPage>(
+    `/api/status-page/incidents/${incidentId}`,
+    payload,
+  );
+  return data;
+}
+
+export async function deleteIncident(incidentId: string): Promise<void> {
+  await api.delete(`/api/status-page/incidents/${incidentId}`);
+}
