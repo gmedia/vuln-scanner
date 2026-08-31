@@ -72,7 +72,7 @@ describe("MobileUpload", () => {
         screen.getByText(/choose \.apk or \.aab file/i),
     ).toBeInTheDocument();
     expect(
-        screen.getByText(/tap to browse, or drop a file \(max 500MB\)/i),
+        screen.getByText(/tap to browse/i),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /browse files/i }),

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Shield, RefreshCw, KeyRound, AlertTriangle } from "lucide-react";
+import { Shield, RefreshCw, KeyRound, AlertTriangle, Copy } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -64,6 +64,42 @@ import {
   GUARD_HOST_SETUP_STEPS,
   resolveApiBaseUrl,
 } from "@/lib/guardEnrollHost";
+
+function truncateId(value: string): string {
+  if (value.length <= 12) return value;
+  return `${value.slice(0, 8)}…${value.slice(-4)}`;
+}
+
+function CopyableId({
+  value,
+  label,
+}: {
+  value: string;
+  label: string;
+}) {
+  return (
+    <span className="flex min-w-0 items-center gap-1">
+      <span
+        className="max-w-[12rem] truncate font-mono text-[11px] text-muted-foreground"
+        title={truncateId(value)}
+      >
+        {truncateId(value)}
+      </span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 min-h-8 min-w-8 shrink-0"
+        aria-label={label}
+        onClick={() => {
+          void navigator.clipboard?.writeText(value).catch(() => undefined);
+        }}
+      >
+        <Copy className="h-3 w-3" />
+      </Button>
+    </span>
+  );
+}
 
 function formatWhen(iso: string | null): string {
   if (!iso) return "—";
@@ -454,7 +490,7 @@ export default function Guard() {
                       <p className="mb-1 font-medium text-foreground">
                         {t("saveNow")}
                       </p>
-                      <code className="break-all">{rawToken}</code>
+                       <code className="break-all">{rawToken}</code>
                     </div>
                     <div>
                       <p className="mb-1.5 font-medium text-foreground">
@@ -571,12 +607,7 @@ export default function Guard() {
                           >
                             {tok.label || t("tokenFallback")}
                           </p>
-                          <p
-                            className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground"
-                            title={tok.id}
-                          >
-                            {tok.id}
-                          </p>
+                          <CopyableId value={tok.id} label={t("copyCurl")} />
                           <p className="mt-2 text-xs text-muted-foreground">
                             {t("colExpires")}: {formatWhen(tok.expires_at)}
                           </p>
@@ -625,12 +656,7 @@ export default function Guard() {
                               >
                                 {tok.label || t("tokenFallback")}
                               </span>
-                              <span
-                                className="block truncate font-mono text-[11px] text-muted-foreground"
-                                title={tok.id}
-                              >
-                                {tok.id}
-                              </span>
+                              <CopyableId value={tok.id} label={t("copyCurl")} />
                             </TableCell>
                             <TableCell className="whitespace-nowrap text-muted-foreground">
                               {formatWhen(tok.expires_at)}

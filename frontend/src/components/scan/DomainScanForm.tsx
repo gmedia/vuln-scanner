@@ -84,17 +84,17 @@ function DomainScanForm() {
           }}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
           disabled={startDomainScan.isPending}
-          className="border-border bg-background font-mono"
+          className="border-border bg-background font-mono placeholder:text-foreground/50"
         />
         <p className="mt-1 text-xs text-muted-foreground">
           e.g. example.com, sub.example.com
         </p>
         <Button
           type="button"
-          variant="outline"
+          variant="link"
           size="sm"
           data-testid="try-example-domain"
-          className="mt-2"
+          className="mt-1 h-auto min-h-0 px-0"
           onClick={() => {
             setDomain("example.com");
             setError("");

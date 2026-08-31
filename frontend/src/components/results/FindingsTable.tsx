@@ -132,7 +132,7 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <div className="mb-3 rounded-full bg-muted p-3">
-          <Search className="h-6 w-6 text-muted-foreground opacity-40" />
+          <Search className="h-6 w-6 text-foreground/50" />
         </div>
         <p className="mb-1 text-sm text-foreground">{t("noFindings")}</p>
         <p className="text-xs text-muted-foreground">{t("cleanResult")}</p>

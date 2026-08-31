@@ -127,7 +127,7 @@ describe("SIEM page", () => {
     const filters = screen.getByTestId("siem-search-filters");
     expect(filters).toBeInTheDocument();
     expect(filters.className).toContain("gap-3");
-    expect(filters.className).not.toContain("grid-cols-6");
+    expect(filters.className).toContain("xl:grid-cols-6");
     expect(filters.className).not.toContain("grid-cols-12");
     expect(screen.getByLabelText("Search box")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Apply" })).toBeInTheDocument();

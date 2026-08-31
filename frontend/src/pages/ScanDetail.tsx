@@ -303,6 +303,7 @@ function ScanDetail() {
           </Card>
 
           <div className="grid gap-5 lg:grid-cols-3 2xl:grid-cols-1">
+            {findingsCount > 0 ? (
             <Card className="lg:col-span-1">
               <CardHeader className="py-3">
                 <CardTitle className="text-sm tracking-wide">{t("severity")}</CardTitle>
@@ -314,6 +315,7 @@ function ScanDetail() {
                 <SeverityChart summary={scan.result_summary} />
               </CardContent>
             </Card>
+            ) : null}
 
             <Card className="lg:col-span-2">
               <CardHeader className="py-3">
