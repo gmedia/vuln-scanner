@@ -479,18 +479,30 @@ async def test_malware_class_does_not_email(db_session: AsyncSession, ctx, monke
 
 
 @pytest.mark.asyncio
-async def test_quarantine_restore_ignore_roles(db_session: AsyncSession, ctx):
+async def test_quarantine_restore_ignore_roles(
+    db_session: AsyncSession, ctx, tmp_path, monkeypatch: pytest.MonkeyPatch
+):
+    from app.services import host_path as hp
+
     org: Organization = ctx["org"]
     owner: User = ctx["owner"]
     viewer: User = ctx["viewer"]
     outsider: User = ctx["outsider"]
     agent: GuardAgent = ctx["agent"]
+    web = tmp_path / "www"
+    qroot = tmp_path / "q"
+    uploads = web / "wp-content" / "uploads"
+    uploads.mkdir(parents=True)
+    (uploads / "cache.php").write_text("<?php eval($_POST['x']); ?>", encoding="utf-8")
+    (uploads / "other.php").write_text("<?php echo 1; ?>", encoding="utf-8")
+    monkeypatch.setattr(hp, "ALLOWED_PREFIXES", (str(web),))
+    monkeypatch.setattr(settings, "host_protect_quarantine_root", str(qroot))
     site = HostSite(
         id=uuid.uuid4(),
         organization_id=org.id,
         guard_agent_id=agent.id,
         name="Q",
-        root_path="/var/www/html",
+        root_path=str(web),
         created_by=owner.id,
     )
     hit = HostHit(
@@ -517,12 +529,19 @@ async def test_quarantine_restore_ignore_roles(db_session: AsyncSession, ctx):
                 headers=_auth(outsider, outsider.last_active_organization_id),
             )
             assert steal.status_code == 404
-            ok = await client.post(f"/api/host/hits/{hid}/quarantine", headers=_auth(owner, org.id))
+            ok = await client.post(
+                f"/api/host/hits/{hid}/quarantine",
+                headers=_auth(owner, org.id),
+            )
             assert ok.status_code == 200, ok.text
             assert ok.json()["status"] == "quarantined"
+            assert not (uploads / "cache.php").exists()
+            qfiles = list(qroot.rglob("*_cache.php"))
+            assert len(qfiles) == 1
             restored = await client.post(f"/api/host/hits/{hid}/restore", headers=_auth(owner, org.id))
             assert restored.status_code == 200
             assert restored.json()["status"] == "restored"
+            assert (uploads / "cache.php").is_file()
             hit2 = HostHit(
                 id=uuid.uuid4(),
                 organization_id=org.id,
@@ -547,6 +566,58 @@ async def test_quarantine_restore_ignore_roles(db_session: AsyncSession, ctx):
     )
     assert len(events) == 2
     assert all("/" not in (e.dest_basename or "") for e in events)
+
+
+@pytest.mark.asyncio
+async def test_quarantine_missing_file_keeps_open(
+    db_session: AsyncSession, ctx, tmp_path, monkeypatch: pytest.MonkeyPatch
+):
+    from app.services import host_path as hp
+
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    web = tmp_path / "www"
+    web.mkdir()
+    monkeypatch.setattr(hp, "ALLOWED_PREFIXES", (str(web),))
+    monkeypatch.setattr(settings, "host_protect_quarantine_root", str(tmp_path / "q"))
+    site = HostSite(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        guard_agent_id=agent.id,
+        name="Q2",
+        root_path=str(web),
+        created_by=owner.id,
+    )
+    hit = HostHit(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        rel_path="missing.php",
+        hit_class="webshell",
+        engine="needles",
+        rule_id="r1",
+        status="open",
+    )
+    db_session.add(site)
+    db_session.add(hit)
+    await db_session.commit()
+    hid = str(hit.id)
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            bad = await client.post(f"/api/host/hits/{hid}/quarantine", headers=_auth(owner, org.id))
+            assert bad.status_code == 400
+    finally:
+        app.dependency_overrides.clear()
+    await db_session.refresh(hit)
+    assert hit.status == "open"
+    events = (
+        (await db_session.execute(select(HostQuarantineEvent).where(HostQuarantineEvent.hit_id == hit.id)))
+        .scalars()
+        .all()
+    )
+    assert events == []
 
 
 @pytest.mark.asyncio
