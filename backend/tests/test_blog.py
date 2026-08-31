@@ -128,7 +128,7 @@ def test_publish_then_public(client):
     assert "bold teaser" in index.text
     assert "class='card'" in index.text or 'class="card"' in index.text
     assert "Baca artikel" in index.text
-    assert "Tulisan buat yang situsnya sudah jalan" in index.text
+    assert "Catatan buat yang situsnya sudah jalan" in index.text
     assert "konsol ahli" not in index.text
     sm = client.get("/blog/sitemap.xml")
     assert sm.status_code == 200
