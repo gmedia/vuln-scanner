@@ -183,9 +183,21 @@ export WAZUH_MANAGER_URL WAZUH_MANAGER_USER WAZUH_MANAGER_PASSWORD
 
 Manual GitHub Action: **Guard lab enroll smoke** (`workflow_dispatch` only, `--api-only` on github-hosted). Full apply/stop needs a bastion with `Host tc5`. Script default protected ids are `000,003` — override to `000` after wipe.
 
+### Host Protect lab on `tc5` (S10 helper + optional S12 Clam)
+
+Public-safe. **Never** put IPs, tokens, or SSH users in git. Playwright ≠ enroll. Do **not** wipe live ERP (`sx-erpstg`).
+
+1. **Guard first** (standing permission): wipe `tc5` then enroll per § Guard lab / AGENT_EXECUTION_GUIDE **§4.1**. Host Protect v1 requires a Guard agent.
+2. **Flags:** `HOST_PROTECT_ENABLED=true` on API **and** `worker_ip`. Prod compose default true.
+3. **Package on agent VM (`tc5`):** install `sinexis-host-scan` (deb `Recommends: clamav`). Optional Clam: extra `engine=clam` **only if** `clamscan` or `clamdscan` is on PATH. **No CVD in git.**
+4. **Token:** `POST /api/host/agents/{id}/results-token` (admin). Put the token in **env on `tc5` only** (`SINEXIS_HOST_SCAN_TOKEN` or equivalent). Never commit it.
+5. **Fixture:** `--prepare-fixture` from a host that resolves `GUARD_LAB_AGENT_SSH` (default `tc5`). Path under `/var/www`, `/srv/www`, or `/home` — default `/var/www/host-protect-fixture`. Not ERP docroots.
+6. **Smoke:** `scripts/host-protect-lab-smoke.sh` (API cycle). Then on `tc5` run the helper against the fixture so ingest is `engine=yara|needles` (and `clam` if present). Missing root → `unreachable_root`, **not** mock hits.
+7. Public origin: `HOST_PROTECT_LAB_ALLOW_PUBLIC_PROD=1` or `GUARD_LAB_ALLOW_PUBLIC_PROD=1`. Never print tokens or IPs.
+
 ### Host Protect lab smoke (after Guard enroll)
 
-API cycle only: create a **fixture** site (default `/var/www/host-protect-fixture`), enqueue mock scan, **quarantine then restore** on the first hit (ignore is `open`-only and cannot follow ignore on the same row), optional ignore on a second open hit, delete site. **Not** Playwright. **Does not** wipe `tc5` or enroll Guard. **Do not** use live ERP (`sx-erpstg`) as `root_path`.
+API cycle only: create a **fixture** site (default `/var/www/host-protect-fixture`), enqueue scan, **quarantine then restore** on the first hit (ignore is `open`-only and cannot follow ignore on the same row), optional ignore on a second open hit, delete site. **Not** Playwright. **Does not** wipe `tc5` or enroll Guard. **Do not** use live ERP (`sx-erpstg`) as `root_path`.
 
 Requires `HOST_PROTECT_ENABLED` on the **API and `worker_ip`** (compose interpolates the same env). Beat also reads the flag for `host_protect.run_due`. Prod compose default **true**; local/CI still false. After a Host Protect merge, deploy **`worker_ip`** on the scan host to the same SHA as app `main` — otherwise the task is missing or skips. Scan is still **mock** if `root_path` is not a directory on the worker.
 

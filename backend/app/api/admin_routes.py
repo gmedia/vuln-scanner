@@ -12,6 +12,7 @@ from app.database import get_db
 from app.middleware.rate_limit import RateLimiter
 from app.models.credit_log import CreditLog
 from app.models.email_verification import EmailVerificationToken
+from app.models.host_protect import HostScan
 from app.models.hpp import (
     HPP_COST_CATEGORIES,
     HPP_KEYS,
@@ -462,11 +463,25 @@ async def get_hpp_report(
     )
     statushost_count = int(host_count_result.scalar() or 0)
 
+    hostscan_result = await db.execute(
+        select(func.count(HostScan.id)).where(
+            HostScan.status == "completed",
+            HostScan.finished_at >= start,
+            HostScan.finished_at <= end,
+        )
+    )
+    hostscan_count = int(hostscan_result.scalar() or 0)
+
     counts: dict[str, int] = {}
     total_count = 0
     total_hpp = 0
     for key in HPP_KEYS:
-        count = statushost_count if key == "statushost" else job_counts.get(key, 0)
+        if key == "statushost":
+            count = statushost_count
+        elif key == "hostscan":
+            count = hostscan_count
+        else:
+            count = job_counts.get(key, 0)
         counts[key] = count
         total_count += count
         total_hpp += count * rates[key]

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
 
-HPP_KEYS = ("ip", "domain", "apk", "ipa", "statushost")
+HPP_KEYS = ("ip", "domain", "apk", "ipa", "statushost", "hostscan")
 
 
 class HppRate(Base):
@@ -22,7 +22,10 @@ class HppRate(Base):
 
     __table_args__ = (
         CheckConstraint("amount_idr >= 0", name="ck_hpp_rates_amount_non_negative"),
-        CheckConstraint("key IN ('ip', 'domain', 'apk', 'ipa', 'statushost')", name="ck_hpp_rates_key"),
+        CheckConstraint(
+            "key IN ('ip', 'domain', 'apk', 'ipa', 'statushost', 'hostscan')",
+            name="ck_hpp_rates_key",
+        ),
     )
 
 
