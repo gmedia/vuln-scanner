@@ -10,30 +10,28 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
-## Session snapshot (2026-08-31 — blog human copy + Host Protect on)
+## Session snapshot (2026-08-31 — /guide Host WAF copy)
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding)** | Re-`git pull`. Tip **`d1389ef`** squash **#525** blog human copy. Before that: **#524** `HOST_PROTECT_ENABLED` CI inject (`6f12892`), **#523** status-page CRUD, **#522** SIEM datetime. |
-| **Open PRs** | None assigned. Dependabot only — **do not mass-merge**. |
-| **Blog (live DB)** | All **8** published posts **PATCH**ed via admin JWT on **loopback** (public `/api/auth/login` hit CF 403). Bodies match `docs/content/blog/*.md`. Index **H1/lede** is **code** (`backend/app/api/blog_html.py`) — live after **#525 deploy**. New copy: H1 **Catatan buat yang situsnya sudah jalan**; lede **Scan berkala, jadwal, kredit, tim, dan alarm di server — bahasa biasa, tanpa istilah konsol.** If public `/blog` still shows **Tulisan buat…**, wait for main **deploy** job (do not SSH Alembic). |
-| **Blog slugs** | `apa-itu-sinexis`, `scan-domain-website`, `scan-ip-server`, `jadwal-scan-attach`, `kredit-dan-paket`, `aset-dan-workspace`, `uptime-situs-nyala`, `guard-dan-siem`. Seed ≠ live until PATCH. |
-| **Host Protect** | Prod **on**: host `.env` `HOST_PROTECT_ENABLED=true` (backend + celery_beat + worker_ip). GitHub secret set. **#524** injects flag in CI `.env` like SIEM. Git default still **false**. `GET /api/host/sites` **200**, empty list. **`HOST_WAF_ENABLED` still off.** |
-| **Status page** | **#523** on main: edit title, incident edit/delete. |
-| **SIEM** | **#522** on main (datetime filter). Prod flag ON; `SIEM_INCLUDE_FULL_LOG` false. |
+| **`main` tip (coding)** | Re-`git pull`. Tip **`d59447a`** squash **#529** Host WAF prod flag ON. Before that: **#528** Host Protect notify + guide Host TOC + Imunify archive (`3ea317a`), **#527** visual QA. |
+| **Open PRs** | **[#530](https://github.com/gmedia/vuln-scanner/pull/530)** `feat/guide-host-waf-copy` — MERGEABLE. Guide copy: Guard prereq (`#guard` not “previous section”), WAF tab detect-only / snippet not edge / protect not sales default. Commits `bbc60dd` + `fecf7bd`. CI may still be running — merge if green, do not poll. Dependabot: **do not mass-merge**. |
+| **Host Protect** | SPA `/host` shipped. Git `HOST_PROTECT_ENABLED` default **false**; prod host `.env` may be **true** (ops). Quarantine ≠ reconstruct. Not Imunify clone (`docs/commercial/imunify-beside-not-roadmap.md`). |
+| **Host WAF** | Spek `docs/specs/host-waf-v1.md` done. **`docker-compose.prod.yml` `HOST_WAF_ENABLED` default true** (#529). Local/CI `.env.example` still **false**. Per-site mode still **off** until admin sets detect. Engine mock until Coraza. **Never** paste snippet onto `sinexis.app` edge nginx. |
+| **`/guide`** | TOC id `host` after status-page. EN/ID `hp1–hp5` + `t3` updated on **#530**. Tests: `/host` link, `#guard`, quarantine/reconstruct, Copy nginx snippet, not Coraza on sinexis.app. |
+| **Imunify** | Closed as product chase. Beside, not roadmap. Do not adopt remaining Imunify360 features unless user reopens. |
 | **Untracked** | Many `*-2k.png` / `.tmp-*` on coding host — **never git-add**. |
-| **Still human** | GTM; Host Protect/WAF **IDR/`service_id`**; real HPP COGS. Optional recapture `/blog` PNGs after deploy. |
+| **Still human** | GTM; Host Protect/WAF **IDR/`service_id`**; real HPP COGS. |
 | **Engineering default** | **Do not start coding** until `implement` / `buat` / `kerjakan`. Do **not** invent P14 Coraza without spec. Do **not** paste WAF onto `sinexis.app` edge. |
 
 ### Next OpenCode session
 
-1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. Expect **`d1389ef`** or newer. `gh pr list --state open --assignee @me`. Do **not** mass-merge Dependabot.
-2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** then **`AGENTS.md`**.
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. Expect **`d59447a`** or **#530 squash** if merged. `gh pr list --state open --assignee @me`. If **#530** CI green → `gh pr merge --squash` then delete branch. Do **not** mass-merge Dependabot.
+2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** then **`AGENTS.md`**. WAF: **`docs/specs/host-waf-v1.md`**. Protect: **`docs/specs/host-protect-v1.md`**.
 3. Speak **Bahasa Indonesia**; prefix git with `GIT_MASTER=1`. Never work on `main`. Never commit secrets/IPs/PNGs.
 4. **Do not** tell the user to SSH Alembic after a green **main** deploy — `scripts/deploy.sh` already migrates.
-5. Confirm public `https://sinexis.app/blog` H1 is **Catatan buat…** (not **Tulisan buat…**). If old, wait for deploy of `#525`.
-6. **Guard:** `sx-erpstg` **online** — do **not** re-enroll/wipe unless user asks full Guard e2e (wipe `tc5` first §4.1). Playwright ≠ enroll.
-7. Optional (only if user picks): recapture blog PNGs; GTM/IDR; named Dependabot; SPA `/host` bugs.
+5. **Guard:** `sx-erpstg` **online** — do **not** re-enroll/wipe unless user asks full Guard e2e (wipe `tc5` first §4.1). Playwright ≠ enroll.
+6. Optional (only if user picks): GTM/IDR; named Dependabot; SPA `/host` bugs; P14 Coraza **spec first**.
 
 ## Session snapshot (2026-08-31 — P13 Host WAF shipped + lab ops)
 
