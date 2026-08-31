@@ -68,6 +68,8 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
       MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-500}
+      HOST_PROTECT_ENABLED: ${HOST_PROTECT_ENABLED:-false}
+      HOST_PROTECT_ALLOW_MOCK: ${HOST_PROTECT_ALLOW_MOCK:-false}
       HOST_WAF_ENABLED: ${HOST_WAF_ENABLED:-false}
       UPTIME_ENABLED: ${UPTIME_ENABLED:-true}
       UPTIME_ALLOW_PRIVATE: ${UPTIME_ALLOW_PRIVATE:-false}
@@ -113,6 +115,7 @@ services:
       CELERY_QUEUE: ip_scan
       CELERY_CONCURRENCY: 2
       HOST_PROTECT_ENABLED: ${HOST_PROTECT_ENABLED:-false}
+      HOST_PROTECT_ALLOW_MOCK: ${HOST_PROTECT_ALLOW_MOCK:-false}
     volumes:
       - ./workers:/app
       - ./backend:/backend
@@ -275,6 +278,7 @@ services:
       OSV_BASE_URL: ${OSV_BASE_URL:-https://api.osv.dev/v1}
       UPTIME_ENABLED: ${UPTIME_ENABLED:-true}
       HOST_PROTECT_ENABLED: ${HOST_PROTECT_ENABLED:-false}
+      HOST_PROTECT_ALLOW_MOCK: ${HOST_PROTECT_ALLOW_MOCK:-false}
     volumes:
       - ./workers:/app
       - ./backend:/backend

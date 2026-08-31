@@ -30,6 +30,8 @@
   "noAgents": "Pasang agen Guard dulu, lalu daftarkan situs di sini.",
   "createFail": "Gagal membuat situs",
   "scanFail": "Gagal mengantrikan scan",
+  "scanUnreachableRoot": "Document root tidak terjangkau di worker scan. Tidak ada hit mock yang dicatat.",
+  "honestyHint": "Hit hanya dari file yang bisa dibaca worker. Root hilang = gagal, bukan malware palsu.",
   "quarantine": "Karantina",
   "restore": "Pulihkan",
   "ignore": "Abaikan",

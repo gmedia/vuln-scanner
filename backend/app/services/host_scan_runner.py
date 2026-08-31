@@ -9,6 +9,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.models.host_protect import HostHit, HostQuarantineEvent, HostScan, HostSite
 from app.services.host_engine import scan_local_root
 from app.services.host_handoff import CRITICAL_CLASSES, handoff_critical_hit
@@ -111,10 +112,17 @@ async def run_host_scan_job(db: AsyncSession, scan_id: UUID) -> dict[str, Any]:
     if os.path.isdir(root):
         specs = scan_local_root(root)
         engine = "yara"
-    else:
-        specs = list(MOCK_HITS)
-        engine = "mock"
-    return await _finish_scan(db, scan, site, specs, engine)
+        return await _finish_scan(db, scan, site, specs, engine)
+    if settings.host_protect_allow_mock:
+        return await _finish_scan(db, scan, site, list(MOCK_HITS), "mock")
+    now = datetime.now(UTC)
+    scan.status = "failed"
+    scan.error = "unreachable_root"
+    scan.started_at = now
+    scan.finished_at = now
+    scan.hit_count = 0
+    await db.commit()
+    return {"ok": False, "error": "unreachable_root", "hit_count": 0, "scan_id": str(scan.id)}
 
 
 async def _run_with_specs(

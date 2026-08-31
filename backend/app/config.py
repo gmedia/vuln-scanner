@@ -138,6 +138,7 @@ class Settings(BaseSettings):
 
     siem_enabled: bool = False
     host_protect_enabled: bool = False
+    host_protect_allow_mock: bool = False
     host_waf_enabled: bool = False
     siem_search_min_level: int = 7
     siem_max_lookback_hours: int = 168

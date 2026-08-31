@@ -131,6 +131,31 @@ describe("Host Protect page", () => {
     expect(screen.queryByText(/Open Wazuh/i)).not.toBeInTheDocument();
   });
 
+  it("shows honesty copy that missing roots do not invent malware", async () => {
+    vi.mocked(hostApi.listHostSites).mockResolvedValue([
+      {
+        id: "s1",
+        organization_id: "org1",
+        guard_agent_id: "a1",
+        asset_id: null,
+        name: "Web",
+        root_path: "/var/www/html",
+        cms_hint: "wordpress",
+        enabled: true,
+        auto_quarantine: false,
+        created_by: "u1",
+        created_at: "2026-08-30T00:00:00Z",
+        updated_at: "2026-08-30T00:00:00Z",
+        sku: "multi",
+        sku_limit: 10,
+      },
+    ]);
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByText(/do not invent malware/i)).toBeInTheDocument(),
+    );
+  });
+
   it("creates a site", async () => {
     vi.mocked(hostApi.createHostSite).mockResolvedValue({
       id: "s1",

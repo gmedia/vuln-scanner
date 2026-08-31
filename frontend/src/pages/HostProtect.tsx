@@ -172,6 +172,7 @@ export default function HostProtect() {
           <p className="mt-1 text-xs text-muted-foreground">
             {t("skuLabel", { sku, count: items.length, limit })}
           </p>
+          <p className="mt-1 text-xs text-muted-foreground">{t("honestyHint")}</p>
         </div>
         <Button
           data-testid="host-add"
