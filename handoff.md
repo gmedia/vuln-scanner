@@ -10,6 +10,29 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
+## Session snapshot (2026-08-31 — P13 Host WAF shipped + lab ops)
+
+| Item | State |
+|------|--------|
+| **`main` tip (coding)** | Re-`git pull`. Tip **`d2d3096`** squash **#519** Dependabot `langgraph-sdk` workers. Before that: **#518** guide bump (`fa9d680`), **#517** WAF copy snippet (`25a293b`). **P12 Host Protect S0–S6** + **P13 Host WAF S0–S5 + SPA copy** on `main`. |
+| **Open PRs** | None assigned. Dependabot: **do not mass-merge**. Next named-only if CI green (avoid `starlette` 1.6 / `alembic` 1.19 / `pydantic-settings` 2.15 until checked). |
+| **P13 WAF** | Spek `docs/specs/host-waf-v1.md` **habis**. Mock API + SPA `/host` tab + SIEM block + snippet generator + `scripts/host-waf-lab-smoke.sh` + copy snippet. Events ≠ `host_hits`. **Not** Coraza on `nginx/sinexis.app.conf`. |
+| **Flags in git** | `HOST_WAF_ENABLED` / `HOST_PROTECT_ENABLED` default **false**. |
+| **Ops `tc1` (2026-08-31)** | Host `.env` set **true** for both flags (not git). `deploy-services.sh` backend SHA `fa9d680`; Alembic `add_host_waf`. Smoke API **passed** (policy, site, snippet, simulate `events=1`, site deleted). **Did not** `--apply-vhost`. **Did not** SSH `tc5` / ERP / edge nginx. |
+| **Edge nginx** | Verified **no** `host-waf` / Coraza / ModSecurity in `/etc/nginx/conf.d/sinexis.app.conf` or repo `nginx/sinexis.app.conf`. No `/tmp/sinexis-host-waf-lab.conf`. |
+| **Still human** | GTM; Host Protect/WAF **IDR/`service_id`**; real HPP COGS. AM must not invoice from SKU file. |
+| **Engineering default** | **Do not start coding** until `implement` / `buat` / `kerjakan`. **Do not** invent P14 Coraza without a new spec. **Do not** paste WAF onto `sinexis.app` edge. |
+
+### Next OpenCode session
+
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. Expect **`d2d3096`** or newer. `gh pr list --state open --assignee @me`. Do **not** mass-merge Dependabot.
+2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** then **`AGENTS.md`**. WAF: **`docs/specs/host-waf-v1.md`**. Protect: **`docs/specs/host-protect-v1.md`**.
+3. Speak **Bahasa Indonesia**; prefix git with `GIT_MASTER=1`. Never work on `main`. Never commit secrets/IPs/PNGs.
+4. **Do not** tell the user to SSH Alembic after a green **main** deploy job — `scripts/deploy.sh` already migrates.
+5. **Guard:** `sx-erpstg` **online** — do **not** re-enroll/wipe unless user asks full Guard e2e (then wipe `tc5` first §4.1). Playwright ≠ enroll. Jangan SSH scan ke `tc5`.
+6. Host WAF lab: `scripts/host-waf-lab-smoke.sh` + `GUARD_LAB_ALLOW_PUBLIC_PROD=1` if public origin. `--apply-vhost` only disposable lab alias — **refuse `tc5` / erp**.
+7. Optional next (only if user picks): one Dependabot PR; P14 Coraza **spec first**; SPA `/host` bugs named by user; GTM/IDR human.
+
 ## Session snapshot (2026-08-30 — visual QA §D + AppShell chips)
 
 | Item | State |
