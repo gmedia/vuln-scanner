@@ -216,6 +216,7 @@ export default function StatusPage() {
                   <Input
                     id="sp-slug"
                     className="h-10 min-h-10"
+                    placeholder={t("slug")}
                     value={slug}
                     onChange={(e) => setSlug(e.target.value)}
                     required
@@ -226,6 +227,7 @@ export default function StatusPage() {
                   <Input
                     id="sp-title"
                     className="h-10 min-h-10"
+                    placeholder={t("pageTitle")}
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     required
@@ -284,6 +286,7 @@ export default function StatusPage() {
                     id="sp-edit-slug"
                     data-testid="status-page-slug"
                     className="h-10 min-h-10"
+                    placeholder={t("slug")}
                     value={slugDraft}
                     onChange={(e) => setEditSlug(e.target.value)}
                   />
