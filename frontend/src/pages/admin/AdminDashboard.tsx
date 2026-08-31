@@ -169,10 +169,6 @@ function AdminDashboard() {
                       name: t("chartScans"),
                       counts: stats?.total_scans ?? 0,
                     },
-                    {
-                      name: t("chartFindings"),
-                      counts: stats?.total_findings ?? 0,
-                    },
                   ]}
                   margin={{ left: 12, right: 12, top: 8, bottom: 0 }}
                 >

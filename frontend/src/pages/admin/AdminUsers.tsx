@@ -5,6 +5,7 @@ import { Users, Search, Eye } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
@@ -69,28 +70,33 @@ function AdminUsers() {
       </div>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <CardTitle className="text-sm tracking-wide">{t("usersCard")}</CardTitle>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder={t("searchEmail")}
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
-                className="h-10 min-h-10 w-[220px] pl-8 text-sm"
-                aria-label={t("searchEmail")}
-              />
-            </div>
+        <CardHeader className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <CardTitle className="text-sm tracking-wide">{t("usersCard")}</CardTitle>
             {data && data.total > 0 && (
               <span className="shrink-0 text-[10px] text-muted-foreground">
                 {t("totalCount", { count: data.total })}
               </span>
             )}
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="admin-users-search">{t("searchEmail")}</Label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="admin-users-search"
+                  type="text"
+                  placeholder={t("searchEmail")}
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
+                  className="h-10 min-h-10 w-full pl-8 text-sm"
+                />
+              </div>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
