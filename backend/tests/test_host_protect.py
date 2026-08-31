@@ -18,7 +18,9 @@ from app.models.host_protect import HostHit, HostQuarantineEvent, HostScan, Host
 from app.models.organization import Organization, OrganizationMembership
 from app.models.siem import SiemCase
 from app.models.user import User
+from app.schemas.host_protect import MAX_AGENT_FINDINGS
 from app.services.auth import create_access_token, hash_password
+from app.services.host_agent_ingest import generate_results_token
 from app.services.host_scan_runner import run_host_scan_job, run_mock_host_scan
 from app.services.organization import ensure_personal_org
 
@@ -651,3 +653,248 @@ async def test_host_scan_job_mock_when_allow_mock(db_session: AsyncSession, ctx,
     assert out["ok"] is True
     assert out["engine"] == "mock"
     assert out["hit_count"] == 1
+
+
+async def _queued_scan(
+    db: AsyncSession, org: Organization, owner: User, agent: GuardAgent
+) -> tuple[HostSite, HostScan]:
+    site = HostSite(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        guard_agent_id=agent.id,
+        name="Ingest",
+        root_path="/var/www/html",
+        created_by=owner.id,
+    )
+    scan = HostScan(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        status="queued",
+        trigger="manual",
+    )
+    db.add(site)
+    db.add(scan)
+    await db.commit()
+    return site, scan
+
+
+def _finding() -> dict[str, str]:
+    return {
+        "rel_path": "wp-content/uploads/cache.php",
+        "class": "webshell",
+        "rule_id": "needles.php.webshell",
+        "sha256": "a" * 64,
+    }
+
+
+@pytest.mark.asyncio
+async def test_agent_ingest_persists_hits(db_session: AsyncSession, ctx):
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    raw, token_hash = generate_results_token()
+    agent.results_token_hash = token_hash
+    _, scan = await _queued_scan(db_session, org, owner, agent)
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.post(
+                "/api/host/agent/results",
+                headers={"X-Host-Agent-Token": raw},
+                json={
+                    "scan_id": str(scan.id),
+                    "agent_id": str(agent.id),
+                    "engine": "needles",
+                    "findings": [_finding()],
+                },
+            )
+            assert r.status_code == 200, r.text
+            assert r.json()["hit_count"] == 1
+            assert r.json()["engine"] == "needles"
+    finally:
+        app.dependency_overrides.clear()
+    hits = (await db_session.execute(select(HostHit).where(HostHit.scan_id == scan.id))).scalars().all()
+    assert len(hits) == 1
+    assert hits[0].engine == "needles"
+    assert hits[0].sha256 == "a" * 64
+    await db_session.refresh(scan)
+    assert scan.status == "completed"
+
+
+@pytest.mark.asyncio
+async def test_agent_ingest_bad_token_401(db_session: AsyncSession, ctx):
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    _, token_hash = generate_results_token()
+    agent.results_token_hash = token_hash
+    _, scan = await _queued_scan(db_session, org, owner, agent)
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.post(
+                "/api/host/agent/results",
+                headers={"X-Host-Agent-Token": "not-the-token"},
+                json={
+                    "scan_id": str(scan.id),
+                    "agent_id": str(agent.id),
+                    "engine": "yara",
+                    "findings": [],
+                },
+            )
+            assert r.status_code == 401
+            missing = await client.post(
+                "/api/host/agent/results",
+                json={
+                    "scan_id": str(scan.id),
+                    "agent_id": str(agent.id),
+                    "engine": "yara",
+                    "findings": [],
+                },
+            )
+            assert missing.status_code == 401
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_agent_ingest_revoked_token_401(db_session: AsyncSession, ctx):
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    raw, token_hash = generate_results_token()
+    agent.results_token_hash = token_hash
+    agent.results_token_revoked_at = datetime.now(UTC)
+    _, scan = await _queued_scan(db_session, org, owner, agent)
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.post(
+                "/api/host/agent/results",
+                headers={"X-Host-Agent-Token": raw},
+                json={
+                    "scan_id": str(scan.id),
+                    "agent_id": str(agent.id),
+                    "engine": "yara",
+                    "findings": [],
+                },
+            )
+            assert r.status_code == 401
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_agent_ingest_idor_other_org_401(db_session: AsyncSession, ctx):
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    outsider: User = ctx["outsider"]
+    other_org = Organization(
+        id=uuid.uuid4(),
+        name="Other Host Org",
+        slug=f"other-host-{uuid.uuid4().hex[:6]}",
+        kind="company",
+        sku="multi",
+        created_by_user_id=outsider.id,
+    )
+    db_session.add(other_org)
+    await db_session.flush()
+    other_agent = GuardAgent(
+        id=uuid.uuid4(),
+        organization_id=other_org.id,
+        wazuh_agent_id="002",
+        name="vps-other",
+        status="active",
+        synced_at=datetime.now(UTC),
+    )
+    raw_a, hash_a = generate_results_token()
+    agent.results_token_hash = hash_a
+    raw_b, hash_b = generate_results_token()
+    other_agent.results_token_hash = hash_b
+    db_session.add(other_agent)
+    _, scan_a = await _queued_scan(db_session, org, owner, agent)
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.post(
+                "/api/host/agent/results",
+                headers={"X-Host-Agent-Token": raw_b},
+                json={
+                    "scan_id": str(scan_a.id),
+                    "agent_id": str(other_agent.id),
+                    "engine": "needles",
+                    "findings": [_finding()],
+                },
+            )
+            assert r.status_code == 401
+            mismatch = await client.post(
+                "/api/host/agent/results",
+                headers={"X-Host-Agent-Token": raw_a},
+                json={
+                    "scan_id": str(scan_a.id),
+                    "agent_id": str(other_agent.id),
+                    "engine": "needles",
+                    "findings": [_finding()],
+                },
+            )
+            assert mismatch.status_code == 401
+    finally:
+        app.dependency_overrides.clear()
+    hits = (await db_session.execute(select(HostHit).where(HostHit.scan_id == scan_a.id))).scalars().all()
+    assert hits == []
+
+
+@pytest.mark.asyncio
+async def test_agent_ingest_oversize_413(db_session: AsyncSession, ctx):
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    raw, token_hash = generate_results_token()
+    agent.results_token_hash = token_hash
+    _, scan = await _queued_scan(db_session, org, owner, agent)
+    _bind_db(db_session)
+    findings = [_finding() | {"rule_id": f"rule-{i}"} for i in range(MAX_AGENT_FINDINGS + 1)]
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.post(
+                "/api/host/agent/results",
+                headers={"X-Host-Agent-Token": raw},
+                json={
+                    "scan_id": str(scan.id),
+                    "agent_id": str(agent.id),
+                    "engine": "needles",
+                    "findings": findings,
+                },
+            )
+            assert r.status_code == 413
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_agent_ingest_flag_off_404(db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "host_protect_enabled", False)
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    raw, token_hash = generate_results_token()
+    agent.results_token_hash = token_hash
+    _, scan = await _queued_scan(db_session, org, owner, agent)
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.post(
+                "/api/host/agent/results",
+                headers={"X-Host-Agent-Token": raw},
+                json={
+                    "scan_id": str(scan.id),
+                    "agent_id": str(agent.id),
+                    "engine": "yara",
+                    "findings": [],
+                },
+            )
+            assert r.status_code == 404
+    finally:
+        app.dependency_overrides.clear()
