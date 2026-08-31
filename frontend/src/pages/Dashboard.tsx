@@ -382,7 +382,7 @@ function Dashboard() {
             )}
           </CardHeader>
           <CardContent className="flex-1">
-            {isFirstLoad || (isFetching && !pageData) ? (
+            {isFirstLoad ? (
               <TableRowSkeleton rows={6} />
             ) : scans.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-2 px-2 py-8 text-center">
