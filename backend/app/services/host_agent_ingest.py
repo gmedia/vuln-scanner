@@ -73,6 +73,7 @@ async def ingest_agent_results(
             "rel_path": finding.rel_path.strip().lstrip("/"),
             "hit_class": finding.hit_class,
             "rule_id": finding.rule_id,
+            "engine": body.engine,
         }
         if finding.sha256:
             spec["sha256"] = finding.sha256.lower()

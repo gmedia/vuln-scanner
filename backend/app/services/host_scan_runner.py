@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models.host_protect import HostHit, HostQuarantineEvent, HostScan, HostSite
-from app.services.host_engine import scan_local_root
+from app.services.host_engine import scan_clam, scan_local_root
 from app.services.host_handoff import CRITICAL_CLASSES, handoff_critical_hit
 from app.services.host_path import jail_rel_path, quarantine_basename, validate_root_path
 
@@ -43,6 +43,7 @@ async def _persist_hits(
         )
         hit = existing.scalar_one_or_none()
         is_new = hit is None
+        row_engine = spec.get("engine") or engine
         if hit is None:
             hit = HostHit(
                 id=uuid.uuid4(),
@@ -51,7 +52,7 @@ async def _persist_hits(
                 scan_id=scan.id,
                 rel_path=spec["rel_path"],
                 hit_class=spec["hit_class"],
-                engine=engine,
+                engine=row_engine,
                 rule_id=spec["rule_id"],
                 status="open",
                 sha256=spec.get("sha256") or None,
@@ -61,7 +62,7 @@ async def _persist_hits(
         else:
             hit.last_seen_at = now
             hit.scan_id = scan.id
-            hit.engine = engine
+            hit.engine = row_engine
             digest = spec.get("sha256")
             if digest:
                 hit.sha256 = digest
@@ -116,6 +117,10 @@ async def run_host_scan_job(db: AsyncSession, scan_id: UUID) -> dict[str, Any]:
     if os.path.isdir(root):
         specs = scan_local_root(root)
         engine = "yara"
+        for clam_hit in scan_clam(root):
+            row = dict(clam_hit)
+            row["engine"] = "clam"
+            specs.append(row)
         return await _finish_scan(db, scan, site, specs, engine)
     if settings.host_protect_allow_mock:
         return await _finish_scan(db, scan, site, list(MOCK_HITS), "mock")
