@@ -40,6 +40,8 @@
 - “Ini **bukan** ganti Imunify di cPanel shared.”
 - “Untuk VPS/colo GMD: agent Guard + daftar folder web + scan malware + isolate file.”
 - “Harga add-on **belum** list resmi; jangan quote angka dari file ini.”
+- “Quarantine **bukan** reconstruct situs; restore CMS = tiket.”
+- Positioning vs Imunify: [`imunify-beside-not-roadmap.md`](imunify-beside-not-roadmap.md) — **bukan** backlog fitur.
 
 ---
 

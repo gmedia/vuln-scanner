@@ -18,7 +18,8 @@
     "siem": "11. SIEM — cari event & kasus",
     "uptime": "12. Uptime — probe HTTP/TCP",
     "status-page": "13. Halaman status — komunikasi publik",
-    "tips": "14. Tips & batasan"
+    "host": "14. Host Protect — malware on-box",
+    "tips": "15. Tips & batasan"
   },
   "hMulai": "Mulai: daftar, login, workspace",
   "mulai1": "Buka halaman login aplikasi. Belum punya akun? daftar lewat <ui>Register</ui> (email + password).",
@@ -120,10 +121,17 @@
   "sp3": "<ui>Tambah komponen</ui>: pilih <ui>Monitor</ui>, isi <ui>Nama tampilan</ui> publik (bukan URL/IP mentah), simpan. Lalu <ui>Terbitkan</ui>. URL publik: <code>/status/{slug}</code> di host platform.",
   "sp4": "Tulis <ui>Insiden baru</ui> dengan dampak/status + teks <ui>Pembaruan</ui> untuk komunikasi pelanggan. <ui>Batalkan terbit</ui> menyembunyikan halaman publik.",
   "sp5": "Hostname kustom (SKU Multi): isi <ui>Hostname kustom</ui>, arahkan CNAME ke target yang didokumentasikan, lalu <ui>Verifikasi DNS</ui>. Jangan harapkan sertifikat in-app.",
+  "hHost": "Host Protect — malware on-box",
+  "hpIntro": "Malware web on-box untuk VPS yang sudah enroll Guard. Bukan Imunify, bukan alert Guard, bukan pencarian SIEM. Quarantine mengisolasi file; tidak merekonstruksi situs.",
+  "hp1": "Enroll agen Guard dulu (bagian sebelumnya). Sidebar → <host>Host Protect</host>.",
+  "hp2": "Tambah situs: nama + document root di agen. Scan tetap di host; hit tidak dicampur temuan IP/domain.",
+  "hp3": "Kelas kritis (webshell / backdoor) mengirim email ke pemilik situs sekali per path+rule baru. Re-scan hanya memperbarui last-seen — tidak ada email kedua. Isi file tidak pernah dilampirkan.",
+  "hp4": "<ui>Quarantine</ui> / <ui>Restore</ui> / <ui>Ignore</ui> adalah aksi isolasi. Rekonstruksi (restore CMS, backup) = tiket hybrid — bukan rewrite in-app.",
+  "hp5": "Tab WAF (jika flag env nyala) adalah lab detect-only: log event, salin snippet nginx. Jangan tempel snippet itu ke edge publik Sinexis.",
   "hTips": "Tips & batasan",
   "t1": "Hanya scan / enroll aset yang Anda kuasai secara hukum.",
   "t2": "Jangan menyimpan password, API key, atau alamat internal di ticket publik / screenshot sembarangan.",
-  "t3": "Guard v1 = inventori + alert kritis + enroll — bukan SOAR atau dashboard manager pelanggan. Uptime = probe outside-in, bukan SLA. Halaman status tidak menampilkan URL/IP monitor.",
+  "t3": "Guard v1 = inventori + alert kritis + enroll — bukan SOAR atau dashboard manager pelanggan. Uptime = probe outside-in, bukan SLA. Halaman status tidak menampilkan URL/IP monitor. Host Protect quarantine ≠ rekonstruksi.",
   "t4": "Brand: {{name}} / {{product}}; mesin scan = VulnScanner.",
   "t5": "Menu ini: Sidebar → <guide>User Guide</guide>."
 }

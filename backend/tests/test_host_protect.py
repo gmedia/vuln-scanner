@@ -386,6 +386,97 @@ async def test_siem_off_does_not_fail_scan(db_session: AsyncSession, ctx, monkey
 
 
 @pytest.mark.asyncio
+async def test_new_webshell_emails_owner_once(db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch):
+    sent: list[dict[str, object]] = []
+
+    async def _capture(email_to: str, **kwargs: object) -> bool:
+        sent.append({"to": email_to, **kwargs})
+        return True
+
+    monkeypatch.setattr("app.services.host_handoff.send_host_protect_email", _capture)
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    site = HostSite(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        guard_agent_id=agent.id,
+        name="Notify",
+        root_path="/var/www/html",
+        created_by=owner.id,
+    )
+    scan = HostScan(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        status="queued",
+        trigger="manual",
+    )
+    db_session.add(site)
+    db_session.add(scan)
+    await db_session.commit()
+    await run_mock_host_scan(db_session, scan.id)
+    assert len(sent) == 1
+    assert sent[0]["to"] == owner.email
+    assert sent[0]["hit_class"] == "webshell"
+    assert sent[0]["site_name"] == "Notify"
+    scan2 = HostScan(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        status="queued",
+        trigger="manual",
+    )
+    db_session.add(scan2)
+    await db_session.commit()
+    await run_mock_host_scan(db_session, scan2.id)
+    assert len(sent) == 1
+
+
+@pytest.mark.asyncio
+async def test_malware_class_does_not_email(db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch):
+    sent: list[object] = []
+
+    async def _capture(*_a: object, **_k: object) -> bool:
+        sent.append(1)
+        return True
+
+    monkeypatch.setattr("app.services.host_handoff.send_host_protect_email", _capture)
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    site = HostSite(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        guard_agent_id=agent.id,
+        name="Mal",
+        root_path="/var/www/html",
+        created_by=owner.id,
+    )
+    scan = HostScan(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        status="queued",
+        trigger="manual",
+    )
+    db_session.add(site)
+    db_session.add(scan)
+    await db_session.commit()
+    from app.services.host_scan_runner import _persist_hits
+
+    await _persist_hits(
+        db_session,
+        scan,
+        site,
+        [{"rel_path": "wp-content/uploads/x.bin", "hit_class": "malware", "rule_id": "mock.malware"}],
+        "mock",
+    )
+    await db_session.commit()
+    assert sent == []
+
+
+@pytest.mark.asyncio
 async def test_quarantine_restore_ignore_roles(db_session: AsyncSession, ctx):
     org: Organization = ctx["org"]
     owner: User = ctx["owner"]

@@ -18,7 +18,8 @@
     "siem": "11. SIEM — search events & cases",
     "uptime": "12. Uptime — HTTP/TCP probes",
     "status-page": "13. Status page — public comms",
-    "tips": "14. Tips & limits"
+    "host": "14. Host Protect — on-box malware",
+    "tips": "15. Tips & limits"
   },
   "hMulai": "Start: register, login, workspace",
   "mulai1": "Open the app login page. No account yet? register via <ui>Register</ui> (email + password).",
@@ -120,10 +121,17 @@
   "sp3": "<ui>Add component</ui>: pick a <ui>Monitor</ui>, set a public <ui>Display name</ui> (never the raw URL/IP), save. Then <ui>Publish</ui>. Public URL is <code>/status/{slug}</code> on the platform host.",
   "sp4": "Post <ui>New incident</ui> with impact/status + <ui>Update</ui> text when you need customer-facing comms. <ui>Unpublish</ui> hides the public page.",
   "sp5": "Custom hostname (Multi SKU): set <ui>Custom hostname</ui>, point a CNAME at the documented target, then <ui>Verify DNS</ui>. Do not expect in-app certificates.",
+  "hHost": "Host Protect — on-box malware",
+  "hpIntro": "On-box web malware for a Guard-enrolled VPS. Not Imunify, not Guard alerts, not SIEM search. Quarantine isolates a file; it does not reconstruct the site.",
+  "hp1": "Enroll a Guard agent first (previous section). Sidebar → <host>Host Protect</host>.",
+  "hp2": "Add a site: name + document root on the agent. Scan stays on the host; hits are not mixed with IP/domain findings.",
+  "hp3": "Critical classes (webshell / backdoor) email the site owner once per new path+rule. Re-scans update last-seen only — no second mail. File contents are never attached.",
+  "hp4": "<ui>Quarantine</ui> / <ui>Restore</ui> / <ui>Ignore</ui> are isolate actions. Reconstruct (CMS restore, backup) is a hybrid ticket — not an in-app rewrite.",
+  "hp5": "WAF tab (if the env flag is on) is detect-only lab: log events, copy nginx snippet. Do not paste that snippet onto the Sinexis public edge.",
   "hTips": "Tips & limits",
   "t1": "Only scan / enroll assets you legally control.",
   "t2": "Do not store passwords, API keys, or internal addresses in public tickets / casual screenshots.",
-  "t3": "Guard v1 = inventory + critical alerts + enroll — not SOAR or a customer manager dashboard. Uptime is outside-in probes, not an SLA. Status page never exposes monitor URL/IP.",
+  "t3": "Guard v1 = inventory + critical alerts + enroll — not SOAR or a customer manager dashboard. Uptime is outside-in probes, not an SLA. Status page never exposes monitor URL/IP. Host Protect quarantine ≠ reconstruct.",
   "t4": "Brand: {{name}} / {{product}}; scan engine = VulnScanner.",
   "t5": "This menu: Sidebar → <guide>User Guide</guide>."
 }

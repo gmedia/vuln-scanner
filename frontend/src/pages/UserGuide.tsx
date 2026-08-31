@@ -62,6 +62,7 @@ const TOC_IDS = [
   "siem",
   "uptime",
   "status-page",
+  "host",
   "tips",
 ] as const;
 
@@ -921,6 +922,38 @@ function UserGuide() {
                 <li>
                   <Trans i18nKey="sp5" ns="guide" components={transUi} />
                 </li>
+              </Steps>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="space-y-3 pt-6">
+              <SectionHeading id="host" icon={Server} title={t("hHost")} />
+              <p className="text-sm text-muted-foreground">
+                <Trans i18nKey="hpIntro" ns="guide" components={transUi} />
+              </p>
+              <Steps>
+                <li>
+                  <Trans
+                    i18nKey="hp1"
+                    ns="guide"
+                    components={{
+                      ...transUi,
+                      host: (
+                        <Link
+                          to="/host"
+                          className="text-primary hover:underline"
+                        />
+                      ),
+                    }}
+                  />
+                </li>
+                <li>{t("hp2")}</li>
+                <li>{t("hp3")}</li>
+                <li>
+                  <Trans i18nKey="hp4" ns="guide" components={transUi} />
+                </li>
+                <li>{t("hp5")}</li>
               </Steps>
             </CardContent>
           </Card>
