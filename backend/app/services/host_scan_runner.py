@@ -54,6 +54,7 @@ async def _persist_hits(
                 engine=engine,
                 rule_id=spec["rule_id"],
                 status="open",
+                sha256=spec.get("sha256") or None,
             )
             db.add(hit)
             await db.flush()
@@ -61,6 +62,9 @@ async def _persist_hits(
             hit.last_seen_at = now
             hit.scan_id = scan.id
             hit.engine = engine
+            digest = spec.get("sha256")
+            if digest:
+                hit.sha256 = digest
         if is_new and hit.hit_class in CRITICAL_CLASSES:
             await handoff_critical_hit(db, hit, site)
         if is_new and site.auto_quarantine and hit.hit_class in CRITICAL_CLASSES:

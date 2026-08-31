@@ -240,7 +240,7 @@ No raw file download of malware samples in v1 (exfil risk). Optional later: plat
 |---|----------------|------------------------|-------------------|
 | **S7** Honesty gate | Never persist `MOCK_HITS` on public origin. `HOST_PROTECT_ALLOW_MOCK` for CI/lab only. Failed scan `unreachable_root`, `hit_count=0`, no SIEM. SPA copy: path not on agent. | `rg MOCK_HITS` + pytest: mock flag off + missing dir → **zero** `cache.php` rows; SIEM not called. Flag-on + `run_mock_host_scan` still 1 fixture hit. | New engine, `.deb`, Clam |
 | **S8** Spek/contract (this docs wave) | JSON ingest shape, token rules, jail, non-goals, AM copy | This section merged; **0** `backend/` `workers/` `frontend/` in the docs PR | App code |
-| **S9** Ingest API | `POST /api/host/agent/results` (name freeze in implement PR). Per-agent hashed token (**not** global `ApiKey`, **not** user JWT). Cap findings size. Bind `scan_id` + `guard_agent_id` + org. | pytest IDOR: org A token cannot write org B `host_hits`. Oversize → 413. Replay/expired token → 401. | Wodle as bus |
+| **S9** Ingest API | Frozen: `POST /api/host/agent/results`. Header `X-Host-Agent-Token` (SHA-256 on `guard_agents.results_token_hash`; **not** global `ApiKey`, **not** user JWT). Cap 500 findings / 256 KiB. Bind `scan_id` + `agent_id` + org + site.agent. | pytest IDOR: org A token cannot write org B `host_hits`. Oversize → 413. Replay/revoked token → 401. | Wodle as bus |
 | **S10** On-box YARA | Helper script + drop-in (unit or cron); `Depends: wazuh-agent`; allowlist `/var/www` `/srv/www` `/home`; timeout/nice; same in-repo needles; `yara` CLI **optional** if on PATH. POST to S9. | Lab **tc5 fixture** (not worker bind, not ERP): needle hit on that disk. CI green **without** Clam/yara packages. Path outside jail → non-zero, no POST. | Clam, Windows, second systemd agent |
 | **S11** On-disk quarantine | `mv` inside jail to `/var/lib/sinexis/quarantine/<site-id>/` (0700, noexec, not under docroot); restore reverse; audit `dest_basename`. Fail command → **do not** set `quarantined`. Auto still off. | Lab quarantine then restore on fixture. pytest jail. | Auto-clean PHP |
 | **S12** Clam optional | Extra `engine=clam` hits **iff** `clamscan`/`clamdscan` present | Skip if binary absent; no CVD in git | Required Clam in CI image |
@@ -253,7 +253,7 @@ No raw file download of malware samples in v1 (exfil risk). Optional later: plat
 2. Else: `host_scans.status=failed`, `error=unreachable_root` (sanitized), no hit rows, no SIEM/email.
 3. SPA: never a green completed scan with a toy webshell when the agent did not scan.
 
-**JSON ingest (illustrative — freeze in S9 PR):** `scan_id`, `agent_id`, `engine` (`yara`\|`needles`), findings[]: `rel_path`, `class`, `rule_id`, `sha256`. **No** file bytes, **no** `full_log`.
+**JSON ingest (frozen S9):** `scan_id`, `agent_id`, `engine` (`yara`\|`needles`), findings[]: `rel_path`, `class`, `rule_id`, `sha256`. Header `X-Host-Agent-Token`. **No** file bytes, **no** `full_log`.
 
 **Packaging:** add-on that **Depends** `wazuh-agent`. **No** second enroll, **no** unsigned “Sinexis agent” that replaces Wazuh. `curl | bash` is not v1.
 
