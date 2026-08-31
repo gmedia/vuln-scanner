@@ -124,13 +124,15 @@ export default function Assets() {
               </Button>
             </>
           ) : null}
-          <Button
-            data-testid="assets-add"
-            disabled={atCap}
-            onClick={() => setOpen((v) => !v)}
-          >
-            {t("add")}
-          </Button>
+          {items.length > 0 || open ? (
+            <Button
+              data-testid="assets-add"
+              disabled={atCap}
+              onClick={() => setOpen((v) => !v)}
+            >
+              {t("add")}
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -213,8 +215,10 @@ export default function Assets() {
       {items.length === 0 && !list.isLoading ? (
         <Card data-testid="assets-empty">
           <CardContent className="flex min-h-[8rem] flex-col items-center justify-center gap-2 px-6 py-8 text-center">
-            <p className="text-sm font-medium text-foreground">{t("empty")}</p>
-            <p className="max-w-md text-sm text-muted-foreground">
+            <p className="text-balance text-sm font-medium text-foreground">
+              {t("empty")}
+            </p>
+            <p className="max-w-md text-balance text-sm text-muted-foreground">
               {t("emptyHint")}
             </p>
             <Button
