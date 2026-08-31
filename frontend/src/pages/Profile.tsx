@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { User, Loader2, AlertCircle, Timer } from "lucide-react";
+import { User, Loader2, AlertCircle, Timer, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
 import { useRateLimitCooldown } from "@/hooks/useRateLimitCooldown";
@@ -22,6 +22,10 @@ function Profile() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showProfilePw, setShowProfilePw] = useState(false);
 
   const profileCooldown = useRateLimitCooldown();
   const passwordCooldown = useRateLimitCooldown();
@@ -93,7 +97,7 @@ function Profile() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Current email
           </p>
           <p className="mt-1 font-mono text-sm text-foreground">{user?.email}</p>
@@ -124,43 +128,88 @@ function Profile() {
               <Label htmlFor="current-password" className="block">
                 Current password
               </Label>
-              <Input
-                id="current-password"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                disabled={isChangingPassword}
-              />
+              <div className="relative">
+                <Input
+                  id="current-password"
+                  type={showCurrent ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  disabled={isChangingPassword}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrent((v) => !v)}
+                  className="absolute right-1.5 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
+                  aria-label={showCurrent ? "Hide password" : "Show password"}
+                >
+                  {showCurrent ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
             <div className="space-y-1">
               <Label htmlFor="new-password" className="block">
                 New password
               </Label>
-              <Input
-                id="new-password"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Min 8 chars, uppercase, lowercase, digit"
-                required
-                disabled={isChangingPassword}
-              />
+              <div className="relative">
+                <Input
+                  id="new-password"
+                  type={showNew ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Min 8 chars, uppercase, lowercase, digit"
+                  required
+                  disabled={isChangingPassword}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNew((v) => !v)}
+                  className="absolute right-1.5 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
+                  aria-label={showNew ? "Hide password" : "Show password"}
+                >
+                  {showNew ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
             <div className="space-y-1">
               <Label htmlFor="confirm-password" className="block">
                 Confirm new password
               </Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                disabled={isChangingPassword}
-              />
+              <div className="relative">
+                <Input
+                  id="confirm-password"
+                  type={showConfirm ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  disabled={isChangingPassword}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm((v) => !v)}
+                  className="absolute right-1.5 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
+                  aria-label={showConfirm ? "Hide password" : "Show password"}
+                >
+                  {showConfirm ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
             <Button
               type="submit"
@@ -224,15 +273,30 @@ function Profile() {
               <Label htmlFor="profile-password" className="block">
                 Current password
               </Label>
-              <Input
-                id="profile-password"
-                type="password"
-                value={profilePassword}
-                onChange={(e) => setProfilePassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                disabled={isUpdatingProfile}
-              />
+              <div className="relative">
+                <Input
+                  id="profile-password"
+                  type={showProfilePw ? "text" : "password"}
+                  value={profilePassword}
+                  onChange={(e) => setProfilePassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  disabled={isUpdatingProfile}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowProfilePw((v) => !v)}
+                  className="absolute right-1.5 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
+                  aria-label={showProfilePw ? "Hide password" : "Show password"}
+                >
+                  {showProfilePw ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
               <p className="text-[10px] text-muted-foreground">
                 Password required to confirm
               </p>
