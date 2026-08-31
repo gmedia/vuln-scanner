@@ -79,6 +79,38 @@ class HostScanResponse(BaseModel):
     created_at: datetime
 
 
+MAX_AGENT_FINDINGS = 500
+MAX_AGENT_BODY_BYTES = 256 * 1024
+
+
+class HostAgentFinding(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    rel_path: str = Field(..., min_length=1, max_length=1024)
+    hit_class: str = Field(..., alias="class", pattern=r"^(webshell|backdoor|malware|spam_seo|suspicious)$")
+    rule_id: str = Field(..., min_length=1, max_length=128)
+    sha256: str | None = Field(default=None, pattern=r"^[a-fA-F0-9]{64}$")
+
+    @field_validator("rel_path", "rule_id")
+    @classmethod
+    def strip_text(cls, v: str) -> str:
+        return v.strip()
+
+
+class HostAgentResultsIngest(BaseModel):
+    scan_id: uuid.UUID
+    agent_id: uuid.UUID
+    engine: str = Field(..., pattern=r"^(yara|needles)$")
+    findings: list[HostAgentFinding] = Field(default_factory=list)
+
+
+class HostAgentResultsResponse(BaseModel):
+    ok: bool
+    scan_id: uuid.UUID
+    hit_count: int
+    engine: str
+
+
 class HostHitResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 

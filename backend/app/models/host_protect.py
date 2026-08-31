@@ -29,7 +29,7 @@ CMS_HINTS = ("wordpress", "laravel", "unknown")
 SCAN_STATUSES = ("queued", "running", "completed", "failed")
 SCAN_TRIGGERS = ("schedule", "manual")
 HIT_CLASSES = ("webshell", "backdoor", "malware", "spam_seo", "suspicious")
-HIT_ENGINES = ("yara", "clam", "mock")
+HIT_ENGINES = ("yara", "clam", "mock", "needles")
 HIT_STATUSES = ("open", "quarantined", "ignored", "restored")
 QUARANTINE_ACTIONS = ("quarantine", "restore")
 
