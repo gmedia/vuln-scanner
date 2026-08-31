@@ -4,11 +4,11 @@ Dua nama gampang ketuker. Keduanya **bukan** paket Scan hari pertama.
 
 ## Guard
 
-Agen tipis di VPS atau colo. Yang dijual sekarang: inventaris mesin + alert kritis. Bukan “semua log dunia.” Bukan dashboard Wazuh penuh buat pelanggan. Bukan SOAR.
+Agen tipis di VPS atau colo. Yang dijual sekarang: daftar mesin + alert yang serius. Bukan “semua log dunia.” Bukan dasbor Wazuh penuh buat pelanggan. Bukan otomasi insiden.
 
 Scan lihat toko dari trotoar. Guard alarm di dalam, bunyi untuk yang serius.
 
-Syarat sehat: Anda sudah nyaman dengan Scan berkala. Guard upsell kedua. Pasang/lepas agen urusan lab dan ops — bukan tombol “install dari artikel blog.”
+Syarat sehat: Anda sudah nyaman dengan Scan berkala. Guard upsell kedua. Pasang atau lepas agen urusan lab dan ops — bukan tombol “install dari artikel blog.”
 
 ## SIEM
 
@@ -16,7 +16,7 @@ Di Sinexis: cari peristiwa organisasi + kasus di workspace yang sama. Bukan kons
 
 Di banyak lingkungan modul ini masih dimatikan sampai ada yang siap baca kasus. Jangan janji SIEM di email penjualan gelombang pertama.
 
-## Urutan yang tidak memalukan
+## Urutan yang masuk akal
 
 Domain dan/atau IP masuk Scan plus jadwal. Kredit dan aset sesuai paket. Uptime kalau Anda peduli web down. Baru Guard di host yang sama. SIEM hanya jika modulnya hidup dan ada orang yang benar-benar baca kasus.
 

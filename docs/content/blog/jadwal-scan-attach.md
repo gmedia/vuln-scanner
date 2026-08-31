@@ -1,18 +1,18 @@
 # Scan Attach: jadwal, perubahan, dan laporan untuk atasan
 
-Scan sekali itu cek kesehatan sekali. Scan Attach itu janji berulang: domain dan/atau IP dicek tiap minggu atau bulan, lalu pertanyaannya sederhana — **apa yang baru dan lebih berbahaya dibanding kemarin?**
+Scan sekali itu cek kesehatan sekali. Scan Attach itu janji berulang: domain dan/atau IP dicek tiap minggu atau bulan. Pertanyaannya sederhana — **apa yang baru dan lebih berbahaya dibanding kemarin?**
 
-Itu alasan add-on ditagih berulang. Bukan hobi nmap.
+Itu alasan add-on ditagih berulang. Bukan hobi scan.
 
 ## Yang terasa di operasional
 
 Anda pilih ritme (bulanan atau mingguan, sesuai paket). Ada batas jumlah jadwal per organisasi — itu batas produk, bukan “unlimited kalau minta.”
 
-Hasil sebelumnya jadi acuan. Yang kami utamakan: temuan critical/high **baru**, bukan dump ribuan baris. Email kalau muncul yang serius (kelengkapan diff tergantung paket). Ada laporan HTML ringkas, Bahasa Indonesia, yang masuk akal diteruskan ke pemilik atau GM.
+Hasil sebelumnya jadi acuan. Yang kami utamakan: temuan parah **baru**, bukan dump ribuan baris. Email kalau muncul yang serius (kelengkapan banding tergantung paket). Ada laporan HTML ringkas, Bahasa Indonesia, yang masuk akal diteruskan ke pemilik atau GM.
 
-Alurnya tidak mistis: tunjuk domain atau IP, pastikan kredit ada, hidupkan jadwal, siklus pertama jalan, bulan berikutnya Anda baca **selisih**, bukan PDF acak.
+Alurnya: tunjuk domain atau IP, pastikan kredit ada, hidupkan jadwal, siklus pertama jalan. Bulan berikutnya Anda baca **selisih**, bukan PDF acak.
 
-Kredit habis → jadwal berhenti sendiri. Isi ulang atau naik paket, lalu hidupkan lagi.
+Kredit habis, jadwal berhenti sendiri. Isi ulang atau naik paket, lalu hidupkan lagi.
 
 ## Bukan ini
 
