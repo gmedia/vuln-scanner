@@ -30,3 +30,29 @@ def test_scan_local_root_matches_eval_post(tmp_path: Path, monkeypatch: pytest.M
 
 def test_scan_local_root_missing_dir_empty():
     assert scan_local_root("/var/www/host-protect-missing-dir-xyz") == []
+
+
+def test_scan_clam_skips_without_binary(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(host_engine.shutil, "which", lambda _n: None)
+    assert host_engine.clam_binary() is None
+    assert host_engine.scan_clam("/var/www/html") == []
+
+
+def test_scan_clam_parses_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(host_path, "ALLOWED_PREFIXES", (str(tmp_path),))
+    monkeypatch.setattr(host_engine, "validate_root_path", lambda p: str(Path(p)))
+    monkeypatch.setattr(host_engine, "jail_rel_path", lambda root, rel: str(Path(root) / rel))
+    infected = tmp_path / "eicar.txt"
+    infected.write_text("X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR", encoding="utf-8")
+    monkeypatch.setattr(host_engine, "clam_binary", lambda: "/usr/bin/clamscan")
+
+    class Fake:
+        stdout = f"{infected}: Eicar-Test-Signature FOUND\n"
+
+    monkeypatch.setattr(host_engine.subprocess, "run", lambda *_a, **_k: Fake())
+    hits = host_engine.scan_clam(str(tmp_path))
+    assert len(hits) == 1
+    assert hits[0]["rel_path"] == "eicar.txt"
+    assert hits[0]["hit_class"] == "malware"
+    assert hits[0]["rule_id"].startswith("clam.")
+    assert "sha256" in hits[0]

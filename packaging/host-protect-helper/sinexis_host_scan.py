@@ -140,6 +140,60 @@ def yara_available() -> bool:
     return shutil.which("yara") is not None
 
 
+def clam_binary() -> str | None:
+    return shutil.which("clamdscan") or shutil.which("clamscan")
+
+
+def scan_clam(root: str, timeout: int = 120) -> list[dict[str, str]]:
+    binary = clam_binary()
+    if binary is None:
+        return []
+    cmd = [binary, "--no-summary", "-r", root]
+    if os.path.basename(binary) == "clamdscan":
+        cmd.insert(1, "--fdpass")
+    try:
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    hits: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for line in (proc.stdout or "").splitlines():
+        if not line.endswith(" FOUND"):
+            continue
+        left, _, sig = line.rpartition(":")
+        path = left.strip()
+        rule = sig.strip().removesuffix(" FOUND").strip()
+        if not path.startswith(root + os.sep) and path != root:
+            continue
+        rel = os.path.relpath(path, root).replace(os.sep, "/")
+        if ".." in rel.split("/") or _NUL in rel:
+            continue
+        if rel in seen:
+            continue
+        seen.add(rel)
+        safe_rule = re.sub(r"[^\w.\-]+", "_", rule)[:80] or "hit"
+        digest = ""
+        try:
+            digest = _sha256_file(path)
+        except OSError:
+            digest = ""
+        item = {
+            "rel_path": rel,
+            "class": "malware",
+            "rule_id": f"clam.{safe_rule}",
+        }
+        if digest:
+            item["sha256"] = digest
+        hits.append(item)
+    return hits
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Sinexis Host Protect on-box scan helper")
     p.add_argument(
@@ -280,14 +334,24 @@ def run(argv: list[str] | None = None) -> int:
     pack = load_signature_pack(Path(args.rules_dir))
     findings = scan_needles(root, pack)
     engine = "yara" if yara_available() else "needles"
+    clam_hits = scan_clam(root, args.timeout)
     payload = {
         "scan_id": args.scan_id,
         "agent_id": args.agent_id,
         "engine": engine,
         "findings": findings,
     }
+    clam_payload = {
+        "scan_id": args.scan_id,
+        "agent_id": args.agent_id,
+        "engine": "clam",
+        "findings": clam_hits,
+    }
     if args.json_out:
-        Path(args.json_out).write_text(json.dumps(payload), encoding="utf-8")
+        dump = dict(payload)
+        if clam_hits:
+            dump["clam_findings"] = clam_hits
+        Path(args.json_out).write_text(json.dumps(dump), encoding="utf-8")
     if args.dry_run:
         return 0
     if not args.api_base or not args.token:
@@ -295,6 +359,10 @@ def run(argv: list[str] | None = None) -> int:
     status = post_results(args.api_base, args.token, payload, args.timeout)
     if status >= 400:
         return 5
+    if clam_hits:
+        cstatus = post_results(args.api_base, args.token, clam_payload, args.timeout)
+        if cstatus >= 400:
+            return 5
     return 0
 
 

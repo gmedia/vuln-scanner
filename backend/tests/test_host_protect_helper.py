@@ -121,6 +121,28 @@ def test_yara_optional_without_binary(monkeypatch: pytest.MonkeyPatch):
     assert helper.yara_available() is False
 
 
+def test_clam_skips_without_binary(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(helper.shutil, "which", lambda _n: None)
+    assert helper.clam_binary() is None
+    assert helper.scan_clam("/var/www/html") == []
+
+
+def test_clam_parses_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(helper, "ALLOWED_PREFIXES", (str(tmp_path),))
+    infected = tmp_path / "eicar.txt"
+    infected.write_text("eicar", encoding="utf-8")
+    monkeypatch.setattr(helper, "clam_binary", lambda: "/usr/bin/clamscan")
+
+    class Fake:
+        stdout = f"{infected}: Win.Test.EICAR_HDB-1 FOUND\n"
+
+    monkeypatch.setattr(helper.subprocess, "run", lambda *_a, **_k: Fake())
+    hits = helper.scan_clam(str(tmp_path))
+    assert hits[0]["class"] == "malware"
+    assert hits[0]["rule_id"].startswith("clam.")
+    assert hits[0]["rel_path"] == "eicar.txt"
+
+
 def test_quarantine_restore_jail(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(helper, "ALLOWED_PREFIXES", (str(tmp_path / "www"),))
     web = tmp_path / "www"

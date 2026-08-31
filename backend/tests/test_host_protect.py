@@ -750,13 +750,15 @@ async def _queued_scan(
     return site, scan
 
 
-def _finding() -> dict[str, str]:
-    return {
+def _finding(**overrides: str) -> dict[str, str]:
+    row = {
         "rel_path": "wp-content/uploads/cache.php",
         "class": "webshell",
         "rule_id": "needles.php.webshell",
         "sha256": "a" * 64,
     }
+    row.update(overrides)
+    return row
 
 
 @pytest.mark.asyncio
@@ -791,6 +793,35 @@ async def test_agent_ingest_persists_hits(db_session: AsyncSession, ctx):
     assert hits[0].sha256 == "a" * 64
     await db_session.refresh(scan)
     assert scan.status == "completed"
+
+
+@pytest.mark.asyncio
+async def test_agent_ingest_accepts_clam_engine(db_session: AsyncSession, ctx):
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    raw, token_hash = generate_results_token()
+    agent.results_token_hash = token_hash
+    _, scan = await _queued_scan(db_session, org, owner, agent)
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.post(
+                "/api/host/agent/results",
+                headers={"X-Host-Agent-Token": raw},
+                json={
+                    "scan_id": str(scan.id),
+                    "agent_id": str(agent.id),
+                    "engine": "clam",
+                    "findings": [_finding(rule_id="clam.Eicar-Test-Signature")],
+                },
+            )
+            assert r.status_code == 200, r.text
+            assert r.json()["engine"] == "clam"
+    finally:
+        app.dependency_overrides.clear()
+    hits = (await db_session.execute(select(HostHit).where(HostHit.scan_id == scan.id))).scalars().all()
+    assert hits[0].engine == "clam"
 
 
 @pytest.mark.asyncio

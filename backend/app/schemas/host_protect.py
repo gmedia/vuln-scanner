@@ -100,7 +100,7 @@ class HostAgentFinding(BaseModel):
 class HostAgentResultsIngest(BaseModel):
     scan_id: uuid.UUID
     agent_id: uuid.UUID
-    engine: str = Field(..., pattern=r"^(yara|needles)$")
+    engine: str = Field(..., pattern=r"^(yara|needles|clam)$")
     findings: list[HostAgentFinding] = Field(default_factory=list)
 
 
