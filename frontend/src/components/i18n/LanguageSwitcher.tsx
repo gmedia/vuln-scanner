@@ -27,7 +27,7 @@ function LanguageSwitcher({ className }: { className?: string }) {
           className={cn(
             "h-full min-w-11 px-2.5",
             current === locale
-              ? "bg-primary text-primary-foreground"
+              ? "bg-secondary text-secondary-foreground"
               : "text-muted-foreground hover:bg-accent hover:text-foreground",
           )}
           onClick={() => {
