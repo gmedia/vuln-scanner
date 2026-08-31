@@ -939,6 +939,12 @@ function UserGuide() {
                     ns="guide"
                     components={{
                       ...transUi,
+                      guard: (
+                        <a
+                          href="#guard"
+                          className="text-primary hover:underline"
+                        />
+                      ),
                       host: (
                         <Link
                           to="/host"
@@ -948,12 +954,16 @@ function UserGuide() {
                     }}
                   />
                 </li>
-                <li>{t("hp2")}</li>
+                <li>
+                  <Trans i18nKey="hp2" ns="guide" components={transUi} />
+                </li>
                 <li>{t("hp3")}</li>
                 <li>
                   <Trans i18nKey="hp4" ns="guide" components={transUi} />
                 </li>
-                <li>{t("hp5")}</li>
+                <li>
+                  <Trans i18nKey="hp5" ns="guide" components={transUi} />
+                </li>
               </Steps>
             </CardContent>
           </Card>

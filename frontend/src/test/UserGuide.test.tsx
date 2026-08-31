@@ -90,8 +90,11 @@ describe("UserGuide", () => {
       "href",
       "/host",
     );
+    expect(document.body.querySelector('a[href="#guard"]')).toBeTruthy();
     expect(document.body.textContent ?? "").toMatch(/quarantine/i);
     expect(document.body.textContent ?? "").toMatch(/reconstruct/i);
+    expect(document.body.textContent ?? "").toMatch(/Copy nginx snippet/);
+    expect(document.body.textContent ?? "").toMatch(/not Coraza on sinexis\.app/);
     expect(
       screen.getByRole("heading", { name: "Tips & limits" }),
     ).toBeInTheDocument();
