@@ -1,6 +1,6 @@
 # Spec: Host Protect v1 (P12 — on-box web malware control plane)
 
-**Status:** **S0–S6 shipped on `main`** (#501–#511). Control plane + worker-local YARA walk. **S7–S12** = honest on-box scan (docs 2026-08-31; **no app code until owner `implement`**). Flag: prod compose may be **true**; local/CI **false**. WAF/Coraza/cPanel remain **out**. SKU list IDR **unset**.
+**Status:** **S0–S6 shipped on `main`** (#501–#511). Control plane + worker-local YARA walk. Prod compose default **true** (API/worker). Local/CI **false**. **S7–S12** = honest on-box scan (docs 2026-08-31). S7 honesty gate (no mock persist when root missing) is **#533**. WAF/Coraza/cPanel remain **out**. SKU list IDR **unset**.
 **Goal:** first **on-host web malware** surface for orgs that already run **Guard thin** — named web paths, scheduled file/YARA (or Clam) scan, incidents in product, **opt-in quarantine** — **without** cloning Imunify360 (no PHP Proactive Defense, no KernelCare, no cPanel plugin in v1).
 **Epic:** **P12**. Does **not** replace P5 Guard, P7 SIEM, or P1 Scan attach. Does **not** jump GTM / Scan SKU lock.
 **Depends:** P2 Workspace (JWT `org_id`) · P3 Assets (optional link) · P5 Guard enroll (agent on VPS) · P7 SIEM cases (incident hand-off).
@@ -96,7 +96,7 @@ Need a **thin control plane**: register web paths on an enrolled host, scan on a
 | **D4** | Scanner | Pluggable: **mock** (CI/lab **only**, `HOST_PROTECT_ALLOW_MOCK`) · **YARA/needles** on the **agent VM** (S10) · optional **ClamAV** **S12** if binary present. Do not vendor Imunify DB. |
 | **D5** | Schedule | Beat-driven per site; default **daily**; cap concurrent scans per org (e.g. 2). |
 | **D6** | Path policy | Absolute POSIX path; must be under an **allowlist prefix** configured per agent (e.g. `/var/www`, `/home/*/public_html` pattern **server-side**). Reject `..`, NUL, non-UTF8, symlink escape (resolve + prefix check). |
-| **D7** | Flag | `HOST_PROTECT_ENABLED` default **false** in CI and until ops injects. API/SPA **404** / feature-off copy when false. |
+| **D7** | Flag | Prod compose default **true** (API + `worker_ip` + beat). Local/CI **false**. API/SPA **404** / feature-off copy when false. |
 | **D8** | Credits | Working: on-box scan **bundled** (cost **0**) **or** pricing key `hostscan` (≤10 chars) if owner wants meter. **Do not** mix with HPP. Seed 0 if metered. |
 | **D9** | AuthZ | viewer+ list/hits; member+ `POST .../scan`; admin+ site CRUD, quarantine, restore, ignore, toggle auto-quarantine. Platform `is_admin` ≠ org owner. |
 | **D10** | SIEM | Create case **only** for classes `webshell` \| `backdoor` (configurable). Do not dump file bytes into case notes. |
