@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { Crosshair, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { BrandMark } from "@/components/brand/BrandMark";
+import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
+import ThemeSwitcher from "@/components/theme/ThemeSwitcher";
 import { useAuthStore } from "@/store/authStore";
 import { useTranslation } from "react-i18next";
 
@@ -28,8 +30,12 @@ function NotFound() {
   return (
     <div className="flex min-h-dvh flex-col items-center bg-background px-4 pb-10 pt-[max(1.25rem,env(safe-area-inset-top))] sm:justify-center sm:py-10">
       <div className="flex w-full max-w-2xl flex-col items-center rounded-lg border border-border bg-card px-10 py-16 text-center 2xl:max-w-3xl">
-        <div className="mb-6">
+        <div className="mb-6 flex flex-col items-center gap-3">
           <BrandMark to="/" aria-label={t("homeAria")} />
+          <div className="flex flex-row flex-wrap items-center justify-center gap-2 [&_button[aria-pressed=true]]:!bg-secondary [&_button[aria-pressed=true]]:!text-secondary-foreground">
+            <ThemeSwitcher className="h-11 min-h-11 w-auto" />
+            <LanguageSwitcher className="h-11 min-h-11 w-auto" />
+          </div>
         </div>
         <div className="mb-4 rounded-full bg-muted p-4">
           <Crosshair className="h-10 w-10 text-primary/70" />
