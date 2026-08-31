@@ -1,12 +1,23 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.user import User
-from app.schemas.host_protect import HostHitResponse, HostScanResponse, HostSiteCreate, HostSiteResponse, HostSiteUpdate
+from app.schemas.host_protect import (
+    MAX_AGENT_BODY_BYTES,
+    MAX_AGENT_FINDINGS,
+    HostAgentResultsIngest,
+    HostAgentResultsResponse,
+    HostHitResponse,
+    HostScanResponse,
+    HostSiteCreate,
+    HostSiteResponse,
+    HostSiteUpdate,
+)
 from app.services.auth import get_active_org_id, get_current_user
+from app.services.host_agent_ingest import ingest_agent_results
 from app.services.host_protect import HostProtectService
 
 router = APIRouter(prefix="/host", tags=["host-protect"])
@@ -118,6 +129,26 @@ async def restore_hit(
     db: AsyncSession = Depends(get_db),
 ) -> HostHitResponse:
     return await HostProtectService(db).restore_hit(current_user, get_active_org_id(request), hit_id)
+
+
+@router.post("/agent/results", response_model=HostAgentResultsResponse)
+async def ingest_host_agent_results(
+    request: Request,
+    body: HostAgentResultsIngest,
+    db: AsyncSession = Depends(get_db),
+    x_host_agent_token: str | None = Header(default=None, alias="X-Host-Agent-Token"),
+) -> HostAgentResultsResponse:
+    content_length = request.headers.get("content-length")
+    if content_length is not None:
+        try:
+            size = int(content_length)
+        except ValueError:
+            size = 0
+        if size > MAX_AGENT_BODY_BYTES:
+            raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Payload too large")
+    if len(body.findings) > MAX_AGENT_FINDINGS:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Payload too large")
+    return await ingest_agent_results(db, x_host_agent_token, body)
 
 
 @router.post("/hits/{hit_id}/ignore", response_model=HostHitResponse)

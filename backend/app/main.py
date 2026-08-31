@@ -66,7 +66,7 @@ app.add_middleware(
     allow_origins=[o.strip() for o in settings.cors_origins.split(",")],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allow_headers=["X-API-Key", "Content-Type", "Authorization", "Accept"],
+    allow_headers=["X-API-Key", "Content-Type", "Authorization", "Accept", "X-Host-Agent-Token"],
 )
 
 app.add_middleware(SecurityHeadersMiddleware)
