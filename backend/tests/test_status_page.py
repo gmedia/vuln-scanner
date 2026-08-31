@@ -140,6 +140,81 @@ async def test_status_page_crud_and_public_html(ctx, db_session: AsyncSession):
         fresh = await client.get("/status/acme-prod", headers={"X-E2E-Test": "1"})
         assert fresh.status_code == 200
         assert "Acme" in fresh.text
+        titled = await client.patch(
+            "/api/status-page",
+            json={"title": "Acme Status"},
+            headers=headers,
+        )
+        assert titled.status_code == 200, titled.text
+        assert titled.json()["title"] == "Acme Status"
+        assert titled.json()["slug"] == "acme-prod"
+        html_titled = await client.get("/status/acme-prod", headers={"X-E2E-Test": "1"})
+        assert "Acme Status" in html_titled.text
+
+
+@pytest.mark.asyncio
+async def test_incident_patch_and_admin_delete(ctx, db_session: AsyncSession):
+    _bind_db(db_session)
+    owner, org = ctx["owner"], ctx["org"]
+    member = await _make_user(db_session, "sp-member@example.com")
+    db_session.add(
+        OrganizationMembership(
+            id=uuid.uuid4(),
+            organization_id=org.id,
+            user_id=member.id,
+            role="member",
+        )
+    )
+    await db_session.commit()
+    owner_h = _auth(owner, org.id)
+    member_h = _auth(member, org.id)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        r = await client.put(
+            "/api/status-page",
+            json={"slug": "inc-lab", "title": "Inc Lab"},
+            headers=owner_h,
+        )
+        assert r.status_code == 200, r.text
+        created = await client.post(
+            "/api/status-page/incidents",
+            json={
+                "title": "API blip",
+                "impact": "minor",
+                "status": "investigating",
+                "body": "Looking into 5xx.",
+            },
+            headers=member_h,
+        )
+        assert created.status_code == 201, created.text
+        created_incs = created.json().get("incidents") or []
+        if not created_incs:
+            listed = await client.get("/api/status-page", headers=member_h)
+            created_incs = listed.json().get("incidents") or []
+        assert created_incs, created.text
+        incident_id = created_incs[0]["id"]
+        patched = await client.patch(
+            f"/api/status-page/incidents/{incident_id}",
+            json={"title": "API outage", "impact": "major"},
+            headers=member_h,
+        )
+        assert patched.status_code == 200, patched.text
+        inc = patched.json()["incidents"][0]
+        assert inc["title"] == "API outage"
+        assert inc["impact"] == "major"
+        assert inc["status"] == "investigating"
+        forbidden = await client.delete(
+            f"/api/status-page/incidents/{incident_id}",
+            headers=member_h,
+        )
+        assert forbidden.status_code == 403
+        deleted = await client.delete(
+            f"/api/status-page/incidents/{incident_id}",
+            headers=owner_h,
+        )
+        assert deleted.status_code == 204
+        listed = await client.get("/api/status-page", headers=owner_h)
+        assert listed.json()["incidents"] == []
 
 
 @pytest.mark.asyncio

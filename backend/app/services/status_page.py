@@ -32,6 +32,7 @@ from app.schemas.status_page import (
     StatusComponentResponse,
     StatusHostnameBody,
     StatusIncidentCreate,
+    StatusIncidentPatch,
     StatusIncidentResponse,
     StatusIncidentUpdateCreate,
     StatusIncidentUpdateResponse,
@@ -121,6 +122,7 @@ class StatusPageService:
     async def _page_for_org(self, organization_id: UUID) -> StatusPage | None:
         result = await self.db.execute(
             select(StatusPage)
+            .execution_options(populate_existing=True)
             .options(
                 selectinload(StatusPage.components).selectinload(StatusPageComponent.monitor),
                 selectinload(StatusPage.incidents).selectinload(StatusIncident.updates),
@@ -585,6 +587,46 @@ class StatusPageService:
         loaded = await self._page_for_org(organization_id)
         assert loaded is not None
         return self._to_response(loaded)
+
+    async def patch_incident(
+        self,
+        user: User,
+        organization_id: UUID | None,
+        incident_id: UUID,
+        body: StatusIncidentPatch,
+    ) -> StatusPageResponse:
+        self._enabled()
+        if organization_id is None:
+            raise HTTPException(status_code=400, detail="Active organization required")
+        await require_membership(self.db, organization_id, user.id, min_role="member")
+        page = await self._page_for_org(organization_id)
+        if page is None:
+            raise HTTPException(status_code=404, detail="Status page not found")
+        incident = next((i for i in page.incidents if i.id == incident_id), None)
+        if incident is None:
+            raise HTTPException(status_code=404, detail="Incident not found")
+        if body.title is not None:
+            incident.title = body.title
+        if body.impact is not None:
+            incident.impact = body.impact
+        await self.db.commit()
+        loaded = await self._page_for_org(organization_id)
+        assert loaded is not None
+        return self._to_response(loaded)
+
+    async def delete_incident(self, user: User, organization_id: UUID | None, incident_id: UUID) -> None:
+        self._enabled()
+        if organization_id is None:
+            raise HTTPException(status_code=400, detail="Active organization required")
+        await require_membership(self.db, organization_id, user.id, min_role="admin")
+        page = await self._page_for_org(organization_id)
+        if page is None:
+            raise HTTPException(status_code=404, detail="Status page not found")
+        incident = next((i for i in page.incidents if i.id == incident_id), None)
+        if incident is None:
+            raise HTTPException(status_code=404, detail="Incident not found")
+        await self.db.delete(incident)
+        await self.db.commit()
 
     async def public_by_slug(self, slug: str) -> StatusPageResponse:
         self._enabled()

@@ -5,6 +5,7 @@ import * as statusApi from "@/api/statusPage";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import StatusPage from "@/pages/StatusPage";
+import { useAuthStore } from "@/store/authStore";
 
 const mockGet = vi.fn();
 
@@ -26,6 +27,8 @@ vi.mock("@/api/statusPage", async () => {
     deleteComponent: vi.fn(),
     createIncident: vi.fn(),
     addIncidentUpdate: vi.fn(),
+    patchIncident: vi.fn(),
+    deleteIncident: vi.fn(),
   };
 });
 
@@ -56,6 +59,12 @@ describe("StatusPage admin", () => {
   beforeEach(() => {
     mockGet.mockReset();
     mockGet.mockResolvedValue(null);
+    useAuthStore.setState({
+      organizations: [
+        { id: "o1", name: "Org", slug: "org", role: "owner" },
+      ],
+      activeOrgId: "o1",
+    });
   });
 
   it("shows empty create form", async () => {
@@ -110,7 +119,109 @@ describe("StatusPage admin", () => {
     await user.clear(input);
     await user.type(input, "erp-prod");
     await user.click(screen.getByTestId("status-page-save-slug"));
-    expect(statusApi.patchStatusPage).toHaveBeenCalledWith({ slug: "erp-prod" });
+    expect(statusApi.patchStatusPage).toHaveBeenCalledWith({
+      slug: "erp-prod",
+      title: "ERP",
+    });
+  });
+
+  it("saves page title without changing slug", async () => {
+    const user = userEvent.setup();
+    mockGet.mockResolvedValue({
+      id: "p1",
+      organization_id: "o1",
+      slug: "erp-stg",
+      title: "ERP",
+      published: true,
+      custom_hostname: null,
+      hostname_status: "none",
+      cname_target: "status-edge.sinexis.app",
+      ...pageFields,
+      public_path: "/status/erp-stg",
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+      components: [],
+      incidents: [],
+      overall: "operational",
+    });
+    vi.mocked(statusApi.patchStatusPage).mockResolvedValue({
+      id: "p1",
+      organization_id: "o1",
+      slug: "erp-stg",
+      title: "ERP Status",
+      published: true,
+      custom_hostname: null,
+      hostname_status: "none",
+      cname_target: "status-edge.sinexis.app",
+      ...pageFields,
+      public_path: "/status/erp-stg",
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+      components: [],
+      incidents: [],
+      overall: "operational",
+    });
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("status-page-title")).toBeInTheDocument(),
+    );
+    const input = screen.getByTestId("status-page-title");
+    await user.clear(input);
+    await user.type(input, "ERP Status");
+    await user.click(screen.getByTestId("status-page-save-slug"));
+    expect(statusApi.patchStatusPage).toHaveBeenCalledWith({
+      slug: "erp-stg",
+      title: "ERP Status",
+    });
+  });
+
+  it("edits and deletes an incident for org admin", async () => {
+    const user = userEvent.setup();
+    mockGet.mockResolvedValue({
+      id: "p1",
+      organization_id: "o1",
+      slug: "erp-stg",
+      title: "ERP",
+      published: true,
+      custom_hostname: null,
+      hostname_status: "none",
+      cname_target: "status-edge.sinexis.app",
+      ...pageFields,
+      public_path: "/status/erp-stg",
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+      components: [],
+      incidents: [
+        {
+          id: "i1",
+          title: "API blip",
+          impact: "minor",
+          status: "investigating",
+          started_at: "2026-01-01T00:00:00Z",
+          resolved_at: null,
+          created_at: "2026-01-01T00:00:00Z",
+          updates: [],
+        },
+      ],
+      overall: "degraded",
+    });
+    vi.mocked(statusApi.patchIncident).mockResolvedValue({} as never);
+    vi.mocked(statusApi.deleteIncident).mockResolvedValue();
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("status-incident-title-i1")).toBeInTheDocument(),
+    );
+    const titleInput = screen.getByTestId("status-incident-title-i1");
+    await user.clear(titleInput);
+    await user.type(titleInput, "API outage");
+    await user.click(screen.getByTestId("status-incident-save-i1"));
+    expect(statusApi.patchIncident).toHaveBeenCalledWith("i1", {
+      title: "API outage",
+      impact: "minor",
+    });
+    await user.click(screen.getByTestId("status-incident-delete-i1"));
+    await user.click(screen.getByTestId("status-incident-delete-confirm-i1"));
+    expect(statusApi.deleteIncident).toHaveBeenCalledWith("i1");
   });
 
   it("attaches a custom hostname on the existing page", async () => {

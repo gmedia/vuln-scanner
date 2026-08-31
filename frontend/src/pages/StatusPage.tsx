@@ -26,14 +26,29 @@ import {
 import { listMonitors } from "@/api/uptime";
 import type { ApiError } from "@/lib/utils";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { canManageMembers } from "@/api/orgs";
+import { useAuthStore } from "@/store/authStore";
+import {
   addComponent,
   addIncidentUpdate,
   attachHostname,
   checkHostname,
   createIncident,
   deleteComponent,
+  deleteIncident,
   detachHostname,
   getStatusPage,
+  patchIncident,
   patchStatusPage,
   replaceHostname,
   upsertStatusPage,
@@ -53,6 +68,10 @@ function stateBadgeVariant(state: string | null) {
 export default function StatusPage() {
   const { t } = useTranslation("statusPage");
   const qc = useQueryClient();
+  const organizations = useAuthStore((s) => s.organizations);
+  const activeOrgId = useAuthStore((s) => s.activeOrgId);
+  const orgRole = organizations.find((o) => o.id === activeOrgId)?.role;
+  const canDeleteIncident = canManageMembers(orgRole);
   const pageQ = useQuery({ queryKey: ["status-page"], queryFn: getStatusPage });
   const monQ = useQuery({
     queryKey: ["uptime-monitors"],
@@ -63,6 +82,7 @@ export default function StatusPage() {
   const [slug, setSlug] = useState("");
   const [title, setTitle] = useState("");
   const [editSlug, setEditSlug] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState<string | null>(null);
   const [host, setHost] = useState<string | null>(null);
   const [monitorId, setMonitorId] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -72,6 +92,7 @@ export default function StatusPage() {
   const [incStatus, setIncStatus] = useState("investigating");
 
   const slugDraft = editSlug ?? page?.slug ?? "";
+  const titleDraft = editTitle ?? page?.title ?? "";
   const hostDraft = host ?? page?.custom_hostname ?? "";
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["status-page"] });
@@ -112,14 +133,16 @@ export default function StatusPage() {
     },
     onError: (err) => toast.error(apiDetail(err, t("detachHost"))),
   });
-  const slugMut = useMutation({
-    mutationFn: () => patchStatusPage({ slug: slugDraft }),
+  const identityMut = useMutation({
+    mutationFn: () =>
+      patchStatusPage({ slug: slugDraft, title: titleDraft.trim() }),
     onSuccess: () => {
       setEditSlug(null);
+      setEditTitle(null);
       invalidate();
-      toast.success(t("savePublicUrl"));
+      toast.success(t("saveIdentity"));
     },
-    onError: (err) => toast.error(apiDetail(err, "Could not save public URL")),
+    onError: (err) => toast.error(apiDetail(err, t("saveIdentity"))),
   });
   const checkMut = useMutation({
     mutationFn: checkHostname,
@@ -274,12 +297,23 @@ export default function StatusPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-sm tracking-wide">
-                {t("publicUrl")}
+                {t("pageIdentity")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">{t("publicUrlHelp")}</p>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label htmlFor="sp-edit-title">{t("pageTitle")}</Label>
+                  <Input
+                    id="sp-edit-title"
+                    data-testid="status-page-title"
+                    className="h-10 min-h-10"
+                    placeholder={t("pageTitle")}
+                    value={titleDraft}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                  />
+                </div>
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <Label htmlFor="sp-edit-slug">{t("slug")}</Label>
                   <Input
@@ -296,10 +330,10 @@ export default function StatusPage() {
                     type="button"
                     className="h-10 min-h-10 w-full"
                     data-testid="status-page-save-slug"
-                    disabled={slugMut.isPending}
-                    onClick={() => slugMut.mutate()}
+                    disabled={identityMut.isPending || !titleDraft.trim()}
+                    onClick={() => identityMut.mutate()}
                   >
-                    {t("savePublicUrl")}
+                    {t("saveIdentity")}
                   </Button>
                 </div>
               </div>
@@ -555,14 +589,10 @@ export default function StatusPage() {
                       key={i.id}
                       className="rounded-md border border-border bg-card p-4"
                     >
-                      <p className="font-medium text-foreground">{i.title}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {i.status} · {i.impact}
-                      </p>
-                      <IncidentQuickUpdate
-                        incidentId={i.id}
+                      <IncidentEditor
+                        incident={i}
+                        canDelete={canDeleteIncident}
                         onDone={invalidate}
-                        addUpdate={addIncidentUpdate}
                       />
                     </li>
                   ))}
@@ -573,6 +603,114 @@ export default function StatusPage() {
           <p className="text-xs text-muted-foreground">{t("disclaimer")}</p>
         </>
       )}
+    </div>
+  );
+}
+
+function IncidentEditor({
+  incident,
+  canDelete,
+  onDone,
+}: {
+  incident: {
+    id: string;
+    title: string;
+    impact: string;
+    status: string;
+  };
+  canDelete: boolean;
+  onDone: () => void;
+}) {
+  const { t } = useTranslation("statusPage");
+  const [title, setTitle] = useState(incident.title);
+  const [impact, setImpact] = useState(incident.impact);
+  const saveMut = useMutation({
+    mutationFn: () => patchIncident(incident.id, { title: title.trim(), impact }),
+    onSuccess: onDone,
+    onError: (err) => toast.error(apiDetail(err, t("saveIncident"))),
+  });
+  const delMut = useMutation({
+    mutationFn: () => deleteIncident(incident.id),
+    onSuccess: onDone,
+    onError: (err) => toast.error(apiDetail(err, t("deleteIncident"))),
+  });
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <Label htmlFor={`inc-title-${incident.id}`}>{t("incidentTitle")}</Label>
+          <Input
+            id={`inc-title-${incident.id}`}
+            data-testid={`status-incident-title-${incident.id}`}
+            className="h-10 min-h-10"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+        </div>
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <Label>{t("impact")}</Label>
+          <Select value={impact} onValueChange={setImpact}>
+            <SelectTrigger className="h-10 min-h-10">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {["none", "minor", "major", "critical"].map((v) => (
+                <SelectItem key={v} value={v}>
+                  {v}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <p className="text-sm text-muted-foreground">{incident.status}</p>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          size="sm"
+          data-testid={`status-incident-save-${incident.id}`}
+          disabled={!title.trim() || saveMut.isPending}
+          onClick={() => saveMut.mutate()}
+        >
+          {t("saveIncident")}
+        </Button>
+        {canDelete ? (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                type="button"
+                size="sm"
+                variant="destructive"
+                data-testid={`status-incident-delete-${incident.id}`}
+              >
+                {t("deleteIncident")}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("deleteIncident")}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t("deleteIncidentConfirm")}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                <AlertDialogAction
+                  data-testid={`status-incident-delete-confirm-${incident.id}`}
+                  onClick={() => delMut.mutate()}
+                >
+                  {t("deleteIncident")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        ) : null}
+      </div>
+      <IncidentQuickUpdate
+        incidentId={incident.id}
+        onDone={onDone}
+        addUpdate={addIncidentUpdate}
+      />
     </div>
   );
 }

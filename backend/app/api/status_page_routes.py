@@ -9,6 +9,7 @@ from app.schemas.status_page import (
     StatusComponentCreate,
     StatusHostnameBody,
     StatusIncidentCreate,
+    StatusIncidentPatch,
     StatusIncidentUpdateCreate,
     StatusPageCreate,
     StatusPageResponse,
@@ -124,6 +125,27 @@ async def create_incident(
     db: AsyncSession = Depends(get_db),
 ) -> StatusPageResponse:
     return await StatusPageService(db).create_incident(current_user, get_active_org_id(request), body)
+
+
+@router.patch("/incidents/{incident_id}", response_model=StatusPageResponse)
+async def patch_incident(
+    request: Request,
+    incident_id: UUID,
+    body: StatusIncidentPatch,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> StatusPageResponse:
+    return await StatusPageService(db).patch_incident(current_user, get_active_org_id(request), incident_id, body)
+
+
+@router.delete("/incidents/{incident_id}", status_code=204)
+async def delete_incident(
+    request: Request,
+    incident_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    await StatusPageService(db).delete_incident(current_user, get_active_org_id(request), incident_id)
 
 
 @router.post("/incidents/{incident_id}/updates", response_model=StatusPageResponse, status_code=201)

@@ -91,6 +91,20 @@ class StatusIncidentCreate(BaseModel):
         return v
 
 
+class StatusIncidentPatch(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=255)
+    impact: str | None = None
+
+    @field_validator("impact")
+    @classmethod
+    def _impact(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        if v not in ("none", "minor", "major", "critical"):
+            raise ValueError("invalid impact")
+        return v
+
+
 class StatusIncidentUpdateCreate(BaseModel):
     body: str = Field(min_length=1, max_length=4000)
     status: str
