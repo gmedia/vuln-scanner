@@ -613,6 +613,41 @@ async def test_host_scan_job_mock_when_root_missing(db_session: AsyncSession, ct
     db_session.add(scan)
     await db_session.commit()
     out = await run_host_scan_job(db_session, scan.id)
+    assert out["ok"] is False
+    assert out["error"] == "unreachable_root"
+    assert out["hit_count"] == 0
+    await db_session.refresh(scan)
+    assert scan.status == "failed"
+    assert scan.error == "unreachable_root"
+    hits = (await db_session.execute(select(HostHit).where(HostHit.site_id == site.id))).scalars().all()
+    assert hits == []
+
+
+@pytest.mark.asyncio
+async def test_host_scan_job_mock_when_allow_mock(db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "host_protect_allow_mock", True)
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    site = HostSite(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        guard_agent_id=agent.id,
+        name="MissingRootMock",
+        root_path="/var/www/host-protect-not-on-worker",
+        created_by=owner.id,
+    )
+    scan = HostScan(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        status="queued",
+        trigger="manual",
+    )
+    db_session.add(site)
+    db_session.add(scan)
+    await db_session.commit()
+    out = await run_host_scan_job(db_session, scan.id)
     assert out["ok"] is True
     assert out["engine"] == "mock"
     assert out["hit_count"] == 1
