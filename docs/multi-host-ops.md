@@ -187,7 +187,7 @@ Manual GitHub Action: **Guard lab enroll smoke** (`workflow_dispatch` only, `--a
 
 API cycle only: create a **fixture** site (default `/var/www/host-protect-fixture`), enqueue mock scan, **quarantine then restore** on the first hit (ignore is `open`-only and cannot follow ignore on the same row), optional ignore on a second open hit, delete site. **Not** Playwright. **Does not** wipe `tc5` or enroll Guard. **Do not** use live ERP (`sx-erpstg`) as `root_path`.
 
-Requires `HOST_PROTECT_ENABLED` on the **API and `worker_ip`** (compose interpolates the same env). Beat also reads the flag for `host_protect.run_due`. After a Host Protect merge, deploy **`worker_ip`** on the scan host to the same SHA as app `main` — otherwise the task is missing or skips.
+Requires `HOST_PROTECT_ENABLED` on the **API and `worker_ip`** (compose interpolates the same env). Beat also reads the flag for `host_protect.run_due`. Prod compose default **true**; local/CI still false. After a Host Protect merge, deploy **`worker_ip`** on the scan host to the same SHA as app `main` — otherwise the task is missing or skips. Scan is still **mock** if `root_path` is not a directory on the worker.
 
 `--prepare-fixture` SSHs to `HOST_PROTECT_LAB_FIXTURE_SSH` if set, else `GUARD_LAB_AGENT_SSH` (default `tc5`). Run it from a host that **resolves** that alias (often the bastion, not the app host).
 
