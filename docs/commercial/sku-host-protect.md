@@ -1,6 +1,7 @@
 # Host Protect — SKU (P12 working, **not** P0 lock)
 
-**Status:** **Working commercial (2026-08-30)** — product **S0–S5 shipped** (#501–#505); owner **has not** locked list IDR. AM **must not** treat this as invoice truth. Scan/Secure add-on remains the **only** P0-locked SKU ([`sku-scan-secure-addon.md`](sku-scan-secure-addon.md)).
+**Status:** **Working commercial (2026-08-31)** — product **S0–S6 shipped**; **S7–S12** honest on-box **spek only**. Owner **has not** locked list IDR. AM **must not** treat this as invoice truth. Scan/Secure add-on remains the **only** P0-locked SKU ([`sku-scan-secure-addon.md`](sku-scan-secure-addon.md)).
+**Do not demo mock hits as on-box detection.** Until S10 lab on a Guard VM, AM must not claim “scan di VPS pelanggan.”
 **Product spec:** [`docs/specs/host-protect-v1.md`](../specs/host-protect-v1.md).
 **Metering:** on-box malware scan **bundled (credit cost 0)** unless owner later seeds admin pricing key **`hostscan`** (≤10 chars). **Do not** mix with HPP / Scan credit bundles.
 
@@ -38,7 +39,7 @@
 ## 2. What AM may say (Bahasa, until IDR lock)
 
 - “Ini **bukan** ganti Imunify di cPanel shared.”
-- “Untuk VPS/colo GMD: agent Guard + daftar folder web + scan malware + isolate file.”
+- “Untuk VPS/colo GMD: agent Guard + daftar folder web. Scan **on-box** = S10 (helper POST ke SaaS); sampai itu, konsol **bukan** bukti disk VPS.”
 - “Harga add-on **belum** list resmi; jangan quote angka dari file ini.”
 - “Quarantine **bukan** reconstruct situs; restore CMS = tiket.”
 - Positioning vs Imunify: [`imunify-beside-not-roadmap.md`](imunify-beside-not-roadmap.md) — **bukan** backlog fitur.
