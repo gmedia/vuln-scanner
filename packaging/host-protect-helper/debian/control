@@ -8,7 +8,9 @@ Standards-Version: 4.6.2
 Package: sinexis-host-protect
 Architecture: all
 Depends: wazuh-agent, python3
-Description: Sinexis Host Protect on-box helper (YARA/needles)
+Recommends: clamav
+Description: Sinexis Host Protect on-box helper (YARA/needles, optional Clam)
  Add-on for an enrolled wazuh-agent VM. Walks allowlisted web roots and
  POSTs JSON findings to the Sinexis Host Protect ingest API.
  Not a second enroll daemon.
+ ClamAV is optional; skip scan if clamscan/clamdscan is absent.
