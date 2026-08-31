@@ -304,7 +304,6 @@ export default function HostProtect() {
                   {t("emptyHint")}
                 </p>
                 <Button
-                  variant="outline"
                   className="mt-2"
                   data-testid="host-empty-cta"
                   disabled={atCap || agents.length === 0}
