@@ -137,7 +137,7 @@ function NavItem({
           <span className="flex min-w-0 flex-col leading-tight">
             <span>{label}</span>
             {hint ? (
-              <span className="truncate text-[10px] font-normal text-foreground/70">
+              <span className="truncate text-[10px] font-normal text-sidebar-foreground/80">
                 {hint}
               </span>
             ) : null}
