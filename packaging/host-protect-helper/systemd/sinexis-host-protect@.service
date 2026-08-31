@@ -1,0 +1,18 @@
+[Unit]
+Description=Sinexis Host Protect on-box scan (%i)
+Requires=wazuh-agent.service
+After=wazuh-agent.service
+
+[Service]
+Type=oneshot
+Nice=15
+TimeoutStartSec=180
+EnvironmentFile=-/etc/sinexis/host-protect.env
+ExecStart=/usr/bin/python3 /usr/lib/sinexis/host-protect/sinexis_host_scan.py --root %i
+User=root
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/sinexis
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily Sinexis Host Protect scan (%i)
+Requires=wazuh-agent.service
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target
