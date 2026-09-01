@@ -111,6 +111,17 @@ class HostAgentResultsResponse(BaseModel):
     engine: str
 
 
+class HostAgentPollJob(BaseModel):
+    scan_id: uuid.UUID
+    site_id: uuid.UUID
+    root_path: str
+    trigger: str
+
+
+class HostAgentPollResponse(BaseModel):
+    jobs: list[HostAgentPollJob]
+
+
 class HostHitResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
