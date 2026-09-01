@@ -671,6 +671,7 @@ async def test_host_scan_job_mock_when_root_missing(db_session: AsyncSession, ct
     org: Organization = ctx["org"]
     owner: User = ctx["owner"]
     agent: GuardAgent = ctx["agent"]
+    agent.last_helper_poll_at = datetime.now(UTC)
     site = HostSite(
         id=uuid.uuid4(),
         organization_id=org.id,
