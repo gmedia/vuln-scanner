@@ -84,7 +84,7 @@ describe("Login", () => {
   it("renders the Crosshair icon and Sign in title", () => {
     render(<Login />);
     expect(
-      screen.getByRole("heading", { name: /welcome back/i }),
+      screen.getByRole("heading", { name: /sign in to scan/i }),
     ).toBeInTheDocument();
   });
 
