@@ -20,6 +20,7 @@ vi.mock("@/api/hostProtect", async () => {
     createHostSite: vi.fn(),
     deleteHostSite: vi.fn(),
     enqueueHostScan: vi.fn(),
+    listHostScans: vi.fn(),
     listHostHits: vi.fn(),
     quarantineHostHit: vi.fn(),
     restoreHostHit: vi.fn(),
@@ -89,6 +90,7 @@ describe("Host Protect page", () => {
     });
     vi.mocked(hostApi.listHostSites).mockResolvedValue([]);
     vi.mocked(hostApi.listHostHits).mockResolvedValue([]);
+    vi.mocked(hostApi.listHostScans).mockResolvedValue([]);
     vi.mocked(hostWafApi.listHostWafPolicies).mockResolvedValue([]);
     vi.mocked(hostWafApi.listHostWafEvents).mockResolvedValue([]);
     vi.mocked(hostWafApi.fetchHostWafSnippet).mockResolvedValue({
@@ -257,6 +259,48 @@ describe("Host Protect page", () => {
     await user.click(screen.getByTestId("host-quarantine"));
     await waitFor(() => expect(hostApi.quarantineHostHit).toHaveBeenCalled());
     expect(vi.mocked(hostApi.quarantineHostHit).mock.calls[0][0]).toBe("h1");
+  });
+
+  it("shows queued scan copy instead of silent empty hits", async () => {
+    vi.mocked(hostApi.listHostSites).mockResolvedValue([
+      {
+        id: "s1",
+        organization_id: "org1",
+        guard_agent_id: "a1",
+        asset_id: null,
+        name: "Erp Stg",
+        root_path: "/var/www/stg/member-pay",
+        cms_hint: "unknown",
+        enabled: true,
+        auto_quarantine: false,
+        created_by: "u1",
+        created_at: "2026-08-30T00:00:00Z",
+        updated_at: "2026-08-30T00:00:00Z",
+        sku: "multi",
+        sku_limit: 10,
+      },
+    ]);
+    vi.mocked(hostApi.listHostScans).mockResolvedValue([
+      {
+        id: "sc1",
+        organization_id: "org1",
+        site_id: "s1",
+        status: "queued",
+        trigger: "manual",
+        started_at: null,
+        finished_at: null,
+        error: null,
+        hit_count: 0,
+        created_at: "2026-08-30T00:00:00Z",
+      },
+    ]);
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByTestId("host-scan-status")).toBeInTheDocument(),
+    );
+    expect(screen.getByTestId("host-hits-empty").textContent).toMatch(
+      /on-box helper/i,
+    );
   });
 
   it("hides leftover mock-engine hits", async () => {

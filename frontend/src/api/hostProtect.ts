@@ -82,6 +82,11 @@ export async function enqueueHostScan(siteId: string): Promise<HostScan> {
   return data;
 }
 
+export async function listHostScans(siteId: string): Promise<HostScan[]> {
+  const { data } = await api.get<HostScan[]>(`/api/host/sites/${siteId}/scans`);
+  return data;
+}
+
 export async function listHostHits(params?: {
   site_id?: string;
   status?: string;
