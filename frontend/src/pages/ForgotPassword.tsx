@@ -50,10 +50,10 @@ function ForgotPassword() {
         <Card className="w-full">
           <CardContent className="pt-6 text-center space-y-4">
             <CheckCircle className="h-12 w-12 text-primary mx-auto" />
-            <p className="text-xs text-foreground/80">{t("resetLinkSent")}</p>
-            <p className="text-xs text-foreground/70">{t("checkSpam")}</p>
+            <p className="text-xs text-muted-foreground">{t("resetLinkSent")}</p>
+            <p className="text-xs text-muted-foreground">{t("checkSpam")}</p>
             <Link to="/login">
-              <Button className="w-full text-sm mt-4">
+              <Button className="mt-4 min-h-11 w-full text-sm">
                 {t("backToSignIn")}
               </Button>
             </Link>
@@ -97,10 +97,10 @@ function ForgotPassword() {
                 disabled={isSubmitting}
               />
             </div>
-            <p className="text-xs text-foreground/70">{t("checkSpam")}</p>
+            <p className="text-xs text-muted-foreground">{t("checkSpam")}</p>
             <Button
               type="submit"
-              className="w-full text-sm"
+              className="min-h-11 w-full text-sm"
               disabled={isSubmitting || cooldown > 0}
             >
               {cooldown > 0 ? (

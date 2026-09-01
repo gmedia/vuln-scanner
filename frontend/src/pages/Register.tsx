@@ -129,7 +129,7 @@ function Register() {
             <Button
               type="button"
               variant="outline"
-              className="w-full text-sm"
+              className="min-h-11 w-full text-sm"
               onClick={handleResend}
               disabled={isResending || !email}
             >
@@ -143,7 +143,7 @@ function Register() {
               )}
             </Button>
             <Link to="/login">
-              <Button className="w-full text-sm mt-2">{t("goToSignIn")}</Button>
+              <Button className="mt-2 min-h-11 w-full text-sm">{t("goToSignIn")}</Button>
             </Link>
           </CardContent>
         </Card>
@@ -255,7 +255,7 @@ function Register() {
             </div>
             <Button
               type="submit"
-              className="w-full text-sm"
+              className="min-h-11 w-full text-sm"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
@@ -268,7 +268,7 @@ function Register() {
               )}
             </Button>
           </form>
-          <p className="mt-4 text-center text-sm text-foreground/80">
+          <p className="mt-4 text-center text-sm text-muted-foreground">
             {t("alreadyHaveAccount")}{" "}
             <Link
               to={
