@@ -11,7 +11,8 @@ Do **not** wipe `sx-erpstg`. Use a fixture folder under `/var/www`, `/srv/www`, 
 3. Environment file `/etc/sinexis/host-protect.env` (mode 600): ingest URL + `X-Host-Agent-Token` from Guard enroll. **Never commit tokens.**
 4. Enable `sinexis-host-protect@.timer` with the Guard agent UUID as instance.
 5. Poll interval: timer `OnUnitActiveSec=5min`. SaaS worker **does not** mount this disk.
+6. systemd unit: `ProtectSystem=strict` plus `ReadWritePaths=/var/lib/sinexis /var/www /srv/www /home` so poll can walk jail roots and (when S11 helper jobs exist) rename into quarantine. Missing env/token → helper exit **4**, no POST. Env file **mode 600**.
 
 Smoke: enqueue a Host Protect scan in the SPA, then run `python3 sinexis_host_scan.py poll --agent-id <uuid>` on **tc5**. Hits appear only after POST. Poll also runs queued **quarantine/restore** jobs and POSTs `/api/host/agent/commands/ack`. Pending SPA status is not on-disk quarantine.
 
-ClamAV is optional (`Recommends: clamav`). Skip if `clamscan`/`clamdscan` is absent.
+ClamAV is optional (`Recommends: clamav`). Skip if `clamscan`/`clamdscan` is absent. CI images must not require Clam.
