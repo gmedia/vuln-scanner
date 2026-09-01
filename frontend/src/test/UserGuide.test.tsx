@@ -91,6 +91,8 @@ describe("UserGuide", () => {
       "/host",
     );
     expect(document.body.querySelector('a[href="#guard"]')).toBeTruthy();
+    expect(document.body.textContent ?? "").toMatch(/Host Protect helper/i);
+    expect(document.body.textContent ?? "").toMatch(/sinexis-host-protect@/i);
     expect(document.body.textContent ?? "").toMatch(/quarantine/i);
     expect(document.body.textContent ?? "").toMatch(/reconstruct/i);
     expect(document.body.textContent ?? "").toMatch(/Copy nginx snippet/);
