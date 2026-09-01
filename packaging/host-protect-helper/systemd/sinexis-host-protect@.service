@@ -2,13 +2,13 @@
 Description=Sinexis Host Protect on-box poll (%i)
 Requires=wazuh-agent.service
 After=wazuh-agent.service
+# StartLimit* is a [Unit] key. In [Service] it is ignored and the default 5/10s remains.
+StartLimitIntervalSec=0
 
 [Service]
 Type=oneshot
 Nice=15
 TimeoutStartSec=180
-# Lab/AM may start this oneshot many times; default 5/10s StartLimit refuses later polls.
-StartLimitIntervalSec=0
 EnvironmentFile=-/etc/sinexis/host-protect.env
 ExecStart=/usr/bin/flock -n /var/lib/sinexis/host-protect-poll-%i.lock /usr/bin/python3 /usr/lib/sinexis/host-protect/sinexis_host_scan.py poll --agent-id %i
 User=root

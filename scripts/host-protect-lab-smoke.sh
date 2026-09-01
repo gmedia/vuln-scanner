@@ -388,12 +388,16 @@ print((picked or {}).get('engine') or '')
 import json,os,sys
 rows=json.loads(sys.argv[1])
 sid=os.environ.get('SCAN_ID','')
+picked=''
 for r in rows:
+    if r.get('status')!='open':
+        continue
     if sid and str(r.get('scan_id'))==sid:
-        print(r.get('id') or '')
+        picked=r.get('id') or ''
         break
-else:
-    print((rows[0].get('id') if rows else '') or '')
+    if not picked:
+        picked=r.get('id') or ''
+print(picked)
 " "$HTTP_BODY")"
   if [[ -z "$hit_id" ]]; then
     log "no hits (mock may need worker; still a valid smoke if scan completed)"
