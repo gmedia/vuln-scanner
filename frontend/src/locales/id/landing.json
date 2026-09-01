@@ -20,13 +20,13 @@
   "featCredits": "Kredit",
   "featCreditsDesc": "Dompet kredit pribadi; setiap jenis scan punya biaya jelas.",
   "heroEyebrow": "Security attach untuk colo, VPS, dan tumpukan hospitality",
-  "heroHeadline": "Cek paparan IP, domain, dan mobile — lalu jadwalkan, jangan nmap sekali jalan.",
+  "heroHeadline": "Cek paparan IP, domain, dan mobile — lalu jadwalkan. Satu nmap bukan kontrol.",
   "heroProduct": "Security attach untuk colo, VPS, dan tumpukan hospitality",
-  "heroSub": "Kredit, workspace, aset, Guard, dan uptime di akun yang sama. Scan kontinyu bukan pentest tahunan.",
+  "heroSub": "Kredit, workspace, aset, Guard, dan uptime di akun yang sama. Scan kontinyu bukan pentest tahunan. Kami tidak mengarang temuan malware.",
   "authSubtitle": "Sinexis — security attach untuk colo, VPS, dan tumpukan hospitality",
   "homeAria": "Beranda Sinexis",
   "notFoundTitle": "Halaman tidak ditemukan",
-  "notFoundBody": "Target yang Anda cari di luar jangkauan scan. Kembali ke pangkalan dan coba lagi.",
+  "notFoundBody": "URL itu bukan halaman Sinexis. Kembali ke beranda atau masuk ke dasbor.",
   "returnDashboard": "Kembali ke dasbor",
   "backHome": "Kembali ke beranda",
   "blog": "Blog",
@@ -49,5 +49,7 @@
   "faqDataQ": "Data scan ke mana?",
   "faqDataA": "Hasil ada di workspace Anda. Lihat kebijakan privasi di situs ini; jangan unggah rahasia yang tidak boleh disimpan.",
   "faqGuardQ": "Guard vs SIEM?",
-  "faqGuardA": "Guard adalah inventaris + alert kritis (Wazuh tipis). SIEM penuh opsional dan default mati."
+  "faqGuardA": "Guard adalah inventaris + alert kritis (Wazuh tipis). SIEM penuh opsional dan default mati.",
+  "faqAgentQ": "Harus pasang dua agen?",
+  "faqAgentA": "Tidak. Satu wazuh-agent per VM. Host Protect adalah helper add-on, bukan daemon enroll kedua."
 }

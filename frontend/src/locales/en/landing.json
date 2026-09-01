@@ -20,13 +20,13 @@
   "featCredits": "Credits",
   "featCreditsDesc": "Personal credit wallet; each scan type has a clear cost.",
   "heroEyebrow": "Security attach for colo, VPS, and hospitality stacks",
-  "heroHeadline": "Find exposure on IP, domain, and mobile — then schedule it, don’t nmap once.",
+  "heroHeadline": "Find exposure on IP, domain, and mobile — then schedule it. One nmap is not a control.",
   "heroProduct": "Security attach for colo, VPS, and hospitality stacks",
-  "heroSub": "Credits, workspace, assets, Guard, and uptime on the same account. Continuous scan is not a yearly pentest.",
+  "heroSub": "Credits, workspace, assets, Guard, and uptime on the same account. Continuous scan is not a yearly pentest. We do not invent malware hits.",
   "authSubtitle": "Sinexis — security attach for colo, VPS, and hospitality stacks",
   "homeAria": "Sinexis home",
   "notFoundTitle": "Page not found",
-  "notFoundBody": "The target you're looking for is out of scan range. Return to base and try again.",
+  "notFoundBody": "That URL is not a Sinexis page. Go home or sign in to the dashboard.",
   "returnDashboard": "Return to dashboard",
   "backHome": "Back to home",
   "blog": "Blog",
@@ -49,5 +49,7 @@
   "faqDataQ": "Where does scan data go?",
   "faqDataA": "Results live in your workspace. See the privacy policy on this site; do not upload secrets you cannot store.",
   "faqGuardQ": "Guard vs SIEM?",
-  "faqGuardA": "Guard is inventory + critical alerts (Wazuh thin). Full SIEM search is optional and off by default."
+  "faqGuardA": "Guard is inventory + critical alerts (Wazuh thin). Full SIEM search is optional and off by default.",
+  "faqAgentQ": "Do I install two agents?",
+  "faqAgentA": "No. One wazuh-agent per VM. Host Protect is a helper add-on, not a second enroll daemon."
 }
