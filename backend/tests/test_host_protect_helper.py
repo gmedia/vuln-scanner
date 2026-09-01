@@ -124,7 +124,9 @@ def test_poll_fetches_and_scans(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setattr(
         helper,
         "fetch_jobs",
-        lambda *_a, **_k: [{"scan_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "root_path": str(tmp_path)}],
+        lambda *_a, **_k: [
+            {"kind": "scan", "scan_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "root_path": str(tmp_path)}
+        ],
     )
     rc = helper.run(
         [
@@ -221,6 +223,50 @@ def test_quarantine_restore_jail(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     assert rc2 == 0
     assert src.is_file()
     assert not dest.exists()
+
+
+def test_poll_runs_quarantine_and_acks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(helper, "ALLOWED_PREFIXES", (str(tmp_path / "www"),))
+    web = tmp_path / "www"
+    uploads = web / "wp-content" / "uploads"
+    uploads.mkdir(parents=True)
+    src = uploads / "cache.php"
+    src.write_text("evil", encoding="utf-8")
+    qroot = tmp_path / "libq"
+    ack = MagicMock(return_value=200)
+    monkeypatch.setattr(helper, "post_command_ack", ack)
+    monkeypatch.setattr(
+        helper,
+        "fetch_jobs",
+        lambda *_a, **_k: [
+            {
+                "kind": "quarantine",
+                "command_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+                "root_path": str(web),
+                "rel_path": "wp-content/uploads/cache.php",
+                "dest_basename": "abcd1234_cache.php",
+                "site_id": "site-a",
+            }
+        ],
+    )
+    rc = helper.run(
+        [
+            "poll",
+            "--agent-id",
+            "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+            "--api-base",
+            "https://example.invalid",
+            "--token",
+            "secret-token",
+            "--quarantine-root",
+            str(qroot),
+        ]
+    )
+    assert rc == 0
+    assert not src.exists()
+    ack.assert_called_once()
+    assert ack.call_args[0][3] == "cccccccc-cccc-cccc-cccc-cccccccccccc"
+    assert ack.call_args[0][4] is True
 
 
 def test_quarantine_outside_jail(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
