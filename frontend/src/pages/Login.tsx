@@ -145,7 +145,7 @@ function Login() {
             </div>
             <Button
               type="submit"
-              className="w-full text-sm"
+              className="min-h-11 w-full text-sm"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
@@ -166,7 +166,7 @@ function Login() {
               <Button
                 type="button"
                 variant="outline"
-                className="w-full text-sm"
+                className="min-h-11 w-full text-sm"
                 onClick={handleResend}
                 disabled={isResending || !email}
               >
@@ -186,7 +186,7 @@ function Login() {
               {t("forgotPassword")}
             </Link>
           </p>
-          <p className="mt-1 text-center text-sm text-foreground/80">
+          <p className="mt-1 text-center text-sm text-muted-foreground">
             {t("noAccount")}{" "}
             <Link
               to={

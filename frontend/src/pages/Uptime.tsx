@@ -395,34 +395,34 @@ export default function Uptime() {
           data-testid="uptime-kpi"
           className="grid grid-cols-1 gap-3 sm:grid-cols-3"
         >
-          <div className="rounded-md border border-border bg-card px-4 py-3">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              {t("statUp")}
-            </p>
-            <p className="mt-1 font-mono text-lg font-bold tabular-nums text-primary">
+          <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card p-3">
+            <p className="font-mono text-xl font-bold tabular-nums text-primary sm:text-2xl">
               {upCount}
             </p>
-          </div>
-          <div className="rounded-md border border-border bg-card px-4 py-3">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              {t("statDown")}
+            <p className="mt-1 text-center text-[10px] uppercase tracking-wider text-muted-foreground">
+              {t("statUp")}
             </p>
+          </div>
+          <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card p-3">
             <p
               className={
                 downCount > 0
-                  ? "mt-1 font-mono text-lg font-bold tabular-nums text-destructive"
-                  : "mt-1 font-mono text-lg font-bold tabular-nums text-muted-foreground"
+                  ? "font-mono text-xl font-bold tabular-nums text-destructive sm:text-2xl"
+                  : "font-mono text-xl font-bold tabular-nums text-muted-foreground sm:text-2xl"
               }
             >
               {downCount}
             </p>
-          </div>
-          <div className="rounded-md border border-border bg-card px-4 py-3">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              {t("statSku")}
+            <p className="mt-1 text-center text-[10px] uppercase tracking-wider text-muted-foreground">
+              {t("statDown")}
             </p>
-            <p className="mt-1 font-mono text-lg font-bold tabular-nums text-foreground">
+          </div>
+          <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card p-3">
+            <p className="font-mono text-xl font-bold tabular-nums text-foreground sm:text-2xl">
               {t("skuShort", { count: enabledCount, limit, sku })}
+            </p>
+            <p className="mt-1 text-center text-[10px] uppercase tracking-wider text-muted-foreground">
+              {t("statSku")}
             </p>
           </div>
         </div>
@@ -431,7 +431,7 @@ export default function Uptime() {
       {items.length > 0 ? (
         <div
           data-testid="uptime-filters"
-          className="grid grid-cols-1 gap-3 rounded-md border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4"
+          className="grid grid-cols-1 gap-3 rounded-md border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-3"
         >
           <div className="flex min-w-0 flex-col gap-1.5">
             <Label htmlFor="uptime-filter-status">{t("filterStatus")}</Label>
@@ -478,7 +478,7 @@ export default function Uptime() {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2">
+          <div className="flex min-w-0 flex-col gap-1.5">
             <Label htmlFor="uptime-filter-search">{t("filterSearch")}</Label>
             <Input
               id="uptime-filter-search"
@@ -488,7 +488,7 @@ export default function Uptime() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <p className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-4">
+          <p className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-3">
             {filtersActive
               ? t("filterShowing", {
                   shown: filtered.length,

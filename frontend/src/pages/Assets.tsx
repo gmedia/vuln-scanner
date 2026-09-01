@@ -124,15 +124,13 @@ export default function Assets() {
               </Button>
             </>
           ) : null}
-          {items.length > 0 || open ? (
-            <Button
-              data-testid="assets-add"
-              disabled={atCap}
-              onClick={() => setOpen((v) => !v)}
-            >
-              {t("add")}
-            </Button>
-          ) : null}
+          <Button
+            data-testid="assets-add"
+            disabled={atCap}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {t("add")}
+          </Button>
         </div>
       </div>
 
@@ -222,7 +220,8 @@ export default function Assets() {
               {t("emptyHint")}
             </p>
             <Button
-              className="mt-2"
+              variant="outline"
+              className="mt-2 min-h-11"
               data-testid="assets-empty-cta"
               disabled={atCap}
               onClick={() => setOpen(true)}

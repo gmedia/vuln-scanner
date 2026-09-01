@@ -174,13 +174,15 @@ export default function HostProtect() {
           </p>
           <p className="mt-1 text-xs text-muted-foreground">{t("honestyHint")}</p>
         </div>
-        <Button
-          data-testid="host-add"
-          disabled={atCap || agents.length === 0}
-          onClick={() => setOpen((v) => !v)}
-        >
-          {t("add")}
-        </Button>
+        {items.length > 0 || open ? (
+          <Button
+            data-testid="host-add"
+            disabled={atCap || agents.length === 0}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {t("add")}
+          </Button>
+        ) : null}
       </div>
 
       {agents.length === 0 && !agentsQ.isLoading ? (
@@ -305,7 +307,8 @@ export default function HostProtect() {
                   {t("emptyHint")}
                 </p>
                 <Button
-                  className="mt-2"
+                  variant="outline"
+                  className="mt-2 min-h-11"
                   data-testid="host-empty-cta"
                   disabled={atCap || agents.length === 0}
                   onClick={() => setOpen(true)}
@@ -353,8 +356,13 @@ export default function HostProtect() {
             </ul>
           )}
 
-          <div>
-            <h2 className="mb-2 text-lg font-medium">{t("hitsTitle")}</h2>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm tracking-wide">
+                {t("hitsTitle")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
             {(hitsQ.data ?? []).length === 0 ? (
               <p
                 className="text-sm text-muted-foreground"
@@ -422,7 +430,8 @@ export default function HostProtect() {
                 </TableBody>
               </Table>
             )}
-          </div>
+            </CardContent>
+          </Card>
         </TabsContent>
         <TabsContent value="waf">
           <HostWafPanel sites={items} />

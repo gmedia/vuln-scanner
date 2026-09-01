@@ -599,7 +599,7 @@ function Dashboard() {
                   </div>
                 ))
               )}
-              <Button asChild variant="outline" size="sm" className="w-full text-xs">
+              <Button asChild size="sm" className="w-full text-xs">
                 <Link to="/schedules">
                   <CalendarClock className="mr-1.5 h-3.5 w-3.5" />
                   {t("manageSchedules")}
@@ -619,7 +619,7 @@ function Dashboard() {
                   ? t("staleSuffix", { count: staleAgents.length })
                   : ""}
               </p>
-              <Button asChild variant="outline" size="sm" className="w-full text-xs">
+              <Button asChild size="sm" className="w-full text-xs">
                 <Link to="/guard">
                   <Shield className="mr-1.5 h-3.5 w-3.5" />
                   {t("openGuard")}

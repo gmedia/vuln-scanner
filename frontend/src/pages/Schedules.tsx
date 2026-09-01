@@ -148,6 +148,7 @@ function ScheduleRowActions({
               ? t("capReachedShort", { max: MAX_ENABLED_SCHEDULES })
               : undefined
           }
+          aria-label={s.enabled ? t("disable") : t("enable")}
           onClick={() => onToggle(s.id, !s.enabled)}
         >
           {s.enabled ? t("disable") : t("enable")}

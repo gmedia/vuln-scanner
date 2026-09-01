@@ -49,12 +49,12 @@ function ResetPassword() {
             </p>
             <div className="space-y-2 pt-2">
               <Link to="/forgot-password" className="block">
-                <Button className="w-full text-sm">
+                <Button className="min-h-11 w-full text-sm">
                   {t("requestNewLink")}
                 </Button>
               </Link>
               <Link to="/login" className="block">
-                <Button variant="outline" className="w-full text-sm">
+                <Button variant="outline" className="min-h-11 w-full text-sm">
                   {t("backToSignInLower")}
                 </Button>
               </Link>
@@ -104,7 +104,7 @@ function ResetPassword() {
               {t("resetSuccessBody")}
             </p>
             <Link to="/login">
-              <Button className="w-full text-sm mt-4">{tc("signIn")}</Button>
+              <Button className="mt-4 min-h-11 w-full text-sm">{tc("signIn")}</Button>
             </Link>
           </CardContent>
         </Card>
@@ -204,7 +204,7 @@ function ResetPassword() {
             </div>
             <Button
               type="submit"
-              className="w-full text-sm"
+              className="min-h-11 w-full text-sm"
               disabled={isSubmitting || cooldown > 0}
             >
               {cooldown > 0 ? (
