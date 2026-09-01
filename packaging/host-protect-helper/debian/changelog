@@ -1,3 +1,9 @@
+sinexis-host-protect (0.1.2) unstable; urgency=medium
+
+  * Disable systemd StartLimit on oneshot poll so lab/AM can start it repeatedly.
+
+ -- Sinexis <ops@sinexis.app>  Tue, 01 Sep 2026 23:50:00 +0000
+
 sinexis-host-protect (0.1.1) unstable; urgency=medium
 
   * Serialize poll with flock; success-wins command ack; drop leftover /etc unit.

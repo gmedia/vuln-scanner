@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PKG_SRC="$ROOT/packaging/host-protect-helper"
-VERSION="${HOST_PROTECT_DEB_VERSION:-0.1.1}"
+VERSION="${HOST_PROTECT_DEB_VERSION:-0.1.2}"
 OUT_DIR="${HOST_PROTECT_DEB_OUT:-$ROOT/dist}"
 STAGE="$(mktemp -d)"
 cleanup() { rm -rf "$STAGE"; }
