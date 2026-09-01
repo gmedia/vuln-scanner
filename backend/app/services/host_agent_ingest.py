@@ -63,6 +63,7 @@ async def poll_agent_jobs(
     agent = await _agent_from_token(db, raw_token)
     if agent.id != agent_id:
         raise _unauthorized()
+    agent.last_helper_poll_at = datetime.now(UTC)
     result = await db.execute(
         select(HostScan, HostSite)
         .join(HostSite, HostSite.id == HostScan.site_id)
@@ -113,6 +114,7 @@ async def poll_agent_jobs(
                 dest_basename=cmd.dest_basename,
             )
         )
+    await db.commit()
     return HostAgentPollResponse(jobs=jobs)
 
 
