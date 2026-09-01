@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e
+# Do not stop named @.timer instances: UUID is operator-owned.
+exit 0

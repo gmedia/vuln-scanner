@@ -1,0 +1,17 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+  configure)
+    mkdir -p /usr/lib/sinexis/host-protect /etc/sinexis /var/lib/sinexis/quarantine /var/www /srv/www
+    chmod 700 /var/lib/sinexis /var/lib/sinexis/quarantine /etc/sinexis
+    if [ ! -f /etc/sinexis/host-protect.env ]; then
+      install -m 600 /usr/share/doc/sinexis-host-protect/host-protect.env.example /etc/sinexis/host-protect.env
+    fi
+    if command -v systemctl >/dev/null 2>&1; then
+      systemctl daemon-reload || true
+    fi
+    ;;
+esac
+
+exit 0
