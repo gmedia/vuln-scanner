@@ -41,8 +41,9 @@ yang Anda miliki, sewa, atau yang secara tertulis diizinkan pemiliknya.
 Memindai sistem orang lain tanpa izin dapat melanggar hukum.</p>
 <h2>2. Layanan</h2>
 <p>Sinexis menyediakan alat keamanan (scan, laporan, jadwal, workspace, Guard
-tipis berbasis Wazuh). Hasil bersifat indikasi teknis, bukan jaminan bahwa
-sistem aman, dan bukan audit resmi atau sertifikasi.</p>
+tipis berbasis Wazuh — satu wazuh-agent per VM). Hasil bersifat indikasi
+teknis, bukan jaminan bahwa sistem aman, dan bukan audit resmi, sertifikasi,
+atau SIEM penuh.</p>
 <h2>3. Kredit dan pembayaran</h2>
 <p>Scan tertentu memakai kredit. Harga dan sisa saldo tampil di dasbor.
 Kredit tidak dijamin dapat diuangkan. Kami dapat mengubah harga dengan
