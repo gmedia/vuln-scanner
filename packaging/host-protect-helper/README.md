@@ -12,6 +12,6 @@ Do **not** wipe `sx-erpstg`. Use a fixture folder under `/var/www`, `/srv/www`, 
 4. Enable `sinexis-host-protect@.timer` with the Guard agent UUID as instance.
 5. Poll interval: timer `OnUnitActiveSec=5min`. SaaS worker **does not** mount this disk.
 
-Smoke: enqueue a Host Protect scan in the SPA, then run `python3 sinexis_host_scan.py poll --agent-id <uuid>` on **tc5**. Hits appear only after POST.
+Smoke: enqueue a Host Protect scan in the SPA, then run `python3 sinexis_host_scan.py poll --agent-id <uuid>` on **tc5**. Hits appear only after POST. Poll also runs queued **quarantine/restore** jobs and POSTs `/api/host/agent/commands/ack`. Pending SPA status is not on-disk quarantine.
 
 ClamAV is optional (`Recommends: clamav`). Skip if `clamscan`/`clamdscan` is absent.
