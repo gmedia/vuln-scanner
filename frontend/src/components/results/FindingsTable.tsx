@@ -25,9 +25,12 @@ import {
 import { cn } from "@/lib/utils";
 import FindingDetail from "@/components/results/FindingDetail";
 
+export type FindingsEmptyReason = "clean" | "failed" | "incomplete";
+
 interface FindingsTableProps {
   findings: ScanFinding[] | undefined;
   isLoading: boolean;
+  emptyReason?: FindingsEmptyReason;
 }
 
 type SortKey = "severity" | "title" | "category" | "cvss_score";
@@ -43,7 +46,11 @@ const SEVERITY_ORDER: Record<string, number> = {
 
 const SEVERITY_FILTERS = ["critical", "high", "medium", "low", "info"] as const;
 
-function FindingsTable({ findings, isLoading }: FindingsTableProps) {
+function FindingsTable({
+  findings,
+  isLoading,
+  emptyReason = "clean",
+}: FindingsTableProps) {
   const { t } = useTranslation("scan");
   const [sortKey, setSortKey] = useState<SortKey>("severity");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -129,13 +136,25 @@ function FindingsTable({ findings, isLoading }: FindingsTableProps) {
   }
 
   if (!findings || findings.length === 0) {
+    const titleKey =
+      emptyReason === "failed"
+        ? "failedNoFindings"
+        : emptyReason === "incomplete"
+          ? "incompleteNoFindings"
+          : "noFindings";
+    const hintKey =
+      emptyReason === "failed"
+        ? "failedNoFindingsHint"
+        : emptyReason === "incomplete"
+          ? "incompleteNoFindingsHint"
+          : "cleanResult";
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <div className="mb-3 rounded-full bg-muted p-3">
           <Search className="h-6 w-6 text-foreground/50" />
         </div>
-        <p className="mb-1 text-sm text-foreground">{t("noFindings")}</p>
-        <p className="text-xs text-muted-foreground">{t("cleanResult")}</p>
+        <p className="mb-1 text-sm text-foreground">{t(titleKey)}</p>
+        <p className="text-xs text-muted-foreground">{t(hintKey)}</p>
       </div>
     );
   }
