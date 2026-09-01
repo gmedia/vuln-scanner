@@ -318,10 +318,28 @@ def fetch_jobs(api_base: str, token: str, agent_id: str, timeout: int) -> list[d
     for job in jobs:
         if not isinstance(job, dict):
             continue
-        scan_id = str(job.get("scan_id") or "")
+        kind = str(job.get("kind") or "scan")
         root = str(job.get("root_path") or "")
-        if scan_id and root:
-            out.append({"scan_id": scan_id, "root_path": root})
+        if kind == "scan":
+            scan_id = str(job.get("scan_id") or "")
+            if scan_id and root:
+                out.append({"kind": "scan", "scan_id": scan_id, "root_path": root})
+        elif kind in ("quarantine", "restore"):
+            command_id = str(job.get("command_id") or "")
+            rel_path = str(job.get("rel_path") or "")
+            dest_basename = str(job.get("dest_basename") or "")
+            site_id = str(job.get("site_id") or "")
+            if command_id and root and rel_path and dest_basename and site_id:
+                out.append(
+                    {
+                        "kind": kind,
+                        "command_id": command_id,
+                        "root_path": root,
+                        "rel_path": rel_path,
+                        "dest_basename": dest_basename,
+                        "site_id": site_id,
+                    }
+                )
     return out
 
 
@@ -344,31 +362,74 @@ def post_results(api_base: str, token: str, payload: dict[str, object], timeout:
         return int(exc.code)
 
 
+def post_command_ack(
+    api_base: str, token: str, agent_id: str, command_id: str, ok: bool, error: str, timeout: int
+) -> int:
+    url = api_base.rstrip("/") + "/api/host/agent/commands/ack"
+    payload = {"command_id": command_id, "agent_id": agent_id, "ok": ok, "error": error or None}
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=data,
+        method="POST",
+        headers={"Content-Type": "application/json", "X-Host-Agent-Token": token},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return int(getattr(resp, "status", 200) or 200)
+    except urllib.error.HTTPError as exc:
+        return int(exc.code)
+    except (urllib.error.URLError, OSError):
+        return 5
+
+
 def run_poll(args: argparse.Namespace) -> int:
     if not args.api_base or not args.token or not args.agent_id:
         return 4
     jobs = fetch_jobs(args.api_base, args.token, args.agent_id, args.timeout)
     worst = 0
     for job in jobs:
-        rc = run(
-            [
-                "scan",
+        kind = job.get("kind") or "scan"
+        if kind == "scan":
+            rc = run(
+                [
+                    "scan",
+                    "--root",
+                    job["root_path"],
+                    "--scan-id",
+                    job["scan_id"],
+                    "--agent-id",
+                    args.agent_id,
+                    "--api-base",
+                    args.api_base,
+                    "--token",
+                    args.token,
+                    "--rules-dir",
+                    args.rules_dir,
+                    "--timeout",
+                    str(args.timeout),
+                ]
+            )
+        else:
+            argv = [
+                kind,
                 "--root",
                 job["root_path"],
-                "--scan-id",
-                job["scan_id"],
-                "--agent-id",
-                args.agent_id,
-                "--api-base",
-                args.api_base,
-                "--token",
-                args.token,
-                "--rules-dir",
-                args.rules_dir,
-                "--timeout",
-                str(args.timeout),
+                "--rel-path",
+                job["rel_path"],
+                "--site-id",
+                job["site_id"],
+                "--dest-basename",
+                job["dest_basename"],
+                "--quarantine-root",
+                args.quarantine_root,
             ]
-        )
+            rc = run(argv)
+            ack_ok = rc == 0
+            err = "" if ack_ok else f"helper exit {rc}"
+            post_command_ack(
+                args.api_base, args.token, args.agent_id, job["command_id"], ack_ok, err, args.timeout
+            )
         if rc != 0:
             worst = rc
     return worst
