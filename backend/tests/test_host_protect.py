@@ -697,8 +697,7 @@ async def test_host_scan_job_mock_when_root_missing(db_session: AsyncSession, ct
 
 
 @pytest.mark.asyncio
-async def test_host_scan_job_mock_when_allow_mock(db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(settings, "host_protect_allow_mock", True)
+async def test_host_scan_job_ignores_stale_mock_when_root_missing(db_session: AsyncSession, ctx):
     org: Organization = ctx["org"]
     owner: User = ctx["owner"]
     agent: GuardAgent = ctx["agent"]
@@ -710,6 +709,16 @@ async def test_host_scan_job_mock_when_allow_mock(db_session: AsyncSession, ctx,
         root_path="/var/www/host-protect-not-on-worker",
         created_by=owner.id,
     )
+    stale = HostHit(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        rel_path="wp-content/uploads/cache.php",
+        hit_class="webshell",
+        engine="mock",
+        rule_id="mock.webshell.php",
+        status="open",
+    )
     scan = HostScan(
         id=uuid.uuid4(),
         organization_id=org.id,
@@ -718,12 +727,15 @@ async def test_host_scan_job_mock_when_allow_mock(db_session: AsyncSession, ctx,
         trigger="manual",
     )
     db_session.add(site)
+    db_session.add(stale)
     db_session.add(scan)
     await db_session.commit()
     out = await run_host_scan_job(db_session, scan.id)
     assert out["ok"] is True
-    assert out["engine"] == "mock"
-    assert out["hit_count"] == 1
+    assert out.get("pending_agent") is True
+    assert out["hit_count"] == 0
+    await db_session.refresh(stale)
+    assert stale.status == "ignored"
 
 
 async def _queued_scan(

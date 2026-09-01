@@ -6,10 +6,9 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
 from app.models.host_protect import HostHit, HostQuarantineEvent, HostScan, HostSite
 from app.services.host_engine import scan_clam, scan_local_root
 from app.services.host_handoff import CRITICAL_CLASSES, handoff_critical_hit
@@ -89,6 +88,18 @@ async def _persist_hits(
     return hit_count
 
 
+async def _ignore_open_mock_hits(db: AsyncSession, site_id: UUID) -> None:
+    await db.execute(
+        update(HostHit)
+        .where(
+            HostHit.site_id == site_id,
+            HostHit.engine == "mock",
+            HostHit.status == "open",
+        )
+        .values(status="ignored")
+    )
+
+
 async def run_mock_host_scan(db: AsyncSession, scan_id: UUID) -> dict[str, Any]:
     return await _run_with_specs(db, scan_id, list(MOCK_HITS), "mock")
 
@@ -122,8 +133,7 @@ async def run_host_scan_job(db: AsyncSession, scan_id: UUID) -> dict[str, Any]:
             row["engine"] = "clam"
             specs.append(row)
         return await _finish_scan(db, scan, site, specs, engine)
-    if settings.host_protect_allow_mock:
-        return await _finish_scan(db, scan, site, list(MOCK_HITS), "mock")
+    await _ignore_open_mock_hits(db, site.id)
     await db.commit()
     return {
         "ok": True,
@@ -166,6 +176,8 @@ async def _finish_scan(
     scan.status = "running"
     scan.started_at = now
     await db.flush()
+    if engine != "mock":
+        await _ignore_open_mock_hits(db, site.id)
     hit_count = await _persist_hits(db, scan, site, specs, engine)
     scan.status = "completed"
     scan.finished_at = datetime.now(UTC)
