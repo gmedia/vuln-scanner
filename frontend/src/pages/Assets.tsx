@@ -10,6 +10,7 @@ import {
   fetchAssetPack,
   fetchAssetPackHtml,
   listAssets,
+  updateAsset,
   type ScanAsset,
 } from "@/api/assets";
 import { Badge } from "@/components/ui/Badge";
@@ -54,7 +55,28 @@ export default function Assets() {
   const [notes, setNotes] = useState("");
   const [tagsInput, setTagsInput] = useState("");
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<ScanAsset | null>(null);
   const [tagFilter, setTagFilter] = useState<string>("all");
+
+  function resetForm() {
+    setName("");
+    setTarget("");
+    setNotes("");
+    setTagsInput("");
+    setScanType("domain");
+    setOpen(false);
+    setEditing(null);
+  }
+
+  function startEdit(a: ScanAsset) {
+    setEditing(a);
+    setName(a.name);
+    setTarget(a.target);
+    setScanType(a.scan_type === "ip" ? "ip" : "domain");
+    setNotes(a.notes ?? "");
+    setTagsInput((a.tags ?? []).join(", "));
+    setOpen(true);
+  }
 
   const list = useQuery({ queryKey: ["assets"], queryFn: () => listAssets() });
   const items = list.data ?? [];
@@ -77,17 +99,30 @@ export default function Assets() {
     mutationFn: createAsset,
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["assets"] });
-      setName("");
-      setTarget("");
-      setNotes("");
-      setTagsInput("");
-      setOpen(false);
+      resetForm();
     },
     onError: (err: { response?: { data?: { detail?: string } } }) => {
       const detail = String(err.response?.data?.detail ?? "");
       toast.error(
         mapAssetError(detail) === "limit" ? t("limitReached") : detail,
       );
+    },
+  });
+
+  const updateMut = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: { name: string; notes?: string; tags: string[] };
+    }) => updateAsset(id, payload),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+      resetForm();
+    },
+    onError: (err: { response?: { data?: { detail?: string } } }) => {
+      toast.error(String(err.response?.data?.detail ?? ""));
     },
   });
 
@@ -155,7 +190,13 @@ export default function Assets() {
           <Button
             data-testid="assets-add"
             disabled={atCap}
-            onClick={() => setOpen((v) => !v)}
+            onClick={() => {
+              if (open) resetForm();
+              else {
+                setEditing(null);
+                setOpen(true);
+              }
+            }}
           >
             {t("add")}
           </Button>
@@ -165,7 +206,7 @@ export default function Assets() {
       {open ? (
         <Card>
           <CardHeader>
-            <CardTitle>{t("add")}</CardTitle>
+            <CardTitle>{editing ? t("editTitle") : t("add")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
@@ -189,6 +230,7 @@ export default function Assets() {
                   id="asset-type"
                   data-testid="asset-type"
                   aria-label={t("type")}
+                  disabled={Boolean(editing)}
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -204,6 +246,7 @@ export default function Assets() {
                 id="asset-target"
                 data-testid="asset-target"
                 value={target}
+                disabled={Boolean(editing)}
                 onChange={(e) => setTarget(e.target.value)}
               />
             </div>
@@ -228,20 +271,38 @@ export default function Assets() {
             <div className="flex gap-2">
               <Button
                 data-testid="asset-save"
-                disabled={!name.trim() || !target.trim() || createMut.isPending}
-                onClick={() =>
+                disabled={
+                  !name.trim() ||
+                  (!editing && !target.trim()) ||
+                  createMut.isPending ||
+                  updateMut.isPending
+                }
+                onClick={() => {
+                  const tags = parseTags(tagsInput);
+                  const notesVal = notes.trim() || undefined;
+                  if (editing) {
+                    updateMut.mutate({
+                      id: editing.id,
+                      payload: {
+                        name: name.trim(),
+                        notes: notesVal,
+                        tags,
+                      },
+                    });
+                    return;
+                  }
                   createMut.mutate({
                     name: name.trim(),
                     scan_type: scanType,
                     target: target.trim(),
-                    notes: notes.trim() || undefined,
-                    tags: parseTags(tagsInput),
-                  })
-                }
+                    notes: notesVal,
+                    tags,
+                  });
+                }}
               >
                 {t("save")}
               </Button>
-              <Button variant="outline" onClick={() => setOpen(false)}>
+              <Button variant="outline" onClick={resetForm}>
                 {t("cancel")}
               </Button>
             </div>
@@ -340,6 +401,14 @@ export default function Assets() {
                         </Link>
                       </Button>
                     ) : null}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      data-testid={`asset-edit-${a.id}`}
+                      onClick={() => startEdit(a)}
+                    >
+                      {t("edit")}
+                    </Button>
                     {!a.schedule_id ? (
                       <Button
                         variant="outline"

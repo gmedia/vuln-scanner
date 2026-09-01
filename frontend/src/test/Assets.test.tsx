@@ -7,6 +7,7 @@ import Assets, { mapAssetError } from "@/pages/Assets";
 
 const mockList = vi.fn();
 const mockCreate = vi.fn();
+const mockUpdate = vi.fn();
 
 vi.mock("@/api/assets", async () => {
   const actual =
@@ -15,6 +16,7 @@ vi.mock("@/api/assets", async () => {
     ...actual,
     listAssets: (...args: unknown[]) => mockList(...args),
     createAsset: (...args: unknown[]) => mockCreate(...args),
+    updateAsset: (...args: unknown[]) => mockUpdate(...args),
     deleteAsset: vi.fn(),
     createAssetSchedule: vi.fn(),
     fetchAssetPack: vi.fn(),
@@ -38,6 +40,7 @@ describe("Assets page", () => {
   beforeEach(() => {
     mockList.mockReset();
     mockCreate.mockReset();
+    mockUpdate.mockReset();
     mockList.mockResolvedValue([]);
   });
 
@@ -107,5 +110,53 @@ describe("Assets page", () => {
     expect(screen.getByTestId("assets-pack-html")).toBeInTheDocument();
     expect(screen.getByTestId("asset-tag-prod")).toBeInTheDocument();
     expect(screen.getByTestId("asset-tag-filter")).toBeInTheDocument();
+  });
+
+  it("edits name, notes, and tags without changing target", async () => {
+    mockList.mockResolvedValue([
+      {
+        id: "a1",
+        name: "Web",
+        scan_type: "domain",
+        target: "example.com",
+        notes: "old",
+        schedule_id: null,
+        sku: "multi",
+        sku_limit: 10,
+        tags: ["prod"],
+      },
+    ]);
+    mockUpdate.mockResolvedValue({
+      id: "a1",
+      name: "Web prod",
+      scan_type: "domain",
+      target: "example.com",
+      notes: "new",
+      tags: ["prod", "hotel"],
+    });
+    const user = userEvent.setup();
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("asset-edit-a1")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("asset-edit-a1"));
+    const nameInput = screen.getByTestId("asset-name");
+    await user.clear(nameInput);
+    await user.type(nameInput, "Web prod");
+    const notesInput = screen.getByLabelText(/notes/i);
+    await user.clear(notesInput);
+    await user.type(notesInput, "new");
+    const tagsInput = screen.getByTestId("asset-tags");
+    await user.clear(tagsInput);
+    await user.type(tagsInput, "prod, hotel");
+    await user.click(screen.getByTestId("asset-save"));
+    await waitFor(() =>
+      expect(mockUpdate).toHaveBeenCalledWith("a1", {
+        name: "Web prod",
+        notes: "new",
+        tags: ["prod", "hotel"],
+      }),
+    );
+    expect(mockCreate).not.toHaveBeenCalled();
   });
 });
