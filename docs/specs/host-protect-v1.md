@@ -1,10 +1,10 @@
 # Spec: Host Protect v1 (P12 — on-box web malware control plane)
 
-**Status:** **S0–S6 shipped on `main`** (#501–#511). Control plane + worker-local YARA walk. Prod compose default **true** (API/worker). Local/CI **false**. **S7–S12** = honest on-box scan (docs 2026-08-31). S7 honesty gate (no mock persist when root missing) is **#533**. WAF/Coraza/cPanel remain **out**. SKU list IDR **unset**.
+**Status:** **S0–S12 on `main`**. Control plane **#501–#511**. Honesty **#533/#556**. Ingest/helper **#534–#537**. Quarantine **queue** **#558**. Clam optional + systemd `ReadWritePaths` **#559**. Prod compose `HOST_PROTECT_ENABLED` **true**; local/CI **false**. Missing on-box root → **`pending_agent`** (or `failed`/`unreachable_root` if abandoned) — **never** persist mock hits on public origin. WAF/Coraza/cPanel remain **out** of this epic (P13/P14). SKU = **working list IDR** (not invoice lock).
 **Goal:** first **on-host web malware** surface for orgs that already run **Guard thin** — named web paths, scheduled file/YARA (or Clam) scan, incidents in product, **opt-in quarantine** — **without** cloning Imunify360 (no PHP Proactive Defense, no KernelCare, no cPanel plugin in v1).
 **Epic:** **P12**. Does **not** replace P5 Guard, P7 SIEM, or P1 Scan attach. Does **not** jump GTM / Scan SKU lock.
 **Depends:** P2 Workspace (JWT `org_id`) · P3 Assets (optional link) · P5 Guard enroll (agent on VPS) · P7 SIEM cases (incident hand-off).
-**Commercial (working, not P0 lock):** [`docs/commercial/sku-host-protect.md`](../commercial/sku-host-protect.md) — **list IDR unset** until product owner locks.
+**Commercial (working, not P0 lock):** [`docs/commercial/sku-host-protect.md`](../commercial/sku-host-protect.md) — working list IDR for quotes; **not** finance/`service_id` lock.
 **Inspiration (not a clone):** CloudLinux Imunify360 job-to-be-done for GMD relations who already buy “Imunify on the panel”: *know which web roots are dirty, isolate without SSH guesswork*. Positioning: **sit beside** Imunify on shared cPanel farms; **attach** on GMD VPS/colo that have no panel suite.
 
 **Not this epic:** Imunify rulesets/UI copy, ModSec/Coraza WAF (S6+), PHP runtime hooks, live kernel patch, auto password-reset, WebShield CAPTCHA, Imunify Email, CageFS-class shared-host isolation.
@@ -220,7 +220,7 @@ No raw file download of malware samples in v1 (exfil risk). Optional later: plat
 
 ---
 
-## 10. Slices (S0–S6 shipped; S7–S12 planned)
+## 10. Slices (S0–S12 shipped on `main`)
 
 | S | Deliverable | DoD | **Git** |
 |---|----------------|-----|---------|
@@ -247,7 +247,7 @@ No raw file download of malware samples in v1 (exfil risk). Optional later: plat
 | **S11** On-disk quarantine | `mv` inside jail to `/var/lib/sinexis/quarantine/<site-id>/` (0700, noexec, not under docroot); restore reverse; audit `dest_basename`. Fail command → **do not** set `quarantined`. Auto still off. | Lab quarantine then restore on fixture. pytest jail. | Auto-clean PHP |
 | **S12** Clam optional + helper unit | Extra `engine=clam` hits **iff** `clamscan`/`clamdscan` present. systemd: `ProtectSystem=strict` + `ReadWritePaths` jail prefixes + `/var/lib/sinexis`. Token/env fail-closed (no POST). | Skip if binary absent; no CVD in git; unit lists `/var/www` `/srv/www` `/home` | Required Clam in CI image |
 
-**Honest-scan epic (implement later):** S7 + S9 + S10. **S11** separate PR. **S8** is this documentation.
+**Honest-scan epic:** S7–S10 **on `main`**. **S11** = **#558**. **S12** = **#559**. **S5** SPA restore ≠ **S11** helper `host_commands` queue. **S8** was documentation. Do **not** re-implement. Further depth = **P14** named slices.
 
 **Mock policy (locked):**
 
@@ -297,7 +297,7 @@ No raw file download of malware samples in v1 (exfil risk). Optional later: plat
 
 ## 13. Agent implementation notes
 
-- S0–S6 already on `main`. **S7–S12** are specified here; **do not implement** app code until the user says `implement` / `buat` / `kerjakan`. New branch from latest `main`; never implement on `main`.
+- S0–S12 already on `main`. **Do not** re-implement. Next code = **P14** only when the user names a slice + `buat` / `kerjakan`. New branch from latest `main`; never implement on `main`.
 - Atomic conventional commits; **ONE COMMIT = FAILURE** for 3+ unrelated files.
 - Prefix git with `GIT_MASTER=1`.
 - Do not print tokens/IPs. Do not commit PNG recaptures.
