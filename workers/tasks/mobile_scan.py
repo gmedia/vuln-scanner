@@ -12,7 +12,7 @@ from typing import Any
 
 import redis
 from celery import shared_task
-from celery.exceptions import Retry, SoftTimeLimitExceeded
+from celery.exceptions import Retry, SoftTimeLimitExceeded, TimeLimitExceeded
 from loguru import logger
 from sqlalchemy import update
 
@@ -277,11 +277,21 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
 
             publish_progress(job_id, "cve_lookup", 70, "Looking up CVEs for embedded libraries...")
             seen_libs: set[str] = set()
+            cve_lookups = 0
+            max_cve_lookups = 20
             for lib in libraries:
                 lib_name = lib.lstrip("lib").replace("_", "-").lower()
                 if lib_name in seen_libs or len(lib_name) < 3:
                     continue
                 seen_libs.add(lib_name)
+                if cve_lookups >= max_cve_lookups:
+                    logger.info(
+                        "CVE lookup cap reached ({cap}) for job {job_id}; remaining libs skipped",
+                        cap=max_cve_lookups,
+                        job_id=job_id,
+                    )
+                    break
+                cve_lookups += 1
                 try:
                     vulns = _run_async(lookup_service_cves(lib_name, lib_name, ""))
                 except (TimeoutError, OSError, RuntimeError) as e:
@@ -360,9 +370,19 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
         raise
     except SoftTimeLimitExceeded:
         err_msg = "scan timed out (soft limit 600s)"
-        fail_job_no_retry(job_id, platform, err_msg)
+        fail_job_no_retry(job_id, "mobile", err_msg)
         publish_progress(job_id, "failed", 100, err_msg)
         logger.error("Mobile scan soft timeout: job={job_id}", job_id=job_id)
+        return {
+            "job_id": job_id,
+            "summary": {"total_findings": 0, "critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0},
+            "error": err_msg,
+        }
+    except TimeLimitExceeded:
+        err_msg = "scan timed out (hard limit)"
+        fail_job_no_retry(job_id, "mobile", err_msg)
+        publish_progress(job_id, "failed", 100, err_msg)
+        logger.error("Mobile scan hard timeout: job={job_id}", job_id=job_id)
         return {
             "job_id": job_id,
             "summary": {"total_findings": 0, "critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0},

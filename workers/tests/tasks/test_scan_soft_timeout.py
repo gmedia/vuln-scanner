@@ -1,7 +1,7 @@
 import sys
 from unittest.mock import MagicMock, patch
 
-from celery.exceptions import SoftTimeLimitExceeded
+from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded
 
 sys.path.insert(0, "/home/ubuntu/vuln-scanner/workers")
 sys.path.insert(0, "/home/ubuntu/vuln-scanner/backend")
@@ -28,6 +28,25 @@ class TestMobileSoftTimeout:
         assert "timed out" in mock_fail.call_args.args[2]
         mock_retry.assert_not_called()
         assert result["error"] == "scan timed out (soft limit 600s)"
+
+    def test_hard_timeout_fails_job_without_retry(self):
+        from tasks.mobile_scan import run_mobile_scan
+
+        task_cls = type(run_mobile_scan._get_current_object())
+        with (
+            patch("tasks.mobile_scan.get_sync_session") as mock_session,
+            patch("tasks.mobile_scan._update_status", side_effect=TimeLimitExceeded()),
+            patch("tasks.mobile_scan.fail_job_no_retry") as mock_fail,
+            patch("tasks.mobile_scan.publish_progress"),
+            patch.object(task_cls, "retry") as mock_retry,
+        ):
+            mock_session.return_value = MagicMock()
+            result = run_mobile_scan(JOB_ID, "/tmp/app.apk", "android")
+        mock_fail.assert_called_once()
+        assert mock_fail.call_args.args[0] == JOB_ID
+        assert "hard limit" in mock_fail.call_args.args[2]
+        mock_retry.assert_not_called()
+        assert result["error"] == "scan timed out (hard limit)"
 
 
 class TestIpSoftTimeout:
