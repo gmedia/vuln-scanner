@@ -269,6 +269,8 @@ sudo nginx -t && sudo systemctl reload nginx
 
 ### Production deploys
 
+Canonical walkthrough (minimal local vs production, **CI vs Alembic**, which script): [`docs/deploy.md`](docs/deploy.md). Multi-host roles: [`docs/multi-host-ops.md`](docs/multi-host-ops.md). After a **green `main` deploy job**, do **not** SSH-run Alembic again.
+
 | Change type | Script | Notes |
 |-------------|--------|-------|
 | **SPA / frontend only** | [`scripts/deploy-frontend.sh`](scripts/deploy-frontend.sh) | Rebuild + recreate `frontend` only. Prefer for UI waves. |

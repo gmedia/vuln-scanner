@@ -31,6 +31,7 @@ When **`main` CI is green including the `deploy` job**, production already ran *
 - Residual after deploy is **product/ops** (fill HPP rates in `/admin/hpp`, GTM, live SSL/SMTP smoke) — not a second migration.
 - Manual Alembic only if **deploy failed**, user asked for a **host without CI**, or they used **`deploy-services.sh --skip-migrate`**. Prefer `deploy-services.sh` (non-destructive) for routine app deploys; it also migrates when `backend` is in the service list and `--skip-migrate` is unset.
 - Never print deploy hosts, SSH ports, or secrets.
+- Human ops: [`docs/deploy.md`](docs/deploy.md).
 
 ## Branch & Commit Rules
 - **Every task = own branch**: `feat/<desc>` or `fix/<desc>` from latest `main`
