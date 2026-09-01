@@ -150,6 +150,15 @@ def test_poll_missing_creds():
     assert rc == 4
 
 
+def test_http_headers_include_user_agent():
+    headers = helper._agent_headers("tok")
+    assert headers["User-Agent"] == helper.USER_AGENT
+    assert headers["X-Host-Agent-Token"] == "tok"
+    json_headers = helper._agent_headers("tok", json_body=True)
+    assert json_headers["Content-Type"] == "application/json"
+    assert json_headers["User-Agent"] == helper.USER_AGENT
+
+
 def test_yara_optional_without_binary(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(helper.shutil, "which", lambda _n: None)
     assert helper.yara_available() is False
