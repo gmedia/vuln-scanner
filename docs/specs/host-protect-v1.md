@@ -250,7 +250,7 @@ No raw file download of malware samples in v1 (exfil risk). Optional later: plat
 **Mock policy (locked):**
 
 1. Persist `engine=mock` / `MOCK_HITS` **only** when `HOST_PROTECT_ALLOW_MOCK=true` **and** origin is not public (`sinexis.app` / `vs.appmedia.id`).
-2. Else: `host_scans.status=failed`, `error=unreachable_root` (sanitized), no hit rows, no SIEM/email.
+2. Else: keep `queued` + `pending_agent` until helper ingest, **or** `failed`/`unreachable_root` if the job is abandoned. No mock hit rows, no SIEM/email. SaaS workers walk local dirs **only** when `HOST_PROTECT_ALLOW_LOCAL_WALK=true` (lab bind, never public origin).
 3. SPA: never a green completed scan with a toy webshell when the agent did not scan.
 
 **JSON ingest (frozen S9, S12 adds `clam`):** `scan_id`, `agent_id`, `engine` (`yara`\|`needles`\|`clam`), findings[]: `rel_path`, `class`, `rule_id`, `sha256`. Header `X-Host-Agent-Token`. **No** file bytes, **no** `full_log`. Clam hits only when `clamscan`/`clamdscan` is on PATH; no CVD in git.

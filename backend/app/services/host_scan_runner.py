@@ -9,6 +9,7 @@ from uuid import UUID
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.models.host_protect import HostHit, HostQuarantineEvent, HostScan, HostSite
 from app.services.host_engine import scan_clam, scan_local_root
 from app.services.host_handoff import CRITICAL_CLASSES, handoff_critical_hit
@@ -125,7 +126,8 @@ async def run_host_scan_job(db: AsyncSession, scan_id: UUID) -> dict[str, Any]:
         scan.finished_at = datetime.now(UTC)
         await db.commit()
         return {"ok": False, "error": str(exc)[:200]}
-    if os.path.isdir(root):
+    allow_walk = bool(settings.host_protect_allow_local_walk)
+    if allow_walk and os.path.isdir(root):
         specs = scan_local_root(root)
         engine = "yara"
         for clam_hit in scan_clam(root):

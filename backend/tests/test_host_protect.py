@@ -698,6 +698,46 @@ async def test_host_scan_job_mock_when_root_missing(db_session: AsyncSession, ct
 
 
 @pytest.mark.asyncio
+async def test_host_scan_job_skips_local_walk_when_flag_off(
+    db_session: AsyncSession, ctx, tmp_path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(settings, "host_protect_allow_local_walk", False)
+    root = tmp_path / "www"
+    root.mkdir()
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    site = HostSite(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        guard_agent_id=agent.id,
+        name="LocalWalkOff",
+        root_path="/var/www/html",
+        created_by=owner.id,
+    )
+    scan = HostScan(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        status="queued",
+        trigger="manual",
+    )
+    db_session.add(site)
+    db_session.add(scan)
+    await db_session.commit()
+
+    def _boom(_p: str) -> list[dict[str, str]]:
+        raise AssertionError("local walk must not run")
+
+    monkeypatch.setattr("app.services.host_scan_runner.validate_root_path", lambda _p: str(root))
+    monkeypatch.setattr("app.services.host_scan_runner.scan_local_root", _boom)
+    out = await run_host_scan_job(db_session, scan.id)
+    assert out.get("pending_agent") is True
+    await db_session.refresh(scan)
+    assert scan.status == "queued"
+
+
+@pytest.mark.asyncio
 async def test_host_scan_job_ignores_stale_mock_when_root_missing(db_session: AsyncSession, ctx):
     org: Organization = ctx["org"]
     owner: User = ctx["owner"]
