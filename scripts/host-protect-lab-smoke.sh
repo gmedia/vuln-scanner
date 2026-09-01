@@ -188,7 +188,7 @@ print(rows[0]['id'])
 kick_helper() {
   local h="${HOST_PROTECT_LAB_FIXTURE_SSH:-${GUARD_LAB_AGENT_SSH}}"
   ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new "$h" \
-    "unit='sinexis-host-protect@${AGENT_ID}.service'; if systemctl is-active --quiet \"\$unit\"; then exit 0; fi; sudo systemctl start \"\$unit\" >/dev/null 2>&1 || true" \
+    "unit='sinexis-host-protect@${AGENT_ID}.service'; sudo systemctl reset-failed \"\$unit\" >/dev/null 2>&1 || true; if systemctl is-active --quiet \"\$unit\"; then exit 0; fi; sudo systemctl start --no-block \"\$unit\" >/dev/null 2>&1 || true" \
     || true
 }
 
@@ -322,7 +322,7 @@ else:
     case "$status" in
       completed|failed) return 0 ;;
     esac
-    if [[ "$TRIGGER_HELPER_POLL" -eq 1 ]]; then
+    if [[ "$TRIGGER_HELPER_POLL" -eq 1 && $((i % 15)) -eq 0 ]]; then
       kick_helper
     fi
     sleep 3
@@ -352,7 +352,7 @@ for r in rows:
     if [[ "$got" == "$want" ]]; then
       return 0
     fi
-    if [[ "$TRIGGER_HELPER_POLL" -eq 1 ]]; then
+    if [[ "$TRIGGER_HELPER_POLL" -eq 1 && $((i % 15)) -eq 0 ]]; then
       kick_helper
     fi
     sleep 3
@@ -403,6 +403,9 @@ else:
   blob="$(curl_api POST "/api/host/hits/${hit_id}/quarantine" '{}')"
   split_body_code "$blob"
   [[ "$HTTP_CODE" == "200" ]] || die "quarantine HTTP ${HTTP_CODE}"
+  if [[ "$TRIGGER_HELPER_POLL" -eq 1 ]]; then
+    kick_helper
+  fi
   wait_hit_status "$hit_id" "quarantined"
   blob="$(curl_api POST "/api/host/hits/${hit_id}/restore" '{}')"
   split_body_code "$blob"
