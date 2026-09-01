@@ -8,6 +8,7 @@ export interface ScanAsset {
   scan_type: "ip" | "domain" | string;
   target: string;
   notes: string | null;
+  tags: string[];
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -21,10 +22,13 @@ export interface AssetCreatePayload {
   scan_type: "ip" | "domain";
   target: string;
   notes?: string;
+  tags?: string[];
 }
 
-export async function listAssets(): Promise<ScanAsset[]> {
-  const { data } = await api.get<ScanAsset[]>("/api/assets");
+export async function listAssets(tag?: string): Promise<ScanAsset[]> {
+  const { data } = await api.get<ScanAsset[]>("/api/assets", {
+    params: tag ? { tag } : undefined,
+  });
   return data;
 }
 
@@ -37,7 +41,7 @@ export async function createAsset(
 
 export async function updateAsset(
   id: string,
-  payload: Partial<Pick<AssetCreatePayload, "name" | "notes">>,
+  payload: Partial<Pick<AssetCreatePayload, "name" | "notes" | "tags">>,
 ): Promise<ScanAsset> {
   const { data } = await api.patch<ScanAsset>(`/api/assets/${id}`, payload);
   return data;
