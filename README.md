@@ -2,7 +2,7 @@
 
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/gmedia/vuln-scanner)
 
-Web-based vulnerability scanner (**VulnScanner** engine) under the **Sinexis** soft dual-brand: IP, domain, and mobile (Android APK/AAB / iOS IPA) analysis, **scheduled** attach scans, **multi-user workspaces**, and a **Guard** thin layer (Wazuh-backed agent inventory + critical alerts — **not** full SIEM; mock default in CI). Deployed via Docker Compose with async task processing.
+Web-based vulnerability scanner (**VulnScanner** engine) under the **Sinexis** soft dual-brand: IP, domain, and mobile (Android APK/AAB / iOS IPA) analysis, **scheduled** attach scans, **multi-user workspaces**, **Guard** (Wazuh-backed agent inventory + critical alerts — **not** full SIEM; mock default in CI), **SIEM** search/cases, **Uptime** probes, public **status pages**, **Host Protect** (on-box web malware, honest empty hits), and **Host WAF** (detect-only API; never on Sinexis edge nginx). Deployed via Docker Compose with async task processing.
 
 ## Architecture
 
@@ -206,10 +206,15 @@ curl http://localhost/api/scan/{id}/export?format=html \
 | Scan (IP / domain / mobile) | **Shipped** | Core engine |
 | Scan attach (schedules, baseline diff, executive HTML) | **Shipped** | Ops: [`docs/scan-schedules-ops.md`](docs/scan-schedules-ops.md) |
 | Workspace (orgs, roles, invites) | **Shipped** | Spek: [`docs/specs/workspace-v1.md`](docs/specs/workspace-v1.md) |
-| Soft dual-brand (Sinexis) | **Shipped** | Public host may still be `vs.appmedia.id` |
-| **Guard** (Wazuh thin) | **Shipped on `main`** (#274–#275) | Inventory + critical alerts + per-org enroll — **not** full SIEM. Spek: [`docs/specs/guard-v1.md`](docs/specs/guard-v1.md). Mock Wazuh in CI; live Manager/Indexer env on **deploy host only** (lab smoke residual). |
-| Asset registry | **P3 S1–S5** | Org CRUD + SKU hard cap + SPA `/assets` + pack JSON — [`docs/specs/assets-v1.md`](docs/specs/assets-v1.md) |
-| **SIEM** (search + cases) | **S0–S5 (P7)** | Spek [`docs/specs/siem-v1.md`](docs/specs/siem-v1.md). API `/api/siem` + SPA `/siem` (flag `SIEM_ENABLED`). Separate from Guard `/guard`. |
+| **Guard** (Wazuh thin) | **Shipped** | Inventory + critical alerts + per-org enroll — **not** full SIEM. Spek: [`docs/specs/guard-v1.md`](docs/specs/guard-v1.md). Mock Wazuh in CI; live lab residual is human. Do **not** add Discover on `/guard`. |
+| Asset registry | **Shipped (P3 S1–S5)** | Org CRUD + SKU hard cap + SPA `/assets` — [`docs/specs/assets-v1.md`](docs/specs/assets-v1.md) |
+| **SIEM** (search + cases) | **Shipped (P7)** | Spek [`docs/specs/siem-v1.md`](docs/specs/siem-v1.md). API `/api/siem` + SPA `/siem`. Flag `SIEM_ENABLED` (prod ON; `SIEM_INCLUDE_FULL_LOG` false). Separate from Guard. |
+| **Uptime** | **Shipped (P8 + v2)** | HTTP/TCP (+ optional DNS/heartbeat); SPA `/uptime`. Spek [`docs/specs/uptime-v1.md`](docs/specs/uptime-v1.md). Flag `UPTIME_ENABLED`. |
+| **Status page** | **Shipped (P11)** | Public `/status/{slug}` + custom host (SSL-gated Active). Spek [`docs/specs/status-page-v1.md`](docs/specs/status-page-v1.md). |
+| **Public blog** | **Shipped (P10)** | FastAPI HTML island `/blog` + admin CMS. Spek [`docs/specs/blog-v1.md`](docs/specs/blog-v1.md). |
+| **Host Protect** | **Shipped (P12 S0–S12)** | On-box web malware (YARA/Clam helper); SPA `/host`. Missing worker roots → **no mock hits** (`pending_agent` / unreachable). Spek [`docs/specs/host-protect-v1.md`](docs/specs/host-protect-v1.md). Flag `HOST_PROTECT_ENABLED` (prod compose default true; local/CI false). |
+| **Host WAF** | **Shipped (P13 S0–S5)** | Per-site detect API + nginx **snippet for customer VPS**. **Never** paste onto `sinexis.app` edge. Spek [`docs/specs/host-waf-v1.md`](docs/specs/host-waf-v1.md). Flag `HOST_WAF_ENABLED`. |
+| Soft dual-brand (Sinexis) | **Shipped** | Public: **`sinexis.app`** (legacy `vs.appmedia.id` may still exist). |
 
 Agent/session priority after reset: [`docs/AGENT_EXECUTION_GUIDE.md`](docs/AGENT_EXECUTION_GUIDE.md).
 
@@ -335,7 +340,7 @@ node scripts/wave-e-screenshots.mjs
 | Service | Port | Description |
 |---------|------|-------------|
 | nginx (compose) | `:80` | Reverse proxy (local/dev compose only) |
-| host nginx | `:443` | Prod edge SSL (`vs.appmedia.id`) |
+| host nginx | `:443` | Prod edge SSL (`sinexis.app`; legacy `vs.appmedia.id`) |
 | frontend | `:5173` local / `:5174` prod host | React dashboard |
 | backend | `:8000` | FastAPI REST API |
 | ip_worker | — | IP scan tasks |
