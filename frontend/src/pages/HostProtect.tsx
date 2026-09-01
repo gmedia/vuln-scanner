@@ -439,7 +439,13 @@ export default function HostProtect() {
                                 <TableCell>{h.rel_path}</TableCell>
                                 <TableCell>{h.class}</TableCell>
                                 <TableCell>{h.engine}</TableCell>
-                                <TableCell>{h.status}</TableCell>
+                                <TableCell>
+                                  {h.status === "pending_quarantine"
+                                    ? t("statusPendingQuarantine")
+                                    : h.status === "pending_restore"
+                                      ? t("statusPendingRestore")
+                                      : h.status}
+                                </TableCell>
                                 <TableCell className="flex flex-wrap gap-2">
                                   {(h.status === "open" ||
                                     h.status === "restored") && (

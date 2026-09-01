@@ -40,6 +40,8 @@
   "scanUnreachableRoot": "Document root tidak terjangkau di worker scan. Tidak ada hit mock yang dicatat.",
   "honestyHint": "Hit berasal dari helper on-box di host Guard. Helper hilang atau job mengantri bukan berarti bersih.",
   "quarantine": "Karantina",
+  "statusPendingQuarantine": "Mengantri helper — belum dikarantina di disk",
+  "statusPendingRestore": "Pulihkan mengantri — file masih di karantina",
   "restore": "Pulihkan",
   "ignore": "Abaikan",
   "openGuard": "Buka Guard",
