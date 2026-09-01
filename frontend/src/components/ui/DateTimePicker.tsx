@@ -67,7 +67,7 @@ function DateTimePicker({
           disabled={disabled}
           aria-label={ariaLabel}
           className={cn(
-            "h-10 min-h-10 w-full min-w-0 justify-start overflow-hidden border border-border bg-input px-3 text-left font-normal shadow-none hover:bg-input",
+            "h-10 min-h-10 w-full min-w-0 max-w-full justify-start overflow-hidden border border-border bg-input px-3 text-left font-normal shadow-none hover:bg-input",
             !selected && "text-muted-foreground",
             className,
           )}
