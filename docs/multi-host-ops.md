@@ -11,7 +11,7 @@ Keep real inventory in a private ops note or password manager.
 | **Worker host** (optional scale-out) | `worker_ip`, `worker_domain` only | Same `.env` broker/DB as app; **no** public 80/443. Shared Redis = Celery queue. Worker image has **no FastAPI**: `guard.sync_all` (queue `ip_scan`) must import `app.services.guard_apply`, not `app.services.guard`. |
 | **Data host** | PostgreSQL 16, Redis 8 (or distro Redis) | ufw: **app + worker** host CIDRs → 5432/6379; **pg_hba** must allow those same client IPs for the app DB role |
 | **Guard host** | Wazuh Manager + Indexer (all-in-one lab OK) | API `:55000` + Indexer `:9200` **only** from app host; agent `:1514`/`:1515` only from lab/agent hosts. Do **not** expose dashboard `:443` to the public internet unless ops explicitly needs it. |
-| **Guard lab agent** (optional) | `wazuh-agent` only | Enroll via app API (`GUARD_MOCK_WAZUH=false`). Never install an agent using a **mock** key. Host Protect helper: [`packaging/host-protect-helper/README.md`](../packaging/host-protect-helper/README.md) on **tc5** only. |
+| **Guard lab agent** (optional) | `wazuh-agent` only | Enroll via app API (`GUARD_MOCK_WAZUH=false`). Never install an agent using a **mock** key. Host Protect helper: [`packaging/host-protect-helper/README.md`](../packaging/host-protect-helper/README.md) + AM [`docs/host-protect-helper-am.md`](host-protect-helper-am.md) on **tc5** only. |
 
 Lab shorthand (private SSH aliases — **never** put IPs in git): **app** = `tc1`, **data** = `tc2`, **Guard** = `tc3`, **ip/domain workers** = `tc4`, **agent VM** = `tc5`.
 
