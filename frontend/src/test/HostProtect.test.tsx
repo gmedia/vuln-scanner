@@ -110,6 +110,7 @@ describe("Host Protect page", () => {
         ip: null,
         version: null,
         last_keep_alive: null,
+        last_helper_poll_at: null,
         synced_at: "2026-08-14T10:00:00Z",
         created_at: "2026-08-14T10:00:00Z",
       },
@@ -182,6 +183,10 @@ describe("Host Protect page", () => {
       expect(screen.getByTestId("host-empty-cta")).toBeInTheDocument(),
     );
     await user.click(screen.getByTestId("host-empty-cta"));
+    expect(screen.getByTestId("host-helper-required")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Helper has not polled this agent yet/i),
+    ).toBeInTheDocument();
     await user.type(screen.getByTestId("host-name"), "Web");
     await user.type(screen.getByTestId("host-root"), "/var/www/html");
     await waitFor(() =>
