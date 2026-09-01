@@ -369,7 +369,7 @@ def run_mobile_scan(self: Any, job_id: str, file_path: str, platform: str) -> Ta
     except Retry:
         raise
     except SoftTimeLimitExceeded:
-        err_msg = "scan timed out (soft limit 600s)"
+        err_msg = "scan timed out (soft limit)"
         fail_job_no_retry(job_id, "mobile", err_msg)
         publish_progress(job_id, "failed", 100, err_msg)
         logger.error("Mobile scan soft timeout: job={job_id}", job_id=job_id)

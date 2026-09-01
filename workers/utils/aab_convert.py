@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import os
 import shutil
+import signal
 import subprocess
 import tempfile
 import zipfile
@@ -127,17 +128,25 @@ def convert_aab_to_universal_apk(aab_path: str, output_dir: str | None = None) -
     logger.info("Converting AAB to universal APK via bundletool")
 
     try:
-        result = subprocess.run(
+        proc = subprocess.Popen(
             cmd,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            timeout=BUNDLETOOL_TIMEOUT_SEC,
-            check=False,
+            start_new_session=True,
         )
-    except subprocess.TimeoutExpired as exc:
-        raise AabConversionError(f"bundletool timed out after {BUNDLETOOL_TIMEOUT_SEC}s") from exc
     except OSError as exc:
         raise AabConversionError(f"Failed to run bundletool: {exc}") from exc
+
+    try:
+        stdout, stderr = proc.communicate(timeout=BUNDLETOOL_TIMEOUT_SEC)
+    except subprocess.TimeoutExpired as exc:
+        with contextlib.suppress(ProcessLookupError, PermissionError, OSError):
+            os.killpg(proc.pid, signal.SIGKILL)
+        proc.wait(timeout=10)
+        raise AabConversionError(f"bundletool timed out after {BUNDLETOOL_TIMEOUT_SEC}s") from exc
+
+    result = subprocess.CompletedProcess(cmd, proc.returncode, stdout, stderr)
 
     if result.returncode != 0:
         err = (result.stderr or result.stdout or "").strip()[:STDERR_LIMIT]

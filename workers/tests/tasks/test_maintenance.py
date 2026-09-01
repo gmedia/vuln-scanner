@@ -186,8 +186,8 @@ class TestFailStaleRunningTaskMeta:
     def test_has_max_retries_1(self):
         assert fail_stale_running_jobs.max_retries == 1
 
-    def test_stale_running_threshold_is_20_minutes(self):
-        assert STALE_RUNNING_THRESHOLD_MINUTES == 20
+    def test_stale_running_threshold_is_45_minutes(self):
+        assert STALE_RUNNING_THRESHOLD_MINUTES == 45
 
 
 class TestFailStaleRunningSuccess:

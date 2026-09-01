@@ -11,11 +11,11 @@ from utils.database import get_sync_session
 type ScanJobDict = dict[str, int]
 
 STALE_PENDING_THRESHOLD_MINUTES = 30
-STALE_RUNNING_THRESHOLD_MINUTES = 20
+STALE_RUNNING_THRESHOLD_MINUTES = 45
 STALE_THRESHOLD_MINUTES = STALE_PENDING_THRESHOLD_MINUTES
 
 STALE_PENDING_FAIL_SUMMARY = '{"error": "auto-failed: stuck pending > 30 minutes"}'
-STALE_RUNNING_FAIL_SUMMARY = '{"error": "auto-failed: stuck running > 20 minutes"}'
+STALE_RUNNING_FAIL_SUMMARY = '{"error": "auto-failed: stuck running > 45 minutes"}'
 STALE_FAIL_SUMMARY = STALE_PENDING_FAIL_SUMMARY
 
 _PENDING_AGE_SQL = "created_at < :cutoff"

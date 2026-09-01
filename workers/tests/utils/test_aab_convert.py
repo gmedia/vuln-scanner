@@ -146,7 +146,7 @@ class TestConvertAabToUniversalApk:
         out_dir = tmp_path / "work"
         out_dir.mkdir()
 
-        def fake_run(cmd, **kwargs):
+        def fake_popen(cmd, **kwargs):
             assert any(a.startswith("-Djava.io.tmpdir=") for a in cmd)
             assert any(a.startswith("--aapt2=") for a in cmd)
             output_arg = next(a for a in cmd if a.startswith("--output="))
@@ -156,11 +156,11 @@ class TestConvertAabToUniversalApk:
                 zf.writestr("universal.apk", b"FAKEAPK")
 
             Path(apks_path).write_bytes(buf.getvalue())
-            result = mock.MagicMock()
-            result.returncode = 0
-            result.stderr = ""
-            result.stdout = ""
-            return result
+            proc = mock.MagicMock()
+            proc.returncode = 0
+            proc.pid = 4242
+            proc.communicate.return_value = ("", "")
+            return proc
 
         aapt2 = tmp_path / "aapt2"
         aapt2.write_text("#!/bin/sh\n")
@@ -169,7 +169,7 @@ class TestConvertAabToUniversalApk:
         monkeypatch.setenv("AAPT2_PATH", str(aapt2))
         with (
             mock.patch("utils.aab_convert.resolve_java_binary", return_value="/usr/bin/java"),
-            mock.patch("utils.aab_convert.subprocess.run", side_effect=fake_run),
+            mock.patch("utils.aab_convert.subprocess.Popen", side_effect=fake_popen),
         ):
             apk_path = convert_aab_to_universal_apk(str(aab), output_dir=str(out_dir))
         assert apk_path.endswith("universal.apk")
@@ -181,13 +181,34 @@ class TestConvertAabToUniversalApk:
         jar = tmp_path / "bundletool.jar"
         jar.write_bytes(b"jar")
         monkeypatch.setenv("BUNDLETOOL_JAR", str(jar))
-        result = mock.MagicMock()
-        result.returncode = 1
-        result.stderr = "boom"
-        result.stdout = ""
+        proc = mock.MagicMock()
+        proc.returncode = 1
+        proc.pid = 99
+        proc.communicate.return_value = ("", "boom")
         with (
             mock.patch("utils.aab_convert.resolve_java_binary", return_value="/usr/bin/java"),
-            mock.patch("utils.aab_convert.subprocess.run", return_value=result),
+            mock.patch("utils.aab_convert.subprocess.Popen", return_value=proc),
             pytest.raises(AabConversionError, match="bundletool failed"),
         ):
             convert_aab_to_universal_apk(str(aab), output_dir=str(tmp_path / "w"))
+
+    def test_bundletool_timeout_kills_process_group(self, tmp_path, monkeypatch):
+        import subprocess as sp
+
+        aab = tmp_path / "app.aab"
+        aab.write_bytes(b"PK")
+        jar = tmp_path / "bundletool.jar"
+        jar.write_bytes(b"jar")
+        monkeypatch.setenv("BUNDLETOOL_JAR", str(jar))
+        proc = mock.MagicMock()
+        proc.pid = 777
+        proc.communicate.side_effect = sp.TimeoutExpired(cmd=["java"], timeout=1)
+        with (
+            mock.patch("utils.aab_convert.resolve_java_binary", return_value="/usr/bin/java"),
+            mock.patch("utils.aab_convert.subprocess.Popen", return_value=proc),
+            mock.patch("utils.aab_convert.os.killpg") as killpg,
+            pytest.raises(AabConversionError, match="timed out"),
+        ):
+            convert_aab_to_universal_apk(str(aab), output_dir=str(tmp_path / "w"))
+        killpg.assert_called_once()
+        assert killpg.call_args.args[0] == 777
