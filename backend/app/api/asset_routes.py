@@ -24,10 +24,11 @@ router = APIRouter(prefix="/assets", tags=["assets"])
 @router.get("", response_model=list[AssetResponse])
 async def list_assets(
     request: Request,
+    tag: str | None = Query(default=None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[AssetResponse]:
-    return await AssetService(db).list_assets(current_user, get_active_org_id(request))
+    return await AssetService(db).list_assets(current_user, get_active_org_id(request), tag=tag)
 
 
 @router.post("", response_model=AssetResponse, status_code=201)
