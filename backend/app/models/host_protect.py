@@ -30,8 +30,17 @@ SCAN_STATUSES = ("queued", "running", "completed", "failed")
 SCAN_TRIGGERS = ("schedule", "manual")
 HIT_CLASSES = ("webshell", "backdoor", "malware", "spam_seo", "suspicious")
 HIT_ENGINES = ("yara", "clam", "mock", "needles")
-HIT_STATUSES = ("open", "quarantined", "ignored", "restored")
+HIT_STATUSES = (
+    "open",
+    "pending_quarantine",
+    "quarantined",
+    "pending_restore",
+    "ignored",
+    "restored",
+)
 QUARANTINE_ACTIONS = ("quarantine", "restore")
+COMMAND_KINDS = ("quarantine", "restore")
+COMMAND_STATUSES = ("queued", "acked", "failed")
 
 
 class HostSite(Base):
@@ -141,3 +150,30 @@ class HostQuarantineEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     __table_args__ = (CheckConstraint(f"action IN {QUARANTINE_ACTIONS}", name="ck_host_quarantine_action"),)
+
+
+class HostCommand(Base):
+    __tablename__ = "host_commands"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    site_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("host_sites.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    hit_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("host_hits.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    actor_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="queued", index=True)
+    dest_basename: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    acked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        CheckConstraint(f"kind IN {COMMAND_KINDS}", name="ck_host_command_kind"),
+        CheckConstraint(f"status IN {COMMAND_STATUSES}", name="ck_host_command_status"),
+    )
