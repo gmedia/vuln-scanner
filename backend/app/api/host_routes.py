@@ -8,6 +8,7 @@ from app.models.user import User
 from app.schemas.host_protect import (
     MAX_AGENT_BODY_BYTES,
     MAX_AGENT_FINDINGS,
+    HostAgentPollResponse,
     HostAgentResultsIngest,
     HostAgentResultsResponse,
     HostHitResponse,
@@ -17,7 +18,7 @@ from app.schemas.host_protect import (
     HostSiteUpdate,
 )
 from app.services.auth import get_active_org_id, get_current_user
-from app.services.host_agent_ingest import ingest_agent_results
+from app.services.host_agent_ingest import ingest_agent_results, poll_agent_jobs
 from app.services.host_protect import HostProtectService
 
 router = APIRouter(prefix="/host", tags=["host-protect"])
@@ -129,6 +130,15 @@ async def restore_hit(
     db: AsyncSession = Depends(get_db),
 ) -> HostHitResponse:
     return await HostProtectService(db).restore_hit(current_user, get_active_org_id(request), hit_id)
+
+
+@router.get("/agent/jobs", response_model=HostAgentPollResponse)
+async def poll_host_agent_jobs(
+    agent_id: UUID = Query(...),
+    db: AsyncSession = Depends(get_db),
+    x_host_agent_token: str | None = Header(default=None, alias="X-Host-Agent-Token"),
+) -> HostAgentPollResponse:
+    return await poll_agent_jobs(db, x_host_agent_token, agent_id)
 
 
 @router.post("/agent/results", response_model=HostAgentResultsResponse)
