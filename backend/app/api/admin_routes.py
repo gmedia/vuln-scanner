@@ -11,6 +11,7 @@ from app.config import settings
 from app.database import get_db
 from app.middleware.rate_limit import RateLimiter
 from app.models.credit_log import CreditLog
+from app.models.email_send_log import EMAIL_SEND_KINDS, EMAIL_SEND_STATUSES, EmailSendLog
 from app.models.email_verification import EmailVerificationToken
 from app.models.host_protect import HostScan
 from app.models.hpp import (
@@ -30,6 +31,8 @@ from app.schemas.admin import (
     AdminUserItem,
     AdminUserList,
     CreditUpdateRequest,
+    EmailSendLogItem,
+    EmailSendLogList,
     HppCostLineCreateRequest,
     HppCostLineItem,
     HppCostLineListResponse,
@@ -707,3 +710,40 @@ async def update_hpp_rate(
     await db.commit()
     await db.refresh(row)
     return HppRateItem.model_validate(row)
+
+
+@router.get("/email-logs", response_model=EmailSendLogList)
+async def list_email_send_logs(
+    request: Request,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    kind: str | None = Query(default=None),
+    status_filter: str | None = Query(default=None, alias="status"),
+    current_admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> EmailSendLogList | Response:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        return limit_response
+    filters = []
+    if kind:
+        if kind not in EMAIL_SEND_KINDS:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid kind")
+        filters.append(EmailSendLog.kind == kind)
+    if status_filter:
+        if status_filter not in EMAIL_SEND_STATUSES:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
+        filters.append(EmailSendLog.status == status_filter)
+    count_q = select(func.count(EmailSendLog.id))
+    list_q = select(EmailSendLog)
+    if filters:
+        count_q = count_q.where(*filters)
+        list_q = list_q.where(*filters)
+    total = (await db.execute(count_q)).scalar() or 0
+    list_q = list_q.order_by(EmailSendLog.created_at.desc())
+    list_q = list_q.offset((page - 1) * page_size).limit(page_size)
+    rows = (await db.execute(list_q)).scalars().all()
+    return EmailSendLogList(
+        items=[EmailSendLogItem.model_validate(r) for r in rows],
+        total=total,
+    )

@@ -136,3 +136,20 @@ class HppReportResponse(BaseModel):
     total_fully_loaded_hpp_idr: int
     unallocated_overhead_idr: int
     sku_estimates: list[HppSkuEstimate]
+
+
+class EmailSendLogItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    kind: str
+    status: str
+    recipient_masked: str
+    attempts: int
+    error_message: str | None = None
+    created_at: datetime
+
+
+class EmailSendLogList(BaseModel):
+    items: list[EmailSendLogItem]
+    total: int

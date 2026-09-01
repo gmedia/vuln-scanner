@@ -104,6 +104,10 @@ describe("Sidebar", () => {
       "href",
       "/admin/blog",
     );
+    expect(screen.getByTestId("nav-admin-email-logs")).toHaveAttribute(
+      "href",
+      "/admin/email-logs",
+    );
   });
 
   it("shows active scan section when activeJobId is set", () => {

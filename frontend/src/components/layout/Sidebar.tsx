@@ -17,6 +17,7 @@ import {
   Activity,
   FileText,
   FolderLock,
+  Mail,
 } from "lucide-react";
 import { BRAND } from "@/lib/brand";
 import { useTranslation } from "react-i18next";
@@ -227,6 +228,12 @@ function Sidebar() {
                   labelKey="blog"
                   icon={FileText}
                   testId="nav-admin-blog"
+                />
+                <NavItem
+                  to="/admin/email-logs"
+                  labelKey="emailLogs"
+                  icon={Mail}
+                  testId="nav-admin-email-logs"
                 />
               </SidebarMenu>
             </SidebarGroupContent>

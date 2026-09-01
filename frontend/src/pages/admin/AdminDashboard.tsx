@@ -10,6 +10,7 @@ import {
   Tag,
   FileText,
   Calculator,
+  Mail,
 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -96,12 +97,18 @@ function AdminDashboard() {
       desc: t("linkHppDesc"),
       icon: Calculator,
     },
-    {
-      to: "/admin/blog",
-      label: t("linkBlog"),
-      desc: t("linkBlogDesc"),
-      icon: FileText,
-    },
+      {
+        to: "/admin/blog",
+        label: t("linkBlog"),
+        desc: t("linkBlogDesc"),
+        icon: FileText,
+      },
+      {
+        to: "/admin/email-logs",
+        label: t("linkEmailLogs"),
+        desc: t("linkEmailLogsDesc"),
+        icon: Mail,
+      },
   ];
 
   return (

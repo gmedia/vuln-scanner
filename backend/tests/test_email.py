@@ -11,6 +11,7 @@ from app.services.email import (
     send_password_reset_email,
     send_verification_email,
 )
+from app.services.email_send_log import kind_from_label, mask_recipient
 
 # ---------------------------------------------------------------------------
 # Successful sends
@@ -705,3 +706,50 @@ class TestSendHostProtectEmail:
         assert "<?php" not in html
         assert "eval(" not in html
         assert sent_msg["Subject"]
+
+
+class TestEmailSendLogHelpers:
+    def test_mask_recipient(self):
+        assert mask_recipient("user@example.com") == "u***@example.com"
+        assert mask_recipient("a@x.io") == "*@x.io"
+        assert mask_recipient("not-an-email") == "***"
+
+    def test_kind_from_label(self):
+        assert kind_from_label("Verification") == "verification"
+        assert kind_from_label("Password reset") == "password_reset"
+        assert kind_from_label("Scan diff") == "scan_diff"
+        assert kind_from_label("Uptime") == "uptime"
+        assert kind_from_label("Host Protect") == "host_protect"
+
+    @pytest.mark.asyncio
+    async def test_success_records_log(self):
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+        with (
+            patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp),
+            patch("app.services.email.record_email_send") as rec,
+        ):
+            ok = await send_verification_email("user@example.com", "tok")
+        assert ok is True
+        rec.assert_called_once()
+        kwargs = rec.call_args.kwargs
+        assert kwargs["ok"] is True
+        assert kwargs["label"] == "Verification"
+        assert kwargs["email_to"] == "user@example.com"
+
+    @pytest.mark.asyncio
+    async def test_failure_records_log(self):
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock(side_effect=SMTPException("boom"))
+        with (
+            patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp),
+            patch("app.services.email.asyncio.sleep", new_callable=AsyncMock),
+            patch("app.services.email.record_email_send") as rec,
+        ):
+            ok = await send_verification_email("user@example.com", "tok")
+        assert ok is False
+        rec.assert_called_once()
+        assert rec.call_args.kwargs["ok"] is False
+        assert rec.call_args.kwargs["attempts"] == 3

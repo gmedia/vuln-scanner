@@ -294,6 +294,33 @@ export async function deleteHppCost(id: string): Promise<void> {
   await api.delete(`/api/admin/hpp/costs/${id}`);
 }
 
+export interface EmailSendLogItem {
+  id: string;
+  kind: string;
+  status: string;
+  recipient_masked: string;
+  attempts: number;
+  error_message: string | null;
+  created_at: string;
+}
+
+export interface EmailSendLogList {
+  items: EmailSendLogItem[];
+  total: number;
+}
+
+export async function getEmailLogs(params: {
+  page?: number;
+  page_size?: number;
+  kind?: string;
+  status?: string;
+}): Promise<EmailSendLogList> {
+  const { data } = await api.get<EmailSendLogList>("/api/admin/email-logs", {
+    params,
+  });
+  return data;
+}
+
 export const adminApi = {
   getStats: getAdminStats,
   getUsers: getAdminUsers,
@@ -310,6 +337,7 @@ export const adminApi = {
   listHppCosts,
   createHppCost,
   deleteHppCost,
+  getEmailLogs,
   listBlogPosts,
   createBlogPost,
   updateBlogPost,
