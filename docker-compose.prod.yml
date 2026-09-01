@@ -140,6 +140,7 @@ services:
       SIEM_MAX_PAGE_SIZE: ${SIEM_MAX_PAGE_SIZE:-50}
       HOST_PROTECT_ENABLED: ${HOST_PROTECT_ENABLED:-true}
       HOST_PROTECT_ALLOW_MOCK: ${HOST_PROTECT_ALLOW_MOCK:-false}
+      HOST_PROTECT_ALLOW_LOCAL_WALK: ${HOST_PROTECT_ALLOW_LOCAL_WALK:-false}
       HOST_WAF_ENABLED: ${HOST_WAF_ENABLED:-true}
       UPTIME_ENABLED: ${UPTIME_ENABLED:-true}
       UPTIME_ALLOW_PRIVATE: ${UPTIME_ALLOW_PRIVATE:-false}
@@ -203,6 +204,7 @@ services:
       CELERY_CONCURRENCY: 2
       HOST_PROTECT_ENABLED: ${HOST_PROTECT_ENABLED:-true}
       HOST_PROTECT_ALLOW_MOCK: ${HOST_PROTECT_ALLOW_MOCK:-false}
+      HOST_PROTECT_ALLOW_LOCAL_WALK: ${HOST_PROTECT_ALLOW_LOCAL_WALK:-false}
     volumes:
       - scan_data:/tmp/scans
       # Lab-only local walk (S6). Host dir is empty unless ops plants a fixture.
@@ -418,6 +420,7 @@ services:
       UPTIME_ENABLED: ${UPTIME_ENABLED:-true}
       HOST_PROTECT_ENABLED: ${HOST_PROTECT_ENABLED:-true}
       HOST_PROTECT_ALLOW_MOCK: ${HOST_PROTECT_ALLOW_MOCK:-false}
+      HOST_PROTECT_ALLOW_LOCAL_WALK: ${HOST_PROTECT_ALLOW_LOCAL_WALK:-false}
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import os; os.stat('/tmp/celerybeat-schedule')\""]
       interval: 30s
