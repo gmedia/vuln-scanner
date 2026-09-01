@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import secrets
+from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -11,8 +12,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models.guard import GuardAgent
-from app.models.host_protect import HostScan, HostSite
+from app.models.host_protect import HostCommand, HostHit, HostQuarantineEvent, HostScan, HostSite
 from app.schemas.host_protect import (
+    HostAgentCommandAck,
     HostAgentPollJob,
     HostAgentPollResponse,
     HostAgentResultsIngest,
@@ -78,13 +80,92 @@ async def poll_agent_jobs(
     for scan, site in result.all():
         jobs.append(
             HostAgentPollJob(
+                kind="scan",
                 scan_id=scan.id,
                 site_id=site.id,
                 root_path=site.root_path,
                 trigger=scan.trigger,
             )
         )
+    cmd_result = await db.execute(
+        select(HostCommand, HostSite, HostHit)
+        .join(HostSite, HostSite.id == HostCommand.site_id)
+        .join(HostHit, HostHit.id == HostCommand.hit_id)
+        .where(
+            HostSite.guard_agent_id == agent.id,
+            HostSite.organization_id == agent.organization_id,
+            HostCommand.organization_id == agent.organization_id,
+            HostCommand.status == "queued",
+            HostSite.enabled.is_(True),
+        )
+        .order_by(HostCommand.created_at.asc())
+        .limit(5)
+    )
+    for cmd, site, hit in cmd_result.all():
+        jobs.append(
+            HostAgentPollJob(
+                kind=cmd.kind,
+                command_id=cmd.id,
+                site_id=site.id,
+                hit_id=hit.id,
+                root_path=site.root_path,
+                rel_path=hit.rel_path,
+                dest_basename=cmd.dest_basename,
+            )
+        )
     return HostAgentPollResponse(jobs=jobs)
+
+
+async def ack_agent_command(
+    db: AsyncSession,
+    raw_token: str | None,
+    body: HostAgentCommandAck,
+) -> HostAgentResultsResponse:
+    agent = await _agent_from_token(db, raw_token)
+    if agent.id != body.agent_id:
+        raise _unauthorized()
+    cmd_result = await db.execute(select(HostCommand).where(HostCommand.id == body.command_id))
+    cmd = cmd_result.scalar_one_or_none()
+    if cmd is None or cmd.organization_id != agent.organization_id:
+        raise _unauthorized()
+    site_result = await db.execute(select(HostSite).where(HostSite.id == cmd.site_id))
+    site = site_result.scalar_one_or_none()
+    if site is None or site.guard_agent_id != agent.id:
+        raise _unauthorized()
+    if cmd.status != "queued":
+        return HostAgentResultsResponse(ok=True, command_id=cmd.id, status=cmd.status)
+    hit_result = await db.execute(select(HostHit).where(HostHit.id == cmd.hit_id))
+    hit = hit_result.scalar_one_or_none()
+    if hit is None:
+        raise _unauthorized()
+    now = datetime.now(UTC)
+    if body.ok:
+        cmd.status = "acked"
+        cmd.acked_at = now
+        cmd.error = None
+        if cmd.kind == "quarantine":
+            hit.status = "quarantined"
+        else:
+            hit.status = "restored"
+        db.add(
+            HostQuarantineEvent(
+                organization_id=hit.organization_id,
+                hit_id=hit.id,
+                actor_user_id=cmd.actor_user_id,
+                action=cmd.kind,
+                dest_basename=cmd.dest_basename,
+            )
+        )
+    else:
+        cmd.status = "failed"
+        cmd.acked_at = now
+        cmd.error = (body.error or "command failed")[:200]
+        if cmd.kind == "quarantine":
+            hit.status = "open"
+        else:
+            hit.status = "quarantined"
+    await db.commit()
+    return HostAgentResultsResponse(ok=body.ok, command_id=cmd.id, status=hit.status)
 
 
 async def ingest_agent_results(

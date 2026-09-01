@@ -10,7 +10,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models.host_protect import HostHit, HostQuarantineEvent, HostScan, HostSite
+from app.models.host_protect import HostCommand, HostHit, HostQuarantineEvent, HostScan, HostSite
 from app.services.host_engine import scan_clam, scan_local_root
 from app.services.host_handoff import CRITICAL_CLASSES, handoff_critical_hit
 from app.services.host_path import jail_rel_path, quarantine_basename, validate_root_path
@@ -75,16 +75,31 @@ async def _persist_hits(
             except ValueError:
                 jail_ok = False
             if jail_ok:
-                hit.status = "quarantined"
-                db.add(
-                    HostQuarantineEvent(
-                        organization_id=hit.organization_id,
-                        hit_id=hit.id,
-                        actor_user_id=site.created_by,
-                        action="quarantine",
-                        dest_basename=quarantine_basename(str(hit.id), hit.rel_path),
+                dest = quarantine_basename(str(hit.id), hit.rel_path)
+                if settings.host_protect_allow_local_walk:
+                    hit.status = "quarantined"
+                    db.add(
+                        HostQuarantineEvent(
+                            organization_id=hit.organization_id,
+                            hit_id=hit.id,
+                            actor_user_id=site.created_by,
+                            action="quarantine",
+                            dest_basename=dest,
+                        )
                     )
-                )
+                else:
+                    hit.status = "pending_quarantine"
+                    db.add(
+                        HostCommand(
+                            organization_id=hit.organization_id,
+                            site_id=site.id,
+                            hit_id=hit.id,
+                            actor_user_id=site.created_by,
+                            kind="quarantine",
+                            status="queued",
+                            dest_basename=dest,
+                        )
+                    )
         hit_count += 1
     return hit_count
 

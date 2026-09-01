@@ -15,6 +15,7 @@ from app.models.asset import ScanAsset
 from app.models.guard import GuardAgent
 from app.models.host_protect import (
     HOST_SITE_SKU_LIMITS,
+    HostCommand,
     HostHit,
     HostQuarantineEvent,
     HostScan,
@@ -323,21 +324,35 @@ class HostProtectService:
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         dest = quarantine_basename(str(hit.id), hit.rel_path)
-        qdir = quarantine_dir(str(site.id), base=settings.host_protect_quarantine_root)
-        try:
-            move_to_quarantine(src, qdir, dest)
-        except OSError as exc:
-            raise HTTPException(status_code=400, detail="quarantine command failed") from exc
-        hit.status = "quarantined"
-        self.db.add(
-            HostQuarantineEvent(
-                organization_id=hit.organization_id,
-                hit_id=hit.id,
-                actor_user_id=user.id,
-                action="quarantine",
-                dest_basename=dest,
+        if settings.host_protect_allow_local_walk:
+            qdir = quarantine_dir(str(site.id), base=settings.host_protect_quarantine_root)
+            try:
+                move_to_quarantine(src, qdir, dest)
+            except OSError as exc:
+                raise HTTPException(status_code=400, detail="quarantine command failed") from exc
+            hit.status = "quarantined"
+            self.db.add(
+                HostQuarantineEvent(
+                    organization_id=hit.organization_id,
+                    hit_id=hit.id,
+                    actor_user_id=user.id,
+                    action="quarantine",
+                    dest_basename=dest,
+                )
             )
-        )
+        else:
+            hit.status = "pending_quarantine"
+            self.db.add(
+                HostCommand(
+                    organization_id=hit.organization_id,
+                    site_id=site.id,
+                    hit_id=hit.id,
+                    actor_user_id=user.id,
+                    kind="quarantine",
+                    status="queued",
+                    dest_basename=dest,
+                )
+            )
         await self.db.commit()
         await self.db.refresh(hit)
         return self._hit_response(hit)
@@ -356,21 +371,35 @@ class HostProtectService:
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         dest = quarantine_basename(str(hit.id), hit.rel_path)
-        qdir = quarantine_dir(str(site.id), base=settings.host_protect_quarantine_root)
-        try:
-            restore_from_quarantine(qdir, dest, original)
-        except OSError as exc:
-            raise HTTPException(status_code=400, detail="restore command failed") from exc
-        hit.status = "restored"
-        self.db.add(
-            HostQuarantineEvent(
-                organization_id=hit.organization_id,
-                hit_id=hit.id,
-                actor_user_id=user.id,
-                action="restore",
-                dest_basename=dest,
+        if settings.host_protect_allow_local_walk:
+            qdir = quarantine_dir(str(site.id), base=settings.host_protect_quarantine_root)
+            try:
+                restore_from_quarantine(qdir, dest, original)
+            except OSError as exc:
+                raise HTTPException(status_code=400, detail="restore command failed") from exc
+            hit.status = "restored"
+            self.db.add(
+                HostQuarantineEvent(
+                    organization_id=hit.organization_id,
+                    hit_id=hit.id,
+                    actor_user_id=user.id,
+                    action="restore",
+                    dest_basename=dest,
+                )
             )
-        )
+        else:
+            hit.status = "pending_restore"
+            self.db.add(
+                HostCommand(
+                    organization_id=hit.organization_id,
+                    site_id=site.id,
+                    hit_id=hit.id,
+                    actor_user_id=user.id,
+                    kind="restore",
+                    status="queued",
+                    dest_basename=dest,
+                )
+            )
         await self.db.commit()
         await self.db.refresh(hit)
         return self._hit_response(hit)

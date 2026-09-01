@@ -8,6 +8,7 @@ from app.models.user import User
 from app.schemas.host_protect import (
     MAX_AGENT_BODY_BYTES,
     MAX_AGENT_FINDINGS,
+    HostAgentCommandAck,
     HostAgentPollResponse,
     HostAgentResultsIngest,
     HostAgentResultsResponse,
@@ -18,7 +19,7 @@ from app.schemas.host_protect import (
     HostSiteUpdate,
 )
 from app.services.auth import get_active_org_id, get_current_user
-from app.services.host_agent_ingest import ingest_agent_results, poll_agent_jobs
+from app.services.host_agent_ingest import ack_agent_command, ingest_agent_results, poll_agent_jobs
 from app.services.host_protect import HostProtectService
 
 router = APIRouter(prefix="/host", tags=["host-protect"])
@@ -159,6 +160,15 @@ async def ingest_host_agent_results(
     if len(body.findings) > MAX_AGENT_FINDINGS:
         raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Payload too large")
     return await ingest_agent_results(db, x_host_agent_token, body)
+
+
+@router.post("/agent/commands/ack", response_model=HostAgentResultsResponse)
+async def ack_host_agent_command(
+    body: HostAgentCommandAck,
+    db: AsyncSession = Depends(get_db),
+    x_host_agent_token: str | None = Header(default=None, alias="X-Host-Agent-Token"),
+) -> HostAgentResultsResponse:
+    return await ack_agent_command(db, x_host_agent_token, body)
 
 
 @router.post("/hits/{hit_id}/ignore", response_model=HostHitResponse)
