@@ -232,6 +232,38 @@ def test_quarantine_restore_jail(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     assert rc2 == 0
     assert src.is_file()
     assert not dest.exists()
+    rc3 = helper.run(
+        [
+            "quarantine",
+            "--root",
+            str(web),
+            "--rel-path",
+            "wp-content/uploads/cache.php",
+            "--site-id",
+            "site-a",
+            "--dest-basename",
+            "abcd1234_cache.php",
+            "--quarantine-root",
+            str(qroot),
+        ]
+    )
+    assert rc3 == 0
+    rc4 = helper.run(
+        [
+            "quarantine",
+            "--root",
+            str(web),
+            "--rel-path",
+            "wp-content/uploads/cache.php",
+            "--site-id",
+            "site-a",
+            "--dest-basename",
+            "abcd1234_cache.php",
+            "--quarantine-root",
+            str(qroot),
+        ]
+    )
+    assert rc4 == 0
 
 
 def test_poll_runs_quarantine_and_acks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

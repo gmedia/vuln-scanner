@@ -270,12 +270,14 @@ def run_quarantine(args: argparse.Namespace) -> int:
             raise ValueError("bad dest")
     except ValueError:
         return 2
+    dest = os.path.join(dest_dir, dest_bn)
+    if os.path.isfile(dest):
+        return 0
     if not os.path.isfile(src):
         return 6
     try:
         os.makedirs(dest_dir, mode=0o700, exist_ok=True)
         os.chmod(dest_dir, 0o700)
-        dest = os.path.join(dest_dir, dest_bn)
         if os.path.lexists(dest):
             return 6
         os.rename(src, dest)
@@ -295,6 +297,8 @@ def run_restore(args: argparse.Namespace) -> int:
     except ValueError:
         return 2
     src = os.path.join(dest_dir, dest_bn)
+    if os.path.isfile(original):
+        return 0
     if not os.path.isfile(src):
         return 6
     try:
