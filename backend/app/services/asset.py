@@ -52,6 +52,7 @@ class AssetService:
             scan_type=asset.scan_type,
             target=asset.target,
             notes=asset.notes,
+            tags=list(asset.tags or []),
             created_by=asset.created_by,
             created_at=asset.created_at,
             updated_at=asset.updated_at,
@@ -60,7 +61,9 @@ class AssetService:
             sku_limit=sku_asset_limit(sku),
         )
 
-    async def list_assets(self, user: User, organization_id: UUID | None) -> list[AssetResponse]:
+    async def list_assets(
+        self, user: User, organization_id: UUID | None, tag: str | None = None
+    ) -> list[AssetResponse]:
         if organization_id is None:
             raise HTTPException(status_code=400, detail="Active organization required")
         await require_membership(self.db, organization_id, user.id, min_role="viewer")
@@ -69,8 +72,11 @@ class AssetService:
             select(ScanAsset).where(ScanAsset.organization_id == organization_id).order_by(ScanAsset.created_at.desc())
         )
         assets = list(result.scalars().all())
+        needle = tag.strip().lower() if tag else None
         out: list[AssetResponse] = []
         for a in assets:
+            if needle and needle not in [t.lower() for t in (a.tags or [])]:
+                continue
             sid = await self._schedule_id(a.id)
             out.append(self._to_response(a, sku=org.sku, schedule_id=sid))
         return out
@@ -106,6 +112,7 @@ class AssetService:
             scan_type=body.scan_type,
             target=body.target,
             notes=body.notes,
+            tags=list(body.tags),
             created_by=user.id,
         )
         self.db.add(asset)

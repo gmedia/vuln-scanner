@@ -102,6 +102,32 @@ async def test_asset_crud_and_sku_cap(db_session: AsyncSession, ctx):
             )
             assert patched.status_code == 200
             assert patched.json()["name"] == "Edge 2"
+            tagged = await client.post(
+                "/api/assets",
+                headers=_auth(owner, org.id),
+                json={
+                    "name": "Prod web",
+                    "scan_type": "domain",
+                    "target": "prod.example",
+                    "tags": ["Prod", "hotel", "prod"],
+                },
+            )
+            assert tagged.status_code == 201, tagged.text
+            assert tagged.json()["tags"] == ["prod", "hotel"]
+            filtered = await client.get(
+                "/api/assets",
+                params={"tag": "hotel"},
+                headers=_auth(owner, org.id),
+            )
+            assert filtered.status_code == 200
+            assert [row["target"] for row in filtered.json()] == ["prod.example"]
+            patched_tags = await client.patch(
+                f"/api/assets/{tagged.json()['id']}",
+                headers=_auth(owner, org.id),
+                json={"tags": ["staging"]},
+            )
+            assert patched_tags.status_code == 200
+            assert patched_tags.json()["tags"] == ["staging"]
     finally:
         app.dependency_overrides.clear()
 

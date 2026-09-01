@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -12,6 +12,7 @@ import {
   listAssets,
   type ScanAsset,
 } from "@/api/assets";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -23,6 +24,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/Select";
+
+function parseTags(raw: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const part of raw.split(",")) {
+    const tag = part.trim().toLowerCase();
+    if (!tag || seen.has(tag)) continue;
+    seen.add(tag);
+    out.push(tag);
+    if (out.length >= 8) break;
+  }
+  return out;
+}
 
 export function mapAssetError(message: string): string {
   if (/Asset limit/i.test(message)) return "limit";
@@ -38,10 +52,23 @@ export default function Assets() {
   const [target, setTarget] = useState("");
   const [scanType, setScanType] = useState<"ip" | "domain">("domain");
   const [notes, setNotes] = useState("");
+  const [tagsInput, setTagsInput] = useState("");
   const [open, setOpen] = useState(false);
+  const [tagFilter, setTagFilter] = useState<string>("all");
 
-  const list = useQuery({ queryKey: ["assets"], queryFn: listAssets });
+  const list = useQuery({ queryKey: ["assets"], queryFn: () => listAssets() });
   const items = list.data ?? [];
+  const allTags = useMemo(() => {
+    const s = new Set<string>();
+    for (const a of items) {
+      for (const tag of a.tags ?? []) s.add(tag);
+    }
+    return [...s].sort();
+  }, [items]);
+  const visible = useMemo(() => {
+    if (tagFilter === "all") return items;
+    return items.filter((a) => (a.tags ?? []).includes(tagFilter));
+  }, [items, tagFilter]);
   const sku = items[0]?.sku ?? "multi";
   const limit = items[0]?.sku_limit ?? 10;
   const atCap = items.length >= limit;
@@ -53,6 +80,7 @@ export default function Assets() {
       setName("");
       setTarget("");
       setNotes("");
+      setTagsInput("");
       setOpen(false);
     },
     onError: (err: { response?: { data?: { detail?: string } } }) => {
@@ -187,6 +215,16 @@ export default function Assets() {
                 onChange={(e) => setNotes(e.target.value)}
               />
             </div>
+            <div>
+              <Label htmlFor="asset-tags">{t("tags")}</Label>
+              <Input
+                id="asset-tags"
+                data-testid="asset-tags"
+                value={tagsInput}
+                onChange={(e) => setTagsInput(e.target.value)}
+                placeholder={t("tagsHint")}
+              />
+            </div>
             <div className="flex gap-2">
               <Button
                 data-testid="asset-save"
@@ -197,6 +235,7 @@ export default function Assets() {
                     scan_type: scanType,
                     target: target.trim(),
                     notes: notes.trim() || undefined,
+                    tags: parseTags(tagsInput),
                   })
                 }
               >
@@ -208,6 +247,32 @@ export default function Assets() {
             </div>
           </CardContent>
         </Card>
+      ) : null}
+
+      {items.length > 0 && allTags.length > 0 ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Label htmlFor="asset-tag-filter">{t("filterTag")}</Label>
+            <Select value={tagFilter} onValueChange={setTagFilter}>
+              <SelectTrigger
+                id="asset-tag-filter"
+                data-testid="asset-tag-filter"
+                className="h-10 min-h-10"
+                aria-label={t("filterTag")}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("allTags")}</SelectItem>
+                {allTags.map((tag) => (
+                  <SelectItem key={tag} value={tag}>
+                    {tag}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       ) : null}
 
       {items.length === 0 && !list.isLoading ? (
@@ -230,9 +295,11 @@ export default function Assets() {
             </Button>
           </CardContent>
         </Card>
+      ) : visible.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t("noTagMatch")}</p>
       ) : (
         <ul className="space-y-3">
-          {items.map((a: ScanAsset) => (
+          {visible.map((a: ScanAsset) => (
             <li key={a.id}>
               <Card>
                 <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
@@ -241,6 +308,21 @@ export default function Assets() {
                     <p className="text-sm text-muted-foreground">
                       {a.scan_type} · {a.target}
                     </p>
+                    {(a.tags ?? []).length > 0 ? (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {a.tags.map((tag) => (
+                          <Badge
+                            key={tag}
+                            variant="default"
+                            data-testid={`asset-tag-${tag}`}
+                            className="cursor-pointer"
+                            onClick={() => setTagFilter(tag)}
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : null}
                     {a.schedule_id ? (
                       <p className="text-xs text-muted-foreground">
                         {t("hasSchedule")}

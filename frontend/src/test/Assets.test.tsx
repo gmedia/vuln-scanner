@@ -75,6 +75,7 @@ describe("Assets page", () => {
         schedule_id: null,
         sku: "multi",
         sku_limit: 10,
+        tags: [],
       },
     ]);
     const user = userEvent.setup();
@@ -98,10 +99,13 @@ describe("Assets page", () => {
         schedule_id: null,
         sku: "multi",
         sku_limit: 10,
+        tags: ["prod"],
       },
     ]);
     renderPage();
     await waitFor(() => expect(screen.getByTestId("assets-pack")).toBeInTheDocument());
     expect(screen.getByTestId("assets-pack-html")).toBeInTheDocument();
+    expect(screen.getByTestId("asset-tag-prod")).toBeInTheDocument();
+    expect(screen.getByTestId("asset-tag-filter")).toBeInTheDocument();
   });
 });
