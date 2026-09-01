@@ -1,6 +1,7 @@
 import asyncio
 import types
 import uuid
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy import select
@@ -10,6 +11,7 @@ from app.database import get_db
 from app.main import app
 from app.models.api_key import ApiKey
 from app.models.credit_log import CreditLog
+from app.models.email_send_log import EmailSendLog
 from app.models.hpp import HppRate
 from app.models.pricing import PricingConfig
 from app.models.scan_finding import ScanFinding
@@ -1317,3 +1319,46 @@ class TestAdminHpp:
             headers=API_HEADERS,
         )
         assert resp.status_code == 422
+
+
+class TestAdminEmailLogs:
+    def test_list_empty(self, client):
+        resp = client.get("/api/admin/email-logs", headers=API_HEADERS)
+        assert resp.status_code == 200
+        assert resp.json() == {"items": [], "total": 0}
+
+    @pytest.mark.asyncio
+    async def test_list_masks_and_filters(self, client, db_session):
+        db_session.add(
+            EmailSendLog(
+                id=uuid.uuid4(),
+                kind="verification",
+                status="sent",
+                recipient_masked="u***@example.com",
+                attempts=1,
+                created_at=datetime.now(UTC),
+            )
+        )
+        db_session.add(
+            EmailSendLog(
+                id=uuid.uuid4(),
+                kind="uptime",
+                status="failed",
+                recipient_masked="o***@example.com",
+                attempts=3,
+                error_message="SMTP timeout",
+                created_at=datetime.now(UTC),
+            )
+        )
+        await db_session.commit()
+        all_rows = client.get("/api/admin/email-logs", headers=API_HEADERS)
+        assert all_rows.status_code == 200
+        body = all_rows.json()
+        assert body["total"] == 2
+        assert all("@" in i["recipient_masked"] for i in body["items"])
+        assert all("***" in i["recipient_masked"] for i in body["items"])
+        failed = client.get("/api/admin/email-logs?status=failed", headers=API_HEADERS)
+        assert failed.json()["total"] == 1
+        assert failed.json()["items"][0]["kind"] == "uptime"
+        bad = client.get("/api/admin/email-logs?kind=inbox", headers=API_HEADERS)
+        assert bad.status_code == 400
