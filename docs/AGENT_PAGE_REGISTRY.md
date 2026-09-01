@@ -88,6 +88,7 @@ Nav groups match Sidebar: **Scan** · **Attach** · **Account** · **Admin** (ad
 | `/admin/pricing` | `pages/admin/AdminPricing.tsx` | Admin | Credit `credit_cost` per scan type + `statushost`. **Not** IDR COGS. | `admin/AdminPricing.test.tsx` |
 | `/admin/hpp` | `pages/admin/AdminHpp.tsx` | Admin | IDR unit rates + monthly overhead + cost journal + date-range report + SKU overlay **estimasi**. Not mixed with Pricing. `nav-admin-hpp`. Spec: `docs/specs/admin-hpp-v1.md`. | `admin/AdminHpp.test.tsx` |
 | `/admin/blog` | `pages/admin/AdminBlog.tsx` | Admin | CMS; `nav-admin-blog`. Locale key `blogStatus`. | `admin/AdminBlog.test.tsx` |
+| `/admin/email-logs` | `pages/admin/AdminEmailLogs.tsx` | Admin | Outbound SMTP log; masked recipient. `nav-admin-email-logs`. | `admin/AdminEmailLogs.test.tsx` |
 
 ---
 

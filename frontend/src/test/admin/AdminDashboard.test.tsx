@@ -172,5 +172,9 @@ describe("AdminDashboard", () => {
     );
     const blogLink = screen.getAllByRole("link").find((a) => a.getAttribute("href") === "/admin/blog");
     expect(blogLink).toBeTruthy();
+    const emailLink = screen
+      .getAllByRole("link")
+      .find((a) => a.getAttribute("href") === "/admin/email-logs");
+    expect(emailLink).toBeTruthy();
   });
 });
