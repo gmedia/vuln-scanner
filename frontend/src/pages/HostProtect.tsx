@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { listGuardAgents } from "@/api/guard";
@@ -10,7 +15,9 @@ import {
   isHostProtectDisabledError,
   ignoreHostHit,
   listHostHits,
+  listHostScans,
   listHostSites,
+  type HostScan,
   quarantineHostHit,
   restoreHostHit,
   type HostSite,
@@ -75,10 +82,25 @@ export default function HostProtect() {
 
   const items = sitesQ.data ?? [];
 
+  const scansQueries = useQueries({
+    queries: items.map((s) => ({
+      queryKey: ["host", activeOrgId, "scans", s.id],
+      queryFn: () => listHostScans(s.id),
+      enabled: !!activeOrgId && featureOn,
+      refetchInterval: (q: { state: { data?: HostScan[] } }) =>
+        q.state.data?.[0]?.status === "queued" ? 4000 : false,
+    })),
+  });
+
+  const waitingAgent = scansQueries.some(
+    (q) => q.data?.[0]?.status === "queued",
+  );
+
   const hitsQ = useQuery({
     queryKey: ["host", activeOrgId, "hits"],
     queryFn: () => listHostHits(),
     enabled: !!activeOrgId && featureOn,
+    refetchInterval: waitingAgent ? 4000 : false,
   });
   const sku = items[0]?.sku ?? "multi";
   const limit = items[0]?.sku_limit ?? 10;
@@ -112,7 +134,10 @@ export default function HostProtect() {
 
   const scanMut = useMutation({
     mutationFn: enqueueHostScan,
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["host"] }),
+    onSuccess: () => {
+      toast.success(t("scanEnqueued"));
+      void qc.invalidateQueries({ queryKey: ["host"] });
+    },
     onError: (err: { response?: { data?: { detail?: string } } }) => {
       toast.error(String(err.response?.data?.detail ?? t("scanFail")));
     },
@@ -319,13 +344,32 @@ export default function HostProtect() {
             </Card>
           ) : (
             <ul className="space-y-3">
-              {items.map((s: HostSite) => {
+              {items.map((s: HostSite, idx: number) => {
                 const siteHits = (hitsQ.data ?? []).filter(
                   (h) =>
                     h.site_id === s.id &&
                     h.status !== "ignored" &&
                     h.engine !== "mock",
                 );
+                const lastScan = scansQueries[idx]?.data?.[0];
+                const emptyHitsCopy =
+                  lastScan?.status === "queued"
+                    ? t("hitsWaitingAgent")
+                    : lastScan?.status === "completed"
+                      ? t("hitsClean")
+                      : t("hitsEmpty");
+                const scanStatusCopy =
+                  lastScan?.status === "queued"
+                    ? t("scanQueued")
+                    : lastScan?.status === "failed"
+                      ? t("scanFailed", {
+                          error: lastScan.error || "failed",
+                        })
+                      : lastScan?.status === "completed"
+                        ? t("scanCompleted", {
+                            count: lastScan.hit_count,
+                          })
+                        : null;
                 return (
                 <li key={s.id}>
                   <Card>
@@ -335,6 +379,14 @@ export default function HostProtect() {
                         <p className="text-sm text-muted-foreground">
                           {s.root_path}
                         </p>
+                        {scanStatusCopy ? (
+                          <p
+                            className="mt-1 text-xs text-muted-foreground"
+                            data-testid="host-scan-status"
+                          >
+                            {scanStatusCopy}
+                          </p>
+                        ) : null}
                       </div>
                       <div className="flex gap-2">
                         <Button
@@ -366,7 +418,7 @@ export default function HostProtect() {
                           className="text-sm text-muted-foreground"
                           data-testid="host-hits-empty"
                         >
-                          {t("hitsEmpty")}
+                          {emptyHitsCopy}
                         </p>
                       ) : (
                         <Table data-testid="host-hits">
