@@ -269,6 +269,13 @@ function ScanDetail() {
               <FindingsTable
                 findings={findings}
                 isLoading={findingsLoading}
+                emptyReason={
+                  scan.status === "failed"
+                    ? "failed"
+                    : scan.status === "completed"
+                      ? "clean"
+                      : "incomplete"
+                }
               />
               {findingsPages > 1 && (
                 <Pagination className="mt-4" data-testid="findings-pagination">

@@ -80,7 +80,13 @@ vi.mock("@/components/results/SeverityChart", () => ({
 }));
 
 vi.mock("@/components/results/FindingsTable", () => ({
-  default: ({ findings }: any) => <div data-testid="findings-table" data-findings-count={findings?.length} />,
+  default: ({ findings, emptyReason }: any) => (
+    <div
+      data-testid="findings-table"
+      data-findings-count={findings?.length}
+      data-empty-reason={emptyReason}
+    />
+  ),
 }));
 
 import { useScanDetail, useScanDiff, useScanFindings } from "@/hooks/useScan";
@@ -526,6 +532,26 @@ describe("ScanDetail", () => {
       renderPage();
       expect(screen.getByText("running")).toBeInTheDocument();
       expect(screen.getByText("In progress")).toBeInTheDocument();
+      expect(screen.getByTestId("findings-table")).toHaveAttribute(
+        "data-empty-reason",
+        "incomplete",
+      );
+    });
+
+    it("passes failed emptyReason to findings table when scan failed", () => {
+      mockUseScanDetailReturn({
+        data: {
+          ...baseScan,
+          status: "failed",
+          result_summary: { error: "auto-failed: stuck running > 20 minutes" },
+          findings: [],
+        } as any,
+      });
+      renderPage();
+      expect(screen.getByTestId("findings-table")).toHaveAttribute(
+        "data-empty-reason",
+        "failed",
+      );
     });
   });
 });
