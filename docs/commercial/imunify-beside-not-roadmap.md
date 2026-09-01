@@ -1,6 +1,6 @@
 # Imunify360 — beside Sinexis, not a roadmap
 
-**Status:** frozen positioning (2026-08-31). Not a feature backlog. Do **not** open PRs titled “Imunify parity.”
+**Status:** frozen **legal/clone** positioning (2026-08-31). **Job roadmap** (on-box access, regional attach) lives in [`imunify-class-onbox.md`](../specs/imunify-class-onbox.md) (**P14**). Do **not** open PRs titled “Imunify parity” or copy CloudLinux IP. P14 is **jobs + original stack**, not a clone.
 
 Sinexis **sits beside** Imunify on cPanel/CloudLinux farms. It is **not** a clone. Scan attach (P0/P1) remains the sold SKU. Host Protect / Host WAF are VPS/colo attach — **IDR unset**; AM must not invoice from this file.
 
@@ -27,7 +27,7 @@ Cleanup: **quarantine ≠ reconstruct**. Reconstruct = hybrid ticket (backup/CMS
 ## AM one-liners (Bahasa)
 
 - “Ini **bukan** ganti Imunify di cPanel shared.”
-- “Untuk VPS/colo GMD: Guard + folder web + scan malware + isolate file.”
+- “Untuk VPS/colo GMD: Guard + folder web + scan malware **on-box** (helper) + isolate file. Konsol SaaS **bukan** bukti disk sampai helper POST.”
 - “WAF detect = lab; jangan jual block mode dari spek.”
 - “Harga Host **belum** list resmi.”
 

@@ -1,7 +1,7 @@
 # Host Protect — SKU (P12 working, **not** P0 lock)
 
 **Status:** **Working commercial (2026-08-31)** — product **S0–S12 shipped** (honest on-box). Owner **has not** locked invoice IDR / `service_id`. AM may use the **working list** below for quotes; **must not** treat it as finance lock. Scan/Secure add-on remains the **only** P0-locked SKU ([`sku-scan-secure-addon.md`](sku-scan-secure-addon.md)).
-**On-box:** S10 helper POST; S12 optional Clam if `clamscan`/`clamdscan` on PATH. Do not demo mock hits as disk proof.
+**On-box:** S10 helper POST; S12 optional Clam if `clamscan`/`clamdscan` on PATH. Do not demo mock hits as disk proof. **P14** (Imunify-**class** jobs, regional GTM): [`imunify-class-onbox.md`](../specs/imunify-class-onbox.md) — worker must not impersonate customer FS.
 **Product spec:** [`docs/specs/host-protect-v1.md`](../specs/host-protect-v1.md).
 **Metering:** Host Protect scan **bundled (credit 0)** unless admin seeds `pricing.scan_type=hostscan` (≤10 chars). **HPP** key `hostscan` is COGS per completed `host_scans` row — seed **0** in git; fill in `/admin/hpp`. Do **not** mix HPP with Scan credit bundles.
 
@@ -39,7 +39,7 @@
 ## 2. What AM may say (Bahasa, until IDR lock)
 
 - “Ini **bukan** ganti Imunify di cPanel shared.”
-- “Untuk VPS/colo GMD: agent Guard + daftar folder web. Scan **on-box** = S10 (helper POST ke SaaS); sampai itu, konsol **bukan** bukti disk VPS.”
+- “Untuk VPS/colo GMD: agent Guard + daftar folder web. Scan **on-box** = helper POST ke SaaS (P14 slice C). Worker cloud **bukan** Imunify. Sampai helper jalan, konsol **bukan** bukti disk VPS.”
 - “Working list (bukan invoice lock): Host Basic **Rp 150.000** · Host Pro **Rp 350.000** · Host Multi **Rp 900.000** / bulan. Finance boleh ± band sebelum `service_id`.”
 - “Quarantine **bukan** reconstruct situs; restore CMS = tiket.”
 - Positioning vs Imunify: [`imunify-beside-not-roadmap.md`](imunify-beside-not-roadmap.md) — **bukan** backlog fitur.
