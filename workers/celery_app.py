@@ -48,7 +48,11 @@ celery_app.conf.update(
     task_annotations={
         "ip_scan.run": {"rate_limit": "10/m"},
         "domain_scan.run": {"rate_limit": "10/m"},
-        "mobile_scan.run": {"rate_limit": "10/m"},
+        "mobile_scan.run": {
+            "rate_limit": "10/m",
+            "soft_time_limit": 1500,
+            "time_limit": 1800,
+        },
     },
     beat_schedule={
         "fail-stale-pending-every-5m": {

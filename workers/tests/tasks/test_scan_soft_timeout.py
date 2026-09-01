@@ -27,7 +27,7 @@ class TestMobileSoftTimeout:
         assert mock_fail.call_args.args[0] == JOB_ID
         assert "timed out" in mock_fail.call_args.args[2]
         mock_retry.assert_not_called()
-        assert result["error"] == "scan timed out (soft limit 600s)"
+        assert result["error"] == "scan timed out (soft limit)"
 
     def test_hard_timeout_fails_job_without_retry(self):
         from tasks.mobile_scan import run_mobile_scan
