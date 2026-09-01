@@ -5,6 +5,8 @@
   "emptyHint": "Tambah IP atau domain bernama agar jadwal scan dan pack export punya target.",
   "emptyCta": "Tambah aset pertama",
   "add": "Tambah aset",
+  "edit": "Ubah",
+  "editTitle": "Ubah aset",
   "name": "Nama",
   "target": "Target",
   "type": "Tipe",

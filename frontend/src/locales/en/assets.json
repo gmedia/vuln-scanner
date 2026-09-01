@@ -5,6 +5,8 @@
   "emptyHint": "Add a named IP or domain so scheduled scans and pack export have a target.",
   "emptyCta": "Add your first asset",
   "add": "Add asset",
+  "edit": "Edit",
+  "editTitle": "Edit asset",
   "name": "Name",
   "target": "Target",
   "type": "Type",
