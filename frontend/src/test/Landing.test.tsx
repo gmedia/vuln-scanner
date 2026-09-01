@@ -70,7 +70,7 @@ describe("Landing Page", () => {
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: /Find exposure on IP, domain, and mobile/i,
+        name: /Find exposure on IP, domain, and mobile — then schedule it/i,
       }),
     ).toBeInTheDocument();
     expect(
@@ -85,7 +85,9 @@ describe("Landing Page", () => {
 
   it("renders attach-loop description without engine dump", () => {
     expect(
-      screen.getByText(/Credits, workspace, assets, Guard, and uptime/),
+      screen.getByText(
+        /Credits, workspace, assets, Guard, and uptime on the same account/,
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/VulnScanner engine/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/JWT auth/)).not.toBeInTheDocument();
@@ -186,6 +188,9 @@ describe("Landing Page", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Is this a human pentest?" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Do I install two agents?" }),
     ).toBeInTheDocument();
   });
 

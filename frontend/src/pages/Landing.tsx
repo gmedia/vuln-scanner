@@ -57,6 +57,7 @@ const faqKeys = [
   { q: "faqPentestQ", a: "faqPentestA" },
   { q: "faqDataQ", a: "faqDataA" },
   { q: "faqGuardQ", a: "faqGuardA" },
+  { q: "faqAgentQ", a: "faqAgentA" },
 ] as const;
 
 function Landing() {
