@@ -315,7 +315,7 @@ function AdminHpp() {
               <Button
                 variant="outline"
                 size="sm"
-                className="w-fit text-xs"
+                className="h-10 min-h-10 w-fit text-xs"
                 disabled={
                   savingOverhead ||
                   overheadEdit === null ||
@@ -401,7 +401,7 @@ function AdminHpp() {
           <Button
             variant="outline"
             size="sm"
-            className="w-fit text-xs"
+            className="h-10 min-h-10 w-fit text-xs"
             disabled={!costDate || createCost.isPending}
             onClick={() => createCost.mutate()}
           >
