@@ -686,12 +686,12 @@ async def test_host_scan_job_mock_when_root_missing(db_session: AsyncSession, ct
     db_session.add(scan)
     await db_session.commit()
     out = await run_host_scan_job(db_session, scan.id)
-    assert out["ok"] is False
-    assert out["error"] == "unreachable_root"
+    assert out["ok"] is True
+    assert out.get("pending_agent") is True
     assert out["hit_count"] == 0
     await db_session.refresh(scan)
-    assert scan.status == "failed"
-    assert scan.error == "unreachable_root"
+    assert scan.status == "queued"
+    assert scan.error is None
     hits = (await db_session.execute(select(HostHit).where(HostHit.site_id == site.id))).scalars().all()
     assert hits == []
 
@@ -998,5 +998,36 @@ async def test_agent_ingest_flag_off_404(db_session: AsyncSession, ctx, monkeypa
                 },
             )
             assert r.status_code == 404
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_agent_poll_returns_queued_jobs(db_session: AsyncSession, ctx):
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    raw, token_hash = generate_results_token()
+    agent.results_token_hash = token_hash
+    site, scan = await _queued_scan(db_session, org, owner, agent)
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.get(
+                "/api/host/agent/jobs",
+                params={"agent_id": str(agent.id)},
+                headers={"X-Host-Agent-Token": raw},
+            )
+            assert r.status_code == 200, r.text
+            jobs = r.json()["jobs"]
+            assert len(jobs) == 1
+            assert jobs[0]["scan_id"] == str(scan.id)
+            assert jobs[0]["root_path"] == site.root_path
+            bad = await client.get(
+                "/api/host/agent/jobs",
+                params={"agent_id": str(agent.id)},
+                headers={"X-Host-Agent-Token": "wrong"},
+            )
+            assert bad.status_code == 401
     finally:
         app.dependency_overrides.clear()
