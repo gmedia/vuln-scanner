@@ -236,7 +236,7 @@ def _shell(
 </main>
 <footer class="site-footer">
   <div class="site-footer-inner">
-    <p>Sinexis · Scan · Guard · SIEM</p>
+    <p>Sinexis · Scan · Guard</p>
     <nav>
       <a href="/blog"{blog_cur}>Blog</a>
       <a href="/terms"{terms_cur}>Syarat</a>
@@ -277,7 +277,7 @@ async def blog_index_html(
     if not posts:
         inner = """<p class="eyebrow">Blog</p>
 <h1>Belum ada artikel.</h1>
-<p class="lede">Security attach di colo/VPS dan hospitality: jadwal cek, bukan nmap sekali.</p>
+<p class="lede">Scan berkala, jadwal, kredit, tim, dan alarm di server — bahasa biasa, tanpa istilah konsol.</p>
 <p class="cta-row"><a class="cta" href="/register">Get started</a>
 <a class="cta-ghost" href="/">Kembali ke Sinexis</a></p>"""
     else:
@@ -298,8 +298,8 @@ async def blog_index_html(
         inner = (
             "<div class='page-intro'><p class='eyebrow'>Blog</p>"
             "<h1>Catatan buat yang situsnya sudah jalan</h1>"
-            "<p class='lede'>Jadwal cek, kredit, tim, dan alarm di server yang sudah "
-            "Anda bayar — bukan SIEM, bukan agen kedua.</p></div>"
+            "<p class='lede'>Scan berkala, jadwal, kredit, tim, dan alarm di server "
+            "— bahasa biasa, tanpa istilah konsol. Bukan SIEM, bukan agen kedua.</p></div>"
             "<ol class='index'>" + "".join(items) + "</ol>"
         )
     html = _shell("Blog — Sinexis", f"{CANONICAL_HOST}/blog", inner, rail=True)
