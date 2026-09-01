@@ -13,7 +13,8 @@ User=root
 NoNewPrivileges=true
 ProtectSystem=strict
 # Quarantine dest + allowlisted web roots (S10 jail). Without these, os.rename fails closed.
-ReadWritePaths=/var/lib/sinexis /var/www /srv/www /home
+# Leading '-' = ignore missing path (systemd 226/NAMESPACE if /srv/www absent).
+ReadWritePaths=/var/lib/sinexis /var/www -/srv/www /home
 PrivateTmp=true
 PrivateDevices=true
 ProtectKernelTunables=true
