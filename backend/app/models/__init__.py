@@ -1,6 +1,7 @@
 from app.models.asset import ScanAsset
 from app.models.blog import BlogPost
 from app.models.credit_log import CreditLog
+from app.models.email_send_log import EmailSendLog
 from app.models.email_verification import EmailVerificationToken
 from app.models.guard import GuardAgent, GuardAlert, GuardEnrollToken, GuardOrgBinding
 from app.models.host_protect import HostHit, HostQuarantineEvent, HostScan, HostSite
@@ -18,6 +19,7 @@ from app.models.user import User
 
 __all__ = [
     "User",
+    "EmailSendLog",
     "EmailVerificationToken",
     "PasswordResetToken",
     "ScanJob",
