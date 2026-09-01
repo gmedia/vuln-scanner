@@ -37,7 +37,6 @@
   "noAgents": "Install a Guard agent first, then register a site here.",
   "createFail": "Failed to create site",
   "scanFail": "Failed to enqueue scan",
-  "scanUnreachableRoot": "Document root is not reachable on the scan worker. No mock hits were recorded.",
   "honestyHint": "Hits come from the on-box helper on the Guard host. Missing helper or queued jobs are not a clean bill of health.",
   "quarantine": "Quarantine",
   "statusPendingQuarantine": "Queued for helper — not quarantined yet",
