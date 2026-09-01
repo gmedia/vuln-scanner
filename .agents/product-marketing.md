@@ -1,11 +1,12 @@
 # Product marketing context — Sinexis
 
-**Document version:** 1.0.0
+**Document version:** 1.1.0
 **Last updated:** 2026-09-01
 **Source of truth for product priority:** `docs/AGENT_EXECUTION_GUIDE.md` (wins over this file if they disagree).
 
 ## Changelog
 
+- 2026-09-01 — v1.1: P14 Imunify-class on-box (regional attach; helper on VM; no clone).
 - 2026-09-01 — V1 drafted from AGENT_EXECUTION_GUIDE + README (no customer PII).
 
 ## 1. Product overview
@@ -31,7 +32,8 @@
 **Jobs to be done:**
 1. Prove the box/site is being checked on a schedule (attach loop).
 2. Share results with the team (workspace) without forwarding PDFs.
-3. Later: know when the host is actually compromised (Guard / Host Protect) — honest, not mock WordPress hits.
+3. On-box web malware + isolate **on the customer VM** (Imunify-**class** job, original stack) — never a SaaS worker walking `/var/www` as if it were the VPS.
+4. Regional attach where panel+Imunify is absent or expensive (GMD VPS/colo) — beside Imunify on cPanel farms, not a CloudLinux replacement pitch.
 
 ## 3. Personas (B2B)
 
@@ -54,6 +56,7 @@
 - **Honesty gate:** missing roots fail or wait for helper; never invent `wp-content` malware.
 - **Thin Guard:** inventory + critical alerts, not customer Wazuh UI.
 - Soft dual-brand 6–12 months; rebrand must not gate Scan upsell.
+- **Imunify-class jobs, original stack (P14):** read files and isolate **on the customer VM**; regional attach where cPanel+Imunify is absent. Not a CloudLinux clone.
 
 ## 6. Objections
 
