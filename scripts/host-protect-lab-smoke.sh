@@ -9,6 +9,8 @@
 #   ./scripts/host-protect-lab-smoke.sh
 #   ./scripts/host-protect-lab-smoke.sh --prepare-fixture   # mkdir allowlisted path (SSH alias)
 #   ./scripts/host-protect-lab-smoke.sh --keep-site
+#   ./scripts/host-protect-lab-smoke.sh --require-helper-heartbeat
+#   ./scripts/host-protect-lab-smoke.sh --trigger-helper-poll --require-helper-heartbeat
 #
 # Requires HOST_PROTECT_ENABLED on the API. Fixture path must be under
 # /var/www, /srv/www, or /home — default /var/www/host-protect-fixture.
@@ -18,12 +20,16 @@ set -euo pipefail
 
 PREPARE_FIXTURE=0
 KEEP_SITE=0
+REQUIRE_HELPER_HEARTBEAT=0
+TRIGGER_HELPER_POLL=0
 for arg in "$@"; do
   case "$arg" in
     --prepare-fixture) PREPARE_FIXTURE=1 ;;
     --keep-site) KEEP_SITE=1 ;;
+    --require-helper-heartbeat) REQUIRE_HELPER_HEARTBEAT=1 ;;
+    --trigger-helper-poll) TRIGGER_HELPER_POLL=1 ;;
     -h|--help)
-      sed -n '2,16p' "$0"
+      sed -n '2,18p' "$0"
       exit 0
       ;;
     *)
@@ -42,6 +48,8 @@ ROOT_PATH="${HOST_PROTECT_LAB_ROOT_PATH:-/var/www/host-protect-fixture}"
 SITE_NAME="${HOST_PROTECT_LAB_SITE_NAME:-lab-host-protect-fixture}"
 POLL_SECONDS="${HOST_PROTECT_LAB_POLL_SECONDS:-45}"
 AGENT_UUID="${HOST_PROTECT_LAB_AGENT_UUID:-}"
+HELPER_STALE_SECONDS="${HOST_PROTECT_LAB_HELPER_STALE_SECONDS:-1200}"
+HELPER_POLL_WAIT="${HOST_PROTECT_LAB_HELPER_POLL_WAIT:-90}"
 
 log() { echo "=== $* ==="; }
 die() { echo "error: $*" >&2; exit 1; }
@@ -177,6 +185,58 @@ print(rows[0]['id'])
   log "using guard_agent_id=${AGENT_ID}"
 }
 
+trigger_helper_poll() {
+  require_cmd ssh
+  log "one-shot helper poll on SSH alias (token not printed)"
+  local h="${HOST_PROTECT_LAB_FIXTURE_SSH:-${GUARD_LAB_AGENT_SSH}}"
+  ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new "$h" \
+    "sudo systemctl start 'sinexis-host-protect@${AGENT_ID}.service'" \
+    || die "helper poll start failed (install helper first — docs/host-protect-helper-am.md)"
+}
+
+require_helper_heartbeat() {
+  log "require last_helper_poll_at within ${HELPER_STALE_SECONDS}s"
+  local i blob stamp
+  for ((i = 0; i < HELPER_POLL_WAIT; i += 5)); do
+    blob="$(curl_api GET /api/guard/agents)"
+    split_body_code "$blob"
+    [[ "$HTTP_CODE" == "200" ]] || die "guard agents HTTP ${HTTP_CODE}"
+    stamp="$(AGENT_ID="$AGENT_ID" python3 -c "
+import json,os,sys
+from datetime import datetime, timezone
+rows=json.loads(sys.argv[1])
+want=os.environ['AGENT_ID']
+for r in rows:
+    if str(r.get('id'))==want:
+        print(r.get('last_helper_poll_at') or '')
+        break
+" "$HTTP_BODY")"
+    if [[ -n "$stamp" ]]; then
+      STALE="$(STAMP="$stamp" HELPER_STALE_SECONDS="$HELPER_STALE_SECONDS" python3 -c "
+import os
+from datetime import datetime, timezone
+raw=os.environ['STAMP'].replace('Z','+00:00')
+try:
+    ts=datetime.fromisoformat(raw)
+except ValueError:
+    raise SystemExit(2)
+if ts.tzinfo is None:
+    ts=ts.replace(tzinfo=timezone.utc)
+age=(datetime.now(timezone.utc)-ts).total_seconds()
+print('stale' if age > float(os.environ['HELPER_STALE_SECONDS']) else 'fresh')
+")" || die "could not parse last_helper_poll_at"
+      log "helper heartbeat=${STALE}"
+      if [[ "$STALE" == "fresh" ]]; then
+        return 0
+      fi
+    else
+      log "helper heartbeat missing"
+    fi
+    sleep 5
+  done
+  die "helper heartbeat missing or stale — enable sinexis-host-protect@.timer on tc5 (AM runbook)"
+}
+
 ensure_host_flag() {
   log "GET /api/host/sites (flag check)"
   local blob
@@ -309,6 +369,12 @@ if [[ "$PREPARE_FIXTURE" -eq 1 ]]; then
 fi
 ensure_host_flag
 pick_agent
+if [[ "$TRIGGER_HELPER_POLL" -eq 1 ]]; then
+  trigger_helper_poll
+fi
+if [[ "$REQUIRE_HELPER_HEARTBEAT" -eq 1 ]]; then
+  require_helper_heartbeat
+fi
 create_site
 enqueue_scan
 poll_scan

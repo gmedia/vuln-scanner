@@ -2,7 +2,7 @@
 
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
-**Last updated:** 2026-09-01
+**Last updated:** 2026-09-01 (P14 C: AM helper runbook + lab heartbeat smoke)
 **Repo tip at write time:** re-`git pull` after reset. Expect **`adab0fd`** or newer. **P12 Host Protect S0–S12 on `main`**: honesty **#556**, quarantine queue **#558**, helper systemd jail **#559**. **Do not** re-implement S1–S12. Missing on-box root: code status **`pending_agent`** (queued, 0 hits) until helper ingest, or **`failed`/`unreachable_root`** if abandoned — **never** mock hits on public origin (**#533**). **P13 Host WAF S0–S5**. Compose: `HOST_PROTECT_ENABLED` / `HOST_WAF_ENABLED` prod **true**, local/CI **false**; per-site WAF still **off**. `SIEM_ENABLED` **git prod compose default false** (ops secret may enable). Never paste WAF onto `sinexis.app` edge nginx. Residual human: **GTM**; Host Protect **invoice** (`service_id`); fill `/admin/hpp` `hostscan`. Working list IDR in `docs/commercial/sku-host-protect.md` (**not** finance lock). **P14** = owner track: **Imunify360 jobs** (on-box files + HTTP), original stack — [`imunify-class-onbox.md`](specs/imunify-class-onbox.md). **Not** a clone. Next eng = named slice **A→B→C** then **D** (D largely landed as #558) + **`buat`**. Clone PRs forbidden: [`imunify-beside-not-roadmap.md`](commercial/imunify-beside-not-roadmap.md).
 **Guard e2e rule:** if the user asks for a **full prod e2e suite including Guard enroll/unenroll**, **wipe `tc5` + leftover Manager/DB smoke rows first** — see **§4.1**. Do not skip this. Do not treat Playwright as enroll/unenroll.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
@@ -208,7 +208,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | [`docs/specs/guard-v1.md`](specs/guard-v1.md) | **S0–S5 + Http on `main`** (#273–#275); host/guide #279–#281 + #294 | Edge lab + secrets on deploy host only; no SIEM on `/guard` |
 | [`docs/specs/siem-v1.md`](specs/siem-v1.md) | **S0–S5 on `main`** (#307) | Flag-off until ops |
 | [`docs/specs/blog-v1.md`](specs/blog-v1.md) | **S0 + S1–S5** (PR #409) | Public `/blog` HTML island; admin CMS |
-| [`docs/specs/host-protect-v1.md`](specs/host-protect-v1.md) | **S0–S12 on `main`** (#533–#537, #556, #558, #559) | Do **not** re-implement. Lab [`scripts/host-protect-lab-smoke.sh`](../scripts/host-protect-lab-smoke.sh). Fail-closed: `pending_agent` / `unreachable_root`, not mock hits. SKU working IDR. |
+| [`docs/specs/host-protect-v1.md`](specs/host-protect-v1.md) | **S0–S12 on `main`** (#533–#537, #556, #558, #559) | Do **not** re-implement. Lab [`scripts/host-protect-lab-smoke.sh`](../scripts/host-protect-lab-smoke.sh) (`--require-helper-heartbeat`). AM install: [`host-protect-helper-am.md`](host-protect-helper-am.md). Fail-closed: `pending_agent` / `unreachable_root`, not mock hits. SKU working IDR. |
 | [`docs/specs/host-waf-v1.md`](specs/host-waf-v1.md) | **S0–S5 + SPA copy shipped** (#512–#517) | P13; prod compose `HOST_WAF_ENABLED` **true**, local/CI **false**; lab [`scripts/host-waf-lab-smoke.sh`](../scripts/host-waf-lab-smoke.sh); never ERP/`tc5`/edge nginx |
 | [`docs/specs/imunify-class-onbox.md`](specs/imunify-class-onbox.md) | **P14 docs** (#555); slices A–H | Implement **only** named slice + `buat`. Jobs not clone. |
 

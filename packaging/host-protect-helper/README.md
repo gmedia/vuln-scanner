@@ -13,6 +13,8 @@ Do **not** wipe `sx-erpstg`. Use a fixture folder under `/var/www`, `/srv/www`, 
 5. Poll interval: timer `OnUnitActiveSec=5min`. SaaS worker **does not** mount this disk.
 6. systemd unit: `ProtectSystem=strict` plus `ReadWritePaths=/var/lib/sinexis /var/www /srv/www /home` so poll can walk jail roots and (when S11 helper jobs exist) rename into quarantine. Missing env/token → helper exit **4**, no POST. Env file **mode 600**.
 
-Smoke: enqueue a Host Protect scan in the SPA, then run `python3 sinexis_host_scan.py poll --agent-id <uuid>` on **tc5**. Hits appear only after POST. Poll also runs queued **quarantine/restore** jobs and POSTs `/api/host/agent/commands/ack`. Pending SPA status is not on-disk quarantine.
+**AM copy-paste:** [`docs/host-protect-helper-am.md`](../../docs/host-protect-helper-am.md) (env placeholders; no tokens in git).
+
+Smoke: enqueue a Host Protect scan in the SPA, then run `python3 sinexis_host_scan.py poll --agent-id <uuid>` on **tc5**. Hits appear only after POST. Poll also runs queued **quarantine/restore** jobs and POSTs `/api/host/agent/commands/ack`. Pending SPA status is not on-disk quarantine. Lab API: [`scripts/host-protect-lab-smoke.sh`](../../scripts/host-protect-lab-smoke.sh) `--require-helper-heartbeat` (optional `--trigger-helper-poll`).
 
 ClamAV is optional (`Recommends: clamav`). Skip if `clamscan`/`clamdscan` is absent. CI images must not require Clam.
