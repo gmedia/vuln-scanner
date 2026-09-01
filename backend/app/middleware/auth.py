@@ -72,6 +72,7 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
             or path.startswith("/api/uptime/heartbeat/")
             or path == "/api/host/agent/results"
             or path == "/api/host/agent/jobs"
+            or path == "/api/host/agent/commands/ack"
         ):
             return await call_next(request)
 

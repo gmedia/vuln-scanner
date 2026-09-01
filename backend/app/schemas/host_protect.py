@@ -106,16 +106,30 @@ class HostAgentResultsIngest(BaseModel):
 
 class HostAgentResultsResponse(BaseModel):
     ok: bool
-    scan_id: uuid.UUID
-    hit_count: int
-    engine: str
+    scan_id: uuid.UUID | None = None
+    command_id: uuid.UUID | None = None
+    hit_count: int = 0
+    engine: str | None = None
+    status: str | None = None
+
+
+class HostAgentCommandAck(BaseModel):
+    command_id: uuid.UUID
+    agent_id: uuid.UUID
+    ok: bool
+    error: str | None = Field(default=None, max_length=200)
 
 
 class HostAgentPollJob(BaseModel):
-    scan_id: uuid.UUID
+    kind: str = "scan"
+    scan_id: uuid.UUID | None = None
+    command_id: uuid.UUID | None = None
     site_id: uuid.UUID
+    hit_id: uuid.UUID | None = None
     root_path: str
-    trigger: str
+    rel_path: str | None = None
+    dest_basename: str | None = None
+    trigger: str | None = None
 
 
 class HostAgentPollResponse(BaseModel):

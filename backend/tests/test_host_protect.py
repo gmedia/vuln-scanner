@@ -14,7 +14,7 @@ from app.config import settings
 from app.database import get_db
 from app.main import app
 from app.models.guard import GuardAgent
-from app.models.host_protect import HostHit, HostQuarantineEvent, HostScan, HostSite
+from app.models.host_protect import HostCommand, HostHit, HostQuarantineEvent, HostScan, HostSite
 from app.models.organization import Organization, OrganizationMembership
 from app.models.siem import SiemCase
 from app.models.user import User
@@ -498,6 +498,7 @@ async def test_quarantine_restore_ignore_roles(
     (uploads / "other.php").write_text("<?php echo 1; ?>", encoding="utf-8")
     monkeypatch.setattr(hp, "ALLOWED_PREFIXES", (str(web),))
     monkeypatch.setattr(settings, "host_protect_quarantine_root", str(qroot))
+    monkeypatch.setattr(settings, "host_protect_allow_local_walk", True)
     site = HostSite(
         id=uuid.uuid4(),
         organization_id=org.id,
@@ -582,6 +583,7 @@ async def test_quarantine_missing_file_keeps_open(
     web.mkdir()
     monkeypatch.setattr(hp, "ALLOWED_PREFIXES", (str(web),))
     monkeypatch.setattr(settings, "host_protect_quarantine_root", str(tmp_path / "q"))
+    monkeypatch.setattr(settings, "host_protect_allow_local_walk", True)
     site = HostSite(
         id=uuid.uuid4(),
         organization_id=org.id,
@@ -623,6 +625,7 @@ async def test_quarantine_missing_file_keeps_open(
 
 @pytest.mark.asyncio
 async def test_auto_quarantine_skips_suspicious(db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "host_protect_allow_local_walk", True)
     monkeypatch.setattr("app.services.host_handoff.send_host_protect_email", _async_ok)
     org: Organization = ctx["org"]
     owner: User = ctx["owner"]
@@ -1074,6 +1077,7 @@ async def test_agent_poll_returns_queued_jobs(db_session: AsyncSession, ctx):
             assert r.status_code == 200, r.text
             jobs = r.json()["jobs"]
             assert len(jobs) == 1
+            assert jobs[0]["kind"] == "scan"
             assert jobs[0]["scan_id"] == str(scan.id)
             assert jobs[0]["root_path"] == site.root_path
             bad = await client.get(
@@ -1084,3 +1088,206 @@ async def test_agent_poll_returns_queued_jobs(db_session: AsyncSession, ctx):
             assert bad.status_code == 401
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_quarantine_queues_command_when_local_walk_off(
+    db_session: AsyncSession, ctx, tmp_path, monkeypatch: pytest.MonkeyPatch
+):
+    from app.services import host_path as hp
+
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    web = tmp_path / "www"
+    web.mkdir()
+    target = web / "cache.php"
+    target.write_text("evil", encoding="utf-8")
+    monkeypatch.setattr(hp, "ALLOWED_PREFIXES", (str(web),))
+    monkeypatch.setattr(settings, "host_protect_allow_local_walk", False)
+    monkeypatch.setattr(settings, "host_protect_quarantine_root", str(tmp_path / "q"))
+    site = HostSite(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        guard_agent_id=agent.id,
+        name="QueueQ",
+        root_path=str(web),
+        created_by=owner.id,
+    )
+    hit = HostHit(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        rel_path="cache.php",
+        hit_class="webshell",
+        engine="needles",
+        rule_id="r1",
+        status="open",
+    )
+    db_session.add(site)
+    db_session.add(hit)
+    await db_session.commit()
+    hid = str(hit.id)
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            ok = await client.post(f"/api/host/hits/{hid}/quarantine", headers=_auth(owner, org.id))
+            assert ok.status_code == 200, ok.text
+            assert ok.json()["status"] == "pending_quarantine"
+    finally:
+        app.dependency_overrides.clear()
+    assert target.is_file()
+    cmds = (await db_session.execute(select(HostCommand).where(HostCommand.hit_id == hit.id))).scalars().all()
+    assert len(cmds) == 1
+    assert cmds[0].kind == "quarantine"
+    assert cmds[0].status == "queued"
+    events = (
+        (await db_session.execute(select(HostQuarantineEvent).where(HostQuarantineEvent.hit_id == hit.id)))
+        .scalars()
+        .all()
+    )
+    assert events == []
+
+
+@pytest.mark.asyncio
+async def test_agent_poll_and_ack_quarantine_command(db_session: AsyncSession, ctx):
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    raw, token_hash = generate_results_token()
+    agent.results_token_hash = token_hash
+    site = HostSite(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        guard_agent_id=agent.id,
+        name="AckQ",
+        root_path="/var/www/html",
+        created_by=owner.id,
+    )
+    hit = HostHit(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        rel_path="wp-content/uploads/cache.php",
+        hit_class="webshell",
+        engine="needles",
+        rule_id="r1",
+        status="pending_quarantine",
+    )
+    cmd = HostCommand(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        hit_id=hit.id,
+        actor_user_id=owner.id,
+        kind="quarantine",
+        status="queued",
+        dest_basename="abcd1234_cache.php",
+    )
+    db_session.add(site)
+    db_session.add(hit)
+    db_session.add(cmd)
+    await db_session.commit()
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            poll = await client.get(
+                "/api/host/agent/jobs",
+                params={"agent_id": str(agent.id)},
+                headers={"X-Host-Agent-Token": raw},
+            )
+            assert poll.status_code == 200, poll.text
+            jobs = poll.json()["jobs"]
+            kinds = {j["kind"] for j in jobs}
+            assert "quarantine" in kinds
+            qjob = next(j for j in jobs if j["kind"] == "quarantine")
+            assert qjob["command_id"] == str(cmd.id)
+            assert qjob["rel_path"] == hit.rel_path
+            ack = await client.post(
+                "/api/host/agent/commands/ack",
+                headers={"X-Host-Agent-Token": raw},
+                json={"command_id": str(cmd.id), "agent_id": str(agent.id), "ok": True},
+            )
+            assert ack.status_code == 200, ack.text
+            assert ack.json()["status"] == "quarantined"
+    finally:
+        app.dependency_overrides.clear()
+    await db_session.refresh(hit)
+    await db_session.refresh(cmd)
+    assert hit.status == "quarantined"
+    assert cmd.status == "acked"
+    events = (
+        (await db_session.execute(select(HostQuarantineEvent).where(HostQuarantineEvent.hit_id == hit.id)))
+        .scalars()
+        .all()
+    )
+    assert len(events) == 1
+    assert events[0].action == "quarantine"
+
+
+@pytest.mark.asyncio
+async def test_agent_ack_failure_reopens_hit(db_session: AsyncSession, ctx):
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    raw, token_hash = generate_results_token()
+    agent.results_token_hash = token_hash
+    site = HostSite(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        guard_agent_id=agent.id,
+        name="AckFail",
+        root_path="/var/www/html",
+        created_by=owner.id,
+    )
+    hit = HostHit(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        rel_path="wp-content/uploads/cache.php",
+        hit_class="webshell",
+        engine="needles",
+        rule_id="r1",
+        status="pending_quarantine",
+    )
+    cmd = HostCommand(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        hit_id=hit.id,
+        actor_user_id=owner.id,
+        kind="quarantine",
+        status="queued",
+        dest_basename="abcd1234_cache.php",
+    )
+    db_session.add(site)
+    db_session.add(hit)
+    db_session.add(cmd)
+    await db_session.commit()
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            ack = await client.post(
+                "/api/host/agent/commands/ack",
+                headers={"X-Host-Agent-Token": raw},
+                json={
+                    "command_id": str(cmd.id),
+                    "agent_id": str(agent.id),
+                    "ok": False,
+                    "error": "helper exit 6",
+                },
+            )
+            assert ack.status_code == 200, ack.text
+            assert ack.json()["status"] == "open"
+    finally:
+        app.dependency_overrides.clear()
+    await db_session.refresh(hit)
+    await db_session.refresh(cmd)
+    assert hit.status == "open"
+    assert cmd.status == "failed"
+    events = (
+        (await db_session.execute(select(HostQuarantineEvent).where(HostQuarantineEvent.hit_id == hit.id)))
+        .scalars()
+        .all()
+    )
+    assert events == []
