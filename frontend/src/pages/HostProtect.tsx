@@ -73,13 +73,13 @@ export default function HostProtect() {
     enabled: !!activeOrgId && featureOn,
   });
 
+  const items = sitesQ.data ?? [];
+
   const hitsQ = useQuery({
     queryKey: ["host", activeOrgId, "hits"],
     queryFn: () => listHostHits(),
     enabled: !!activeOrgId && featureOn,
   });
-
-  const items = sitesQ.data ?? [];
   const sku = items[0]?.sku ?? "multi";
   const limit = items[0]?.sku_limit ?? 10;
   const atCap = items.length >= limit;
@@ -319,7 +319,11 @@ export default function HostProtect() {
             </Card>
           ) : (
             <ul className="space-y-3">
-              {items.map((s: HostSite) => (
+              {items.map((s: HostSite) => {
+                const siteHits = (hitsQ.data ?? []).filter(
+                  (h) => h.site_id === s.id && h.status !== "ignored",
+                );
+                return (
                 <li key={s.id}>
                   <Card>
                     <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
@@ -350,88 +354,86 @@ export default function HostProtect() {
                         </Button>
                       </div>
                     </CardContent>
+                    <CardContent className="pt-0">
+                      <p className="mb-2 text-sm font-medium tracking-wide">
+                        {t("hitsTitle")}
+                      </p>
+                      {siteHits.length === 0 ? (
+                        <p
+                          className="text-sm text-muted-foreground"
+                          data-testid="host-hits-empty"
+                        >
+                          {t("hitsEmpty")}
+                        </p>
+                      ) : (
+                        <Table data-testid="host-hits">
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>{t("colPath")}</TableHead>
+                              <TableHead>{t("colClass")}</TableHead>
+                              <TableHead>{t("colEngine")}</TableHead>
+                              <TableHead>{t("colStatus")}</TableHead>
+                              <TableHead />
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {siteHits.map((h) => (
+                              <TableRow key={h.id}>
+                                <TableCell>{h.rel_path}</TableCell>
+                                <TableCell>{h.class}</TableCell>
+                                <TableCell>{h.engine}</TableCell>
+                                <TableCell>{h.status}</TableCell>
+                                <TableCell className="flex flex-wrap gap-2">
+                                  {(h.status === "open" ||
+                                    h.status === "restored") && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      data-testid="host-quarantine"
+                                      onClick={() => qMut.mutate(h.id)}
+                                    >
+                                      {t("quarantine")}
+                                    </Button>
+                                  )}
+                                  {h.status === "quarantined" && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      data-testid="host-restore"
+                                      onClick={() => rMut.mutate(h.id)}
+                                    >
+                                      {t("restore")}
+                                    </Button>
+                                  )}
+                                  {h.status === "open" && (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      data-testid="host-ignore"
+                                      onClick={() => iMut.mutate(h.id)}
+                                    >
+                                      {t("ignore")}
+                                    </Button>
+                                  )}
+                                  {(h.class === "webshell" ||
+                                    h.class === "backdoor") && (
+                                    <Button size="sm" variant="ghost" asChild>
+                                      <a href="/siem">{t("openSiem")}</a>
+                                    </Button>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </CardContent>
                   </Card>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm tracking-wide">
-                {t("hitsTitle")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-            {(hitsQ.data ?? []).length === 0 ? (
-              <p
-                className="text-sm text-muted-foreground"
-                data-testid="host-hits-empty"
-              >
-                {t("hitsEmpty")}
-              </p>
-            ) : (
-              <Table data-testid="host-hits">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("colPath")}</TableHead>
-                    <TableHead>{t("colClass")}</TableHead>
-                    <TableHead>{t("colEngine")}</TableHead>
-                    <TableHead>{t("colStatus")}</TableHead>
-                    <TableHead />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(hitsQ.data ?? []).map((h) => (
-                    <TableRow key={h.id}>
-                      <TableCell>{h.rel_path}</TableCell>
-                      <TableCell>{h.class}</TableCell>
-                      <TableCell>{h.engine}</TableCell>
-                      <TableCell>{h.status}</TableCell>
-                      <TableCell className="flex flex-wrap gap-2">
-                        {(h.status === "open" || h.status === "restored") && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            data-testid="host-quarantine"
-                            onClick={() => qMut.mutate(h.id)}
-                          >
-                            {t("quarantine")}
-                          </Button>
-                        )}
-                        {h.status === "quarantined" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            data-testid="host-restore"
-                            onClick={() => rMut.mutate(h.id)}
-                          >
-                            {t("restore")}
-                          </Button>
-                        )}
-                        {h.status === "open" && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            data-testid="host-ignore"
-                            onClick={() => iMut.mutate(h.id)}
-                          >
-                            {t("ignore")}
-                          </Button>
-                        )}
-                        {(h.class === "webshell" || h.class === "backdoor") && (
-                          <Button size="sm" variant="ghost" asChild>
-                            <a href="/siem">{t("openSiem")}</a>
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-            </CardContent>
-          </Card>
         </TabsContent>
         <TabsContent value="waf">
           <HostWafPanel sites={items} />
