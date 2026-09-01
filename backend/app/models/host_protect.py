@@ -121,7 +121,7 @@ class HostHit(Base):
     hit_class: Mapped[str] = mapped_column("class", String(32), nullable=False)
     engine: Mapped[str] = mapped_column(String(16), nullable=False)
     rule_id: Mapped[str] = mapped_column(String(128), nullable=False)
-    status: Mapped[str] = mapped_column(String(16), nullable=False, default="open")
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="open")
     sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
     first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
