@@ -266,7 +266,38 @@ def test_quarantine_restore_jail(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     assert rc4 == 0
 
 
+def test_quarantine_src_and_dest_conflict(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(helper, "ALLOWED_PREFIXES", (str(tmp_path / "www"),))
+    web = tmp_path / "www"
+    uploads = web / "wp-content" / "uploads"
+    uploads.mkdir(parents=True)
+    src = uploads / "cache.php"
+    src.write_text("new", encoding="utf-8")
+    qroot = tmp_path / "libq"
+    dest_dir = qroot / "site-a"
+    dest_dir.mkdir(parents=True)
+    (dest_dir / "abcd1234_cache.php").write_text("old", encoding="utf-8")
+    rc = helper.run(
+        [
+            "quarantine",
+            "--root",
+            str(web),
+            "--rel-path",
+            "wp-content/uploads/cache.php",
+            "--site-id",
+            "site-a",
+            "--dest-basename",
+            "abcd1234_cache.php",
+            "--quarantine-root",
+            str(qroot),
+        ]
+    )
+    assert rc == 6
+    assert src.is_file()
+
+
 def test_poll_runs_quarantine_and_acks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("SINEXIS_POLL_LOCK_DIR", str(tmp_path / "locks"))
     monkeypatch.setattr(helper, "ALLOWED_PREFIXES", (str(tmp_path / "www"),))
     web = tmp_path / "www"
     uploads = web / "wp-content" / "uploads"
