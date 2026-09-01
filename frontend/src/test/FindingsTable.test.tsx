@@ -44,6 +44,17 @@ describe("FindingsTable", () => {
   it("shows 'No findings detected' when findings is an empty array", () => {
     renderTable(<FindingsTable findings={[]} isLoading={false} />);
     expect(screen.getByText("No findings detected")).toBeInTheDocument();
+    expect(screen.getByText("This scan returned a clean result.")).toBeInTheDocument();
+  });
+
+  it("does not claim a clean result when the scan failed", () => {
+    renderTable(
+      <FindingsTable findings={[]} isLoading={false} emptyReason="failed" />,
+    );
+    expect(
+      screen.getByText("Scan did not finish — no findings were saved"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("This scan returned a clean result.")).not.toBeInTheDocument();
   });
 
   it("renders filter search input", () => {

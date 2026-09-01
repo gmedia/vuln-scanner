@@ -456,7 +456,12 @@ def _scan_secrets(text_content: str) -> list[ScanFinding]:
 
 def _extract_text_from_zip(zf: zipfile.ZipFile, file_list: list[str], *skip_extensions: str) -> str:
     chunks = []
+    scanned = 0
+    max_files = 200
     for name in file_list:
+        if scanned >= max_files:
+            logger.info("Zip text extract cap reached ({cap}); remaining entries skipped", cap=max_files)
+            break
         ext = os.path.splitext(name)[1].lower()
         if ext in skip_extensions:
             continue
@@ -469,6 +474,7 @@ def _extract_text_from_zip(zf: zipfile.ZipFile, file_list: list[str], *skip_exte
                     logger.trace("Zip text decode fallback to latin-1 for {name}: {error}", name=name, error=e)
                     text = raw.decode("latin-1", errors="replace")
                 chunks.append(text[:50000])
+                scanned += 1
         except (OSError, zipfile.BadZipFile, RuntimeError, KeyError) as e:
             logger.trace("Skipping unreadable zip entry {name}: {error}", name=name, error=e)
             continue

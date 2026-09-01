@@ -146,6 +146,18 @@ class TestMobileAndroidSuccessfulFlow:
         self._call_task()
         assert self.mock_cve.call_count > 0
 
+    def test_cve_lookup_caps_at_twenty_libraries(self):
+        from utils.mobile_utils import AndroidManifestInfo
+
+        many_libs = [f"libfoo{i:02d}.so" for i in range(30)]
+        self.mock_apk.return_value = (
+            AndroidManifestInfo(package_name="com.example.app"),
+            [],
+            many_libs,
+        )
+        self._call_task()
+        assert self.mock_cve.call_count == 20
+
     def test_secret_scan_failure_does_not_crash(self):
         self.mock_secrets.side_effect = OSError("secret scan failed")
         result = self._call_task()

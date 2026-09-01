@@ -7,7 +7,7 @@ from typing import Any
 
 import redis
 from celery import shared_task
-from celery.exceptions import Retry, SoftTimeLimitExceeded
+from celery.exceptions import Retry, SoftTimeLimitExceeded, TimeLimitExceeded
 from loguru import logger
 from sqlalchemy import update
 
@@ -215,6 +215,16 @@ def run_domain_scan(self: Any, job_id: str, domain: str) -> TaskResult:
         fail_job_no_retry(job_id, "domain", err_msg)
         publish_progress(job_id, "failed", 100, err_msg)
         logger.error("Domain scan soft timeout: job={job_id}", job_id=job_id)
+        return {
+            "job_id": job_id,
+            "summary": {"total_findings": 0, "critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0},
+            "error": err_msg,
+        }
+    except TimeLimitExceeded:
+        err_msg = "scan timed out (hard limit)"
+        fail_job_no_retry(job_id, "domain", err_msg)
+        publish_progress(job_id, "failed", 100, err_msg)
+        logger.error("Domain scan hard timeout: job={job_id}", job_id=job_id)
         return {
             "job_id": job_id,
             "summary": {"total_findings": 0, "critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0},

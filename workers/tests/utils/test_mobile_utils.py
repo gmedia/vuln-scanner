@@ -742,6 +742,19 @@ class TestExtractTextFromZip:
         assert "readable" in result
         assert "also fine" in result
 
+    def test_caps_number_of_files_scanned(self):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            for i in range(250):
+                zf.writestr(f"f{i}.txt", f"content-{i}")
+        buf.seek(0)
+        names = [f"f{i}.txt" for i in range(250)]
+        with zipfile.ZipFile(buf, "r") as zf:
+            result = _extract_text_from_zip(zf, names)
+        assert result.count("content-") == 200
+        assert "content-199" in result
+        assert "content-200" not in result
+
     def test_empty_file_list(self):
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as zf:
