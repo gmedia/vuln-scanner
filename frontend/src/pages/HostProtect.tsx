@@ -243,6 +243,12 @@ export default function HostProtect() {
                 onChange={(e) => setRootPath(e.target.value)}
               />
             </div>
+            <p
+              className="text-sm text-muted-foreground"
+              data-testid="host-helper-required"
+            >
+              {t("helperRequired")}
+            </p>
             <div>
               <Label htmlFor="host-agent">{t("guardAgent")}</Label>
               <Select value={selectedAgentId} onValueChange={setAgentId}>
@@ -261,6 +267,15 @@ export default function HostProtect() {
                   ))}
                 </SelectContent>
               </Select>
+              {selectedAgentId ? (
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  {(() => {
+                    const ag = agents.find((a) => a.id === selectedAgentId);
+                    if (!ag?.last_helper_poll_at) return t("helperNeverPolled");
+                    return t("helperPolled", { when: ag.last_helper_poll_at });
+                  })()}
+                </p>
+              ) : null}
             </div>
             <div>
               <Label htmlFor="host-cms">{t("cmsHint")}</Label>

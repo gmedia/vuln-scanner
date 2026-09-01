@@ -76,6 +76,7 @@ class GuardAgent(Base):
     ip: Mapped[str | None] = mapped_column(String(64), nullable=True)
     version: Mapped[str | None] = mapped_column(String(64), nullable=True)
     last_keep_alive: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_helper_poll_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     results_token_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True)
     results_token_revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     synced_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))

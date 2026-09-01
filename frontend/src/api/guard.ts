@@ -18,6 +18,7 @@ export interface GuardAgent {
   ip: string | null;
   version: string | null;
   last_keep_alive: string | null;
+  last_helper_poll_at: string | null;
   synced_at: string;
   created_at: string;
 }

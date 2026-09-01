@@ -26,6 +26,7 @@ class GuardAgentResponse(BaseModel):
     ip: str | None = None
     version: str | None = None
     last_keep_alive: datetime | None = None
+    last_helper_poll_at: datetime | None = None
     synced_at: datetime
     created_at: datetime
 

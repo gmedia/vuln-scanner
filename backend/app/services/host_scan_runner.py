@@ -10,10 +10,13 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.models.guard import GuardAgent
 from app.models.host_protect import HostCommand, HostHit, HostQuarantineEvent, HostScan, HostSite
 from app.services.host_engine import scan_clam, scan_local_root
 from app.services.host_handoff import CRITICAL_CLASSES, handoff_critical_hit
 from app.services.host_path import jail_rel_path, quarantine_basename, validate_root_path
+
+HELPER_STALE_SECONDS = 20 * 60
 
 MOCK_HITS: tuple[dict[str, str], ...] = (
     {
@@ -150,12 +153,32 @@ async def run_host_scan_job(db: AsyncSession, scan_id: UUID) -> dict[str, Any]:
             row["engine"] = "clam"
             specs.append(row)
         return await _finish_scan(db, scan, site, specs, engine)
+    agent_row = await db.execute(select(GuardAgent).where(GuardAgent.id == site.guard_agent_id))
+    agent = agent_row.scalar_one_or_none()
+    polled = agent.last_helper_poll_at if agent is not None else None
+    if polled is not None and polled.tzinfo is None:
+        polled = polled.replace(tzinfo=UTC)
+    now = datetime.now(UTC)
+    helper_fresh = polled is not None and (now - polled).total_seconds() <= HELPER_STALE_SECONDS
+    if helper_fresh:
+        await _ignore_open_mock_hits(db, site.id)
+        await db.commit()
+        return {
+            "ok": True,
+            "pending_agent": True,
+            "error": None,
+            "hit_count": 0,
+            "scan_id": str(scan.id),
+        }
+    scan.status = "failed"
+    scan.error = "host protect helper has not polled this Guard agent"
+    scan.finished_at = now
     await _ignore_open_mock_hits(db, site.id)
     await db.commit()
     return {
-        "ok": True,
-        "pending_agent": True,
-        "error": None,
+        "ok": False,
+        "pending_agent": False,
+        "error": scan.error,
         "hit_count": 0,
         "scan_id": str(scan.id),
     }

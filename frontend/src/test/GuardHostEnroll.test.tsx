@@ -176,6 +176,7 @@ describe("Guard host enroll UI", () => {
         ip: "10.0.0.1",
         version: "4.7.0",
         last_keep_alive: "2026-08-17T14:05:00Z",
+        last_helper_poll_at: null,
         synced_at: "2026-08-17T14:05:00Z",
         created_at: "2026-08-17T14:05:00Z",
       },

@@ -108,6 +108,7 @@ describe("SIEM page", () => {
         ip: null,
         version: null,
         last_keep_alive: null,
+        last_helper_poll_at: null,
         synced_at: "2026-08-14T10:00:00Z",
         created_at: "2026-08-14T10:00:00Z",
       },
