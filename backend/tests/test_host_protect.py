@@ -312,11 +312,12 @@ async def test_mock_scan_writes_hit(db_session: AsyncSession, ctx):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             hits = await client.get("/api/host/hits", headers=_auth(owner, org.id))
             assert hits.status_code == 200
-            body = hits.json()
-            assert len(body) == 1
-            assert body[0]["engine"] == "mock"
-            assert body[0]["class"] == "webshell"
-            assert body[0]["rel_path"] == "wp-content/uploads/cache.php"
+            assert hits.json() == []
+            stored = await db_session.execute(select(HostHit).where(HostHit.site_id == site.id))
+            row = stored.scalar_one()
+            assert row.engine == "mock"
+            assert row.hit_class == "webshell"
+            assert row.rel_path == "wp-content/uploads/cache.php"
     finally:
         app.dependency_overrides.clear()
 

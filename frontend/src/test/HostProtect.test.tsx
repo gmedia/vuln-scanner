@@ -225,10 +225,10 @@ describe("Host Protect page", () => {
         organization_id: "org1",
         site_id: "s1",
         scan_id: null,
-        rel_path: "wp-content/uploads/cache.php",
+        rel_path: "app/Http/evil.php",
         class: "webshell",
-        engine: "mock",
-        rule_id: "mock.webshell.php",
+        engine: "yara",
+        rule_id: "yara.webshell.php",
         status: "open",
         sha256: null,
         first_seen_at: "2026-08-30T00:00:00Z",
@@ -257,6 +257,48 @@ describe("Host Protect page", () => {
     await user.click(screen.getByTestId("host-quarantine"));
     await waitFor(() => expect(hostApi.quarantineHostHit).toHaveBeenCalled());
     expect(vi.mocked(hostApi.quarantineHostHit).mock.calls[0][0]).toBe("h1");
+  });
+
+  it("hides leftover mock-engine hits", async () => {
+    vi.mocked(hostApi.listHostSites).mockResolvedValue([
+      {
+        id: "s1",
+        organization_id: "org1",
+        guard_agent_id: "a1",
+        asset_id: null,
+        name: "Web",
+        root_path: "/var/www/html",
+        cms_hint: "wordpress",
+        enabled: true,
+        auto_quarantine: false,
+        created_by: "u1",
+        created_at: "2026-08-30T00:00:00Z",
+        updated_at: "2026-08-30T00:00:00Z",
+        sku: "multi",
+        sku_limit: 10,
+      },
+    ]);
+    vi.mocked(hostApi.listHostHits).mockResolvedValue([
+      {
+        id: "h-mock",
+        organization_id: "org1",
+        site_id: "s1",
+        scan_id: null,
+        rel_path: "wp-content/uploads/cache.php",
+        class: "webshell",
+        engine: "mock",
+        rule_id: "mock.webshell.php",
+        status: "open",
+        sha256: null,
+        first_seen_at: "2026-08-30T00:00:00Z",
+        last_seen_at: "2026-08-30T00:00:00Z",
+      },
+    ]);
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByTestId("host-hits-empty")).toBeInTheDocument(),
+    );
+    expect(screen.queryByText("wp-content/uploads/cache.php")).not.toBeInTheDocument();
   });
 
   it("opens WAF tab with frozen host-waf-panel testid", async () => {

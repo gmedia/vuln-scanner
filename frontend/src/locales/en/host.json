@@ -35,7 +35,7 @@
   "quarantine": "Quarantine",
   "restore": "Restore",
   "ignore": "Ignore",
-  "openSiem": "Open SIEM",
+  "openGuard": "Open Guard",
   "tabMalware": "Malware",
   "tabWaf": "WAF",
   "wafHint": "Per-site HTTP WAF policy. Events are not malware hits. Engine is mock until Coraza ships.",

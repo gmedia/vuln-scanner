@@ -321,7 +321,10 @@ export default function HostProtect() {
             <ul className="space-y-3">
               {items.map((s: HostSite) => {
                 const siteHits = (hitsQ.data ?? []).filter(
-                  (h) => h.site_id === s.id && h.status !== "ignored",
+                  (h) =>
+                    h.site_id === s.id &&
+                    h.status !== "ignored" &&
+                    h.engine !== "mock",
                 );
                 return (
                 <li key={s.id}>
@@ -418,7 +421,7 @@ export default function HostProtect() {
                                   {(h.class === "webshell" ||
                                     h.class === "backdoor") && (
                                     <Button size="sm" variant="ghost" asChild>
-                                      <a href="/siem">{t("openSiem")}</a>
+                                      <Link to="/guard">{t("openGuard")}</Link>
                                     </Button>
                                   )}
                                 </TableCell>

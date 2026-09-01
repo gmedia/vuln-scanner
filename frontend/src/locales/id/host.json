@@ -35,7 +35,7 @@
   "quarantine": "Karantina",
   "restore": "Pulihkan",
   "ignore": "Abaikan",
-  "openSiem": "Buka SIEM",
+  "openGuard": "Buka Guard",
   "tabMalware": "Malware",
   "tabWaf": "WAF",
   "wafHint": "Kebijakan WAF HTTP per situs. Event bukan hit malware. Mesin mock sampai Coraza.",

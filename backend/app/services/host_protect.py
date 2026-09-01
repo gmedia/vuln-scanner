@@ -247,7 +247,10 @@ class HostProtectService:
     ) -> list[HostHitResponse]:
         self._require_feature()
         org_id = await self._require_org(user, organization_id, min_role="viewer")
-        stmt = select(HostHit).where(HostHit.organization_id == org_id)
+        stmt = select(HostHit).where(
+            HostHit.organization_id == org_id,
+            HostHit.engine != "mock",
+        )
         if site_id is not None:
             stmt = stmt.where(HostHit.site_id == site_id)
         if hit_status is not None:
