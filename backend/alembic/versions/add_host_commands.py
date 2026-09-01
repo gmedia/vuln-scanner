@@ -1,7 +1,7 @@
 """S11 Host Protect on-box quarantine command queue.
 
 Revision ID: add_host_commands
-Revises: add_hpp_hostscan
+Revises: merge_email_logs_asset_tags
 Create Date: 2026-09-01
 """
 
@@ -13,7 +13,7 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 revision: str = "add_host_commands"
-down_revision: str | None = "add_hpp_hostscan"
+down_revision: str | None = "merge_email_logs_asset_tags"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
