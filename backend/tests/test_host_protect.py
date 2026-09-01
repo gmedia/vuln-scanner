@@ -1291,3 +1291,98 @@ async def test_agent_ack_failure_reopens_hit(db_session: AsyncSession, ctx):
         .all()
     )
     assert events == []
+
+
+@pytest.mark.asyncio
+async def test_poll_sets_helper_heartbeat(db_session: AsyncSession, ctx):
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    raw, token_hash = generate_results_token()
+    agent.results_token_hash = token_hash
+    site = HostSite(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        guard_agent_id=agent.id,
+        name="Hb",
+        root_path="/var/www/html",
+        created_by=owner.id,
+    )
+    db_session.add(site)
+    await db_session.commit()
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            poll = await client.get(
+                "/api/host/agent/jobs",
+                params={"agent_id": str(agent.id)},
+                headers={"X-Host-Agent-Token": raw},
+            )
+            assert poll.status_code == 200, poll.text
+    finally:
+        app.dependency_overrides.clear()
+    await db_session.refresh(agent)
+    assert agent.last_helper_poll_at is not None
+
+
+@pytest.mark.asyncio
+async def test_run_host_scan_fails_without_helper_poll(db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "host_protect_allow_local_walk", False)
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    site = HostSite(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        guard_agent_id=agent.id,
+        name="NoHelper",
+        root_path="/var/www/html",
+        created_by=owner.id,
+    )
+    scan = HostScan(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        status="queued",
+        trigger="manual",
+    )
+    db_session.add(site)
+    db_session.add(scan)
+    await db_session.commit()
+    out = await run_host_scan_job(db_session, scan.id)
+    assert out["ok"] is False
+    assert "helper" in (out["error"] or "").lower()
+    await db_session.refresh(scan)
+    assert scan.status == "failed"
+
+
+@pytest.mark.asyncio
+async def test_run_host_scan_pending_when_helper_fresh(db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "host_protect_allow_local_walk", False)
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    agent.last_helper_poll_at = datetime.now(UTC)
+    site = HostSite(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        guard_agent_id=agent.id,
+        name="Fresh",
+        root_path="/var/www/html",
+        created_by=owner.id,
+    )
+    scan = HostScan(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        status="queued",
+        trigger="manual",
+    )
+    db_session.add(site)
+    db_session.add(scan)
+    await db_session.commit()
+    out = await run_host_scan_job(db_session, scan.id)
+    assert out["ok"] is True
+    assert out.get("pending_agent") is True
+    await db_session.refresh(scan)
+    assert scan.status == "queued"
