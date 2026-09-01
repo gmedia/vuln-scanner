@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import html
 import logging
-import socket
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -71,17 +70,6 @@ def assert_custom_hostname(host: str) -> None:
         raise HTTPException(status_code=400, detail="hostname is reserved")
     if any(host.endswith(suf) for suf in RESERVED_HOST_SUFFIXES):
         raise HTTPException(status_code=400, detail="hostname is reserved")
-
-
-def verify_cname(hostname: str) -> bool:
-    target = _cname_target()
-    try:
-        cname, aliases, _ = socket.gethostbyname_ex(hostname)
-    except OSError:
-        return False
-    names = {hostname.lower().rstrip("."), cname.lower().rstrip(".")}
-    names.update(a.lower().rstrip(".") for a in aliases)
-    return target in names
 
 
 def _overall(states: list[str], open_incidents: list[StatusIncident]) -> str:
