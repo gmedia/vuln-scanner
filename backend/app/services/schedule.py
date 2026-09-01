@@ -12,7 +12,6 @@ from app.models.scan_schedule import ScanSchedule
 from app.models.user import User
 from app.schemas.schedule import MAX_SCHEDULES_PER_ORG, ScheduleCreate, ScheduleResponse, ScheduleUpdate
 from app.services.organization import get_membership, role_at_least
-from app.services.scanner import ScannerService
 
 
 async def _count_enabled_in_scope(
@@ -235,34 +234,3 @@ class ScheduleService:
             query = query.where(ScanJob.user_id == user_id)
         result = await self.db.execute(query.order_by(ScanJob.created_at.desc()).limit(limit))
         return list(result.scalars().all())
-
-    async def run_due_now(self, schedule: ScanSchedule, user: User) -> ScanJob | None:
-        if schedule.last_job_id:
-            job_result = await self.db.execute(select(ScanJob).where(ScanJob.id == schedule.last_job_id))
-            last = job_result.scalar_one_or_none()
-            if last and last.status in ("pending", "running"):
-                return None
-
-        svc = ScannerService(self.db)
-        try:
-            job = await svc.start_scan(
-                user=user,
-                scan_type=schedule.scan_type,
-                target=schedule.target,
-                organization_id=schedule.organization_id,
-            )
-        except HTTPException as exc:
-            schedule.last_error = str(exc.detail)
-            schedule.updated_at = datetime.now(UTC)
-            if exc.status_code == 402:
-                schedule.enabled = False
-            await self.db.commit()
-            raise
-
-        schedule.last_run_at = datetime.now(UTC)
-        schedule.last_job_id = job.id
-        schedule.next_run_at = advance_next_run(schedule.cadence, schedule.timezone, schedule.next_run_at)
-        schedule.last_error = None
-        schedule.updated_at = datetime.now(UTC)
-        await self.db.commit()
-        return job

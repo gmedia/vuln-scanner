@@ -220,11 +220,6 @@ def get_active_org_id(request: Request) -> UUID | None:
         return None
 
 
-def get_active_org_role(request: Request) -> str | None:
-    role = getattr(request.state, "org_role", None)
-    return str(role) if role is not None else None
-
-
 async def get_current_user(
     request: Request,
     db: AsyncSession = Depends(get_db),

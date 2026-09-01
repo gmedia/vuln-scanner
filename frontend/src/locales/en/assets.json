@@ -23,8 +23,6 @@
   "hasSchedule": "Scheduled",
   "limitReached": "Asset limit reached for this SKU.",
   "skuLabel": "SKU {{sku}} — {{count}} / {{limit}}",
-  "cadenceWeekly": "Weekly",
-  "cadenceMonthly": "Monthly",
   "confirmDelete": "Delete this asset?",
   "pack": "Download pack JSON",
   "packHtml": "Download pack HTML",

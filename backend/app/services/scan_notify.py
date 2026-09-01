@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select
@@ -156,17 +155,3 @@ def build_notify_context(session: Session, job_id: str) -> NotifyDiffContext | N
         schedule_id=str(sched.id) if sched is not None else None,
         locale=locale,
     )
-
-
-def notify_payload_from_context(ctx: NotifyDiffContext) -> dict[str, Any]:
-    return {
-        "email_to": ctx.email_to,
-        "target": ctx.target,
-        "job_id": ctx.job_id,
-        "new_critical": ctx.diff.new_critical,
-        "new_high": ctx.diff.new_high,
-        "resolved": ctx.diff.resolved,
-        "worsened": ctx.diff.worsened,
-        "has_baseline": ctx.has_baseline,
-        "schedule_id": ctx.schedule_id,
-    }

@@ -23,8 +23,6 @@
   "hasSchedule": "Ada jadwal",
   "limitReached": "Batas aset untuk SKU ini tercapai.",
   "skuLabel": "SKU {{sku}} — {{count}} / {{limit}}",
-  "cadenceWeekly": "Mingguan",
-  "cadenceMonthly": "Bulanan",
   "confirmDelete": "Hapus aset ini?",
   "pack": "Unduh pack JSON",
   "packHtml": "Unduh pack HTML",
