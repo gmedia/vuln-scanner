@@ -710,6 +710,7 @@ async def test_host_scan_job_skips_local_walk_when_flag_off(
     org: Organization = ctx["org"]
     owner: User = ctx["owner"]
     agent: GuardAgent = ctx["agent"]
+    agent.last_helper_poll_at = datetime.now(UTC)
     site = HostSite(
         id=uuid.uuid4(),
         organization_id=org.id,
@@ -745,6 +746,7 @@ async def test_host_scan_job_ignores_stale_mock_when_root_missing(db_session: As
     org: Organization = ctx["org"]
     owner: User = ctx["owner"]
     agent: GuardAgent = ctx["agent"]
+    agent.last_helper_poll_at = datetime.now(UTC)
     site = HostSite(
         id=uuid.uuid4(),
         organization_id=org.id,
