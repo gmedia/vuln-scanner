@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import secrets
+from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -11,7 +12,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.models.guard import GuardAgent
 from app.models.host_protect import HostScan, HostSite
-from app.schemas.host_protect import HostAgentResultsIngest, HostAgentResultsResponse
+from app.schemas.host_protect import (
+    HostAgentPollJob,
+    HostAgentPollResponse,
+    HostAgentResultsIngest,
+    HostAgentResultsResponse,
+)
 from app.services.host_path import jail_rel_path
 from app.services.host_scan_runner import _finish_scan
 
@@ -29,11 +35,7 @@ def _unauthorized() -> HTTPException:
     return HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid agent token")
 
 
-async def ingest_agent_results(
-    db: AsyncSession,
-    raw_token: str | None,
-    body: HostAgentResultsIngest,
-) -> HostAgentResultsResponse:
+async def _agent_from_token(db: AsyncSession, raw_token: str | None) -> GuardAgent:
     if not settings.host_protect_enabled:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     if not raw_token or not raw_token.strip():
@@ -48,6 +50,49 @@ async def ingest_agent_results(
         raise _unauthorized()
     if agent.results_token_revoked_at is not None:
         raise _unauthorized()
+    return agent
+
+
+async def poll_agent_jobs(
+    db: AsyncSession,
+    raw_token: str | None,
+    agent_id: UUID,
+) -> HostAgentPollResponse:
+    agent = await _agent_from_token(db, raw_token)
+    if agent.id != agent_id:
+        raise _unauthorized()
+    result = await db.execute(
+        select(HostScan, HostSite)
+        .join(HostSite, HostSite.id == HostScan.site_id)
+        .where(
+            HostSite.guard_agent_id == agent.id,
+            HostSite.organization_id == agent.organization_id,
+            HostScan.organization_id == agent.organization_id,
+            HostScan.status == "queued",
+            HostSite.enabled.is_(True),
+        )
+        .order_by(HostScan.created_at.asc())
+        .limit(5)
+    )
+    jobs: list[HostAgentPollJob] = []
+    for scan, site in result.all():
+        jobs.append(
+            HostAgentPollJob(
+                scan_id=scan.id,
+                site_id=site.id,
+                root_path=site.root_path,
+                trigger=scan.trigger,
+            )
+        )
+    return HostAgentPollResponse(jobs=jobs)
+
+
+async def ingest_agent_results(
+    db: AsyncSession,
+    raw_token: str | None,
+    body: HostAgentResultsIngest,
+) -> HostAgentResultsResponse:
+    agent = await _agent_from_token(db, raw_token)
     if agent.id != body.agent_id:
         raise _unauthorized()
 

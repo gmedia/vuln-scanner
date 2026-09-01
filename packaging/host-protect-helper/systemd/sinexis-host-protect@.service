@@ -1,5 +1,5 @@
 [Unit]
-Description=Sinexis Host Protect on-box scan (%i)
+Description=Sinexis Host Protect on-box poll (%i)
 Requires=wazuh-agent.service
 After=wazuh-agent.service
 
@@ -8,7 +8,7 @@ Type=oneshot
 Nice=15
 TimeoutStartSec=180
 EnvironmentFile=-/etc/sinexis/host-protect.env
-ExecStart=/usr/bin/python3 /usr/lib/sinexis/host-protect/sinexis_host_scan.py --root %i
+ExecStart=/usr/bin/python3 /usr/lib/sinexis/host-protect/sinexis_host_scan.py poll --agent-id %i
 User=root
 NoNewPrivileges=true
 ProtectSystem=strict

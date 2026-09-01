@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -200,11 +201,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "action",
         nargs="?",
         default="scan",
-        choices=("scan", "quarantine", "restore"),
+        choices=("scan", "poll", "quarantine", "restore"),
     )
     p.add_argument("--root", default="", help="Absolute web root on this VM")
     p.add_argument("--scan-id", default="")
-    p.add_argument("--agent-id", default="")
+    p.add_argument("--agent-id", default=os.environ.get("SINEXIS_AGENT_ID", ""))
     p.add_argument("--rel-path", default="")
     p.add_argument("--site-id", default="")
     p.add_argument("--hit-id", default="")
@@ -298,6 +299,32 @@ def run_restore(args: argparse.Namespace) -> int:
     return 0
 
 
+def fetch_jobs(api_base: str, token: str, agent_id: str, timeout: int) -> list[dict[str, str]]:
+    url = api_base.rstrip("/") + "/api/host/agent/jobs?agent_id=" + urllib.parse.quote(agent_id)
+    req = urllib.request.Request(
+        url,
+        method="GET",
+        headers={"X-Host-Agent-Token": token},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            body = json.loads(resp.read().decode("utf-8"))
+    except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError, OSError):
+        return []
+    jobs = body.get("jobs") if isinstance(body, dict) else None
+    if not isinstance(jobs, list):
+        return []
+    out: list[dict[str, str]] = []
+    for job in jobs:
+        if not isinstance(job, dict):
+            continue
+        scan_id = str(job.get("scan_id") or "")
+        root = str(job.get("root_path") or "")
+        if scan_id and root:
+            out.append({"scan_id": scan_id, "root_path": root})
+    return out
+
+
 def post_results(api_base: str, token: str, payload: dict[str, object], timeout: int) -> int:
     url = api_base.rstrip("/") + "/api/host/agent/results"
     data = json.dumps(payload).encode("utf-8")
@@ -317,12 +344,44 @@ def post_results(api_base: str, token: str, payload: dict[str, object], timeout:
         return int(exc.code)
 
 
+def run_poll(args: argparse.Namespace) -> int:
+    if not args.api_base or not args.token or not args.agent_id:
+        return 4
+    jobs = fetch_jobs(args.api_base, args.token, args.agent_id, args.timeout)
+    worst = 0
+    for job in jobs:
+        rc = run(
+            [
+                "scan",
+                "--root",
+                job["root_path"],
+                "--scan-id",
+                job["scan_id"],
+                "--agent-id",
+                args.agent_id,
+                "--api-base",
+                args.api_base,
+                "--token",
+                args.token,
+                "--rules-dir",
+                args.rules_dir,
+                "--timeout",
+                str(args.timeout),
+            ]
+        )
+        if rc != 0:
+            worst = rc
+    return worst
+
+
 def run(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     if args.action == "quarantine":
         return run_quarantine(args)
     if args.action == "restore":
         return run_restore(args)
+    if args.action == "poll":
+        return run_poll(args)
     if not args.scan_id or not args.agent_id:
         return 4
     try:

@@ -124,14 +124,14 @@ async def run_host_scan_job(db: AsyncSession, scan_id: UUID) -> dict[str, Any]:
         return await _finish_scan(db, scan, site, specs, engine)
     if settings.host_protect_allow_mock:
         return await _finish_scan(db, scan, site, list(MOCK_HITS), "mock")
-    now = datetime.now(UTC)
-    scan.status = "failed"
-    scan.error = "unreachable_root"
-    scan.started_at = now
-    scan.finished_at = now
-    scan.hit_count = 0
     await db.commit()
-    return {"ok": False, "error": "unreachable_root", "hit_count": 0, "scan_id": str(scan.id)}
+    return {
+        "ok": True,
+        "pending_agent": True,
+        "error": None,
+        "hit_count": 0,
+        "scan_id": str(scan.id),
+    }
 
 
 async def _run_with_specs(

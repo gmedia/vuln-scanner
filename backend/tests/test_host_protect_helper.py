@@ -116,6 +116,38 @@ def test_post_called_on_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     assert payload["scan_id"] == "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 
 
+def test_poll_fetches_and_scans(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(helper, "ALLOWED_PREFIXES", (str(tmp_path),))
+    (tmp_path / "ok.php").write_text("<?php echo 1; ?>", encoding="utf-8")
+    mock_post = MagicMock(return_value=200)
+    monkeypatch.setattr(helper, "post_results", mock_post)
+    monkeypatch.setattr(
+        helper,
+        "fetch_jobs",
+        lambda *_a, **_k: [{"scan_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "root_path": str(tmp_path)}],
+    )
+    rc = helper.run(
+        [
+            "poll",
+            "--agent-id",
+            "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+            "--api-base",
+            "https://example.invalid",
+            "--token",
+            "secret-token",
+            "--rules-dir",
+            str(HELPER_DIR / "rules"),
+        ]
+    )
+    assert rc == 0
+    mock_post.assert_called()
+
+
+def test_poll_missing_creds():
+    rc = helper.run(["poll", "--agent-id", "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"])
+    assert rc == 4
+
+
 def test_yara_optional_without_binary(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(helper.shutil, "which", lambda _n: None)
     assert helper.yara_available() is False

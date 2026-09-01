@@ -1,9 +1,10 @@
 [Unit]
-Description=Daily Sinexis Host Protect scan (%i)
+Description=Sinexis Host Protect poll (%i)
 Requires=wazuh-agent.service
 
 [Timer]
-OnCalendar=daily
+OnBootSec=2min
+OnUnitActiveSec=5min
 Persistent=true
 
 [Install]
