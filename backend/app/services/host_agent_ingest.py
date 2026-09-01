@@ -134,13 +134,15 @@ async def ack_agent_command(
     site = site_result.scalar_one_or_none()
     if site is None or site.guard_agent_id != agent.id:
         raise _unauthorized()
-    if cmd.status != "queued":
-        return HostAgentResultsResponse(ok=True, command_id=cmd.id, status=cmd.status)
     hit_result = await db.execute(select(HostHit).where(HostHit.id == cmd.hit_id))
     hit = hit_result.scalar_one_or_none()
     if hit is None:
         raise _unauthorized()
     now = datetime.now(UTC)
+    if cmd.status == "acked":
+        return HostAgentResultsResponse(ok=True, command_id=cmd.id, status=hit.status)
+    if cmd.status == "failed" and not body.ok:
+        return HostAgentResultsResponse(ok=False, command_id=cmd.id, status=hit.status)
     if body.ok:
         cmd.status = "acked"
         cmd.acked_at = now
@@ -158,7 +160,7 @@ async def ack_agent_command(
                 dest_basename=cmd.dest_basename,
             )
         )
-    else:
+    elif cmd.status == "queued":
         cmd.status = "failed"
         cmd.acked_at = now
         cmd.error = (body.error or "command failed")[:200]

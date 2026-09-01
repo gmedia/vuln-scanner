@@ -1297,6 +1297,126 @@ async def test_agent_ack_failure_reopens_hit(db_session: AsyncSession, ctx):
 
 
 @pytest.mark.asyncio
+async def test_agent_ack_success_wins_over_prior_failure(db_session: AsyncSession, ctx):
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    raw, token_hash = generate_results_token()
+    agent.results_token_hash = token_hash
+    site = HostSite(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        guard_agent_id=agent.id,
+        name="AckRace",
+        root_path="/var/www/html",
+        created_by=owner.id,
+    )
+    hit = HostHit(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        rel_path="wp-content/uploads/cache.php",
+        hit_class="webshell",
+        engine="needles",
+        rule_id="r1",
+        status="open",
+    )
+    cmd = HostCommand(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        hit_id=hit.id,
+        actor_user_id=owner.id,
+        kind="quarantine",
+        status="failed",
+        dest_basename="abcd1234_cache.php",
+        error="helper exit 6",
+    )
+    db_session.add(site)
+    db_session.add(hit)
+    db_session.add(cmd)
+    await db_session.commit()
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            ack = await client.post(
+                "/api/host/agent/commands/ack",
+                headers={"X-Host-Agent-Token": raw},
+                json={"command_id": str(cmd.id), "agent_id": str(agent.id), "ok": True},
+            )
+            assert ack.status_code == 200, ack.text
+            assert ack.json()["status"] == "quarantined"
+    finally:
+        app.dependency_overrides.clear()
+    await db_session.refresh(hit)
+    await db_session.refresh(cmd)
+    assert hit.status == "quarantined"
+    assert cmd.status == "acked"
+
+
+@pytest.mark.asyncio
+async def test_agent_ack_failure_ignored_after_acked(db_session: AsyncSession, ctx):
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    raw, token_hash = generate_results_token()
+    agent.results_token_hash = token_hash
+    site = HostSite(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        guard_agent_id=agent.id,
+        name="AckIgnoreFail",
+        root_path="/var/www/html",
+        created_by=owner.id,
+    )
+    hit = HostHit(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        rel_path="wp-content/uploads/cache.php",
+        hit_class="webshell",
+        engine="needles",
+        rule_id="r1",
+        status="quarantined",
+    )
+    cmd = HostCommand(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        site_id=site.id,
+        hit_id=hit.id,
+        actor_user_id=owner.id,
+        kind="quarantine",
+        status="acked",
+        dest_basename="abcd1234_cache.php",
+    )
+    db_session.add(site)
+    db_session.add(hit)
+    db_session.add(cmd)
+    await db_session.commit()
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            ack = await client.post(
+                "/api/host/agent/commands/ack",
+                headers={"X-Host-Agent-Token": raw},
+                json={
+                    "command_id": str(cmd.id),
+                    "agent_id": str(agent.id),
+                    "ok": False,
+                    "error": "helper exit 6",
+                },
+            )
+            assert ack.status_code == 200, ack.text
+            assert ack.json()["status"] == "quarantined"
+    finally:
+        app.dependency_overrides.clear()
+    await db_session.refresh(hit)
+    await db_session.refresh(cmd)
+    assert hit.status == "quarantined"
+    assert cmd.status == "acked"
+
+
+@pytest.mark.asyncio
 async def test_poll_sets_helper_heartbeat(db_session: AsyncSession, ctx):
     org: Organization = ctx["org"]
     owner: User = ctx["owner"]

@@ -8,6 +8,9 @@ case "$1" in
     if [ ! -f /etc/sinexis/host-protect.env ]; then
       install -m 600 /usr/share/doc/sinexis-host-protect/host-protect.env.example /etc/sinexis/host-protect.env
     fi
+    if [ -f /etc/systemd/system/sinexis-host-protect@.service ]; then
+      rm -f /etc/systemd/system/sinexis-host-protect@.service
+    fi
     if command -v systemctl >/dev/null 2>&1; then
       systemctl daemon-reload || true
     fi

@@ -7,6 +7,7 @@ CI must pass without clamscan or yara CLI.
 from __future__ import annotations
 
 import argparse
+import fcntl
 import hashlib
 import json
 import os
@@ -271,8 +272,10 @@ def run_quarantine(args: argparse.Namespace) -> int:
     except ValueError:
         return 2
     dest = os.path.join(dest_dir, dest_bn)
-    if os.path.isfile(dest):
+    if os.path.isfile(dest) and not os.path.isfile(src):
         return 0
+    if os.path.isfile(dest) and os.path.isfile(src):
+        return 6
     if not os.path.isfile(src):
         return 6
     try:
@@ -297,8 +300,10 @@ def run_restore(args: argparse.Namespace) -> int:
     except ValueError:
         return 2
     src = os.path.join(dest_dir, dest_bn)
-    if os.path.isfile(original):
+    if os.path.isfile(original) and not os.path.isfile(src):
         return 0
+    if os.path.isfile(original) and os.path.isfile(src):
+        return 6
     if not os.path.isfile(src):
         return 6
     try:
@@ -392,9 +397,39 @@ def post_command_ack(
         return 5
 
 
+def _poll_lock_path(agent_id: str) -> str:
+    safe = re.sub(r"[^0-9a-fA-F-]", "_", agent_id)[:80] or "agent"
+    lock_dir = os.environ.get("SINEXIS_POLL_LOCK_DIR", "/var/lib/sinexis")
+    return os.path.join(lock_dir, f"host-protect-poll-{safe}.lock")
+
+
 def run_poll(args: argparse.Namespace) -> int:
     if not args.api_base or not args.token or not args.agent_id:
         return 4
+    lock_path = _poll_lock_path(args.agent_id)
+    try:
+        os.makedirs(os.path.dirname(lock_path), mode=0o700, exist_ok=True)
+        lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
+    except OSError:
+        lock_fd = None
+    if lock_fd is not None:
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            os.close(lock_fd)
+            return 0
+    try:
+        return _run_poll_jobs(args)
+    finally:
+        if lock_fd is not None:
+            try:
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            except OSError:
+                pass
+            os.close(lock_fd)
+
+
+def _run_poll_jobs(args: argparse.Namespace) -> int:
     jobs = fetch_jobs(args.api_base, args.token, args.agent_id, args.timeout)
     worst = 0
     for job in jobs:
