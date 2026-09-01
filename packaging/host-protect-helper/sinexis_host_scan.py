@@ -32,6 +32,14 @@ _NUL = "\x00"
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_RULES = HERE / "rules"
+USER_AGENT = "SinexisHostProtect/1"
+
+
+def _agent_headers(token: str, *, json_body: bool = False) -> dict[str, str]:
+    headers = {"User-Agent": USER_AGENT, "X-Host-Agent-Token": token}
+    if json_body:
+        headers["Content-Type"] = "application/json"
+    return headers
 
 
 def validate_root_path(raw: str) -> str:
@@ -304,7 +312,7 @@ def fetch_jobs(api_base: str, token: str, agent_id: str, timeout: int) -> list[d
     req = urllib.request.Request(
         url,
         method="GET",
-        headers={"X-Host-Agent-Token": token},
+        headers=_agent_headers(token),
     )
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -350,10 +358,7 @@ def post_results(api_base: str, token: str, payload: dict[str, object], timeout:
         url,
         data=data,
         method="POST",
-        headers={
-            "Content-Type": "application/json",
-            "X-Host-Agent-Token": token,
-        },
+        headers=_agent_headers(token, json_body=True),
     )
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -372,7 +377,7 @@ def post_command_ack(
         url,
         data=data,
         method="POST",
-        headers={"Content-Type": "application/json", "X-Host-Agent-Token": token},
+        headers=_agent_headers(token, json_body=True),
     )
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:

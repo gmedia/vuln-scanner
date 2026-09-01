@@ -20,8 +20,9 @@ This is **not** a second enroll daemon. Guard (`wazuh-agent`) stays the identity
 On the **enrolled** VM (after `wazuh-agent` is running):
 
 ```bash
-sudo mkdir -p /usr/lib/sinexis/host-protect /etc/sinexis /var/lib/sinexis/quarantine
+sudo mkdir -p /usr/lib/sinexis/host-protect /etc/sinexis /var/lib/sinexis/quarantine /var/www /srv/www
 sudo chmod 700 /var/lib/sinexis /var/lib/sinexis/quarantine /etc/sinexis
+# /srv/www may be empty; systemd ReadWritePaths used to fail 226 if the dir was missing.
 
 # From a checkout of this repo (or a tarball AM was given — not curl|bash):
 sudo cp packaging/host-protect-helper/sinexis_host_scan.py /usr/lib/sinexis/host-protect/
