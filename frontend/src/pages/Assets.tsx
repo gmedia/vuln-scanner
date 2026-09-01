@@ -56,7 +56,7 @@ export default function Assets() {
   const [open, setOpen] = useState(false);
   const [tagFilter, setTagFilter] = useState<string>("all");
 
-  const list = useQuery({ queryKey: ["assets"], queryFn: listAssets });
+  const list = useQuery({ queryKey: ["assets"], queryFn: () => listAssets() });
   const items = list.data ?? [];
   const allTags = useMemo(() => {
     const s = new Set<string>();
@@ -313,7 +313,7 @@ export default function Assets() {
                         {a.tags.map((tag) => (
                           <Badge
                             key={tag}
-                            variant="secondary"
+                            variant="default"
                             data-testid={`asset-tag-${tag}`}
                             className="cursor-pointer"
                             onClick={() => setTagFilter(tag)}
