@@ -1,12 +1,12 @@
 # Scan domain: cek website yang sudah online
 
-Domain itu nama yang diketik pengunjung. Di belakangnya hosting atau VPS. Scan domain Sinexis melihat sisi itu dari internet. Bukan folder di laptop. Bukan “kami masuk server lalu beresin plugin.”
+Domain itu nama yang diketik pengunjung. Di belakangnya hosting atau VPS. Scan domain Sinexis melihat sisi itu **dari internet**. Bukan folder di laptop. Bukan “kami masuk server lalu beresin plugin.” Bukan SIEM. Tidak perlu pasang agen.
 
 ## Yang biasanya muncul
 
 Nama masih mengarah ke tempat yang masuk akal, atau sudah nyasar. Gembok HTTPS: sertifikat masih hidup atau hampir habis. Aturan yang browser harapkan dari situs (header). Kadang kelihatan teknologi di luar (bukan audit kode). Subdomain yang tercatat di catatan publik ikut kelihatan kalau ada.
 
-Ini pemeriksaan postur. Bukan uji “kami coba bobol.”
+Ini pemeriksaan postur. Bukan uji “kami coba bobol.” Satu nmap bukan kontrol — jadwal yang bikin jadi kebiasaan.
 
 ## Kapan berguna
 
@@ -16,6 +16,6 @@ Mulai dari **satu domain yang benar-benar dipakai pelanggan**. Jangan masukkan s
 
 ## Yang tidak otomatis
 
-Plugin WordPress tidak kami perbaiki. File di disk hosting tidak kami cek virus. Tidak ada jaminan “tidak bisa diretas.”
+Plugin WordPress tidak kami perbaiki. File di disk hosting tidak kami cek virus dari scan domain (itu Host Protect + helper, kalau Anda beli — tanpa helper kami tidak mengarang temuan). Tidak ada jaminan “tidak bisa diretas.”
 
 Hasilnya di dasbor. Kalau jadwal hidup, perubahan yang serius dibanding bulan lalu bisa ke email — itu Scan Attach, artikel terpisah.
