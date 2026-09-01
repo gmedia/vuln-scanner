@@ -71,7 +71,7 @@ Do **not** mix slices in one PR. Lab: **tc5 fixture**, never ERP `sx-erpstg`. Wi
 | **G** | Panel (research) | cPanel/Plesk **later** | Spek-only until owner; no trademark UI | Shared-UID farm |
 | **H** | PHP runtime (research) | PD-class | Spek-only; legal + SAPI cost | Clone Imunify PD |
 
-**Build order:** **A → B → C** (closes “worker membohongi path”) **then D** (isolate) **then E/F**. **G/H** only if owner names them.
+**Build order:** **A** largely **#556**. **D** largely **#558** (`host_commands` queue). **S12** **#559**. Remaining default: **B** (fail-closed worker / no SaaS `isdir` as proof) → **C** (AM install + tc5 lab) → then **E/F**. **G/H** only if owner names them.
 
 ---
 
@@ -79,7 +79,7 @@ Do **not** mix slices in one PR. Lab: **tc5 fixture**, never ERP `sx-erpstg`. Wi
 
 | Epic | Keep |
 |------|------|
-| P12 S0–S12 | Models, ingest, helper **code**; honesty gate |
+| P12 S0–S12 | Models, ingest, helper **code**; honesty **#556**; queue **#558**; jail **#559** |
 | P13 S0–S5 | Detect API; do not sell protect until **F** |
 | P5 | One `wazuh-agent`; no second enroll daemon |
 

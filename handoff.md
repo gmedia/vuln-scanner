@@ -10,12 +10,12 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
-## Session snapshot (2026-09-01 — Host Protect empty Hits + email log + AAB timeout)
+## Session snapshot (2026-09-01 — P12 S11/S12 merged; P14 docs)
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding)** | Re-`git pull`. Tip **`e67a471`** squash **#548** hide mock Hits. Before: **#547** assets edit, **#546** marketing skills / public pages, **#545** no mock hits, **#544** asset tags. |
-| **Open PRs (assignee)** | **[#551](https://github.com/gmedia/vuln-scanner/pull/551)** `feat/host-protect-scan-status` — SPA last-scan status + honest empty Hits + poll while `queued`. **[#550](https://github.com/gmedia/vuln-scanner/pull/550)** `fix/mobile-aab-stale-running` — mobile soft **1500s** / hard **1800s**, `STALE_RUNNING_THRESHOLD_MINUTES=45`, bundletool `killpg`. **[#549](https://github.com/gmedia/vuln-scanner/pull/549)** `feat/admin-email-send-log` + Alembic merge `merge_email_logs_asset_tags`. Merge if CI green; **do not poll**. Dependabot: **do not mass-merge**. |
+| **`main` tip (coding)** | Re-`git pull`. Expect **`adab0fd`** or newer: **#559** S12 jail, **#558** S11 queue, **#556** honesty. **P14** spek [`docs/specs/imunify-class-onbox.md`](docs/specs/imunify-class-onbox.md). |
+| **Open PRs (assignee)** | Re-`gh pr list`. **#549–#551** already merged historically. Dependabot: **do not mass-merge**. |
 | **Host Protect (why Hits empty)** | Scan Now **enqueues** `host_scans` `queued` + Celery `host_protect.run_scan` on `ip_scan`. SaaS worker **does not** mount customer disks. If `os.path.isdir(root)` false → **`pending_agent`**, **0 hits**, scan **stays queued** (honesty gate: **no mock** `wp-content/uploads/cache.php`). Real walk = needle grep of `php_webshell.yar` (`eval($_POST|GET|REQUEST`, `system\|passthru\|shell_exec($_GET`) + optional Clam; cap **500 files / 1 MiB**. Helper: `packaging/host-protect-helper/sinexis_host_scan.py` poll `GET /api/host/agent/jobs` + POST results. Site **Erp Stg** `/var/www/stg/member-pay` is **allowlisted** (`/var/www`) but **not on the worker FS**. Empty Hits = unread / not ingested, **not** proven clean. **#551** shows that instead of silent “No malware hits yet.” Product: one `wazuh-agent`; Host Protect ≠ SIEM; **do not invent malware**. |
 | **Blog live** | Public `/blog` = DB `blog_posts`. After **#546** merge + green main: **8 slugs updated in prod** (`updated=8 missing=0`) via `vuln-backend`. Seed `docs/content/blog/*.md`. |
 | **Email** | User: mail tidak sampai → admin log. **#549** persist `record_email_send` via `DATABASE_URL_SYNC`; kinds `verification\|password_reset\|scan_diff\|uptime\|host_protect`. |
@@ -26,12 +26,12 @@
 
 ### Next OpenCode session
 
-1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. Expect **`e67a471`** or newer if **#549/#550/#551** merged. `gh pr list --state open --assignee @me`. CI green → `gh pr merge --squash` then delete branch. **Do not poll CI.** Do **not** mass-merge Dependabot.
-2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** then **`AGENTS.md`**. Protect: **`docs/specs/host-protect-v1.md`**. Note: spec `unreachable_root` vs **code `pending_agent`**.
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. Expect **`adab0fd`** or newer. `gh pr list --state open --assignee @me`. CI green → `gh pr merge --squash` then delete branch. **Do not poll CI.** Do **not** mass-merge Dependabot.
+2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** then **`AGENTS.md`**. P12: **`docs/specs/host-protect-v1.md`**. P14: **`imunify-class-onbox.md`**. Code fail status **`pending_agent`**; spek also **`unreachable_root`**.
 3. Speak **Bahasa Indonesia**; prefix git with `GIT_MASTER=1`. Never work on `main`. Never commit secrets/IPs/PNGs/`workers/coverage-report.json`.
 4. **Do not** tell the user to SSH Alembic after a green **main** deploy — `scripts/deploy.sh` already migrates (`merge_email_logs_asset_tags` if **#549** landed).
 5. **Guard:** `sx-erpstg` **online** — do **not** re-enroll/wipe unless user asks full Guard e2e (wipe `tc5` first §4.1). Playwright ≠ enroll. Standing lab **tc1–tc5** OK; never wipe live ERP.
-6. Optional (only if user picks): merge **#551** then install helper on the **same host as the docroot**; live AAB re-scan after **#550** deploy; SMTP log UI after **#549**; GTM/`service_id`; fill HPP `hostscan`.
+6. Optional (only if user picks): **P14** named slice **B** or **C** + `buat`; lab helper on **tc5** after deploy; GTM/`service_id`; fill HPP `hostscan`. Do **not** clone Imunify.
 
 ## Session snapshot (2026-08-31 — Host Protect S7–S12 + SKU/HPP #538)
 
