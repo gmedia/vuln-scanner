@@ -6,7 +6,9 @@ test.describe("Auth — Login", () => {
 
   test("login page renders correctly", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.locator("h1")).toContainText("Selamat datang kembali");
+    await expect(page.locator("h1")).toContainText(
+      /Masuk untuk scan|Sign in to scan/,
+    );
     await expect(page.locator("input#email")).toBeVisible();
     await expect(page.locator("input#password")).toBeVisible();
     await expect(page.locator("button[type='submit']")).toBeVisible();
@@ -50,7 +52,9 @@ test.describe("Auth — Register", () => {
 
   test("register page renders correctly", async ({ page }) => {
     await page.goto("/register");
-    await expect(page.locator("h1")).toContainText("Buat akun");
+    await expect(page.locator("h1")).toContainText(
+      /Buat akun scan|Create a scan account/,
+    );
     await expect(page.locator("input#email")).toBeVisible();
     await expect(page.locator("input#password")).toBeVisible();
     await expect(page.locator("input#confirmPassword")).toBeVisible();
@@ -112,7 +116,9 @@ test.describe("Auth — Logout", () => {
     await expect(signOutBtn).toBeVisible();
     await signOutBtn.click();
     await page.waitForURL("/login", { timeout: 10_000 });
-    await expect(page.locator("h1")).toContainText("Selamat datang kembali");
+    await expect(page.locator("h1")).toContainText(
+      /Masuk untuk scan|Sign in to scan/,
+    );
   });
 
   test("protected route redirects to login when unauthenticated", async ({
@@ -127,7 +133,7 @@ test.describe("Auth — Logout", () => {
     await freshPage.goto("/dashboard");
     await freshPage.waitForURL("/login", { timeout: 10_000 });
     await expect(freshPage.locator("h1")).toContainText(
-      "Selamat datang kembali",
+      /Masuk untuk scan|Sign in to scan/,
     );
     await freshContext.close();
   });
