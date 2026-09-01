@@ -8,6 +8,7 @@ import aiosmtplib
 from aiosmtplib.errors import SMTPException
 
 from app.i18n import normalize_lang, t
+from app.services.email_send_log import record_email_send
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ _RETRY_BACKOFF_BASE = 1  # seconds: 1s, 2s, 4s
 
 
 async def _send_with_retry(msg: MIMEMultipart, email_to: str, label: str) -> bool:
-    """Send email via SMTP with exponential backoff retry (up to 3 attempts)."""
+    last_error = ""
     for attempt in range(1, _MAX_RETRIES + 1):
         try:
             use_tls = SMTP_PORT == 465
@@ -44,9 +45,16 @@ async def _send_with_retry(msg: MIMEMultipart, email_to: str, label: str) -> boo
             await smtp.quit()
 
             logger.warning("%s email sent to %s", label, email_to)
+            record_email_send(
+                label=label,
+                email_to=email_to,
+                ok=True,
+                attempts=attempt,
+            )
             return True
 
-        except (SMTPException, OSError, Exception):
+        except (SMTPException, OSError, Exception) as exc:
+            last_error = str(exc)
             if attempt < _MAX_RETRIES:
                 delay = _RETRY_BACKOFF_BASE * (2 ** (attempt - 1))
                 logger.warning(
@@ -64,6 +72,13 @@ async def _send_with_retry(msg: MIMEMultipart, email_to: str, label: str) -> boo
                     label,
                     email_to,
                     _MAX_RETRIES,
+                )
+                record_email_send(
+                    label=label,
+                    email_to=email_to,
+                    ok=False,
+                    attempts=attempt,
+                    error=last_error,
                 )
 
     return False
