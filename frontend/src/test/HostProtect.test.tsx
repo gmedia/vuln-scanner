@@ -125,6 +125,7 @@ describe("Host Protect page", () => {
     );
     expect(screen.getByTestId("host-page")).toBeInTheDocument();
     expect(screen.getByTestId("host-empty-cta")).toBeInTheDocument();
+    expect(screen.queryByTestId("host-add")).not.toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Host Protect" }),
     ).toBeInTheDocument();
@@ -175,8 +176,10 @@ describe("Host Protect page", () => {
     });
     const user = userEvent.setup();
     renderHost();
-    await waitFor(() => expect(hostApi.listHostSites).toHaveBeenCalled());
-    await user.click(screen.getByTestId("host-add"));
+    await waitFor(() =>
+      expect(screen.getByTestId("host-empty-cta")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("host-empty-cta"));
     await user.type(screen.getByTestId("host-name"), "Web");
     await user.type(screen.getByTestId("host-root"), "/var/www/html");
     await waitFor(() =>
