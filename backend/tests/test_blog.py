@@ -64,6 +64,8 @@ def test_public_html_index(client):
     assert "Blog" in resp.text
     assert "<h1>" in resp.text
     assert "Belum ada artikel" in resp.text
+    assert "tanpa istilah konsol" in resp.text
+    assert "Scan · Guard · SIEM" not in resp.text
     assert "page-intro" in resp.text or "Belum ada artikel" in resp.text
     assert "brand-text" in resp.text
     assert 'rel="canonical"' in resp.text
@@ -129,6 +131,8 @@ def test_publish_then_public(client):
     assert "class='card'" in index.text or 'class="card"' in index.text
     assert "Baca artikel" in index.text
     assert "Catatan buat yang situsnya sudah jalan" in index.text
+    assert "tanpa istilah konsol" in index.text
+    assert "Bukan SIEM" in index.text
     assert "konsol ahli" not in index.text
     sm = client.get("/blog/sitemap.xml")
     assert sm.status_code == 200

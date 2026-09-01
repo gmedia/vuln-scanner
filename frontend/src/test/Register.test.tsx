@@ -110,7 +110,7 @@ describe("Register", () => {
   it("renders the Crosshair icon and Create account title", () => {
     render(<Register />);
     expect(
-      screen.getByRole("heading", { name: /create account/i }),
+      screen.getByRole("heading", { name: /create a scan account/i }),
     ).toBeInTheDocument();
   });
 

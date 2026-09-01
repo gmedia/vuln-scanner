@@ -66,7 +66,7 @@ describe("NotFound", () => {
     render(<NotFound />);
     expect(
       await screen.findByText(
-        /The target you.*re looking for is out of scan range/,
+        /That URL is not a Sinexis page/,
       ),
     ).toBeInTheDocument();
   });

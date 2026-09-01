@@ -6,7 +6,9 @@ test.describe("Landing", () => {
   test("page loads with outcome heading", async ({ page }) => {
     await page.goto("/");
     await expect(
-      page.locator("h1:has-text('Cek paparan IP, domain, dan mobile')"),
+      page.locator(
+        "h1:has-text('Cek paparan IP, domain, dan mobile — lalu jadwalkan')",
+      ),
     ).toBeVisible();
     await expect(
       page

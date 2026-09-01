@@ -4,9 +4,11 @@ Dua kata yang sering tertukar.
 
 **Aset** = barang yang dicek: “website booking”, “VPS produksi”, “IP colo rak A.” **Workspace** = perusahaan atau hotel tempat orang diundang. Satu organisasi kira-kira satu perusahaan di versi ini — bukan banyak proyek bersarang.
 
+Label/tag di daftar aset hanya untuk mengelompokkan di dasbor. Bukan agen. Bukan SIEM.
+
 ## Kenapa aset
 
-Tanpa label, orang ketik IP atau domain berulang dan salah sasaran. Dengan aset: nama sekali, satu jadwal, paket yang membatasi jumlah.
+Tanpa nama, orang ketik IP atau domain berulang dan salah sasaran. Dengan aset: nama sekali, satu jadwal, paket yang membatasi jumlah.
 
 Basic: **1** aset. Pro: sampai **3**. Multi-asset: sampai **10**. Itu batas keras sesuai yang dijual. Jangan janji 50 domain di Basic.
 
@@ -19,3 +21,5 @@ Peran kira-kira: owner, admin, member, viewer. Owner dan admin undang orang. Mem
 Kredit tetap pribadi. Undang rekan **tidak** menggabungkan pulsa jadi kas perusahaan. Dompet organisasi belakangan.
 
 Satu orang + satu VPS: Basic dan satu aset biasanya cukup. Beberapa properti atau banyak SID: workspace + aset + Multi. Hotel: satu hotel satu workspace; banyak properti = banyak aset — bukan satu login campur semua grup tanpa batas.
+
+Guard, kalau nanti, tetap **satu** `wazuh-agent` per mesin di workspace itu — bukan daemon kedua per aset.

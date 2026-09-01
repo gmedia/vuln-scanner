@@ -2,7 +2,7 @@
 
 Scan sekali itu cek kesehatan sekali. Scan Attach itu janji berulang: domain dan/atau IP dicek tiap minggu atau bulan. Pertanyaannya sederhana — **apa yang baru dan lebih berbahaya dibanding kemarin?**
 
-Itu alasan add-on ditagih berulang. Bukan hobi scan.
+Itu alasan add-on ditagih berulang. Bukan hobi scan. Bukan SIEM. Tidak perlu agen di server untuk jadwal ini — pemeriksaan tetap dari internet.
 
 ## Yang terasa di operasional
 
@@ -16,6 +16,6 @@ Kredit habis, jadwal berhenti sendiri. Isi ulang atau naik paket, lalu hidupkan 
 
 ## Bukan ini
 
-Bukan SIEM. Bukan “aman 100%.” Bukan Guard (agen di dalam server) — itu upsell lain. Bukan unlimited scan.
+Bukan SIEM. Bukan “aman 100%.” Bukan Guard (satu `wazuh-agent` di dalam server) — itu upsell lain. Bukan agen enroll kedua. Bukan unlimited scan.
 
 Untuk pembeli colo/VPS, modul ini yang paling dekat dengan “kenapa saya bayar tiap bulan.” Scan sekali di dasbor tetap ada; attach yang bikin jadi kebiasaan.
