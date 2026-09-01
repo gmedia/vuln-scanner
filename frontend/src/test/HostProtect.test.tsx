@@ -155,7 +155,7 @@ describe("Host Protect page", () => {
     ]);
     renderHost();
     await waitFor(() =>
-      expect(screen.getByText(/do not invent malware/i)).toBeInTheDocument(),
+      expect(screen.getByText(/on-box helper on the Guard host/i)).toBeInTheDocument(),
     );
   });
 
