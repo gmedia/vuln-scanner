@@ -9,6 +9,8 @@
 
 **Not this epic:** Imunify rulesets/UI copy, ModSec/Coraza WAF (S6+), PHP runtime hooks, live kernel patch, auto password-reset, WebShield CAPTCHA, Imunify Email, CageFS-class shared-host isolation.
 
+**Follow-on (docs):** Imunify-**class** on-box stages **P14** — [`imunify-class-onbox.md`](imunify-class-onbox.md). P12 stays file malware control plane; P14 reorders **honesty + helper-first** so SaaS never pretends to walk VPS disks.
+
 ---
 
 ## 0) Relation to existing modules (read first)
