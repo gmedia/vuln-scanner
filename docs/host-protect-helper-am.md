@@ -6,7 +6,9 @@ This is **not** a second enroll daemon. Guard (`wazuh-agent`) stays the identity
 
 **Lab:** SSH alias **`tc5` only**. Do **not** wipe `sx-erpstg`. Fixture path must stay under `/var/www`, `/srv/www`, or `/home` (default `/var/www/host-protect-fixture`).
 
-**Debian `.deb`:** not required for this path. Copy files from `packaging/host-protect-helper/` until ops ships a package.
+**Debian `.deb`:** build with `./scripts/build-host-protect-deb.sh` (writes `dist/sinexis-host-protect_*_all.deb`). Package **Depends: wazuh-agent** — do not install on machines without Guard. Env file is **not** in the package payload except as `/usr/share/doc/.../host-protect.env.example` (empty token). `postinst` copies the example to `/etc/sinexis/host-protect.env` only if missing (mode 600). Enable the timer with the Guard UUID after filling the token.
+
+Copy-from-tree (no dpkg) still works:
 
 ## 0) Prerequisites
 

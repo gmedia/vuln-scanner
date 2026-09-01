@@ -1,0 +1,5 @@
+sinexis-host-protect (0.1.0) unstable; urgency=medium
+
+  * Initial helper package: poll/scan/quarantine/restore units and YARA needles.
+
+ -- Sinexis <ops@sinexis.app>  Tue, 01 Sep 2026 00:00:00 +0000
