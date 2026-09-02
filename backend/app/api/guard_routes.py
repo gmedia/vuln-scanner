@@ -16,6 +16,7 @@ from app.schemas.guard import (
     GuardEnrollTokenCreate,
     GuardEnrollTokenCreated,
     GuardEnrollTokenMeta,
+    GuardHostAgentTokenCreated,
     GuardStatusResponse,
     GuardSyncResponse,
 )
@@ -61,7 +62,12 @@ async def list_agents(
     db: AsyncSession = Depends(get_db),
 ) -> list[GuardAgentResponse]:
     rows = await GuardService(db).list_agents(current_user, get_active_org_id(request))
-    return [GuardAgentResponse.model_validate(r) for r in rows]
+    return [
+        GuardAgentResponse.model_validate(r).model_copy(
+            update={"has_host_agent_token": bool(r.results_token_hash) and r.results_token_revoked_at is None}
+        )
+        for r in rows
+    ]
 
 
 @router.get("/alerts", response_model=list[GuardAlertResponse])
@@ -73,6 +79,25 @@ async def list_alerts(
 ) -> list[GuardAlertResponse]:
     rows = await GuardService(db).list_alerts(current_user, get_active_org_id(request), limit=limit)
     return [GuardAlertResponse.model_validate(r) for r in rows]
+
+
+@router.post(
+    "/agents/{agent_id}/host-token",
+    response_model=GuardHostAgentTokenCreated,
+    status_code=201,
+)
+async def issue_host_agent_token(
+    agent_id: UUID,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> GuardHostAgentTokenCreated:
+    agent, raw = await GuardService(db).issue_host_agent_token(
+        current_user,
+        get_active_org_id(request),
+        agent_id,
+    )
+    return GuardHostAgentTokenCreated(agent_id=agent.id, token=raw)
 
 
 @router.post("/enroll-tokens", response_model=GuardEnrollTokenCreated, status_code=201)

@@ -262,3 +262,85 @@ async def test_member_cannot_create_token(db_session: AsyncSession, guard_ws):
         r = await client.get("/api/guard/agents", headers=_auth(member, org.id))
         assert r.status_code == 200
     app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_issue_host_agent_token_admin_idor(db_session: AsyncSession, guard_ws):
+    owner = guard_ws["owner"]
+    viewer = guard_ws["viewer"]
+    outsider = guard_ws["outsider"]
+    org = guard_ws["org"]
+    other = guard_ws["other"]
+    from sqlalchemy import select
+
+    from app.database import get_db
+    from app.models.guard import GuardAgent
+    from app.services.host_agent_ingest import hash_results_token
+
+    async def _db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = _db
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        assert (await client.post("/api/guard/enable", headers=_auth(owner, org.id))).status_code == 200
+        r = await client.post(
+            "/api/guard/enroll-tokens",
+            headers=_auth(owner, org.id),
+            json={"label": "colo-hp"},
+        )
+        raw_enroll = r.json()["token"]
+        r = await client.post(
+            "/api/guard/enroll",
+            headers={"X-E2E-Test": "1"},
+            json={"token": raw_enroll, "agent_name": "vps-hp-01"},
+        )
+        assert r.status_code == 200
+
+        r = await client.get("/api/guard/agents", headers=_auth(owner, org.id))
+        agents = r.json()
+        agent = next(a for a in agents if a["name"] == "vps-hp-01")
+        aid = agent["id"]
+        assert agent["has_host_agent_token"] is False
+        assert "results_token" not in agent
+        assert "results_token_hash" not in agent
+
+        r = await client.post(
+            f"/api/guard/agents/{aid}/host-token",
+            headers=_auth(viewer, org.id),
+        )
+        assert r.status_code == 403
+
+        r = await client.post(
+            f"/api/guard/agents/{aid}/host-token",
+            headers=_auth(outsider, other.id),
+        )
+        assert r.status_code == 404
+
+        r = await client.post(
+            f"/api/guard/agents/{aid}/host-token",
+            headers=_auth(owner, org.id),
+        )
+        assert r.status_code == 201
+        first = r.json()["token"]
+        assert first
+        assert r.json()["agent_id"] == aid
+
+        r = await client.post(
+            f"/api/guard/agents/{aid}/host-token",
+            headers=_auth(owner, org.id),
+        )
+        assert r.status_code == 201
+        second = r.json()["token"]
+        assert second != first
+
+        r = await client.get("/api/guard/agents", headers=_auth(owner, org.id))
+        listed = next(a for a in r.json() if a["id"] == aid)
+        assert listed["has_host_agent_token"] is True
+        assert "token" not in listed
+
+        row = (await db_session.execute(select(GuardAgent).where(GuardAgent.id == uuid.UUID(aid)))).scalar_one()
+        assert row.results_token_hash == hash_results_token(second)
+        assert row.results_token_hash != hash_results_token(first)
+
+    app.dependency_overrides.clear()
