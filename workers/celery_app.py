@@ -79,9 +79,9 @@ celery_app.conf.update(
             "task": "uptime.purge",
             "schedule": 21600.0,
         },
-        "host-protect-run-due-daily": {
+        "host-protect-run-due-every-5m": {
             "task": "host_protect.run_due",
-            "schedule": 86400.0,
+            "schedule": 300.0,
         },
     },
 )
