@@ -236,6 +236,7 @@ class TestAdminUsers:
         assert "credits" in user
         assert "scan_count" in user
         assert "created_at" in user
+        assert "last_login_at" in user
 
     def test_pagination_defaults(self, client):
         resp = client.get("/api/admin/users", headers=API_HEADERS)

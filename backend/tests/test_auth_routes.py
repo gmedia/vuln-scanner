@@ -321,6 +321,24 @@ class TestLogin:
         assert "user" in data
         assert data["user"]["email"] == "test@example.com"
 
+    def test_success_sets_last_login_at(self, auth_client, db_session):
+        import asyncio
+
+        asyncio.get_event_loop().run_until_complete(_create_verified_user(db_session))
+
+        resp = auth_client.post(
+            "/api/auth/login",
+            json={"email": "test@example.com", "password": "Test1234!"},
+        )
+        assert resp.status_code == 200
+
+        async def read_last_login():
+            result = await db_session.execute(select(User).where(User.email == "test@example.com"))
+            return result.scalar_one().last_login_at
+
+        last = asyncio.get_event_loop().run_until_complete(read_last_login())
+        assert last is not None
+
     def test_wrong_password_returns_401(self, auth_client, db_session):
         import asyncio
 

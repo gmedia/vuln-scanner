@@ -22,6 +22,7 @@ class AdminUserItem(BaseModel):
     credits: int
     scan_count: int
     created_at: datetime
+    last_login_at: datetime | None = None
 
 
 class AdminUserList(BaseModel):

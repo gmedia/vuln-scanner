@@ -32,6 +32,7 @@ class User(Base):
         ForeignKey("organizations.id", ondelete="SET NULL", use_alter=True, name="fk_users_last_active_org"),
         nullable=True,
     )
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)

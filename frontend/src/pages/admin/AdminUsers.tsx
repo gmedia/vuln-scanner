@@ -40,6 +40,17 @@ function formatDate(iso: string): string {
   });
 }
 
+function formatDateTime(iso: string): string {
+  const lng = isAppLocale(i18n.language) ? htmlLang(i18n.language) : "id";
+  return new Date(iso).toLocaleString(lng === "en" ? "en-US" : "id-ID", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function AdminUsers() {
   const { t } = useTranslation("admin");
   const navigate = useNavigate();
@@ -140,7 +151,10 @@ function AdminUsers() {
                     </Badge>
                   </div>
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    {user.credits} · {user.scan_count} · {formatDate(user.created_at)}
+                    {user.credits} · {user.scan_count} · {formatDate(user.created_at)} ·{" "}
+                    {user.last_login_at
+                      ? formatDateTime(user.last_login_at)
+                      : t("lastLoginNever")}
                   </p>
                 </button>
               ))}
@@ -149,23 +163,26 @@ function AdminUsers() {
             <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[28%] text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[22%] text-[10px] uppercase tracking-wider">
                     {t("colEmail")}
                   </TableHead>
-                  <TableHead className="w-[12%] text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[10%] text-[10px] uppercase tracking-wider">
                     {t("colRole")}
                   </TableHead>
-                  <TableHead className="w-[12%] text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[10%] text-[10px] uppercase tracking-wider">
                     {t("colVerified")}
                   </TableHead>
-                  <TableHead className="w-[12%] text-right text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[10%] text-right text-[10px] uppercase tracking-wider">
                     {t("colCredits")}
                   </TableHead>
-                  <TableHead className="w-[10%] text-right text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[8%] text-right text-[10px] uppercase tracking-wider">
                     {t("colScans")}
                   </TableHead>
-                  <TableHead className="w-[14%] text-[10px] uppercase tracking-wider">
+                  <TableHead className="w-[12%] text-[10px] uppercase tracking-wider">
                     {t("colCreated")}
+                  </TableHead>
+                  <TableHead className="w-[16%] text-[10px] uppercase tracking-wider">
+                    {t("colLastLogin")}
                   </TableHead>
                   <TableHead className="w-[12%] whitespace-nowrap text-right text-[10px] uppercase tracking-wider">
                     {t("colActions")}
@@ -254,6 +271,13 @@ function UserRow({ user, onView }: { user: AdminUserItem; onView: () => void }) 
       <TableCell>
         <span className="font-mono text-xs tabular-nums text-muted-foreground">
           {formatDate(user.created_at)}
+        </span>
+      </TableCell>
+      <TableCell>
+        <span className="font-mono text-xs tabular-nums text-muted-foreground">
+          {user.last_login_at
+            ? formatDateTime(user.last_login_at)
+            : t("lastLoginNever")}
         </span>
       </TableCell>
       <TableCell className="text-right">

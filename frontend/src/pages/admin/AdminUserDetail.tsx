@@ -35,6 +35,17 @@ function formatDate(iso: string): string {
   });
 }
 
+function formatDateTime(iso: string): string {
+  const lng = isAppLocale(i18n.language) ? htmlLang(i18n.language) : "id";
+  return new Date(iso).toLocaleString(lng === "en" ? "en-US" : "id-ID", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function AdminUserDetail() {
   const { t } = useTranslation("admin");
   const { id } = useParams<{ id: string }>();
@@ -264,6 +275,14 @@ function AdminUserDetail() {
                 <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span className="font-mono text-xs tabular-nums text-muted-foreground">
                   {t("joined", { date: formatDate(user.created_at) })}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                  {user.last_login_at
+                    ? t("lastLoginAt", { date: formatDateTime(user.last_login_at) })
+                    : t("lastLoginNever")}
                 </span>
               </div>
             </CardContent>

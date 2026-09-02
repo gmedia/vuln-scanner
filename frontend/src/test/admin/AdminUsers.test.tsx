@@ -172,6 +172,7 @@ describe("AdminUsers", () => {
         credits: 100,
         scan_count: 42,
         created_at: "2025-01-15T00:00:00Z",
+        last_login_at: "2025-08-01T14:30:00Z",
       },
       {
         id: "2",
@@ -181,6 +182,7 @@ describe("AdminUsers", () => {
         credits: 10,
         scan_count: 3,
         created_at: "2025-06-01T00:00:00Z",
+        last_login_at: null,
       },
     ];
 
@@ -235,6 +237,13 @@ describe("AdminUsers", () => {
       expect(screen.getAllByText("3").length).toBeGreaterThan(0);
     });
 
+    it("renders last login column and never for null", () => {
+      mockUseQueryReturn({ data: { users: mockUsers, total: 2 } });
+      renderPage();
+      expect(screen.getAllByText("Last login").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("Never").length).toBeGreaterThan(0);
+    });
+
     it("sets title tooltip on email cells", () => {
       mockUseQueryReturn({ data: { users: mockUsers, total: 2 } });
       renderPage();
@@ -264,6 +273,7 @@ describe("AdminUsers", () => {
         credits: 10,
         scan_count: 1,
         created_at: "2025-01-01T00:00:00Z",
+        last_login_at: null,
       }));
       mockUseQueryReturn({ data: { users: manyUsers, total: 25 } });
       renderPage();
@@ -279,6 +289,7 @@ describe("AdminUsers", () => {
         credits: 10,
         scan_count: 1,
         created_at: "2025-01-01T00:00:00Z",
+        last_login_at: null,
       }));
       mockUseQueryReturn({ data: { users: fewUsers, total: 5 } });
       renderPage();

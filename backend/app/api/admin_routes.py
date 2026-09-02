@@ -140,6 +140,7 @@ async def get_users(
                 credits=user.credits,
                 scan_count=scan_count,
                 created_at=user.created_at,
+                last_login_at=user.last_login_at,
             )
         )
 
@@ -172,6 +173,7 @@ async def get_user_detail(
         credits=user.credits,
         scan_count=scan_count,
         created_at=user.created_at,
+        last_login_at=user.last_login_at,
     )
 
 
@@ -223,6 +225,7 @@ async def adjust_user_credits(
         credits=user.credits,
         scan_count=scan_count,
         created_at=user.created_at,
+        last_login_at=user.last_login_at,
     )
 
 
