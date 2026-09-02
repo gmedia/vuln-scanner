@@ -112,6 +112,64 @@ describe("Assets page", () => {
     expect(screen.getByTestId("asset-tag-filter")).toBeInTheDocument();
   });
 
+  it("filters by multiple tags with type-to-search", async () => {
+    mockList.mockResolvedValue([
+      {
+        id: "a1",
+        name: "Web",
+        scan_type: "domain",
+        target: "example.com",
+        notes: null,
+        schedule_id: null,
+        sku: "multi",
+        sku_limit: 10,
+        tags: ["prod"],
+      },
+      {
+        id: "a2",
+        name: "Staging",
+        scan_type: "domain",
+        target: "stg.example.com",
+        notes: null,
+        schedule_id: null,
+        sku: "multi",
+        sku_limit: 10,
+        tags: ["hotel"],
+      },
+      {
+        id: "a3",
+        name: "Lab",
+        scan_type: "ip",
+        target: "10.0.0.1",
+        notes: null,
+        schedule_id: null,
+        sku: "multi",
+        sku_limit: 10,
+        tags: ["lab"],
+      },
+    ]);
+    const user = userEvent.setup();
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("asset-tag-filter")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("asset-tag-filter"));
+    await waitFor(() =>
+      expect(screen.getByTestId("asset-tag-filter-search")).toBeInTheDocument(),
+    );
+    await user.type(screen.getByTestId("asset-tag-filter-search"), "ho");
+    expect(screen.getByTestId("asset-tag-filter-opt-hotel")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("asset-tag-filter-opt-prod"),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("asset-tag-filter-opt-hotel"));
+    await user.clear(screen.getByTestId("asset-tag-filter-search"));
+    await user.click(screen.getByTestId("asset-tag-filter-opt-prod"));
+    expect(screen.getByText("Web")).toBeInTheDocument();
+    expect(screen.getByText("Staging")).toBeInTheDocument();
+    expect(screen.queryByText("Lab")).not.toBeInTheDocument();
+  });
+
   it("edits name, notes, and tags without changing target", async () => {
     mockList.mockResolvedValue([
       {
