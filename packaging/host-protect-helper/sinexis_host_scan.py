@@ -15,6 +15,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -406,6 +407,7 @@ def _poll_lock_path(agent_id: str) -> str:
 def run_poll(args: argparse.Namespace) -> int:
     if not args.api_base or not args.token or not args.agent_id:
         return 4
+    fetch_jobs(args.api_base, args.token, args.agent_id, args.timeout)
     lock_path = _poll_lock_path(args.agent_id)
     try:
         os.makedirs(os.path.dirname(lock_path), mode=0o700, exist_ok=True)
@@ -420,11 +422,12 @@ def run_poll(args: argparse.Namespace) -> int:
             return 0
     try:
         worst = 0
-        for _ in range(4):
+        deadline = time.monotonic() + 90
+        for _ in range(40):
             n_jobs, rc = _run_poll_jobs(args)
             if rc != 0:
                 worst = rc
-            if n_jobs < 5:
+            if n_jobs < 5 or time.monotonic() >= deadline:
                 break
         return worst
     finally:
