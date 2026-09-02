@@ -109,6 +109,7 @@ async def _issue_login_response(
     active_org_id = await resolve_default_org_id(db, user) or personal.id
     if user.last_active_organization_id != active_org_id:
         user.last_active_organization_id = active_org_id
+    user.last_login_at = datetime.now(UTC)
     await db.commit()
 
     user_id_str = str(user.id)
