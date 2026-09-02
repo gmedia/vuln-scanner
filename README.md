@@ -2,7 +2,7 @@
 
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/gmedia/vuln-scanner)
 
-Web-based vulnerability scanner (**VulnScanner** engine) under the **Sinexis** soft dual-brand: IP, domain, and mobile (Android APK/AAB / iOS IPA) analysis, **scheduled** attach scans, **multi-user workspaces**, **Guard** (Wazuh-backed agent inventory + critical alerts — **not** full SIEM; mock default in CI), **SIEM** search/cases, **Uptime** probes, public **status pages**, **Host Protect** (on-box web malware, honest empty hits), and **Host WAF** (detect-only API; never on Sinexis edge nginx). Deployed via Docker Compose with async task processing.
+Web-based vulnerability scanner (**VulnScanner** engine) under the **Sinexis** soft dual-brand: IP, domain, and mobile (Android APK/AAB / iOS IPA) analysis, **scheduled** attach scans, **multi-user workspaces**, **Guard** (Wazuh-backed agent inventory + critical alerts — **not** full SIEM; mock default in CI), **SIEM** search/cases, **Uptime** probes, public **status pages**, **Host Protect** (on-box web malware, honest empty hits), and **Host WAF** (detect + **protect** on Host Multi via customer nginx snippet; **never** paste onto Sinexis edge). Deployed via Docker Compose with async task processing.
 
 ## Architecture
 

@@ -1,6 +1,6 @@
 # Spec: Host WAF v1 (P13 — on-box web request filter control plane)
 
-**Status:** **S0–S5 shipped** (detect-only lab + SPA copy). Product **P12 Host Protect S0–S6** is on `main` (malware files). This epic is **HTTP request filtering** for the **same Guard-enrolled VPS**, not a rewrite of `/host` scans. **Protect selling / Coraza on Sinexis edge / full CRS = not this product.**
+**Status:** **S0–S5 shipped**; **P14 F** adds **protect** on **Host Multi** (customer nginx `SecRuleEngine On`). Product **P12 Host Protect** is on `main` (malware files). This epic is **HTTP request filtering** for the **same Guard-enrolled VPS**, not a rewrite of `/host` scans. **Coraza on Sinexis edge / full CRS = not this product.**
 **Goal:** first **WAF attach** that GMD relations can describe as “Imunify-like request block” **without** cloning Imunify360, ModSecurity commercial rules, or putting Coraza on the **Sinexis public edge**.
 **Epic:** **P13**. Does **not** replace P12 file malware, P5 Guard, P7 SIEM, or P1 Scan. Does **not** jump GTM / Host Protect IDR lock.
 **Depends:** P2 Workspace · P5 Guard enroll · P12 `host_sites` (policy is **per site**, same `root_path` / agent).
