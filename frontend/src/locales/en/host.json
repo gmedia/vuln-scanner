@@ -53,7 +53,7 @@
   "openGuard": "Open Guard",
   "tabMalware": "Malware",
   "tabWaf": "WAF",
-  "wafHint": "Per-site HTTP WAF policy. Events are not malware hits. Engine is mock until Coraza ships.",
+  "wafHint": "Per-site HTTP WAF. Detect logs; protect blocks on the customer nginx snippet (Host Multi). Never paste onto sinexis.app edge. Events are not malware hits.",
   "wafFeatureOff": "Host WAF is not enabled in this environment.",
   "wafNeedSite": "Add a Host Protect site first, then set WAF mode.",
   "wafSite": "Site",

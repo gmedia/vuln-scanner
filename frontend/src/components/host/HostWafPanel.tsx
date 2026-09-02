@@ -64,8 +64,8 @@ export default function HostWafPanel({ sites }: { sites: HostSite[] }) {
     mutationFn: (next: HostWafPolicy["mode"]) =>
       upsertHostWafPolicy(selected, {
         mode: next,
-        engine: "mock",
-        paranoia: 1,
+        engine: policyForSite?.engine ?? "mock",
+        paranoia: policyForSite?.paranoia ?? 1,
       }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["host-waf"] }),
     onError: (err: { response?: { data?: { detail?: string } } }) => {
