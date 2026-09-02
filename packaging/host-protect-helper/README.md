@@ -6,7 +6,7 @@ Add-on for an enrolled **wazuh-agent** VM. Walks allowlisted web roots and POSTs
 
 Do **not** wipe `sx-erpstg`. Use a fixture folder under `/var/www`, `/srv/www`, or `/home`.
 
-1. Obtain **this directory** (clone `gmedia/vuln-scanner` → `packaging/host-protect-helper`, or [browse on GitHub](https://github.com/gmedia/vuln-scanner/tree/main/packaging/host-protect-helper); do not download only `sinexis-install.sh`). Then copy `sinexis_host_scan.py` + `rules/` onto the agent, **or** `dpkg -i` the artifact from `./scripts/build-host-protect-deb.sh` (Depends `wazuh-agent`), **or** run `./sinexis-install.sh` from this directory (`--dry-run` first; `--token-file`; never `curl | bash`). The wrapper does **not** install `wazuh-agent`.
+1. Obtain **this directory** via GitHub ZIP ([browse `packaging/host-protect-helper`](https://github.com/gmedia/vuln-scanner/tree/main/packaging/host-protect-helper) → Code → Download ZIP) or a tarball AM sent — **not** a git clone, not a lone `sinexis-install.sh`. Then copy `sinexis_host_scan.py` + `rules/` onto the agent, **or** `dpkg -i` the artifact from `./scripts/build-host-protect-deb.sh` (Depends `wazuh-agent`), **or** run `./sinexis-install.sh` from this directory (`--dry-run` first; `--token-file`; never `curl | bash`). The wrapper does **not** install `wazuh-agent`.
 2. `Depends: wazuh-agent` — start after `wazuh-agent.service`.
 3. Environment file `/etc/sinexis/host-protect.env` (mode 600): ingest URL + `X-Host-Agent-Token` from Guard enroll. **Never commit tokens.**
 4. Enable `sinexis-host-protect@.timer` with the Guard agent UUID as instance.

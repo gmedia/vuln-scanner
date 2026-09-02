@@ -8,11 +8,10 @@ This is **not** a second enroll daemon. Guard (`wazuh-agent`) stays the identity
 
 **Debian `.deb`:** build with `./scripts/build-host-protect-deb.sh` (writes `dist/sinexis-host-protect_*_all.deb`). Package **Depends: wazuh-agent** — do not install on machines without Guard. Env file is **not** in the package payload except as `/usr/share/doc/.../host-protect.env.example` (empty token). `postinst` copies the example to `/etc/sinexis/host-protect.env` only if missing (mode 600). Enable the timer with the Guard UUID after filling the token.
 
-**How to get the files (not curl|bash):** the wrapper needs the **whole helper directory**, not a lone `sinexis-install.sh`. From a workstation:
+**How to get the files (not curl|bash, not a git clone):** the wrapper needs the **whole helper directory**, not a lone `sinexis-install.sh`. From a workstation:
 
-1. Clone `https://github.com/gmedia/vuln-scanner` then `cd packaging/host-protect-helper`, **or**
-2. Open [that folder on GitHub](https://github.com/gmedia/vuln-scanner/tree/main/packaging/host-protect-helper) → Download ZIP / copy the tree AM was given, **or**
-3. Optional `.deb` from a [GitHub Release](https://github.com/gmedia/vuln-scanner/releases) (verify SHA256).
+1. Open [that folder on GitHub](https://github.com/gmedia/vuln-scanner/tree/main/packaging/host-protect-helper) → Code → Download ZIP, then use `packaging/host-protect-helper` inside the archive (or a zip/tarball AM sent), **or**
+2. Optional `.deb` from a [GitHub Release](https://github.com/gmedia/vuln-scanner/releases) (verify SHA256).
 
 Copy that directory onto the VPS (scp/rsync). Then:
 
@@ -51,7 +50,7 @@ sudo mkdir -p /usr/lib/sinexis/host-protect /etc/sinexis /var/lib/sinexis/quaran
 sudo chmod 700 /var/lib/sinexis /var/lib/sinexis/quarantine /etc/sinexis
 # /srv/www may be empty; systemd ReadWritePaths used to fail 226 if the dir was missing.
 
-# From a checkout of this repo (or a tarball AM was given — not curl|bash):
+# From the extracted helper zip (not a git clone, not curl|bash):
 sudo cp packaging/host-protect-helper/sinexis_host_scan.py /usr/lib/sinexis/host-protect/
 sudo cp -a packaging/host-protect-helper/rules /usr/lib/sinexis/host-protect/
 sudo cp packaging/host-protect-helper/systemd/sinexis-host-protect@.service /etc/systemd/system/
