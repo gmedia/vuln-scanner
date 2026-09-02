@@ -366,3 +366,39 @@ async def test_detect_simulate_skips_siem(db_session: AsyncSession, ctx, monkeyp
         assert cases == []
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_protect_requires_multi_sku(db_session: AsyncSession, ctx):
+    _bind_db(db_session)
+    org = ctx["org"]
+    owner: User = ctx["owner"]
+    site: HostSite = ctx["site"]
+    org.sku = "pro"
+    await db_session.commit()
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            denied = await client.put(
+                f"/api/host/waf/sites/{site.id}/policy",
+                headers=_auth(owner, org.id),
+                json={"mode": "protect", "engine": "nginx_modsec", "paranoia": 1},
+            )
+            assert denied.status_code == 403
+            detect = await client.put(
+                f"/api/host/waf/sites/{site.id}/policy",
+                headers=_auth(owner, org.id),
+                json={"mode": "detect", "engine": "nginx_modsec", "paranoia": 1},
+            )
+            assert detect.status_code == 200
+            org.sku = "multi"
+            await db_session.commit()
+            ok = await client.put(
+                f"/api/host/waf/sites/{site.id}/policy",
+                headers=_auth(owner, org.id),
+                json={"mode": "protect", "engine": "nginx_modsec", "paranoia": 1},
+            )
+            assert ok.status_code == 200
+            assert ok.json()["mode"] == "protect"
+            assert ok.json()["engine"] == "nginx_modsec"
+    finally:
+        app.dependency_overrides.clear()

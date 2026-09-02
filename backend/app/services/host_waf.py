@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.models.host_protect import HostSite
 from app.models.host_waf import HostWafEvent, HostWafPolicy
+from app.models.organization import Organization
 from app.models.user import User
 from app.schemas.host_waf import (
     HostWafEventResponse,
@@ -79,6 +80,13 @@ class HostWafService:
     ) -> HostWafPolicyResponse:
         self._require_feature()
         org_id = await self._require_org(user, organization_id, min_role="admin")
+        if body.mode == "protect":
+            org = (await self.db.execute(select(Organization).where(Organization.id == org_id))).scalar_one()
+            if org.sku != "multi":
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="WAF protect requires Host Multi SKU",
+                )
         site = await self._site(org_id, site_id)
         existing = (
             await self.db.execute(select(HostWafPolicy).where(HostWafPolicy.site_id == site.id))
