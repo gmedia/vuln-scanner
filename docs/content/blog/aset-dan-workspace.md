@@ -4,7 +4,7 @@ Dua kata yang sering tertukar.
 
 **Aset** = barang yang dicek: “website booking”, “VPS produksi”, “IP colo rak A.” **Workspace** = perusahaan atau hotel tempat orang diundang. Satu organisasi kira-kira satu perusahaan di versi ini — bukan banyak proyek bersarang.
 
-Label/tag di daftar aset hanya untuk mengelompokkan di dasbor. Bukan agen. Bukan SIEM.
+Label/tag di daftar aset hanya untuk mengelompokkan dan **filter** di dasbor (bisa pilih beberapa tag sekaligus). Bukan agen. Bukan SIEM. Bukan izin jaringan.
 
 ## Kenapa aset
 
@@ -22,4 +22,4 @@ Kredit tetap pribadi. Undang rekan **tidak** menggabungkan pulsa jadi kas perusa
 
 Satu orang + satu VPS: Basic dan satu aset biasanya cukup. Beberapa properti atau banyak SID: workspace + aset + Multi. Hotel: satu hotel satu workspace; banyak properti = banyak aset — bukan satu login campur semua grup tanpa batas.
 
-Guard, kalau nanti, tetap **satu** `wazuh-agent` per mesin di workspace itu — bukan daemon kedua per aset.
+Guard, kalau nanti, tetap **satu** `wazuh-agent` per mesin di workspace itu — bukan daemon kedua per aset. Host Protect helper juga per VM, bukan per tag.
