@@ -10,7 +10,7 @@
 
 **Not this epic:** Imunify trademarks/rulesets, PHP Proactive Defense, KernelCare, CAPTCHA/WebShield, email anti-spam, putting Coraza in `nginx/sinexis.app.conf`, CrowdSec as the product, CRS paid packs in git.
 
-**Follow-on:** protect-on-customer-nginx is **P14 slice F** — [`imunify-class-onbox.md`](imunify-class-onbox.md). Do not sell protect until that slice + owner SKU.
+**Follow-on:** protect-on-customer-nginx is **P14 slice F** — [`imunify-class-onbox.md`](imunify-class-onbox.md). Protect mode is **Host Multi** only; snippet still never for `sinexis.app` edge.
 
 ---
 

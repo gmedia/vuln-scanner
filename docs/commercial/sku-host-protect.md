@@ -30,7 +30,7 @@
 |------|-----|-------|----------------------|------|------------|-----|
 | **Host Basic** | One VPS, one site | **1** | **150.000** | Scheduled + manual | Manual admin | No |
 | **Host Pro** | Small corporate VPS | **≤3** | **350.000** | Daily default | Manual + optional auto for webshell/backdoor | No |
-| **Host Multi** | Multi-site VPS / small farm | **≤10** | **900.000** | Daily | Same as Pro | **P13 detect** working; protect later |
+| **Host Multi** | Multi-site VPS / small farm | **≤10** | **900.000** | Daily | Same as Pro | **P13 detect** + **P14 F protect** (customer nginx snippet; not Sinexis edge) |
 
 **Out of SKU v1:** Imunify replacement, shared-host thousands of UIDs, KernelCare, PHP PD, email anti-spam product.
 

@@ -53,7 +53,7 @@
   "openGuard": "Buka Guard",
   "tabMalware": "Malware",
   "tabWaf": "WAF",
-  "wafHint": "Kebijakan WAF HTTP per situs. Event bukan hit malware. Mesin mock sampai Coraza.",
+  "wafHint": "WAF HTTP per situs. Detect mencatat; protect memblokir di snippet nginx pelanggan (Host Multi). Jangan tempel ke edge sinexis.app. Event bukan hit malware.",
   "wafFeatureOff": "Host WAF belum diaktifkan di lingkungan ini.",
   "wafNeedSite": "Tambah situs Host Protect dulu, lalu atur mode WAF.",
   "wafSite": "Situs",

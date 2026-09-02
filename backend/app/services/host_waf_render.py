@@ -25,6 +25,7 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
 # Site: {name}
 # Document root (ops): {root}
 # Engine field: {policy.engine}  mode: {policy.mode}  paranoia: {paranoia}
+# Mode protect → SecRuleEngine On (403 deny). detect → DetectionOnly (log). off → Off.
 # Install: customer VPS or disposable lab vhost only. No SSH from SaaS.
 
 # Requires nginx + ModSecurity (or Coraza spoa) on the **tenant** host.
