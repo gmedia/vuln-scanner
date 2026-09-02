@@ -443,6 +443,7 @@ def run_poll(args: argparse.Namespace) -> int:
 
 def _run_poll_jobs(args: argparse.Namespace) -> tuple[int, int]:
     n_raw, jobs = fetch_jobs(args.api_base, args.token, args.agent_id, args.timeout)
+    jobs.sort(key=lambda j: 0 if (j.get("kind") or "") in ("quarantine", "restore") else 1)
     worst = 0
     for job in jobs:
         kind = job.get("kind") or "scan"
