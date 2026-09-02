@@ -45,12 +45,14 @@ import {
   createEnrollToken,
   enableGuard,
   getGuardStatus,
+  issueHostAgentToken,
   listEnrollTokens,
   listGuardAgents,
   listGuardAlerts,
   revokeEnrollToken,
   syncGuard,
 } from "@/api/guard";
+import type { GuardAgent } from "@/api/guard";
 import { useAuthStore } from "@/store/authStore";
 import type { ApiError } from "@/lib/utils";
 import { toast } from "sonner";
@@ -68,6 +70,52 @@ import {
 function truncateId(value: string): string {
   if (value.length <= 12) return value;
   return `${value.slice(0, 8)}…${value.slice(-4)}`;
+}
+
+function HostTokenIssueButton({
+  agent,
+  t,
+  pending,
+  onIssue,
+}: {
+  agent: GuardAgent;
+  t: (key: string) => string;
+  pending: boolean;
+  onIssue: (id: string) => void;
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="min-h-9"
+          disabled={pending}
+          data-testid="guard-host-token-issue"
+          aria-label={
+            agent.has_host_agent_token ? t("hostTokenRotate") : t("hostToken")
+          }
+        >
+          {agent.has_host_agent_token ? t("hostTokenRotate") : t("hostToken")}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t("hostTokenConfirmTitle")}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {t("hostTokenConfirmBody")}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+          <AlertDialogAction onClick={() => onIssue(agent.id)}>
+            {t("hostTokenIssue")}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 }
 
 function CopyableId({
@@ -240,6 +288,9 @@ export default function Guard() {
   const [curlCopied, setCurlCopied] = useState(false);
   const [showAllTokens, setShowAllTokens] = useState(false);
   const [showTechDetails, setShowTechDetails] = useState(false);
+  const [hostTokenPlain, setHostTokenPlain] = useState<string | null>(null);
+  const [hostTokenAgentId, setHostTokenAgentId] = useState<string | null>(null);
+  const [hostTokenCopied, setHostTokenCopied] = useState(false);
 
   const apiBase = resolveApiBaseUrl(
     import.meta.env.VITE_API_URL as string | undefined,
@@ -306,6 +357,19 @@ export default function Guard() {
       invalidate();
     },
     onError: (e) => setActionError(apiDetail(e, t("tokenCreateFail"))),
+  });
+
+  const hostTokenMut = useMutation({
+    mutationFn: (agentId: string) => issueHostAgentToken(agentId),
+    onSuccess: (data) => {
+      setHostTokenPlain(data.token);
+      setHostTokenAgentId(data.agent_id);
+      setHostTokenCopied(false);
+      setActionError(null);
+      toast.success(t("hostTokenCreated"));
+      invalidate();
+    },
+    onError: (e) => setActionError(apiDetail(e, t("hostTokenCreateFail"))),
   });
 
   const revokeMut = useMutation({
@@ -712,6 +776,40 @@ export default function Guard() {
             </Card>
           )}
 
+          {hostTokenPlain && (
+            <Alert
+              className="border-primary/40 bg-primary/5"
+              data-testid="guard-host-token-once"
+            >
+              <AlertDescription className="space-y-2 text-sm">
+                <p className="font-medium">{t("hostTokenSaveNow")}</p>
+                {hostTokenAgentId ? (
+                  <p className="font-mono text-xs text-muted-foreground">
+                    --agent-id {hostTokenAgentId}
+                  </p>
+                ) : null}
+                <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded border border-border/60 bg-background p-2 font-mono text-[11px]">
+                  {hostTokenPlain}
+                </pre>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="min-h-9"
+                  aria-label={t("copyHostToken")}
+                  onClick={() => {
+                    void navigator.clipboard
+                      ?.writeText(hostTokenPlain)
+                      .then(() => setHostTokenCopied(true))
+                      .catch(() => undefined);
+                  }}
+                >
+                  {hostTokenCopied ? t("hostTokenCopied") : t("copyHostToken")}
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Card data-testid="guard-agents">
             <CardHeader>
               <CardTitle className="text-base">{t("agents")}</CardTitle>
@@ -742,24 +840,47 @@ export default function Guard() {
                         >
                           {a.name}
                         </p>
+                        <CopyableId value={a.id} label={t("copyAgentId")} />
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           {statusBadge(a.status, t)}
                           <span className="text-xs text-muted-foreground">
                             {a.version ?? "—"}
                           </span>
+                          <Badge variant="info">
+                            {a.has_host_agent_token
+                              ? t("hasHostToken")
+                              : t("noHostToken")}
+                          </Badge>
                         </div>
                         <p className="mt-1 text-[11px] text-muted-foreground">
-                          {formatWhen(a.last_keep_alive)}
+                          {t("colLastSeen")}: {formatWhen(a.last_keep_alive)}
                         </p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          {t("colHelperPoll")}:{" "}
+                          {formatWhen(a.last_helper_poll_at)}
+                        </p>
+                        {canAdmin ? (
+                          <div className="mt-2">
+                            <HostTokenIssueButton
+                              agent={a}
+                              t={t}
+                              pending={hostTokenMut.isPending}
+                              onIssue={(id) => hostTokenMut.mutate(id)}
+                            />
+                          </div>
+                        ) : null}
                       </div>
                     ))}
                   </div>
                   <div className="hidden overflow-x-auto md:block">
-                  <Table className="min-w-[48rem]">
+                  <Table className="min-w-[64rem]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="min-w-[18rem]">
+                        <TableHead className="min-w-[14rem]">
                           {t("colName")}
+                        </TableHead>
+                        <TableHead className="min-w-[10rem]">
+                          {t("copyAgentId")}
                         </TableHead>
                         <TableHead className="min-w-[7rem]">
                           {t("colStatus")}
@@ -767,19 +888,33 @@ export default function Guard() {
                         <TableHead className="min-w-[11rem]">
                           {t("colLastSeen")}
                         </TableHead>
+                        <TableHead className="min-w-[11rem]">
+                          {t("colHelperPoll")}
+                        </TableHead>
                         <TableHead className="min-w-[6rem]">
                           {t("colVersion")}
                         </TableHead>
+                        {canAdmin ? (
+                          <TableHead className="min-w-[10rem]">
+                            {t("hostToken")}
+                          </TableHead>
+                        ) : null}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {agentsQ.data?.map((a) => (
-                        <TableRow key={a.id}>
+                        <TableRow
+                          key={a.id}
+                          data-testid="guard-agent-row"
+                        >
                           <TableCell
-                            className="min-w-[18rem] max-w-[min(48rem,55vw)] truncate font-mono text-xs font-medium 2xl:max-w-none 2xl:overflow-visible 2xl:whitespace-normal"
+                            className="min-w-[14rem] max-w-[min(48rem,55vw)] truncate font-mono text-xs font-medium 2xl:max-w-none 2xl:overflow-visible 2xl:whitespace-normal"
                             title={a.name}
                           >
                             {a.name}
+                          </TableCell>
+                          <TableCell>
+                            <CopyableId value={a.id} label={t("copyAgentId")} />
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
                             {statusBadge(a.status, t)}
@@ -787,12 +922,25 @@ export default function Guard() {
                           <TableCell className="whitespace-nowrap text-muted-foreground">
                             {formatWhen(a.last_keep_alive)}
                           </TableCell>
+                          <TableCell className="whitespace-nowrap text-muted-foreground">
+                            {formatWhen(a.last_helper_poll_at)}
+                          </TableCell>
                           <TableCell
                             className="max-w-[8rem] truncate text-muted-foreground"
                             title={a.version ?? undefined}
                           >
                             {a.version ?? "—"}
                           </TableCell>
+                          {canAdmin ? (
+                            <TableCell>
+                              <HostTokenIssueButton
+                                agent={a}
+                                t={t}
+                                pending={hostTokenMut.isPending}
+                                onIssue={(id) => hostTokenMut.mutate(id)}
+                              />
+                            </TableCell>
+                          ) : null}
                         </TableRow>
                       ))}
                     </TableBody>
