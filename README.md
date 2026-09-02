@@ -213,7 +213,7 @@ curl http://localhost/api/scan/{id}/export?format=html \
 | **Status page** | **Shipped (P11)** | Public `/status/{slug}` + custom host (SSL-gated Active). Spek [`docs/specs/status-page-v1.md`](docs/specs/status-page-v1.md). |
 | **Public blog** | **Shipped (P10)** | FastAPI HTML island `/blog` + admin CMS. Spek [`docs/specs/blog-v1.md`](docs/specs/blog-v1.md). |
 | **Host Protect** | **Shipped (P12 S0–S12)** | On-box web malware (YARA/Clam helper); SPA `/host`. Missing worker roots → **no mock hits** (`pending_agent` / `unreachable_root`). Spek [`docs/specs/host-protect-v1.md`](docs/specs/host-protect-v1.md). Flag `HOST_PROTECT_ENABLED` (prod compose default true; local/CI false). Follow-on **P14** jobs (not clone): [`docs/specs/imunify-class-onbox.md`](docs/specs/imunify-class-onbox.md). |
-| **Host WAF** | **Shipped (P13 S0–S5)** | Per-site detect API + nginx **snippet for customer VPS**. **Never** paste onto `sinexis.app` edge. Spek [`docs/specs/host-waf-v1.md`](docs/specs/host-waf-v1.md). Flag `HOST_WAF_ENABLED`. |
+| **Host WAF** | **Shipped (P13 + P14 F)** | Per-site detect + **protect** (Host Multi SKU; customer nginx snippet `SecRuleEngine On`). **Never** paste onto `sinexis.app` edge. Spek [`docs/specs/host-waf-v1.md`](docs/specs/host-waf-v1.md). Flag `HOST_WAF_ENABLED`. |
 | **Imunify-class on-box (P14)** | **Docs** | Job roadmap: helper-first scan, regional attach — **not** an Imunify clone. Spek [`docs/specs/imunify-class-onbox.md`](docs/specs/imunify-class-onbox.md). |
 | Soft dual-brand (Sinexis) | **Shipped** | Public: **`sinexis.app`** (legacy `vs.appmedia.id` may still exist). |
 
