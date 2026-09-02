@@ -96,6 +96,12 @@ describe("UserGuide", () => {
     expect(document.body.textContent ?? "").toMatch(/raw\.githubusercontent\.com/);
     expect(document.body.textContent ?? "").toMatch(/DOCTYPE html/);
     expect(document.body.textContent ?? "").toMatch(/Do not clone the repo/);
+    expect(screen.getByTestId("sinexis-install-wget").textContent).toMatch(
+      /wget -O sinexis-install\.sh/,
+    );
+    expect(screen.getByTestId("sinexis-install-wget").textContent).toMatch(
+      /head -n1 sinexis-install\.sh/,
+    );
     expect(document.body.textContent ?? "").toMatch(/install wazuh-agent/i);
     expect(
       screen.getByRole("link", { name: "sinexis-install.sh" }),

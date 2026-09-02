@@ -48,6 +48,15 @@ import {
   GUARD_HOST_SETUP_STEPS,
 } from "@/lib/guardEnrollHost";
 
+const SINEXIS_INSTALL_RAW_URL =
+  "https://raw.githubusercontent.com/gmedia/vuln-scanner/main/packaging/host-protect-helper/sinexis-install.sh";
+
+const SINEXIS_INSTALL_WGET = [
+  `wget -O sinexis-install.sh '${SINEXIS_INSTALL_RAW_URL}'`,
+  "head -n1 sinexis-install.sh",
+  "chmod +x sinexis-install.sh",
+].join("\n");
+
 const TOC_IDS = [
   "mulai",
   "scan-ip",
@@ -960,14 +969,14 @@ function UserGuide() {
                     ns="guide"
                     components={{
                       ...transUi,
-                      gh: (
-                        <a
-                          href="https://raw.githubusercontent.com/gmedia/vuln-scanner/main/packaging/host-protect-helper/sinexis-install.sh"
-                          className="text-primary hover:underline"
-                          target="_blank"
-                          rel="noreferrer"
-                        />
-                      ),
+                       gh: (
+                         <a
+                           href={SINEXIS_INSTALL_RAW_URL}
+                           className="text-primary hover:underline"
+                           download="sinexis-install.sh"
+                           rel="noreferrer"
+                         />
+                       ),
                       rel: (
                         <a
                           href="https://github.com/gmedia/vuln-scanner/releases"
@@ -977,10 +986,19 @@ function UserGuide() {
                         />
                       ),
                     }}
-                  />
-                </li>
-                <li>
-                  <Trans i18nKey="hpInstall" ns="guide" components={transUi} />
+                   />
+                   <pre
+                     className="mt-2 overflow-x-auto whitespace-pre-wrap break-all rounded-md border border-border bg-muted/40 p-3 font-mono text-[11px] leading-relaxed text-foreground"
+                     data-testid="sinexis-install-wget"
+                   >
+                     {SINEXIS_INSTALL_WGET}
+                   </pre>
+                   <p className="mt-2 text-sm text-muted-foreground">
+                     {t("hpGetCheck")}
+                   </p>
+                 </li>
+                 <li>
+                   <Trans i18nKey="hpInstall" ns="guide" components={transUi} />
                 </li>
                 <li>
                   <Trans i18nKey="hp2" ns="guide" components={transUi} />
