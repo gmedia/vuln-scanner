@@ -1,6 +1,6 @@
 sinexis-host-protect (0.1.2) unstable; urgency=medium
 
-  * Disable systemd StartLimit on oneshot poll so lab/AM can start it repeatedly.
+  * Disable systemd StartLimit; poll up to 50 queued commands per GET.
 
  -- Sinexis <ops@sinexis.app>  Tue, 01 Sep 2026 23:50:00 +0000
 

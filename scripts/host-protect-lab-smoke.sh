@@ -352,7 +352,7 @@ for r in rows:
     if [[ "$got" == "$want" ]]; then
       return 0
     fi
-    if [[ "$TRIGGER_HELPER_POLL" -eq 1 && $((i % 15)) -eq 0 ]]; then
+    if [[ "$TRIGGER_HELPER_POLL" -eq 1 ]]; then
       kick_helper
     fi
     sleep 3

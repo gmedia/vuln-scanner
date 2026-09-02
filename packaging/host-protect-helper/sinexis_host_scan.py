@@ -419,7 +419,14 @@ def run_poll(args: argparse.Namespace) -> int:
             os.close(lock_fd)
             return 0
     try:
-        return _run_poll_jobs(args)
+        worst = 0
+        for _ in range(16):
+            n_jobs, rc = _run_poll_jobs(args)
+            if rc != 0:
+                worst = rc
+            if n_jobs < 5:
+                break
+        return worst
     finally:
         if lock_fd is not None:
             try:
@@ -429,7 +436,7 @@ def run_poll(args: argparse.Namespace) -> int:
             os.close(lock_fd)
 
 
-def _run_poll_jobs(args: argparse.Namespace) -> int:
+def _run_poll_jobs(args: argparse.Namespace) -> tuple[int, int]:
     jobs = fetch_jobs(args.api_base, args.token, args.agent_id, args.timeout)
     worst = 0
     for job in jobs:
@@ -476,7 +483,7 @@ def _run_poll_jobs(args: argparse.Namespace) -> int:
             )
         if rc != 0:
             worst = rc
-    return worst
+    return len(jobs), worst
 
 
 def run(argv: list[str] | None = None) -> int:

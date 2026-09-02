@@ -100,7 +100,7 @@ async def poll_agent_jobs(
             HostSite.enabled.is_(True),
         )
         .order_by(HostCommand.created_at.asc())
-        .limit(5)
+        .limit(50)
     )
     for cmd, site, hit in cmd_result.all():
         jobs.append(
