@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -1509,3 +1510,23 @@ async def test_run_host_scan_pending_when_helper_fresh(db_session: AsyncSession,
     assert out.get("pending_agent") is True
     await db_session.refresh(scan)
     assert scan.status == "queued"
+
+
+def _compose_local_walk_defaults(path: str) -> list[str]:
+    needle = "HOST_PROTECT_ALLOW_LOCAL_WALK:"
+    found: list[str] = []
+    with Path(path).open(encoding="utf-8") as fh:
+        for line in fh:
+            if needle in line:
+                found.append(line.strip())
+    return found
+
+
+def test_compose_files_default_local_walk_off():
+    root = Path(__file__).resolve().parents[2]
+    for rel in ("docker-compose.yml", "docker-compose.prod.yml"):
+        lines = _compose_local_walk_defaults(str(root / rel))
+        assert lines, rel
+        for line in lines:
+            assert "${HOST_PROTECT_ALLOW_LOCAL_WALK:-false}" in line, (rel, line)
+    assert settings.host_protect_allow_local_walk is False
