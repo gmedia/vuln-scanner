@@ -8,29 +8,27 @@ This is **not** a second enroll daemon. Guard (`wazuh-agent`) stays the identity
 
 **Debian `.deb`:** build with `./scripts/build-host-protect-deb.sh` (writes `dist/sinexis-host-protect_*_all.deb`). Package **Depends: wazuh-agent** — do not install on machines without Guard. Env file is **not** in the package payload except as `/usr/share/doc/.../host-protect.env.example` (empty token). `postinst` copies the example to `/etc/sinexis/host-protect.env` only if missing (mode 600). Enable the timer with the Guard UUID after filling the token.
 
-**How to get the files (not curl|bash, not a git clone):** the wrapper needs the **whole helper directory**, not a lone `sinexis-install.sh`. From a workstation:
+**How to get the installer (not curl|bash, not a git clone):** download **one file** [`sinexis-install.sh`](https://github.com/gmedia/vuln-scanner/blob/main/packaging/host-protect-helper/sinexis-install.sh) (or a [GitHub Release](https://github.com/gmedia/vuln-scanner/releases) asset — verify SHA256). Payloads (scan helper, rules, systemd units) are **embedded**. Copy that file onto the VPS (`chmod +x`).
 
-1. Open [that folder on GitHub](https://github.com/gmedia/vuln-scanner/tree/main/packaging/host-protect-helper) → Code → Download ZIP, then use `packaging/host-protect-helper` inside the archive (or a zip/tarball AM sent), **or**
-2. Optional `.deb` from a [GitHub Release](https://github.com/gmedia/vuln-scanner/releases) (verify SHA256).
-
-Copy that directory onto the VPS (scp/rsync). Then:
-
-**Wrapper (P14 C2):** `sinexis-install.sh` in that directory — not `curl | bash`, does **not** install `wazuh-agent`.
+**Wrapper:** TTY menu — (1) install `wazuh-agent`, (2) configure Host Protect helper, (3) both. Not `curl | bash`. Enroll still uses SaaS token + `manage_agents` for `agent_key`.
 
 ```bash
-# Non-interactive (preferred). Token stays in a 600 file, not argv.
-sudo ./sinexis-install.sh --agent-id <GUARD-UUID> \
+# TTY menu (1 wazuh-agent / 2 helper / 3 both):
+sudo ./sinexis-install.sh
+
+# Non-interactive helper. Token stays in a 600 file, not argv.
+sudo ./sinexis-install.sh --configure-host-protect --agent-id <GUARD-UUID> \
   --token-file /root/host-agent.token \
   --api-base https://sinexis.app
 
-# Optional TTY prompts (do not pipe into this):
-sudo ./sinexis-install.sh --interactive
+# Wazuh package + Manager address (manager_host from enroll; not a lab IP guess):
+sudo ./sinexis-install.sh --install-wazuh-agent --manager-host <MANAGER_HOST>
 
 # Preview only:
-./sinexis-install.sh --dry-run --agent-id <GUARD-UUID> --token-file /root/host-agent.token
+./sinexis-install.sh --dry-run --configure-host-protect --agent-id <GUARD-UUID> --token-file /root/host-agent.token
 ```
 
-`--deb path.deb` runs `dpkg -i` first. `--from-tree` (default) copies `sinexis_host_scan.py` + units from this directory. Lab: `--skip-wazuh-check` only on a throwaway VM — never customer.
+`--deb path.deb` runs `dpkg -i` first. `--from-tree` copies sibling files if you still have the directory. Default is **embedded payloads**. Lab: `--skip-wazuh-check` only on a throwaway VM — never customer.
 
 Copy-from-tree (no dpkg) still works:
 
@@ -50,7 +48,7 @@ sudo mkdir -p /usr/lib/sinexis/host-protect /etc/sinexis /var/lib/sinexis/quaran
 sudo chmod 700 /var/lib/sinexis /var/lib/sinexis/quarantine /etc/sinexis
 # /srv/www may be empty; systemd ReadWritePaths used to fail 226 if the dir was missing.
 
-# From the extracted helper zip (not a git clone, not curl|bash):
+# After sudo ./sinexis-install.sh (embedded payloads), or copy from a tree:
 sudo cp packaging/host-protect-helper/sinexis_host_scan.py /usr/lib/sinexis/host-protect/
 sudo cp -a packaging/host-protect-helper/rules /usr/lib/sinexis/host-protect/
 sudo cp packaging/host-protect-helper/systemd/sinexis-host-protect@.service /etc/systemd/system/
