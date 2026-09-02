@@ -9,7 +9,7 @@
 
 **Not this epic:** Imunify rulesets/UI copy, ModSec/Coraza WAF (S6+), PHP runtime hooks, live kernel patch, auto password-reset, WebShield CAPTCHA, Imunify Email, CageFS-class shared-host isolation.
 
-**Follow-on (docs):** Imunify-**class** on-box stages **P14** — [`imunify-class-onbox.md`](imunify-class-onbox.md). P12 stays file malware control plane; P14 reorders **honesty + helper-first** so SaaS never pretends to walk VPS disks. AM install (slice C): [`../host-protect-helper-am.md`](../host-protect-helper-am.md).
+**Follow-on (docs):** Imunify-**class** on-box stages **P14** — [`imunify-class-onbox.md`](imunify-class-onbox.md). P12 stays file malware control plane; P14 **B**: `HOST_PROTECT_ALLOW_LOCAL_WALK` default false — SaaS `isdir` is not proof of customer disk. AM install (slice C): [`../host-protect-helper-am.md`](../host-protect-helper-am.md).
 
 ---
 

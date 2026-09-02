@@ -71,7 +71,7 @@ Do **not** mix slices in one PR. Lab: **tc5 fixture**, never ERP `sx-erpstg`. Wi
 | **G** | Panel (research) | cPanel/Plesk **later** | Spek-only until owner; no trademark UI | Shared-UID farm |
 | **H** | PHP runtime (research) | PD-class | Spek-only; legal + SAPI cost | Clone Imunify PD |
 
-**Build order:** **A** largely **#556**. **D** largely **#558** (`host_commands` queue). **S12** **#559**. Remaining default: **B** (fail-closed worker / no SaaS `isdir` as proof) → **C** (AM install + tc5 lab) → then **E/F**. **G/H** only if owner names them.
+**Build order:** **A** largely **#556**. **D** largely **#558** (`host_commands` queue). **S12** **#559**. **B** fail-closed: `HOST_PROTECT_ALLOW_LOCAL_WALK` default **false** (compose prod + local); worker `_finish_scan` via `os.path.isdir` **only** when that flag is on (lab bind). **C** AM install + tc5 lab (`.deb` #567, heartbeat #564, quarantine lab #570). Remaining: **E/F**. **G/H** only if owner names them.
 
 ---
 
