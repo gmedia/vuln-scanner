@@ -10,6 +10,28 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
+## Session snapshot (2026-09-02 — Guard host-agent token SPA)
+
+| Item | State |
+|------|--------|
+| **`main` tip (coding)** | Re-`git pull`. Expect **`9677e07`** or newer: **#576** `sinexis-install.sh` wrapper (not curl\|bash; does **not** install `wazuh-agent`). Before that: **#575** README, **#574** `/guide` Host WAF, **#573** P14 F protect. |
+| **Open PR** | **[#577](https://github.com/gmedia/vuln-scanner/pull/577)** `feat/guard-host-agent-token` — mint helper `results_token` from SPA `/guard`. Commits: `28cbf03` API, `fb7c00b` SPA, `7f4b43f` docs. **Not on `main` until squash-merge.** CI: most jobs green; `python-tests (backend)` was still in progress last check — **do not poll**; merge if green. Dependabot: **do not mass-merge**. |
+| **#577 what** | Admin/owner `POST /api/guard/agents/{id}/host-token` → plaintext **once**; DB `results_token_hash` only. List: `has_host_agent_token` (no hash). SPA: copy **product UUID** (`GuardAgent.id`, not Wazuh numeric), generate/rotate token dialog, last helper poll. Guide `hp1` + `docs/host-protect-helper-am.md`. Tests: `test_issue_host_agent_token_admin_idor`; vitest `GuardHostEnroll`. |
+| **Install path (operator)** | (1) enroll **wazuh-agent** (2) `/guard` copy UUID + generate helper token (3) `sinexis-install.sh --agent-id <uuid> --token-file` (mode 600). Token file ≠ Wazuh enroll token. Header `X-Host-Agent-Token` / env `SINEXIS_HOST_AGENT_TOKEN`. **No** CSV/JSON download of secrets. |
+| **P14** | **A–F** on this stream (F = Host Multi WAF protect, customer nginx only). **G/H** only if user **names** slice + `buat`. Spek [`imunify-class-onbox.md`](docs/specs/imunify-class-onbox.md). **Do not** title PRs “Imunify parity.” |
+| **Lab** | Host Protect helper: **tc5 only**. Do **not** wipe `sx-erpstg`. Live WAF **403** needs **disposable** vhost + `GUARD_LAB_*` / `HOST_WAF_LAB_VHOST_SSH` — **not** tc5. Playwright ≠ enroll. |
+| **Still human** | GTM; Host Protect **invoice/`service_id`**; fill `/admin/hpp` `hostscan`; after **#577** merge+deploy, operator install on tc5. |
+| **Engineering default** | **Do not start coding** until `implement` / `buat` / `kerjakan`. Do **not** invent second enroll daemon. Do **not** paste WAF onto `sinexis.app` edge. Do **not** poll CI. |
+
+### Next OpenCode session
+
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. Expect **`9677e07`** or **#577 squash** if merged. `gh pr list --state open --assignee @me`. If **#577** CI green → `gh pr merge --squash` then delete `feat/guard-host-agent-token`. **Do not poll CI.** Do **not** mass-merge Dependabot.
+2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** then **`AGENTS.md`**. Protect: **`docs/specs/host-protect-v1.md`**. P14: **`docs/specs/imunify-class-onbox.md`**. Wrapper/AM: **`docs/host-protect-helper-am.md`**.
+3. Speak **Bahasa Indonesia**; prefix git with `GIT_MASTER=1`. Never work on `main`. Never commit secrets/IPs/tokens/PNGs.
+4. **Do not** tell the user to SSH Alembic after a green **main** deploy — `scripts/deploy.sh` already migrates.
+5. **Guard:** `sx-erpstg` **online** — do **not** re-enroll/wipe unless user asks full Guard e2e (wipe `tc5` first §4.1). Playwright ≠ enroll. Standing lab **tc1–tc5** OK.
+6. Optional (only if user picks): merge **#577**; live helper on **tc5** after deploy (wipe-first); named **G/H** + `buat`; disposable vhost 403; GTM/`service_id`; HPP `hostscan`. Do **not** clone Imunify.
+
 ## Session snapshot (2026-09-01 — P12 S11/S12 merged; P14 docs)
 
 | Item | State |

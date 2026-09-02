@@ -19,8 +19,14 @@ export interface GuardAgent {
   version: string | null;
   last_keep_alive: string | null;
   last_helper_poll_at: string | null;
+  has_host_agent_token?: boolean;
   synced_at: string;
   created_at: string;
+}
+
+export interface GuardHostAgentTokenCreated {
+  agent_id: string;
+  token: string;
 }
 
 export interface GuardAlert {
@@ -91,6 +97,15 @@ export async function listEnrollTokens(): Promise<GuardEnrollTokenMeta[]> {
 
 export async function revokeEnrollToken(id: string): Promise<void> {
   await api.delete(`/api/guard/enroll-tokens/${id}`);
+}
+
+export async function issueHostAgentToken(
+  agentId: string,
+): Promise<GuardHostAgentTokenCreated> {
+  const { data } = await api.post<GuardHostAgentTokenCreated>(
+    `/api/guard/agents/${agentId}/host-token`,
+  );
+  return data;
 }
 
 export async function syncGuard(): Promise<{
