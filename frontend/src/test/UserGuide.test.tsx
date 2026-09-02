@@ -73,6 +73,11 @@ describe("UserGuide", () => {
         name: "SIEM — search events & cases",
       }),
     ).toBeInTheDocument();
+    expect(document.body.textContent ?? "").toMatch(
+      /incident ticket in this app/i,
+    );
+    expect(document.body.textContent ?? "").toMatch(/not a Wazuh plugin/i);
+    expect(document.body.textContent ?? "").toMatch(/we are working this/i);
     expect(
       screen.getByRole("heading", {
         name: "Uptime — HTTP/TCP probes",
