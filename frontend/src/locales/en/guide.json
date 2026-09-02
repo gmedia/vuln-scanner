@@ -98,7 +98,7 @@
   "gCurlLead": "Example enrollment from the host (replace the app origin and token; no JWT needed):",
   "gEndpoint": "The public org-bound endpoint uses a token (not JWT): <code>POST /api/guard/enroll</code> with body <code>{ token, agent_name }</code>. The response includes <code>agent_id</code>, <code>agent_key</code>, <code>manager_host</code>, and <code>install_hint</code>.",
   "gInstallLead": "Agent runtime install on the target host — install wazuh-agent using the commands for your distro below (no lab secrets included):",
-  "gHostCmds": "Commands on the target host (by distro: Debian / Ubuntu, RHEL / CentOS / Rocky / AlmaLinux / Fedora, SLES / openSUSE)",
+  "gHostCmds": "Commands on the target host (by distro)",
   "g7": "Click <ui>Sinkronkan</ui> (admin only) to refresh the agent projection. The <ui>Agen</ui> table shows each agent's status (online / disconnected / pending), and the <ui>Alert kritis</ui> section shows high-severity events.",
   "g8": "Viewer and above can see agents and alerts after Guard is enabled, but only admin/owner can generate enrollment tokens.",
   "g9": "Quick troubleshooting: if enrollment returns 4xx, the token is expired, revoked, or belongs to a different org. If an agent stays pending too long, check that the host can reach <code>manager_host</code> from the enrollment response, then click Sync. Never use Manager passwords on the enrolled host.",
