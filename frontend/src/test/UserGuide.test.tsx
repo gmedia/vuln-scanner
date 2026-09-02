@@ -93,7 +93,11 @@ describe("UserGuide", () => {
     expect(document.body.querySelector('a[href="#guard"]')).toBeTruthy();
     expect(document.body.textContent ?? "").toMatch(/Host Protect helper/i);
     expect(document.body.textContent ?? "").toMatch(/sinexis-install\.sh/);
-    expect(document.body.textContent ?? "").toMatch(/helper folder|folder helper/);
+    expect(document.body.textContent ?? "").toMatch(
+      /helper folder|folder helper/,
+    );
+    expect(document.body.textContent ?? "").toMatch(/Do not clone the repo/);
+    expect(document.body.textContent ?? "").toMatch(/Download ZIP/);
     expect(
       screen.getByRole("link", { name: "packaging/host-protect-helper" }),
     ).toHaveAttribute(
