@@ -26,6 +26,9 @@ if TYPE_CHECKING:
 HOST_SITE_SKU_LIMITS: dict[str, int] = {"basic": 1, "pro": 3, "multi": 10}
 
 CMS_HINTS = ("wordpress", "laravel", "unknown")
+SCAN_INTERVALS = ("daily", "hourly")
+SCAN_INTERVAL_SECONDS = {"daily": 86400, "hourly": 3600}
+HOST_PROTECT_ORG_CONCURRENT_CAP = 2
 SCAN_STATUSES = ("queued", "running", "completed", "failed")
 SCAN_TRIGGERS = ("schedule", "manual")
 HIT_CLASSES = ("webshell", "backdoor", "malware", "spam_seo", "suspicious")
@@ -61,6 +64,7 @@ class HostSite(Base):
     cms_hint: Mapped[str | None] = mapped_column(String(32), nullable=True)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     auto_quarantine: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    scan_interval: Mapped[str] = mapped_column(String(16), nullable=False, default="daily")
     created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
@@ -77,6 +81,7 @@ class HostSite(Base):
     __table_args__ = (
         UniqueConstraint("organization_id", "guard_agent_id", "root_path", name="uq_host_sites_org_agent_path"),
         CheckConstraint("cms_hint IS NULL OR cms_hint IN ('wordpress', 'laravel', 'unknown')", name="ck_host_site_cms"),
+        CheckConstraint("scan_interval IN ('daily', 'hourly')", name="ck_host_site_scan_interval"),
     )
 
 

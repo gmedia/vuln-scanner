@@ -65,11 +65,13 @@ def run_due_host_scans(limit: int = 20) -> dict[str, Any]:
 
     session = get_sync_session()
     enqueued = 0
+    skipped_cap = 0
+    skipped_not_due = 0
     try:
         rows = session.execute(
             text(
                 """
-                SELECT s.id AS site_id, s.organization_id
+                SELECT s.id AS site_id, s.organization_id, s.scan_interval
                 FROM host_sites s
                 WHERE s.enabled = true
                 ORDER BY s.created_at ASC
@@ -79,6 +81,43 @@ def run_due_host_scans(limit: int = 20) -> dict[str, Any]:
             {"lim": limit},
         ).mappings()
         for row in rows:
+            org_id = row["organization_id"]
+            site_id = row["site_id"]
+            interval = row["scan_interval"] or "daily"
+            seconds = 3600 if interval == "hourly" else 86400
+
+            inflight = session.execute(
+                text(
+                    """
+                    SELECT COUNT(*) FROM host_scans
+                    WHERE organization_id = :org
+                      AND status IN ('queued', 'running')
+                    """
+                ),
+                {"org": org_id},
+            ).scalar_one()
+            if int(inflight or 0) >= 2:
+                skipped_cap += 1
+                continue
+
+            last_at = session.execute(
+                text(
+                    """
+                    SELECT MAX(created_at) FROM host_scans
+                    WHERE site_id = :site AND trigger = 'schedule'
+                    """
+                ),
+                {"site": site_id},
+            ).scalar_one()
+            if last_at is not None:
+                due = session.execute(
+                    text("SELECT (:last + make_interval(secs => :secs)) <= NOW()"),
+                    {"last": last_at, "secs": seconds},
+                ).scalar_one()
+                if not due:
+                    skipped_not_due += 1
+                    continue
+
             scan_id = session.execute(
                 text(
                     """
@@ -87,12 +126,17 @@ def run_due_host_scans(limit: int = 20) -> dict[str, Any]:
                     RETURNING id
                     """
                 ),
-                {"org": row["organization_id"], "site": row["site_id"]},
+                {"org": org_id, "site": site_id},
             ).scalar_one()
             session.commit()
             celery_app.send_task("host_protect.run_scan", args=[str(scan_id)], queue="ip_scan")
             enqueued += 1
-        return {"ok": True, "enqueued": enqueued}
+        return {
+            "ok": True,
+            "enqueued": enqueued,
+            "skipped_cap": skipped_cap,
+            "skipped_not_due": skipped_not_due,
+        }
     except Exception as exc:
         session.rollback()
         logger.exception("Host Protect beat failed: {error}", error=exc)

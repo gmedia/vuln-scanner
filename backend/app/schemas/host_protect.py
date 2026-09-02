@@ -19,6 +19,7 @@ class HostSiteCreate(BaseModel):
     asset_id: uuid.UUID | None = None
     enabled: bool = True
     auto_quarantine: bool = False
+    scan_interval: str = Field(default="daily", pattern=r"^(daily|hourly)$")
 
     @field_validator("name")
     @classmethod
@@ -36,6 +37,7 @@ class HostSiteUpdate(BaseModel):
     cms_hint: str | None = Field(default=None, pattern=r"^(wordpress|laravel|unknown)$")
     enabled: bool | None = None
     auto_quarantine: bool | None = None
+    scan_interval: str | None = Field(default=None, pattern=r"^(daily|hourly)$")
 
     @field_validator("name")
     @classmethod
@@ -57,6 +59,7 @@ class HostSiteResponse(BaseModel):
     cms_hint: str | None
     enabled: bool
     auto_quarantine: bool
+    scan_interval: str = "daily"
     created_by: uuid.UUID
     created_at: datetime
     updated_at: datetime

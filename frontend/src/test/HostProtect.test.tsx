@@ -18,6 +18,7 @@ vi.mock("@/api/hostProtect", async () => {
     ...actual,
     listHostSites: vi.fn(),
     createHostSite: vi.fn(),
+    updateHostSite: vi.fn(),
     deleteHostSite: vi.fn(),
     enqueueHostScan: vi.fn(),
     listHostScans: vi.fn(),
@@ -147,6 +148,7 @@ describe("Host Protect page", () => {
         cms_hint: "wordpress",
         enabled: true,
         auto_quarantine: false,
+        scan_interval: "daily",
         created_by: "u1",
         created_at: "2026-08-30T00:00:00Z",
         updated_at: "2026-08-30T00:00:00Z",
@@ -171,6 +173,7 @@ describe("Host Protect page", () => {
       cms_hint: "wordpress",
       enabled: true,
       auto_quarantine: false,
+      scan_interval: "daily",
       created_by: "u1",
       created_at: "2026-08-30T00:00:00Z",
       updated_at: "2026-08-30T00:00:00Z",
@@ -219,6 +222,7 @@ describe("Host Protect page", () => {
         cms_hint: "wordpress",
         enabled: true,
         auto_quarantine: false,
+        scan_interval: "daily",
         created_by: "u1",
         created_at: "2026-08-30T00:00:00Z",
         updated_at: "2026-08-30T00:00:00Z",
@@ -278,6 +282,7 @@ describe("Host Protect page", () => {
         cms_hint: "unknown",
         enabled: true,
         auto_quarantine: false,
+        scan_interval: "daily",
         created_by: "u1",
         created_at: "2026-08-30T00:00:00Z",
         updated_at: "2026-08-30T00:00:00Z",
@@ -306,6 +311,7 @@ describe("Host Protect page", () => {
     expect(screen.getByTestId("host-hits-empty").textContent).toMatch(
       /on-box helper/i,
     );
+    expect(screen.getByTestId("host-interval-existing")).toBeInTheDocument();
   });
 
   it("hides leftover mock-engine hits", async () => {
@@ -320,6 +326,7 @@ describe("Host Protect page", () => {
         cms_hint: "wordpress",
         enabled: true,
         auto_quarantine: false,
+        scan_interval: "daily",
         created_by: "u1",
         created_at: "2026-08-30T00:00:00Z",
         updated_at: "2026-08-30T00:00:00Z",
@@ -384,6 +391,7 @@ describe("Host Protect page", () => {
         cms_hint: "wordpress",
         enabled: true,
         auto_quarantine: false,
+        scan_interval: "daily",
         created_by: "u1",
         created_at: "2026-08-30T00:00:00Z",
         updated_at: "2026-08-30T00:00:00Z",

@@ -1522,6 +1522,44 @@ def _compose_local_walk_defaults(path: str) -> list[str]:
     return found
 
 
+@pytest.mark.asyncio
+async def test_site_scan_interval_hourly_opt_in(db_session: AsyncSession, ctx):
+    _bind_db(db_session)
+    org = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            created = await client.post(
+                "/api/host/sites",
+                headers=_auth(owner, org.id),
+                json={
+                    "name": "Hourly",
+                    "guard_agent_id": str(agent.id),
+                    "root_path": "/var/www/hourly",
+                    "scan_interval": "hourly",
+                },
+            )
+            assert created.status_code == 201, created.text
+            assert created.json()["scan_interval"] == "hourly"
+            sid = created.json()["id"]
+            patched = await client.patch(
+                f"/api/host/sites/{sid}",
+                headers=_auth(owner, org.id),
+                json={"scan_interval": "daily"},
+            )
+            assert patched.status_code == 200, patched.text
+            assert patched.json()["scan_interval"] == "daily"
+            bad = await client.patch(
+                f"/api/host/sites/{sid}",
+                headers=_auth(owner, org.id),
+                json={"scan_interval": "minutely"},
+            )
+            assert bad.status_code == 422
+    finally:
+        app.dependency_overrides.clear()
+
+
 def test_compose_files_default_local_walk_off():
     root = Path(__file__).resolve().parents[2]
     for rel in ("docker-compose.yml", "docker-compose.prod.yml"):
