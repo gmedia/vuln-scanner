@@ -86,6 +86,7 @@ curl_api() {
   if [[ -n "${ACCESS_TOKEN:-}" ]]; then
     args+=(-H "Authorization: Bearer ${ACCESS_TOKEN}")
   fi
+  args+=(-H "X-E2E-Test: 1")
   if [[ -n "$data" ]]; then
     args+=(-H "Content-Type: application/json" -d "$data")
   fi
