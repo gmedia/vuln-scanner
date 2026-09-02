@@ -30,8 +30,8 @@ Copy-from-tree (no dpkg) still works:
 ## 0) Prerequisites
 
 1. Org has **Guard** enabled; agent enrolled and **online** (SPA `/guard`). Product enroll is **not** Playwright — see [`AGENT_EXECUTION_GUIDE.md`](AGENT_EXECUTION_GUIDE.md) **§4.1** for wipe-first lab.
-2. Copy the **Guard agent UUID** from `/guard` (product `id`, not the Wazuh numeric id).
-3. Copy **Host agent token** from the same Guard enroll / Host Protect helper copy block on `/guide` (header `X-Host-Agent-Token`). Never paste it into git, tickets, or screenshots.
+2. On SPA `/guard`, copy the **Guard agent UUID** (product `id`, not the Wazuh numeric id) from the agent row.
+3. Admin/owner: **Generate Host Protect token** on that row (plaintext once). Write it to a mode-600 file on the VM (`--token-file`). This is **not** a Guard enroll token. Never paste it into git, tickets, or screenshots.
 4. Public API origin (example shape only): `https://sinexis.app` — use the origin the customer actually uses.
 
 ## 1) Files on the VM
