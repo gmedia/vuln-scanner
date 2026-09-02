@@ -1,11 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import UserGuide from "@/pages/UserGuide";
 import { SidebarProvider } from "@/components/ui/sidebar";
 
 describe("UserGuide", () => {
-  it("renders title, toc, and step-by-step section headings", () => {
+  it("renders title, toc, and step-by-step section headings", async () => {
+    const user = userEvent.setup();
     render(
       <MemoryRouter>
         <SidebarProvider>
@@ -140,10 +142,10 @@ describe("UserGuide", () => {
       screen.getByText(/RHEL \/ CentOS \/ Rocky \/ AlmaLinux \/ Fedora/),
     ).toBeInTheDocument();
     expect(screen.getByText(/SLES \/ openSUSE/)).toBeInTheDocument();
-    expect(document.body.textContent ?? "").toMatch(
+    expect(document.body.textContent ?? "").not.toMatch(
       /apt-get install -y wazuh-agent/,
     );
-    expect(document.body.textContent ?? "").toMatch(
+    expect(document.body.textContent ?? "").not.toMatch(
       /dnf install -y wazuh-agent/,
     );
     expect(screen.getByRole("link", { name: "IP Scanner" })).toHaveAttribute(
@@ -191,5 +193,15 @@ describe("UserGuide", () => {
     });
     expect(debianTrigger).toHaveAttribute("aria-expanded", "false");
     expect(debianTrigger).toHaveAttribute("data-state", "closed");
+    await user.click(debianTrigger);
+    expect(debianTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(document.body.textContent ?? "").toMatch(
+      /apt-get install -y wazuh-agent/,
+    );
+    await user.click(debianTrigger);
+    expect(debianTrigger).toHaveAttribute("aria-expanded", "false");
+    expect(document.body.textContent ?? "").not.toMatch(
+      /apt-get install -y wazuh-agent/,
+    );
   });
 });

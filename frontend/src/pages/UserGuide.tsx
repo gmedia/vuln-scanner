@@ -783,7 +783,7 @@ function UserGuide() {
                               </span>
                             </span>
                           </AccordionTrigger>
-                          <AccordionContent forceMount>
+                          <AccordionContent>
                             <pre className="mb-1 overflow-x-auto whitespace-pre-wrap break-all rounded-md border border-border bg-background/80 p-3 font-mono text-[11px] leading-relaxed text-foreground">
                               {guide.commands.join("\n")}
                             </pre>
