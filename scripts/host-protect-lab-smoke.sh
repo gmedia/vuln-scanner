@@ -90,7 +90,17 @@ curl_api() {
     args+=(-H "Content-Type: application/json" -d "$data")
   fi
   args+=(-w $'\n%{http_code}' "${GUARD_LAB_APP_BASE}${path}")
-  curl "${args[@]}"
+  local out code try
+  for try in 1 2 3 4 5; do
+    out="$(curl "${args[@]}")"
+    code="$(printf '%s' "$out" | tail -n1)"
+    if [[ "$code" != "429" ]]; then
+      printf '%s' "$out"
+      return 0
+    fi
+    sleep $((try * 3))
+  done
+  printf '%s' "$out"
 }
 
 split_body_code() {
@@ -352,7 +362,7 @@ for r in rows:
     if [[ "$got" == "$want" ]]; then
       return 0
     fi
-    if [[ "$TRIGGER_HELPER_POLL" -eq 1 ]]; then
+    if [[ "$TRIGGER_HELPER_POLL" -eq 1 && $((i % 15)) -eq 0 ]]; then
       kick_helper
     fi
     sleep 3
