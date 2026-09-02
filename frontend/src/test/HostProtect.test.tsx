@@ -314,6 +314,114 @@ describe("Host Protect page", () => {
     expect(screen.getByTestId("host-interval-existing")).toBeInTheDocument();
   });
 
+  it("does not claim a clean scan when last scan has hits but the table is empty", async () => {
+    vi.mocked(hostApi.listHostSites).mockResolvedValue([
+      {
+        id: "s1",
+        organization_id: "org1",
+        guard_agent_id: "a1",
+        asset_id: null,
+        name: "Erp Stg",
+        root_path: "/var/www/stg/member-pay",
+        cms_hint: "unknown",
+        enabled: true,
+        auto_quarantine: false,
+        scan_interval: "daily",
+        created_by: "u1",
+        created_at: "2026-08-30T00:00:00Z",
+        updated_at: "2026-08-30T00:00:00Z",
+        sku: "multi",
+        sku_limit: 10,
+      },
+    ]);
+    vi.mocked(hostApi.listHostScans).mockResolvedValue([
+      {
+        id: "sc1",
+        organization_id: "org1",
+        site_id: "s1",
+        status: "completed",
+        trigger: "manual",
+        started_at: "2026-08-30T00:00:00Z",
+        finished_at: "2026-08-30T00:01:00Z",
+        error: null,
+        hit_count: 1,
+        created_at: "2026-08-30T00:00:00Z",
+      },
+    ]);
+    vi.mocked(hostApi.listHostHits).mockResolvedValue([
+      {
+        id: "h-ign",
+        organization_id: "org1",
+        site_id: "s1",
+        scan_id: "sc1",
+        rel_path: "cache.php",
+        class: "webshell",
+        engine: "yara",
+        rule_id: "yara.webshell.php",
+        status: "ignored",
+        sha256: null,
+        first_seen_at: "2026-08-30T00:00:00Z",
+        last_seen_at: "2026-08-30T00:00:00Z",
+      },
+    ]);
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByTestId("host-scan-status")).toBeInTheDocument(),
+    );
+    expect(screen.getByTestId("host-scan-status").textContent).toMatch(
+      /1 hits/i,
+    );
+    expect(screen.getByTestId("host-hits-empty").textContent).toMatch(
+      /not a clean bill of health/i,
+    );
+    expect(screen.getByTestId("host-hits-empty").textContent).not.toMatch(
+      /no matching signatures/i,
+    );
+  });
+
+  it("shows clean-scan copy only when last scan completed with zero hits", async () => {
+    vi.mocked(hostApi.listHostSites).mockResolvedValue([
+      {
+        id: "s1",
+        organization_id: "org1",
+        guard_agent_id: "a1",
+        asset_id: null,
+        name: "Erp Stg",
+        root_path: "/var/www/stg/member-pay",
+        cms_hint: "unknown",
+        enabled: true,
+        auto_quarantine: false,
+        scan_interval: "daily",
+        created_by: "u1",
+        created_at: "2026-08-30T00:00:00Z",
+        updated_at: "2026-08-30T00:00:00Z",
+        sku: "multi",
+        sku_limit: 10,
+      },
+    ]);
+    vi.mocked(hostApi.listHostScans).mockResolvedValue([
+      {
+        id: "sc1",
+        organization_id: "org1",
+        site_id: "s1",
+        status: "completed",
+        trigger: "manual",
+        started_at: "2026-08-30T00:00:00Z",
+        finished_at: "2026-08-30T00:01:00Z",
+        error: null,
+        hit_count: 0,
+        created_at: "2026-08-30T00:00:00Z",
+      },
+    ]);
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByTestId("host-scan-status")).toBeInTheDocument(),
+    );
+    expect(screen.getByTestId("host-hits-empty").textContent).toMatch(
+      /no matching signatures/i,
+    );
+  });
+
   it("hides leftover mock-engine hits", async () => {
     vi.mocked(hostApi.listHostSites).mockResolvedValue([
       {

@@ -411,9 +411,13 @@ export default function HostProtect() {
                     ? t("hitsWaitingAgent")
                     : lastScan?.status === "failed"
                       ? t("hitsUnreachable")
-                      : lastScan?.status === "completed"
+                      : lastScan?.status === "completed" &&
+                          (lastScan.hit_count ?? 0) === 0
                         ? t("hitsClean")
-                        : t("hitsEmpty");
+                        : lastScan?.status === "completed" &&
+                            (lastScan.hit_count ?? 0) > 0
+                          ? t("hitsHidden")
+                          : t("hitsEmpty");
                 const scanStatusCopy =
                   lastScan?.status === "queued"
                     ? t("scanQueued")

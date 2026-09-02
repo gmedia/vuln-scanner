@@ -29,6 +29,7 @@
   "hitsEmpty": "No malware hits yet.",
   "hitsWaitingAgent": "Scan is queued on the Guard host. Hits appear after the on-box helper reads this document root. The SaaS worker does not mount customer disks.",
   "hitsClean": "Last scan finished with no matching signatures in the files it could read (cap 500 files, 1 MiB each).",
+  "hitsHidden": "Last scan reported hits, but none are listed here (ignored, mock engine, or already cleared). That is not a clean bill of health.",
   "hitsUnreachable": "This scan did not finish on the Guard host. Hits appear only after the on-box helper POSTs results. The SaaS worker does not read customer disks.",
   "scanQueued": "Scan queued — waiting for the Guard host helper.",
   "scanCompleted": "Last scan completed ({{count}} hits).",

@@ -29,6 +29,7 @@
   "hitsEmpty": "Belum ada hit malware.",
   "hitsWaitingAgent": "Scan mengantri di host Guard. Hit muncul setelah helper on-box membaca document root ini. Worker SaaS tidak me-mount disk pelanggan.",
   "hitsClean": "Scan terakhir selesai tanpa signature yang cocok pada file yang bisa dibaca (batas 500 file, 1 MiB per file).",
+  "hitsHidden": "Scan terakhir melaporkan hit, tetapi tidak ada yang tampil di sini (diabaikan, mesin mock, atau sudah dibersihkan). Itu bukan berarti bersih.",
   "hitsUnreachable": "Scan ini belum selesai di host Guard. Hit muncul hanya setelah helper on-box mengirim hasil. Worker SaaS tidak membaca disk pelanggan.",
   "scanQueued": "Scan mengantri — menunggu helper di host Guard.",
   "scanCompleted": "Scan terakhir selesai ({{count}} hit).",
