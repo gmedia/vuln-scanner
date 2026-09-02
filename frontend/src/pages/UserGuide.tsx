@@ -962,7 +962,7 @@ function UserGuide() {
                       ...transUi,
                       gh: (
                         <a
-                          href="https://github.com/gmedia/vuln-scanner/blob/main/packaging/host-protect-helper/sinexis-install.sh"
+                          href="https://raw.githubusercontent.com/gmedia/vuln-scanner/main/packaging/host-protect-helper/sinexis-install.sh"
                           className="text-primary hover:underline"
                           target="_blank"
                           rel="noreferrer"
