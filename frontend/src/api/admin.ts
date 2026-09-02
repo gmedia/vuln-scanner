@@ -16,6 +16,7 @@ export interface AdminUserItem {
   credits: number;
   scan_count: number;
   created_at: string;
+  last_login_at: string | null;
 }
 
 export interface AdminUserList {
