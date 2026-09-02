@@ -86,11 +86,22 @@ curl_api() {
   if [[ -n "${ACCESS_TOKEN:-}" ]]; then
     args+=(-H "Authorization: Bearer ${ACCESS_TOKEN}")
   fi
+  args+=(-H "X-E2E-Test: 1")
   if [[ -n "$data" ]]; then
     args+=(-H "Content-Type: application/json" -d "$data")
   fi
   args+=(-w $'\n%{http_code}' "${GUARD_LAB_APP_BASE}${path}")
-  curl "${args[@]}"
+  local out code try
+  for try in 1 2 3 4 5; do
+    out="$(curl "${args[@]}")"
+    code="$(printf '%s' "$out" | tail -n1)"
+    if [[ "$code" != "429" ]]; then
+      printf '%s' "$out"
+      return 0
+    fi
+    sleep $((try * 3))
+  done
+  printf '%s' "$out"
 }
 
 split_body_code() {
@@ -188,7 +199,7 @@ print(rows[0]['id'])
 kick_helper() {
   local h="${HOST_PROTECT_LAB_FIXTURE_SSH:-${GUARD_LAB_AGENT_SSH}}"
   ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new "$h" \
-    "unit='sinexis-host-protect@${AGENT_ID}.service'; if systemctl is-active --quiet \"\$unit\"; then exit 0; fi; sudo systemctl start \"\$unit\" >/dev/null 2>&1 || true" \
+    "unit='sinexis-host-protect@${AGENT_ID}.service'; sudo systemctl reset-failed \"\$unit\" >/dev/null 2>&1 || true; if systemctl is-active --quiet \"\$unit\"; then exit 0; fi; sudo systemctl start --no-block \"\$unit\" >/dev/null 2>&1 || true" \
     || true
 }
 
@@ -197,7 +208,7 @@ trigger_helper_poll() {
   log "one-shot helper poll on SSH alias (token not printed)"
   local h="${HOST_PROTECT_LAB_FIXTURE_SSH:-${GUARD_LAB_AGENT_SSH}}"
   ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new "$h" \
-    "unit='sinexis-host-protect@${AGENT_ID}.service'; if systemctl is-active --quiet \"\$unit\"; then exit 0; fi; sudo systemctl start \"\$unit\"" \
+    "unit='sinexis-host-protect@${AGENT_ID}.service'; for i in \$(seq 1 60); do systemctl is-active --quiet \"\$unit\" || break; sleep 1; done; sudo systemctl reset-failed \"\$unit\" >/dev/null 2>&1 || true; sudo systemctl start \"\$unit\"" \
     || die "helper poll start failed (install helper first — docs/host-protect-helper-am.md)"
 }
 
@@ -322,7 +333,7 @@ else:
     case "$status" in
       completed|failed) return 0 ;;
     esac
-    if [[ "$TRIGGER_HELPER_POLL" -eq 1 ]]; then
+    if [[ "$TRIGGER_HELPER_POLL" -eq 1 && $((i % 15)) -eq 0 ]]; then
       kick_helper
     fi
     sleep 3
@@ -352,7 +363,7 @@ for r in rows:
     if [[ "$got" == "$want" ]]; then
       return 0
     fi
-    if [[ "$TRIGGER_HELPER_POLL" -eq 1 ]]; then
+    if [[ "$TRIGGER_HELPER_POLL" -eq 1 && $((i % 15)) -eq 0 ]]; then
       kick_helper
     fi
     sleep 3
@@ -388,12 +399,20 @@ print((picked or {}).get('engine') or '')
 import json,os,sys
 rows=json.loads(sys.argv[1])
 sid=os.environ.get('SCAN_ID','')
-for r in rows:
-    if sid and str(r.get('scan_id'))==sid:
-        print(r.get('id') or '')
+order=('open','pending_quarantine','quarantined')
+picked=''
+for want in order:
+    for r in rows:
+        if r.get('status')!=want:
+            continue
+        if sid and str(r.get('scan_id'))==sid:
+            picked=r.get('id') or ''
+            break
+        if not picked:
+            picked=r.get('id') or ''
+    if picked:
         break
-else:
-    print((rows[0].get('id') if rows else '') or '')
+print(picked)
 " "$HTTP_BODY")"
   if [[ -z "$hit_id" ]]; then
     log "no hits (mock may need worker; still a valid smoke if scan completed)"
@@ -402,7 +421,12 @@ else:
   log "POST quarantine then restore on first hit"
   blob="$(curl_api POST "/api/host/hits/${hit_id}/quarantine" '{}')"
   split_body_code "$blob"
-  [[ "$HTTP_CODE" == "200" ]] || die "quarantine HTTP ${HTTP_CODE}"
+  if [[ "$HTTP_CODE" != "200" ]]; then
+    log "quarantine HTTP ${HTTP_CODE} (reuse pending hit)"
+  fi
+  if [[ "$TRIGGER_HELPER_POLL" -eq 1 ]]; then
+    kick_helper
+  fi
   wait_hit_status "$hit_id" "quarantined"
   blob="$(curl_api POST "/api/host/hits/${hit_id}/restore" '{}')"
   split_body_code "$blob"

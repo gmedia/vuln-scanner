@@ -64,30 +64,7 @@ async def poll_agent_jobs(
     if agent.id != agent_id:
         raise _unauthorized()
     agent.last_helper_poll_at = datetime.now(UTC)
-    result = await db.execute(
-        select(HostScan, HostSite)
-        .join(HostSite, HostSite.id == HostScan.site_id)
-        .where(
-            HostSite.guard_agent_id == agent.id,
-            HostSite.organization_id == agent.organization_id,
-            HostScan.organization_id == agent.organization_id,
-            HostScan.status == "queued",
-            HostSite.enabled.is_(True),
-        )
-        .order_by(HostScan.created_at.asc())
-        .limit(5)
-    )
     jobs: list[HostAgentPollJob] = []
-    for scan, site in result.all():
-        jobs.append(
-            HostAgentPollJob(
-                kind="scan",
-                scan_id=scan.id,
-                site_id=site.id,
-                root_path=site.root_path,
-                trigger=scan.trigger,
-            )
-        )
     cmd_result = await db.execute(
         select(HostCommand, HostSite, HostHit)
         .join(HostSite, HostSite.id == HostCommand.site_id)
@@ -100,7 +77,7 @@ async def poll_agent_jobs(
             HostSite.enabled.is_(True),
         )
         .order_by(HostCommand.created_at.asc())
-        .limit(5)
+        .limit(50)
     )
     for cmd, site, hit in cmd_result.all():
         jobs.append(
@@ -112,6 +89,29 @@ async def poll_agent_jobs(
                 root_path=site.root_path,
                 rel_path=hit.rel_path,
                 dest_basename=cmd.dest_basename,
+            )
+        )
+    scan_result = await db.execute(
+        select(HostScan, HostSite)
+        .join(HostSite, HostSite.id == HostScan.site_id)
+        .where(
+            HostSite.guard_agent_id == agent.id,
+            HostSite.organization_id == agent.organization_id,
+            HostScan.organization_id == agent.organization_id,
+            HostScan.status == "queued",
+            HostSite.enabled.is_(True),
+        )
+        .order_by(HostScan.created_at.asc())
+        .limit(5)
+    )
+    for scan, site in scan_result.all():
+        jobs.append(
+            HostAgentPollJob(
+                kind="scan",
+                scan_id=scan.id,
+                site_id=site.id,
+                root_path=site.root_path,
+                trigger=scan.trigger,
             )
         )
     await db.commit()

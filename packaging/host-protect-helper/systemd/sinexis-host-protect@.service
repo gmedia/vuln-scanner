@@ -2,6 +2,8 @@
 Description=Sinexis Host Protect on-box poll (%i)
 Requires=wazuh-agent.service
 After=wazuh-agent.service
+# StartLimit* is a [Unit] key. In [Service] it is ignored and the default 5/10s remains.
+StartLimitIntervalSec=0
 
 [Service]
 Type=oneshot

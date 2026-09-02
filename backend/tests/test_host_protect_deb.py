@@ -39,7 +39,9 @@ def test_build_deb_contents(tmp_path: Path) -> None:
         assert b"LOCK_EX" in body
         unit = tf.extractfile("./usr/lib/systemd/system/sinexis-host-protect@.service")
         assert unit is not None
-        assert b"flock -n" in unit.read()
+        unit_body = unit.read()
+        assert b"flock -n" in unit_body
+        assert b"StartLimitIntervalSec=0" in unit_body
         env_ex = tf.extractfile("./usr/share/doc/sinexis-host-protect/host-protect.env.example")
         assert env_ex is not None
         env_body = env_ex.read()

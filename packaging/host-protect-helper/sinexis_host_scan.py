@@ -15,6 +15,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -316,7 +317,7 @@ def run_restore(args: argparse.Namespace) -> int:
     return 0
 
 
-def fetch_jobs(api_base: str, token: str, agent_id: str, timeout: int) -> list[dict[str, str]]:
+def fetch_jobs(api_base: str, token: str, agent_id: str, timeout: int) -> tuple[int, list[dict[str, str]]]:
     url = api_base.rstrip("/") + "/api/host/agent/jobs?agent_id=" + urllib.parse.quote(agent_id)
     req = urllib.request.Request(
         url,
@@ -327,10 +328,10 @@ def fetch_jobs(api_base: str, token: str, agent_id: str, timeout: int) -> list[d
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             body = json.loads(resp.read().decode("utf-8"))
     except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError, OSError):
-        return []
+        return 0, []
     jobs = body.get("jobs") if isinstance(body, dict) else None
     if not isinstance(jobs, list):
-        return []
+        return 0, []
     out: list[dict[str, str]] = []
     for job in jobs:
         if not isinstance(job, dict):
@@ -357,7 +358,9 @@ def fetch_jobs(api_base: str, token: str, agent_id: str, timeout: int) -> list[d
                         "site_id": site_id,
                     }
                 )
-    return out
+            elif command_id:
+                post_command_ack(api_base, token, agent_id, command_id, False, "incomplete job", timeout)
+    return len(jobs), out
 
 
 def post_results(api_base: str, token: str, payload: dict[str, object], timeout: int) -> int:
@@ -406,6 +409,7 @@ def _poll_lock_path(agent_id: str) -> str:
 def run_poll(args: argparse.Namespace) -> int:
     if not args.api_base or not args.token or not args.agent_id:
         return 4
+    fetch_jobs(args.api_base, args.token, args.agent_id, args.timeout)
     lock_path = _poll_lock_path(args.agent_id)
     try:
         os.makedirs(os.path.dirname(lock_path), mode=0o700, exist_ok=True)
@@ -419,7 +423,15 @@ def run_poll(args: argparse.Namespace) -> int:
             os.close(lock_fd)
             return 0
     try:
-        return _run_poll_jobs(args)
+        worst = 0
+        deadline = time.monotonic() + 90
+        for _ in range(40):
+            n_raw, rc = _run_poll_jobs(args)
+            if rc != 0:
+                worst = rc
+            if n_raw < 5 or time.monotonic() >= deadline:
+                break
+        return worst
     finally:
         if lock_fd is not None:
             try:
@@ -429,8 +441,9 @@ def run_poll(args: argparse.Namespace) -> int:
             os.close(lock_fd)
 
 
-def _run_poll_jobs(args: argparse.Namespace) -> int:
-    jobs = fetch_jobs(args.api_base, args.token, args.agent_id, args.timeout)
+def _run_poll_jobs(args: argparse.Namespace) -> tuple[int, int]:
+    n_raw, jobs = fetch_jobs(args.api_base, args.token, args.agent_id, args.timeout)
+    jobs.sort(key=lambda j: 0 if (j.get("kind") or "") in ("quarantine", "restore") else 1)
     worst = 0
     for job in jobs:
         kind = job.get("kind") or "scan"
@@ -476,7 +489,7 @@ def _run_poll_jobs(args: argparse.Namespace) -> int:
             )
         if rc != 0:
             worst = rc
-    return worst
+    return n_raw, worst
 
 
 def run(argv: list[str] | None = None) -> int:
