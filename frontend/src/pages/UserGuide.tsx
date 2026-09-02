@@ -114,6 +114,7 @@ function GuideCode({ children }: { children?: ReactNode }) {
 const transUi = {
   ui: <Ui />,
   code: <GuideCode />,
+  strong: <strong className="font-medium text-foreground" />,
 };
 
 function useActiveGuideSection() {
@@ -857,6 +858,18 @@ function UserGuide() {
                 </li>
                 <li>
                   <Trans i18nKey="s4" ns="guide" components={transUi} />
+                </li>
+                <li>
+                  <Trans i18nKey="sCasesWhat" ns="guide" components={transUi} />
+                </li>
+                <li>
+                  <Trans i18nKey="sCasesVs" ns="guide" components={transUi} />
+                </li>
+                <li>
+                  <Trans i18nKey="sCasesFlow" ns="guide" components={transUi} />
+                </li>
+                <li>
+                  <Trans i18nKey="sCasesNot" ns="guide" components={transUi} />
                 </li>
               </Steps>
             </CardContent>
