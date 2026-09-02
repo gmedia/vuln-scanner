@@ -25,6 +25,7 @@ from app.services.guard_apply import get_binding as apply_get_binding
 from app.services.guard_apply import sanitize_sync_error
 from app.services.guard_apply import sync_all_enabled as apply_sync_all_enabled
 from app.services.guard_apply import sync_org as apply_sync_org
+from app.services.host_agent_ingest import generate_results_token
 from app.services.organization import require_membership
 from app.services.wazuh_client import WazuhClient, get_wazuh_client
 
@@ -121,6 +122,28 @@ class GuardService:
             select(GuardAgent).where(GuardAgent.organization_id == org_id).order_by(GuardAgent.name.asc())
         )
         return list(result.scalars().all())
+
+    async def issue_host_agent_token(
+        self,
+        user: User,
+        organization_id: UUID | None,
+        agent_id: UUID,
+    ) -> tuple[GuardAgent, str]:
+        self._require_feature()
+        org_id = await self._require_org(user, organization_id, min_role="admin")
+        result = await self.db.execute(
+            select(GuardAgent).where(GuardAgent.id == agent_id, GuardAgent.organization_id == org_id)
+        )
+        agent = result.scalar_one_or_none()
+        if agent is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found")
+        raw, token_hash = generate_results_token()
+        agent.results_token_hash = token_hash
+        agent.results_token_revoked_at = None
+        agent.updated_at = datetime.now(UTC)
+        await self.db.commit()
+        await self.db.refresh(agent)
+        return agent, raw
 
     async def list_alerts(
         self,

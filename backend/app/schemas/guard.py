@@ -27,8 +27,14 @@ class GuardAgentResponse(BaseModel):
     version: str | None = None
     last_keep_alive: datetime | None = None
     last_helper_poll_at: datetime | None = None
+    has_host_agent_token: bool = False
     synced_at: datetime
     created_at: datetime
+
+
+class GuardHostAgentTokenCreated(BaseModel):
+    agent_id: uuid.UUID
+    token: str
 
 
 class GuardAlertResponse(BaseModel):

@@ -20,6 +20,7 @@ vi.mock("@/api/guard", async () => {
     enableGuard: vi.fn(),
     syncGuard: vi.fn(),
     revokeEnrollToken: vi.fn(),
+    issueHostAgentToken: vi.fn(),
   };
 });
 
@@ -197,7 +198,7 @@ describe("Guard host enroll UI", () => {
     const agentsCard = screen.getByTestId("guard-agents");
     const agentTable = agentsCard.querySelector("table");
     expect(agentTable).toBeTruthy();
-    expect(agentTable?.className ?? "").toContain("min-w-[48rem]");
+    expect(agentTable?.className ?? "").toContain("min-w-[64rem]");
     expect(agentTable?.className ?? "").not.toContain("table-fixed");
   });
 
@@ -241,5 +242,61 @@ describe("Guard host enroll UI", () => {
     expect(
       screen.queryByText("Could not load Guard status"),
     ).not.toBeInTheDocument();
+  });
+
+  it("copies agent UUID and issues a host-agent token once", async () => {
+    const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    vi.mocked(guardApi.listGuardAgents).mockResolvedValue([
+      {
+        id: "ag-uuid-copy",
+        organization_id: "org1",
+        wazuh_agent_id: "001",
+        name: "vps-hp-01",
+        status: "active",
+        ip: null,
+        version: "4.7.0",
+        last_keep_alive: "2026-08-17T14:05:00Z",
+        last_helper_poll_at: null,
+        has_host_agent_token: false,
+        synced_at: "2026-08-17T14:05:00Z",
+        created_at: "2026-08-17T14:05:00Z",
+      },
+    ]);
+    vi.mocked(guardApi.issueHostAgentToken).mockResolvedValue({
+      agent_id: "ag-uuid-copy",
+      token: "once-plain-host-token",
+    });
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <Guard />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    const copyBtns = await screen.findAllByRole("button", {
+      name: "Copy Guard agent UUID",
+    });
+    await user.click(copyBtns[0]);
+    expect(writeText).toHaveBeenCalledWith("ag-uuid-copy");
+    expect(screen.getByText("Helper poll")).toBeInTheDocument();
+    await user.click(
+      screen.getAllByTestId("guard-host-token-issue")[0],
+    );
+    expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Generate token" }));
+    await waitFor(() => {
+      expect(guardApi.issueHostAgentToken).toHaveBeenCalledWith("ag-uuid-copy");
+    });
+    expect(await screen.findByTestId("guard-host-token-once")).toHaveTextContent(
+      "once-plain-host-token",
+    );
   });
 });
