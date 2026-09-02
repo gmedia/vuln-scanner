@@ -93,6 +93,17 @@ describe("UserGuide", () => {
     expect(document.body.querySelector('a[href="#guard"]')).toBeTruthy();
     expect(document.body.textContent ?? "").toMatch(/Host Protect helper/i);
     expect(document.body.textContent ?? "").toMatch(/sinexis-install\.sh/);
+    expect(document.body.textContent ?? "").toMatch(/helper folder|folder helper/);
+    expect(
+      screen.getByRole("link", { name: "packaging/host-protect-helper" }),
+    ).toHaveAttribute(
+      "href",
+      "https://github.com/gmedia/vuln-scanner/tree/main/packaging/host-protect-helper",
+    );
+    expect(screen.getByRole("link", { name: "GitHub Release" })).toHaveAttribute(
+      "href",
+      "https://github.com/gmedia/vuln-scanner/releases",
+    );
     expect(document.body.textContent ?? "").toMatch(/curl \| bash/);
     expect(document.body.textContent ?? "").toMatch(/sinexis-host-protect@/i);
     expect(document.body.textContent ?? "").toMatch(/quarantine/i);

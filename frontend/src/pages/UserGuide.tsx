@@ -955,6 +955,34 @@ function UserGuide() {
                   />
                 </li>
                 <li>
+                  <Trans
+                    i18nKey="hpGet"
+                    ns="guide"
+                    components={{
+                      ...transUi,
+                      gh: (
+                        <a
+                          href="https://github.com/gmedia/vuln-scanner/tree/main/packaging/host-protect-helper"
+                          className="text-primary hover:underline"
+                          target="_blank"
+                          rel="noreferrer"
+                        />
+                      ),
+                      rel: (
+                        <a
+                          href="https://github.com/gmedia/vuln-scanner/releases"
+                          className="text-primary hover:underline"
+                          target="_blank"
+                          rel="noreferrer"
+                        />
+                      ),
+                    }}
+                  />
+                </li>
+                <li>
+                  <Trans i18nKey="hpInstall" ns="guide" components={transUi} />
+                </li>
+                <li>
                   <Trans i18nKey="hp2" ns="guide" components={transUi} />
                 </li>
                 <li>{t("hp3")}</li>
