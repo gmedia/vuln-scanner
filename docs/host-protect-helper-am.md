@@ -8,7 +8,16 @@ This is **not** a second enroll daemon. Guard (`wazuh-agent`) stays the identity
 
 **Debian `.deb`:** build with `./scripts/build-host-protect-deb.sh` (writes `dist/sinexis-host-protect_*_all.deb`). Package **Depends: wazuh-agent** — do not install on machines without Guard. Env file is **not** in the package payload except as `/usr/share/doc/.../host-protect.env.example` (empty token). `postinst` copies the example to `/etc/sinexis/host-protect.env` only if missing (mode 600). Enable the timer with the Guard UUID after filling the token.
 
-**How to get the installer (not curl|bash, not a git clone):** download **one file** [`sinexis-install.sh`](https://github.com/gmedia/vuln-scanner/blob/main/packaging/host-protect-helper/sinexis-install.sh) (or a [GitHub Release](https://github.com/gmedia/vuln-scanner/releases) asset — verify SHA256). Payloads (scan helper, rules, systemd units) are **embedded**. Copy that file onto the VPS (`chmod +x`).
+**How to get the installer (not curl|bash, not a git clone):** download the **raw** file (not the GitHub HTML blob page):
+
+```bash
+wget -O sinexis-install.sh \
+  'https://raw.githubusercontent.com/gmedia/vuln-scanner/main/packaging/host-protect-helper/sinexis-install.sh'
+head -n1 sinexis-install.sh   # must be #!/usr/bin/env bash — not <!DOCTYPE html>
+chmod +x sinexis-install.sh
+```
+
+Or a [GitHub Release](https://github.com/gmedia/vuln-scanner/releases) asset — verify SHA256. Payloads (scan helper, rules, systemd units) are **embedded**. If `bash` reports `<!DOCTYPE html>`, you saved the web page.
 
 **Wrapper:** TTY menu — (1) install `wazuh-agent`, (2) configure Host Protect helper, (3) both. Not `curl | bash`. Enroll still uses SaaS token + `manage_agents` for `agent_key`.
 
