@@ -64,7 +64,7 @@ Do **not** mix slices in one PR. Lab: **tc5 fixture**, never ERP `sx-erpstg`. Wi
 |-------|------|------|------------------------|-----|
 | **A** | Honesty UX | Konsol tidak berbohong | `pending_agent` / `unreachable_root` in API + SPA; `hit_count` ignores mock; copy: path not on agent | New engine |
 | **B** | Default on-box | Scan now **always** means helper (or fail) | Worker **never** `_finish_scan` from SaaS `isdir` except documented **lab bind fixture** flag; prod missing dir → fail closed | Bind customer disks |
-| **C** | Helper ops | Install path AM can run | Package/docs: Depends `wazuh-agent`; token from Guard UI; timer; AM runbook [`host-protect-helper-am.md`](../host-protect-helper-am.md); lab smoke `--require-helper-heartbeat` on **tc5** | `curl \| bash` as v1 |
+| **C** | Helper ops | Install path AM can run | Package/docs: Depends `wazuh-agent`; token from Guard UI; timer; AM runbook [`host-protect-helper-am.md`](../host-protect-helper-am.md); wrapper [`sinexis-install.sh`](../../packaging/host-protect-helper/sinexis-install.sh) (`--dry-run` / `--token-file` / `--interactive`); lab smoke `--require-helper-heartbeat` on **tc5** | `curl \| bash` as v1 |
 | **D** | Disk quarantine | Isolate like Imunify “cleanup” **without** rewrite | S11: `mv` jail, restore, audit; auto off | PHP rewrite |
 | **E** | denser schedule | Daily → optional hourly / on-write later | Beat cap; no 24×7 root YARA on `/` | inotify v1 unless named |
 | **F** | WAF protect | Block on **customer** nginx | Owner names protect SKU; lab vhost only; **never** Sinexis edge | CRS paid packs in git |
