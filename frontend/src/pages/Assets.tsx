@@ -25,6 +25,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/Select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/Popover";
 
 function parseTags(raw: string): string[] {
   const seen = new Set<string>();
@@ -56,7 +61,8 @@ export default function Assets() {
   const [tagsInput, setTagsInput] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ScanAsset | null>(null);
-  const [tagFilter, setTagFilter] = useState<string>("all");
+  const [tagFilters, setTagFilters] = useState<string[]>([]);
+  const [tagQuery, setTagQuery] = useState("");
 
   function resetForm() {
     setName("");
@@ -88,9 +94,22 @@ export default function Assets() {
     return [...s].sort();
   }, [items]);
   const visible = useMemo(() => {
-    if (tagFilter === "all") return items;
-    return items.filter((a) => (a.tags ?? []).includes(tagFilter));
-  }, [items, tagFilter]);
+    if (tagFilters.length === 0) return items;
+    return items.filter((a) =>
+      (a.tags ?? []).some((tag) => tagFilters.includes(tag)),
+    );
+  }, [items, tagFilters]);
+  const tagOptions = useMemo(() => {
+    const q = tagQuery.trim().toLowerCase();
+    if (!q) return allTags;
+    return allTags.filter((tag) => tag.includes(q));
+  }, [allTags, tagQuery]);
+
+  function toggleTagFilter(tag: string) {
+    setTagFilters((prev) =>
+      prev.includes(tag) ? prev.filter((x) => x !== tag) : [...prev, tag],
+    );
+  }
   const sku = items[0]?.sku ?? "multi";
   const limit = items[0]?.sku_limit ?? 10;
   const atCap = items.length >= limit;
@@ -314,24 +333,90 @@ export default function Assets() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="flex min-w-0 flex-col gap-1.5">
             <Label htmlFor="asset-tag-filter">{t("filterTag")}</Label>
-            <Select value={tagFilter} onValueChange={setTagFilter}>
-              <SelectTrigger
-                id="asset-tag-filter"
-                data-testid="asset-tag-filter"
-                className="h-10 min-h-10"
-                aria-label={t("filterTag")}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="asset-tag-filter"
+                  type="button"
+                  variant="outline"
+                  data-testid="asset-tag-filter"
+                  className="h-10 min-h-10 w-full justify-start font-normal"
+                  aria-label={t("filterTag")}
+                >
+                  {tagFilters.length === 0
+                    ? t("allTags")
+                    : t("filterTagCount", { count: tagFilters.length })}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="start"
+                className="w-[min(24rem,calc(100vw-2rem))] p-3"
               >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("allTags")}</SelectItem>
-                {allTags.map((tag) => (
-                  <SelectItem key={tag} value={tag}>
-                    {tag}
-                  </SelectItem>
+                <Input
+                  data-testid="asset-tag-filter-search"
+                  value={tagQuery}
+                  onChange={(e) => setTagQuery(e.target.value)}
+                  placeholder={t("filterTagSearch")}
+                  aria-label={t("filterTagSearch")}
+                  className="h-10 min-h-10"
+                />
+                <ul
+                  className="mt-2 max-h-56 overflow-y-auto"
+                  data-testid="asset-tag-filter-list"
+                >
+                  {tagOptions.length === 0 ? (
+                    <li className="px-1 py-2 text-sm text-muted-foreground">
+                      {t("filterTagNone")}
+                    </li>
+                  ) : (
+                    tagOptions.map((tag) => {
+                      const on = tagFilters.includes(tag);
+                      return (
+                        <li key={tag}>
+                          <Button
+                            type="button"
+                            variant={on ? "outline" : "ghost"}
+                            className="h-9 w-full justify-start font-normal"
+                            data-testid={`asset-tag-filter-opt-${tag}`}
+                            aria-pressed={on}
+                            onClick={() => toggleTagFilter(tag)}
+                          >
+                            {tag}
+                          </Button>
+                        </li>
+                      );
+                    })
+                  )}
+                </ul>
+                {tagFilters.length > 0 ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2"
+                    data-testid="asset-tag-filter-clear"
+                    onClick={() => setTagFilters([])}
+                  >
+                    {t("clearTagFilter")}
+                  </Button>
+                ) : null}
+              </PopoverContent>
+            </Popover>
+            {tagFilters.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {tagFilters.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="default"
+                    className="cursor-pointer"
+                    data-testid={`asset-tag-chip-${tag}`}
+                    onClick={() => toggleTagFilter(tag)}
+                  >
+                    {tag} ×
+                  </Badge>
                 ))}
-              </SelectContent>
-            </Select>
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -377,7 +462,7 @@ export default function Assets() {
                             variant="default"
                             data-testid={`asset-tag-${tag}`}
                             className="cursor-pointer"
-                            onClick={() => setTagFilter(tag)}
+                            onClick={() => toggleTagFilter(tag)}
                           >
                             {tag}
                           </Badge>
