@@ -47,6 +47,29 @@ def test_wrapper_dry_run_ok(tmp_path: Path) -> None:
     assert "token not printed" in combined
 
 
+def test_wrapper_dry_run_wazuh_agent() -> None:
+    proc = _run(
+        [
+            "--dry-run",
+            "--install-wazuh-agent",
+            "--manager-host",
+            "example.invalid",
+        ]
+    )
+    assert proc.returncode == 0, proc.stderr
+    combined = proc.stdout + proc.stderr
+    assert "dry-run: install wazuh-agent" in combined
+    assert "example.invalid" in combined
+
+
+def test_wrapper_help_mentions_menu() -> None:
+    proc = _run(["--help"])
+    assert proc.returncode == 0
+    assert "Install wazuh-agent" in proc.stdout
+    assert "Configure Host Protect helper" in proc.stdout
+    assert "curl|bash" in proc.stdout or "curl | bash" in proc.stdout
+
+
 def test_wrapper_rejects_http_api() -> None:
     proc = _run(
         [
