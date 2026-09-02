@@ -420,7 +420,7 @@ def run_poll(args: argparse.Namespace) -> int:
             return 0
     try:
         worst = 0
-        for _ in range(16):
+        for _ in range(4):
             n_jobs, rc = _run_poll_jobs(args)
             if rc != 0:
                 worst = rc
