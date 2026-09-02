@@ -375,7 +375,7 @@ export default function Assets() {
                         <li key={tag}>
                           <Button
                             type="button"
-                            variant={on ? "secondary" : "ghost"}
+                            variant={on ? "outline" : "ghost"}
                             className="h-9 w-full justify-start font-normal"
                             data-testid={`asset-tag-filter-opt-${tag}`}
                             aria-pressed={on}
