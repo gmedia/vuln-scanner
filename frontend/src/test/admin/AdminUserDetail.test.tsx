@@ -39,6 +39,7 @@ const mockUser = {
   credits: 25,
   scan_count: 7,
   created_at: "2024-01-15T12:00:00Z",
+  last_login_at: null,
 };
 
 function renderPage(userId = "user-1") {
