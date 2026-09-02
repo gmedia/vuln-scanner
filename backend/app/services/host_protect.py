@@ -84,6 +84,7 @@ class HostProtectService:
             cms_hint=site.cms_hint,
             enabled=site.enabled,
             auto_quarantine=site.auto_quarantine,
+            scan_interval=site.scan_interval,
             created_by=site.created_by,
             created_at=site.created_at,
             updated_at=site.updated_at,
@@ -148,6 +149,7 @@ class HostProtectService:
             cms_hint=body.cms_hint,
             enabled=body.enabled,
             auto_quarantine=body.auto_quarantine,
+            scan_interval=body.scan_interval,
             created_by=user.id,
         )
         self.db.add(site)
