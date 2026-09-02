@@ -11,6 +11,7 @@ export interface HostSite {
   cms_hint: string | null;
   enabled: boolean;
   auto_quarantine: boolean;
+  scan_interval: "daily" | "hourly";
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -54,6 +55,15 @@ export interface HostSiteCreatePayload {
   asset_id?: string;
   enabled?: boolean;
   auto_quarantine?: boolean;
+  scan_interval?: "daily" | "hourly";
+}
+
+export async function updateHostSite(
+  id: string,
+  payload: { scan_interval?: "daily" | "hourly" },
+): Promise<HostSite> {
+  const { data } = await api.patch<HostSite>(`/api/host/sites/${id}`, payload);
+  return data;
 }
 
 export function isHostProtectDisabledError(err: unknown): boolean {

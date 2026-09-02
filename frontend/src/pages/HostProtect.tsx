@@ -18,6 +18,7 @@ import {
   listHostScans,
   listHostSites,
   type HostScan,
+  updateHostSite,
   quarantineHostHit,
   restoreHostHit,
   type HostSite,
@@ -63,6 +64,7 @@ export default function HostProtect() {
   const [cmsHint, setCmsHint] = useState<"wordpress" | "laravel" | "unknown">(
     "unknown",
   );
+  const [scanInterval, setScanInterval] = useState<"daily" | "hourly">("daily");
 
   const sitesQ = useQuery({
     queryKey: ["host", activeOrgId, "sites"],
@@ -115,6 +117,7 @@ export default function HostProtect() {
       setName("");
       setRootPath("");
       setAgentId("");
+      setScanInterval("daily");
       setOpen(false);
     },
     onError: (err: { response?: { data?: { detail?: string } } }) => {
@@ -129,6 +132,17 @@ export default function HostProtect() {
 
   const delMut = useMutation({
     mutationFn: deleteHostSite,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["host"] }),
+  });
+
+  const intervalMut = useMutation({
+    mutationFn: ({
+      id,
+      scan_interval,
+    }: {
+      id: string;
+      scan_interval: "daily" | "hourly";
+    }) => updateHostSite(id, { scan_interval }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["host"] }),
   });
 
@@ -299,6 +313,30 @@ export default function HostProtect() {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label htmlFor="host-interval">{t("scanInterval")}</Label>
+              <Select
+                value={scanInterval}
+                onValueChange={(v) =>
+                  setScanInterval(v as "daily" | "hourly")
+                }
+              >
+                <SelectTrigger
+                  id="host-interval"
+                  data-testid="host-interval"
+                  aria-label={t("scanInterval")}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">{t("intervalDaily")}</SelectItem>
+                  <SelectItem value="hourly">{t("intervalHourly")}</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                {t("intervalHint")}
+              </p>
+            </div>
             <div className="flex gap-2">
               <Button
                 data-testid="host-save"
@@ -314,6 +352,7 @@ export default function HostProtect() {
                     root_path: rootPath.trim(),
                     guard_agent_id: selectedAgentId,
                     cms_hint: cmsHint,
+                    scan_interval: scanInterval,
                   })
                 }
               >
@@ -404,6 +443,36 @@ export default function HostProtect() {
                             {scanStatusCopy}
                           </p>
                         ) : null}
+                        <div className="mt-2 max-w-xs">
+                          <Label htmlFor={`host-interval-${s.id}`}>
+                            {t("scanInterval")}
+                          </Label>
+                          <Select
+                            value={s.scan_interval ?? "daily"}
+                            onValueChange={(v) =>
+                              intervalMut.mutate({
+                                id: s.id,
+                                scan_interval: v as "daily" | "hourly",
+                              })
+                            }
+                          >
+                            <SelectTrigger
+                              id={`host-interval-${s.id}`}
+                              data-testid="host-interval-existing"
+                              aria-label={t("scanInterval")}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="daily">
+                                {t("intervalDaily")}
+                              </SelectItem>
+                              <SelectItem value="hourly">
+                                {t("intervalHourly")}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                       <div className="flex gap-2">
                         <Button
