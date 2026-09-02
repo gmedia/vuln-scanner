@@ -127,7 +127,7 @@
   "hp2": "Klik <ui>Tambah situs</ui> hanya setelah helper sudah poll (last helper poll pada agen). Isi <ui>Nama</ui>, <ui>Root path</ui> di agen, <ui>Agen Guard</ui>, opsional petunjuk CMS. Enroll Guard saja tidak cukup — Scan sekarang gagal tertutup sampai helper poll. Hit tidak dicampur temuan IP/domain.",
   "hp3": "Kelas kritis (webshell / backdoor) mengirim email ke pemilik situs sekali per path+rule baru. Re-scan hanya memperbarui last-seen — tidak ada email kedua. Isi file tidak pernah dilampirkan.",
   "hp4": "<ui>Quarantine</ui> / <ui>Restore</ui> / <ui>Ignore</ui> adalah aksi isolasi. Rekonstruksi (restore CMS, backup) = tiket hybrid — bukan rewrite in-app.",
-  "hp5": "Buka tab <ui>WAF</ui>. Mode per-situs default <ui>off</ui>. Pakai <ui>detect</ui> untuk log event; <ui>Simulate request</ui> = lab mock. <ui>Copy nginx snippet</ui> hanya untuk VPS pelanggan — jangan tempel ke edge publik Sinexis. Mode protect bukan default penjualan.",
+  "hp5": "Buka tab <ui>WAF</ui>. Mode per-situs default <ui>off</ui>. <ui>detect</ui> mencatat di snippet nginx pelanggan. <ui>protect</ui> hanya Host Multi: <code>SecRuleEngine On</code> (tolak 403) di VPS yang sama. Pakai <ui>Copy nginx snippet</ui> hanya di VPS pelanggan — jangan tempel ke edge publik Sinexis. <ui>Simulate request</ui> = lab control plane, bukan traffic hidup. Scan malware <ui>Hourly</ui> opsional tetap dibatasi dua job inflight per org.",
   "hTips": "Tips & batasan",
   "t1": "Hanya scan / enroll aset yang Anda kuasai secara hukum.",
   "t2": "Jangan menyimpan password, API key, atau alamat internal di ticket publik / screenshot sembarangan.",

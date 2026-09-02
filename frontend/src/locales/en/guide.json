@@ -127,7 +127,7 @@
   "hp2": "Click <ui>Add site</ui> only after the helper has polled (last helper poll on the agent). Fill <ui>Name</ui>, <ui>Root path</ui> on the agent, <ui>Guard agent</ui>, optional CMS hint. Guard enroll alone is not enough — Scan now fails closed until the helper polls. Hits are not mixed with IP/domain findings.",
   "hp3": "Critical classes (webshell / backdoor) email the site owner once per new path+rule. Re-scans update last-seen only — no second mail. File contents are never attached.",
   "hp4": "<ui>Quarantine</ui> / <ui>Restore</ui> / <ui>Ignore</ui> are isolate actions. Reconstruct (CMS restore, backup) is a hybrid ticket — not an in-app rewrite.",
-  "hp5": "Open the <ui>WAF</ui> tab. Default per-site mode is <ui>off</ui>. Use <ui>detect</ui> to log events; <ui>Simulate request</ui> is a lab mock. <ui>Copy nginx snippet</ui> is for the customer VPS only — never paste it onto the Sinexis public edge. Protect mode is not a selling default.",
+  "hp5": "Open the <ui>WAF</ui> tab. Default per-site mode is <ui>off</ui>. <ui>detect</ui> logs on the customer nginx snippet. <ui>protect</ui> is Host Multi only: it sets <code>SecRuleEngine On</code> (403 deny) on that same customer VPS. Use <ui>Copy nginx snippet</ui> on the customer VPS only — never paste it onto the Sinexis public edge. <ui>Simulate request</ui> is a control-plane lab, not live traffic. Optional <ui>Hourly</ui> malware scans still cap two in-flight jobs per org.",
   "hTips": "Tips & limits",
   "t1": "Only scan / enroll assets you legally control.",
   "t2": "Do not store passwords, API keys, or internal addresses in public tickets / casual screenshots.",

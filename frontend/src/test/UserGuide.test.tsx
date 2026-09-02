@@ -97,6 +97,9 @@ describe("UserGuide", () => {
     expect(document.body.textContent ?? "").toMatch(/reconstruct/i);
     expect(document.body.textContent ?? "").toMatch(/Copy nginx snippet/);
     expect(document.body.textContent ?? "").toMatch(/not Coraza on sinexis\.app/);
+    expect(document.body.textContent ?? "").toMatch(/Host Multi/);
+    expect(document.body.textContent ?? "").toMatch(/SecRuleEngine On/);
+    expect(document.body.textContent ?? "").toMatch(/Hourly/);
     expect(
       screen.getByRole("heading", { name: "Tips & limits" }),
     ).toBeInTheDocument();
