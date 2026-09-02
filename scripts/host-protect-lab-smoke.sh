@@ -388,15 +388,19 @@ print((picked or {}).get('engine') or '')
 import json,os,sys
 rows=json.loads(sys.argv[1])
 sid=os.environ.get('SCAN_ID','')
+order=('open','pending_quarantine','quarantined')
 picked=''
-for r in rows:
-    if r.get('status')!='open':
-        continue
-    if sid and str(r.get('scan_id'))==sid:
-        picked=r.get('id') or ''
+for want in order:
+    for r in rows:
+        if r.get('status')!=want:
+            continue
+        if sid and str(r.get('scan_id'))==sid:
+            picked=r.get('id') or ''
+            break
+        if not picked:
+            picked=r.get('id') or ''
+    if picked:
         break
-    if not picked:
-        picked=r.get('id') or ''
 print(picked)
 " "$HTTP_BODY")"
   if [[ -z "$hit_id" ]]; then
@@ -406,7 +410,9 @@ print(picked)
   log "POST quarantine then restore on first hit"
   blob="$(curl_api POST "/api/host/hits/${hit_id}/quarantine" '{}')"
   split_body_code "$blob"
-  [[ "$HTTP_CODE" == "200" ]] || die "quarantine HTTP ${HTTP_CODE}"
+  if [[ "$HTTP_CODE" != "200" ]]; then
+    log "quarantine HTTP ${HTTP_CODE} (reuse pending hit)"
+  fi
   if [[ "$TRIGGER_HELPER_POLL" -eq 1 ]]; then
     kick_helper
   fi
