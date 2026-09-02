@@ -158,7 +158,9 @@ describe("Host Protect page", () => {
     ]);
     renderHost();
     await waitFor(() =>
-      expect(screen.getByText(/on-box helper on the Guard host/i)).toBeInTheDocument(),
+      expect(
+        screen.getByText(/waiting or failed check is not a clean result/i),
+      ).toBeInTheDocument(),
     );
   });
 
@@ -309,7 +311,7 @@ describe("Host Protect page", () => {
       expect(screen.getByTestId("host-scan-status")).toBeInTheDocument(),
     );
     expect(screen.getByTestId("host-hits-empty").textContent).toMatch(
-      /on-box helper/i,
+      /do not treat this as clean/i,
     );
     expect(screen.getByTestId("host-interval-existing")).toBeInTheDocument();
   });
@@ -369,14 +371,18 @@ describe("Host Protect page", () => {
       expect(screen.getByTestId("host-scan-status")).toBeInTheDocument(),
     );
     expect(screen.getByTestId("host-scan-status").textContent).toMatch(
-      /1 hits/i,
+      /already marked Ignore/i,
     );
     expect(screen.getByTestId("host-hits-empty").textContent).toMatch(
-      /not a clean bill of health/i,
+      /does not mean the site is clean/i,
     );
     expect(screen.getByTestId("host-hits-empty").textContent).not.toMatch(
-      /no matching signatures/i,
+      /No suspicious files in the folder/i,
     );
+    expect(screen.getByTestId("host-show-ignored")).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByTestId("host-show-ignored"));
+    expect(screen.getByText("cache.php")).toBeInTheDocument();
+    expect(screen.getByText("Ignored")).toBeInTheDocument();
   });
 
   it("shows clean-scan copy only when last scan completed with zero hits", async () => {
@@ -418,7 +424,7 @@ describe("Host Protect page", () => {
       expect(screen.getByTestId("host-scan-status")).toBeInTheDocument(),
     );
     expect(screen.getByTestId("host-hits-empty").textContent).toMatch(
-      /no matching signatures/i,
+      /No suspicious files in the folder/i,
     );
   });
 
