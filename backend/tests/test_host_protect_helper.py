@@ -124,9 +124,10 @@ def test_poll_fetches_and_scans(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setattr(
         helper,
         "fetch_jobs",
-        lambda *_a, **_k: [
-            {"kind": "scan", "scan_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "root_path": str(tmp_path)}
-        ],
+        lambda *_a, **_k: (
+            1,
+            [{"kind": "scan", "scan_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "root_path": str(tmp_path)}],
+        ),
     )
     rc = helper.run(
         [
@@ -310,16 +311,19 @@ def test_poll_runs_quarantine_and_acks(tmp_path: Path, monkeypatch: pytest.Monke
     monkeypatch.setattr(
         helper,
         "fetch_jobs",
-        lambda *_a, **_k: [
-            {
-                "kind": "quarantine",
-                "command_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
-                "root_path": str(web),
-                "rel_path": "wp-content/uploads/cache.php",
-                "dest_basename": "abcd1234_cache.php",
-                "site_id": "site-a",
-            }
-        ],
+        lambda *_a, **_k: (
+            1,
+            [
+                {
+                    "kind": "quarantine",
+                    "command_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+                    "root_path": str(web),
+                    "rel_path": "wp-content/uploads/cache.php",
+                    "dest_basename": "abcd1234_cache.php",
+                    "site_id": "site-a",
+                }
+            ],
+        ),
     )
     rc = helper.run(
         [
