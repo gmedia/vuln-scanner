@@ -6,7 +6,7 @@ Add-on for an enrolled **wazuh-agent** VM. Walks allowlisted web roots and POSTs
 
 Do **not** wipe `sx-erpstg`. Use a fixture folder under `/var/www`, `/srv/www`, or `/home`.
 
-1. Copy `sinexis_host_scan.py` + `rules/` onto the agent, **or** `dpkg -i` the artifact from `./scripts/build-host-protect-deb.sh` (Depends `wazuh-agent`), **or** run `./sinexis-install.sh` from this directory (`--dry-run` first; `--token-file`; never `curl | bash`). The wrapper does **not** install `wazuh-agent`.
+1. Download **one file** [`sinexis-install.sh`](https://github.com/gmedia/vuln-scanner/blob/main/packaging/host-protect-helper/sinexis-install.sh) (payloads embedded; **not** a git clone; never `curl | bash`). On a TTY: `sudo ./sinexis-install.sh` — menu (1) install `wazuh-agent` (needs `manager_host` from enroll), (2) configure Host Protect helper (`--token-file`), (3) both. Optional: `dpkg -i` from `./scripts/build-host-protect-deb.sh`.
 2. `Depends: wazuh-agent` — start after `wazuh-agent.service`.
 3. Environment file `/etc/sinexis/host-protect.env` (mode 600): ingest URL + `X-Host-Agent-Token` from Guard enroll. **Never commit tokens.**
 4. Enable `sinexis-host-protect@.timer` with the Guard agent UUID as instance.

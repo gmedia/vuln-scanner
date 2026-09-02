@@ -93,6 +93,18 @@ describe("UserGuide", () => {
     expect(document.body.querySelector('a[href="#guard"]')).toBeTruthy();
     expect(document.body.textContent ?? "").toMatch(/Host Protect helper/i);
     expect(document.body.textContent ?? "").toMatch(/sinexis-install\.sh/);
+    expect(document.body.textContent ?? "").toMatch(/Do not clone the repo/);
+    expect(document.body.textContent ?? "").toMatch(/install wazuh-agent/i);
+    expect(
+      screen.getByRole("link", { name: "sinexis-install.sh" }),
+    ).toHaveAttribute(
+      "href",
+      "https://github.com/gmedia/vuln-scanner/blob/main/packaging/host-protect-helper/sinexis-install.sh",
+    );
+    expect(screen.getByRole("link", { name: "GitHub Release" })).toHaveAttribute(
+      "href",
+      "https://github.com/gmedia/vuln-scanner/releases",
+    );
     expect(document.body.textContent ?? "").toMatch(/curl \| bash/);
     expect(document.body.textContent ?? "").toMatch(/sinexis-host-protect@/i);
     expect(document.body.textContent ?? "").toMatch(/quarantine/i);
