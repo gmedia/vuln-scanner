@@ -65,6 +65,9 @@ export default function HostProtect() {
     "unknown",
   );
   const [scanInterval, setScanInterval] = useState<"daily" | "hourly">("daily");
+  const [showIgnoredBySite, setShowIgnoredBySite] = useState<
+    Record<string, boolean>
+  >({});
 
   const sitesQ = useQuery({
     queryKey: ["host", activeOrgId, "sites"],
@@ -399,23 +402,29 @@ export default function HostProtect() {
           ) : (
             <ul className="space-y-3">
               {items.map((s: HostSite, idx: number) => {
-                const siteHits = (hitsQ.data ?? []).filter(
-                  (h) =>
-                    h.site_id === s.id &&
-                    h.status !== "ignored" &&
-                    h.engine !== "mock",
+                const siteRows = (hitsQ.data ?? []).filter(
+                  (h) => h.site_id === s.id && h.engine !== "mock",
                 );
+                const activeHits = siteRows.filter(
+                  (h) => h.status !== "ignored",
+                );
+                const ignoredHits = siteRows.filter(
+                  (h) => h.status === "ignored",
+                );
+                const showIgnored = Boolean(showIgnoredBySite[s.id]);
+                const siteHits = showIgnored
+                  ? [...activeHits, ...ignoredHits]
+                  : activeHits;
                 const lastScan = scansQueries[idx]?.data?.[0];
+                const lastCount = lastScan?.hit_count ?? 0;
                 const emptyHitsCopy =
                   lastScan?.status === "queued"
                     ? t("hitsWaitingAgent")
                     : lastScan?.status === "failed"
                       ? t("hitsUnreachable")
-                      : lastScan?.status === "completed" &&
-                          (lastScan.hit_count ?? 0) === 0
+                      : lastScan?.status === "completed" && lastCount === 0
                         ? t("hitsClean")
-                        : lastScan?.status === "completed" &&
-                            (lastScan.hit_count ?? 0) > 0
+                        : lastScan?.status === "completed" && lastCount > 0
                           ? t("hitsHidden")
                           : t("hitsEmpty");
                 const scanStatusCopy =
@@ -425,11 +434,16 @@ export default function HostProtect() {
                       ? t("scanFailed", {
                           error: lastScan.error || "failed",
                         })
-                      : lastScan?.status === "completed"
-                        ? t("scanCompleted", {
-                            count: lastScan.hit_count,
-                          })
-                        : null;
+                      : lastScan?.status === "completed" && lastCount === 0
+                        ? t("scanCompletedNone")
+                        : lastScan?.status === "completed" &&
+                            lastCount > 0 &&
+                            activeHits.length === 0 &&
+                            ignoredHits.length > 0
+                          ? t("scanCompletedIgnored", { count: lastCount })
+                          : lastScan?.status === "completed"
+                            ? t("scanCompleted", { count: lastCount })
+                            : null;
                 return (
                 <li key={s.id}>
                   <Card>
@@ -500,9 +514,28 @@ export default function HostProtect() {
                       </div>
                     </CardContent>
                     <CardContent className="pt-0">
-                      <p className="mb-2 text-sm font-medium tracking-wide">
-                        {t("hitsTitle")}
-                      </p>
+                      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-medium tracking-wide">
+                          {t("hitsTitle")}
+                        </p>
+                        {ignoredHits.length > 0 ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            data-testid="host-show-ignored"
+                            onClick={() =>
+                              setShowIgnoredBySite((prev) => ({
+                                ...prev,
+                                [s.id]: !showIgnored,
+                              }))
+                            }
+                          >
+                            {showIgnored
+                              ? t("hideIgnored")
+                              : t("showIgnored")}
+                          </Button>
+                        ) : null}
+                      </div>
                       {siteHits.length === 0 ? (
                         <p
                           className="text-sm text-muted-foreground"
@@ -532,7 +565,9 @@ export default function HostProtect() {
                                     ? t("statusPendingQuarantine")
                                     : h.status === "pending_restore"
                                       ? t("statusPendingRestore")
-                                      : h.status}
+                                      : h.status === "ignored"
+                                        ? t("statusIgnored")
+                                        : h.status}
                                 </TableCell>
                                 <TableCell className="flex flex-wrap gap-2">
                                   {(h.status === "open" ||
