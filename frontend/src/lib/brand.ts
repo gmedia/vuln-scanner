@@ -9,14 +9,14 @@ export const BRAND = {
   },
   metaTitle: "Sinexis — Security attach for colo & VPS",
   metaDescription:
-    "Find exposure on IP, domain, and mobile. Schedule attach scans, share in a workspace, then Guard on the same account. Not a SIEM. Not a second agent.",
+    "Find internet-facing exposure, schedule attach scans, then Guard on the box. Host Protect does not invent malware. Not a SIEM. Not a second agent.",
   homeAriaLabel: "Sinexis home",
   authSubtitle:
     "Sinexis — security attach for colo, VPS, and hospitality stacks",
   heroTitle: "Sinexis",
   heroProduct: "Security attach for colo, VPS, and hospitality stacks",
   heroSub:
-    "Find exposure on IP, domain, and mobile. Schedule attach scans, share in a workspace, then run Guard and SIEM on the same account — credits included.",
+    "Periodic scan is not 24/7 SIEM. Host Protect reads disk on your VM. One wazuh-agent. Not a human pentest.",
   footerLine: "Sinexis · Scan · Guard · SIEM",
   sidebarVersion: "Sinexis Scan v1.2.0",
 } as const;
