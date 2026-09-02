@@ -4,11 +4,11 @@ Scan keamanan nanya: pintu dan gembok masih wajar? Uptime nanya hal lain: **dari
 
 AM sering kena “kenapa web down?” Ini cek dari luar, berkala — hitungan menit, bukan sebulan sekali. Tidak perlu agen di server.
 
-Scan = inspeksi kunci dan jendela. Uptime = lampu toko masih nyala pas lewat jalan. Berguna dua-duanya. Satu tidak menggantikan yang lain. Keduanya **bukan** SIEM.
+Scan = inspeksi kunci dan jendela. Uptime = lampu toko masih nyala pas lewat jalan. Berguna dua-duanya. Satu tidak menggantikan yang lain. Keduanya **bukan** SIEM dan **bukan** Host Protect (itu file di disk).
 
 ## Yang dicek
 
-HTTP(S): halaman publik jawab atau tidak. TCP: port tertentu di VPS masih terima koneksi. Status turun lalu naik bisa kirim email. Ini bukan analisis celah keamanan.
+HTTP(S): halaman publik jawab atau tidak. TCP: port tertentu di VPS masih terima koneksi. Status turun lalu naik bisa kirim email. Ini bukan analisis celah keamanan, bukan CVE.
 
 ## Paket dan flag
 
@@ -16,6 +16,6 @@ Di spek, kursi uptime **termasuk** add-on Scan — bukan baris harga terpisah. K
 
 ## Bukan uptime
 
-Tidak ganti hosting otomatis. Bukan SLA legal 99,99% (itu kontrak infra). Bukan pengganti Scan Attach. Bukan Guard. Bukan agen kedua.
+Tidak ganti hosting otomatis. Bukan SLA legal 99,99% (itu kontrak infra). Bukan pengganti Scan Attach. Bukan Guard. Bukan agen kedua. Bukan “aman dari malware.”
 
 Pakai URL atau port yang **sama** dengan yang Anda scan. Jangan monitor puluhan URL percobaan di akun kecil.

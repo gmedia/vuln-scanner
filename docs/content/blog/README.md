@@ -18,3 +18,5 @@ Canonical public URLs: `https://sinexis.app/blog/:slug`
 Publish via admin JWT (`POST /api/admin/blog/posts` then `.../publish`). Idempotent on slug (409 if exists).
 
 **Live `/blog` is the database.** Editing these files does not change production until an admin updates the matching slug (or recreates the post). Keep copy layperson Bahasa; no prices, IPs, or images.
+
+Editorial notes (2026-09): Scan = outside-in posture (DAST-class baseline, not business logic). Attach = scheduled control, not SIEM. Guard = thin Wazuh inventory + critical alerts. SIEM Cases = Postgres incident tickets, not a Wazuh plugin. Host Protect = on-box helper, never invented malware. Do not quote IDR.
