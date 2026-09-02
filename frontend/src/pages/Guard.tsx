@@ -639,7 +639,7 @@ export default function Guard() {
                                   </span>
                                 </span>
                               </AccordionTrigger>
-                              <AccordionContent forceMount>
+                              <AccordionContent>
                                 <pre className="overflow-x-auto whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-foreground">
                                   {guide.commands.join("\n")}
                                 </pre>
