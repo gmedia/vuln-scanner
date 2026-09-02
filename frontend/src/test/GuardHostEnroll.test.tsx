@@ -118,7 +118,21 @@ describe("Guard host enroll UI", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Debian / Ubuntu")).toBeInTheDocument();
     expect(screen.getByText(/SLES \/ openSUSE/)).toBeInTheDocument();
+    const debianTrigger = screen.getByRole("button", {
+      name: /Debian \/ Ubuntu/,
+    });
+    expect(debianTrigger).toHaveAttribute("aria-expanded", "false");
+    expect(document.body.textContent ?? "").not.toMatch(
+      /apt-get install -y wazuh-agent/,
+    );
+    await user.click(debianTrigger);
+    expect(debianTrigger).toHaveAttribute("aria-expanded", "true");
     expect(document.body.textContent ?? "").toMatch(
+      /apt-get install -y wazuh-agent/,
+    );
+    await user.click(debianTrigger);
+    expect(debianTrigger).toHaveAttribute("aria-expanded", "false");
+    expect(document.body.textContent ?? "").not.toMatch(
       /apt-get install -y wazuh-agent/,
     );
   });
