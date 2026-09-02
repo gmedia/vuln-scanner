@@ -11,7 +11,7 @@ Sinexis **sits beside** Imunify on cPanel/CloudLinux farms. It is **not** a clon
 | Outside-in vuln scan | IP/domain/mobile + schedules | Imunify malware |
 | Runtime agent | Guard (Wazuh thin) | Full SIEM / Wazuh UI |
 | On-box web malware | Host Protect: scan, hits, quarantine/restore | PHP Proactive Defense, auto-clean rewrite |
-| HTTP filter | Host WAF **detect-only lab** (flag off in git) | Coraza on `sinexis.app`, full CRS, protect SKU |
+| HTTP filter | Host WAF detect + **protect** (Host Multi; customer nginx) | Coraza on `sinexis.app`, full CRS paid packs |
 
 ## Explicitly not chasing (leave the idea)
 
@@ -19,7 +19,7 @@ Sinexis **sits beside** Imunify on cPanel/CloudLinux farms. It is **not** a clon
 - cPanel/WHM plugin, shared-UID thousands of sites
 - Email anti-spam / RBL product
 - Imunify trademarks, commercial rulesets in git
-- Host WAF **protect** as a sold line until owner names it
+- Host WAF **protect** on Basic/Pro (Multi only); never Sinexis edge
 - Putting WAF on Sinexis public nginx
 
 Cleanup: **quarantine ≠ reconstruct**. Reconstruct = hybrid ticket (backup/CMS), not in-app PHP rewrite.
@@ -28,7 +28,7 @@ Cleanup: **quarantine ≠ reconstruct**. Reconstruct = hybrid ticket (backup/CMS
 
 - “Ini **bukan** ganti Imunify di cPanel shared.”
 - “Untuk VPS/colo GMD: Guard + folder web + scan malware **on-box** (helper) + isolate file. Konsol SaaS **bukan** bukti disk sampai helper POST.”
-- “WAF detect = lab; jangan jual block mode dari spek.”
+- “WAF protect = Host Multi, snippet di nginx **pelanggan**; bukan edge Sinexis.”
 - “Harga Host **belum** list resmi.”
 
 See also: [`sku-host-protect.md`](sku-host-protect.md) H5/H6/H7, [`host-protect-v1.md`](../specs/host-protect-v1.md), [`host-waf-v1.md`](../specs/host-waf-v1.md).
