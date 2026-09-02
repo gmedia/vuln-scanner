@@ -284,7 +284,7 @@ def run_quarantine(args: argparse.Namespace) -> int:
         os.chmod(dest_dir, 0o700)
         if os.path.lexists(dest):
             return 6
-        os.rename(src, dest)
+        shutil.move(src, dest)
     except OSError:
         return 6
     return 0
@@ -311,7 +311,7 @@ def run_restore(args: argparse.Namespace) -> int:
         os.makedirs(os.path.dirname(original), exist_ok=True)
         if os.path.lexists(original):
             return 6
-        os.rename(src, original)
+        shutil.move(src, original)
     except OSError:
         return 6
     return 0
@@ -423,15 +423,12 @@ def run_poll(args: argparse.Namespace) -> int:
             os.close(lock_fd)
             return 0
     try:
-        worst = 0
         deadline = time.monotonic() + 90
         for _ in range(40):
-            n_raw, rc = _run_poll_jobs(args)
-            if rc != 0:
-                worst = rc
+            n_raw, _rc = _run_poll_jobs(args)
             if n_raw < 5 or time.monotonic() >= deadline:
                 break
-        return worst
+        return 0
     finally:
         if lock_fd is not None:
             try:

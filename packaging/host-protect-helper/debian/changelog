@@ -1,3 +1,9 @@
+sinexis-host-protect (0.1.3) unstable; urgency=medium
+
+  * Drop systemd flock; copy across filesystems; poll ack must not fail the unit.
+
+ -- Sinexis <ops@sinexis.app>  Wed, 02 Sep 2026 09:45:00 +0000
+
 sinexis-host-protect (0.1.2) unstable; urgency=medium
 
   * Disable systemd StartLimit; poll up to 50 queued commands per GET.
