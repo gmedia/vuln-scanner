@@ -8,6 +8,23 @@ This is **not** a second enroll daemon. Guard (`wazuh-agent`) stays the identity
 
 **Debian `.deb`:** build with `./scripts/build-host-protect-deb.sh` (writes `dist/sinexis-host-protect_*_all.deb`). Package **Depends: wazuh-agent** — do not install on machines without Guard. Env file is **not** in the package payload except as `/usr/share/doc/.../host-protect.env.example` (empty token). `postinst` copies the example to `/etc/sinexis/host-protect.env` only if missing (mode 600). Enable the timer with the Guard UUID after filling the token.
 
+**Wrapper (P14 C2):** `packaging/host-protect-helper/sinexis-install.sh` — not `curl | bash`, does **not** install `wazuh-agent`. Copy the script from a checkout or a **GitHub Release** (verify SHA256). Then:
+
+```bash
+# Non-interactive (preferred). Token stays in a 600 file, not argv.
+sudo ./sinexis-install.sh --agent-id <GUARD-UUID> \
+  --token-file /root/host-agent.token \
+  --api-base https://sinexis.app
+
+# Optional TTY prompts (do not pipe into this):
+sudo ./sinexis-install.sh --interactive
+
+# Preview only:
+./sinexis-install.sh --dry-run --agent-id <GUARD-UUID> --token-file /root/host-agent.token
+```
+
+`--deb path.deb` runs `dpkg -i` first. `--from-tree` (default) copies `sinexis_host_scan.py` + units from this directory. Lab: `--skip-wazuh-check` only on a throwaway VM — never customer.
+
 Copy-from-tree (no dpkg) still works:
 
 ## 0) Prerequisites
