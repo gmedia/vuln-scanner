@@ -8,7 +8,15 @@ This is **not** a second enroll daemon. Guard (`wazuh-agent`) stays the identity
 
 **Debian `.deb`:** build with `./scripts/build-host-protect-deb.sh` (writes `dist/sinexis-host-protect_*_all.deb`). Package **Depends: wazuh-agent** — do not install on machines without Guard. Env file is **not** in the package payload except as `/usr/share/doc/.../host-protect.env.example` (empty token). `postinst` copies the example to `/etc/sinexis/host-protect.env` only if missing (mode 600). Enable the timer with the Guard UUID after filling the token.
 
-**Wrapper (P14 C2):** `packaging/host-protect-helper/sinexis-install.sh` — not `curl | bash`, does **not** install `wazuh-agent`. Copy the script from a checkout or a **GitHub Release** (verify SHA256). Then:
+**How to get the files (not curl|bash):** the wrapper needs the **whole helper directory**, not a lone `sinexis-install.sh`. From a workstation:
+
+1. Clone `https://github.com/gmedia/vuln-scanner` then `cd packaging/host-protect-helper`, **or**
+2. Open [that folder on GitHub](https://github.com/gmedia/vuln-scanner/tree/main/packaging/host-protect-helper) → Download ZIP / copy the tree AM was given, **or**
+3. Optional `.deb` from a [GitHub Release](https://github.com/gmedia/vuln-scanner/releases) (verify SHA256).
+
+Copy that directory onto the VPS (scp/rsync). Then:
+
+**Wrapper (P14 C2):** `sinexis-install.sh` in that directory — not `curl | bash`, does **not** install `wazuh-agent`.
 
 ```bash
 # Non-interactive (preferred). Token stays in a 600 file, not argv.
