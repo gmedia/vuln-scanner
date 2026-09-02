@@ -70,7 +70,7 @@ describe("Landing Page", () => {
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: /Find exposure on IP, domain, and mobile — then schedule it/i,
+        name: /Find internet-facing exposure, schedule it, then alarm on the box/i,
       }),
     ).toBeInTheDocument();
     expect(
@@ -86,7 +86,7 @@ describe("Landing Page", () => {
   it("renders attach-loop description without engine dump", () => {
     expect(
       screen.getByText(
-        /Credits, workspace, assets, Guard, and uptime on the same account/,
+        /Periodic scan is not 24\/7 SIEM/,
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/VulnScanner engine/i)).not.toBeInTheDocument();
