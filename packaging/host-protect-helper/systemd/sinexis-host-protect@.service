@@ -9,6 +9,7 @@ StartLimitIntervalSec=0
 Type=oneshot
 Nice=15
 TimeoutStartSec=180
+SuccessExitStatus=6
 EnvironmentFile=-/etc/sinexis/host-protect.env
 ExecStart=/usr/bin/python3 /usr/lib/sinexis/host-protect/sinexis_host_scan.py poll --agent-id %i
 User=root

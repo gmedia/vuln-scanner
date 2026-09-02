@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import posixpath
 import re
+import shutil
 
 ALLOWED_PREFIXES = ("/var/www", "/srv/www", "/home")
 DEFAULT_QUARANTINE_ROOT = "/var/lib/sinexis/quarantine"
@@ -78,7 +79,7 @@ def move_to_quarantine(src: str, dest_dir: str, dest_basename: str) -> str:
     dest = os.path.join(dest_dir, dest_basename)
     if os.path.lexists(dest):
         raise OSError("quarantine dest exists")
-    os.rename(src, dest)
+    shutil.move(src, dest)
     return dest
 
 
@@ -92,4 +93,4 @@ def restore_from_quarantine(dest_dir: str, dest_basename: str, original: str) ->
     os.makedirs(parent, exist_ok=True)
     if os.path.lexists(original):
         raise OSError("restore target exists")
-    os.rename(src, original)
+    shutil.move(src, original)

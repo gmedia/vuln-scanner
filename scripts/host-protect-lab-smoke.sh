@@ -208,7 +208,7 @@ trigger_helper_poll() {
   log "one-shot helper poll on SSH alias (token not printed)"
   local h="${HOST_PROTECT_LAB_FIXTURE_SSH:-${GUARD_LAB_AGENT_SSH}}"
   ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new "$h" \
-    "unit='sinexis-host-protect@${AGENT_ID}.service'; for i in \$(seq 1 60); do systemctl is-active --quiet \"\$unit\" || break; sleep 1; done; sudo systemctl reset-failed \"\$unit\" >/dev/null 2>&1 || true; sudo systemctl start \"\$unit\"" \
+    "unit='sinexis-host-protect@${AGENT_ID}.service'; for i in \$(seq 1 120); do systemctl is-active --quiet \"\$unit\" || break; sleep 1; done; sudo systemctl reset-failed \"\$unit\" >/dev/null 2>&1 || true; if systemctl is-active --quiet \"\$unit\"; then exit 0; fi; sudo systemctl start --no-block \"\$unit\"" \
     || die "helper poll start failed (install helper first — docs/host-protect-helper-am.md)"
 }
 
