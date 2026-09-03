@@ -1,6 +1,6 @@
 # Imunify360 — beside Sinexis, not a roadmap
 
-**Status:** frozen **legal/clone** positioning (2026-08-31). **Job roadmap** (on-box access, regional attach) lives in [`imunify-class-onbox.md`](../specs/imunify-class-onbox.md) (**P14**). Do **not** open PRs titled “Imunify parity” or copy CloudLinux IP. P14 is **jobs + original stack**, not a clone.
+**Status:** frozen **legal/clone** positioning (2026-08-31; waves pointer **2026-09-03**). **Job roadmap** (on-box access, regional attach, **waves 0–3**) lives in [`imunify-class-onbox.md`](../specs/imunify-class-onbox.md) (**P14** §7). Do **not** open PRs titled “Imunify parity” or copy CloudLinux IP. P14 is **jobs + original stack**, not a clone.
 
 Sinexis **sits beside** Imunify on cPanel/CloudLinux farms. It is **not** a clone. Scan attach (P0/P1) remains the sold SKU. Host Protect / Host WAF are VPS/colo attach — **IDR unset**; AM must not invoice from this file.
 

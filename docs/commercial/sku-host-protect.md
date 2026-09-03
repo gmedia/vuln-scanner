@@ -1,7 +1,7 @@
 # Host Protect — SKU (P12 working, **not** P0 lock)
 
 **Status:** **Working commercial (2026-09-01)** — product **S0–S12 on `main`** (#556 honesty, #558 queue, #559 jail). Owner **has not** locked invoice `service_id`. AM may quote the **working list IDR** below; **must not** treat it as finance lock. Scan/Secure add-on remains the **only** P0-locked SKU ([`sku-scan-secure-addon.md`](sku-scan-secure-addon.md)).
-**On-box:** S10 helper POST; S12 optional Clam if `clamscan`/`clamdscan` on PATH. Do not demo mock hits as disk proof. **P14** (Imunify-**class** jobs, regional GTM): [`imunify-class-onbox.md`](../specs/imunify-class-onbox.md) — worker must not impersonate customer FS.
+**On-box:** S10 helper POST; S12 optional Clam if `clamscan`/`clamdscan` on PATH. Do not demo mock hits as disk proof. **P14** (Imunify-**class** jobs, regional GTM, **waves 0–3**): [`imunify-class-onbox.md`](../specs/imunify-class-onbox.md) — worker must not impersonate customer FS. Until finance lock, quote **Host Basic (1 site)** for wave 0 demos.
 **Product spec:** [`docs/specs/host-protect-v1.md`](../specs/host-protect-v1.md).
 **Metering:** Host Protect scan **bundled (credit 0)** unless admin seeds `pricing.scan_type=hostscan` (≤10 chars). **HPP** key `hostscan` is COGS per completed `host_scans` row — seed **0** in git; fill in `/admin/hpp`. Do **not** mix HPP with Scan credit bundles.
 
