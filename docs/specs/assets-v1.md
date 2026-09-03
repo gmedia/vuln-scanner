@@ -161,6 +161,12 @@ Default order: **S0 → S1 → S2 → S3 → S4 → S5**.
 
 ---
 
+## 13. Tag colors (follow-on)
+
+Org-scoped palette on `organizations.tag_colors` (`JSONB` map tag → `gray|green|blue|amber|red|violet`). `GET`/`PATCH /api/assets/tag-colors`. SPA `/assets` paints badges + a swatch row. Filter still matches **name**, not color. No free hex.
+
+---
+
 ## 12. References
 
 - Guide §1.3 P3, §5.3 sketch

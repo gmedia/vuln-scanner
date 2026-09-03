@@ -30,5 +30,8 @@
   "confirmDelete": "Hapus aset ini?",
   "pack": "Unduh pack JSON",
   "packHtml": "Unduh pack HTML",
-  "watchHttp": "Pantau HTTP aset ini"
+  "watchHttp": "Pantau HTTP aset ini",
+  "tagColors": "Warna label",
+  "tagColorFor": "Warna untuk {{tag}}",
+  "tagColorPick": "{{tag}}: {{color}}"
 }

@@ -30,5 +30,8 @@
   "confirmDelete": "Delete this asset?",
   "pack": "Download pack JSON",
   "packHtml": "Download pack HTML",
-  "watchHttp": "Watch this asset over HTTP"
+  "watchHttp": "Watch this asset over HTTP",
+  "tagColors": "Tag colors",
+  "tagColorFor": "Color for {{tag}}",
+  "tagColorPick": "{{tag}}: {{color}}"
 }

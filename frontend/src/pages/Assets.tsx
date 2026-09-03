@@ -9,10 +9,15 @@ import {
   deleteAsset,
   fetchAssetPack,
   fetchAssetPackHtml,
+  fetchTagColors,
   listAssets,
+  patchTagColors,
+  TAG_COLOR_KEYS,
   updateAsset,
   type ScanAsset,
+  type TagColorKey,
 } from "@/api/assets";
+import { TAG_COLOR_DOT, tagColorClass } from "@/lib/tagColors";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -85,6 +90,11 @@ export default function Assets() {
   }
 
   const list = useQuery({ queryKey: ["assets"], queryFn: () => listAssets() });
+  const colorsQ = useQuery({
+    queryKey: ["asset-tag-colors"],
+    queryFn: fetchTagColors,
+  });
+  const colorMap = colorsQ.data ?? {};
   const items = list.data ?? [];
   const allTags = useMemo(() => {
     const s = new Set<string>();
@@ -148,6 +158,17 @@ export default function Assets() {
   const delMut = useMutation({
     mutationFn: deleteAsset,
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["assets"] }),
+  });
+
+  const colorMut = useMutation({
+    mutationFn: (payload: Record<string, TagColorKey>) =>
+      patchTagColors(payload),
+    onSuccess: (data) => {
+      qc.setQueryData(["asset-tag-colors"], data);
+    },
+    onError: (err: { response?: { data?: { detail?: string } } }) => {
+      toast.error(String(err.response?.data?.detail ?? ""));
+    },
   });
 
   const schedMut = useMutation({
@@ -408,7 +429,7 @@ export default function Assets() {
                   <Badge
                     key={tag}
                     variant="default"
-                    className="cursor-pointer"
+                    className={`cursor-pointer ${tagColorClass(tag, colorMap)}`}
                     data-testid={`asset-tag-chip-${tag}`}
                     onClick={() => toggleTagFilter(tag)}
                   >
@@ -417,6 +438,43 @@ export default function Assets() {
                 ))}
               </div>
             ) : null}
+          </div>
+          <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2 lg:col-span-3">
+            <Label>{t("tagColors")}</Label>
+            <ul className="flex flex-wrap gap-2" data-testid="asset-tag-colors">
+              {allTags.map((tag) => (
+                <li
+                  key={tag}
+                  className="flex items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1"
+                >
+                  <Badge
+                    variant="default"
+                    className={tagColorClass(tag, colorMap)}
+                  >
+                    {tag}
+                  </Badge>
+                  <div className="flex gap-1" role="group" aria-label={t("tagColorFor", { tag })}>
+                    {TAG_COLOR_KEYS.map((key) => (
+                      <Button
+                        key={key}
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 min-h-6 p-0"
+                        data-testid={`asset-tag-color-${tag}-${key}`}
+                        aria-label={t("tagColorPick", { tag, color: key })}
+                        aria-pressed={(colorMap[tag] ?? "gray") === key}
+                        onClick={() => colorMut.mutate({ [tag]: key })}
+                      >
+                        <span
+                          className={`block h-3.5 w-3.5 rounded-full ${TAG_COLOR_DOT[key]} ${(colorMap[tag] ?? "gray") === key ? "ring-2 ring-ring ring-offset-1" : ""}`}
+                        />
+                      </Button>
+                    ))}
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       ) : null}
@@ -461,7 +519,7 @@ export default function Assets() {
                             key={tag}
                             variant="default"
                             data-testid={`asset-tag-${tag}`}
-                            className="cursor-pointer"
+                            className={`cursor-pointer ${tagColorClass(tag, colorMap)}`}
                             onClick={() => toggleTagFilter(tag)}
                           >
                             {tag}

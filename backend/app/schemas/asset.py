@@ -13,6 +13,8 @@ MAX_ASSETS_MULTI = ASSET_SKU_LIMITS["multi"]
 MAX_TAGS_PER_ASSET = 8
 MAX_TAG_LEN = 32
 _TAG_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,31}$")
+TAG_COLOR_KEYS = ("gray", "green", "blue", "amber", "red", "violet")
+MAX_TAG_COLORS = 64
 
 
 def normalize_tags(tags: list[str] | None) -> list[str]:
@@ -89,6 +91,38 @@ class AssetUpdate(BaseModel):
         if v is None:
             return v
         return v.strip()
+
+
+def normalize_tag_colors(colors: dict[str, str] | None) -> dict[str, str]:
+    if not colors:
+        return {}
+    out: dict[str, str] = {}
+    for raw_name, raw_color in colors.items():
+        tag = raw_name.strip().lower()
+        if not tag:
+            continue
+        if len(tag) > MAX_TAG_LEN or not _TAG_RE.match(tag):
+            raise ValueError("tag must be 1–32 chars: lowercase letters, digits, . _ -")
+        color = raw_color.strip().lower()
+        if color not in TAG_COLOR_KEYS:
+            raise ValueError(f"color must be one of: {', '.join(TAG_COLOR_KEYS)}")
+        out[tag] = color
+        if len(out) > MAX_TAG_COLORS:
+            raise ValueError(f"at most {MAX_TAG_COLORS} tag colors per organization")
+    return out
+
+
+class TagColorsResponse(BaseModel):
+    colors: dict[str, str] = Field(default_factory=dict)
+
+
+class TagColorsUpdate(BaseModel):
+    colors: dict[str, str] = Field(default_factory=dict)
+
+    @field_validator("colors")
+    @classmethod
+    def validate_colors(cls, v: dict[str, str]) -> dict[str, str]:
+        return normalize_tag_colors(v)
 
 
 class AssetScheduleCreate(BaseModel):

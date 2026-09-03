@@ -12,6 +12,8 @@ from app.schemas.asset import (
     AssetResponse,
     AssetScheduleCreate,
     AssetUpdate,
+    TagColorsResponse,
+    TagColorsUpdate,
 )
 from app.schemas.schedule import ScheduleResponse
 from app.services.asset import AssetService
@@ -64,6 +66,25 @@ async def asset_pack(
             },
         )
     raise HTTPException(status_code=400, detail="format must be 'json' or 'html'")
+
+
+@router.get("/tag-colors", response_model=TagColorsResponse)
+async def get_tag_colors(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> TagColorsResponse:
+    return await AssetService(db).get_tag_colors(current_user, get_active_org_id(request))
+
+
+@router.patch("/tag-colors", response_model=TagColorsResponse)
+async def patch_tag_colors(
+    request: Request,
+    body: TagColorsUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> TagColorsResponse:
+    return await AssetService(db).update_tag_colors(current_user, get_active_org_id(request), body)
 
 
 @router.get("/{asset_id}", response_model=AssetResponse)
