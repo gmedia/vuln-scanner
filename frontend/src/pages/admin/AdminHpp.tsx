@@ -629,6 +629,24 @@ function AdminHpp() {
                     {formatIdr(sku.hpp_if_all_domain_idr)}
                   </span>
                 </p>
+                <p>
+                  {t("hppMarginIfAllIp")}:{" "}
+                  <span className="font-mono tabular-nums">
+                    {formatIdr(sku.margin_if_all_ip_idr)}
+                  </span>
+                  {sku.margin_if_all_ip_pct != null
+                    ? ` (${sku.margin_if_all_ip_pct}%)`
+                    : ""}
+                </p>
+                <p>
+                  {t("hppMarginIfAllDomain")}:{" "}
+                  <span className="font-mono tabular-nums">
+                    {formatIdr(sku.margin_if_all_domain_idr)}
+                  </span>
+                  {sku.margin_if_all_domain_pct != null
+                    ? ` (${sku.margin_if_all_domain_pct}%)`
+                    : ""}
+                </p>
                 <Badge variant="info" className="text-[10px]">
                   {sku.label}
                 </Badge>

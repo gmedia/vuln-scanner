@@ -1130,6 +1130,14 @@ class TestAdminHpp:
         assert data["total_fully_loaded_hpp_idr"] == 1000
         assert data["sku_estimates"][0]["label"] == "estimasi"
         assert data["sku_estimates"][0]["sku"] == "basic"
+        basic = data["sku_estimates"][0]
+        assert basic["list_idr"] == 300_000
+        assert basic["hpp_if_all_ip_idr"] == 10_000
+        assert basic["margin_if_all_ip_idr"] == 290_000
+        assert basic["margin_if_all_ip_pct"] == 97
+        assert basic["hpp_if_all_domain_idr"] == 10_000
+        assert basic["margin_if_all_domain_idr"] == 290_000
+        assert basic["margin_if_all_domain_pct"] == 97
 
     @pytest.mark.asyncio
     async def test_report_statushost_from_credit_logs(self, client, db_session, sample_user):

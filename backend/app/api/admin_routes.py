@@ -542,6 +542,8 @@ async def get_hpp_report(
         domain_jobs = (credits // domain_credits) if domain_credits else None
         hpp_ip = (ip_jobs * ip_rate) if ip_jobs is not None else None
         hpp_domain = (domain_jobs * domain_rate) if domain_jobs is not None else None
+        margin_ip = (list_idr - hpp_ip) if hpp_ip is not None else None
+        margin_domain = (list_idr - hpp_domain) if hpp_domain is not None else None
         sku_estimates.append(
             HppSkuEstimate(
                 sku=sku,
@@ -550,8 +552,14 @@ async def get_hpp_report(
                 label="estimasi",
                 hpp_if_all_ip_idr=hpp_ip,
                 hpp_if_all_domain_idr=hpp_domain,
-                margin_if_all_ip_idr=(list_idr - hpp_ip) if hpp_ip is not None else None,
-                margin_if_all_domain_idr=(list_idr - hpp_domain) if hpp_domain is not None else None,
+                margin_if_all_ip_idr=margin_ip,
+                margin_if_all_domain_idr=margin_domain,
+                margin_if_all_ip_pct=(
+                    round(margin_ip * 100 / list_idr) if margin_ip is not None and list_idr else None
+                ),
+                margin_if_all_domain_pct=(
+                    round(margin_domain * 100 / list_idr) if margin_domain is not None and list_idr else None
+                ),
             )
         )
 

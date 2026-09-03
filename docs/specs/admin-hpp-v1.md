@@ -57,7 +57,7 @@ Table `hpp_rates`:
 
 Report rows: per key `count`, `rate_idr`, `hpp_idr` (= count × rate). Totals. Statushost count = `credit_logs` with `type=deduct` and description prefix `Status hostname:` in range. Hostscan count = `host_scans` with `status=completed` and `finished_at` in range. Seed `hostscan` **0** — no real COGS in git.
 
-S3 overlay: for each SKU, **estimasi** HPP if monthly credits were burned entirely as IP jobs vs entirely as domain jobs (using current `pricing.credit_cost` and `hpp_rates`). Labelled estimasi.
+S3 overlay: for each SKU, **estimasi** HPP if monthly credits were burned entirely as IP jobs vs entirely as domain jobs (using current `pricing.credit_cost` and `hpp_rates`). Derived **margin** = list − HPP (IDR + % of list). Labelled estimasi — not invoice P&L.
 
 ---
 
