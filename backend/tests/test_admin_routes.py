@@ -1329,6 +1329,52 @@ class TestAdminHpp:
         )
         assert resp.status_code == 422
 
+    @pytest.mark.asyncio
+    async def test_quote_provider_compare(self, client, db_session):
+        for key, amt in [("ip", 1500), ("domain", 2500), ("hostscan", 2000)]:
+            client.put(f"/api/admin/hpp/{key}", json={"amount_idr": amt}, headers=API_HEADERS)
+        client.put("/api/admin/hpp/overhead", json={"amount_idr": 500_000}, headers=API_HEADERS)
+        resp = client.post(
+            "/api/admin/hpp/quote",
+            json={
+                "provider": "tencent-cvm",
+                "region": "jakarta",
+                "cpu_vcpu": 2,
+                "ram_gb": 4,
+                "monthly_instance_idr": 568_750,
+                "electricity_idr_per_kwh": 1692,
+                "power_watt_per_vcpu": 8,
+                "pue": 1.3,
+                "jobs": {"ip": 100, "domain": 50, "hostscan": 20},
+            },
+            headers=API_HEADERS,
+        )
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["provider"] == "tencent-cvm"
+        assert body["total_jobs"] == 170
+        assert body["monthly_total_idr"] >= body["monthly_compute_idr"]
+        assert body["total_fully_loaded_hpp_idr"] >= body["total_hpp_idr"]
+        assert body["breakeven_unit_idr"] > 0
+        assert len(body["lines"]) == 6
+        ip_line = next(x for x in body["lines"] if x["key"] == "ip")
+        assert ip_line["jobs"] == 100
+        assert ip_line["rate_idr"] == 1500
+        assert ip_line["hpp_idr"] == 150_000
+
+    def test_quote_rejects_bad_spec(self, client):
+        resp = client.post(
+            "/api/admin/hpp/quote",
+            json={
+                "provider": "",
+                "cpu_vcpu": 0,
+                "ram_gb": 0,
+                "monthly_instance_idr": -1,
+            },
+            headers=API_HEADERS,
+        )
+        assert resp.status_code == 422
+
 
 class TestAdminEmailLogs:
     def test_list_empty(self, client):
