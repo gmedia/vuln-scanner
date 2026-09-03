@@ -1,5 +1,6 @@
 import asyncio
 from email.mime.multipart import MIMEMultipart
+from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -753,3 +754,23 @@ class TestEmailSendLogHelpers:
         rec.assert_called_once()
         assert rec.call_args.kwargs["ok"] is False
         assert rec.call_args.kwargs["attempts"] == 3
+
+
+def test_compose_worker_uptime_injects_smtp() -> None:
+    root = Path(__file__).resolve().parents[2]
+    required = (
+        "SMTP_HOST:",
+        "SMTP_PORT:",
+        "SMTP_USER:",
+        "SMTP_PASS:",
+        "SMTP_FROM:",
+        "FRONTEND_URL:",
+    )
+    for rel in ("docker-compose.yml", "docker-compose.prod.yml", "docker-compose.e2e.yml"):
+        text = (root / rel).read_text(encoding="utf-8")
+        marker = "CELERY_QUEUE: uptime_check"
+        idx = text.find(marker)
+        assert idx != -1, rel
+        window = text[idx : idx + 900]
+        for needle in required:
+            assert needle in window, (rel, needle)
