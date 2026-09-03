@@ -24,6 +24,12 @@ def test_validate_slug_rejects():
         pass
 
 
+def test_render_strips_leading_h1():
+    html = render_body_html("# Apa itu Sinexis?\n\nServer Anda sudah jalan.")
+    assert html.lower().count("<h1") == 0
+    assert "Server Anda sudah jalan" in html
+
+
 def test_render_strips_script():
     html = render_body_html("hi <script>alert(1)</script>")
     assert "<script" not in html.lower()
@@ -126,6 +132,7 @@ def test_publish_then_public(client):
     assert "lede excerpt" not in page.text
     body = page.text.split("<div class='body'>", 1)[-1].split("</div>", 1)[0]
     assert body.count("intro") == 1
+    assert page.text.lower().count("<h1") == 1
     index = client.get("/blog")
     assert "**bold**" not in index.text
     assert "bold teaser" in index.text
