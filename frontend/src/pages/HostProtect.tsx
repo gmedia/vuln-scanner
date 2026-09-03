@@ -422,11 +422,15 @@ export default function HostProtect() {
                     ? t("hitsWaitingAgent")
                     : lastScan?.status === "failed"
                       ? t("hitsUnreachable")
-                      : lastScan?.status === "completed" && lastCount === 0
-                        ? t("hitsClean")
-                        : lastScan?.status === "completed" && lastCount > 0
-                          ? t("hitsHidden")
-                          : t("hitsEmpty");
+                      : lastScan?.status === "completed" &&
+                          activeHits.length === 0 &&
+                          ignoredHits.length > 0
+                        ? t("hitsHidden")
+                        : lastScan?.status === "completed" && lastCount === 0
+                          ? t("hitsClean")
+                          : lastScan?.status === "completed" && lastCount > 0
+                            ? t("hitsUnlisted")
+                            : t("hitsEmpty");
                 const scanStatusCopy =
                   lastScan?.status === "queued"
                     ? t("scanQueued")
@@ -434,16 +438,20 @@ export default function HostProtect() {
                       ? t("scanFailed", {
                           error: lastScan.error || "failed",
                         })
-                      : lastScan?.status === "completed" && lastCount === 0
-                        ? t("scanCompletedNone")
+                      : lastScan?.status === "completed" &&
+                          activeHits.length > 0
+                        ? t("scanCompleted", { count: activeHits.length })
                         : lastScan?.status === "completed" &&
-                            lastCount > 0 &&
                             activeHits.length === 0 &&
                             ignoredHits.length > 0
-                          ? t("scanCompletedIgnored", { count: lastCount })
-                          : lastScan?.status === "completed"
-                            ? t("scanCompleted", { count: lastCount })
-                            : null;
+                          ? t("scanCompletedIgnored", {
+                              count: ignoredHits.length,
+                            })
+                          : lastScan?.status === "completed" && lastCount === 0
+                            ? t("scanCompletedNone")
+                            : lastScan?.status === "completed"
+                              ? t("scanCompletedUnlisted")
+                              : null;
                 return (
                 <li key={s.id}>
                   <Card>
