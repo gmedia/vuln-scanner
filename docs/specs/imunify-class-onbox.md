@@ -1,6 +1,6 @@
 # Spec: Imunify-class on-box (P14 — regional attach, original stack)
 
-**Status:** **docs only** (2026-09-01). Owner asked to **re-plan** Host Protect / Host WAF toward **Imunify360 jobs** (read files and HTTP on the **customer VM**) so GMD can take **regional** share where CloudLinux/cPanel+Imunify is weak or expensive. **Not** an Imunify clone, trademark, or ruleset dump.
+**Status:** **docs** (2026-09-03). Owner asked to **re-plan** Host Protect / Host WAF toward **Imunify360 jobs** (read files and HTTP on the **customer VM**) so GMD can take **regional** share where CloudLinux/cPanel+Imunify is weak or expensive. **Not** an Imunify clone, trademark, or ruleset dump. **Waves 0–3** (§7) sequence product work **after** P12 S0–S12; they do **not** re-open S1–S12.
 **Epic:** **P14**. Builds on **P12** (files) + **P13** (HTTP) + **P5** (Guard enroll). Does **not** jump Scan SKU lock, hospitality GTM, or finance `service_id`.
 **Do not implement app code** until the user says `implement` / `buat` / `kerjakan` for a **named slice** below.
 **Legal:** original UX, original signatures, original nginx/Coraza config. No Imunify screenshots, no commercial Imunify/CloudLinux DB in git, no “Imunify compatible” in product UI.
@@ -99,3 +99,59 @@ Regional AM can demo: enroll Guard → helper on fixture → **real** hit on **t
 - `GIT_MASTER=1`; branch `feat/` or `docs/` from `main`.
 - No IPs, tokens, customer `public_html` in git.
 - Playwright ≠ enroll.
+
+---
+
+## 7) Waves 0–3 (product sequence after P12)
+
+Slices **A–H** remain the **PR stream** names. Waves are **when sales can demo** vs remaining engineering. **Do not** re-implement S1–S12. Implement app code **only** when the user names a slice **and** says `buat` / `kerjakan`.
+
+**Control-plane fact:** P12 S0–S12 is on `main`. That is **not** “ready to sell as Imunify replacement.” Residual: helper **AM-repeatable** on `/host`, SKU invoice lock, WAF mix-up.
+
+### Job map (Imunify job → Sinexis wave)
+
+| Imunify-shaped **job** | Sinexis today | Wave |
+|------------------------|---------------|------|
+| Agent on the VPS that **owns** the web root | Guard + `sinexis_host_scan` helper | **0** — heartbeat visible on `/host`; installer one-file from `/host` (slice **C** residual) |
+| Scan files on that disk | Helper POST; honesty #556 | **0–1** — fail-closed already **B**; copy must not look like “empty = clean” when helper missing |
+| Show hits a layperson can act on | SPA `/host`; ignore vs empty **#596** | **1** — remaining: AM demo script; no jargon-only empty states |
+| Isolate / restore | S11 queue **#558** | **1** — already queued; lab **tc5** only |
+| HTTP filter on same host | P13 detect; **F** protect Multi | **2** — never `sinexis.app` edge |
+| Panel / PHP PD | Out | **3** = **G/H** research only |
+
+### Wave 0 — sellable **install** (default next)
+
+| In | Out |
+|----|-----|
+| Heartbeat / last helper POST on `/host` (if not already obvious) | New YARA pack |
+| One-file `sinexis-install.sh` from **product UI**, not “clone the repo” | `curl \| bash` as the blessed path |
+| AM runbook already exists — keep it the source of truth | Wipe `sx-erpstg` |
+| SKU: quote **Host Basic 1 site** only until finance `service_id` | Invoice lock in git |
+
+**DoD:** AM on a **tc5** fixture: Guard enroll → download wrapper → helper timer → `/host` shows **pending_agent** then a **real** ingest (or honest fail). No mock hits.
+
+### Wave 1 — **file** loop a layperson finishes
+
+| In | Out |
+|----|-----|
+| Copy already: empty scan ≠ ignored hits (#596) | Reconstruct PHP |
+| Quarantine/restore smoke on **tc5** | Auto-clean rewrite |
+| Optional hourly already slice **E** — do not enable 24×7 `/` YARA | inotify unless named |
+
+### Wave 2 — **HTTP** on customer nginx
+
+| In | Out |
+|----|-----|
+| Slice **F** protect = Host **Multi** + customer snippet | Sinexis edge Coraza |
+| Lab vhost; `--apply-vhost` still refuses ERP/`tc5` production sites | CRS paid packs in git |
+
+### Wave 3 — research only
+
+**G** panel plugin, **H** PHP PD-class. Spek-only until owner names + `buat`. No “Imunify parity” PRs.
+
+### Cross-links
+
+- Legal freeze: [`imunify-beside-not-roadmap.md`](../commercial/imunify-beside-not-roadmap.md)
+- File plane: [`host-protect-v1.md`](host-protect-v1.md) — **do not** re-implement S1–S12
+- HTTP plane: [`host-waf-v1.md`](host-waf-v1.md)
+- Working IDR: [`sku-host-protect.md`](../commercial/sku-host-protect.md)
