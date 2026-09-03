@@ -59,6 +59,10 @@ export default function HostWafPanel({ sites }: { sites: HostSite[] }) {
     (p) => p.site_id === selected,
   );
   const mode: HostWafPolicy["mode"] = policyForSite?.mode ?? "off";
+  const selectedSite = sites.find((s) => s.id === selected);
+  const canProtect =
+    sites.length === 0 ||
+    (selectedSite ? (selectedSite.sku ?? "multi") === "multi" : true);
 
   const saveMut = useMutation({
     mutationFn: (next: HostWafPolicy["mode"]) =>
@@ -148,9 +152,19 @@ export default function HostWafPanel({ sites }: { sites: HostSite[] }) {
                 <SelectContent>
                   <SelectItem value="off">{t("wafOff")}</SelectItem>
                   <SelectItem value="detect">{t("wafDetect")}</SelectItem>
-                  <SelectItem value="protect">{t("wafProtect")}</SelectItem>
+                  {canProtect ? (
+                    <SelectItem value="protect">{t("wafProtect")}</SelectItem>
+                  ) : null}
                 </SelectContent>
               </Select>
+              {!canProtect ? (
+                <p
+                  className="text-xs text-muted-foreground"
+                  data-testid="host-waf-protect-locked"
+                >
+                  {t("wafProtectLocked")}
+                </p>
+              ) : null}
             </div>
           </div>
           <div className="flex flex-wrap gap-2">

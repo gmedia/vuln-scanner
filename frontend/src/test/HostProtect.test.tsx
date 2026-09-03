@@ -134,6 +134,16 @@ describe("Host Protect page", () => {
       screen.getByRole("heading", { name: "Host Protect" }),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Open Wazuh/i)).not.toBeInTheDocument();
+    expect(screen.getByTestId("host-install-download")).toHaveAttribute(
+      "download",
+      "sinexis-install.sh",
+    );
+    expect(screen.getByTestId("host-install-wget").textContent).toMatch(
+      /wget -O sinexis-install\.sh/,
+    );
+    expect(screen.getByTestId("host-install-wget").textContent).not.toMatch(
+      /git clone/i,
+    );
   });
 
   it("shows honesty copy that missing roots do not invent malware", async () => {
@@ -436,6 +446,70 @@ describe("Host Protect page", () => {
     expect(screen.queryByTestId("host-show-ignored")).not.toBeInTheDocument();
   });
 
+  it("shows helper never-polled on the site card", async () => {
+    vi.mocked(hostApi.listHostSites).mockResolvedValue([
+      {
+        id: "s1",
+        organization_id: "org1",
+        guard_agent_id: "a1",
+        asset_id: null,
+        name: "Web",
+        root_path: "/var/www/html",
+        cms_hint: "wordpress",
+        enabled: true,
+        auto_quarantine: false,
+        scan_interval: "daily",
+        created_by: "u1",
+        created_at: "2026-08-30T00:00:00Z",
+        updated_at: "2026-08-30T00:00:00Z",
+        sku: "basic",
+        sku_limit: 1,
+      },
+    ]);
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByTestId("host-helper-poll")).toBeInTheDocument(),
+    );
+    expect(screen.getByTestId("host-helper-poll").textContent).toMatch(
+      /has not polled/i,
+    );
+  });
+
+  it("hides WAF protect for Host Basic SKU", async () => {
+    vi.mocked(hostApi.listHostSites).mockResolvedValue([
+      {
+        id: "s1",
+        organization_id: "org1",
+        guard_agent_id: "a1",
+        asset_id: null,
+        name: "Web",
+        root_path: "/var/www/html",
+        cms_hint: "wordpress",
+        enabled: true,
+        auto_quarantine: false,
+        scan_interval: "daily",
+        created_by: "u1",
+        created_at: "2026-08-30T00:00:00Z",
+        updated_at: "2026-08-30T00:00:00Z",
+        sku: "basic",
+        sku_limit: 1,
+      },
+    ]);
+    const user = userEvent.setup();
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByTestId("host-tab-waf")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("host-tab-waf"));
+    await waitFor(() =>
+      expect(screen.getByTestId("host-waf-protect-locked")).toBeInTheDocument(),
+    );
+    expect(screen.getByTestId("host-waf-mode")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("option", { name: /^protect$/i }),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows clean-scan copy only when last scan completed with zero hits", async () => {
     vi.mocked(hostApi.listHostSites).mockResolvedValue([
       {
@@ -454,6 +528,21 @@ describe("Host Protect page", () => {
         updated_at: "2026-08-30T00:00:00Z",
         sku: "multi",
         sku_limit: 10,
+      },
+    ]);
+    vi.mocked(guardApi.listGuardAgents).mockResolvedValue([
+      {
+        id: "a1",
+        organization_id: "org1",
+        wazuh_agent_id: "001",
+        name: "web-1",
+        status: "active",
+        ip: null,
+        version: null,
+        last_keep_alive: null,
+        last_helper_poll_at: new Date().toISOString(),
+        synced_at: "2026-08-14T10:00:00Z",
+        created_at: "2026-08-14T10:00:00Z",
       },
     ]);
     vi.mocked(hostApi.listHostScans).mockResolvedValue([
