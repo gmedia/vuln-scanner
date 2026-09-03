@@ -54,10 +54,22 @@ def reject_markdown_images(body_md: str) -> None:
         raise BlogValidationError("Images are not allowed in blog markdown")
 
 
+_LEADING_MD_H1_RE = re.compile(r"^\s*#\s+[^\n]+\n+", re.MULTILINE)
+_LEADING_HTML_H1_RE = re.compile(r"^\s*<h1\b[^>]*>.*?</h1>\s*", re.IGNORECASE | re.DOTALL)
+
+
+def strip_leading_markdown_h1(body_md: str) -> str:
+    return _LEADING_MD_H1_RE.sub("", body_md, count=1)
+
+
+def strip_leading_html_h1(body_html: str) -> str:
+    return _LEADING_HTML_H1_RE.sub("", body_html, count=1)
+
+
 def render_body_html(body_md: str) -> str:
     reject_markdown_images(body_md)
     raw = markdown.markdown(
-        body_md,
+        strip_leading_markdown_h1(body_md),
         extensions=["extra", "sane_lists", "nl2br"],
         output_format="html",
     )
