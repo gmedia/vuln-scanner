@@ -39,31 +39,39 @@ export async function createAsset(
   return data;
 }
 
-export type TagColorKey =
-  "gray" | "green" | "blue" | "amber" | "red" | "violet";
-
-export const TAG_COLOR_KEYS: TagColorKey[] = [
+export const TAG_COLOR_KEYS = [
   "gray",
   "green",
   "blue",
   "amber",
   "red",
   "violet",
-];
+] as const;
+
+export type TagNamedColor = (typeof TAG_COLOR_KEYS)[number];
+export type TagColorValue = TagNamedColor | `#${string}`;
+
+const HEX_COLOR_RE = /^#[0-9a-f]{6}$/;
+
+export function isTagColorValue(value: string): value is TagColorValue {
+  return (
+    (TAG_COLOR_KEYS as readonly string[]).includes(value) ||
+    HEX_COLOR_RE.test(value)
+  );
+}
 
 function parseColorMap(
   colors: Record<string, string> | undefined,
-): Record<string, TagColorKey> {
-  const out: Record<string, TagColorKey> = {};
+): Record<string, TagColorValue> {
+  const out: Record<string, TagColorValue> = {};
   for (const [tag, color] of Object.entries(colors ?? {})) {
-    if ((TAG_COLOR_KEYS as string[]).includes(color)) {
-      out[tag] = color as TagColorKey;
-    }
+    const c = color.trim().toLowerCase();
+    if (isTagColorValue(c)) out[tag] = c;
   }
   return out;
 }
 
-export async function fetchTagColors(): Promise<Record<string, TagColorKey>> {
+export async function fetchTagColors(): Promise<Record<string, TagColorValue>> {
   const { data } = await api.get<{ colors: Record<string, string> }>(
     "/api/assets/tag-colors",
   );
@@ -71,8 +79,8 @@ export async function fetchTagColors(): Promise<Record<string, TagColorKey>> {
 }
 
 export async function patchTagColors(
-  colors: Record<string, TagColorKey>,
-): Promise<Record<string, TagColorKey>> {
+  colors: Record<string, TagColorValue>,
+): Promise<Record<string, TagColorValue>> {
   const { data } = await api.patch<{ colors: Record<string, string> }>(
     "/api/assets/tag-colors",
     { colors },

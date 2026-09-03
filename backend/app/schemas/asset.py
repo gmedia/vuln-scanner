@@ -14,6 +14,7 @@ MAX_TAGS_PER_ASSET = 8
 MAX_TAG_LEN = 32
 _TAG_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,31}$")
 TAG_COLOR_KEYS = ("gray", "green", "blue", "amber", "red", "violet")
+_HEX_COLOR_RE = re.compile(r"^#[0-9a-f]{6}$")
 MAX_TAG_COLORS = 64
 
 
@@ -104,8 +105,10 @@ def normalize_tag_colors(colors: dict[str, str] | None) -> dict[str, str]:
         if len(tag) > MAX_TAG_LEN or not _TAG_RE.match(tag):
             raise ValueError("tag must be 1–32 chars: lowercase letters, digits, . _ -")
         color = raw_color.strip().lower()
-        if color not in TAG_COLOR_KEYS:
-            raise ValueError(f"color must be one of: {', '.join(TAG_COLOR_KEYS)}")
+        if color not in TAG_COLOR_KEYS and not _HEX_COLOR_RE.match(color):
+            raise ValueError(
+                f"color must be one of {', '.join(TAG_COLOR_KEYS)} or #rrggbb",
+            )
         out[tag] = color
         if len(out) > MAX_TAG_COLORS:
             raise ValueError(f"at most {MAX_TAG_COLORS} tag colors per organization")

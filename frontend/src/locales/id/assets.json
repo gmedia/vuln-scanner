@@ -33,5 +33,6 @@
   "watchHttp": "Pantau HTTP aset ini",
   "tagColors": "Warna label",
   "tagColorFor": "Warna untuk {{tag}}",
-  "tagColorPick": "{{tag}}: {{color}}"
+  "tagColorPick": "{{tag}}: {{color}}",
+  "tagColorPicker": "{{tag}}: warna kustom"
 }
