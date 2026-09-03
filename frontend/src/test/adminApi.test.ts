@@ -20,6 +20,7 @@ import {
   getPricing,
   listHppCosts,
   normalizePricingList,
+  quoteHpp,
   resendVerification,
   updateHppOverhead,
   updateHppRate,
@@ -193,6 +194,41 @@ describe("hpp admin api", () => {
       category: "opex",
       note: "CF",
     });
+  });
+
+  it("quoteHpp posts spec and jobs", async () => {
+    mockPost.mockResolvedValue({
+      data: {
+        provider: "tencent-cvm",
+        region: "jakarta",
+        monthly_compute_idr: 568750,
+        monthly_power_idr: 1,
+        monthly_total_idr: 568751,
+        total_jobs: 170,
+        breakeven_unit_idr: 4000,
+        overhead_pool_idr: 1_068_751,
+        total_hpp_idr: 315000,
+        total_fully_loaded_hpp_idr: 1_383_751,
+        breakeven_pct_of_list_basic: 1.3,
+        breakeven_pct_of_list_pro: 0.6,
+        breakeven_pct_of_list_multi: 0.2,
+        lines: [],
+        note: "Server price only",
+      },
+    });
+    const body = {
+      provider: "tencent-cvm",
+      region: "jakarta",
+      cpu_vcpu: 2,
+      ram_gb: 4,
+      monthly_instance_idr: 568750,
+      jobs: { ip: 100, domain: 50, hostscan: 20 },
+    };
+    await expect(quoteHpp(body)).resolves.toMatchObject({
+      provider: "tencent-cvm",
+      total_jobs: 170,
+    });
+    expect(mockPost).toHaveBeenCalledWith("/api/admin/hpp/quote", body);
   });
 });
 
