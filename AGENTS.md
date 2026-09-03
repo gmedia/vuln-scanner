@@ -83,8 +83,7 @@ Public marketing and in-app SPA share **one visual family**. Detail: `docs/AGENT
 # PROJECT KNOWLEDGE BASE
 
 **Generated:** 2026-09-03  
-**Commit:** 192d7ee  
-**Branch:** main  
+**Code snapshot:** `192d7ee` (`main` at map time; not this PR tip)  
 
 Child maps: [`backend/AGENTS.md`](backend/AGENTS.md) · [`frontend/AGENTS.md`](frontend/AGENTS.md) · [`workers/AGENTS.md`](workers/AGENTS.md) · [`scripts/AGENTS.md`](scripts/AGENTS.md)
 
