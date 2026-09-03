@@ -1,65 +1,69 @@
 # Guard dan SIEM: setelah Scan, bukan pengganti Scan
 
-Dua nama yang gampang tertukar. Keduanya bukan paket Scan hari pertama.
+Dua nama yang paling gampang tertukar di Sinexis. Keduanya juga bukan tempat memulai.
 
-Di luar Sinexis, orang juga sering mencampur: OpenVAS/nmap = foto berkala dari luar; Wazuh/SIEM = mata di dalam host. Sinexis tidak menjual yang kedua seolah-olah yang pertama.
+Bedanya begini. Scan adalah foto berkala dari luar: apa yang terlihat orang lewat dari internet. Guard dan SIEM bekerja dari arah dalam: apa yang terjadi di dalam mesin Anda. Banyak penawaran keamanan mencampur keduanya seolah satu barang. Kami memisahkannya, termasuk soal batasnya.
 
 ## Guard: lapisan tipis di dalam server
 
-Guard adalah alarm di dalam VPS atau colo Anda. Yang dijual sekarang: **daftar mesin plus alert yang benar-benar kritis**. Bukan "semua log dunia." Bukan dasbor Wazuh penuh untuk pelanggan. Bukan otomasi insiden.
+Guard adalah alarm di dalam VPS atau colo Anda. Yang tersedia sekarang cukup spesifik: **daftar mesin yang terdaftar, plus alert untuk peristiwa yang benar-benar kritis**.
 
-Satu `wazuh-agent` per VM. Bukan dua agen. Tidak ada daemon enroll kedua yang harus dipasang mendampingi.
+Bukan "semua log ditelan". Bukan dasbor pemantauan lengkap yang diserahkan ke pelanggan. Bukan respons insiden otomatis.
+
+Satu agen per mesin — satu `wazuh-agent`, bukan dua. Tidak ada program pendamping kedua yang harus dipasang di sebelahnya.
 
 Yang Guard lakukan:
 
-- Inventaris mesin yang terdaftar.
-- Alert untuk peristiwa kritis (misalnya: layanan penting mati, perubahan mencurigakan).
-- Notifikasi ke tim.
+- Menampilkan inventaris mesin yang sudah terdaftar.
+- Mengirim alert untuk peristiwa kritis, misalnya layanan penting yang mati atau perubahan yang mencurigakan.
+- Meneruskan notifikasi itu ke tim Anda.
 
 Yang Guard **tidak** lakukan:
 
-- Menelan semua log 24 jam.
-- Mengganti dashboard Wazuh penuh.
-- Otomasi insiden atau respons otomatis.
-- Membaca file di disk (itu Host Protect).
+- Menyimpan dan menampilkan seluruh log sepanjang hari.
+- Menggantikan dasbor pemantauan penuh.
+- Menjalankan otomasi atau respons insiden sendiri.
+- Membaca berkas di disk — itu pekerjaan Host Protect.
 
-Scan lihat toko dari trotoar. Guard alarm di dalam, bunyi untuk yang serius. Dua perspektif, dua pekerjaan.
+Analoginya: Scan melihat toko dari trotoar. Guard adalah alarm di dalam yang berbunyi untuk hal serius. Dua perspektif, dua pekerjaan berbeda.
 
-Syarat: Anda sudah nyaman dengan Scan berkala. Guard upsell kedua. Pasang atau lepas agen urusan lab dan ops, bukan tombol "install dari artikel blog."
+Syarat wajarnya: Anda sudah nyaman dengan Scan berkala lebih dulu. Guard adalah lapisan kedua, dan pemasangan atau pelepasan agennya dikerjakan bersama tim operasional — bukan tombol yang dipasang sendiri dari artikel blog.
 
-## SIEM: cari peristiwa dan tiket insiden
+## SIEM: pencarian peristiwa dan tiket insiden
 
-Di Sinexis, SIEM terdiri dari dua hal:
+Di Sinexis, SIEM berarti dua hal, tidak lebih.
 
-**Cari peristiwa** = telusuri log organisasi yang sudah masuk. Bukan konsol kedua, bukan ganti Guard.
+**Pencarian peristiwa** — menelusuri log organisasi yang sudah masuk. Ini bukan konsol kedua dan bukan pengganti Guard.
 
-**Cases** = tiket insiden di Postgres. Buka, akui, tutup. Disimpan di aplikasi Sinexis, bukan plugin Wazuh, bukan daftar alert Guard.
+**Cases** — tiket insiden yang tersimpan di database aplikasi Sinexis. Dibuka, ditangani, lalu ditutup, dengan catatan siapa mengerjakan apa. Ini tiket di dalam aplikasi Sinexis, bukan plugin di sistem pemantauan lain, dan bukan daftar alert Guard yang dipindahkan.
 
-Bukan "platform AI cybersecurity." Bukan konsol terpisah yang harus login beda. Di banyak lingkungan, modul ini masih dimatikan (`SIEM_ENABLED`) sampai ada yang siap baca kasus.
+Yang tidak kami klaim: ini bukan "platform keamanan AI", dan bukan pusat operasi keamanan yang berjaga 24 jam. Tidak ada tim Sinexis yang membaca kasus Anda tiap jam.
 
-Jangan janji SIEM di email penjualan gelombang pertama. Itu modul untuk tim yang sudah matang.
+Di banyak akun, modul ini masih dimatikan sampai ada orang di pihak Anda yang benar-benar siap membaca dan menutup kasus. Fitur tiket yang tidak pernah dibuka lebih buruk daripada tidak ada, karena memberi rasa aman yang salah.
 
-## Host Protect: cek malware di disk
+## Host Protect: memeriksa berkas di disk
 
-Supaya tidak tertukar lagi.
+Supaya tidak tertukar lagi dengan dua modul di atas.
 
-Host Protect membaca file di **disk VM pelanggan**, lewat helper yang jalan di mesin itu sendiri. Pekerjaan sekelas Imunify on-box, stack sendiri, bukan clone panel.
+Host Protect membaca berkas di disk mesin Anda, lewat program pembantu kecil yang jalan di mesin itu sendiri. Fokusnya berkas web yang mencurigakan.
 
-Tanpa helper: menunggu atau tidak terjangkau. Bukan temuan `wp-content` palsu di path ERP. Kami tidak mengarang malware yang tidak ada.
+Kalau program pembantunya belum terpasang atau tidak terjangkau, statusnya jujur: "menunggu" atau "tidak terjangkau". Kami tidak mengarang temuan supaya laporan terlihat ramai — tidak ada temuan berkas WordPress palsu di server yang isinya aplikasi akuntansi.
 
-Helper diunduh lewat satu skrip `sinexis-install.sh`, bukan clone repo. Bukan agen enroll baru.
+Pemasangannya lewat satu skrip installer resmi, bukan menyalin repositori kode. Dan ini bukan agen enroll kedua di samping Guard.
 
 ## Urutan yang masuk akal
 
-1. **Domain dan/atau IP masuk Scan** plus jadwal. Ini fondasi.
-2. **Kredit dan aset** sesuai paket. Supaya jadwal jalan.
-3. **Uptime** kalau Anda peduli web down. Kursi Scan, bukan baris baru.
-4. **Guard** di host yang sama. Satu agen. Setelah Scan berjalan.
-5. **Host Protect** jika Anda butuh jujur soal file web. Per VM, bukan per tag.
-6. **SIEM** hanya jika modulnya hidup dan ada orang yang benar-benar baca Cases.
+1. **Scan domain dan/atau IP**, lalu hidupkan jadwalnya. Ini fondasinya.
+2. **Kredit dan aset** disiapkan sesuai paket, supaya jadwal benar-benar jalan.
+3. **Uptime** kalau Anda peduli situs mati atau tidak. Ini termasuk paket Scan.
+4. **Guard** di server yang sama, setelah Scan berjalan rutin. Satu agen per mesin.
+5. **Host Protect** kalau Anda butuh kejelasan soal berkas di dalam server. Per mesin.
+6. **SIEM** paling akhir, dan hanya kalau ada orang yang siap membaca Cases.
 
-Website plus hosting saja? Mulai **scan domain plus jadwal**. Guard dan SIEM boleh dibaca. Jangan dibeli lebih dulu daripada kebiasaan laporan bulanan.
+Kalau yang Anda punya hanya website di hosting, berhenti di langkah pertama sudah masuk akal: scan domain plus jadwal. Guard dan SIEM boleh dibaca-baca dulu, jangan dibeli sebelum kebiasaan membaca laporan bulanan terbentuk.
 
 ## Langkah berikutnya
 
-Mulai dari Scan. Jadwal Attach. Kalau sudah jalan beberapa bulan dan Anda butuh alarm di dalam server, baru bicara Guard. SIEM belakangan, kalau modulnya hidup dan ada yang baca.
+Mulai dari Scan dan jadwal Attach di **sinexis.app**. Jalankan beberapa bulan.
+
+Kalau setelah itu Anda merasa butuh alarm dari dalam server, baru bicarakan Guard. SIEM belakangan, kalau modulnya aktif dan ada orang yang benar-benar membacanya.

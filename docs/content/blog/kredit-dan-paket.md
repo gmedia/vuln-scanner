@@ -1,43 +1,57 @@
 # Kredit: dompet untuk tiap pemeriksaan
 
-Di Sinexis, scan tidak unlimited tanpa hitungan. Tiap jenis pemeriksaan punya biaya kredit.
+Di Sinexis, scan tidak berjalan tanpa hitungan. Setiap jenis pemeriksaan punya biaya kredit, dan kredit itu harus ada dulu sebelum tombolnya bisa ditekan.
 
-Bayangkan seperti pulsa HP. Isi dulu, baru bisa dipakai. Lihat sisa kapan saja di dasbor. Dompet di versi sekarang milik login Anda, bukan kas bersama perusahaan.
+Cara berpikir paling mudah: seperti pulsa. Isi dulu, baru bisa dipakai. Sisanya kelihatan kapan saja di dasbor.
 
-Artikel ini tidak menempel tarif rupiah. Angka pasti ada di layar harga di akun Anda.
+Artikel ini sengaja tidak menyebut angka rupiah. Tarif yang berlaku selalu tampil di layar harga di dalam akun Anda, sebelum pemeriksaan dijalankan.
+
+## Kenapa dihitung, bukan sekadar "unlimited"
+
+Setiap pemeriksaan memakai waktu mesin dan bandwidth nyata. Kalau dijual sebagai "sebanyak-banyaknya", yang terjadi biasanya salah satu dari dua: harga dinaikkan untuk semua orang, atau ada batas tersembunyi yang baru ketahuan saat Anda butuh.
+
+Kredit membuat batasnya terlihat sejak awal. Anda tahu berapa sisa, dan tahu kapan harus mengisi.
 
 ## Kira-kira pemakaiannya
 
-Tipe pemeriksaan yang beda, beda juga biayanya:
+Jenis pemeriksaan yang berbeda punya bobot yang berbeda:
 
 - **Scan IP** biasanya lebih ringan. Satu kali jalan, satu kali potong.
-- **Scan domain** biasanya lebih berat. DNS, TLS, header, sidik stack, subdomain. Lebih banyak kerja, lebih banyak kredit.
-- **Scan mobile** (APK/IPA) dihitung terpisah. Bukan paket andalan untuk hosting atau VPS.
-- **Jadwal (Scan Attach)** makan kredit yang sama saat waktunya tiba. Kredit nol, jadwal mati sendiri. Tidak ada kejutan tagihan.
-- **Host Protect** punya hitungan sendiri di mesin. Jangan samakan dengan scan domain.
+- **Scan domain** biasanya lebih berat, karena satu pemeriksaan mencakup DNS, sertifikat HTTPS, header keamanan, teknologi yang terbaca, sampai subdomain publik. Lebih banyak kerja, lebih banyak kredit.
+- **Scan mobile** (berkas Android atau iOS) dihitung terpisah. Ini pelengkap, bukan menu utama untuk pemilik hosting atau VPS.
+- **Jadwal Scan Attach** memakai kredit yang sama saat waktunya tiba. Kredit nol berarti jadwal berhenti sendiri, tanpa tagihan kejutan.
+- **Host Protect** punya hitungan sendiri karena bekerja di dalam mesin Anda, bukan dari internet. Jangan disamakan dengan scan domain.
 
-Angka pasti ada di layar harga di akun. Tarif rupiah urusan tagihan AM dan finance, jangan dikutip di halaman publik.
+Angka pastinya bukan hafalan — buka layar harga di akun sebelum menjalankan pemeriksaan.
 
-## Cerita paket (bukan invoice)
+## Tingkatan paket, gambaran umum
 
-AM biasanya menawarkan tiga tingkat Secure Scan Add-on:
+Ada beberapa tingkat, dan yang membedakan terutama jumlah target dan kerapatan jadwal.
 
-**Basic** = satu target (satu domain atau satu IP), ritme bulanan, kuota kecil. Cocok untuk satu server atau satu website.
+**Tingkat dasar** cocok untuk satu target: satu domain atau satu IP, dengan ritme bulanan. Ini pilihan wajar untuk satu website atau satu server.
 
-**Pro** = beberapa target, ritme lebih rapat, banding dan laporan lebih lengkap. Cocok untuk tim yang punya beberapa domain atau IP.
+**Tingkat menengah** untuk beberapa target, dengan ritme lebih rapat serta perbandingan dan laporan yang lebih lengkap. Cocok kalau Anda memegang beberapa domain atau VPS.
 
-**Multi-asset** = belasan target bernama, untuk yang punya banyak VPS atau domain. Satu workspace, banyak aset.
+**Tingkat multi-aset** untuk yang punya belasan target bernama. Satu workspace, banyak aset di dalamnya.
 
-Uptime (cek "situs nyala?") termasuk kursi Scan, bukan baris harga baru. Guard (satu `wazuh-agent` per VM), SIEM, dan Host Protect helper bukan isi paket Scan. Itu add-on terpisah.
+Uptime — cek "situs masih nyala?" — termasuk dalam paket Scan, bukan biaya baru yang berdiri sendiri. Sementara Guard (satu agen per mesin), SIEM, dan program pembantu Host Protect bukan bagian dari paket Scan; ketiganya tambahan terpisah.
 
-## Yang perlu diingat
+## Yang perlu diingat soal dompet
 
-Kontak teknis atau AM yang isi kuota. Pemilik cukup tahu: tanpa kredit, bulan ini tidak ada pemeriksaan.
+Kredit di versi sekarang menempel pada akun login Anda, bukan kas bersama organisasi. Mengundang rekan ke workspace tidak otomatis menggabungkan saldo. Dompet tingkat organisasi mungkin menyusul, tapi belum sekarang.
 
-Riwayat transaksi ada di dasbor. Jangan bagikan kunci API atau password di tiket publik.
+Karena itu, biasanya satu orang ditunjuk sebagai pemegang kredit — kontak teknis atau siapa pun yang mengurus tagihan layanan Anda. Pemilik usaha cukup tahu satu hal: tanpa kredit, bulan ini tidak ada pemeriksaan.
 
-Kredit tetap pribadi per orang. Undang rekan ke workspace tidak menggabungkan pulsa jadi kas perusahaan. Dompet organisasi mungkin belakangan.
+Riwayat pemakaian tercatat di dasbor, jadi bisa dicek kalau saldo turun lebih cepat dari perkiraan. Dan seperti biasa: jangan pernah menempelkan kunci API atau kata sandi di tiket atau grup chat.
+
+## Memilih tanpa berlebihan
+
+Hitung dulu berapa alamat yang benar-benar Anda jaga dan menghadap pelanggan. Bukan alamat percobaan, bukan subdomain staging yang sudah lupa dipakai.
+
+Ambil paket sesuai angka itu. Menaikkan paket nanti jauh lebih mudah daripada membayar kapasitas yang tidak pernah terpakai selama setahun.
 
 ## Langkah berikutnya
 
-Lihat layar harga di akun untuk angka pasti. Kalau belum punya akun, tanya AM yang mengurus colo atau VPS Anda. Mulai dari paket yang sesuai dengan jumlah target yang benar-benar Anda jaga, bukan yang terbesar.
+Buka **sinexis.app**, daftar, dan lihat layar harga di dalam akun untuk angka yang berlaku hari ini.
+
+Mulai dari satu target yang paling penting, jalankan satu pemeriksaan, lalu putuskan apakah perlu jadwal berulang. Keputusan paketnya jadi jauh lebih mudah setelah Anda melihat satu hasil nyata.

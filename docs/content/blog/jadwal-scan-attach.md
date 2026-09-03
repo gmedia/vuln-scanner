@@ -1,45 +1,65 @@
-# Scan Attach: jadwal, perubahan, dan laporan untuk atasan
+# Scan Attach: jadwal, perubahan, dan laporan bulanan
 
-Scan sekali itu cek kesehatan sekali. Hasilnya bagus di hari itu, tapi bulan depan sudah basi.
+Scan sekali itu seperti cek kesehatan sekali. Hasilnya benar untuk hari itu, tapi bulan depan sudah basi.
 
-Scan Attach itu janji berulang: domain dan/atau IP dicek tiap minggu atau bulan, otomatis. Pertanyaannya sederhana: **apa yang baru dan lebih berbahaya dibanding kemarin?**
+Scan Attach adalah janji berulang: domain dan/atau IP Anda diperiksa lagi tiap minggu atau tiap bulan, otomatis. Pertanyaan yang dijawab bukan "apa saja temuannya", tapi yang lebih berguna: **apa yang baru dan lebih berbahaya dibanding pemeriksaan sebelumnya?**
 
-Itu alasan add-on ini ditagih berulang di colo/VPS yang sudah Anda bayar. Bukan hobi scan. Bukan SIEM 24 jam. Tidak perlu agen di server untuk jadwal ini, pemeriksaan tetap dari internet.
+Kata "attach" dipakai karena modul ini menempel di layanan yang sudah Anda bayar — colo, VPS, atau hosting. Bukan hosting pengganti, dan bukan pemantauan log 24 jam. Untuk jadwal ini tidak ada agen yang perlu dipasang; pemeriksaan tetap dari internet.
 
 ## Cara kerjanya
 
-Anda pilih ritme: bulanan atau mingguan, sesuai paket. Ada batas jumlah jadwal per organisasi, itu batas produk, bukan "unlimited kalau minta."
+Anda pilih ritmenya: bulanan atau mingguan, sesuai paket yang diambil. Jumlah jadwal per organisasi ada batasnya, dan batas itu bagian dari produk — bukan angka yang bisa dinaikkan sekadar karena diminta.
 
-Alurnya:
+Urutannya:
 
-1. **Tunjuk target** = domain atau IP yang mau diawasi. Lebih aman lewat aset bernama supaya tidak salah sasaran.
-2. **Pastikan kredit ada** = jadwal makan kredit yang sama dengan scan biasa. Kredit habis, jadwal berhenti sendiri.
-3. **Hidupkan jadwal** = siklus pertama jalan otomatis.
-4. **Baca selisih** = bulan berikutnya, yang Anda lihat bukan PDF acak, tapi perubahan dibanding yang kemarin.
+1. **Tunjuk target.** Satu domain atau satu IP. Lebih aman lewat aset yang sudah diberi nama, supaya tidak salah sasaran.
+2. **Pastikan kredit tersedia.** Jadwal memakai kredit yang sama seperti scan manual. Kredit habis berarti jadwal berhenti.
+3. **Hidupkan jadwal.** Siklus pertama jalan otomatis dan jadi acuan awal.
+4. **Baca selisihnya.** Periode berikutnya yang Anda lihat bukan daftar panjang dari nol, tapi perbandingan dengan hasil sebelumnya.
 
-## Yang terasa di operasional
+## Yang berubah di operasional harian
 
-Hasil sebelumnya jadi acuan. Yang diutamakan: temuan parah **baru**, bukan dump ribuan baris yang bikin pusing.
+Hasil pemeriksaan sebelumnya disimpan sebagai acuan. Yang ditonjolkan adalah temuan parah yang **baru muncul**, bukan tumpukan baris yang sama tiap bulan.
 
-Email kalau muncul yang serius (kelengkapan tergantung paket). Ada laporan HTML ringkas, Bahasa Indonesia, yang masuk akal diteruskan ke pemilik atau GM hotel.
+Kalau ada temuan serius, notifikasi email dikirim; kelengkapannya tergantung paket. Ada juga laporan HTML ringkas dalam Bahasa Indonesia yang masuk akal diteruskan ke pemilik usaha, manajer, atau GM hotel tanpa perlu diterjemahkan dulu oleh orang IT.
 
-Kredit habis? Jadwal mati sendiri. Isi ulang atau naik paket, lalu hidupkan lagi. Tidak ada kejutan tagihan tambahan.
+Efek sampingnya sederhana tapi penting: pembicaraan keamanan bulanan jadi punya bahan. Bukan "sepertinya aman", tapi "bulan ini ada dua perubahan, satu sudah ditutup".
 
-## Yang dicek vs yang tidak
+## Kalau kredit habis
+
+Jadwal berhenti dengan sendirinya. Tidak ada pemeriksaan yang dipaksa jalan, dan tidak ada tagihan tambahan yang muncul di belakang.
+
+Isi ulang kredit atau naikkan paket, lalu hidupkan jadwalnya lagi. Riwayat sebelumnya tidak hilang, jadi perbandingan bisa dilanjutkan.
+
+## Yang dicek dan yang tidak
 
 | Dari jadwal Attach | Bukan dari sini |
 |---|---|
-| Perubahan temuan dibanding periode sebelumnya | Log 24 jam di dalam server |
+| Perubahan temuan dibanding periode sebelumnya | Pemantauan log di dalam server |
 | Temuan parah baru yang perlu perhatian | Patch otomatis atau perbaikan |
-| Laporan HTML untuk diteruskan | Dashboard SIEM atau Wazuh penuh |
+| Laporan HTML ringkas untuk diteruskan | Dasbor SIEM lengkap |
 | Notifikasi email untuk temuan serius | Alert real-time setiap menit |
 
-## Bukan ini
+## Batas yang perlu jelas sejak awal
 
-Bukan SIEM. Bukan "aman 100%." Bukan Guard (satu `wazuh-agent` di dalam server), itu upsell lain. Bukan agen enroll kedua. Bukan unlimited scan. Bukan pengganti pentest tahunan.
+Scan Attach bukan SIEM dan bukan tim yang berjaga tiap jam. Ia berjalan sesuai jadwal, dari luar.
 
-Untuk pembeli colo/VPS, modul ini yang paling dekat dengan "kenapa saya bayar tiap bulan." Scan sekali di dasbor tetap ada. Attach yang bikin jadi kebiasaan.
+Ini juga bukan Guard. Guard adalah alarm di dalam server dengan satu agen per mesin, dan itu modul terpisah. Menghidupkan jadwal Attach tidak memasang agen apa pun.
+
+Bukan pula pengganti pengujian oleh manusia. Kalau aplikasi Anda punya alur pemesanan atau hak akses yang rumit, tetap perlu orang yang menelusurinya. Attach menjaga lapisan dasarnya tetap terpantau.
+
+Dan tidak ada janji "aman 100%". Yang dijanjikan: kalau permukaan Anda berubah menjadi lebih berisiko, Anda tahu dalam hitungan minggu, bukan setahun kemudian.
+
+## Buat siapa ini paling terasa
+
+Tim kecil yang tidak punya orang khusus keamanan, tapi punya satu sampai beberapa alamat yang menghadap pelanggan.
+
+Pemilik layanan hosting atau colo yang ingin menambahkan satu baris keamanan yang bisa dibuktikan tiap bulan, bukan janji lisan.
+
+Kantor atau properti yang secara berkala ditanya "keamanan kita bagaimana?" dan butuh jawaban satu halaman.
 
 ## Langkah berikutnya
 
-Pilih satu domain atau IP yang benar-benar menghadap pelanggan. Scan sekali dulu, lihat hasilnya. Kalau masuk akal, hidupkan jadwal. Bulan depan Anda baca selisih, bukan PDF acak.
+Pilih satu domain atau IP yang benar-benar menghadap pelanggan. Jalankan satu scan manual dulu di **sinexis.app**, lalu baca hasilnya.
+
+Kalau isinya masuk akal untuk dilaporkan rutin, hidupkan jadwalnya. Periode berikutnya Anda hanya perlu membaca perubahannya.
