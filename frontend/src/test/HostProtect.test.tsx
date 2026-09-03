@@ -385,6 +385,57 @@ describe("Host Protect page", () => {
     expect(screen.getByText("Ignored")).toBeInTheDocument();
   });
 
+  it("does not say files need review when the list is empty", async () => {
+    vi.mocked(hostApi.listHostSites).mockResolvedValue([
+      {
+        id: "s1",
+        organization_id: "org1",
+        guard_agent_id: "a1",
+        asset_id: null,
+        name: "Erp Stg",
+        root_path: "/var/www/stg/member-pay",
+        cms_hint: "unknown",
+        enabled: true,
+        auto_quarantine: false,
+        scan_interval: "daily",
+        created_by: "u1",
+        created_at: "2026-08-30T00:00:00Z",
+        updated_at: "2026-08-30T00:00:00Z",
+        sku: "multi",
+        sku_limit: 10,
+      },
+    ]);
+    vi.mocked(hostApi.listHostScans).mockResolvedValue([
+      {
+        id: "sc1",
+        organization_id: "org1",
+        site_id: "s1",
+        status: "completed",
+        trigger: "manual",
+        started_at: "2026-08-30T00:00:00Z",
+        finished_at: "2026-08-30T00:01:00Z",
+        error: null,
+        hit_count: 1,
+        created_at: "2026-08-30T00:00:00Z",
+      },
+    ]);
+    vi.mocked(hostApi.listHostHits).mockResolvedValue([]);
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByTestId("host-scan-status")).toBeInTheDocument(),
+    );
+    expect(screen.getByTestId("host-scan-status").textContent).not.toMatch(
+      /need a decision/i,
+    );
+    expect(screen.getByTestId("host-scan-status").textContent).toMatch(
+      /not in this list/i,
+    );
+    expect(screen.getByTestId("host-hits-empty").textContent).toMatch(
+      /none appear in this list/i,
+    );
+    expect(screen.queryByTestId("host-show-ignored")).not.toBeInTheDocument();
+  });
+
   it("shows clean-scan copy only when last scan completed with zero hits", async () => {
     vi.mocked(hostApi.listHostSites).mockResolvedValue([
       {
