@@ -239,3 +239,45 @@ async def test_schedule_one_to_one(db_session: AsyncSession, ctx, mock_celery):
             assert bad.status_code == 400
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_tag_colors_member_patch_viewer_forbidden(db_session: AsyncSession, ctx):
+    _bind_db(db_session)
+    transport = ASGITransport(app=app)
+    org = ctx["org"]
+    owner: User = ctx["owner"]
+    viewer: User = ctx["viewer"]
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            empty = await client.get("/api/assets/tag-colors", headers=_auth(owner, org.id))
+            assert empty.status_code == 200
+            assert empty.json()["colors"] == {}
+            patched = await client.patch(
+                "/api/assets/tag-colors",
+                headers=_auth(owner, org.id),
+                json={"colors": {"prod": "green", "hotel": "blue"}},
+            )
+            assert patched.status_code == 200, patched.text
+            assert patched.json()["colors"] == {"prod": "green", "hotel": "blue"}
+            merge = await client.patch(
+                "/api/assets/tag-colors",
+                headers=_auth(owner, org.id),
+                json={"colors": {"prod": "red"}},
+            )
+            assert merge.json()["colors"]["prod"] == "red"
+            assert merge.json()["colors"]["hotel"] == "blue"
+            denied = await client.patch(
+                "/api/assets/tag-colors",
+                headers=_auth(viewer, org.id),
+                json={"colors": {"prod": "amber"}},
+            )
+            assert denied.status_code == 403
+            bad = await client.patch(
+                "/api/assets/tag-colors",
+                headers=_auth(owner, org.id),
+                json={"colors": {"prod": "#ff00aa"}},
+            )
+            assert bad.status_code == 422
+    finally:
+        app.dependency_overrides.clear()

@@ -19,6 +19,8 @@ from app.schemas.asset import (
     AssetResponse,
     AssetScheduleCreate,
     AssetUpdate,
+    TagColorsResponse,
+    TagColorsUpdate,
 )
 from app.schemas.schedule import ScheduleCreate, ScheduleResponse
 from app.services.organization import get_membership, require_membership, role_at_least
@@ -221,3 +223,25 @@ class AssetService:
         await self.db.commit()
         await self.db.refresh(schedule)
         return ScheduleResponse.model_validate(schedule)
+
+    async def get_tag_colors(self, user: User, organization_id: UUID | None) -> TagColorsResponse:
+        if organization_id is None:
+            raise HTTPException(status_code=400, detail="Active organization required")
+        await require_membership(self.db, organization_id, user.id, min_role="viewer")
+        org = await self._org(organization_id)
+        return TagColorsResponse(colors=dict(org.tag_colors or {}))
+
+    async def update_tag_colors(
+        self, user: User, organization_id: UUID | None, body: TagColorsUpdate
+    ) -> TagColorsResponse:
+        if organization_id is None:
+            raise HTTPException(status_code=400, detail="Active organization required")
+        await require_membership(self.db, organization_id, user.id, min_role="member")
+        org = await self._org(organization_id)
+        merged = dict(org.tag_colors or {})
+        merged.update(body.colors)
+        org.tag_colors = merged
+        org.updated_at = datetime.now(UTC)
+        await self.db.commit()
+        await self.db.refresh(org)
+        return TagColorsResponse(colors=dict(org.tag_colors or {}))
