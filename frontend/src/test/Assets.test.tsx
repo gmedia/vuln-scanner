@@ -244,6 +244,11 @@ describe("Assets page", () => {
     const user = userEvent.setup();
     renderPage();
     await waitFor(() =>
+      expect(screen.getByTestId("asset-tag-colors-toggle")).toBeInTheDocument(),
+    );
+    expect(screen.queryByTestId("asset-tag-color-prod-green")).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("asset-tag-colors-toggle"));
+    await waitFor(() =>
       expect(screen.getByTestId("asset-tag-color-prod-green")).toBeInTheDocument(),
     );
     await user.click(screen.getByTestId("asset-tag-color-prod-green"));
