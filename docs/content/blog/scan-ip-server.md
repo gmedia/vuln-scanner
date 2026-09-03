@@ -1,45 +1,67 @@
-# Scan IP: cek server yang menghadap internet
+# Scan IP: memeriksa server yang menghadap internet
 
-IP itu nomor rumah server. VPS, dedicated, colo hampir selalu punya yang publik. Scan IP Sinexis mengetuk dari jalan: pintu mana yang terbuka, layanan apa yang menjawab, CVE yang cocok dengan layanan itu.
+IP adalah nomor rumah server Anda. VPS, dedicated server, dan colo hampir selalu punya satu yang bisa dijangkau dari internet.
 
-Analoginya: depan, belakang, gudang. Kami tidak duduk di ruang tamu. Kami lihat dari luar. Itu pekerjaan network scan, bukan SIEM yang menelan log 24 jam di dalam OS.
+Scan IP Sinexis mengetuk dari jalan. Pintu mana yang terbuka, siapa yang menjawab dari balik pintu itu, dan apakah ada kerentanan publik yang sudah diketahui untuk layanan tersebut.
 
-Ini bukan pasang agen di dalam. Scan IP tidak butuh `wazuh-agent`. Guard (satu agen per VM) adalah upsell terpisah. Host Protect (baca disk) juga terpisah.
+Kami tetap di luar. Tidak ada teknisi yang masuk ke sistem operasi Anda, dan tidak ada program yang perlu dipasang untuk pemeriksaan ini.
 
-## Isi pemeriksaan
+## Isi pemeriksaannya
 
-Yang dicek dari luar:
+**Port yang terbuka.** Pintu mana saja yang menjawab dari internet. Kadang hasilnya mengejutkan: server yang "cuma untuk web" ternyata masih membuka layanan lain yang lupa ditutup sejak dulu.
 
-- **Port terbuka** = pintu mana yang terbuka di host publik. SSH, HTTP, database, atau layanan yang seharusnya tidak terlihat.
-- **Layanan yang teridentifikasi** = apa yang menjawab di balik port itu. Versi web server, jenis database, dan sejenisnya.
-- **CVE yang cocok** = kerentanan yang sudah diketahui publik dan cocok dengan versi layanan yang terdeteksi. Sumbernya dari database publik (OSV.dev), bukan temuan sendiri.
-- **Tingkat keparahan** = mana yang parah, mana yang informatif.
+**Layanan dan versinya.** Apa yang menjawab di balik setiap port, dan versi berapa. Misalnya jenis web server, atau sebuah database yang seharusnya tidak terlihat publik.
 
-Tetap dari luar: tidak ada teknisi masuk sistem operasi, tidak ada patch otomatis, tidak ada perubahan konfigurasi.
+**Kerentanan publik yang cocok.** Kalau versi layanan yang terdeteksi punya catatan kerentanan yang sudah diumumkan publik, itu ditampilkan. Sumbernya database kerentanan terbuka, bukan tebakan kami sendiri.
 
-## Kapan relevan
+**Tingkat keparahan.** Setiap temuan dikelompokkan supaya jelas mana yang perlu ditindak minggu ini dan mana yang sekadar catatan.
 
-IP tetap di VPS atau colo. Server yang katanya cuma web, tapi kadang masih ada layanan lain yang lupa ditutup. Port database yang seharusnya tidak terbuka ke internet. SSH yang masih di port default.
+Perlu ditegaskan: mendeteksi versi yang punya catatan kerentanan bukan berarti server Anda sudah dibobol. Artinya ada permukaan yang sebaiknya diperiksa dan diperbarui.
 
-Anda butuh bukti bulanan: permukaan ini masih seperti yang kita kira. Atau: ternyata ada port yang terbuka sejak migrasi terakhir.
+## Kapan ini relevan
 
-## Yang dicek vs yang tidak
+Anda punya IP tetap di VPS atau colo, dan tidak ada yang rutin memeriksa apa saja yang terbuka dari luar.
 
-| Dicek dari luar | Tidak dicek |
+Beberapa situasi yang khas:
+
+- Port database terbuka ke internet padahal seharusnya hanya diakses dari dalam.
+- Layanan pengelolaan atau panel yang masih terjangkau publik.
+- Ada port baru yang terbuka setelah migrasi atau instalasi terakhir, tanpa ada yang mencatat.
+- Anda butuh bukti berkala bahwa permukaan server masih sama seperti yang disepakati.
+
+## Yang diperiksa dan yang tidak
+
+| Diperiksa dari luar | Tidak diperiksa |
 |---|---|
-| Port terbuka di host publik | Konfigurasi di dalam OS |
-| Layanan dan versi yang menjawab | Patch otomatis atau perbaikan |
-| CVE publik yang cocok | Firewall rules (kami tidak mengubah) |
-| Perubahan dibanding scan sebelumnya | Logika aplikasi atau isi database |
+| Port yang terbuka dari internet | Pengaturan di dalam sistem operasi |
+| Layanan dan versi yang menjawab | Isi database atau berkas aplikasi |
+| Kerentanan publik yang cocok | Aturan firewall Anda (kami tidak mengubahnya) |
+| Perubahan dibanding pemeriksaan sebelumnya | Berkas mencurigakan di disk (itu Host Protect) |
 
-## Yang tidak kami lakukan dari sini
+## Batasnya
 
-Tidak patch otomatis. Tidak ganti firewall tanpa Anda. Bukan otomasi insiden. Bukan "kami masuk dalam-dalam." Bukan SIEM. Bukan daemon scan kedua di host.
+Kami tidak memasang patch otomatis dan tidak mengubah aturan firewall Anda. Keputusan dan eksekusinya tetap di tangan Anda atau penyedia server Anda.
 
-Bukan Imunify di cPanel. Kalau farm Anda sudah punya panel dengan fitur keamanan on-box, Scan IP tetap hanya melihat dari internet. Dua pekerjaan berbeda, dua perspektif berbeda.
+Scan IP juga bukan pemantauan dari dalam server. Tidak ada program yang perlu dipasang untuk ini, dan tidak ada yang berjaga membaca kejadian tiap jam. Kalau Anda memang butuh alarm dari dalam server, itu pekerjaan Guard — modul terpisah, satu agen per mesin.
+
+Ini juga bukan cek "masih nyala atau tidak" setiap beberapa menit. Untuk itu ada Uptime, yang dibahas di artikel tersendiri.
+
+Dan seperti pemeriksaan otomatis lainnya, ini bukan pengganti pengujian oleh manusia. Hasil scan memberi daftar permukaan, bukan simulasi serangan menyeluruh.
+
+## Bedanya dengan keamanan di dalam panel
+
+Kalau server Anda memakai panel hosting dengan fitur keamanan sendiri, itu bekerja dari dalam: melihat berkas, akun, dan konfigurasi.
+
+Scan IP bekerja dari arah berlawanan. Dua sudut pandang berbeda, dan keduanya bisa jalan berdampingan. Yang satu tahu isi rumah, yang satu tahu apa yang kelihatan dari jalan.
+
+## Cara membaca hasilnya tanpa panik
+
+Mulai dari yang paling parah, lalu tanyakan tiga hal: layanan ini memang perlu terbuka ke publik? Versinya masih didukung? Kalau tidak perlu publik, bisa dibatasi ke jaringan internal atau VPN?
+
+Sering kali tindakan paling murah bukan menambal, tapi menutup pintu yang sejak awal tidak perlu dibuka.
 
 ## Langkah berikutnya
 
-Scan IP memakai kredit (biasanya lebih ringan daripada scan domain). Satu IP atau satu domain, pilih yang benar-benar menghadap pelanggan. Angka rupiah tidak ditulis di artikel ini, lihat layar harga di akun.
+Pilih satu IP yang benar-benar melayani pelanggan Anda. Buka **sinexis.app**, daftar, lalu jalankan satu scan IP.
 
-Aplikasi HP (APK/IPA) adalah mesin terpisah. Bukan pengganti cek server.
+Setiap scan memakai kredit; biaya per jenis pemeriksaan bisa dilihat di layar harga di dalam akun sebelum Anda menjalankannya. Kalau hasilnya terasa berguna, hidupkan jadwal supaya perbandingannya jalan sendiri tiap bulan.

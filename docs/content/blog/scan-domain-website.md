@@ -1,51 +1,67 @@
-# Scan domain: cek website yang sudah online
+# Scan domain: memeriksa website yang sudah online
 
-Domain itu nama yang diketik pengunjung. Di belakangnya ada hosting atau VPS yang sudah jalan. Scan domain Sinexis melihat sisi itu **dari internet**, bukan dari dalam folder di server.
+Domain adalah nama yang diketik pengunjung Anda. Di belakang nama itu ada hosting atau VPS yang sudah berjalan.
 
-Bukan "kami masuk server lalu beresin plugin." Bukan SIEM. Tidak perlu pasang agen. Satu klik, tunggu hasilnya.
+Scan domain Sinexis melihat sisi luarnya — persis seperti yang dilihat pengunjung dan, sayangnya, juga orang yang berniat jahat. Kami tidak masuk ke folder di server, tidak membuka panel hosting, dan tidak perlu Anda memasang apa pun.
 
-## Apa yang sebenarnya diperiksa
+Analoginya sederhana: kami berdiri di trotoar depan ruko Anda dan mencatat kondisi pintu, gembok, dan papan nama. Bukan masuk ke gudang.
 
-OWASP membedakan DAST (uji aplikasi yang sudah hidup, dari luar) dari uji logika bisnis. Scan domain Sinexis termasuk yang pertama: **baseline postur** dari sisi publik.
+## Yang benar-benar diperiksa
 
-Yang dicek:
+**DNS.** Nama domain masih mengarah ke tempat yang masuk akal, atau sudah nyasar ke alamat lain. Ini sering berubah tanpa ada yang sadar setelah pindah penyedia.
 
-- **DNS** = nama masih mengarah ke tempat yang masuk akal, atau sudah nyasar ke IP yang salah.
-- **Sertifikat HTTPS** = gembok TLS masih hidup atau hampir kedaluwarsa. Ini yang sering lolos setelah pindah hosting.
-- **Header keamanan** = aturan yang browser harapkan dari situs. Kadang hilang setelah update theme atau migrasi.
-- **Sidik teknologi** = apa yang terlihat dari luar (WordPress, Nginx, dan sejenisnya). Bukan audit kode.
-- **Subdomain** = yang tercatat di catatan publik (misalnya crt.sh). Kadang ada subdomain lupa yang masih hidup.
+**Sertifikat HTTPS.** Gembok di address bar masih hidup, atau sudah mendekati tanggal kedaluwarsa. Termasuk apakah nama di sertifikat cocok dengan domainnya.
 
-Ini pemeriksaan postur. Satu scan bukan "kami coba bobol checkout." Jadwal yang bikin jadi kebiasaan.
+**Header keamanan.** Ada beberapa aturan yang browser modern harapkan dikirim oleh situs. Aturan ini sering hilang setelah ganti tema, update, atau migrasi.
 
-## Kapan berguna
+**Teknologi yang terlihat.** Jenis web server dan platform yang bisa dikenali dari luar. Ini bukan audit kode, hanya catatan apa yang terbaca publik.
 
-Situs sudah live, orang pakai HTTPS, dan tidak ada yang sempat cek manual tiap bulan. Yang sering lolos:
+**Subdomain yang tercatat publik.** Kadang muncul subdomain lama yang sudah dilupakan tapi masih hidup dan tidak ada yang merawatnya.
 
-- Sertifikat hampir kedaluwarsa, tidak ada yang ingat perpanjang.
-- Header berubah setelah pindah hosting atau ganti theme.
-- DNS tersenggol tanpa ada yang sadar.
-- Subdomain lama masih mengarah ke server yang tidak dijaga.
+Semuanya adalah pemeriksaan **postur**: seberapa rapi permukaan situs Anda hari ini. Satu kali scan memberi gambaran hari itu. Jadwal yang membuatnya jadi kebiasaan.
 
-Mulai dari **satu domain yang benar-benar dipakai pelanggan**. Jangan masukkan semua subdomain percobaan ke akun kecil.
+## Kapan ini terasa berguna
 
-## Yang dicek vs yang tidak
+Situasi paling umum: situs sudah live, jalan normal, dan tidak ada orang yang punya waktu memeriksa hal-hal kecil setiap bulan.
 
-| Dicek dari luar | Tidak dicek |
+Yang biasanya lolos dari perhatian:
+
+- Sertifikat HTTPS mendekati kedaluwarsa dan tidak ada yang ingat memperpanjang.
+- Header keamanan hilang setelah update tema atau pindah hosting.
+- Catatan DNS tersenggol saat ada perubahan lain.
+- Subdomain lama masih menunjuk ke server yang sudah tidak dirawat.
+
+Tidak ada yang dramatis di daftar itu. Tapi hal-hal kecil seperti inilah yang biasanya jadi pintu masuk.
+
+## Yang diperiksa dan yang tidak
+
+| Diperiksa dari luar | Tidak diperiksa |
 |---|---|
-| DNS, TLS, header, sidik stack, subdomain publik | File di disk server |
-| Sertifikat hidup atau mati | Plugin WordPress rusak |
-| Konfigurasi publik yang terlihat | Logika bisnis (checkout, login bypass) |
-| Perubahan dibanding scan sebelumnya | Malware di hosting (itu Host Protect) |
+| DNS, sertifikat HTTPS, header keamanan | Berkas di disk server |
+| Teknologi yang terbaca publik | Plugin yang bermasalah di dalam CMS |
+| Subdomain yang tercatat publik | Logika bisnis: checkout, hak akses, alur login |
+| Perubahan dibanding pemeriksaan sebelumnya | Berkas mencurigakan di hosting (itu Host Protect) |
 
-## Yang tidak otomatis
+## Batasnya, supaya jelas
 
-Plugin WordPress tidak kami perbaiki. File di disk hosting tidak kami cek virus dari scan domain (itu pekerjaan Host Protect plus helper di VM, dan tanpa helper kami tidak mengarang temuan palsu).
+Kami tidak memperbaiki apa pun. Hasil scan adalah daftar temuan plus penjelasannya; tindakannya tetap di tangan Anda atau tim hosting Anda.
 
-Tidak ada jaminan "tidak bisa diretas." Tidak mengganti WAF di edge panel hosting, dan kami tidak menempel WAF ke nginx publik Sinexis.
+Scan domain juga tidak memeriksa berkas di disk. Pemeriksaan berkas mencurigakan adalah pekerjaan Host Protect, dan itu butuh program pembantu di mesin Anda. Kalau pembantunya belum ada, statusnya jujur "menunggu" — kami tidak mengarang temuan.
+
+Ini juga bukan pemantauan dari dalam server. Scan domain berjalan dari internet, sesekali, sesuai jadwal; tidak ada yang membaca kejadian di server Anda tiap jam.
+
+Dan pemeriksaan otomatis bukan pengganti pengujian oleh manusia. Kesalahan di alur pemesanan atau hak akses antar pengguna hanya ketemu kalau ada orang yang menelusurinya. Kami memberi lapisan dasar yang rutin, bukan pentest.
+
+## Setelah hasilnya keluar
+
+Hasil muncul di dasbor, dikelompokkan menurut tingkat keparahan, dengan penjelasan singkat per temuan. Bisa juga diekspor jadi laporan yang enak dibaca orang non-teknis.
+
+Kalau Anda menghidupkan jadwal, pemeriksaan berikutnya otomatis dibandingkan dengan yang sekarang. Yang dikirim ke email hanya perubahan yang serius, bukan seluruh daftar berulang-ulang. Bagian itu dibahas terpisah di artikel tentang Scan Attach.
+
+Setiap scan memakai kredit. Jumlahnya bisa Anda lihat di layar harga di dalam akun sebelum menekan tombol.
 
 ## Langkah berikutnya
 
-Hasilnya di dasbor. Kalau jadwal hidup, perubahan yang serius dibanding bulan lalu bisa dikirim lewat email. Itu namanya Scan Attach, dan ada artikel terpisah yang menjelaskan cara kerjanya.
+Pilih satu domain yang benar-benar dipakai pelanggan Anda — bukan subdomain percobaan. Buka **sinexis.app**, daftar, dan jalankan satu scan domain.
 
-Scan domain memakai kredit. Angka pasti ada di layar harga di akun Anda.
+Baca hasilnya sekali. Kalau isinya masuk akal untuk dilaporkan tiap bulan, hidupkan jadwalnya.
