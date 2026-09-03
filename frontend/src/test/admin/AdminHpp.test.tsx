@@ -190,6 +190,8 @@ const report = {
       hpp_if_all_domain_idr: 0,
       margin_if_all_ip_idr: 290000,
       margin_if_all_domain_idr: 300000,
+      margin_if_all_ip_pct: 97,
+      margin_if_all_domain_pct: 100,
     },
   ],
 };
@@ -271,5 +273,8 @@ describe("AdminHpp", () => {
     expect(screen.getByTestId("hpp-costs-card")).toBeInTheDocument();
     expect(screen.getByTestId("hpp-sku-basic")).toBeInTheDocument();
     expect(screen.getByText("estimasi")).toBeInTheDocument();
+    expect(screen.getByText(/Margin if all IP/)).toBeInTheDocument();
+    expect(screen.getByText(/290.000/)).toBeInTheDocument();
+    expect(screen.getByText(/\(97%\)/)).toBeInTheDocument();
   });
 });

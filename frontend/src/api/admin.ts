@@ -200,6 +200,8 @@ export interface HppSkuEstimate {
   hpp_if_all_domain_idr: number | null;
   margin_if_all_ip_idr: number | null;
   margin_if_all_domain_idr: number | null;
+  margin_if_all_ip_pct: number | null;
+  margin_if_all_domain_pct: number | null;
 }
 
 export interface HppReportResponse {

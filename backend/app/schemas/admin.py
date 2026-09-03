@@ -123,6 +123,8 @@ class HppSkuEstimate(BaseModel):
     hpp_if_all_domain_idr: int | None
     margin_if_all_ip_idr: int | None
     margin_if_all_domain_idr: int | None
+    margin_if_all_ip_pct: int | None
+    margin_if_all_domain_pct: int | None
 
 
 class HppReportResponse(BaseModel):
