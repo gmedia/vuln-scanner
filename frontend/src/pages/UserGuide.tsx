@@ -47,15 +47,10 @@ import {
   GUARD_DISTRO_INSTALL_GUIDES,
   GUARD_HOST_SETUP_STEPS,
 } from "@/lib/guardEnrollHost";
-
-const SINEXIS_INSTALL_RAW_URL =
-  "https://raw.githubusercontent.com/gmedia/vuln-scanner/main/packaging/host-protect-helper/sinexis-install.sh";
-
-const SINEXIS_INSTALL_WGET = [
-  `wget -O sinexis-install.sh '${SINEXIS_INSTALL_RAW_URL}'`,
-  "head -n1 sinexis-install.sh",
-  "chmod +x sinexis-install.sh",
-].join("\n");
+import {
+  SINEXIS_INSTALL_RAW_URL,
+  SINEXIS_INSTALL_WGET,
+} from "@/lib/sinexisInstall";
 
 const TOC_IDS = [
   "mulai",

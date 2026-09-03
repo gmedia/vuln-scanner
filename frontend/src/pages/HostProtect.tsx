@@ -46,6 +46,12 @@ import {
 } from "@/components/ui/Table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import HostWafPanel from "@/components/host/HostWafPanel";
+import {
+  SINEXIS_INSTALL_RAW_URL,
+  SINEXIS_INSTALL_WGET,
+  formatHelperPollAt,
+  isHelperPollStale,
+} from "@/lib/sinexisInstall";
 import { useAuthStore } from "@/store/authStore";
 
 export function mapHostError(message: string): string {
@@ -215,6 +221,26 @@ export default function HostProtect() {
             {t("skuLabel", { sku, count: items.length, limit })}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">{t("honestyHint")}</p>
+          <div className="mt-3 max-w-xl space-y-2">
+            <p className="text-sm text-muted-foreground">{t("installHint")}</p>
+            <Button variant="outline" size="sm" asChild>
+              <a
+                href={SINEXIS_INSTALL_RAW_URL}
+                download="sinexis-install.sh"
+                rel="noreferrer"
+                data-testid="host-install-download"
+              >
+                {t("installDownload")}
+              </a>
+            </Button>
+            <pre
+              className="overflow-x-auto whitespace-pre-wrap break-all rounded-md border border-border bg-muted/40 p-3 font-mono text-[11px] leading-relaxed text-foreground"
+              data-testid="host-install-wget"
+            >
+              {SINEXIS_INSTALL_WGET}
+            </pre>
+            <p className="text-xs text-muted-foreground">{t("installCheck")}</p>
+          </div>
         </div>
         {items.length > 0 || open ? (
           <Button
@@ -288,8 +314,11 @@ export default function HostProtect() {
                 <p className="mt-1.5 text-xs text-muted-foreground">
                   {(() => {
                     const ag = agents.find((a) => a.id === selectedAgentId);
-                    if (!ag?.last_helper_poll_at) return t("helperNeverPolled");
-                    return t("helperPolled", { when: ag.last_helper_poll_at });
+                    const when = formatHelperPollAt(
+                      ag?.last_helper_poll_at ?? null,
+                    );
+                    if (!when) return t("helperNeverPolled");
+                    return t("helperPolled", { when });
                   })()}
                 </p>
               ) : null}
@@ -417,20 +446,31 @@ export default function HostProtect() {
                   : activeHits;
                 const lastScan = scansQueries[idx]?.data?.[0];
                 const lastCount = lastScan?.hit_count ?? 0;
+                const siteAgent = agents.find((a) => a.id === s.guard_agent_id);
+                const helperWhen = formatHelperPollAt(
+                  siteAgent?.last_helper_poll_at ?? null,
+                );
+                const helperStale = isHelperPollStale(
+                  siteAgent?.last_helper_poll_at ?? null,
+                );
                 const emptyHitsCopy =
                   lastScan?.status === "queued"
                     ? t("hitsWaitingAgent")
                     : lastScan?.status === "failed"
                       ? t("hitsUnreachable")
                       : lastScan?.status === "completed" &&
-                          activeHits.length === 0 &&
-                          ignoredHits.length > 0
-                        ? t("hitsHidden")
-                        : lastScan?.status === "completed" && lastCount === 0
-                          ? t("hitsClean")
-                          : lastScan?.status === "completed" && lastCount > 0
-                            ? t("hitsUnlisted")
-                            : t("hitsEmpty");
+                          lastCount === 0 &&
+                          helperStale
+                        ? t("hitsUnreachable")
+                        : lastScan?.status === "completed" &&
+                            activeHits.length === 0 &&
+                            ignoredHits.length > 0
+                          ? t("hitsHidden")
+                          : lastScan?.status === "completed" && lastCount === 0
+                            ? t("hitsClean")
+                            : lastScan?.status === "completed" && lastCount > 0
+                              ? t("hitsUnlisted")
+                              : t("hitsEmpty");
                 const scanStatusCopy =
                   lastScan?.status === "queued"
                     ? t("scanQueued")
@@ -439,19 +479,23 @@ export default function HostProtect() {
                           error: lastScan.error || "failed",
                         })
                       : lastScan?.status === "completed" &&
-                          activeHits.length > 0
-                        ? t("scanCompleted", { count: activeHits.length })
+                          lastCount === 0 &&
+                          helperStale
+                        ? t("hitsUnreachable")
                         : lastScan?.status === "completed" &&
-                            activeHits.length === 0 &&
-                            ignoredHits.length > 0
-                          ? t("scanCompletedIgnored", {
-                              count: ignoredHits.length,
-                            })
-                          : lastScan?.status === "completed" && lastCount === 0
-                            ? t("scanCompletedNone")
-                            : lastScan?.status === "completed"
-                              ? t("scanCompletedUnlisted")
-                              : null;
+                            activeHits.length > 0
+                          ? t("scanCompleted", { count: activeHits.length })
+                          : lastScan?.status === "completed" &&
+                              activeHits.length === 0 &&
+                              ignoredHits.length > 0
+                            ? t("scanCompletedIgnored", {
+                                count: ignoredHits.length,
+                              })
+                            : lastScan?.status === "completed" && lastCount === 0
+                              ? t("scanCompletedNone")
+                              : lastScan?.status === "completed"
+                                ? t("scanCompletedUnlisted")
+                                : null;
                 return (
                 <li key={s.id}>
                   <Card>
@@ -460,6 +504,16 @@ export default function HostProtect() {
                         <p className="font-medium">{s.name}</p>
                         <p className="text-sm text-muted-foreground">
                           {s.root_path}
+                        </p>
+                        <p
+                          className="mt-1 text-xs text-muted-foreground"
+                          data-testid="host-helper-poll"
+                        >
+                          {helperWhen
+                            ? helperStale
+                              ? t("helperStale", { when: helperWhen })
+                              : t("helperPolled", { when: helperWhen })
+                            : t("helperNeverPolled")}
                         </p>
                         {scanStatusCopy ? (
                           <p
