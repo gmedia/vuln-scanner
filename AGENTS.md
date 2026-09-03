@@ -77,3 +77,86 @@ Public marketing and in-app SPA share **one visual family**. Detail: `docs/AGENT
 3. **SPA pages** (dashboard, admin, auth) — primitives in `frontend/src/components/ui/` only. **No** native `<select>` (eslint `no-restricted-syntax`; use `Select`). **No** native `<button>` for primary actions (use `Button`). Allowed native `<button>`: icon toggles (show password) and full-width list/card rows. Unlabeled inputs forbidden. New forms: `Label` + `Input`/`Textarea`/`Select`.
    **Filter bars** (search/date/select rows): copy Credit History — equal `gap-3` grid, each field `flex min-w-0 flex-col gap-1.5`, controls `h-10 min-h-10`. `DatePicker`/`DateTimePicker` trigger chrome = `border-border bg-input` (same as `Input`). Do **not** use uneven `grid-cols-12` spans or a far-right Apply with empty gutter. Reference: `frontend/src/pages/credit/CreditHistory.tsx`.
 4. **Do not** restyle kit files to match one screenshot. Frozen e2e testids stay.
+
+---
+
+# PROJECT KNOWLEDGE BASE
+
+**Generated:** 2026-09-03  
+**Commit:** 192d7ee  
+**Branch:** main  
+
+Child maps: [`backend/AGENTS.md`](backend/AGENTS.md) · [`frontend/AGENTS.md`](frontend/AGENTS.md) · [`workers/AGENTS.md`](workers/AGENTS.md) · [`scripts/AGENTS.md`](scripts/AGENTS.md)
+
+## OVERVIEW
+
+Sinexis/VulnScanner: FastAPI + Celery + Vite SPA Docker stack. Scan attach SaaS with Workspace, Guard (Wazuh thin), SIEM/Uptime flags, Host Protect/WAF. Three deployable roots — not a Python/npm workspace.
+
+## STRUCTURE
+
+```
+./
+├── backend/          # FastAPI; Alembic here only
+├── workers/          # Sibling Celery (not backend/celery)
+├── frontend/         # Vite React SPA
+├── nginx/            # Local compose proxy; prod = host nginx
+├── packaging/        # host-protect-helper Debian (customer box)
+├── scripts/          # deploy*.sh — prefer deploy-services.sh
+├── docs/             # AGENT_EXECUTION_GUIDE wins vs handoff.md
+├── monitoring/       # scrape/alert templates only
+└── docker-compose*.yml
+```
+
+## WHERE TO LOOK
+
+| Task | Location | Notes |
+|------|----------|-------|
+| REST / HTML islands | `backend/app/api/` | `/blog` `/legal` `/status` are FastAPI, not Vite |
+| Enqueue scans | `backend/app/services/scanner.py` | Not the nmap engine |
+| Scan engines | `workers/tasks/{ip,domain,mobile}_scan.py` | |
+| SPA pages | `frontend/src/pages/` | |
+| shadcn kit | `frontend/src/components/ui/` | Do not restyle for one screenshot |
+| Product priority | `docs/AGENT_EXECUTION_GUIDE.md` | Beats `handoff.md` |
+| User URLs | `docs/AGENT_PAGE_REGISTRY.md` | |
+| Specs | `docs/specs/*.md` | |
+
+## CODE MAP
+
+| Symbol | Type | Location | Role |
+|--------|------|----------|------|
+| `app` | FastAPI | `backend/app/main.py` | API + HTML islands |
+| `api_router` | APIRouter | `backend/app/api/router.py` | Mounts feature routers |
+| Celery `vuln_scanner` | Celery | `workers/celery_app.py` | Real workers; API has thin clients |
+| SPA | `main.tsx` | `frontend/src/main.tsx` | Vite 5173; prod host 5174 |
+
+## CONVENTIONS
+
+- Ruff line 120, py312; mypy strict (tests/alembic excluded).
+- Pytest cov fail-under **75** backend / **76** workers. Vitest 75/70.
+- Node **>=24**. Prefix git: `GIT_MASTER=1`.
+- Vite proxy → `http://backend:8000` (Docker DNS).
+- Feature flags: `SIEM_ENABLED` compose default false; Host Protect/WAF prod true, local/CI false.
+
+## ANTI-PATTERNS (THIS PROJECT)
+
+- Mix Guard/Wazuh with Workspace epic; SIEM under Guard PR; Discover on `/guard`.
+- Mock Host Protect hits; paste WAF on `sinexis.app` edge; Imunify-clone PRs.
+- SSH Alembic after green `main` deploy; `deploy.sh` for routine (wipes volumes).
+- Native `<select>` / primary native `<button>`; second color palette.
+- Secrets/hosts/PII in tracked markdown.
+
+## COMMANDS
+
+```bash
+make install-dev && make lint && make test
+cd backend && alembic upgrade head && uvicorn app.main:app --reload --port 8000
+cd workers && celery -A celery_app worker -Q ip_scan --loglevel=info
+cd frontend && npm run dev
+# routine prod: scripts/deploy-services.sh  (not deploy.sh)
+```
+
+## NOTES
+
+- Duplicate Celery apps in backend services talk Redis; canonical app is `workers/celery_app.py`.
+- Extra tasks (guard, host_protect, schedules) often ride `ip_scan`.
+- Playwright ≠ Guard enroll. Wipe `tc5` first for live lab.
