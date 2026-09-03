@@ -141,6 +141,45 @@ class HppReportResponse(BaseModel):
     sku_estimates: list[HppSkuEstimate]
 
 
+class HppQuoteRequest(BaseModel):
+    provider: str = Field(..., min_length=1, max_length=40)
+    region: str = Field(default="", max_length=40)
+    cpu_vcpu: int = Field(..., ge=1, le=512)
+    ram_gb: int = Field(..., ge=1, le=4096)
+    monthly_instance_idr: int = Field(..., ge=0, description="Monthly instance cost in IDR")
+    electricity_idr_per_kwh: float = Field(default=1692.0, ge=0)
+    power_watt_per_vcpu: float = Field(default=8.0, ge=0)
+    pue: float = Field(default=1.3, ge=1.0)
+    jobs: dict[str, int] = Field(default_factory=dict)
+    overhead_idr: int | None = Field(default=None, ge=0)
+
+
+class HppQuoteLine(BaseModel):
+    key: str
+    jobs: int
+    rate_idr: int
+    hpp_idr: int
+    fully_loaded_unit_idr: int
+
+
+class HppQuoteResponse(BaseModel):
+    provider: str
+    region: str
+    monthly_compute_idr: int
+    monthly_power_idr: int
+    monthly_total_idr: int
+    total_jobs: int
+    breakeven_unit_idr: int
+    overhead_pool_idr: int
+    total_hpp_idr: int
+    total_fully_loaded_hpp_idr: int
+    breakeven_pct_of_list_basic: float
+    breakeven_pct_of_list_pro: float
+    breakeven_pct_of_list_multi: float
+    lines: list[HppQuoteLine]
+    note: str
+
+
 class EmailSendLogItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

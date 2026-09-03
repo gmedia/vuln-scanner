@@ -23,7 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
-import { adminApi, type HppRateItem } from "@/api/admin";
+import { adminApi, type HppQuoteResponse, type HppRateItem } from "@/api/admin";
 import { useTranslation } from "react-i18next";
 import { htmlLang, isAppLocale } from "@/i18n/locales";
 import i18n from "@/i18n";
@@ -46,6 +46,23 @@ function AdminHpp() {
   const [costAmount, setCostAmount] = useState("");
   const [costCategory, setCostCategory] = useState<"opex" | "variable">("opex");
   const [costNote, setCostNote] = useState("");
+  const [quoteProvider, setQuoteProvider] = useState("tencent-cvm");
+  const [quoteRegion, setQuoteRegion] = useState("jakarta");
+  const [quoteCpu, setQuoteCpu] = useState("2");
+  const [quoteRam, setQuoteRam] = useState("4");
+  const [quoteInstance, setQuoteInstance] = useState("568750");
+  const [quoteKwh, setQuoteKwh] = useState("1692");
+  const [quoteWatt, setQuoteWatt] = useState("8");
+  const [quotePue, setQuotePue] = useState("1.3");
+  const [quoteJobs, setQuoteJobs] = useState<Record<string, string>>({
+    ip: "100",
+    domain: "50",
+    apk: "0",
+    ipa: "0",
+    statushost: "0",
+    hostscan: "20",
+  });
+  const [quoteResult, setQuoteResult] = useState<HppQuoteResponse | null>(null);
 
   const { data: rates, isLoading: ratesLoading } = useQuery({
     queryKey: ["admin-hpp"],
@@ -107,6 +124,24 @@ function AdminHpp() {
       queryClient.invalidateQueries({ queryKey: ["admin-hpp-costs"] });
       queryClient.invalidateQueries({ queryKey: ["admin-hpp-report"] });
     },
+  });
+
+  const runQuote = useMutation({
+    mutationFn: () =>
+      adminApi.quoteHpp({
+        provider: quoteProvider.trim() || "custom",
+        region: quoteRegion.trim(),
+        cpu_vcpu: parseInt(quoteCpu, 10) || 1,
+        ram_gb: parseInt(quoteRam, 10) || 1,
+        monthly_instance_idr: parseInt(quoteInstance, 10) || 0,
+        electricity_idr_per_kwh: parseFloat(quoteKwh) || 0,
+        power_watt_per_vcpu: parseFloat(quoteWatt) || 0,
+        pue: parseFloat(quotePue) || 1,
+        jobs: Object.fromEntries(
+          Object.entries(quoteJobs).map(([k, v]) => [k, parseInt(v, 10) || 0]),
+        ),
+      }),
+    onSuccess: (data) => setQuoteResult(data),
   });
 
   const updateRate = useMutation({
@@ -335,6 +370,232 @@ function AdminHpp() {
               </Button>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card data-testid="hpp-quote-card">
+        <CardHeader>
+          <CardTitle className="text-sm tracking-wide">
+            {t("hppQuoteCard")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-[11px] text-muted-foreground">
+            {t("hppQuoteHint")}
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="hpp-quote-provider">{t("hppQuoteProvider")}</Label>
+              <Input
+                id="hpp-quote-provider"
+                value={quoteProvider}
+                onChange={(e) => setQuoteProvider(e.target.value)}
+                className="h-10 min-h-10"
+              />
+            </div>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="hpp-quote-region">{t("hppQuoteRegion")}</Label>
+              <Input
+                id="hpp-quote-region"
+                value={quoteRegion}
+                onChange={(e) => setQuoteRegion(e.target.value)}
+                className="h-10 min-h-10"
+              />
+            </div>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="hpp-quote-cpu">{t("hppQuoteCpu")}</Label>
+              <Input
+                id="hpp-quote-cpu"
+                type="number"
+                min={1}
+                value={quoteCpu}
+                onChange={(e) => setQuoteCpu(e.target.value)}
+                className="h-10 min-h-10 font-mono text-xs tabular-nums"
+              />
+            </div>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="hpp-quote-ram">{t("hppQuoteRam")}</Label>
+              <Input
+                id="hpp-quote-ram"
+                type="number"
+                min={1}
+                value={quoteRam}
+                onChange={(e) => setQuoteRam(e.target.value)}
+                className="h-10 min-h-10 font-mono text-xs tabular-nums"
+              />
+            </div>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="hpp-quote-instance">{t("hppQuoteInstance")}</Label>
+              <Input
+                id="hpp-quote-instance"
+                type="number"
+                min={0}
+                value={quoteInstance}
+                onChange={(e) => setQuoteInstance(e.target.value)}
+                className="h-10 min-h-10 font-mono text-xs tabular-nums"
+              />
+            </div>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="hpp-quote-kwh">{t("hppQuoteKwh")}</Label>
+              <Input
+                id="hpp-quote-kwh"
+                type="number"
+                min={0}
+                value={quoteKwh}
+                onChange={(e) => setQuoteKwh(e.target.value)}
+                className="h-10 min-h-10 font-mono text-xs tabular-nums"
+              />
+            </div>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="hpp-quote-watt">{t("hppQuoteWatt")}</Label>
+              <Input
+                id="hpp-quote-watt"
+                type="number"
+                min={0}
+                value={quoteWatt}
+                onChange={(e) => setQuoteWatt(e.target.value)}
+                className="h-10 min-h-10 font-mono text-xs tabular-nums"
+              />
+            </div>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="hpp-quote-pue">{t("hppQuotePue")}</Label>
+              <Input
+                id="hpp-quote-pue"
+                type="number"
+                min={1}
+                step="0.1"
+                value={quotePue}
+                onChange={(e) => setQuotePue(e.target.value)}
+                className="h-10 min-h-10 font-mono text-xs tabular-nums"
+              />
+            </div>
+          </div>
+          <p className="text-[11px] font-medium text-foreground">
+            {t("hppQuoteJobs")}
+          </p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {(["ip", "domain", "apk", "ipa", "statushost", "hostscan"] as const).map(
+              (key) => (
+                <div key={key} className="flex min-w-0 flex-col gap-1.5">
+                  <Label htmlFor={`hpp-quote-job-${key}`}>{key}</Label>
+                  <Input
+                    id={`hpp-quote-job-${key}`}
+                    type="number"
+                    min={0}
+                    value={quoteJobs[key] ?? "0"}
+                    onChange={(e) =>
+                      setQuoteJobs((prev) => ({
+                        ...prev,
+                        [key]: e.target.value,
+                      }))
+                    }
+                    className="h-10 min-h-10 font-mono text-xs tabular-nums"
+                  />
+                </div>
+              ),
+            )}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 min-h-10 w-fit text-xs"
+            disabled={runQuote.isPending || !quoteProvider.trim()}
+            onClick={() => runQuote.mutate()}
+          >
+            {runQuote.isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              t("hppQuoteRun")
+            )}
+          </Button>
+          {quoteResult ? (
+            <div className="space-y-3" data-testid="hpp-quote-result">
+              <p className="text-xs text-muted-foreground">
+                {t("hppQuoteMonthly")}:{" "}
+                <span className="font-mono tabular-nums text-foreground">
+                  {formatIdr(quoteResult.monthly_total_idr)}
+                </span>{" "}
+                · {t("hppQuoteCompute")}:{" "}
+                <span className="font-mono tabular-nums">
+                  {formatIdr(quoteResult.monthly_compute_idr)}
+                </span>{" "}
+                · {t("hppQuotePower")}:{" "}
+                <span className="font-mono tabular-nums">
+                  {formatIdr(quoteResult.monthly_power_idr)}
+                </span>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {t("hppQuotePool")}:{" "}
+                <span className="font-mono tabular-nums text-foreground">
+                  {formatIdr(quoteResult.overhead_pool_idr)}
+                </span>{" "}
+                · {t("hppQuoteFully")}:{" "}
+                <span className="font-mono tabular-nums">
+                  {formatIdr(quoteResult.total_fully_loaded_hpp_idr)}
+                </span>{" "}
+                · {t("hppQuoteBreakeven")}:{" "}
+                <span className="font-mono tabular-nums">
+                  {formatIdr(quoteResult.breakeven_unit_idr)}
+                </span>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {t("hppQuoteVsBasic")}: {quoteResult.breakeven_pct_of_list_basic}
+                % · {t("hppQuoteVsPro")}: {quoteResult.breakeven_pct_of_list_pro}
+                % · {t("hppQuoteVsMulti")}:{" "}
+                {quoteResult.breakeven_pct_of_list_multi}%
+              </p>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-[10px] uppercase">
+                      {t("hppColKey")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase">
+                      {t("hppColCount")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase">
+                      {t("hppColAmount")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase">
+                      {t("hppColHpp")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase">
+                      {t("hppQuoteColFullyUnit")}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {quoteResult.lines.map((line) => (
+                    <TableRow key={line.key}>
+                      <TableCell>
+                        <Badge
+                          variant="default"
+                          className="text-[10px] uppercase"
+                        >
+                          {line.key}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs tabular-nums">
+                        {line.jobs}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs tabular-nums">
+                        {formatIdr(line.rate_idr)}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs tabular-nums">
+                        {formatIdr(line.hpp_idr)}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs tabular-nums">
+                        {formatIdr(line.fully_loaded_unit_idr)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <p className="text-[11px] text-muted-foreground">
+                {quoteResult.note}
+              </p>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 

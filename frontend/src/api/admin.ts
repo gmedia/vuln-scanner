@@ -297,6 +297,55 @@ export async function deleteHppCost(id: string): Promise<void> {
   await api.delete(`/api/admin/hpp/costs/${id}`);
 }
 
+export interface HppQuoteLine {
+  key: string;
+  jobs: number;
+  rate_idr: number;
+  hpp_idr: number;
+  fully_loaded_unit_idr: number;
+}
+
+export interface HppQuoteResponse {
+  provider: string;
+  region: string;
+  monthly_compute_idr: number;
+  monthly_power_idr: number;
+  monthly_total_idr: number;
+  total_jobs: number;
+  breakeven_unit_idr: number;
+  overhead_pool_idr: number;
+  total_hpp_idr: number;
+  total_fully_loaded_hpp_idr: number;
+  breakeven_pct_of_list_basic: number;
+  breakeven_pct_of_list_pro: number;
+  breakeven_pct_of_list_multi: number;
+  lines: HppQuoteLine[];
+  note: string;
+}
+
+export interface HppQuoteRequest {
+  provider: string;
+  region?: string;
+  cpu_vcpu: number;
+  ram_gb: number;
+  monthly_instance_idr: number;
+  electricity_idr_per_kwh?: number;
+  power_watt_per_vcpu?: number;
+  pue?: number;
+  jobs: Record<string, number>;
+  overhead_idr?: number | null;
+}
+
+export async function quoteHpp(
+  body: HppQuoteRequest,
+): Promise<HppQuoteResponse> {
+  const { data } = await api.post<HppQuoteResponse>(
+    "/api/admin/hpp/quote",
+    body,
+  );
+  return data;
+}
+
 export interface EmailSendLogItem {
   id: string;
   kind: string;
@@ -340,6 +389,7 @@ export const adminApi = {
   listHppCosts,
   createHppCost,
   deleteHppCost,
+  quoteHpp,
   getEmailLogs,
   listBlogPosts,
   createBlogPost,
