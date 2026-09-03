@@ -15,9 +15,14 @@ import {
   TAG_COLOR_KEYS,
   updateAsset,
   type ScanAsset,
-  type TagColorKey,
+  type TagColorValue,
 } from "@/api/assets";
-import { TAG_COLOR_DOT, tagColorClass } from "@/lib/tagColors";
+import {
+  TAG_COLOR_DOT,
+  tagColorClass,
+  tagColorHex,
+  tagColorStyle,
+} from "@/lib/tagColors";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -161,7 +166,7 @@ export default function Assets() {
   });
 
   const colorMut = useMutation({
-    mutationFn: (payload: Record<string, TagColorKey>) =>
+    mutationFn: (payload: Record<string, TagColorValue>) =>
       patchTagColors(payload),
     onSuccess: (data) => {
       qc.setQueryData(["asset-tag-colors"], data);
@@ -470,6 +475,7 @@ export default function Assets() {
                       <Badge
                         variant="default"
                         className={tagColorClass(tag, colorMap)}
+                        style={tagColorStyle(tag, colorMap)}
                       >
                         {tag}
                       </Badge>
@@ -497,6 +503,25 @@ export default function Assets() {
                             />
                           </Button>
                         ))}
+                        <Label
+                          htmlFor={`asset-tag-picker-${tag}`}
+                          className="sr-only"
+                        >
+                          {t("tagColorPicker", { tag })}
+                        </Label>
+                        <input
+                          id={`asset-tag-picker-${tag}`}
+                          type="color"
+                          className="h-6 w-6 cursor-pointer rounded-md border border-border bg-transparent p-0"
+                          data-testid={`asset-tag-color-picker-${tag}`}
+                          aria-label={t("tagColorPicker", { tag })}
+                          value={tagColorHex(tag, colorMap)}
+                          onChange={(e) =>
+                            colorMut.mutate({
+                              [tag]: e.target.value.toLowerCase() as TagColorValue,
+                            })
+                          }
+                        />
                       </div>
                     </li>
                   ))}
@@ -548,6 +573,7 @@ export default function Assets() {
                             variant="default"
                             data-testid={`asset-tag-${tag}`}
                             className={`cursor-pointer ${tagColorClass(tag, colorMap)}`}
+                            style={tagColorStyle(tag, colorMap)}
                             onClick={() => toggleTagFilter(tag)}
                           >
                             {tag}

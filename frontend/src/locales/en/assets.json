@@ -33,5 +33,6 @@
   "watchHttp": "Watch this asset over HTTP",
   "tagColors": "Tag colors",
   "tagColorFor": "Color for {{tag}}",
-  "tagColorPick": "{{tag}}: {{color}}"
+  "tagColorPick": "{{tag}}: {{color}}",
+  "tagColorPicker": "{{tag}}: custom color"
 }

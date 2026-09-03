@@ -273,10 +273,17 @@ async def test_tag_colors_member_patch_viewer_forbidden(db_session: AsyncSession
                 json={"colors": {"prod": "amber"}},
             )
             assert denied.status_code == 403
-            bad = await client.patch(
+            hexed = await client.patch(
                 "/api/assets/tag-colors",
                 headers=_auth(owner, org.id),
                 json={"colors": {"prod": "#ff00aa"}},
+            )
+            assert hexed.status_code == 200, hexed.text
+            assert hexed.json()["colors"]["prod"] == "#ff00aa"
+            bad = await client.patch(
+                "/api/assets/tag-colors",
+                headers=_auth(owner, org.id),
+                json={"colors": {"prod": "not-a-color"}},
             )
             assert bad.status_code == 422
     finally:

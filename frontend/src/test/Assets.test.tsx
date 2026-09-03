@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -254,6 +254,35 @@ describe("Assets page", () => {
     await user.click(screen.getByTestId("asset-tag-color-prod-green"));
     await waitFor(() =>
       expect(mockPatchColors).toHaveBeenCalledWith({ prod: "green" }),
+    );
+  });
+
+  it("sets a custom hex color from the picker", async () => {
+    mockList.mockResolvedValue([
+      {
+        id: "a1",
+        name: "Web",
+        scan_type: "domain",
+        target: "example.com",
+        notes: null,
+        schedule_id: null,
+        sku: "multi",
+        sku_limit: 10,
+        tags: ["prod"],
+      },
+    ]);
+    mockFetchColors.mockResolvedValue({ prod: "gray" });
+    mockPatchColors.mockResolvedValue({ prod: "#ff00aa" });
+    const user = userEvent.setup();
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("asset-tag-colors-toggle")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("asset-tag-colors-toggle"));
+    const picker = await screen.findByTestId("asset-tag-color-picker-prod");
+    fireEvent.change(picker, { target: { value: "#ff00aa" } });
+    await waitFor(() =>
+      expect(mockPatchColors).toHaveBeenCalledWith({ prod: "#ff00aa" }),
     );
   });
 });
