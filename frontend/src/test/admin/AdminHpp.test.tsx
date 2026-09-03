@@ -18,6 +18,7 @@ vi.mock("@/api/admin", () => ({
     listHppCosts: vi.fn(),
     createHppCost: vi.fn(),
     deleteHppCost: vi.fn(),
+    quoteHpp: vi.fn(),
   },
 }));
 
@@ -270,6 +271,7 @@ describe("AdminHpp", () => {
     expect(screen.getAllByDisplayValue(1000).length).toBeGreaterThan(0);
     expect(screen.getByTestId("hpp-report-filters")).toBeInTheDocument();
     expect(screen.getByTestId("hpp-overhead-card")).toBeInTheDocument();
+    expect(screen.getByTestId("hpp-quote-card")).toBeInTheDocument();
     expect(screen.getByTestId("hpp-costs-card")).toBeInTheDocument();
     expect(screen.getByTestId("hpp-sku-basic")).toBeInTheDocument();
     expect(screen.getByText("estimasi")).toBeInTheDocument();
