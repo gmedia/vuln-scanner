@@ -11,7 +11,7 @@ from app.config import settings
 from app.database import get_db
 from app.middleware.rate_limit import RateLimiter
 from app.models.blog import BlogPost
-from app.services.blog import escape_text, is_publicly_visible, plain_excerpt
+from app.services.blog import escape_text, is_publicly_visible, plain_excerpt, strip_leading_html_h1
 
 html_router = APIRouter(tags=["blog-html"])
 
@@ -359,7 +359,7 @@ async def blog_article_html(
         f"<h1>{escape_text(post.title)}</h1>"
         f"<p class='meta'><time datetime='{escape_text(pub)}'>{escape_text(human)}</time>"
         f" · {escape_text(post.locale)}</p>"
-        f"<div class='body'>{post.body_html}</div>"
+        f"<div class='body'>{strip_leading_html_h1(post.body_html)}</div>"
         f"<p class='back'><a href='/blog'>← Semua artikel</a>"
         f"<a class='cta' href='/register'>Get started</a></p>"
         f"</article>"
