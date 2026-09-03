@@ -437,11 +437,14 @@ describe("Host Protect page", () => {
     expect(screen.getByTestId("host-scan-status").textContent).not.toMatch(
       /need a decision/i,
     );
-    expect(screen.getByTestId("host-scan-status").textContent).toMatch(
+    expect(screen.getByTestId("host-scan-status").textContent).not.toMatch(
       /not in this list/i,
     );
+    expect(screen.getByTestId("host-scan-status").textContent).toMatch(
+      /No suspicious files in the folder/i,
+    );
     expect(screen.getByTestId("host-hits-empty").textContent).toMatch(
-      /none appear in this list/i,
+      /No suspicious files in the folder/i,
     );
     expect(screen.queryByTestId("host-show-ignored")).not.toBeInTheDocument();
   });
