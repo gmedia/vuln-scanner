@@ -8,6 +8,8 @@ import Assets, { mapAssetError } from "@/pages/Assets";
 const mockList = vi.fn();
 const mockCreate = vi.fn();
 const mockUpdate = vi.fn();
+const mockFetchColors = vi.fn();
+const mockPatchColors = vi.fn();
 
 vi.mock("@/api/assets", async () => {
   const actual =
@@ -17,6 +19,8 @@ vi.mock("@/api/assets", async () => {
     listAssets: (...args: unknown[]) => mockList(...args),
     createAsset: (...args: unknown[]) => mockCreate(...args),
     updateAsset: (...args: unknown[]) => mockUpdate(...args),
+    fetchTagColors: (...args: unknown[]) => mockFetchColors(...args),
+    patchTagColors: (...args: unknown[]) => mockPatchColors(...args),
     deleteAsset: vi.fn(),
     createAssetSchedule: vi.fn(),
     fetchAssetPack: vi.fn(),
@@ -41,7 +45,10 @@ describe("Assets page", () => {
     mockList.mockReset();
     mockCreate.mockReset();
     mockUpdate.mockReset();
+    mockFetchColors.mockReset();
+    mockPatchColors.mockReset();
     mockList.mockResolvedValue([]);
+    mockFetchColors.mockResolvedValue({});
   });
 
   it("maps sku limit errors", () => {
@@ -216,5 +223,32 @@ describe("Assets page", () => {
       }),
     );
     expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it("sets a tag color from the palette", async () => {
+    mockList.mockResolvedValue([
+      {
+        id: "a1",
+        name: "Web",
+        scan_type: "domain",
+        target: "example.com",
+        notes: null,
+        schedule_id: null,
+        sku: "multi",
+        sku_limit: 10,
+        tags: ["prod"],
+      },
+    ]);
+    mockFetchColors.mockResolvedValue({ prod: "gray" });
+    mockPatchColors.mockResolvedValue({ prod: "green" });
+    const user = userEvent.setup();
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("asset-tag-color-prod-green")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("asset-tag-color-prod-green"));
+    await waitFor(() =>
+      expect(mockPatchColors).toHaveBeenCalledWith({ prod: "green" }),
+    );
   });
 });

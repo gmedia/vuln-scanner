@@ -39,6 +39,47 @@ export async function createAsset(
   return data;
 }
 
+export type TagColorKey =
+  "gray" | "green" | "blue" | "amber" | "red" | "violet";
+
+export const TAG_COLOR_KEYS: TagColorKey[] = [
+  "gray",
+  "green",
+  "blue",
+  "amber",
+  "red",
+  "violet",
+];
+
+function parseColorMap(
+  colors: Record<string, string> | undefined,
+): Record<string, TagColorKey> {
+  const out: Record<string, TagColorKey> = {};
+  for (const [tag, color] of Object.entries(colors ?? {})) {
+    if ((TAG_COLOR_KEYS as string[]).includes(color)) {
+      out[tag] = color as TagColorKey;
+    }
+  }
+  return out;
+}
+
+export async function fetchTagColors(): Promise<Record<string, TagColorKey>> {
+  const { data } = await api.get<{ colors: Record<string, string> }>(
+    "/api/assets/tag-colors",
+  );
+  return parseColorMap(data.colors);
+}
+
+export async function patchTagColors(
+  colors: Record<string, TagColorKey>,
+): Promise<Record<string, TagColorKey>> {
+  const { data } = await api.patch<{ colors: Record<string, string> }>(
+    "/api/assets/tag-colors",
+    { colors },
+  );
+  return parseColorMap(data.colors);
+}
+
 export async function updateAsset(
   id: string,
   payload: Partial<Pick<AssetCreatePayload, "name" | "notes" | "tags">>,
