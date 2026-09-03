@@ -7,4 +7,5 @@
 - **Retention:** samples 7d / events 90d — purged on each probe apply and beat `uptime.purge` every 6h.
 - **Concurrency:** `worker_uptime` default **8** (`UPTIME_WORKER_CONCURRENCY`); due-select still limit 50.
 - **UA:** `SinexisUptime/1.0` — allowlist on customer firewalls.
+- **SMTP:** `worker_uptime` sends alert mail. It must receive `SMTP_*` + `FRONTEND_URL` (same as backend / scan workers). Missing env → code defaults to `localhost:587` inside the container (`ECONNREFUSED`).
 - **Do not** put customer URLs, IPs, or SMTP passwords in git.

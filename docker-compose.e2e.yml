@@ -156,6 +156,12 @@ services:
       CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/0
       CELERY_QUEUE: uptime_check
       UPTIME_ENABLED: ${UPTIME_ENABLED:-true}
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-Sinexis <noreply@sinexis.app>}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
     volumes:
       - ./workers:/app
       - ./backend:/backend

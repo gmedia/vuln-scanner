@@ -217,6 +217,12 @@ services:
       CELERY_CONCURRENCY: ${UPTIME_WORKER_CONCURRENCY:-8}
       UPTIME_ENABLED: ${UPTIME_ENABLED:-true}
       UPTIME_ALLOW_PRIVATE: ${UPTIME_ALLOW_PRIVATE:-false}
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-Sinexis <noreply@sinexis.app>}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
     volumes:
       - ./workers:/app
       - ./backend:/backend
