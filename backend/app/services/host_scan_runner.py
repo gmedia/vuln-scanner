@@ -69,6 +69,8 @@ async def _persist_hits(
             digest = spec.get("sha256")
             if digest:
                 hit.sha256 = digest
+        if row_engine == "mock":
+            continue
         if is_new and hit.hit_class in CRITICAL_CLASSES:
             await handoff_critical_hit(db, hit, site)
         if is_new and site.auto_quarantine and hit.hit_class in CRITICAL_CLASSES:
