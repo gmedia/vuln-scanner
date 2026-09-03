@@ -1,52 +1,64 @@
 # Uptime: apakah website atau port masih nyala?
 
-Scan keamanan bertanya: pintu dan gembok masih wajar? Uptime bertanya hal lain: **dari internet, situs atau port itu masih merespons?**
+Scan keamanan menjawab satu pertanyaan: pintu dan gemboknya masih wajar? Uptime menjawab pertanyaan yang sama sekali lain: **dari internet, situs atau port ini masih merespons?**
 
-Dua pertanyaan beda, dua jawaban beda. Satu tidak menggantikan yang lain.
+Dua pertanyaan berbeda, dua jawaban berbeda. Yang satu tidak menggantikan yang lain.
 
-AM sering kena pertanyaan "kenapa web down?" Uptime adalah cek dari luar, berkala, hitungan menit, bukan sebulan sekali. Tidak perlu pasang agen di server.
+Bedanya juga di ritme. Scan berjalan sesekali sesuai jadwal; Uptime memeriksa tiap beberapa menit. Sama-sama dari luar, dan sama-sama tidak butuh program dipasang di server Anda.
 
 ## Analoginya
 
-Scan = inspeksi kunci dan jendela, lihat apakah ada yang lemah. Uptime = lampu toko masih nyala pas lewat jalan. Kalau mati, Anda tahu dalam beberapa menit, bukan sebulan kemudian.
+Scan adalah inspeksi kunci dan jendela: mana yang lemah, mana yang perlu diganti. Uptime adalah melihat lampu toko masih menyala saat lewat di depannya.
 
-Keduanya bukan SIEM. Keduanya bukan Host Protect (itu cek file di disk).
+Kalau lampunya mati, Anda tahu dalam hitungan menit — bukan sebulan kemudian saat ada pelanggan yang mengeluh.
+
+Keduanya bukan pemantauan dari dalam server, dan bukan pemeriksaan berkas di disk. Yang terakhir itu pekerjaan Host Protect.
 
 ## Yang dicek
 
-**HTTP(S)** = halaman publik jawab atau tidak. Bukan analisis konten, bukan cek keamanan. Cuma: hidup atau mati.
+**HTTP(S)** — halaman publik menjawab atau tidak. Bukan analisis isi halaman, bukan pemeriksaan keamanan. Cuma: hidup atau mati.
 
-**TCP** = port tertentu di VPS masih terima koneksi. Misalnya port 443 untuk web, port 22 untuk SSH.
+**TCP** — port tertentu masih menerima koneksi. Misalnya port web, atau port SSH yang seharusnya selalu bisa dijangkau tim Anda.
 
-**DNS** = opsional, cek apakah nama domain masih mengarah ke IP yang benar.
+**DNS** — opsional, memastikan nama domain masih mengarah ke alamat yang benar.
 
-**Heartbeat** = opsional, cek apakah server mengirim sinyal hidup secara berkala.
+**Heartbeat** — opsional, memastikan server Anda masih mengirim sinyal hidup secara berkala. Berguna untuk pekerjaan yang jalan di latar belakang, misalnya proses backup terjadwal.
 
-Status turun lalu naik bisa kirim notifikasi. Ini bukan analisis celah keamanan, bukan CVE, bukan scan vulnerability.
+Saat status turun lalu naik kembali, notifikasi bisa dikirim. Yang dikirim adalah kabar hidup atau mati — bukan analisis celah keamanan, bukan daftar kerentanan.
 
-## Paket dan flag
+## Kalau situsnya mati, apa yang Anda dapat
 
-Di spek, kursi uptime termasuk add-on Scan, bukan baris harga terpisah. Kalau menu uptime tidak muncul di akun, tanya yang urus lingkungan.
+Anda dapat waktu. Tahu lebih cepat berarti bisa menghubungi penyedia hosting sebelum keluhan pelanggan menumpuk, dan punya catatan jam berapa gangguan mulai serta berapa lama berlangsung.
 
-Uptime bisa diaktifkan atau dimatikan per target. Tidak harus semua aset dipantau.
+Catatan waktu itu yang biasanya paling berguna saat membahas gangguan dengan penyedia layanan Anda. Bukan ingatan, tapi data.
 
-## Yang dicek vs yang tidak
+## Yang dicek dan yang tidak
 
 | Dicek oleh Uptime | Bukan dari sini |
 |---|---|
-| Situs hidup atau mati dari internet | Kenapa situs mati (itu log server) |
-| Port terbuka atau tertutup | Kerentanan di port itu (itu Scan IP) |
+| Situs hidup atau mati dari internet | Kenapa situs mati (itu ada di log server) |
+| Port menerima koneksi atau tidak | Kerentanan di port itu (itu Scan IP) |
 | Waktu respons dari luar | Performa di dalam server |
-| Notifikasi saat turun | Perbaikan otomatis |
+| Notifikasi saat status turun | Perbaikan otomatis |
 
-## Bukan uptime
+## Batasnya
 
-Tidak ganti hosting otomatis. Kalau situs mati, Anda yang harus bertindak.
+Uptime tidak memperbaiki apa pun dan tidak memindahkan hosting Anda. Kalau situs mati, tetap Anda atau penyedia server yang bertindak.
 
-Bukan SLA legal 99,99%. Itu kontrak infra dengan provider hosting atau colo. Uptime hanya mengonfirmasi dari luar.
+Ini juga bukan jaminan SLA. Angka ketersediaan yang mengikat ada di kontrak dengan penyedia hosting atau colo Anda; Uptime hanya mengonfirmasi dari luar apa yang benar-benar terlihat.
 
-Bukan pengganti Scan Attach. Bukan Guard. Bukan agen kedua. Bukan "aman dari malware."
+Dan bukan pengganti Scan Attach, bukan Guard, bukan perlindungan dari malware. Situs bisa menyala sempurna sambil punya sertifikat yang hampir kedaluwarsa — itu sebabnya keduanya tetap perlu.
+
+## Cara memakainya dengan waras
+
+Pantau alamat yang sama dengan yang Anda scan. Kalau "website booking" adalah aset yang diperiksa rutin, itu juga yang paling masuk akal dipantau tiap beberapa menit.
+
+Jangan memasukkan puluhan URL percobaan. Satu alamat produksi yang benar-benar dipakai pelanggan lebih berguna daripada sepuluh alamat yang tidak ada yang peduli kalau mati.
+
+Uptime bisa dinyalakan atau dimatikan per target, jadi tidak semua aset harus dipantau. Kalau menunya belum muncul di akun Anda, modulnya kemungkinan belum diaktifkan untuk lingkungan itu.
 
 ## Langkah berikutnya
 
-Pakai URL atau port yang sama dengan yang Anda scan. Monitor yang benar-benar dipakai pelanggan, bukan puluhan URL percobaan di akun kecil. Satu URL produksi yang dipantau lebih berguna daripada sepuluh yang asal masuk.
+Buka **sinexis.app**, lalu tambahkan satu monitor untuk alamat produksi yang paling penting.
+
+Biarkan berjalan seminggu. Setelah itu Anda punya gambaran nyata tentang seberapa stabil layanan Anda dari luar — dan apakah perlu monitor kedua.
