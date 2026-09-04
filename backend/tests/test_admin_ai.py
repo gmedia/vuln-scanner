@@ -5,7 +5,6 @@ import pytest
 from app.config import settings
 from app.services.ai_crypto import decrypt_credential, encrypt_credential
 
-
 API_HEADERS = {"X-API-Key": settings.api_key, "X-E2E-Test": "1"}
 
 
@@ -152,12 +151,20 @@ def test_provider_model_crud(client, ai_on) -> None:
     assert rename_clash.status_code == 409
 
     missing_uuid = "00000000-0000-0000-0000-000000000099"
-    assert client.patch(f"/api/admin/ai/providers/{missing_uuid}", headers=API_HEADERS, json={"name": "x"}).status_code == 404
-    assert client.patch(
-        f"/api/admin/ai/providers/{pid}",
+    missing_provider = client.patch(
+        f"/api/admin/ai/providers/{missing_uuid}",
         headers=API_HEADERS,
-        json={"status": "nope"},
-    ).status_code == 422
+        json={"name": "x"},
+    )
+    assert missing_provider.status_code == 404
+    assert (
+        client.patch(
+            f"/api/admin/ai/providers/{pid}",
+            headers=API_HEADERS,
+            json={"status": "nope"},
+        ).status_code
+        == 422
+    )
     cred = client.patch(
         f"/api/admin/ai/providers/{pid}",
         headers=API_HEADERS,
@@ -174,7 +181,12 @@ def test_provider_model_crud(client, ai_on) -> None:
     assert cred.json()["enabled"] is False
     assert "new-secret" not in cred.text
 
-    assert client.patch(f"/api/admin/ai/models/{missing_uuid}", headers=API_HEADERS, json={"enabled": True}).status_code == 404
+    missing_model = client.patch(
+        f"/api/admin/ai/models/{missing_uuid}",
+        headers=API_HEADERS,
+        json={"enabled": True},
+    )
+    assert missing_model.status_code == 404
     assert client.delete(f"/api/admin/ai/models/{missing_uuid}", headers=API_HEADERS).status_code == 404
     assert client.delete(f"/api/admin/ai/providers/{missing_uuid}", headers=API_HEADERS).status_code == 404
 
