@@ -4,19 +4,19 @@ Markdown here is the **seed / editorial source** for CMS posts. Live copy lives 
 
 Canonical public URLs: `https://sinexis.app/blog/:slug`
 
-| Slug | Topic |
+| Slug | Title (H1) |
 |------|--------|
-| `apa-itu-sinexis` | Product overview |
-| `scan-domain-website` | Domain / website scan |
-| `scan-ip-server` | IP / server scan |
-| `jadwal-scan-attach` | Scheduled attach scans |
-| `kredit-dan-paket` | Credits (no IDR) |
-| `aset-dan-workspace` | Assets + workspace |
-| `uptime-situs-nyala` | Uptime |
-| `guard-dan-siem` | Guard vs SIEM (honest scope) |
+| `apa-itu-sinexis` | Sinexis menempel di rak yang sudah Anda bayar |
+| `scan-domain-website` | Scan domain melihat website seperti pengunjung melihatnya |
+| `scan-ip-server` | Scan IP mengetuk pintu server dari internet |
+| `jadwal-scan-attach` | Scan Attach: yang dibaca adalah perubahannya |
+| `kredit-dan-paket` | Kredit: saldo yang kelihatan sebelum scan jalan |
+| `aset-dan-workspace` | Aset punya nama. Workspace adalah orangnya. |
+| `uptime-situs-nyala` | Uptime: lampu toko masih nyala, atau sudah padam |
+| `guard-dan-siem` | Guard tipis, SIEM belakangan. Keduanya bukan Scan. |
 
 Publish via admin JWT (`POST /api/admin/blog/posts` then `.../publish`). Idempotent on slug (409 if exists).
 
 **Live `/blog` is the database.** Editing these files does not change production until an admin updates the matching slug (or recreates the post). Keep copy layperson Bahasa; no prices, IPs, or images.
 
-Editorial notes (2026-09): Scan = outside-in posture (DAST-class baseline, not business logic). Attach = scheduled control, not SIEM. Guard = thin Wazuh inventory + critical alerts. SIEM Cases = Postgres incident tickets, not a Wazuh plugin. Host Protect = on-box helper, never invented malware. Do not quote IDR.
+Voice: operator-honest, no flattery, no invented CVEs. Scan = outside-in posture (not business logic). Attach = scheduled control plus diff, not SIEM. Guard = thin Wazuh inventory plus critical alerts. SIEM Cases = app tickets, not a Wazuh plugin. Host Protect = on-box helper, never invented malware. One `wazuh-agent` per VM. Host WAF stays on the customer box. Do not quote IDR. Do not claim 24/7 watch, Imunify clone, or pentest replacement.

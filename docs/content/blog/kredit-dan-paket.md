@@ -1,57 +1,59 @@
-# Kredit: dompet untuk tiap pemeriksaan
+# Kredit: saldo yang kelihatan sebelum scan jalan
 
-Di Sinexis, scan tidak berjalan tanpa hitungan. Setiap jenis pemeriksaan punya biaya kredit, dan kredit itu harus ada dulu sebelum tombolnya bisa ditekan.
+Di Sinexis, tombol scan tidak hidup dari udara. Tiap jenis pemeriksaan punya bobot kredit. Saldo harus ada dulu.
 
-Cara berpikir paling mudah: seperti pulsa. Isi dulu, baru bisa dipakai. Sisanya kelihatan kapan saja di dasbor.
+Cara pikirnya seperti pulsa. Isi, pakai, lihat sisa. Bukan "unlimited" yang diiklankan lalu dibatasi diam-diam.
 
-Artikel ini sengaja tidak menyebut angka rupiah. Tarif yang berlaku selalu tampil di layar harga di dalam akun Anda, sebelum pemeriksaan dijalankan.
+Angka rupiah tidak ada di artikel ini. Tarif yang berlaku tampil di layar harga di dalam akun, sebelum pemeriksaan dijalankan. Itu tempatnya, bukan halaman publik.
 
-## Kenapa dihitung, bukan sekadar "unlimited"
+## Kenapa dihitung
 
-Setiap pemeriksaan memakai waktu mesin dan bandwidth nyata. Kalau dijual sebagai "sebanyak-banyaknya", yang terjadi biasanya salah satu dari dua: harga dinaikkan untuk semua orang, atau ada batas tersembunyi yang baru ketahuan saat Anda butuh.
+Tiap jalan memakai waktu mesin dan bandwidth nyata. Kalau dijual sebanyak-banyaknya, biasanya salah satu dari dua yang terjadi: harga semua orang naik, atau ada plafon tersembunyi yang baru ketahuan saat Anda sedang butuh.
 
-Kredit membuat batasnya terlihat sejak awal. Anda tahu berapa sisa, dan tahu kapan harus mengisi.
+Kredit membuat plafonnya kelihatan. Anda tahu sisa. Anda tahu kapan mengisi. Bulan audit yang padat memang lebih mahal daripada bulan yang tenang, dan tidak ada yang dipotong tanpa jejak.
 
-## Kira-kira pemakaiannya
+## Kira-kira bobotnya
 
-Jenis pemeriksaan yang berbeda punya bobot yang berbeda:
+Jenis yang berbeda tidak ditimbang sama:
 
-- **Scan IP** biasanya lebih ringan. Satu kali jalan, satu kali potong.
-- **Scan domain** biasanya lebih berat, karena satu pemeriksaan mencakup DNS, sertifikat HTTPS, header keamanan, teknologi yang terbaca, sampai subdomain publik. Lebih banyak kerja, lebih banyak kredit.
-- **Scan mobile** (berkas Android atau iOS) dihitung terpisah. Ini pelengkap, bukan menu utama untuk pemilik hosting atau VPS.
-- **Jadwal Scan Attach** memakai kredit yang sama saat waktunya tiba. Kredit nol berarti jadwal berhenti sendiri, tanpa tagihan kejutan.
-- **Host Protect** punya hitungan sendiri karena bekerja di dalam mesin Anda, bukan dari internet. Jangan disamakan dengan scan domain.
+- **Scan IP** biasanya lebih ringan. Satu jalan, satu potong.
+- **Scan domain** biasanya lebih berat: DNS, HTTPS, header, teknologi yang terbaca, subdomain publik. Lebih banyak kerja.
+- **Scan mobile** (berkas Android atau iOS) dihitung terpisah. Pelengkap, bukan menu utama pemilik hosting.
+- **Jadwal Attach** memakai kredit yang sama saat waktunya tiba. Nol berarti jadwal berhenti. Bukan tagihan kejutan.
+- **Host Protect** punya hitungan sendiri karena bekerja di disk mesin Anda, bukan dari internet. Jangan disamakan dengan scan domain.
 
-Angka pastinya bukan hafalan — buka layar harga di akun sebelum menjalankan pemeriksaan.
+Angka pastinya bukan hafalan. Buka layar harga di akun.
 
-## Tingkatan paket, gambaran umum
+## Tingkatan paket, tanpa angka
 
-Ada beberapa tingkat, dan yang membedakan terutama jumlah target dan kerapatan jadwal.
+Yang membedakan tingkat terutama jumlah target dan kerapatan jadwal.
 
-**Tingkat dasar** cocok untuk satu target: satu domain atau satu IP, dengan ritme bulanan. Ini pilihan wajar untuk satu website atau satu server.
+**Dasar.** Satu target: satu domain atau satu IP, ritme bulanan. Wajar untuk satu situs atau satu server.
 
-**Tingkat menengah** untuk beberapa target, dengan ritme lebih rapat serta perbandingan dan laporan yang lebih lengkap. Cocok kalau Anda memegang beberapa domain atau VPS.
+**Menengah.** Beberapa target, ritme lebih rapat, perbandingan dan laporan lebih lengkap. Untuk yang memegang beberapa domain atau VPS.
 
-**Tingkat multi-aset** untuk yang punya belasan target bernama. Satu workspace, banyak aset di dalamnya.
+**Multi-aset.** Belasan target bernama. Satu workspace, banyak aset.
 
-Uptime — cek "situs masih nyala?" — termasuk dalam paket Scan, bukan biaya baru yang berdiri sendiri. Sementara Guard (satu agen per mesin), SIEM, dan program pembantu Host Protect bukan bagian dari paket Scan; ketiganya tambahan terpisah.
+Uptime (masih nyala atau tidak) termasuk paket Scan, bukan biaya baru yang berdiri sendiri. Guard (satu agen per mesin), SIEM, dan helper Host Protect bukan isi paket Scan. Ketiganya tambahan terpisah. Jangan kira beli Scan lalu dapat dasbor SIEM.
 
-## Yang perlu diingat soal dompet
+## Dompet masih pribadi
 
-Kredit di versi sekarang menempel pada akun login Anda, bukan kas bersama organisasi. Mengundang rekan ke workspace tidak otomatis menggabungkan saldo. Dompet tingkat organisasi mungkin menyusul, tapi belum sekarang.
+Kredit menempel pada akun login, bukan kas bersama organisasi. Mengundang rekan ke workspace tidak menggabungkan saldo.
 
-Karena itu, biasanya satu orang ditunjuk sebagai pemegang kredit — kontak teknis atau siapa pun yang mengurus tagihan layanan Anda. Pemilik usaha cukup tahu satu hal: tanpa kredit, bulan ini tidak ada pemeriksaan.
+Biasanya satu orang ditunjuk pemegang kredit: kontak teknis, atau siapa yang mengurus tagihan infra. Pemilik usaha cukup tahu satu kalimat: tanpa kredit, bulan ini tidak ada pemeriksaan.
 
-Riwayat pemakaian tercatat di dasbor, jadi bisa dicek kalau saldo turun lebih cepat dari perkiraan. Dan seperti biasa: jangan pernah menempelkan kunci API atau kata sandi di tiket atau grup chat.
+Riwayat pemakaian ada di dasbor. Berguna kalau sisa turun lebih cepat dari perkiraan. Jangan pernah menempelkan kunci API atau kata sandi di tiket atau grup chat.
 
-## Memilih tanpa berlebihan
+Dompet tingkat organisasi mungkin menyusul. Belum sekarang. Kami tidak berpura-pura sudah ada.
 
-Hitung dulu berapa alamat yang benar-benar Anda jaga dan menghadap pelanggan. Bukan alamat percobaan, bukan subdomain staging yang sudah lupa dipakai.
+## Pilih tanpa berlebihan
 
-Ambil paket sesuai angka itu. Menaikkan paket nanti jauh lebih mudah daripada membayar kapasitas yang tidak pernah terpakai selama setahun.
+Hitung alamat yang benar-benar menghadap pelanggan. Buang percobaan. Buang staging yang sudah lupa.
+
+Ambil paket sesuai angka itu. Naikkan nanti lebih mudah daripada setahun membayar kapasitas yang tidak pernah dipakai.
 
 ## Langkah berikutnya
 
-Buka **sinexis.app**, daftar, dan lihat layar harga di dalam akun untuk angka yang berlaku hari ini.
+Buka **sinexis.app**, daftar, lihat layar harga di dalam akun.
 
-Mulai dari satu target yang paling penting, jalankan satu pemeriksaan, lalu putuskan apakah perlu jadwal berulang. Keputusan paketnya jadi jauh lebih mudah setelah Anda melihat satu hasil nyata.
+Mulai dari satu target yang paling merugikan kalau temuan telat ketahuan. Jalankan sekali. Putuskan jadwal setelah ada satu hasil nyata, bukan dari brosur.
