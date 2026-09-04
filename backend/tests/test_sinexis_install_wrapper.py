@@ -67,7 +67,36 @@ def test_wrapper_help_mentions_menu() -> None:
     assert proc.returncode == 0
     assert "Install wazuh-agent" in proc.stdout
     assert "Configure Host Protect helper" in proc.stdout
+    assert "Write Host WAF nginx snippet" in proc.stdout
+    assert "--write-waf-snippet" in proc.stdout
     assert "curl|bash" in proc.stdout or "curl | bash" in proc.stdout
+
+
+def test_wrapper_write_waf_snippet_dry_run() -> None:
+    proc = _run(["--dry-run", "--write-waf-snippet"])
+    assert proc.returncode == 0, proc.stderr
+    combined = proc.stdout + proc.stderr
+    assert "sinexis-waf.snippet.conf" in combined
+    assert "no include" in combined
+    assert "nginx reload" in combined
+
+
+def test_wrapper_write_waf_snippet_file(tmp_path: Path) -> None:
+    dest = tmp_path / "sinexis-waf.snippet.conf"
+    proc = _run(
+        [
+            "--write-waf-snippet",
+            "--waf-snippet-path",
+            str(dest),
+        ]
+    )
+    assert proc.returncode == 0, proc.stderr
+    text = dest.read_text(encoding="utf-8")
+    assert "Do not paste onto sinexis.app" in text
+    assert "does not add an include" in text
+    assert "modsecurity on;" in text
+    combined = proc.stdout + proc.stderr
+    assert "No nginx reload" in combined
 
 
 def test_wrapper_rejects_http_api() -> None:

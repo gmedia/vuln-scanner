@@ -5,6 +5,7 @@
 #   sudo ./sinexis-install.sh                 # TTY menu
 #   sudo ./sinexis-install.sh --install-wazuh-agent --manager-host HOST
 #   sudo ./sinexis-install.sh --configure-host-protect --agent-id UUID --token-file PATH
+#   sudo ./sinexis-install.sh --write-waf-snippet   # file only; no nginx include/reload
 set -euo pipefail
 
 API_BASE="${SINEXIS_API_BASE:-https://sinexis.app}"
@@ -20,6 +21,8 @@ FROM_TREE=0
 MENU=1
 DO_WAZUH=0
 DO_HELPER=0
+DO_WAF_SNIPPET=0
+WAF_SNIPPET_PATH="/etc/nginx/sinexis-waf.snippet.conf"
 MANAGER_HOST=""
 QUARANTINE_ROOT="/var/lib/sinexis/quarantine"
 ENV_PATH="/etc/sinexis/host-protect.env"
@@ -33,12 +36,14 @@ sinexis-install.sh — one file (not curl|bash)
 TTY (default, no flags): menu
   1) Install wazuh-agent (package + Manager address)
   2) Configure Host Protect helper (payloads in this file)
-  3) Both
-  4) Quit
+  3) Both (1+2)
+  4) Write Host WAF nginx snippet file (no include, no reload)
+  5) Quit
 
 Non-interactive:
   --install-wazuh-agent --manager-host HOST
   --configure-host-protect --agent-id UUID --token-file PATH [--api-base URL]
+  --write-waf-snippet [--waf-snippet-path PATH]
 
 Host Protect:
   --agent-id UUID          Guard agent UUID from SPA /guard
@@ -53,6 +58,8 @@ Host Protect:
   --help
 
 Does not: curl|bash, enroll Guard, print the token, wipe ERP.
+Does not: include the WAF snippet into a vhost, nginx -t, reload nginx,
+          or paste onto sinexis.app edge.
 EOF
 }
 
@@ -267,19 +274,54 @@ configure_host_protect() {
   log "ok: helper configured for agent ${AGENT_ID} (token not printed)"
 }
 
+write_waf_snippet() {
+  local dest="$WAF_SNIPPET_PATH"
+  if [[ "$dest" == /etc/* ]]; then
+    need_root
+  fi
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    log "dry-run: write ${dest} (WAF snippet; no include, no nginx reload)"
+    return 0
+  fi
+  mkdir -p "$(dirname "$dest")"
+  cat >"$dest" <<'EOF'
+# Sinexis Host WAF starter snippet — customer VPS only.
+# Do not paste onto sinexis.app edge nginx.
+# This installer does not add an include, run nginx -t, or reload nginx.
+# Ops: add  include /etc/nginx/sinexis-waf.snippet.conf;  to the site that
+# serves the Host Protect document root, then nginx -t && reload yourself.
+# Requires nginx + ModSecurity (or Coraza spoa) on this tenant host.
+# SaaS Simulate request is a fake UI row; it does not hit this file.
+
+modsecurity on;
+modsecurity_rules '
+SecRuleEngine DetectionOnly
+SecRequestBodyAccess Off
+SecResponseBodyAccess Off
+SecRule REQUEST_URI "@beginsWith /xmlrpc.php" "id:1001,phase:1,t:none,deny,status:403,msg:\'mock.xmlrpc\'"
+SecRule ARGS "@rx (?i)(union\\s+select|or\\s+1=1)" "id:1002,phase:2,t:none,deny,status:403,msg:\'mock.sqli.1\'"
+SecRule REQUEST_URI "@rx \\.\\./" "id:1003,phase:1,t:none,deny,status:403,msg:\'mock.rce.path\'"
+'
+EOF
+  chmod 644 "$dest"
+  log "ok: wrote ${dest}. Include it in the customer site vhost yourself. No nginx reload."
+}
+
 show_menu() {
-  [[ -t 0 ]] || die "no flags and no TTY — pass --install-wazuh-agent and/or --configure-host-protect"
+  [[ -t 0 ]] || die "no flags and no TTY — pass --install-wazuh-agent, --configure-host-protect, and/or --write-waf-snippet"
   echo "Sinexis installer"
   echo "  1) Install wazuh-agent"
   echo "  2) Configure Host Protect helper"
-  echo "  3) Both"
-  echo "  4) Quit"
-  read -r -p "Choice [1-4]: " _c
+  echo "  3) Both (1+2)"
+  echo "  4) Write Host WAF nginx snippet (file only; no include/reload)"
+  echo "  5) Quit"
+  read -r -p "Choice [1-5]: " _c
   case "$_c" in
     1) DO_WAZUH=1 ;;
     2) DO_HELPER=1; INTERACTIVE=1 ;;
     3) DO_WAZUH=1; DO_HELPER=1; INTERACTIVE=1 ;;
-    4) exit 0 ;;
+    4) DO_WAF_SNIPPET=1 ;;
+    5) exit 0 ;;
     *) die "invalid choice" ;;
   esac
 }
@@ -714,6 +756,16 @@ while [[ $# -gt 0 ]]; do
       MANAGER_HOST="${2:-}"
       shift 2
       ;;
+    --write-waf-snippet)
+      DO_WAF_SNIPPET=1
+      MENU=0
+      shift
+      ;;
+    --waf-snippet-path)
+      WAF_SNIPPET_PATH="${2:-}"
+      [[ -n "$WAF_SNIPPET_PATH" ]] || die "missing --waf-snippet-path"
+      shift 2
+      ;;
     --help|-h)
       usage
       exit 0
@@ -734,7 +786,10 @@ fi
 if [[ "$DO_HELPER" -eq 1 ]]; then
   configure_host_protect
 fi
-if [[ "$DO_WAZUH" -eq 0 && "$DO_HELPER" -eq 0 ]]; then
+if [[ "$DO_WAF_SNIPPET" -eq 1 ]]; then
+  write_waf_snippet
+fi
+if [[ "$DO_WAZUH" -eq 0 && "$DO_HELPER" -eq 0 && "$DO_WAF_SNIPPET" -eq 0 ]]; then
   usage
   exit 1
 fi
