@@ -24,7 +24,7 @@
   "hMulai": "Start: register, login, workspace",
   "mulai1": "Open the login page. No account yet? Use <ui>Register</ui> — email and password is enough. Submit with <ui>Create account</ui>.",
   "mulai2": "Verify when prompted: open the link in your inbox, or stay on <ui>Check your email</ui> and resend if the mail never arrived. Unverified accounts are normally blocked from starting scans.",
-  "mulai3": "Click <ui>Sign In</ui>. The header shows your <ui>Credits</ui> chip. The sidebar lists Dashboard, the three scanners, Schedules, Guard, Host Protect, and the rest.",
+  "mulai3": "Click Sign In. The header shows your Credits chip. The sidebar lists Dashboard, the three scanners, Schedules, Guard, Host Protect, and the rest.",
   "mulai4": "More than one organization? Set the workspace in the org switcher before you do anything else. Scans, schedules, assets, and monitors all bind to the active org — pick the wrong one and the work lands in the wrong place.",
   "mulai5": "Open <dash>Dashboard</dash> for recent scans and shortcuts into each module.",
   "hScanIp": "IP scan — step by step",
