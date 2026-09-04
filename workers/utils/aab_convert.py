@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import errno
 import os
 import shutil
 import signal
@@ -24,8 +25,9 @@ DEFAULT_AAPT2_PATHS = (
 )
 
 BUNDLETOOL_TIMEOUT_SEC = int(os.environ.get("BUNDLETOOL_TIMEOUT_SEC", "300"))
-BUNDLETOOL_JAVA_TMPDIR = os.environ.get("BUNDLETOOL_JAVA_TMPDIR", "/tmp/bundletool-work")
+BUNDLETOOL_JAVA_TMPDIR = os.environ.get("BUNDLETOOL_JAVA_TMPDIR", "/tmp/scans/bundletool-work")
 STDERR_LIMIT = 2000
+_DISK_FULL_MARKERS = ("no space left", "enospc", "not enough space")
 
 
 class AabConversionError(Exception):
@@ -75,8 +77,22 @@ def extract_bundled_aapt2(bundletool_jar: str, dest_dir: str) -> str | None:
     return None
 
 
+def _is_disk_full_text(text: str) -> bool:
+    lowered = text.lower()
+    return any(marker in lowered for marker in _DISK_FULL_MARKERS)
+
+
+def _raise_disk_full(detail: str) -> None:
+    raise AabConversionError(f"AAB conversion ran out of disk space in the bundletool work directory. {detail}")
+
+
 def _ensure_java_tmpdir() -> str:
-    os.makedirs(BUNDLETOOL_JAVA_TMPDIR, exist_ok=True)
+    try:
+        os.makedirs(BUNDLETOOL_JAVA_TMPDIR, exist_ok=True)
+    except OSError as exc:
+        if exc.errno == errno.ENOSPC:
+            _raise_disk_full(str(exc))
+        raise
     return BUNDLETOOL_JAVA_TMPDIR
 
 
@@ -136,6 +152,8 @@ def convert_aab_to_universal_apk(aab_path: str, output_dir: str | None = None) -
             start_new_session=True,
         )
     except OSError as exc:
+        if exc.errno == errno.ENOSPC:
+            _raise_disk_full(str(exc))
         raise AabConversionError(f"Failed to run bundletool: {exc}") from exc
 
     try:
@@ -151,6 +169,8 @@ def convert_aab_to_universal_apk(aab_path: str, output_dir: str | None = None) -
     if result.returncode != 0:
         err = (result.stderr or result.stdout or "").strip()[:STDERR_LIMIT]
         logger.error("bundletool stderr (exit {code}): {err}", code=result.returncode, err=err)
+        if _is_disk_full_text(err):
+            _raise_disk_full(err)
         raise AabConversionError(f"bundletool failed (exit {result.returncode}): {err}")
 
     if not os.path.isfile(apks_path):
@@ -182,5 +202,10 @@ def _extract_universal_apk(apks_path: str, dest_apk: str) -> None:
         if not target.startswith(dest_real + os.sep) and target != dest_real:
             raise AabConversionError(f"Unsafe APK member path in .apks: {member}")
 
-        with zf.open(member) as src, open(dest_apk, "wb") as dst:
-            shutil.copyfileobj(src, dst)
+        try:
+            with zf.open(member) as src, open(dest_apk, "wb") as dst:
+                shutil.copyfileobj(src, dst)
+        except OSError as exc:
+            if getattr(exc, "errno", None) == errno.ENOSPC:
+                _raise_disk_full(str(exc))
+            raise

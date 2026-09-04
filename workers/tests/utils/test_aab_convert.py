@@ -212,3 +212,20 @@ class TestConvertAabToUniversalApk:
             convert_aab_to_universal_apk(str(aab), output_dir=str(tmp_path / "w"))
         killpg.assert_called_once()
         assert killpg.call_args.args[0] == 777
+
+    def test_bundletool_enospc_stderr(self, tmp_path, monkeypatch):
+        aab = tmp_path / "app.aab"
+        aab.write_bytes(b"PK")
+        jar = tmp_path / "bundletool.jar"
+        jar.write_bytes(b"jar")
+        monkeypatch.setenv("BUNDLETOOL_JAR", str(jar))
+        proc = mock.MagicMock()
+        proc.returncode = 1
+        proc.pid = 11
+        proc.communicate.return_value = ("", "java.io.IOException: No space left on device")
+        with (
+            mock.patch("utils.aab_convert.resolve_java_binary", return_value="/usr/bin/java"),
+            mock.patch("utils.aab_convert.subprocess.Popen", return_value=proc),
+            pytest.raises(AabConversionError, match="out of disk space"),
+        ):
+            convert_aab_to_universal_apk(str(aab), output_dir=str(tmp_path / "w"))
