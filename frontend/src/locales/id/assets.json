@@ -34,5 +34,7 @@
   "tagColors": "Warna label",
   "tagColorFor": "Warna untuk {{tag}}",
   "tagColorPick": "{{tag}}: {{color}}",
-  "tagColorPicker": "{{tag}}: warna kustom"
+  "tagColorPicker": "{{tag}}: warna kustom",
+  "guardLinked": "Guard: {{name}}",
+  "openGuard": "Buka Guard"
 }

@@ -34,5 +34,7 @@
   "tagColors": "Tag colors",
   "tagColorFor": "Color for {{tag}}",
   "tagColorPick": "{{tag}}: {{color}}",
-  "tagColorPicker": "{{tag}}: custom color"
+  "tagColorPicker": "{{tag}}: custom color",
+  "guardLinked": "Guard: {{name}}",
+  "openGuard": "Open Guard"
 }

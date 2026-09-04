@@ -15,6 +15,8 @@ export interface ScanAsset {
   schedule_id: string | null;
   sku: string | null;
   sku_limit: number | null;
+  guard_agent_id?: string | null;
+  guard_agent_name?: string | null;
 }
 
 export interface AssetCreatePayload {
