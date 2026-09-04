@@ -226,8 +226,8 @@ def _shell(
     </a>
     <nav class="header-actions">
       <a class="ghost" href="/blog"{blog_cur}>Blog</a>
-      <a class="ghost sm-hide" href="/login">Sign in</a>
-      <a class="primary" href="/register">Get started</a>
+      <a class="ghost sm-hide" href="/login">Masuk</a>
+      <a class="primary" href="/register">Mulai</a>
     </nav>
   </div>
 </header>
@@ -241,8 +241,8 @@ def _shell(
       <a href="/blog"{blog_cur}>Blog</a>
       <a href="/terms"{terms_cur}>Syarat</a>
       <a href="/privacy"{privacy_cur}>Privasi</a>
-      <a href="/login">Sign in</a>
-      <a class="primary" href="/register">Get started</a>
+      <a href="/login">Masuk</a>
+      <a class="primary" href="/register">Mulai</a>
     </nav>
   </div>
 </footer>
@@ -277,8 +277,8 @@ async def blog_index_html(
     if not posts:
         inner = """<p class="eyebrow">Blog</p>
 <h1>Belum ada artikel.</h1>
-<p class="lede">Jadwal cek, temuan, dan alarm di mesin, dalam bahasa operator.</p>
-<p class="cta-row"><a class="cta" href="/register">Get started</a>
+<p class="lede">Scan dari luar, temuan buat tim, alarm tipis di mesin. Bahasa operator, bukan brosur.</p>
+<p class="cta-row"><a class="cta" href="/register">Mulai</a>
 <a class="cta-ghost" href="/">Kembali ke Sinexis</a></p>"""
     else:
         items = []
@@ -291,15 +291,16 @@ async def blog_index_html(
                 f"<time datetime='{escape_text(pub)}'>{escape_text(human)}</time>"
                 f"<h2>{escape_text(p.title)}</h2>"
                 f"<p class='excerpt'>{escape_text(plain_excerpt(p.excerpt))}</p>"
-                "<span class='read'>Baca artikel →</span>"
+                "<span class='read'>Lanjut baca →</span>"
                 "</a>"
                 "</li>"
             )
         inner = (
             "<div class='page-intro'><p class='eyebrow'>Blog</p>"
-            "<h1>Jadwal cek buat yang situsnya sudah jalan</h1>"
-            "<p class='lede'>Jadwal cek dari luar, temuan buat tim, alarm kritis di mesin. "
-            "Bukan SIEM 24/7, bukan agen kedua: satu wazuh-agent per VM, Host Protect cuma helper.</p></div>"
+            "<h1>Cek paparan dari luar, lalu jadwalkan</h1>"
+            "<p class='lede'>Scan dari internet, temuan buat tim, alarm kritis di mesin. "
+            "Bukan SIEM yang ditunggui. Satu wazuh-agent per VM. "
+            "Host Protect diam kalau helper belum ada.</p></div>"
             "<ol class='index'>" + "".join(items) + "</ol>"
         )
     html = _shell("Blog — Sinexis", f"{CANONICAL_HOST}/blog", inner, rail=True)
@@ -360,8 +361,8 @@ async def blog_article_html(
         f"<p class='meta'><time datetime='{escape_text(pub)}'>{escape_text(human)}</time>"
         f" · {escape_text(post.locale)}</p>"
         f"<div class='body'>{strip_leading_html_h1(post.body_html)}</div>"
-        f"<p class='back'><a href='/blog'>← Semua artikel</a>"
-        f"<a class='cta' href='/register'>Get started</a></p>"
+        f"<p class='back'><a href='/blog'>← Daftar artikel</a>"
+        f"<a class='cta' href='/register'>Mulai</a></p>"
         f"</article>"
     )
     html = _shell(

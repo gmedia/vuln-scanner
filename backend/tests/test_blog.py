@@ -70,7 +70,8 @@ def test_public_html_index(client):
     assert "Blog" in resp.text
     assert "<h1>" in resp.text
     assert "Belum ada artikel" in resp.text
-    assert "Jadwal cek, temuan, dan alarm di mesin" in resp.text
+    assert "Scan dari luar, temuan buat tim, alarm tipis di mesin" in resp.text
+    assert "Bahasa operator, bukan brosur" in resp.text
     assert "tanpa istilah konsol" not in resp.text
     assert "Scan · Guard · SIEM" not in resp.text
     assert "page-intro" in resp.text or "Belum ada artikel" in resp.text
@@ -137,14 +138,17 @@ def test_publish_then_public(client):
     assert "**bold**" not in index.text
     assert "bold teaser" in index.text
     assert "class='card'" in index.text or 'class="card"' in index.text
-    assert "Baca artikel" in index.text
-    assert "Jadwal cek buat yang situsnya sudah jalan" in index.text
-    assert "Bukan SIEM 24/7" in index.text
-    assert "bukan agen kedua" in index.text
+    assert "Lanjut baca" in index.text
+    assert "Cek paparan dari luar, lalu jadwalkan" in index.text
+    assert "Bukan SIEM yang ditunggui" in index.text
     assert "wazuh-agent" in index.text
-    assert "Host Protect cuma helper" in index.text
+    assert "Host Protect diam kalau helper belum ada" in index.text
     assert "tanpa istilah konsol" not in index.text
     assert "konsol ahli" not in index.text
+    assert "Masuk" in index.text
+    assert "Mulai" in index.text
+    assert "Sign in" not in index.text
+    assert "Get started" not in index.text
     sm = client.get("/blog/sitemap.xml")
     assert sm.status_code == 200
     assert "hello-sinexis" in sm.text
