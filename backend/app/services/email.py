@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import re
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -19,8 +20,74 @@ SMTP_PASS = os.getenv("SMTP_PASS", "")
 SMTP_FROM = os.getenv("SMTP_FROM", "Sinexis <noreply@sinexis.app>")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://sinexis.app")
 
+_CTA_BG = "#22c55e"
 _MAX_RETRIES = 3
-_RETRY_BACKOFF_BASE = 1  # seconds: 1s, 2s, 4s
+_RETRY_BACKOFF_BASE = 1
+
+_CTA_STYLE = (
+    f"display:inline-block;padding:12px 24px;background:{_CTA_BG};color:#fff;"
+    "text-decoration:none;border-radius:6px"
+)
+
+
+def _plain_from_html(html: str) -> str:
+    text = re.sub(r"(?is)<style.*?>.*?</style>", "", html)
+    text = re.sub(r"(?is)<script.*?>.*?</script>", "", text)
+    text = re.sub(r"(?i)<br\s*/?>", "\n", text)
+    text = re.sub(r"(?i)</p>", "\n\n", text)
+    text = re.sub(r"(?i)</li>", "\n", text)
+    text = re.sub(r"(?i)</h2>", "\n\n", text)
+    text = re.sub(r"<[^>]+>", "", text)
+    text = text.replace("&nbsp;", " ").replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+    lines = [ln.strip() for ln in text.splitlines()]
+    collapsed: list[str] = []
+    blank = False
+    for ln in lines:
+        if not ln:
+            if not blank:
+                collapsed.append("")
+            blank = True
+            continue
+        blank = False
+        collapsed.append(ln)
+    return "\n".join(collapsed).strip() + "\n"
+
+
+def _wrap_html(*, heading: str, inner: str, preheader: str) -> str:
+    hidden = (
+        '<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">'
+        f"{preheader}</div>"
+    )
+    return f"""\
+<html>
+<body style="font-family: sans-serif; max-width: 520px; margin: 0 auto; padding: 24px;">
+  {hidden}
+  <p style="margin:0 0 16px;font-size:13px;letter-spacing:0.04em;color:#166534;">Sinexis</p>
+  <h2 style="margin-bottom: 8px;">{heading}</h2>
+  {inner}
+</body>
+</html>"""
+
+
+def _cta_block(href: str, label: str, or_copy: str) -> str:
+    return f"""\
+  <p>
+    <a href="{href}" style="{_CTA_STYLE}">{label}</a>
+  </p>
+  <p style="color: #6b7280; font-size: 14px;">
+    {or_copy}<br>
+    {href}
+  </p>"""
+
+
+def _build_message(*, email_to: str, subject: str, html_body: str) -> MIMEMultipart:
+    msg = MIMEMultipart("alternative")
+    msg["From"] = SMTP_FROM
+    msg["To"] = email_to
+    msg["Subject"] = subject
+    msg.attach(MIMEText(_plain_from_html(html_body), "plain", "utf-8"))
+    msg.attach(MIMEText(html_body, "html", "utf-8"))
+    return msg
 
 
 async def _send_with_retry(msg: MIMEMultipart, email_to: str, label: str) -> bool:
@@ -84,69 +151,49 @@ async def _send_with_retry(msg: MIMEMultipart, email_to: str, label: str) -> boo
     return False
 
 
-async def send_verification_email(email_to: str, token: str) -> bool:
+async def send_verification_email(email_to: str, token: str, lang: str | None = None) -> bool:
+    locale = normalize_lang(lang)
     verification_link = f"{FRONTEND_URL}/verify-email?token={token}"
-
-    html_body = f"""\
-<html>
-<body style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-  <h2>Verify Your Email</h2>
-  <p>Click the link below to verify your Sinexis account:</p>
-  <p>
-    <a href="{verification_link}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;"
-       "text-decoration:none;border-radius:6px">
-      Verify Email
-    </a>
-  </p>
+    heading = t(locale, "auth_email", "verify_heading")
+    inner = f"""\
+  <p style="color: #374151;">{t(locale, "auth_email", "verify_intro")}</p>
+{_cta_block(verification_link, t(locale, "auth_email", "verify_cta"), t(locale, "auth_email", "verify_or_copy"))}
   <p style="color: #6b7280; font-size: 14px;">
-    Or copy this link:<br>
-    {verification_link}
-  </p>
-  <p style="color: #6b7280; font-size: 14px;">
-    This link expires in 24 hours. If you didn't create an account, ignore this email.
-  </p>
-</body>
-</html>"""
-
-    msg = MIMEMultipart("alternative")
-    msg["From"] = SMTP_FROM
-    msg["To"] = email_to
-    msg["Subject"] = "Sinexis — Verify Your Email"
-    msg.attach(MIMEText(html_body, "html", "utf-8"))
-
+    {t(locale, "auth_email", "verify_footer")}
+  </p>"""
+    html_body = _wrap_html(
+        heading=heading,
+        inner=inner,
+        preheader=t(locale, "auth_email", "verify_preheader"),
+    )
+    msg = _build_message(
+        email_to=email_to,
+        subject=t(locale, "auth_email", "verify_subject"),
+        html_body=html_body,
+    )
     return await _send_with_retry(msg, email_to, "Verification")
 
 
-async def send_password_reset_email(email_to: str, token: str) -> bool:
+async def send_password_reset_email(email_to: str, token: str, lang: str | None = None) -> bool:
+    locale = normalize_lang(lang)
     reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
-
-    html_body = f"""\
-<html>
-<body style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-  <h2>Reset Your Password</h2>
-  <p>Click the button below to reset your Sinexis account password:</p>
-  <p>
-    <a href="{reset_link}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;"
-       "text-decoration:none;border-radius:6px">
-       Reset Password
-     </a>
-  </p>
+    heading = t(locale, "auth_email", "reset_heading")
+    inner = f"""\
+  <p style="color: #374151;">{t(locale, "auth_email", "reset_intro")}</p>
+{_cta_block(reset_link, t(locale, "auth_email", "reset_cta"), t(locale, "auth_email", "reset_or_copy"))}
   <p style="color: #6b7280; font-size: 14px;">
-    Or copy this link:<br>
-    {reset_link}
-  </p>
-  <p style="color: #6b7280; font-size: 14px;">
-    This link expires in 1 hour. If you didn't request a password reset, ignore this email.
-  </p>
-</body>
-</html>"""
-
-    msg = MIMEMultipart("alternative")
-    msg["From"] = SMTP_FROM
-    msg["To"] = email_to
-    msg["Subject"] = "Sinexis — Reset Your Password"
-    msg.attach(MIMEText(html_body, "html", "utf-8"))
-
+    {t(locale, "auth_email", "reset_footer")}
+  </p>"""
+    html_body = _wrap_html(
+        heading=heading,
+        inner=inner,
+        preheader=t(locale, "auth_email", "reset_preheader"),
+    )
+    msg = _build_message(
+        email_to=email_to,
+        subject=t(locale, "auth_email", "reset_subject"),
+        html_body=html_body,
+    )
     return await _send_with_retry(msg, email_to, "Password reset")
 
 
@@ -164,52 +211,31 @@ async def send_scan_diff_email(
     locale = normalize_lang(lang)
     n_new = int(new_critical) + int(new_high)
     detail_link = f"{FRONTEND_URL}/scan/{job_id}"
-    subject = t(locale, "notify", "subject", n=n_new, target=target)
     heading = t(locale, "notify", "heading")
-    intro = t(locale, "notify", "intro", target=target, n=n_new)
-    li_crit = t(locale, "notify", "new_critical", n=int(new_critical))
-    li_high = t(locale, "notify", "new_high", n=int(new_high))
-    li_res = t(locale, "notify", "resolved", n=int(resolved))
-    li_worse = t(locale, "notify", "worsened", n=int(worsened))
-    open_detail = t(locale, "notify", "open_detail")
-    or_copy = t(locale, "notify", "or_copy")
-    footer = t(locale, "notify", "footer")
-
-    html_body = f"""\
-<html>
-<body style="font-family: sans-serif; max-width: 520px; margin: 0 auto; padding: 24px;">
-  <h2 style="margin-bottom: 8px;">{heading}</h2>
+    inner = f"""\
   <p style="color: #374151;">
-    {intro}
+    {t(locale, "notify", "intro", target=target, n=n_new)}
   </p>
   <ul style="color: #111827; line-height: 1.6;">
-    <li>{li_crit}</li>
-    <li>{li_high}</li>
-    <li>{li_res}</li>
-    <li>{li_worse}</li>
+    <li>{t(locale, "notify", "new_critical", n=int(new_critical))}</li>
+    <li>{t(locale, "notify", "new_high", n=int(new_high))}</li>
+    <li>{t(locale, "notify", "resolved", n=int(resolved))}</li>
+    <li>{t(locale, "notify", "worsened", n=int(worsened))}</li>
   </ul>
-  <p>
-    <a href="{detail_link}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;
-       text-decoration:none;border-radius:6px">
-      {open_detail}
-    </a>
-  </p>
-  <p style="color: #6b7280; font-size: 14px;">
-    {or_copy}<br>
-    {detail_link}
-  </p>
+{_cta_block(detail_link, t(locale, "notify", "open_detail"), t(locale, "notify", "or_copy"))}
   <p style="color: #6b7280; font-size: 13px;">
-    {footer}
-  </p>
-</body>
-</html>"""
-
-    msg = MIMEMultipart("alternative")
-    msg["From"] = SMTP_FROM
-    msg["To"] = email_to
-    msg["Subject"] = subject
-    msg.attach(MIMEText(html_body, "html", "utf-8"))
-
+    {t(locale, "notify", "footer")}
+  </p>"""
+    html_body = _wrap_html(
+        heading=heading,
+        inner=inner,
+        preheader=t(locale, "notify", "preheader", n=n_new, target=target),
+    )
+    msg = _build_message(
+        email_to=email_to,
+        subject=t(locale, "notify", "subject", n=n_new, target=target),
+        html_body=html_body,
+    )
     return await _send_with_retry(msg, email_to, "Scan diff")
 
 
@@ -224,31 +250,22 @@ async def send_uptime_email(
 ) -> bool:
     loc = normalize_lang(locale)
     key = kind if kind in ("down", "up", "tls") else "down"
-    subject = t(loc, "uptime", f"subject_{key}", name=name)
     heading = t(loc, "uptime", f"heading_{key}")
-    intro = t(loc, "uptime", f"intro_{key}", name=name, target=target, detail=detail or "")
-    open_label = t(loc, "uptime", "open")
-    or_copy = t(loc, "uptime", "or_copy")
-    footer = t(loc, "uptime", "footer")
     link = f"{FRONTEND_URL}/uptime"
-    html_body = f"""\
-<html>
-<body style="font-family: sans-serif; max-width: 520px; margin: 0 auto; padding: 24px;">
-  <h2 style="margin-bottom: 8px;">{heading}</h2>
-  <p style="color: #374151;">{intro}</p>
-  <p>
-    <a href="{link}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;
-       text-decoration:none;border-radius:6px">{open_label}</a>
-  </p>
-  <p style="color: #6b7280; font-size: 14px;">{or_copy}<br>{link}</p>
-  <p style="color: #6b7280; font-size: 13px;">{footer}</p>
-</body>
-</html>"""
-    msg = MIMEMultipart("alternative")
-    msg["From"] = SMTP_FROM
-    msg["To"] = email_to
-    msg["Subject"] = subject
-    msg.attach(MIMEText(html_body, "html", "utf-8"))
+    inner = f"""\
+  <p style="color: #374151;">{t(loc, "uptime", f"intro_{key}", name=name, target=target, detail=detail or "")}</p>
+{_cta_block(link, t(loc, "uptime", "open"), t(loc, "uptime", "or_copy"))}
+  <p style="color: #6b7280; font-size: 13px;">{t(loc, "uptime", "footer")}</p>"""
+    html_body = _wrap_html(
+        heading=heading,
+        inner=inner,
+        preheader=t(loc, "uptime", f"preheader_{key}", name=name),
+    )
+    msg = _build_message(
+        email_to=email_to,
+        subject=t(loc, "uptime", f"subject_{key}", name=name),
+        html_body=html_body,
+    )
     return await _send_with_retry(msg, email_to, "Uptime")
 
 
@@ -263,37 +280,25 @@ async def send_host_protect_email(
     locale: str | None = None,
 ) -> bool:
     loc = normalize_lang(locale)
-    subject = t(loc, "host_notify", "subject", hit_class=hit_class, site=site_name)
     heading = t(loc, "host_notify", "heading")
-    intro = t(loc, "host_notify", "intro", hit_class=hit_class, site=site_name)
-    path_line = t(loc, "host_notify", "path", rel_path=rel_path)
-    rule_line = t(loc, "host_notify", "rule", rule_id=rule_id)
-    hit_line = t(loc, "host_notify", "hit", hit_id=hit_id)
-    open_label = t(loc, "host_notify", "open")
-    or_copy = t(loc, "host_notify", "or_copy")
-    footer = t(loc, "host_notify", "footer")
     link = f"{FRONTEND_URL}/host"
-    html_body = f"""\
-<html>
-<body style="font-family: sans-serif; max-width: 520px; margin: 0 auto; padding: 24px;">
-  <h2 style="margin-bottom: 8px;">{heading}</h2>
-  <p style="color: #374151;">{intro}</p>
+    inner = f"""\
+  <p style="color: #374151;">{t(loc, "host_notify", "intro", hit_class=hit_class, site=site_name)}</p>
   <ul style="color: #111827; line-height: 1.6;">
-    <li>{path_line}</li>
-    <li>{rule_line}</li>
-    <li>{hit_line}</li>
+    <li>{t(loc, "host_notify", "path", rel_path=rel_path)}</li>
+    <li>{t(loc, "host_notify", "rule", rule_id=rule_id)}</li>
+    <li>{t(loc, "host_notify", "hit", hit_id=hit_id)}</li>
   </ul>
-  <p>
-    <a href="{link}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;
-       text-decoration:none;border-radius:6px">{open_label}</a>
-  </p>
-  <p style="color: #6b7280; font-size: 14px;">{or_copy}<br>{link}</p>
-  <p style="color: #6b7280; font-size: 13px;">{footer}</p>
-</body>
-</html>"""
-    msg = MIMEMultipart("alternative")
-    msg["From"] = SMTP_FROM
-    msg["To"] = email_to
-    msg["Subject"] = subject
-    msg.attach(MIMEText(html_body, "html", "utf-8"))
+{_cta_block(link, t(loc, "host_notify", "open"), t(loc, "host_notify", "or_copy"))}
+  <p style="color: #6b7280; font-size: 13px;">{t(loc, "host_notify", "footer")}</p>"""
+    html_body = _wrap_html(
+        heading=heading,
+        inner=inner,
+        preheader=t(loc, "host_notify", "preheader", hit_class=hit_class, site=site_name),
+    )
+    msg = _build_message(
+        email_to=email_to,
+        subject=t(loc, "host_notify", "subject", hit_class=hit_class, site=site_name),
+        html_body=html_body,
+    )
     return await _send_with_retry(msg, email_to, "Host Protect")
