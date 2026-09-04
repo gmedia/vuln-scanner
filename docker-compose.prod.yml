@@ -272,7 +272,6 @@ services:
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=512M
-      - /tmp/bundletool-work:rw,exec,nosuid,size=512M
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -302,7 +301,7 @@ services:
       COS_ENDPOINT: ${COS_ENDPOINT:-}
       COS_PREFIX: ${COS_PREFIX:-scans/}
       COS_TIMEOUT_SEC: ${COS_TIMEOUT_SEC:-600}
-      BUNDLETOOL_JAVA_TMPDIR: /tmp/bundletool-work
+      BUNDLETOOL_JAVA_TMPDIR: /tmp/scans/bundletool-work
     volumes:
       - scan_data:/tmp/scans
     healthcheck:
