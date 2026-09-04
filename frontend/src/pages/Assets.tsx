@@ -586,6 +586,21 @@ export default function Assets() {
                         {t("hasSchedule")}
                       </p>
                     ) : null}
+                    {a.guard_agent_id ? (
+                      <div className="mt-2">
+                        <Badge
+                          variant="info"
+                          data-testid={`asset-guard-chip-${a.id}`}
+                        >
+                          {t("guardLinked", {
+                            name: a.guard_agent_name ?? a.guard_agent_id,
+                          })}
+                        </Badge>{" "}
+                        <Button variant="link" size="sm" className="h-auto p-0" asChild>
+                          <Link to="/guard">{t("openGuard")}</Link>
+                        </Button>
+                      </div>
+                    ) : null}
                   </div>
                   <div className="flex gap-2">
                     {a.scan_type === "domain" ? (

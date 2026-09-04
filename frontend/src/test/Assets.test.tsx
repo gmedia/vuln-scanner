@@ -119,6 +119,28 @@ describe("Assets page", () => {
     expect(screen.getByTestId("asset-tag-filter")).toBeInTheDocument();
   });
 
+  it("shows Guard chip when asset is linked", async () => {
+    mockList.mockResolvedValue([
+      {
+        id: "a1",
+        name: "Web",
+        scan_type: "domain",
+        target: "example.com",
+        notes: null,
+        schedule_id: null,
+        sku: "multi",
+        sku_limit: 10,
+        tags: [],
+        guard_agent_id: "g1",
+        guard_agent_name: "vps-edge-01",
+      },
+    ]);
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("asset-guard-chip-a1")).toHaveTextContent("vps-edge-01"),
+    );
+  });
+
   it("filters by multiple tags with type-to-search", async () => {
     mockList.mockResolvedValue([
       {

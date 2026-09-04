@@ -21,8 +21,13 @@ vi.mock("@/api/guard", async () => {
     syncGuard: vi.fn(),
     revokeEnrollToken: vi.fn(),
     issueHostAgentToken: vi.fn(),
+    linkGuardAgentAsset: vi.fn(),
   };
 });
+
+vi.mock("@/api/assets", () => ({
+  listAssets: vi.fn().mockResolvedValue([]),
+}));
 
 describe("Guard host enroll UI", () => {
   beforeEach(() => {
@@ -312,5 +317,39 @@ describe("Guard host enroll UI", () => {
     expect(await screen.findByTestId("guard-host-token-once")).toHaveTextContent(
       "once-plain-host-token",
     );
+  });
+
+  it("shows linked asset chip", async () => {
+    vi.mocked(guardApi.listGuardAgents).mockResolvedValue([
+      {
+        id: "ag-linked",
+        organization_id: "org1",
+        wazuh_agent_id: "002",
+        name: "vps-linked",
+        status: "active",
+        ip: null,
+        version: "4.7.0",
+        last_keep_alive: "2026-08-17T14:05:00Z",
+        last_helper_poll_at: null,
+        has_host_agent_token: false,
+        asset_id: "asset-1",
+        asset_name: "Edge VPS",
+        asset_target: "203.0.113.10",
+        synced_at: "2026-08-17T14:05:00Z",
+        created_at: "2026-08-17T14:05:00Z",
+      },
+    ]);
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <Guard />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    const chips = await screen.findAllByTestId("guard-asset-chip-ag-linked");
+    expect(chips[0]).toHaveTextContent("Edge VPS");
   });
 });
