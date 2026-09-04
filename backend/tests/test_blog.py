@@ -72,6 +72,10 @@ def test_public_html_index(client):
     assert "Belum ada artikel" in resp.text
     assert "Scan dari luar, temuan buat tim, alarm tipis di mesin" in resp.text
     assert "Bahasa operator, bukan brosur" in resp.text
+    assert "Masuk" in resp.text
+    assert "Mulai" in resp.text
+    assert "Sign in" not in resp.text
+    assert "Get started" not in resp.text
     assert "tanpa istilah konsol" not in resp.text
     assert "Scan · Guard · SIEM" not in resp.text
     assert "page-intro" in resp.text or "Belum ada artikel" in resp.text
@@ -134,6 +138,9 @@ def test_publish_then_public(client):
     body = page.text.split("<div class='body'>", 1)[-1].split("</div>", 1)[0]
     assert body.count("intro") == 1
     assert page.text.lower().count("<h1") == 1
+    assert "Daftar artikel" in page.text
+    assert "Semua artikel" not in page.text
+    assert "Mulai" in page.text
     index = client.get("/blog")
     assert "**bold**" not in index.text
     assert "bold teaser" in index.text
