@@ -24,8 +24,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openjdk-17-jre-headless \
     curl \
     ca-certificates \
-    && mkdir -p /opt/bundletool /tmp/bundletool-work \
-    && chmod 1777 /tmp/bundletool-work \
+    && mkdir -p /opt/bundletool /tmp/scans/bundletool-work \
+    && chmod 1777 /tmp/scans /tmp/scans/bundletool-work \
     && curl -fsSL \
         "https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar" \
         -o /opt/bundletool/bundletool.jar \
@@ -41,7 +41,7 @@ COPY backend/ /backend/
 
 ENV PYTHONPATH=/backend
 ENV BUNDLETOOL_JAR=/opt/bundletool/bundletool.jar
-ENV BUNDLETOOL_JAVA_TMPDIR=/tmp/bundletool-work
+ENV BUNDLETOOL_JAVA_TMPDIR=/tmp/scans/bundletool-work
 
 RUN chmod +x /app/entrypoint.sh
 
