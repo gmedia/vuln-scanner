@@ -137,6 +137,9 @@ class Settings(BaseSettings):
     wazuh_agent_manager_host: str = ""
 
     siem_enabled: bool = False
+    ai_gateway_enabled: bool = False
+    ai_usd_idr: int = 16000
+    ai_store_prompts: bool = False
     host_protect_enabled: bool = False
     host_protect_allow_mock: bool = False
     host_protect_allow_local_walk: bool = False

@@ -19,6 +19,7 @@ celery[redis]==5.6.3
 python-multipart==0.0.32
 websockets==17.0
 pyjwt[crypto]==2.13.0
+cryptography==50.0.1
 bcrypt==5.0.0
 sentry-sdk[fastapi]==2.66.1
 prometheus-fastapi-instrumentator==8.1.0

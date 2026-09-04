@@ -26,6 +26,14 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 # Import models first so metadata is populated
 from app.database import Base
+from app.models.ai_gateway import (  # noqa: F401
+    AiApiKey,
+    AiModel,
+    AiProvider,
+    AiReservation,
+    AiUsageEvent,
+    AiWallet,
+)
 from app.models.api_key import ApiKey  # noqa: F401
 from app.models.asset import ScanAsset  # noqa: F401
 from app.models.blog import BlogPost  # noqa: F401

@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.api.admin_ai_routes import router as admin_ai_router
 from app.api.admin_blog_routes import router as admin_blog_router
 from app.api.admin_routes import router as admin_router
 from app.api.asset_routes import router as asset_router
@@ -28,6 +29,7 @@ api_router.include_router(auth_router)
 api_router.include_router(credit_router)
 api_router.include_router(admin_router)
 api_router.include_router(admin_blog_router)
+api_router.include_router(admin_ai_router)
 api_router.include_router(blog_router)
 api_router.include_router(org_router)
 api_router.include_router(guard_router)
