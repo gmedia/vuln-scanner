@@ -719,6 +719,9 @@ describe("Host Protect page", () => {
       expect(screen.getByTestId("host-waf-copy-snippet")).toBeInTheDocument(),
     );
     expect(screen.getByTestId("host-waf-simulate")).toBeDisabled();
+    expect(screen.getByTestId("host-waf-copy-hint").textContent).toMatch(
+      /Clipboard only/i,
+    );
     await user.click(screen.getByTestId("host-waf-copy-snippet"));
     await waitFor(() =>
       expect(hostWafApi.fetchHostWafSnippet).toHaveBeenCalledWith("s1"),

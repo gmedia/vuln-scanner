@@ -1,6 +1,6 @@
 {
   "title": "Assets",
-  "subtitle": "Named scan targets for this workspace (SKU cap).",
+  "subtitle": "Named scan targets for this workspace (SKU cap). Not a Guard host.",
   "empty": "No assets yet.",
   "emptyHint": "Add a named IP or domain so scheduled scans and pack export have a target.",
   "emptyCta": "Add your first asset",

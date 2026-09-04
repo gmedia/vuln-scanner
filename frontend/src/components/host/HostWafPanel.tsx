@@ -185,6 +185,12 @@ export default function HostWafPanel({ sites }: { sites: HostSite[] }) {
               {t("wafCopySnippet")}
             </Button>
           </div>
+          <p
+            className="text-xs text-muted-foreground"
+            data-testid="host-waf-copy-hint"
+          >
+            {t("wafCopyHint")}
+          </p>
         </>
       )}
       <p className="text-xs text-muted-foreground" data-testid="host-waf-simulate-hint">

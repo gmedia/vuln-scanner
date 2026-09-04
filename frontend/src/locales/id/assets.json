@@ -1,6 +1,6 @@
 {
   "title": "Aset",
-  "subtitle": "Target scan bernama untuk workspace ini (batas SKU).",
+  "subtitle": "Target scan bernama untuk workspace ini (batas SKU). Bukan host Guard.",
   "empty": "Belum ada aset.",
   "emptyHint": "Tambah IP atau domain bernama agar jadwal scan dan pack export punya target.",
   "emptyCta": "Tambah aset pertama",
