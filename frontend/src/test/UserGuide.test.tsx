@@ -125,6 +125,9 @@ describe("UserGuide", () => {
     expect(document.body.textContent ?? "").toMatch(/quarantine/i);
     expect(document.body.textContent ?? "").toMatch(/reconstruct/i);
     expect(document.body.textContent ?? "").toMatch(/Copy nginx snippet/);
+    expect(document.body.textContent ?? "").toMatch(/Two machines/);
+    expect(document.body.textContent ?? "").toMatch(/fills the clipboard only/);
+    expect(document.body.textContent ?? "").toMatch(/not a Guard host/);
     expect(document.body.textContent ?? "").toMatch(/not Coraza on sinexis\.app/);
     expect(document.body.textContent ?? "").toMatch(/Host Multi/);
     expect(document.body.textContent ?? "").toMatch(/SecRuleEngine On/);

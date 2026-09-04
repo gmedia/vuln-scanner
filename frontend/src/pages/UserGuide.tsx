@@ -1018,6 +1018,9 @@ function UserGuide() {
                 <li>
                   <Trans i18nKey="hp5" ns="guide" components={transUi} />
                 </li>
+                <li>
+                  <Trans i18nKey="hp5b" ns="guide" components={transUi} />
+                </li>
               </Steps>
             </CardContent>
           </Card>
