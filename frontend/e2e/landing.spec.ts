@@ -7,13 +7,13 @@ test.describe("Landing", () => {
     await page.goto("/");
     await expect(
       page.locator(
-        "h1:has-text('Cek paparan IP, domain, dan mobile — lalu jadwalkan')",
+        "h1:has-text('Pasang jadwal cek di server yang sudah Anda bayar')",
       ),
     ).toBeVisible();
     await expect(
       page
         .locator(
-          "text=Security attach untuk colo, VPS, dan tumpukan hospitality",
+          "text=Security attach untuk colo, VPS, dan hospitality yang sudah ditagih",
         )
         .first(),
     ).toBeVisible();
@@ -22,7 +22,7 @@ test.describe("Landing", () => {
   test("shows attach-loop tagline", async ({ page }) => {
     await page.goto("/");
     await expect(
-      page.locator("text=Kredit, workspace, aset, Guard, dan uptime"),
+      page.locator("text=scan terjadwal dari sisi internet"),
     ).toBeVisible();
     await expect(
       page.locator("text=powered by the VulnScanner engine"),
@@ -46,7 +46,7 @@ test.describe("Landing", () => {
   test("What you can use today heading is visible", async ({ page }) => {
     await page.goto("/");
     await expect(
-      page.locator("h2:has-text('Yang bisa dipakai hari ini')"),
+      page.locator("h2:has-text('Yang jalan di akun hari ini')"),
     ).toBeVisible();
   });
 
@@ -55,7 +55,7 @@ test.describe("Landing", () => {
     await expect(page.locator("text=Scan IP")).toBeVisible();
     await expect(
       page.locator(
-        "text=Port, layanan, dan tingkat keparahan CVE pada host yang sudah Anda jalankan.",
+        "text=Port yang terbuka, versi layanan, CVE yang cocok menurut keparahan.",
       ),
     ).toBeVisible();
   });
