@@ -1,6 +1,6 @@
 # Spec: AI Gateway v1 (OpenAI-compatible resale)
 
-**Status:** **S1 shipped** (catalog + flag). **S2 in progress** (wallet / reservation / JWT usage). **S3+ not started** — no public `/v1` until S3.
+**Status:** **S1–S3 shipped** (catalog, wallet, customer `sk-sx-` keys, public `/v1` proxy + nginx). **S4+** SPA `/ai` not started. Git flag default **off**.
 **Goal:** resell **contracted OpenAI-compatible** wholesale APIs to Sinexis orgs: customer keys, usage ledger, admin catalog + trial chat.
 **Epic:** **new business line** (not P14, not Guard, not Workspace). Does **not** jump attach / Host Protect / GTM.
 **Depends:** P2 Workspace (JWT `org_id`, membership) · existing admin SPA kit · host nginx + Cloudflare for a new `/v1` location.
