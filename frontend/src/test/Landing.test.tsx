@@ -70,12 +70,12 @@ describe("Landing Page", () => {
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: /Find internet-facing exposure, schedule it, then alarm on the box/i,
+        name: /See what the internet sees on boxes you already pay for/i,
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Security attach for colo, VPS, and hospitality stacks",
+        "Attaches to colo, VPS, and hospitality already on the invoice",
         {
           selector: "p",
         },
@@ -86,7 +86,7 @@ describe("Landing Page", () => {
   it("renders attach-loop description without engine dump", () => {
     expect(
       screen.getByText(
-        /Periodic scan is not 24\/7 SIEM/,
+        /A schedule is not 24\/7 SIEM/,
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/VulnScanner engine/i)).not.toBeInTheDocument();
@@ -146,14 +146,14 @@ describe("Landing Page", () => {
     expect(screen.queryByText(/Guard → SIEM/)).not.toBeInTheDocument();
   });
 
-  it("renders How it works and What you can use today", () => {
+  it("renders How you run it and What is open in the account", () => {
     expect(
-      screen.getByRole("heading", { level: 2, name: "How it works" }),
+      screen.getByRole("heading", { level: 2, name: "How you run it" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
         level: 2,
-        name: "What you can use today",
+        name: "What is open in the account",
       }),
     ).toBeInTheDocument();
   });
@@ -184,13 +184,13 @@ describe("Landing Page", () => {
 
   it("renders FAQ", () => {
     expect(
-      screen.getByRole("heading", { level: 2, name: "Questions" }),
+      screen.getByRole("heading", { level: 2, name: "Straight answers" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Is this a human pentest?" }),
+      screen.getByRole("button", { name: "Is a person going to pentest us?" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Do I install two agents?" }),
+      screen.getByRole("button", { name: "Two agents on the same VM?" }),
     ).toBeInTheDocument();
   });
 
