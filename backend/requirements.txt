@@ -29,7 +29,7 @@ email-validator==2.3.0
 idna==3.18
 urllib3==2.7.0
 msgpack==1.2.1
-tornado==6.5.7
+tornado==6.5.8
 bleach==6.4.0
 markdown==3.8.2
 types-bleach==6.2.0.20241123
