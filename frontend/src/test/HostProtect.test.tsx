@@ -625,8 +625,10 @@ describe("Host Protect page", () => {
       expect(screen.getByTestId("host-waf-panel")).toBeInTheDocument(),
     );
     expect(screen.getByTestId("host-waf-events-empty")).toBeInTheDocument();
+    expect(screen.getByTestId("host-waf-simulate-hint")).toBeInTheDocument();
+    expect(screen.getByTestId("host-waf-events-hint")).toBeInTheDocument();
     expect(screen.getByTestId("host-waf-panel").textContent).toMatch(
-      /customer nginx|Host Multi/i,
+      /mock\.sqli|Malware tab|customer VPS|Host Multi/i,
     );
   });
 
