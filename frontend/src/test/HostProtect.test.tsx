@@ -628,7 +628,7 @@ describe("Host Protect page", () => {
     expect(screen.getByTestId("host-waf-simulate-hint")).toBeInTheDocument();
     expect(screen.getByTestId("host-waf-events-hint")).toBeInTheDocument();
     expect(screen.getByTestId("host-waf-panel").textContent).toMatch(
-      /mock\.sqli|sinexis-waf-lab|Malware tab|customer VPS|Host Multi/i,
+      /preview only|helper posts|customer VPS|Host Multi|Malware tab/i,
     );
   });
 
@@ -676,7 +676,7 @@ describe("Host Protect page", () => {
       expect(screen.getByTestId("host-waf-simulate")).toBeEnabled(),
     );
     expect(screen.getByTestId("host-waf-simulate-hint").textContent).toMatch(
-      /sinexis-waf-lab/i,
+      /Preview only/i,
     );
   });
 
