@@ -307,7 +307,7 @@ async def test_mock_scan_writes_hit(db_session: AsyncSession, ctx):
     await db_session.commit()
     out = await run_mock_host_scan(db_session, scan.id)
     assert out["ok"] is True
-    assert out["hit_count"] == 1
+    assert out["hit_count"] == 0
     _bind_db(db_session)
     try:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -316,6 +316,8 @@ async def test_mock_scan_writes_hit(db_session: AsyncSession, ctx):
             assert hits.json() == []
             stored = await db_session.execute(select(HostHit).where(HostHit.site_id == site.id))
             row = stored.scalar_one()
+            await db_session.refresh(scan)
+            assert scan.hit_count == 0
             assert row.engine == "mock"
             assert row.hit_class == "webshell"
             assert row.rel_path == "wp-content/uploads/cache.php"

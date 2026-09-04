@@ -103,7 +103,8 @@ async def _persist_hits(
                             dest_basename=dest,
                         )
                     )
-        hit_count += 1
+        if row_engine != "mock":
+            hit_count += 1
     return hit_count
 
 

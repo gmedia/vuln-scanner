@@ -466,11 +466,11 @@ export default function HostProtect() {
                             activeHits.length === 0 &&
                             ignoredHits.length > 0
                           ? t("hitsHidden")
-                          : lastScan?.status === "completed" && lastCount === 0
+                          : lastScan?.status === "completed" &&
+                              activeHits.length === 0 &&
+                              ignoredHits.length === 0
                             ? t("hitsClean")
-                            : lastScan?.status === "completed" && lastCount > 0
-                              ? t("hitsUnlisted")
-                              : t("hitsEmpty");
+                            : t("hitsEmpty");
                 const scanStatusCopy =
                   lastScan?.status === "queued"
                     ? t("scanQueued")
@@ -491,11 +491,9 @@ export default function HostProtect() {
                             ? t("scanCompletedIgnored", {
                                 count: ignoredHits.length,
                               })
-                            : lastScan?.status === "completed" && lastCount === 0
+                            : lastScan?.status === "completed"
                               ? t("scanCompletedNone")
-                              : lastScan?.status === "completed"
-                                ? t("scanCompletedUnlisted")
-                                : null;
+                              : null;
                 return (
                 <li key={s.id}>
                   <Card>
