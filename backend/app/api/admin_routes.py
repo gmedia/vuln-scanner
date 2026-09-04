@@ -38,9 +38,6 @@ from app.schemas.admin import (
     HppCostLineListResponse,
     HppOverheadItem,
     HppOverheadUpdateRequest,
-    HppQuoteLine,
-    HppQuoteRequest,
-    HppQuoteResponse,
     HppRateItem,
     HppRateListResponse,
     HppRateUpdateRequest,
@@ -698,99 +695,6 @@ async def delete_hpp_cost(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cost line not found")
     await db.delete(row)
     await db.commit()
-
-
-_SKU_LIST_FOR_QUOTE: list[tuple[str, int, int]] = [
-    ("basic", 300_000, 10),
-    ("pro", 650_000, 24),
-    ("multi", 2_000_000, 60),
-]
-
-
-@router.post("/hpp/quote", response_model=HppQuoteResponse)
-async def post_hpp_quote(
-    request: Request,
-    body: HppQuoteRequest,
-    current_admin: User = Depends(get_current_admin),
-    db: AsyncSession = Depends(get_db),
-) -> HppQuoteResponse | Response:
-    limit_response = await admin_limiter(request)
-    if limit_response:
-        return limit_response
-
-    rates_result = await db.execute(select(HppRate))
-    rates = {row.key: row.amount_idr for row in rates_result.scalars().all()}
-
-    if body.overhead_idr is None:
-        ov = await db.get(HppOverhead, HPP_OVERHEAD_SINGLETON_ID)
-        overhead_idr = int(ov.amount_idr) if ov is not None else 0
-    else:
-        overhead_idr = body.overhead_idr
-
-    monthly_compute_idr = int(round(body.monthly_instance_idr))
-    daily_hours = 730.0
-    monthly_kwh = body.cpu_vcpu * body.power_watt_per_vcpu * body.pue * daily_hours / 1000.0
-    monthly_power_idr = int(round(monthly_kwh * body.electricity_idr_per_kwh))
-    monthly_total_idr = monthly_compute_idr + monthly_power_idr
-    overhead_pool_idr = monthly_total_idr + overhead_idr
-
-    sanitized_jobs: dict[str, int] = {}
-    for key in HPP_KEYS:
-        raw = body.jobs.get(key, 0)
-        try:
-            v = int(raw)
-        except (TypeError, ValueError):
-            v = 0
-        sanitized_jobs[key] = max(v, 0)
-    total_jobs = sum(sanitized_jobs.values())
-
-    lines: list[HppQuoteLine] = []
-    total_hpp_idr = 0
-    for key in HPP_KEYS:
-        jobs = sanitized_jobs[key]
-        rate = int(rates.get(key, 0))
-        line_hpp = jobs * rate
-        total_hpp_idr += line_hpp
-        share = int(round(overhead_pool_idr * (jobs / total_jobs))) if total_jobs > 0 and jobs > 0 else 0
-        fully_unit = rate + (share // jobs if jobs > 0 else 0)
-        lines.append(
-            HppQuoteLine(
-                key=key,
-                jobs=jobs,
-                rate_idr=rate,
-                hpp_idr=line_hpp,
-                fully_loaded_unit_idr=fully_unit,
-            )
-        )
-
-    total_fully = total_hpp_idr + overhead_pool_idr
-    breakeven_unit_idr = int(round(total_fully / total_jobs)) if total_jobs > 0 else 0
-
-    def pct(num: int, denom: int) -> float:
-        if denom <= 0:
-            return 0.0
-        return round((num / denom) * 100, 1)
-
-    return HppQuoteResponse(
-        provider=body.provider,
-        region=body.region,
-        monthly_compute_idr=monthly_compute_idr,
-        monthly_power_idr=monthly_power_idr,
-        monthly_total_idr=monthly_total_idr,
-        total_jobs=total_jobs,
-        breakeven_unit_idr=breakeven_unit_idr,
-        overhead_pool_idr=overhead_pool_idr,
-        total_hpp_idr=total_hpp_idr,
-        total_fully_loaded_hpp_idr=total_fully,
-        breakeven_pct_of_list_basic=pct(breakeven_unit_idr, _SKU_LIST_FOR_QUOTE[0][1]),
-        breakeven_pct_of_list_pro=pct(breakeven_unit_idr, _SKU_LIST_FOR_QUOTE[1][1]),
-        breakeven_pct_of_list_multi=pct(breakeven_unit_idr, _SKU_LIST_FOR_QUOTE[2][1]),
-        lines=lines,
-        note=(
-            "Server price only (compute + facility power). Add third-party "
-            "SaaS like Cloudflare Pro, SMTP, or backups via the opex journal."
-        ),
-    )
 
 
 @router.put("/hpp/{key}", response_model=HppRateItem)
