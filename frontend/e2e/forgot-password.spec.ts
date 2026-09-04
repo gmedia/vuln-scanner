@@ -6,7 +6,7 @@ test.describe("Auth — Forgot Password", () => {
 
   test("forgot password page renders correctly", async ({ page }) => {
     await page.goto("/forgot-password");
-    await expect(page.locator("h1")).toContainText("Lupa kata sandi");
+    await expect(page.locator("h1")).toContainText("Reset kata sandi akun ini");
     await expect(page.locator("input#email")).toBeVisible();
     await expect(page.locator("button[type='submit']")).toBeVisible();
   });
@@ -17,11 +17,11 @@ test.describe("Auth — Forgot Password", () => {
     await page.goto("/forgot-password");
     await page.locator("input#email").fill(e2eEmail());
     await page.locator("button[type='submit']").click();
-    await expect(page.locator("h1:has-text('Periksa email Anda')")).toBeVisible(
-      {
-        timeout: 15_000,
-      },
-    );
+    await expect(
+      page.locator("h1:has-text('Periksa kotak masuk itu')"),
+    ).toBeVisible({
+      timeout: 15_000,
+    });
   });
 
   test("forgot password with empty email shows browser validation", async ({

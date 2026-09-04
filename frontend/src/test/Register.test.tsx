@@ -61,7 +61,7 @@ async function submitValidRegistration() {
   fireEvent.change(screen.getByLabelText("Confirm Password"), {
     target: { value: "password123" },
   });
-  fireEvent.click(screen.getByRole("button", { name: /create account/i }));
+  fireEvent.click(screen.getByRole("button", { name: /open scan account/i }));
 }
 
 describe("Register", () => {
@@ -82,7 +82,7 @@ describe("Register", () => {
   it("renders the registration form with email input", () => {
     render(<Register />);
     expect(screen.getByLabelText("Email")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("you@example.com")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("ops@example.com")).toBeInTheDocument();
   });
 
   it("renders the password input", () => {
@@ -102,7 +102,7 @@ describe("Register", () => {
 
   it("renders the submit button", () => {
     render(<Register />);
-    const button = screen.getByRole("button", { name: /create account/i });
+    const button = screen.getByRole("button", { name: /open scan account/i });
     expect(button).toBeInTheDocument();
     expect(button).not.toBeDisabled();
   });
@@ -110,13 +110,13 @@ describe("Register", () => {
   it("renders the Crosshair icon and Create account title", () => {
     render(<Register />);
     expect(
-      screen.getByRole("heading", { name: /create a scan account/i }),
+      screen.getByRole("heading", { name: /open a scan account/i }),
     ).toBeInTheDocument();
   });
 
   it("renders Sign in link", () => {
     render(<Register />);
-    const signInLink = screen.getByText("Already have an account?");
+    const signInLink = screen.getByText("Already have a scan account?");
     expect(signInLink).toBeInTheDocument();
     const link = signInLink.parentElement?.querySelector("a");
     expect(link).toHaveAttribute("href", "/login");
@@ -133,10 +133,10 @@ describe("Register", () => {
     fireEvent.change(screen.getByLabelText("Confirm Password"), {
       target: { value: "short" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /create account/i }));
+    fireEvent.click(screen.getByRole("button", { name: /open scan account/i }));
     await waitFor(() => {
       expect(
-        screen.getByText("Password must be at least 8 characters"),
+        screen.getByText("Use at least 8 characters"),
       ).toBeInTheDocument();
     });
     expect(defaultAuthState.register).not.toHaveBeenCalled();
@@ -153,9 +153,9 @@ describe("Register", () => {
     fireEvent.change(screen.getByLabelText("Confirm Password"), {
       target: { value: "different" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /create account/i }));
+    fireEvent.click(screen.getByRole("button", { name: /open scan account/i }));
     await waitFor(() => {
-      expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
+      expect(screen.getByText("Those two passwords do not match")).toBeInTheDocument();
     });
     expect(defaultAuthState.register).not.toHaveBeenCalled();
   });
@@ -185,7 +185,9 @@ describe("Register", () => {
     render(<Register />);
     await submitValidRegistration();
     await waitFor(() => {
-      expect(screen.getByText("Registration Successful!")).toBeInTheDocument();
+      expect(
+        screen.getByText("Account created. Verify your email."),
+      ).toBeInTheDocument();
     });
     expect(
       screen.getByText(
@@ -193,9 +195,9 @@ describe("Register", () => {
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /resend verification email/i }),
+      screen.getByRole("button", { name: /resend the verify email/i }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Go to Sign In")).toBeInTheDocument();
+    expect(screen.getByText("Sign in now")).toBeInTheDocument();
   });
 
   it("shows send-failed warning and resend on email_sent false", async () => {
@@ -208,13 +210,15 @@ describe("Register", () => {
     render(<Register />);
     await submitValidRegistration();
     await waitFor(() => {
-      expect(screen.getByText("Registration Successful!")).toBeInTheDocument();
+      expect(
+        screen.getByText("Account created. Verify your email."),
+      ).toBeInTheDocument();
     });
     expect(
       screen.getByText(/email verifikasi gagal dikirim/i),
     ).toBeInTheDocument();
     fireEvent.click(
-      screen.getByRole("button", { name: /resend verification email/i }),
+      screen.getByRole("button", { name: /resend the verify email/i }),
     );
     await waitFor(() => {
       expect(defaultAuthState.resendVerification).toHaveBeenCalledWith(
@@ -234,9 +238,11 @@ describe("Register", () => {
     render(<Register />);
     await submitValidRegistration();
     await waitFor(() => {
-      expect(screen.getByText("Registration Successful!")).toBeInTheDocument();
+      expect(
+        screen.getByText("Account created. Verify your email."),
+      ).toBeInTheDocument();
     });
-    const goToSignIn = screen.getByText("Go to Sign In");
+    const goToSignIn = screen.getByText("Sign in now");
     expect(goToSignIn.closest("a")).toHaveAttribute("href", "/login");
   });
 
@@ -248,7 +254,7 @@ describe("Register", () => {
     render(<Register />);
     await submitValidRegistration();
     await waitFor(() => {
-      expect(screen.getByText("Creating account...")).toBeInTheDocument();
+      expect(screen.getByText("Opening the scan account...")).toBeInTheDocument();
     });
   });
 
@@ -275,7 +281,7 @@ describe("Register", () => {
     await submitValidRegistration();
     await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: /creating account/i }),
+        screen.getByRole("button", { name: /opening the scan account/i }),
       ).toBeDisabled();
     });
   });

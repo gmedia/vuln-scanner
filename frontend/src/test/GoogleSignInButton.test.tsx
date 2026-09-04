@@ -39,7 +39,7 @@ describe("GoogleSignInButton", () => {
     render(<GoogleSignInButton />);
     expect(await screen.findByTestId("google-sign-in")).toBeInTheDocument();
     expect(screen.getByTestId("google-sign-in-btn")).toHaveTextContent(
-      /continue with google/i,
+      /sign in with google/i,
     );
   });
 

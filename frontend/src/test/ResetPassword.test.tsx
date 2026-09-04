@@ -55,28 +55,30 @@ describe("ResetPassword", () => {
     it("renders Invalid Reset Link heading", () => {
       render(<ResetPassword />);
       expect(
-        screen.getByRole("heading", { name: "Invalid Reset Link" }),
+        screen.getByRole("heading", { name: "This reset link is not valid" }),
       ).toBeInTheDocument();
     });
 
     it("renders error description text", () => {
       render(<ResetPassword />);
       expect(
-        screen.getByText(/This password reset link is invalid or missing a token/),
+        screen.getByText(
+          /This password reset link is missing a token or is no longer valid/,
+        ),
       ).toBeInTheDocument();
     });
 
     it("renders Request new link primary CTA to /forgot-password", () => {
       render(<ResetPassword />);
       expect(
-        screen.getByRole("link", { name: /request new link/i }),
+        screen.getByRole("link", { name: /request a new reset link/i }),
       ).toHaveAttribute("href", "/forgot-password");
     });
 
     it("renders Back to sign in secondary link", () => {
       render(<ResetPassword />);
       expect(
-        screen.getByRole("link", { name: /back to sign in/i }),
+        screen.getByRole("link", { name: /return to sign in/i }),
       ).toHaveAttribute("href", "/login");
     });
   });
@@ -85,7 +87,7 @@ describe("ResetPassword", () => {
     it("renders Set new password heading", () => {
       render(<ResetPassword />);
       expect(
-        screen.getByRole("heading", { name: /set new password/i }),
+        screen.getByRole("heading", { name: /choose a new password/i }),
       ).toBeInTheDocument();
     });
 
@@ -100,7 +102,7 @@ describe("ResetPassword", () => {
     it("renders Reset Password button", () => {
       render(<ResetPassword />);
       expect(
-        screen.getByRole("button", { name: "Reset Password" }),
+        screen.getByRole("button", { name: "Save new password" }),
       ).toBeInTheDocument();
     });
 
@@ -110,11 +112,11 @@ describe("ResetPassword", () => {
       fireEvent.change(inputs[0], { target: { value: "short" } });
       fireEvent.change(inputs[1], { target: { value: "short" } });
 
-      fireEvent.click(screen.getByRole("button", { name: "Reset Password" }));
+      fireEvent.click(screen.getByRole("button", { name: "Save new password" }));
 
       await waitFor(() => {
         expect(
-          screen.getByText("Password must be at least 8 characters"),
+          screen.getByText("Use at least 8 characters"),
         ).toBeInTheDocument();
       });
       expect(mockResetPassword).not.toHaveBeenCalled();
@@ -126,11 +128,11 @@ describe("ResetPassword", () => {
       fireEvent.change(inputs[0], { target: { value: "password123" } });
       fireEvent.change(inputs[1], { target: { value: "different456" } });
 
-      fireEvent.click(screen.getByRole("button", { name: "Reset Password" }));
+      fireEvent.click(screen.getByRole("button", { name: "Save new password" }));
 
       await waitFor(() => {
         expect(
-          screen.getByText("Passwords do not match"),
+          screen.getByText("Those two passwords do not match"),
         ).toBeInTheDocument();
       });
       expect(mockResetPassword).not.toHaveBeenCalled();
@@ -165,11 +167,11 @@ describe("ResetPassword", () => {
       fireEvent.change(inputs[0], { target: { value: "newpassword123" } });
       fireEvent.change(inputs[1], { target: { value: "newpassword123" } });
 
-      fireEvent.click(screen.getByRole("button", { name: "Reset Password" }));
+      fireEvent.click(screen.getByRole("button", { name: "Save new password" }));
 
       await waitFor(() => {
         expect(
-          screen.getByRole("heading", { name: "Password Reset Successful!" }),
+          screen.getByRole("heading", { name: "Password updated" }),
         ).toBeInTheDocument();
       });
     });
@@ -180,7 +182,7 @@ describe("ResetPassword", () => {
       fireEvent.change(inputs[0], { target: { value: "newpassword123" } });
       fireEvent.change(inputs[1], { target: { value: "newpassword123" } });
 
-      fireEvent.click(screen.getByRole("button", { name: "Reset Password" }));
+      fireEvent.click(screen.getByRole("button", { name: "Save new password" }));
 
       await waitFor(() => {
         expect(screen.getByRole("link", { name: "Sign In" })).toHaveAttribute(
@@ -196,7 +198,7 @@ describe("ResetPassword", () => {
       fireEvent.change(inputs[0], { target: { value: "newpassword123" } });
       fireEvent.change(inputs[1], { target: { value: "newpassword123" } });
 
-      fireEvent.click(screen.getByRole("button", { name: "Reset Password" }));
+      fireEvent.click(screen.getByRole("button", { name: "Save new password" }));
 
       await waitFor(() => {
         expect(mockResetPassword).toHaveBeenCalledWith(
@@ -216,10 +218,10 @@ describe("ResetPassword", () => {
       fireEvent.change(inputs[0], { target: { value: "newpassword123" } });
       fireEvent.change(inputs[1], { target: { value: "newpassword123" } });
 
-      fireEvent.click(screen.getByRole("button", { name: "Reset Password" }));
+      fireEvent.click(screen.getByRole("button", { name: "Save new password" }));
 
       await waitFor(() => {
-        expect(screen.getByText("Resetting password...")).toBeInTheDocument();
+        expect(screen.getByText("Saving the new password...")).toBeInTheDocument();
       });
     });
 
