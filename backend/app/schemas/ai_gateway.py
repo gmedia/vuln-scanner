@@ -135,3 +135,25 @@ class AiUsageOut(BaseModel):
 class AiUsageList(BaseModel):
     items: list[AiUsageOut]
     total: int
+
+
+class AiKeyCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=128)
+
+
+class AiKeyOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    name: str
+    prefix: str
+    is_active: bool
+    rate_limit_rpm: int
+    created_at: datetime
+    last_used_at: datetime | None
+    key: str | None = None
+
+
+class AiKeyList(BaseModel):
+    items: list[AiKeyOut]
+    total: int
