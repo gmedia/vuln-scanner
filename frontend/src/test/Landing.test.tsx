@@ -70,12 +70,12 @@ describe("Landing Page", () => {
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: /Find internet-facing exposure, schedule it, then alarm on the box/i,
+        name: /Put the servers you already pay for on a scan calendar/i,
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Security attach for colo, VPS, and hospitality stacks",
+        "Security attach for colo, VPS, and hospitality already on the bill",
         {
           selector: "p",
         },
@@ -146,14 +146,14 @@ describe("Landing Page", () => {
     expect(screen.queryByText(/Guard → SIEM/)).not.toBeInTheDocument();
   });
 
-  it("renders How it works and What you can use today", () => {
+  it("renders How attach works and What ships today", () => {
     expect(
-      screen.getByRole("heading", { level: 2, name: "How it works" }),
+      screen.getByRole("heading", { level: 2, name: "How attach works" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
         level: 2,
-        name: "What you can use today",
+        name: "What ships today",
       }),
     ).toBeInTheDocument();
   });
