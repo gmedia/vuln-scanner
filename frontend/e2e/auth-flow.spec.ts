@@ -7,7 +7,7 @@ test.describe("Auth — Login", () => {
   test("login page renders correctly", async ({ page }) => {
     await page.goto("/login");
     await expect(page.locator("h1")).toContainText(
-      /Masuk untuk scan|Sign in to scan/,
+      /Masuk ke akun scan|Open your scan account/,
     );
     await expect(page.locator("input#email")).toBeVisible();
     await expect(page.locator("input#password")).toBeVisible();
@@ -53,7 +53,7 @@ test.describe("Auth — Register", () => {
   test("register page renders correctly", async ({ page }) => {
     await page.goto("/register");
     await expect(page.locator("h1")).toContainText(
-      /Buat akun scan|Create a scan account/,
+      /Buka akun scan|Open a scan account/,
     );
     await expect(page.locator("input#email")).toBeVisible();
     await expect(page.locator("input#password")).toBeVisible();
@@ -98,7 +98,7 @@ test.describe("Auth — Register", () => {
     await page.locator("input#confirmPassword").fill("Str0ng!Pass123");
     await page.locator("button[type='submit']").click();
     await expect(
-      page.locator("h1:has-text('Pendaftaran berhasil!')"),
+      page.locator("h1:has-text('Akun dibuat. Verifikasi email.')"),
     ).toBeVisible({ timeout: 15_000 });
   });
 });
@@ -117,7 +117,7 @@ test.describe("Auth — Logout", () => {
     await signOutBtn.click();
     await page.waitForURL("/login", { timeout: 10_000 });
     await expect(page.locator("h1")).toContainText(
-      /Masuk untuk scan|Sign in to scan/,
+      /Masuk ke akun scan|Open your scan account/,
     );
   });
 
@@ -133,7 +133,7 @@ test.describe("Auth — Logout", () => {
     await freshPage.goto("/dashboard");
     await freshPage.waitForURL("/login", { timeout: 10_000 });
     await expect(freshPage.locator("h1")).toContainText(
-      /Masuk untuk scan|Sign in to scan/,
+      /Masuk ke akun scan|Open your scan account/,
     );
     await freshContext.close();
   });

@@ -16,20 +16,24 @@ test.describe("Verify Email", () => {
 
     test("shows Check Your Email card title", async ({ page }) => {
       await page.goto("/verify-email");
-      await expect(page.locator("text=Periksa email Anda")).toBeVisible();
+      await expect(page.locator("text=Verifikasi akun scan ini")).toBeVisible();
     });
 
     test("shows instructional text", async ({ page }) => {
       await page.goto("/verify-email");
       await expect(
-        page.locator("text=Buka tautan yang kami kirim untuk verifikasi akun."),
+        page.locator(
+          "text=Buka tautan yang kami kirim lewat email. Sebelum itu Anda belum bisa scan.",
+        ),
       ).toBeVisible();
     });
 
     test("Back to Login button is visible", async ({ page }) => {
       await page.goto("/verify-email");
       await expect(
-        page.locator("a[href='/login']").locator("text=Kembali ke masuk"),
+        page
+          .locator("a[href='/login']")
+          .locator("text=Kembali ke halaman masuk"),
       ).toBeVisible();
     });
 
@@ -38,7 +42,7 @@ test.describe("Verify Email", () => {
       const emailInput = page.locator("input[type='email']");
       await expect(emailInput).toHaveAttribute(
         "placeholder",
-        "email pendaftaran Anda",
+        "email di akun scan ini",
       );
     });
 
@@ -48,7 +52,7 @@ test.describe("Verify Email", () => {
       await emailInput.fill("test@example.com");
 
       const resendBtn = page.locator(
-        "button:has-text('Kirim ulang email verifikasi')",
+        "button:has-text('Kirim email verifikasi lagi')",
       );
       await expect(resendBtn).not.toBeDisabled();
     });
@@ -61,11 +65,11 @@ test.describe("Verify Email", () => {
       );
 
       await page
-        .locator("button:has-text('Kirim ulang email verifikasi')")
+        .locator("button:has-text('Kirim email verifikasi lagi')")
         .click();
 
       const feedback = page.locator(
-        "text=/Email verifikasi dikirim ulang|Terlalu banyak percobaan/",
+        "text=/Email verifikasi dikirim lagi|Terlalu banyak percobaan/",
       );
       await expect(feedback).toBeVisible({ timeout: 15_000 });
     });
@@ -81,7 +85,7 @@ test.describe("Verify Email", () => {
       });
 
       await expect(
-        page.getByRole("heading", { name: /Verifikasi gagal/i }),
+        page.getByRole("heading", { name: /Verifikasi tidak selesai/i }),
       ).toBeVisible();
     });
 
@@ -89,7 +93,9 @@ test.describe("Verify Email", () => {
       await page.goto("/verify-email?token=invalid-token-value");
 
       await expect(
-        page.locator("a[href='/login']").locator("text=Kembali ke masuk"),
+        page
+          .locator("a[href='/login']")
+          .locator("text=Kembali ke halaman masuk"),
       ).toBeVisible({ timeout: 15_000 });
     });
   });

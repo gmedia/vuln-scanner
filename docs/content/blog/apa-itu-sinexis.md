@@ -1,71 +1,75 @@
-# Apa itu Sinexis?
+# Sinexis menempel di colo dan VPS yang sudah Anda bayar
 
-Server Anda sudah jalan. Website sudah online. Sinexis tidak datang untuk menggantikan keduanya.
+Anda sudah punya rak, VPS, atau hosting. Tagihannya sudah jalan. Yang sering kosong adalah kebiasaan memeriksa: apakah permukaan yang menghadap internet masih sama seperti bulan lalu.
 
-Yang kami tambahkan cuma satu hal: pemeriksaan berkala dari internet terhadap alamat yang sudah Anda punya, lalu kabar kalau ada yang berubah. Bukan hosting baru, bukan migrasi, bukan "serahkan server ke kami".
+Sinexis mengisi celah itu. Bukan pindahan server, bukan kontrak colo baru, dan bukan janji "serahkan mesinnya, kami yang jaga".
 
-Bayangkan ruko yang sudah Anda sewa dan sudah dipakai berjualan. Sinexis bukan tukang renovasi, dan bukan penjaga yang duduk di dalam sepanjang malam. Kami lewat di depan secara berkala, melihat pintu, jendela, gembok, dan papan nama dari trotoar. Kalau bulan depan ada jendela yang tertinggal terbuka atau gembok yang sudah longgar, Anda kami kabari.
+Yang ditambahkan: pemeriksaan dari internet pada alamat yang sudah Anda miliki, jadwal supaya pemeriksaan itu berulang, lalu kabar kalau ada yang berubah. Kalau nanti Anda butuh sinyal dari dalam mesin, itu modul terpisah, dan kami tidak menyamarkannya sebagai scan.
 
-Itu batas pekerjaannya, dan batas itu memang kami jaga.
+## Menempel, bukan mengganti
 
-## Menempel, bukan menggantikan
+Produk ini dijual di samping infra yang sudah dibayar. Colo tetap colo. VPS tetap VPS. Firewall, backup, dan antivirus perangkat tetap urusan Anda.
 
-Sinexis dipakai di atas colo, VPS, atau hosting yang sudah Anda bayar. Tidak ada yang perlu dipindahkan, tidak ada kontrak lama yang harus diputus, dan untuk pemeriksaan dari luar tidak ada program yang harus dipasang di server.
+Untuk pemeriksaan dari luar, tidak ada program yang harus dipasang di server. Targetnya domain atau IP yang sudah live. Hasilnya dibaca di dasbor, bisa dibagi ke rekan, bisa dijadwalkan.
 
-Karena itu firewall, antivirus perangkat, dan backup tetap urusan Anda. Sinexis menambah satu kebiasaan: ada yang rutin melihat, dan ada catatannya.
+Itu alasan kata "attach" muncul di produk. Modul keamanan yang menempel di layanan yang sudah ada, bukan platform baru yang harus menggantikan tagihan lama.
 
-## Dari luar, bukan dari dalam
+## Dua arah yang tidak boleh dicampur
 
-Banyak penawaran keamanan mencampur dua hal yang sebenarnya berbeda. Sinexis memisahkannya.
+Banyak penawaran keamanan menyatukan dua pekerjaan jadi satu slogan. Sinexis memisahkannya.
 
-**Pemeriksaan dari luar** adalah pekerjaan sehari-hari kami: melihat apa yang terlihat publik dari internet. Port yang terbuka, sertifikat HTTPS, pengaturan DNS, header keamanan. Ibarat foto rutin dari trotoar, lalu dibandingkan dengan foto bulan lalu.
+**Dari luar.** Ini pekerjaan harian Scan: port, DNS, sertifikat HTTPS, header, layanan yang menjawab dari internet. Foto permukaan, lalu dibanding dengan foto sebelumnya. Tidak masuk folder, tidak buka panel hosting.
 
-**Pemantauan dari dalam server** adalah pekerjaan lain. Itu butuh program yang dipasang di dalam mesin dan orang yang benar-benar membaca hasilnya. Sinexis punya modul untuk itu, tapi kami tidak menjualnya seolah-olah sama dengan pemeriksaan dari luar, dan tidak menjanjikan ada tim yang berjaga tiap jam.
+**Dari dalam.** Ini Guard, Host Protect, dan SIEM. Butuh program di mesin, atau orang yang membaca peristiwa. Bukan pengganti Scan, dan bukan "tim berjaga 24 jam" yang kami jual diam-diam.
 
-## Isi akun, dalam bahasa sehari-hari
+Kalau yang Anda butuhkan bulan ini cuma bukti bahwa situs dan server masih diperiksa, cukup Scan plus jadwal. Jangan beli alarm dalam mesin sebelum kebiasaan membaca laporan terbentuk.
 
-**Scan domain** — memeriksa website dari internet: DNS, sertifikat HTTPS, header keamanan, dan teknologi yang terlihat dari luar.
+## Isi akun, tanpa istilah konsol
 
-**Scan IP** — memeriksa server dari internet: port yang terbuka, layanan yang menjawab, dan kerentanan publik yang cocok dengan layanan itu.
+**Scan domain.** Website dari internet: DNS, HTTPS, header keamanan, teknologi yang terbaca publik, subdomain yang tercatat di luar.
 
-**Scan mobile** — pemeriksaan berkas aplikasi Android atau iOS yang Anda unggah sendiri. Ini pelengkap, bukan menu utama untuk pemilik hosting atau VPS.
+**Scan IP.** Server dari internet: port terbuka, layanan yang menjawab, kerentanan publik yang cocok dengan versi itu.
 
-**Scan Attach (jadwal)** — pemeriksaan yang berulang sendiri tiap minggu atau tiap bulan, lalu dibandingkan dengan hasil sebelumnya. Yang ditonjolkan adalah temuan serius yang **baru**.
+**Scan mobile.** Berkas Android atau iOS yang Anda unggah. Pelengkap. Bukan menu utama pemilik hosting atau VPS.
 
-**Kredit** — saldo untuk setiap pemeriksaan, mirip pulsa. Isi, pakai, lihat sisanya.
+**Scan Attach.** Jadwal mingguan atau bulanan. Yang ditonjolkan temuan serius yang **baru**, bukan daftar yang sama diulang tiap periode.
 
-**Aset** — nama manusiawi untuk target Anda: "website booking", "VPS produksi", "server kantor". Supaya tidak salah ketik alamat setiap kali.
+**Kredit.** Saldo tiap pemeriksaan. Isi, pakai, lihat sisa. Mirip pulsa. Angka rupiah tidak dibahas di artikel ini. Tarif ada di layar harga di dalam akun.
 
-**Workspace** — tempat mengundang rekan satu tim, dengan peran owner, admin, member, dan viewer.
+**Aset.** Nama manusiawi untuk target: "situs booking", "VPS produksi". Supaya alamat tidak diketik ulang tiap kali, dan jadwal menempel di nama itu.
 
-**Uptime** — cek berkala tiap beberapa menit: situs atau port ini masih menjawab dari internet atau tidak.
+**Workspace.** Satu organisasi, beberapa orang, empat peran: owner, admin, member, viewer.
 
-**Guard** — lapisan tipis di dalam server: daftar mesin yang terdaftar plus alert yang benar-benar kritis. Satu agen per mesin, bukan dua.
+**Uptime.** Tiap beberapa menit: dari internet, situs atau port ini masih menjawab atau tidak.
 
-**SIEM** — pencarian peristiwa organisasi plus Cases, yaitu tiket insiden (buka, tangani, tutup) yang tersimpan di database aplikasi Sinexis. Di banyak akun modul ini masih dimatikan sampai ada orang yang siap menanganinya.
+**Guard.** Lapisan tipis di dalam server: daftar mesin yang terdaftar plus alert yang benar-benar kritis. Satu `wazuh-agent` per mesin. Bukan dasbor SIEM pelanggan.
 
-**Host Protect** — pemeriksaan berkas mencurigakan di disk server Anda, lewat program pembantu kecil yang jalan di mesin itu sendiri.
+**SIEM.** Pencarian peristiwa organisasi, plus Cases: tiket insiden (buka, tangani, tutup) di database aplikasi Sinexis. Bukan plugin di sistem pemantauan lain. Di banyak akun modul ini masih mati sampai ada orang yang siap menutup tiket.
+
+**Host Protect.** Pemeriksaan berkas mencurigakan di disk, lewat program pembantu yang jalan **di mesin pelanggan**. Bukan pekerja SaaS yang berpura-pura masuk folder web Anda. Kalau pembantunya belum ada, statusnya menunggu atau tidak terjangkau. Tidak ada temuan yang dikarang.
+
+**Host WAF.** Opsional, per situs, di nginx pelanggan. Tidak pernah ditempel di pintu depan layanan Sinexis.
 
 ## Siapa yang biasanya cocok
 
-Tim yang domain atau servernya sudah berjalan di hosting, VPS, atau colo, dengan satu sampai beberapa alamat yang menghadap internet.
+Tim ops di pelanggan colo atau VPS yang sudah bayar infra, lalu butuh satu baris keamanan yang bisa ditunjukkan tiap bulan.
 
-Kantor atau hotel yang butuh laporan singkat setiap bulan, bukan tumpukan istilah teknis.
+Kantor atau grup properti yang ditanya "keamanan kita bagaimana" dan butuh satu halaman, bukan tumpukan istilah.
 
-Penyedia layanan yang sudah menagih colo atau VPS dan ingin menambahkan satu baris keamanan yang bisa dipertanggungjawabkan.
+Penyedia layanan yang sudah menagih rak atau VPS dan ingin menempelkan pemeriksaan berkala, tanpa harus ganti vendor atau buka proyek keamanan baru.
 
 ## Yang tidak kami janjikan
 
-Tidak ada klaim "aman seratus persen". Pemeriksaan rutin mengecilkan peluang lubang menganga berbulan-bulan tanpa ada yang tahu; itu manfaat yang wajar dijanjikan.
+Tidak ada klaim aman seratus persen. Yang wajar dijanjikan: lubang di permukaan tidak menganga berbulan-bulan tanpa ada yang tahu.
 
-Pemeriksaan otomatis juga tidak menggantikan pengujian oleh manusia. Uji logika bisnis seperti alur checkout atau salah pengaturan hak akses tetap butuh orang yang menelusuri aplikasi Anda. Sinexis memberi lapisan dasar yang rutin, bukan pengganti pentest.
+Scan otomatis bukan pentest. Alur checkout, hak akses antar pengguna, dan logika bisnis tetap butuh orang yang menelusuri aplikasi. Sinexis adalah lapisan dasar yang rutin.
 
-Host Protect hanya melaporkan apa yang benar-benar ditemukan program pembantu di mesin Anda. Kalau pembantunya belum terpasang, statusnya jujur "menunggu", bukan temuan yang dikarang.
+Host Protect hanya melaporkan apa yang benar-benar dibaca helper di mesin Anda. Server akuntansi tidak akan tiba-tiba "ketemu" berkas WordPress palsu.
 
-Ada juga Host WAF sebagai tambahan opsional. Itu dipasang di server pelanggan, bukan di pintu depan layanan Sinexis.
+Guard bukan SIEM. SIEM bukan tim yang berjaga 24 jam. Uptime bukan jaminan ketersediaan dari penyedia hosting Anda.
 
 ## Mulai dari mana
 
-Pilih satu domain atau satu IP yang benar-benar dipakai pelanggan Anda. Bukan alamat percobaan.
+Pilih satu domain atau satu IP yang benar-benar dipakai, bukan alamat percobaan.
 
-Buka **sinexis.app**, daftar, lalu jalankan satu pemeriksaan dan baca hasilnya. Kalau isinya terasa berguna, hidupkan jadwal supaya bulan depan Anda tinggal membaca perubahannya.
+Buka **sinexis.app**, daftar, jalankan satu pemeriksaan, baca hasilnya. Kalau isinya berguna untuk rapat bulanan, hidupkan jadwalnya. Periode berikutnya Anda membaca perubahannya, bukan mengulang daftar dari nol.

@@ -47,25 +47,25 @@ describe("ForgotPassword", () => {
   it("renders the Forgot password heading", () => {
     render(<ForgotPassword />);
     expect(
-      screen.getByRole("heading", { name: /forgot password/i }),
+      screen.getByRole("heading", { name: /reset this password/i }),
     ).toBeInTheDocument();
   });
 
   it("renders email input with correct placeholder", () => {
     render(<ForgotPassword />);
     expect(
-      screen.getByPlaceholderText("your signup email"),
+      screen.getByPlaceholderText("email on this scan account"),
     ).toBeInTheDocument();
   });
 
   it("renders Send Reset Link button", () => {
     render(<ForgotPassword />);
-    expect(screen.getByRole("button", { name: "Send Reset Link" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Send the reset link" })).toBeInTheDocument();
   });
 
   it("renders Back to sign in link pointing to /login", () => {
     render(<ForgotPassword />);
-    const link = screen.getByRole("link", { name: /back to sign in/i });
+    const link = screen.getByRole("link", { name: /return to sign in/i });
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute("href", "/login");
   });
@@ -95,25 +95,25 @@ describe("ForgotPassword", () => {
 
   it("shows success state after successful submit", async () => {
     render(<ForgotPassword />);
-    const emailInput = screen.getByPlaceholderText("your signup email");
+    const emailInput = screen.getByPlaceholderText("email on this scan account");
     fireEvent.change(emailInput, { target: { value: "user@example.com" } });
 
-    fireEvent.click(screen.getByRole("button", { name: "Send Reset Link" }));
+    fireEvent.click(screen.getByRole("button", { name: "Send the reset link" }));
 
     await waitFor(() => {
-      expect(screen.getByText("Check Your Email")).toBeInTheDocument();
+      expect(screen.getByText("Check that inbox")).toBeInTheDocument();
     });
   });
 
   it("success state has Back to Sign In link", async () => {
     render(<ForgotPassword />);
-    const emailInput = screen.getByPlaceholderText("your signup email");
+    const emailInput = screen.getByPlaceholderText("email on this scan account");
     fireEvent.change(emailInput, { target: { value: "user@example.com" } });
 
-    fireEvent.click(screen.getByRole("button", { name: "Send Reset Link" }));
+    fireEvent.click(screen.getByRole("button", { name: "Send the reset link" }));
 
     await waitFor(() => {
-      const links = screen.getAllByRole("link", { name: /back to sign in/i });
+      const links = screen.getAllByRole("link", { name: /return to sign in/i });
       expect(links.length).toBeGreaterThan(0);
     });
   });
@@ -123,25 +123,25 @@ describe("ForgotPassword", () => {
       () => new Promise((resolve) => setTimeout(() => resolve(true), 100)),
     );
     render(<ForgotPassword />);
-    const emailInput = screen.getByPlaceholderText("your signup email");
+    const emailInput = screen.getByPlaceholderText("email on this scan account");
     fireEvent.change(emailInput, { target: { value: "user@example.com" } });
 
-    fireEvent.click(screen.getByRole("button", { name: "Send Reset Link" }));
+    fireEvent.click(screen.getByRole("button", { name: "Send the reset link" }));
 
     await waitFor(() => {
-      expect(screen.getByText("Sending reset link...")).toBeInTheDocument();
+      expect(screen.getByText("Sending the reset link...")).toBeInTheDocument();
     });
     await waitFor(() => {
-      expect(screen.getByText("Check Your Email")).toBeInTheDocument();
+      expect(screen.getByText("Check that inbox")).toBeInTheDocument();
     });
   });
 
   it("calls forgotPassword on form submit", async () => {
     render(<ForgotPassword />);
-    const emailInput = screen.getByPlaceholderText("your signup email");
+    const emailInput = screen.getByPlaceholderText("email on this scan account");
     fireEvent.change(emailInput, { target: { value: "user@example.com" } });
 
-    fireEvent.click(screen.getByRole("button", { name: "Send Reset Link" }));
+    fireEvent.click(screen.getByRole("button", { name: "Send the reset link" }));
 
     await waitFor(() => {
       expect(mockForgotPassword).toHaveBeenCalledWith("user@example.com");
@@ -153,16 +153,16 @@ describe("ForgotPassword", () => {
       () => new Promise((resolve) => setTimeout(() => resolve(true), 100)),
     );
     render(<ForgotPassword />);
-    const emailInput = screen.getByPlaceholderText("your signup email");
+    const emailInput = screen.getByPlaceholderText("email on this scan account");
     fireEvent.change(emailInput, { target: { value: "user@example.com" } });
 
-    fireEvent.click(screen.getByRole("button", { name: "Send Reset Link" }));
+    fireEvent.click(screen.getByRole("button", { name: "Send the reset link" }));
 
     await waitFor(() => {
       expect(emailInput).toBeDisabled();
     });
     await waitFor(() => {
-      expect(screen.getByText("Check Your Email")).toBeInTheDocument();
+      expect(screen.getByText("Check that inbox")).toBeInTheDocument();
     });
   });
 
