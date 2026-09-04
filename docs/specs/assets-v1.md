@@ -41,7 +41,7 @@ Upsell needs a **thin registry**: name a VPS/domain once, attach schedules, resp
 | **Full CMDB** (CI, ownership graphs, change tickets) | P3 is light registry only |
 | **IoT / PMS / cloud inventory sync** | Out of attach SKU |
 | **Auto-discovery of assets from nmap** | Nice-later; v1 is manual CRUD |
-| **Merging Guard agents into assets** | Agents ≠ scan assets; optional *link* later only |
+| **Merging Guard agents into assets** | Agents ≠ scan assets; optional FK link: [`asset-guard-link.md`](asset-guard-link.md) |
 | **Org wallet / billing automation** | Credits remain personal (Workspace D1) |
 | **Nested projects / multi-workspace trees** | 1 org = 1 workspace |
 | **Mobile APK/IPA as scheduled asset type** | Schedules stay ip/domain |
