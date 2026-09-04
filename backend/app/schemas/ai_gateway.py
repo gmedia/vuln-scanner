@@ -89,3 +89,49 @@ class AiModelOut(BaseModel):
 class AiModelList(BaseModel):
     items: list[AiModelOut]
     total: int
+
+
+class AiWalletOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    organization_id: uuid.UUID
+    balance_idr: int
+    currency: str
+
+
+class AiWalletTopup(BaseModel):
+    amount_idr: int = Field(..., ge=1)
+
+
+class AiPublicModelOut(BaseModel):
+    public_id: str
+    price_idr_per_1k_in: int
+    price_idr_per_1k_out: int
+    max_ctx: int
+    max_tokens_cap: int
+
+
+class AiPublicModelList(BaseModel):
+    items: list[AiPublicModelOut]
+    total: int
+
+
+class AiUsageOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    organization_id: uuid.UUID | None
+    source: str
+    model_public_id: str
+    prompt_tokens: int
+    completion_tokens: int
+    billed_idr: int
+    latency_ms: int | None
+    http_status: int | None
+    finish_reason: str | None
+    created_at: datetime
+
+
+class AiUsageList(BaseModel):
+    items: list[AiUsageOut]
+    total: int
