@@ -187,7 +187,13 @@ export default function HostWafPanel({ sites }: { sites: HostSite[] }) {
           </div>
         </>
       )}
+      <p className="text-xs text-muted-foreground" data-testid="host-waf-simulate-hint">
+        {t("wafSimulateHint")}
+      </p>
       <h3 className="text-sm font-medium">{t("wafEvents")}</h3>
+      <p className="text-xs text-muted-foreground" data-testid="host-waf-events-hint">
+        {t("wafEventsHint")}
+      </p>
       {(eventsQ.data ?? []).length === 0 ? (
         <p
           className="text-sm text-muted-foreground"
