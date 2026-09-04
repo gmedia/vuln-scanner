@@ -11,12 +11,16 @@ from app.database import get_db
 from app.models.ai_gateway import AiModel, AiUsageEvent
 from app.models.user import User
 from app.schemas.ai_gateway import (
+    AiKeyCreate,
+    AiKeyList,
+    AiKeyOut,
     AiPublicModelList,
     AiPublicModelOut,
     AiUsageList,
     AiUsageOut,
     AiWalletOut,
 )
+from app.services.ai_keys import create_key, list_keys, revoke_key
 from app.services.ai_wallet import get_or_create_wallet
 from app.services.auth import get_active_org_id, get_current_user
 from app.services.organization import require_membership
@@ -99,3 +103,60 @@ async def list_usage(
         .all()
     )
     return AiUsageList(items=[AiUsageOut.model_validate(r) for r in rows], total=total)
+
+
+def _key_out(row, plaintext: str | None = None) -> AiKeyOut:
+    return AiKeyOut(
+        id=row.id,
+        name=row.name,
+        prefix=row.prefix,
+        is_active=row.is_active,
+        rate_limit_rpm=row.rate_limit_rpm,
+        created_at=row.created_at,
+        last_used_at=row.last_used_at,
+        key=plaintext,
+    )
+
+
+@router.get("/keys", response_model=AiKeyList)
+async def get_keys(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> AiKeyList:
+    _disabled()
+    org_id = await _org(request, current_user, db)
+    rows = await list_keys(db, org_id)
+    return AiKeyList(items=[_key_out(r) for r in rows], total=len(rows))
+
+
+@router.post("/keys", response_model=AiKeyOut, status_code=201)
+async def post_key(
+    body: AiKeyCreate,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> AiKeyOut:
+    _disabled()
+    org_id = get_active_org_id(request)
+    if org_id is None:
+        raise HTTPException(status_code=400, detail="No active organization")
+    await require_membership(db, org_id, current_user.id, min_role="member")
+    row, plain = await create_key(db, organization_id=org_id, user_id=current_user.id, name=body.name)
+    return _key_out(row, plain)
+
+
+@router.delete("/keys/{key_id}", response_model=AiKeyOut)
+async def delete_key(
+    key_id: UUID,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> AiKeyOut:
+    _disabled()
+    org_id = get_active_org_id(request)
+    if org_id is None:
+        raise HTTPException(status_code=400, detail="No active organization")
+    await require_membership(db, org_id, current_user.id, min_role="member")
+    row = await revoke_key(db, organization_id=org_id, key_id=key_id)
+    return _key_out(row)
