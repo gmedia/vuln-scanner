@@ -130,6 +130,121 @@ export interface BlogPostWrite {
   locale: "id" | "en";
 }
 
+export interface AiProviderAdmin {
+  id: string;
+  name: string;
+  base_url: string;
+  auth_header: string;
+  credential_set: boolean;
+  enabled: boolean;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AiModelAdmin {
+  id: string;
+  provider_id: string;
+  public_id: string;
+  upstream_id: string;
+  hpp_usd_per_1k_in: number;
+  hpp_usd_per_1k_out: number;
+  price_idr_per_1k_in: number;
+  price_idr_per_1k_out: number;
+  max_ctx: number;
+  max_tokens_cap: number;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function listAiProviders(): Promise<{
+  items: AiProviderAdmin[];
+  total: number;
+}> {
+  const { data } = await api.get("/api/admin/ai/providers");
+  return data;
+}
+
+export async function createAiProvider(body: {
+  name: string;
+  base_url: string;
+  credential: string;
+  auth_header?: string;
+  enabled?: boolean;
+  status?: string;
+}): Promise<AiProviderAdmin> {
+  const { data } = await api.post("/api/admin/ai/providers", body);
+  return data;
+}
+
+export async function updateAiProvider(
+  id: string,
+  body: Partial<{
+    name: string;
+    base_url: string;
+    credential: string;
+    auth_header: string;
+    enabled: boolean;
+    status: string;
+  }>,
+): Promise<AiProviderAdmin> {
+  const { data } = await api.patch(`/api/admin/ai/providers/${id}`, body);
+  return data;
+}
+
+export async function deleteAiProvider(id: string): Promise<void> {
+  await api.delete(`/api/admin/ai/providers/${id}`);
+}
+
+export async function listAiModels(providerId?: string): Promise<{
+  items: AiModelAdmin[];
+  total: number;
+}> {
+  const { data } = await api.get("/api/admin/ai/models", {
+    params: providerId ? { provider_id: providerId } : undefined,
+  });
+  return data;
+}
+
+export async function createAiModel(body: {
+  provider_id: string;
+  public_id: string;
+  upstream_id: string;
+  price_idr_per_1k_in: number;
+  price_idr_per_1k_out: number;
+  hpp_usd_per_1k_in?: number;
+  hpp_usd_per_1k_out?: number;
+  max_ctx?: number;
+  max_tokens_cap?: number;
+  enabled?: boolean;
+}): Promise<AiModelAdmin> {
+  const { data } = await api.post("/api/admin/ai/models", body);
+  return data;
+}
+
+export async function updateAiModel(
+  id: string,
+  body: Partial<{
+    public_id: string;
+    upstream_id: string;
+    price_idr_per_1k_in: number;
+    price_idr_per_1k_out: number;
+    hpp_usd_per_1k_in: number;
+    hpp_usd_per_1k_out: number;
+    max_ctx: number;
+    max_tokens_cap: number;
+    enabled: boolean;
+  }>,
+): Promise<AiModelAdmin> {
+  const { data } = await api.patch(`/api/admin/ai/models/${id}`, body);
+  return data;
+}
+
+export async function deleteAiModel(id: string): Promise<void> {
+  await api.delete(`/api/admin/ai/models/${id}`);
+}
+
 export async function listBlogPosts(): Promise<{
   items: BlogPostAdmin[];
   total: number;
@@ -341,6 +456,14 @@ export const adminApi = {
     createHppCost,
     deleteHppCost,
     getEmailLogs,
+  listAiProviders,
+  createAiProvider,
+  updateAiProvider,
+  deleteAiProvider,
+  listAiModels,
+  createAiModel,
+  updateAiModel,
+  deleteAiModel,
   listBlogPosts,
   createBlogPost,
   updateBlogPost,
