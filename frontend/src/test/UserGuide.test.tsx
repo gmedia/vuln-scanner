@@ -16,53 +16,53 @@ describe("UserGuide", () => {
       </MemoryRouter>,
     );
     expect(
-      screen.getByRole("heading", { name: "User guide" }),
+      screen.getByRole("heading", { name: "Run the scan account" }),
     ).toBeInTheDocument();
-    expect(screen.getAllByText("Contents").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("On this page").length).toBeGreaterThanOrEqual(1);
     expect(
       screen.getByRole("heading", {
-        name: "Start: register, login, workspace",
+        name: "Open the scan account",
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "IP scan — step by step",
+        name: "IP scan",
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "Domain scan — step by step",
+        name: "Domain scan",
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "Mobile scan — step by step",
+        name: "Mobile scan",
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Read results & download reports" }),
+      screen.getByRole("heading", { name: "Read the report" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "Recurring scan schedules (Scan Attach)",
-      }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", {
-        name: "Assets — named scan targets",
+        name: "Scan Attach schedules",
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "Workspace & invites",
+        name: "Named assets",
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Credits" }),
+      screen.getByRole("heading", {
+        name: "Workspace and invites",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Credits on this login" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "Guard (runtime thin) — step by step",
+        name: "Guard on the box",
       }),
     ).toBeInTheDocument();
     expect(screen.getByText("Start IP scan")).toBeInTheDocument();
@@ -70,7 +70,7 @@ describe("UserGuide", () => {
     expect(screen.getByText("Aktifkan Guard")).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "SIEM — search events & cases",
+        name: "SIEM search and cases",
       }),
     ).toBeInTheDocument();
     expect(document.body.textContent ?? "").toMatch(
@@ -80,17 +80,17 @@ describe("UserGuide", () => {
     expect(document.body.textContent ?? "").toMatch(/we are working this/i);
     expect(
       screen.getByRole("heading", {
-        name: "Uptime — HTTP/TCP probes",
+        name: "Uptime probes",
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "Status page — public comms",
+        name: "Public status page",
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "Host Protect — on-box malware",
+        name: "Host Protect on disk",
       }),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Host Protect" })).toHaveAttribute(
@@ -130,7 +130,7 @@ describe("UserGuide", () => {
     expect(document.body.textContent ?? "").toMatch(/SecRuleEngine On/);
     expect(document.body.textContent ?? "").toMatch(/Hourly/);
     expect(
-      screen.getByRole("heading", { name: "Tips & limits" }),
+      screen.getByRole("heading", { name: "Limits that stay true" }),
     ).toBeInTheDocument();
     expect(
       screen.getAllByText(/POST \/api\/guard\/enroll/).length,
@@ -185,16 +185,16 @@ describe("UserGuide", () => {
     expect(screen.getByText("Create page")).toBeInTheDocument();
     expect(screen.getByText("Add asset")).toBeInTheDocument();
     const tocNavs = screen.getAllByRole("navigation", {
-      name: "Guide table of contents",
+      name: "Guide sections",
     });
     expect(tocNavs.length).toBeGreaterThanOrEqual(2);
     const mobileToc = tocNavs[0]?.closest("[data-slot='card']");
     expect(mobileToc).toBeTruthy();
     expect(mobileToc?.parentElement).toHaveClass("sticky", "top-14");
-    const contentsToggle = screen.getByRole("button", { name: /Contents/ });
+    const contentsToggle = screen.getByRole("button", { name: /On this page/ });
     expect(contentsToggle).toHaveAttribute("aria-expanded", "false");
     const tocLink = screen.getAllByRole("link", {
-      name: "1. Start: register, login, workspace",
+      name: "1. Open the scan account",
     })[0];
     expect(tocLink.className).toMatch(/min-h-11/);
     const desktopToc = screen.getByTestId("guide-desktop-toc");
