@@ -1,6 +1,6 @@
 # Spec: AI Gateway v1 (OpenAI-compatible resale)
 
-**Status:** **S0 spec only** — **do not implement** until the user says `buat` / `implement` / `kerjakan` (or points at a named slice).
+**Status:** **S1 shipped** (catalog + flag). **S2 in progress** (wallet / reservation / JWT usage). **S3+ not started** — no public `/v1` until S3.
 **Goal:** resell **contracted OpenAI-compatible** wholesale APIs to Sinexis orgs: customer keys, usage ledger, admin catalog + trial chat.
 **Epic:** **new business line** (not P14, not Guard, not Workspace). Does **not** jump attach / Host Protect / GTM.
 **Depends:** P2 Workspace (JWT `org_id`, membership) · existing admin SPA kit · host nginx + Cloudflare for a new `/v1` location.
@@ -274,7 +274,7 @@ Register both in `App.tsx` + [`AGENT_PAGE_REGISTRY.md`](../AGENT_PAGE_REGISTRY.m
 |-------|-------------|---------|
 | **S0** | This spec + guide pointer | — |
 | **S1** | Flag + models/tables Alembic + admin provider/model CRUD | S0 + `buat` |
-| **S2** | Wallet + reservation + usage; no public `/v1` yet | S1 |
+| **S2** | Wallet + reservation + usage; JWT `/api/ai/wallet|models|usage`; admin topup; no public `/v1` | S1 |
 | **S3** | `/v1` + nginx location + customer keys; one wholesaler | S2 |
 | **S4** | SPA `/ai` + `/admin/ai` trial chat + i18n | S3 |
 | **S5** | Limits, sanitizer tests, ops notes, Playwright smoke flag-off | S4 |
