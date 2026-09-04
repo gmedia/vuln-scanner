@@ -1,7 +1,7 @@
 {
   "kicker": "Panduan",
   "title": "Panduan pengguna",
-  "intro": "{{product}} berjalan di mesin VulnScanner. Panduan ini mengikuti urutan kerja yang biasa dipakai, dan jujur soal cakupan: apa yang dikerjakan tiap modul, dan apa yang tidak. Scan memeriksa port, DNS/TLS, dan CVE yang sudah dikenal pada target yang Anda kuasai — hasilnya snapshot saat itu, bukan pantauan 24 jam. Guard adalah sisi agen yang tipis: inventori host yang sudah di-enroll plus alert kritis, bukan instalasi Wazuh lengkap. SIEM mencari event itu dan memungkinkan Anda membuka kasus, yaitu tiket insiden di aplikasi ini. Host Protect memindai file web dari malware di VPS Anda sendiri lewat helper. Label tombol di bawah mengikuti UI apa adanya. Tidak ada host produksi, IP, atau kredensial di halaman ini — hanya aset yang Anda berwenang sentuh.",
+  "intro": "{{product}} menempel di colo atau VPS yang sudah jalan: Scan (VulnScanner) adalah pass dari luar, Attach pengulangan mingguan atau bulanan, lalu Guard / Host Protect kalau box di-enroll. Halaman ini mengikuti urutan itu dan jujur soal cakupan. Scan = port, DNS/TLS, CVE yang dikenal pada target yang Anda kuasai — snapshot, bukan pantauan 24 jam. Guard = satu wazuh-agent: inventori host ter-enroll plus alert kritis, bukan daemon kedua dan bukan konsol Wazuh penuh. SIEM mencari event itu dan membuka kasus (tiket insiden di aplikasi ini). Host Protect membaca file web di VPS Anda lewat helper; kosong setelah poll nyata adalah hasil jujur. Label tombol mengikuti UI. Tidak ada host produksi, IP, atau kredensial di sini.",
   "tocAria": "Daftar isi panduan",
   "tocTitle": "Daftar isi",
   "toc": {
@@ -138,7 +138,7 @@
   "hTips": "Tips & batasan",
   "t1": "Scan dan enroll hanya aset yang Anda kuasai secara hukum. Mengarahkan ini ke infrastruktur pihak ketiga tanpa otorisasi tertulis adalah cara tercepat kehilangan akun.",
   "t2": "Jauhkan kata sandi, kunci API, token enroll, dan IP internal dari tiket publik, screenshot, dan dokumen bersama. Token di sini ditampilkan sekali karena dimaksudkan langsung masuk ke penyimpanan rahasia.",
-  "t3": "Scan attach ≠ SIEM 24 jam. Guard v1 = inventori + alert kritis + enroll — bukan SOAR, bukan dashboard manager pelanggan. Uptime = probe from-outside, bukan jaminan SLA. Halaman status tidak pernah menampilkan URL/IP monitor mentah. Karantina Host Protect ≠ rekonstruksi. Host WAF adalah control plane plus snippet nginx pelanggan, bukan Coraza di sinexis.app.",
+  "t3": "Scan Attach adalah pass dari luar yang dijadwalkan, bukan SIEM 24 jam. Guard v1 = satu wazuh-agent, inventori + alert kritis + enroll — bukan SOAR, bukan dashboard manager pelanggan. Uptime = probe from-outside, bukan jaminan SLA. Halaman status tidak pernah menampilkan URL/IP monitor mentah. Karantina Host Protect ≠ rekonstruksi. Host WAF adalah control plane plus snippet nginx pelanggan, bukan Coraza di sinexis.app.",
   "t4": "Brand: {{name}} / {{product}}; mesin scan = VulnScanner.",
   "t5": "Panduan ini: Sidebar → <guide>Panduan</guide>."
 }

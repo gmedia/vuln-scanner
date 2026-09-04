@@ -1,7 +1,7 @@
 {
   "kicker": "Guide",
   "title": "User guide",
-  "intro": "{{product}} runs on the VulnScanner engine. This guide covers every module in the order you would actually use it, and it is explicit about scope — what each module does, and what it will never do. Scan looks at ports, DNS/TLS, and known CVEs on a target you control: a point-in-time snapshot, not 24/7 monitoring. Guard is the thin agent side: inventory of enrolled hosts plus critical alerts, not a full Wazuh deployment. SIEM searches those events and lets you open a case, which is an incident ticket in this app. Host Protect scans web files for malware on your own VPS through a helper. Every button label below matches the UI as shipped. No production hosts, IPs, or credentials appear here — only assets you are authorized to touch.",
+  "intro": "{{product}} sits on colo or VPS you already run: Scan (VulnScanner) is the outside-in pass, Attach is the weekly or monthly repeat, then Guard / Host Protect if you enroll the box. This page follows that order and stays explicit about scope. Scan is ports, DNS/TLS, and known CVEs on a target you control — a snapshot, not 24/7 coverage. Guard is one wazuh-agent: enrolled inventory plus critical alerts, not a second daemon and not a full Wazuh console. SIEM searches those events and opens a case (an incident ticket in this app). Host Protect reads web files on your own VPS via the helper; empty after a real poll is honest. Button labels match the shipped UI. No production hosts, IPs, or credentials here.",
   "tocAria": "Guide table of contents",
   "tocTitle": "Contents",
   "toc": {
@@ -138,7 +138,7 @@
   "hTips": "Tips & limits",
   "t1": "Scan and enroll only assets you legally control. Pointing this at third-party infrastructure without written authorization is the fastest way to lose your account.",
   "t2": "Keep passwords, API keys, enrollment tokens, and internal IPs out of public tickets, screenshots, and shared documents. Tokens here are shown once because they are meant to go straight into a secret store.",
-  "t3": "Scan attach ≠ SIEM 24/7. Guard v1 = inventory + critical alerts + enroll — not SOAR, not a customer manager dashboard. Uptime = outside-in probes, not an SLA guarantee. Status page never exposes raw monitor URL/IP. Host Protect quarantine ≠ reconstruct. Host WAF is a control plane plus a customer nginx snippet, not Coraza on sinexis.app.",
+  "t3": "Scan Attach is a scheduled outside-in pass, not SIEM 24/7. Guard v1 = one wazuh-agent, inventory + critical alerts + enroll — not SOAR, not a customer manager dashboard. Uptime = outside-in probes, not an SLA. Status page never exposes raw monitor URL/IP. Host Protect quarantine ≠ reconstruct. Host WAF is a control plane plus a customer nginx snippet, not Coraza on sinexis.app.",
   "t4": "Brand: {{name}} / {{product}}; scan engine = VulnScanner.",
   "t5": "This guide: Sidebar → <guide>User Guide</guide>."
 }
