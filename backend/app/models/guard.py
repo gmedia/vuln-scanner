@@ -7,10 +7,12 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -18,6 +20,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
 if TYPE_CHECKING:
+    from app.models.asset import ScanAsset
     from app.models.organization import Organization
     from app.models.user import User
 
@@ -79,6 +82,9 @@ class GuardAgent(Base):
     last_helper_poll_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     results_token_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True)
     results_token_revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    asset_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("scan_assets.id", ondelete="SET NULL"), nullable=True
+    )
     synced_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
@@ -87,9 +93,19 @@ class GuardAgent(Base):
         onupdate=lambda: datetime.now(UTC),
     )
 
+    organization: Mapped["Organization"] = relationship()
+    asset: Mapped["ScanAsset | None"] = relationship()
+
     __table_args__ = (
         UniqueConstraint("organization_id", "wazuh_agent_id", name="uq_guard_agent_org_wazuh"),
         CheckConstraint(f"status IN {AGENT_STATUSES}", name="ck_guard_agent_status"),
+        Index(
+            "uq_guard_agents_asset_id",
+            "asset_id",
+            unique=True,
+            sqlite_where=text("asset_id IS NOT NULL"),
+            postgresql_where=text("asset_id IS NOT NULL"),
+        ),
     )
 
 
