@@ -1,67 +1,65 @@
-# Scan domain: memeriksa website yang sudah online
+# Website sudah online. Scan domain melihat sisi luarnya
 
-Domain adalah nama yang diketik pengunjung Anda. Di belakang nama itu ada hosting atau VPS yang sudah berjalan.
+Nama domain adalah yang diketik pengunjung. Di belakangnya ada hosting atau VPS yang sudah hidup. Scan domain Sinexis tidak masuk ke situ.
 
-Scan domain Sinexis melihat sisi luarnya — persis seperti yang dilihat pengunjung dan, sayangnya, juga orang yang berniat jahat. Kami tidak masuk ke folder di server, tidak membuka panel hosting, dan tidak perlu Anda memasang apa pun.
+Pemeriksaan ini berdiri di internet, melihat apa yang juga terlihat pengunjung, crawler, dan orang yang mencari lubang. Tidak buka folder di disk. Tidak minta akses panel. Tidak perlu memasang apa pun di server.
 
-Analoginya sederhana: kami berdiri di trotoar depan ruko Anda dan mencatat kondisi pintu, gembok, dan papan nama. Bukan masuk ke gudang.
+Satu kali jalan memberi foto hari itu. Yang membuatnya berguna adalah mengulanginya, lalu membandingkan.
 
-## Yang benar-benar diperiksa
+## Apa yang benar-benar dilihat
 
-**DNS.** Nama domain masih mengarah ke tempat yang masuk akal, atau sudah nyasar ke alamat lain. Ini sering berubah tanpa ada yang sadar setelah pindah penyedia.
+**DNS.** Nama masih mengarah ke tempat yang masuk akal, atau sudah nyasar setelah pindah penyedia, ganti CDN, atau "perbaikan kecil" yang tidak dicatat.
 
-**Sertifikat HTTPS.** Gembok di address bar masih hidup, atau sudah mendekati tanggal kedaluwarsa. Termasuk apakah nama di sertifikat cocok dengan domainnya.
+**Sertifikat HTTPS.** Gembok di address bar masih hidup, nama di sertifikat cocok, dan tanggal kedaluwarsa tidak terlewat diam-diam.
 
-**Header keamanan.** Ada beberapa aturan yang browser modern harapkan dikirim oleh situs. Aturan ini sering hilang setelah ganti tema, update, atau migrasi.
+**Header keamanan.** Browser modern mengharapkan beberapa aturan dikirim situs. Aturan ini sering hilang setelah ganti tema, plugin, atau pindah mesin.
 
-**Teknologi yang terlihat.** Jenis web server dan platform yang bisa dikenali dari luar. Ini bukan audit kode, hanya catatan apa yang terbaca publik.
+**Teknologi yang terbaca publik.** Jenis web server atau platform yang kelihatan dari luar. Catatan permukaan, bukan audit kode.
 
-**Subdomain yang tercatat publik.** Kadang muncul subdomain lama yang sudah dilupakan tapi masih hidup dan tidak ada yang merawatnya.
+**Subdomain yang tercatat di publik.** Staging lama, panel lama, atau "situs event tahun lalu" yang masih hidup tanpa yang merawat.
 
-Semuanya adalah pemeriksaan **postur**: seberapa rapi permukaan situs Anda hari ini. Satu kali scan memberi gambaran hari itu. Jadwal yang membuatnya jadi kebiasaan.
+Itu pemeriksaan **postur**. Seberapa rapi permukaan hari ini. Bukan simulasi serangan, bukan tes logika bisnis.
 
-## Kapan ini terasa berguna
+## Kenapa ini lolos dari perhatian
 
-Situasi paling umum: situs sudah live, jalan normal, dan tidak ada orang yang punya waktu memeriksa hal-hal kecil setiap bulan.
+Situs yang "sudah lancar" jarang punya orang yang duduk memeriksa DNS dan header tiap bulan. Yang biasanya ketahuan terlambat:
 
-Yang biasanya lolos dari perhatian:
+- Sertifikat hampir habis, perpanjangannya di akun orang yang sudah resign.
+- Header hilang setelah update.
+- Catatan DNS tersenggol saat migrasi email atau ganti nameserver.
+- Subdomain lama masih menunjuk ke mesin yang sudah tidak dijaga.
 
-- Sertifikat HTTPS mendekati kedaluwarsa dan tidak ada yang ingat memperpanjang.
-- Header keamanan hilang setelah update tema atau pindah hosting.
-- Catatan DNS tersenggol saat ada perubahan lain.
-- Subdomain lama masih menunjuk ke server yang sudah tidak dirawat.
+Tidak ada yang terdengar heboh. Pintu masuk sering dari yang kecil dan membosankan.
 
-Tidak ada yang dramatis di daftar itu. Tapi hal-hal kecil seperti inilah yang biasanya jadi pintu masuk.
+## Yang masuk scan domain, yang tidak
 
-## Yang diperiksa dan yang tidak
-
-| Diperiksa dari luar | Tidak diperiksa |
+| Dari luar | Bukan pekerjaan ini |
 |---|---|
-| DNS, sertifikat HTTPS, header keamanan | Berkas di disk server |
-| Teknologi yang terbaca publik | Plugin yang bermasalah di dalam CMS |
-| Subdomain yang tercatat publik | Logika bisnis: checkout, hak akses, alur login |
-| Perubahan dibanding pemeriksaan sebelumnya | Berkas mencurigakan di hosting (itu Host Protect) |
+| DNS, HTTPS, header | Berkas di disk server |
+| Teknologi yang terbaca publik | Plugin rusak di dalam CMS |
+| Subdomain yang tercatat publik | Checkout, hak akses, alur login |
+| Selisih vs pemeriksaan sebelumnya | Malware di hosting (itu Host Protect) |
 
-## Batasnya, supaya jelas
+## Batas yang kami jaga
 
-Kami tidak memperbaiki apa pun. Hasil scan adalah daftar temuan plus penjelasannya; tindakannya tetap di tangan Anda atau tim hosting Anda.
+Hasilnya daftar temuan plus penjelasan. Kami tidak menambal, tidak ganti tema, tidak sentuh DNS Anda. Tindakan tetap di tim Anda atau penyedia hosting.
 
-Scan domain juga tidak memeriksa berkas di disk. Pemeriksaan berkas mencurigakan adalah pekerjaan Host Protect, dan itu butuh program pembantu di mesin Anda. Kalau pembantunya belum ada, statusnya jujur "menunggu" — kami tidak mengarang temuan.
+Berkas di disk adalah pekerjaan Host Protect, dan itu butuh helper di mesin pelanggan. Kalau helper belum terpasang, statusnya jujur menunggu. Tidak ada temuan yang dikarang supaya laporan ramai.
 
-Ini juga bukan pemantauan dari dalam server. Scan domain berjalan dari internet, sesekali, sesuai jadwal; tidak ada yang membaca kejadian di server Anda tiap jam.
+Scan domain juga bukan Guard. Tidak ada agen. Tidak ada yang membaca kejadian di server tiap jam. Ritmenya sesekali, sesuai tombol atau jadwal.
 
-Dan pemeriksaan otomatis bukan pengganti pengujian oleh manusia. Kesalahan di alur pemesanan atau hak akses antar pengguna hanya ketemu kalau ada orang yang menelusurinya. Kami memberi lapisan dasar yang rutin, bukan pentest.
+Pemeriksaan otomatis bukan pengganti manusia. Salah harga di keranjang, hak akses antar cabang, atau bolong di alur login hanya ketemu kalau ada orang yang menelusuri. Ini lapisan dasar, bukan pentest.
 
-## Setelah hasilnya keluar
+## Setelah hasil keluar
 
-Hasil muncul di dasbor, dikelompokkan menurut tingkat keparahan, dengan penjelasan singkat per temuan. Bisa juga diekspor jadi laporan yang enak dibaca orang non-teknis.
+Dasbor mengelompokkan temuan menurut keparahan, dengan bahasa yang bisa diteruskan ke orang non-teknis. Laporan bisa diekspor.
 
-Kalau Anda menghidupkan jadwal, pemeriksaan berikutnya otomatis dibandingkan dengan yang sekarang. Yang dikirim ke email hanya perubahan yang serius, bukan seluruh daftar berulang-ulang. Bagian itu dibahas terpisah di artikel tentang Scan Attach.
+Kalau jadwal Attach hidup, pemeriksaan berikutnya dibanding dengan acuan. Email menonjolkan perubahan serius, bukan menempel daftar yang sama tiap minggu. Cara kerja jadwal ada di artikel Scan Attach.
 
-Setiap scan memakai kredit. Jumlahnya bisa Anda lihat di layar harga di dalam akun sebelum menekan tombol.
+Tiap scan memotong kredit. Bobot per jenis kelihatan di layar harga di dalam akun, sebelum tombol ditekan. Artikel ini tidak menyebut tarif.
 
-## Langkah berikutnya
+## Satu domain dulu
 
-Pilih satu domain yang benar-benar dipakai pelanggan Anda — bukan subdomain percobaan. Buka **sinexis.app**, daftar, dan jalankan satu scan domain.
+Pilih nama yang benar-benar dipakai pelanggan, bukan subdomain percobaan.
 
-Baca hasilnya sekali. Kalau isinya masuk akal untuk dilaporkan tiap bulan, hidupkan jadwalnya.
+Buka **sinexis.app**, daftar, jalankan satu scan domain, baca isinya sekali. Kalau pantas jadi bahan rapat bulanan, hidupkan jadwalnya.

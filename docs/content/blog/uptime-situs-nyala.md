@@ -1,64 +1,60 @@
-# Uptime: apakah website atau port masih nyala?
+# Uptime: tahu situsnya mati sebelum pelanggan yang bilang
 
-Scan keamanan menjawab satu pertanyaan: pintu dan gemboknya masih wajar? Uptime menjawab pertanyaan yang sama sekali lain: **dari internet, situs atau port ini masih merespons?**
+Scan bertanya: pintu dan gemboknya masih wajar? Uptime bertanya hal lain: **dari internet, situs atau port ini masih merespons?**
 
-Dua pertanyaan berbeda, dua jawaban berbeda. Yang satu tidak menggantikan yang lain.
+Jawaban yang satu tidak menggantikan yang lain. Ritmenya juga beda. Scan jalan sesekali. Uptime mengetuk tiap beberapa menit. Keduanya dari luar. Keduanya tidak minta program dipasang di server.
 
-Bedanya juga di ritme. Scan berjalan sesekali sesuai jadwal; Uptime memeriksa tiap beberapa menit. Sama-sama dari luar, dan sama-sama tidak butuh program dipasang di server Anda.
+Analoginya kasar tapi cukup: scan memeriksa kunci. Uptime melihat lampu toko masih nyala saat lewat. Kalau lampu mati, Anda tahu dalam hitungan menit, bukan sebulan kemudian dari keluhan.
 
-## Analoginya
+## Yang benar-benar diketuk
 
-Scan adalah inspeksi kunci dan jendela: mana yang lemah, mana yang perlu diganti. Uptime adalah melihat lampu toko masih menyala saat lewat di depannya.
+**HTTP(S).** Halaman publik menjawab atau tidak. Bukan baca isi, bukan audit keamanan. Hidup atau mati.
 
-Kalau lampunya mati, Anda tahu dalam hitungan menit — bukan sebulan kemudian saat ada pelanggan yang mengeluh.
+**TCP.** Port tertentu masih menerima koneksi. Port web, atau port yang tim Anda harapkan selalu terjangkau.
 
-Keduanya bukan pemantauan dari dalam server, dan bukan pemeriksaan berkas di disk. Yang terakhir itu pekerjaan Host Protect.
+**DNS.** Opsional. Nama masih mengarah ke alamat yang benar.
 
-## Yang dicek
+**Heartbeat.** Opsional. Mesin masih mengirim sinyal hidup. Berguna untuk pekerjaan latar, misalnya cadangan terjadwal.
 
-**HTTP(S)** — halaman publik menjawab atau tidak. Bukan analisis isi halaman, bukan pemeriksaan keamanan. Cuma: hidup atau mati.
+Saat status turun lalu naik, notifikasi bisa dikirim. Isinya kabar hidup atau mati. Bukan daftar kerentanan. Bukan analisis kenapa mesin mati. Alasan ada di log server Anda, atau di tiket penyedia.
 
-**TCP** — port tertentu masih menerima koneksi. Misalnya port web, atau port SSH yang seharusnya selalu bisa dijangkau tim Anda.
+## Yang Anda dapat saat mati
 
-**DNS** — opsional, memastikan nama domain masih mengarah ke alamat yang benar.
+Waktu. Kabar lebih cepat, plus catatan jam berapa mulai dan berapa lama. Itu bahan yang berguna saat bicara dengan hosting atau colo. Bukan ingatan orang yang "kayaknya dari tadi siang".
 
-**Heartbeat** — opsional, memastikan server Anda masih mengirim sinyal hidup secara berkala. Berguna untuk pekerjaan yang jalan di latar belakang, misalnya proses backup terjadwal.
+Uptime tidak memindahkan situs, tidak ganti DNS, tidak hidupkan mesin. Tetap Anda atau penyedia yang bertindak.
 
-Saat status turun lalu naik kembali, notifikasi bisa dikirim. Yang dikirim adalah kabar hidup atau mati — bukan analisis celah keamanan, bukan daftar kerentanan.
+## Tabel batas
 
-## Kalau situsnya mati, apa yang Anda dapat
-
-Anda dapat waktu. Tahu lebih cepat berarti bisa menghubungi penyedia hosting sebelum keluhan pelanggan menumpuk, dan punya catatan jam berapa gangguan mulai serta berapa lama berlangsung.
-
-Catatan waktu itu yang biasanya paling berguna saat membahas gangguan dengan penyedia layanan Anda. Bukan ingatan, tapi data.
-
-## Yang dicek dan yang tidak
-
-| Dicek oleh Uptime | Bukan dari sini |
+| Dicek Uptime | Bukan dari sini |
 |---|---|
-| Situs hidup atau mati dari internet | Kenapa situs mati (itu ada di log server) |
-| Port menerima koneksi atau tidak | Kerentanan di port itu (itu Scan IP) |
-| Waktu respons dari luar | Performa di dalam server |
-| Notifikasi saat status turun | Perbaikan otomatis |
+| Nyala atau mati dari internet | Kenapa mati |
+| Port terima koneksi atau tidak | Lubang di port itu (Scan IP) |
+| Waktu merespons dari luar | Performa di dalam mesin |
+| Notifikasi saat turun | Perbaikan otomatis |
 
-## Batasnya
+## Yang sering tertukar
 
-Uptime tidak memperbaiki apa pun dan tidak memindahkan hosting Anda. Kalau situs mati, tetap Anda atau penyedia server yang bertindak.
+Ini bukan jaminan SLA. Angka ketersediaan yang mengikat ada di kontrak penyedia Anda. Uptime hanya mengonfirmasi apa yang terlihat dari luar.
 
-Ini juga bukan jaminan SLA. Angka ketersediaan yang mengikat ada di kontrak dengan penyedia hosting atau colo Anda; Uptime hanya mengonfirmasi dari luar apa yang benar-benar terlihat.
+Scan Attach tetap terpisah: situs bisa nyala sempurna sambil sertifikat hampir kedaluwarsa.
 
-Dan bukan pengganti Scan Attach, bukan Guard, bukan perlindungan dari malware. Situs bisa menyala sempurna sambil punya sertifikat yang hampir kedaluwarsa — itu sebabnya keduanya tetap perlu.
+Guard juga terpisah. Tidak ada agen di sini, tidak ada alert dari dalam mesin.
 
-## Cara memakainya dengan waras
+Host Protect tidak ikut. Uptime tidak membaca berkas di disk.
 
-Pantau alamat yang sama dengan yang Anda scan. Kalau "website booking" adalah aset yang diperiksa rutin, itu juga yang paling masuk akal dipantau tiap beberapa menit.
+Kalau menunya belum muncul di akun, modulnya mungkin belum diaktifkan di lingkungan itu. Jangan anggap hilang berarti "sudah termasuk diam-diam".
 
-Jangan memasukkan puluhan URL percobaan. Satu alamat produksi yang benar-benar dipakai pelanggan lebih berguna daripada sepuluh alamat yang tidak ada yang peduli kalau mati.
+## Pakai dengan hemat
 
-Uptime bisa dinyalakan atau dimatikan per target, jadi tidak semua aset harus dipantau. Kalau menunya belum muncul di akun Anda, modulnya kemungkinan belum diaktifkan untuk lingkungan itu.
+Pantau alamat yang sama dengan yang Anda scan. Aset "website booking" yang dicek bulanan biasanya aset yang sama yang pantas diketuk tiap beberapa menit.
 
-## Langkah berikutnya
+Jangan masukkan puluhan URL percobaan. Satu alamat produksi yang benar-benar dipakai lebih berguna daripada sepuluh yang tidak ada yang peduli kalau mati.
 
-Buka **sinexis.app**, lalu tambahkan satu monitor untuk alamat produksi yang paling penting.
+Monitor bisa hidup atau mati per target. Tidak semua aset wajib dipantau.
 
-Biarkan berjalan seminggu. Setelah itu Anda punya gambaran nyata tentang seberapa stabil layanan Anda dari luar — dan apakah perlu monitor kedua.
+## Nyalakan satu monitor
+
+Buka **sinexis.app**. Tambah satu monitor untuk alamat produksi yang paling penting.
+
+Biarkan seminggu. Setelah itu Anda punya gambaran, dari luar, seberapa sering layanan Anda benar-benar menjawab, dan apakah perlu monitor kedua.
