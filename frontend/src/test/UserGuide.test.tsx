@@ -40,8 +40,12 @@ describe("UserGuide", () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Read the report" }),
+      screen.getByRole("heading", { name: "Guard on the box" }),
     ).toBeInTheDocument();
+    expect(document.body.textContent ?? "").toMatch(
+      /Why Simulate request is fake/i,
+    );
+    expect(document.body.textContent ?? "").toMatch(/--write-waf-snippet/);
     expect(
       screen.getByRole("heading", {
         name: "Scan Attach schedules",
@@ -65,6 +69,10 @@ describe("UserGuide", () => {
         name: "Guard on the box",
       }),
     ).toBeInTheDocument();
+    expect(document.body.textContent ?? "").toMatch(
+      /Why Simulate request is fake/i,
+    );
+    expect(document.body.textContent ?? "").toMatch(/--write-waf-snippet/);
     expect(screen.getByText("Start IP scan")).toBeInTheDocument();
     expect(screen.getByText("Buat jadwal")).toBeInTheDocument();
     expect(screen.getByText("Aktifkan Guard")).toBeInTheDocument();
