@@ -1,5 +1,5 @@
 {
-  "subject": "Host Protect: {hit_class} on {site}",
+  "subject": "[Sinexis Host Protect] {hit_class} on {site}",
   "heading": "Host Protect hit",
   "intro": "A {hit_class} hit was recorded for site {site}.",
   "path": "Path: {rel_path}",
@@ -7,5 +7,6 @@
   "hit": "Hit id: {hit_id}",
   "open": "Open Host Protect",
   "or_copy": "Or copy this link:",
-  "footer": "File contents are not attached. This is not a Guard or SIEM inbox."
+  "footer": "File contents are not attached. This is not a Guard or SIEM inbox.",
+  "preheader": "{hit_class} hit on {site}."
 }

@@ -645,7 +645,7 @@ class TestPasswordResetMimeMessage:
             await send_password_reset_email("user@example.com", "token123")
 
         sent_msg = mock_smtp.send_message.call_args[0][0]
-        assert sent_msg["Subject"] == "Sinexis — Reset Your Password"
+        assert sent_msg["Subject"] == "Sinexis — atur ulang kata sandi"
 
     @pytest.mark.asyncio
     async def test_message_is_multipart_alternative(self):
@@ -674,7 +674,7 @@ class TestPasswordResetMimeMessage:
             await send_password_reset_email("user@example.com", "special-token-456")
 
         sent_msg = mock_smtp.send_message.call_args[0][0]
-        html_part = sent_msg.get_payload()[0]
+        html_part = sent_msg.get_payload()[1]
         html_body = html_part.get_payload(decode=True).decode("utf-8")
         assert "https://custom.example.com/reset-password?token=special-token-456" in html_body
 
@@ -689,7 +689,7 @@ class TestPasswordResetMimeMessage:
             await send_password_reset_email("user@example.com", "token789")
 
         sent_msg = mock_smtp.send_message.call_args[0][0]
-        html_part = sent_msg.get_payload()[0]
+        html_part = sent_msg.get_payload()[1]
         html_body = html_part.get_payload(decode=True).decode("utf-8")
         assert "https://sinexis.app/reset-password?token=token789" in html_body
 
@@ -704,7 +704,7 @@ class TestPasswordResetMimeMessage:
             await send_password_reset_email("user@example.com", "token123")
 
         sent_msg = mock_smtp.send_message.call_args[0][0]
-        html_part = sent_msg.get_payload()[0]
+        html_part = sent_msg.get_payload()[1]
         assert html_part.get_content_type() == "text/html"
         assert html_part.get_content_charset() == "utf-8"
 
@@ -776,7 +776,7 @@ class TestPasswordResetTokenInLink:
             await send_password_reset_email("user@example.com", "test-token-abc123")
 
         sent_msg = mock_smtp.send_message.call_args[0][0]
-        html_part = sent_msg.get_payload()[0]
+        html_part = sent_msg.get_payload()[1]
         html_body = html_part.get_payload(decode=True).decode("utf-8")
         assert "reset-password?token=test-token-abc123" in html_body
 
@@ -792,7 +792,7 @@ class TestPasswordResetTokenInLink:
             await send_password_reset_email("user@example.com", special_token)
 
         sent_msg = mock_smtp.send_message.call_args[0][0]
-        html_part = sent_msg.get_payload()[0]
+        html_part = sent_msg.get_payload()[1]
         html_body = html_part.get_payload(decode=True).decode("utf-8")
         assert special_token in html_body
 
@@ -808,7 +808,7 @@ class TestPasswordResetTokenInLink:
 
         assert result is True
         sent_msg = mock_smtp.send_message.call_args[0][0]
-        html_part = sent_msg.get_payload()[0]
+        html_part = sent_msg.get_payload()[1]
         html_body = html_part.get_payload(decode=True).decode("utf-8")
         assert "reset-password?token=" in html_body
 
@@ -862,7 +862,7 @@ class TestPasswordResetEmailEdgeCases:
             await send_password_reset_email("user@example.com", long_token)
 
         sent_msg = mock_smtp.send_message.call_args[0][0]
-        html_part = sent_msg.get_payload()[0]
+        html_part = sent_msg.get_payload()[1]
         html_body = html_part.get_payload(decode=True).decode("utf-8")
         assert long_token in html_body
 

@@ -271,7 +271,9 @@ async def admin_resend_verification(
     await db.commit()
 
     try:
-        email_sent = await send_verification_email(email_to=user.email, token=token_str)
+        email_sent = await send_verification_email(
+            email_to=user.email, token=token_str, lang=getattr(user, "locale", None)
+        )
     except Exception:
         logger.exception(
             "Unexpected error sending verification email (admin-resend) to %s",
