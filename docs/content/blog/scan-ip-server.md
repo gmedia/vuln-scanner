@@ -1,67 +1,73 @@
-# Scan IP: memeriksa server yang menghadap internet
+# Scan IP mengetuk pintu server dari internet
 
-IP adalah nomor rumah server Anda. VPS, dedicated server, dan colo hampir selalu punya satu yang bisa dijangkau dari internet.
+IP adalah nomor yang membuat mesin Anda bisa dipanggil dari luar. VPS, dedicated, colo: hampir selalu ada satu yang menghadap publik.
 
-Scan IP Sinexis mengetuk dari jalan. Pintu mana yang terbuka, siapa yang menjawab dari balik pintu itu, dan apakah ada kerentanan publik yang sudah diketahui untuk layanan tersebut.
+Scan IP Sinexis mengetuk dari jalan. Pintu mana yang terbuka. Siapa yang menjawab. Apakah versi layanan itu punya catatan kerentanan yang sudah diumumkan publik.
 
-Kami tetap di luar. Tidak ada teknisi yang masuk ke sistem operasi Anda, dan tidak ada program yang perlu dipasang untuk pemeriksaan ini.
+Teknisi tidak masuk ke sistem operasi Anda. Program tidak perlu dipasang untuk pemeriksaan ini. Kami tetap di luar.
 
-## Isi pemeriksaannya
+## Isi ketukannya
 
-**Port yang terbuka.** Pintu mana saja yang menjawab dari internet. Kadang hasilnya mengejutkan: server yang "cuma untuk web" ternyata masih membuka layanan lain yang lupa ditutup sejak dulu.
+**Port terbuka.** Layanan mana yang menjawab dari internet. Server "cuma untuk web" kadang masih membuka pintu lain yang lupa ditutup sejak instalasi pertama.
 
-**Layanan dan versinya.** Apa yang menjawab di balik setiap port, dan versi berapa. Misalnya jenis web server, atau sebuah database yang seharusnya tidak terlihat publik.
+**Layanan dan versi.** Apa di balik tiap pintu, dan versi berapa. Web server. Kadang database yang seharusnya hanya kelihatan dari dalam. Kadang panel pengelolaan yang masih publik.
 
-**Kerentanan publik yang cocok.** Kalau versi layanan yang terdeteksi punya catatan kerentanan yang sudah diumumkan publik, itu ditampilkan. Sumbernya database kerentanan terbuka, bukan tebakan kami sendiri.
+**Kerentanan publik yang cocok.** Kalau versi yang terdeteksi punya catatan di database kerentanan terbuka, itu ditampilkan. Sumbernya publik, bukan tebakan kami.
 
-**Tingkat keparahan.** Setiap temuan dikelompokkan supaya jelas mana yang perlu ditindak minggu ini dan mana yang sekadar catatan.
+**Tingkat keparahan.** Supaya jelas mana yang perlu dibahas minggu ini, mana yang cukup jadi catatan.
 
-Perlu ditegaskan: mendeteksi versi yang punya catatan kerentanan bukan berarti server Anda sudah dibobol. Artinya ada permukaan yang sebaiknya diperiksa dan diperbarui.
+Satu hal yang sering salah dibaca: versi yang punya catatan kerentanan bukan berarti mesin sudah dibobol. Artinya ada permukaan yang sebaiknya diperiksa dan, kalau perlu, ditutup atau diperbarui.
 
 ## Kapan ini relevan
 
-Anda punya IP tetap di VPS atau colo, dan tidak ada yang rutin memeriksa apa saja yang terbuka dari luar.
+Anda punya IP tetap, dan tidak ada yang rutin bertanya "apa saja yang masih terbuka dari luar?"
 
-Beberapa situasi yang khas:
+Situasi yang berulang:
 
-- Port database terbuka ke internet padahal seharusnya hanya diakses dari dalam.
-- Layanan pengelolaan atau panel yang masih terjangkau publik.
-- Ada port baru yang terbuka setelah migrasi atau instalasi terakhir, tanpa ada yang mencatat.
-- Anda butuh bukti berkala bahwa permukaan server masih sama seperti yang disepakati.
+- Database menghadap internet padahal cukup diakses dari jaringan dalam.
+- Panel atau layanan pengelolaan masih terjangkau publik.
+- Port baru muncul setelah migrasi atau pasang perangkat lunak, tanpa ada yang mencatat.
+- Anda butuh bukti berkala bahwa permukaan masih sama seperti yang disepakati tim.
 
 ## Yang diperiksa dan yang tidak
 
-| Diperiksa dari luar | Tidak diperiksa |
+| Dari luar | Bukan dari sini |
 |---|---|
-| Port yang terbuka dari internet | Pengaturan di dalam sistem operasi |
-| Layanan dan versi yang menjawab | Isi database atau berkas aplikasi |
-| Kerentanan publik yang cocok | Aturan firewall Anda (kami tidak mengubahnya) |
-| Perubahan dibanding pemeriksaan sebelumnya | Berkas mencurigakan di disk (itu Host Protect) |
+| Port yang menjawab dari internet | Pengaturan di dalam sistem operasi |
+| Layanan dan versi yang terlihat | Isi database atau berkas aplikasi |
+| Kerentanan publik yang cocok | Aturan firewall (kami tidak mengubahnya) |
+| Perubahan dibanding sebelumnya | Berkas mencurigakan di disk (itu Host Protect) |
 
 ## Batasnya
 
-Kami tidak memasang patch otomatis dan tidak mengubah aturan firewall Anda. Keputusan dan eksekusinya tetap di tangan Anda atau penyedia server Anda.
+Tidak ada patch otomatis. Tidak ada yang mengubah firewall Anda. Keputusan tetap di tangan Anda atau penyedia server.
 
-Scan IP juga bukan pemantauan dari dalam server. Tidak ada program yang perlu dipasang untuk ini, dan tidak ada yang berjaga membaca kejadian tiap jam. Kalau Anda memang butuh alarm dari dalam server, itu pekerjaan Guard — modul terpisah, satu agen per mesin.
+Ini bukan Guard. Guard butuh satu agen di dalam mesin, dan itu modul terpisah. Menghidupkan scan IP tidak memasang apa pun.
 
-Ini juga bukan cek "masih nyala atau tidak" setiap beberapa menit. Untuk itu ada Uptime, yang dibahas di artikel tersendiri.
+Bukan Uptime. Uptime menjawab "masih nyala?" tiap beberapa menit. Scan IP menjawab "pintu apa yang terbuka, dan apa risikonya?" Ritme dan pertanyaannya beda.
 
-Dan seperti pemeriksaan otomatis lainnya, ini bukan pengganti pengujian oleh manusia. Hasil scan memberi daftar permukaan, bukan simulasi serangan menyeluruh.
+Bukan pentest. Daftar permukaan, bukan simulasi serangan. Manusia tetap perlu kalau kontrak atau audit mewajibkan uji mendalam.
 
-## Bedanya dengan keamanan di dalam panel
+## Bedanya dengan fitur keamanan di panel
 
-Kalau server Anda memakai panel hosting dengan fitur keamanan sendiri, itu bekerja dari dalam: melihat berkas, akun, dan konfigurasi.
+Panel hosting yang punya antivirus atau pemindai berkas bekerja dari dalam: melihat file, akun, konfigurasi.
 
-Scan IP bekerja dari arah berlawanan. Dua sudut pandang berbeda, dan keduanya bisa jalan berdampingan. Yang satu tahu isi rumah, yang satu tahu apa yang kelihatan dari jalan.
+Scan IP bekerja dari arah berlawanan. Yang satu tahu isi rumah. Yang satu tahu apa yang kelihatan dari jalan. Keduanya bisa jalan berdampingan. Yang satu tidak menggantikan yang lain.
 
-## Cara membaca hasilnya tanpa panik
+Kalau Anda sudah punya pemindai di panel, scan IP tetap berguna justru karena sudutnya berbeda: ia melihat apa yang *sengaja atau tidak* Anda buka ke publik.
 
-Mulai dari yang paling parah, lalu tanyakan tiga hal: layanan ini memang perlu terbuka ke publik? Versinya masih didukung? Kalau tidak perlu publik, bisa dibatasi ke jaringan internal atau VPN?
+## Cara membaca tanpa panik
 
-Sering kali tindakan paling murah bukan menambal, tapi menutup pintu yang sejak awal tidak perlu dibuka.
+Mulai dari yang paling parah. Tiga pertanyaan cukup:
+
+1. Layanan ini memang perlu terbuka ke internet?
+2. Versinya masih didukung?
+3. Kalau tidak perlu publik, bisakah dibatasi ke jaringan dalam atau VPN?
+
+Sering kali langkah termurah bukan menambal. Menutup pintu yang sejak awal tidak perlu dibuka.
 
 ## Langkah berikutnya
 
-Pilih satu IP yang benar-benar melayani pelanggan Anda. Buka **sinexis.app**, daftar, lalu jalankan satu scan IP.
+Pilih satu IP yang benar-benar melayani pelanggan. Buka **sinexis.app**, daftar, jalankan satu scan IP.
 
-Setiap scan memakai kredit; biaya per jenis pemeriksaan bisa dilihat di layar harga di dalam akun sebelum Anda menjalankannya. Kalau hasilnya terasa berguna, hidupkan jadwal supaya perbandingannya jalan sendiri tiap bulan.
+Kredit terpotong per jalan; lihat layar harga di akun sebelum menekan. Kalau hasilnya terasa jadi bahan yang bisa dibahas, hidupkan jadwal supaya perbandingannya jalan sendiri.
