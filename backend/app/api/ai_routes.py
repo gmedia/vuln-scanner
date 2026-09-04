@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,7 +29,7 @@ def _disabled() -> None:
         raise HTTPException(status_code=404, detail="Not found")
 
 
-async def _org(request: Request, user: User, db: AsyncSession):
+async def _org(request: Request, user: User, db: AsyncSession) -> UUID:
     org_id = get_active_org_id(request)
     if org_id is None:
         raise HTTPException(status_code=400, detail="No active organization")

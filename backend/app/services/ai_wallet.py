@@ -73,7 +73,8 @@ async def reserve(
         .where(AiWallet.organization_id == organization_id, AiWallet.balance_idr >= hold)
         .values(balance_idr=AiWallet.balance_idr - hold)
     )
-    if result.rowcount != 1:
+    updated = int(getattr(result, "rowcount", 0) or 0)
+    if updated != 1:
         raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail="Insufficient AI wallet balance")
     reservation = AiReservation(
         id=uuid.uuid4(),
