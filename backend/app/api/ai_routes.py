@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
-from app.models.ai_gateway import AiModel, AiUsageEvent
+from app.models.ai_gateway import AiApiKey, AiModel, AiUsageEvent
 from app.models.user import User
 from app.schemas.ai_gateway import (
     AiKeyCreate,
@@ -105,7 +105,7 @@ async def list_usage(
     return AiUsageList(items=[AiUsageOut.model_validate(r) for r in rows], total=total)
 
 
-def _key_out(row, plaintext: str | None = None) -> AiKeyOut:
+def _key_out(row: AiApiKey, plaintext: str | None = None) -> AiKeyOut:
     return AiKeyOut(
         id=row.id,
         name=row.name,
