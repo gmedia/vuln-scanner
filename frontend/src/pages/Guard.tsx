@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Shield, RefreshCw, KeyRound, AlertTriangle, Copy } from "lucide-react";
 import {
@@ -46,12 +47,21 @@ import {
   enableGuard,
   getGuardStatus,
   issueHostAgentToken,
+  linkGuardAgentAsset,
   listEnrollTokens,
   listGuardAgents,
   listGuardAlerts,
   revokeEnrollToken,
   syncGuard,
 } from "@/api/guard";
+import { listAssets } from "@/api/assets";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/Select";
 import type { GuardAgent } from "@/api/guard";
 import { useAuthStore } from "@/store/authStore";
 import type { ApiError } from "@/lib/utils";
@@ -322,6 +332,11 @@ export default function Guard() {
     queryFn: listEnrollTokens,
     enabled: !!activeOrgId && !!statusQ.data?.enabled && canAdmin,
   });
+  const assetsQ = useQuery({
+    queryKey: ["assets", activeOrgId],
+    queryFn: () => listAssets(),
+    enabled: !!activeOrgId && !!statusQ.data?.enabled && canAdmin,
+  });
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ["guard"] });
@@ -380,6 +395,22 @@ export default function Guard() {
       invalidate();
     },
     onError: (e) => setActionError(apiDetail(e, t("tokenRevokeFail"))),
+  });
+
+  const linkMut = useMutation({
+    mutationFn: ({
+      agentId,
+      assetId,
+    }: {
+      agentId: string;
+      assetId: string | null;
+    }) => linkGuardAgentAsset(agentId, assetId),
+    onSuccess: (data) => {
+      toast.success(data.asset_id ? t("assetLinkedToast") : t("assetUnlinkedToast"));
+      invalidate();
+      void queryClient.invalidateQueries({ queryKey: ["assets"] });
+    },
+    onError: (e) => setActionError(apiDetail(e, t("assetLinkFail"))),
   });
 
   const enabled = statusQ.data?.enabled ?? false;
@@ -859,8 +890,51 @@ export default function Guard() {
                           {t("colHelperPoll")}:{" "}
                           {formatWhen(a.last_helper_poll_at)}
                         </p>
-                        {canAdmin ? (
+                        {a.asset_id ? (
                           <div className="mt-2">
+                            <Badge
+                              variant="info"
+                              data-testid={`guard-asset-chip-${a.id}`}
+                            >
+                              {t("linkedAsset", {
+                                name: a.asset_name ?? a.asset_id,
+                              })}
+                            </Badge>{" "}
+                            <Button variant="link" size="sm" className="h-auto p-0" asChild>
+                              <Link to="/assets">{t("openAssets")}</Link>
+                            </Button>
+                          </div>
+                        ) : null}
+                        {canAdmin ? (
+                          <div className="mt-2 space-y-2">
+                            <Label htmlFor={`guard-link-${a.id}`} className="sr-only">
+                              {t("linkAsset")}
+                            </Label>
+                            <Select
+                              value={a.asset_id ?? "none"}
+                              onValueChange={(v) =>
+                                linkMut.mutate({
+                                  agentId: a.id,
+                                  assetId: v === "none" ? null : v,
+                                })
+                              }
+                            >
+                              <SelectTrigger
+                                id={`guard-link-${a.id}`}
+                                className="h-10"
+                                data-testid={`guard-link-asset-${a.id}`}
+                              >
+                                <SelectValue placeholder={t("linkAsset")} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">{t("unlinkAsset")}</SelectItem>
+                                {(assetsQ.data ?? []).map((asset) => (
+                                  <SelectItem key={asset.id} value={asset.id}>
+                                    {asset.name} ({asset.target})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             <HostTokenIssueButton
                               agent={a}
                               t={t}
@@ -893,6 +967,9 @@ export default function Guard() {
                         </TableHead>
                         <TableHead className="min-w-[6rem]">
                           {t("colVersion")}
+                        </TableHead>
+                        <TableHead className="min-w-[10rem]">
+                          {t("linkAsset")}
                         </TableHead>
                         {canAdmin ? (
                           <TableHead className="min-w-[10rem]">
@@ -930,6 +1007,54 @@ export default function Guard() {
                             title={a.version ?? undefined}
                           >
                             {a.version ?? "—"}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              {a.asset_id ? (
+                                <>
+                                  <Badge
+                                    variant="info"
+                                    data-testid={`guard-asset-chip-${a.id}`}
+                                  >
+                                    {t("linkedAsset", {
+                                      name: a.asset_name ?? a.asset_id,
+                                    })}
+                                  </Badge>
+                                  <Button variant="link" size="sm" className="h-auto justify-start p-0" asChild>
+                                    <Link to="/assets">{t("openAssets")}</Link>
+                                  </Button>
+                                </>
+                              ) : null}
+                              {canAdmin ? (
+                                <Select
+                                  value={a.asset_id ?? "none"}
+                                  onValueChange={(v) =>
+                                    linkMut.mutate({
+                                      agentId: a.id,
+                                      assetId: v === "none" ? null : v,
+                                    })
+                                  }
+                                >
+                                  <SelectTrigger
+                                    className="h-10"
+                                    data-testid={`guard-link-asset-${a.id}`}
+                                    aria-label={t("linkAsset")}
+                                  >
+                                    <SelectValue placeholder={t("linkAsset")} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">{t("unlinkAsset")}</SelectItem>
+                                    {(assetsQ.data ?? []).map((asset) => (
+                                      <SelectItem key={asset.id} value={asset.id}>
+                                        {asset.name} ({asset.target})
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              ) : a.asset_id ? null : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
+                            </div>
                           </TableCell>
                           {canAdmin ? (
                             <TableCell>

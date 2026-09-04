@@ -77,5 +77,12 @@
   "noAlertsHint": "Guard only surfaces high-level rules. Search and cases live in SIEM.",
   "online": "online",
   "disconnected": "disconnected",
-  "pending": "pending"
+  "pending": "pending",
+  "linkedAsset": "Asset: {{name}}",
+  "openAssets": "Open Assets",
+  "linkAsset": "Link scan asset",
+  "unlinkAsset": "Unlinked",
+  "assetLinkedToast": "Asset linked",
+  "assetUnlinkedToast": "Asset unlinked",
+  "assetLinkFail": "Could not link asset"
 }

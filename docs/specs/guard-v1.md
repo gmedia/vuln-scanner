@@ -50,7 +50,7 @@ Commercial: Guard is **second line** after Scan attach on colo/VPS; hospitality 
 | **Reuse global `ApiKey` as org enroll** | Redesign; store Guard enroll hashes in own tables |
 | **Same PR epic as Workspace rewrite** | Workspace already shipped; Guard is additive |
 | **Hard rebrand / domain cutover** | P4 soft already; must not gate Guard |
-| **P3 full asset registry** | Optional link later; agents are not assets product |
+| **P3 full asset registry** | Agents are not assets; optional link: [`asset-guard-link.md`](asset-guard-link.md) |
 | **Committing manager IPs, passwords, customer agent lists** | Public repo hygiene |
 
 ---

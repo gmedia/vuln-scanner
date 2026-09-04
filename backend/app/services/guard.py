@@ -13,6 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.models.asset import ScanAsset
 from app.models.guard import (
     GuardAgent,
     GuardAlert,
@@ -122,6 +123,48 @@ class GuardService:
             select(GuardAgent).where(GuardAgent.organization_id == org_id).order_by(GuardAgent.name.asc())
         )
         return list(result.scalars().all())
+
+    async def link_asset(
+        self,
+        user: User,
+        organization_id: UUID | None,
+        agent_id: UUID,
+        asset_id: UUID | None,
+    ) -> GuardAgent:
+        self._require_feature()
+        org_id = await self._require_org(user, organization_id, min_role="admin")
+        result = await self.db.execute(
+            select(GuardAgent).where(GuardAgent.id == agent_id, GuardAgent.organization_id == org_id)
+        )
+        agent = result.scalar_one_or_none()
+        if agent is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found")
+        if asset_id is None:
+            agent.asset_id = None
+            agent.updated_at = datetime.now(UTC)
+            await self.db.commit()
+            await self.db.refresh(agent)
+            return agent
+        asset_row = await self.db.execute(
+            select(ScanAsset).where(ScanAsset.id == asset_id, ScanAsset.organization_id == org_id)
+        )
+        asset = asset_row.scalar_one_or_none()
+        if asset is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+        taken = await self.db.execute(
+            select(GuardAgent.id).where(
+                GuardAgent.organization_id == org_id,
+                GuardAgent.asset_id == asset_id,
+                GuardAgent.id != agent_id,
+            )
+        )
+        if taken.scalar_one_or_none() is not None:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Asset already linked to another agent")
+        agent.asset_id = asset_id
+        agent.updated_at = datetime.now(UTC)
+        await self.db.commit()
+        await self.db.refresh(agent)
+        return agent
 
     async def issue_host_agent_token(
         self,

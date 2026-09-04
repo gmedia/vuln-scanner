@@ -3,12 +3,15 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.middleware.rate_limit import RateLimiter
+from app.models.asset import ScanAsset
 from app.models.user import User
 from app.schemas.guard import (
+    GuardAgentAssetLink,
     GuardAgentResponse,
     GuardAlertResponse,
     GuardEnrollRequest,
@@ -62,12 +65,25 @@ async def list_agents(
     db: AsyncSession = Depends(get_db),
 ) -> list[GuardAgentResponse]:
     rows = await GuardService(db).list_agents(current_user, get_active_org_id(request))
-    return [
-        GuardAgentResponse.model_validate(r).model_copy(
-            update={"has_host_agent_token": bool(r.results_token_hash) and r.results_token_revoked_at is None}
+    asset_ids = [r.asset_id for r in rows if r.asset_id is not None]
+    names: dict[UUID, ScanAsset] = {}
+    if asset_ids:
+        asset_q = await db.execute(select(ScanAsset).where(ScanAsset.id.in_(asset_ids)))
+        names = {a.id: a for a in asset_q.scalars().all()}
+    out: list[GuardAgentResponse] = []
+    for r in rows:
+        asset = names.get(r.asset_id) if r.asset_id else None
+        out.append(
+            GuardAgentResponse.model_validate(r).model_copy(
+                update={
+                    "has_host_agent_token": bool(r.results_token_hash) and r.results_token_revoked_at is None,
+                    "asset_id": r.asset_id,
+                    "asset_name": asset.name if asset else None,
+                    "asset_target": asset.target if asset else None,
+                }
+            )
         )
-        for r in rows
-    ]
+    return out
 
 
 @router.get("/alerts", response_model=list[GuardAlertResponse])
@@ -79,6 +95,37 @@ async def list_alerts(
 ) -> list[GuardAlertResponse]:
     rows = await GuardService(db).list_alerts(current_user, get_active_org_id(request), limit=limit)
     return [GuardAlertResponse.model_validate(r) for r in rows]
+
+
+@router.patch("/agents/{agent_id}/asset", response_model=GuardAgentResponse)
+async def link_agent_asset(
+    agent_id: UUID,
+    body: GuardAgentAssetLink,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> GuardAgentResponse:
+    agent = await GuardService(db).link_asset(
+        current_user,
+        get_active_org_id(request),
+        agent_id,
+        body.asset_id,
+    )
+    asset_name = None
+    asset_target = None
+    if agent.asset_id is not None:
+        asset_q = await db.execute(select(ScanAsset).where(ScanAsset.id == agent.asset_id))
+        asset = asset_q.scalar_one_or_none()
+        if asset is not None:
+            asset_name = asset.name
+            asset_target = asset.target
+    return GuardAgentResponse.model_validate(agent).model_copy(
+        update={
+            "has_host_agent_token": bool(agent.results_token_hash) and agent.results_token_revoked_at is None,
+            "asset_name": asset_name,
+            "asset_target": asset_target,
+        }
+    )
 
 
 @router.post(

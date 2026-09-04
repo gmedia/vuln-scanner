@@ -9,6 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.asset import ASSET_SKU_LIMITS, ScanAsset
+from app.models.guard import GuardAgent
 from app.models.organization import Organization
 from app.models.scan_schedule import ScanSchedule
 from app.models.user import User
@@ -46,7 +47,22 @@ class AssetService:
         result = await self.db.execute(select(ScanSchedule.id).where(ScanSchedule.asset_id == asset_id))
         return result.scalar_one_or_none()
 
-    def _to_response(self, asset: ScanAsset, *, sku: str | None, schedule_id: UUID | None = None) -> AssetResponse:
+    async def _guard_link(self, asset_id: UUID) -> tuple[UUID | None, str | None]:
+        result = await self.db.execute(select(GuardAgent.id, GuardAgent.name).where(GuardAgent.asset_id == asset_id))
+        row = result.one_or_none()
+        if row is None:
+            return None, None
+        return row.id, row.name
+
+    def _to_response(
+        self,
+        asset: ScanAsset,
+        *,
+        sku: str | None,
+        schedule_id: UUID | None = None,
+        guard_agent_id: UUID | None = None,
+        guard_agent_name: str | None = None,
+    ) -> AssetResponse:
         return AssetResponse(
             id=asset.id,
             organization_id=asset.organization_id,
@@ -61,6 +77,8 @@ class AssetService:
             schedule_id=schedule_id,
             sku=sku,
             sku_limit=sku_asset_limit(sku),
+            guard_agent_id=guard_agent_id,
+            guard_agent_name=guard_agent_name,
         )
 
     async def list_assets(
@@ -74,13 +92,29 @@ class AssetService:
             select(ScanAsset).where(ScanAsset.organization_id == organization_id).order_by(ScanAsset.created_at.desc())
         )
         assets = list(result.scalars().all())
+        agent_rows = await self.db.execute(
+            select(GuardAgent.id, GuardAgent.name, GuardAgent.asset_id).where(
+                GuardAgent.organization_id == organization_id,
+                GuardAgent.asset_id.is_not(None),
+            )
+        )
+        agent_by_asset = {row.asset_id: (row.id, row.name) for row in agent_rows.all()}
         needle = tag.strip().lower() if tag else None
         out: list[AssetResponse] = []
         for a in assets:
             if needle and needle not in [t.lower() for t in (a.tags or [])]:
                 continue
             sid = await self._schedule_id(a.id)
-            out.append(self._to_response(a, sku=org.sku, schedule_id=sid))
+            linked = agent_by_asset.get(a.id)
+            out.append(
+                self._to_response(
+                    a,
+                    sku=org.sku,
+                    schedule_id=sid,
+                    guard_agent_id=linked[0] if linked else None,
+                    guard_agent_name=linked[1] if linked else None,
+                )
+            )
         return out
 
     async def create(self, user: User, organization_id: UUID | None, body: AssetCreate) -> AssetResponse:
@@ -138,7 +172,8 @@ class AssetService:
         asset = await self._get_in_org(asset_id, organization_id, user.id)
         org = await self._org(asset.organization_id)
         sid = await self._schedule_id(asset.id)
-        return self._to_response(asset, sku=org.sku, schedule_id=sid)
+        gid, gname = await self._guard_link(asset.id)
+        return self._to_response(asset, sku=org.sku, schedule_id=sid, guard_agent_id=gid, guard_agent_name=gname)
 
     async def update(
         self, user: User, organization_id: UUID | None, asset_id: UUID, body: AssetUpdate
@@ -158,7 +193,8 @@ class AssetService:
         await self.db.refresh(asset)
         org = await self._org(asset.organization_id)
         sid = await self._schedule_id(asset.id)
-        return self._to_response(asset, sku=org.sku, schedule_id=sid)
+        gid, gname = await self._guard_link(asset.id)
+        return self._to_response(asset, sku=org.sku, schedule_id=sid, guard_agent_id=gid, guard_agent_name=gname)
 
     async def delete(self, user: User, organization_id: UUID | None, asset_id: UUID) -> None:
         asset = await self._get_in_org(asset_id, organization_id, user.id)

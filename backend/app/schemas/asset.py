@@ -168,3 +168,5 @@ class AssetResponse(BaseModel):
     schedule_id: uuid.UUID | None = None
     sku_limit: int | None = None
     sku: str | None = None
+    guard_agent_id: uuid.UUID | None = None
+    guard_agent_name: str | None = None

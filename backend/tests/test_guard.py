@@ -344,3 +344,111 @@ async def test_issue_host_agent_token_admin_idor(db_session: AsyncSession, guard
         assert row.results_token_hash != hash_results_token(first)
 
     app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_link_agent_asset(db_session: AsyncSession, guard_ws):
+    owner = guard_ws["owner"]
+    viewer = guard_ws["viewer"]
+    outsider = guard_ws["outsider"]
+    org = guard_ws["org"]
+    other = guard_ws["other"]
+    from app.database import get_db
+    from app.models.asset import ScanAsset
+
+    asset = ScanAsset(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        name="Edge VPS",
+        scan_type="ip",
+        target="203.0.113.10",
+        created_by=owner.id,
+    )
+    other_asset = ScanAsset(
+        id=uuid.uuid4(),
+        organization_id=other.id,
+        name="Other",
+        scan_type="ip",
+        target="203.0.113.99",
+        created_by=outsider.id,
+    )
+    db_session.add_all([asset, other_asset])
+    await db_session.commit()
+
+    async def _db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = _db
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.post("/api/guard/enable", headers=_auth(owner, org.id))
+        r = await client.post(
+            "/api/guard/enroll-tokens",
+            headers=_auth(owner, org.id),
+            json={"label": "link"},
+        )
+        raw = r.json()["token"]
+        await client.post(
+            "/api/guard/enroll",
+            headers={"X-E2E-Test": "1"},
+            json={"token": raw, "agent_name": "vps-link-01"},
+        )
+        r = await client.post(
+            "/api/guard/enroll-tokens",
+            headers=_auth(owner, org.id),
+            json={"label": "link2"},
+        )
+        raw2 = r.json()["token"]
+        await client.post(
+            "/api/guard/enroll",
+            headers={"X-E2E-Test": "1"},
+            json={"token": raw2, "agent_name": "vps-link-02"},
+        )
+        agents = (await client.get("/api/guard/agents", headers=_auth(owner, org.id))).json()
+        a1 = next(a for a in agents if a["name"] == "vps-link-01")
+        a2 = next(a for a in agents if a["name"] == "vps-link-02")
+        assert a1["asset_id"] is None
+
+        r = await client.patch(
+            f"/api/guard/agents/{a1['id']}/asset",
+            headers=_auth(viewer, org.id),
+            json={"asset_id": str(asset.id)},
+        )
+        assert r.status_code == 403
+
+        r = await client.patch(
+            f"/api/guard/agents/{a1['id']}/asset",
+            headers=_auth(owner, org.id),
+            json={"asset_id": str(other_asset.id)},
+        )
+        assert r.status_code == 404
+
+        r = await client.patch(
+            f"/api/guard/agents/{a1['id']}/asset",
+            headers=_auth(owner, org.id),
+            json={"asset_id": str(asset.id)},
+        )
+        assert r.status_code == 200
+        assert r.json()["asset_id"] == str(asset.id)
+        assert r.json()["asset_name"] == "Edge VPS"
+
+        r = await client.patch(
+            f"/api/guard/agents/{a2['id']}/asset",
+            headers=_auth(owner, org.id),
+            json={"asset_id": str(asset.id)},
+        )
+        assert r.status_code == 409
+
+        listed = (await client.get("/api/guard/agents", headers=_auth(owner, org.id))).json()
+        linked = next(a for a in listed if a["id"] == a1["id"])
+        assert linked["asset_name"] == "Edge VPS"
+
+        r = await client.patch(
+            f"/api/guard/agents/{a1['id']}/asset",
+            headers=_auth(owner, org.id),
+            json={"asset_id": None},
+        )
+        assert r.status_code == 200
+        assert r.json()["asset_id"] is None
+
+    app.dependency_overrides.clear()
