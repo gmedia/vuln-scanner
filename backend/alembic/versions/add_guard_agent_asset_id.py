@@ -1,7 +1,7 @@
 """Optional Guard agent → scan asset FK (1:0..1).
 
 Revision ID: add_guard_agent_asset_id
-Revises: merge_tag_colors_host_site_interval
+Revises: merge_tag_colors_host_interval
 Create Date: 2026-09-04
 """
 
@@ -13,7 +13,7 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 revision: str = "add_guard_agent_asset_id"
-down_revision: str | None = "merge_tag_colors_host_site_interval"
+down_revision: str | None = "merge_tag_colors_host_interval"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
