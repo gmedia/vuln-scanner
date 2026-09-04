@@ -1,3 +1,4 @@
+from app.models.ai_gateway import AiApiKey, AiModel, AiProvider, AiReservation, AiUsageEvent, AiWallet
 from app.models.asset import ScanAsset
 from app.models.blog import BlogPost
 from app.models.credit_log import CreditLog
@@ -18,6 +19,12 @@ from app.models.uptime import UptimeEvent, UptimeMonitor, UptimeSample
 from app.models.user import User
 
 __all__ = [
+    "AiProvider",
+    "AiModel",
+    "AiApiKey",
+    "AiWallet",
+    "AiReservation",
+    "AiUsageEvent",
     "User",
     "EmailSendLog",
     "EmailVerificationToken",
