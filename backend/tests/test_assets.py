@@ -95,6 +95,8 @@ async def test_asset_crud_and_sku_cap(db_session: AsyncSession, ctx):
             listed = await client.get("/api/assets", headers=_auth(owner, org.id))
             assert listed.status_code == 200
             assert len(listed.json()) == 1
+            assert listed.json()[0]["guard_agent_id"] is None
+            assert listed.json()[0]["guard_agent_name"] is None
             patched = await client.patch(
                 f"/api/assets/{aid}",
                 headers=_auth(owner, org.id),
