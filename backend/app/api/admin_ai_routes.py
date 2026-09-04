@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.database import get_db
 from app.middleware.rate_limit import RateLimiter
-from app.models.ai_gateway import PROVIDER_STATUSES, AiModel, AiProvider
+from app.models.ai_gateway import PROVIDER_STATUSES, AiModel, AiProvider, AiUsageEvent
 from app.models.user import User
 from app.schemas.ai_gateway import (
     AiModelCreate,
@@ -20,8 +20,13 @@ from app.schemas.ai_gateway import (
     AiProviderList,
     AiProviderOut,
     AiProviderUpdate,
+    AiUsageList,
+    AiUsageOut,
+    AiWalletOut,
+    AiWalletTopup,
 )
 from app.services.ai_crypto import encrypt_credential
+from app.services.ai_wallet import topup as wallet_topup
 from app.services.auth import get_current_admin
 
 router = APIRouter(prefix="/admin/ai", tags=["admin-ai"])
@@ -253,3 +258,41 @@ async def delete_model(
     await db.delete(row)
     await db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/wallets/{org_id}/topup", response_model=AiWalletOut)
+async def topup_wallet(
+    org_id: uuid.UUID,
+    request: Request,
+    body: AiWalletTopup,
+    _admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> AiWalletOut | Response:
+    _disabled()
+    limited = await _limit(request)
+    if limited:
+        return limited
+    wallet = await wallet_topup(db, org_id, body.amount_idr)
+    return AiWalletOut.model_validate(wallet)
+
+
+@router.get("/usage", response_model=AiUsageList)
+async def admin_list_usage(
+    request: Request,
+    org_id: uuid.UUID | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=200),
+    _admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> AiUsageList | Response:
+    _disabled()
+    limited = await _limit(request)
+    if limited:
+        return limited
+    q = select(AiUsageEvent)
+    cq = select(func.count(AiUsageEvent.id))
+    if org_id is not None:
+        q = q.where(AiUsageEvent.organization_id == org_id)
+        cq = cq.where(AiUsageEvent.organization_id == org_id)
+    total = (await db.execute(cq)).scalar() or 0
+    rows = list((await db.execute(q.order_by(AiUsageEvent.created_at.desc()).limit(limit))).scalars().all())
+    return AiUsageList(items=[AiUsageOut.model_validate(r) for r in rows], total=total)
