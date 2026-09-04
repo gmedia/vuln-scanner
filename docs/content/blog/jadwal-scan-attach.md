@@ -1,65 +1,63 @@
-# Scan Attach: jadwal, perubahan, dan laporan bulanan
+# Attach: janji cek ulang, bukan foto sekali
 
-Scan sekali itu seperti cek kesehatan sekali. Hasilnya benar untuk hari itu, tapi bulan depan sudah basi.
+Scan sekali benar untuk hari itu. Minggu depan, sertifikat bisa hampir habis, port bisa terbuka, DNS bisa nyasar. Foto lama tidak menolong.
 
-Scan Attach adalah janji berulang: domain dan/atau IP Anda diperiksa lagi tiap minggu atau tiap bulan, otomatis. Pertanyaan yang dijawab bukan "apa saja temuannya", tapi yang lebih berguna: **apa yang baru dan lebih berbahaya dibanding pemeriksaan sebelumnya?**
+Scan Attach adalah janji berulang. Domain dan/atau IP diperiksa lagi tiap minggu atau tiap bulan, otomatis. Pertanyaan utamanya bukan "ada berapa temuan", melainkan **apa yang baru dan lebih berbahaya dibanding acuan sebelumnya**.
 
-Kata "attach" dipakai karena modul ini menempel di layanan yang sudah Anda bayar — colo, VPS, atau hosting. Bukan hosting pengganti, dan bukan pemantauan log 24 jam. Untuk jadwal ini tidak ada agen yang perlu dipasang; pemeriksaan tetap dari internet.
+Kata attach dipakai karena modul ini menempel di colo, VPS, atau hosting yang sudah Anda bayar. Bukan pindahan mesin. Bukan SIEM. Untuk jadwal ini tidak ada agen. Pemeriksaan tetap dari internet.
 
-## Cara kerjanya
+## Urutan yang biasa
 
-Anda pilih ritmenya: bulanan atau mingguan, sesuai paket yang diambil. Jumlah jadwal per organisasi ada batasnya, dan batas itu bagian dari produk — bukan angka yang bisa dinaikkan sekadar karena diminta.
+Anda pilih ritme: bulanan atau mingguan, sesuai paket. Jumlah jadwal per organisasi ada atapnya. Atap itu bagian dari produk, bukan angka yang dinegosiasi di artikel blog.
 
-Urutannya:
+1. **Tunjuk target.** Satu domain atau satu IP. Lebih aman lewat aset bernama, supaya orang lain tidak salah ketik.
+2. **Cek kredit.** Jadwal memotong saldo yang sama dengan scan manual. Kredit habis, jadwal berhenti.
+3. **Hidupkan.** Siklus pertama jadi acuan.
+4. **Baca selisih.** Periode berikutnya yang ditonjolkan adalah perubahan, terutama temuan parah yang baru muncul.
 
-1. **Tunjuk target.** Satu domain atau satu IP. Lebih aman lewat aset yang sudah diberi nama, supaya tidak salah sasaran.
-2. **Pastikan kredit tersedia.** Jadwal memakai kredit yang sama seperti scan manual. Kredit habis berarti jadwal berhenti.
-3. **Hidupkan jadwal.** Siklus pertama jalan otomatis dan jadi acuan awal.
-4. **Baca selisihnya.** Periode berikutnya yang Anda lihat bukan daftar panjang dari nol, tapi perbandingan dengan hasil sebelumnya.
+## Yang berubah di rapat bulanan
 
-## Yang berubah di operasional harian
+Tanpa jadwal, pembicaraan keamanan sering berhenti di "sepertinya aman". Dengan acuan, bahannya konkret: bulan ini ada perubahan, satu sudah ditutup, satu masih terbuka.
 
-Hasil pemeriksaan sebelumnya disimpan sebagai acuan. Yang ditonjolkan adalah temuan parah yang **baru muncul**, bukan tumpukan baris yang sama tiap bulan.
+Notifikasi email untuk temuan serius, kelengkapannya tergantung paket. Ada laporan HTML ringkas dalam Bahasa Indonesia yang masuk akal diteruskan ke pemilik usaha, manajer, atau GM, tanpa harus diterjemahkan dulu oleh orang teknis.
 
-Kalau ada temuan serius, notifikasi email dikirim; kelengkapannya tergantung paket. Ada juga laporan HTML ringkas dalam Bahasa Indonesia yang masuk akal diteruskan ke pemilik usaha, manajer, atau GM hotel tanpa perlu diterjemahkan dulu oleh orang IT.
-
-Efek sampingnya sederhana tapi penting: pembicaraan keamanan bulanan jadi punya bahan. Bukan "sepertinya aman", tapi "bulan ini ada dua perubahan, satu sudah ditutup".
+Itu pekerjaan kontrol. Bukan pemantauan log sepanjang malam.
 
 ## Kalau kredit habis
 
-Jadwal berhenti dengan sendirinya. Tidak ada pemeriksaan yang dipaksa jalan, dan tidak ada tagihan tambahan yang muncul di belakang.
+Jadwal diam. Tidak ada pemeriksaan yang dipaksa. Tidak ada tagihan yang muncul di belakang.
 
-Isi ulang kredit atau naikkan paket, lalu hidupkan jadwalnya lagi. Riwayat sebelumnya tidak hilang, jadi perbandingan bisa dilanjutkan.
+Isi ulang atau naikkan paket, hidupkan lagi. Riwayat lama tidak dihapus, jadi perbandingan bisa disambung.
 
-## Yang dicek dan yang tidak
+## Dari Attach, dan yang bukan
 
-| Dari jadwal Attach | Bukan dari sini |
+| Dari jadwal | Bukan dari sini |
 |---|---|
-| Perubahan temuan dibanding periode sebelumnya | Pemantauan log di dalam server |
-| Temuan parah baru yang perlu perhatian | Patch otomatis atau perbaikan |
-| Laporan HTML ringkas untuk diteruskan | Dasbor SIEM lengkap |
-| Notifikasi email untuk temuan serius | Alert real-time setiap menit |
+| Selisih temuan vs periode lalu | Baca log di dalam server |
+| Temuan parah baru | Patch otomatis |
+| Laporan HTML ringkas | Dasbor SIEM |
+| Email untuk yang serius | Alert tiap menit |
 
-## Batas yang perlu jelas sejak awal
+## Batas sejak halaman ini
 
-Scan Attach bukan SIEM dan bukan tim yang berjaga tiap jam. Ia berjalan sesuai jadwal, dari luar.
+Attach bukan Guard. Guard butuh satu `wazuh-agent` per mesin dan berdiri sebagai modul sendiri. Menghidupkan jadwal tidak memasang agen.
 
-Ini juga bukan Guard. Guard adalah alarm di dalam server dengan satu agen per mesin, dan itu modul terpisah. Menghidupkan jadwal Attach tidak memasang agen apa pun.
+SIEM, Cases, dan tim yang berjaga juga bukan pekerjaan ini. Ritme mengikuti kalender, dari luar.
 
-Bukan pula pengganti pengujian oleh manusia. Kalau aplikasi Anda punya alur pemesanan atau hak akses yang rumit, tetap perlu orang yang menelusurinya. Attach menjaga lapisan dasarnya tetap terpantau.
+Pengujian oleh manusia tetap terpisah. Alur bisnis yang rumit butuh orang yang menelusuri. Attach hanya menjaga lapisan dasar tidak dibiarkan setahun tanpa dilihat.
 
-Dan tidak ada janji "aman 100%". Yang dijanjikan: kalau permukaan Anda berubah menjadi lebih berisiko, Anda tahu dalam hitungan minggu, bukan setahun kemudian.
+Tidak ada janji aman 100 persen. Yang dijanjikan: kalau permukaan jadi lebih berisiko, Anda tahu dalam hitungan minggu, bukan setelah insiden.
 
 ## Buat siapa ini paling terasa
 
-Tim kecil yang tidak punya orang khusus keamanan, tapi punya satu sampai beberapa alamat yang menghadap pelanggan.
+Tim kecil tanpa orang keamanan penuh waktu, dengan satu sampai beberapa alamat yang menghadap pelanggan.
 
-Pemilik layanan hosting atau colo yang ingin menambahkan satu baris keamanan yang bisa dibuktikan tiap bulan, bukan janji lisan.
+Penyedia colo atau VPS yang ingin satu baris keamanan yang bisa dibuktikan, bukan janji di chat.
 
-Kantor atau properti yang secara berkala ditanya "keamanan kita bagaimana?" dan butuh jawaban satu halaman.
+Kantor atau properti yang tiap periode ditanya status, dan butuh satu halaman daripada slide kosong.
 
-## Langkah berikutnya
+## Sesudah satu scan manual
 
-Pilih satu domain atau IP yang benar-benar menghadap pelanggan. Jalankan satu scan manual dulu di **sinexis.app**, lalu baca hasilnya.
+Jalankan dulu satu pemeriksaan di **sinexis.app** pada target yang benar-benar live. Baca hasilnya.
 
-Kalau isinya masuk akal untuk dilaporkan rutin, hidupkan jadwalnya. Periode berikutnya Anda hanya perlu membaca perubahannya.
+Kalau isinya pantas jadi bahan rutin, hidupkan jadwal. Periode berikutnya pekerjaan Anda membaca perubahan, bukan mengulang dari nol.

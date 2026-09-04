@@ -1,66 +1,68 @@
-# Aset dan workspace: nama target dan satu tim
+# Aset bernama dan workspace: supaya scan tidak salah sasaran
 
-Dua istilah yang sering tertukar. Mari dipisahkan dulu.
+Dua kata yang sering ditukar. Pisahkan dulu.
 
-**Aset** adalah barang yang diperiksa: "website booking", "VPS produksi", "IP colo rak A". Ini nama manusiawi untuk target, supaya tidak perlu mengetik ulang alamat setiap kali scan.
+**Aset** adalah barang yang diperiksa. Nama manusiawi untuk target: "website booking", "VPS produksi", "IP colo lantai 2". Bukan agen. Bukan izin jaringan.
 
-**Workspace** adalah tempat orang-orangnya berkumpul: satu perusahaan, satu hotel, satu kantor. Di versi sekarang satu workspace kira-kira setara satu organisasi, bukan banyak proyek bersarang di dalamnya.
+**Workspace** adalah orang-orangnya. Satu perusahaan, satu hotel, satu kantor. Di versi sekarang kira-kira satu organisasi, bukan banyak proyek bersarang.
 
-## Kenapa aset penting
+Tanpa aset, orang mengetik IP atau domain berulang-ulang. Salah ketik ke alamat milik orang lain bukan soal kerapian lagi. Dengan aset, didaftarkan sekali, jadwal menempel di nama itu, riwayat terkumpul di satu tempat.
 
-Tanpa nama, orang mengetik IP atau domain berulang-ulang, dan cepat atau lambat ada yang salah ketik. Kalau yang tersalah ketik itu alamat milik orang lain, urusannya bukan lagi soal kerapian.
+## Nama, bukan dekorasi
 
-Dengan aset: didaftarkan sekali, dipakai berkali-kali, dan jadwal pemeriksaan menempel di nama itu. Riwayat hasilnya juga jadi rapi karena terkumpul di satu tempat.
+Label dan tag di daftar aset hanya untuk mengelompokkan tampilan. Bisa dipilih beberapa sekaligus. Tag tidak memasang apa pun di server, tidak menambah agen, tidak membuka port.
 
-Label dan tag di daftar aset gunanya hanya untuk mengelompokkan dan memfilter tampilan di dasbor. Bisa dipilih beberapa sekaligus. Tag bukan agen, bukan izin jaringan, dan tidak mengubah apa pun di server Anda.
+Pakai nama yang orang lain pahami saat Anda cuti. "Situs utama" atau "VPS billing" lebih berguna daripada kode yang hanya Anda hafal.
 
-## Batas jumlah aset
+## Atap jumlah aset ikut paket
 
-Jumlah aset yang bisa didaftarkan mengikuti paket:
+Batasnya keras sesuai tingkat yang diambil. Tidak ada janji belasan domain di paket satu aset.
 
-- **Tingkat dasar** — satu aset. Satu domain atau satu IP.
-- **Tingkat menengah** — beberapa aset, untuk tim dengan lebih dari satu target.
-- **Tingkat multi-aset** — belasan aset bernama, untuk yang mengelola banyak VPS atau domain.
+- **Dasar:** satu aset. Satu domain atau satu IP.
+- **Menengah:** beberapa aset.
+- **Multi-aset:** belasan nama, untuk yang pegang banyak VPS atau domain.
 
-Angka pastinya tampil di akun Anda, dan batas itu berlaku keras sesuai paket yang diambil. Jadi tidak ada janji belasan domain di paket satu aset.
+Angka pastinya tampil di akun. Blog tidak mengutip kuota seolah harga.
 
-Saran praktis: pakai nama yang bisa dimengerti orang lain. "Situs utama" atau "VPS billing" jauh lebih berguna daripada kode acak yang cuma Anda pahami — terutama saat Anda cuti dan orang lain yang membaca laporannya.
+## Empat peran di workspace
 
-## Workspace: siapa bisa apa
+Dari yang paling luas:
 
-Ada empat peran, dari yang paling luas ke yang paling sempit:
+- **Owner.** Mengundang orang, mengatur langganan.
+- **Admin.** Mengundang, mengelola aset dan jadwal.
+- **Member.** Kerja harian: menjalankan scan, membaca hasil.
+- **Viewer.** Lihat saja. Tidak mengubah pengaturan.
 
-- **Owner** — pemilik workspace. Mengundang orang dan mengatur langganan.
-- **Admin** — mengundang orang, mengelola aset dan jadwal.
-- **Member** — kerja sehari-hari: menjalankan scan, membaca hasil.
-- **Viewer** — hanya melihat, tidak bisa mengubah apa pun.
+Viewer sering diremehkan. Manajer, pemilik, atau compliance biasanya cukup membaca laporan bulanan tanpa risiko menyentuh tombol.
 
-Peran viewer sering diremehkan padahal paling sering dipakai. Manajer, pemilik usaha, atau tim compliance biasanya cukup butuh melihat hasil dan laporan bulanan tanpa risiko menyentuh pengaturan.
+Aturan praktis: owner dan admin mengundang, member mengerjakan, viewer memantau.
 
-Aturan sederhananya: owner dan admin yang mengundang, member yang bekerja, viewer yang memantau.
+## Kredit tidak ikut undangan
 
-## Kredit tetap pribadi
+Mengundang rekan **tidak** menyatukan saldo. Kredit menempel di akun login masing-masing.
 
-Ini bagian yang paling sering disalahpahami, jadi disebut terang-terangan: kredit menempel pada akun login masing-masing orang, bukan kas bersama workspace.
+Kalau satu orang harus menanggung semua pemeriksaan, tunjuk satu pemegang kredit. Biarkan dia yang menjalankan atau menjadwalkan. Kas bersama organisasi belum ada.
 
-Mengundang rekan ke workspace **tidak** menggabungkan saldo. Kalau Anda ingin satu orang yang menanggung semua pemeriksaan, tunjuk satu akun sebagai pemegang kredit dan biarkan dia yang menjalankan atau menjadwalkan scan. Dompet tingkat organisasi mungkin menyusul di versi berikutnya.
+Itu juga alasan PDF bolak-balik bisa dikurangi: hasilnya dibaca di workspace, dengan peran yang jelas, tanpa meneruskan berkas ke grup yang salah.
 
-## Tiga contoh susunan
+## Tiga susunan yang wajar
 
-**Hotel satu properti.** Satu workspace, satu aset (domain booking), satu orang IT yang memegang. GM cukup diundang sebagai viewer kalau ingin membaca laporan bulanan.
+**Satu properti.** Satu workspace, satu aset (domain booking), satu orang IT. GM sebagai viewer kalau ingin laporan.
 
-**Grup hotel.** Satu workspace, beberapa aset — satu per properti atau satu per layanan. GM tiap properti sebagai viewer, tim IT pusat sebagai member.
+**Beberapa properti.** Satu workspace, beberapa aset. IT pusat sebagai member, GM tiap lokasi sebagai viewer.
 
-**Kantor dengan banyak VPS.** Satu workspace, belasan aset bernama, paket multi-aset. Tag dipakai untuk memisahkan mana yang produksi dan mana yang internal.
+**Kantor banyak VPS.** Satu workspace, belasan aset bernama, paket multi-aset. Tag memisahkan produksi dan internal.
 
-## Yang tidak berubah oleh aset
+Hospitality di sini contoh susunan tim, bukan klaim bahwa semua pelanggan adalah hotel.
 
-Mendaftarkan aset tidak memasang apa pun di server Anda. Kalau nanti Anda memakai Guard, tetap satu agen per mesin — bukan satu agen per aset atau per tag. Program pembantu Host Protect juga dihitung per mesin, bukan per label.
+## Yang tidak berubah karena aset
 
-Aset adalah cara Sinexis menyebut target Anda. Tidak lebih, tidak kurang.
+Mendaftarkan nama tidak memasang program di mesin. Guard tetap satu `wazuh-agent` per VM, bukan per aset atau per tag. Helper Host Protect juga per mesin, bukan per label.
 
-## Langkah berikutnya
+Aset adalah cara Sinexis menyebut target. Titik.
 
-Buka **sinexis.app**, lalu buat satu aset untuk target yang paling penting — yang benar-benar dipakai pelanggan Anda.
+## Buat satu nama dulu
 
-Undang satu rekan kalau memang ada yang perlu membaca hasilnya. Mulai kecil, tambah kalau manfaatnya sudah terasa.
+Buka **sinexis.app**. Buat satu aset untuk target yang paling penting, yang benar-benar dipakai.
+
+Undang satu rekan hanya jika ada yang perlu membaca. Tambah nama berikutnya setelah manfaatnya terasa, bukan karena kuota paket masih sisa.

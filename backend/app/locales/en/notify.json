@@ -8,5 +8,6 @@
   "worsened": "Worsened: {n}",
   "open_detail": "Open scan detail",
   "or_copy": "Or copy this link:",
-  "footer": "You received this email because scan notifications (schedule or baseline diff) are enabled."
+  "footer": "You received this email because scan notifications (schedule or baseline diff) are enabled.",
+  "preheader": "{n} new critical/high findings on {target}."
 }

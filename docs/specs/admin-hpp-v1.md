@@ -54,7 +54,6 @@ Table `hpp_rates`:
 | GET | `/api/admin/hpp/costs?from=&to=` | Journal lines in range |
 | POST | `/api/admin/hpp/costs` | `{ incurred_on, amount_idr, category, note }` |
 | DELETE | `/api/admin/hpp/costs/{id}` | 204 |
-| POST | `/api/admin/hpp/quote` | Cloud compare: CPU/RAM + instance IDR + kWh + monthly jobs. Uses current `hpp_rates` + overhead. Generic provider string — not a vendor bind. |
 
 Report rows: per key `count`, `rate_idr`, `hpp_idr` (= count × rate). Totals. Statushost count = `credit_logs` with `type=deduct` and description prefix `Status hostname:` in range. Hostscan count = `host_scans` with `status=completed` and `finished_at` in range. Seed `hostscan` **0** — no real COGS in git.
 
@@ -64,4 +63,4 @@ S3 overlay: for each SKU, **estimasi** HPP if monthly credits were burned entire
 
 ## 4. SPA
 
-`/admin/hpp`: rates form (pattern Admin Pricing) + cloud-compare quote (CPU/RAM/instance + job volume) + date filter (Credit History `gap-3` / `h-10`) + report table + SKU cards. i18n `admin` + nav `hpp`.
+`/admin/hpp`: rates form (pattern Admin Pricing) + date filter (Credit History `gap-3` / `h-10`) + report table + SKU cards. i18n `admin` + nav `hpp`. No cloud-compare / quote UI.

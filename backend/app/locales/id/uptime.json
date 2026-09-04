@@ -2,13 +2,16 @@
   "subject_down": "[Sinexis Uptime] DOWN — {name}",
   "subject_up": "[Sinexis Uptime] UP — {name}",
   "subject_tls": "[Sinexis Uptime] Peringatan TLS — {name}",
-  "heading_down": "Monitor down",
-  "heading_up": "Monitor up",
+  "heading_down": "Monitor tidak merespons",
+  "heading_up": "Monitor pulih",
   "heading_tls": "Peringatan sertifikat TLS",
   "intro_down": "<strong>{name}</strong> ({target}) gagal beberapa kali berturut-turut.",
   "intro_up": "<strong>{name}</strong> ({target}) pulih.",
   "intro_tls": "<strong>{name}</strong> ({target}): {detail}",
   "open": "Buka Uptime",
   "or_copy": "Atau salin tautan ini:",
-  "footer": "Anda menerima email ini karena monitor Uptime aktif di workspace."
+  "footer": "Anda menerima email ini karena monitor Uptime aktif di workspace.",
+  "preheader_down": "{name} gagal pemeriksaan berturut-turut.",
+  "preheader_up": "{name} sudah pulih.",
+  "preheader_tls": "Peringatan TLS untuk {name}."
 }

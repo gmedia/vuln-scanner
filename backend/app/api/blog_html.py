@@ -277,7 +277,7 @@ async def blog_index_html(
     if not posts:
         inner = """<p class="eyebrow">Blog</p>
 <h1>Belum ada artikel.</h1>
-<p class="lede">Jadwal cek, temuan, dan alarm di mesin, dalam bahasa operator.</p>
+<p class="lede">Scan Attach dari luar, temuan di workspace, alarm kritis di box. Satu wazuh-agent. Bukan SIEM 24/7.</p>
 <p class="cta-row"><a class="cta" href="/register">Get started</a>
 <a class="cta-ghost" href="/">Kembali ke Sinexis</a></p>"""
     else:
@@ -297,9 +297,10 @@ async def blog_index_html(
             )
         inner = (
             "<div class='page-intro'><p class='eyebrow'>Blog</p>"
-            "<h1>Jadwal cek buat yang situsnya sudah jalan</h1>"
-            "<p class='lede'>Jadwal cek dari luar, temuan buat tim, alarm kritis di mesin. "
-            "Bukan SIEM 24/7, bukan agen kedua: satu wazuh-agent per VM, Host Protect cuma helper.</p></div>"
+            "<h1>Situs sudah jalan: cek dari luar, terjadwal</h1>"
+            "<p class='lede'>Scan Attach memotret permukaan (port, DNS/TLS, CVE dikenal) ke workspace. "
+            "Guard satu wazuh-agent, alarm kritis. Host Protect helper di VPS Anda. "
+            "Bukan SIEM 24/7, bukan agen kedua.</p></div>"
             "<ol class='index'>" + "".join(items) + "</ol>"
         )
     html = _shell("Blog — Sinexis", f"{CANONICAL_HOST}/blog", inner, rail=True)

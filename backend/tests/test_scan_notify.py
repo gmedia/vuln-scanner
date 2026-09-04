@@ -59,11 +59,12 @@ async def test_send_scan_diff_email_subject_and_link(monkeypatch):
     sent = mock_smtp.send_message.call_args[0][0]
     assert sent["To"] == "owner@example.com"
     assert sent["From"] == "Scan <scan@example.test>"
-    assert sent["Subject"] == "[Sinexis Scan] 3 temuan baru critical/high — example.com"
+    assert sent["Subject"] == "[Sinexis Scan] 3 temuan kritis/tinggi baru — example.com"
     payload = sent.get_payload()
-    body = payload[0].get_payload(decode=True).decode("utf-8")
+    body = payload[1].get_payload(decode=True).decode("utf-8")
     assert "https://example.test/scan/job-abc" in body
-    assert "Critical baru" in body
+    assert "Kritis baru" in body
+    assert "#22c55e" in body
 
 
 @pytest.mark.asyncio
@@ -88,7 +89,7 @@ async def test_send_scan_diff_email_en_subject(monkeypatch):
     sent = mock_smtp.send_message.call_args[0][0]
     assert sent["Subject"] == "[Sinexis Scan] 3 new critical/high findings — example.com"
     payload = sent.get_payload()
-    body = payload[0].get_payload(decode=True).decode("utf-8")
+    body = payload[1].get_payload(decode=True).decode("utf-8")
     assert "New critical" in body
     assert "temuan baru" not in body
 

@@ -1,12 +1,13 @@
 {
-  "subject": "[Sinexis Scan] {n} temuan baru critical/high — {target}",
+  "subject": "[Sinexis Scan] {n} temuan kritis/tinggi baru — {target}",
   "heading": "Sinexis Scan — temuan baru",
-  "intro": "Scan pada target <strong>{target}</strong> selesai dan menemukan <strong>{n}</strong> temuan baru critical/high dibanding baseline sebelumnya.",
-  "new_critical": "Critical baru: <strong>{n}</strong>",
-  "new_high": "High baru: <strong>{n}</strong>",
+  "intro": "Scan pada target <strong>{target}</strong> selesai dan menemukan <strong>{n}</strong> temuan baru tingkat kritis atau tinggi dibanding baseline sebelumnya.",
+  "new_critical": "Kritis baru: <strong>{n}</strong>",
+  "new_high": "Tinggi baru: <strong>{n}</strong>",
   "resolved": "Terselesaikan: {n}",
   "worsened": "Memburuk: {n}",
   "open_detail": "Buka detail scan",
   "or_copy": "Atau salin tautan:",
-  "footer": "Anda menerima email ini karena notifikasi scan (jadwal atau baseline diff) aktif."
+  "footer": "Anda menerima email ini karena notifikasi scan (jadwal atau baseline diff) aktif.",
+  "preheader": "{n} temuan kritis/tinggi baru pada {target}."
 }

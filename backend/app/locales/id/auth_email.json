@@ -1,0 +1,16 @@
+{
+  "verify_subject": "Sinexis — verifikasi email Anda",
+  "verify_heading": "Verifikasi email",
+  "verify_intro": "Klik tombol di bawah untuk memverifikasi akun Sinexis Anda.",
+  "verify_cta": "Verifikasi email",
+  "verify_or_copy": "Atau salin tautan:",
+  "verify_footer": "Tautan ini kedaluwarsa dalam 24 jam. Jika Anda tidak membuat akun, abaikan email ini.",
+  "verify_preheader": "Verifikasi akun Sinexis Anda dalam 24 jam.",
+  "reset_subject": "Sinexis — atur ulang kata sandi",
+  "reset_heading": "Atur ulang kata sandi",
+  "reset_intro": "Klik tombol di bawah untuk mengatur ulang kata sandi akun Sinexis.",
+  "reset_cta": "Atur ulang kata sandi",
+  "reset_or_copy": "Atau salin tautan:",
+  "reset_footer": "Tautan ini kedaluwarsa dalam 1 jam. Jika Anda tidak meminta reset, abaikan email ini.",
+  "reset_preheader": "Atur ulang kata sandi Sinexis. Kedaluwarsa dalam 1 jam."
+}

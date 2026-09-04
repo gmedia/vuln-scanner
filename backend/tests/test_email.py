@@ -100,7 +100,7 @@ class TestMimeMessageStructure:
             await send_verification_email("user@example.com", "token123")
 
         sent_msg = mock_smtp.send_message.call_args[0][0]
-        assert sent_msg["Subject"] == "Sinexis — Verify Your Email"
+        assert sent_msg["Subject"] == "Sinexis — verifikasi email Anda"
 
     @pytest.mark.asyncio
     async def test_message_is_multipart_alternative(self):
@@ -129,7 +129,7 @@ class TestMimeMessageStructure:
             await send_verification_email("user@example.com", "special-token-456")
 
         sent_msg = mock_smtp.send_message.call_args[0][0]
-        html_part = sent_msg.get_payload()[0]
+        html_part = sent_msg.get_payload()[1]
         html_body = html_part.get_payload(decode=True).decode("utf-8")
         assert "https://custom.example.com/verify-email?token=special-token-456" in html_body
 
@@ -144,7 +144,7 @@ class TestMimeMessageStructure:
             await send_verification_email("user@example.com", "token789")
 
         sent_msg = mock_smtp.send_message.call_args[0][0]
-        html_part = sent_msg.get_payload()[0]
+        html_part = sent_msg.get_payload()[1]
         html_body = html_part.get_payload(decode=True).decode("utf-8")
         assert "https://sinexis.app/verify-email?token=token789" in html_body
 
@@ -159,7 +159,7 @@ class TestMimeMessageStructure:
             await send_verification_email("user@example.com", "token123")
 
         sent_msg = mock_smtp.send_message.call_args[0][0]
-        html_part = sent_msg.get_payload()[0]
+        html_part = sent_msg.get_payload()[1]
         assert html_part.get_content_type() == "text/html"
         assert html_part.get_content_charset() == "utf-8"
 
@@ -328,7 +328,7 @@ class TestTokenInLink:
             await send_verification_email("user@example.com", "test-token-abc123")
 
         sent_msg = mock_smtp.send_message.call_args[0][0]
-        html_part = sent_msg.get_payload()[0]
+        html_part = sent_msg.get_payload()[1]
         html_body = html_part.get_payload(decode=True).decode("utf-8")
         assert "verify-email?token=test-token-abc123" in html_body
 
@@ -344,7 +344,7 @@ class TestTokenInLink:
             await send_verification_email("user@example.com", special_token)
 
         sent_msg = mock_smtp.send_message.call_args[0][0]
-        html_part = sent_msg.get_payload()[0]
+        html_part = sent_msg.get_payload()[1]
         html_body = html_part.get_payload(decode=True).decode("utf-8")
         assert special_token in html_body
 
@@ -360,7 +360,7 @@ class TestTokenInLink:
 
         assert result is True
         sent_msg = mock_smtp.send_message.call_args[0][0]
-        html_part = sent_msg.get_payload()[0]
+        html_part = sent_msg.get_payload()[1]
         html_body = html_part.get_payload(decode=True).decode("utf-8")
         assert "verify-email?token=" in html_body
 
@@ -532,7 +532,7 @@ class TestEmailEdgeCases:
             await send_verification_email("user@example.com", "token123")
 
         sent_msg = mock_smtp.send_message.call_args[0][0]
-        html_part = sent_msg.get_payload()[0]
+        html_part = sent_msg.get_payload()[1]
         html_body = html_part.get_payload(decode=True).decode("utf-8")
         # The current implementation does NOT strip trailing slash, so this
         # reveals the actual behavior: double slash exists.
@@ -553,7 +553,7 @@ class TestEmailEdgeCases:
             await send_verification_email("user@example.com", long_token)
 
         sent_msg = mock_smtp.send_message.call_args[0][0]
-        html_part = sent_msg.get_payload()[0]
+        html_part = sent_msg.get_payload()[1]
         html_body = html_part.get_payload(decode=True).decode("utf-8")
         assert long_token in html_body
 
@@ -572,7 +572,7 @@ class TestEmailEdgeCases:
             await send_verification_email("user@example.com", special_token)
 
         sent_msg = mock_smtp.send_message.call_args[0][0]
-        html_part = sent_msg.get_payload()[0]
+        html_part = sent_msg.get_payload()[1]
         html_body = html_part.get_payload(decode=True).decode("utf-8")
         # Verify raw token appears in the href (not HTML-escaped as &lt; etc.)
         assert f'href="https://sinexis.app/verify-email?token={special_token}"' in html_body
@@ -700,13 +700,16 @@ class TestSendHostProtectEmail:
 
         assert ok is True
         sent_msg = mock_smtp.send_message.call_args[0][0]
-        html = sent_msg.get_payload()[0].get_payload(decode=True).decode("utf-8")
+        html = sent_msg.get_payload()[1].get_payload(decode=True).decode("utf-8")
         assert "https://app.example.test/host" in html
         assert "webshell" in html
         assert "cache.php" in html
         assert "<?php" not in html
         assert "eval(" not in html
-        assert sent_msg["Subject"]
+        assert sent_msg["Subject"] == "[Sinexis Host Protect] webshell on Shop"
+        assert "#22c55e" in html
+        assert "#2563eb" not in html
+        assert sent_msg.get_payload()[0].get_content_type() == "text/plain"
 
 
 class TestEmailSendLogHelpers:

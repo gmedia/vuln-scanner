@@ -63,7 +63,7 @@ describe("Login", () => {
   it("renders the Sign In form with email input", () => {
     render(<Login />);
     expect(screen.getByLabelText("Email")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("you@example.com")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("ops@example.com")).toBeInTheDocument();
   });
 
   it("renders the password input", () => {
@@ -84,7 +84,7 @@ describe("Login", () => {
   it("renders the Crosshair icon and Sign in title", () => {
     render(<Login />);
     expect(
-      screen.getByRole("heading", { name: /sign in to scan/i }),
+      screen.getByRole("heading", { name: /open your scan account/i }),
     ).toBeInTheDocument();
   });
 
@@ -100,14 +100,14 @@ describe("Login", () => {
 
   it("renders Forgot password? link", () => {
     render(<Login />);
-    const forgotLink = screen.getByText("Forgot password?");
+    const forgotLink = screen.getByText("Lost the password?");
     expect(forgotLink).toBeInTheDocument();
     expect(forgotLink.closest("a")).toHaveAttribute("href", "/forgot-password");
   });
 
   it("renders Register link", () => {
     render(<Login />);
-    const registerLink = screen.getByText("Register");
+    const registerLink = screen.getByText("Open one");
     expect(registerLink).toBeInTheDocument();
     expect(registerLink.closest("a")).toHaveAttribute("href", "/register");
   });
@@ -186,7 +186,7 @@ describe("Login", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
     await waitFor(() => {
-      expect(screen.getByText("Signing in...")).toBeInTheDocument();
+      expect(screen.getByText("Signing you in...")).toBeInTheDocument();
     });
   });
 
@@ -222,7 +222,7 @@ describe("Login", () => {
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
     await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: /signing in/i }),
+        screen.getByRole("button", { name: /signing you in/i }),
       ).toBeDisabled();
     });
   });
@@ -261,10 +261,10 @@ describe("Login", () => {
     render(<Login />);
     expect(screen.getByText("Email belum diverifikasi")).toBeInTheDocument();
     expect(
-      screen.getByText("Need a new verification link?"),
+      screen.getByText("Still need the verify link?"),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /resend verification email/i }),
+      screen.getByRole("button", { name: /resend the verify email/i }),
     ).toBeInTheDocument();
   });
 
@@ -275,7 +275,7 @@ describe("Login", () => {
     });
     render(<Login />);
     expect(
-      screen.queryByRole("button", { name: /resend verification email/i }),
+      screen.queryByRole("button", { name: /resend the verify email/i }),
     ).not.toBeInTheDocument();
   });
 
@@ -289,7 +289,7 @@ describe("Login", () => {
       target: { value: "unverified@example.com" },
     });
     fireEvent.click(
-      screen.getByRole("button", { name: /resend verification email/i }),
+      screen.getByRole("button", { name: /resend the verify email/i }),
     );
     await waitFor(() => {
       expect(defaultAuthState.resendVerification).toHaveBeenCalledWith(

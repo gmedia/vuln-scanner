@@ -59,7 +59,7 @@ describe("VerifyEmail", () => {
     it("renders Check your email heading", () => {
       render(<VerifyEmail />);
       expect(
-        screen.getByRole("heading", { name: /check your email/i }),
+        screen.getByRole("heading", { name: /verify this scan account/i }),
       ).toBeInTheDocument();
     });
 
@@ -72,7 +72,7 @@ describe("VerifyEmail", () => {
     it("renders Back to sign in secondary link", () => {
       render(<VerifyEmail />);
       expect(
-        screen.getByRole("link", { name: /back to sign in/i }),
+          screen.getByRole("link", { name: /return to sign in/i }),
       ).toBeInTheDocument();
     });
 
@@ -80,26 +80,26 @@ describe("VerifyEmail", () => {
       render(<VerifyEmail />);
       expect(screen.getByLabelText("Email")).toBeInTheDocument();
       expect(
-        screen.getByPlaceholderText("your signup email"),
+        screen.getByPlaceholderText("email on this scan account"),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: "Resend Verification Email" }),
+        screen.getByRole("button", { name: "Send verify email again" }),
       ).toBeInTheDocument();
     });
 
     it("shows resend success message after successful resend", async () => {
       render(<VerifyEmail />);
-      const input = screen.getByPlaceholderText("your signup email");
+      const input = screen.getByPlaceholderText("email on this scan account");
       fireEvent.change(input, { target: { value: "user@example.com" } });
 
       fireEvent.click(
-        screen.getByRole("button", { name: "Resend Verification Email" }),
+        screen.getByRole("button", { name: "Send verify email again" }),
       );
 
       await waitFor(() => {
         expect(
           screen.getByText(
-            "Verification email resent! Please check your inbox.",
+            "Verify email sent again. Check that inbox.",
           ),
         ).toBeInTheDocument();
       });
@@ -133,11 +133,11 @@ describe("VerifyEmail", () => {
 
     it("calls resendVerification on form submit", async () => {
       render(<VerifyEmail />);
-      const input = screen.getByPlaceholderText("your signup email");
+      const input = screen.getByPlaceholderText("email on this scan account");
       fireEvent.change(input, { target: { value: "user@example.com" } });
 
       fireEvent.click(
-        screen.getByRole("button", { name: "Resend Verification Email" }),
+        screen.getByRole("button", { name: "Send verify email again" }),
       );
 
       await waitFor(() => {
@@ -161,15 +161,15 @@ describe("VerifyEmail", () => {
           ),
       );
       render(<VerifyEmail />);
-      const input = screen.getByPlaceholderText("your signup email");
+      const input = screen.getByPlaceholderText("email on this scan account");
       fireEvent.change(input, { target: { value: "user@example.com" } });
 
       fireEvent.click(
-        screen.getByRole("button", { name: "Resend Verification Email" }),
+        screen.getByRole("button", { name: "Send verify email again" }),
       );
 
       await waitFor(() => {
-        expect(screen.getByText("Sending...")).toBeInTheDocument();
+        expect(screen.getByText("Sending the email...")).toBeInTheDocument();
       });
     });
   });
@@ -182,7 +182,7 @@ describe("VerifyEmail", () => {
     it("renders Verifying email heading", () => {
       render(<VerifyEmail />);
       expect(
-        screen.getByRole("heading", { name: /verifying email/i }),
+        screen.getByRole("heading", { name: /checking this email/i }),
       ).toBeInTheDocument();
     });
 
@@ -201,7 +201,7 @@ describe("VerifyEmail", () => {
       );
 
       render(<VerifyEmail />);
-      expect(screen.getByText("Verifying...")).toBeInTheDocument();
+      expect(screen.getByText("Checking the verify link...")).toBeInTheDocument();
     });
 
     it("shows success state after successful verification", async () => {
@@ -209,7 +209,9 @@ describe("VerifyEmail", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Email verified successfully!"),
+          screen.getByText(
+            "This scan account is verified. Credits on this login are yours.",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -219,7 +221,7 @@ describe("VerifyEmail", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByRole("button", { name: /go to dashboard/i }),
+          screen.getByRole("button", { name: /open the dashboard/i }),
         ).toBeInTheDocument();
       });
     });
@@ -229,7 +231,7 @@ describe("VerifyEmail", () => {
 
       await waitFor(() => {
         fireEvent.click(
-          screen.getByRole("button", { name: /go to dashboard/i }),
+          screen.getByRole("button", { name: /open the dashboard/i }),
         );
       });
 
@@ -242,7 +244,9 @@ describe("VerifyEmail", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Verification failed. Please try again."),
+          screen.getByText(
+            "Verify did not complete. Request a new link and try again.",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -253,7 +257,7 @@ describe("VerifyEmail", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByRole("link", { name: /back to sign in/i }),
+        screen.getByRole("link", { name: /return to sign in/i }),
         ).toBeInTheDocument();
       });
     });

@@ -1,5 +1,5 @@
 {
-  "subject": "Host Protect: {hit_class} di {site}",
+  "subject": "[Sinexis Host Protect] {hit_class} di {site}",
   "heading": "Hit Host Protect",
   "intro": "Hit {hit_class} tercatat untuk situs {site}.",
   "path": "Path: {rel_path}",
@@ -7,5 +7,6 @@
   "hit": "Id hit: {hit_id}",
   "open": "Buka Host Protect",
   "or_copy": "Atau salin tautan ini:",
-  "footer": "Isi file tidak dilampirkan. Ini bukan kotak masuk Guard atau SIEM."
+  "footer": "Isi file tidak dilampirkan. Ini bukan kotak masuk Guard atau SIEM.",
+  "preheader": "Hit {hit_class} pada {site}."
 }

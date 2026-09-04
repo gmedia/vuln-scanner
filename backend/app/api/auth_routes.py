@@ -89,9 +89,9 @@ _MSG_RESEND_OK = "Email verifikasi telah dikirim. Silakan periksa kotak masuk An
 _MSG_RESEND_FAILED = "Gagal mengirim email verifikasi. Silakan coba lagi dalam beberapa saat."
 
 
-async def _try_send_verification(email_to: str, token: str, *, context: str) -> bool:
+async def _try_send_verification(email_to: str, token: str, *, context: str, lang: str | None = None) -> bool:
     try:
-        sent = await send_verification_email(email_to=email_to, token=token)
+        sent = await send_verification_email(email_to=email_to, token=token, lang=lang)
     except Exception:
         logger.exception("Unexpected error sending verification email (%s) to %s", context, email_to)
         return False
@@ -205,7 +205,9 @@ async def register(
     db.add(verification_token)
     await db.commit()
 
-    email_sent = await _try_send_verification(user.email, token_str, context="register")
+    email_sent = await _try_send_verification(
+        user.email, token_str, context="register", lang=getattr(user, "locale", None)
+    )
     if email_sent:
         return MessageResponse(message=_MSG_REGISTER_OK, email_sent=True)
     return MessageResponse(message=_MSG_REGISTER_EMAIL_FAILED, email_sent=False)
@@ -374,7 +376,9 @@ async def resend_verification(
     db.add(verification_token)
     await db.commit()
 
-    email_sent = await _try_send_verification(user.email, token_str, context="resend")
+    email_sent = await _try_send_verification(
+        user.email, token_str, context="resend", lang=getattr(user, "locale", None)
+    )
     if email_sent:
         return MessageResponse(message=_MSG_RESEND_OK, email_sent=True)
     return MessageResponse(message=_MSG_RESEND_FAILED, email_sent=False)
@@ -408,7 +412,9 @@ async def forgot_password(
         await db.commit()
 
         try:
-            sent = await send_password_reset_email(email_to=user.email, token=token_str)
+            sent = await send_password_reset_email(
+                email_to=user.email, token=token_str, lang=getattr(user, "locale", None)
+            )
             if not sent:
                 logger.error("Password reset email was not sent to %s", user.email)
         except Exception:
