@@ -79,7 +79,7 @@
   "wafProtect": "protect",
   "wafProtectLocked": "Protect mode needs Host Multi. Basic can use detect only.",
   "wafSimulate": "Simulate request",
-  "wafSimulateHint": "Writes a fake HTTP row (rule mock.sqli.1). It is not a malware file and does not hit live traffic.",
+  "wafSimulateHint": "Writes a fake HTTP row: mock.sqli.1 GET /sinexis-waf-lab. Not WordPress, not a malware file, not live traffic. Disabled while mode is off.",
   "wafEvents": "WAF events",
   "wafEventsHint": "HTTP log/block only. mock.sqli.* comes from Simulate. It will not appear under Suspicious files.",
   "wafEventsEmpty": "No WAF events. Simulate (mode detect or protect) writes a fake row — not a malware hit.",
