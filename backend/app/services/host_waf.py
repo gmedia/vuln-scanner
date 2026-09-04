@@ -143,7 +143,7 @@ class HostWafService:
             action=action,
             rule_id="mock.sqli.1",
             method="GET",
-            path=_strip_query("/wp-login.php?q=1%27+OR+1%3D1"),
+            path=_strip_query("/sinexis-waf-lab?q=1%27+OR+1%3D1"),
             http_status=403 if action == "block" else 200,
         )
         self.db.add(event)

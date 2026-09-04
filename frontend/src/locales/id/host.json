@@ -79,7 +79,7 @@
   "wafProtect": "protect",
   "wafProtectLocked": "Mode protect butuh Host Multi. Basic hanya detect.",
   "wafSimulate": "Simulasikan permintaan",
-  "wafSimulateHint": "Menulis baris HTTP palsu (aturan mock.sqli.1). Bukan file malware dan tidak menyentuh traffic hidup.",
+  "wafSimulateHint": "Menulis baris HTTP palsu: mock.sqli.1 GET /sinexis-waf-lab. Bukan WordPress, bukan file malware, bukan traffic hidup. Mati saat mode off.",
   "wafEvents": "Event WAF",
   "wafEventsHint": "Hanya log/blok HTTP. mock.sqli.* dari Simulasi. Tidak muncul di File mencurigakan.",
   "wafEventsEmpty": "Belum ada event WAF. Simulasi (mode detect atau protect) menulis baris palsu — bukan hit malware.",

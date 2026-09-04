@@ -165,6 +165,7 @@ async def test_upsert_simulate_and_list(db_session: AsyncSession, ctx):
             assert sim.status_code == 201, sim.text
             body = sim.json()
             assert body["action"] == "log"
+            assert body["path"] == "/sinexis-waf-lab"
             assert "?" not in body["path"]
             events = await client.get("/api/host/waf/events", headers=_auth(owner, org.id))
             assert events.status_code == 200

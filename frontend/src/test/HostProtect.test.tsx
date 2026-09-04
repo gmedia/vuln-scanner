@@ -628,7 +628,55 @@ describe("Host Protect page", () => {
     expect(screen.getByTestId("host-waf-simulate-hint")).toBeInTheDocument();
     expect(screen.getByTestId("host-waf-events-hint")).toBeInTheDocument();
     expect(screen.getByTestId("host-waf-panel").textContent).toMatch(
-      /mock\.sqli|Malware tab|customer VPS|Host Multi/i,
+      /mock\.sqli|sinexis-waf-lab|Malware tab|customer VPS|Host Multi/i,
+    );
+  });
+
+  it("enables WAF simulate when policy is detect", async () => {
+    vi.mocked(hostApi.listHostSites).mockResolvedValue([
+      {
+        id: "s1",
+        organization_id: "org1",
+        guard_agent_id: "a1",
+        asset_id: null,
+        name: "Web",
+        root_path: "/var/www/html",
+        cms_hint: "wordpress",
+        enabled: true,
+        auto_quarantine: false,
+        scan_interval: "daily",
+        created_by: "u1",
+        created_at: "2026-08-30T00:00:00Z",
+        updated_at: "2026-08-30T00:00:00Z",
+        sku: "multi",
+        sku_limit: 10,
+      },
+    ]);
+    vi.mocked(hostWafApi.listHostWafPolicies).mockResolvedValue([
+      {
+        id: "p1",
+        organization_id: "org1",
+        site_id: "s1",
+        mode: "detect",
+        engine: "mock",
+        paranoia: 1,
+        updated_by: "u1",
+        created_at: "2026-08-30T00:00:00Z",
+        updated_at: "2026-08-30T00:00:00Z",
+        site_name: "Web",
+      },
+    ]);
+    const user = userEvent.setup();
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByTestId("host-tab-waf")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("host-tab-waf"));
+    await waitFor(() =>
+      expect(screen.getByTestId("host-waf-simulate")).toBeEnabled(),
+    );
+    expect(screen.getByTestId("host-waf-simulate-hint").textContent).toMatch(
+      /sinexis-waf-lab/i,
     );
   });
 
@@ -670,6 +718,7 @@ describe("Host Protect page", () => {
     await waitFor(() =>
       expect(screen.getByTestId("host-waf-copy-snippet")).toBeInTheDocument(),
     );
+    expect(screen.getByTestId("host-waf-simulate")).toBeDisabled();
     await user.click(screen.getByTestId("host-waf-copy-snippet"));
     await waitFor(() =>
       expect(hostWafApi.fetchHostWafSnippet).toHaveBeenCalledWith("s1"),
