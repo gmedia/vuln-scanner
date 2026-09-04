@@ -73,6 +73,8 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
             or path == "/api/host/agent/results"
             or path == "/api/host/agent/jobs"
             or path == "/api/host/agent/commands/ack"
+            or path.startswith("/v1/")
+            or path == "/v1"
         ):
             return await call_next(request)
 
