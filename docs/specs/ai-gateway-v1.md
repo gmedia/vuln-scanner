@@ -36,7 +36,7 @@ Prod nginx (`nginx/sinexis.app.conf`) proxies `/api/` and `/ws/` to FastAPI; **`
 3. **Org AI wallet** (prepaid IDR) with **reserve → settle/release** so concurrent streams cannot overdraw.
 4. Immutable **usage events** (tokens, billed IDR, COGS IDR, latency, status) — **no prompt body** by default.
 5. Admin: CRUD providers (encrypted creds), models (public alias → upstream id + HPP/markup), global usage, **trial chat** on the same gateway (`source=admin_trial`) with a **platform spend cap**.
-6. Kill switch `AI_GATEWAY_ENABLED` (compose **false** like SIEM). Flag off → `/v1` and `/api/ai*` **404**.
+6. Kill switch `AI_GATEWAY_ENABLED`. Local/CI compose **false**; **prod compose hardcodes `true`** (host `.env` cannot keep it off). Flag off → `/v1` and `/api/ai*` **404**.
 7. Edge: dedicated nginx `location ^~ /v1/` (buffering off, long read timeout). Do not starve scan workers.
 8. Tests: IDOR, key hash, reserve race, stream settle, flag-off, no leak of wholesale URL/key on upstream 401.
 
