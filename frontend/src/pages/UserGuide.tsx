@@ -110,6 +110,7 @@ const transUi = {
   ui: <Ui />,
   code: <GuideCode />,
   strong: <strong className="font-medium text-foreground" />,
+  uuid: <span>{"<UUID>"}</span>,
 };
 
 function useActiveGuideSection() {
