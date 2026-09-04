@@ -28,8 +28,15 @@ class GuardAgentResponse(BaseModel):
     last_keep_alive: datetime | None = None
     last_helper_poll_at: datetime | None = None
     has_host_agent_token: bool = False
+    asset_id: uuid.UUID | None = None
+    asset_name: str | None = None
+    asset_target: str | None = None
     synced_at: datetime
     created_at: datetime
+
+
+class GuardAgentAssetLink(BaseModel):
+    asset_id: uuid.UUID | None = None
 
 
 class GuardHostAgentTokenCreated(BaseModel):
