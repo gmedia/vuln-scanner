@@ -19,7 +19,7 @@ chmod +x sinexis-install.sh
 
 Or a [GitHub Release](https://github.com/gmedia/vuln-scanner/releases) asset — verify SHA256. Payloads (scan helper, rules, systemd units) are **embedded**. If `bash` reports `<!DOCTYPE html>`, you saved the web page.
 
-**Wrapper:** TTY prints **setup status** first (wazuh / helper / WAF snippet — **no tokens**), then menu — (1) wazuh-agent, (2) helper, (3) both, (4) WAF file only, (5) WAF include + reload, (6) status, (7) quit. If a piece is already installed, TTY asks **Re-run? [y/N]**. Flags skip unless `--force`. Not `curl | bash`. Enroll still uses SaaS token + `manage_agents` for `agent_key`.
+**Wrapper:** TTY prints **setup status** first (wazuh / helper / WAF snippet / **which site files already include it** — **no tokens**, no extra `nginx` CLI). Then menu — (1) wazuh-agent, (2) helper, (3) both, (4) WAF file only, (5) WAF include + reload, (6) status, (7) quit. If a piece is already installed, TTY asks **Re-run? [y/N]**. Flags skip unless `--force`. Not `curl | bash`. Enroll still uses SaaS token + `manage_agents` for `agent_key`.
 
 ```bash
 # TTY menu (1 wazuh-agent / 2 helper / 3 both):
