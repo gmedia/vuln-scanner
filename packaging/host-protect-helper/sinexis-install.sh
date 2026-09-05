@@ -19,10 +19,15 @@ ENABLE_TIMER=1
 SKIP_WAZUH_CHECK=0
 FROM_TREE=0
 MENU=1
+DO_STATUS=0
 DO_WAZUH=0
 DO_HELPER=0
 DO_WAF_SNIPPET=0
+DO_WAF_APPLY=0
+FORCE_SETUP=0
+SKIP_SNIPPET_CONFIRM=0
 WAF_SNIPPET_PATH="/etc/nginx/sinexis-waf.snippet.conf"
+WAF_VHOST_PATH=""
 MANAGER_HOST=""
 QUARANTINE_ROOT="/var/lib/sinexis/quarantine"
 ENV_PATH="/etc/sinexis/host-protect.env"
@@ -33,17 +38,22 @@ usage() {
   cat <<'EOF'
 sinexis-install.sh — one file (not curl|bash)
 
-TTY (default, no flags): menu
+TTY (default, no flags): prints setup status, then menu
   1) Install wazuh-agent (package + Manager address)
   2) Configure Host Protect helper (payloads in this file)
   3) Both (1+2)
   4) Write Host WAF nginx snippet file (no include, no reload)
-  5) Quit
+  5) Write snippet AND include it in a vhost you name (nginx -t + reload)
+  6) Show setup status only
+  7) Quit
 
 Non-interactive:
+  --status                 Print what is already installed (no tokens); exit
+  --force                  Re-run even if that piece is already set up
   --install-wazuh-agent --manager-host HOST
   --configure-host-protect --agent-id UUID --token-file PATH [--api-base URL]
   --write-waf-snippet [--waf-snippet-path PATH]
+  --apply-waf-vhost PATH   Write snippet, include in that nginx file, nginx -t, reload
 
 Host Protect:
   --agent-id UUID          Guard agent UUID from SPA /guard
@@ -55,11 +65,15 @@ Host Protect:
   --interactive            Prompt for missing helper fields on a TTY
   --no-timer               Install files/env only
   --skip-wazuh-check       Lab only — do not use on customer VPS
+  --force                  Re-run a step that is already set up
+  --status                 Print setup status (no tokens) and exit
   --help
 
 Does not: curl|bash, enroll Guard, print the token, wipe ERP.
-Does not: include the WAF snippet into a vhost, nginx -t, reload nginx,
-          or paste onto sinexis.app edge.
+Does not: guess which vhost to patch, or paste onto sinexis.app edge.
+Without --apply-waf-vhost (menu 4): file only — no include, no nginx -t/reload.
+With --apply-waf-vhost PATH (menu 5): include in that file only, then nginx -t + reload.
+Already set up: TTY asks Re-run? [y/N]. Flags skip unless --force.
 EOF
 }
 
@@ -98,6 +112,81 @@ write_b64_file() {
   chmod "$mode" "$dest"
 }
 
+_yn() {
+  local ans="$1"
+  [[ "$ans" == "y" || "$ans" == "Y" || "$ans" == "yes" || "$ans" == "YES" ]]
+}
+
+helper_already_configured() {
+  [[ -f "$ENV_PATH" && -x "$LIB_DIR/sinexis_host_scan.py" ]]
+}
+
+wazuh_already_present() {
+  if command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet wazuh-agent 2>/dev/null; then
+    return 0
+  fi
+  command -v wazuh-agentd >/dev/null 2>&1 && return 0
+  [[ -x /var/ossec/bin/wazuh-agentd || -x /var/ossec/bin/ossec-agentd ]] && return 0
+  return 1
+}
+
+waf_snippet_present() {
+  [[ -f "$WAF_SNIPPET_PATH" ]]
+}
+
+waf_include_present() {
+  local vhost="${1:-}"
+  [[ -n "$vhost" && -f "$vhost" ]] || return 1
+  grep -qF "$WAF_SNIPPET_PATH" "$vhost"
+}
+
+print_setup_status() {
+  local w="missing" h="missing" s="missing" m="unknown"
+  if wazuh_already_present; then
+    w="present"
+  fi
+  if helper_already_configured; then
+    h="present (env + helper binary; token not printed)"
+  elif [[ -f "$ENV_PATH" ]]; then
+    h="partial (env file exists, helper binary missing)"
+  elif [[ -x "$LIB_DIR/sinexis_host_scan.py" ]]; then
+    h="partial (helper binary exists, env missing)"
+  fi
+  if waf_snippet_present; then
+    s="present (${WAF_SNIPPET_PATH})"
+  fi
+  if nginx_has_modsecurity; then
+    m="detected"
+  else
+    m="not detected"
+  fi
+  log "Setup status (no tokens):"
+  log "  wazuh-agent: ${w}"
+  log "  Host Protect helper: ${h}"
+  log "  WAF snippet file: ${s}"
+  log "  nginx ModSecurity module: ${m}"
+  log "  Re-run a step: TTY will ask, or pass --force"
+}
+
+confirm_rerun() {
+  local what="$1"
+  if [[ "$FORCE_SETUP" -eq 1 ]]; then
+    log "re-run: ${what} (--force)"
+    return 0
+  fi
+  if [[ -t 0 ]]; then
+    local ans=""
+    read -r -p "${what} already set up. Re-run? [y/N]: " ans || true
+    if _yn "$ans"; then
+      return 0
+    fi
+    log "skip: ${what} (already set up)"
+    return 1
+  fi
+  log "skip: ${what} already set up (pass --force to re-run)"
+  return 1
+}
+
 wazuh_ok() {
   if [[ "$SKIP_WAZUH_CHECK" -eq 1 ]]; then
     log "skip wazuh-agent check (--skip-wazuh-check)"
@@ -116,6 +205,9 @@ wazuh_ok() {
 }
 
 install_wazuh_agent() {
+  if wazuh_already_present; then
+    confirm_rerun "wazuh-agent" || return 0
+  fi
   if [[ -z "$MANAGER_HOST" ]]; then
     if [[ -t 0 ]]; then
       read -r -p "Wazuh Manager host (from Guard enroll response): " MANAGER_HOST
@@ -254,6 +346,9 @@ enable_timer() {
 }
 
 configure_host_protect() {
+  if helper_already_configured; then
+    confirm_rerun "Host Protect helper" || return 0
+  fi
   if [[ "$INTERACTIVE" -eq 1 ]]; then
     prompt_interactive
   fi
@@ -274,8 +369,109 @@ configure_host_protect() {
   log "ok: helper configured for agent ${AGENT_ID} (token not printed)"
 }
 
+nginx_has_modsecurity() {
+  if command -v nginx >/dev/null 2>&1; then
+    if nginx -V 2>&1 | grep -qiE 'modsecurity|modsec|ngx_http_modsecurity'; then
+      return 0
+    fi
+  fi
+  if [[ -d /etc/nginx/modules-enabled ]] && grep -RqiE 'modsecurity|modsec' /etc/nginx/modules-enabled 2>/dev/null; then
+    return 0
+  fi
+  if [[ -f /etc/nginx/nginx.conf ]] && grep -qiE 'modsecurity|load_module.*modsec' /etc/nginx/nginx.conf; then
+    return 0
+  fi
+  return 1
+}
+
+refuse_edge_vhost() {
+  local path="$1"
+  local base
+  base="$(basename "$path")"
+  case "$base" in
+    *sinexis.app*|*vs.appmedia.id*)
+      die "refusing Sinexis edge vhost (${base}). Host WAF is on-box only."
+      ;;
+  esac
+  if [[ -f "$path" ]] && grep -qiE 'server_name[[:space:]].*(sinexis\.app|vs\.appmedia\.id)' "$path"; then
+    die "refusing vhost whose server_name is Sinexis edge. Pick the customer site file."
+  fi
+}
+
+insert_waf_include() {
+  local vhost="$1"
+  local snippet="$2"
+  SNIPPET_PATH="$snippet" VHOST_PATH="$vhost" python3 - <<'PY'
+import os
+from pathlib import Path
+
+vhost = Path(os.environ["VHOST_PATH"])
+snippet = os.environ["SNIPPET_PATH"]
+line = f"    include {snippet};"
+text = vhost.read_text(encoding="utf-8")
+if snippet in text:
+    print("already-included")
+    raise SystemExit(0)
+out: list[str] = []
+inserted = False
+for raw in text.splitlines(True):
+    out.append(raw)
+    stripped = raw.strip()
+    if not inserted and stripped.startswith("server") and stripped.endswith("{"):
+        out.append(line + "\n")
+        inserted = True
+if not inserted:
+    out.append("\n" + line + "\n")
+vhost.write_text("".join(out), encoding="utf-8")
+print("inserted")
+PY
+}
+
+apply_waf_vhost() {
+  local vhost="$WAF_VHOST_PATH"
+  if [[ -z "$vhost" && -t 0 ]]; then
+    echo "List site files (example): ls /etc/nginx/sites-enabled" >&2
+    read -r -p "Absolute path of the CUSTOMER site vhost to patch: " vhost
+  fi
+  WAF_VHOST_PATH="$vhost"
+  [[ -n "$vhost" ]] || die "missing vhost path (menu 5 / --apply-waf-vhost PATH). Will not guess."
+  [[ "$vhost" == /* ]] || die "vhost path must be absolute"
+  case "$vhost" in
+    /etc/nginx/*) ;;
+    *) die "vhost path must be under /etc/nginx" ;;
+  esac
+  refuse_edge_vhost "$vhost"
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    log "dry-run: write ${WAF_SNIPPET_PATH}; include in ${vhost}; nginx -t; reload (not sinexis.app edge)"
+    return 0
+  fi
+  [[ -f "$vhost" ]] || die "vhost file not found (will not create a new site)"
+  if waf_include_present "$vhost"; then
+    confirm_rerun "WAF include in named vhost" || return 0
+  fi
+  SKIP_SNIPPET_CONFIRM=1
+  write_waf_snippet
+  if ! nginx_has_modsecurity; then
+    die "nginx ModSecurity module not detected. Install libnginx-mod-http-modsecurity (or equivalent) before include. Snippet file was written; vhost not patched."
+  fi
+  need_root
+  insert_waf_include "$vhost" "$WAF_SNIPPET_PATH"
+  if ! nginx -t; then
+    die "nginx -t failed after include. Restore the vhost from backup/editor; snippet file is still on disk."
+  fi
+  if command -v systemctl >/dev/null 2>&1; then
+    systemctl reload nginx
+  else
+    nginx -s reload
+  fi
+  log "ok: included ${WAF_SNIPPET_PATH} in the named vhost and reloaded nginx. Not sinexis.app edge."
+}
+
 write_waf_snippet() {
   local dest="$WAF_SNIPPET_PATH"
+  if [[ "${SKIP_SNIPPET_CONFIRM:-0}" -ne 1 ]] && waf_snippet_present; then
+    confirm_rerun "WAF snippet file" || return 0
+  fi
   if [[ "$dest" == /etc/* ]]; then
     need_root
   fi
@@ -308,20 +504,25 @@ EOF
 }
 
 show_menu() {
-  [[ -t 0 ]] || die "no flags and no TTY — pass --install-wazuh-agent, --configure-host-protect, and/or --write-waf-snippet"
+  [[ -t 0 ]] || die "no flags and no TTY — pass --status, --install-wazuh-agent, --configure-host-protect, --write-waf-snippet, and/or --apply-waf-vhost"
+  print_setup_status
   echo "Sinexis installer"
   echo "  1) Install wazuh-agent"
   echo "  2) Configure Host Protect helper"
   echo "  3) Both (1+2)"
   echo "  4) Write Host WAF nginx snippet (file only; no include/reload)"
-  echo "  5) Quit"
-  read -r -p "Choice [1-5]: " _c
+  echo "  5) Write snippet AND include in a vhost you name (nginx -t + reload)"
+  echo "  6) Show setup status only"
+  echo "  7) Quit"
+  read -r -p "Choice [1-7]: " _c
   case "$_c" in
     1) DO_WAZUH=1 ;;
     2) DO_HELPER=1; INTERACTIVE=1 ;;
     3) DO_WAZUH=1; DO_HELPER=1; INTERACTIVE=1 ;;
     4) DO_WAF_SNIPPET=1 ;;
-    5) exit 0 ;;
+    5) DO_WAF_APPLY=1 ;;
+    6) DO_STATUS=1 ;;
+    7) exit 0 ;;
     *) die "invalid choice" ;;
   esac
 }
@@ -756,10 +957,26 @@ while [[ $# -gt 0 ]]; do
       MANAGER_HOST="${2:-}"
       shift 2
       ;;
+    --status)
+      DO_STATUS=1
+      MENU=0
+      shift
+      ;;
+    --force)
+      FORCE_SETUP=1
+      shift
+      ;;
     --write-waf-snippet)
       DO_WAF_SNIPPET=1
       MENU=0
       shift
+      ;;
+    --apply-waf-vhost)
+      WAF_VHOST_PATH="${2:-}"
+      [[ -n "$WAF_VHOST_PATH" ]] || die "missing --apply-waf-vhost PATH"
+      DO_WAF_APPLY=1
+      MENU=0
+      shift 2
       ;;
     --waf-snippet-path)
       WAF_SNIPPET_PATH="${2:-}"
@@ -780,16 +997,25 @@ if [[ "$MENU" -eq 1 ]]; then
   show_menu
 fi
 
+if [[ "$DO_STATUS" -eq 1 ]]; then
+  print_setup_status
+  if [[ "$DO_WAZUH" -eq 0 && "$DO_HELPER" -eq 0 && "$DO_WAF_SNIPPET" -eq 0 && "$DO_WAF_APPLY" -eq 0 ]]; then
+    exit 0
+  fi
+fi
+
 if [[ "$DO_WAZUH" -eq 1 ]]; then
   install_wazuh_agent
 fi
 if [[ "$DO_HELPER" -eq 1 ]]; then
   configure_host_protect
 fi
-if [[ "$DO_WAF_SNIPPET" -eq 1 ]]; then
+if [[ "$DO_WAF_APPLY" -eq 1 ]]; then
+  apply_waf_vhost
+elif [[ "$DO_WAF_SNIPPET" -eq 1 ]]; then
   write_waf_snippet
 fi
-if [[ "$DO_WAZUH" -eq 0 && "$DO_HELPER" -eq 0 && "$DO_WAF_SNIPPET" -eq 0 ]]; then
+if [[ "$DO_WAZUH" -eq 0 && "$DO_HELPER" -eq 0 && "$DO_WAF_SNIPPET" -eq 0 && "$DO_WAF_APPLY" -eq 0 ]]; then
   usage
   exit 1
 fi
