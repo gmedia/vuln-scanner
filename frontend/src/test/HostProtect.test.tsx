@@ -168,10 +168,13 @@ describe("Host Protect page", () => {
     ]);
     renderHost();
     await waitFor(() =>
-      expect(
-        screen.getByText(/waiting or failed check is not a clean result/i),
-      ).toBeInTheDocument(),
+      expect(screen.getByTestId("host-site-id")).toBeInTheDocument(),
     );
+    expect(
+      screen.getByText(/waiting or failed check is not a clean result/i),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("host-site-id").textContent).toMatch(/s1/);
+    expect(screen.getByTestId("host-copy-site-id")).toBeInTheDocument();
   });
 
   it("creates a site", async () => {
@@ -719,9 +722,16 @@ describe("Host Protect page", () => {
       expect(screen.getByTestId("host-waf-copy-snippet")).toBeInTheDocument(),
     );
     expect(screen.getByTestId("host-waf-simulate")).toBeDisabled();
+    expect(screen.getByTestId("host-waf-site-id").textContent).toMatch(/s1/);
+    expect(screen.getByTestId("host-waf-copy-site-id")).toBeInTheDocument();
+    expect(screen.getByTestId("host-waf-site-id-hint").textContent).toMatch(
+      /--waf-site-id s1/,
+    );
     expect(screen.getByTestId("host-waf-copy-hint").textContent).toMatch(
       /Clipboard only/i,
     );
+    await user.click(screen.getByTestId("host-waf-copy-site-id"));
+    expect(writeText).toHaveBeenCalledWith("s1");
     await user.click(screen.getByTestId("host-waf-copy-snippet"));
     await waitFor(() =>
       expect(hostWafApi.fetchHostWafSnippet).toHaveBeenCalledWith("s1"),
