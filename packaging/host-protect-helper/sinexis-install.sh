@@ -24,10 +24,14 @@ DO_WAZUH=0
 DO_HELPER=0
 DO_WAF_SNIPPET=0
 DO_WAF_APPLY=0
+DO_WAF_INGEST=0
+DO_WAF_POLL=0
 FORCE_SETUP=0
 SKIP_SNIPPET_CONFIRM=0
 WAF_SNIPPET_PATH="/etc/nginx/sinexis-waf.snippet.conf"
 WAF_VHOST_PATH=""
+WAF_SITE_ID="${SINEXIS_WAF_SITE_ID:-}"
+WAF_AUDIT_LOG="${SINEXIS_WAF_AUDIT_LOG:-/var/log/modsec_audit.log}"
 MANAGER_HOST=""
 QUARANTINE_ROOT="/var/lib/sinexis/quarantine"
 ENV_PATH="/etc/sinexis/host-protect.env"
@@ -45,7 +49,9 @@ TTY (default, no flags): prints setup status, then menu
   4) Write Host WAF nginx snippet file (no include, no reload)
   5) Write snippet AND include it in a vhost you name (nginx -t + reload)
   6) Show setup status only
-  7) Quit
+  7) Set WAF ingest (site UUID + audit log in env; token not printed) and poll once
+  8) Poll helper once (POST WAF events if site UUID is set)
+  9) Quit
 
 Non-interactive:
   --status                 Print what is already installed (no tokens); exit
@@ -54,6 +60,10 @@ Non-interactive:
   --configure-host-protect --agent-id UUID --token-file PATH [--api-base URL]
   --write-waf-snippet [--waf-snippet-path PATH]
   --apply-waf-vhost PATH   Write snippet, include in that nginx file, nginx -t, reload
+  --waf-site-id UUID       Host Protect site UUID from SPA /host (for WAF ingest)
+  --waf-audit-log PATH     ModSecurity audit log (default /var/log/modsec_audit.log)
+  --configure-waf-ingest   Write those keys into host-protect.env (keep existing token)
+  --poll-once              Start sinexis-host-protect@AGENT.service once (no journal dump)
 
 Host Protect:
   --agent-id UUID          Guard agent UUID from SPA /guard
@@ -197,6 +207,25 @@ print_setup_status() {
     for f in "${inc_files[@]}"; do
       log "    ${f}"
     done
+  fi
+  local sid="missing" alog="missing"
+  if [[ -f "$ENV_PATH" ]]; then
+    sid="$(awk -F= '/^SINEXIS_WAF_SITE_ID=/{print $2; exit}' "$ENV_PATH" || true)"
+    alog="$(awk -F= '/^SINEXIS_WAF_AUDIT_LOG=/{print $2; exit}' "$ENV_PATH" || true)"
+  fi
+  if [[ -n "${sid}" ]]; then
+    log "  WAF ingest site UUID: set (not printed in full: ${sid:0:8}…)"
+  else
+    log "  WAF ingest site UUID: missing (menu 7 / --configure-waf-ingest --waf-site-id UUID from SPA /host)"
+  fi
+  if [[ -n "${alog}" ]]; then
+    if [[ -f "$alog" ]]; then
+      log "  WAF audit log: ${alog} (file present)"
+    else
+      log "  WAF audit log: ${alog} (path in env; file not found yet)"
+    fi
+  else
+    log "  WAF audit log: not in env (default helper path /var/log/modsec_audit.log)"
   fi
   log "  Re-run a step: TTY will ask, or pass --force"
 }
@@ -351,6 +380,7 @@ install_deb() {
 write_env() {
   if [[ "$DRY_RUN" -eq 1 ]]; then
     log "dry-run: write ${ENV_PATH} (mode 600); token not printed"
+    upsert_env_waf_keys
     return 0
   fi
   umask 077
@@ -361,6 +391,71 @@ SINEXIS_AGENT_ID=${AGENT_ID}
 SINEXIS_QUARANTINE_ROOT=${QUARANTINE_ROOT}
 EOF
   chmod 600 "$ENV_PATH"
+  upsert_env_waf_keys
+}
+
+env_upsert_key() {
+  local key="$1"
+  local val="$2"
+  local tmp
+  [[ -f "$ENV_PATH" ]] || die "missing ${ENV_PATH} (configure helper first)"
+  tmp="$(mktemp)"
+  umask 077
+  grep -v "^${key}=" "$ENV_PATH" >"$tmp" || true
+  printf '%s=%s\n' "$key" "$val" >>"$tmp"
+  cat "$tmp" >"$ENV_PATH"
+  rm -f "$tmp"
+  chmod 600 "$ENV_PATH"
+}
+
+upsert_env_waf_keys() {
+  [[ -n "$WAF_SITE_ID" ]] || return 0
+  is_uuid "$WAF_SITE_ID" || die "invalid --waf-site-id (Host Protect site UUID from SPA /host)"
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    log "dry-run: set SINEXIS_WAF_SITE_ID in ${ENV_PATH} (UUID not printed in full)"
+    return 0
+  fi
+  need_root
+  env_upsert_key "SINEXIS_WAF_SITE_ID" "$WAF_SITE_ID"
+  env_upsert_key "SINEXIS_WAF_AUDIT_LOG" "$WAF_AUDIT_LOG"
+  log "ok: WAF ingest keys written (token not printed)"
+}
+
+load_agent_id_from_env() {
+  if [[ -n "$AGENT_ID" ]]; then
+    return 0
+  fi
+  [[ -f "$ENV_PATH" ]] || return 1
+  AGENT_ID="$(awk -F= '/^SINEXIS_AGENT_ID=/{print $2; exit}' "$ENV_PATH" || true)"
+}
+
+poll_helper_once() {
+  load_agent_id_from_env || true
+  is_uuid "${AGENT_ID:-}" || die "missing agent UUID (env or --agent-id) to poll"
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    log "dry-run: systemctl start sinexis-host-protect@${AGENT_ID}.service (no journal dump)"
+    return 0
+  fi
+  need_root
+  command -v systemctl >/dev/null 2>&1 || die "systemctl not found"
+  systemctl start "sinexis-host-protect@${AGENT_ID}.service" || die "poll unit failed (do not journalctl — token in env)"
+  log "ok: started helper poll once for agent ${AGENT_ID} (token not printed; wait for SPA /host WAF tab)"
+}
+
+configure_waf_ingest() {
+  if [[ -z "$WAF_SITE_ID" && -t 0 ]]; then
+    read -r -p "Host Protect site UUID from SPA /host (not Guard agent id): " WAF_SITE_ID
+  fi
+  [[ -n "$WAF_SITE_ID" ]] || die "missing --waf-site-id UUID"
+  if [[ -t 0 ]]; then
+    local _al=""
+    read -r -p "ModSecurity audit log [${WAF_AUDIT_LOG}]: " _al || true
+    if [[ -n "${_al}" ]]; then
+      WAF_AUDIT_LOG="$_al"
+    fi
+  fi
+  upsert_env_waf_keys
+  poll_helper_once
 }
 
 enable_timer() {
@@ -549,8 +644,10 @@ show_menu() {
   echo "  4) Write Host WAF nginx snippet (file only; no include/reload)"
   echo "  5) Write snippet AND include in a vhost you name (nginx -t + reload)"
   echo "  6) Show setup status only"
-  echo "  7) Quit"
-  read -r -p "Choice [1-7]: " _c
+  echo "  7) Set WAF ingest (site UUID + audit log; token not printed) and poll once"
+  echo "  8) Poll helper once (POST WAF events if site UUID is set)"
+  echo "  9) Quit"
+  read -r -p "Choice [1-9]: " _c
   case "$_c" in
     1) DO_WAZUH=1 ;;
     2) DO_HELPER=1; INTERACTIVE=1 ;;
@@ -558,7 +655,9 @@ show_menu() {
     4) DO_WAF_SNIPPET=1 ;;
     5) DO_WAF_APPLY=1 ;;
     6) DO_STATUS=1 ;;
-    7) exit 0 ;;
+    7) DO_WAF_INGEST=1 ;;
+    8) DO_WAF_POLL=1 ;;
+    9) exit 0 ;;
     *) die "invalid choice" ;;
   esac
 }
@@ -936,8 +1035,6 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --agent-id)
       AGENT_ID="${2:-}"
-      MENU=0
-      DO_HELPER=1
       shift 2
       ;;
     --token-file)
@@ -1019,6 +1116,26 @@ while [[ $# -gt 0 ]]; do
       [[ -n "$WAF_SNIPPET_PATH" ]] || die "missing --waf-snippet-path"
       shift 2
       ;;
+    --waf-site-id)
+      WAF_SITE_ID="${2:-}"
+      [[ -n "$WAF_SITE_ID" ]] || die "missing --waf-site-id UUID"
+      shift 2
+      ;;
+    --waf-audit-log)
+      WAF_AUDIT_LOG="${2:-}"
+      [[ -n "$WAF_AUDIT_LOG" ]] || die "missing --waf-audit-log PATH"
+      shift 2
+      ;;
+    --configure-waf-ingest)
+      DO_WAF_INGEST=1
+      MENU=0
+      shift
+      ;;
+    --poll-once)
+      DO_WAF_POLL=1
+      MENU=0
+      shift
+      ;;
     --help|-h)
       usage
       exit 0
@@ -1035,7 +1152,7 @@ fi
 
 if [[ "$DO_STATUS" -eq 1 ]]; then
   print_setup_status
-  if [[ "$DO_WAZUH" -eq 0 && "$DO_HELPER" -eq 0 && "$DO_WAF_SNIPPET" -eq 0 && "$DO_WAF_APPLY" -eq 0 ]]; then
+  if [[ "$DO_WAZUH" -eq 0 && "$DO_HELPER" -eq 0 && "$DO_WAF_SNIPPET" -eq 0 && "$DO_WAF_APPLY" -eq 0 && "$DO_WAF_INGEST" -eq 0 && "$DO_WAF_POLL" -eq 0 ]]; then
     exit 0
   fi
 fi
@@ -1051,7 +1168,12 @@ if [[ "$DO_WAF_APPLY" -eq 1 ]]; then
 elif [[ "$DO_WAF_SNIPPET" -eq 1 ]]; then
   write_waf_snippet
 fi
-if [[ "$DO_WAZUH" -eq 0 && "$DO_HELPER" -eq 0 && "$DO_WAF_SNIPPET" -eq 0 && "$DO_WAF_APPLY" -eq 0 ]]; then
+if [[ "$DO_WAF_INGEST" -eq 1 ]]; then
+  configure_waf_ingest
+elif [[ "$DO_WAF_POLL" -eq 1 ]]; then
+  poll_helper_once
+fi
+if [[ "$DO_WAZUH" -eq 0 && "$DO_HELPER" -eq 0 && "$DO_WAF_SNIPPET" -eq 0 && "$DO_WAF_APPLY" -eq 0 && "$DO_WAF_INGEST" -eq 0 && "$DO_WAF_POLL" -eq 0 ]]; then
   usage
   exit 1
 fi
