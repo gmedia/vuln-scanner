@@ -488,9 +488,12 @@ apply_waf_vhost() {
     die "nginx ModSecurity module not detected. Install libnginx-mod-http-modsecurity (or equivalent) before include. Snippet file was written; vhost not patched."
   fi
   need_root
+  local backup="${vhost}.sinexis.bak"
+  cp -a "$vhost" "$backup"
   insert_waf_include "$vhost" "$WAF_SNIPPET_PATH"
   if ! nginx -t; then
-    die "nginx -t failed after include. Restore the vhost from backup/editor; snippet file is still on disk."
+    cp -a "$backup" "$vhost"
+    die "nginx -t failed after include. Restored ${vhost} from ${backup}. Snippet file is still on disk; nginx not reloaded."
   fi
   if command -v systemctl >/dev/null 2>&1; then
     systemctl reload nginx
@@ -530,7 +533,7 @@ SecResponseBodyAccess Off
 SecRule REQUEST_URI "@beginsWith /xmlrpc.php" "id:1001,phase:1,t:none,deny,status:403,msg:\'mock.xmlrpc\'"
 SecRule ARGS "@rx (?i)(union\\s+select|or\\s+1=1)" "id:1002,phase:2,t:none,deny,status:403,msg:\'mock.sqli.1\'"
 SecRule REQUEST_URI "@rx \\.\\./" "id:1003,phase:1,t:none,deny,status:403,msg:\'mock.rce.path\'"
-'
+';
 EOF
   chmod 644 "$dest"
   log "ok: wrote ${dest}. Include it in the customer site vhost yourself. No nginx reload."
