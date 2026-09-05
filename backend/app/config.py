@@ -140,6 +140,7 @@ class Settings(BaseSettings):
     ai_gateway_enabled: bool = False
     ai_usd_idr: int = 16000
     ai_store_prompts: bool = False
+    ai_trial_monthly_cap_idr: int = 500_000
     host_protect_enabled: bool = False
     host_protect_allow_mock: bool = False
     host_protect_allow_local_walk: bool = False

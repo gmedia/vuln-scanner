@@ -315,3 +315,160 @@ async def _stream_and_settle(
                 provider_request_id=req_id,
             )
         yield b"data: [DONE]\n\n"
+
+
+def _upstream_headers(model: AiModel) -> tuple[str, dict[str, str]]:
+    cred = decrypt_credential(model.provider.credential_enc)
+    header_name = model.provider.auth_header or "Authorization"
+    headers = {"Content-Type": "application/json"}
+    if header_name.lower() == "authorization" and not cred.lower().startswith("bearer "):
+        headers[header_name] = f"Bearer {cred}"
+    else:
+        headers[header_name] = cred
+    url = model.provider.base_url.rstrip("/") + "/chat/completions"
+    return url, headers
+
+
+async def admin_trial_chat(
+    db: AsyncSession,
+    *,
+    admin_id: UUID,
+    body: dict[str, Any],
+) -> JSONResponse:
+    from datetime import UTC, datetime
+
+    from sqlalchemy import func, select
+
+    from app.models.ai_gateway import AiUsageEvent
+
+    if body.get("stream"):
+        raise HTTPException(status_code=400, detail="stream is not supported for admin trial")
+    _validate_body(body)
+    public_id = str(body.get("model") or "")
+    model = await _load_model(db, public_id)
+
+    month_start = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    spent = (
+        await db.execute(
+            select(func.coalesce(func.sum(AiUsageEvent.billed_idr), 0)).where(
+                AiUsageEvent.source == "admin_trial",
+                AiUsageEvent.created_at >= month_start,
+            )
+        )
+    ).scalar()
+    spent_i = int(spent or 0)
+    if spent_i >= settings.ai_trial_monthly_cap_idr:
+        raise HTTPException(status_code=402, detail="Admin trial monthly cap reached")
+
+    requested = int(body.get("max_tokens") or model.max_tokens_cap)
+    upstream_body = dict(body)
+    upstream_body["model"] = model.upstream_id
+    upstream_body["max_tokens"] = min(requested, model.max_tokens_cap)
+    url, headers = _upstream_headers(model)
+    started = time.perf_counter()
+    try:
+        async with httpx.AsyncClient(timeout=UPSTREAM_TIMEOUT) as client:
+            resp = await client.post(url, headers=headers, json=upstream_body)
+    except httpx.HTTPError:
+        await record_usage(
+            db,
+            organization_id=None,
+            user_id=admin_id,
+            key_id=None,
+            source="admin_trial",
+            model=model,
+            prompt_tokens=0,
+            completion_tokens=0,
+            billed=0,
+            cogs=0,
+            reservation_id=None,
+            http_status=502,
+        )
+        await db.commit()
+        return _generic_upstream_fail()
+
+    latency_ms = int((time.perf_counter() - started) * 1000)
+    if resp.status_code in (401, 403) or resp.status_code >= 500:
+        await record_usage(
+            db,
+            organization_id=None,
+            user_id=admin_id,
+            key_id=None,
+            source="admin_trial",
+            model=model,
+            prompt_tokens=0,
+            completion_tokens=0,
+            billed=0,
+            cogs=0,
+            reservation_id=None,
+            http_status=resp.status_code,
+        )
+        await db.commit()
+        return _generic_upstream_fail()
+    if resp.status_code >= 400:
+        await record_usage(
+            db,
+            organization_id=None,
+            user_id=admin_id,
+            key_id=None,
+            source="admin_trial",
+            model=model,
+            prompt_tokens=0,
+            completion_tokens=0,
+            billed=0,
+            cogs=0,
+            reservation_id=None,
+            http_status=resp.status_code,
+        )
+        await db.commit()
+        return openai_error(resp.status_code, "Request rejected", err_type="invalid_request_error")
+
+    try:
+        payload = resp.json()
+    except json.JSONDecodeError:
+        await record_usage(
+            db,
+            organization_id=None,
+            user_id=admin_id,
+            key_id=None,
+            source="admin_trial",
+            model=model,
+            prompt_tokens=0,
+            completion_tokens=0,
+            billed=0,
+            cogs=0,
+            reservation_id=None,
+            http_status=resp.status_code,
+        )
+        await db.commit()
+        return _generic_upstream_fail()
+
+    prompt_t, completion_t, finish = _usage_from_payload(payload if isinstance(payload, dict) else {})
+    billed = billed_idr(prompt_tokens=prompt_t, completion_tokens=completion_t, model=model)
+    if spent_i + billed > settings.ai_trial_monthly_cap_idr:
+        billed = 0
+    cogs = cogs_idr(
+        prompt_tokens=prompt_t,
+        completion_tokens=completion_t,
+        model=model,
+        usd_idr=settings.ai_usd_idr,
+    )
+    await record_usage(
+        db,
+        organization_id=None,
+        user_id=admin_id,
+        key_id=None,
+        source="admin_trial",
+        model=model,
+        prompt_tokens=prompt_t,
+        completion_tokens=completion_t,
+        billed=billed,
+        cogs=cogs,
+        reservation_id=None,
+        latency_ms=latency_ms,
+        http_status=resp.status_code,
+        finish_reason=finish,
+        provider_request_id=payload.get("id") if isinstance(payload, dict) else None,
+    )
+    await db.commit()
+    return JSONResponse(content=payload, status_code=200)
