@@ -67,8 +67,27 @@ async def _incr_side_effect(key: str) -> int:
     return _incr_counters[key]
 
 
+async def _incrby_side_effect(key: str, amount: int) -> int:
+    _incr_counters[key] = _incr_counters.get(key, 0) + int(amount)
+    return _incr_counters[key]
+
+
+async def _decr_side_effect(key: str) -> int:
+    _incr_counters[key] = _incr_counters.get(key, 0) - 1
+    return _incr_counters[key]
+
+
+async def _delete_side_effect(key: str) -> int:
+    existed = 1 if key in _incr_counters else 0
+    _incr_counters.pop(key, None)
+    return existed
+
+
 _fake_redis = _AsyncMock(spec=_aioredis.Redis)
 _fake_redis.incr = _incr_side_effect
+_fake_redis.incrby = _incrby_side_effect
+_fake_redis.decr = _decr_side_effect
+_fake_redis.delete = _delete_side_effect
 _fake_redis.expire = _AsyncMock(return_value=True)
 _fake_redis.ttl = _AsyncMock(return_value=-1)
 _fake_redis.ping = _AsyncMock(return_value=True)

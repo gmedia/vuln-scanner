@@ -474,3 +474,21 @@ class TestSanitizeEdgeCases:
         assert result["response"]["body"]["user"]["id"] == "abc"
         assert result["response"]["body"]["user"]["email"] == "user@test.com"
         assert result["response"]["body"]["user"]["credits"] == 100
+
+
+def test_wholesale_gateway_secrets_redacted() -> None:
+    leaked = sanitize_for_log(
+        {
+            "credential_enc": "sk-or-v1-wholesale-secret",
+            "api_key": "sk-or-v1-wholesale-secret",
+            "authorization": "Bearer sk-or-v1-wholesale-secret",
+            "upstream_url": "https://openrouter.example/v1",
+            "model": "sinexis/fast",
+        }
+    )
+    assert leaked["credential_enc"] == "[REDACTED]"
+    assert leaked["api_key"] == "[REDACTED]"
+    assert leaked["authorization"] == "[REDACTED]"
+    assert "sk-or-v1-wholesale-secret" not in str(leaked)
+    assert leaked["upstream_url"] == "https://openrouter.example/v1"
+    assert leaked["model"] == "sinexis/fast"

@@ -74,6 +74,7 @@ describe("AI Gateway page", () => {
     expect(
       await screen.findByText("The AI Gateway module is not enabled in this environment."),
     ).toBeInTheDocument();
+    expect(screen.getByTestId("ai-feature-off")).toBeInTheDocument();
   });
 
   it("asks to pick org when none active", () => {
