@@ -96,6 +96,7 @@ def test_wrapper_write_waf_snippet_file(tmp_path: Path) -> None:
     assert "Do not paste onto sinexis.app" in text
     assert "does not add an include" in text
     assert "modsecurity on;" in text
+    assert "';" in text.split("modsecurity_rules", 1)[1]
     combined = proc.stdout + proc.stderr
     assert "No nginx reload" in combined
 
