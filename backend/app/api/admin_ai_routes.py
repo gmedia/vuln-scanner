@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import uuid
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi.responses import JSONResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,6 +29,7 @@ from app.schemas.ai_gateway import (
     AiWalletTopup,
 )
 from app.services.ai_crypto import encrypt_credential
+from app.services.ai_proxy import admin_trial_chat
 from app.services.ai_wallet import topup as wallet_topup
 from app.services.auth import get_current_admin
 
@@ -296,3 +300,22 @@ async def admin_list_usage(
     total = (await db.execute(cq)).scalar() or 0
     rows = list((await db.execute(q.order_by(AiUsageEvent.created_at.desc()).limit(limit))).scalars().all())
     return AiUsageList(items=[AiUsageOut.model_validate(r) for r in rows], total=total)
+
+
+@router.post("/chat", response_model=None)
+async def admin_chat(
+    request: Request,
+    admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse | Response:
+    _disabled()
+    limited = await _limit(request)
+    if limited:
+        return limited
+    try:
+        body: dict[str, Any] = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="JSON body required") from None
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="JSON object required")
+    return await admin_trial_chat(db, admin_id=admin.id, body=body)
