@@ -8,7 +8,30 @@
 1. Read **`docs/AGENT_EXECUTION_GUIDE.md`** (§0 boot, then **§1.2–1.3** priority).
 2. Read **`AGENTS.md`** for git/PR rules.
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
-4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`vs.appmedia.id`** (public DNS). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
+4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`sinexis.app`** (public DNS; legacy `vs.appmedia.id` may still exist). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
+
+## Session snapshot (2026-09-05 — AI Gateway S1–S5 + prod ops)
+
+| Item | State |
+|------|--------|
+| **`main` tip (coding)** | Re-`git pull`. Expect **`cc7c9fe`** or newer: **#624** WAF snippet; **#623** CI persist `AI_GATEWAY_ENABLED` from GitHub secret; **#622** AI Gateway S5. S1–S4: **#612 / #616 / #617 / #620**. |
+| **Open PRs** | None from this wave. Dependabot: **do not mass-merge**. |
+| **AI Gateway code** | **S1–S5 on `main`**. Spek [`docs/specs/ai-gateway-v1.md`](docs/specs/ai-gateway-v1.md). Ops: [`docs/ai-gateway-ops.md`](docs/ai-gateway-ops.md). SPA `/ai` + `/admin/ai`. Proxy `/v1/chat/completions` + `/v1/models`. Git compose **`AI_GATEWAY_ENABLED` default `false`**. **Do not** flip git default on. |
+| **Prod app host (`tc1`)** | Hop: coding host → jump host → **tc1** (aliases / env only — **never** commit SSH IPs). Compose project **`vuln`**. After ops + green **#623** deploy: host `.env` + container **`AI_GATEWAY_ENABLED=true`**. **`AI_USD_IDR=16000`**. Host nginx **`location ^~ /v1/`** (SSE / Accel-Buffering) on live `sinexis.app` conf — **do not** replace cert paths. Smoke: `GET /v1/models` **401** (not 404); `/health` **200**. |
+| **Catalog** | Prod tables **empty**: `ai_providers` / `ai_models` / `ai_wallets` / `ai_api_keys` = **0**. No seed script. Seed = admin JWT `POST /api/admin/ai/providers` then `/models` then `/wallets/{org_id}/topup`. Master **`X-API-Key` alone is not enough** (`get_current_admin` needs Bearer JWT `is_admin`). |
+| **Blocked for agents** | Wholesale `base_url` + credential, SKU `public_id` / `upstream_id` + IDR prices, org UUID + top-up amount — **human**. Do **not** invent list prices or commit keys. GitHub secrets: **`AI_GATEWAY_ENABLED` only** (no OpenRouter/OpenAI key). |
+| **Still human (non-AI)** | GTM; Host Protect **invoice/`service_id`**; fill `/admin/hpp` (`hostscan` + AI rates if used). Residual spek (not this session): `service_id`, playground JWT, dedicated uvicorn. |
+| **P14 / Guard** | Unchanged. **G/H** only if named + `buat`. Do **not** wipe `sx-erpstg`. Playwright ≠ enroll. |
+| **Engineering default** | **Do not start coding** until `implement` / `buat` / `kerjakan`. **No AI Gateway code left** until catalog fields arrive. Next eng default in guide = **P14 C** (wave 0) if user names it. Do **not** paste WAF onto `sinexis.app` edge. Do **not** poll CI. |
+
+### Next OpenCode session
+
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. Expect **`cc7c9fe`** or this handoff squash. `gh pr list --state open --assignee @me`. CI green → squash-merge then delete branch. **Do not poll CI.** Do **not** mass-merge Dependabot.
+2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** then **`AGENTS.md`**. AI: **`docs/specs/ai-gateway-v1.md`** + **`docs/ai-gateway-ops.md`**. P14: **`docs/specs/imunify-class-onbox.md`**.
+3. Speak **Bahasa Indonesia**; prefix git with `GIT_MASTER=1`. Never work on `main`. Never commit secrets/IPs/tokens/PNGs.
+4. **Do not** tell the user to SSH Alembic after a green **main** deploy — `scripts/deploy.sh` already migrates.
+5. **Do not** recreate backend / rewrite host `.env` “to enable AI” unless the flag is missing — it is **already true** on tc1 after #623. Confirm: `docker exec vuln-backend printenv AI_GATEWAY_ENABLED` → `true`; nginx has `/v1/`.
+6. Optional (only if user picks): **seed catalog** after they paste wholesale URL+key + SKU prices + org top-up (never echo keys); **P14 C** + `buat`; GTM/`service_id`; HPP. Do **not** clone Imunify. Do **not** start AI S6 (playground JWT / extra uvicorn) without a new spek + `buat`.
 
 ## Session snapshot (2026-09-02 — Guard host-agent token SPA)
 
