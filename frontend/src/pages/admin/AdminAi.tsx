@@ -43,7 +43,7 @@ export default function AdminAi() {
   });
   const modelsQ = useQuery({
     queryKey: ["admin-ai-models"],
-    queryFn: listAiModels,
+    queryFn: () => listAiModels(),
     enabled: !isAiDisabledError(providersQ.error),
     retry: false,
   });

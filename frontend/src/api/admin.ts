@@ -162,7 +162,9 @@ export async function listAiProviders(): Promise<{
   items: AiProviderAdmin[];
   total: number;
 }> {
-  const { data } = await api.get("/api/admin/ai/providers");
+  const { data } = await api.get<{ items: AiProviderAdmin[]; total: number }>(
+    "/api/admin/ai/providers",
+  );
   return data;
 }
 
@@ -201,9 +203,10 @@ export async function listAiModels(providerId?: string): Promise<{
   items: AiModelAdmin[];
   total: number;
 }> {
-  const { data } = await api.get("/api/admin/ai/models", {
-    params: providerId ? { provider_id: providerId } : undefined,
-  });
+  const { data } = await api.get<{ items: AiModelAdmin[]; total: number }>(
+    "/api/admin/ai/models",
+    { params: providerId ? { provider_id: providerId } : undefined },
+  );
   return data;
 }
 
@@ -262,7 +265,10 @@ export async function listAiUsage(params?: {
   org_id?: string;
   limit?: number;
 }): Promise<{ items: AiUsageAdmin[]; total: number }> {
-  const { data } = await api.get("/api/admin/ai/usage", { params });
+  const { data } = await api.get<{ items: AiUsageAdmin[]; total: number }>(
+    "/api/admin/ai/usage",
+    { params },
+  );
   return data;
 }
 
