@@ -20,6 +20,9 @@ def test_lab_fixture_snippet_has_probe_rule():
     assert "mock.lab.probe" in text
     assert "do not paste onto sinexis.app" in text
     assert "listen" not in text.lower()
+    assert "modsecurity_rules '" in text
+    assert text.rstrip().endswith("v1.") or "';" in text
+    assert "';" in text.split("modsecurity_rules", 1)[1]
 
 
 def test_customer_snippet_omits_lab_probe():
