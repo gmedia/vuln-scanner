@@ -16,6 +16,8 @@ from starlette.responses import JSONResponse, StreamingResponse
 from app.config import settings
 from app.models.ai_gateway import AiApiKey, AiModel
 from app.services.ai_crypto import decrypt_credential
+from app.services.ai_limits import acquire as acquire_limits
+from app.services.ai_limits import release_concurrent
 from app.services.ai_wallet import billed_idr, cogs_idr, hold_idr, record_usage, release, reserve, settle
 
 UPSTREAM_TIMEOUT = 120.0
@@ -96,9 +98,14 @@ async def chat_completions(
     model = await _load_model(db, public_id)
     stream = bool(body.get("stream"))
     requested = int(body.get("max_tokens") or model.max_tokens_cap)
+    await acquire_limits(key, estimated_tokens=min(requested, model.max_tokens_cap))
     hold = hold_idr(max_tokens=requested, model=model)
-    reservation = await reserve(db, organization_id=key.organization_id, hold=hold, key_id=key.id)
-    await db.commit()
+    try:
+        reservation = await reserve(db, organization_id=key.organization_id, hold=hold, key_id=key.id)
+        await db.commit()
+    except Exception:
+        await release_concurrent(key.id)
+        raise
 
     upstream_body = dict(body)
     upstream_body["model"] = model.upstream_id
@@ -137,20 +144,24 @@ async def chat_completions(
         async with httpx.AsyncClient(timeout=UPSTREAM_TIMEOUT) as client:
             resp = await client.post(url, headers=headers, json=upstream_body)
     except httpx.HTTPError:
+        await release_concurrent(key.id)
         await _fail_release(db, reservation.id, model, key)
         return _generic_upstream_fail()
 
     latency_ms = int((time.perf_counter() - started) * 1000)
     if resp.status_code in (401, 403) or resp.status_code >= 500:
+        await release_concurrent(key.id)
         await _fail_release(db, reservation.id, model, key, http_status=resp.status_code)
         return _generic_upstream_fail()
     if resp.status_code >= 400:
+        await release_concurrent(key.id)
         await _fail_release(db, reservation.id, model, key, http_status=resp.status_code)
         return openai_error(resp.status_code, "Request rejected", err_type="invalid_request_error")
 
     try:
         payload = resp.json()
     except json.JSONDecodeError:
+        await release_concurrent(key.id)
         await _fail_release(db, reservation.id, model, key, http_status=resp.status_code)
         return _generic_upstream_fail()
 
@@ -167,6 +178,7 @@ async def chat_completions(
         finish_reason=finish,
         provider_request_id=payload.get("id") if isinstance(payload, dict) else None,
     )
+    await release_concurrent(key.id)
     return JSONResponse(content=payload, status_code=200)
 
 
@@ -299,6 +311,7 @@ async def _stream_and_settle(
         yield b"data: {\"error\":{\"message\":\"Upstream provider error\",\"type\":\"api_error\"}}\n\n"
     finally:
         latency_ms = int((time.perf_counter() - started) * 1000)
+        await release_concurrent(key.id)
         if failed:
             await _fail_release(db, reservation_id, model, key, http_status=http_status)
         else:
