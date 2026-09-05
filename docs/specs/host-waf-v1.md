@@ -25,7 +25,7 @@
 
 1. Do **not** ship WAF under “Guard” or “SIEM.”
 2. Do **not** merge WAF events into `scan_findings` or `host_hits` (different domain: HTTP vs file).
-3. Do **not** treat Playwright as enroll. Live lab: **not** `sx-erpstg` / `tc5` ERP. Prefer a **lab vhost** on the worker/app host or a disposable site on the Guard VM **after** wipe-first only if the user asks full Guard e2e.
+3. Do **not** treat Playwright as enroll. Live lab: **not** `sx-erpstg` (customer ERP, different account). **tc5** is the Sinexis Guard lab agent VM — Host WAF `--apply-vhost` may copy a **lab fixture** snippet there. Never paste onto `sinexis.app` edge.
 4. Do **not** copy Imunify/OWASP commercial rule text into the product UI.
 5. **Sinexis edge** (`sinexis.app` host nginx) stays **out** of this epic. WAF runs on the **customer VPS** (or a lab fixture), not as a global reverse-proxy for the SaaS.
 
