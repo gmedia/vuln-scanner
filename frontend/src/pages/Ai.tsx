@@ -95,7 +95,7 @@ export default function Ai() {
     return (
       <div className="w-full space-y-6">
         <Header />
-        <Alert>
+        <Alert data-testid="ai-feature-off">
           <AlertDescription>{t("featureOff")}</AlertDescription>
         </Alert>
       </div>
