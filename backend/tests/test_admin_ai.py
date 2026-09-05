@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from unittest.mock import AsyncMock, patch
+
 import pytest
 
 from app.config import settings
@@ -22,6 +24,7 @@ def test_ai_gateway_disabled_404(client) -> None:
         json={"name": "x", "base_url": "https://api.example/v1", "credential": "k"},
     )
     assert r.status_code == 404
+    assert client.post("/api/admin/ai/chat", headers=API_HEADERS, json={"model": "x"}).status_code == 404
 
 
 def test_encrypt_roundtrip() -> None:
@@ -192,4 +195,60 @@ def test_provider_model_crud(client, ai_on) -> None:
 
     assert client.delete(f"/api/admin/ai/models/{mid}", headers=API_HEADERS).status_code == 204
     assert client.delete(f"/api/admin/ai/models/{oid}", headers=API_HEADERS).status_code == 204
+    assert client.delete(f"/api/admin/ai/providers/{pid}", headers=API_HEADERS).status_code == 204
+
+
+def test_admin_trial_chat_stream_rejected_and_ok(client, ai_on) -> None:
+    created = client.post(
+        "/api/admin/ai/providers",
+        headers=API_HEADERS,
+        json={
+            "name": "OR",
+            "base_url": "https://openrouter.ai/api/v1",
+            "credential": "sk-or-v1-secret",
+        },
+    )
+    pid = created.json()["id"]
+    mid = client.post(
+        "/api/admin/ai/models",
+        headers=API_HEADERS,
+        json={
+            "provider_id": pid,
+            "public_id": "sinexis/trial",
+            "upstream_id": "hidden-up",
+            "price_idr_per_1k_in": 100,
+            "price_idr_per_1k_out": 200,
+        },
+    ).json()["id"]
+    stream = client.post(
+        "/api/admin/ai/chat",
+        headers=API_HEADERS,
+        json={"model": "sinexis/trial", "stream": True, "messages": [{"role": "user", "content": "x"}]},
+    )
+    assert stream.status_code == 400
+
+    class _Resp:
+        status_code = 200
+
+        def json(self):
+            return {
+                "id": "chatcmpl-admin",
+                "choices": [{"finish_reason": "stop", "message": {"role": "assistant", "content": "pong"}}],
+                "usage": {"prompt_tokens": 1, "completion_tokens": 1},
+            }
+
+    mock_client = AsyncMock()
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+    mock_client.post = AsyncMock(return_value=_Resp())
+    with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+        ok = client.post(
+            "/api/admin/ai/chat",
+            headers=API_HEADERS,
+            json={"model": "sinexis/trial", "messages": [{"role": "user", "content": "ping"}]},
+        )
+    assert ok.status_code == 200, ok.text
+    assert "sk-or" not in ok.text
+    assert "hidden-up" not in ok.text
+    assert client.delete(f"/api/admin/ai/models/{mid}", headers=API_HEADERS).status_code == 204
     assert client.delete(f"/api/admin/ai/providers/{pid}", headers=API_HEADERS).status_code == 204

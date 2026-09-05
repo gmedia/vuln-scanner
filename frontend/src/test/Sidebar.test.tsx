@@ -69,6 +69,8 @@ describe("Sidebar", () => {
     expect(screen.getByText("Host agents")).toBeInTheDocument();
     expect(screen.getByText("SIEM")).toBeInTheDocument();
     expect(screen.getByText("Org events")).toBeInTheDocument();
+    expect(screen.getByText("AI Gateway")).toBeInTheDocument();
+    expect(screen.getByText("Org wallet + keys")).toBeInTheDocument();
     expect(screen.getByText("Host Protect")).toBeInTheDocument();
     expect(screen.getByText("On-box malware")).toBeInTheDocument();
     expect(screen.getByText("Uptime")).toBeInTheDocument();

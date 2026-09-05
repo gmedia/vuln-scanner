@@ -26,6 +26,7 @@ const Schedules = lazy(() => import("@/pages/Schedules"));
 const Assets = lazy(() => import("@/pages/Assets"));
 const Guard = lazy(() => import("@/pages/Guard"));
 const Siem = lazy(() => import("@/pages/Siem"));
+const Ai = lazy(() => import("@/pages/Ai"));
 const HostProtect = lazy(() => import("@/pages/HostProtect"));
 const Uptime = lazy(() => import("@/pages/Uptime"));
 const StatusPage = lazy(() => import("@/pages/StatusPage"));
@@ -39,6 +40,7 @@ const AdminPricing = lazy(() => import("@/pages/admin/AdminPricing"));
 const AdminHpp = lazy(() => import("@/pages/admin/AdminHpp"));
 const AdminBlog = lazy(() => import("@/pages/admin/AdminBlog"));
 const AdminEmailLogs = lazy(() => import("@/pages/admin/AdminEmailLogs"));
+const AdminAi = lazy(() => import("@/pages/admin/AdminAi"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 function App() {
@@ -130,6 +132,7 @@ function App() {
             />
             <Route path="/guard" element={<PageBoundary component={Guard} />} />
             <Route path="/siem" element={<PageBoundary component={Siem} />} />
+            <Route path="/ai" element={<PageBoundary component={Ai} />} />
             <Route path="/host" element={<PageBoundary component={HostProtect} />} />
             <Route
               path="/uptime"
@@ -185,6 +188,10 @@ function App() {
               <Route
                 path="/admin/email-logs"
                 element={<PageBoundary component={AdminEmailLogs} />}
+              />
+              <Route
+                path="/admin/ai"
+                element={<PageBoundary component={AdminAi} />}
               />
             </Route>
           </Route>

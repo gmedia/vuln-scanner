@@ -17,6 +17,7 @@ import enWorkspace from "@/locales/en/workspace.json";
 import enGuard from "@/locales/en/guard.json";
 import enGuide from "@/locales/en/guide.json";
 import enSiem from "@/locales/en/siem.json";
+import enAi from "@/locales/en/ai.json";
 import enHost from "@/locales/en/host.json";
 import enAssets from "@/locales/en/assets.json";
 import enUptime from "@/locales/en/uptime.json";
@@ -32,6 +33,7 @@ import idWorkspace from "@/locales/id/workspace.json";
 import idGuard from "@/locales/id/guard.json";
 import idGuide from "@/locales/id/guide.json";
 import idSiem from "@/locales/id/siem.json";
+import idAi from "@/locales/id/ai.json";
 import idHost from "@/locales/id/host.json";
 import idAssets from "@/locales/id/assets.json";
 import idUptime from "@/locales/id/uptime.json";
@@ -50,6 +52,7 @@ export const resources = {
     guard: enGuard,
     guide: enGuide,
     siem: enSiem,
+    ai: enAi,
     host: enHost,
     assets: enAssets,
     uptime: enUptime,
@@ -67,6 +70,7 @@ export const resources = {
     guard: idGuard,
     guide: idGuide,
     siem: idSiem,
+    ai: idAi,
     host: idHost,
     assets: idAssets,
     uptime: idUptime,

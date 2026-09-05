@@ -18,6 +18,7 @@ import {
   FileText,
   FolderLock,
   Mail,
+  Bot,
 } from "lucide-react";
 import { BRAND } from "@/lib/brand";
 import { useTranslation } from "react-i18next";
@@ -66,6 +67,13 @@ const productNav = [
     hintKey: "siemHint",
     icon: Siren,
     testId: "nav-siem",
+  },
+  {
+    to: "/ai",
+    labelKey: "ai",
+    hintKey: "aiHint",
+    icon: Bot,
+    testId: "nav-ai",
   },
   {
     to: "/host",
@@ -234,6 +242,12 @@ function Sidebar() {
                   labelKey="emailLogs"
                   icon={Mail}
                   testId="nav-admin-email-logs"
+                />
+                <NavItem
+                  to="/admin/ai"
+                  labelKey="adminAi"
+                  icon={Bot}
+                  testId="nav-admin-ai"
                 />
               </SidebarMenu>
             </SidebarGroupContent>
