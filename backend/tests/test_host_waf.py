@@ -448,6 +448,39 @@ async def test_agent_waf_ingest_persists_and_strips_query(db_session: AsyncSessi
     assert rows[0].method == "GET"
     assert rows[0].action == "block"
     assert rows[0].http_status == 403
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            again = await client.post(
+                "/api/host/agent/waf-events",
+                headers={"X-Host-Agent-Token": raw},
+                json={
+                    "agent_id": str(agent.id),
+                    "site_id": str(site.id),
+                    "events": [
+                        {
+                            "action": "block",
+                            "rule_id": "941100",
+                            "method": "GET",
+                            "path": "/wp-login.php",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "941100",
+                            "method": "GET",
+                            "path": "/wp-login.php",
+                            "http_status": 403,
+                        },
+                    ],
+                },
+            )
+            assert again.status_code == 200
+            assert again.json()["accepted"] == 0
+    finally:
+        app.dependency_overrides.clear()
+    rows2 = (await db_session.execute(select(HostWafEvent).where(HostWafEvent.site_id == site.id))).scalars().all()
+    assert len(rows2) == 1
 
 
 @pytest.mark.asyncio

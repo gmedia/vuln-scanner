@@ -91,5 +91,9 @@
   "wafCopySnippet": "Salin snippet nginx",
   "wafCopyHint": "Hanya clipboard. Tempel include di VPS pelanggan — tombol ini tidak memasang atau me-reload nginx.",
   "wafCopyOk": "Snippet disalin. Jangan tempel ke nginx edge sinexis.app.",
-  "wafCopyFail": "Gagal menyalin snippet WAF"
+  "wafCopyFail": "Gagal menyalin snippet WAF",
+  "wafSnippetNotIncluded": "Menyalin snippet tidak berarti nginx sudah meng-include-nya. Sampai include di VPS pelanggan dan nginx di-reload, baris hidup tidak muncul.",
+  "wafHelperNever": "Helper belum poll agent Guard situs ini. Baris WAF hidup menunggu poll itu.",
+  "wafHelperPolled": "Helper terakhir poll {{when}}.",
+  "wafHelperStale": "Helper terakhir poll {{when}} — lebih dari 30 menit. Ingest WAF hidup mungkin tertunda."
 }

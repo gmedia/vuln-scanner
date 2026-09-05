@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import secrets
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -240,15 +240,39 @@ async def ingest_agent_waf_events(
     policy = (await db.execute(select(HostWafPolicy).where(HostWafPolicy.site_id == site.id))).scalar_one_or_none()
     owner = (await db.execute(select(User).where(User.id == site.created_by))).scalar_one_or_none()
     accepted = 0
+    cutoff = datetime.now(UTC) - timedelta(minutes=10)
+    seen: set[tuple[str, str, str, str]] = set()
     for item in body.events:
+        path = _strip_query(item.path)
+        rule_id = item.rule_id[:128]
+        key = (path, rule_id, item.method, item.action)
+        if key in seen:
+            continue
+        seen.add(key)
+        dup = (
+            await db.execute(
+                select(HostWafEvent.id)
+                .where(
+                    HostWafEvent.site_id == site.id,
+                    HostWafEvent.path == path,
+                    HostWafEvent.rule_id == rule_id,
+                    HostWafEvent.method == item.method,
+                    HostWafEvent.action == item.action,
+                    HostWafEvent.created_at >= cutoff,
+                )
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        if dup is not None:
+            continue
         event = HostWafEvent(
             organization_id=site.organization_id,
             site_id=site.id,
             policy_id=policy.id if policy is not None else None,
             action=item.action,
-            rule_id=item.rule_id[:128],
+            rule_id=rule_id,
             method=item.method,
-            path=_strip_query(item.path),
+            path=path,
             http_status=item.http_status,
         )
         db.add(event)

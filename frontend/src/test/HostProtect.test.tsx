@@ -727,6 +727,12 @@ describe("Host Protect page", () => {
       expect(hostWafApi.fetchHostWafSnippet).toHaveBeenCalledWith("s1"),
     );
     expect(writeText).toHaveBeenCalled();
+    expect(screen.getByTestId("host-waf-snippet-status").textContent).toMatch(
+      /does not mean nginx already includes|tidak berarti nginx/i,
+    );
+    expect(screen.getByTestId("host-waf-helper-poll").textContent).toMatch(
+      /has not polled|belum poll/i,
+    );
   });
 
   it("treats WAF list 404 as feature off", async () => {
