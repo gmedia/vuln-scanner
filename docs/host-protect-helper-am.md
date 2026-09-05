@@ -19,7 +19,7 @@ chmod +x sinexis-install.sh
 
 Or a [GitHub Release](https://github.com/gmedia/vuln-scanner/releases) asset — verify SHA256. Payloads (scan helper, rules, systemd units) are **embedded**. If `bash` reports `<!DOCTYPE html>`, you saved the web page.
 
-**Wrapper:** TTY menu — (1) install `wazuh-agent`, (2) configure Host Protect helper, (3) both. Not `curl | bash`. Enroll still uses SaaS token + `manage_agents` for `agent_key`.
+**Wrapper:** TTY prints **setup status** first (wazuh / helper / WAF snippet — **no tokens**), then menu — (1) wazuh-agent, (2) helper, (3) both, (4) WAF file only, (5) WAF include + reload, (6) status, (7) quit. If a piece is already installed, TTY asks **Re-run? [y/N]**. Flags skip unless `--force`. Not `curl | bash`. Enroll still uses SaaS token + `manage_agents` for `agent_key`.
 
 ```bash
 # TTY menu (1 wazuh-agent / 2 helper / 3 both):
@@ -136,8 +136,8 @@ Do **not** paste the snippet onto `sinexis.app` edge nginx. Customer (or lab) VP
 | Step | Honest check |
 |------|----------------|
 | Copy snippet in `/host` WAF tab | Clipboard only. Does **not** include or reload nginx. |
-| Write file on VPS | `/etc/nginx/sinexis-waf.snippet.conf` (or lab fixture vhost). |
-| Include in **that** site’s vhost | Then `nginx -t` and reload **on that box**. |
+| Write file on VPS | Menu **4** / `--write-waf-snippet` → `/etc/nginx/sinexis-waf.snippet.conf` only. |
+| Include + reload | Menu **5** / `--apply-waf-vhost /etc/nginx/sites-enabled/<site>` — you name the file. Refuses `sinexis.app` edge. Needs ModSecurity module. |
 | Env for ingest | `SINEXIS_WAF_SITE_ID=<host_sites UUID>` and `SINEXIS_WAF_AUDIT_LOG=/var/log/modsec_audit.log` in `host-protect.env`. systemd unit needs `ReadOnlyPaths=-/var/log/modsec_audit.log`. |
 | Live rows in SPA | After nginx actually matches **and** helper poll POSTs `/api/host/agent/waf-events`. Simulate is preview only (`mock.sqli.1`). |
 | Duplicate probes | API drops identical path+rule+method+action within ~10 minutes. |
