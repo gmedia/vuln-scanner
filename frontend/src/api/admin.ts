@@ -245,6 +245,46 @@ export async function deleteAiModel(id: string): Promise<void> {
   await api.delete(`/api/admin/ai/models/${id}`);
 }
 
+export interface AiUsageAdmin {
+  id: string;
+  organization_id: string | null;
+  source: string;
+  model_public_id: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+  billed_idr: number;
+  cogs_idr: number;
+  http_status: number | null;
+  created_at: string;
+}
+
+export async function listAiUsage(params?: {
+  org_id?: string;
+  limit?: number;
+}): Promise<{ items: AiUsageAdmin[]; total: number }> {
+  const { data } = await api.get("/api/admin/ai/usage", { params });
+  return data;
+}
+
+export async function topupAiWallet(
+  orgId: string,
+  amountIdr: number,
+): Promise<{ organization_id: string; balance_idr: number }> {
+  const { data } = await api.post(`/api/admin/ai/wallets/${orgId}/topup`, {
+    amount_idr: amountIdr,
+  });
+  return data;
+}
+
+export async function adminAiChat(body: {
+  model: string;
+  messages: { role: string; content: string }[];
+  max_tokens?: number;
+}): Promise<Record<string, unknown>> {
+  const { data } = await api.post("/api/admin/ai/chat", body);
+  return data;
+}
+
 export async function listBlogPosts(): Promise<{
   items: BlogPostAdmin[];
   total: number;
@@ -464,6 +504,9 @@ export const adminApi = {
   createAiModel,
   updateAiModel,
   deleteAiModel,
+  listAiUsage,
+  topupAiWallet,
+  adminAiChat,
   listBlogPosts,
   createBlogPost,
   updateBlogPost,
