@@ -143,7 +143,7 @@ Slices **A–H** remain the **PR stream** names. Waves are **when sales can demo
 | In | Out |
 |----|-----|
 | Slice **F** protect = Host **Multi** + customer snippet | Sinexis edge Coraza |
-| Lab vhost; `--apply-vhost` still refuses ERP/`tc5` production sites | CRS paid packs in git |
+| Lab vhost; `--apply-vhost` **tc5 OK** (Sinexis lab); refuses ERP/`sx-erpstg` | CRS paid packs in git |
 
 ### Wave 3 — research only
 

@@ -233,7 +233,7 @@ S5 (live disposable vhost smoke) is a later slice.
 
 API cycle: login → Guard agent → create **fixture** site (`/var/www/host-waf-fixture`) → upsert protect/mock → fetch snippet (must warn against `sinexis.app` edge) → simulate block → list events → delete site. **Not** Playwright. **Does not** wipe `tc5`, enroll Guard, or SSH to `tc5`.
 
-`--apply-vhost` is optional and **requires** `HOST_WAF_LAB_VHOST_SSH` pointing at a **disposable** lab alias. The script **refuses** `tc5` and ERP-like names. It copies the snippet to `/tmp/sinexis-host-waf-lab.conf` on that host — operator still includes it on a lab vhost. Never `nginx/sinexis.app.conf`.
+`--apply-vhost` is optional. Default `HOST_WAF_LAB_VHOST_SSH=tc5` (Sinexis Guard lab agent VM). The script **refuses** ERP-like names (`erp`, `sx-erpstg`) — that host is a **different account**. It copies the **lab fixture** snippet to `/tmp/sinexis-host-waf-lab.conf` on `tc5` — operator still includes it on a lab vhost. Never `nginx/sinexis.app.conf`.
 
 ```bash
 export GUARD_LAB_APP_BASE='https://<app-origin>'

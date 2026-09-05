@@ -307,6 +307,8 @@ async def test_engine_coraza_snippet(db_session: AsyncSession, ctx):
             assert nginx_snip.status_code == 200
             assert nginx_snip.json()["filename"] == "sinexis-host-waf-modsec.conf"
             assert "SecRuleEngine On" in nginx_snip.json()["content"]
+            assert "customer VPS" in nginx_snip.json()["content"]
+            assert "/sinexis-waf-lab" not in nginx_snip.json()["content"]
     finally:
         app.dependency_overrides.clear()
 
