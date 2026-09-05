@@ -211,7 +211,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | [`docs/specs/host-protect-v1.md`](specs/host-protect-v1.md) | **S0–S12 on `main`** (#533–#537, #556, #558, #559) | Do **not** re-implement. Lab [`scripts/host-protect-lab-smoke.sh`](../scripts/host-protect-lab-smoke.sh) (`--require-helper-heartbeat`). AM install: [`host-protect-helper-am.md`](host-protect-helper-am.md). Fail-closed: `pending_agent` / `unreachable_root`, not mock hits. SKU working IDR. |
 | [`docs/specs/host-waf-v1.md`](specs/host-waf-v1.md) | **S0–S5 + P14 F protect** | P13; prod compose `HOST_WAF_ENABLED` **true**, local/CI **false**; lab [`scripts/host-waf-lab-smoke.sh`](../scripts/host-waf-lab-smoke.sh) API smoke; `--apply-vhost` **refuses tc5**; never ERP/edge nginx |
 | [`docs/specs/imunify-class-onbox.md`](specs/imunify-class-onbox.md) | **P14 docs** (#555); slices A–H | Implement **only** named slice + `buat`. Jobs not clone. |
-| [`docs/specs/ai-gateway-v1.md`](specs/ai-gateway-v1.md) | **S0 spec** | OpenAI-compat resale; **not** 9router/CLIProxyAPI. **Do not implement** until named slice + `buat`. Does not jump P14/GTM. |
+| [`docs/specs/ai-gateway-v1.md`](specs/ai-gateway-v1.md) | **S1–S5 on `main` (this PR)** | OpenAI-compat resale; flag **off**. Ops: [`ai-gateway-ops.md`](ai-gateway-ops.md). Residual: human catalog/FX/enable. |
 
 **Agent:** wait for **explicit implement** even when spec exists. Prefer **draft spec** over silent coding for new epics; P3 assets already shipped.
 
@@ -471,6 +471,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 | `docs/dependency-pins.md` | Redis/Celery/kombu pin matrix |
 | `scripts/smoke-broker.sh` | Broker/API smoke |
 | `docs/scan-schedules-ops.md` | Beat, credits gate, smoke A/B, compose project notes |
+| `docs/ai-gateway-ops.md` | AI Gateway flag, Redis limits, nginx `/v1/` SSE |
 | `docs/commercial/*` | P0 one-pager, SKU lock, AM email |
 | `handoff.md` | Session snapshot + GTM checklist — **epic order** still this guide |
 | `docs/archive/handoff-scan-pending-2026.md` | **ARCHIVED** stuck-pending (re-verify) |

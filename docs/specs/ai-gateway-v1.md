@@ -1,6 +1,6 @@
 # Spec: AI Gateway v1 (OpenAI-compatible resale)
 
-**Status:** **S1–S4 shipped** (catalog, wallet, `/v1`, SPA `/ai` + `/admin/ai` trial chat). **S5+** limits/ops. Git flag default **off**.
+**Status:** **S1–S5 shipped** (catalog, wallet, `/v1`, SPA, Redis limits, ops notes). Git flag default **off**.
 **Goal:** resell **contracted OpenAI-compatible** wholesale APIs to Sinexis orgs: customer keys, usage ledger, admin catalog + trial chat.
 **Epic:** **new business line** (not P14, not Guard, not Workspace). Does **not** jump attach / Host Protect / GTM.
 **Depends:** P2 Workspace (JWT `org_id`, membership) · existing admin SPA kit · host nginx + Cloudflare for a new `/v1` location.
@@ -277,7 +277,7 @@ Register both in `App.tsx` + [`AGENT_PAGE_REGISTRY.md`](../AGENT_PAGE_REGISTRY.m
 | **S2** | Wallet + reservation + usage; JWT `/api/ai/wallet|models|usage`; admin topup; no public `/v1` | S1 |
 | **S3** | `/v1` + nginx location + customer keys; one wholesaler | S2 |
 | **S4** | SPA `/ai` + `/admin/ai` trial chat + i18n | **done** |
-| **S5** | Limits, sanitizer tests, ops notes, Playwright smoke flag-off | S4 |
+| **S5** | Limits, sanitizer tests, ops notes, Playwright smoke flag-off | **done** |
 
 Default order **S1 → S5**. Do not combine with Host Protect / Guard PRs.
 
