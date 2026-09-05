@@ -14,10 +14,12 @@ from app.database import get_db
 from app.main import app
 from app.models.guard import GuardAgent
 from app.models.host_protect import HostSite
+from app.models.host_waf import HostWafEvent
 from app.models.organization import Organization, OrganizationMembership
 from app.models.siem import SiemCase, SiemCaseNote
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
+from app.services.host_agent_ingest import generate_results_token
 from app.services.organization import ensure_personal_org
 
 
@@ -57,6 +59,7 @@ def _bind_db(db_session: AsyncSession) -> None:
 @pytest_asyncio.fixture
 async def ctx(db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(settings, "host_waf_enabled", True)
+    monkeypatch.setattr(settings, "host_protect_enabled", True)
     owner = await _make_user(db_session, "waf-owner@example.com")
     member = await _make_user(db_session, "waf-member@example.com")
     viewer = await _make_user(db_session, "waf-viewer@example.com")
@@ -123,6 +126,7 @@ async def ctx(db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch):
         "outsider": outsider,
         "org": org,
         "other": other,
+        "agent": agent,
         "site": site,
         "other_site": other_site,
     }
@@ -401,5 +405,114 @@ async def test_protect_requires_multi_sku(db_session: AsyncSession, ctx):
             assert ok.status_code == 200
             assert ok.json()["mode"] == "protect"
             assert ok.json()["engine"] == "nginx_modsec"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_agent_waf_ingest_persists_and_strips_query(db_session: AsyncSession, ctx):
+    agent: GuardAgent = ctx["agent"]
+    site: HostSite = ctx["site"]
+    raw, token_hash = generate_results_token()
+    agent.results_token_hash = token_hash
+    await db_session.commit()
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.post(
+                "/api/host/agent/waf-events",
+                headers={"X-Host-Agent-Token": raw},
+                json={
+                    "agent_id": str(agent.id),
+                    "site_id": str(site.id),
+                    "events": [
+                        {
+                            "action": "block",
+                            "rule_id": "941100",
+                            "method": "get",
+                            "path": "/wp-login.php?user=1",
+                            "http_status": 403,
+                        }
+                    ],
+                },
+            )
+            assert r.status_code == 200, r.text
+            assert r.json()["accepted"] == 1
+    finally:
+        app.dependency_overrides.clear()
+    rows = (await db_session.execute(select(HostWafEvent).where(HostWafEvent.site_id == site.id))).scalars().all()
+    assert len(rows) == 1
+    assert rows[0].path == "/wp-login.php"
+    assert rows[0].method == "GET"
+    assert rows[0].action == "block"
+    assert rows[0].http_status == 403
+
+
+@pytest.mark.asyncio
+async def test_agent_waf_ingest_401_without_token(db_session: AsyncSession, ctx):
+    agent: GuardAgent = ctx["agent"]
+    site: HostSite = ctx["site"]
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.post(
+                "/api/host/agent/waf-events",
+                json={
+                    "agent_id": str(agent.id),
+                    "site_id": str(site.id),
+                    "events": [{"action": "log", "rule_id": "1", "method": "GET", "path": "/"}],
+                },
+            )
+            assert r.status_code == 401
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_agent_waf_ingest_401_site_org_mismatch(db_session: AsyncSession, ctx):
+    agent: GuardAgent = ctx["agent"]
+    other_site: HostSite = ctx["other_site"]
+    raw, token_hash = generate_results_token()
+    agent.results_token_hash = token_hash
+    await db_session.commit()
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.post(
+                "/api/host/agent/waf-events",
+                headers={"X-Host-Agent-Token": raw},
+                json={
+                    "agent_id": str(agent.id),
+                    "site_id": str(other_site.id),
+                    "events": [{"action": "log", "rule_id": "1", "method": "GET", "path": "/x"}],
+                },
+            )
+            assert r.status_code == 401
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_agent_waf_ingest_413_too_many_events(db_session: AsyncSession, ctx):
+    agent: GuardAgent = ctx["agent"]
+    site: HostSite = ctx["site"]
+    raw, token_hash = generate_results_token()
+    agent.results_token_hash = token_hash
+    await db_session.commit()
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.post(
+                "/api/host/agent/waf-events",
+                headers={"X-Host-Agent-Token": raw},
+                json={
+                    "agent_id": str(agent.id),
+                    "site_id": str(site.id),
+                    "events": [
+                        {"action": "log", "rule_id": "1", "method": "GET", "path": f"/p{i}"} for i in range(101)
+                    ],
+                },
+            )
+            assert r.status_code == 413
     finally:
         app.dependency_overrides.clear()

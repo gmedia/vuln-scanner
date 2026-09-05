@@ -55,3 +55,39 @@ class HostWafSnippetResponse(BaseModel):
     mode: str
     filename: str
     content: str
+
+
+MAX_AGENT_WAF_EVENTS = 100
+_HTTP_METHODS = frozenset({"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"})
+
+
+class HostAgentWafEventIn(BaseModel):
+    action: str = Field(..., pattern=r"^(log|block)$")
+    rule_id: str = Field(..., min_length=1, max_length=128)
+    method: str = Field(..., min_length=1, max_length=8)
+    path: str = Field(..., min_length=1, max_length=512)
+    http_status: int | None = Field(default=None, ge=100, le=599)
+
+    @field_validator("rule_id", "path")
+    @classmethod
+    def strip_text(cls, v: str) -> str:
+        return v.strip()
+
+    @field_validator("method")
+    @classmethod
+    def normalize_method(cls, v: str) -> str:
+        method = v.strip().upper()
+        if method not in _HTTP_METHODS:
+            raise ValueError("unsupported HTTP method")
+        return method
+
+
+class HostAgentWafEventsIngest(BaseModel):
+    agent_id: uuid.UUID
+    site_id: uuid.UUID
+    events: list[HostAgentWafEventIn] = Field(default_factory=list)
+
+
+class HostAgentWafEventsResponse(BaseModel):
+    ok: bool
+    accepted: int = 0

@@ -628,7 +628,7 @@ describe("Host Protect page", () => {
     expect(screen.getByTestId("host-waf-simulate-hint")).toBeInTheDocument();
     expect(screen.getByTestId("host-waf-events-hint")).toBeInTheDocument();
     expect(screen.getByTestId("host-waf-panel").textContent).toMatch(
-      /Preview only|sample row|customer VPS|Host Multi/i,
+      /preview only|helper posts|customer VPS|Host Multi|Malware tab/i,
     );
   });
 

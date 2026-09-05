@@ -13,6 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.models.guard import GuardAgent
 from app.models.host_protect import HostCommand, HostHit, HostQuarantineEvent, HostScan, HostSite
+from app.models.host_waf import HostWafEvent, HostWafPolicy
+from app.models.user import User
 from app.schemas.host_protect import (
     HostAgentCommandAck,
     HostAgentPollJob,
@@ -20,8 +22,11 @@ from app.schemas.host_protect import (
     HostAgentResultsIngest,
     HostAgentResultsResponse,
 )
+from app.schemas.host_waf import HostAgentWafEventsIngest, HostAgentWafEventsResponse
+from app.services.host_handoff import handoff_waf_block
 from app.services.host_path import jail_rel_path
 from app.services.host_scan_runner import _finish_scan
+from app.services.host_waf import _strip_query
 
 
 def hash_results_token(token: str) -> str:
@@ -216,3 +221,40 @@ async def ingest_agent_results(
         hit_count=int(out["hit_count"]),
         engine=body.engine,
     )
+
+
+async def ingest_agent_waf_events(
+    db: AsyncSession,
+    raw_token: str | None,
+    body: HostAgentWafEventsIngest,
+) -> HostAgentWafEventsResponse:
+    if not settings.host_waf_enabled:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    agent = await _agent_from_token(db, raw_token)
+    if agent.id != body.agent_id:
+        raise _unauthorized()
+    site_result = await db.execute(select(HostSite).where(HostSite.id == body.site_id))
+    site = site_result.scalar_one_or_none()
+    if site is None or site.guard_agent_id != agent.id or site.organization_id != agent.organization_id:
+        raise _unauthorized()
+    policy = (await db.execute(select(HostWafPolicy).where(HostWafPolicy.site_id == site.id))).scalar_one_or_none()
+    owner = (await db.execute(select(User).where(User.id == site.created_by))).scalar_one_or_none()
+    accepted = 0
+    for item in body.events:
+        event = HostWafEvent(
+            organization_id=site.organization_id,
+            site_id=site.id,
+            policy_id=policy.id if policy is not None else None,
+            action=item.action,
+            rule_id=item.rule_id[:128],
+            method=item.method,
+            path=_strip_query(item.path),
+            http_status=item.http_status,
+        )
+        db.add(event)
+        await db.flush()
+        if owner is not None:
+            await handoff_waf_block(db, event, site, owner)
+        accepted += 1
+    await db.commit()
+    return HostAgentWafEventsResponse(ok=True, accepted=accepted)

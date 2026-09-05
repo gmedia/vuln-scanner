@@ -18,8 +18,14 @@ from app.schemas.host_protect import (
     HostSiteResponse,
     HostSiteUpdate,
 )
+from app.schemas.host_waf import MAX_AGENT_WAF_EVENTS, HostAgentWafEventsIngest, HostAgentWafEventsResponse
 from app.services.auth import get_active_org_id, get_current_user
-from app.services.host_agent_ingest import ack_agent_command, ingest_agent_results, poll_agent_jobs
+from app.services.host_agent_ingest import (
+    ack_agent_command,
+    ingest_agent_results,
+    ingest_agent_waf_events,
+    poll_agent_jobs,
+)
 from app.services.host_protect import HostProtectService
 
 router = APIRouter(prefix="/host", tags=["host-protect"])
@@ -160,6 +166,26 @@ async def ingest_host_agent_results(
     if len(body.findings) > MAX_AGENT_FINDINGS:
         raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Payload too large")
     return await ingest_agent_results(db, x_host_agent_token, body)
+
+
+@router.post("/agent/waf-events", response_model=HostAgentWafEventsResponse)
+async def ingest_host_agent_waf_events(
+    request: Request,
+    body: HostAgentWafEventsIngest,
+    db: AsyncSession = Depends(get_db),
+    x_host_agent_token: str | None = Header(default=None, alias="X-Host-Agent-Token"),
+) -> HostAgentWafEventsResponse:
+    content_length = request.headers.get("content-length")
+    if content_length is not None:
+        try:
+            size = int(content_length)
+        except ValueError:
+            size = 0
+        if size > MAX_AGENT_BODY_BYTES:
+            raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Payload too large")
+    if len(body.events) > MAX_AGENT_WAF_EVENTS:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Payload too large")
+    return await ingest_agent_waf_events(db, x_host_agent_token, body)
 
 
 @router.post("/agent/commands/ack", response_model=HostAgentResultsResponse)

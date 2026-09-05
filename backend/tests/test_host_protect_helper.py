@@ -386,3 +386,62 @@ def test_quarantine_missing_file_no_move(tmp_path: Path, monkeypatch: pytest.Mon
     )
     assert rc == 6
     assert not (tmp_path / "q" / "s1").exists() or not any((tmp_path / "q" / "s1").iterdir())
+
+
+def test_parse_modsec_json_strips_query_no_body():
+    blob = json.dumps(
+        {
+            "transaction": {
+                "request": {"method": "POST", "uri": "/search.php?q=1"},
+                "response": {"http_code": 403},
+            },
+            "messages": [{"details": {"ruleId": "941100"}}],
+        }
+    )
+    events = helper.parse_modsec_audit_events(blob)
+    assert len(events) == 1
+    assert events[0]["path"] == "/search.php"
+    assert events[0]["action"] == "block"
+    assert events[0]["rule_id"] == "941100"
+    assert "body" not in events[0]
+
+
+def test_poll_posts_waf_events(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("SINEXIS_POLL_LOCK_DIR", str(tmp_path / "locks"))
+    audit = tmp_path / "modsec_audit.log"
+    audit.write_text(
+        json.dumps(
+            {
+                "transaction": {
+                    "request": {"method": "GET", "uri": "/wp-login.php?x=1"},
+                    "response": {"http_code": 403},
+                },
+                "messages": [{"details": {"ruleId": "941100"}}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("SINEXIS_WAF_AUDIT_LOG", str(audit))
+    monkeypatch.setenv("SINEXIS_WAF_SITE_ID", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+    posted: list[dict[str, object]] = []
+    monkeypatch.setattr(helper, "fetch_jobs", lambda *_a, **_k: (0, []))
+
+    def _capture(_api: str, _tok: str, payload: dict[str, object], _timeout: int) -> int:
+        posted.append(payload)
+        return 200
+
+    monkeypatch.setattr(helper, "post_waf_events", _capture)
+    rc = helper.run(
+        [
+            "poll",
+            "--agent-id",
+            "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+            "--api-base",
+            "https://example.invalid",
+            "--token",
+            "secret-token",
+        ]
+    )
+    assert rc == 0
+    assert len(posted) == 1
+    assert posted[0]["events"][0]["path"] == "/wp-login.php"

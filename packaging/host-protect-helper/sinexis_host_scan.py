@@ -363,6 +363,146 @@ def fetch_jobs(api_base: str, token: str, agent_id: str, timeout: int) -> tuple[
     return len(jobs), out
 
 
+_WAF_ID_RE = re.compile(r'\[id\s+"(\d+)"\]')
+_WAF_REQ_RE = re.compile(r"^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+(\S+)", re.MULTILINE)
+_MAX_WAF_EVENTS = 100
+
+
+def parse_modsec_audit_events(text: str) -> list[dict[str, object]]:
+    events: list[dict[str, object]] = []
+    stripped = (text or "").strip()
+    if not stripped:
+        return events
+    if stripped.startswith("{") or stripped.startswith("["):
+        try:
+            parsed = json.loads(stripped)
+        except json.JSONDecodeError:
+            parsed = None
+        rows = parsed if isinstance(parsed, list) else ([parsed] if isinstance(parsed, dict) else [])
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            txn = row.get("transaction") if isinstance(row.get("transaction"), dict) else {}
+            req = txn.get("request") if isinstance(txn.get("request"), dict) else {}
+            resp = txn.get("response") if isinstance(txn.get("response"), dict) else {}
+            msgs = row.get("messages") if isinstance(row.get("messages"), list) else []
+            rule_id = "unknown"
+            for msg in msgs:
+                if not isinstance(msg, dict):
+                    continue
+                details = msg.get("details") if isinstance(msg.get("details"), dict) else {}
+                rid = details.get("ruleId") or details.get("id")
+                if rid:
+                    rule_id = str(rid)[:128]
+                    break
+            method = str(req.get("method") or "GET").upper()
+            path = str(req.get("uri") or req.get("uri_no_query") or "/")
+            path = path.split("?", 1)[0][:256] or "/"
+            status_code = resp.get("http_code") or resp.get("status")
+            http_status = int(status_code) if isinstance(status_code, int) else None
+            action = "block" if http_status == 403 else "log"
+            events.append(
+                {
+                    "action": action,
+                    "rule_id": rule_id[:128],
+                    "method": method[:8],
+                    "path": path,
+                    "http_status": http_status,
+                }
+            )
+            if len(events) >= _MAX_WAF_EVENTS:
+                break
+        return events
+    for chunk in re.split(r"\n--[A-Za-z0-9]+--[A-Z]--\n", text):
+        ids = _WAF_ID_RE.findall(chunk)
+        req_m = _WAF_REQ_RE.search(chunk)
+        if not ids and not req_m:
+            continue
+        method = (req_m.group(1) if req_m else "GET").upper()
+        raw_path = req_m.group(2) if req_m else "/"
+        path = raw_path.split("?", 1)[0][:256] or "/"
+        http_status = 403 if "403" in chunk or "Intercepted" in chunk else None
+        events.append(
+            {
+                "action": "block" if http_status == 403 else "log",
+                "rule_id": (ids[0] if ids else "unknown")[:128],
+                "method": method[:8],
+                "path": path,
+                "http_status": http_status,
+            }
+        )
+        if len(events) >= _MAX_WAF_EVENTS:
+            break
+    return events
+
+
+def _waf_cursor_path(agent_id: str) -> str:
+    safe = re.sub(r"[^0-9a-fA-F-]", "_", agent_id)[:80] or "agent"
+    lock_dir = os.environ.get("SINEXIS_POLL_LOCK_DIR", "/var/lib/sinexis")
+    return os.path.join(lock_dir, f"waf-audit-{safe}.cursor")
+
+
+def read_new_audit_text(path: str, agent_id: str) -> str:
+    if not path or not os.path.isfile(path):
+        return ""
+    cursor_path = _waf_cursor_path(agent_id)
+    offset = 0
+    try:
+        with open(cursor_path, encoding="utf-8") as fh:
+            offset = int(fh.read().strip() or "0")
+    except (OSError, ValueError):
+        offset = 0
+    try:
+        size = os.path.getsize(path)
+        if offset > size:
+            offset = 0
+        with open(path, "rb") as fh:
+            fh.seek(offset)
+            data = fh.read()
+        new_offset = offset + len(data)
+        os.makedirs(os.path.dirname(cursor_path), mode=0o700, exist_ok=True)
+        with open(cursor_path, "w", encoding="utf-8") as fh:
+            fh.write(str(new_offset))
+        return data.decode("utf-8", errors="replace")
+    except OSError:
+        return ""
+
+
+def post_waf_events(api_base: str, token: str, payload: dict[str, object], timeout: int) -> int:
+    url = api_base.rstrip("/") + "/api/host/agent/waf-events"
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=data,
+        method="POST",
+        headers=_agent_headers(token, json_body=True),
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return int(getattr(resp, "status", 200) or 200)
+    except urllib.error.HTTPError as exc:
+        return int(exc.code)
+    except (urllib.error.URLError, OSError):
+        return 5
+
+
+def maybe_post_waf_events(args: argparse.Namespace) -> None:
+    site_id = (os.environ.get("SINEXIS_WAF_SITE_ID") or "").strip()
+    audit = (os.environ.get("SINEXIS_WAF_AUDIT_LOG") or "/var/log/modsec_audit.log").strip()
+    if not site_id or not args.api_base or not args.token or not args.agent_id:
+        return
+    text = read_new_audit_text(audit, args.agent_id)
+    events = parse_modsec_audit_events(text)
+    if not events:
+        return
+    post_waf_events(
+        args.api_base,
+        args.token,
+        {"agent_id": args.agent_id, "site_id": site_id, "events": events},
+        args.timeout,
+    )
+
+
 def post_results(api_base: str, token: str, payload: dict[str, object], timeout: int) -> int:
     url = api_base.rstrip("/") + "/api/host/agent/results"
     data = json.dumps(payload).encode("utf-8")
@@ -428,6 +568,7 @@ def run_poll(args: argparse.Namespace) -> int:
             n_raw, _rc = _run_poll_jobs(args)
             if n_raw < 5 or time.monotonic() >= deadline:
                 break
+        maybe_post_waf_events(args)
         return 0
     finally:
         if lock_fd is not None:

@@ -73,6 +73,7 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
             or path == "/api/host/agent/results"
             or path == "/api/host/agent/jobs"
             or path == "/api/host/agent/commands/ack"
+            or path == "/api/host/agent/waf-events"
             or path.startswith("/v1/")
             or path == "/v1"
         ):
