@@ -158,6 +158,7 @@ def test_wrapper_status_prints_setup() -> None:
     assert "wazuh-agent:" in combined
     assert "Host Protect helper:" in combined
     assert "WAF snippet file:" in combined
+    assert "WAF include in site vhost:" in combined
     assert "token" in combined.lower()
     assert "lab-token" not in combined
 
