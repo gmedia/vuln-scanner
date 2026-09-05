@@ -494,6 +494,18 @@ def read_new_audit_text(path: str, agent_id: str) -> str:
         return ""
 
 
+def dedupe_waf_events(events: list[dict[str, object]]) -> list[dict[str, object]]:
+    seen: set[tuple[object, object, object, object]] = set()
+    out: list[dict[str, object]] = []
+    for event in events:
+        key = (event.get("path"), event.get("rule_id"), event.get("method"), event.get("action"))
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(event)
+    return out
+
+
 def post_waf_events(api_base: str, token: str, payload: dict[str, object], timeout: int) -> int:
     url = api_base.rstrip("/") + "/api/host/agent/waf-events"
     data = json.dumps(payload).encode("utf-8")
@@ -518,7 +530,7 @@ def maybe_post_waf_events(args: argparse.Namespace) -> None:
     if not site_id or not args.api_base or not args.token or not args.agent_id:
         return
     text = read_new_audit_text(audit, args.agent_id)
-    events = parse_modsec_audit_events(text)
+    events = dedupe_waf_events(parse_modsec_audit_events(text))
     if not events:
         return
     post_waf_events(

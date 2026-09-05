@@ -435,6 +435,7 @@ def test_parse_modsec_ndjson_txn_messages():
     assert events[0]["path"] == "/sinexis-waf-lab"
     assert events[0]["action"] == "block"
     assert "body" not in events[0]
+    assert len(helper.dedupe_waf_events(events)) == 1
 
 
 def test_poll_posts_waf_events(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
