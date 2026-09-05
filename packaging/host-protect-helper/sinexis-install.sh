@@ -140,8 +140,28 @@ waf_include_present() {
   grep -qF "$WAF_SNIPPET_PATH" "$vhost"
 }
 
+list_waf_include_files() {
+  local d f base
+  for d in /etc/nginx/sites-enabled /etc/nginx/sites-available /etc/nginx/conf.d; do
+    [[ -d "$d" ]] || continue
+    shopt -s nullglob
+    for f in "$d"/*; do
+      [[ -f "$f" ]] || continue
+      base="$(basename "$f")"
+      case "$base" in
+        *sinexis.app*|*vs.appmedia.id*) continue ;;
+      esac
+      if grep -qF "$WAF_SNIPPET_PATH" "$f" 2>/dev/null; then
+        printf '%s\n' "$f"
+      fi
+    done
+    shopt -u nullglob
+  done
+}
+
 print_setup_status() {
-  local w="missing" h="missing" s="missing" m="unknown"
+  local w="missing" h="missing" s="missing" m="unknown" inc="none"
+  local -a inc_files=()
   if wazuh_already_present; then
     w="present"
   fi
@@ -160,11 +180,24 @@ print_setup_status() {
   else
     m="not detected"
   fi
+  mapfile -t inc_files < <(list_waf_include_files)
+  if [[ ${#inc_files[@]} -gt 0 ]]; then
+    inc="present in ${#inc_files[@]} site file(s)"
+  elif waf_snippet_present; then
+    inc="snippet on disk, not included in any site under /etc/nginx/sites-enabled|sites-available|conf.d (menu 5 / --apply-waf-vhost PATH)"
+  fi
   log "Setup status (no tokens):"
   log "  wazuh-agent: ${w}"
   log "  Host Protect helper: ${h}"
   log "  WAF snippet file: ${s}"
   log "  nginx ModSecurity module: ${m}"
+  log "  WAF include in site vhost: ${inc}"
+  if [[ ${#inc_files[@]} -gt 0 ]]; then
+    local f
+    for f in "${inc_files[@]}"; do
+      log "    ${f}"
+    done
+  fi
   log "  Re-run a step: TTY will ask, or pass --force"
 }
 
