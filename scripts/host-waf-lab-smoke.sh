@@ -2,17 +2,17 @@
 # Repeatable Host WAF API smoke (S5).
 #
 # Not Playwright. Does not enroll Guard. Does not wipe tc5.
-# Does not SSH to tc5. Does not paste onto sinexis.app edge nginx.
+# Does not paste onto sinexis.app edge nginx.
 # Default refuses sinexis.app / vs.appmedia.id.
 # Never prints tokens, passwords, or host IPs.
 #
 #   export GUARD_LAB_APP_BASE GUARD_LAB_EMAIL GUARD_LAB_PASSWORD
 #   ./scripts/host-waf-lab-smoke.sh
 #   ./scripts/host-waf-lab-smoke.sh --keep-site
-#   HOST_WAF_LAB_VHOST_SSH=<lab-alias> ./scripts/host-waf-lab-smoke.sh --apply-vhost
+#   HOST_WAF_LAB_VHOST_SSH=tc5 ./scripts/host-waf-lab-smoke.sh --apply-vhost
 #
-# --apply-vhost copies the generated snippet to a disposable lab vhost via SSH.
-# Refuse aliases tc5 and any name containing erp / sx-erpstg.
+# --apply-vhost copies the generated snippet to the Sinexis lab agent VM (default tc5).
+# Refuse aliases containing erp / sx-erpstg (customer ERP, different account).
 # Requires HOST_WAF_ENABLED on the API.
 
 set -euo pipefail
@@ -41,7 +41,7 @@ VERIFY_TLS="${GUARD_LAB_VERIFY_TLS:-1}"
 ROOT_PATH="${HOST_WAF_LAB_ROOT_PATH:-/var/www/host-waf-fixture}"
 SITE_NAME="${HOST_WAF_LAB_SITE_NAME:-lab-host-waf-fixture}"
 AGENT_UUID="${HOST_WAF_LAB_AGENT_UUID:-${HOST_PROTECT_LAB_AGENT_UUID:-}}"
-VHOST_SSH="${HOST_WAF_LAB_VHOST_SSH:-}"
+VHOST_SSH="${HOST_WAF_LAB_VHOST_SSH:-tc5}"
 SNIPPET_REMOTE="${HOST_WAF_LAB_SNIPPET_REMOTE:-/tmp/sinexis-host-waf-lab.conf}"
 
 log() { echo "=== $* ==="; }
@@ -120,10 +120,10 @@ case "$ROOT_PATH" in
 esac
 
 if [[ "$APPLY_VHOST" -eq 1 ]]; then
-  [[ -n "$VHOST_SSH" ]] || die "--apply-vhost requires HOST_WAF_LAB_VHOST_SSH (not tc5)"
+  [[ -n "$VHOST_SSH" ]] || die "--apply-vhost requires HOST_WAF_LAB_VHOST_SSH (default tc5 lab VM)"
   case "$VHOST_SSH" in
-    tc5|tc5.*|*erp*|*sx-erpstg*)
-      die "HOST_WAF_LAB_VHOST_SSH refuses tc5 and ERP aliases — disposable lab vhost only"
+    *erp*|*sx-erpstg*)
+      die "HOST_WAF_LAB_VHOST_SSH refuses ERP aliases — Sinexis lab agent VM only (tc5 OK)"
       ;;
   esac
 fi
@@ -241,14 +241,14 @@ apply_vhost() {
   [[ "$APPLY_VHOST" -eq 1 ]] || return 0
   require_cmd ssh
   require_cmd scp
-  log "copy snippet to disposable lab vhost (alias not printed as IP)"
+  log "copy snippet to Sinexis lab agent VM (alias not printed as IP)"
   local tmp
   tmp="$(mktemp)"
   printf '%s\n' "$SNIPPET" >"$tmp"
   scp -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new \
     "$tmp" "${VHOST_SSH}:${SNIPPET_REMOTE}" || {
     rm -f "$tmp"
-    die "scp snippet failed (disposable vhost only; never tc5/ERP)"
+    die "scp snippet failed (lab agent VM only; never ERP)"
   }
   rm -f "$tmp"
   log "snippet copied to remote path (not nginx/sinexis.app.conf). Operator must include it on a lab vhost."
