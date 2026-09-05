@@ -11,7 +11,12 @@ import {
   upsertHostWafPolicy,
   type HostWafPolicy,
 } from "@/api/hostWaf";
+import type { GuardAgent } from "@/api/guard";
 import type { HostSite } from "@/api/hostProtect";
+import {
+  formatHelperPollAt,
+  isHelperPollStale,
+} from "@/lib/sinexisInstall";
 import { Button } from "@/components/ui/Button";
 import { Label } from "@/components/ui/Label";
 import {
@@ -31,7 +36,13 @@ import {
 } from "@/components/ui/Table";
 import { useAuthStore } from "@/store/authStore";
 
-export default function HostWafPanel({ sites }: { sites: HostSite[] }) {
+export default function HostWafPanel({
+  sites,
+  agents,
+}: {
+  sites: HostSite[];
+  agents: GuardAgent[];
+}) {
   const { t } = useTranslation("host");
   const qc = useQueryClient();
   const activeOrgId = useAuthStore((s) => s.activeOrgId);
@@ -60,6 +71,10 @@ export default function HostWafPanel({ sites }: { sites: HostSite[] }) {
   );
   const mode: HostWafPolicy["mode"] = policyForSite?.mode ?? "off";
   const selectedSite = sites.find((s) => s.id === selected);
+  const siteAgent = agents.find((a) => a.id === selectedSite?.guard_agent_id);
+  const pollIso = siteAgent?.last_helper_poll_at ?? null;
+  const pollLabel = formatHelperPollAt(pollIso);
+  const pollStale = isHelperPollStale(pollIso);
   const canProtect =
     sites.length === 0 ||
     (selectedSite ? (selectedSite.sku ?? "multi") === "multi" : true);
@@ -190,6 +205,22 @@ export default function HostWafPanel({ sites }: { sites: HostSite[] }) {
             data-testid="host-waf-copy-hint"
           >
             {t("wafCopyHint")}
+          </p>
+          <p
+            className="text-xs text-muted-foreground"
+            data-testid="host-waf-snippet-status"
+          >
+            {t("wafSnippetNotIncluded")}
+          </p>
+          <p
+            className="text-xs text-muted-foreground"
+            data-testid="host-waf-helper-poll"
+          >
+            {pollLabel
+              ? pollStale
+                ? t("wafHelperStale", { when: pollLabel })
+                : t("wafHelperPolled", { when: pollLabel })
+              : t("wafHelperNever")}
           </p>
         </>
       )}

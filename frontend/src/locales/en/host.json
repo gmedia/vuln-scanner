@@ -91,5 +91,9 @@
   "wafCopySnippet": "Copy nginx snippet",
   "wafCopyHint": "Clipboard only. Paste the include on the customer VPS — this button does not install or reload nginx.",
   "wafCopyOk": "Snippet copied. Do not paste onto sinexis.app edge nginx.",
-  "wafCopyFail": "Failed to copy WAF snippet"
+  "wafCopyFail": "Failed to copy WAF snippet",
+  "wafSnippetNotIncluded": "Copying the snippet does not mean nginx already includes it. Until you paste the include on the customer VPS and reload nginx, live rows will not appear.",
+  "wafHelperNever": "Helper has not polled this site’s Guard agent yet. Live WAF rows wait on that poll.",
+  "wafHelperPolled": "Helper last polled {{when}}.",
+  "wafHelperStale": "Helper last polled {{when}} — older than 30 minutes. Live WAF ingest may be delayed."
 }

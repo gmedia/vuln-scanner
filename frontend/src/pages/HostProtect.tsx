@@ -682,7 +682,7 @@ export default function HostProtect() {
           )}
         </TabsContent>
         <TabsContent value="waf">
-          <HostWafPanel sites={items} />
+          <HostWafPanel sites={items} agents={agents} />
         </TabsContent>
       </Tabs>
     </div>
