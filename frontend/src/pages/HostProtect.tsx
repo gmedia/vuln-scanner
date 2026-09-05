@@ -504,6 +504,27 @@ export default function HostProtect() {
                           {s.root_path}
                         </p>
                         <p
+                          className="mt-1 font-mono text-xs text-muted-foreground break-all"
+                          data-testid="host-site-id"
+                        >
+                          {t("siteId")}: {s.id}
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="mt-1"
+                          data-testid="host-copy-site-id"
+                          onClick={() => {
+                            void navigator.clipboard
+                              .writeText(s.id)
+                              .then(() => toast.success(t("copySiteIdOk")))
+                              .catch(() => toast.error(t("copySiteIdFail")));
+                          }}
+                        >
+                          {t("copySiteId")}
+                        </Button>
+                        <p
                           className="mt-1 text-xs text-muted-foreground"
                           data-testid="host-helper-poll"
                         >

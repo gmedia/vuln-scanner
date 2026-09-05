@@ -93,6 +93,11 @@
   "wafCopyOk": "Snippet copied. Do not paste onto sinexis.app edge nginx.",
   "wafCopyFail": "Failed to copy WAF snippet",
   "wafSnippetNotIncluded": "Copying the snippet does not mean nginx already includes it. Until you paste the include on the customer VPS and reload nginx, live rows will not appear.",
+  "siteId": "Site UUID",
+  "copySiteId": "Copy site UUID",
+  "copySiteIdOk": "Site UUID copied. Use it as --waf-site-id on the VPS (not the Guard agent id).",
+  "copySiteIdFail": "Failed to copy site UUID",
+  "siteIdHint": "This is Host Protect site id — not Guard. On the VPS: sudo ./sinexis-install.sh --configure-waf-ingest --waf-site-id {{id}}",
   "wafHelperNever": "Helper has not polled this site’s Guard agent yet. Live WAF rows wait on that poll.",
   "wafHelperPolled": "Helper last polled {{when}}.",
   "wafHelperStale": "Helper last polled {{when}} — older than 30 minutes. Live WAF ingest may be delayed."
