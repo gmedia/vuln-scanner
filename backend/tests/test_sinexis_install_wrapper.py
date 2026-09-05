@@ -169,7 +169,44 @@ def test_wrapper_help_mentions_status_force() -> None:
     assert proc.returncode == 0
     assert "--status" in proc.stdout
     assert "--force" in proc.stdout
+    assert "--configure-waf-ingest" in proc.stdout
+    assert "--poll-once" in proc.stdout
     assert "Show setup status" in proc.stdout or "prints setup status" in proc.stdout.lower()
+
+
+def test_wrapper_poll_once_dry_run() -> None:
+    proc = _run(["--dry-run", "--poll-once", "--agent-id", UUID])
+    assert proc.returncode == 0, proc.stderr
+    combined = proc.stdout + proc.stderr
+    assert f"sinexis-host-protect@{UUID}.service" in combined
+    assert "no journal dump" in combined
+
+
+def test_wrapper_configure_waf_ingest_dry_run() -> None:
+    site = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+    proc = _run(
+        [
+            "--dry-run",
+            "--configure-waf-ingest",
+            "--waf-site-id",
+            site,
+            "--agent-id",
+            UUID,
+        ]
+    )
+    assert proc.returncode == 0, proc.stderr
+    combined = proc.stdout + proc.stderr
+    assert "SINEXIS_WAF_SITE_ID" in combined
+    assert "token not printed" in combined.lower() or "UUID not printed" in combined
+    assert site not in combined or "not printed" in combined
+
+
+def test_wrapper_status_mentions_waf_ingest() -> None:
+    proc = _run(["--status"])
+    assert proc.returncode == 0, proc.stderr
+    combined = proc.stdout + proc.stderr
+    assert "WAF ingest site UUID" in combined
+    assert "WAF audit log" in combined
 
 
 def test_wrapper_executable_bit() -> None:

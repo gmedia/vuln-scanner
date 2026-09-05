@@ -138,7 +138,8 @@ Do **not** paste the snippet onto `sinexis.app` edge nginx. Customer (or lab) VP
 | Copy snippet in `/host` WAF tab | Clipboard only. Does **not** include or reload nginx. |
 | Write file on VPS | Menu **4** / `--write-waf-snippet` → `/etc/nginx/sinexis-waf.snippet.conf` only. |
 | Include + reload | Menu **5** / `--apply-waf-vhost /etc/nginx/sites-enabled/<site>` — you name the file. Refuses `sinexis.app` edge. Needs ModSecurity module. |
-| Env for ingest | `SINEXIS_WAF_SITE_ID=<host_sites UUID>` and `SINEXIS_WAF_AUDIT_LOG=/var/log/modsec_audit.log` in `host-protect.env`. systemd unit needs `ReadOnlyPaths=-/var/log/modsec_audit.log`. |
+| Env for ingest | Menu **7** / `--configure-waf-ingest --waf-site-id <host_sites UUID>` writes `SINEXIS_WAF_SITE_ID` + `SINEXIS_WAF_AUDIT_LOG` (default `/var/log/modsec_audit.log`) without printing the token. systemd unit needs `ReadOnlyPaths=-/var/log/modsec_audit.log`. |
+| Poll once | Menu **8** / `--poll-once` starts `sinexis-host-protect@<GUARD-UUID>.service`. Do not `journalctl` (token in env). Timer still every 5 min. |
 | Live rows in SPA | After nginx actually matches **and** helper poll POSTs `/api/host/agent/waf-events`. Simulate is preview only (`mock.sqli.1`). |
 | Duplicate probes | API drops identical path+rule+method+action within ~10 minutes. |
 
