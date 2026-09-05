@@ -368,33 +368,58 @@ _WAF_REQ_RE = re.compile(r"^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+(\S+)", r
 _MAX_WAF_EVENTS = 100
 
 
+def _modsec_json_rows(text: str) -> list[object]:
+    stripped = (text or "").strip()
+    if not stripped:
+        return []
+    try:
+        parsed = json.loads(stripped)
+        return parsed if isinstance(parsed, list) else [parsed]
+    except json.JSONDecodeError:
+        rows: list[object] = []
+        for line in stripped.splitlines():
+            line = line.strip()
+            if not line.startswith("{") and not line.startswith("["):
+                continue
+            try:
+                parsed = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(parsed, list):
+                rows.extend(parsed)
+            else:
+                rows.append(parsed)
+        return rows
+
+
+def _modsec_rule_id(row: dict[str, object], txn: dict[str, object]) -> str:
+    msgs = row.get("messages") if isinstance(row.get("messages"), list) else []
+    if not msgs:
+        msgs = txn.get("messages") if isinstance(txn.get("messages"), list) else []
+    for msg in msgs:
+        if not isinstance(msg, dict):
+            continue
+        details = msg.get("details") if isinstance(msg.get("details"), dict) else {}
+        rid = details.get("ruleId") or details.get("id")
+        if rid:
+            return str(rid)[:128]
+    return "unknown"
+
+
 def parse_modsec_audit_events(text: str) -> list[dict[str, object]]:
     events: list[dict[str, object]] = []
     stripped = (text or "").strip()
     if not stripped:
         return events
-    if stripped.startswith("{") or stripped.startswith("["):
-        try:
-            parsed = json.loads(stripped)
-        except json.JSONDecodeError:
-            parsed = None
-        rows = parsed if isinstance(parsed, list) else ([parsed] if isinstance(parsed, dict) else [])
+    if stripped.startswith("{") or stripped.startswith("[") or "\n{" in stripped:
+        rows = _modsec_json_rows(stripped)
         for row in rows:
             if not isinstance(row, dict):
                 continue
             txn = row.get("transaction") if isinstance(row.get("transaction"), dict) else {}
             req = txn.get("request") if isinstance(txn.get("request"), dict) else {}
             resp = txn.get("response") if isinstance(txn.get("response"), dict) else {}
-            msgs = row.get("messages") if isinstance(row.get("messages"), list) else []
-            rule_id = "unknown"
-            for msg in msgs:
-                if not isinstance(msg, dict):
-                    continue
-                details = msg.get("details") if isinstance(msg.get("details"), dict) else {}
-                rid = details.get("ruleId") or details.get("id")
-                if rid:
-                    rule_id = str(rid)[:128]
-                    break
+            rule_id = _modsec_rule_id(row, txn)
             method = str(req.get("method") or "GET").upper()
             path = str(req.get("uri") or req.get("uri_no_query") or "/")
             path = path.split("?", 1)[0][:256] or "/"
@@ -412,7 +437,8 @@ def parse_modsec_audit_events(text: str) -> list[dict[str, object]]:
             )
             if len(events) >= _MAX_WAF_EVENTS:
                 break
-        return events
+        if events:
+            return events
     for chunk in re.split(r"\n--[A-Za-z0-9]+--[A-Z]--\n", text):
         ids = _WAF_ID_RE.findall(chunk)
         req_m = _WAF_REQ_RE.search(chunk)
