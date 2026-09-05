@@ -170,6 +170,10 @@ class HostWafService:
             filename = "sinexis-host-waf-modsec.conf"
         if "sinexis.app" in content.lower() and "do not paste onto sinexis.app" not in content.lower():
             raise HTTPException(status_code=500, detail="refusing edge-bound snippet")
+        low = content.lower()
+        erp_ok = "not for erp" in low or "do not install on erp" in low
+        if "sx-erpstg" in low and not erp_ok:
+            raise HTTPException(status_code=500, detail="refusing erp-bound snippet")
         return HostWafSnippetResponse(
             site_id=site.id,
             engine=policy.engine,
