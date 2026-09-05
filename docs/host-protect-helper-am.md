@@ -128,3 +128,18 @@ Full Guard enroll/unenroll still uses wipe-first **§4.1** (`scripts/guard-lab-e
 | Guard enroll ≠ Host Protect helper | One click on `/host` installs files |
 
 Package metadata: [`packaging/host-protect-helper/README.md`](../packaging/host-protect-helper/README.md). Spec slice C: [`specs/imunify-class-onbox.md`](specs/imunify-class-onbox.md).
+
+## 6) Host WAF on the same helper (one page)
+
+Do **not** paste the snippet onto `sinexis.app` edge nginx. Customer (or lab) VPS only.
+
+| Step | Honest check |
+|------|----------------|
+| Copy snippet in `/host` WAF tab | Clipboard only. Does **not** include or reload nginx. |
+| Write file on VPS | `/etc/nginx/sinexis-waf.snippet.conf` (or lab fixture vhost). |
+| Include in **that** site’s vhost | Then `nginx -t` and reload **on that box**. |
+| Env for ingest | `SINEXIS_WAF_SITE_ID=<host_sites UUID>` and `SINEXIS_WAF_AUDIT_LOG=/var/log/modsec_audit.log` in `host-protect.env`. systemd unit needs `ReadOnlyPaths=-/var/log/modsec_audit.log`. |
+| Live rows in SPA | After nginx actually matches **and** helper poll POSTs `/api/host/agent/waf-events`. Simulate is preview only (`mock.sqli.1`). |
+| Duplicate probes | API drops identical path+rule+method+action within ~10 minutes. |
+
+Prove loopback (lab): `GET` a fixture path that returns **403**; then trigger helper poll. SPA WAF table should show the **real** `rule_id`, not only Simulate.
