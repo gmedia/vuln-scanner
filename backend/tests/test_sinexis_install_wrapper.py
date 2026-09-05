@@ -69,6 +69,7 @@ def test_wrapper_help_mentions_menu() -> None:
     assert "Configure Host Protect helper" in proc.stdout
     assert "Write Host WAF nginx snippet" in proc.stdout
     assert "--write-waf-snippet" in proc.stdout
+    assert "--apply-waf-vhost" in proc.stdout
     assert "curl|bash" in proc.stdout or "curl | bash" in proc.stdout
 
 
@@ -99,6 +100,32 @@ def test_wrapper_write_waf_snippet_file(tmp_path: Path) -> None:
     assert "No nginx reload" in combined
 
 
+def test_wrapper_apply_waf_vhost_dry_run() -> None:
+    proc = _run(
+        [
+            "--dry-run",
+            "--apply-waf-vhost",
+            "/etc/nginx/sites-enabled/customer.conf",
+        ]
+    )
+    assert proc.returncode == 0, proc.stderr
+    combined = proc.stdout + proc.stderr
+    assert "include" in combined
+    assert "customer.conf" in combined
+    assert "reload" in combined
+
+
+def test_wrapper_apply_waf_vhost_refuses_edge() -> None:
+    proc = _run(["--dry-run", "--apply-waf-vhost", "/etc/nginx/sinexis.app.conf"])
+    assert proc.returncode != 0
+    assert "edge" in (proc.stdout + proc.stderr).lower()
+
+
+def test_wrapper_apply_waf_vhost_requires_path() -> None:
+    proc = _run(["--apply-waf-vhost"])
+    assert proc.returncode != 0
+
+
 def test_wrapper_rejects_http_api() -> None:
     proc = _run(
         [
@@ -121,6 +148,26 @@ def test_wrapper_rejects_bad_uuid(tmp_path: Path) -> None:
     proc = _run(["--dry-run", "--agent-id", "not-a-uuid", "--token-file", str(tok)])
     assert proc.returncode != 0
     assert "invalid --agent-id" in proc.stderr
+
+
+def test_wrapper_status_prints_setup() -> None:
+    proc = _run(["--status"])
+    assert proc.returncode == 0, proc.stderr
+    combined = proc.stdout + proc.stderr
+    assert "Setup status" in combined
+    assert "wazuh-agent:" in combined
+    assert "Host Protect helper:" in combined
+    assert "WAF snippet file:" in combined
+    assert "token" in combined.lower()
+    assert "lab-token" not in combined
+
+
+def test_wrapper_help_mentions_status_force() -> None:
+    proc = _run(["--help"])
+    assert proc.returncode == 0
+    assert "--status" in proc.stdout
+    assert "--force" in proc.stdout
+    assert "Show setup status" in proc.stdout or "prints setup status" in proc.stdout.lower()
 
 
 def test_wrapper_executable_bit() -> None:
