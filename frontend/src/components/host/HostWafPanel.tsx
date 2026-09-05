@@ -200,6 +200,36 @@ export default function HostWafPanel({
               {t("wafCopySnippet")}
             </Button>
           </div>
+          {selected ? (
+            <div className="space-y-2">
+              <p
+                className="font-mono text-xs text-muted-foreground break-all"
+                data-testid="host-waf-site-id"
+              >
+                {t("siteId")}: {selected}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                data-testid="host-waf-copy-site-id"
+                disabled={!selected}
+                onClick={() => {
+                  void navigator.clipboard
+                    .writeText(selected)
+                    .then(() => toast.success(t("copySiteIdOk")))
+                    .catch(() => toast.error(t("copySiteIdFail")));
+                }}
+              >
+                {t("copySiteId")}
+              </Button>
+              <p
+                className="text-xs text-muted-foreground"
+                data-testid="host-waf-site-id-hint"
+              >
+                {t("siteIdHint", { id: selected })}
+              </p>
+            </div>
+          ) : null}
           <p
             className="text-xs text-muted-foreground"
             data-testid="host-waf-copy-hint"
