@@ -18,6 +18,8 @@ ProtectSystem=strict
 # Quarantine dest + allowlisted web roots (S10 jail). Without these, os.rename fails closed.
 # Leading '-' = ignore missing path (systemd 226/NAMESPACE if /srv/www absent).
 ReadWritePaths=/var/lib/sinexis /var/www -/srv/www /home
+# Lab/customer WAF ingest: helper tails ModSecurity JSON audit (no request bodies).
+ReadOnlyPaths=-/var/log/modsec_audit.log
 PrivateTmp=true
 PrivateDevices=true
 ProtectKernelTunables=true

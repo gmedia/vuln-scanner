@@ -406,6 +406,37 @@ def test_parse_modsec_json_strips_query_no_body():
     assert "body" not in events[0]
 
 
+def test_parse_modsec_ndjson_txn_messages():
+    blob = "\n".join(
+        [
+            json.dumps(
+                {
+                    "transaction": {
+                        "request": {"method": "GET", "uri": "/sinexis-waf-lab"},
+                        "response": {"http_code": 403, "body": ""},
+                        "messages": [{"message": "mock.lab.probe", "details": {"ruleId": "1004"}}],
+                    }
+                }
+            ),
+            json.dumps(
+                {
+                    "transaction": {
+                        "request": {"method": "GET", "uri": "/sinexis-waf-lab"},
+                        "response": {"http_code": 403, "body": ""},
+                        "messages": [{"message": "mock.lab.probe", "details": {"ruleId": "1004"}}],
+                    }
+                }
+            ),
+        ]
+    )
+    events = helper.parse_modsec_audit_events(blob)
+    assert len(events) == 2
+    assert events[0]["rule_id"] == "1004"
+    assert events[0]["path"] == "/sinexis-waf-lab"
+    assert events[0]["action"] == "block"
+    assert "body" not in events[0]
+
+
 def test_poll_posts_waf_events(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("SINEXIS_POLL_LOCK_DIR", str(tmp_path / "locks"))
     audit = tmp_path / "modsec_audit.log"
