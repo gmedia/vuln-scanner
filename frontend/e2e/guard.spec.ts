@@ -36,7 +36,7 @@ async function openGuard(
   });
 }
 
-test.describe("Guard — Layer A smoke", () => {
+test.describe("Guard — Layer A smoke @guard", () => {
   test("page loads status card without crashing", async ({ page }) => {
     await openGuard(page);
     await expect(page.getByTestId("guard-state")).toContainText(
@@ -69,7 +69,7 @@ test.describe("Guard — Layer A smoke", () => {
   });
 });
 
-test.describe("Guard — Layer B mutations (CI / non-prod)", () => {
+test.describe("Guard — Layer B mutations (CI / non-prod) @guard", () => {
   test.beforeEach(() => {
     test.skip(
       isPublicProdBase(),
