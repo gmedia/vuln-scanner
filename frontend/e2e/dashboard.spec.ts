@@ -98,7 +98,7 @@ test.describe("Dashboard @smoke", () => {
 
   test("org switcher frozen testid is present", async ({ page }) => {
     await page.goto("/dashboard");
-    await expect(page.getByTestId("org-switcher")).toBeVisible({
+    await expect(page.getByTestId("org-switcher").first()).toBeVisible({
       timeout: 15_000,
     });
   });
