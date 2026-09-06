@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures";
 
-test.describe("Scan Detail Page", () => {
+test.describe("Scan Detail Page @scan", () => {
   test("shows 404 for non-existent scan", async ({ page }) => {
     await page.goto("/scan/non-existent-id");
     await expect(page.locator("h2:has-text('SCAN NOT FOUND')")).toBeVisible({
@@ -81,5 +81,19 @@ test.describe("Scan Detail Page", () => {
     });
     await page.locator("a[href='/dashboard']").first().click();
     await expect(page).toHaveURL("/dashboard");
+  });
+
+  test("completed scan shows rescan and executive export testids @smoke @scan", async ({
+    page,
+  }) => {
+    const href = await getFirstCompletedScanHref(page);
+    test.skip(!href, "No completed scans found — run seed_e2e first");
+    await page.goto(href!);
+    await expect(page.locator("h2:has-text('Detail scan')")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("rescan-button")).toBeVisible();
+    await page.getByRole("tab", { name: "Ekspor" }).click();
+    await expect(page.getByTestId("export-executive")).toBeVisible();
   });
 });

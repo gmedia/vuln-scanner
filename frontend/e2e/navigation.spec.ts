@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures";
 
-test.describe("Navigation", () => {
+test.describe("Navigation @smoke", () => {
   test("all routes render without crashing", async ({ page }) => {
     const routes = [
       "/dashboard",
@@ -59,5 +59,12 @@ test.describe("Navigation", () => {
   test("sidebar shows version info", async ({ page }) => {
     await page.goto("/dashboard");
     await expect(page.locator("text=Sinexis Scan v1.2.0")).toBeVisible();
+  });
+
+  test("guide desktop toc frozen testid is present", async ({ page }) => {
+    await page.goto("/guide");
+    await expect(page.getByTestId("guide-desktop-toc")).toBeVisible({
+      timeout: 15_000,
+    });
   });
 });

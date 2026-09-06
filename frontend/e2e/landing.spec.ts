@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("Landing", () => {
+test.describe("Landing @smoke @shell", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
   test("page loads with outcome heading", async ({ page }) => {
