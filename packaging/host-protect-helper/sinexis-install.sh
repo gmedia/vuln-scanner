@@ -55,7 +55,7 @@ TTY (default, no flags): prints setup status, then menu
   9) Quit
 
 Non-interactive:
-  --status                 Print what is already installed (no tokens); exit
+  --status                 Print setup (no tokens): includes, ingest, audit size vs unread cursor, last-2k parse; exit
   --force                  Re-run even if that piece is already set up
   --install-wazuh-agent --manager-host HOST
   --configure-host-protect --agent-id UUID --token-file PATH [--api-base URL]
@@ -257,7 +257,62 @@ print_setup_status() {
   else
     log "  WAF audit log: not in env (helper auto-detects nginx SecAuditLog or /var/log/modsec_audit.log)"
   fi
+  print_waf_audit_cursor_status "${alog}"
   log "  Re-run a step: TTY will ask, or pass --force"
+}
+
+print_waf_audit_cursor_status() {
+  local alog="${1:-}"
+  local aid="" cursor="" size="" unread="" parsed=""
+  if [[ -z "$alog" ]]; then
+    alog="$(detect_modsec_audit_log)"
+  fi
+  load_agent_id_from_env || true
+  aid="${AGENT_ID:-}"
+  if [[ -n "$alog" && -f "$alog" ]]; then
+    size="$(stat -c '%s' "$alog" 2>/dev/null || echo "?")"
+    log "  WAF audit log size: ${size} bytes"
+  else
+    log "  WAF audit log size: (file missing)"
+    return 0
+  fi
+  if ! is_uuid "${aid}"; then
+    log "  WAF audit cursor: missing agent UUID (env or --agent-id)"
+    return 0
+  fi
+  cursor="/var/lib/sinexis/waf-audit-${aid}.cursor"
+  if [[ -f "$cursor" ]]; then
+    unread="$(awk -v sz="$size" '{off=$0+0; if (sz ~ /^[0-9]+$/ && off <= sz+0) print (sz+0)-off; else print "?"}' "$cursor" 2>/dev/null || echo "?")"
+    log "  WAF audit cursor: present (offset not printed; unread ${unread} bytes)"
+  else
+    log "  WAF audit cursor: missing (next poll reads from start of file — large logs may skip the tail)"
+  fi
+  if [[ -f "$LIB_DIR/sinexis_host_scan.py" ]]; then
+    parsed="$(
+      python3 - "$LIB_DIR/sinexis_host_scan.py" "$alog" <<'PY' 2>/dev/null || true
+import importlib.util
+import sys
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("s", sys.argv[1])
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+text = Path(sys.argv[2]).read_bytes()[-2000:].decode("utf-8", "replace")
+rows = mod.parse_modsec_audit_events(text)
+bits = []
+for ev in rows[:5]:
+    rid = str(ev.get("rule_id") or "?")[:32]
+    path = str(ev.get("path") or "/")[:64]
+    bits.append(f"{rid}:{path}")
+print(f"{len(rows)} last-2k events" + (f" ({'; '.join(bits)})" if bits else ""))
+PY
+    )"
+    if [[ -n "$parsed" ]]; then
+      log "  WAF audit parse (last 2k, no request body): ${parsed}"
+    else
+      log "  WAF audit parse (last 2k): helper parse failed (do not cat the log)"
+    fi
+  fi
 }
 
 confirm_rerun() {
