@@ -1,6 +1,6 @@
 # Spec: CI selective tests (path + module)
 
-**Status:** **S0.1** — Oracle + Momus reviewed; **revise-before-S1** items below. Implement only after user `buat` on a named slice (S1 / S2 / S3).
+**Status:** **S1 in PR** — path-filter jobs + `ci-ok` in `.github/workflows/ci.yml`. S2/S3 still wait for S1 on `main`.
 **Goal:** Cut PR CI time without weakening merge/deploy gates (AuthZ, credits, Host Protect honesty, Guard IDOR).
 **Epic:** engineering hygiene — **not** P14, Guard, Workspace, or GTM.
 **Depends:** existing `.github/workflows/ci.yml` (name **CI/CD**); pytest fail-under **75** backend / **76** workers; Playwright serial chromium (`workers: 1`).
