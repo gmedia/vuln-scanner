@@ -280,6 +280,7 @@ def test_wrapper_status_mentions_waf_ingest() -> None:
     combined = proc.stdout + proc.stderr
     assert "WAF ingest site UUID" in combined
     assert "WAF audit log" in combined
+    assert "WAF audit log size" in combined or "WAF audit cursor" in combined
 
 
 def test_wrapper_status_mentions_auto_detect_audit() -> None:
