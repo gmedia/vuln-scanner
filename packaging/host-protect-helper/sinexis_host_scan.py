@@ -366,6 +366,8 @@ def fetch_jobs(api_base: str, token: str, agent_id: str, timeout: int) -> tuple[
 _WAF_ID_RE = re.compile(r'\[id\s+"(\d+)"\]')
 _WAF_REQ_RE = re.compile(r"^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+(\S+)", re.MULTILINE)
 _MAX_WAF_EVENTS = 100
+_WAF_BOOTSTRAP_MIN_BYTES = 1_048_576
+_WAF_BOOTSTRAP_TAIL_BYTES = 65_536
 
 
 def _modsec_json_rows(text: str) -> list[object]:
@@ -473,19 +475,25 @@ def read_new_audit_text(path: str, agent_id: str) -> str:
         return ""
     cursor_path = _waf_cursor_path(agent_id)
     offset = 0
+    had_cursor = False
     try:
         with open(cursor_path, encoding="utf-8") as fh:
             offset = int(fh.read().strip() or "0")
+        had_cursor = True
     except (OSError, ValueError):
         offset = 0
     try:
         size = os.path.getsize(path)
         if offset > size:
             offset = 0
+        if not had_cursor and size > _WAF_BOOTSTRAP_MIN_BYTES:
+            offset = max(0, size - _WAF_BOOTSTRAP_TAIL_BYTES)
         with open(path, "rb") as fh:
             fh.seek(offset)
+            if not had_cursor and size > _WAF_BOOTSTRAP_MIN_BYTES and offset:
+                fh.readline()
             data = fh.read()
-        new_offset = offset + len(data)
+            new_offset = fh.tell()
         os.makedirs(os.path.dirname(cursor_path), mode=0o700, exist_ok=True)
         with open(cursor_path, "w", encoding="utf-8") as fh:
             fh.write(str(new_offset))

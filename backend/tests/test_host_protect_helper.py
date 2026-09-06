@@ -477,3 +477,25 @@ def test_poll_posts_waf_events(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     assert rc == 0
     assert len(posted) == 1
     assert posted[0]["events"][0]["path"] == "/wp-login.php"
+
+
+def test_first_poll_skips_large_audit_history(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("SINEXIS_POLL_LOCK_DIR", str(tmp_path / "locks"))
+    audit = tmp_path / "modsec_audit.log"
+    pad = "x" * (helper._WAF_BOOTSTRAP_MIN_BYTES + 100)
+    live = json.dumps(
+        {
+            "transaction": {
+                "request": {"method": "GET", "uri": "/xmlrpc.php"},
+                "response": {"http_code": 404},
+                "messages": [{"details": {"ruleId": "1001"}}],
+            }
+        }
+    )
+    audit.write_text(pad + "\n" + live + "\n", encoding="utf-8")
+    text = helper.read_new_audit_text(str(audit), "cccccccc-cccc-cccc-cccc-cccccccccccc")
+    assert "/xmlrpc.php" in text
+    assert len(text) < helper._WAF_BOOTSTRAP_MIN_BYTES
+    cursor = tmp_path / "locks" / "waf-audit-cccccccc-cccc-cccc-cccc-cccccccccccc.cursor"
+    assert cursor.is_file()
+    assert int(cursor.read_text(encoding="utf-8")) == audit.stat().st_size
