@@ -116,7 +116,7 @@ Slices **A–H** remain the **PR stream** names. Waves are **when sales can demo
 | Scan files on that disk | Helper POST; honesty #556 | **0–1** — fail-closed already **B**; copy must not look like “empty = clean” when helper missing |
 | Show hits a layperson can act on | SPA `/host`; ignore vs empty **#596** | **1** — remaining: AM demo script; no jargon-only empty states |
 | Isolate / restore | S11 queue **#558** | **1** — already queued; lab **tc5** only |
-| HTTP filter on same host | P13 detect; **F** protect Multi | **2** — never `sinexis.app` edge |
+| HTTP filter on same host | P13 detect + starter **1001–1004** (**#640**); **F** protect Multi | **2** — never `sinexis.app` edge; do not ingest IM360 IDs |
 | Panel / PHP PD | Out | **3** = **G/H** research only |
 
 ### Wave 0 — sellable **install** (default next)
@@ -124,11 +124,11 @@ Slices **A–H** remain the **PR stream** names. Waves are **when sales can demo
 | In | Out |
 |----|-----|
 | Heartbeat / last helper POST on `/host` (if not already obvious) | New YARA pack |
-| One-file `sinexis-install.sh` from **product UI**, not “clone the repo” | `curl \| bash` as the blessed path |
+| One-file `sinexis-install.sh` from **product origin `sinexis.app`** (**#642** on `main`), not “clone the repo” | `curl \| bash` as the blessed path |
 | AM runbook already exists — keep it the source of truth | Wipe `sx-erpstg` |
 | SKU: quote **Host Basic 1 site** only until finance `service_id` | Invoice lock in git |
 
-**DoD:** AM on a **tc5** fixture: Guard enroll → download wrapper → helper timer → `/host` shows **pending_agent** then a **real** ingest (or honest fail). No mock hits.
+**DoD:** AM on a **tc5** fixture: Guard enroll → download wrapper from **sinexis.app** → helper timer → `/host` shows **pending_agent** then a **real** ingest (or honest fail). No mock hits. Residual after **#642**: wget on **already-installed** VMs (not wipe `sx-erpstg`); heartbeat copy on `/host` if still unclear.
 
 ### Wave 1 — **file** loop a layperson finishes
 
