@@ -11,7 +11,7 @@ Sinexis **sits beside** Imunify on cPanel/CloudLinux farms. It is **not** a clon
 | Outside-in vuln scan | IP/domain/mobile + schedules | Imunify malware |
 | Runtime agent | Guard (Wazuh thin) | Full SIEM / Wazuh UI |
 | On-box web malware | Host Protect: scan, hits, quarantine/restore | PHP Proactive Defense, auto-clean rewrite |
-| HTTP filter | Host WAF detect + **protect** (Host Multi; customer nginx) | Coraza on `sinexis.app`, full CRS paid packs |
+| HTTP filter | Host WAF detect + **protect** (Host Multi; customer nginx). Tab/list = **starter 1001–1004** only (**#640**) | Coraza on `sinexis.app`, full CRS / Imunify rule IDs as product events |
 
 ## Explicitly not chasing (leave the idea)
 

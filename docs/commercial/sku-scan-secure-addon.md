@@ -27,7 +27,7 @@
 | **D1** | Report language v1 | **Bahasa Indonesia** (EN later) |
 | **D2** | Dual-brand window | **6–12 months** soft dual; no hard rebrand before attach ARPU |
 | **D3** | P2 Workspace | **Only if** multi-user / multi-property blocks paid delivery — spec first |
-| **D4** | P5 Guard | **Park** — second upsell after Scan attach |
+| **D4** | P5 Guard | **Do not bundle into Scan SKU.** Guard/Host Protect/WAF are **separate** attach lines. Product code is on `main`; Host invoice `service_id` still open. Sell Scan attach first. |
 | **D5** | Billing in app | **Mix v1:** GMD invoice + **manual credit top-up** in app; no subscription table yet |
 | **E1** | Infra failure | **No charge** / one auto-retry (P1 direction) |
 | **E2** | Zero credits mid-cycle | Schedule **auto-disabled** + `last_error`; AM top-up or upgrade |
@@ -65,7 +65,7 @@ Bundle with colo/VPS as **add-on line item**; do not reprice rack.
 | **Pro** | Small corporate / busy VPS | **Up to 3** (mix domain/IP) | Weekly **or** monthly at signup | Full **baseline diff** + executive HTML | **24** | **650.000** |
 | **Multi-asset** | Multi-service / hotel group / multi-IP colo | **Up to 10** named assets (`/assets` hard cap) | Weekly | Pack JSON (`GET /api/assets/pack`) + executive export; hybrid review optional | **60** | **2.000.000** |
 
-**Out of tier v1:** full SIEM, Windows depth, org wallet, unlimited targets, 24/7 SOC, Guard.
+**Out of this Scan SKU v1:** full SIEM, Windows depth, org wallet, unlimited targets, 24/7 SOC. **Guard / Host Protect / Host WAF** exist as **other** SKUs — do not imply they are unshipped.
 
 **Credit math (guide):** domain ≈ 2 credits, IP ≈ 1. Basic 10 ≈ several monthly domain runs + buffer; Pro 24 ≈ weekly domain ×3 targets with headroom; Multi 60 ≈ weekly across many targets — ops must top up if customer burns manual scans.
 

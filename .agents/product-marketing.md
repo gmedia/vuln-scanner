@@ -1,12 +1,14 @@
 # Product marketing context — Sinexis
 
-**Document version:** 1.1.1
-**Last updated:** 2026-09-06
+**Document version:** 1.2.1
+**Last updated:** 2026-09-07
 **Source of truth for product priority:** `docs/AGENT_EXECUTION_GUIDE.md` (wins over this file if they disagree).
 
 ## Changelog
 
-- 2026-09-06 — v1.1.1: VPS displace-lite plan (`docs/specs/vps-displace-imunify-dev-plan.md`). AM may say replace Imunify **on nginx VPS only** after honesty threshold — never shared cPanel, never PD/WebShield clone.
+- 2026-09-07 — v1.2.1: Displace-lite **DL0–DL2** + Sentence-ok (`vps-displace-imunify-dev-plan.md`); merge #640/#642 notes.
+- 2026-09-06 — v1.2: Host WAF starter-only events (#640); one-file installer from sinexis.app (#642); landing still scan-first; not an Imunify replacement.
+- 2026-09-06 — v1.1.1: VPS displace-lite plan. AM may say replace Imunify **on nginx VPS only** after Sentence-ok — never shared cPanel, never PD/WebShield clone.
 - 2026-09-01 — v1.1: P14 Imunify-class on-box (regional attach; helper on VM; no clone).
 - 2026-09-01 — V1 drafted from AGENT_EXECUTION_GUIDE + README (no customer PII).
 
@@ -14,7 +16,7 @@
 
 **One-liner:** Sinexis is security control for teams that already run servers with GMD: find exposure, schedule checks, share results, then runtime alerts — hospitality as the story, colo/VPS as the attach base.
 
-**What it does:** Web vulnerability scanner (IP, domain, mobile APK/AAB/IPA) plus scheduled attach scans, multi-user workspaces, asset registry, thin Guard (Wazuh agent inventory + critical alerts — not full SIEM), Host Protect (on-box malware honesty), Host WAF (per-site, not edge nginx). Soft dual-brand: **Sinexis** public (`sinexis.app`) with **VulnScanner** as the Scan module.
+**What it does:** Web vulnerability scanner (IP, domain, mobile APK/AAB/IPA) plus scheduled attach scans, multi-user workspaces, asset registry, thin Guard (Wazuh agent inventory + critical alerts — not full SIEM), Host Protect (on-box malware honesty via helper on the customer VM), Host WAF (per-site nginx on that VM: starter rules 1001–1004; never Sinexis edge; never Imunify/CRS noise as product). Soft dual-brand: **Sinexis** public (`sinexis.app`) with **VulnScanner** as the Scan module. Public landing is still **scan-first**; Host Protect/WAF are modules, not the homepage hero.
 
 **Category:** B2B security SaaS / managed-security attach on existing infrastructure billing.
 
