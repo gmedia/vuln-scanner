@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 
 from app.api.blog_html import html_router as blog_html_router
+from app.api.install_routes import router as install_router
 from app.api.legal_html import html_router as legal_html_router
 from app.api.openai_v1_routes import router as openai_v1_router
 from app.api.router import api_router
@@ -104,6 +105,7 @@ app.include_router(openai_v1_router)
 app.include_router(blog_html_router)
 app.include_router(legal_html_router)
 app.include_router(status_html_router)
+app.include_router(install_router)
 
 
 @app.get("/health")

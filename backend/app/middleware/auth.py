@@ -68,6 +68,7 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
             or path in ("/terms", "/privacy")
             or path == "/status"
             or path.startswith("/status/")
+            or path == "/install/sinexis-install.sh"
             or path == "/"
             or path.startswith("/api/uptime/heartbeat/")
             or path == "/api/host/agent/results"
