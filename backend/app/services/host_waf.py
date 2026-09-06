@@ -22,10 +22,18 @@ from app.services.host_handoff import handoff_waf_block
 from app.services.host_waf_render import render_coraza_include, render_nginx_modsec
 from app.services.organization import require_membership
 
+_WAF_STARTER_IDS = frozenset({"1001", "1002", "1003", "1004"})
+_WAF_SIMULATE_RULE = "mock.sqli.1"
+
 
 def _strip_query(path: str) -> str:
     cut = path.split("?", 1)[0]
     return cut[:256] or "/"
+
+
+def is_product_waf_rule(rule_id: str) -> bool:
+    rid = (rule_id or "")[:128]
+    return rid in _WAF_STARTER_IDS or rid == _WAF_SIMULATE_RULE
 
 
 class HostWafService:
@@ -124,7 +132,7 @@ class HostWafService:
             stmt = stmt.where(HostWafEvent.site_id == site_id)
         stmt = stmt.order_by(HostWafEvent.created_at.desc()).limit(100)
         rows = (await self.db.execute(stmt)).scalars().all()
-        return [HostWafEventResponse.model_validate(r) for r in rows]
+        return [HostWafEventResponse.model_validate(r) for r in rows if is_product_waf_rule(r.rule_id)]
 
     async def simulate(self, user: User, organization_id: UUID | None, site_id: UUID) -> HostWafEventResponse:
         self._require_feature()
