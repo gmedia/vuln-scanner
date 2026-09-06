@@ -119,6 +119,20 @@ Optional one-shot poll over SSH (still does not print tokens):
 
 Full Guard enroll/unenroll still uses wipe-first **§4.1** (`scripts/guard-lab-enroll-smoke.sh`). This smoke **does not** enroll.
 
+## 4.1) AM demo script (layperson file loop — Wave 1)
+
+Public-repo safe. Lab SSH alias **`tc5` only**. Never print tokens. Playwright ≠ enroll.
+
+Talk track (Bahasa, honest):
+
+1. **Guard online** on `/guard` (agent enrolled; wipe-first §4.1 if this is a full enroll demo).
+2. On **`tc5`**: wget the wrapper from `https://sinexis.app/install/sinexis-install.sh`, `head -n1` must be `#!/usr/bin/env bash`.
+3. `sudo ./sinexis-install.sh` — helper (menu 2) with `--token-file` (mode 600). Do not `curl | bash`.
+4. SPA **`/host`**: add site whose folder exists **on that VM** (lab fixture under `/var/www`). Empty list ≠ clean.
+5. **Scan now**. Wait until `/host` shows a finished check **or** an honest fail (`pending` / unreachable). **Never** invent hits.
+6. If a real hit exists on the fixture: **Quarantine** → wait helper queue → **Restore**. Auto-clean rewrite is out.
+7. Do **not** say “Imunify replacement.” Quote **Host Basic 1 site** until finance `service_id`.
+
 ## 5) Honesty for AM
 
 | Say | Do not say |
