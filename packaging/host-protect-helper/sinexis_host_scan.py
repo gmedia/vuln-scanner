@@ -366,6 +366,11 @@ def fetch_jobs(api_base: str, token: str, agent_id: str, timeout: int) -> tuple[
 _WAF_ID_RE = re.compile(r'\[id\s+"(\d+)"\]')
 _WAF_REQ_RE = re.compile(r"^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+(\S+)", re.MULTILINE)
 _MAX_WAF_EVENTS = 100
+_WAF_STARTER_IDS = frozenset({"1001", "1002", "1003", "1004"})
+_WAF_STATIC_PATH_RE = re.compile(
+    r"\.(?:js|css|map|woff2?|png|jpe?g|gif|svg|ico|ttf|eot)(?:$|\?)",
+    re.IGNORECASE,
+)
 
 
 def _modsec_json_rows(text: str) -> list[object]:
@@ -392,18 +397,35 @@ def _modsec_json_rows(text: str) -> list[object]:
         return rows
 
 
-def _modsec_rule_id(row: dict[str, object], txn: dict[str, object]) -> str:
+def _modsec_rule_ids(row: dict[str, object], txn: dict[str, object]) -> list[str]:
     msgs = row.get("messages") if isinstance(row.get("messages"), list) else []
     if not msgs:
         msgs = txn.get("messages") if isinstance(txn.get("messages"), list) else []
+    ids: list[str] = []
     for msg in msgs:
         if not isinstance(msg, dict):
             continue
         details = msg.get("details") if isinstance(msg.get("details"), dict) else {}
         rid = details.get("ruleId") or details.get("id")
         if rid:
-            return str(rid)[:128]
-    return "unknown"
+            ids.append(str(rid)[:128])
+    return ids
+
+
+def _modsec_rule_id(row: dict[str, object], txn: dict[str, object]) -> str:
+    ids = _modsec_rule_ids(row, txn)
+    for rid in ids:
+        if rid in _WAF_STARTER_IDS:
+            return rid
+    return ids[0] if ids else "unknown"
+
+
+def keep_waf_event(rule_id: str, path: str) -> bool:
+    if rule_id not in _WAF_STARTER_IDS:
+        return False
+    if _WAF_STATIC_PATH_RE.search(path or ""):
+        return False
+    return True
 
 
 def parse_modsec_audit_events(text: str) -> list[dict[str, object]]:
@@ -423,6 +445,8 @@ def parse_modsec_audit_events(text: str) -> list[dict[str, object]]:
             method = str(req.get("method") or "GET").upper()
             path = str(req.get("uri") or req.get("uri_no_query") or "/")
             path = path.split("?", 1)[0][:256] or "/"
+            if not keep_waf_event(rule_id, path):
+                continue
             status_code = resp.get("http_code") or resp.get("status")
             http_status = int(status_code) if isinstance(status_code, int) else None
             action = "block" if http_status == 403 else "log"
@@ -447,11 +471,14 @@ def parse_modsec_audit_events(text: str) -> list[dict[str, object]]:
         method = (req_m.group(1) if req_m else "GET").upper()
         raw_path = req_m.group(2) if req_m else "/"
         path = raw_path.split("?", 1)[0][:256] or "/"
+        rule_id = next((i for i in ids if i in _WAF_STARTER_IDS), (ids[0] if ids else "unknown"))
+        if not keep_waf_event(rule_id, path):
+            continue
         http_status = 403 if "403" in chunk or "Intercepted" in chunk else None
         events.append(
             {
                 "action": "block" if http_status == 403 else "log",
-                "rule_id": (ids[0] if ids else "unknown")[:128],
+                "rule_id": rule_id[:128],
                 "method": method[:8],
                 "path": path,
                 "http_status": http_status,

@@ -395,14 +395,14 @@ def test_parse_modsec_json_strips_query_no_body():
                 "request": {"method": "POST", "uri": "/search.php?q=1"},
                 "response": {"http_code": 403},
             },
-            "messages": [{"details": {"ruleId": "941100"}}],
+            "messages": [{"details": {"ruleId": "1002"}}],
         }
     )
     events = helper.parse_modsec_audit_events(blob)
     assert len(events) == 1
     assert events[0]["path"] == "/search.php"
     assert events[0]["action"] == "block"
-    assert events[0]["rule_id"] == "941100"
+    assert events[0]["rule_id"] == "1002"
     assert "body" not in events[0]
 
 
@@ -448,7 +448,7 @@ def test_poll_posts_waf_events(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
                     "request": {"method": "GET", "uri": "/wp-login.php?x=1"},
                     "response": {"http_code": 403},
                 },
-                "messages": [{"details": {"ruleId": "941100"}}],
+                "messages": [{"details": {"ruleId": "1001"}}],
             }
         ),
         encoding="utf-8",
@@ -477,3 +477,33 @@ def test_poll_posts_waf_events(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     assert rc == 0
     assert len(posted) == 1
     assert posted[0]["events"][0]["path"] == "/wp-login.php"
+    assert posted[0]["events"][0]["rule_id"] == "1001"
+
+
+def test_parse_modsec_drops_vendor_and_static():
+    im360 = json.dumps(
+        {
+            "transaction": {
+                "request": {"method": "GET", "uri": "/libraries/axios/axios.min.js"},
+                "response": {"http_code": 200},
+                "messages": [{"details": {"ruleId": "77350396"}}],
+            }
+        }
+    )
+    mixed = json.dumps(
+        {
+            "transaction": {
+                "request": {"method": "GET", "uri": "/xmlrpc.php"},
+                "response": {"http_code": 404},
+                "messages": [
+                    {"details": {"ruleId": "77350396"}},
+                    {"details": {"ruleId": "1001"}},
+                ],
+            }
+        }
+    )
+    assert helper.parse_modsec_audit_events(im360) == []
+    events = helper.parse_modsec_audit_events(mixed)
+    assert len(events) == 1
+    assert events[0]["rule_id"] == "1001"
+    assert events[0]["path"] == "/xmlrpc.php"

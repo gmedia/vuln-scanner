@@ -26,7 +26,7 @@ from app.schemas.host_waf import HostAgentWafEventsIngest, HostAgentWafEventsRes
 from app.services.host_handoff import handoff_waf_block
 from app.services.host_path import jail_rel_path
 from app.services.host_scan_runner import _finish_scan
-from app.services.host_waf import _strip_query
+from app.services.host_waf import _strip_query, is_product_waf_rule
 
 
 def hash_results_token(token: str) -> str:
@@ -245,6 +245,8 @@ async def ingest_agent_waf_events(
     for item in body.events:
         path = _strip_query(item.path)
         rule_id = item.rule_id[:128]
+        if not is_product_waf_rule(rule_id):
+            continue
         key = (path, rule_id, item.method, item.action)
         if key in seen:
             continue

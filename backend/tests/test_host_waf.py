@@ -430,9 +430,9 @@ async def test_agent_waf_ingest_persists_and_strips_query(db_session: AsyncSessi
                     "events": [
                         {
                             "action": "block",
-                            "rule_id": "941100",
+                            "rule_id": "1001",
                             "method": "get",
-                            "path": "/wp-login.php?user=1",
+                            "path": "/xmlrpc.php?user=1",
                             "http_status": 403,
                         }
                     ],
@@ -444,7 +444,7 @@ async def test_agent_waf_ingest_persists_and_strips_query(db_session: AsyncSessi
         app.dependency_overrides.clear()
     rows = (await db_session.execute(select(HostWafEvent).where(HostWafEvent.site_id == site.id))).scalars().all()
     assert len(rows) == 1
-    assert rows[0].path == "/wp-login.php"
+    assert rows[0].path == "/xmlrpc.php"
     assert rows[0].method == "GET"
     assert rows[0].action == "block"
     assert rows[0].http_status == 403
@@ -460,16 +460,16 @@ async def test_agent_waf_ingest_persists_and_strips_query(db_session: AsyncSessi
                     "events": [
                         {
                             "action": "block",
-                            "rule_id": "941100",
+                            "rule_id": "1001",
                             "method": "GET",
-                            "path": "/wp-login.php",
+                            "path": "/xmlrpc.php",
                             "http_status": 403,
                         },
                         {
                             "action": "block",
-                            "rule_id": "941100",
+                            "rule_id": "1001",
                             "method": "GET",
-                            "path": "/wp-login.php",
+                            "path": "/xmlrpc.php",
                             "http_status": 403,
                         },
                     ],
@@ -481,6 +481,48 @@ async def test_agent_waf_ingest_persists_and_strips_query(db_session: AsyncSessi
         app.dependency_overrides.clear()
     rows2 = (await db_session.execute(select(HostWafEvent).where(HostWafEvent.site_id == site.id))).scalars().all()
     assert len(rows2) == 1
+
+
+@pytest.mark.asyncio
+async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, ctx):
+    agent: GuardAgent = ctx["agent"]
+    site: HostSite = ctx["site"]
+    raw, token_hash = generate_results_token()
+    agent.results_token_hash = token_hash
+    await db_session.commit()
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.post(
+                "/api/host/agent/waf-events",
+                headers={"X-Host-Agent-Token": raw},
+                json={
+                    "agent_id": str(agent.id),
+                    "site_id": str(site.id),
+                    "events": [
+                        {
+                            "action": "log",
+                            "rule_id": "77350396",
+                            "method": "GET",
+                            "path": "/libraries/axios/axios.min.js",
+                            "http_status": 200,
+                        },
+                        {
+                            "action": "log",
+                            "rule_id": "1001",
+                            "method": "GET",
+                            "path": "/xmlrpc.php",
+                            "http_status": 404,
+                        },
+                    ],
+                },
+            )
+            assert r.status_code == 200, r.text
+            assert r.json()["accepted"] == 1
+    finally:
+        app.dependency_overrides.clear()
+    rows = (await db_session.execute(select(HostWafEvent).where(HostWafEvent.site_id == site.id))).scalars().all()
+    assert {row.rule_id for row in rows} == {"1001"}
 
 
 @pytest.mark.asyncio
