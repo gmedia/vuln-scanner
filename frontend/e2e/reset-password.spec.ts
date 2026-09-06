@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("Auth — Reset Password", () => {
+test.describe("Auth — Reset Password @shell", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
   test("reset password page without token shows invalid link message", async ({

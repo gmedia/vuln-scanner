@@ -1,9 +1,9 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("Verify Email", () => {
+test.describe("Verify Email @shell", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
-  test.describe("no token — resend form", () => {
+  test.describe("no token — resend form @shell", () => {
     test("shows SINEXIS branding", async ({ page }) => {
       await page.goto("/verify-email");
       await expect(
@@ -75,7 +75,7 @@ test.describe("Verify Email", () => {
     });
   });
 
-  test.describe("invalid token — error state", () => {
+  test.describe("invalid token — error state @shell", () => {
     test("shows verification error for invalid token", async ({ page }) => {
       await page.goto("/verify-email?token=invalid-token-value");
 

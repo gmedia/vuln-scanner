@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { e2eEmail } from "./credentials";
 
-test.describe("Auth — Forgot Password", () => {
+test.describe("Auth — Forgot Password @shell", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
   test("forgot password page renders correctly", async ({ page }) => {
