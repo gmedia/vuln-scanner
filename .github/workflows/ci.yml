@@ -192,6 +192,7 @@ jobs:
                 .github/*|.github/workflows/*|scripts/deploy.sh|scripts/deploy-*.sh|scripts/smoke-broker.sh)
                   ;;
                 *.md)
+                  ;;
                 *)
                   UNKNOWN=true
                   echo "unmapped path: $f"
