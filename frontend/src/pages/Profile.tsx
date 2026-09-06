@@ -143,7 +143,9 @@ function Profile() {
                   type="button"
                   onClick={() => setShowCurrent((v) => !v)}
                   className="absolute right-1.5 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
-                  aria-label={showCurrent ? "Hide password" : "Show password"}
+                  aria-label={
+                    showCurrent ? "Hide current password" : "Show current password"
+                  }
                 >
                   {showCurrent ? (
                     <EyeOff className="h-4 w-4" />
@@ -172,7 +174,9 @@ function Profile() {
                   type="button"
                   onClick={() => setShowNew((v) => !v)}
                   className="absolute right-1.5 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
-                  aria-label={showNew ? "Hide password" : "Show password"}
+                  aria-label={
+                    showNew ? "Hide new password" : "Show new password"
+                  }
                 >
                   {showNew ? (
                     <EyeOff className="h-4 w-4" />
@@ -201,7 +205,11 @@ function Profile() {
                   type="button"
                   onClick={() => setShowConfirm((v) => !v)}
                   className="absolute right-1.5 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
-                  aria-label={showConfirm ? "Hide password" : "Show password"}
+                  aria-label={
+                    showConfirm
+                      ? "Hide confirm password"
+                      : "Show confirm password"
+                  }
                 >
                   {showConfirm ? (
                     <EyeOff className="h-4 w-4" />
@@ -288,7 +296,11 @@ function Profile() {
                   type="button"
                   onClick={() => setShowProfilePw((v) => !v)}
                   className="absolute right-1.5 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
-                  aria-label={showProfilePw ? "Hide password" : "Show password"}
+                  aria-label={
+                    showProfilePw
+                      ? "Hide email confirmation password"
+                      : "Show email confirmation password"
+                  }
                 >
                   {showProfilePw ? (
                     <EyeOff className="h-4 w-4" />
