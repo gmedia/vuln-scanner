@@ -31,7 +31,8 @@ SKIP_SNIPPET_CONFIRM=0
 WAF_SNIPPET_PATH="/etc/nginx/sinexis-waf.snippet.conf"
 WAF_VHOST_PATH=""
 WAF_SITE_ID="${SINEXIS_WAF_SITE_ID:-}"
-WAF_AUDIT_LOG="${SINEXIS_WAF_AUDIT_LOG:-/var/log/modsec_audit.log}"
+WAF_AUDIT_LOG="${SINEXIS_WAF_AUDIT_LOG:-}"
+WAF_AUDIT_LOG_CLI=0
 MANAGER_HOST=""
 QUARANTINE_ROOT="/var/lib/sinexis/quarantine"
 ENV_PATH="/etc/sinexis/host-protect.env"
@@ -61,7 +62,7 @@ Non-interactive:
   --write-waf-snippet [--waf-snippet-path PATH]
   --apply-waf-vhost PATH   Write snippet, include in that nginx file, nginx -t, reload
   --waf-site-id UUID       Host Protect site UUID from SPA /host (for WAF ingest)
-  --waf-audit-log PATH     ModSecurity audit log (default /var/log/modsec_audit.log)
+  --waf-audit-log PATH     ModSecurity audit log (auto: nginx path if present, else /var/log/modsec_audit.log)
   --configure-waf-ingest   Write those keys into host-protect.env (keep existing token)
   --poll-once              Start sinexis-host-protect@AGENT.service once (no journal dump)
 
@@ -92,6 +93,35 @@ die() { log "error: $*"; exit 1; }
 
 is_uuid() {
   [[ "$1" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]
+}
+
+detect_modsec_audit_log() {
+  local p conf line
+  for p in /var/log/nginx/modsec_audit_log /var/log/nginx/modsec_audit.log /var/log/modsec_audit.log; do
+    if [[ -f "$p" ]]; then
+      printf '%s\n' "$p"
+      return 0
+    fi
+  done
+  for conf in /etc/nginx/modsec.conf /etc/modsecurity/modsecurity.conf /etc/nginx/modsecurity.conf; do
+    [[ -f "$conf" ]] || continue
+    line="$(awk '/^[[:space:]]*SecAuditLog[[:space:]]+\//{print $2; exit}' "$conf" 2>/dev/null || true)"
+    if [[ -n "$line" ]]; then
+      printf '%s\n' "$line"
+      return 0
+    fi
+  done
+  printf '%s\n' "/var/log/modsec_audit.log"
+}
+
+resolve_waf_audit_log() {
+  if [[ "$WAF_AUDIT_LOG_CLI" -eq 1 && -n "$WAF_AUDIT_LOG" ]]; then
+    return 0
+  fi
+  if [[ -n "$WAF_AUDIT_LOG" ]]; then
+    return 0
+  fi
+  WAF_AUDIT_LOG="$(detect_modsec_audit_log)"
 }
 
 need_root() {
@@ -225,7 +255,7 @@ print_setup_status() {
       log "  WAF audit log: ${alog} (path in env; file not found yet)"
     fi
   else
-    log "  WAF audit log: not in env (default helper path /var/log/modsec_audit.log)"
+    log "  WAF audit log: not in env (helper auto-detects nginx SecAuditLog or /var/log/modsec_audit.log)"
   fi
   log "  Re-run a step: TTY will ask, or pass --force"
 }
@@ -447,6 +477,7 @@ configure_waf_ingest() {
     read -r -p "Host Protect site UUID from SPA /host (not Guard agent id): " WAF_SITE_ID
   fi
   [[ -n "$WAF_SITE_ID" ]] || die "missing --waf-site-id UUID"
+  resolve_waf_audit_log
   if [[ -t 0 ]]; then
     local _al=""
     read -r -p "ModSecurity audit log [${WAF_AUDIT_LOG}]: " _al || true
@@ -1019,12 +1050,18 @@ UHJpdmlsZWdlcz10cnVlClByb3RlY3RTeXN0ZW09c3RyaWN0CiMgUXVhcmFudGluZSBkZXN0ICsg
 YWxsb3dsaXN0ZWQgd2ViIHJvb3RzIChTMTAgamFpbCkuIFdpdGhvdXQgdGhlc2UsIG9zLnJlbmFt
 ZSBmYWlscyBjbG9zZWQuCiMgTGVhZGluZyAnLScgPSBpZ25vcmUgbWlzc2luZyBwYXRoIChzeXN0
 ZW1kIDIyNi9OQU1FU1BBQ0UgaWYgL3Nydi93d3cgYWJzZW50KS4KUmVhZFdyaXRlUGF0aHM9L3Zh
-ci9saWIvc2luZXhpcyAvdmFyL3d3dyAtL3Nydi93d3cgL2hvbWUKUHJpdmF0ZVRtcD10cnVlClBy
-aXZhdGVEZXZpY2VzPXRydWUKUHJvdGVjdEtlcm5lbFR1bmFibGVzPXRydWUKUHJvdGVjdENvbnRy
-b2xHcm91cHM9dHJ1ZQpSZXN0cmljdFNVSURTR0lEPXRydWUKTG9ja1BlcnNvbmFsaXR5PXRydWUK
-UmVzdHJpY3RSZWFsdGltZT10cnVlClJlc3RyaWN0QWRkcmVzc0ZhbWlsaWVzPUFGX1VOSVggQUZf
-SU5FVCBBRl9JTkVUNgpTeXN0ZW1DYWxsQXJjaGl0ZWN0dXJlcz1uYXRpdmUKCltJbnN0YWxsXQpX
-YW50ZWRCeT1tdWx0aS11c2VyLnRhcmdldAo='
+ci9saWIvc2luZXhpcyAvdmFyL3d3dyAtL3Nydi93d3cgL2hvbWUKIyBMYWIvY3VzdG9tZXIgV0FG
+IGluZ2VzdDogaGVscGVyIHRhaWxzIE1vZFNlY3VyaXR5IEpTT04gYXVkaXQgKG5vIHJlcXVlc3Qg
+Ym9kaWVzKS4KIyBMZWFkaW5nICctJyA9IGlnbm9yZSBtaXNzaW5nIHBhdGguIG5naW54L2xpYm1v
+ZHNlY3VyaXR5IG9mdGVuIHdyaXRlIHVuZGVyIC92YXIvbG9nL25naW54Ly4KUmVhZE9ubHlQYXRo
+cz0tL3Zhci9sb2cvbW9kc2VjX2F1ZGl0LmxvZyAtL3Zhci9sb2cvbmdpbngvbW9kc2VjX2F1ZGl0
+X2xvZyAtL3Zhci9sb2cvbmdpbngvbW9kc2VjX2F1ZGl0LmxvZwpQcml2YXRlVG1wPXRydWUKUHJp
+dmF0ZURldmljZXM9dHJ1ZQpQcm90ZWN0S2VybmVsVHVuYWJsZXM9dHJ1ZQpQcm90ZWN0Q29udHJv
+bEdyb3Vwcz10cnVlClJlc3RyaWN0U1VJRFNHSUQ9dHJ1ZQpMb2NrUGVyc29uYWxpdHk9dHJ1ZQpS
+ZXN0cmljdFJlYWx0aW1lPXRydWUKUmVzdHJpY3RBZGRyZXNzRmFtaWxpZXM9QUZfVU5JWCBBRl9J
+TkVUIEFGX0lORVQ2ClN5c3RlbUNhbGxBcmNoaXRlY3R1cmVzPW5hdGl2ZQoKW0luc3RhbGxdCldh
+bnRlZEJ5PW11bHRpLXVzZXIudGFyZ2V0Cg==
+'
 SINEXIS_B64_TMR='W1VuaXRdCkRlc2NyaXB0aW9uPVNpbmV4aXMgSG9zdCBQcm90ZWN0IHBvbGwgKCVpKQpSZXF1aXJl
 cz13YXp1aC1hZ2VudC5zZXJ2aWNlCgpbVGltZXJdCk9uQm9vdFNlYz0ybWluCk9uVW5pdEFjdGl2
 ZVNlYz01bWluClBlcnNpc3RlbnQ9dHJ1ZQoKW0luc3RhbGxdCldhbnRlZEJ5PXRpbWVycy50YXJn
@@ -1124,6 +1161,7 @@ while [[ $# -gt 0 ]]; do
     --waf-audit-log)
       WAF_AUDIT_LOG="${2:-}"
       [[ -n "$WAF_AUDIT_LOG" ]] || die "missing --waf-audit-log PATH"
+      WAF_AUDIT_LOG_CLI=1
       shift 2
       ;;
     --configure-waf-ingest)
