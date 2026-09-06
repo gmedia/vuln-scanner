@@ -1,5 +1,4 @@
-export const SINEXIS_INSTALL_RAW_URL =
-  "https://raw.githubusercontent.com/gmedia/vuln-scanner/main/packaging/host-protect-helper/sinexis-install.sh";
+export const SINEXIS_INSTALL_RAW_URL = "https://sinexis.app/install/sinexis-install.sh";
 
 export const SINEXIS_INSTALL_WGET = [
   `wget -O sinexis-install.sh '${SINEXIS_INSTALL_RAW_URL}'`,

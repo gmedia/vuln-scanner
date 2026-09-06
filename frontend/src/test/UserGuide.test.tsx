@@ -108,7 +108,7 @@ describe("UserGuide", () => {
     expect(document.body.querySelector('a[href="#guard"]')).toBeTruthy();
     expect(document.body.textContent ?? "").toMatch(/Host Protect helper/i);
     expect(document.body.textContent ?? "").toMatch(/sinexis-install\.sh/);
-    expect(document.body.textContent ?? "").toMatch(/raw\.githubusercontent\.com/);
+    expect(document.body.textContent ?? "").toMatch(/sinexis\.app\/install\/sinexis-install\.sh/);
     expect(document.body.textContent ?? "").toMatch(/DOCTYPE html/);
     expect(document.body.textContent ?? "").toMatch(/Do not clone the repo/);
     expect(screen.getByTestId("sinexis-install-wget").textContent).toMatch(
@@ -122,7 +122,7 @@ describe("UserGuide", () => {
       screen.getByRole("link", { name: "sinexis-install.sh" }),
     ).toHaveAttribute(
       "href",
-      "https://raw.githubusercontent.com/gmedia/vuln-scanner/main/packaging/host-protect-helper/sinexis-install.sh",
+      "https://sinexis.app/install/sinexis-install.sh",
     );
     expect(screen.getByRole("link", { name: "GitHub Release" })).toHaveAttribute(
       "href",
