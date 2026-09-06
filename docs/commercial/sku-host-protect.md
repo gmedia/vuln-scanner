@@ -15,7 +15,7 @@
 | **H2** | Seat | **Web paths (sites)** on enrolled VPS, not per-domain DNS | Working |
 | **H3** | Caps | Basic **1** · Pro **3** · Multi **10** `host_sites` | Working (mirrors Scan assets) |
 | **H4** | List IDR / mo | **Working list** (not invoice lock): Host Basic **150.000** · Host Pro **350.000** · Host Multi **900.000** | Working |
-| **H5** | vs Imunify | **Beside** on cPanel farms; **attach** on GMD VPS/colo without panel suite. Not a CloudLinux replacement pitch | Working |
+| **H5** | vs Imunify | **Beside** on cPanel farms. **Displace-lite** on GMD VPS/colo **without** panel suite **only after** [`vps-displace-imunify-dev-plan.md`](../specs/vps-displace-imunify-dev-plan.md) §1 (helper + isolate + original WAF pack; **no** PD/WebShield/KernelCare). Not a CloudLinux replacement pitch | Working |
 | **H6** | Cleanup | Quarantine/restore in-app; reconstruct = **hybrid ticket**. No silent PHP rewrite | Working |
 | **H7** | WAF | **Not** in Host Protect **file** v1. **P13 Host WAF** = separate control plane; working: **detect** on Pro/Multi, **protect** Multi+; IDR unset | Working |
 | **H8** | Guard prerequisite | Host Protect v1 **requires** Guard agent on the VM | Working |
@@ -39,10 +39,11 @@
 ## 2. What AM may say (Bahasa, until IDR lock)
 
 - “Ini **bukan** ganti Imunify di cPanel shared.”
+- “Ganti di **VPS tanpa panel** hanya jika syarat plan displace terpenuhi; tanpa PD/kernel/email.”
 - “Untuk VPS/colo GMD: agent Guard + daftar folder web. Scan **on-box** = helper POST ke SaaS (P14 slice C). Worker cloud **bukan** Imunify. Sampai helper jalan, konsol **bukan** bukti disk VPS.”
 - “Working list (bukan invoice lock): Host Basic **Rp 150.000** · Host Pro **Rp 350.000** · Host Multi **Rp 900.000** / bulan. Finance boleh ± band sebelum `service_id`.”
 - “Quarantine **bukan** reconstruct situs; restore CMS = tiket.”
-- Positioning vs Imunify: [`imunify-beside-not-roadmap.md`](imunify-beside-not-roadmap.md) — **bukan** backlog fitur.
+- Positioning vs Imunify: [`imunify-beside-not-roadmap.md`](imunify-beside-not-roadmap.md) — **bukan** backlog fitur. Development slices: [`vps-displace-imunify-dev-plan.md`](../specs/vps-displace-imunify-dev-plan.md).
 
 ---
 

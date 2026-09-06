@@ -1,11 +1,12 @@
 # Product marketing context — Sinexis
 
-**Document version:** 1.1.0
-**Last updated:** 2026-09-01
+**Document version:** 1.1.1
+**Last updated:** 2026-09-06
 **Source of truth for product priority:** `docs/AGENT_EXECUTION_GUIDE.md` (wins over this file if they disagree).
 
 ## Changelog
 
+- 2026-09-06 — v1.1.1: VPS displace-lite plan (`docs/specs/vps-displace-imunify-dev-plan.md`). AM may say replace Imunify **on nginx VPS only** after honesty threshold — never shared cPanel, never PD/WebShield clone.
 - 2026-09-01 — v1.1: P14 Imunify-class on-box (regional attach; helper on VM; no clone).
 - 2026-09-01 — V1 drafted from AGENT_EXECUTION_GUIDE + README (no customer PII).
 
@@ -33,7 +34,7 @@
 1. Prove the box/site is being checked on a schedule (attach loop).
 2. Share results with the team (workspace) without forwarding PDFs.
 3. On-box web malware + isolate **on the customer VM** (Imunify-**class** job, original stack) — never a SaaS worker walking `/var/www` as if it were the VPS.
-4. Regional attach where panel+Imunify is absent or expensive (GMD VPS/colo) — beside Imunify on cPanel farms, not a CloudLinux replacement pitch.
+4. Regional attach where panel+Imunify is absent or expensive (GMD VPS/colo) — **beside** Imunify on cPanel farms. **Displace-lite** on a single nginx VPS only after the honesty threshold in `docs/specs/vps-displace-imunify-dev-plan.md` — not a CloudLinux replacement pitch.
 
 ## 3. Personas (B2B)
 
@@ -56,13 +57,14 @@
 - **Honesty gate:** missing roots fail or wait for helper; never invent `wp-content` malware.
 - **Thin Guard:** inventory + critical alerts, not customer Wazuh UI.
 - Soft dual-brand 6–12 months; rebrand must not gate Scan upsell.
-- **Imunify-class jobs, original stack (P14):** read files and isolate **on the customer VM**; regional attach where cPanel+Imunify is absent. Not a CloudLinux clone.
+- **Imunify-class jobs, original stack (P14):** read files and isolate **on the customer VM**; regional attach where cPanel+Imunify is absent. Not a CloudLinux clone. VPS displace-lite: `docs/specs/vps-displace-imunify-dev-plan.md`.
 
 ## 6. Objections
 
 - “Is this a SIEM?” — No. SIEM is a separate flagged module; Guard is thin.
 - “Do I install two agents?” — No. One `wazuh-agent` per VM.
 - “Will you WAF sinexis.app edge?” — Never paste WAF onto public edge nginx.
+- “Can I replace Imunify with Sinexis?” — **Not** on shared cPanel. On a **nginx VPS without a panel suite**, only after helper + isolate + original WAF pack, and **without** claiming PHP PD, WebShield, or KernelCare.
 
 ## 7. Proof / constraints for copy
 

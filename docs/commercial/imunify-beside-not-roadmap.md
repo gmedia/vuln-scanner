@@ -1,6 +1,6 @@
 # Imunify360 — beside Sinexis, not a roadmap
 
-**Status:** frozen **legal/clone** positioning (2026-08-31; waves pointer **2026-09-03**). **Job roadmap** (on-box access, regional attach, **waves 0–3**) lives in [`imunify-class-onbox.md`](../specs/imunify-class-onbox.md) (**P14** §7). Do **not** open PRs titled “Imunify parity” or copy CloudLinux IP. P14 is **jobs + original stack**, not a clone.
+**Status:** frozen **legal/clone** positioning (2026-08-31; waves pointer **2026-09-03**; VPS displace-lite plan **2026-09-06**). **Job roadmap** (on-box access, regional attach, **waves 0–3**) lives in [`imunify-class-onbox.md`](../specs/imunify-class-onbox.md) (**P14** §7). **AM “ganti Imunify di VPS”** (nginx/dedicated only, after honesty threshold): [`vps-displace-imunify-dev-plan.md`](../specs/vps-displace-imunify-dev-plan.md). Do **not** open PRs titled “Imunify parity” or copy CloudLinux IP. P14 is **jobs + original stack**, not a clone.
 
 Sinexis **sits beside** Imunify on cPanel/CloudLinux farms. It is **not** a clone. Scan attach (P0/P1) remains the sold SKU. Host Protect / Host WAF are VPS/colo attach — **IDR unset**; AM must not invoice from this file.
 
@@ -27,8 +27,9 @@ Cleanup: **quarantine ≠ reconstruct**. Reconstruct = hybrid ticket (backup/CMS
 ## AM one-liners (Bahasa)
 
 - “Ini **bukan** ganti Imunify di cPanel shared.”
+- “Di **VPS nginx/dedicated tanpa panel**: boleh *displace-lite* hanya setelah helper hidup, isolate, WAF pack kita, tanpa PD/WebShield — lihat [`vps-displace-imunify-dev-plan.md`](../specs/vps-displace-imunify-dev-plan.md).”
 - “Untuk VPS/colo GMD: Guard + folder web + scan malware **on-box** (helper) + isolate file. Konsol SaaS **bukan** bukti disk sampai helper POST.”
 - “WAF protect = Host Multi, snippet di nginx **pelanggan**; bukan edge Sinexis.”
 - “Harga Host **belum** list resmi.”
 
-See also: [`sku-host-protect.md`](sku-host-protect.md) H5/H6/H7, [`host-protect-v1.md`](../specs/host-protect-v1.md), [`host-waf-v1.md`](../specs/host-waf-v1.md).
+See also: [`sku-host-protect.md`](sku-host-protect.md) H5/H6/H7, [`host-protect-v1.md`](../specs/host-protect-v1.md), [`host-waf-v1.md`](../specs/host-waf-v1.md), [`vps-displace-imunify-dev-plan.md`](../specs/vps-displace-imunify-dev-plan.md).
