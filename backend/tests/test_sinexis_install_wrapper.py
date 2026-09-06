@@ -209,6 +209,34 @@ def test_wrapper_status_mentions_waf_ingest() -> None:
     assert "WAF audit log" in combined
 
 
+def test_wrapper_status_mentions_auto_detect_audit() -> None:
+    proc = _run(["--status"])
+    assert proc.returncode == 0, proc.stderr
+    combined = proc.stdout + proc.stderr
+    assert "auto-detects" in combined or "nginx" in combined.lower()
+
+
+def test_wrapper_help_mentions_auto_audit() -> None:
+    proc = _run(["--help"])
+    assert proc.returncode == 0
+    assert "auto:" in proc.stdout or "nginx path" in proc.stdout
+
+
+def test_embedded_unit_allows_nginx_modsec_audit() -> None:
+    text = WRAPPER.read_text(encoding="utf-8")
+    marker = "SINEXIS_B64_SVC='"
+    start = text.index(marker) + len(marker)
+    end = text.index("'\nSINEXIS_B64_TMR=")
+    blob = text[start:end].replace("\n", "")
+    import base64
+
+    unit = base64.b64decode(blob).decode("utf-8")
+    assert "ReadOnlyPaths=" in unit
+    assert "/var/log/nginx/modsec_audit_log" in unit
+    disk = (ROOT / "packaging/host-protect-helper/systemd/sinexis-host-protect@.service").read_text(encoding="utf-8")
+    assert "/var/log/nginx/modsec_audit_log" in disk
+
+
 def test_wrapper_executable_bit() -> None:
     mode = WRAPPER.stat().st_mode
     assert mode & stat.S_IXUSR
