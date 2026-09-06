@@ -45,6 +45,8 @@ jobs:
       docs_only: ${{ steps.flags.outputs.docs_only }}
       unknown: ${{ steps.flags.outputs.unknown }}
       always_full: ${{ steps.flags.outputs.always_full }}
+      e2e_full: ${{ steps.flags.outputs.e2e_full }}
+      e2e_grep: ${{ steps.flags.outputs.e2e_grep }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -77,6 +79,75 @@ jobs:
               - 'README.md'
               - 'handoff.md'
               - 'AGENTS.md'
+            mod_scan:
+              - 'backend/app/api/scan_routes.py'
+              - 'backend/app/api/schedule_routes.py'
+              - 'backend/app/services/scanner.py'
+              - 'backend/app/services/schedule.py'
+              - 'frontend/src/pages/IpScanner.tsx'
+              - 'frontend/src/pages/DomainScanner.tsx'
+              - 'frontend/src/pages/MobileScanner.tsx'
+              - 'frontend/src/pages/ScanDetail.tsx'
+              - 'frontend/src/pages/Schedules.tsx'
+              - 'frontend/e2e/*scanner*'
+              - 'frontend/e2e/scan-*'
+              - 'frontend/e2e/export.spec.ts'
+              - 'workers/tasks/*scan*'
+            mod_guard:
+              - 'backend/app/**/guard*'
+              - 'frontend/src/pages/Guard.tsx'
+              - 'frontend/e2e/guard.spec.ts'
+            mod_siem:
+              - 'backend/app/**/siem*'
+              - 'frontend/src/pages/Siem.tsx'
+              - 'frontend/e2e/siem.spec.ts'
+            mod_uptime:
+              - 'backend/app/**/uptime*'
+              - 'backend/app/**/status_page*'
+              - 'frontend/src/pages/Uptime.tsx'
+              - 'frontend/src/pages/StatusPage.tsx'
+              - 'frontend/e2e/uptime.spec.ts'
+            mod_ai:
+              - 'backend/app/**/ai*'
+              - 'backend/app/**/openai_v1*'
+              - 'frontend/src/pages/Ai.tsx'
+              - 'frontend/e2e/ai.spec.ts'
+            mod_admin:
+              - 'backend/app/api/admin_routes.py'
+              - 'frontend/src/pages/admin/**'
+              - 'frontend/e2e/admin*.spec.ts'
+            mod_shell:
+              - 'frontend/src/pages/Profile.tsx'
+              - 'frontend/src/pages/Landing.tsx'
+              - 'frontend/src/pages/NotFound.tsx'
+              - 'frontend/src/pages/VerifyEmail.tsx'
+              - 'frontend/src/pages/ForgotPassword.tsx'
+              - 'frontend/src/pages/ResetPassword.tsx'
+              - 'frontend/src/pages/credit/**'
+              - 'frontend/e2e/profile.spec.ts'
+              - 'frontend/e2e/credit-history.spec.ts'
+              - 'frontend/e2e/not-found.spec.ts'
+              - 'frontend/e2e/verify-email.spec.ts'
+              - 'frontend/e2e/forgot-password.spec.ts'
+              - 'frontend/e2e/reset-password.spec.ts'
+              - 'frontend/e2e/landing.spec.ts'
+            mod_core:
+              - 'backend/app/main.py'
+              - 'backend/app/api/router.py'
+              - 'backend/app/api/auth_routes.py'
+              - 'backend/app/api/org_routes.py'
+              - 'backend/app/api/credit_routes.py'
+              - 'backend/app/services/auth.py'
+              - 'backend/app/services/organization.py'
+              - 'backend/app/models/organization.py'
+              - 'backend/app/middleware/**'
+              - 'frontend/src/components/ui/**'
+              - 'frontend/src/components/layout/**'
+              - 'frontend/src/locales/**'
+              - 'frontend/e2e/global-setup.ts'
+              - 'frontend/playwright.config.ts'
+              - 'frontend/src/App.tsx'
+              - 'frontend/src/main.tsx'
       - name: Compute always_full and package flags
         id: flags
         env:
@@ -89,6 +160,14 @@ jobs:
           FILTER_PACKAGING: ${{ steps.filter.outputs.packaging }}
           FILTER_CI: ${{ steps.filter.outputs.ci }}
           FILTER_DOCS: ${{ steps.filter.outputs.docs }}
+          MOD_SCAN: ${{ steps.filter.outputs.mod_scan }}
+          MOD_GUARD: ${{ steps.filter.outputs.mod_guard }}
+          MOD_SIEM: ${{ steps.filter.outputs.mod_siem }}
+          MOD_UPTIME: ${{ steps.filter.outputs.mod_uptime }}
+          MOD_AI: ${{ steps.filter.outputs.mod_ai }}
+          MOD_ADMIN: ${{ steps.filter.outputs.mod_admin }}
+          MOD_SHELL: ${{ steps.filter.outputs.mod_shell }}
+          MOD_CORE: ${{ steps.filter.outputs.mod_core }}
         run: |
           set -euo pipefail
           ALWAYS=false
@@ -141,6 +220,37 @@ jobs:
           if [ "$ALWAYS" = "false" ] && [ "$FILTER_DOCS" = "true" ] && [ "$FILTER_BACKEND" != "true" ] && [ "$FILTER_WORKERS" != "true" ] && [ "$FILTER_FRONTEND" != "true" ] && [ "$FILTER_COMPOSE" != "true" ] && [ "$FILTER_PACKAGING" != "true" ] && [ "$FILTER_CI" != "true" ] && [ "$UNKNOWN" != "true" ]; then
             DOCS_ONLY=true
           fi
+          E2E_FULL=true
+          E2E_GREP=""
+          if [ "$ALWAYS" = "false" ] && [ "$COMPOSE" != "true" ] && [ "$PACKAGING" != "true" ] && [ "$CI_OUT" != "true" ] && [ "$MOD_CORE" != "true" ]; then
+            TAGS="@smoke"
+            [ "$MOD_SCAN" = "true" ] && TAGS="$TAGS|@scan"
+            [ "$MOD_GUARD" = "true" ] && TAGS="$TAGS|@guard"
+            [ "$MOD_SIEM" = "true" ] && TAGS="$TAGS|@siem"
+            [ "$MOD_UPTIME" = "true" ] && TAGS="$TAGS|@uptime"
+            [ "$MOD_AI" = "true" ] && TAGS="$TAGS|@ai"
+            [ "$MOD_ADMIN" = "true" ] && TAGS="$TAGS|@admin"
+            [ "$MOD_SHELL" = "true" ] && TAGS="$TAGS|@shell"
+            MAP_HIT=false
+            [ "$MOD_SCAN" = "true" ] && MAP_HIT=true
+            [ "$MOD_GUARD" = "true" ] && MAP_HIT=true
+            [ "$MOD_SIEM" = "true" ] && MAP_HIT=true
+            [ "$MOD_UPTIME" = "true" ] && MAP_HIT=true
+            [ "$MOD_AI" = "true" ] && MAP_HIT=true
+            [ "$MOD_ADMIN" = "true" ] && MAP_HIT=true
+            [ "$MOD_SHELL" = "true" ] && MAP_HIT=true
+            if [ "$MAP_HIT" = "true" ]; then
+              E2E_FULL=false
+              E2E_GREP="$TAGS"
+            elif [ "$BACKEND" != "true" ] && [ "$WORKERS" != "true" ] && [ "$FRONTEND" != "true" ]; then
+              E2E_FULL=false
+              E2E_GREP="@smoke"
+            else
+              # frontend/backend/workers changed but no module map → full E2E
+              E2E_FULL=true
+              E2E_GREP=""
+            fi
+          fi
           {
             echo "backend=$BACKEND"
             echo "workers=$WORKERS"
@@ -151,6 +261,8 @@ jobs:
             echo "docs_only=$DOCS_ONLY"
             echo "unknown=$UNKNOWN"
             echo "always_full=$ALWAYS"
+            echo "e2e_full=$E2E_FULL"
+            echo "e2e_grep=$E2E_GREP"
           } >> "$GITHUB_OUTPUT"
 
   python-tests-backend:
@@ -497,7 +609,6 @@ jobs:
           done
 
       - name: Run Playwright E2E tests
-        run: npx playwright test
         working-directory: frontend
         env:
           CI: "true"
@@ -505,6 +616,15 @@ jobs:
           API_KEY: "e2e-test-api-key"
           E2E_EMAIL: ${{ env.E2E_EMAIL }}
           E2E_PASSWORD: ${{ env.E2E_PASSWORD }}
+          E2E_FULL: ${{ needs.changes.outputs.e2e_full }}
+          E2E_GREP: ${{ needs.changes.outputs.e2e_grep }}
+        run: |
+          set -euo pipefail
+          if [ "${E2E_FULL}" = "true" ] || [ -z "${E2E_GREP}" ]; then
+            npx playwright test
+          else
+            npx playwright test --grep "${E2E_GREP}" --pass-with-no-tests
+          fi
 
       - name: Upload Playwright HTML report (on failure)
         if: failure()
