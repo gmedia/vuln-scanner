@@ -155,3 +155,4 @@ Slices **A–H** remain the **PR stream** names. Waves are **when sales can demo
 - File plane: [`host-protect-v1.md`](host-protect-v1.md) — **do not** re-implement S1–S12
 - HTTP plane: [`host-waf-v1.md`](host-waf-v1.md)
 - Working IDR: [`sku-host-protect.md`](../commercial/sku-host-protect.md)
+- **VPS displace-lite (AM “ganti Imunify di VPS/server”):** [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) — honesty threshold + slices **D0–D2**; not shared cPanel; not clone
