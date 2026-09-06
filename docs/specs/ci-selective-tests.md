@@ -1,6 +1,6 @@
 # Spec: CI selective tests (path + module)
 
-**Status:** **S1 on `main`**. **S2 in PR** — Playwright tags + `--grep` on product PRs. S3 waits for S2 on `main`.
+**Status:** **S1 + S2 on `main`** (`#635`, `#637`). S3 optional — wait for explicit `buat S3`. Human residual: required GitHub check **`ci-ok` only**.
 **Goal:** Cut PR CI time without weakening merge/deploy gates (AuthZ, credits, Host Protect honesty, Guard IDOR).
 **Epic:** engineering hygiene — **not** P14, Guard, Workspace, or GTM.
 **Depends:** existing `.github/workflows/ci.yml` (name **CI/CD**); pytest fail-under **75** backend / **76** workers; Playwright serial chromium (`workers: 1`).
@@ -251,7 +251,7 @@ No new npm/pip dependencies except the GitHub Action `dorny/paths-filter` (pin m
 
 ## 4) S2 — Playwright smoke vs module tags
 
-**Do not start S2 until S1 is on `main`.**
+**Shipped** on `main` (`#637`). Do not start S3 until named.
 
 ### 4.1 Tags
 
@@ -311,15 +311,15 @@ If `core` is true → Playwright **full** (not only smoke).
 |------|--------|
 | `frontend/e2e/*.spec.ts` | `test.describe.configure` or `test(..., { tag: ['@scan'] })` — Playwright **tag** in title ` @scan` **or** native `tag` (Playwright 1.42+). Prefer **title suffix** `@scan` if current `@playwright/test` in lockfile is old; verify version in S2. |
 | `.github/workflows/ci.yml` | grep expression from `changes` outputs |
-| this spec | S2 shipped |
+| this spec | S2 shipped (`#637`) |
 
 ### 4.5 S2 DoD
 
-- [ ] `main` still runs 26 specs (no grep).
-- [ ] PR touching only `frontend/e2e/ai.spec.ts` + `Ai.tsx` runs smoke + `@ai`, not all scanners.
-- [ ] PR touching `auth_routes.py` runs **full** E2E (`core`).
-- [ ] Frozen testids covered in `@smoke`.
-- [ ] No change to pytest collection.
+- [x] `main` still runs 26 specs (no grep) — `e2e_full` on `always_full`.
+- [x] PR module map + `--grep` (quoted `|`); incomplete map → full E2E.
+- [x] `auth_routes.py` / `mod_core` → **full** E2E.
+- [x] Frozen testids in `@smoke` except `guard-state` (`@guard` only).
+- [x] No change to pytest collection.
 
 ---
 
@@ -352,7 +352,7 @@ If `core` is true → Playwright **full** (not only smoke).
 | **S2** | `buat S2` | `ci: Playwright smoke and module tags on PRs` |
 | **S3** | `buat S3` | `ci: vitest globs and api path forces backend tests` |
 
-Default if user says only `buat` after this spec: **S1 only**.
+Default if user says only `buat` after this spec: **S1 only** (done). Next named slice: **S3**.
 
 ---
 
