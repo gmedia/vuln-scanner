@@ -48,7 +48,7 @@ TTY (default, no flags): prints setup status, then menu
   2) Configure Host Protect helper (payloads in this file)
   3) Both (1+2)
   4) Write Host WAF nginx snippet file (no include, no reload)
-  5) Write snippet AND include it in a vhost you name (nginx -t + reload)
+  5) Write snippet AND include it in every server{} of a vhost you name (nginx -t + reload)
   6) Show setup status only
   7) Set WAF ingest (site UUID + audit log in env; token not printed) and poll once
   8) Poll helper once (POST WAF events if site UUID is set)
@@ -60,7 +60,7 @@ Non-interactive:
   --install-wazuh-agent --manager-host HOST
   --configure-host-protect --agent-id UUID --token-file PATH [--api-base URL]
   --write-waf-snippet [--waf-snippet-path PATH]
-  --apply-waf-vhost PATH   Write snippet, include in that nginx file, nginx -t, reload
+  --apply-waf-vhost PATH   Write snippet, include in every server{} of that file, nginx -t, reload
   --waf-site-id UUID       Host Protect site UUID from SPA /host (for WAF ingest)
   --waf-audit-log PATH     ModSecurity audit log (auto: nginx path if present, else /var/log/modsec_audit.log)
   --configure-waf-ingest   Write those keys into host-protect.env (keep existing token)
@@ -83,7 +83,7 @@ Host Protect:
 Does not: curl|bash, enroll Guard, print the token, wipe ERP.
 Does not: guess which vhost to patch, or paste onto sinexis.app edge.
 Without --apply-waf-vhost (menu 4): file only — no include, no nginx -t/reload.
-With --apply-waf-vhost PATH (menu 5): include in that file only, then nginx -t + reload.
+With --apply-waf-vhost PATH (menu 5): include in every server{} of that file, then nginx -t + reload.
 Already set up: TTY asks Re-run? [y/N]. Flags skip unless --force.
 EOF
 }
@@ -568,21 +568,44 @@ vhost = Path(os.environ["VHOST_PATH"])
 snippet = os.environ["SNIPPET_PATH"]
 line = f"    include {snippet};"
 text = vhost.read_text(encoding="utf-8")
-if snippet in text:
+lines = text.splitlines(True)
+
+
+def is_server_open(raw: str) -> bool:
+    s = raw.strip()
+    if "{" not in s:
+        return False
+    token = s.split("{", 1)[0].split()
+    return bool(token) and token[0] == "server"
+
+
+starts = [i for i, raw in enumerate(lines) if is_server_open(raw)]
+if not starts:
+    if snippet in text:
+        print("already-included")
+        raise SystemExit(0)
+    vhost.write_text(text + ("\n" if text and not text.endswith("\n") else "") + line + "\n", encoding="utf-8")
+    print("inserted-1")
+    raise SystemExit(0)
+
+added = 0
+out: list[str] = list(lines[: starts[0]])
+for n, start in enumerate(starts):
+    end = starts[n + 1] if n + 1 < len(starts) else len(lines)
+    chunk = lines[start:end]
+    body = "".join(chunk)
+    if snippet in body:
+        out.extend(chunk)
+        continue
+    out.append(chunk[0])
+    out.append(line + "\n")
+    out.extend(chunk[1:])
+    added += 1
+if added == 0:
     print("already-included")
     raise SystemExit(0)
-out: list[str] = []
-inserted = False
-for raw in text.splitlines(True):
-    out.append(raw)
-    stripped = raw.strip()
-    if not inserted and stripped.startswith("server") and stripped.endswith("{"):
-        out.append(line + "\n")
-        inserted = True
-if not inserted:
-    out.append("\n" + line + "\n")
 vhost.write_text("".join(out), encoding="utf-8")
-print("inserted")
+print(f"inserted-{added}")
 PY
 }
 
@@ -605,9 +628,6 @@ apply_waf_vhost() {
     return 0
   fi
   [[ -f "$vhost" ]] || die "vhost file not found (will not create a new site)"
-  if waf_include_present "$vhost"; then
-    confirm_rerun "WAF include in named vhost" || return 0
-  fi
   SKIP_SNIPPET_CONFIRM=1
   write_waf_snippet
   if ! nginx_has_modsecurity; then
@@ -626,7 +646,7 @@ apply_waf_vhost() {
   else
     nginx -s reload
   fi
-  log "ok: included ${WAF_SNIPPET_PATH} in the named vhost and reloaded nginx. Not sinexis.app edge."
+  log "ok: included ${WAF_SNIPPET_PATH} in every server{} block of the named vhost and reloaded nginx. Not sinexis.app edge."
 }
 
 write_waf_snippet() {
@@ -673,7 +693,7 @@ show_menu() {
   echo "  2) Configure Host Protect helper"
   echo "  3) Both (1+2)"
   echo "  4) Write Host WAF nginx snippet (file only; no include/reload)"
-  echo "  5) Write snippet AND include in a vhost you name (nginx -t + reload)"
+  echo "  5) Write snippet AND include in every server{} of a vhost you name (nginx -t + reload)"
   echo "  6) Show setup status only"
   echo "  7) Set WAF ingest (site UUID + audit log; token not printed) and poll once"
   echo "  8) Poll helper once (POST WAF events if site UUID is set)"
