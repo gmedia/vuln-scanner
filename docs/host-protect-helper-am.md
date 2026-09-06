@@ -8,11 +8,11 @@ This is **not** a second enroll daemon. Guard (`wazuh-agent`) stays the identity
 
 **Debian `.deb`:** build with `./scripts/build-host-protect-deb.sh` (writes `dist/sinexis-host-protect_*_all.deb`). Package **Depends: wazuh-agent** — do not install on machines without Guard. Env file is **not** in the package payload except as `/usr/share/doc/.../host-protect.env.example` (empty token). `postinst` copies the example to `/etc/sinexis/host-protect.env` only if missing (mode 600). Enable the timer with the Guard UUID after filling the token.
 
-**How to get the installer (not curl|bash, not a git clone):** download the **raw** file (not the GitHub HTML blob page):
+**How to get the installer (not curl|bash, not a git clone):** download from the product origin (SPA `/host` copies the same wget):
 
 ```bash
 wget -O sinexis-install.sh \
-  'https://raw.githubusercontent.com/gmedia/vuln-scanner/main/packaging/host-protect-helper/sinexis-install.sh'
+  'https://sinexis.app/install/sinexis-install.sh'
 head -n1 sinexis-install.sh   # must be #!/usr/bin/env bash — not <!DOCTYPE html>
 chmod +x sinexis-install.sh
 ```
