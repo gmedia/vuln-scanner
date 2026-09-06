@@ -253,6 +253,7 @@ def test_wrapper_poll_once_dry_run() -> None:
     combined = proc.stdout + proc.stderr
     assert f"sinexis-host-protect@{UUID}.service" in combined
     assert "no journal dump" in combined
+    assert "refresh helper binary" in combined
 
 
 def test_wrapper_configure_waf_ingest_dry_run() -> None:
