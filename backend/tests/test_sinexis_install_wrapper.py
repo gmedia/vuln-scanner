@@ -127,6 +127,79 @@ def test_wrapper_apply_waf_vhost_requires_path() -> None:
     assert proc.returncode != 0
 
 
+def _insert_waf_python() -> str:
+    text = WRAPPER.read_text(encoding="utf-8")
+    marker = "insert_waf_include() {"
+    start = text.index(marker)
+    py_start = text.index("python3 - <<'PY'\n", start) + len("python3 - <<'PY'\n")
+    py_end = text.index("\nPY\n", py_start)
+    return text[py_start:py_end]
+
+
+def test_insert_waf_include_all_server_blocks(tmp_path: Path) -> None:
+    vhost = tmp_path / "erp.appmedia.id.conf"
+    vhost.write_text(
+        "server {\n"
+        "    include /etc/nginx/sinexis-waf.snippet.conf;\n"
+        "  listen 80;\n"
+        "  server_name erp.appmedia.id;\n"
+        "  return 308 https://erp.appmedia.id$request_uri;\n"
+        "}\n"
+        "map $http_upgrade $connection_upgrade {\n"
+        "    default upgrade;\n"
+        "    ''      close;\n"
+        "}\n"
+        "server {\n"
+        "  listen 443 ssl http2;\n"
+        "  server_name erp.appmedia.id;\n"
+        "}\n",
+        encoding="utf-8",
+    )
+    snippet = "/etc/nginx/sinexis-waf.snippet.conf"
+    env = os.environ.copy()
+    env["VHOST_PATH"] = str(vhost)
+    env["SNIPPET_PATH"] = snippet
+    proc = subprocess.run(
+        ["python3", "-c", _insert_waf_python()],
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip() == "inserted-1"
+    body = vhost.read_text(encoding="utf-8")
+    assert body.count(snippet) == 2
+    needle = "include /etc/nginx/sinexis-waf.snippet.conf;"
+    assert needle in body.split("listen 443", 1)[0]
+    proc2 = subprocess.run(
+        ["python3", "-c", _insert_waf_python()],
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+    assert proc2.stdout.strip() == "already-included"
+
+
+def test_insert_waf_include_idempotent_single_server(tmp_path: Path) -> None:
+    vhost = tmp_path / "site.conf"
+    vhost.write_text("server {\n  listen 80;\n}\n", encoding="utf-8")
+    env = os.environ.copy()
+    env["VHOST_PATH"] = str(vhost)
+    env["SNIPPET_PATH"] = "/etc/nginx/sinexis-waf.snippet.conf"
+    proc = subprocess.run(
+        ["python3", "-c", _insert_waf_python()],
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip() == "inserted-1"
+    assert vhost.read_text(encoding="utf-8").count("sinexis-waf.snippet.conf") == 1
+
+
 def test_wrapper_rejects_http_api() -> None:
     proc = _run(
         [
