@@ -7,10 +7,13 @@ import {
 } from "@/lib/sinexisInstall";
 
 describe("sinexisInstall", () => {
-  it("points wget at GitHub raw, not a clone", () => {
-    expect(SINEXIS_INSTALL_RAW_URL).toMatch(/sinexis-install\.sh$/);
+  it("points wget at product origin, not a clone", () => {
+    expect(SINEXIS_INSTALL_RAW_URL).toBe(
+      "https://sinexis.app/install/sinexis-install.sh",
+    );
     expect(SINEXIS_INSTALL_WGET).toContain("wget -O sinexis-install.sh");
     expect(SINEXIS_INSTALL_WGET).not.toMatch(/git clone/i);
+    expect(SINEXIS_INSTALL_WGET).not.toMatch(/raw\.githubusercontent/);
     expect(SINEXIS_INSTALL_WGET).toContain("head -n1");
   });
 
