@@ -1,7 +1,7 @@
 import { test, expect } from "./fixtures";
 import { e2eEmail } from "./credentials";
 
-test.describe("Admin — Users", () => {
+test.describe("Admin — Users @admin", () => {
   test("page loads with USER MANAGEMENT heading", async ({ page }) => {
     await page.goto("/admin/users");
     await expect(

@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures";
 
-test.describe("Admin — Access", () => {
+test.describe("Admin — Access @admin", () => {
   test("admin accessing /admin loads admin dashboard", async ({ page }) => {
     await page.goto("/admin");
     await expect(page.locator("h2")).toBeVisible({ timeout: 15_000 });
