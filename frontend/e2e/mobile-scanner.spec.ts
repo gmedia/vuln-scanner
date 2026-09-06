@@ -1,7 +1,7 @@
 import { test, expect } from "./fixtures";
 import path from "path";
 
-test.describe("Mobile Scanner", () => {
+test.describe("Mobile Scanner @scan", () => {
   test("loads mobile scanner page with upload area", async ({ page }) => {
     await page.goto("/scan/mobile");
     await expect(page.locator("h2:has-text('Mobile scanner')")).toBeVisible();

@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures";
 
-test.describe("IP Scanner Error States", () => {
+test.describe("IP Scanner Error States @scan", () => {
   test("shows validation error for empty IP", async ({ page }) => {
     await page.goto("/scan/ip");
     await page.locator('button:has-text("Start IP scan")').click();

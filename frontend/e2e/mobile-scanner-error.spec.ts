@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures";
 
-test.describe("Mobile Scanner Error States", () => {
+test.describe("Mobile Scanner Error States @scan", () => {
   test("shows error for wrong file type on Android", async ({ page }) => {
     await page.goto("/scan/mobile");
     const fileInput = page.locator('input[type="file"]');

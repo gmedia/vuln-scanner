@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures";
 
-test.describe("Domain Scanner Error States", () => {
+test.describe("Domain Scanner Error States @scan", () => {
   test("shows validation error for empty domain", async ({ page }) => {
     await page.goto("/scan/domain");
     await page.locator('button:has-text("Start domain scan")').click();
