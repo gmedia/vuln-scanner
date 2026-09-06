@@ -32,7 +32,7 @@
 | **Host Pro** | Small corporate VPS | **≤3** | **350.000** | Daily default | Manual + optional auto for webshell/backdoor | No |
 | **Host Multi** | Multi-site VPS / small farm | **≤10** | **900.000** | Daily | Same as Pro | **P13 detect** + **P14 F protect** (customer nginx snippet; not Sinexis edge) |
 
-**Out of SKU v1:** Imunify replacement, shared-host thousands of UIDs, KernelCare, PHP PD, email anti-spam product.
+**Out of SKU v1:** **Full** Imunify360 / CloudLinux replacement (cPanel shared, PD, KernelCare, email, thousands of UIDs). **Displace-lite** on a **single nginx VPS** is **not** this line — see H5 + [`vps-displace-imunify-dev-plan.md`](../specs/vps-displace-imunify-dev-plan.md).
 
 ---
 

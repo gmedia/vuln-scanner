@@ -106,7 +106,7 @@ Regional AM can demo: enroll Guard → helper on fixture → **real** hit on **t
 
 Slices **A–H** remain the **PR stream** names. Waves are **when sales can demo** vs remaining engineering. **Do not** re-implement S1–S12. Implement app code **only** when the user names a slice **and** says `buat` / `kerjakan`.
 
-**Control-plane fact:** P12 S0–S12 is on `main`. That is **not** “ready to sell as Imunify replacement.” Residual: helper **AM-repeatable** on `/host`, SKU invoice lock, WAF mix-up.
+**Control-plane fact:** P12 S0–S12 is on `main`. That is **not** ready to sell as a **full** Imunify360 replacement (PD/WebShield/cPanel). **Displace-lite** on nginx VPS is a **separate** AM sentence after the honesty threshold in [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md). Residual: helper **AM-repeatable** on `/host`, SKU invoice lock, WAF mix-up.
 
 ### Job map (Imunify job → Sinexis wave)
 
