@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures";
 
-test.describe("Domain Scanner", () => {
+test.describe("Domain Scanner @scan", () => {
   test("loads domain scanner page with form", async ({ page }) => {
     await page.goto("/scan/domain");
     await expect(page.locator("h2:has-text('Domain scanner')")).toBeVisible();

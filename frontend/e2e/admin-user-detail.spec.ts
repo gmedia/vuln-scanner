@@ -14,7 +14,7 @@ async function goToFirstUserDetail(page: import("@playwright/test").Page) {
   await page.waitForURL(/\/admin\/users\/[a-f0-9-]+/, { timeout: 15_000 });
 }
 
-test.describe("Admin — User Detail", () => {
+test.describe("Admin — User Detail @admin", () => {
   test("page loads with USER DETAILS heading", async ({ page }) => {
     await goToFirstUserDetail(page);
     await page

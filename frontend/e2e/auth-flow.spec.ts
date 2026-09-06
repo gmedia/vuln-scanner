@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { e2eEmail, e2ePassword } from "./credentials";
 
-test.describe("Auth — Login", () => {
+test.describe("Auth — Login @smoke", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
   test("login page renders correctly", async ({ page }) => {
@@ -47,7 +47,7 @@ test.describe("Auth — Login", () => {
   });
 });
 
-test.describe("Auth — Register", () => {
+test.describe("Auth — Register @smoke", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
   test("register page renders correctly", async ({ page }) => {
@@ -103,7 +103,7 @@ test.describe("Auth — Register", () => {
   });
 });
 
-test.describe("Auth — Logout", () => {
+test.describe("Auth — Logout @smoke", () => {
   test("logout redirects to login page", async ({ page }) => {
     await page.goto("/dashboard");
     await page.waitForSelector("header", { timeout: 10_000 });

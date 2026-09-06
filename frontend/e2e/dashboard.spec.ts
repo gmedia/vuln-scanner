@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures";
 
-test.describe("Dashboard", () => {
+test.describe("Dashboard @smoke", () => {
   test("loads and shows all UI elements", async ({ page }) => {
     await page.goto("/dashboard");
     await expect(page.locator("h2:has-text('Ringkasan')")).toBeVisible();
@@ -94,5 +94,12 @@ test.describe("Dashboard", () => {
 
     await page.locator("aside").locator("a:has-text('Dasbor')").first().click();
     await expect(page).toHaveURL("/dashboard");
+  });
+
+  test("org switcher frozen testid is present", async ({ page }) => {
+    await page.goto("/dashboard");
+    await expect(page.getByTestId("org-switcher")).toBeVisible({
+      timeout: 15_000,
+    });
   });
 });

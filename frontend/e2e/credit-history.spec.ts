@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures";
 
-test.describe("Credit History", () => {
+test.describe("Credit History @shell", () => {
   test("page loads with Credit history heading", async ({ page }) => {
     await page.goto("/credit-history");
     await expect(page.locator("h2:has-text('Credit history')")).toBeVisible();

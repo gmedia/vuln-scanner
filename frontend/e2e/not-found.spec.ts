@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures";
 
-test.describe("404 Page (authenticated)", () => {
+test.describe("404 Page (authenticated) @shell", () => {
   test("shows 404 page for unknown route", async ({ page }) => {
     await page.goto("/some/nonexistent/route");
     await expect(page.locator("text=404")).toBeVisible();
@@ -23,7 +23,7 @@ test.describe("404 Page (authenticated)", () => {
   });
 });
 
-test.describe("404 Page (guest)", () => {
+test.describe("404 Page (guest) @shell", () => {
   test.use({ storageState: { cookies: [], origins: [] }, skipAuth: true });
 
   test("guest sees home and sign in CTAs", async ({ page }) => {

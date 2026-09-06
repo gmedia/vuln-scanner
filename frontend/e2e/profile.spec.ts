@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures";
 
-test.describe("Profile", () => {
+test.describe("Profile @shell", () => {
   test("profile page renders correctly", async ({ page }) => {
     await page.goto("/profile");
     await expect(page.getByRole("heading", { name: "Profile" })).toBeVisible();

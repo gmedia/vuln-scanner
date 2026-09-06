@@ -16,7 +16,7 @@ async function login(
   return body.access_token as string;
 }
 
-test.describe("Export", () => {
+test.describe("Export @scan", () => {
   test("export buttons trigger download on completed scan", async ({
     page,
     request,

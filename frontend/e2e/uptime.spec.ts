@@ -9,7 +9,7 @@ function tcpTarget(): string | undefined {
   return raw || undefined;
 }
 
-test.describe("Uptime", () => {
+test.describe("Uptime @uptime", () => {
   test("sidebar links to Uptime and page loads", async ({ page }) => {
     await page.goto("/dashboard");
     await page.getByTestId("nav-uptime").click();

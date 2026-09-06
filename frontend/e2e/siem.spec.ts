@@ -28,7 +28,7 @@ async function openSiem(
   await expect(page.getByText("Gagal memuat status SIEM")).toHaveCount(0);
 }
 
-test.describe("SIEM — Layer A smoke", () => {
+test.describe("SIEM — Layer A smoke @siem", () => {
   test("page loads heading without crashing", async ({ page }) => {
     await openSiem(page);
   });
@@ -89,7 +89,7 @@ test.describe("SIEM — Layer A smoke", () => {
   });
 });
 
-test.describe("SIEM — Layer B mutations (CI / non-prod)", () => {
+test.describe("SIEM — Layer B mutations (CI / non-prod) @siem", () => {
   test.beforeEach(() => {
     test.skip(
       isPublicProdBase(),

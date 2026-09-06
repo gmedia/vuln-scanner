@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures";
 
-test.describe("AI gateway — Layer A smoke", () => {
+test.describe("AI gateway — Layer A smoke @ai", () => {
   test("page loads heading; flag-off shows empty copy", async ({ page }) => {
     await page.goto("/ai");
     await expect(page.getByRole("heading", { name: "AI Gateway" })).toBeVisible({

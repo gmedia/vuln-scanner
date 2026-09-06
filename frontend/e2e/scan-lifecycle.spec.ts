@@ -26,8 +26,8 @@ async function login(
   return body.access_token as string;
 }
 
-test.describe("Scan Lifecycle", () => {
-  test.describe("Domain scan — full lifecycle via API + UI", () => {
+test.describe("Scan Lifecycle @scan", () => {
+  test.describe("Domain scan — full lifecycle via API + UI @scan", () => {
     test("triggers a domain scan and shows its detail page", async ({
       page,
       request,
@@ -67,7 +67,7 @@ test.describe("Scan Lifecycle", () => {
     });
   });
 
-  test.describe("IP scan — full lifecycle via API + UI", () => {
+  test.describe("IP scan — full lifecycle via API + UI @scan", () => {
     test("triggers an IP scan on localhost, validates UI reflects it", async ({
       page,
       request,
@@ -107,7 +107,7 @@ test.describe("Scan Lifecycle", () => {
     });
   });
 
-  test.describe("API direct — scan CRUD", () => {
+  test.describe("API direct — scan CRUD @scan", () => {
     test("triggers IP scan, fetches status via API", async ({ request }) => {
       const authToken = await login(request);
       // Create
