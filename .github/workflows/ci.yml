@@ -489,8 +489,8 @@ jobs:
 
   e2e-tests:
     needs: [changes, python-tests-backend, python-tests-workers, frontend-typecheck, frontend-unit-tests, frontend-build, python-lint-backend, python-lint-workers, python-typecheck-backend, python-typecheck-workers, frontend-lint]
-    if: ${{
-      always()
+    if: >-
+      ${{ always()
       && !cancelled()
       && (github.event_name != 'workflow_dispatch' || !inputs.skip_tests)
       && (needs.changes.outputs.always_full == 'true'
@@ -508,8 +508,7 @@ jobs:
       && (needs.python-lint-workers.result == 'success' || needs.python-lint-workers.result == 'skipped')
       && (needs.python-typecheck-backend.result == 'success' || needs.python-typecheck-backend.result == 'skipped')
       && (needs.python-typecheck-workers.result == 'success' || needs.python-typecheck-workers.result == 'skipped')
-      && (needs.frontend-lint.result == 'success' || needs.frontend-lint.result == 'skipped')
-    }}
+      && (needs.frontend-lint.result == 'success' || needs.frontend-lint.result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
