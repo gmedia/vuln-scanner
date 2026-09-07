@@ -119,19 +119,19 @@ Optional one-shot poll over SSH (still does not print tokens):
 
 Full Guard enroll/unenroll still uses wipe-first **§4.1** (`scripts/guard-lab-enroll-smoke.sh`). This smoke **does not** enroll.
 
-## 4.1) AM demo script (layperson file loop — Wave 1)
+## 4.1) AM demo script (layperson file loop — **DL1**)
 
-Public-repo safe. Lab SSH alias **`tc5` only**. Never print tokens. Playwright ≠ enroll.
+Canonical checklist: [`specs/dl1-file-loop-runbook.md`](specs/dl1-file-loop-runbook.md). Public-repo safe. Lab **`tc5` only**. Never print tokens. Playwright ≠ enroll.
 
 Talk track (Bahasa, honest):
 
-1. **Guard online** on `/guard` (agent enrolled; wipe-first §4.1 if this is a full enroll demo).
-2. On **`tc5`**: wget the wrapper from `https://sinexis.app/install/sinexis-install.sh`, `head -n1` must be `#!/usr/bin/env bash`.
+1. **Guard online** on `/guard` (wipe-first guide §4.1 if this is a full enroll demo).
+2. On **`tc5`**: wget `https://sinexis.app/install/sinexis-install.sh`, `head -n1` must be `#!/usr/bin/env bash`.
 3. `sudo ./sinexis-install.sh` — helper (menu 2) with `--token-file` (mode 600). Do not `curl | bash`.
-4. SPA **`/host`**: add site whose folder exists **on that VM** (lab fixture under `/var/www`). Empty list ≠ clean.
-5. **Scan now**. Wait until `/host` shows a finished check **or** an honest fail (`pending` / unreachable). **Never** invent hits.
-6. If a real hit exists on the fixture: **Quarantine** → wait helper queue → **Restore**. Auto-clean rewrite is out.
-7. Do **not** say “Imunify replacement.” Quote **Host Basic 1 site** until finance `service_id`.
+4. SPA **`/host`**: add site whose folder exists **on that VM**. Empty list ≠ clean.
+5. **Scan now**. Finished check **or** honest fail. **Never** invent hits.
+6. Real hit: SPA **Quarantine** (status queued until helper `mv`) → then SPA **Restore**. Auto-clean / MDS is out.
+7. Do **not** say “Imunify replacement.” File demo = **Host Basic** until finance `service_id`.
 
 ## 5) Honesty for AM
 
@@ -155,7 +155,7 @@ Do **not** paste the snippet onto `sinexis.app` edge nginx. Customer (or lab) VP
 | Env for ingest | Menu **7** / `--configure-waf-ingest --waf-site-id <host_sites UUID>` writes `SINEXIS_WAF_SITE_ID` + `SINEXIS_WAF_AUDIT_LOG`. Auto-detects `SecAuditLog` (often `/var/log/nginx/modsec_audit_log`). Override with `--waf-audit-log`. systemd `ReadOnlyPaths` includes those files (leading `-` = ignore if missing). |
 | Status | `--status` / menu **6**: include files, ingest UUID prefix, audit path, **log size vs unread cursor bytes**, parse of **last 2k** (rule:path only — no body, no `journalctl`). |
 | Poll once | Menu **8** / `--poll-once` starts `sinexis-host-protect@<GUARD-UUID>.service`. Do not `journalctl` (token in env). Timer still every 5 min. |
-| Live rows in SPA | After nginx actually matches **and** helper poll POSTs `/api/host/agent/waf-events`. Simulate is preview only (`mock.sqli.1`). |
+| Live rows in SPA | After nginx actually matches **and** helper poll POSTs `/api/host/agent/waf-events`. Simulate is **lab-only** (fixture site); live table is starter ids **1001–1004**. |
 | Duplicate probes | API drops identical path+rule+method+action within ~10 minutes. |
 
 Prove loopback (lab): `GET` a fixture path that returns **403**; then trigger helper poll. SPA WAF table should show the **real** `rule_id`, not only Simulate.
