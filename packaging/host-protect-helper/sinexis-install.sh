@@ -734,6 +734,10 @@ SecResponseBodyAccess Off
 SecRule REQUEST_URI "@beginsWith /xmlrpc.php" "id:1001,phase:1,t:none,deny,status:403,msg:\'sinexis.xmlrpc\'"
 SecRule ARGS "@rx (?i)(union\\s+select|or\\s+1=1)" "id:1002,phase:2,t:none,deny,status:403,msg:\'sinexis.sqli\'"
 SecRule REQUEST_URI "@rx \\.\\./" "id:1003,phase:1,t:none,deny,status:403,msg:\'sinexis.path.traversal\'"
+SecRule REQUEST_URI "@beginsWith /wp-login.php" "id:1005,phase:1,t:none,deny,status:403,msg:\'sinexis.wplogin.payload\',chain"
+SecRule REQUEST_METHOD "@streq POST" "t:none,chain"
+SecRule ARGS "@rx (?i)(union\\s+select|or\\s+1=1|eval\\s*\\(|base64_decode\\s*\\()" "t:none"
+SecRule REQUEST_URI "@rx (?i)(eval\\s*\\(|base64_decode\\s*\\()" "id:1006,phase:1,t:none,deny,status:403,msg:\'sinexis.php.wrapper\'"
 ';
 EOF
   chmod 644 "$dest"
