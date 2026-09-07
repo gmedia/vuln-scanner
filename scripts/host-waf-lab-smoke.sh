@@ -18,8 +18,10 @@
 # DL2 live probes (ops, after ModSec is loaded on the lab vhost — not this script):
 #   POST /wp-login.php with ARGS union+select  → expect 403 (id 1005)
 #   GET  /eval(  or URI containing base64_decode( → expect 403 (id 1006)
+#   GET  /wp-cron.php  → expect 403 (id 1007)
+#   GET  URI php:// or data://  → expect 403 (id 1008)
 #   GET  /wp-admin/  → expect 200 (not in pack)
-# This script only asserts the snippet contains id:1005/id:1006 and no wp-admin.
+# This script only asserts the snippet contains id:1005–1008 and no wp-admin.
 
 set -euo pipefail
 
@@ -224,6 +226,8 @@ fetch_snippet() {
   printf '%s' "$SNIPPET" | grep -qiE '(^|[[:space:]])listen[[:space:]]' && die "snippet must not contain listen"
   printf '%s' "$SNIPPET" | grep -q 'id:1005' || die "snippet missing original rule 1005"
   printf '%s' "$SNIPPET" | grep -q 'id:1006' || die "snippet missing original rule 1006"
+  printf '%s' "$SNIPPET" | grep -q 'id:1007' || die "snippet missing original rule 1007"
+  printf '%s' "$SNIPPET" | grep -q 'id:1008' || die "snippet missing original rule 1008"
   printf '%s' "$SNIPPET" | grep -qi 'wp-admin' && die "snippet must not match /wp-admin/"
   log "snippet ok (not printed)"
 }
