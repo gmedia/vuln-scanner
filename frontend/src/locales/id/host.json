@@ -34,7 +34,7 @@
   "hitsUnreachable": "Pemeriksaan tidak selesai di server Anda. Hasil muncul hanya setelah pemeriksaan itu mengirim data kembali.",
   "scanQueued": "Masih memeriksa di server Anda. Hasil belum ada.",
   "scanCompleted": "Pemeriksaan selesai. {{count}} file masih perlu keputusan (karantina atau abaikan).",
-  "scanCompletedNone": "Pemeriksaan selesai. Tidak ada file mencurigakan pada folder yang dicek.",
+  "scanCompletedNone": "Pemeriksaan selesai. Tidak ada file mencurigakan pada folder yang dicek — bukan server bersih.",
   "scanCompletedIgnored": "Pemeriksaan selesai. {{count}} file sama dengan yang sudah Anda abaikan — tidak ada keputusan baru.",
   "scanCompletedUnlisted": "Pemeriksaan selesai. Ada temuan, tetapi tidak tampil di daftar ini. Coba Scan sekarang.",
   "showIgnored": "Tampilkan yang diabaikan",

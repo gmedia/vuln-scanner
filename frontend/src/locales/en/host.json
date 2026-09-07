@@ -34,7 +34,7 @@
   "hitsUnreachable": "The check did not finish on your server. Results appear only after that check sends them back.",
   "scanQueued": "Still checking on your server. Results are not in yet.",
   "scanCompleted": "Check finished. {{count}} file(s) still need a decision (quarantine or ignore).",
-  "scanCompletedNone": "Check finished. No suspicious files in the folder it could check.",
+  "scanCompletedNone": "Check finished. No suspicious files in the folder it could check — not a clean server.",
   "scanCompletedIgnored": "Check finished. {{count}} file(s) match what you already marked Ignore — nothing new to decide.",
   "scanCompletedUnlisted": "Check finished. Findings were recorded but are not in this list. Try Scan now.",
   "showIgnored": "Show ignored files",
