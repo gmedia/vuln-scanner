@@ -11,7 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.ai_gateway import AiApiKey
 from app.utils import hash_key
 
-KEY_PREFIX = "sk-sx-"
+KEY_PREFIX = "sx-"
+LEGACY_KEY_PREFIX = "sk-sx-"
 
 
 def mint_plaintext() -> str:
@@ -72,7 +73,7 @@ async def revoke_key(db: AsyncSession, *, organization_id: UUID, key_id: UUID) -
 
 
 async def authenticate_customer_key(db: AsyncSession, bearer: str) -> AiApiKey:
-    if not bearer.startswith(KEY_PREFIX):
+    if not (bearer.startswith(KEY_PREFIX) or bearer.startswith(LEGACY_KEY_PREFIX)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
     row = (
         await db.execute(select(AiApiKey).where(AiApiKey.key_hash == hash_key(bearer)))

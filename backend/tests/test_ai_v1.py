@@ -108,7 +108,7 @@ async def test_keys_and_v1_chat(db_session: AsyncSession, ctx) -> None:
             created = await ac.post("/api/ai/keys", headers=_auth(owner, org.id), json={"name": "cli"})
             assert created.status_code == 201, created.text
             plain = created.json()["key"]
-            assert plain.startswith("sk-sx-")
+            assert plain.startswith("sx-")
             listed = await ac.get("/api/ai/keys", headers=_auth(owner, org.id))
             assert listed.status_code == 200
             assert listed.json()["items"][0].get("key") in (None, "")
@@ -187,5 +187,28 @@ async def test_keys_and_v1_chat(db_session: AsyncSession, ctx) -> None:
 
 
 def test_v1_flag_off(client) -> None:
-    r = client.get("/v1/models", headers={"Authorization": "Bearer sk-sx-x", "X-E2E-Test": "1"})
+    r = client.get("/v1/models", headers={"Authorization": "Bearer sx-x", "X-E2E-Test": "1"})
     assert r.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_legacy_sk_sx_prefix_still_authenticates(db_session: AsyncSession, ctx) -> None:
+    from app.models.ai_gateway import AiApiKey
+    from app.services.ai_keys import LEGACY_KEY_PREFIX, authenticate_customer_key
+    from app.utils import hash_key
+
+    org = ctx["org"]
+    owner = ctx["owner"]
+    plain = LEGACY_KEY_PREFIX + "legacytokenvalue0123456789abcd"
+    db_session.add(
+        AiApiKey(
+            organization_id=org.id,
+            created_by_user_id=owner.id,
+            name="legacy",
+            prefix=plain[:16],
+            key_hash=hash_key(plain),
+        )
+    )
+    await db_session.commit()
+    row = await authenticate_customer_key(db_session, plain)
+    assert row.name == "legacy"
