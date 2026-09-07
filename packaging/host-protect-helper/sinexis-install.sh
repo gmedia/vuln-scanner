@@ -731,9 +731,9 @@ modsecurity_rules '
 SecRuleEngine DetectionOnly
 SecRequestBodyAccess Off
 SecResponseBodyAccess Off
-SecRule REQUEST_URI "@beginsWith /xmlrpc.php" "id:1001,phase:1,t:none,deny,status:403,msg:\'mock.xmlrpc\'"
-SecRule ARGS "@rx (?i)(union\\s+select|or\\s+1=1)" "id:1002,phase:2,t:none,deny,status:403,msg:\'mock.sqli.1\'"
-SecRule REQUEST_URI "@rx \\.\\./" "id:1003,phase:1,t:none,deny,status:403,msg:\'mock.rce.path\'"
+SecRule REQUEST_URI "@beginsWith /xmlrpc.php" "id:1001,phase:1,t:none,deny,status:403,msg:\'sinexis.xmlrpc\'"
+SecRule ARGS "@rx (?i)(union\\s+select|or\\s+1=1)" "id:1002,phase:2,t:none,deny,status:403,msg:\'sinexis.sqli\'"
+SecRule REQUEST_URI "@rx \\.\\./" "id:1003,phase:1,t:none,deny,status:403,msg:\'sinexis.path.traversal\'"
 ';
 EOF
   chmod 644 "$dest"
