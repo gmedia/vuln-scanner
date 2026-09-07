@@ -173,7 +173,8 @@ async def test_upsert_simulate_and_list(db_session: AsyncSession, ctx):
             assert "?" not in body["path"]
             events = await client.get("/api/host/waf/events", headers=_auth(owner, org.id))
             assert events.status_code == 200
-            assert len(events.json()) == 1
+            assert events.json() == []
+            assert body["rule_id"] == "mock.sqli.1"
             listed = await client.get("/api/host/waf/policies", headers=_auth(owner, org.id))
             assert listed.status_code == 200
             assert len(listed.json()) == 1
@@ -195,7 +196,8 @@ async def test_upsert_simulate_and_list(db_session: AsyncSession, ctx):
                 headers=_auth(owner, org.id),
             )
             assert filtered.status_code == 200
-            assert len(filtered.json()) == 2
+            assert filtered.json() == []
+            assert all(row.get("rule_id") != "mock.sqli.1" for row in filtered.json())
             off = await client.put(
                 f"/api/host/waf/sites/{site.id}/policy",
                 headers=_auth(owner, org.id),
@@ -288,7 +290,10 @@ async def test_engine_coraza_snippet(db_session: AsyncSession, ctx):
             assert "do not paste onto sinexis.app" in body["content"]
             assert "listen" not in body["content"].lower()
             assert "SecRequestBodyAccess Off" in body["content"]
-            assert "mock.sqli.1" in body["content"]
+            assert "sqli.args" in body["content"]
+            assert "mock.sqli.1" not in body["content"]
+            assert "xmlrpc.php" in body["content"]
+            assert "path.traversal" in body["content"]
             missing = await client.get(
                 f"/api/host/waf/sites/{ctx['other_site'].id}/snippet",
                 headers=_auth(owner, org.id),
@@ -505,6 +510,13 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
                             "rule_id": "77350396",
                             "method": "GET",
                             "path": "/libraries/axios/axios.min.js",
+                            "http_status": 200,
+                        },
+                        {
+                            "action": "log",
+                            "rule_id": "mock.sqli.1",
+                            "method": "GET",
+                            "path": "/sinexis-waf-lab",
                             "http_status": 200,
                         },
                         {

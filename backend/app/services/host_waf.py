@@ -33,7 +33,7 @@ def _strip_query(path: str) -> str:
 
 def is_product_waf_rule(rule_id: str) -> bool:
     rid = (rule_id or "")[:128]
-    return rid in _WAF_STARTER_IDS or rid == _WAF_SIMULATE_RULE
+    return rid in _WAF_STARTER_IDS
 
 
 class HostWafService:
@@ -149,7 +149,7 @@ class HostWafService:
             site_id=site.id,
             policy_id=policy.id,
             action=action,
-            rule_id="mock.sqli.1",
+            rule_id=_WAF_SIMULATE_RULE,
             method="GET",
             path=_strip_query("/sinexis-waf-lab?q=1%27+OR+1%3D1"),
             http_status=403 if action == "block" else 200,
