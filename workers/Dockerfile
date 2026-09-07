@@ -15,6 +15,7 @@ FROM python:3.12-slim-bookworm@sha256:8a7e7cc04fd3e2bd787f7f24e22d5d119aa590d429
 WORKDIR /app
 
 ARG BUNDLETOOL_VERSION=1.18.3
+ARG INSTALL_BUNDLETOOL=0
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
@@ -22,15 +23,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl \
     sudo \
     openjdk-17-jre-headless \
-    curl \
     ca-certificates \
     && mkdir -p /opt/bundletool /tmp/scans /tmp/bundletool-work \
     && chmod 1777 /tmp/scans /tmp/bundletool-work \
-    && curl -fsSL \
-        "https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar" \
-        -o /opt/bundletool/bundletool.jar \
-    && apt-get purge -y curl \
-    && apt-get autoremove -y \
+    && if [ "$INSTALL_BUNDLETOOL" = "1" ]; then \
+         apt-get install -y --no-install-recommends curl \
+         && ( \
+              curl -fsSL --retry 5 --retry-all-errors --retry-delay 3 \
+                --connect-timeout 30 --max-time 180 \
+                "https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar" \
+                -o /opt/bundletool/bundletool.jar \
+           || curl -fsSL --retry 5 --retry-all-errors --retry-delay 3 \
+                --connect-timeout 30 --max-time 180 \
+                "https://ghproxy.net/https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar" \
+                -o /opt/bundletool/bundletool.jar \
+         ) \
+         && apt-get purge -y curl \
+         && apt-get autoremove -y; \
+       fi \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /install /usr/local
