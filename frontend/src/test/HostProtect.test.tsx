@@ -134,6 +134,10 @@ describe("Host Protect page", () => {
       screen.getByRole("heading", { name: "Host Protect" }),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Open Wazuh/i)).not.toBeInTheDocument();
+    expect(screen.getByTestId("host-empty").textContent).not.toMatch(/YARA|fail closed/i);
+    expect(screen.getByTestId("host-empty").textContent).toMatch(
+      /folder of a site|Checks run on that server/i,
+    );
     expect(screen.getByTestId("host-install-download")).toHaveAttribute(
       "download",
       "sinexis-install.sh",
@@ -203,7 +207,7 @@ describe("Host Protect page", () => {
     await user.click(screen.getByTestId("host-empty-cta"));
     expect(screen.getByTestId("host-helper-required")).toBeInTheDocument();
     expect(
-      screen.getByText(/Helper has not polled this agent yet/i),
+        screen.getByText(/has not checked in from this agent yet/i),
     ).toBeInTheDocument();
     await user.type(screen.getByTestId("host-name"), "Web");
     await user.type(screen.getByTestId("host-root"), "/var/www/html");
@@ -477,7 +481,7 @@ describe("Host Protect page", () => {
       expect(screen.getByTestId("host-helper-poll")).toBeInTheDocument(),
     );
     expect(screen.getByTestId("host-helper-poll").textContent).toMatch(
-      /has not polled/i,
+      /has not checked in/i,
     );
   });
 
@@ -740,8 +744,8 @@ describe("Host Protect page", () => {
     expect(screen.getByTestId("host-waf-snippet-status").textContent).toMatch(
       /does not mean nginx already includes|tidak berarti nginx/i,
     );
-    expect(screen.getByTestId("host-waf-helper-poll").textContent).toMatch(
-      /has not polled|belum poll/i,
+      expect(screen.getByTestId("host-waf-helper-poll").textContent).toMatch(
+        /has not checked in|belum laporan/i,
     );
   });
 
