@@ -72,6 +72,9 @@ export default function HostWafPanel({
   const mode: HostWafPolicy["mode"] = policyForSite?.mode ?? "off";
   const selectedSite = sites.find((s) => s.id === selected);
   const siteAgent = agents.find((a) => a.id === selectedSite?.guard_agent_id);
+  const liveEvents = (eventsQ.data ?? []).filter(
+    (e) => e.rule_id !== "mock.sqli.1",
+  );
   const pollIso = siteAgent?.last_helper_poll_at ?? null;
   const pollLabel = formatHelperPollAt(pollIso);
   const pollStale = isHelperPollStale(pollIso);
@@ -261,7 +264,7 @@ export default function HostWafPanel({
       <p className="text-xs text-muted-foreground" data-testid="host-waf-events-hint">
         {t("wafEventsHint")}
       </p>
-      {(eventsQ.data ?? []).length === 0 ? (
+      {liveEvents.length === 0 ? (
         <p
           className="text-sm text-muted-foreground"
           data-testid="host-waf-events-empty"
@@ -279,7 +282,7 @@ export default function HostWafPanel({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {(eventsQ.data ?? []).map((e) => (
+            {liveEvents.map((e) => (
               <TableRow key={e.id}>
                 <TableCell>{e.action}</TableCell>
                 <TableCell>{e.rule_id}</TableCell>

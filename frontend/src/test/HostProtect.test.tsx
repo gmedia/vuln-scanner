@@ -683,7 +683,68 @@ describe("Host Protect page", () => {
       expect(screen.getByTestId("host-waf-simulate")).toBeEnabled(),
     );
     expect(screen.getByTestId("host-waf-simulate-hint").textContent).toMatch(
-      /Preview only/i,
+      /Lab preview only/i,
+    );
+  });
+
+  it("hides unlabeled Simulate mock.sqli.1 from the live WAF table", async () => {
+    vi.mocked(hostApi.listHostSites).mockResolvedValue([
+      {
+        id: "s1",
+        organization_id: "org1",
+        guard_agent_id: "a1",
+        asset_id: null,
+        name: "Web",
+        root_path: "/var/www/html",
+        cms_hint: "wordpress",
+        enabled: true,
+        auto_quarantine: false,
+        scan_interval: "daily",
+        created_by: "u1",
+        created_at: "2026-08-30T00:00:00Z",
+        updated_at: "2026-08-30T00:00:00Z",
+        sku: "multi",
+        sku_limit: 10,
+      },
+    ]);
+    vi.mocked(hostWafApi.listHostWafEvents).mockResolvedValue([
+      {
+        id: "e-sim",
+        organization_id: "org1",
+        site_id: "s1",
+        policy_id: "p1",
+        action: "log",
+        rule_id: "mock.sqli.1",
+        method: "GET",
+        path: "/sinexis-waf-lab",
+        http_status: 200,
+        created_at: "2026-08-30T00:00:00Z",
+      },
+      {
+        id: "e-live",
+        organization_id: "org1",
+        site_id: "s1",
+        policy_id: "p1",
+        action: "block",
+        rule_id: "1002",
+        method: "GET",
+        path: "/index.php",
+        http_status: 403,
+        created_at: "2026-08-30T00:01:00Z",
+      },
+    ]);
+    const user = userEvent.setup();
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByTestId("host-tab-waf")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("host-tab-waf"));
+    await waitFor(() =>
+      expect(screen.getByTestId("host-waf-events")).toBeInTheDocument(),
+    );
+    expect(screen.getByTestId("host-waf-events").textContent).toMatch(/1002/);
+    expect(screen.getByTestId("host-waf-events").textContent).not.toMatch(
+      /mock\.sqli\.1/,
     );
   });
 
