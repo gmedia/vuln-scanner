@@ -178,6 +178,12 @@ export default function HostProtect() {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["host"] }),
   });
 
+  const enabledMut = useMutation({
+    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
+      updateHostSite(id, { enabled }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["host"] }),
+  });
+
   const scanMut = useMutation({
     mutationFn: enqueueHostScan,
     onSuccess: () => {
@@ -606,6 +612,39 @@ export default function HostProtect() {
                             {scanStatusCopy}
                           </p>
                         ) : null}
+                        <div className="mt-2 max-w-xs">
+                          <Label htmlFor={`host-enabled-${s.id}`}>
+                            {t("siteEnabled")}
+                          </Label>
+                          <Select
+                            value={s.enabled ? "on" : "off"}
+                            onValueChange={(v) =>
+                              enabledMut.mutate({
+                                id: s.id,
+                                enabled: v === "on",
+                              })
+                            }
+                          >
+                            <SelectTrigger
+                              id={`host-enabled-${s.id}`}
+                              data-testid="host-enabled-existing"
+                              aria-label={t("siteEnabled")}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="on">
+                                {t("siteEnabledOn")}
+                              </SelectItem>
+                              <SelectItem value="off">
+                                {t("siteEnabledOff")}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {t("siteEnabledHint")}
+                          </p>
+                        </div>
                         <div className="mt-2 max-w-xs">
                           <Label htmlFor={`host-interval-${s.id}`}>
                             {t("scanInterval")}

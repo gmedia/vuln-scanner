@@ -335,6 +335,7 @@ describe("Host Protect page", () => {
     expect(
       screen.getByTestId("host-auto-quarantine-existing"),
     ).toBeInTheDocument();
+    expect(screen.getByTestId("host-enabled-existing")).toBeInTheDocument();
   });
 
   it("sends auto_quarantine false by default when creating a site", async () => {
