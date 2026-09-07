@@ -488,6 +488,8 @@ async def test_agent_waf_ingest_persists_and_strips_query(db_session: AsyncSessi
     assert rows[0].method == "GET"
     assert rows[0].action == "block"
     assert rows[0].http_status == 403
+    await db_session.refresh(agent)
+    assert agent.last_helper_poll_at is not None
     _bind_db(db_session)
     try:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
