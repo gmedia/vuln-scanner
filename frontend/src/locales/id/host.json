@@ -51,6 +51,8 @@
   "helperNeverPolled": "Helper belum pernah laporan dari agen ini.",
   "helperPolled": "Helper terakhir laporan {{when}}.",
   "helperStale": "Helper terakhir laporan {{when}} — lebih dari 30 menit. Scan sekarang bisa gagal sampai helper jalan lagi.",
+  "helperFleetNever": "Belum ada laporan Host Protect helper dari agen Guard. Daftar kosong bukan berarti server bersih.",
+  "helperFleetStale": "Helper Host Protect terakhir laporan {{when}} — lebih dari 30 menit. Daftar kosong di sini bukan hasil bersih sampai helper laporan lagi.",
   "installHint": "Di VPS Guard, unduh satu file dari sinexis.app. Jangan clone repo. Jangan pipa curl ke bash.",
   "installDownload": "Unduh sinexis-install.sh",
   "installCheck": "Baris pertama harus diawali #! — jika muncul HTML, unduhan gagal.",
