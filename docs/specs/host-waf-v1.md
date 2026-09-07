@@ -12,6 +12,8 @@
 
 **Follow-on:** protect-on-customer-nginx is **P14 slice F** / **wave 2** — [`imunify-class-onbox.md`](imunify-class-onbox.md) §7. Original pack widen = **DL2** in [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md). Protect mode is **Host Multi** only; snippet still never for `sinexis.app` edge.
 
+**Lab probe (tc5, after ModSec on vhost; never `sinexis.app` edge):** `host-waf-lab-smoke.sh` asserts snippet `id:1005`/`id:1006` and no `wp-admin`. Live curl (ops): POST `/wp-login.php` + payload ARGS → **403**; URI `eval(` / `base64_decode(` → **403**; GET `/wp-admin/` → **200**.
+
 ---
 
 ## 0) Relation to Host Protect (read first)

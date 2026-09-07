@@ -1,6 +1,6 @@
 # Spec: VPS displace-lite vs Imunify360 (development plan)
 
-**Status:** **docs** (2026-09-07). **DL0 shipped** (`main` #647). **DL1** runbook shipped (`main` #649). **DL2** pack 1005/1006 = this PR. Owner **intent:** AM able to say **“ganti Imunify dengan Sinexis di VPS/server”** — **only** on a **single nginx VPS or dedicated**, **not** shared cPanel/CloudLinux farms. That short fragment is **internal intent**, **forbidden in customer meetings** until **Sentence-ok** (§1).
+**Status:** **docs** (2026-09-07). **DL0 shipped** (`main` #647). **DL1** runbook shipped (`main` #649). **DL2** pack 1005/1006 shipped (`main` #651). Owner **intent:** AM able to say **“ganti Imunify dengan Sinexis di VPS/server”** — **only** on a **single nginx VPS or dedicated**, **not** shared cPanel/CloudLinux farms. That short fragment is **internal intent**, **forbidden in customer meetings** until **Sentence-ok** (§1).
 **Epic:** **P14 follow-on honesty plan** (jobs + original stack). Does **not** reopen P12 S1–S12 or P13 S0–S5.
 **Legal:** [`imunify-beside-not-roadmap.md`](../commercial/imunify-beside-not-roadmap.md) still forbids clone PRs, trademarks, Imunify/CRS commercial DB in git, “Imunify compatible” in UI. This file is a **job + speech gate**, not parity.
 **HTTP stack:** **nginx + ModSecurity (or Coraza spoa) on the customer/lab vhost.** **Caddy = out** until a **named** slice. Do not say “nginx/Caddy” in AM copy.
@@ -12,7 +12,7 @@
 |---------------|-----|---------|
 | **DL0** | residual **C** / Wave 0 | Simulate/lab-gate; do **not** rebuild installer/heartbeat |
 | **DL1** | Wave 1 runbook; P14 **D** (disk quarantine) **already shipped** | AM script, not a new queue |
-| **DL2** | follow-on to **F** (protect shipped) | Original pack **widen** — **1005/1006 shipped** (this branch) |
+| **DL2** | follow-on to **F** (protect shipped) | Original pack **widen** — **1005/1006 shipped** (`main` #651) |
 | **DL3** | — | Notify; **parked** until live ingest events |
 
 P14 **D** = on-box quarantine (**S11**). Displace **DL1** is **not** a second D.
@@ -118,7 +118,7 @@ Canonical: [`dl1-file-loop-runbook.md`](dl1-file-loop-runbook.md) + [`host-prote
 
 **DoD:** Non-engineer finishes **SPA** loop after helper is live. Quarantine path under `/var/lib/sinexis/quarantine` then restore. Copy: quarantine ≠ clean site. SSH for install is expected.
 
-### DL2 — Original HTTP pack widen (**shipped in this PR**)
+### DL2 — Original HTTP pack widen (**shipped** #651)
 
 | In | Out |
 |----|-----|
@@ -126,7 +126,7 @@ Canonical: [`dl1-file-loop-runbook.md`](dl1-file-loop-runbook.md) + [`host-prote
 | Protect remains Host **Multi**; snippet customer nginx | Sinexis edge Coraza; Caddy adapter |
 | CMS-admin FP: snippet has **no** `wp-admin` match (GET `/wp-admin/` stays 200 when ModSec is loaded) | Ingest IM360/CRS noise |
 
-**DoD:** pytest/installer assert `id:1005`/`1006` and `wp-admin` absent. Live curl 403 on tc5 remains **ops** (ModSec on vhost).
+**DoD:** pytest/installer assert `id:1005`/`1006` and `wp-admin` absent. `host-waf-lab-smoke.sh` documents + asserts the same. Live curl 403 on tc5 remains **ops** (ModSec on vhost): POST `/wp-login.php`+payload, URI eval/base64; GET `/wp-admin/` stays 200.
 
 ### DL3 — Notify (parked)
 
