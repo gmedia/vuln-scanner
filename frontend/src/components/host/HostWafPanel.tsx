@@ -78,6 +78,16 @@ export default function HostWafPanel({
   const canProtect =
     sites.length === 0 ||
     (selectedSite ? (selectedSite.sku ?? "multi") === "multi" : true);
+  const labRoot = selectedSite?.root_path ?? "";
+  const labName = (selectedSite?.name ?? "").toLowerCase();
+  const isLabSite =
+    Boolean(selectedSite) &&
+    !labRoot.toLowerCase().includes("erp") &&
+    !labRoot.toLowerCase().includes("sx-erpstg") &&
+    (/^\/var\/www\/host-(waf|protect)-fixture/.test(labRoot) ||
+      labRoot.startsWith("/srv/www/host-waf-fixture") ||
+      labName.startsWith("lab-host-waf"));
+  const showSimulate = Boolean(selected) && isLabSite;
 
   const saveMut = useMutation({
     mutationFn: (next: HostWafPolicy["mode"]) =>
@@ -183,14 +193,16 @@ export default function HostWafPanel({
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              data-testid="host-waf-simulate"
-              disabled={!selected || mode === "off" || simMut.isPending}
-              onClick={() => simMut.mutate()}
-            >
-              {t("wafSimulate")}
-            </Button>
+            {showSimulate ? (
+              <Button
+                variant="outline"
+                data-testid="host-waf-simulate"
+                disabled={mode === "off" || simMut.isPending}
+                onClick={() => simMut.mutate()}
+              >
+                {t("wafSimulate")}
+              </Button>
+            ) : null}
             <Button
               variant="outline"
               data-testid="host-waf-copy-snippet"
@@ -255,7 +267,7 @@ export default function HostWafPanel({
         </>
       )}
       <p className="text-xs text-muted-foreground" data-testid="host-waf-simulate-hint">
-        {t("wafSimulateHint")}
+        {showSimulate ? t("wafSimulateHint") : t("wafSimulateProdHint")}
       </p>
       <h3 className="text-sm font-medium">{t("wafEvents")}</h3>
       <p className="text-xs text-muted-foreground" data-testid="host-waf-events-hint">

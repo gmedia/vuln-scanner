@@ -162,21 +162,43 @@ async def test_upsert_simulate_and_list(db_session: AsyncSession, ctx):
             )
             assert put.status_code == 200, put.text
             assert put.json()["mode"] == "detect"
-            sim = await client.post(
+            prod_sim = await client.post(
                 f"/api/host/waf/sites/{site.id}/simulate",
+                headers=_auth(member, org.id),
+            )
+            assert prod_sim.status_code == 400
+            lab = HostSite(
+                organization_id=org.id,
+                guard_agent_id=ctx["agent"].id,
+                name="lab-host-waf-tc5",
+                root_path="/var/www/host-waf-fixture",
+                created_by=owner.id,
+            )
+            db_session.add(lab)
+            await db_session.commit()
+            await db_session.refresh(lab)
+            lab_put = await client.put(
+                f"/api/host/waf/sites/{lab.id}/policy",
+                headers=_auth(owner, org.id),
+                json={"mode": "detect", "engine": "mock", "paranoia": 1},
+            )
+            assert lab_put.status_code == 200, lab_put.text
+            sim = await client.post(
+                f"/api/host/waf/sites/{lab.id}/simulate",
                 headers=_auth(member, org.id),
             )
             assert sim.status_code == 201, sim.text
             body = sim.json()
             assert body["action"] == "log"
+            assert body["rule_id"] == "mock.sqli.1"
             assert body["path"] == "/sinexis-waf-lab"
             assert "?" not in body["path"]
             events = await client.get("/api/host/waf/events", headers=_auth(owner, org.id))
             assert events.status_code == 200
-            assert len(events.json()) == 1
+            assert events.json() == []
             listed = await client.get("/api/host/waf/policies", headers=_auth(owner, org.id))
             assert listed.status_code == 200
-            assert len(listed.json()) == 1
+            assert len(listed.json()) == 2
             again = await client.put(
                 f"/api/host/waf/sites/{site.id}/policy",
                 headers=_auth(owner, org.id),
@@ -184,18 +206,24 @@ async def test_upsert_simulate_and_list(db_session: AsyncSession, ctx):
             )
             assert again.status_code == 200
             assert again.json()["mode"] == "protect"
+            lab_protect = await client.put(
+                f"/api/host/waf/sites/{lab.id}/policy",
+                headers=_auth(owner, org.id),
+                json={"mode": "protect", "engine": "mock", "paranoia": 2},
+            )
+            assert lab_protect.status_code == 200
             blocked = await client.post(
-                f"/api/host/waf/sites/{site.id}/simulate",
+                f"/api/host/waf/sites/{lab.id}/simulate",
                 headers=_auth(member, org.id),
             )
             assert blocked.status_code == 201
             assert blocked.json()["action"] == "block"
             filtered = await client.get(
-                f"/api/host/waf/events?site_id={site.id}",
+                f"/api/host/waf/events?site_id={lab.id}",
                 headers=_auth(owner, org.id),
             )
             assert filtered.status_code == 200
-            assert len(filtered.json()) == 2
+            assert filtered.json() == []
             off = await client.put(
                 f"/api/host/waf/sites/{site.id}/policy",
                 headers=_auth(owner, org.id),
@@ -288,7 +316,8 @@ async def test_engine_coraza_snippet(db_session: AsyncSession, ctx):
             assert "do not paste onto sinexis.app" in body["content"]
             assert "listen" not in body["content"].lower()
             assert "SecRequestBodyAccess Off" in body["content"]
-            assert "mock.sqli.1" in body["content"]
+            assert "sinexis.sqli" in body["content"]
+            assert "mock.sqli.1" not in body["content"]
             missing = await client.get(
                 f"/api/host/waf/sites/{ctx['other_site'].id}/snippet",
                 headers=_auth(owner, org.id),
@@ -321,6 +350,9 @@ async def test_protect_simulate_opens_siem_case(db_session: AsyncSession, ctx, m
     owner: User = ctx["owner"]
     member: User = ctx["member"]
     site: HostSite = ctx["site"]
+    site.name = "lab-host-waf-siem"
+    site.root_path = "/var/www/host-waf-fixture"
+    await db_session.commit()
     try:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             await client.put(
@@ -356,6 +388,9 @@ async def test_detect_simulate_skips_siem(db_session: AsyncSession, ctx, monkeyp
     owner: User = ctx["owner"]
     member: User = ctx["member"]
     site: HostSite = ctx["site"]
+    site.name = "lab-host-waf-detect"
+    site.root_path = "/var/www/host-waf-fixture"
+    await db_session.commit()
     try:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             await client.put(
@@ -505,6 +540,13 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
                             "rule_id": "77350396",
                             "method": "GET",
                             "path": "/libraries/axios/axios.min.js",
+                            "http_status": 200,
+                        },
+                        {
+                            "action": "log",
+                            "rule_id": "mock.sqli.1",
+                            "method": "GET",
+                            "path": "/sinexis-waf-lab",
                             "http_status": 200,
                         },
                         {
