@@ -740,6 +740,9 @@ SecRule ARGS "@rx (?i)(union\\s+select|or\\s+1=1|eval\\s*\\(|base64_decode\\s*\\
 SecRule REQUEST_URI "@rx (?i)(eval\\s*\\(|base64_decode\\s*\\()" "id:1006,phase:1,t:none,deny,status:403,msg:\'sinexis.php.wrapper\'"
 SecRule REQUEST_URI "@beginsWith /wp-cron.php" "id:1007,phase:1,t:none,deny,status:403,msg:\'sinexis.wpcron\'"
 SecRule REQUEST_URI "@rx (?i)(php://|data://)" "id:1008,phase:1,t:none,deny,status:403,msg:\'sinexis.uri.wrapper\'"
+SecRule REQUEST_URI "@rx (?i)/\\.(env|git)(/|$)" "id:1009,phase:1,t:none,deny,status:403,msg:\'sinexis.dotfile\'"
+SecRule REQUEST_URI "@rx (?i)/phpinfo\\.php" "id:1010,phase:1,t:none,deny,status:403,msg:\'sinexis.phpinfo\'"
+SecRule REQUEST_URI "@rx (?i)/wp-config\\.php" "id:1011,phase:1,t:none,deny,status:403,msg:\'sinexis.wpconfig\'"
 ';
 EOF
   chmod 644 "$dest"
