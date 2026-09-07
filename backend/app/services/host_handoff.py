@@ -11,7 +11,7 @@ from app.models.host_protect import HostHit, HostSite
 from app.models.host_waf import HostWafEvent
 from app.models.siem import SiemCase, SiemCaseNote
 from app.models.user import User
-from app.services.email import send_host_protect_email
+from app.services.email import send_host_protect_email, send_host_waf_email
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,8 @@ async def handoff_critical_hit(db: AsyncSession, hit: HostHit, site: HostSite) -
         except Exception:
             logger.exception("SIEM hand-off failed for host hit %s", hit.id)
 
-    if owner.email:
+    engine = (hit.engine or "").strip().lower()
+    if owner.email and engine != "mock":
         try:
             await send_host_protect_email(
                 owner.email,
@@ -89,6 +90,24 @@ def _waf_note(event: HostWafEvent) -> str:
 def _waf_rule_is_handoff(rule_id: str) -> bool:
     low = rule_id.lower()
     return any(tok in low for tok in WAF_SIEM_TOKENS)
+
+
+async def notify_live_waf_block(event: HostWafEvent, site: HostSite, owner: User) -> None:
+    if event.action != "block" or not owner.email:
+        return
+    try:
+        await send_host_waf_email(
+            owner.email,
+            site_name=site.name,
+            rule_id=event.rule_id,
+            method=event.method,
+            path=event.path,
+            action=event.action,
+            event_id=str(event.id),
+            locale=getattr(owner, "locale", None),
+        )
+    except Exception:
+        logger.exception("Host WAF email failed for event %s", event.id)
 
 
 async def handoff_waf_block(db: AsyncSession, event: HostWafEvent, site: HostSite, actor: User) -> UUID | None:
