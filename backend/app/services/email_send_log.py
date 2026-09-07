@@ -20,6 +20,7 @@ _LABEL_TO_KIND = {
     "Scan diff": "scan_diff",
     "Uptime": "uptime",
     "Host Protect": "host_protect",
+    "Host WAF": "host_waf",
 }
 
 _engine = None

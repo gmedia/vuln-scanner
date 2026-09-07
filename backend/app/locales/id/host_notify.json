@@ -8,5 +8,13 @@
   "open": "Buka Host Protect",
   "or_copy": "Atau salin tautan ini:",
   "footer": "Isi file tidak dilampirkan. Ini bukan kotak masuk Guard atau SIEM.",
-  "preheader": "Hit {hit_class} pada {site}."
+  "preheader": "Hit {hit_class} pada {site}.",
+  "waf_subject": "[Sinexis Host WAF] blokir di {site}",
+  "waf_heading": "Blokir Host WAF",
+  "waf_intro": "Aksi WAF {action} tercatat untuk situs {site}.",
+  "waf_path": "Permintaan: {method} {path}",
+  "waf_rule": "Aturan: {rule_id}",
+  "waf_event": "Id event: {event_id}",
+  "waf_footer": "Isi request tidak dilampirkan. Ini bukan kotak masuk Guard atau SIEM.",
+  "waf_preheader": "Blokir WAF pada {site}."
 }

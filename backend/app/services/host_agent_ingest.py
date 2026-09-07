@@ -23,7 +23,7 @@ from app.schemas.host_protect import (
     HostAgentResultsResponse,
 )
 from app.schemas.host_waf import HostAgentWafEventsIngest, HostAgentWafEventsResponse
-from app.services.host_handoff import handoff_waf_block
+from app.services.host_handoff import handoff_waf_block, notify_live_waf_block
 from app.services.host_path import jail_rel_path
 from app.services.host_scan_runner import _finish_scan
 from app.services.host_waf import _strip_query, is_product_waf_rule
@@ -288,6 +288,7 @@ async def ingest_agent_waf_events(
         await db.flush()
         if owner is not None:
             await handoff_waf_block(db, event, site, owner)
+            await notify_live_waf_block(event, site, owner)
         accepted += 1
     await db.commit()
     return HostAgentWafEventsResponse(ok=True, accepted=accepted)

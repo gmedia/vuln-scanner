@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
+from unittest.mock import AsyncMock
 
 import pytest
 import pytest_asyncio
@@ -452,7 +453,10 @@ async def test_protect_requires_multi_sku(db_session: AsyncSession, ctx):
 
 
 @pytest.mark.asyncio
-async def test_agent_waf_ingest_persists_and_strips_query(db_session: AsyncSession, ctx):
+async def test_agent_waf_ingest_persists_and_strips_query(
+    db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr("app.services.host_handoff.send_host_waf_email", AsyncMock(return_value=True))
     agent: GuardAgent = ctx["agent"]
     site: HostSite = ctx["site"]
     raw, token_hash = generate_results_token()
@@ -526,7 +530,91 @@ async def test_agent_waf_ingest_persists_and_strips_query(db_session: AsyncSessi
 
 
 @pytest.mark.asyncio
-async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, ctx):
+async def test_agent_waf_ingest_block_emails_owner(db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch):
+    sent: list[dict[str, object]] = []
+
+    async def _capture(email_to: str, **kwargs: object) -> bool:
+        sent.append({"to": email_to, **kwargs})
+        return True
+
+    monkeypatch.setattr("app.services.host_handoff.send_host_waf_email", _capture)
+    agent: GuardAgent = ctx["agent"]
+    site: HostSite = ctx["site"]
+    owner: User = ctx["owner"]
+    raw, token_hash = generate_results_token()
+    agent.results_token_hash = token_hash
+    await db_session.commit()
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.post(
+                "/api/host/agent/waf-events",
+                headers={"X-Host-Agent-Token": raw},
+                json={
+                    "agent_id": str(agent.id),
+                    "site_id": str(site.id),
+                    "events": [
+                        {
+                            "action": "block",
+                            "rule_id": "1001",
+                            "method": "POST",
+                            "path": "/xmlrpc.php",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "log",
+                            "rule_id": "1001",
+                            "method": "GET",
+                            "path": "/xmlrpc.php",
+                            "http_status": 200,
+                        },
+                    ],
+                },
+            )
+            assert r.status_code == 200, r.text
+            assert r.json()["accepted"] == 2
+    finally:
+        app.dependency_overrides.clear()
+    assert len(sent) == 1
+    assert sent[0]["to"] == owner.email
+    assert sent[0]["rule_id"] == "1001"
+    assert sent[0]["action"] == "block"
+
+
+@pytest.mark.asyncio
+async def test_protect_simulate_does_not_email(db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "siem_enabled", False)
+    emailed = AsyncMock(return_value=True)
+    monkeypatch.setattr("app.services.host_handoff.send_host_waf_email", emailed)
+    _bind_db(db_session)
+    org = ctx["org"]
+    owner: User = ctx["owner"]
+    member: User = ctx["member"]
+    site: HostSite = ctx["site"]
+    site.name = "lab-host-waf-no-mail"
+    site.root_path = "/var/www/host-waf-fixture"
+    await db_session.commit()
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            await client.put(
+                f"/api/host/waf/sites/{site.id}/policy",
+                headers=_auth(owner, org.id),
+                json={"mode": "protect", "engine": "mock", "paranoia": 1},
+            )
+            blocked = await client.post(
+                f"/api/host/waf/sites/{site.id}/simulate",
+                headers=_auth(member, org.id),
+            )
+            assert blocked.status_code == 201
+            assert blocked.json()["action"] == "block"
+    finally:
+        app.dependency_overrides.clear()
+    emailed.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr("app.services.host_handoff.send_host_waf_email", AsyncMock(return_value=True))
     agent: GuardAgent = ctx["agent"]
     site: HostSite = ctx["site"]
     raw, token_hash = generate_results_token()

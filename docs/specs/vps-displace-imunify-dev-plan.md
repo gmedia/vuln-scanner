@@ -128,9 +128,9 @@ Canonical: [`dl1-file-loop-runbook.md`](dl1-file-loop-runbook.md) + [`host-prote
 
 **DoD:** pytest/installer assert `id:1005`/`1006` and `wp-admin` absent. `host-waf-lab-smoke.sh` documents + asserts the same. Live curl 403 on tc5 remains **ops** (ModSec on vhost): POST `/wp-login.php`+payload, URI eval/base64; GET `/wp-admin/` stays 200.
 
-### DL3 — Notify (parked)
+### DL3 — Notify (unparked)
 
-Malware-detected / WAF-block email using **existing** notify patterns — not Imunify Email. Park until **live** (not Simulate) events exist.
+Malware-detected email skips `engine=mock`. WAF-block email fires only on helper ingest (`notify_live_waf_block`), never Simulate. Uses existing SMTP + `host_notify` locales — not Imunify Email.
 
 ### Parked (not this plan)
 

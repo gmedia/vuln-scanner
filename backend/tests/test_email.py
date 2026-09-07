@@ -9,6 +9,7 @@ from aiosmtplib.errors import SMTPException
 import app.services.email as email_module
 from app.services.email import (
     send_host_protect_email,
+    send_host_waf_email,
     send_password_reset_email,
     send_verification_email,
 )
@@ -712,6 +713,40 @@ class TestSendHostProtectEmail:
         assert sent_msg.get_payload()[0].get_content_type() == "text/plain"
 
 
+class TestSendHostWafEmail:
+    @pytest.mark.asyncio
+    async def test_body_has_host_link_not_request_body(self, monkeypatch):
+        monkeypatch.setattr(email_module, "FRONTEND_URL", "https://app.example.test")
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            ok = await send_host_waf_email(
+                "owner@example.com",
+                site_name="Shop",
+                rule_id="1001",
+                method="POST",
+                path="/xmlrpc.php",
+                action="block",
+                event_id="22222222-2222-2222-2222-222222222222",
+                locale="en",
+            )
+
+        assert ok is True
+        sent_msg = mock_smtp.send_message.call_args[0][0]
+        html = sent_msg.get_payload()[1].get_payload(decode=True).decode("utf-8")
+        assert "https://app.example.test/host" in html
+        assert "1001" in html
+        assert "/xmlrpc.php" in html
+        assert "POST" in html
+        assert "<script" not in html.lower()
+        assert sent_msg["Subject"] == "[Sinexis Host WAF] block on Shop"
+        assert "#22c55e" in html
+        assert sent_msg.get_payload()[0].get_content_type() == "text/plain"
+
+
 class TestEmailSendLogHelpers:
     def test_mask_recipient(self):
         assert mask_recipient("user@example.com") == "u***@example.com"
@@ -724,6 +759,7 @@ class TestEmailSendLogHelpers:
         assert kind_from_label("Scan diff") == "scan_diff"
         assert kind_from_label("Uptime") == "uptime"
         assert kind_from_label("Host Protect") == "host_protect"
+        assert kind_from_label("Host WAF") == "host_waf"
 
     @pytest.mark.asyncio
     async def test_success_records_log(self):
