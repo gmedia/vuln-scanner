@@ -9,7 +9,7 @@
 
 **Not this epic:** Imunify rulesets/UI copy, ModSec/Coraza WAF (S6+), PHP runtime hooks, live kernel patch, auto password-reset, WebShield CAPTCHA, Imunify Email, CageFS-class shared-host isolation.
 
-**Follow-on (docs):** Imunify-**class** on-box stages **P14** — [`imunify-class-onbox.md`](imunify-class-onbox.md) (**waves 0–3** in §7: install/heartbeat → file loop → customer WAF → G/H research). P12 stays file malware control plane; **do not** re-implement S1–S12. P14 **B**: `HOST_PROTECT_ALLOW_LOCAL_WALK` default false — SaaS `isdir` is not proof of customer disk. AM install (slice C / **wave 0**): [`../host-protect-helper-am.md`](../host-protect-helper-am.md).
+**Follow-on (docs):** Imunify-**class** on-box stages **P14** — [`imunify-class-onbox.md`](imunify-class-onbox.md) (**waves 0–3** in §7). **AM “ganti di VPS”:** [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) (**Sentence-ok**; **DL0–DL2**). P12 stays file malware control plane; **do not** re-implement S1–S12. P14 **B**: `HOST_PROTECT_ALLOW_LOCAL_WALK` default false — SaaS `isdir` is not proof of customer disk. AM install (slice C / **wave 0**): [`../host-protect-helper-am.md`](../host-protect-helper-am.md).
 
 ---
 
@@ -93,7 +93,7 @@ Need a **thin control plane**: register web paths on an enrolled host, scan on a
 | ID | Topic | Default |
 |----|--------|---------|
 | **D1** | Topology | **One Guard agent per VM**; sites are paths **on that agent**. No shared-kernel multi-tenant scanner in v1. |
-| **D2** | Positioning | **Attach beside** Imunify where panel already has it; **primary** on GMD VPS/colo without Imunify. |
+| **D2** | Positioning | **Attach beside** Imunify where panel already has it; **primary / displace-lite** on GMD VPS/colo **without** a panel suite — after [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) **Sentence-ok**. **Not** “rip Imunify on cPanel shared.” |
 | **D3** | Cleanup | **Quarantine + restore** only. **No** automatic in-place clean. Auto-quarantine **off** until org admin enables. |
 | **D4** | Scanner | Pluggable: **mock** (CI/lab **only**, `HOST_PROTECT_ALLOW_MOCK`) · **YARA/needles** on the **agent VM** (S10) · optional **ClamAV** **S12** if binary present. Do not vendor Imunify DB. |
 | **D5** | Schedule | Beat-driven per site; default **daily**; cap concurrent scans per org (e.g. 2). |
@@ -308,6 +308,6 @@ No raw file download of malware samples in v1 (exfil risk). Optional later: plat
 
 ## 14. Success (product)
 
-v1 is successful when an org with an enrolled VPS can: **name a web root**, **run a scan**, **see a webshell hit**, **quarantine and restore**, without SSH — and AM can describe it as **Sinexis Host Protect**, not “Imunify but worse.”
+v1 is successful when an org with an enrolled VPS can: **name a web root**, **run a scan**, **see a webshell hit**, **quarantine and restore**, without SSH — and AM can describe it as **Sinexis Host Protect**, not “Imunify but worse.” Full Imunify clone remains **out**. VPS displace-lite (file + thin HTTP + Scan, no PD) is the **follow-on** plan, not this epic’s DoD.
 
 Lab (not Playwright): [`scripts/host-protect-lab-smoke.sh`](../../scripts/host-protect-lab-smoke.sh) after Guard enroll. Fixture path only — never `sx-erpstg`. Quarantine then restore on one hit; ignore only while `open` (not after ignore on the same row). `HOST_PROTECT_ENABLED` must reach **`worker_ip`** (and beat for `run_due`), not only the API. See [`docs/multi-host-ops.md`](../multi-host-ops.md) § Host Protect lab smoke.
