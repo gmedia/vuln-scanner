@@ -479,10 +479,10 @@ describe("Host Protect page", () => {
       /not in this list/i,
     );
     expect(screen.getByTestId("host-scan-status").textContent).toMatch(
-      /No suspicious files in the folder/i,
+      /No suspicious files in the folder it could check — not a clean server/i,
     );
     expect(screen.getByTestId("host-hits-empty").textContent).toMatch(
-      /No suspicious files in the folder/i,
+      /No suspicious files in the folder it could check/i,
     );
     expect(screen.queryByTestId("host-show-ignored")).not.toBeInTheDocument();
   });

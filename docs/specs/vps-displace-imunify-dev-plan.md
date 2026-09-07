@@ -13,7 +13,7 @@
 | **DL0** | residual **C** / Wave 0 | Simulate/lab-gate; do **not** rebuild installer/heartbeat |
 | **DL1** | Wave 1 runbook; P14 **D** (disk quarantine) **already shipped** | AM script, not a new queue |
 | **DL2** | follow-on to **F** (protect shipped) | Original pack **widen** — **1005/1006 shipped** (`main` #651) |
-| **DL3** | — | Notify; **parked** until live ingest events |
+| **DL3** | — | Notify live ingest; **shipped** (`main` #659) |
 
 P14 **D** = on-box quarantine (**S11**). Displace **DL1** is **not** a second D.
 
