@@ -31,7 +31,7 @@
 
 1. `/host` → **Add site**: name + **root path that exists on the VM** + Guard agent.
 2. **Scan now**. Wait until the check **finishes** or an honest fail (`pending_agent` / unreachable). **Never** invent a webshell row.
-3. Copy if empty: *“No suspicious files in the folder it could check — not a clean server.”* (`hitsClean` / `hitsWaitingAgent`).
+3. Copy if empty: *“No suspicious files in the folder it could check — not a clean server.”* (`hitsClean` / `scanCompletedNone` / `hitsWaitingAgent`).
 
 ---
 
