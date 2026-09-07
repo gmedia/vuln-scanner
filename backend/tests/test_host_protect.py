@@ -855,6 +855,8 @@ async def test_agent_ingest_persists_hits(db_session: AsyncSession, ctx):
     assert hits[0].sha256 == "a" * 64
     await db_session.refresh(scan)
     assert scan.status == "completed"
+    await db_session.refresh(agent)
+    assert agent.last_helper_poll_at is not None
 
 
 @pytest.mark.asyncio
