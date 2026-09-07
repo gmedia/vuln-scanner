@@ -575,15 +575,29 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
                             "path": "/index.php",
                             "http_status": 403,
                         },
+                        {
+                            "action": "block",
+                            "rule_id": "1007",
+                            "method": "GET",
+                            "path": "/wp-cron.php",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1008",
+                            "method": "GET",
+                            "path": "/index.php",
+                            "http_status": 403,
+                        },
                     ],
                 },
             )
             assert r.status_code == 200, r.text
-            assert r.json()["accepted"] == 3
+            assert r.json()["accepted"] == 5
     finally:
         app.dependency_overrides.clear()
     rows = (await db_session.execute(select(HostWafEvent).where(HostWafEvent.site_id == site.id))).scalars().all()
-    assert {row.rule_id for row in rows} == {"1001", "1005", "1006"}
+    assert {row.rule_id for row in rows} == {"1001", "1005", "1006", "1007", "1008"}
 
 
 @pytest.mark.asyncio
