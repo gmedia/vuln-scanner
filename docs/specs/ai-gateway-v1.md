@@ -32,7 +32,7 @@ Prod nginx (`nginx/sinexis.app.conf`) proxies `/api/` and `/ws/` to FastAPI; **`
 ## 2. Goals
 
 1. OpenAI-compatible **`GET /v1/models`** and **`POST /v1/chat/completions`** (stream + non-stream) for **allowlisted aliases only**.
-2. Customer keys `sk-sx-…` via `Authorization: Bearer` (OpenAI SDK drop-in). Prefix + SHA-256; plaintext once; **org-bound**.
+2. Customer keys `sx-…` via `Authorization: Bearer` (OpenAI SDK drop-in). Prefix + SHA-256; plaintext once; **org-bound**.
 3. **Org AI wallet** (prepaid IDR) with **reserve → settle/release** so concurrent streams cannot overdraw.
 4. Immutable **usage events** (tokens, billed IDR, COGS IDR, latency, status) — **no prompt body** by default.
 5. Admin: CRUD providers (encrypted creds), models (public alias → upstream id + HPP/markup), global usage, **trial chat** on the same gateway (`source=admin_trial`) with a **platform spend cap**.
@@ -69,7 +69,7 @@ Prod nginx (`nginx/sinexis.app.conf`) proxies `/api/` and `/ws/` to FastAPI; **`
 | **Unit** | Bill **IDR per 1K prompt + 1K completion** from model row (wholesale USD × FX snapshot × markup). Round **up** to whole IDR. |
 | **FX** | Admin-set `AI_USD_IDR` (or per-day table later); no silent live FX |
 | **Catalog** | **Named aliases only** (`sinexis/…`); reject unknown `model` |
-| **Auth `/v1`** | Customer `Authorization: Bearer sk-sx-…` only. **Never** platform `X-API-Key` / `settings.api_key`. JWT **not** for SDK `/v1`. |
+| **Auth `/v1`** | Customer `Authorization: Bearer sx-…` only. **Never** platform `X-API-Key` / `settings.api_key`. JWT **not** for SDK `/v1`. |
 | **Playground / trial** | JWT **admin** → internal `/api/admin/ai/chat`; same proxy; `source=admin_trial`; **platform wallet + monthly IDR cap** |
 | **Org roles** | Owner/admin: mint/revoke keys, read usage, spend. Member: use existing keys if issued to them. **Viewer: no mint, no spend.** |
 | **Prompt retention** | **Metadata only**. `AI_STORE_PROMPTS=false`. If later true: ≤14d, hashed/redact, admin trial included. |
@@ -91,7 +91,7 @@ Prod nginx (`nginx/sinexis.app.conf`) proxies `/api/` and `/ws/` to FastAPI; **`
 | **Org member** | Call `/v1` with a key they were given |
 | **Org viewer** | Usage read-only if product wants parity; **no keys, no spend** (lock: **no spend**) |
 | **Platform admin** | Providers, models, FX, HPP/markup, all-org usage, trial chat, top-up org wallet, kill switch |
-| **SDK client** | OpenAI SDK `base_url=…/v1`, `api_key=sk-sx-…` |
+| **SDK client** | OpenAI SDK `base_url=…/v1`, `api_key=sx-…` |
 | **Upstream** | HTTPS OpenAI-compat `chat/completions` only |
 
 ---
@@ -99,7 +99,7 @@ Prod nginx (`nginx/sinexis.app.conf`) proxies `/api/` and `/ws/` to FastAPI; **`
 ## 6. Architecture
 
 ```text
-SDK  -- Bearer sk-sx- -->  nginx ^~ /v1/  -->  FastAPI AI gateway
+SDK  -- Bearer sx- -->  nginx ^~ /v1/  -->  FastAPI AI gateway
                                               │  hash key, org, RPM/TPM
                                               │  reserve wallet
                                               │  map alias → provider+upstream model
@@ -113,7 +113,7 @@ SPA /ai (customer keys+usage)  -- JWT -->  /api/ai/*
 SPA /admin/ai                  -- admin --> /api/admin/ai/*
 ```
 
-**Middleware:** exclude `/v1` from requiring platform `X-API-Key`. Dedicated authenticator for `sk-sx-` Bearer. Do not treat JWT user tokens as customer AI keys (30-min TTL).
+**Middleware:** exclude `/v1` from requiring platform `X-API-Key`. Dedicated authenticator for `sx-` Bearer. Do not treat JWT user tokens as customer AI keys (30-min TTL).
 
 ---
 
@@ -152,7 +152,7 @@ SPA /admin/ai                  -- admin --> /api/admin/ai/*
 | `organization_id` | required |
 | `created_by_user_id` | |
 | `name` | |
-| `prefix` | `sk-sx-` + 8 chars public |
+| `prefix` | `sx-` + 8 chars public |
 | `key_hash` | SHA-256 of full secret |
 | `rate_limit_rpm` / `tpm` / `max_concurrent` | |
 | `allowed_model_ids` | JSON list or join table; empty = all enabled in catalog |
@@ -237,7 +237,7 @@ Response shape: OpenAI chat completions (including `usage`). Errors: OpenAI-styl
 
 ## 9. Request lifecycle (`/v1/chat/completions`)
 
-1. Authenticate `sk-sx-`; load org + wallet; enforce RPM/TPM/concurrent.
+1. Authenticate `sx-`; load org + wallet; enforce RPM/TPM/concurrent.
 2. Resolve `model` → enabled `ai_models`; reject tools/images/`n!=1`.
 3. Compute **hold_idr** from `max_tokens` (or model cap) × sell price; `SELECT … FOR UPDATE` wallet; if `balance < hold` → 402; insert reservation `open`; debit hold.
 4. Strip customer auth; set wholesale header; POST upstream (timeout).
