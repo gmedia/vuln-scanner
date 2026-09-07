@@ -14,6 +14,10 @@ vi.mock("@/api/admin", async () => {
     listAiUsage: vi.fn(),
     createAiProvider: vi.fn(),
     createAiModel: vi.fn(),
+    updateAiProvider: vi.fn(),
+    deleteAiProvider: vi.fn(),
+    updateAiModel: vi.fn(),
+    deleteAiModel: vi.fn(),
     topupAiWallet: vi.fn(),
     adminAiChat: vi.fn(),
   };
@@ -44,6 +48,68 @@ describe("AdminAi", () => {
     renderPage();
     expect(await screen.findByText("AI Gateway")).toBeInTheDocument();
     expect(await screen.findByText("No providers.")).toBeInTheDocument();
+  });
+
+  it("lists provider and model with edit and delete", async () => {
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [
+        {
+          id: "p1",
+          name: "OpenRouter",
+          base_url: "https://openrouter.ai/api/v1",
+          auth_header: "Authorization",
+          credential_set: true,
+          enabled: true,
+          status: "ok",
+          created_at: "",
+          updated_at: "",
+        },
+      ],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({
+      items: [
+        {
+          id: "m1",
+          provider_id: "p1",
+          public_id: "sinexis/demo",
+          upstream_id: "gpt",
+          hpp_usd_per_1k_in: 0,
+          hpp_usd_per_1k_out: 0,
+          price_idr_per_1k_in: 1,
+          price_idr_per_1k_out: 2,
+          max_ctx: 1,
+          max_tokens_cap: 1,
+          enabled: true,
+          created_at: "",
+          updated_at: "",
+        },
+      ],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({
+      items: [
+        {
+          id: "u1",
+          organization_id: null,
+          source: "admin_trial",
+          model_public_id: "sinexis/demo",
+          prompt_tokens: 1,
+          completion_tokens: 1,
+          billed_idr: 0,
+          cogs_idr: 0,
+          http_status: 200,
+          created_at: "",
+          request_payload: { model: "sinexis/demo" },
+          response_payload: { id: "cmpl" },
+        },
+      ],
+      total: 1,
+    });
+    renderPage();
+    expect(await screen.findByText("OpenRouter")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Edit" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "Delete" }).length).toBeGreaterThan(0);
   });
 
   it("shows feature-off on 404", async () => {
