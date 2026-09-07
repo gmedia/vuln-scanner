@@ -19,7 +19,7 @@ from app.schemas.host_waf import (
     HostWafSnippetResponse,
 )
 from app.services.host_handoff import handoff_waf_block
-from app.services.host_waf_render import render_coraza_include, render_nginx_modsec
+from app.services.host_waf_render import is_lab_waf_site, render_coraza_include, render_nginx_modsec
 from app.services.organization import require_membership
 
 _WAF_STARTER_IDS = frozenset({"1001", "1002", "1003", "1004"})
@@ -32,8 +32,7 @@ def _strip_query(path: str) -> str:
 
 
 def is_product_waf_rule(rule_id: str) -> bool:
-    rid = (rule_id or "")[:128]
-    return rid in _WAF_STARTER_IDS or rid == _WAF_SIMULATE_RULE
+    return (rule_id or "")[:128] in _WAF_STARTER_IDS
 
 
 class HostWafService:
@@ -138,6 +137,8 @@ class HostWafService:
         self._require_feature()
         org_id = await self._require_org(user, organization_id, min_role="member")
         site = await self._site(org_id, site_id)
+        if not is_lab_waf_site(site):
+            raise HTTPException(status_code=400, detail="Simulate is lab-only")
         policy = (
             await self.db.execute(select(HostWafPolicy).where(HostWafPolicy.site_id == site.id))
         ).scalar_one_or_none()
