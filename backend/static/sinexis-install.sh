@@ -738,6 +738,8 @@ SecRule REQUEST_URI "@beginsWith /wp-login.php" "id:1005,phase:1,t:none,deny,sta
 SecRule REQUEST_METHOD "@streq POST" "t:none,chain"
 SecRule ARGS "@rx (?i)(union\\s+select|or\\s+1=1|eval\\s*\\(|base64_decode\\s*\\()" "t:none"
 SecRule REQUEST_URI "@rx (?i)(eval\\s*\\(|base64_decode\\s*\\()" "id:1006,phase:1,t:none,deny,status:403,msg:\'sinexis.php.wrapper\'"
+SecRule REQUEST_URI "@beginsWith /wp-cron.php" "id:1007,phase:1,t:none,deny,status:403,msg:\'sinexis.wpcron\'"
+SecRule REQUEST_URI "@rx (?i)(php://|data://)" "id:1008,phase:1,t:none,deny,status:403,msg:\'sinexis.uri.wrapper\'"
 ';
 EOF
   chmod 644 "$dest"

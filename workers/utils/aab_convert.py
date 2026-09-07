@@ -25,7 +25,7 @@ DEFAULT_AAPT2_PATHS = (
 )
 
 BUNDLETOOL_TIMEOUT_SEC = int(os.environ.get("BUNDLETOOL_TIMEOUT_SEC", "300"))
-BUNDLETOOL_JAVA_TMPDIR = os.environ.get("BUNDLETOOL_JAVA_TMPDIR", "/tmp/scans/bundletool-work")
+BUNDLETOOL_JAVA_TMPDIR = os.environ.get("BUNDLETOOL_JAVA_TMPDIR", "/tmp/bundletool-work")
 STDERR_LIMIT = 2000
 _DISK_FULL_MARKERS = ("no space left", "enospc", "not enough space")
 

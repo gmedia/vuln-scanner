@@ -22,7 +22,7 @@ from app.services.host_handoff import handoff_waf_block
 from app.services.host_waf_render import is_lab_waf_site, render_coraza_include, render_nginx_modsec
 from app.services.organization import require_membership
 
-_WAF_STARTER_IDS = frozenset({"1001", "1002", "1003", "1004", "1005", "1006"})
+_WAF_STARTER_IDS = frozenset({"1001", "1002", "1003", "1004", "1005", "1006", "1007", "1008"})
 _WAF_SIMULATE_RULE = "mock.sqli.1"
 
 

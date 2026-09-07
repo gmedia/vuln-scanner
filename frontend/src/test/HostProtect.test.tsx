@@ -206,6 +206,7 @@ describe("Host Protect page", () => {
     );
     await user.click(screen.getByTestId("host-empty-cta"));
     expect(screen.getByTestId("host-helper-required")).toBeInTheDocument();
+    expect(screen.getByTestId("host-helper-poll-add")).toBeInTheDocument();
     expect(
         screen.getByText(/has not checked in from this agent yet/i),
     ).toBeInTheDocument();

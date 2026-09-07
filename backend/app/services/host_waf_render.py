@@ -77,6 +77,14 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         'SecRule REQUEST_URI "@rx (?i)(eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" '
         "\"id:1006,phase:1,t:none,deny,status:403,msg:\\'sinexis.php.wrapper\\'\""
     )
+    rule_1007 = (
+        'SecRule REQUEST_URI "@beginsWith /wp-cron.php" '
+        "\"id:1007,phase:1,t:none,deny,status:403,msg:\\'sinexis.wpcron\\'\""
+    )
+    rule_1008 = (
+        'SecRule REQUEST_URI "@rx (?i)(php://|data://)" '
+        "\"id:1008,phase:1,t:none,deny,status:403,msg:\\'sinexis.uri.wrapper\\'\""
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -93,6 +101,8 @@ SecRule REQUEST_URI "@rx \\\\.\\\\./" "id:1003,phase:1,t:none,deny,status:403,ms
 SecRule REQUEST_METHOD "@streq POST" "t:none,chain"
 {args_chain}
 {rule_1006}
+{rule_1007}
+{rule_1008}
 {extra}';
 # Paranoia {paranoia}: keep starter rules only. Do not raise to 4 in v1.
 """
