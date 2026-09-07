@@ -107,6 +107,13 @@ describe("UserGuide", () => {
     );
     expect(document.body.querySelector('a[href="#guard"]')).toBeTruthy();
     expect(document.body.textContent ?? "").toMatch(/Host Protect helper/i);
+    expect(document.body.textContent ?? "").toMatch(/1001–1008/);
+    expect(document.body.textContent ?? "").not.toMatch(
+      /Those rows use a CRS or starter rule id/,
+    );
+    expect(document.body.textContent ?? "").toMatch(
+      /Simulate never writes Suspicious files and never emails/,
+    );
     expect(document.body.textContent ?? "").toMatch(/sinexis-install\.sh/);
     expect(document.body.textContent ?? "").toMatch(/sinexis\.app\/install\/sinexis-install\.sh/);
     expect(document.body.textContent ?? "").toMatch(/DOCTYPE html/);
