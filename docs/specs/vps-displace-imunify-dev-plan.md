@@ -1,6 +1,6 @@
 # Spec: VPS displace-lite vs Imunify360 (development plan)
 
-**Status:** **docs** (2026-09-07). Owner **intent:** AM able to say **“ganti Imunify dengan Sinexis di VPS/server”** — **only** on a **single nginx VPS or dedicated**, **not** shared cPanel/CloudLinux farms. That short fragment is **internal intent**, **forbidden in customer meetings** until **Sentence-ok** (§1).
+**Status:** **docs** (2026-09-07). **DL0 shipped** (`main` #647). **DL1** runbook shipped (`main` #649). **DL2** pack 1005/1006 = this PR. Owner **intent:** AM able to say **“ganti Imunify dengan Sinexis di VPS/server”** — **only** on a **single nginx VPS or dedicated**, **not** shared cPanel/CloudLinux farms. That short fragment is **internal intent**, **forbidden in customer meetings** until **Sentence-ok** (§1).
 **Epic:** **P14 follow-on honesty plan** (jobs + original stack). Does **not** reopen P12 S1–S12 or P13 S0–S5.
 **Legal:** [`imunify-beside-not-roadmap.md`](../commercial/imunify-beside-not-roadmap.md) still forbids clone PRs, trademarks, Imunify/CRS commercial DB in git, “Imunify compatible” in UI. This file is a **job + speech gate**, not parity.
 **HTTP stack:** **nginx + ModSecurity (or Coraza spoa) on the customer/lab vhost.** **Caddy = out** until a **named** slice. Do not say “nginx/Caddy” in AM copy.
@@ -56,7 +56,7 @@ Until Demo-ok: do not demo Host as “on-box proof.”
 **Demo-ok + Invoice-ok** and:
 
 1. Original pack has **new numeric IDs beyond 1001–1004** (`1005` wp-login POST+payload, `1006` URI eval/base64), allowlisted, lab probe documented, CMS-admin FP written (**DL2** — pack in git; live 403 still needs ModSec on vhost).
-2. Simulate hidden **or** rows labeled `preview` / `lab`; no unlabeled `mock.sqli.1` in customer UX (**DL0 shipped**). Live `msg:` on 1001–1003 is `sinexis.*`.
+2. Simulate hidden **or** rows labeled `preview` / `lab`; no unlabeled `mock.sqli.1` in customer UX (**DL0 shipped** #647: lab-gate Simulate; starter `msg:` 1001–1003 original labels). Live ingest **1001–1006**.
 3. Demo vhost actually has ModSec loaded (ops checkbox).
 
 Until Sentence-ok use the fallback: *“file + HTTP tipis + scan luar; Imunify tetap lebih dalam di PHP runtime dan bot challenge.”*
@@ -89,7 +89,7 @@ Sources: Imunify360 marketing (6 layers, PD, CloudAV, RapidScan, auto-cleanup, W
 | Crontab / Adminer-zero | None | **Park** |
 | Invoice SKU | Working IDR; `service_id` open | **Invoice-ok** — human |
 
-WAF IDs (`host_waf_render.py`): **1001** `/xmlrpc.php` (`sinexis.xmlrpc`); **1002** ARGS `union select` / `or 1=1` (`sinexis.sqli`); **1003** URI `../`; **1004** lab `/sinexis-waf-lab`; **1005** POST `/wp-login.php` chained with payload ARGS; **1006** URI `eval(` / `base64_decode(`. Product GET/ingest = those IDs. SPA Simulate still inserts **`rule_id=mock.sqli.1`** (lab-only). **Not matched:** GET `/wp-admin/`.
+WAF IDs (`host_waf_render.py`): **1001** `/xmlrpc.php` (`sinexis.xmlrpc`); **1002** ARGS `union select` / `or 1=1` (`sinexis.sqli`); **1003** URI `../` (`sinexis.path.traversal`); **1004** lab `/sinexis-waf-lab`; **1005** POST `/wp-login.php` chained with payload ARGS; **1006** URI `eval(` / `base64_decode(`. Product GET/ingest = those IDs. SPA Simulate is **lab-only** and is **not** listed on the live table (#647). **Not matched:** GET `/wp-admin/`.
 
 ---
 
@@ -97,7 +97,7 @@ WAF IDs (`host_waf_render.py`): **1001** `/xmlrpc.php` (`sinexis.xmlrpc`); **100
 
 Implement **only** when named **DL0/DL1/DL2** + `buat`. Do **not** mix with Workspace/SIEM/Guard Discover. Lab: **tc5**; **never wipe `sx-erpstg`**. Never paste WAF onto `sinexis.app` edge.
 
-### DL0 — Simulate / mock hygiene (default next if `buat`)
+### DL0 — Simulate / mock hygiene (**shipped** #647)
 
 | In | Out |
 |----|-----|
@@ -108,6 +108,8 @@ Implement **only** when named **DL0/DL1/DL2** + `buat`. Do **not** mix with Work
 **DoD:** pytest — Simulate events excluded from “live” list **or** flagged `source=simulate`; ingest still allowlists 1001–1004. Vitest — lab/preview badge **or** Simulate absent in prod UX flag.
 
 ### DL1 — File-loop runbook (not a product PR)
+
+Canonical: [`dl1-file-loop-runbook.md`](dl1-file-loop-runbook.md) + [`host-protect-helper-am.md`](../host-protect-helper-am.md) §4.1.
 
 | In | Out |
 |----|-----|
