@@ -332,6 +332,46 @@ describe("Host Protect page", () => {
       /do not treat this as clean/i,
     );
     expect(screen.getByTestId("host-interval-existing")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("host-auto-quarantine-existing"),
+    ).toBeInTheDocument();
+  });
+
+  it("sends auto_quarantine false by default when creating a site", async () => {
+    vi.mocked(hostApi.createHostSite).mockResolvedValue({
+      id: "s1",
+      organization_id: "org1",
+      guard_agent_id: "a1",
+      asset_id: null,
+      name: "Web",
+      root_path: "/var/www/html",
+      cms_hint: "unknown",
+      enabled: true,
+      auto_quarantine: false,
+      scan_interval: "daily",
+      created_by: "u1",
+      created_at: "2026-08-30T00:00:00Z",
+      updated_at: "2026-08-30T00:00:00Z",
+      sku: "multi",
+      sku_limit: 10,
+    });
+    const user = userEvent.setup();
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByTestId("host-empty-cta")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("host-empty-cta"));
+    expect(screen.getByTestId("host-auto-quarantine")).toBeInTheDocument();
+    await user.type(screen.getByTestId("host-name"), "Web");
+    await user.type(screen.getByTestId("host-root"), "/var/www/html");
+    await waitFor(() =>
+      expect(screen.getByTestId("host-save")).not.toBeDisabled(),
+    );
+    await user.click(screen.getByTestId("host-save"));
+    await waitFor(() => expect(hostApi.createHostSite).toHaveBeenCalled());
+    expect(vi.mocked(hostApi.createHostSite).mock.calls[0][0]).toMatchObject({
+      auto_quarantine: false,
+    });
   });
 
   it("does not claim a clean scan when last scan has hits but the table is empty", async () => {

@@ -72,6 +72,7 @@ export default function HostProtect() {
     "unknown",
   );
   const [scanInterval, setScanInterval] = useState<"daily" | "hourly">("daily");
+  const [autoQuarantine, setAutoQuarantine] = useState(false);
   const [showIgnoredBySite, setShowIgnoredBySite] = useState<
     Record<string, boolean>
   >({});
@@ -137,6 +138,7 @@ export default function HostProtect() {
       setRootPath("");
       setAgentId("");
       setScanInterval("daily");
+      setAutoQuarantine(false);
       setOpen(false);
     },
     onError: (err: { response?: { data?: { detail?: string } } }) => {
@@ -162,6 +164,17 @@ export default function HostProtect() {
       id: string;
       scan_interval: "daily" | "hourly";
     }) => updateHostSite(id, { scan_interval }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["host"] }),
+  });
+
+  const autoQuarantineMut = useMutation({
+    mutationFn: ({
+      id,
+      auto_quarantine,
+    }: {
+      id: string;
+      auto_quarantine: boolean;
+    }) => updateHostSite(id, { auto_quarantine }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["host"] }),
   });
 
@@ -395,6 +408,28 @@ export default function HostProtect() {
                 {t("intervalHint")}
               </p>
             </div>
+            <div>
+              <Label htmlFor="host-auto-quarantine">{t("autoQuarantine")}</Label>
+              <Select
+                value={autoQuarantine ? "on" : "off"}
+                onValueChange={(v) => setAutoQuarantine(v === "on")}
+              >
+                <SelectTrigger
+                  id="host-auto-quarantine"
+                  data-testid="host-auto-quarantine"
+                  aria-label={t("autoQuarantine")}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="off">{t("autoQuarantineOff")}</SelectItem>
+                  <SelectItem value="on">{t("autoQuarantineOn")}</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                {t("autoQuarantineHint")}
+              </p>
+            </div>
             <div className="flex gap-2">
               <Button
                 data-testid="host-save"
@@ -411,6 +446,7 @@ export default function HostProtect() {
                     guard_agent_id: selectedAgentId,
                     cms_hint: cmsHint,
                     scan_interval: scanInterval,
+                    auto_quarantine: autoQuarantine,
                   })
                 }
               >
@@ -599,6 +635,39 @@ export default function HostProtect() {
                               </SelectItem>
                             </SelectContent>
                           </Select>
+                        </div>
+                        <div className="mt-2 max-w-xs">
+                          <Label htmlFor={`host-auto-quarantine-${s.id}`}>
+                            {t("autoQuarantine")}
+                          </Label>
+                          <Select
+                            value={s.auto_quarantine ? "on" : "off"}
+                            onValueChange={(v) =>
+                              autoQuarantineMut.mutate({
+                                id: s.id,
+                                auto_quarantine: v === "on",
+                              })
+                            }
+                          >
+                            <SelectTrigger
+                              id={`host-auto-quarantine-${s.id}`}
+                              data-testid="host-auto-quarantine-existing"
+                              aria-label={t("autoQuarantine")}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="off">
+                                {t("autoQuarantineOff")}
+                              </SelectItem>
+                              <SelectItem value="on">
+                                {t("autoQuarantineOn")}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <p className="mt-1.5 text-xs text-muted-foreground">
+                            {t("autoQuarantineHint")}
+                          </p>
                         </div>
                       </div>
                       <div className="flex gap-2">
