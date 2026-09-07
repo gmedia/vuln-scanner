@@ -116,7 +116,7 @@ Slices **A–H** remain the **PR stream** names. Waves are **when sales can demo
 | Scan files on that disk | Helper POST; honesty #556 | **0–1** — fail-closed already **B**; copy must not look like “empty = clean” when helper missing |
 | Show hits a layperson can act on | SPA `/host`; ignore vs empty **#596** | **1** — remaining: AM demo script; no jargon-only empty states |
 | Isolate / restore | S11 queue **#558** | **1** — already queued; lab **tc5** only |
-| HTTP filter on same host | P13 detect + starter **1001–1006** (**DL2**); **F** protect Multi | **2** — never `sinexis.app` edge; do not ingest IM360 IDs |
+| HTTP filter on same host | P13 detect + starter **1001–1008**; **F** protect Multi; **DL3** live notify | **2** — never `sinexis.app` edge; do not ingest IM360 IDs |
 | Panel / PHP PD | Out | **3** = **G/H** research only |
 
 ### Wave 0 — sellable **install** (default next)
@@ -155,4 +155,4 @@ Slices **A–H** remain the **PR stream** names. Waves are **when sales can demo
 - File plane: [`host-protect-v1.md`](host-protect-v1.md) — **do not** re-implement S1–S12
 - HTTP plane: [`host-waf-v1.md`](host-waf-v1.md)
 - Working IDR: [`sku-host-protect.md`](../commercial/sku-host-protect.md)
-- **VPS displace-lite:** [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) — **Sentence-ok** before short “ganti” line; slices **DL0–DL2**; not shared cPanel; not clone; Caddy out
+- **VPS displace-lite:** [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) — **Sentence-ok** before short “ganti” line; slices **DL0–DL3**; not shared cPanel; not clone; Caddy out
