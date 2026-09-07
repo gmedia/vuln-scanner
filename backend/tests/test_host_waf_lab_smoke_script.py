@@ -17,3 +17,7 @@ def test_lab_script_safety_markers():
     assert "nginx/sinexis.app.conf" in text
     assert "refuses ERP" in text
     assert "tc5 OK" in text
+    assert "id:1005" in text
+    assert "id:1006" in text
+    assert "must not match /wp-admin/" in text
+    assert "POST /wp-login.php" in text
