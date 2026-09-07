@@ -1,6 +1,6 @@
 # Spec: CI selective tests (path + module)
 
-**Status:** **S1 + S2 on `main`** (`#635`, `#637`). S3 optional — wait for explicit `buat S3`. Human residual: required GitHub check **`ci-ok` only**.
+**Status:** **S1 + S2 on `main`** (`#635`, `#637`). **S3** this PR (`feat/ci-selective-s3`). Human residual: required GitHub check **`ci-ok` only**.
 **Goal:** Cut PR CI time without weakening merge/deploy gates (AuthZ, credits, Host Protect honesty, Guard IDOR).
 **Epic:** engineering hygiene — **not** P14, Guard, Workspace, or GTM.
 **Depends:** existing `.github/workflows/ci.yml` (name **CI/CD**); pytest fail-under **75** backend / **76** workers; Playwright serial chromium (`workers: 1`).
@@ -325,10 +325,12 @@ If `core` is true → Playwright **full** (not only smoke).
 
 ## 5) S3 — Optional Vitest globs + SPA-api → backend
 
-**Do not start S3 until S2 is on `main`.** Optional; user must name S3.
+**Shipped** (this slice). S2 was already on `main`.
 
-- Vitest: `vitest run src/test/<Module>*` when only that page changed; if `components/ui`, `locales`, `store`, `AppShell` → full `npm test`.
-- If PR touches `frontend/src/api/**` → also run **python-tests-backend** (contract).
+- Vitest: `npx vitest run src/test/<Page>.test.*` when the PR only touches matching `frontend/src/pages/**` and/or those test files. Existing files only (`--` skip missing stems).
+- If PR touches `components/ui`, `components/layout`, `locales`, `store`, `App.tsx`/`main.tsx`, `vitest.config.ts`, `package.json`/`lock`, or `src/test/setup.ts` → full `npm test`.
+- If PR touches `frontend/src/api/**` → set `spa_api` and run **python-tests-backend** (full pytest that package; no file subset). Also full Vitest (client contract).
+- `always_full` / `main` / schedule / dispatch: full `npm test`.
 - Still **no** pytest file subset.
 
 ---
@@ -352,7 +354,7 @@ If `core` is true → Playwright **full** (not only smoke).
 | **S2** | `buat S2` | `ci: Playwright smoke and module tags on PRs` |
 | **S3** | `buat S3` | `ci: vitest globs and api path forces backend tests` |
 
-Default if user says only `buat` after this spec: **S1 only** (done). Next named slice: **S3**.
+Default if user says only `buat` after this spec: **S1 only** (done). **S3** named and implemented. No further CI slice in this epic.
 
 ---
 
