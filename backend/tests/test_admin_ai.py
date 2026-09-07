@@ -250,5 +250,12 @@ def test_admin_trial_chat_stream_rejected_and_ok(client, ai_on) -> None:
     assert ok.status_code == 200, ok.text
     assert "sk-or" not in ok.text
     assert "hidden-up" not in ok.text
+    usage = client.get("/api/admin/ai/usage", headers=API_HEADERS)
+    assert usage.status_code == 200
+    items = usage.json()["items"]
+    assert items
+    assert items[0].get("request_payload") is not None
+    assert items[0]["request_payload"].get("model") == "sinexis/trial"
+    assert items[0].get("response_payload", {}).get("id") == "chatcmpl-admin"
     assert client.delete(f"/api/admin/ai/models/{mid}", headers=API_HEADERS).status_code == 204
     assert client.delete(f"/api/admin/ai/providers/{pid}", headers=API_HEADERS).status_code == 204

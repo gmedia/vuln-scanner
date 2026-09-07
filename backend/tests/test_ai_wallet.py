@@ -165,10 +165,11 @@ async def test_wallet_idor_and_topup(db_session: AsyncSession, ctx) -> None:
                 model=model,
                 prompt_tokens=10,
                 completion_tokens=20,
-                billed=billed,
-                cogs=1,
-                reservation_id=first.id,
-            )
+                 billed=billed,
+                 cogs=1,
+                 reservation_id=first.id,
+                 request_payload={"messages": [{"role": "user", "content": "secret-prompt"}]},
+             )
             await db_session.commit()
 
             usage = await ac.get("/api/ai/usage", headers=_auth(owner, org.id))
@@ -176,6 +177,8 @@ async def test_wallet_idor_and_topup(db_session: AsyncSession, ctx) -> None:
             body = usage.json()
             assert body["total"] == 1
             assert "messages" not in usage.text
+            assert "secret-prompt" not in usage.text
+            assert "request_payload" not in usage.text
 
             res2 = await reserve(db_session, organization_id=org.id, hold=hold)
             await release(db_session, res2)
@@ -192,6 +195,8 @@ async def test_wallet_idor_and_topup(db_session: AsyncSession, ctx) -> None:
             )
             assert admin_usage.status_code == 200
             assert admin_usage.json()["total"] >= 1
+            admin_item = admin_usage.json()["items"][0]
+            assert admin_item.get("request_payload", {}).get("messages")[0]["content"] == "secret-prompt"
     finally:
         app.dependency_overrides.pop(get_db, None)
         app.dependency_overrides.pop(get_current_admin, None)
