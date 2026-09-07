@@ -137,6 +137,16 @@ class AiUsageList(BaseModel):
     total: int
 
 
+class AiAdminUsageOut(AiUsageOut):
+    request_payload: dict | None = None
+    response_payload: dict | None = None
+
+
+class AiAdminUsageList(BaseModel):
+    items: list[AiAdminUsageOut]
+    total: int
+
+
 class AiKeyCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=128)
 
