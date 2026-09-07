@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
@@ -134,6 +135,16 @@ class AiUsageOut(BaseModel):
 
 class AiUsageList(BaseModel):
     items: list[AiUsageOut]
+    total: int
+
+
+class AiAdminUsageOut(AiUsageOut):
+    request_payload: dict[str, Any] | None = None
+    response_payload: dict[str, Any] | None = None
+
+
+class AiAdminUsageList(BaseModel):
+    items: list[AiAdminUsageOut]
     total: int
 
 

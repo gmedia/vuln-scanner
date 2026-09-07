@@ -1,6 +1,6 @@
 import uuid
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -181,6 +181,8 @@ class AiUsageEvent(Base):
         ForeignKey("ai_reservations.id", ondelete="SET NULL"),
         nullable=True,
     )
+    request_payload: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    response_payload: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     __table_args__ = (CheckConstraint(f"source IN {USAGE_SOURCES}", name="ck_ai_usage_source"),)

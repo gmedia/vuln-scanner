@@ -259,6 +259,8 @@ export interface AiUsageAdmin {
   cogs_idr: number;
   http_status: number | null;
   created_at: string;
+  request_payload?: Record<string, unknown> | null;
+  response_payload?: Record<string, unknown> | null;
 }
 
 export async function listAiUsage(params?: {

@@ -185,5 +185,14 @@
   "aiTrialModel": "Model",
   "aiTrialPrompt": "Prompt",
   "aiTrialSend": "Send",
-  "aiTrialReply": "Reply"
+  "aiTrialReply": "Reply",
+  "aiEdit": "Edit",
+  "aiSave": "Save",
+  "aiCancel": "Cancel",
+  "aiDelete": "Delete",
+  "aiSelectProvider": "Select provider",
+  "aiSelectModel": "Select model",
+  "aiRequest": "Request",
+  "aiResponse": "Response",
+  "aiNoPayload": "No payload stored."
 }

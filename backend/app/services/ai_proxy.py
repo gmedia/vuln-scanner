@@ -145,24 +145,30 @@ async def chat_completions(
             resp = await client.post(url, headers=headers, json=upstream_body)
     except httpx.HTTPError:
         await release_concurrent(key.id)
-        await _fail_release(db, reservation.id, model, key)
+        await _fail_release(db, reservation.id, model, key, request_payload=body)
         return _generic_upstream_fail()
 
     latency_ms = int((time.perf_counter() - started) * 1000)
     if resp.status_code in (401, 403) or resp.status_code >= 500:
         await release_concurrent(key.id)
-        await _fail_release(db, reservation.id, model, key, http_status=resp.status_code)
+        await _fail_release(
+            db, reservation.id, model, key, http_status=resp.status_code, request_payload=body
+        )
         return _generic_upstream_fail()
     if resp.status_code >= 400:
         await release_concurrent(key.id)
-        await _fail_release(db, reservation.id, model, key, http_status=resp.status_code)
+        await _fail_release(
+            db, reservation.id, model, key, http_status=resp.status_code, request_payload=body
+        )
         return openai_error(resp.status_code, "Request rejected", err_type="invalid_request_error")
 
     try:
         payload = resp.json()
     except json.JSONDecodeError:
         await release_concurrent(key.id)
-        await _fail_release(db, reservation.id, model, key, http_status=resp.status_code)
+        await _fail_release(
+            db, reservation.id, model, key, http_status=resp.status_code, request_payload=body
+        )
         return _generic_upstream_fail()
 
     prompt_t, completion_t, finish = _usage_from_payload(payload if isinstance(payload, dict) else {})
@@ -177,6 +183,8 @@ async def chat_completions(
         http_status=resp.status_code,
         finish_reason=finish,
         provider_request_id=payload.get("id") if isinstance(payload, dict) else None,
+        request_payload=body,
+        response_payload=payload if isinstance(payload, dict) else None,
     )
     await release_concurrent(key.id)
     return JSONResponse(content=payload, status_code=200)
@@ -188,6 +196,8 @@ async def _fail_release(
     model: AiModel,
     key: AiApiKey,
     http_status: int | None = None,
+    request_payload: dict[str, Any] | None = None,
+    response_payload: dict[str, Any] | None = None,
 ) -> None:
     from app.models.ai_gateway import AiReservation
 
@@ -208,6 +218,8 @@ async def _fail_release(
         cogs=0,
         reservation_id=reservation.id,
         http_status=http_status,
+        request_payload=request_payload,
+        response_payload=response_payload,
     )
     await db.commit()
 
@@ -224,6 +236,8 @@ async def _settle_usage(
     http_status: int | None,
     finish_reason: str | None,
     provider_request_id: str | None,
+    request_payload: dict[str, Any] | None = None,
+    response_payload: dict[str, Any] | None = None,
 ) -> None:
     from app.models.ai_gateway import AiReservation
 
@@ -254,6 +268,8 @@ async def _settle_usage(
         http_status=http_status,
         finish_reason=finish_reason,
         provider_request_id=provider_request_id,
+        request_payload=request_payload,
+        response_payload=response_payload,
     )
     await db.commit()
 
@@ -312,8 +328,17 @@ async def _stream_and_settle(
     finally:
         latency_ms = int((time.perf_counter() - started) * 1000)
         await release_concurrent(key.id)
+        stored_req = dict(upstream_body)
+        stored_req["model"] = model.public_id
         if failed:
-            await _fail_release(db, reservation_id, model, key, http_status=http_status)
+            await _fail_release(
+                db,
+                reservation_id,
+                model,
+                key,
+                http_status=http_status,
+                request_payload=stored_req,
+            )
         else:
             await _settle_usage(
                 db,
@@ -326,6 +351,7 @@ async def _stream_and_settle(
                 http_status=http_status,
                 finish_reason=finish,
                 provider_request_id=req_id,
+                request_payload=stored_req,
             )
         yield b"data: [DONE]\n\n"
 
@@ -396,6 +422,7 @@ async def admin_trial_chat(
             cogs=0,
             reservation_id=None,
             http_status=502,
+            request_payload=body,
         )
         await db.commit()
         return _generic_upstream_fail()
@@ -415,6 +442,7 @@ async def admin_trial_chat(
             cogs=0,
             reservation_id=None,
             http_status=resp.status_code,
+            request_payload=body,
         )
         await db.commit()
         return _generic_upstream_fail()
@@ -432,6 +460,7 @@ async def admin_trial_chat(
             cogs=0,
             reservation_id=None,
             http_status=resp.status_code,
+            request_payload=body,
         )
         await db.commit()
         return openai_error(resp.status_code, "Request rejected", err_type="invalid_request_error")
@@ -452,6 +481,7 @@ async def admin_trial_chat(
             cogs=0,
             reservation_id=None,
             http_status=resp.status_code,
+            request_payload=body,
         )
         await db.commit()
         return _generic_upstream_fail()
@@ -482,6 +512,8 @@ async def admin_trial_chat(
         http_status=resp.status_code,
         finish_reason=finish,
         provider_request_id=payload.get("id") if isinstance(payload, dict) else None,
+        request_payload=body,
+        response_payload=payload if isinstance(payload, dict) else None,
     )
     await db.commit()
     return JSONResponse(content=payload, status_code=200)

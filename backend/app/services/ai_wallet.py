@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import uuid
+from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -139,6 +140,8 @@ async def record_usage(
     http_status: int | None = None,
     finish_reason: str | None = None,
     provider_request_id: str | None = None,
+    request_payload: dict[str, Any] | None = None,
+    response_payload: dict[str, Any] | None = None,
 ) -> AiUsageEvent:
     event = AiUsageEvent(
         organization_id=organization_id,
@@ -156,6 +159,8 @@ async def record_usage(
         finish_reason=finish_reason,
         provider_request_id=provider_request_id,
         reservation_id=reservation_id,
+        request_payload=request_payload,
+        response_payload=response_payload,
     )
     db.add(event)
     await db.flush()

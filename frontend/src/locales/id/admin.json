@@ -185,5 +185,14 @@
   "aiTrialModel": "Model",
   "aiTrialPrompt": "Prompt",
   "aiTrialSend": "Kirim",
-  "aiTrialReply": "Balasan"
+  "aiTrialReply": "Balasan",
+  "aiEdit": "Ubah",
+  "aiSave": "Simpan",
+  "aiCancel": "Batal",
+  "aiDelete": "Hapus",
+  "aiSelectProvider": "Pilih provider",
+  "aiSelectModel": "Pilih model",
+  "aiRequest": "Request",
+  "aiResponse": "Response",
+  "aiNoPayload": "Tidak ada payload."
 }
