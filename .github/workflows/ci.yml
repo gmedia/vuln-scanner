@@ -47,6 +47,9 @@ jobs:
       always_full: ${{ steps.flags.outputs.always_full }}
       e2e_full: ${{ steps.flags.outputs.e2e_full }}
       e2e_grep: ${{ steps.flags.outputs.e2e_grep }}
+      spa_api: ${{ steps.flags.outputs.spa_api }}
+      vitest_full: ${{ steps.flags.outputs.vitest_full }}
+      vitest_globs: ${{ steps.flags.outputs.vitest_globs }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -61,6 +64,19 @@ jobs:
               - 'workers/**'
             frontend:
               - 'frontend/**'
+            spa_api:
+              - 'frontend/src/api/**'
+            vitest_shared:
+              - 'frontend/src/components/ui/**'
+              - 'frontend/src/components/layout/**'
+              - 'frontend/src/locales/**'
+              - 'frontend/src/store/**'
+              - 'frontend/src/App.tsx'
+              - 'frontend/src/main.tsx'
+              - 'frontend/src/test/setup.ts'
+              - 'frontend/vitest.config.ts'
+              - 'frontend/package.json'
+              - 'frontend/package-lock.json'
             compose:
               - 'docker-compose*.yml'
               - '.env.example'
@@ -156,6 +172,8 @@ jobs:
           FILTER_BACKEND: ${{ steps.filter.outputs.backend }}
           FILTER_WORKERS: ${{ steps.filter.outputs.workers }}
           FILTER_FRONTEND: ${{ steps.filter.outputs.frontend }}
+          FILTER_SPA_API: ${{ steps.filter.outputs.spa_api }}
+          FILTER_VITEST_SHARED: ${{ steps.filter.outputs.vitest_shared }}
           FILTER_COMPOSE: ${{ steps.filter.outputs.compose }}
           FILTER_PACKAGING: ${{ steps.filter.outputs.packaging }}
           FILTER_CI: ${{ steps.filter.outputs.ci }}
@@ -206,6 +224,10 @@ jobs:
           BACKEND=$FILTER_BACKEND
           WORKERS=$FILTER_WORKERS
           FRONTEND=$FILTER_FRONTEND
+          SPA_API=${FILTER_SPA_API:-false}
+          if [ "$SPA_API" = "true" ]; then
+            BACKEND=true
+          fi
           COMPOSE=$FILTER_COMPOSE
           PACKAGING=$FILTER_PACKAGING
           CI_OUT=$FILTER_CI
@@ -252,6 +274,53 @@ jobs:
               E2E_GREP=""
             fi
           fi
+          VITEST_FULL=true
+          VITEST_GLOBS=""
+          if [ "$ALWAYS" = "false" ] && [ "$FRONTEND" = "true" ] && [ "${FILTER_VITEST_SHARED:-false}" != "true" ] && [ "$SPA_API" != "true" ]; then
+            GLOBS=""
+            PAGE_ONLY=true
+            while IFS= read -r f; do
+              [ -z "$f" ] && continue
+              case "$f" in
+                frontend/src/pages/*.tsx|frontend/src/pages/*.ts)
+                  base=$(basename "$f")
+                  stem=${base%.*}
+                  GLOBS="$GLOBS src/test/${stem}.test.tsx src/test/${stem}.test.ts"
+                  ;;
+                frontend/src/pages/admin/*.tsx|frontend/src/pages/admin/*.ts)
+                  base=$(basename "$f")
+                  stem=${base%.*}
+                  GLOBS="$GLOBS src/test/admin/${stem}.test.tsx src/test/admin/${stem}.test.ts"
+                  ;;
+                frontend/src/pages/credit/*.tsx|frontend/src/pages/credit/*.ts)
+                  base=$(basename "$f")
+                  stem=${base%.*}
+                  GLOBS="$GLOBS src/test/credit/${stem}.test.tsx src/test/credit/${stem}.test.ts"
+                  ;;
+                frontend/src/test/*.test.ts|frontend/src/test/*.test.tsx)
+                  GLOBS="$GLOBS ${f#frontend/}"
+                  ;;
+                frontend/src/test/admin/*.test.ts|frontend/src/test/admin/*.test.tsx|frontend/src/test/credit/*.test.ts|frontend/src/test/credit/*.test.tsx)
+                  GLOBS="$GLOBS ${f#frontend/}"
+                  ;;
+                frontend/*)
+                  PAGE_ONLY=false
+                  ;;
+              esac
+            done <<< "$CHANGED"
+            if [ "$PAGE_ONLY" = "true" ] && [ -n "$GLOBS" ]; then
+              EXISTING=""
+              for g in $GLOBS; do
+                if [ -f "frontend/$g" ]; then
+                  EXISTING="$EXISTING $g"
+                fi
+              done
+              if [ -n "$EXISTING" ]; then
+                VITEST_FULL=false
+                VITEST_GLOBS=$(echo "$EXISTING" | xargs echo)
+              fi
+            fi
+          fi
           {
             echo "backend=$BACKEND"
             echo "workers=$WORKERS"
@@ -264,13 +333,17 @@ jobs:
             echo "always_full=$ALWAYS"
             echo "e2e_full=$E2E_FULL"
             echo "e2e_grep=$E2E_GREP"
+            echo "spa_api=$SPA_API"
+            echo "vitest_full=$VITEST_FULL"
+            echo "vitest_globs=$VITEST_GLOBS"
           } >> "$GITHUB_OUTPUT"
 
   python-tests-backend:
     needs: [changes]
     if: ${{ (github.event_name != 'workflow_dispatch' || !inputs.skip_tests)
             && (needs.changes.outputs.always_full == 'true'
-                || needs.changes.outputs.backend == 'true') }}
+                || needs.changes.outputs.backend == 'true'
+                || needs.changes.outputs.spa_api == 'true') }}
     runs-on: ubuntu-latest
     env:
       SENTRY_DSN: ""
@@ -364,7 +437,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Run unit tests
-        run: npm test
+        env:
+          VITEST_FULL: ${{ needs.changes.outputs.vitest_full }}
+          VITEST_GLOBS: ${{ needs.changes.outputs.vitest_globs }}
+        run: |
+          if [ "$VITEST_FULL" != "true" ] && [ -n "$VITEST_GLOBS" ]; then
+            # shellcheck disable=SC2086
+            npx vitest run $VITEST_GLOBS
+          else
+            npm test
+          fi
 
   frontend-build:
     needs: [changes]
