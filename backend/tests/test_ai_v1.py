@@ -146,6 +146,34 @@ async def test_keys_and_v1_chat(db_session: AsyncSession, ctx) -> None:
             assert posted_json["model"] == "hidden-upstream"
             assert posted_json["model"] != "sinexis/test"
 
+            tools_payload = {
+                "model": "sinexis/test",
+                "messages": [{"role": "user", "content": "hi"}],
+                "tools": [
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": "lookup",
+                            "description": "lookup",
+                            "parameters": {"type": "object", "properties": {}},
+                        },
+                    }
+                ],
+                "tool_choice": "auto",
+            }
+            mock_client.post = AsyncMock(return_value=_Resp())
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                with_tools = await ac.post(
+                    "/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {plain}", "X-E2E-Test": "1"},
+                    json=tools_payload,
+                )
+            assert with_tools.status_code == 200, with_tools.text
+            forwarded = mock_client.post.call_args.kwargs["json"]
+            assert forwarded["tools"] == tools_payload["tools"]
+            assert forwarded["tool_choice"] == "auto"
+            assert forwarded["model"] == "hidden-upstream"
+
             bad_n = await ac.post(
                 "/v1/chat/completions",
                 headers={"Authorization": f"Bearer {plain}", "X-E2E-Test": "1"},

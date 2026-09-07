@@ -37,8 +37,6 @@ def _generic_upstream_fail() -> JSONResponse:
 def _validate_body(body: dict[str, Any]) -> None:
     if body.get("n", 1) != 1:
         raise HTTPException(status_code=400, detail="n must be 1")
-    if body.get("tools") or body.get("functions") or body.get("function_call") or body.get("tool_choice"):
-        raise HTTPException(status_code=400, detail="tools/functions are not supported")
     messages = body.get("messages")
     if not isinstance(messages, list) or not messages:
         raise HTTPException(status_code=400, detail="messages required")
