@@ -633,6 +633,7 @@ describe("Host Protect page", () => {
     );
     expect(screen.getByTestId("host-waf-events-empty")).toBeInTheDocument();
     expect(screen.getByTestId("host-waf-simulate-hint")).toBeInTheDocument();
+    expect(screen.queryByTestId("host-waf-simulate")).not.toBeInTheDocument();
     expect(screen.getByTestId("host-waf-events-hint")).toBeInTheDocument();
     expect(screen.getByTestId("host-waf-panel").textContent).toMatch(
       /preview only|helper posts|customer VPS|Host Multi|Malware tab/i,
@@ -646,8 +647,8 @@ describe("Host Protect page", () => {
         organization_id: "org1",
         guard_agent_id: "a1",
         asset_id: null,
-        name: "Web",
-        root_path: "/var/www/html",
+        name: "lab-host-waf-web",
+        root_path: "/var/www/host-waf-fixture",
         cms_hint: "wordpress",
         enabled: true,
         auto_quarantine: false,
@@ -725,7 +726,7 @@ describe("Host Protect page", () => {
     await waitFor(() =>
       expect(screen.getByTestId("host-waf-copy-snippet")).toBeInTheDocument(),
     );
-    expect(screen.getByTestId("host-waf-simulate")).toBeDisabled();
+    expect(screen.queryByTestId("host-waf-simulate")).not.toBeInTheDocument();
     expect(screen.getByTestId("host-waf-site-id").textContent).toMatch(/s1/);
     expect(screen.getByTestId("host-waf-copy-site-id")).toBeInTheDocument();
     expect(screen.getByTestId("host-waf-site-id-hint").textContent).toMatch(
