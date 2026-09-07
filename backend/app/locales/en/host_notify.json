@@ -8,5 +8,13 @@
   "open": "Open Host Protect",
   "or_copy": "Or copy this link:",
   "footer": "File contents are not attached. This is not a Guard or SIEM inbox.",
-  "preheader": "{hit_class} hit on {site}."
+  "preheader": "{hit_class} hit on {site}.",
+  "waf_subject": "[Sinexis Host WAF] block on {site}",
+  "waf_heading": "Host WAF block",
+  "waf_intro": "A WAF {action} was recorded for site {site}.",
+  "waf_path": "Request: {method} {path}",
+  "waf_rule": "Rule: {rule_id}",
+  "waf_event": "Event id: {event_id}",
+  "waf_footer": "Request bodies are not attached. This is not a Guard or SIEM inbox.",
+  "waf_preheader": "WAF block on {site}."
 }

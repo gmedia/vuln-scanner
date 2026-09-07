@@ -25,8 +25,7 @@ _MAX_RETRIES = 3
 _RETRY_BACKOFF_BASE = 1
 
 _CTA_STYLE = (
-    f"display:inline-block;padding:12px 24px;background:{_CTA_BG};color:#fff;"
-    "text-decoration:none;border-radius:6px"
+    f"display:inline-block;padding:12px 24px;background:{_CTA_BG};color:#fff;text-decoration:none;border-radius:6px"
 )
 
 
@@ -54,10 +53,7 @@ def _plain_from_html(html: str) -> str:
 
 
 def _wrap_html(*, heading: str, inner: str, preheader: str) -> str:
-    hidden = (
-        '<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">'
-        f"{preheader}</div>"
-    )
+    hidden = f'<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">{preheader}</div>'
     return f"""\
 <html>
 <body style="font-family: sans-serif; max-width: 520px; margin: 0 auto; padding: 24px;">
@@ -302,3 +298,39 @@ async def send_host_protect_email(
         html_body=html_body,
     )
     return await _send_with_retry(msg, email_to, "Host Protect")
+
+
+async def send_host_waf_email(
+    email_to: str,
+    *,
+    site_name: str,
+    rule_id: str,
+    method: str,
+    path: str,
+    action: str,
+    event_id: str,
+    locale: str | None = None,
+) -> bool:
+    loc = normalize_lang(locale)
+    heading = t(loc, "host_notify", "waf_heading")
+    link = f"{FRONTEND_URL}/host"
+    inner = f"""\
+  <p style="color: #374151;">{t(loc, "host_notify", "waf_intro", site=site_name, action=action)}</p>
+  <ul style="color: #111827; line-height: 1.6;">
+    <li>{t(loc, "host_notify", "waf_path", method=method, path=path)}</li>
+    <li>{t(loc, "host_notify", "waf_rule", rule_id=rule_id)}</li>
+    <li>{t(loc, "host_notify", "waf_event", event_id=event_id)}</li>
+  </ul>
+{_cta_block(link, t(loc, "host_notify", "open"), t(loc, "host_notify", "or_copy"))}
+  <p style="color: #6b7280; font-size: 13px;">{t(loc, "host_notify", "waf_footer")}</p>"""
+    html_body = _wrap_html(
+        heading=heading,
+        inner=inner,
+        preheader=t(loc, "host_notify", "waf_preheader", site=site_name),
+    )
+    msg = _build_message(
+        email_to=email_to,
+        subject=t(loc, "host_notify", "waf_subject", site=site_name),
+        html_body=html_body,
+    )
+    return await _send_with_retry(msg, email_to, "Host WAF")
