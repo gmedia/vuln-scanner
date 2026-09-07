@@ -60,7 +60,10 @@ export interface HostSiteCreatePayload {
 
 export async function updateHostSite(
   id: string,
-  payload: { scan_interval?: "daily" | "hourly" },
+  payload: {
+    scan_interval?: "daily" | "hourly";
+    auto_quarantine?: boolean;
+  },
 ): Promise<HostSite> {
   const { data } = await api.patch<HostSite>(`/api/host/sites/${id}`, payload);
   return data;
