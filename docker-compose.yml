@@ -168,6 +168,8 @@ services:
     build:
       context: .
       dockerfile: workers/Dockerfile
+      args:
+        INSTALL_BUNDLETOOL: "1"
     container_name: vuln-worker-mobile
     restart: unless-stopped
     depends_on:
