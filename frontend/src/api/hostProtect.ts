@@ -63,6 +63,7 @@ export async function updateHostSite(
   payload: {
     scan_interval?: "daily" | "hourly";
     auto_quarantine?: boolean;
+    enabled?: boolean;
   },
 ): Promise<HostSite> {
   const { data } = await api.patch<HostSite>(`/api/host/sites/${id}`, payload);
