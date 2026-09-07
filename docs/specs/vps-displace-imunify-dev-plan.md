@@ -1,6 +1,6 @@
 # Spec: VPS displace-lite vs Imunify360 (development plan)
 
-**Status:** **docs** (2026-09-07). **DL0 shipped** (`main` #647). Next named slice: **DL1** runbook (docs) then **DL2** pack. Owner **intent:** AM able to say **“ganti Imunify dengan Sinexis di VPS/server”** — **only** on a **single nginx VPS or dedicated**, **not** shared cPanel/CloudLinux farms. That short fragment is **internal intent**, **forbidden in customer meetings** until **Sentence-ok** (§1).
+**Status:** **docs** (2026-09-07). **DL0 shipped** (`main` #647). **DL1** runbook shipped (`main` #649). **DL2** pack 1005/1006 = this PR. Owner **intent:** AM able to say **“ganti Imunify dengan Sinexis di VPS/server”** — **only** on a **single nginx VPS or dedicated**, **not** shared cPanel/CloudLinux farms. That short fragment is **internal intent**, **forbidden in customer meetings** until **Sentence-ok** (§1).
 **Epic:** **P14 follow-on honesty plan** (jobs + original stack). Does **not** reopen P12 S1–S12 or P13 S0–S5.
 **Legal:** [`imunify-beside-not-roadmap.md`](../commercial/imunify-beside-not-roadmap.md) still forbids clone PRs, trademarks, Imunify/CRS commercial DB in git, “Imunify compatible” in UI. This file is a **job + speech gate**, not parity.
 **HTTP stack:** **nginx + ModSecurity (or Coraza spoa) on the customer/lab vhost.** **Caddy = out** until a **named** slice. Do not say “nginx/Caddy” in AM copy.
@@ -12,7 +12,7 @@
 |---------------|-----|---------|
 | **DL0** | residual **C** / Wave 0 | Simulate/lab-gate; do **not** rebuild installer/heartbeat |
 | **DL1** | Wave 1 runbook; P14 **D** (disk quarantine) **already shipped** | AM script, not a new queue |
-| **DL2** | follow-on to **F** (protect shipped) | Original pack **widen** beyond 1001–1004 |
+| **DL2** | follow-on to **F** (protect shipped) | Original pack **widen** — **1005/1006 shipped** (this branch) |
 | **DL3** | — | Notify; **parked** until live ingest events |
 
 P14 **D** = on-box quarantine (**S11**). Displace **DL1** is **not** a second D.
@@ -41,7 +41,7 @@ All of:
 
 1. Helper installed from **sinexis.app**; last POST visible (`helperPolled` / not stale) on `/host`.
 2. Real file hit on **that** VM’s jail → quarantine/restore **from the SPA** (SSH allowed for **install only**).
-3. WAF **live** demo only if **ModSec/Coraza is loaded** on the lab vhost **and** a **live** (not Simulate) event for a starter id (1001–1004). Console snippet copy ≠ filter.
+3. WAF **live** demo only if **ModSec/Coraza is loaded** on the lab vhost **and** a **live** (not Simulate) event for a starter id (1001–1006). Console snippet copy ≠ filter. GET `/wp-admin/` must stay **200** (not in pack).
 4. Spoken exclusions: **no PD, no WebShield, no MDS auto-clean DB, no kernel live-patch**.
 
 Until Demo-ok: do not demo Host as “on-box proof.”
@@ -55,8 +55,8 @@ Until Demo-ok: do not demo Host as “on-box proof.”
 
 **Demo-ok + Invoice-ok** and:
 
-1. Original pack has **new numeric IDs beyond 1001–1004**, allowlisted, lab probe documented, CMS-admin FP written (**DL2**).
-2. Simulate hidden **or** rows labeled `preview` / `lab`; no unlabeled `mock.sqli.1` in customer UX (**DL0 shipped** #647: lab-gate Simulate; live GET/ingest **1001–1004**; starter `msg:` 1001–1003 original labels).
+1. Original pack has **new numeric IDs beyond 1001–1004** (`1005` wp-login POST+payload, `1006` URI eval/base64), allowlisted, lab probe documented, CMS-admin FP written (**DL2** — pack in git; live 403 still needs ModSec on vhost).
+2. Simulate hidden **or** rows labeled `preview` / `lab`; no unlabeled `mock.sqli.1` in customer UX (**DL0 shipped** #647: lab-gate Simulate; starter `msg:` 1001–1003 original labels). Live ingest **1001–1006**.
 3. Demo vhost actually has ModSec loaded (ops checkbox).
 
 Until Sentence-ok use the fallback: *“file + HTTP tipis + scan luar; Imunify tetap lebih dalam di PHP runtime dan bot challenge.”*
@@ -76,7 +76,7 @@ Sources: Imunify360 marketing (6 layers, PD, CloudAV, RapidScan, auto-cleanup, W
 | Real-time / RapidScan / CloudAV | Timer + daily/hourly; **not** inotify | **Park** |
 | Show hits + isolate | SPA `/host`; quarantine **mv** (auto **off**) | **DL1** runbook; **no** new queue (P14 **D** shipped) |
 | Auto cleanup / reconstruct / MDS | Hybrid ticket (H6) | **Out** |
-| HTTP WAF | Starter **1001–1004 already shipped** | **DL2** **widen** (new IDs); never IM360/CRS |
+| HTTP WAF | Starter **1001–1006** (DL2) | Further original IDs only; never IM360/CRS |
 | Protect on by default | **F shipped**; per-site default **off**; protect **Multi** | Keep off; do not re-do F |
 | ModSec module on typical nginx | Snippet copy only; Ubuntu often has **no** module | **Ops/hybrid** — Demo-ok checkbox, not SaaS |
 | Proactive Defense | None | **Out** (slice **H**) |
@@ -89,7 +89,7 @@ Sources: Imunify360 marketing (6 layers, PD, CloudAV, RapidScan, auto-cleanup, W
 | Crontab / Adminer-zero | None | **Park** |
 | Invoice SKU | Working IDR; `service_id` open | **Invoice-ok** — human |
 
-WAF IDs (`host_waf_render.py`): **1001** `/xmlrpc.php` (`sinexis.xmlrpc`); **1002** ARGS `union select` / `or 1=1` (`sinexis.sqli`); **1003** URI `../` (`sinexis.path.traversal`); **1004** lab `/sinexis-waf-lab`. Product GET/ingest = those IDs. SPA Simulate is **lab-only** and is **not** listed on the live table (#647).
+WAF IDs (`host_waf_render.py`): **1001** `/xmlrpc.php` (`sinexis.xmlrpc`); **1002** ARGS `union select` / `or 1=1` (`sinexis.sqli`); **1003** URI `../` (`sinexis.path.traversal`); **1004** lab `/sinexis-waf-lab`; **1005** POST `/wp-login.php` chained with payload ARGS; **1006** URI `eval(` / `base64_decode(`. Product GET/ingest = those IDs. SPA Simulate is **lab-only** and is **not** listed on the live table (#647). **Not matched:** GET `/wp-admin/`.
 
 ---
 
@@ -118,15 +118,15 @@ Canonical: [`dl1-file-loop-runbook.md`](dl1-file-loop-runbook.md) + [`host-prote
 
 **DoD:** Non-engineer finishes **SPA** loop after helper is live. Quarantine path under `/var/lib/sinexis/quarantine` then restore. Copy: quarantine ≠ clean site. SSH for install is expected.
 
-### DL2 — Original HTTP pack widen (only real eng slice)
+### DL2 — Original HTTP pack widen (**shipped in this PR**)
 
 | In | Out |
 |----|-----|
-| **New** numeric IDs **we write** (e.g. wp-login POST flood, extra SQLi) + allowlist extension | CRS paid / Imunify rules in git; re-doing F |
+| **1005** POST `/wp-login.php` + payload ARGS (chain); **1006** URI `eval(` / `base64_decode(`; `_WAF_STARTER_IDS` + dual installer | CRS paid / Imunify rules in git; re-doing F |
 | Protect remains Host **Multi**; snippet customer nginx | Sinexis edge Coraza; Caddy adapter |
-| One CMS-admin FP page (`wp-admin` still 200) | Ingest IM360/CRS noise |
+| CMS-admin FP: snippet has **no** `wp-admin` match (GET `/wp-admin/` stays 200 when ModSec is loaded) | Ingest IM360/CRS noise |
 
-**DoD (tc5, not Playwright enroll):** curl **named** path/args → 403 **and** helper POST → event `rule_id` in {new ids}; `wp-admin` 200 documented.
+**DoD:** pytest/installer assert `id:1005`/`1006` and `wp-admin` absent. Live curl 403 on tc5 remains **ops** (ModSec on vhost).
 
 ### DL3 — Notify (parked)
 

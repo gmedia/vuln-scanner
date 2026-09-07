@@ -317,6 +317,11 @@ async def test_engine_coraza_snippet(db_session: AsyncSession, ctx):
             assert "listen" not in body["content"].lower()
             assert "SecRequestBodyAccess Off" in body["content"]
             assert "sinexis.sqli" in body["content"]
+            assert "sinexis.wplogin.payload" in body["content"]
+            assert "sinexis.php.wrapper" in body["content"]
+            assert "id:1005" in body["content"]
+            assert "id:1006" in body["content"]
+            assert "wp-admin" not in body["content"]
             assert "mock.sqli.1" not in body["content"]
             missing = await client.get(
                 f"/api/host/waf/sites/{ctx['other_site'].id}/snippet",
@@ -556,15 +561,29 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
                             "path": "/xmlrpc.php",
                             "http_status": 404,
                         },
+                        {
+                            "action": "block",
+                            "rule_id": "1005",
+                            "method": "POST",
+                            "path": "/wp-login.php",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1006",
+                            "method": "GET",
+                            "path": "/index.php",
+                            "http_status": 403,
+                        },
                     ],
                 },
             )
             assert r.status_code == 200, r.text
-            assert r.json()["accepted"] == 1
+            assert r.json()["accepted"] == 3
     finally:
         app.dependency_overrides.clear()
     rows = (await db_session.execute(select(HostWafEvent).where(HostWafEvent.site_id == site.id))).scalars().all()
-    assert {row.rule_id for row in rows} == {"1001"}
+    assert {row.rule_id for row in rows} == {"1001", "1005", "1006"}
 
 
 @pytest.mark.asyncio

@@ -15,7 +15,7 @@
 | **H2** | Seat | **Web paths (sites)** on enrolled VPS, not per-domain DNS | Working |
 | **H3** | Caps | Basic **1** · Pro **3** · Multi **10** `host_sites` | Working (mirrors Scan assets) |
 | **H4** | List IDR / mo | **Working list** (not invoice lock): Host Basic **150.000** · Host Pro **350.000** · Host Multi **900.000** | Working |
-| **H5** | vs Imunify | **Beside** on cPanel farms. **Displace-lite** on GMD VPS/colo **without** panel suite **only after** [`vps-displace-imunify-dev-plan.md`](../specs/vps-displace-imunify-dev-plan.md) **Sentence-ok** (Demo-ok + Invoice-ok + pack beyond 1001–1004 + labeled Simulate; **no** PD/WebShield/KernelCare). Not a CloudLinux replacement pitch | Working |
+| **H5** | vs Imunify | **Beside** on cPanel farms. **Displace-lite** on GMD VPS/colo **without** panel suite **only after** [`vps-displace-imunify-dev-plan.md`](../specs/vps-displace-imunify-dev-plan.md) **Sentence-ok** (Demo-ok + Invoice-ok + pack **1001–1006** + labeled Simulate; **no** PD/WebShield/KernelCare). Not a CloudLinux replacement pitch | Working |
 | **H6** | Cleanup | Quarantine/restore in-app; reconstruct = **hybrid ticket**. No silent PHP rewrite | Working |
 | **H7** | WAF | **Not** in Host Protect **file** v1. **P13 Host WAF** = separate control plane; working: **detect** on Pro/Multi, **protect** Multi+; IDR unset | Working |
 | **H8** | Guard prerequisite | Host Protect v1 **requires** Guard agent on the VM | Working |
