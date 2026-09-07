@@ -48,7 +48,7 @@ Prepaid **org** IDR. Reserve before upstream; settle/release after. Insufficient
 
 ## Secrets
 
-Provider credentials live encrypted in DB (or env per provider). Never commit wholesale URLs with keys, customer `sk-sx-` plaintext, or host SSH details.
+Provider credentials live encrypted in DB (or env per provider). Never commit wholesale URLs with keys, customer `sx-` plaintext, or host SSH details.
 
 ## Routine deploy
 
