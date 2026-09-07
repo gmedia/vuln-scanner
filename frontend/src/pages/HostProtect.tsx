@@ -311,13 +311,18 @@ export default function HostProtect() {
                 </SelectContent>
               </Select>
               {selectedAgentId ? (
-                <p className="mt-1.5 text-xs text-muted-foreground">
+                <p
+                  className="mt-1.5 text-xs text-muted-foreground"
+                  data-testid="host-helper-poll-add"
+                >
                   {(() => {
                     const ag = agents.find((a) => a.id === selectedAgentId);
-                    const when = formatHelperPollAt(
-                      ag?.last_helper_poll_at ?? null,
-                    );
+                    const iso = ag?.last_helper_poll_at ?? null;
+                    const when = formatHelperPollAt(iso);
                     if (!when) return t("helperNeverPolled");
+                    if (isHelperPollStale(iso)) {
+                      return t("helperStale", { when });
+                    }
                     return t("helperPolled", { when });
                   })()}
                 </p>
