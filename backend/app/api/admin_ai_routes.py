@@ -14,6 +14,8 @@ from app.middleware.rate_limit import RateLimiter
 from app.models.ai_gateway import PROVIDER_STATUSES, AiModel, AiProvider, AiUsageEvent
 from app.models.user import User
 from app.schemas.ai_gateway import (
+    AiAdminUsageList,
+    AiAdminUsageOut,
     AiModelCreate,
     AiModelList,
     AiModelOut,
@@ -22,8 +24,6 @@ from app.schemas.ai_gateway import (
     AiProviderList,
     AiProviderOut,
     AiProviderUpdate,
-    AiAdminUsageList,
-    AiAdminUsageOut,
     AiWalletOut,
     AiWalletTopup,
 )
