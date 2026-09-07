@@ -17,7 +17,8 @@ def test_lab_fixture_snippet_has_probe_rule():
     text = render_nginx_modsec(_policy(), site)
     assert "LAB fixture" in text
     assert "/sinexis-waf-lab" in text
-    assert "mock.lab.probe" in text
+    assert "lab.probe" in text
+    assert "mock." not in text
     assert "do not paste onto sinexis.app" in text
     assert "listen" not in text.lower()
     assert "modsecurity_rules '" in text
@@ -31,7 +32,12 @@ def test_customer_snippet_omits_lab_probe():
     text = render_nginx_modsec(_policy(), site)
     assert "customer VPS" in text
     assert "/sinexis-waf-lab" not in text
-    assert "mock.lab.probe" not in text
+    assert "lab.probe" not in text
+    assert "xmlrpc.php" in text
+    assert "sqli.args" in text
+    assert "path.traversal" in text
+    assert "mock.xmlrpc" not in text
+    assert "mock.sqli.1" not in text
     assert "do not paste onto sinexis.app" in text
 
 

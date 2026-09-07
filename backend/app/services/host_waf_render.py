@@ -53,7 +53,7 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
 """
         extra = (
             'SecRule REQUEST_URI "@beginsWith /sinexis-waf-lab" '
-            "\"id:1004,phase:1,t:none,deny,status:403,msg:\\'mock.lab.probe\\'\"\n"
+            "\"id:1004,phase:1,t:none,deny,status:403,msg:\\'lab.probe\\'\"\n"
         )
     else:
         header = f"""# Sinexis Host WAF generated snippet — customer VPS only.
@@ -74,9 +74,9 @@ modsecurity_rules '
 SecRuleEngine {engine}
 SecRequestBodyAccess Off
 SecResponseBodyAccess Off
-SecRule REQUEST_URI "@beginsWith /xmlrpc.php" "id:1001,phase:1,t:none,deny,status:403,msg:\\'mock.xmlrpc\\'"
-SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1)" "id:1002,phase:2,t:none,deny,status:403,msg:\\'mock.sqli.1\\'"
-SecRule REQUEST_URI "@rx \\\\.\\\\./" "id:1003,phase:1,t:none,deny,status:403,msg:\\'mock.rce.path\\'"
+SecRule REQUEST_URI "@beginsWith /xmlrpc.php" "id:1001,phase:1,t:none,deny,status:403,msg:\\'xmlrpc.php\\'"
+SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1)" "id:1002,phase:2,t:none,deny,status:403,msg:\\'sqli.args\\'"
+SecRule REQUEST_URI "@rx \\\\.\\\\./" "id:1003,phase:1,t:none,deny,status:403,msg:\\'path.traversal\\'"
 {extra}';
 # Paranoia {paranoia}: keep starter rules only. Do not raise to 4 in v1.
 """
