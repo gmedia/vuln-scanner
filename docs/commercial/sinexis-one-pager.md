@@ -17,7 +17,7 @@
 | Full SIEM day-one | **Scheduled external scan** + what changed + manager-readable report |
 | One-shot hobby dashboard | **Monthly/weekly reason to pay** |
 
-**Sinexis Guard** (host alerts) = **parked** second upsell (P5) after Scan attach works.
+**Sinexis Guard / Host Protect / Host WAF** = **separate attach SKUs** (code on `main`). **Do not** bundle into Scan invoice. Host IDR = working list, **not** finance lock. Guard was “parked” as *sales sequence* (sell Scan first), not “unshipped.”
 
 ---
 
@@ -49,7 +49,9 @@
 | **Scan** | Cadence check domain/IP; new critical/high; executive summary (Bahasa) | **P1 — shipped** |
 | **Workspace** | Several people, one company | **P2 — only if multi-user blocks** |
 | **Assets** | Named targets / packs | **P3** |
-| **Guard** | Host critical alerts | **P5 — parked** |
+| **Guard** | Host critical alerts (Wazuh thin) | **P5 — shipped**; **do not** silent-bundle into Scan |
+| **Host Protect** | On-box web malware + quarantine | **P12 — shipped**; working IDR; invoice `service_id` open |
+| **Host WAF** | HTTP filter on **customer** nginx (starter 1001–1004) | **P13 — shipped**; protect = Host Multi; never Sinexis edge |
 
 Mobile APK/IPA = engine feature, **not** hero SKU for GMD servers/domains.
 
