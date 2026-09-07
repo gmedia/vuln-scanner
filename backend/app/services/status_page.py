@@ -652,18 +652,6 @@ class StatusPageService:
         return self._to_response(page)
 
 
-_CROSSHAIR_SVG = (
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" '
-    'stroke="currentColor" stroke-width="2" stroke-linecap="round" '
-    'stroke-linejoin="round" aria-hidden="true">'
-    '<circle cx="12" cy="12" r="10"/>'
-    '<line x1="22" x2="18" y1="12" y2="12"/>'
-    '<line x1="6" x2="2" y1="12" y2="12"/>'
-    '<line x1="12" x2="12" y1="6" y2="2"/>'
-    '<line x1="12" x2="12" y1="22" y2="18"/>'
-    "</svg>"
-)
-
 _STATUS_CSS = """
 :root{
   --background:hsl(0 0% 98%);--foreground:hsl(0 0% 7%);--muted:hsl(0 0% 96%);
@@ -687,29 +675,13 @@ body{
   color:var(--foreground);background:var(--background);line-height:1.55;letter-spacing:-0.011em;
 }
 a{color:var(--primary);text-underline-offset:0.15em}
-.site-header{border-bottom:1px solid var(--border)}
-.site-header-inner,.site-footer-inner{
-  width:min(var(--rail),100%);margin:0 auto;padding:0 1rem;
-  display:flex;align-items:center;justify-content:space-between;gap:0.75rem;
-}
-.site-header-inner{height:3rem}
-.brand{display:inline-flex;align-items:center;gap:0.6rem;text-decoration:none;color:var(--foreground)}
-.brand svg{width:1.25rem;height:1.25rem;color:var(--primary);flex-shrink:0}
-.brand-text{
-  font-family:ui-monospace,"JetBrains Mono",Menlo,monospace;
-  font-size:0.875rem;font-weight:700;letter-spacing:0.08em;
-}
-.brand-accent{color:var(--primary)}
-.header-actions{display:flex;align-items:center;gap:0.5rem}
-.header-actions a,.theme-switch button{
-  display:inline-flex;align-items:center;min-height:2.75rem;padding:0 0.75rem;
-  font-size:0.75rem;text-decoration:none;color:var(--foreground);
-  border:1px solid var(--border);border-radius:0.375rem;background:transparent;cursor:pointer;font-family:inherit;
-}
-.header-actions a.ghost{border-color:transparent;color:var(--muted-foreground)}
-.header-actions a.primary{background:var(--primary);color:var(--primary-foreground);border-color:transparent}
+.theme-row{display:flex;justify-content:flex-end;margin:0 0 1rem}
 .theme-switch{display:inline-flex;border:1px solid var(--border);border-radius:0.375rem;overflow:hidden}
-.theme-switch button{border:0;border-radius:0;font-size:0.6875rem;padding:0 0.6rem}
+.theme-switch button{
+  display:inline-flex;align-items:center;min-height:2.75rem;padding:0 0.6rem;
+  font-size:0.6875rem;text-decoration:none;color:var(--foreground);
+  border:0;border-radius:0;background:transparent;cursor:pointer;font-family:inherit;
+}
 .theme-switch button[aria-pressed="true"]{background:var(--muted)}
 main.rail{flex:1;width:min(var(--rail),calc(100% - 2rem));margin:0 auto;padding:2.5rem 0 4rem}
 .eyebrow{
@@ -749,17 +721,7 @@ h1{font-size:clamp(1.75rem,3vw,2.25rem);line-height:1.15;font-weight:700;letter-
 .inc p{margin:0 0 0.5rem;font-size:0.9375rem;color:var(--muted-foreground)}
 .inc p:last-child{margin-bottom:0}
 .empty{padding:1.15rem;color:var(--muted-foreground);font-size:0.875rem}
-.site-footer{margin-top:auto;border-top:1px solid var(--border);padding:1.5rem 0}
-.site-footer p{margin:0;font-size:0.75rem;color:var(--muted-foreground)}
-.site-footer a{font-size:0.75rem;color:var(--muted-foreground);text-decoration:none;min-height:2.75rem;
-  display:inline-flex;align-items:center;padding:0 0.35rem}
-.site-footer a:hover{color:var(--foreground)}
-.site-footer a.primary{
-  background:var(--primary);color:var(--primary-foreground);
-  border-radius:0.375rem;padding:0 0.75rem;font-weight:600;
-}
 .disclaimer{font-size:0.75rem;color:var(--muted-foreground);margin:0}
-@media (max-width:640px){.header-actions a.sm-hide{display:none}}
 """
 
 _THEME_BOOT = """
@@ -854,24 +816,13 @@ def render_status_html(page: StatusPageResponse) -> str:
 {_THEME_BOOT}
 </head>
 <body>
-<header class="site-header">
-  <div class="site-header-inner">
-    <a class="brand" href="/" aria-label="Sinexis home">
-      {_CROSSHAIR_SVG}
-      <span class="brand-text">SINE<span class="brand-accent">XIS</span></span>
-    </a>
-    <nav class="header-actions">
-      <a class="ghost" href="/blog">Blog</a>
-      <a class="ghost sm-hide" href="/login">Sign in</a>
-      <a class="primary" href="/register">Get started</a>
-      <span class="theme-switch" role="group" aria-label="Theme">
-        <button type="button" data-theme-set="dark" aria-pressed="true">Dark</button>
-        <button type="button" data-theme-set="light" aria-pressed="false">Light</button>
-      </span>
-    </nav>
-  </div>
-</header>
 <main class="rail">
+  <div class="theme-row">
+    <span class="theme-switch" role="group" aria-label="Theme">
+      <button type="button" data-theme-set="dark" aria-pressed="true">Dark</button>
+      <button type="button" data-theme-set="light" aria-pressed="false">Light</button>
+    </span>
+  </div>
   <p class="eyebrow">Status</p>
   <h1>{title}</h1>
   <div class="banner {_escape(overall)}">
@@ -892,18 +843,6 @@ def render_status_html(page: StatusPageResponse) -> str:
   {past_section}
   <p class="disclaimer">Best-effort outside-in checks. Not an SLA. Monitor URLs and IPs are never shown.</p>
 </main>
-<footer class="site-footer">
-  <div class="site-footer-inner">
-    <p>Sinexis · Scan · Guard · SIEM</p>
-    <nav>
-      <a href="/blog">Blog</a>
-      <a href="/terms">Syarat</a>
-      <a href="/privacy">Privasi</a>
-      <a href="/login">Sign in</a>
-      <a class="primary" href="/register">Get started</a>
-    </nav>
-  </div>
-</footer>
 {_THEME_FOOT}
 </body>
 </html>"""
