@@ -22,8 +22,8 @@ from app.schemas.ai_gateway import (
     AiProviderList,
     AiProviderOut,
     AiProviderUpdate,
-    AiUsageList,
-    AiUsageOut,
+    AiAdminUsageList,
+    AiAdminUsageOut,
     AiWalletOut,
     AiWalletTopup,
 )
@@ -279,14 +279,14 @@ async def topup_wallet(
     return AiWalletOut.model_validate(wallet)
 
 
-@router.get("/usage", response_model=AiUsageList)
+@router.get("/usage", response_model=AiAdminUsageList)
 async def admin_list_usage(
     request: Request,
     org_id: uuid.UUID | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=200),
     _admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
-) -> AiUsageList | Response:
+) -> AiAdminUsageList | Response:
     _disabled()
     limited = await _limit(request)
     if limited:
@@ -298,7 +298,7 @@ async def admin_list_usage(
         cq = cq.where(AiUsageEvent.organization_id == org_id)
     total = (await db.execute(cq)).scalar() or 0
     rows = list((await db.execute(q.order_by(AiUsageEvent.created_at.desc()).limit(limit))).scalars().all())
-    return AiUsageList(items=[AiUsageOut.model_validate(r) for r in rows], total=total)
+    return AiAdminUsageList(items=[AiAdminUsageOut.model_validate(r) for r in rows], total=total)
 
 
 @router.post("/chat", response_model=None)
