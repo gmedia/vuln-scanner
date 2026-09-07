@@ -122,9 +122,16 @@ async def test_status_page_crud_and_public_html(ctx, db_session: AsyncSession):
         assert "timeout" not in pub.text.lower()
         assert "Authorization" not in pub.text
         assert "All systems operational" in pub.text
-        assert "SINEXIS" in pub.text.replace(" ", "") or "SINE" in pub.text
         assert "Components" in pub.text
-        assert 'class="site-header"' in pub.text
+        assert "site-header" not in pub.text
+        assert "site-footer" not in pub.text
+        assert "SINEXIS" not in pub.text.replace(" ", "")
+        assert "Get started" not in pub.text
+        assert 'href="/login"' not in pub.text
+        assert 'href="/register"' not in pub.text
+        assert 'href="/blog"' not in pub.text
+        assert "Scan · Guard · SIEM" not in pub.text
+        assert 'data-theme-set="dark"' in pub.text
         hidden = await client.get("/status/missing", headers={"X-E2E-Test": "1"})
         assert hidden.status_code == 404
         renamed = await client.patch(
