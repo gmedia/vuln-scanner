@@ -24,7 +24,8 @@ import {
   type HostSite,
 } from "@/api/hostProtect";
 import { Link } from "react-router-dom";
-import { Shield } from "lucide-react";
+import { AlertTriangle, Shield } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -89,6 +90,7 @@ export default function HostProtect() {
     queryKey: ["guard", activeOrgId, "agents"],
     queryFn: listGuardAgents,
     enabled: !!activeOrgId && featureOn,
+    refetchInterval: 30_000,
   });
 
   const items = sitesQ.data ?? [];
@@ -118,6 +120,14 @@ export default function HostProtect() {
   const atCap = items.length >= limit;
   const agents = agentsQ.data ?? [];
   const selectedAgentId = agentId || agents[0]?.id || "";
+  const fleetPollIso = agents.reduce<string | null>((latest, a) => {
+    const iso = a.last_helper_poll_at;
+    if (!iso) return latest;
+    if (!latest) return iso;
+    return Date.parse(iso) > Date.parse(latest) ? iso : latest;
+  }, null);
+  const fleetWhen = formatHelperPollAt(fleetPollIso);
+  const fleetStale = isHelperPollStale(fleetPollIso);
 
   const createMut = useMutation({
     mutationFn: createHostSite,
@@ -260,6 +270,17 @@ export default function HostProtect() {
         >
           {t("noAgents")}
         </p>
+      ) : null}
+
+      {featureOn && agents.length > 0 && fleetStale ? (
+        <Alert variant="destructive" data-testid="host-helper-fleet">
+          <AlertTriangle />
+          <AlertDescription>
+            {fleetWhen
+              ? t("helperFleetStale", { when: fleetWhen })
+              : t("helperFleetNever")}
+          </AlertDescription>
+        </Alert>
       ) : null}
 
       {open ? (
@@ -463,9 +484,7 @@ export default function HostProtect() {
                     ? t("hitsWaitingAgent")
                     : lastScan?.status === "failed"
                       ? t("hitsUnreachable")
-                      : lastScan?.status === "completed" &&
-                          lastCount === 0 &&
-                          helperStale
+                      : helperStale
                         ? t("hitsUnreachable")
                         : lastScan?.status === "completed" &&
                             activeHits.length === 0 &&
@@ -530,7 +549,11 @@ export default function HostProtect() {
                           {t("copySiteId")}
                         </Button>
                         <p
-                          className="mt-1 text-xs text-muted-foreground"
+                          className={
+                            helperStale
+                              ? "mt-1 text-sm font-medium text-destructive"
+                              : "mt-1 text-sm text-foreground"
+                          }
                           data-testid="host-helper-poll"
                         >
                           {helperWhen

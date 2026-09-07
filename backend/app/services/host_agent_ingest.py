@@ -60,6 +60,10 @@ async def _agent_from_token(db: AsyncSession, raw_token: str | None) -> GuardAge
     return agent
 
 
+def touch_helper_poll(agent: GuardAgent) -> None:
+    agent.last_helper_poll_at = datetime.now(UTC)
+
+
 async def poll_agent_jobs(
     db: AsyncSession,
     raw_token: str | None,
@@ -68,7 +72,7 @@ async def poll_agent_jobs(
     agent = await _agent_from_token(db, raw_token)
     if agent.id != agent_id:
         raise _unauthorized()
-    agent.last_helper_poll_at = datetime.now(UTC)
+    touch_helper_poll(agent)
     jobs: list[HostAgentPollJob] = []
     cmd_result = await db.execute(
         select(HostCommand, HostSite, HostHit)
@@ -131,6 +135,7 @@ async def ack_agent_command(
     agent = await _agent_from_token(db, raw_token)
     if agent.id != body.agent_id:
         raise _unauthorized()
+    touch_helper_poll(agent)
     cmd_result = await db.execute(select(HostCommand).where(HostCommand.id == body.command_id))
     cmd = cmd_result.scalar_one_or_none()
     if cmd is None or cmd.organization_id != agent.organization_id:
@@ -185,6 +190,7 @@ async def ingest_agent_results(
     agent = await _agent_from_token(db, raw_token)
     if agent.id != body.agent_id:
         raise _unauthorized()
+    touch_helper_poll(agent)
 
     scan_result = await db.execute(select(HostScan).where(HostScan.id == body.scan_id))
     scan = scan_result.scalar_one_or_none()
@@ -233,6 +239,7 @@ async def ingest_agent_waf_events(
     agent = await _agent_from_token(db, raw_token)
     if agent.id != body.agent_id:
         raise _unauthorized()
+    touch_helper_poll(agent)
     site_result = await db.execute(select(HostSite).where(HostSite.id == body.site_id))
     site = site_result.scalar_one_or_none()
     if site is None or site.guard_agent_id != agent.id or site.organization_id != agent.organization_id:
