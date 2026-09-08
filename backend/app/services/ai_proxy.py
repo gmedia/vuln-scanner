@@ -18,7 +18,17 @@ from app.models.ai_gateway import AiApiKey, AiModel
 from app.services.ai_crypto import decrypt_credential
 from app.services.ai_limits import acquire as acquire_limits
 from app.services.ai_limits import release_concurrent
-from app.services.ai_wallet import billed_idr, cogs_idr, hold_idr, record_usage, release, reserve, settle
+from app.services.ai_wallet import (
+    affordable_max_tokens,
+    billed_idr,
+    cogs_idr,
+    get_or_create_wallet,
+    hold_idr,
+    record_usage,
+    release,
+    reserve,
+    settle,
+)
 
 UPSTREAM_TIMEOUT = 120.0
 
@@ -92,8 +102,13 @@ async def chat_completions(
     model = await _load_model(db, public_id)
     stream = bool(body.get("stream"))
     requested = int(body.get("max_tokens") or model.max_tokens_cap)
-    await acquire_limits(key, estimated_tokens=min(requested, model.max_tokens_cap))
-    hold = hold_idr(max_tokens=requested, model=model)
+    wallet = await get_or_create_wallet(db, key.organization_id)
+    afford = affordable_max_tokens(balance_idr=wallet.balance_idr, model=model)
+    if afford < 1:
+        raise HTTPException(status_code=402, detail="Insufficient AI wallet balance")
+    capped = min(requested, model.max_tokens_cap, afford)
+    await acquire_limits(key, estimated_tokens=capped)
+    hold = hold_idr(max_tokens=capped, model=model)
     try:
         reservation = await reserve(db, organization_id=key.organization_id, hold=hold, key_id=key.id)
         await db.commit()
@@ -103,7 +118,7 @@ async def chat_completions(
 
     upstream_body = dict(body)
     upstream_body["model"] = model.upstream_id
-    upstream_body["max_tokens"] = min(requested, model.max_tokens_cap)
+    upstream_body["max_tokens"] = capped
     if stream:
         upstream_body["stream_options"] = {"include_usage": True}
 

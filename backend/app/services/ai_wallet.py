@@ -30,6 +30,20 @@ def hold_idr(*, max_tokens: int, model: AiModel) -> int:
     return math.ceil(cap * model.price_idr_per_1k_out / 1000) + model.price_idr_per_1k_in
 
 
+def affordable_max_tokens(*, balance_idr: int, model: AiModel) -> int:
+    if balance_idr < 1 or model.max_tokens_cap < 1:
+        return 0
+    lo, hi, best = 1, model.max_tokens_cap, 0
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        if hold_idr(max_tokens=mid, model=model) <= balance_idr:
+            best = mid
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return best
+
+
 async def get_or_create_wallet(db: AsyncSession, organization_id: UUID) -> AiWallet:
     row = (
         await db.execute(select(AiWallet).where(AiWallet.organization_id == organization_id))
