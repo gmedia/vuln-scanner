@@ -758,6 +758,9 @@ SecRule REQUEST_URI "@rx (?i)/vendor/phpunit" "id:1023,phase:1,t:none,deny,statu
 SecRule REQUEST_URI "@rx (?i)/timthumb\\.php" "id:1024,phase:1,t:none,deny,status:403,msg:\'sinexis.timthumb\'"
 SecRule REQUEST_URI "@rx (?i)/actuator(/|$)" "id:1025,phase:1,t:none,deny,status:403,msg:\'sinexis.actuator\'"
 SecRule REQUEST_URI "@rx (?i)/telescope(/|$)" "id:1026,phase:1,t:none,deny,status:403,msg:\'sinexis.telescope\'"
+SecRule REQUEST_URI "@rx (?i)/\\.DS_Store" "id:1027,phase:1,t:none,deny,status:403,msg:\'sinexis.dsstore\'"
+SecRule REQUEST_URI "@rx (?i)/wlwmanifest\\.xml" "id:1028,phase:1,t:none,deny,status:403,msg:\'sinexis.wlwmanifest\'"
+SecRule REQUEST_URI "@rx (?i)/wp-json/wp/v2/users" "id:1029,phase:1,t:none,deny,status:403,msg:\'sinexis.wpjson.users\'"
 ';
 EOF
   chmod 644 "$dest"
