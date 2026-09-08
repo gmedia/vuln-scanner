@@ -65,7 +65,7 @@ describe("AI Gateway page", () => {
     vi.mocked(aiApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
     renderAi();
     expect(await screen.findByText("AI Gateway")).toBeInTheDocument();
-    expect(await screen.findByText("12.000")).toBeInTheDocument();
+    expect(await screen.findByText("Rp 12.000")).toBeInTheDocument();
     expect(screen.getByText("Balance (IDR)")).toBeInTheDocument();
   });
 
@@ -82,8 +82,28 @@ describe("AI Gateway page", () => {
     expect(
       await screen.findByText("Wallet is empty. Add credits to use the AI Gateway."),
     ).toBeInTheDocument();
-    const cta = screen.getByRole("link", { name: "Go to credits" });
+    expect(await screen.findByText("Rp 0")).toBeInTheDocument();
+    const cta = screen.getByRole("link", { name: "Top up credits" });
     expect(cta).toHaveAttribute("href", "/credit-history");
+  });
+
+  it("keeps key and catalog tabs on the tablist when rendered", async () => {
+    vi.mocked(aiApi.getAiWallet).mockResolvedValue({
+      organization_id: "org1",
+      balance_idr: 0,
+      currency: "IDR",
+    });
+    vi.mocked(aiApi.listAiKeys).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(aiApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(aiApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
+    renderAi();
+    expect(await screen.findByRole("tab", { name: "Wallet" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Keys" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Usage" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Catalog" })).toBeInTheDocument();
+    const list = screen.getByRole("tablist");
+    expect(list.className).toMatch(/min-w-max/);
+    expect(list.className).not.toMatch(/\bw-full\b/);
   });
 
   it("shows feature-off on 404", async () => {
