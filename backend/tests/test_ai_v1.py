@@ -181,6 +181,30 @@ async def test_keys_and_v1_chat(db_session: AsyncSession, ctx) -> None:
             )
             assert bad_n.status_code == 400
 
+            multimodal_payload = {
+                "model": "sinexis/test",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "what is this?"},
+                            {"type": "image_url", "image_url": {"url": "https://example.com/x.png"}},
+                        ],
+                    }
+                ],
+            }
+            mock_client.post = AsyncMock(return_value=_Resp())
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                mm = await ac.post(
+                    "/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {plain}", "X-E2E-Test": "1"},
+                    json=multimodal_payload,
+                )
+            assert mm.status_code == 200, mm.text
+            forwarded_mm = mock_client.post.call_args.kwargs["json"]
+            assert forwarded_mm["messages"] == multimodal_payload["messages"]
+            assert forwarded_mm["model"] == "hidden-upstream"
+
             unknown = await ac.post(
                 "/v1/chat/completions",
                 headers={"Authorization": f"Bearer {plain}", "X-E2E-Test": "1"},

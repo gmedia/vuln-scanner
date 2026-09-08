@@ -40,10 +40,6 @@ def _validate_body(body: dict[str, Any]) -> None:
     messages = body.get("messages")
     if not isinstance(messages, list) or not messages:
         raise HTTPException(status_code=400, detail="messages required")
-    for msg in messages:
-        content = msg.get("content") if isinstance(msg, dict) else None
-        if isinstance(content, list):
-            raise HTTPException(status_code=400, detail="multimodal content is not supported")
 
 
 async def _load_model(db: AsyncSession, public_id: str) -> AiModel:

@@ -49,8 +49,9 @@ Prod nginx (`nginx/sinexis.app.conf`) proxies `/api/` and `/ws/` to FastAPI; **`
 | Fork/embed 9router or CLIProxyAPI | Wrong product; ToS; ops |
 | Native `/v1/messages` (Anthropic) / Gemini | Translation epic |
 | Combo / 3-tier fallback | Surface typed **503**; customer retries |
-    | Embeddings, TTS, STT, images | Unpriced |
+    | Embeddings, TTS, STT | Unpriced |
     | Native tool *execution* in the gateway | Pass `tools` / `tool_choice` / `functions` through to wholesale; no Sinexis-side tool runner |
+    | Images / multimodal content (`messages[].content` parts) | Pass-through; tokens priced by wholesale usage. No Sinexis-side image storage / preview. |
 | `n > 1` completions | Fan-out cost |
 | Reuse `api_keys` or `credit_logs` | Wrong identity / unit |
 | Unify with Workspace “credits stay personal” | Dual wallets stay; AI is the **exception** (org) |
