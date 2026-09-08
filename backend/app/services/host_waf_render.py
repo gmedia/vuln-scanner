@@ -240,6 +240,18 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         'SecRule REQUEST_URI "@rx (?i)/debug/default/view" '
         "\"id:1047,phase:1,t:none,deny,status:403,msg:\\'sinexis.django.debug\\'\""
     )
+    rule_1048 = (
+        'SecRule REQUEST_URI "@rx (?i)/actuator/heapdump" '
+        "\"id:1048,phase:1,t:none,deny,status:403,msg:\\'sinexis.actuator.heapdump\\'\""
+    )
+    rule_1049 = (
+        'SecRule REQUEST_URI "@rx (?i)/elmah\\\\.axd" '
+        "\"id:1049,phase:1,t:none,deny,status:403,msg:\\'sinexis.elmah\\'\""
+    )
+    rule_1050 = (
+        'SecRule REQUEST_URI "@rx (?i)/trace\\\\.axd" '
+        "\"id:1050,phase:1,t:none,deny,status:403,msg:\\'sinexis.trace.axd\\'\""
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -297,6 +309,9 @@ SecRule REQUEST_METHOD "@streq POST" "t:none,chain"
      {rule_1045}
      {rule_1046}
      {rule_1047}
+     {rule_1048}
+     {rule_1049}
+     {rule_1050}
      {extra}';
 # Paranoia {paranoia}: keep starter rules only. Do not raise to 4 in v1.
 """
