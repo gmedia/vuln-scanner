@@ -144,6 +144,18 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         'SecRule REQUEST_URI "@rx (?i)/vendor/phpunit" '
         "\"id:1023,phase:1,t:none,deny,status:403,msg:\\'sinexis.phpunit\\'\""
     )
+    rule_1024 = (
+        'SecRule REQUEST_URI "@rx (?i)/timthumb\\\\.php" '
+        "\"id:1024,phase:1,t:none,deny,status:403,msg:\\'sinexis.timthumb\\'\""
+    )
+    rule_1025 = (
+        'SecRule REQUEST_URI "@rx (?i)/actuator(/|$)" '
+        "\"id:1025,phase:1,t:none,deny,status:403,msg:\\'sinexis.actuator\\'\""
+    )
+    rule_1026 = (
+        'SecRule REQUEST_URI "@rx (?i)/telescope(/|$)" '
+        "\"id:1026,phase:1,t:none,deny,status:403,msg:\\'sinexis.telescope\\'\""
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -177,6 +189,9 @@ SecRule REQUEST_METHOD "@streq POST" "t:none,chain"
     {rule_1021}
     {rule_1022}
     {rule_1023}
+    {rule_1024}
+    {rule_1025}
+    {rule_1026}
     {extra}';
 # Paranoia {paranoia}: keep starter rules only. Do not raise to 4 in v1.
 """
