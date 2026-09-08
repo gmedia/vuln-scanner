@@ -109,6 +109,18 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         'SecRule REQUEST_URI "@rx (?i)\\\\.(sql|sql\\\\.gz)$" '
         "\"id:1014,phase:1,t:none,deny,status:403,msg:\\'sinexis.sqldump\\'\""
     )
+    rule_1015 = (
+        'SecRule REQUEST_URI "@rx (?i)/uploads/.+\\\\.(php|phtml|phar)([/?]|$)" '
+        "\"id:1015,phase:1,t:none,deny,status:403,msg:\\'sinexis.php.upload\\'\""
+    )
+    rule_1016 = (
+        'SecRule REQUEST_METHOD "@rx (?i)^(PUT|DELETE|PATCH|TRACE|CONNECT)$" '
+        "\"id:1016,phase:1,t:none,deny,status:403,msg:\\'sinexis.method.unusual\\'\""
+    )
+    rule_1017 = (
+        'SecRule REQUEST_HEADERS:X-Forwarded-For "@rx (^|,\\\\s*)127\\\\.0\\\\.0\\\\.1" '
+        "\"id:1017,phase:1,t:none,deny,status:403,msg:\\'sinexis.xff.loopback\\'\""
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -133,6 +145,9 @@ SecRule REQUEST_METHOD "@streq POST" "t:none,chain"
     {rule_1012}
     {rule_1013}
     {rule_1014}
+    {rule_1015}
+    {rule_1016}
+    {rule_1017}
     {extra}';
 # Paranoia {paranoia}: keep starter rules only. Do not raise to 4 in v1.
 """
