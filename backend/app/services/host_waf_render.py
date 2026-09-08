@@ -216,6 +216,18 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         'SecRule REQUEST_URI "@rx (?i)/axis2/axis2-admin" '
         "\"id:1041,phase:1,t:none,deny,status:403,msg:\\'sinexis.axis2.admin\\'\""
     )
+    rule_1042 = (
+        'SecRule REQUEST_URI "@rx (?i)/console(/|$)" '
+        "\"id:1042,phase:1,t:none,deny,status:403,msg:\\'sinexis.weblogic.console\\'\""
+    )
+    rule_1043 = (
+        'SecRule REQUEST_URI "@rx (?i)/CFIDE/administrator" '
+        "\"id:1043,phase:1,t:none,deny,status:403,msg:\\'sinexis.cfide.admin\\'\""
+    )
+    rule_1044 = (
+        'SecRule REQUEST_URI "@rx (?i)/_profiler(/|$)" '
+        "\"id:1044,phase:1,t:none,deny,status:403,msg:\\'sinexis.symfony.profiler\\'\""
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -267,6 +279,9 @@ SecRule REQUEST_METHOD "@streq POST" "t:none,chain"
      {rule_1039}
      {rule_1040}
      {rule_1041}
+     {rule_1042}
+     {rule_1043}
+     {rule_1044}
      {extra}';
 # Paranoia {paranoia}: keep starter rules only. Do not raise to 4 in v1.
 """

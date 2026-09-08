@@ -910,11 +910,32 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
                             "path": "/axis2/axis2-admin",
                             "http_status": 403,
                         },
+                        {
+                            "action": "block",
+                            "rule_id": "1042",
+                            "method": "GET",
+                            "path": "/console",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1043",
+                            "method": "GET",
+                            "path": "/CFIDE/administrator",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1044",
+                            "method": "GET",
+                            "path": "/_profiler",
+                            "http_status": 403,
+                        },
                     ],
                 },
             )
             assert r.status_code == 200, r.text
-            assert r.json()["accepted"] == 38
+            assert r.json()["accepted"] == 41
     finally:
         app.dependency_overrides.clear()
     rows = (await db_session.execute(select(HostWafEvent).where(HostWafEvent.site_id == site.id))).scalars().all()
@@ -957,6 +978,9 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
         "1039",
         "1040",
         "1041",
+        "1042",
+        "1043",
+        "1044",
     }
 
 
