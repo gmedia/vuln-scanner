@@ -10,6 +10,8 @@
   "name": "Name",
   "target": "Target",
   "type": "Type",
+  "typeDomain": "Domain",
+  "typeIp": "IP",
   "notes": "Notes",
   "tags": "Tags",
   "tagsHint": "Comma-separated, e.g. prod, hotel",

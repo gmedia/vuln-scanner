@@ -59,9 +59,16 @@ describe("Assets page", () => {
     renderPage();
     await waitFor(() => expect(screen.getByTestId("assets-empty")).toBeInTheDocument());
     expect(screen.getByTestId("assets-empty-cta")).toBeInTheDocument();
-    expect(screen.getByTestId("assets-add")).toBeInTheDocument();
+    expect(screen.queryByTestId("assets-add")).not.toBeInTheDocument();
     expect(screen.queryByTestId("assets-pack")).not.toBeInTheDocument();
     expect(screen.queryByTestId("assets-pack-html")).not.toBeInTheDocument();
+  });
+
+  it("shows card skeletons while the list is loading", () => {
+    mockList.mockReturnValue(new Promise(() => undefined));
+    renderPage();
+    expect(screen.getByTestId("assets-loading")).toBeInTheDocument();
+    expect(screen.queryByTestId("assets-empty")).not.toBeInTheDocument();
   });
 
   it("creates an asset", async () => {

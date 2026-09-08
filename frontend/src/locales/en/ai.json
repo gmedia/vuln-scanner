@@ -27,5 +27,8 @@
   "colBilled": "Billed (IDR)",
   "colTime": "Time",
   "colIn": "IDR / 1K in",
-  "colOut": "IDR / 1K out"
+  "colOut": "IDR / 1K out",
+  "walletEmpty": "Wallet is empty. Add credits to use the AI Gateway.",
+  "walletTopUp": "Go to credits",
+  "usageEmptyHint": "See catalog"
 }

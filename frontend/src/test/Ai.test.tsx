@@ -65,7 +65,25 @@ describe("AI Gateway page", () => {
     vi.mocked(aiApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
     renderAi();
     expect(await screen.findByText("AI Gateway")).toBeInTheDocument();
-    expect(await screen.findByText("12000")).toBeInTheDocument();
+    expect(await screen.findByText("12.000")).toBeInTheDocument();
+    expect(screen.getByText("Balance (IDR)")).toBeInTheDocument();
+  });
+
+  it("shows empty wallet copy and credits CTA when balance is zero", async () => {
+    vi.mocked(aiApi.getAiWallet).mockResolvedValue({
+      organization_id: "org1",
+      balance_idr: 0,
+      currency: "IDR",
+    });
+    vi.mocked(aiApi.listAiKeys).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(aiApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(aiApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
+    renderAi();
+    expect(
+      await screen.findByText("Wallet is empty. Add credits to use the AI Gateway."),
+    ).toBeInTheDocument();
+    const cta = screen.getByRole("link", { name: "Go to credits" });
+    expect(cta).toHaveAttribute("href", "/credit-history");
   });
 
   it("shows feature-off on 404", async () => {
