@@ -25,18 +25,18 @@ def cogs_idr(*, prompt_tokens: int, completion_tokens: int, model: AiModel, usd_
     return inn + out
 
 
-def hold_idr(*, max_tokens: int, model: AiModel) -> int:
+def hold_idr(*, max_tokens: int, model: AiModel, prompt_tokens: int = 1) -> int:
     cap = min(max(max_tokens, 1), model.max_tokens_cap)
-    return math.ceil(cap * model.price_idr_per_1k_out / 1000) + model.price_idr_per_1k_in
+    return billed_idr(prompt_tokens=max(prompt_tokens, 1), completion_tokens=cap, model=model)
 
 
-def affordable_max_tokens(*, balance_idr: int, model: AiModel) -> int:
+def affordable_max_tokens(*, balance_idr: int, model: AiModel, prompt_tokens: int = 1) -> int:
     if balance_idr < 1 or model.max_tokens_cap < 1:
         return 0
     lo, hi, best = 1, model.max_tokens_cap, 0
     while lo <= hi:
         mid = (lo + hi) // 2
-        if hold_idr(max_tokens=mid, model=model) <= balance_idr:
+        if hold_idr(max_tokens=mid, model=model, prompt_tokens=prompt_tokens) <= balance_idr:
             best = mid
             lo = mid + 1
         else:

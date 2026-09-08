@@ -52,6 +52,33 @@ def _validate_body(body: dict[str, Any]) -> None:
         raise HTTPException(status_code=400, detail="messages required")
 
 
+def _requested_max_tokens(body: dict[str, Any], model: AiModel) -> int:
+    raw = body.get("max_tokens")
+    if raw is None:
+        raw = body.get("max_completion_tokens")
+    if raw is None:
+        return model.max_tokens_cap
+    return int(raw)
+
+
+def _estimate_prompt_tokens(body: dict[str, Any]) -> int:
+    messages = body.get("messages")
+    if not isinstance(messages, list):
+        return 1
+    chars = 0
+    for msg in messages:
+        if not isinstance(msg, dict):
+            continue
+        content = msg.get("content")
+        if isinstance(content, str):
+            chars += len(content)
+        elif isinstance(content, list):
+            for part in content:
+                if isinstance(part, dict) and isinstance(part.get("text"), str):
+                    chars += len(part["text"])
+    return max(chars // 4, 1)
+
+
 async def _load_model(db: AsyncSession, public_id: str) -> AiModel:
     row = (
         await db.execute(
@@ -101,14 +128,17 @@ async def chat_completions(
         raise HTTPException(status_code=404, detail="model_not_found")
     model = await _load_model(db, public_id)
     stream = bool(body.get("stream"))
-    requested = int(body.get("max_tokens") or model.max_tokens_cap)
+    requested = _requested_max_tokens(body, model)
+    prompt_est = _estimate_prompt_tokens(body)
     wallet = await get_or_create_wallet(db, key.organization_id)
-    afford = affordable_max_tokens(balance_idr=wallet.balance_idr, model=model)
+    afford = affordable_max_tokens(
+        balance_idr=wallet.balance_idr, model=model, prompt_tokens=prompt_est
+    )
     if afford < 1:
         raise HTTPException(status_code=402, detail="Insufficient AI wallet balance")
     capped = min(requested, model.max_tokens_cap, afford)
     await acquire_limits(key, estimated_tokens=capped)
-    hold = hold_idr(max_tokens=capped, model=model)
+    hold = hold_idr(max_tokens=capped, model=model, prompt_tokens=prompt_est)
     try:
         reservation = await reserve(db, organization_id=key.organization_id, hold=hold, key_id=key.id)
         await db.commit()
