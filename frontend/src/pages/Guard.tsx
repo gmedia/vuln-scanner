@@ -159,10 +159,10 @@ function CopyableId({
   );
 }
 
-function formatWhen(iso: string | null): string {
+function formatWhen(iso: string | null, locale: string): string {
   if (!iso) return "—";
   try {
-    return new Date(iso).toLocaleString("id-ID", {
+    return new Date(iso).toLocaleString(locale === "en" ? "en-US" : "id-ID", {
       timeZone: "Asia/Jakarta",
       day: "numeric",
       month: "short",
@@ -287,7 +287,8 @@ function statusBadge(status: string, t: (key: string) => string) {
 }
 
 export default function Guard() {
-  const { t } = useTranslation("guard");
+  const { t, i18n } = useTranslation("guard");
+  const dateLocale = i18n.language.startsWith("en") ? "en" : "id";
   const queryClient = useQueryClient();
   const activeRole = useAuthStore((s) => s.activeRole);
   const activeOrgId = useAuthStore((s) => s.activeOrgId);
@@ -491,6 +492,7 @@ export default function Guard() {
                   {t("syncAt", {
                     when: formatWhen(
                       statusQ.data?.last_inventory_sync_at ?? null,
+                      dateLocale,
                     ),
                   })}
                 </span>
@@ -704,7 +706,7 @@ export default function Guard() {
                           </p>
                           <CopyableId value={tok.id} label={t("copyCurl")} />
                           <p className="mt-2 text-xs text-muted-foreground">
-                            {t("colExpires")}: {formatWhen(tok.expires_at)}
+                            {t("colExpires")}: {formatWhen(tok.expires_at, dateLocale)}
                           </p>
                           <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                             {tokenStatusBadge(tok, t)}
@@ -754,7 +756,7 @@ export default function Guard() {
                               <CopyableId value={tok.id} label={t("copyCurl")} />
                             </TableCell>
                             <TableCell className="whitespace-nowrap text-muted-foreground">
-                              {formatWhen(tok.expires_at)}
+                              {formatWhen(tok.expires_at, dateLocale)}
                             </TableCell>
                             <TableCell>{tokenStatusBadge(tok, t)}</TableCell>
                             <TableCell>
@@ -776,6 +778,7 @@ export default function Guard() {
                       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-2 text-xs text-muted-foreground">
                         <span>
                           {t("tokenSummary", {
+                            count: tokens.length,
                             total: tokens.length,
                             unused: unusedCount,
                           })}
@@ -884,11 +887,11 @@ export default function Guard() {
                           </Badge>
                         </div>
                         <p className="mt-1 text-[11px] text-muted-foreground">
-                          {t("colLastSeen")}: {formatWhen(a.last_keep_alive)}
+                          {t("colLastSeen")}: {formatWhen(a.last_keep_alive, dateLocale)}
                         </p>
                         <p className="mt-1 text-[11px] text-muted-foreground">
                           {t("colHelperPoll")}:{" "}
-                          {formatWhen(a.last_helper_poll_at)}
+                            {formatWhen(a.last_helper_poll_at, dateLocale)}
                         </p>
                         {a.asset_id ? (
                           <div className="mt-2">
@@ -997,10 +1000,10 @@ export default function Guard() {
                             {statusBadge(a.status, t)}
                           </TableCell>
                           <TableCell className="whitespace-nowrap text-muted-foreground">
-                            {formatWhen(a.last_keep_alive)}
+                            {formatWhen(a.last_keep_alive, dateLocale)}
                           </TableCell>
                           <TableCell className="whitespace-nowrap text-muted-foreground">
-                            {formatWhen(a.last_helper_poll_at)}
+                          {formatWhen(a.last_helper_poll_at, dateLocale)}
                           </TableCell>
                           <TableCell
                             className="max-w-[8rem] truncate text-muted-foreground"
@@ -1091,6 +1094,11 @@ export default function Guard() {
                   <p className="max-w-md text-xs text-muted-foreground">
                     {t("noAlertsHint")}
                   </p>
+                  <Button variant="outline" size="sm" className="mt-1" asChild>
+                    <Link to="/siem" data-testid="guard-open-siem">
+                      {t("openSiem")}
+                    </Link>
+                  </Button>
                 </div>
               ) : (
                 <ul className="space-y-3">
@@ -1106,7 +1114,7 @@ export default function Guard() {
                         </span>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {formatWhen(al.occurred_at)}
+                        {formatWhen(al.occurred_at, dateLocale)}
                         {al.agent_name ? ` · ${al.agent_name}` : ""}
                         {al.rule_id ? ` · rule ${al.rule_id}` : ""}
                       </p>
