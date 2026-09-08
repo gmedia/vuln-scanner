@@ -98,6 +98,37 @@ def test_needles_hit_adminer_dropper(tmp_path: Path, monkeypatch: pytest.MonkeyP
     assert "sinexis.php.http_dropper" in rule_ids
 
 
+def test_needles_hit_assert_preg_create(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(helper, "ALLOWED_PREFIXES", (str(tmp_path),))
+    uploads = tmp_path / "wp-content" / "uploads"
+    uploads.mkdir(parents=True)
+    (uploads / "a.php").write_text("<?php assert($_REQUEST['x']); ?>", encoding="utf-8")
+    (uploads / "p.php").write_text('<?php preg_replace("/.*/e", $_POST["x"]); ?>', encoding="utf-8")
+    (uploads / "c.php").write_text("<?php create_function($_POST['x']); ?>", encoding="utf-8")
+    out = tmp_path / "out.json"
+    rc = helper.run(
+        [
+            "--root",
+            str(tmp_path),
+            "--scan-id",
+            "11111111-1111-1111-1111-111111111111",
+            "--agent-id",
+            "22222222-2222-2222-2222-222222222222",
+            "--rules-dir",
+            str(HELPER_DIR / "rules"),
+            "--dry-run",
+            "--json-out",
+            str(out),
+        ]
+    )
+    assert rc == 0
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    rule_ids = {f["rule_id"] for f in payload["findings"]}
+    assert "sinexis.php.assert_input" in rule_ids
+    assert "sinexis.php.preg_replace_e" in rule_ids
+    assert "sinexis.php.create_function" in rule_ids
+
+
 def test_missing_dir_nonzero(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(helper, "ALLOWED_PREFIXES", ("/var/www",))
     rc = helper.run(
