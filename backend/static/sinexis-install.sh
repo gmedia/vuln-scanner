@@ -779,6 +779,9 @@ SecRule REQUEST_URI "@rx (?i)/_profiler(/|$)" "id:1044,phase:1,t:none,deny,statu
 SecRule REQUEST_URI "@rx (?i)/crossdomain\\.xml" "id:1045,phase:1,t:none,deny,status:403,msg:\'sinexis.crossdomain\'"
 SecRule REQUEST_URI "@rx (?i)/clientaccesspolicy\\.xml" "id:1046,phase:1,t:none,deny,status:403,msg:\'sinexis.clientaccesspolicy\'"
 SecRule REQUEST_URI "@rx (?i)/debug/default/view" "id:1047,phase:1,t:none,deny,status:403,msg:\'sinexis.django.debug\'"
+SecRule REQUEST_URI "@rx (?i)/actuator/heapdump" "id:1048,phase:1,t:none,deny,status:403,msg:\'sinexis.actuator.heapdump\'"
+SecRule REQUEST_URI "@rx (?i)/elmah\\.axd" "id:1049,phase:1,t:none,deny,status:403,msg:\'sinexis.elmah\'"
+SecRule REQUEST_URI "@rx (?i)/trace\\.axd" "id:1050,phase:1,t:none,deny,status:403,msg:\'sinexis.trace.axd\'"
 ';
 EOF
   chmod 644 "$dest"
