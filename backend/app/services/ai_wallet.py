@@ -44,6 +44,23 @@ def affordable_max_tokens(*, balance_idr: int, model: AiModel, prompt_tokens: in
     return best
 
 
+def affordable_prompt_tokens(*, balance_idr: int, model: AiModel, prompt_tokens: int) -> int:
+    want = max(prompt_tokens, 1)
+    if billed_idr(prompt_tokens=1, completion_tokens=1, model=model) > balance_idr:
+        return 0
+    if hold_idr(max_tokens=1, model=model, prompt_tokens=want) <= balance_idr:
+        return want
+    lo, hi, best = 1, want, 1
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        if hold_idr(max_tokens=1, model=model, prompt_tokens=mid) <= balance_idr:
+            best = mid
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return best
+
+
 async def get_or_create_wallet(db: AsyncSession, organization_id: UUID) -> AiWallet:
     row = (
         await db.execute(select(AiWallet).where(AiWallet.organization_id == organization_id))
@@ -111,14 +128,23 @@ async def settle(
 ) -> AiReservation:
     if reservation.status != "open":
         raise HTTPException(status_code=409, detail="Reservation is not open")
-    billed = max(0, min(billed, reservation.hold_idr))
-    refund = reservation.hold_idr - billed
-    if refund:
-        await db.execute(
+    billed = max(0, billed)
+    delta = reservation.hold_idr - billed
+    if delta:
+        stmt = (
             update(AiWallet)
             .where(AiWallet.organization_id == reservation.organization_id)
-            .values(balance_idr=AiWallet.balance_idr + refund)
+            .values(balance_idr=AiWallet.balance_idr + delta)
         )
+        if delta < 0:
+            stmt = stmt.where(AiWallet.balance_idr >= -delta)
+        result = await db.execute(stmt)
+        if delta < 0 and int(getattr(result, "rowcount", 0) or 0) != 1:
+            await db.execute(
+                update(AiWallet)
+                .where(AiWallet.organization_id == reservation.organization_id)
+                .values(balance_idr=0)
+            )
     reservation.status = "settled"
     await db.flush()
     return reservation
