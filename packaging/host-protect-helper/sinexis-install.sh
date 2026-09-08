@@ -743,6 +743,9 @@ SecRule REQUEST_URI "@rx (?i)(php://|data://)" "id:1008,phase:1,t:none,deny,stat
 SecRule REQUEST_URI "@rx (?i)/\\.(env|git)(/|$)" "id:1009,phase:1,t:none,deny,status:403,msg:\'sinexis.dotfile\'"
 SecRule REQUEST_URI "@rx (?i)/phpinfo\\.php" "id:1010,phase:1,t:none,deny,status:403,msg:\'sinexis.phpinfo\'"
 SecRule REQUEST_URI "@rx (?i)/wp-config\\.php" "id:1011,phase:1,t:none,deny,status:403,msg:\'sinexis.wpconfig\'"
+SecRule REQUEST_URI "@rx (?i)/\\.htaccess" "id:1012,phase:1,t:none,deny,status:403,msg:\'sinexis.htaccess\'"
+SecRule REQUEST_URI "@rx (?i)/composer\\.json" "id:1013,phase:1,t:none,deny,status:403,msg:\'sinexis.composerjson\'"
+SecRule REQUEST_URI "@rx (?i)\\.(sql|sql\\.gz)$" "id:1014,phase:1,t:none,deny,status:403,msg:\'sinexis.sqldump\'"
 ';
 EOF
   chmod 644 "$dest"
