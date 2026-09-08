@@ -121,6 +121,9 @@ def test_wrapper_write_waf_snippet_file(tmp_path: Path) -> None:
     assert "id:1027" in text
     assert "id:1028" in text
     assert "id:1029" in text
+    assert "id:1030" in text
+    assert "id:1031" in text
+    assert "id:1032" in text
     assert "wp-admin" not in text
     assert "';" in text.split("modsecurity_rules", 1)[1]
     combined = proc.stdout + proc.stderr
