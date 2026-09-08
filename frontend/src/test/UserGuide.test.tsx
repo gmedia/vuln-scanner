@@ -107,7 +107,7 @@ describe("UserGuide", () => {
     );
     expect(document.body.querySelector('a[href="#guard"]')).toBeTruthy();
     expect(document.body.textContent ?? "").toMatch(/Host Protect helper/i);
-    expect(document.body.textContent ?? "").toMatch(/1001–1035/);
+    expect(document.body.textContent ?? "").toMatch(/1001–1038/);
     expect(document.body.textContent ?? "").not.toMatch(
       /Those rows use a CRS or starter rule id/,
     );

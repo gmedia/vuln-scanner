@@ -767,6 +767,9 @@ SecRule REQUEST_URI "@rx (?i)/manager/html" "id:1032,phase:1,t:none,deny,status:
 SecRule REQUEST_URI "@rx (?i)/solr/admin" "id:1033,phase:1,t:none,deny,status:403,msg:\'sinexis.solr.admin\'"
 SecRule REQUEST_URI "@rx (?i)/jenkins(/|$)" "id:1034,phase:1,t:none,deny,status:403,msg:\'sinexis.jenkins\'"
 SecRule REQUEST_URI "@rx (?i)/jmx-console" "id:1035,phase:1,t:none,deny,status:403,msg:\'sinexis.jmx.console\'"
+SecRule REQUEST_URI "@rx (?i)/trace\\.axd" "id:1036,phase:1,t:none,deny,status:403,msg:\'sinexis.trace.axd\'"
+SecRule REQUEST_URI "@rx (?i)/\\.svn/entries" "id:1037,phase:1,t:none,deny,status:403,msg:\'sinexis.svn.entries\'"
+SecRule REQUEST_URI "@rx (?i)/invoker/JMXInvokerServlet" "id:1038,phase:1,t:none,deny,status:403,msg:\'sinexis.jmx.invoker\'"
 ';
 EOF
   chmod 644 "$dest"

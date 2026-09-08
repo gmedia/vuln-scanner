@@ -47,8 +47,11 @@
 #   GET  /solr/admin  → expect 403 (id 1033)
 #   GET  /jenkins  → expect 403 (id 1034)
 #   GET  /jmx-console  → expect 403 (id 1035)
+#   GET  /trace.axd  → expect 403 (id 1036)
+#   GET  /.svn/entries  → expect 403 (id 1037)
+#   GET  /invoker/JMXInvokerServlet  → expect 403 (id 1038)
 #   GET  /wp-admin/  → expect 200 (not in pack)
-# This script only asserts the snippet contains id:1005–1035 and no wp-admin.
+# This script only asserts the snippet contains id:1005–1038 and no wp-admin.
 
 set -euo pipefail
 
@@ -282,6 +285,9 @@ fetch_snippet() {
   printf '%s' "$SNIPPET" | grep -q 'id:1033' || die "snippet missing original rule 1033"
   printf '%s' "$SNIPPET" | grep -q 'id:1034' || die "snippet missing original rule 1034"
   printf '%s' "$SNIPPET" | grep -q 'id:1035' || die "snippet missing original rule 1035"
+  printf '%s' "$SNIPPET" | grep -q 'id:1036' || die "snippet missing original rule 1036"
+  printf '%s' "$SNIPPET" | grep -q 'id:1037' || die "snippet missing original rule 1037"
+  printf '%s' "$SNIPPET" | grep -q 'id:1038' || die "snippet missing original rule 1038"
   printf '%s' "$SNIPPET" | grep -qi 'wp-admin' && die "snippet must not match /wp-admin/"
   log "snippet ok (not printed)"
 }
