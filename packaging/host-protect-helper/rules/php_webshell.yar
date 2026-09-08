@@ -61,3 +61,41 @@ rule sinexis_php_http_dropper
     condition:
         any of them
 }
+
+rule sinexis_php_assert_input
+{
+    meta:
+        id = "sinexis.php.assert_input"
+        hit_class = "webshell"
+    strings:
+        $a = "assert($_POST"
+        $b = "assert($_GET"
+        $c = "assert($_REQUEST"
+    condition:
+        any of them
+}
+
+rule sinexis_php_preg_replace_e
+{
+    meta:
+        id = "sinexis.php.preg_replace_e"
+        hit_class = "webshell"
+    strings:
+        $a = "preg_replace('/.*/e"
+        $b = "preg_replace(\"/.*/e"
+    condition:
+        any of them
+}
+
+rule sinexis_php_create_function
+{
+    meta:
+        id = "sinexis.php.create_function"
+        hit_class = "webshell"
+    strings:
+        $a = "create_function($_POST"
+        $b = "create_function($_GET"
+        $c = "create_function($_REQUEST"
+    condition:
+        any of them
+}
