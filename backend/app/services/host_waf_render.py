@@ -180,6 +180,18 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         'SecRule REQUEST_URI "@rx (?i)/manager/html" '
         "\"id:1032,phase:1,t:none,deny,status:403,msg:\\'sinexis.tomcat.manager\\'\""
     )
+    rule_1033 = (
+        'SecRule REQUEST_URI "@rx (?i)/solr/admin" '
+        "\"id:1033,phase:1,t:none,deny,status:403,msg:\\'sinexis.solr.admin\\'\""
+    )
+    rule_1034 = (
+        'SecRule REQUEST_URI "@rx (?i)/jenkins(/|$)" '
+        "\"id:1034,phase:1,t:none,deny,status:403,msg:\\'sinexis.jenkins\\'\""
+    )
+    rule_1035 = (
+        'SecRule REQUEST_URI "@rx (?i)/jmx-console" '
+        "\"id:1035,phase:1,t:none,deny,status:403,msg:\\'sinexis.jmx.console\\'\""
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -222,6 +234,9 @@ SecRule REQUEST_METHOD "@streq POST" "t:none,chain"
      {rule_1030}
      {rule_1031}
      {rule_1032}
+     {rule_1033}
+     {rule_1034}
+     {rule_1035}
      {extra}';
 # Paranoia {paranoia}: keep starter rules only. Do not raise to 4 in v1.
 """
