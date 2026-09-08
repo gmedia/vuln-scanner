@@ -20,6 +20,7 @@ from app.services.ai_limits import acquire as acquire_limits
 from app.services.ai_limits import release_concurrent
 from app.services.ai_wallet import (
     affordable_max_tokens,
+    affordable_prompt_tokens,
     billed_idr,
     cogs_idr,
     get_or_create_wallet,
@@ -131,14 +132,19 @@ async def chat_completions(
     requested = _requested_max_tokens(body, model)
     prompt_est = _estimate_prompt_tokens(body)
     wallet = await get_or_create_wallet(db, key.organization_id)
-    afford = affordable_max_tokens(
+    prompt_hold = affordable_prompt_tokens(
         balance_idr=wallet.balance_idr, model=model, prompt_tokens=prompt_est
+    )
+    if prompt_hold < 1:
+        raise HTTPException(status_code=402, detail="Insufficient AI wallet balance")
+    afford = affordable_max_tokens(
+        balance_idr=wallet.balance_idr, model=model, prompt_tokens=prompt_hold
     )
     if afford < 1:
         raise HTTPException(status_code=402, detail="Insufficient AI wallet balance")
     capped = min(requested, model.max_tokens_cap, afford)
     await acquire_limits(key, estimated_tokens=capped)
-    hold = hold_idr(max_tokens=capped, model=model, prompt_tokens=prompt_est)
+    hold = hold_idr(max_tokens=capped, model=model, prompt_tokens=prompt_hold)
     try:
         reservation = await reserve(db, organization_id=key.organization_id, hold=hold, key_id=key.id)
         await db.commit()

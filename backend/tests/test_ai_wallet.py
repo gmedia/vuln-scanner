@@ -14,7 +14,16 @@ from app.main import app
 from app.models.ai_gateway import AiModel, AiProvider
 from app.models.organization import Organization, OrganizationMembership
 from app.models.user import User
-from app.services.ai_wallet import affordable_max_tokens, billed_idr, hold_idr, record_usage, release, reserve, settle
+from app.services.ai_wallet import (
+    affordable_max_tokens,
+    affordable_prompt_tokens,
+    billed_idr,
+    hold_idr,
+    record_usage,
+    release,
+    reserve,
+    settle,
+)
 from app.services.auth import create_access_token, get_current_admin, hash_password
 from app.services.organization import ensure_personal_org
 
@@ -118,6 +127,21 @@ def test_hold_idr_matches_billed_not_full_1k_in() -> None:
     )
     assert hold_idr(max_tokens=1, model=_M(), prompt_tokens=1) < 10_000
     assert affordable_max_tokens(balance_idr=10_000, model=_M(), prompt_tokens=1) >= 1
+
+
+def test_affordable_prompt_tokens_clamps_huge_context() -> None:
+    class _M:
+        price_idr_per_1k_in = 10_000
+        price_idr_per_1k_out = 20_000
+        max_tokens_cap = 4096
+
+    huge = 200_000
+    assert hold_idr(max_tokens=1, model=_M(), prompt_tokens=huge) > 10_000
+    clamped = affordable_prompt_tokens(balance_idr=10_000, model=_M(), prompt_tokens=huge)
+    assert clamped >= 1
+    assert hold_idr(max_tokens=1, model=_M(), prompt_tokens=clamped) <= 10_000
+    assert affordable_max_tokens(balance_idr=10_000, model=_M(), prompt_tokens=clamped) >= 1
+    assert affordable_prompt_tokens(balance_idr=0, model=_M(), prompt_tokens=10) == 0
 
 
 def test_billed_idr_ceils_per_thousand() -> None:
