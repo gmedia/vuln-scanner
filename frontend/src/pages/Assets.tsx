@@ -194,8 +194,8 @@ export default function Assets() {
             {t("skuLabel", { sku, count: items.length, limit })}
           </p>
         </div>
-        <div className="flex gap-2">
-          {items.length > 0 ? (
+          <div className="flex flex-wrap justify-end gap-2">
+            {items.length > 0 ? (
             <>
               <Button
                 variant="outline"
@@ -602,7 +602,7 @@ export default function Assets() {
                       </div>
                     ) : null}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap justify-end gap-2">
                     {a.scan_type === "domain" ? (
                       <Button variant="outline" size="sm" asChild>
                         <Link
