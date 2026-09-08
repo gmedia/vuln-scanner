@@ -10,6 +10,29 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`sinexis.app`** (public DNS; legacy `vs.appmedia.id` may still exist). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
+## Session snapshot (2026-09-08 — Host Protect original WAF/YARA vs Imunify gap)
+
+| Item | State |
+|------|--------|
+| **`main` tip (coding)** | Re-`git pull`. Expect **`ecc3da7f`** or newer: **#678** WAF 1021–1023. Before that: **#677** SPA visual QA, **#676** AI gateway clamp, **#675** YARA exec/system/unserialize, **#674** WAF 1018–1020, **#672** YARA include/backtick/proc, **#670** WAF 1015–1017. |
+| **Open PRs** | **[#679](https://github.com/gmedia/vuln-scanner/pull/679)** `feat/host-yara-fileput-upload-evalfiles` — original dual-pack YARA: `sinexis.php.file_put_input`, `sinexis.php.move_uploaded`, `sinexis.php.eval_files`. **Not on `main` until squash-merge.** Dependabot: **do not mass-merge**. |
+| **WAF starter** | Allowlist **`_WAF_STARTER_IDS` 1001–1023**. Copy/docs: **1001–1023**. Ingest test `accepted == 20`. Dual ship: `host_waf_render.py` + helper/static `sinexis-install.sh`. Last merged IDs: **1021** `sinexis.debug.log` (`/wp-content/debug.log`), **1022** `sinexis.server.status`, **1023** `sinexis.phpunit`. Earlier: 1015 php upload, 1016 unusual methods (no OPTIONS), 1017 XFF loopback, 1018 phpMyAdmin, 1019 cgi-bin, 1020 UA shellshock `() {`. |
+| **YARA pack** | Dual: `backend/app/host_protect_rules/php_webshell.yar` + `packaging/host-protect-helper/rules/php_webshell.yar`. On `main`: eval_post, system_get, adminer, filesman, http_dropper, assert/preg/create, obfuscation (eval_b64, gzinflate_b64, str_rot13), include_http, backtick_input, proc_open_input, exec_input, system_post, unserialize_input. **#679** adds file_put / move_uploaded / eval_files. |
+| **Pattern** | Alternate **WAF IDs then YARA needles**. Original only. **Not** Imunify/CloudAV/CRS dump. **No** “Imunify compatible” in UI. **Do not implement G/H.** |
+| **Legal freeze** | [`docs/commercial/imunify-beside-not-roadmap.md`](docs/commercial/imunify-beside-not-roadmap.md). Spek: [`docs/specs/vps-displace-imunify-dev-plan.md`](docs/specs/vps-displace-imunify-dev-plan.md), [`docs/specs/imunify-class-onbox.md`](docs/specs/imunify-class-onbox.md). |
+| **Comment-hook** | Lab smoke header lines for probe IDs are **ops comments** matching the existing list — not new commentary. YARA/ModSec strings are **needles/regex**, not comments. |
+| **Git** | Prefix **`GIT_MASTER=1`**. Never work on `main`. Never poll CI. Never commit secrets/IPs. |
+| **Engineering default** | User keeps saying **“sudah saya merge, lanjut menutup gap fitur dengan imunify360”** → next original slice (WAF 1024+ after #679 merge, or more YARA). Speak **Bahasa Indonesia**. |
+
+### Next OpenCode session
+
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. Expect **`ecc3da7f`** or **#679 squash** if merged. `gh pr list --state open --assignee @me`. If **#679** CI green → `gh pr merge --squash` then delete `feat/host-yara-fileput-upload-evalfiles`. **Do not poll CI.** Do **not** mass-merge Dependabot.
+2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** then **`AGENTS.md`**. P14: **`docs/specs/imunify-class-onbox.md`**. Legal: **`imunify-beside-not-roadmap.md`**.
+3. Speak **Bahasa Indonesia**; prefix git with `GIT_MASTER=1`. Never work on `main`. Never commit secrets/IPs/tokens/PNGs.
+4. **Do not** tell the user to SSH Alembic after a green **main** deploy.
+5. If user says continue Imunify gap: **next original WAF 1024+** (after #679) or further YARA needles. Dual-pack always. Tests: `test_host_waf.py` ingest count, `test_host_waf_render.py`, install wrappers, lab smoke grep; YARA: `test_host_engine.py` + `test_host_protect_helper.py`.
+6. **Do not implement G/H.** Do **not** clone Imunify. Do **not** paste WAF onto `sinexis.app` edge.
+
 ## Session snapshot (2026-09-05 — AI Gateway S1–S5 + prod ops)
 
 | Item | State |
