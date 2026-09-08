@@ -168,6 +168,18 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         'SecRule REQUEST_URI "@rx (?i)/wp-json/wp/v2/users" '
         "\"id:1029,phase:1,t:none,deny,status:403,msg:\\'sinexis.wpjson.users\\'\""
     )
+    rule_1030 = (
+        'SecRule REQUEST_URI "@rx (?i)/adminer\\\\.php" '
+        "\"id:1030,phase:1,t:none,deny,status:403,msg:\\'sinexis.adminer\\'\""
+    )
+    rule_1031 = (
+        'SecRule REQUEST_URI "@rx (?i)/elmah\\\\.axd" '
+        "\"id:1031,phase:1,t:none,deny,status:403,msg:\\'sinexis.elmah\\'\""
+    )
+    rule_1032 = (
+        'SecRule REQUEST_URI "@rx (?i)/manager/html" '
+        "\"id:1032,phase:1,t:none,deny,status:403,msg:\\'sinexis.tomcat.manager\\'\""
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -207,6 +219,9 @@ SecRule REQUEST_METHOD "@streq POST" "t:none,chain"
      {rule_1027}
      {rule_1028}
      {rule_1029}
+     {rule_1030}
+     {rule_1031}
+     {rule_1032}
      {extra}';
 # Paranoia {paranoia}: keep starter rules only. Do not raise to 4 in v1.
 """

@@ -761,6 +761,9 @@ SecRule REQUEST_URI "@rx (?i)/telescope(/|$)" "id:1026,phase:1,t:none,deny,statu
 SecRule REQUEST_URI "@rx (?i)/\\.DS_Store" "id:1027,phase:1,t:none,deny,status:403,msg:\'sinexis.dsstore\'"
 SecRule REQUEST_URI "@rx (?i)/wlwmanifest\\.xml" "id:1028,phase:1,t:none,deny,status:403,msg:\'sinexis.wlwmanifest\'"
 SecRule REQUEST_URI "@rx (?i)/wp-json/wp/v2/users" "id:1029,phase:1,t:none,deny,status:403,msg:\'sinexis.wpjson.users\'"
+SecRule REQUEST_URI "@rx (?i)/adminer\\.php" "id:1030,phase:1,t:none,deny,status:403,msg:\'sinexis.adminer\'"
+SecRule REQUEST_URI "@rx (?i)/elmah\\.axd" "id:1031,phase:1,t:none,deny,status:403,msg:\'sinexis.elmah\'"
+SecRule REQUEST_URI "@rx (?i)/manager/html" "id:1032,phase:1,t:none,deny,status:403,msg:\'sinexis.tomcat.manager\'"
 ';
 EOF
   chmod 644 "$dest"
