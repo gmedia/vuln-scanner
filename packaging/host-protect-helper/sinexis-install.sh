@@ -752,6 +752,9 @@ SecRule REQUEST_HEADERS:X-Forwarded-For "@rx (^|,\\s*)127\\.0\\.0\\.1" "id:1017,
 SecRule REQUEST_URI "@rx (?i)/phpmyadmin" "id:1018,phase:1,t:none,deny,status:403,msg:\'sinexis.phpmyadmin\'"
 SecRule REQUEST_URI "@rx (?i)/cgi-bin/" "id:1019,phase:1,t:none,deny,status:403,msg:\'sinexis.cgibin\'"
 SecRule REQUEST_HEADERS:User-Agent "@rx \(\)\s*\{" "id:1020,phase:1,t:none,deny,status:403,msg:\'sinexis.ua.shellshock\'"
+SecRule REQUEST_URI "@rx (?i)/wp-content/debug\\.log" "id:1021,phase:1,t:none,deny,status:403,msg:\'sinexis.debug.log\'"
+SecRule REQUEST_URI "@rx (?i)/server-status" "id:1022,phase:1,t:none,deny,status:403,msg:\'sinexis.server.status\'"
+SecRule REQUEST_URI "@rx (?i)/vendor/phpunit" "id:1023,phase:1,t:none,deny,status:403,msg:\'sinexis.phpunit\'"
 ';
 EOF
   chmod 644 "$dest"

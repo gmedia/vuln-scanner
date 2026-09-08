@@ -44,6 +44,9 @@ _WAF_STARTER_IDS = frozenset(
         "1018",
         "1019",
         "1020",
+        "1021",
+        "1022",
+        "1023",
     }
 )
 _WAF_SIMULATE_RULE = "mock.sqli.1"
