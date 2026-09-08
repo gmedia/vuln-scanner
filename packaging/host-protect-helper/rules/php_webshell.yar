@@ -99,3 +99,42 @@ rule sinexis_php_create_function
     condition:
         any of them
 }
+
+rule sinexis_php_eval_b64
+{
+    meta:
+        id = "sinexis.php.eval_b64"
+        hit_class = "webshell"
+    strings:
+        $a = "eval(base64_decode"
+        $b = "eval(gzinflate"
+        $c = "eval(str_rot13"
+    condition:
+        any of them
+}
+
+rule sinexis_php_gzinflate_b64
+{
+    meta:
+        id = "sinexis.php.gzinflate_b64"
+        hit_class = "webshell"
+    strings:
+        $a = "gzinflate(base64_decode"
+        $b = "gzuncompress(base64_decode"
+        $c = "gzdecode(base64_decode"
+    condition:
+        any of them
+}
+
+rule sinexis_php_str_rot13_input
+{
+    meta:
+        id = "sinexis.php.str_rot13_input"
+        hit_class = "webshell"
+    strings:
+        $a = "str_rot13($_POST"
+        $b = "str_rot13($_GET"
+        $c = "str_rot13($_REQUEST"
+    condition:
+        any of them
+}
