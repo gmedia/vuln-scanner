@@ -48,6 +48,10 @@ describe("AdminAi", () => {
     renderPage();
     expect(await screen.findByText("AI Gateway")).toBeInTheDocument();
     expect(await screen.findByText("No providers.")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Trial chat" })).toBeInTheDocument();
+    const list = screen.getByRole("tablist");
+    expect(list.className).toMatch(/min-w-max/);
+    expect(list.className).not.toMatch(/\bw-full\b/);
   });
 
   it("lists provider and model with edit and delete", async () => {

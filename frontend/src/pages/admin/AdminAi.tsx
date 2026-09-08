@@ -183,13 +183,15 @@ export default function AdminAi() {
     <div className="w-full space-y-6">
       <Head />
       <Tabs defaultValue="providers">
-        <TabsList className="w-full overflow-x-auto flex-nowrap justify-start">
+        <div className="max-w-full overflow-x-auto">
+        <TabsList className="inline-flex h-auto min-w-max flex-nowrap justify-start">
           <TabsTrigger value="providers">{t("aiTabProviders")}</TabsTrigger>
           <TabsTrigger value="models">{t("aiTabModels")}</TabsTrigger>
           <TabsTrigger value="usage">{t("aiTabUsage")}</TabsTrigger>
           <TabsTrigger value="topup">{t("aiTabTopup")}</TabsTrigger>
           <TabsTrigger value="trial">{t("aiTabTrial")}</TabsTrigger>
         </TabsList>
+        </div>
         <TabsContent value="providers">
           <Card>
             <CardHeader>
@@ -215,7 +217,6 @@ export default function AdminAi() {
               >
                 {t("aiAddProvider")}
               </Button>
-              <div className="overflow-x-auto">
               <Table className="min-w-[40rem]">
                 <TableHeader>
                   <TableRow>
@@ -356,7 +357,6 @@ export default function AdminAi() {
               >
                 {t("aiAddModel")}
               </Button>
-              <div className="overflow-x-auto">
               <Table className="min-w-[40rem]">
                 <TableHeader>
                   <TableRow>
@@ -461,7 +461,6 @@ export default function AdminAi() {
                   )}
                 </TableBody>
               </Table>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -471,7 +470,6 @@ export default function AdminAi() {
               <CardTitle>{t("aiTabUsage")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
               <Table className="min-w-[40rem]">
                 <TableHeader>
                   <TableRow>
@@ -500,7 +498,6 @@ export default function AdminAi() {
                   )}
                 </TableBody>
               </Table>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
