@@ -784,11 +784,32 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
                             "path": "/vendor/phpunit",
                             "http_status": 403,
                         },
+                        {
+                            "action": "block",
+                            "rule_id": "1024",
+                            "method": "GET",
+                            "path": "/timthumb.php",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1025",
+                            "method": "GET",
+                            "path": "/actuator",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1026",
+                            "method": "GET",
+                            "path": "/telescope",
+                            "http_status": 403,
+                        },
                     ],
                 },
             )
             assert r.status_code == 200, r.text
-            assert r.json()["accepted"] == 20
+            assert r.json()["accepted"] == 23
     finally:
         app.dependency_overrides.clear()
     rows = (await db_session.execute(select(HostWafEvent).where(HostWafEvent.site_id == site.id))).scalars().all()
@@ -813,6 +834,9 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
         "1021",
         "1022",
         "1023",
+        "1024",
+        "1025",
+        "1026",
     }
 
 
