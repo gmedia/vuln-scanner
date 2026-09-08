@@ -805,11 +805,32 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
                             "path": "/telescope",
                             "http_status": 403,
                         },
+                        {
+                            "action": "block",
+                            "rule_id": "1027",
+                            "method": "GET",
+                            "path": "/.DS_Store",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1028",
+                            "method": "GET",
+                            "path": "/wlwmanifest.xml",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1029",
+                            "method": "GET",
+                            "path": "/wp-json/wp/v2/users",
+                            "http_status": 403,
+                        },
                     ],
                 },
             )
             assert r.status_code == 200, r.text
-            assert r.json()["accepted"] == 23
+            assert r.json()["accepted"] == 26
     finally:
         app.dependency_overrides.clear()
     rows = (await db_session.execute(select(HostWafEvent).where(HostWafEvent.site_id == site.id))).scalars().all()
@@ -837,6 +858,9 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
         "1024",
         "1025",
         "1026",
+        "1027",
+        "1028",
+        "1029",
     }
 
 

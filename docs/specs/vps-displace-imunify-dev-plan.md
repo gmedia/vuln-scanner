@@ -56,7 +56,7 @@ Until Demo-ok: do not demo Host as “on-box proof.”
 **Demo-ok + Invoice-ok** and:
 
 1. Original pack has **new numeric IDs beyond 1001–1004** (`1005` wp-login POST+payload, `1006` URI eval/base64), allowlisted, lab probe documented, CMS-admin FP written (**DL2** — pack in git; live 403 still needs ModSec on vhost).
-2. Simulate hidden **or** rows labeled `preview` / `lab`; no unlabeled `mock.sqli.1` in customer UX (**DL0 shipped** #647: lab-gate Simulate; starter `msg:` 1001–1003 original labels). Live ingest **1001–1026**.
+2. Simulate hidden **or** rows labeled `preview` / `lab`; no unlabeled `mock.sqli.1` in customer UX (**DL0 shipped** #647: lab-gate Simulate; starter `msg:` 1001–1003 original labels). Live ingest **1001–1029**.
 3. Demo vhost actually has ModSec loaded (ops checkbox).
 
 Until Sentence-ok use the fallback: *“file + HTTP tipis + scan luar; Imunify tetap lebih dalam di PHP runtime dan bot challenge.”*
@@ -76,7 +76,7 @@ Sources: Imunify360 marketing (6 layers, PD, CloudAV, RapidScan, auto-cleanup, W
 | Real-time / RapidScan / CloudAV | Timer + daily/hourly; **not** inotify | **Park** |
 | Show hits + isolate | SPA `/host`; quarantine **mv** (auto **off**) | **DL1** runbook; **no** new queue (P14 **D** shipped) |
 | Auto cleanup / reconstruct / MDS | Hybrid ticket (H6) | **Out** |
-| HTTP WAF | Starter **1001–1026** | Further original IDs only; never IM360/CRS |
+| HTTP WAF | Starter **1001–1029** | Further original IDs only; never IM360/CRS |
 | Protect on by default | **F shipped**; per-site default **off**; protect **Multi** | Keep off; do not re-do F |
 | ModSec module on typical nginx | Snippet copy only; Ubuntu often has **no** module | **Ops/hybrid** — Demo-ok checkbox, not SaaS |
 | Proactive Defense | None | **Out** (slice **H**) |
@@ -89,7 +89,7 @@ Sources: Imunify360 marketing (6 layers, PD, CloudAV, RapidScan, auto-cleanup, W
 | Crontab / Adminer-zero | None | **Park** |
 | Invoice SKU | Working IDR; `service_id` open | **Invoice-ok** — human |
 
-WAF IDs (`host_waf_render.py`): **1001** `/xmlrpc.php` (`sinexis.xmlrpc`); **1002** ARGS `union select` / `or 1=1` (`sinexis.sqli`); **1003** URI `../` (`sinexis.path.traversal`); **1004** lab `/sinexis-waf-lab`; **1005** POST `/wp-login.php` chained with payload ARGS; **1006** URI `eval(` / `base64_decode(`; **1007** `/wp-cron.php`; **1008** URI `php://` / `data://`; **1024** `/timthumb.php` (`sinexis.timthumb`); **1025** `/actuator` (`sinexis.actuator`); **1026** `/telescope` (`sinexis.telescope`). Product GET/ingest = starter IDs **1001–1026**. SPA Simulate is **lab-only** and is **not** listed on the live table (#647). **Not matched:** GET `/wp-admin/`.
+WAF IDs (`host_waf_render.py`): **1001** `/xmlrpc.php` (`sinexis.xmlrpc`); **1002** ARGS `union select` / `or 1=1` (`sinexis.sqli`); **1003** URI `../` (`sinexis.path.traversal`); **1004** lab `/sinexis-waf-lab`; **1005** POST `/wp-login.php` chained with payload ARGS; **1006** URI `eval(` / `base64_decode(`; **1007** `/wp-cron.php`; **1008** URI `php://` / `data://`; **1024** `/timthumb.php` (`sinexis.timthumb`); **1025** `/actuator` (`sinexis.actuator`); **1026** `/telescope` (`sinexis.telescope`); **1027** `/.DS_Store` (`sinexis.dsstore`); **1028** `/wlwmanifest.xml` (`sinexis.wlwmanifest`); **1029** `/wp-json/wp/v2/users` (`sinexis.wpjson.users`). Product GET/ingest = starter IDs **1001–1029**. SPA Simulate is **lab-only** and is **not** listed on the live table (#647). **Not matched:** GET `/wp-admin/`.
 
 ---
 

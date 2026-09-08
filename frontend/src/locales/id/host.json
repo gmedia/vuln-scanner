@@ -86,7 +86,7 @@
   "wafProtectLocked": "Mode protect butuh Host Multi. Basic hanya detect.",
   "wafSimulate": "Simulasikan permintaan",
   "wafSimulateHint": "Hanya pratinjau lab. Menambah baris contoh supaya Anda melihat tampilan. Bukan hit nginx hidup. Ubah mode ke detect atau protect dulu.",
-  "wafSimulateProdHint": "Simulasi hanya lab (situs fixture). Tabel ini baris hidup dari helper (aturan 1001–1026), bukan pratinjau dashboard.",
+  "wafSimulateProdHint": "Simulasi hanya lab (situs fixture). Tabel ini baris hidup dari helper (aturan 1001–1029), bukan pratinjau dashboard.",
   "wafEvents": "Event WAF",
   "wafEventsHint": "Baris ini event filter HTTP, bukan File mencurigakan. Baris hidup muncul setelah helper mengirim kecocokan dari nginx di VPS — bukan dari dashboard ini.",
   "wafEventsEmpty": "Belum ada event WAF. Simulasi hanya pratinjau. Hit hidup butuh snippet di VPS plus poll helper yang mengirim ke sini.",

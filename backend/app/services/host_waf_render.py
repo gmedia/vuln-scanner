@@ -156,6 +156,18 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         'SecRule REQUEST_URI "@rx (?i)/telescope(/|$)" '
         "\"id:1026,phase:1,t:none,deny,status:403,msg:\\'sinexis.telescope\\'\""
     )
+    rule_1027 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.DS_Store" '
+        "\"id:1027,phase:1,t:none,deny,status:403,msg:\\'sinexis.dsstore\\'\""
+    )
+    rule_1028 = (
+        'SecRule REQUEST_URI "@rx (?i)/wlwmanifest\\\\.xml" '
+        "\"id:1028,phase:1,t:none,deny,status:403,msg:\\'sinexis.wlwmanifest\\'\""
+    )
+    rule_1029 = (
+        'SecRule REQUEST_URI "@rx (?i)/wp-json/wp/v2/users" '
+        "\"id:1029,phase:1,t:none,deny,status:403,msg:\\'sinexis.wpjson.users\\'\""
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -192,7 +204,10 @@ SecRule REQUEST_METHOD "@streq POST" "t:none,chain"
     {rule_1024}
     {rule_1025}
     {rule_1026}
-    {extra}';
+     {rule_1027}
+     {rule_1028}
+     {rule_1029}
+     {extra}';
 # Paranoia {paranoia}: keep starter rules only. Do not raise to 4 in v1.
 """
 
