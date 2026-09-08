@@ -182,3 +182,45 @@ rule sinexis_php_proc_open_input
     condition:
         any of them
 }
+
+rule sinexis_php_exec_input
+{
+    meta:
+        id = "sinexis.php.exec_input"
+        hit_class = "backdoor"
+    strings:
+        $a = "exec($_POST"
+        $b = "exec($_GET"
+        $c = "exec($_REQUEST"
+    condition:
+        any of them
+}
+
+rule sinexis_php_system_post
+{
+    meta:
+        id = "sinexis.php.system_post"
+        hit_class = "backdoor"
+    strings:
+        $a = "system($_POST"
+        $b = "passthru($_POST"
+        $c = "shell_exec($_POST"
+        $d = "system($_REQUEST"
+        $e = "passthru($_REQUEST"
+        $f = "shell_exec($_REQUEST"
+    condition:
+        any of them
+}
+
+rule sinexis_php_unserialize_input
+{
+    meta:
+        id = "sinexis.php.unserialize_input"
+        hit_class = "webshell"
+    strings:
+        $a = "unserialize($_POST"
+        $b = "unserialize($_GET"
+        $c = "unserialize($_REQUEST"
+    condition:
+        any of them
+}
