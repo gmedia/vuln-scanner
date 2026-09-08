@@ -47,6 +47,11 @@ import {
 import { isAiDisabledError } from "@/api/ai";
 import { useTranslation } from "react-i18next";
 
+function formatIdr(n: number | null | undefined): string {
+  if (n == null) return "—";
+  return `Rp ${n.toLocaleString("id-ID")}`;
+}
+
 export default function AdminAi() {
   const { t } = useTranslation("admin");
   const qc = useQueryClient();
@@ -257,8 +262,8 @@ export default function AdminAi() {
                             </span>
                           )}
                         </TableCell>
-                        <TableCell className="space-x-2">
-                          {editingProv?.id === p.id ? (
+                         <TableCell className="whitespace-nowrap space-x-2">
+                           {editingProv?.id === p.id ? (
                             <>
                               <Field
                                 id="ai-p-edit-cred"
@@ -408,8 +413,8 @@ export default function AdminAi() {
                             m.upstream_id
                           )}
                         </TableCell>
-                        <TableCell className="space-x-2">
-                          {editingModel?.id === m.id ? (
+                         <TableCell className="whitespace-nowrap space-x-2">
+                           {editingModel?.id === m.id ? (
                             <>
                               <Button
                                 type="button"
@@ -615,8 +620,8 @@ function UsageRow({
       <TableRow>
         <TableCell>{u.model_public_id}</TableCell>
         <TableCell>{u.source}</TableCell>
-        <TableCell>{u.billed_idr}</TableCell>
-        <TableCell>
+        <TableCell>{formatIdr(u.billed_idr)}</TableCell>
+        <TableCell className="whitespace-nowrap">
           <Button type="button" size="sm" variant="outline" onClick={onToggle}>
             {open ? t("aiCancel") : t("aiRequest")}
           </Button>
