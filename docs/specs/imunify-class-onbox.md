@@ -116,7 +116,7 @@ Slices **A–H** remain the **PR stream** names. Waves are **when sales can demo
 | Scan files on that disk | Helper POST; honesty #556 | **0–1** — fail-closed already **B**; copy must not look like “empty = clean” when helper missing |
 | Show hits a layperson can act on | SPA `/host`; ignore vs empty **#596** | **1** — remaining: AM demo script; no jargon-only empty states |
 | Isolate / restore | S11 queue **#558** | **1** — already queued; lab **tc5** only |
-| HTTP filter on same host | P13 detect + starter **1001–1026**; **F** protect Multi; **DL3** live notify | **2** — never `sinexis.app` edge; do not ingest IM360 IDs |
+| HTTP filter on same host | P13 detect + starter **1001–1029**; **F** protect Multi; **DL3** live notify | **2** — never `sinexis.app` edge; do not ingest IM360 IDs |
 | Panel / PHP PD | Out | **3** = **G/H** research only |
 
 ### Wave 0 — sellable **install** (default next)
