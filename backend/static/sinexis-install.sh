@@ -770,6 +770,9 @@ SecRule REQUEST_URI "@rx (?i)/jmx-console" "id:1035,phase:1,t:none,deny,status:4
 SecRule REQUEST_URI "@rx (?i)/trace\\.axd" "id:1036,phase:1,t:none,deny,status:403,msg:\'sinexis.trace.axd\'"
 SecRule REQUEST_URI "@rx (?i)/\\.svn/entries" "id:1037,phase:1,t:none,deny,status:403,msg:\'sinexis.svn.entries\'"
 SecRule REQUEST_URI "@rx (?i)/invoker/JMXInvokerServlet" "id:1038,phase:1,t:none,deny,status:403,msg:\'sinexis.jmx.invoker\'"
+SecRule REQUEST_URI "@rx (?i)/web\\.config" "id:1039,phase:1,t:none,deny,status:403,msg:\'sinexis.web.config\'"
+SecRule REQUEST_URI "@rx (?i)/server-info" "id:1040,phase:1,t:none,deny,status:403,msg:\'sinexis.server.info\'"
+SecRule REQUEST_URI "@rx (?i)/axis2/axis2-admin" "id:1041,phase:1,t:none,deny,status:403,msg:\'sinexis.axis2.admin\'"
 ';
 EOF
   chmod 644 "$dest"
