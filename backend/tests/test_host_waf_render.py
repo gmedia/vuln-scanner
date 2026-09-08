@@ -53,6 +53,9 @@ def test_lab_fixture_snippet_has_probe_rule():
     assert "id:1036" in text
     assert "id:1037" in text
     assert "id:1038" in text
+    assert "id:1039" in text
+    assert "id:1040" in text
+    assert "id:1041" in text
     assert "wp-admin" not in text
     assert "listen" not in text.lower()
     assert "modsecurity_rules '" in text
@@ -101,6 +104,9 @@ def test_customer_snippet_omits_lab_probe():
     assert "id:1036" in text
     assert "id:1037" in text
     assert "id:1038" in text
+    assert "id:1039" in text
+    assert "id:1040" in text
+    assert "id:1041" in text
     assert "wp-admin" not in text
     assert "do not paste onto sinexis.app" in text
 
