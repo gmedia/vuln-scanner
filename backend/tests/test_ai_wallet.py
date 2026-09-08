@@ -100,11 +100,24 @@ def test_affordable_max_tokens_fits_hold() -> None:
         max_tokens_cap = 4096
 
     assert affordable_max_tokens(balance_idr=0, model=_M()) == 0
-    assert affordable_max_tokens(balance_idr=999, model=_M()) == 0
+    assert affordable_max_tokens(balance_idr=1, model=_M()) == 0
     cap = affordable_max_tokens(balance_idr=10_000, model=_M())
     assert cap >= 1
     assert hold_idr(max_tokens=cap, model=_M()) <= 10_000
     assert hold_idr(max_tokens=min(cap + 1, _M().max_tokens_cap), model=_M()) > 10_000 or cap == _M().max_tokens_cap
+
+
+def test_hold_idr_matches_billed_not_full_1k_in() -> None:
+    class _M:
+        price_idr_per_1k_in = 10_000
+        price_idr_per_1k_out = 20_000
+        max_tokens_cap = 4096
+
+    assert hold_idr(max_tokens=1, model=_M(), prompt_tokens=1) == billed_idr(
+        prompt_tokens=1, completion_tokens=1, model=_M()
+    )
+    assert hold_idr(max_tokens=1, model=_M(), prompt_tokens=1) < 10_000
+    assert affordable_max_tokens(balance_idr=10_000, model=_M(), prompt_tokens=1) >= 1
 
 
 def test_billed_idr_ceils_per_thousand() -> None:
