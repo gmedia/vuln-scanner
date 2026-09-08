@@ -192,6 +192,18 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         'SecRule REQUEST_URI "@rx (?i)/jmx-console" '
         "\"id:1035,phase:1,t:none,deny,status:403,msg:\\'sinexis.jmx.console\\'\""
     )
+    rule_1036 = (
+        'SecRule REQUEST_URI "@rx (?i)/trace\\\\.axd" '
+        "\"id:1036,phase:1,t:none,deny,status:403,msg:\\'sinexis.trace.axd\\'\""
+    )
+    rule_1037 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\\\.svn/entries" '
+        "\"id:1037,phase:1,t:none,deny,status:403,msg:\\'sinexis.svn.entries\\'\""
+    )
+    rule_1038 = (
+        'SecRule REQUEST_URI "@rx (?i)/invoker/JMXInvokerServlet" '
+        "\"id:1038,phase:1,t:none,deny,status:403,msg:\\'sinexis.jmx.invoker\\'\""
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -237,6 +249,9 @@ SecRule REQUEST_METHOD "@streq POST" "t:none,chain"
      {rule_1033}
      {rule_1034}
      {rule_1035}
+     {rule_1036}
+     {rule_1037}
+     {rule_1038}
      {extra}';
 # Paranoia {paranoia}: keep starter rules only. Do not raise to 4 in v1.
 """
