@@ -228,6 +228,18 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         'SecRule REQUEST_URI "@rx (?i)/_profiler(/|$)" '
         "\"id:1044,phase:1,t:none,deny,status:403,msg:\\'sinexis.symfony.profiler\\'\""
     )
+    rule_1045 = (
+        'SecRule REQUEST_URI "@rx (?i)/crossdomain\\\\.xml" '
+        "\"id:1045,phase:1,t:none,deny,status:403,msg:\\'sinexis.crossdomain\\'\""
+    )
+    rule_1046 = (
+        'SecRule REQUEST_URI "@rx (?i)/clientaccesspolicy\\\\.xml" '
+        "\"id:1046,phase:1,t:none,deny,status:403,msg:\\'sinexis.clientaccesspolicy\\'\""
+    )
+    rule_1047 = (
+        'SecRule REQUEST_URI "@rx (?i)/debug/default/view" '
+        "\"id:1047,phase:1,t:none,deny,status:403,msg:\\'sinexis.django.debug\\'\""
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -282,6 +294,9 @@ SecRule REQUEST_METHOD "@streq POST" "t:none,chain"
      {rule_1042}
      {rule_1043}
      {rule_1044}
+     {rule_1045}
+     {rule_1046}
+     {rule_1047}
      {extra}';
 # Paranoia {paranoia}: keep starter rules only. Do not raise to 4 in v1.
 """
