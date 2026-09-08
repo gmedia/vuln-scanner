@@ -36,7 +36,7 @@ import { useTranslation } from "react-i18next";
 
 function formatIdr(n: number | null | undefined): string {
   if (n == null) return "—";
-  return n.toLocaleString("id-ID");
+  return `Rp ${n.toLocaleString("id-ID")}`;
 }
 
 export default function Ai() {
@@ -124,12 +124,14 @@ export default function Ai() {
     <div className="w-full space-y-6">
       <Header />
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="w-full max-w-full overflow-x-auto flex-nowrap justify-start">
+        <div className="max-w-full overflow-x-auto">
+        <TabsList className="inline-flex h-auto min-w-max flex-nowrap justify-start">
           <TabsTrigger value="wallet">{t("tabWallet")}</TabsTrigger>
           <TabsTrigger value="keys">{t("tabKeys")}</TabsTrigger>
           <TabsTrigger value="usage">{t("tabUsage")}</TabsTrigger>
           <TabsTrigger value="catalog">{t("tabCatalog")}</TabsTrigger>
         </TabsList>
+        </div>
         <TabsContent value="wallet">
           <Card className="border-border">
             <CardHeader>
@@ -199,8 +201,7 @@ export default function Ai() {
                   </AlertDescription>
                 </Alert>
               ) : null}
-              <div className="overflow-x-auto">
-                <Table className="min-w-[36rem]">
+              <Table className="min-w-[36rem]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("colName")}</TableHead>
@@ -236,8 +237,7 @@ export default function Ai() {
                     ))
                   )}
                 </TableBody>
-                </Table>
-              </div>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
@@ -260,8 +260,7 @@ export default function Ai() {
                   </Button>
                 </p>
               ) : (
-              <div className="overflow-x-auto">
-                <Table className="min-w-[36rem]">
+              <Table className="min-w-[36rem]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("colModel")}</TableHead>
@@ -282,8 +281,7 @@ export default function Ai() {
                       </TableRow>
                     ))}
                 </TableBody>
-                </Table>
-              </div>
+              </Table>
               )}
             </CardContent>
           </Card>
@@ -294,8 +292,7 @@ export default function Ai() {
               <CardTitle>{t("tabCatalog")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <Table className="min-w-[36rem]">
+              <Table className="min-w-[36rem]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("colModel")}</TableHead>
@@ -318,8 +315,7 @@ export default function Ai() {
                     ))
                   )}
                 </TableBody>
-                </Table>
-              </div>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
