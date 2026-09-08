@@ -222,6 +222,37 @@ def test_needles_hit_exec_system_unserialize(tmp_path: Path, monkeypatch: pytest
     assert "sinexis.php.unserialize_input" in rule_ids
 
 
+def test_needles_hit_fileput_upload_evalfiles(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(helper, "ALLOWED_PREFIXES", (str(tmp_path),))
+    uploads = tmp_path / "wp-content" / "uploads"
+    uploads.mkdir(parents=True)
+    (uploads / "w.php").write_text("<?php file_put_contents($_GET['f'], 'x'); ?>", encoding="utf-8")
+    (uploads / "m.php").write_text("<?php copy($_FILES['f']['tmp_name'], 'x.php'); ?>", encoding="utf-8")
+    (uploads / "f.php").write_text("<?php include($_FILES['x']['tmp_name']); ?>", encoding="utf-8")
+    out = tmp_path / "out.json"
+    rc = helper.run(
+        [
+            "--root",
+            str(tmp_path),
+            "--scan-id",
+            "11111111-1111-1111-1111-111111111111",
+            "--agent-id",
+            "22222222-2222-2222-2222-222222222222",
+            "--rules-dir",
+            str(HELPER_DIR / "rules"),
+            "--dry-run",
+            "--json-out",
+            str(out),
+        ]
+    )
+    assert rc == 0
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    rule_ids = {f["rule_id"] for f in payload["findings"]}
+    assert "sinexis.php.file_put_input" in rule_ids
+    assert "sinexis.php.move_uploaded" in rule_ids
+    assert "sinexis.php.eval_files" in rule_ids
+
+
 def test_missing_dir_nonzero(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(helper, "ALLOWED_PREFIXES", ("/var/www",))
     rc = helper.run(
