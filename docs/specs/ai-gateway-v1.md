@@ -241,7 +241,7 @@ Response shape: OpenAI chat completions (including `usage`). Errors: OpenAI-styl
 
 1. Authenticate `sx-`; load org + wallet; enforce RPM/TPM/concurrent.
 2. Resolve `model` → enabled `ai_models`; reject tools/images/`n!=1`.
-3. Compute **hold_idr** from `min(requested max_tokens, model cap, affordable_max_tokens(balance))` × sell price. If wallet cannot cover even 1 completion token + 1k-in floor → 402. Otherwise clamp `max_tokens` down so hold ≤ balance (coding agents omit `max_tokens` or send 8k–128k). Then reserve.
+3. Compute **hold_idr** as `billed_idr(prompt_est, max_tokens)` (same ceil-per-1k as settle — **not** a full 1k-in floor). `max_tokens` = min(request `max_tokens`/`max_completion_tokens`, model cap, affordable_max_tokens(balance, prompt_est)). If wallet cannot cover 1 in + 1 out token → 402. Coding agents omit `max_tokens` or send 8k–128k.
 4. Strip customer auth; set wholesale header; POST upstream (timeout).
 5. Stream or JSON to client; parse usage from final chunk / body.
 6. `billed_idr` from actual tokens; `cogs_idr` from HPP×FX; settle: credit back `hold - billed` (or full release if 0); write usage event.
