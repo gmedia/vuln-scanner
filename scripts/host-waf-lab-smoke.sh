@@ -26,8 +26,11 @@
 #   GET  /.htaccess  → expect 403 (id 1012)
 #   GET  /composer.json  → expect 403 (id 1013)
 #   GET  /dump.sql  → expect 403 (id 1014)
+#   GET  /uploads/x.php  → expect 403 (id 1015)
+#   PUT  /  → expect 403 (id 1016)
+#   GET  / with X-Forwarded-For 127.0.0.1 → expect 403 (id 1017)
 #   GET  /wp-admin/  → expect 200 (not in pack)
-# This script only asserts the snippet contains id:1005–1014 and no wp-admin.
+# This script only asserts the snippet contains id:1005–1017 and no wp-admin.
 
 set -euo pipefail
 
@@ -240,6 +243,9 @@ fetch_snippet() {
   printf '%s' "$SNIPPET" | grep -q 'id:1012' || die "snippet missing original rule 1012"
   printf '%s' "$SNIPPET" | grep -q 'id:1013' || die "snippet missing original rule 1013"
   printf '%s' "$SNIPPET" | grep -q 'id:1014' || die "snippet missing original rule 1014"
+  printf '%s' "$SNIPPET" | grep -q 'id:1015' || die "snippet missing original rule 1015"
+  printf '%s' "$SNIPPET" | grep -q 'id:1016' || die "snippet missing original rule 1016"
+  printf '%s' "$SNIPPET" | grep -q 'id:1017' || die "snippet missing original rule 1017"
   printf '%s' "$SNIPPET" | grep -qi 'wp-admin' && die "snippet must not match /wp-admin/"
   log "snippet ok (not printed)"
 }
