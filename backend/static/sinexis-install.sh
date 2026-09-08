@@ -776,6 +776,9 @@ SecRule REQUEST_URI "@rx (?i)/axis2/axis2-admin" "id:1041,phase:1,t:none,deny,st
 SecRule REQUEST_URI "@rx (?i)/console(/|$)" "id:1042,phase:1,t:none,deny,status:403,msg:\'sinexis.weblogic.console\'"
 SecRule REQUEST_URI "@rx (?i)/CFIDE/administrator" "id:1043,phase:1,t:none,deny,status:403,msg:\'sinexis.cfide.admin\'"
 SecRule REQUEST_URI "@rx (?i)/_profiler(/|$)" "id:1044,phase:1,t:none,deny,status:403,msg:\'sinexis.symfony.profiler\'"
+SecRule REQUEST_URI "@rx (?i)/crossdomain\\.xml" "id:1045,phase:1,t:none,deny,status:403,msg:\'sinexis.crossdomain\'"
+SecRule REQUEST_URI "@rx (?i)/clientaccesspolicy\\.xml" "id:1046,phase:1,t:none,deny,status:403,msg:\'sinexis.clientaccesspolicy\'"
+SecRule REQUEST_URI "@rx (?i)/debug/default/view" "id:1047,phase:1,t:none,deny,status:403,msg:\'sinexis.django.debug\'"
 ';
 EOF
   chmod 644 "$dest"
