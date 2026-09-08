@@ -183,7 +183,7 @@ export default function AdminAi() {
     <div className="w-full space-y-6">
       <Head />
       <Tabs defaultValue="providers">
-        <TabsList>
+        <TabsList className="w-full overflow-x-auto flex-nowrap justify-start">
           <TabsTrigger value="providers">{t("aiTabProviders")}</TabsTrigger>
           <TabsTrigger value="models">{t("aiTabModels")}</TabsTrigger>
           <TabsTrigger value="usage">{t("aiTabUsage")}</TabsTrigger>
@@ -207,10 +207,16 @@ export default function AdminAi() {
                   type="password"
                 />
               </div>
-              <Button type="button" onClick={() => addProv.mutate()} disabled={addProv.isPending}>
+              <Button
+                type="button"
+                className="w-full sm:w-auto"
+                onClick={() => addProv.mutate()}
+                disabled={addProv.isPending}
+              >
                 {t("aiAddProvider")}
               </Button>
-              <Table>
+              <div className="overflow-x-auto">
+              <Table className="min-w-[40rem]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("aiName")}</TableHead>
@@ -237,7 +243,7 @@ export default function AdminAi() {
                             p.name
                           )}
                         </TableCell>
-                        <TableCell className="font-mono text-xs">
+                        <TableCell className="max-w-[18rem] font-mono text-xs">
                           {editingProv?.id === p.id ? (
                             <Input
                               aria-label={t("aiBaseUrl")}
@@ -245,7 +251,9 @@ export default function AdminAi() {
                               onChange={(e) => setEditProvUrl(e.target.value)}
                             />
                           ) : (
-                            p.base_url
+                            <span className="block truncate" title={p.base_url}>
+                              {p.base_url}
+                            </span>
                           )}
                         </TableCell>
                         <TableCell className="space-x-2">
@@ -306,6 +314,7 @@ export default function AdminAi() {
                   )}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -341,12 +350,14 @@ export default function AdminAi() {
               </div>
               <Button
                 type="button"
+                className="w-full sm:w-auto"
                 onClick={() => addModel.mutate()}
                 disabled={addModel.isPending || !providerId}
               >
                 {t("aiAddModel")}
               </Button>
-              <Table>
+              <div className="overflow-x-auto">
+              <Table className="min-w-[40rem]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("aiPublicId")}</TableHead>
@@ -450,6 +461,7 @@ export default function AdminAi() {
                   )}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -459,7 +471,8 @@ export default function AdminAi() {
               <CardTitle>{t("aiTabUsage")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
+              <div className="overflow-x-auto">
+              <Table className="min-w-[40rem]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("aiPublicId")}</TableHead>
@@ -487,6 +500,7 @@ export default function AdminAi() {
                   )}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -497,7 +511,13 @@ export default function AdminAi() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Field id="ai-org" label={t("aiOrgId")} value={orgId} onChange={setOrgId} />
+                <Field
+                  id="ai-org"
+                  label={t("aiOrgId")}
+                  value={orgId}
+                  onChange={setOrgId}
+                  placeholder={t("aiOrgIdPlaceholder")}
+                />
                 <Field id="ai-amt" label={t("aiAmount")} value={amount} onChange={setAmount} />
               </div>
               <Button type="button" onClick={() => topupMut.mutate()} disabled={topupMut.isPending}>
@@ -653,17 +673,25 @@ function Field({
   value,
   onChange,
   type = "text",
+  placeholder,
 }: {
   id: string;
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
+  placeholder?: string;
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
       <Label htmlFor={id}>{label}</Label>
-      <Input id={id} type={type} value={value} onChange={(e) => onChange(e.target.value)} />
+      <Input
+        id={id}
+        type={type}
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </div>
   );
 }

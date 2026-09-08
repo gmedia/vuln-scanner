@@ -180,6 +180,7 @@
   "aiPriceIn": "Harga IDR / 1K in",
   "aiPriceOut": "Harga IDR / 1K out",
   "aiOrgId": "ID organisasi",
+  "aiOrgIdPlaceholder": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
   "aiAmount": "Nominal (IDR)",
   "aiTopup": "Top up",
   "aiTrialModel": "Model",

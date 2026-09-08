@@ -180,6 +180,7 @@
   "aiPriceIn": "Price IDR / 1K in",
   "aiPriceOut": "Price IDR / 1K out",
   "aiOrgId": "Organization id",
+  "aiOrgIdPlaceholder": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
   "aiAmount": "Amount (IDR)",
   "aiTopup": "Top up",
   "aiTrialModel": "Model",
