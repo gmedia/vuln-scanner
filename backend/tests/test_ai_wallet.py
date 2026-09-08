@@ -178,8 +178,9 @@ async def test_wallet_idor_and_topup(db_session: AsyncSession, ctx) -> None:
 
             hold = hold_idr(max_tokens=10, model=model)
             first = await reserve(db_session, organization_id=org.id, hold=hold)
+            leftover = 10_000 - hold
             with pytest.raises(HTTPException) as exc:
-                await reserve(db_session, organization_id=org.id, hold=9_000)
+                await reserve(db_session, organization_id=org.id, hold=leftover + 1)
             assert exc.value.status_code == 402
             billed = billed_idr(prompt_tokens=10, completion_tokens=20, model=model)
             await settle(db_session, reservation=first, billed=billed)
