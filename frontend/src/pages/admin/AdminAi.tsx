@@ -315,7 +315,6 @@ export default function AdminAi() {
                   )}
                 </TableBody>
               </Table>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
