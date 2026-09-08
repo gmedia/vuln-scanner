@@ -138,3 +138,47 @@ rule sinexis_php_str_rot13_input
     condition:
         any of them
 }
+
+rule sinexis_php_include_http
+{
+    meta:
+        id = "sinexis.php.include_http"
+        hit_class = "dropper"
+    strings:
+        $a = "include(\"http"
+        $b = "include('http"
+        $c = "require(\"http"
+        $d = "require('http"
+        $e = "include_once(\"http"
+        $f = "require_once(\"http"
+    condition:
+        any of them
+}
+
+rule sinexis_php_backtick_input
+{
+    meta:
+        id = "sinexis.php.backtick_input"
+        hit_class = "backdoor"
+    strings:
+        $a = "`$_POST"
+        $b = "`$_GET"
+        $c = "`$_REQUEST"
+    condition:
+        any of them
+}
+
+rule sinexis_php_proc_open_input
+{
+    meta:
+        id = "sinexis.php.proc_open_input"
+        hit_class = "backdoor"
+    strings:
+        $a = "proc_open($_POST"
+        $b = "proc_open($_GET"
+        $c = "proc_open($_REQUEST"
+        $d = "popen($_GET"
+        $e = "popen($_POST"
+    condition:
+        any of them
+}
