@@ -773,6 +773,9 @@ SecRule REQUEST_URI "@rx (?i)/invoker/JMXInvokerServlet" "id:1038,phase:1,t:none
 SecRule REQUEST_URI "@rx (?i)/web\\.config" "id:1039,phase:1,t:none,deny,status:403,msg:\'sinexis.web.config\'"
 SecRule REQUEST_URI "@rx (?i)/server-info" "id:1040,phase:1,t:none,deny,status:403,msg:\'sinexis.server.info\'"
 SecRule REQUEST_URI "@rx (?i)/axis2/axis2-admin" "id:1041,phase:1,t:none,deny,status:403,msg:\'sinexis.axis2.admin\'"
+SecRule REQUEST_URI "@rx (?i)/console(/|$)" "id:1042,phase:1,t:none,deny,status:403,msg:\'sinexis.weblogic.console\'"
+SecRule REQUEST_URI "@rx (?i)/CFIDE/administrator" "id:1043,phase:1,t:none,deny,status:403,msg:\'sinexis.cfide.admin\'"
+SecRule REQUEST_URI "@rx (?i)/_profiler(/|$)" "id:1044,phase:1,t:none,deny,status:403,msg:\'sinexis.symfony.profiler\'"
 ';
 EOF
   chmod 644 "$dest"
