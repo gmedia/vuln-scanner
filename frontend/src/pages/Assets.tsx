@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Skeleton } from "@/components/ui/Skeleton";
 import {
   Select,
   SelectContent,
@@ -199,6 +200,7 @@ export default function Assets() {
             <>
               <Button
                 variant="outline"
+                className="hidden sm:flex"
                 data-testid="assets-pack"
                 onClick={async () => {
                   const pack = await fetchAssetPack();
@@ -217,6 +219,7 @@ export default function Assets() {
               </Button>
               <Button
                 variant="outline"
+                className="hidden sm:flex"
                 data-testid="assets-pack-html"
                 onClick={async () => {
                   const blob = await fetchAssetPackHtml();
@@ -232,6 +235,7 @@ export default function Assets() {
               </Button>
             </>
           ) : null}
+          {items.length > 0 || open ? (
           <Button
             data-testid="assets-add"
             disabled={atCap}
@@ -245,6 +249,7 @@ export default function Assets() {
           >
             {t("add")}
           </Button>
+          ) : null}
         </div>
       </div>
 
@@ -280,8 +285,8 @@ export default function Assets() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="domain">domain</SelectItem>
-                  <SelectItem value="ip">ip</SelectItem>
+                  <SelectItem value="domain">{t("typeDomain")}</SelectItem>
+                  <SelectItem value="ip">{t("typeIp")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -428,21 +433,6 @@ export default function Assets() {
                 ) : null}
               </PopoverContent>
             </Popover>
-            {tagFilters.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5">
-                {tagFilters.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="default"
-                    className={`cursor-pointer ${tagColorClass(tag, colorMap)}`}
-                    data-testid={`asset-tag-chip-${tag}`}
-                    onClick={() => toggleTagFilter(tag)}
-                  >
-                    {tag} ×
-                  </Badge>
-                ))}
-              </div>
-            ) : null}
           </div>
           <div className="flex min-w-0 flex-col gap-1.5">
             <Label htmlFor="asset-tag-colors-toggle">{t("tagColors")}</Label>
@@ -529,10 +519,44 @@ export default function Assets() {
               </PopoverContent>
             </Popover>
           </div>
+          {tagFilters.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5 sm:col-span-2">
+              {tagFilters.map((tag) => (
+                <Button
+                  key={tag}
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto p-0"
+                  onClick={() => toggleTagFilter(tag)}
+                >
+                  <Badge
+                    variant="default"
+                    className={tagColorClass(tag, colorMap)}
+                    data-testid={`asset-tag-chip-${tag}`}
+                  >
+                    {tag} ×
+                  </Badge>
+                </Button>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
 
-      {items.length === 0 && !list.isLoading ? (
+      {list.isLoading ? (
+        <div className="space-y-3" data-testid="assets-loading">
+          {[0, 1, 2].map((i) => (
+            <Card key={i}>
+              <CardContent className="space-y-3 pt-6">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-4 w-64" />
+                <Skeleton className="h-8 w-full max-w-sm" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : items.length === 0 ? (
         <Card data-testid="assets-empty">
           <CardContent className="flex min-h-[8rem] flex-col items-center justify-center gap-2 px-6 py-8 text-center">
             <p className="text-balance text-sm font-medium text-foreground">
@@ -566,20 +590,27 @@ export default function Assets() {
                       {a.scan_type} · {a.target}
                     </p>
                     {(a.tags ?? []).length > 0 ? (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {a.tags.map((tag) => (
-                          <Badge
-                            key={tag}
-                            variant="default"
-                            data-testid={`asset-tag-${tag}`}
-                            className={`cursor-pointer ${tagColorClass(tag, colorMap)}`}
-                            style={tagColorStyle(tag, colorMap)}
-                            onClick={() => toggleTagFilter(tag)}
-                          >
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
+                       <div className="mt-2 flex flex-wrap gap-1.5">
+                         {a.tags.map((tag) => (
+                           <Button
+                             key={tag}
+                             type="button"
+                             variant="ghost"
+                             size="sm"
+                             className="h-auto p-0"
+                             onClick={() => toggleTagFilter(tag)}
+                           >
+                             <Badge
+                               variant="default"
+                               data-testid={`asset-tag-${tag}`}
+                               className={tagColorClass(tag, colorMap)}
+                               style={tagColorStyle(tag, colorMap)}
+                             >
+                               {tag}
+                             </Badge>
+                           </Button>
+                         ))}
+                       </div>
                     ) : null}
                     {a.schedule_id ? (
                       <p className="text-xs text-muted-foreground">
@@ -587,22 +618,22 @@ export default function Assets() {
                       </p>
                     ) : null}
                     {a.guard_agent_id ? (
-                      <div className="mt-2">
-                        <Badge
-                          variant="info"
-                          data-testid={`asset-guard-chip-${a.id}`}
-                        >
-                          {t("guardLinked", {
-                            name: a.guard_agent_name ?? a.guard_agent_id,
-                          })}
-                        </Badge>{" "}
-                        <Button variant="link" size="sm" className="h-auto p-0" asChild>
-                          <Link to="/guard">{t("openGuard")}</Link>
-                        </Button>
-                      </div>
-                    ) : null}
+                       <div className="mt-2 flex flex-wrap items-center gap-2">
+                         <Badge
+                           variant="info"
+                           data-testid={`asset-guard-chip-${a.id}`}
+                         >
+                           {t("guardLinked", {
+                             name: a.guard_agent_name ?? a.guard_agent_id,
+                           })}
+                         </Badge>
+                         <Button variant="link" size="sm" className="h-auto p-0" asChild>
+                           <Link to="/guard">{t("openGuard")}</Link>
+                         </Button>
+                       </div>
+                     ) : null}
                   </div>
-                  <div className="flex flex-wrap justify-end gap-2">
+                  <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
                     {a.scan_type === "domain" ? (
                       <Button variant="outline" size="sm" asChild>
                         <Link

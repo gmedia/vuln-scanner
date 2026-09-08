@@ -10,6 +10,8 @@
   "name": "Nama",
   "target": "Target",
   "type": "Tipe",
+  "typeDomain": "Domain",
+  "typeIp": "IP",
   "notes": "Catatan",
   "tags": "Label",
   "tagsHint": "Pisahkan koma, mis. prod, hotel",
