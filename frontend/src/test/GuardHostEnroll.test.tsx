@@ -352,4 +352,19 @@ describe("Guard host enroll UI", () => {
     const chips = await screen.findAllByTestId("guard-asset-chip-ag-linked");
     expect(chips[0]).toHaveTextContent("Edge VPS");
   });
+
+  it("links empty critical alerts to SIEM", async () => {
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <Guard />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    const link = await screen.findByTestId("guard-open-siem");
+    expect(link).toHaveAttribute("href", "/siem");
+  });
 });

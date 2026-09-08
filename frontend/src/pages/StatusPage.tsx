@@ -457,6 +457,7 @@ export default function StatusPage() {
                 <div className="flex min-w-0 flex-col justify-end gap-1.5">
                   <Button
                     type="button"
+                    variant="outline"
                     className="h-10"
                     disabled={!monitorId}
                     onClick={() => addCompMut.mutate()}
@@ -496,9 +497,8 @@ export default function StatusPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <Button
-                            variant="outline"
+                            variant="destructive"
                             size="sm"
-                            className="text-destructive"
                             onClick={() => delCompMut.mutate(c.id)}
                           >
                             {t("remove")}
