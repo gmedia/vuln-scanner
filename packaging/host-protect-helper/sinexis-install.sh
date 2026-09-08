@@ -755,6 +755,9 @@ SecRule REQUEST_HEADERS:User-Agent "@rx \(\)\s*\{" "id:1020,phase:1,t:none,deny,
 SecRule REQUEST_URI "@rx (?i)/wp-content/debug\\.log" "id:1021,phase:1,t:none,deny,status:403,msg:\'sinexis.debug.log\'"
 SecRule REQUEST_URI "@rx (?i)/server-status" "id:1022,phase:1,t:none,deny,status:403,msg:\'sinexis.server.status\'"
 SecRule REQUEST_URI "@rx (?i)/vendor/phpunit" "id:1023,phase:1,t:none,deny,status:403,msg:\'sinexis.phpunit\'"
+SecRule REQUEST_URI "@rx (?i)/timthumb\\.php" "id:1024,phase:1,t:none,deny,status:403,msg:\'sinexis.timthumb\'"
+SecRule REQUEST_URI "@rx (?i)/actuator(/|$)" "id:1025,phase:1,t:none,deny,status:403,msg:\'sinexis.actuator\'"
+SecRule REQUEST_URI "@rx (?i)/telescope(/|$)" "id:1026,phase:1,t:none,deny,status:403,msg:\'sinexis.telescope\'"
 ';
 EOF
   chmod 644 "$dest"
