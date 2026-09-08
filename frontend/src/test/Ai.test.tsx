@@ -85,6 +85,7 @@ describe("AI Gateway page", () => {
     expect(await screen.findByText("Rp 0")).toBeInTheDocument();
     const cta = screen.getByRole("link", { name: "Top up credits" });
     expect(cta).toHaveAttribute("href", "/credit-history");
+    expect(cta.className).toMatch(/bg-primary/);
   });
 
   it("keeps key and catalog tabs on the tablist when rendered", async () => {

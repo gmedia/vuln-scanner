@@ -148,7 +148,7 @@ export default function Ai() {
               {(walletQ.data?.balance_idr == null || walletQ.data.balance_idr === 0) && (
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">{t("walletEmpty")}</p>
-                  <Button type="button" variant="outline" size="sm" asChild>
+                  <Button type="button" size="sm" asChild>
                     <Link to="/credit-history">{t("walletTopUp")}</Link>
                   </Button>
                 </div>
@@ -221,8 +221,8 @@ export default function Ai() {
                         <TableCell>{k.name}</TableCell>
                         <TableCell className="font-mono text-xs">{k.prefix}</TableCell>
                         <TableCell>{String(k.is_active)}</TableCell>
-                        <TableCell>
-                          {k.is_active ? (
+                          <TableCell className="whitespace-nowrap">
+                            {k.is_active ? (
                             <Button
                               type="button"
                               variant="outline"
