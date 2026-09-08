@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bot, Copy } from "lucide-react";
 import {
@@ -33,6 +34,11 @@ import {
 import { useAuthStore } from "@/store/authStore";
 import { useTranslation } from "react-i18next";
 
+function formatIdr(n: number | null | undefined): string {
+  if (n == null) return "—";
+  return n.toLocaleString("id-ID");
+}
+
 export default function Ai() {
   const { t } = useTranslation("ai");
   const orgId = useAuthStore((s) => s.activeOrgId);
@@ -40,6 +46,7 @@ export default function Ai() {
   const [keyName, setKeyName] = useState("sdk");
   const [onceKey, setOnceKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [tab, setTab] = useState("wallet");
 
   const walletQ = useQuery({
     queryKey: ["ai-wallet", orgId],
@@ -116,26 +123,38 @@ export default function Ai() {
   return (
     <div className="w-full space-y-6">
       <Header />
-      <Tabs defaultValue="wallet">
-        <TabsList>
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList className="w-full max-w-full overflow-x-auto flex-nowrap justify-start">
           <TabsTrigger value="wallet">{t("tabWallet")}</TabsTrigger>
           <TabsTrigger value="keys">{t("tabKeys")}</TabsTrigger>
           <TabsTrigger value="usage">{t("tabUsage")}</TabsTrigger>
           <TabsTrigger value="catalog">{t("tabCatalog")}</TabsTrigger>
         </TabsList>
         <TabsContent value="wallet">
-          <Card>
+          <Card className="border-border">
             <CardHeader>
               <CardTitle>{t("tabWallet")}</CardTitle>
               <CardDescription>{t("baseUrlHint")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-2xl font-semibold tabular-nums">
-                {walletQ.data?.balance_idr ?? "—"}
-              </p>
-              <p className="text-xs text-muted-foreground">{t("balance")}</p>
-              <div className="flex flex-wrap items-center gap-2">
-                <code className="rounded bg-muted px-2 py-1 text-xs">{baseUrl}</code>
+              <div>
+                <p className="text-xs text-muted-foreground">{t("balance")}</p>
+                <p className="text-2xl font-semibold tabular-nums">
+                  {formatIdr(walletQ.data?.balance_idr)}
+                </p>
+              </div>
+              {(walletQ.data?.balance_idr == null || walletQ.data.balance_idr === 0) && (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">{t("walletEmpty")}</p>
+                  <Button type="button" variant="outline" size="sm" asChild>
+                    <Link to="/credit-history">{t("walletTopUp")}</Link>
+                  </Button>
+                </div>
+              )}
+              <div className="flex max-sm:flex-col flex-wrap items-start sm:items-center gap-2">
+                <code className="rounded border border-border bg-muted/40 px-2 py-1 text-xs">
+                  {baseUrl}
+                </code>
                 <Button
                   type="button"
                   variant="outline"
@@ -180,7 +199,8 @@ export default function Ai() {
                   </AlertDescription>
                 </Alert>
               ) : null}
-              <Table>
+              <div className="overflow-x-auto">
+                <Table className="min-w-[36rem]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("colName")}</TableHead>
@@ -216,7 +236,8 @@ export default function Ai() {
                     ))
                   )}
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -225,8 +246,22 @@ export default function Ai() {
             <CardHeader>
               <CardTitle>{t("tabUsage")}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <Table>
+            <CardContent className="space-y-4">
+              {(usageQ.data?.items ?? []).length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {t("usageEmpty")}{" "}
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="h-auto p-0"
+                    onClick={() => setTab("catalog")}
+                  >
+                    {t("usageEmptyHint")}
+                  </Button>
+                </p>
+              ) : (
+              <div className="overflow-x-auto">
+                <Table className="min-w-[36rem]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("colModel")}</TableHead>
@@ -236,24 +271,20 @@ export default function Ai() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(usageQ.data?.items ?? []).length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4}>{t("usageEmpty")}</TableCell>
-                    </TableRow>
-                  ) : (
-                    (usageQ.data?.items ?? []).map((u) => (
+                    {(usageQ.data?.items ?? []).map((u) => (
                       <TableRow key={u.id}>
                         <TableCell>{u.model_public_id}</TableCell>
                         <TableCell>
                           {u.prompt_tokens}/{u.completion_tokens}
                         </TableCell>
-                        <TableCell>{u.billed_idr}</TableCell>
+                        <TableCell>{formatIdr(u.billed_idr)}</TableCell>
                         <TableCell>{u.created_at}</TableCell>
                       </TableRow>
-                    ))
-                  )}
+                    ))}
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -263,7 +294,8 @@ export default function Ai() {
               <CardTitle>{t("tabCatalog")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
+              <div className="overflow-x-auto">
+                <Table className="min-w-[36rem]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("colModel")}</TableHead>
@@ -280,13 +312,14 @@ export default function Ai() {
                     (modelsQ.data?.items ?? []).map((m) => (
                       <TableRow key={m.public_id}>
                         <TableCell>{m.public_id}</TableCell>
-                        <TableCell>{m.price_idr_per_1k_in}</TableCell>
-                        <TableCell>{m.price_idr_per_1k_out}</TableCell>
+                        <TableCell>{formatIdr(m.price_idr_per_1k_in)}</TableCell>
+                        <TableCell>{formatIdr(m.price_idr_per_1k_out)}</TableCell>
                       </TableRow>
                     ))
                   )}
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

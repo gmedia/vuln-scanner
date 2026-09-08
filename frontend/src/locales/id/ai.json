@@ -27,5 +27,8 @@
   "colBilled": "Tagihan (IDR)",
   "colTime": "Waktu",
   "colIn": "IDR / 1K in",
-  "colOut": "IDR / 1K out"
+  "colOut": "IDR / 1K out",
+  "walletEmpty": "Wallet kosong. Tambah kredit untuk memakai AI Gateway.",
+  "walletTopUp": "Ke kredit",
+  "usageEmptyHint": "Lihat katalog"
 }
