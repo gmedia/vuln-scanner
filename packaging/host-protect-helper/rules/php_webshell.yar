@@ -224,3 +224,43 @@ rule sinexis_php_unserialize_input
     condition:
         any of them
 }
+
+rule sinexis_php_file_put_input
+{
+    meta:
+        id = "sinexis.php.file_put_input"
+        hit_class = "dropper"
+    strings:
+        $a = "file_put_contents($_POST"
+        $b = "file_put_contents($_GET"
+        $c = "file_put_contents($_REQUEST"
+        $d = "fwrite($_POST"
+        $e = "fwrite($_GET"
+    condition:
+        any of them
+}
+
+rule sinexis_php_move_uploaded
+{
+    meta:
+        id = "sinexis.php.move_uploaded"
+        hit_class = "dropper"
+    strings:
+        $a = "move_uploaded_file($_FILES"
+        $b = "copy($_FILES"
+    condition:
+        any of them
+}
+
+rule sinexis_php_eval_files
+{
+    meta:
+        id = "sinexis.php.eval_files"
+        hit_class = "webshell"
+    strings:
+        $a = "eval($_FILES"
+        $b = "include($_FILES"
+        $c = "require($_FILES"
+    condition:
+        any of them
+}

@@ -28,6 +28,9 @@ def test_load_signature_pack_has_webshell_rule():
     assert "sinexis.php.exec_input" in ids
     assert "sinexis.php.system_post" in ids
     assert "sinexis.php.unserialize_input" in ids
+    assert "sinexis.php.file_put_input" in ids
+    assert "sinexis.php.move_uploaded" in ids
+    assert "sinexis.php.eval_files" in ids
 
 
 def test_scan_local_root_matches_eval_post(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
@@ -128,6 +131,24 @@ def test_scan_local_root_matches_exec_system_unserialize(tmp_path: Path, monkeyp
     assert ("e.php", "sinexis.php.exec_input") in ids
     assert ("s.php", "sinexis.php.system_post") in ids
     assert ("u.php", "sinexis.php.unserialize_input") in ids
+    assert not any(h["rel_path"].endswith("clean.php") for h in hits)
+
+
+def test_scan_local_root_matches_fileput_upload_evalfiles(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(host_path, "ALLOWED_PREFIXES", (str(tmp_path),))
+    monkeypatch.setattr(host_engine, "validate_root_path", lambda p: str(Path(p)))
+    monkeypatch.setattr(host_engine, "jail_rel_path", lambda root, rel: str(Path(root) / rel))
+    uploads = tmp_path / "wp-content" / "uploads"
+    uploads.mkdir(parents=True)
+    (uploads / "w.php").write_text("<?php file_put_contents($_POST['f'], $_POST['b']); ?>", encoding="utf-8")
+    (uploads / "m.php").write_text("<?php move_uploaded_file($_FILES['f']['tmp_name'], 'x.php'); ?>", encoding="utf-8")
+    (uploads / "f.php").write_text("<?php eval($_FILES['x']['tmp_name']); ?>", encoding="utf-8")
+    (uploads / "clean.php").write_text("<?php echo 1; ?>", encoding="utf-8")
+    hits = scan_local_root(str(tmp_path))
+    ids = {(h["rel_path"].split("/")[-1], h["rule_id"]) for h in hits}
+    assert ("w.php", "sinexis.php.file_put_input") in ids
+    assert ("m.php", "sinexis.php.move_uploaded") in ids
+    assert ("f.php", "sinexis.php.eval_files") in ids
     assert not any(h["rel_path"].endswith("clean.php") for h in hits)
 
 
