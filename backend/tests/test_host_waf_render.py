@@ -65,6 +65,51 @@ def test_lab_fixture_snippet_has_probe_rule():
     assert "id:1048" in text
     assert "id:1049" in text
     assert "id:1050" in text
+    assert "id:1051" in text
+    assert "id:1052" in text
+    assert "id:1053" in text
+    assert "id:1054" in text
+    assert "id:1055" in text
+    assert "id:1056" in text
+    assert "id:1057" in text
+    assert "id:1058" in text
+    assert "id:1059" in text
+    assert "id:1060" in text
+    assert "id:1061" in text
+    assert "id:1062" in text
+    assert "id:1063" in text
+    assert "id:1064" in text
+    assert "id:1065" in text
+    assert "id:1066" in text
+    assert "id:1067" in text
+    assert "id:1068" in text
+    assert "id:1069" in text
+    assert "id:1070" in text
+    assert "id:1071" in text
+    assert "id:1072" in text
+    assert "id:1073" in text
+    assert "id:1074" in text
+    assert "id:1075" in text
+    assert "id:1076" in text
+    assert "id:1077" in text
+    assert "id:1078" in text
+    assert "id:1079" in text
+    assert "id:1080" in text
+    assert "id:1081" in text
+    assert "id:1082" in text
+    assert "id:1083" in text
+    assert "id:1084" in text
+    assert "id:1085" in text
+    assert "id:1086" in text
+    assert "id:1087" in text
+    assert "id:1088" in text
+    assert "id:1089" in text
+    assert "id:1090" in text
+    assert "id:1091" in text
+    assert "id:1092" in text
+    assert "id:1093" in text
+    assert "id:1094" in text
+    assert "id:1095" in text
     assert "wp-admin" not in text
     assert "listen" not in text.lower()
     assert "modsecurity_rules '" in text
@@ -125,6 +170,51 @@ def test_customer_snippet_omits_lab_probe():
     assert "id:1048" in text
     assert "id:1049" in text
     assert "id:1050" in text
+    assert "id:1051" in text
+    assert "id:1052" in text
+    assert "id:1053" in text
+    assert "id:1054" in text
+    assert "id:1055" in text
+    assert "id:1056" in text
+    assert "id:1057" in text
+    assert "id:1058" in text
+    assert "id:1059" in text
+    assert "id:1060" in text
+    assert "id:1061" in text
+    assert "id:1062" in text
+    assert "id:1063" in text
+    assert "id:1064" in text
+    assert "id:1065" in text
+    assert "id:1066" in text
+    assert "id:1067" in text
+    assert "id:1068" in text
+    assert "id:1069" in text
+    assert "id:1070" in text
+    assert "id:1071" in text
+    assert "id:1072" in text
+    assert "id:1073" in text
+    assert "id:1074" in text
+    assert "id:1075" in text
+    assert "id:1076" in text
+    assert "id:1077" in text
+    assert "id:1078" in text
+    assert "id:1079" in text
+    assert "id:1080" in text
+    assert "id:1081" in text
+    assert "id:1082" in text
+    assert "id:1083" in text
+    assert "id:1084" in text
+    assert "id:1085" in text
+    assert "id:1086" in text
+    assert "id:1087" in text
+    assert "id:1088" in text
+    assert "id:1089" in text
+    assert "id:1090" in text
+    assert "id:1091" in text
+    assert "id:1092" in text
+    assert "id:1093" in text
+    assert "id:1094" in text
+    assert "id:1095" in text
     assert "wp-admin" not in text
     assert "do not paste onto sinexis.app" in text
 
