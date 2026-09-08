@@ -746,6 +746,9 @@ SecRule REQUEST_URI "@rx (?i)/wp-config\\.php" "id:1011,phase:1,t:none,deny,stat
 SecRule REQUEST_URI "@rx (?i)/\\.htaccess" "id:1012,phase:1,t:none,deny,status:403,msg:\'sinexis.htaccess\'"
 SecRule REQUEST_URI "@rx (?i)/composer\\.json" "id:1013,phase:1,t:none,deny,status:403,msg:\'sinexis.composerjson\'"
 SecRule REQUEST_URI "@rx (?i)\\.(sql|sql\\.gz)$" "id:1014,phase:1,t:none,deny,status:403,msg:\'sinexis.sqldump\'"
+SecRule REQUEST_URI "@rx (?i)/uploads/.+\\.(php|phtml|phar)([/?]|$)" "id:1015,phase:1,t:none,deny,status:403,msg:\'sinexis.php.upload\'"
+SecRule REQUEST_METHOD "@rx (?i)^(PUT|DELETE|PATCH|TRACE|CONNECT)$" "id:1016,phase:1,t:none,deny,status:403,msg:\'sinexis.method.unusual\'"
+SecRule REQUEST_HEADERS:X-Forwarded-For "@rx (^|,\\s*)127\\.0\\.0\\.1" "id:1017,phase:1,t:none,deny,status:403,msg:\'sinexis.xff.loopback\'"
 ';
 EOF
   chmod 644 "$dest"
