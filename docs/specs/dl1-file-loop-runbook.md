@@ -69,7 +69,7 @@ Then **Scan now** again. A hit must show **path + class** on `/host`. If still e
 |-----|-----|
 | New quarantine **queue** in SaaS | P14 **D** already shipped |
 | Reconstruct / Imunify MDS | Legal + product **out** |
-| WAF Simulate as “live block” | DL0: Simulate is **lab-only**; live = helper POST 1001–1017 |
+| WAF Simulate as “live block” | DL0: Simulate is **lab-only**; live = helper POST 1001–1020 |
 | Wipe ERP / `sx-erpstg` | Standing rule |
 | `sinexis.app` edge nginx snippet | Never |
 

@@ -749,6 +749,9 @@ SecRule REQUEST_URI "@rx (?i)\\.(sql|sql\\.gz)$" "id:1014,phase:1,t:none,deny,st
 SecRule REQUEST_URI "@rx (?i)/uploads/.+\\.(php|phtml|phar)([/?]|$)" "id:1015,phase:1,t:none,deny,status:403,msg:\'sinexis.php.upload\'"
 SecRule REQUEST_METHOD "@rx (?i)^(PUT|DELETE|PATCH|TRACE|CONNECT)$" "id:1016,phase:1,t:none,deny,status:403,msg:\'sinexis.method.unusual\'"
 SecRule REQUEST_HEADERS:X-Forwarded-For "@rx (^|,\\s*)127\\.0\\.0\\.1" "id:1017,phase:1,t:none,deny,status:403,msg:\'sinexis.xff.loopback\'"
+SecRule REQUEST_URI "@rx (?i)/phpmyadmin" "id:1018,phase:1,t:none,deny,status:403,msg:\'sinexis.phpmyadmin\'"
+SecRule REQUEST_URI "@rx (?i)/cgi-bin/" "id:1019,phase:1,t:none,deny,status:403,msg:\'sinexis.cgibin\'"
+SecRule REQUEST_HEADERS:User-Agent "@rx \(\)\s*\{" "id:1020,phase:1,t:none,deny,status:403,msg:\'sinexis.ua.shellshock\'"
 ';
 EOF
   chmod 644 "$dest"

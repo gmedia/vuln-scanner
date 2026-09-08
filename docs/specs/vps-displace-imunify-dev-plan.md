@@ -56,7 +56,7 @@ Until Demo-ok: do not demo Host as “on-box proof.”
 **Demo-ok + Invoice-ok** and:
 
 1. Original pack has **new numeric IDs beyond 1001–1004** (`1005` wp-login POST+payload, `1006` URI eval/base64), allowlisted, lab probe documented, CMS-admin FP written (**DL2** — pack in git; live 403 still needs ModSec on vhost).
-2. Simulate hidden **or** rows labeled `preview` / `lab`; no unlabeled `mock.sqli.1` in customer UX (**DL0 shipped** #647: lab-gate Simulate; starter `msg:` 1001–1003 original labels). Live ingest **1001–1017**.
+2. Simulate hidden **or** rows labeled `preview` / `lab`; no unlabeled `mock.sqli.1` in customer UX (**DL0 shipped** #647: lab-gate Simulate; starter `msg:` 1001–1003 original labels). Live ingest **1001–1020**.
 3. Demo vhost actually has ModSec loaded (ops checkbox).
 
 Until Sentence-ok use the fallback: *“file + HTTP tipis + scan luar; Imunify tetap lebih dalam di PHP runtime dan bot challenge.”*
@@ -76,7 +76,7 @@ Sources: Imunify360 marketing (6 layers, PD, CloudAV, RapidScan, auto-cleanup, W
 | Real-time / RapidScan / CloudAV | Timer + daily/hourly; **not** inotify | **Park** |
 | Show hits + isolate | SPA `/host`; quarantine **mv** (auto **off**) | **DL1** runbook; **no** new queue (P14 **D** shipped) |
 | Auto cleanup / reconstruct / MDS | Hybrid ticket (H6) | **Out** |
-| HTTP WAF | Starter **1001–1017** | Further original IDs only; never IM360/CRS |
+| HTTP WAF | Starter **1001–1020** | Further original IDs only; never IM360/CRS |
 | Protect on by default | **F shipped**; per-site default **off**; protect **Multi** | Keep off; do not re-do F |
 | ModSec module on typical nginx | Snippet copy only; Ubuntu often has **no** module | **Ops/hybrid** — Demo-ok checkbox, not SaaS |
 | Proactive Defense | None | **Out** (slice **H**) |

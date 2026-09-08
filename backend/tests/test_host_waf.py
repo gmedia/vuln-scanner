@@ -742,11 +742,32 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
                             "path": "/",
                             "http_status": 403,
                         },
+                        {
+                            "action": "block",
+                            "rule_id": "1018",
+                            "method": "GET",
+                            "path": "/phpmyadmin",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1019",
+                            "method": "GET",
+                            "path": "/cgi-bin/",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1020",
+                            "method": "GET",
+                            "path": "/",
+                            "http_status": 403,
+                        },
                     ],
                 },
             )
             assert r.status_code == 200, r.text
-            assert r.json()["accepted"] == 14
+            assert r.json()["accepted"] == 17
     finally:
         app.dependency_overrides.clear()
     rows = (await db_session.execute(select(HostWafEvent).where(HostWafEvent.site_id == site.id))).scalars().all()
@@ -765,6 +786,9 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
         "1015",
         "1016",
         "1017",
+        "1018",
+        "1019",
+        "1020",
     }
 
 
