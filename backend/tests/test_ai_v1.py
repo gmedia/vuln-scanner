@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -234,6 +235,62 @@ async def test_keys_and_v1_chat(db_session: AsyncSession, ctx) -> None:
             assert rev.status_code == 200
             dead = await ac.get("/v1/models", headers={"Authorization": f"Bearer {plain}", "X-E2E-Test": "1"})
             assert dead.status_code == 401
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+
+@pytest.mark.asyncio
+async def test_v1_clamps_hold_to_wallet(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    ctx["model"].max_tokens_cap = 8192
+    ctx["model"].price_idr_per_1k_in = 2000
+    ctx["model"].price_idr_per_1k_out = 5000
+    wallet = (
+        await db_session.execute(select(AiWallet).where(AiWallet.organization_id == org.id))
+    ).scalar_one()
+    wallet.balance_idr = 10_000
+    await db_session.commit()
+
+    from app.services.ai_wallet import hold_idr
+
+    full = hold_idr(max_tokens=8192, model=ctx["model"])
+    assert full > 10_000
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            created = await ac.post("/api/ai/keys", headers=_auth(owner, org.id), json={"name": "hold"})
+            plain = created.json()["key"]
+
+            class _Resp:
+                status_code = 200
+
+                def json(self):
+                    return {
+                        "id": "chatcmpl-1",
+                        "choices": [{"finish_reason": "stop", "message": {"role": "assistant", "content": "hi"}}],
+                        "usage": {"prompt_tokens": 10, "completion_tokens": 5},
+                    }
+
+            mock_client = AsyncMock()
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=None)
+            mock_client.post = AsyncMock(return_value=_Resp())
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(
+                    "/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {plain}", "X-E2E-Test": "1"},
+                    json={"model": "sinexis/test", "messages": [{"role": "user", "content": "hi"}]},
+                )
+            assert chat.status_code == 200, chat.text
+            forwarded = mock_client.post.call_args.kwargs["json"]
+            assert forwarded["max_tokens"] < 8192
+            assert hold_idr(max_tokens=forwarded["max_tokens"], model=ctx["model"]) <= 10_000
     finally:
         app.dependency_overrides.pop(get_db, None)
 

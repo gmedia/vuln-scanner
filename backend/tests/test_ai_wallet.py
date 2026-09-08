@@ -14,7 +14,7 @@ from app.main import app
 from app.models.ai_gateway import AiModel, AiProvider
 from app.models.organization import Organization, OrganizationMembership
 from app.models.user import User
-from app.services.ai_wallet import billed_idr, hold_idr, record_usage, release, reserve, settle
+from app.services.ai_wallet import affordable_max_tokens, billed_idr, hold_idr, record_usage, release, reserve, settle
 from app.services.auth import create_access_token, get_current_admin, hash_password
 from app.services.organization import ensure_personal_org
 
@@ -91,6 +91,20 @@ async def ctx(db_session: AsyncSession, ai_on):
     db_session.add(model)
     await db_session.commit()
     return {"owner": owner, "outsider": outsider, "org": org, "model": model}
+
+
+def test_affordable_max_tokens_fits_hold() -> None:
+    class _M:
+        price_idr_per_1k_in = 1000
+        price_idr_per_1k_out = 2000
+        max_tokens_cap = 4096
+
+    assert affordable_max_tokens(balance_idr=0, model=_M()) == 0
+    assert affordable_max_tokens(balance_idr=999, model=_M()) == 0
+    cap = affordable_max_tokens(balance_idr=10_000, model=_M())
+    assert cap >= 1
+    assert hold_idr(max_tokens=cap, model=_M()) <= 10_000
+    assert hold_idr(max_tokens=min(cap + 1, _M().max_tokens_cap), model=_M()) > 10_000 or cap == _M().max_tokens_cap
 
 
 def test_billed_idr_ceils_per_thousand() -> None:
