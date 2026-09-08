@@ -97,6 +97,18 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         'SecRule REQUEST_URI "@rx (?i)/wp-config\\\\.php" '
         "\"id:1011,phase:1,t:none,deny,status:403,msg:\\'sinexis.wpconfig\\'\""
     )
+    rule_1012 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\\\.htaccess" '
+        "\"id:1012,phase:1,t:none,deny,status:403,msg:\\'sinexis.htaccess\\'\""
+    )
+    rule_1013 = (
+        'SecRule REQUEST_URI "@rx (?i)/composer\\\\.json" '
+        "\"id:1013,phase:1,t:none,deny,status:403,msg:\\'sinexis.composerjson\\'\""
+    )
+    rule_1014 = (
+        'SecRule REQUEST_URI "@rx (?i)\\\\.(sql|sql\\\\.gz)$" '
+        "\"id:1014,phase:1,t:none,deny,status:403,msg:\\'sinexis.sqldump\\'\""
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -115,10 +127,13 @@ SecRule REQUEST_METHOD "@streq POST" "t:none,chain"
 {rule_1006}
 {rule_1007}
 {rule_1008}
-{rule_1009}
-{rule_1010}
-{rule_1011}
-{extra}';
+    {rule_1009}
+    {rule_1010}
+    {rule_1011}
+    {rule_1012}
+    {rule_1013}
+    {rule_1014}
+    {extra}';
 # Paranoia {paranoia}: keep starter rules only. Do not raise to 4 in v1.
 """
 
