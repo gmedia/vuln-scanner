@@ -86,7 +86,7 @@
   "wafProtectLocked": "Protect mode needs Host Multi. Basic can use detect only.",
   "wafSimulate": "Simulate request",
   "wafSimulateHint": "Lab preview only. Adds a sample row so you can see the layout. It is not a live nginx hit. Turn mode to detect or protect first.",
-  "wafSimulateProdHint": "Simulate is lab-only (fixture site). This table lists live helper posts (rules 1001–1029), not dashboard previews.",
+  "wafSimulateProdHint": "Simulate is lab-only (fixture site). This table lists live helper posts (rules 1001–1032), not dashboard previews.",
   "wafEvents": "WAF events",
   "wafEventsHint": "These rows are HTTP filter events, not Suspicious files. Live rows appear after the helper posts matches from nginx on your VPS — not from this dashboard.",
   "wafEventsEmpty": "No WAF events yet. Simulate is preview only. Live hits need the snippet on the VPS plus a helper poll that posts them here.",
