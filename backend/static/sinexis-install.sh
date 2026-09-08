@@ -764,6 +764,9 @@ SecRule REQUEST_URI "@rx (?i)/wp-json/wp/v2/users" "id:1029,phase:1,t:none,deny,
 SecRule REQUEST_URI "@rx (?i)/adminer\\.php" "id:1030,phase:1,t:none,deny,status:403,msg:\'sinexis.adminer\'"
 SecRule REQUEST_URI "@rx (?i)/elmah\\.axd" "id:1031,phase:1,t:none,deny,status:403,msg:\'sinexis.elmah\'"
 SecRule REQUEST_URI "@rx (?i)/manager/html" "id:1032,phase:1,t:none,deny,status:403,msg:\'sinexis.tomcat.manager\'"
+SecRule REQUEST_URI "@rx (?i)/solr/admin" "id:1033,phase:1,t:none,deny,status:403,msg:\'sinexis.solr.admin\'"
+SecRule REQUEST_URI "@rx (?i)/jenkins(/|$)" "id:1034,phase:1,t:none,deny,status:403,msg:\'sinexis.jenkins\'"
+SecRule REQUEST_URI "@rx (?i)/jmx-console" "id:1035,phase:1,t:none,deny,status:403,msg:\'sinexis.jmx.console\'"
 ';
 EOF
   chmod 644 "$dest"
