@@ -62,8 +62,53 @@
 #   GET  /actuator/heapdump  → expect 403 (id 1048)
 #   GET  /elmah.axd  → expect 403 (id 1049)
 #   GET  /trace.axd  → expect 403 (id 1050)
+#   GET  /.hg/store  → expect 403 (id 1051)
+#   GET  /.bzr/branch  → expect 403 (id 1052)
+#   GET  /web.config.bak  → expect 403 (id 1053)
+#   GET  /backup.zip  → expect 403 (id 1054)
+#   GET  /wp-config.php.bak  → expect 403 (id 1055)
+#   GET  /pma  → expect 403 (id 1056)
+#   GET  /myadmin  → expect 403 (id 1057)
+#   GET  /administrator  → expect 403 (id 1058)
+#   GET  /user/login  → expect 403 (id 1059)
+#   GET  /__debug__/  → expect 403 (id 1060)
+#   GET  /rails/info/properties  → expect 403 (id 1061)
+#   GET  /_ignition  → expect 403 (id 1062)
+#   GET  /horizon  → expect 403 (id 1063)
+#   GET  /nova  → expect 403 (id 1064)
+#   GET  /jolokia  → expect 403 (id 1065)
+#   GET  /hawtio  → expect 403 (id 1066)
+#   GET  /web-console  → expect 403 (id 1067)
+#   GET  /.aws/credentials  → expect 403 (id 1068)
+#   GET  /id_rsa  → expect 403 (id 1069)
+#   GET  /.ssh/  → expect 403 (id 1070)
+#   GET  /aspnet_client/  → expect 403 (id 1071)
+#   GET  /php.ini  → expect 403 (id 1072)
+#   GET  /config.php.bak  → expect 403 (id 1073)
+#   GET  /backup.tar.gz  → expect 403 (id 1074)
+#   GET  /sftp-config.json  → expect 403 (id 1075)
+#   GET  /Thumbs.db  → expect 403 (id 1076)
+#   GET  /CVS/Root  → expect 403 (id 1077)
+#   GET  /WEB-INF/web.xml  → expect 403 (id 1078)
+#   GET  /META-INF/context.xml  → expect 403 (id 1079)
+#   GET  /struts2-rest-showcase  → expect 403 (id 1080)
+#   GET  /resin-admin  → expect 403 (id 1081)
+#   GET  /_debugbar  → expect 403 (id 1082)
+#   GET  /phpminiadmin  → expect 403 (id 1083)
+#   GET  /sqlbuddy  → expect 403 (id 1084)
+#   GET  /docker-compose.yml  → expect 403 (id 1085)
+#   GET  /.dockerignore  → expect 403 (id 1086)
+#   GET  /id_dsa  → expect 403 (id 1087)
+#   GET  /authorized_keys  → expect 403 (id 1088)
+#   GET  /wp-config.php.old  → expect 403 (id 1089)
+#   GET  /settings.py  → expect 403 (id 1090)
+#   GET  /application.yml  → expect 403 (id 1091)
+#   GET  /localsettings.php  → expect 403 (id 1092)
+#   GET  /sites/default/settings.php  → expect 403 (id 1093)
+#   GET  /.hgignore  → expect 403 (id 1094)
+#   GET  /glassfish  → expect 403 (id 1095)
 #   GET  /wp-admin/  → expect 200 (not in pack)
-# This script only asserts the snippet contains id:1005–1050 and no wp-admin.
+# This script only asserts the snippet contains id:1005–1095 and no wp-admin.
 
 set -euo pipefail
 
@@ -312,6 +357,8 @@ fetch_snippet() {
   printf '%s' "$SNIPPET" | grep -q 'id:1048' || die "snippet missing original rule 1048"
   printf '%s' "$SNIPPET" | grep -q 'id:1049' || die "snippet missing original rule 1049"
   printf '%s' "$SNIPPET" | grep -q 'id:1050' || die "snippet missing original rule 1050"
+  printf '%s' "$SNIPPET" | grep -q 'id:1051' || die "snippet missing original rule 1051"
+  printf '%s' "$SNIPPET" | grep -q 'id:1095' || die "snippet missing original rule 1095"
   printf '%s' "$SNIPPET" | grep -qi 'wp-admin' && die "snippet must not match /wp-admin/"
   log "snippet ok (not printed)"
 }

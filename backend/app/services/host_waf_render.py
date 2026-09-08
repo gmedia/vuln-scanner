@@ -252,6 +252,174 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         'SecRule REQUEST_URI "@rx (?i)/trace\\\\.axd" '
         "\"id:1050,phase:1,t:none,deny,status:403,msg:\\'sinexis.trace.axd\\'\""
     )
+    rule_1051 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\\\.hg/store" '
+        "\"id:1051,phase:1,t:none,deny,status:403,msg:\\'sinexis.hg.store\\'\""
+    )
+    rule_1052 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\\\.bzr/branch" '
+        "\"id:1052,phase:1,t:none,deny,status:403,msg:\\'sinexis.bzr.branch\\'\""
+    )
+    rule_1053 = (
+        'SecRule REQUEST_URI "@rx (?i)/web\\.config\\.bak" '
+        "\"id:1053,phase:1,t:none,deny,status:403,msg:\\'sinexis.webconfig.bak\\'\""
+    )
+    rule_1054 = (
+        'SecRule REQUEST_URI "@rx (?i)/backup\\.zip" '
+        "\"id:1054,phase:1,t:none,deny,status:403,msg:\\'sinexis.backup.zip\\'\""
+    )
+    rule_1055 = (
+        'SecRule REQUEST_URI "@rx (?i)/wp-config\\.php\\.bak" '
+        "\"id:1055,phase:1,t:none,deny,status:403,msg:\\'sinexis.wpconfig.bak\\'\""
+    )
+    rule_1056 = (
+        'SecRule REQUEST_URI "@rx (?i)/pma(/|$)" "id:1056,phase:1,t:none,deny,status:403,msg:\\\'sinexis.pma\\\'"'
+    )
+    rule_1057 = (
+        'SecRule REQUEST_URI "@rx (?i)/myadmin(/|$)" '
+        "\"id:1057,phase:1,t:none,deny,status:403,msg:\\'sinexis.myadmin\\'\""
+    )
+    rule_1058 = (
+        'SecRule REQUEST_URI "@rx (?i)/administrator(/|$)" '
+        "\"id:1058,phase:1,t:none,deny,status:403,msg:\\'sinexis.joomla.admin\\'\""
+    )
+    rule_1059 = (
+        'SecRule REQUEST_URI "@rx (?i)/user/login" '
+        "\"id:1059,phase:1,t:none,deny,status:403,msg:\\'sinexis.drupal.login\\'\""
+    )
+    rule_1060 = (
+        'SecRule REQUEST_URI "@rx (?i)/__debug__/" '
+        "\"id:1060,phase:1,t:none,deny,status:403,msg:\\'sinexis.flask.debug\\'\""
+    )
+    rule_1061 = (
+        'SecRule REQUEST_URI "@rx (?i)/rails/info/properties" '
+        "\"id:1061,phase:1,t:none,deny,status:403,msg:\\'sinexis.rails.info\\'\""
+    )
+    rule_1062 = (
+        'SecRule REQUEST_URI "@rx (?i)/_ignition" "id:1062,phase:1,t:none,deny,status:403,msg:\\\'sinexis.ignition\\\'"'
+    )
+    rule_1063 = (
+        'SecRule REQUEST_URI "@rx (?i)/horizon(/|$)" '
+        "\"id:1063,phase:1,t:none,deny,status:403,msg:\\'sinexis.horizon\\'\""
+    )
+    rule_1064 = (
+        'SecRule REQUEST_URI "@rx (?i)/nova(/|$)" "id:1064,phase:1,t:none,deny,status:403,msg:\\\'sinexis.nova\\\'"'
+    )
+    rule_1065 = (
+        'SecRule REQUEST_URI "@rx (?i)/jolokia" "id:1065,phase:1,t:none,deny,status:403,msg:\\\'sinexis.jolokia\\\'"'
+    )
+    rule_1066 = (
+        'SecRule REQUEST_URI "@rx (?i)/hawtio" "id:1066,phase:1,t:none,deny,status:403,msg:\\\'sinexis.hawtio\\\'"'
+    )
+    rule_1067 = (
+        'SecRule REQUEST_URI "@rx (?i)/web-console" '
+        "\"id:1067,phase:1,t:none,deny,status:403,msg:\\'sinexis.web.console\\'\""
+    )
+    rule_1068 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.aws/credentials" '
+        "\"id:1068,phase:1,t:none,deny,status:403,msg:\\'sinexis.aws.credentials\\'\""
+    )
+    rule_1069 = (
+        'SecRule REQUEST_URI "@rx (?i)/id_rsa" "id:1069,phase:1,t:none,deny,status:403,msg:\\\'sinexis.id.rsa\\\'"'
+    )
+    rule_1070 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.ssh/" "id:1070,phase:1,t:none,deny,status:403,msg:\\\'sinexis.dotssh\\\'"'
+    )
+    rule_1071 = (
+        'SecRule REQUEST_URI "@rx (?i)/aspnet_client/" '
+        "\"id:1071,phase:1,t:none,deny,status:403,msg:\\'sinexis.aspnet.client\\'\""
+    )
+    rule_1072 = (
+        'SecRule REQUEST_URI "@rx (?i)/php\\.ini" "id:1072,phase:1,t:none,deny,status:403,msg:\\\'sinexis.php.ini\\\'"'
+    )
+    rule_1073 = (
+        'SecRule REQUEST_URI "@rx (?i)/config\\.php\\.bak" '
+        "\"id:1073,phase:1,t:none,deny,status:403,msg:\\'sinexis.config.bak\\'\""
+    )
+    rule_1074 = (
+        'SecRule REQUEST_URI "@rx (?i)/backup\\.tar\\.gz" '
+        "\"id:1074,phase:1,t:none,deny,status:403,msg:\\'sinexis.backup.tgz\\'\""
+    )
+    rule_1075 = (
+        'SecRule REQUEST_URI "@rx (?i)/sftp-config\\.json" '
+        "\"id:1075,phase:1,t:none,deny,status:403,msg:\\'sinexis.sftp.config\\'\""
+    )
+    rule_1076 = (
+        'SecRule REQUEST_URI "@rx (?i)/Thumbs\\.db" '
+        "\"id:1076,phase:1,t:none,deny,status:403,msg:\\'sinexis.thumbs.db\\'\""
+    )
+    rule_1077 = (
+        'SecRule REQUEST_URI "@rx (?i)/CVS/Root" "id:1077,phase:1,t:none,deny,status:403,msg:\\\'sinexis.cvs.root\\\'"'
+    )
+    rule_1078 = (
+        'SecRule REQUEST_URI "@rx (?i)/WEB-INF/web\\.xml" '
+        "\"id:1078,phase:1,t:none,deny,status:403,msg:\\'sinexis.webinf.webxml\\'\""
+    )
+    rule_1079 = (
+        'SecRule REQUEST_URI "@rx (?i)/META-INF/context\\.xml" '
+        "\"id:1079,phase:1,t:none,deny,status:403,msg:\\'sinexis.metainf.context\\'\""
+    )
+    rule_1080 = (
+        'SecRule REQUEST_URI "@rx (?i)/struts2-rest-showcase" '
+        "\"id:1080,phase:1,t:none,deny,status:403,msg:\\'sinexis.struts.showcase\\'\""
+    )
+    rule_1081 = (
+        'SecRule REQUEST_URI "@rx (?i)/resin-admin" '
+        "\"id:1081,phase:1,t:none,deny,status:403,msg:\\'sinexis.resin.admin\\'\""
+    )
+    rule_1082 = (
+        'SecRule REQUEST_URI "@rx (?i)/_debugbar" "id:1082,phase:1,t:none,deny,status:403,msg:\\\'sinexis.debugbar\\\'"'
+    )
+    rule_1083 = (
+        'SecRule REQUEST_URI "@rx (?i)/phpminiadmin" '
+        "\"id:1083,phase:1,t:none,deny,status:403,msg:\\'sinexis.phpminiadmin\\'\""
+    )
+    rule_1084 = (
+        'SecRule REQUEST_URI "@rx (?i)/sqlbuddy" "id:1084,phase:1,t:none,deny,status:403,msg:\\\'sinexis.sqlbuddy\\\'"'
+    )
+    rule_1085 = (
+        'SecRule REQUEST_URI "@rx (?i)/docker-compose\\.yml" '
+        "\"id:1085,phase:1,t:none,deny,status:403,msg:\\'sinexis.docker.compose\\'\""
+    )
+    rule_1086 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.dockerignore" '
+        "\"id:1086,phase:1,t:none,deny,status:403,msg:\\'sinexis.dockerignore\\'\""
+    )
+    rule_1087 = (
+        'SecRule REQUEST_URI "@rx (?i)/id_dsa" "id:1087,phase:1,t:none,deny,status:403,msg:\\\'sinexis.id.dsa\\\'"'
+    )
+    rule_1088 = (
+        'SecRule REQUEST_URI "@rx (?i)/authorized_keys" '
+        "\"id:1088,phase:1,t:none,deny,status:403,msg:\\'sinexis.authorized.keys\\'\""
+    )
+    rule_1089 = (
+        'SecRule REQUEST_URI "@rx (?i)/wp-config\\.php\\.old" '
+        "\"id:1089,phase:1,t:none,deny,status:403,msg:\\'sinexis.wpconfig.old\\'\""
+    )
+    rule_1090 = (
+        'SecRule REQUEST_URI "@rx (?i)/settings\\.py" '
+        "\"id:1090,phase:1,t:none,deny,status:403,msg:\\'sinexis.settings.py\\'\""
+    )
+    rule_1091 = (
+        'SecRule REQUEST_URI "@rx (?i)/application\\.yml" '
+        "\"id:1091,phase:1,t:none,deny,status:403,msg:\\'sinexis.application.yml\\'\""
+    )
+    rule_1092 = (
+        'SecRule REQUEST_URI "@rx (?i)/localsettings\\.php" '
+        "\"id:1092,phase:1,t:none,deny,status:403,msg:\\'sinexis.localsettings\\'\""
+    )
+    rule_1093 = (
+        'SecRule REQUEST_URI "@rx (?i)/sites/default/settings\\.php" '
+        "\"id:1093,phase:1,t:none,deny,status:403,msg:\\'sinexis.drupal.settings\\'\""
+    )
+    rule_1094 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.hgignore" '
+        "\"id:1094,phase:1,t:none,deny,status:403,msg:\\'sinexis.hgignore\\'\""
+    )
+    rule_1095 = (
+        'SecRule REQUEST_URI "@rx (?i)/glassfish" '
+        "\"id:1095,phase:1,t:none,deny,status:403,msg:\\'sinexis.glassfish\\'\""
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -311,8 +479,53 @@ SecRule REQUEST_METHOD "@streq POST" "t:none,chain"
      {rule_1047}
      {rule_1048}
      {rule_1049}
-     {rule_1050}
-     {extra}';
+      {rule_1050}
+      {rule_1051}
+      {rule_1052}
+      {rule_1053}
+      {rule_1054}
+      {rule_1055}
+      {rule_1056}
+      {rule_1057}
+      {rule_1058}
+      {rule_1059}
+      {rule_1060}
+      {rule_1061}
+      {rule_1062}
+      {rule_1063}
+      {rule_1064}
+      {rule_1065}
+      {rule_1066}
+      {rule_1067}
+      {rule_1068}
+      {rule_1069}
+      {rule_1070}
+      {rule_1071}
+      {rule_1072}
+      {rule_1073}
+      {rule_1074}
+      {rule_1075}
+      {rule_1076}
+      {rule_1077}
+      {rule_1078}
+      {rule_1079}
+      {rule_1080}
+      {rule_1081}
+      {rule_1082}
+      {rule_1083}
+      {rule_1084}
+      {rule_1085}
+      {rule_1086}
+      {rule_1087}
+      {rule_1088}
+      {rule_1089}
+      {rule_1090}
+      {rule_1091}
+      {rule_1092}
+      {rule_1093}
+      {rule_1094}
+      {rule_1095}
+      {extra}';
 # Paranoia {paranoia}: keep starter rules only. Do not raise to 4 in v1.
 """
 
