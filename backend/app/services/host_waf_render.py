@@ -121,6 +121,17 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         'SecRule REQUEST_HEADERS:X-Forwarded-For "@rx (^|,\\\\s*)127\\\\.0\\\\.0\\\\.1" '
         "\"id:1017,phase:1,t:none,deny,status:403,msg:\\'sinexis.xff.loopback\\'\""
     )
+    rule_1018 = (
+        'SecRule REQUEST_URI "@rx (?i)/phpmyadmin" '
+        "\"id:1018,phase:1,t:none,deny,status:403,msg:\\'sinexis.phpmyadmin\\'\""
+    )
+    rule_1019 = (
+        'SecRule REQUEST_URI "@rx (?i)/cgi-bin/" "id:1019,phase:1,t:none,deny,status:403,msg:\\\'sinexis.cgibin\\\'"'
+    )
+    rule_1020 = (
+        'SecRule REQUEST_HEADERS:User-Agent "@rx \\(\\)\\\\s*\\\\{" '
+        "\"id:1020,phase:1,t:none,deny,status:403,msg:\\'sinexis.ua.shellshock\\'\""
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -148,6 +159,9 @@ SecRule REQUEST_METHOD "@streq POST" "t:none,chain"
     {rule_1015}
     {rule_1016}
     {rule_1017}
+    {rule_1018}
+    {rule_1019}
+    {rule_1020}
     {extra}';
 # Paranoia {paranoia}: keep starter rules only. Do not raise to 4 in v1.
 """
