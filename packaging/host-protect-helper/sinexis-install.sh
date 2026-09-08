@@ -782,6 +782,9 @@ SecRule REQUEST_URI "@rx (?i)/debug/default/view" "id:1047,phase:1,t:none,deny,s
 SecRule REQUEST_URI "@rx (?i)/actuator/heapdump" "id:1048,phase:1,t:none,deny,status:403,msg:\'sinexis.actuator.heapdump\'"
 SecRule REQUEST_URI "@rx (?i)/elmah\\.axd" "id:1049,phase:1,t:none,deny,status:403,msg:\'sinexis.elmah\'"
 SecRule REQUEST_URI "@rx (?i)/trace\\.axd" "id:1050,phase:1,t:none,deny,status:403,msg:\'sinexis.trace.axd\'"
+SecRule REQUEST_URI "@rx (?i)/solr/admin" "id:1051,phase:1,t:none,deny,status:403,msg:\'sinexis.solr.admin\'"
+SecRule REQUEST_URI "@rx (?i)/manager/html" "id:1052,phase:1,t:none,deny,status:403,msg:\'sinexis.tomcat.manager\'"
+SecRule REQUEST_URI "@rx (?i)/jmx-console" "id:1053,phase:1,t:none,deny,status:403,msg:\'sinexis.jmx.console\'"
 ';
 EOF
   chmod 644 "$dest"
