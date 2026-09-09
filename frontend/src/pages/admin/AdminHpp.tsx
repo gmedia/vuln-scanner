@@ -23,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import PageHeader from "@/components/layout/PageHeader";
 import { adminApi, type HppRateItem } from "@/api/admin";
 import { useTranslation } from "react-i18next";
 import { htmlLang, isAppLocale } from "@/i18n/locales";
@@ -147,17 +148,11 @@ function AdminHpp() {
 
   return (
     <div className="w-full space-y-6">
-      <div className="flex items-center gap-3">
-        <Calculator className="h-6 w-6 text-primary" />
-        <div>
-          <h2 className="text-lg font-bold tracking-wide text-foreground">
-            {t("hppTitle")}
-          </h2>
-          <p className="text-[11px] text-muted-foreground">
-            {t("hppSubtitle")}
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        leading={<Calculator className="h-6 w-6 shrink-0 text-primary" />}
+        title={t("hppTitle")}
+        description={t("hppSubtitle")}
+      />
 
       <Card>
         <CardHeader>
