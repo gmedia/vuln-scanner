@@ -193,7 +193,9 @@
   "aiDelete": "Delete",
   "aiSelectProvider": "Select provider",
   "aiSelectModel": "Select model",
-  "aiRequest": "Request",
-  "aiResponse": "Response",
-  "aiNoPayload": "No payload stored."
+   "aiRequest": "Request",
+   "aiResponse": "Response",
+   "aiNoPayload": "No payload stored.",
+   "aiSource": "Source",
+   "aiBilled": "Billed (IDR)"
 }

@@ -28,7 +28,7 @@
   "colTime": "Time",
   "colIn": "IDR / 1K in",
   "colOut": "IDR / 1K out",
-  "walletEmpty": "Wallet is empty. Add credits to use the AI Gateway.",
+   "walletEmpty": "AI wallet is empty (IDR prepaid, not scan credits). Top up the org wallet to use the gateway.",
   "walletTopUp": "Top up credits",
   "usageEmptyHint": "See catalog"
 }
