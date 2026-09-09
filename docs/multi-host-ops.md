@@ -15,6 +15,8 @@ Keep real inventory in a private ops note or password manager.
 
 Lab shorthand (private SSH aliases — **never** put IPs in git): **app** = `tc1`, **data** = `tc2`, **Guard** = `tc3`, **ip/domain workers** = `tc4`, **agent VM** = `tc5`.
 
+**Stay on Compose** for provider cutover (no Swarm/K8s). VM min vs recommended and **no tc6**: [`compose-host-sizing.md`](compose-host-sizing.md).
+
 Early launch used **Guard mock** on the app host. Live Manager/Indexer now lives on the Guard host; set `GUARD_MOCK_WAZUH=false` and `WAZUH_*` **only** in host `.env` (mode 600). Compose must pass those keys into `backend` (`docker-compose.prod.yml`). Split **ip/domain** workers to a worker host when app CPU is tight; leave **mobile + beat** on the app host until shared object storage exists for uploads.
 
 ## App host compose
