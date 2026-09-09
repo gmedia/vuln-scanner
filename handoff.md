@@ -10,7 +10,32 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`sinexis.app`** (public DNS; legacy `vs.appmedia.id` may still exist). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
+## Session snapshot (2026-09-09 — Host Protect original pack after #696)
+
+| Item | State |
+|------|--------|
+| **`main` tip (coding)** | Re-`git pull`. Expect **`ba902799`** or newer: **#696** YARA `eval_cookie` / `call_user_input` / `include_input`. Before that: **#695** WAF 1096–1140, **#693** 1051–1095, **#691** 1048–1050, **#689** 1045–1047, **#679** file_put/move_uploaded/eval_files (merged). |
+| **Open PRs (agent)** | None for this wave. Dependabot: **do not mass-merge**. |
+| **WAF starter** | Allowlist **`_WAF_STARTER_IDS` 1001–1140**. Renderer emits **all** of those IDs (`host_waf_render.py`). **Do not** add IDs past 1140 without expanding the frozenset **and** dual-shipping helper/static install wrappers. Ingest tests must match count. |
+| **YARA pack** | Dual: `backend/app/host_protect_rules/php_webshell.yar` + `packaging/host-protect-helper/rules/php_webshell.yar`. On `main` after **#696**: previous needles **plus** `sinexis.php.eval_cookie`, `sinexis.php.call_user_input`, `sinexis.php.include_input`. |
+| **Pattern** | Alternate **WAF IDs then YARA needles**. WAF room **inside 1001–1140 is full** until allowlist grows. Next original slice = **more YARA** (or raise 1141+ **only** with allowlist + render + tests). Original only. **Not** Imunify/CloudAV/CRS dump. **No** “Imunify compatible” in UI. **Do not implement G/H.** |
+| **Legal freeze** | [`docs/commercial/imunify-beside-not-roadmap.md`](docs/commercial/imunify-beside-not-roadmap.md). Spek: [`docs/specs/vps-displace-imunify-dev-plan.md`](docs/specs/vps-displace-imunify-dev-plan.md), [`docs/specs/imunify-class-onbox.md`](docs/specs/imunify-class-onbox.md). P14 **A–F** + DL0–DL3 **shipped in code**. **G/H** parked. |
+| **Still human** | GTM; Host Protect invoice `service_id`; `/admin/hpp` hostscan; lab demo-ok (helper tc5, real hits). Not clone work. |
+| **Git** | Prefix **`GIT_MASTER=1`**. Never work on `main`. Never poll CI. Never commit secrets/IPs. |
+| **Engineering default** | User **“sudah saya merge”** → next original **YARA** (WAF 1140 cap). Speak **Bahasa Indonesia**. Do **not** implement until `buat` / `kerjakan`. |
+
+### Next OpenCode session
+
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. Expect **`ba902799`** (**#696**). `gh pr list --state open --assignee @me`. CI green → squash-merge then delete branch. **Do not poll CI.** Do **not** mass-merge Dependabot.
+2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** then **`AGENTS.md`**. P14: **`docs/specs/imunify-class-onbox.md`**. Legal: **`imunify-beside-not-roadmap.md`**.
+3. Speak **Bahasa Indonesia**; prefix git with `GIT_MASTER=1`. Never work on `main`. Never commit secrets/IPs/tokens/PNGs.
+4. **Do not** tell the user to SSH Alembic after a green **main** deploy.
+5. If user says continue Imunify-shaped **jobs**: **next original YARA** (dual pack + `test_host_engine.py` + `test_host_protect_helper.py`). WAF 1141+ only if expanding `_WAF_STARTER_IDS` + render + ingest tests. Dual-pack always.
+6. **Do not implement G/H.** Do **not** clone Imunify. Do **not** paste WAF onto `sinexis.app` edge.
+
 ## Session snapshot (2026-09-08 — Host Protect original WAF/YARA vs Imunify gap)
+
+> **Stale vs `main`.** Kept for history. Tip after **#696** is **`ba902799`**. WAF on `main` is **1001–1140**, not 1023. **#679** is merged. Use the **2026-09-09** snapshot above.
 
 | Item | State |
 |------|--------|
@@ -24,13 +49,13 @@
 | **Git** | Prefix **`GIT_MASTER=1`**. Never work on `main`. Never poll CI. Never commit secrets/IPs. |
 | **Engineering default** | User keeps saying **“sudah saya merge, lanjut menutup gap fitur dengan imunify360”** → next original slice (WAF 1024+ after #679 merge, or more YARA). Speak **Bahasa Indonesia**. |
 
-### Next OpenCode session
+### Next OpenCode session (stale 2026-09-08)
 
-1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. Expect **`ecc3da7f`** or **#679 squash** if merged. `gh pr list --state open --assignee @me`. If **#679** CI green → `gh pr merge --squash` then delete `feat/host-yara-fileput-upload-evalfiles`. **Do not poll CI.** Do **not** mass-merge Dependabot.
+1. Use the **2026-09-09** block. Do not expect **#679** still open. WAF cap is **1140**.
 2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** then **`AGENTS.md`**. P14: **`docs/specs/imunify-class-onbox.md`**. Legal: **`imunify-beside-not-roadmap.md`**.
 3. Speak **Bahasa Indonesia**; prefix git with `GIT_MASTER=1`. Never work on `main`. Never commit secrets/IPs/tokens/PNGs.
 4. **Do not** tell the user to SSH Alembic after a green **main** deploy.
-5. If user says continue Imunify gap: **next original WAF 1024+** (after #679) or further YARA needles. Dual-pack always. Tests: `test_host_waf.py` ingest count, `test_host_waf_render.py`, install wrappers, lab smoke grep; YARA: `test_host_engine.py` + `test_host_protect_helper.py`.
+5. If user says continue Imunify gap: **next original YARA** (WAF IDs already through 1140). Dual-pack always.
 6. **Do not implement G/H.** Do **not** clone Imunify. Do **not** paste WAF onto `sinexis.app` edge.
 
 ## Session snapshot (2026-09-05 — AI Gateway S1–S5 + prod ops)
