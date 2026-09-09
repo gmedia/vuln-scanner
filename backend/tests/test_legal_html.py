@@ -9,6 +9,8 @@ def test_terms_html_public(client):
     assert "sinexis.theme" not in resp.text
     assert "bukan nasihat hukum" in resp.text
     assert 'aria-current="page"' in resp.text
+    assert "footer-grid" in resp.text
+    assert "Sinexis · Scan · Guard" in resp.text
 
 
 def test_privacy_html_public(client):
@@ -18,3 +20,4 @@ def test_privacy_html_public(client):
     assert "https://sinexis.app/privacy" in resp.text
     assert "hash kata sandi" in resp.text
     assert 'href="/terms"' in resp.text
+    assert "footer-grid" in resp.text
