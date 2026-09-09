@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
@@ -47,8 +47,35 @@ function renderSiem() {
 }
 
 describe("SIEM page", () => {
+  const originalMatchMedia = window.matchMedia;
+  const originalInnerWidth = window.innerWidth;
+
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia;
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: originalInnerWidth,
+    });
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 800,
+    });
+    window.matchMedia = ((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia;
     useAuthStore.setState({
       user: {
         id: "u1",
@@ -134,12 +161,46 @@ describe("SIEM page", () => {
     expect(screen.getByRole("button", { name: "Apply" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Search events" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Cases" })).toBeInTheDocument();
+    expect(screen.queryByTestId("siem-event-detail")).not.toBeInTheDocument();
+    expect(screen.queryByText("evt-1")).not.toBeInTheDocument();
+
+    await user.click(screen.getByTestId("siem-event-row"));
     expect(screen.getByTestId("siem-event-detail")).toBeInTheDocument();
     expect(screen.getByText("evt-1")).toBeInTheDocument();
     expect(screen.getByTestId("siem-copy-id")).toBeInTheDocument();
+    expect(screen.getByTestId("siem-event-row")).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
 
-    await user.click(screen.getAllByText("Login failed")[0]);
-    expect(screen.getByTestId("siem-event-detail")).toBeInTheDocument();
+    await user.click(screen.getByTestId("siem-event-row"));
+    expect(screen.queryByTestId("siem-event-detail")).not.toBeInTheDocument();
+  });
+
+  it("auto-selects the first event in the xl split pane", async () => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 1440,
+    });
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes("min-width: 1280px"),
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia;
+
+    renderSiem();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("siem-event-detail")).toBeInTheDocument();
+    });
+    expect(screen.getByText("evt-1")).toBeInTheDocument();
+    expect(screen.getByRole("table")).toBeInTheDocument();
   });
 
   it("shows Guard-first empty copy when no agents", async () => {

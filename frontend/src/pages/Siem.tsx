@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Search, Siren, AlertTriangle } from "lucide-react";
+import { ChevronDown, ChevronUp, Search, Siren, AlertTriangle } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -46,25 +46,12 @@ import {
   type SiemCase,
 } from "@/api/siem";
 import { useAuthStore } from "@/store/authStore";
-import type { ApiError } from "@/lib/utils";
+import { cn, type ApiError } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import PageHeader from "@/components/layout/PageHeader";
-
-function formatWhen(iso: string | null): string {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleString("id-ID", {
-      timeZone: "Asia/Jakarta",
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
-}
+import { formatSiemWhen } from "@/components/siem/formatSiemWhen";
+import { SiemEventDetail } from "@/components/siem/SiemEventDetail";
+import { useIsXl } from "@/hooks/use-mobile";
 
 const AUTH_SESSION_DETAILS = new Set([
   "Invalid or expired token",
@@ -175,6 +162,7 @@ export default function Siem() {
     agent_id: "",
     q: "",
   });
+  const isXl = useIsXl();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [caseTitle, setCaseTitle] = useState("");
   const [activeCaseId, setActiveCaseId] = useState<string | null>(null);
@@ -277,8 +265,10 @@ export default function Siem() {
     safeEventPage * pageSize + pageSize,
   );
 
-  const selected =
-    events.find((e) => e.external_id === selectedId) ?? events[0] ?? null;
+  const selectedMatch =
+    events.find((e) => e.external_id === selectedId) ?? null;
+  const selected = isXl ? (selectedMatch ?? events[0] ?? null) : selectedMatch;
+  const selectedKey = selected?.external_id ?? null;
 
   const cases = casesQ.data?.items ?? [];
   const activeCase: SiemCase | undefined = cases.find(
@@ -477,7 +467,8 @@ export default function Siem() {
                 <TableRowSkeleton rows={6} />
               ) : (
                 <>
-                <div className="space-y-2 md:hidden">
+                {!isXl ? (
+                <div className="space-y-2">
                   {events.length === 0 ? (
                     <p
                       data-testid="siem-events-empty"
@@ -486,37 +477,83 @@ export default function Siem() {
                       {t("eventsEmpty")}
                     </p>
                   ) : (
-                    events.map((ev) => (
-                      <button
-                        key={ev.external_id}
-                        type="button"
-                        data-testid="siem-event-row"
-                        className="w-full rounded-lg border border-border bg-card p-3 text-left min-h-11"
-                        onClick={() => setSelectedId(ev.external_id)}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <LevelChip level={ev.rule_level} t={t} />
-                          <span className="shrink-0 text-[11px] text-muted-foreground">
-                            {formatWhen(ev.occurred_at)}
-                          </span>
-                        </div>
-                        <p className="mt-2 break-words text-sm text-foreground">
-                          {ev.rule_description}
-                          {ev.rule_id ? (
-                            <span className="ml-1 text-xs text-muted-foreground">
-                              #{ev.rule_id}
-                            </span>
+                    events.map((ev) => {
+                      const isExpanded = selectedKey === ev.external_id;
+                      return (
+                        <div
+                          key={ev.external_id}
+                          className={cn(
+                            "rounded-lg border border-border bg-card p-3",
+                            isExpanded && "border-primary/50 bg-muted/20",
+                          )}
+                        >
+                          <button
+                            type="button"
+                            data-testid="siem-event-row"
+                            className="flex w-full min-h-11 flex-col gap-2 text-left"
+                            aria-expanded={isExpanded}
+                            onClick={() =>
+                              setSelectedId((prev) =>
+                                prev === ev.external_id ? null : ev.external_id,
+                              )
+                            }
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <LevelChip level={ev.rule_level} t={t} />
+                              <span className="flex shrink-0 items-center gap-2">
+                                <span className="text-[11px] text-muted-foreground">
+                                   {formatSiemWhen(ev.occurred_at)}
+                                </span>
+                                {isExpanded ? (
+                                  <ChevronUp
+                                    className="h-4 w-4 text-muted-foreground motion-safe:transition-transform"
+                                    aria-hidden
+                                  />
+                                ) : (
+                                  <ChevronDown
+                                    className="h-4 w-4 text-muted-foreground motion-safe:transition-transform"
+                                    aria-hidden
+                                  />
+                                )}
+                              </span>
+                            </div>
+                            <p className="break-words text-sm text-foreground">
+                              {ev.rule_description}
+                              {ev.rule_id ? (
+                                <span className="ml-1 text-xs text-muted-foreground">
+                                  #{ev.rule_id}
+                                </span>
+                              ) : null}
+                            </p>
+                            <p className="break-all font-mono text-xs text-muted-foreground">
+                              {ev.agent_name ?? ev.agent_wazuh_id ?? "—"}
+                            </p>
+                          </button>
+                          {isExpanded ? (
+                            <div className="mt-3 border-t border-border pt-3 motion-reduce:transition-none motion-safe:animate-in motion-safe:fade-in-0">
+                              <SiemEventDetail
+                                event={ev}
+                                t={t}
+                                canCreate={canCreate}
+                                caseTitle={caseTitle}
+                                onCaseTitleChange={setCaseTitle}
+                                createPending={createMut.isPending}
+                                onCreateCase={() =>
+                                  createMut.mutate({
+                                    title: caseTitle.trim(),
+                                    external_id: ev.external_id,
+                                  })
+                                }
+                              />
+                            </div>
                           ) : null}
-                        </p>
-                        <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
-                          {ev.agent_name ?? ev.agent_wazuh_id ?? "—"}
-                        </p>
-                      </button>
-                    ))
+                        </div>
+                      );
+                    })
                   )}
-                </div>
-                <div className="hidden md:block">
-                <Table className="table-fixed">
+                 </div>
+                ) : (
+                 <Table className="table-fixed">
                   <TableHeader className="sticky top-0 z-[1] bg-card shadow-[0_1px_0_hsl(var(--border))]">
                     <TableRow>
                       <TableHead className="w-[12rem]">{t("colTime")}</TableHead>
@@ -537,11 +574,14 @@ export default function Siem() {
                       <TableRow
                         key={ev.external_id}
                         data-testid="siem-event-row"
-                        className="cursor-pointer"
+                        className={cn(
+                          "cursor-pointer",
+                          selectedKey === ev.external_id && "bg-muted/50",
+                        )}
                         onClick={() => setSelectedId(ev.external_id)}
                       >
                         <TableCell className="whitespace-nowrap">
-                          {formatWhen(ev.occurred_at)}
+                          {formatSiemWhen(ev.occurred_at)}
                         </TableCell>
                         <TableCell>
                           <LevelChip level={ev.rule_level} t={t} />
@@ -570,9 +610,9 @@ export default function Siem() {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
-                </div>
-                {allEvents.length > pageSize && (
+                 </Table>
+                )}
+                 {allEvents.length > pageSize && (
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                     <span>
                       {t("eventPager", {
@@ -612,79 +652,36 @@ export default function Siem() {
             </CardContent>
           </Card>
 
-          {selected ? (
-            <Card data-testid="siem-event-detail" className="xl:sticky xl:top-4">
+          {isXl && selected ? (
+            <Card className="xl:sticky xl:top-4">
               <CardHeader>
                 <CardTitle>{t("eventDetail")}</CardTitle>
-                <CardDescription className="flex items-center gap-2">
-                  <span className="min-w-0 truncate font-mono text-xs">
-                    {selected.external_id}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="shrink-0"
-                    data-testid="siem-copy-id"
-                    onClick={() => {
-                      void navigator.clipboard.writeText(selected.external_id);
-                    }}
-                    aria-label={t("copyId")}
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                  </Button>
-                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <p>
-                  <span className="text-muted-foreground">{t("detailLevel")}</span>{" "}
-                  {selected.rule_level}
-                </p>
-                <p>
-                  <span className="text-muted-foreground">{t("detailRule")}</span>{" "}
-                  {selected.rule_description}
-                </p>
-                <p>
-                  <span className="text-muted-foreground">{t("detailAgent")}</span>{" "}
-                  {selected.agent_name ?? selected.agent_wazuh_id ?? "—"}
-                </p>
-                <p>
-                  <span className="text-muted-foreground">{t("detailTime")}</span>{" "}
-                  {formatWhen(selected.occurred_at)}
-                </p>
-                {canCreate && (
-                  <div className="flex flex-wrap items-end gap-2">
-                    <div className="min-w-[12rem] flex-1">
-                      <Label htmlFor="siem-case-title">{t("caseTitle")}</Label>
-                      <Input
-                        id="siem-case-title"
-                        value={caseTitle}
-                        onChange={(e) => setCaseTitle(e.target.value)}
-                      />
-                    </div>
-                    <Button
-                      disabled={!caseTitle.trim() || createMut.isPending}
-                      onClick={() =>
-                        createMut.mutate({
-                          title: caseTitle.trim(),
-                          external_id: selected.external_id,
-                        })
-                      }
-                    >
-                      {t("createCase")}
-                    </Button>
-                  </div>
-                )}
+              <CardContent>
+                <SiemEventDetail
+                  event={selected}
+                  t={t}
+                  canCreate={canCreate}
+                  caseTitle={caseTitle}
+                  onCaseTitleChange={setCaseTitle}
+                  createPending={createMut.isPending}
+                  onCreateCase={() =>
+                    createMut.mutate({
+                      title: caseTitle.trim(),
+                      external_id: selected.external_id,
+                    })
+                  }
+                />
               </CardContent>
             </Card>
-          ) : (
-            <Card className="hidden xl:block" data-testid="siem-event-detail-empty">
+          ) : isXl ? (
+            <Card data-testid="siem-event-detail-empty">
               <CardHeader>
                 <CardTitle>{t("eventDetail")}</CardTitle>
                 <CardDescription>{t("eventsEmpty")}</CardDescription>
               </CardHeader>
             </Card>
-          )}
+          ) : null}
           </div>
 
             </TabsContent>
@@ -752,7 +749,7 @@ export default function Siem() {
                     <ul className="space-y-1 text-sm">
                       {activeCase.events.map((ev) => (
                         <li key={ev.id}>
-                          {formatWhen(ev.occurred_at)} · L{ev.rule_level} ·{" "}
+                          {formatSiemWhen(ev.occurred_at)} · L{ev.rule_level} ·{" "}
                           {ev.rule_description}
                         </li>
                       ))}
