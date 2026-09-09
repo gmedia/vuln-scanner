@@ -45,6 +45,7 @@ import {
   type AiUsageAdmin,
 } from "@/api/admin";
 import { isAiDisabledError } from "@/api/ai";
+import PageHeader from "@/components/layout/PageHeader";
 import { useTranslation } from "react-i18next";
 
 function formatIdr(n: number | null | undefined): string {
@@ -658,13 +659,11 @@ function UsageRow({
 function Head() {
   const { t } = useTranslation("admin");
   return (
-    <div className="flex items-center gap-3">
-      <Bot className="h-6 w-6 text-primary" />
-      <div>
-        <h2 className="text-lg font-bold tracking-wide text-foreground">{t("aiTitle")}</h2>
-        <p className="text-[11px] text-muted-foreground">{t("aiSubtitle")}</p>
-      </div>
-    </div>
+    <PageHeader
+      leading={<Bot className="h-6 w-6 shrink-0 text-primary" />}
+      title={t("aiTitle")}
+      description={t("aiSubtitle")}
+    />
   );
 }
 
