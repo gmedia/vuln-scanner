@@ -10,6 +10,29 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`sinexis.app`** (public DNS; legacy `vs.appmedia.id` may still exist). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
+## Session snapshot (2026-09-09 — SPA visual QA + status-page incident create card)
+
+| Item | State |
+|------|--------|
+| **`main` tip (coding)** | Re-`git pull`. Expect **`979ebbc9`** (`fix: keep mobile sidebar trigger in document flow` **#718**) or newer. Before that: **#717** AI/assets visual QA (`a7ea7994`). |
+| **Open PRs (agent)** | **[#719](https://github.com/gmedia/vuln-scanner/pull/719)** `feat/status-incident-create-card` — **not on `main` until squash-merge.** Create-incident form hidden until **New incident**; in-page Card like Assets; Save/Cancel; list + per-incident editor unchanged. Vitest `StatusPage.test.tsx` **8/8**. **Do not merge unless asked. Do not poll CI.** Dependabot: **do not mass-merge**. |
+| **This session (SPA)** | (1) Visual QA `/admin/ai`, `/ai`, `/assets` → **#717** merged. (2) Mobile hamburger overlapped titles: `SidebarTrigger` was `fixed`; now in-flow `md:hidden` bar in `AppShell.tsx` → **#718** merged. (3) User asked incident add/update like Assets: **create only** → **#719**. **Do not** copy Assets 1:1 onto incident **update/timeline**. **Do not** use Dialog/modal (frozen testids). |
+| **Recapture** | Playwright vs **prod** `https://sinexis.app` only **after SPA deploy**. Old prod shots stale. PNGs under `/tmp` — **never git-add**. |
+| **Item 5 (ops)** | Lab IP in provider URL = **data/ops**, not CSS. |
+| **Still human** | GTM; Host invoice `service_id`; `/admin/hpp`; lab demo-ok. Merge **#719** is human/CI. |
+| **Git** | Prefix **`GIT_MASTER=1`**. Never work on `main`. Never poll CI. Never commit secrets/IPs/`.omo/`/PNGs. |
+| **Engineering default** | **Do not start coding** until `implement` / `buat` / `kerjakan`. Optional next **if named**: merge **#719**; recapture after deploy; incident **update** UX (not default); Uptime monitor form like Assets (separate epic). Speak **Bahasa Indonesia**. Do **not** paste WAF onto `sinexis.app` edge. |
+
+### Next OpenCode session
+
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. Expect **`979ebbc9`** or **#719 squash** if merged. `gh pr list --state open --assignee @me`. If **#719** CI green → squash-merge then delete `feat/status-incident-create-card` **only if session boot / user merging**. **Do not poll CI.** Do **not** mass-merge Dependabot.
+2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** then **`AGENTS.md`**. Status page: `frontend/src/pages/StatusPage.tsx`, `frontend/src/test/StatusPage.test.tsx`. Assets pattern: `frontend/src/pages/Assets.tsx`.
+3. Speak **Bahasa Indonesia**; prefix git with `GIT_MASTER=1`. Never work on `main`. Never commit secrets/IPs/tokens/PNGs/`.omo/`.
+4. **Do not** tell the user to SSH Alembic after a green **main** deploy.
+5. **Do not** implement incident **update** as Assets form unless user asks. **Do not** restyle kit for one screenshot. Frozen e2e testids stay (`status-page`, `status-incident-title-*`, dll).
+6. **Do not implement G/H.** Do **not** clone Imunify. Do **not** paste WAF onto `sinexis.app` edge.
+7. Older Host Protect / ClamAV / YARA notes below are **history**. Product priority still **`docs/AGENT_EXECUTION_GUIDE.md`**.
+
 ## Session snapshot (2026-09-09 — ClamAV + real YARA; stop pack-widen default)
 
 | Item | State |
