@@ -480,6 +480,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 | `docs/specs/guard-v1.md` | P5 Guard thin spek + status (S0–S5 + Http on main) |
 | `docs/specs/blog-v1.md` | P10 public blog (CMS + SEO path) |
 | `docs/specs/shadcn-ui-migration.md` | SPA kit; Wave A–F shipped |
+| `docs/specs/spa-grok-chrome-redesign.md` | **P15 S0 draft** — SPA chrome vs Grok2API zip; **layout overrides** theme-v1 “header stays”; green primary stays. Code only if named slice + `buat` |
 | `docs/specs/*` | Attach/workspace/assets/uptime/i18n/theme shipped; blog S1–S5; status page P11; hostname lifecycle **draft** |
 
 ---
