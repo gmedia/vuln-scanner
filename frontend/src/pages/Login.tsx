@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import AuthLayout, {
+  AUTH_CARD_CLASS,
   AUTH_SECONDARY_LINK,
 } from "@/components/layout/AuthLayout";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
@@ -86,7 +87,7 @@ function Login() {
 
   return (
     <AuthLayout title={t("signInTitle")} maxWidth="lg">
-      <Card className="w-full">
+      <Card className={AUTH_CARD_CLASS}>
         <CardContent className="pt-6">
           <GoogleSignInButton />
           <form onSubmit={handleSubmit} className="space-y-4">
