@@ -1323,11 +1323,32 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
                             "path": "/configuration.php",
                             "http_status": 403,
                         },
+                        {
+                            "action": "block",
+                            "rule_id": "1144",
+                            "method": "GET",
+                            "path": "/.env.production",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1145",
+                            "method": "GET",
+                            "path": "/wp-config.php.save",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1146",
+                            "method": "GET",
+                            "path": "/app/etc/local.xml",
+                            "http_status": 403,
+                        },
                     ],
                 },
             )
             assert r.status_code == 200, r.text
-            assert r.json()["accepted"] == 97
+            assert r.json()["accepted"] == 100
     finally:
         app.dependency_overrides.clear()
     rows = (await db_session.execute(select(HostWafEvent).where(HostWafEvent.site_id == site.id))).scalars().all()
@@ -1429,6 +1450,9 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
         "1141",
         "1142",
         "1143",
+        "1144",
+        "1145",
+        "1146",
     }
 
 
@@ -1493,7 +1517,7 @@ async def test_agent_waf_ingest_413_too_many_events(db_session: AsyncSession, ct
                     "agent_id": str(agent.id),
                     "site_id": str(site.id),
                     "events": [
-                        {"action": "log", "rule_id": "1", "method": "GET", "path": f"/p{i}"} for i in range(101)
+                        {"action": "log", "rule_id": "1", "method": "GET", "path": f"/p{i}"} for i in range(129)
                     ],
                 },
             )
