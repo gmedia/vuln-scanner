@@ -224,6 +224,76 @@ describe("StatusPage admin", () => {
     expect(statusApi.deleteIncident).toHaveBeenCalledWith("i1");
   });
 
+  it("hides the new-incident form until New incident is clicked", async () => {
+    const user = userEvent.setup();
+    mockGet.mockResolvedValue({
+      id: "p1",
+      organization_id: "o1",
+      slug: "erp-stg",
+      title: "ERP",
+      published: true,
+      custom_hostname: null,
+      hostname_status: "none",
+      cname_target: "status-edge.sinexis.app",
+      ...pageFields,
+      public_path: "/status/erp-stg",
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+      components: [],
+      incidents: [],
+      overall: "operational",
+    });
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("status-incident-add")).toBeInTheDocument(),
+    );
+    expect(screen.queryByTestId("status-incident-create")).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("status-incident-add"));
+    expect(screen.getByTestId("status-incident-create")).toBeInTheDocument();
+    expect(screen.getByTestId("status-incident-title")).toBeInTheDocument();
+    await user.click(screen.getByTestId("status-incident-create-cancel"));
+    expect(screen.queryByTestId("status-incident-create")).not.toBeInTheDocument();
+  });
+
+  it("posts a new incident from the create card then closes it", async () => {
+    const user = userEvent.setup();
+    mockGet.mockResolvedValue({
+      id: "p1",
+      organization_id: "o1",
+      slug: "erp-stg",
+      title: "ERP",
+      published: true,
+      custom_hostname: null,
+      hostname_status: "none",
+      cname_target: "status-edge.sinexis.app",
+      ...pageFields,
+      public_path: "/status/erp-stg",
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+      components: [],
+      incidents: [],
+      overall: "operational",
+    });
+    vi.mocked(statusApi.createIncident).mockResolvedValue({} as never);
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("status-incident-add")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("status-incident-add"));
+    await user.type(screen.getByTestId("status-incident-title"), "API blip");
+    await user.type(screen.getByTestId("status-incident-body"), "Looking into it");
+    await user.click(screen.getByTestId("status-incident-create-save"));
+    expect(statusApi.createIncident).toHaveBeenCalledWith({
+      title: "API blip",
+      impact: "minor",
+      status: "investigating",
+      body: "Looking into it",
+    });
+    await waitFor(() =>
+      expect(screen.queryByTestId("status-incident-create")).not.toBeInTheDocument(),
+    );
+  });
+
   it("attaches a custom hostname on the existing page", async () => {
     const user = userEvent.setup();
     mockGet.mockResolvedValue({

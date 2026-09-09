@@ -91,6 +91,7 @@ export default function StatusPage() {
   const [incBody, setIncBody] = useState("");
   const [incImpact, setIncImpact] = useState("minor");
   const [incStatus, setIncStatus] = useState("investigating");
+  const [incOpen, setIncOpen] = useState(false);
 
   const slugDraft = editSlug ?? page?.slug ?? "";
   const titleDraft = editTitle ?? page?.title ?? "";
@@ -179,6 +180,9 @@ export default function StatusPage() {
     onSuccess: () => {
       setIncTitle("");
       setIncBody("");
+      setIncImpact("minor");
+      setIncStatus("investigating");
+      setIncOpen(false);
       invalidate();
     },
   });
@@ -514,73 +518,117 @@ export default function StatusPage() {
           </Card>
 
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle className="text-sm tracking-wide">
                 {t("incidents")}
               </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="flex min-w-0 flex-col gap-1.5 lg:col-span-2">
-                  <Label htmlFor="sp-inc-title">{t("incidentTitle")}</Label>
-                  <Input
-                    id="sp-inc-title"
-                    className="h-10 min-h-10"
-                    value={incTitle}
-                    onChange={(e) => setIncTitle(e.target.value)}
-                  />
-                </div>
-                <div className="flex min-w-0 flex-col gap-1.5">
-                  <Label>{t("impact")}</Label>
-                  <Select value={incImpact} onValueChange={setIncImpact}>
-                    <SelectTrigger className="h-10 min-h-10">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {["none", "minor", "major", "critical"].map((v) => (
-                        <SelectItem key={v} value={v}>
-                          {v}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex min-w-0 flex-col gap-1.5">
-                  <Label>{t("status")}</Label>
-                  <Select value={incStatus} onValueChange={setIncStatus}>
-                    <SelectTrigger className="h-10 min-h-10">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[
-                        "investigating",
-                        "identified",
-                        "monitoring",
-                        "resolved",
-                      ].map((v) => (
-                        <SelectItem key={v} value={v}>
-                          {v}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2 lg:col-span-4">
-                  <Label htmlFor="sp-inc-body">{t("body")}</Label>
-                  <Textarea
-                    id="sp-inc-body"
-                    value={incBody}
-                    onChange={(e) => setIncBody(e.target.value)}
-                  />
-                </div>
-              </div>
               <Button
                 type="button"
-                disabled={!incTitle || !incBody}
-                onClick={() => incMut.mutate()}
+                size="sm"
+                data-testid="status-incident-add"
+                onClick={() => {
+                  if (incOpen) {
+                    setIncTitle("");
+                    setIncBody("");
+                    setIncImpact("minor");
+                    setIncStatus("investigating");
+                    setIncOpen(false);
+                  } else {
+                    setIncOpen(true);
+                  }
+                }}
               >
                 {t("newIncident")}
               </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {incOpen ? (
+                <div
+                  className="space-y-4"
+                  data-testid="status-incident-create"
+                >
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="flex min-w-0 flex-col gap-1.5 lg:col-span-2">
+                      <Label htmlFor="sp-inc-title">{t("incidentTitle")}</Label>
+                      <Input
+                        id="sp-inc-title"
+                        data-testid="status-incident-title"
+                        className="h-10 min-h-10"
+                        value={incTitle}
+                        onChange={(e) => setIncTitle(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-1.5">
+                      <Label>{t("impact")}</Label>
+                      <Select value={incImpact} onValueChange={setIncImpact}>
+                        <SelectTrigger className="h-10 min-h-10">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["none", "minor", "major", "critical"].map((v) => (
+                            <SelectItem key={v} value={v}>
+                              {v}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-1.5">
+                      <Label>{t("status")}</Label>
+                      <Select value={incStatus} onValueChange={setIncStatus}>
+                        <SelectTrigger className="h-10 min-h-10">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[
+                            "investigating",
+                            "identified",
+                            "monitoring",
+                            "resolved",
+                          ].map((v) => (
+                            <SelectItem key={v} value={v}>
+                              {v}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2 lg:col-span-4">
+                      <Label htmlFor="sp-inc-body">{t("body")}</Label>
+                      <Textarea
+                        id="sp-inc-body"
+                        data-testid="status-incident-body"
+                        value={incBody}
+                        onChange={(e) => setIncBody(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      data-testid="status-incident-create-save"
+                      disabled={!incTitle.trim() || !incBody.trim() || incMut.isPending}
+                      onClick={() => incMut.mutate()}
+                    >
+                      {t("save")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      data-testid="status-incident-create-cancel"
+                      onClick={() => {
+                        setIncTitle("");
+                        setIncBody("");
+                        setIncImpact("minor");
+                        setIncStatus("investigating");
+                        setIncOpen(false);
+                      }}
+                    >
+                      {t("cancel")}
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
               {page.incidents.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t("noIncidents")}</p>
               ) : (
