@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import AuthLayout, {
+  AUTH_CARD_CLASS,
   AUTH_SECONDARY_LINK,
 } from "@/components/layout/AuthLayout";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
@@ -104,7 +105,7 @@ function Register() {
     const sendFailed = emailSent === false;
     return (
       <AuthLayout title={t("registerSuccess")}>
-        <Card className="w-full">
+        <Card className={AUTH_CARD_CLASS}>
           <CardContent className="pt-6 text-center space-y-4">
             {sendFailed ? (
               <AlertTriangle className="h-12 w-12 text-amber-400 mx-auto" />
@@ -153,7 +154,7 @@ function Register() {
 
   return (
     <AuthLayout title={t("createAccount")}>
-      <Card className="w-full">
+      <Card className={AUTH_CARD_CLASS}>
         <CardContent className="pt-6">
           <GoogleSignInButton />
           <form onSubmit={handleSubmit} className="space-y-4">

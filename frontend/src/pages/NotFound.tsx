@@ -29,7 +29,7 @@ function NotFound() {
 
   return (
     <div className="flex min-h-dvh flex-col items-center bg-background px-4 pb-10 pt-[max(1.25rem,env(safe-area-inset-top))] sm:justify-center sm:py-10">
-      <div className="flex w-full max-w-2xl flex-col items-center rounded-lg border border-border bg-card px-10 py-16 text-center 2xl:max-w-3xl">
+        <div className="flex w-full max-w-2xl flex-col items-center rounded-lg border border-border/80 bg-card px-10 py-16 text-center shadow-none 2xl:max-w-3xl">
         <div className="mb-6 flex flex-col items-center gap-3">
           <BrandMark to="/" aria-label={t("homeAria")} />
           <div className="flex flex-row flex-wrap items-center justify-center gap-2 [&_button[aria-pressed=true]]:!bg-secondary [&_button[aria-pressed=true]]:!text-secondary-foreground">
