@@ -420,6 +420,175 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         'SecRule REQUEST_URI "@rx (?i)/glassfish" '
         "\"id:1095,phase:1,t:none,deny,status:403,msg:\\'sinexis.glassfish\\'\""
     )
+    rule_1096 = (
+        'SecRule REQUEST_URI "@rx (?i)/solr/select" '
+        "\"id:1096,phase:1,t:none,deny,status:403,msg:\\'sinexis.solr.select\\'\""
+    )
+    rule_1097 = (
+        'SecRule REQUEST_URI "@rx (?i)/host-manager/html" '
+        "\"id:1097,phase:1,t:none,deny,status:403,msg:\\'sinexis.tomcat.hostmanager\\'\""
+    )
+    rule_1098 = (
+        'SecRule REQUEST_URI "@rx (?i)/jmxrmi" "id:1098,phase:1,t:none,deny,status:403,msg:\\\'sinexis.jmxrmi\\\'"'
+    )
+    rule_1099 = (
+        'SecRule REQUEST_URI "@rx (?i)/manager/status" '
+        "\"id:1099,phase:1,t:none,deny,status:403,msg:\\'sinexis.tomcat.status\\'\""
+    )
+    rule_1100 = (
+        'SecRule REQUEST_URI "@rx (?i)/nginx_status" '
+        "\"id:1100,phase:1,t:none,deny,status:403,msg:\\'sinexis.nginx.status\\'\""
+    )
+    rule_1101 = (
+        'SecRule REQUEST_URI "@rx (?i)/fckeditor" '
+        "\"id:1101,phase:1,t:none,deny,status:403,msg:\\'sinexis.fckeditor\\'\""
+    )
+    rule_1102 = (
+        'SecRule REQUEST_URI "@rx (?i)/ckfinder" "id:1102,phase:1,t:none,deny,status:403,msg:\\\'sinexis.ckfinder\\\'"'
+    )
+    rule_1103 = (
+        'SecRule REQUEST_URI "@rx (?i)/tiny_mce(/|$|[?])" '
+        "\"id:1103,phase:1,t:none,deny,status:403,msg:\\'sinexis.tinymce\\'\""
+    )
+    rule_1104 = (
+        'SecRule REQUEST_URI "@rx (?i)/xmlrpc\\.php\\.bak" '
+        "\"id:1104,phase:1,t:none,deny,status:403,msg:\\'sinexis.xmlrpc.bak\\'\""
+    )
+    rule_1105 = (
+        'SecRule REQUEST_URI "@rx (?i)/config\\.json($|[?])" '
+        "\"id:1105,phase:1,t:none,deny,status:403,msg:\\'sinexis.config.json\\'\""
+    )
+    rule_1106 = (
+        'SecRule REQUEST_URI "@rx (?i)/secrets\\.yml" '
+        "\"id:1106,phase:1,t:none,deny,status:403,msg:\\'sinexis.secrets.yml\\'\""
+    )
+    rule_1107 = (
+        'SecRule REQUEST_URI "@rx (?i)/database\\.yml" '
+        "\"id:1107,phase:1,t:none,deny,status:403,msg:\\'sinexis.database.yml\\'\""
+    )
+    rule_1108 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.npmrc" "id:1108,phase:1,t:none,deny,status:403,msg:\\\'sinexis.npmrc\\\'"'
+    )
+    rule_1109 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.yarnrc" "id:1109,phase:1,t:none,deny,status:403,msg:\\\'sinexis.yarnrc\\\'"'
+    )
+    rule_1110 = (
+        'SecRule REQUEST_URI "@rx (?i)/package-lock\\.json" '
+        "\"id:1110,phase:1,t:none,deny,status:403,msg:\\'sinexis.packagelock\\'\""
+    )
+    rule_1111 = (
+        'SecRule REQUEST_URI "@rx (?i)/yarn\\.lock" '
+        "\"id:1111,phase:1,t:none,deny,status:403,msg:\\'sinexis.yarn.lock\\'\""
+    )
+    rule_1112 = (
+        'SecRule REQUEST_URI "@rx (?i)/Gemfile($|[/?])" '
+        "\"id:1112,phase:1,t:none,deny,status:403,msg:\\'sinexis.gemfile\\'\""
+    )
+    rule_1113 = (
+        'SecRule REQUEST_URI "@rx (?i)/Procfile" "id:1113,phase:1,t:none,deny,status:403,msg:\\\'sinexis.procfile\\\'"'
+    )
+    rule_1114 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.travis\\.yml" '
+        "\"id:1114,phase:1,t:none,deny,status:403,msg:\\'sinexis.travis\\'\""
+    )
+    rule_1115 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.gitlab-ci\\.yml" '
+        "\"id:1115,phase:1,t:none,deny,status:403,msg:\\'sinexis.gitlabci\\'\""
+    )
+    rule_1116 = (
+        'SecRule REQUEST_URI "@rx (?i)/bitbucket-pipelines\\.yml" '
+        "\"id:1116,phase:1,t:none,deny,status:403,msg:\\'sinexis.bitbucket.pipelines\\'\""
+    )
+    rule_1117 = (
+        'SecRule REQUEST_URI "@rx (?i)/error_log($|[/?])" '
+        "\"id:1117,phase:1,t:none,deny,status:403,msg:\\'sinexis.error.log\\'\""
+    )
+    rule_1118 = (
+        'SecRule REQUEST_URI "@rx (?i)/php_error\\.log" '
+        "\"id:1118,phase:1,t:none,deny,status:403,msg:\\'sinexis.php.errorlog\\'\""
+    )
+    rule_1119 = (
+        'SecRule REQUEST_URI "@rx (?i)/storage/logs/laravel\\.log" '
+        "\"id:1119,phase:1,t:none,deny,status:403,msg:\\'sinexis.laravel.log\\'\""
+    )
+    rule_1120 = (
+        'SecRule REQUEST_URI "@rx (?i)/webmail(/|$)" '
+        "\"id:1120,phase:1,t:none,deny,status:403,msg:\\'sinexis.webmail\\'\""
+    )
+    rule_1121 = (
+        'SecRule REQUEST_URI "@rx (?i)/roundcube(/|$|[?])" '
+        "\"id:1121,phase:1,t:none,deny,status:403,msg:\\'sinexis.roundcube\\'\""
+    )
+    rule_1122 = (
+        'SecRule REQUEST_URI "@rx (?i)/squirrelmail(/|$|[?])" '
+        "\"id:1122,phase:1,t:none,deny,status:403,msg:\\'sinexis.squirrelmail\\'\""
+    )
+    rule_1123 = (
+        'SecRule REQUEST_URI "@rx (?i)/zabbix(/|$)" "id:1123,phase:1,t:none,deny,status:403,msg:\\\'sinexis.zabbix\\\'"'
+    )
+    rule_1124 = (
+        'SecRule REQUEST_URI "@rx (?i)/nagios(/|$)" "id:1124,phase:1,t:none,deny,status:403,msg:\\\'sinexis.nagios\\\'"'
+    )
+    rule_1125 = (
+        'SecRule REQUEST_URI "@rx (?i)/grafana(/|$)" '
+        "\"id:1125,phase:1,t:none,deny,status:403,msg:\\'sinexis.grafana\\'\""
+    )
+    rule_1126 = (
+        'SecRule REQUEST_URI "@rx (?i)/prometheus(/|$)" '
+        "\"id:1126,phase:1,t:none,deny,status:403,msg:\\'sinexis.prometheus\\'\""
+    )
+    rule_1127 = (
+        'SecRule REQUEST_URI "@rx (?i)/kibana(/|$)" "id:1127,phase:1,t:none,deny,status:403,msg:\\\'sinexis.kibana\\\'"'
+    )
+    rule_1128 = (
+        'SecRule REQUEST_URI "@rx (?i)/_cat/indices" '
+        "\"id:1128,phase:1,t:none,deny,status:403,msg:\\'sinexis.es.cat\\'\""
+    )
+    rule_1129 = (
+        'SecRule REQUEST_URI "@rx (?i)/minio(/|$)" "id:1129,phase:1,t:none,deny,status:403,msg:\\\'sinexis.minio\\\'"'
+    )
+    rule_1130 = (
+        'SecRule REQUEST_URI "@rx (?i)/portainer" '
+        "\"id:1130,phase:1,t:none,deny,status:403,msg:\\'sinexis.portainer\\'\""
+    )
+    rule_1131 = (
+        'SecRule REQUEST_URI "@rx (?i)/consul(/|$)" "id:1131,phase:1,t:none,deny,status:403,msg:\\\'sinexis.consul\\\'"'
+    )
+    rule_1132 = (
+        'SecRule REQUEST_URI "@rx (?i)/vault/ui" "id:1132,phase:1,t:none,deny,status:403,msg:\\\'sinexis.vault.ui\\\'"'
+    )
+    rule_1133 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.kube/config" '
+        "\"id:1133,phase:1,t:none,deny,status:403,msg:\\'sinexis.kube.config\\'\""
+    )
+    rule_1134 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.docker/config\\.json" '
+        "\"id:1134,phase:1,t:none,deny,status:403,msg:\\'sinexis.docker.config\\'\""
+    )
+    rule_1135 = (
+        'SecRule REQUEST_URI "@rx (?i)/wp-content/uploads/dump\\.sql" '
+        "\"id:1135,phase:1,t:none,deny,status:403,msg:\\'sinexis.wp.dump\\'\""
+    )
+    rule_1136 = (
+        'SecRule REQUEST_URI "@rx (?i)/backup\\.sql\\.gz" '
+        "\"id:1136,phase:1,t:none,deny,status:403,msg:\\'sinexis.backup.sqlgz\\'\""
+    )
+    rule_1137 = (
+        'SecRule REQUEST_URI "@rx (?i)/phpmyadmin/setup" '
+        "\"id:1137,phase:1,t:none,deny,status:403,msg:\\'sinexis.pma.setup\\'\""
+    )
+    rule_1138 = (
+        'SecRule REQUEST_URI "@rx (?i)/setup\\.php($|[?])" '
+        "\"id:1138,phase:1,t:none,deny,status:403,msg:\\'sinexis.setup.php\\'\""
+    )
+    rule_1139 = (
+        'SecRule REQUEST_URI "@rx (?i)/install\\.php($|[?])" '
+        "\"id:1139,phase:1,t:none,deny,status:403,msg:\\'sinexis.install.php\\'\""
+    )
+    rule_1140 = (
+        'SecRule REQUEST_URI "@rx (?i)/solr/update" '
+        "\"id:1140,phase:1,t:none,deny,status:403,msg:\\'sinexis.solr.update\\'\""
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -524,8 +693,53 @@ SecRule REQUEST_METHOD "@streq POST" "t:none,chain"
       {rule_1092}
       {rule_1093}
       {rule_1094}
-      {rule_1095}
-      {extra}';
+       {rule_1095}
+       {rule_1096}
+       {rule_1097}
+       {rule_1098}
+       {rule_1099}
+       {rule_1100}
+       {rule_1101}
+       {rule_1102}
+       {rule_1103}
+       {rule_1104}
+       {rule_1105}
+       {rule_1106}
+       {rule_1107}
+       {rule_1108}
+       {rule_1109}
+       {rule_1110}
+       {rule_1111}
+       {rule_1112}
+       {rule_1113}
+       {rule_1114}
+       {rule_1115}
+       {rule_1116}
+       {rule_1117}
+       {rule_1118}
+       {rule_1119}
+       {rule_1120}
+       {rule_1121}
+       {rule_1122}
+       {rule_1123}
+       {rule_1124}
+       {rule_1125}
+       {rule_1126}
+       {rule_1127}
+       {rule_1128}
+       {rule_1129}
+       {rule_1130}
+       {rule_1131}
+       {rule_1132}
+       {rule_1133}
+       {rule_1134}
+       {rule_1135}
+       {rule_1136}
+       {rule_1137}
+       {rule_1138}
+       {rule_1139}
+       {rule_1140}
+       {extra}';
 # Paranoia {paranoia}: keep starter rules only. Do not raise to 4 in v1.
 """
 
