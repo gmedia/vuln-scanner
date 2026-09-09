@@ -10,7 +10,34 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`sinexis.app`** (public DNS; legacy `vs.appmedia.id` may still exist). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
+## Session snapshot (2026-09-09 — ClamAV + real YARA; stop pack-widen default)
+
+| Item | State |
+|------|--------|
+| **`main` tip (coding)** | Re-`git pull`. Expect **`16a9c117`** (`docs: handoff after Host WAF 1141-1143` **#701**) or newer. Merged on main: **#700** host sizing, **#699** WAF 1141–1143. **#706 / #708 not on main** until squash-merge. |
+| **Open PRs (agent)** | **[#706](https://github.com/gmedia/vuln-scanner/pull/706)** `feat/host-yara-shutdown-preg-evalgz` — original dual-pack YARA needles: `sinexis.php.register_shutdown`, `sinexis.php.preg_callback_input`, `sinexis.php.eval_gzuncompress`. **[#708](https://github.com/gmedia/vuln-scanner/pull/708)** `feat/host-waf-1144-1146` — WAF **1144** `/.env.production`, **1145** `/wp-config.php.save`, **1146** `/app/etc/local.xml`; `MAX_AGENT_WAF_EVENTS` **100→128**; dual-ship helper/static + lab smoke. **Do not merge from agent unless asked. Do not poll CI.** Dependabot: **do not mass-merge**. |
+| **WAF starter** | On **`main`**: `_WAF_STARTER_IDS` **1001–1143**. On **#708** (if merged): **1001–1146**. Ingest fixture `accepted` **97** on main; **100** on #708. Renderer + helper/static must stay in lockstep. **Do not** add IDs past the merged cap without frozenset + dual-ship + tests. |
+| **YARA pack** | Dual `.yar`. On **`main`**: through `system_cookie` / `extract_input` / `array_map_input` (**#698**). On **#706**: + shutdown / preg_callback / eval_gzuncompress. **Parser is substring needles**, not libyara. |
+| **User intent (this session)** | Tired of copy-paste rule slices. Asked if implementation is correct; then interested in **ClamAV** and **real YARA**. **Do not** default to WAF 1147+ / more needles unless user names that slice. **G/H parked.** |
+| **ClamAV (already S12)** | Helper `scan_clam()` if `clamdscan`/`clamscan` on PATH; POST `engine=clam`, `rule_id=clam.*`. `Recommends: clamav`. **No CVD in git.** CI must not require Clam. Gap = **lab/ops**: install on tc5, `freshclam`, systemd `ProtectSystem=strict` vs `clamdscan --fdpass` (empty hits if timeout). |
+| **YARA CLI (gap / honesty bug)** | `yara_available()` is `shutil.which("yara")` then **`engine = "yara"` while still `scan_needles()`**. Label lies if CLI is installed. Real YARA = `yara -r pack.yar root` (or yara-python) with **valid** rules (`condition`); needle parser strips that. Fallback needles if CLI absent (S10). CI without yara package. **Do not vendor community packs / Imunify DB into git.** |
+| **Legal freeze** | [`docs/commercial/imunify-beside-not-roadmap.md`](docs/commercial/imunify-beside-not-roadmap.md). Spek: [`docs/specs/host-protect-v1.md`](docs/specs/host-protect-v1.md) S10/S12, [`docs/specs/imunify-class-onbox.md`](docs/specs/imunify-class-onbox.md), [`docs/specs/vps-displace-imunify-dev-plan.md`](docs/specs/vps-displace-imunify-dev-plan.md). CRS/Imunify rules **not** product events. Never paste WAF onto `sinexis.app` edge. |
+| **Still human** | GTM; Host invoice `service_id`; `/admin/hpp`; lab demo-ok. Merge **#706/#708** is human/CI. |
+| **Git** | Prefix **`GIT_MASTER=1`**. Never work on `main`. Never poll CI. Never commit secrets/IPs. |
+| **Engineering default** | Next code **if user says `kerjakan`**: (1) **honest `engine=`** (needles vs real yara CLI), (2) **Clam lab path** (optional unit/socket/`ReadWritePaths` only if needed), (3) **optional `yara -r`** on original pack + needle fallback. **Not** another 3-ID WAF PR unless asked. Speak **Bahasa Indonesia**. Do **not** implement until `buat` / `kerjakan`. |
+
+### Next OpenCode session
+
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. Expect **`16a9c117`** or this handoff squash. `gh pr list --state open --assignee @me`. If **#706** / **#708** CI green → squash-merge then delete branch **only if that is the session boot rule / user already merging**. **Do not poll CI.** Do **not** mass-merge Dependabot.
+2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** then **`AGENTS.md`**. Host: **`docs/specs/host-protect-v1.md`** (S10 YARA optional, S12 Clam). P14 legal: **`imunify-beside-not-roadmap.md`**. Helper: `packaging/host-protect-helper/sinexis_host_scan.py` (`scan_clam`, `yara_available`, `scan_needles`).
+3. Speak **Bahasa Indonesia**; prefix git with `GIT_MASTER=1`. Never work on `main`. Never commit secrets/IPs/tokens/PNGs.
+4. **Do not** tell the user to SSH Alembic after a green **main** deploy.
+5. If user says **`kerjakan` Clam/YARA**: start with **fix `engine=yara` lie** + tests (`test_host_protect_helper.py`); then Clam ops/lab; then real `yara` CLI on **our** pack. Dual-pack `.yar` if rules change. **Do not** dump CRS/community YARA into git. **Do not** widen WAF IDs unless named.
+6. **Do not implement G/H.** Do **not** clone Imunify. Do **not** paste WAF onto `sinexis.app` edge.
+
 ## Session snapshot (2026-09-09 — Host Protect original pack after #699)
+
+> **Stale vs next work.** Kept for history. WAF on **`main`** is **1001–1143**. Open follow-ups **#706** (YARA) and **#708** (WAF 1144–1146). User pivoted to **ClamAV + real YARA**, not more copy-paste IDs. Use the **ClamAV + real YARA** snapshot above.
 
 | Item | State |
 |------|--------|
@@ -24,13 +51,13 @@
 | **Git** | Prefix **`GIT_MASTER=1`**. Never work on `main`. Never poll CI. Never commit secrets/IPs. |
 | **Engineering default** | User **“sudah saya merge”** → next original **YARA** (WAF just grew to 1143). Speak **Bahasa Indonesia**. Do **not** implement until `buat` / `kerjakan`. |
 
-### Next OpenCode session
+### Next OpenCode session (stale — pack after #699)
 
-1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. Expect **`29f2484e`** or this handoff squash. `gh pr list --state open --assignee @me`. CI green → squash-merge then delete branch. **Do not poll CI.** Do **not** mass-merge Dependabot.
+1. Use the **ClamAV + real YARA** block. **#706/#708** may still be open.
 2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** then **`AGENTS.md`**. P14: **`docs/specs/imunify-class-onbox.md`**. Legal: **`imunify-beside-not-roadmap.md`**.
 3. Speak **Bahasa Indonesia**; prefix git with `GIT_MASTER=1`. Never work on `main`. Never commit secrets/IPs/tokens/PNGs.
 4. **Do not** tell the user to SSH Alembic after a green **main** deploy.
-5. If user says continue Imunify-shaped **jobs**: **next original YARA** (dual pack + `test_host_engine.py` + `test_host_protect_helper.py`) — last product slice was WAF. WAF 1144+ only if expanding `_WAF_STARTER_IDS` + render + dual-ship + ingest tests. Dual-pack always.
+5. Default next **code** is Clam/YARA honesty, **not** WAF 1147, unless the user names pack-widen.
 6. **Do not implement G/H.** Do **not** clone Imunify. Do **not** paste WAF onto `sinexis.app` edge.
 
 ## Session snapshot (2026-09-08 — Host Protect original WAF/YARA vs Imunify gap)
