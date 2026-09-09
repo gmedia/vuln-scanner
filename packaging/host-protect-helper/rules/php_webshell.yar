@@ -308,3 +308,49 @@ rule sinexis_php_include_input
     condition:
         any of them
 }
+
+rule sinexis_php_system_cookie
+{
+    meta:
+        id = "sinexis.php.system_cookie"
+        hit_class = "backdoor"
+    strings:
+        $a = "system($_COOKIE"
+        $b = "passthru($_COOKIE"
+        $c = "shell_exec($_COOKIE"
+        $d = "exec($_COOKIE"
+        $e = "system($_SERVER"
+    condition:
+        any of them
+}
+
+rule sinexis_php_extract_input
+{
+    meta:
+        id = "sinexis.php.extract_input"
+        hit_class = "webshell"
+    strings:
+        $a = "extract($_POST"
+        $b = "extract($_GET"
+        $c = "extract($_REQUEST"
+        $d = "extract($_COOKIE"
+        $e = "parse_str($_POST"
+        $f = "parse_str($_GET"
+    condition:
+        any of them
+}
+
+rule sinexis_php_array_map_input
+{
+    meta:
+        id = "sinexis.php.array_map_input"
+        hit_class = "webshell"
+    strings:
+        $a = "array_map($_POST"
+        $b = "array_map($_GET"
+        $c = "array_map($_REQUEST"
+        $d = "array_filter($_POST"
+        $e = "array_walk($_GET"
+    condition:
+        any of them
+}
