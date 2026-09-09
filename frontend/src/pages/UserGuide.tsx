@@ -28,6 +28,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/Accordion";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
+import PageHeader from "@/components/layout/PageHeader";
 import {
   Sidebar,
   SidebarContent,
@@ -264,17 +265,18 @@ function UserGuide() {
   return (
     <div className="pb-8">
       <div className="mb-6 max-w-4xl 2xl:max-w-none">
-        <div className="mb-1 flex items-center gap-2 text-primary">
-          <BookOpen className="h-5 w-5" />
-          <span className="text-xs font-medium uppercase tracking-wider">
-            {t("kicker")}
-          </span>
-        </div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          {t("title")}
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {t("intro", { product: BRAND.product })}
+        <PageHeader
+          title={t("title")}
+          description={t("intro", { product: BRAND.product })}
+          leading={
+            <div className="mt-1 flex flex-col items-center gap-1 text-primary">
+              <BookOpen className="h-5 w-5" aria-hidden />
+              <span className="sr-only">{t("kicker")}</span>
+            </div>
+          }
+        />
+        <p className="mt-2 text-xs font-medium uppercase tracking-wider text-primary">
+          {t("kicker")}
         </p>
       </div>
 
