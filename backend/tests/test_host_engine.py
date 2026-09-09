@@ -31,6 +31,9 @@ def test_load_signature_pack_has_webshell_rule():
     assert "sinexis.php.file_put_input" in ids
     assert "sinexis.php.move_uploaded" in ids
     assert "sinexis.php.eval_files" in ids
+    assert "sinexis.php.eval_cookie" in ids
+    assert "sinexis.php.call_user_input" in ids
+    assert "sinexis.php.include_input" in ids
 
 
 def test_scan_local_root_matches_eval_post(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
@@ -149,6 +152,24 @@ def test_scan_local_root_matches_fileput_upload_evalfiles(tmp_path: Path, monkey
     assert ("w.php", "sinexis.php.file_put_input") in ids
     assert ("m.php", "sinexis.php.move_uploaded") in ids
     assert ("f.php", "sinexis.php.eval_files") in ids
+    assert not any(h["rel_path"].endswith("clean.php") for h in hits)
+
+
+def test_scan_local_root_matches_cookie_calluser_include(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(host_path, "ALLOWED_PREFIXES", (str(tmp_path),))
+    monkeypatch.setattr(host_engine, "validate_root_path", lambda p: str(Path(p)))
+    monkeypatch.setattr(host_engine, "jail_rel_path", lambda root, rel: str(Path(root) / rel))
+    uploads = tmp_path / "wp-content" / "uploads"
+    uploads.mkdir(parents=True)
+    (uploads / "k.php").write_text("<?php eval($_COOKIE['x']); ?>", encoding="utf-8")
+    (uploads / "c.php").write_text("<?php call_user_func($_POST['f']); ?>", encoding="utf-8")
+    (uploads / "i.php").write_text("<?php include($_GET['p']); ?>", encoding="utf-8")
+    (uploads / "clean.php").write_text("<?php echo 1; ?>", encoding="utf-8")
+    hits = scan_local_root(str(tmp_path))
+    ids = {(h["rel_path"].split("/")[-1], h["rule_id"]) for h in hits}
+    assert ("k.php", "sinexis.php.eval_cookie") in ids
+    assert ("c.php", "sinexis.php.call_user_input") in ids
+    assert ("i.php", "sinexis.php.include_input") in ids
     assert not any(h["rel_path"].endswith("clean.php") for h in hits)
 
 
