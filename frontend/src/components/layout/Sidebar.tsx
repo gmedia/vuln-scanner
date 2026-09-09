@@ -26,9 +26,7 @@ import { useScanStore } from "@/store/scanStore";
 import { useAuthStore } from "@/store/authStore";
 import { Badge } from "@/components/ui/Badge";
 import { BrandMark } from "@/components/brand/BrandMark";
-import OrgSwitcher from "@/components/workspace/OrgSwitcher";
-import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
-import ThemeSwitcher from "@/components/theme/ThemeSwitcher";
+import Header from "@/components/layout/Header";
 import {
   Sidebar as SidebarPrimitive,
   SidebarContent,
@@ -173,9 +171,6 @@ function Sidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <div className="px-2 sm:hidden">
-          <OrgSwitcher className="w-full" />
-        </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
@@ -255,10 +250,7 @@ function Sidebar() {
         ) : null}
       </SidebarContent>
       <SidebarFooter>
-        <div className="flex min-h-11 flex-wrap items-center gap-2 px-2 pb-1 md:hidden [&_button[aria-pressed=true]]:!bg-secondary [&_button[aria-pressed=true]]:!text-secondary-foreground">
-          <ThemeSwitcher />
-          <LanguageSwitcher />
-        </div>
+        <Header />
         {activeJobId ? (
           <div className="rounded-md bg-muted p-3 group-data-[collapsible=icon]:hidden">
             <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">

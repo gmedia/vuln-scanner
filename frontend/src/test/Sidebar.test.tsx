@@ -9,10 +9,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useCreditStore } from "@/store/creditStore";
 
 vi.mock("@/store/creditStore", () => ({
-  useCreditStore: vi.fn(() => ({
-    credits: 0,
-    fetchBalance: vi.fn(),
-  })),
+  useCreditStore: vi.fn(),
 }));
 
 describe("Sidebar", () => {
@@ -47,14 +44,20 @@ describe("Sidebar", () => {
       organizations: [],
       activeOrgId: null,
     });
-    vi.mocked(useCreditStore).mockReturnValue({
+    const creditState = {
       credits: 0,
       isAdmin: false,
       isLoading: false,
       error: null,
       fetchBalance: vi.fn(),
       checkEligibility: vi.fn(),
-    });
+    };
+    vi.mocked(useCreditStore).mockImplementation(((
+      selector?: (s: typeof creditState) => unknown,
+    ) =>
+      typeof selector === "function"
+        ? selector(creditState)
+        : creditState) as typeof useCreditStore);
   });
 
   it("renders nav items", () => {
