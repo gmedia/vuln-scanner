@@ -58,7 +58,7 @@ body{
 a{color:var(--primary);text-underline-offset:0.15em}
 a:hover{color:var(--foreground)}
 .site-header{border-bottom:1px solid var(--border)}
-.site-header-inner,.site-footer-inner{
+.site-header-inner{
   width:min(var(--rail),100%);margin:0 auto;padding:0 1rem;
   display:flex;align-items:center;justify-content:space-between;gap:0.75rem;
 }
@@ -139,17 +139,46 @@ ol.index .read{
 }
 .body a{color:var(--primary)}
 .back{margin-top:2.5rem;font-size:0.875rem;display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center}
-.site-footer{margin-top:auto;border-top:1px solid var(--border);padding:1.5rem 0}
-.site-footer-inner{flex-wrap:wrap;gap:0.75rem 1rem}
-.site-footer p{margin:0;font-size:0.75rem;color:var(--muted-foreground)}
-.site-footer a{
-  font-size:0.75rem;color:var(--muted-foreground);text-decoration:none;
-  min-height:2.75rem;display:inline-flex;align-items:center;padding:0 0.35rem;
+.site-footer{
+  margin-top:auto;border-top:1px solid var(--border);
+  background:color-mix(in srgb, var(--muted) 40%, var(--background));
 }
-.site-footer a:hover{color:var(--foreground)}
-.site-footer a.primary{
+.site-footer-inner{
+  width:min(var(--rail),100%);margin:0 auto;padding:3rem 1rem 1.5rem;
+  display:block;
+}
+.footer-grid{
+  display:grid;grid-template-columns:1fr;gap:2.5rem;
+}
+.footer-brand p.blurb{
+  margin:1rem 0 0;max-width:20rem;font-size:0.875rem;line-height:1.55;
+  color:var(--muted-foreground);
+}
+.footer-col p.col-head{
+  margin:0;font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;
+  text-transform:uppercase;color:var(--primary);
+}
+.footer-col nav{display:flex;flex-direction:column;margin-top:0.75rem}
+.footer-col a{
+  font-size:0.875rem;color:var(--muted-foreground);text-decoration:none;
+  min-height:2.75rem;display:inline-flex;align-items:center;
+}
+.footer-col a:hover{color:var(--foreground)}
+.footer-col a.primary{
+  margin-top:0.25rem;align-self:flex-start;
   background:var(--primary);color:var(--primary-foreground);border-radius:0.375rem;
-  padding:0 0.75rem;font-weight:600;
+  padding:0 0.75rem;font-weight:600;font-size:0.75rem;
+}
+.footer-meta{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
+  gap:0.5rem;margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);
+}
+.footer-meta p{margin:0;font-size:0.75rem;color:var(--muted-foreground)}
+@media (min-width:640px){
+  .footer-grid{grid-template-columns:1fr 1fr;gap:2rem}
+}
+@media (min-width:1024px){
+  .footer-grid{grid-template-columns:1.4fr 1fr 1fr 1fr}
 }
 @media (max-width:640px){
   .header-actions a.sm-hide{display:none}
@@ -236,14 +265,41 @@ def _shell(
 </main>
 <footer class="site-footer">
   <div class="site-footer-inner">
-    <p>Sinexis · Scan · Guard</p>
-    <nav>
-      <a href="/blog"{blog_cur}>Blog</a>
-      <a href="/terms"{terms_cur}>Syarat</a>
-      <a href="/privacy"{privacy_cur}>Privasi</a>
-      <a href="/login">Sign in</a>
-      <a class="primary" href="/register">Get started</a>
-    </nav>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a class="brand" href="/" aria-label="Sinexis home">
+          {_CROSSHAIR_SVG}
+          <span class="brand-text">SINE<span class="brand-accent">XIS</span></span>
+        </a>
+        <p class="blurb">Menempel di colo, VPS, dan hospitality yang sudah di tagihan.
+        Scan dari luar, lalu satu agen tipis di mesin.</p>
+      </div>
+      <div class="footer-col">
+        <p class="col-head">Produk</p>
+        <nav aria-label="Produk">
+          <a href="/">Beranda</a>
+          <a href="/blog"{blog_cur}>Blog</a>
+        </nav>
+      </div>
+      <div class="footer-col">
+        <p class="col-head">Legal</p>
+        <nav aria-label="Legal">
+          <a href="/terms"{terms_cur}>Syarat</a>
+          <a href="/privacy"{privacy_cur}>Privasi</a>
+        </nav>
+      </div>
+      <div class="footer-col">
+        <p class="col-head">Akun</p>
+        <nav aria-label="Akun">
+          <a href="/login">Sign in</a>
+          <a class="primary" href="/register">Get started</a>
+        </nav>
+      </div>
+    </div>
+    <div class="footer-meta">
+      <p>Sinexis · Scan · Guard</p>
+      <p>© {datetime.now(UTC).year} Sinexis</p>
+    </div>
   </div>
 </footer>
 </body>
