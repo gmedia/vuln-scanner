@@ -67,6 +67,7 @@ import { useAuthStore } from "@/store/authStore";
 import type { ApiError } from "@/lib/utils";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import PageHeader from "@/components/layout/PageHeader";
 import {
   buildEnrollCurlExample,
   GUARD_AGENT_INSTALL_INTRO,
@@ -427,27 +428,21 @@ export default function Guard() {
 
   return (
     <div className="w-full space-y-6">
-      <div className="mb-2 py-1">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-              <Shield className="h-6 w-6 text-primary" />
-              {t("title")}
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {t("subtitle")}
-            </p>
-          </div>
-          {canAdmin && !enabled && (
+      <PageHeader
+        title={t("title")}
+        description={t("subtitle")}
+        leading={<Shield className="mt-1 h-6 w-6 text-primary" aria-hidden />}
+        actions={
+          canAdmin && !enabled ? (
             <Button
               onClick={() => enableMut.mutate()}
               disabled={enableMut.isPending}
             >
               {t("enable")}
             </Button>
-          )}
-        </div>
-      </div>
+          ) : null
+        }
+      />
 
       {actionError && (
         <Alert variant="destructive" className="border-destructive/40">
@@ -536,9 +531,15 @@ export default function Guard() {
       </Card>
 
       {!enabled && !statusQ.isLoading && (
-        <Card data-testid="guard-disabled">
-          <CardContent className="flex min-h-[8rem] flex-col items-center justify-center px-6 py-8 text-center text-sm text-muted-foreground">
-            {t("disabledHint")}
+        <Card
+          data-testid="guard-disabled"
+          className="rounded-3xl border-border"
+        >
+          <CardContent className="flex min-h-[16rem] flex-col items-center justify-center px-8 py-12 text-center">
+            <Shield className="mb-4 h-10 w-10 text-muted-foreground" aria-hidden />
+            <p className="max-w-md text-sm text-muted-foreground">
+              {t("disabledHint")}
+            </p>
           </CardContent>
         </Card>
       )}

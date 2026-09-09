@@ -48,6 +48,7 @@ import {
 import { useAuthStore } from "@/store/authStore";
 import type { ApiError } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
+import PageHeader from "@/components/layout/PageHeader";
 
 function formatWhen(iso: string | null): string {
   if (!iso) return "—";
@@ -286,15 +287,11 @@ export default function Siem() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-          <Siren className="h-6 w-6 text-primary" />
-          {t("title")}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t("subtitle")}
-        </p>
-      </div>
+      <PageHeader
+        title={t("title")}
+        description={t("subtitle")}
+        leading={<Siren className="mt-1 h-6 w-6 text-primary" aria-hidden />}
+      />
 
       {actionError && (
         <Alert variant="destructive" className="border-destructive/40">

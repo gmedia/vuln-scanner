@@ -26,6 +26,7 @@ import {
 import { Link } from "react-router-dom";
 import { AlertTriangle, Shield } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -211,7 +212,7 @@ export default function HostProtect() {
   if (!activeOrgId) {
     return (
       <div className="space-y-6" data-testid="host-page">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
+        <PageHeader title={t("title")} />
         <p className="text-sm text-muted-foreground">{t("pickOrg")}</p>
       </div>
     );
@@ -220,7 +221,7 @@ export default function HostProtect() {
   if (featureOff) {
     return (
       <div className="space-y-6" data-testid="host-page">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
+        <PageHeader title={t("title")} />
         <Card>
           <CardContent className="flex min-h-[12rem] flex-col items-center justify-center gap-3 px-6 py-10 text-center">
             <Shield className="h-10 w-10 text-foreground/50" aria-hidden />
@@ -242,44 +243,46 @@ export default function HostProtect() {
 
   return (
     <div className="space-y-6" data-testid="host-page">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">{t("title")}</h1>
-          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {t("skuLabel", { sku, count: items.length, limit })}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">{t("honestyHint")}</p>
-          <div className="mt-3 max-w-xl space-y-2">
-            <p className="text-sm text-muted-foreground">{t("installHint")}</p>
-            <Button variant="outline" size="sm" asChild>
-              <a
-                href={SINEXIS_INSTALL_RAW_URL}
-                download="sinexis-install.sh"
-                rel="noreferrer"
-                data-testid="host-install-download"
-              >
-                {t("installDownload")}
-              </a>
-            </Button>
-            <pre
-              className="overflow-x-auto whitespace-pre-wrap break-all rounded-md border border-border bg-muted/40 p-3 font-mono text-[11px] leading-relaxed text-foreground"
-              data-testid="host-install-wget"
-            >
-              {SINEXIS_INSTALL_WGET}
-            </pre>
-            <p className="text-xs text-muted-foreground">{t("installCheck")}</p>
+      <PageHeader
+        title={t("title")}
+        description={
+          <div className="space-y-1">
+            <p>{t("subtitle")}</p>
+            <p className="text-xs">{t("skuLabel", { sku, count: items.length, limit })}</p>
+            <p className="text-xs">{t("honestyHint")}</p>
           </div>
-        </div>
-        {items.length > 0 || open ? (
-          <Button
-            data-testid="host-add"
-            disabled={atCap || agents.length === 0}
-            onClick={() => setOpen((v) => !v)}
+        }
+        actions={
+          items.length > 0 || open ? (
+            <Button
+              data-testid="host-add"
+              disabled={atCap || agents.length === 0}
+              onClick={() => setOpen((v) => !v)}
+            >
+              {t("add")}
+            </Button>
+          ) : null
+        }
+      />
+      <div className="max-w-xl space-y-2">
+        <p className="text-sm text-muted-foreground">{t("installHint")}</p>
+        <Button variant="outline" size="sm" asChild>
+          <a
+            href={SINEXIS_INSTALL_RAW_URL}
+            download="sinexis-install.sh"
+            rel="noreferrer"
+            data-testid="host-install-download"
           >
-            {t("add")}
-          </Button>
-        ) : null}
+            {t("installDownload")}
+          </a>
+        </Button>
+        <pre
+          className="overflow-x-auto whitespace-pre-wrap break-all rounded-md border border-border bg-muted/40 p-3 font-mono text-[11px] leading-relaxed text-foreground"
+          data-testid="host-install-wget"
+        >
+          {SINEXIS_INSTALL_WGET}
+        </pre>
+        <p className="text-xs text-muted-foreground">{t("installCheck")}</p>
       </div>
 
       {agents.length === 0 && !agentsQ.isLoading ? (

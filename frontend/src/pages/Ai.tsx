@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bot, Copy } from "lucide-react";
+import PageHeader from "@/components/layout/PageHeader";
 import {
   Card,
   CardHeader,
@@ -327,12 +328,10 @@ export default function Ai() {
 function Header() {
   const { t } = useTranslation("ai");
   return (
-    <div className="flex items-center gap-3">
-      <Bot className="h-6 w-6 text-primary" />
-      <div>
-        <h2 className="text-lg font-bold tracking-wide text-foreground">{t("title")}</h2>
-        <p className="text-[11px] text-muted-foreground">{t("subtitle")}</p>
-      </div>
-    </div>
+    <PageHeader
+      title={t("title")}
+      description={t("subtitle")}
+      leading={<Bot className="mt-1 h-6 w-6 text-primary" aria-hidden />}
+    />
   );
 }

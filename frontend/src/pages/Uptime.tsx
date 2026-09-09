@@ -14,6 +14,7 @@ import {
   type UptimeMonitor,
   type UptimeSample,
 } from "@/api/uptime";
+import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -368,27 +369,27 @@ export default function Uptime() {
 
   return (
     <div className="space-y-6" data-testid="uptime-page">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
-          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
-        </div>
-        <Button
-          data-testid="uptime-add"
-          disabled={atCap}
-          onClick={() => {
-            if (open) {
-              resetForm();
-              setOpen(false);
-            } else {
-              resetForm();
-              setOpen(true);
-            }
-          }}
-        >
-          {t("add")}
-        </Button>
-      </div>
+      <PageHeader
+        title={t("title")}
+        description={t("subtitle")}
+        actions={
+          <Button
+            data-testid="uptime-add"
+            disabled={atCap}
+            onClick={() => {
+              if (open) {
+                resetForm();
+                setOpen(false);
+              } else {
+                resetForm();
+                setOpen(true);
+              }
+            }}
+          >
+            {t("add")}
+          </Button>
+        }
+      />
 
       {items.length > 0 ? (
         <div
