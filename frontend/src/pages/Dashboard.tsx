@@ -5,7 +5,6 @@ import {
   Radar,
   Globe,
   Smartphone,
-  Crosshair,
   ChevronDown,
   Plus,
   CalendarClock,
@@ -46,6 +45,7 @@ import { listGuardAgents, listGuardAlerts } from "@/api/guard";
 import { useAuthStore } from "@/store/authStore";
 import { useCreditStore } from "@/store/creditStore";
 import { cn } from "@/lib/utils";
+import PageHeader from "@/components/layout/PageHeader";
 import { useTranslation } from "react-i18next";
 
 const PAGE_LIMIT = 20;
@@ -235,74 +235,68 @@ function Dashboard() {
   const primaryIsJadwal = canCreateScans && noJadwal;
 
   return (
-    <div className="w-full space-y-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <Crosshair className="h-6 w-6 text-primary" />
-          <div>
-            <h2 className="text-lg font-bold tracking-wide text-foreground">
-              {t("summary")}
-            </h2>
-            <p className="text-[11px] text-muted-foreground">
-              {enabledSchedules.length > 0
-                ? t("assetsWithActiveSchedules", {
-                    count: enabledSchedules.length,
-                  })
-                : t("oneOffScansNoAttach", { count: totalScans })}
-            </p>
-          </div>
-        </div>
-
-        {canCreateScans ? (
-          <div className="flex flex-wrap items-center gap-2">
-            {primaryIsJadwal ? (
-              <Button asChild className="min-h-11 text-sm">
-                <Link to="/schedules" data-testid="primary-jadwal-cta">
-                  <CalendarClock className="mr-2 h-4 w-4" />
-                  {t("setSchedule")}
-                </Link>
-              </Button>
-            ) : (
-              <Button asChild variant="outline" className="min-h-11 text-sm">
-                <Link to="/schedules">
-                  <CalendarClock className="mr-2 h-4 w-4" />
-                  {t("setSchedule")}
-                </Link>
-              </Button>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant={primaryIsJadwal ? "outline" : "default"}
-                  className="min-h-11 w-full text-sm sm:w-auto"
-                  data-testid="new-scan-cta"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  {t("newScan")}
-                  <ChevronDown className="ml-2 h-3.5 w-3.5" />
+    <div className="w-full space-y-6">
+      <PageHeader
+        title={t("summary")}
+        description={
+          enabledSchedules.length > 0
+            ? t("assetsWithActiveSchedules", {
+                count: enabledSchedules.length,
+              })
+            : t("oneOffScansNoAttach", { count: totalScans })
+        }
+        actions={
+          canCreateScans ? (
+            <>
+              {primaryIsJadwal ? (
+                <Button asChild className="min-h-11 text-sm">
+                  <Link to="/schedules" data-testid="primary-jadwal-cta">
+                    <CalendarClock className="mr-2 h-4 w-4" />
+                    {t("setSchedule")}
+                  </Link>
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                {NEW_SCAN_OPTIONS.map((opt) => (
-                  <DropdownMenuItem key={opt.to} asChild>
-                    <Link to={opt.to}>
-                      <opt.icon className="h-4 w-4 shrink-0" />
-                      {t(opt.labelKey)}
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        ) : (
-          <p
-            className="text-xs text-muted-foreground"
-            data-testid="viewer-scan-readonly"
-          >
-            {t("viewerReadonly")}
-          </p>
-        )}
-      </div>
+              ) : (
+                <Button asChild variant="outline" className="min-h-11 text-sm">
+                  <Link to="/schedules">
+                    <CalendarClock className="mr-2 h-4 w-4" />
+                    {t("setSchedule")}
+                  </Link>
+                </Button>
+              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant={primaryIsJadwal ? "outline" : "default"}
+                    className="min-h-11 w-full text-sm sm:w-auto"
+                    data-testid="new-scan-cta"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    {t("newScan")}
+                    <ChevronDown className="ml-2 h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {NEW_SCAN_OPTIONS.map((opt) => (
+                    <DropdownMenuItem key={opt.to} asChild>
+                      <Link to={opt.to}>
+                        <opt.icon className="h-4 w-4 shrink-0" />
+                        {t(opt.labelKey)}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            <p
+              className="text-xs text-muted-foreground"
+              data-testid="viewer-scan-readonly"
+            >
+              {t("viewerReadonly")}
+            </p>
+          )
+        }
+      />
 
       {attention.length > 0 && (
         <Alert
@@ -326,7 +320,7 @@ function Dashboard() {
         </Alert>
       )}
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
           label={t("openRisk")}
           value={openRisk.critical + openRisk.high}
@@ -384,37 +378,37 @@ function Dashboard() {
           <CardContent className="flex-1">
             {isFirstLoad ? (
               <TableRowSkeleton rows={6} />
-            ) : scans.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-2 px-2 py-8 text-center">
-                <Radar className="h-8 w-8 text-muted-foreground" />
-                <p className="text-sm text-foreground">{t("noScansYet")}</p>
-                <p className="text-xs text-muted-foreground">
-                  {canCreateScans
-                    ? t("emptyCanCreate")
-                    : t("emptyCannotCreate")}
-                </p>
+              ) : scans.length === 0 ? (
+                <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-12 text-center">
+                  <Radar className="h-8 w-8 text-muted-foreground" />
+                  <p className="text-sm text-foreground">{t("noScansYet")}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {canCreateScans
+                      ? t("emptyCanCreate")
+                      : t("emptyCannotCreate")}
+                  </p>
                   {canCreateScans && (
-                  <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-                    <Button asChild size="sm" className="text-xs">
-                      <Link to="/scan/ip">
-                        <Plus className="mr-1.5 h-3.5 w-3.5" />
-                        {t("scanIp")}
-                      </Link>
-                    </Button>
-                    <Button
-                      asChild
-                      variant="outline"
-                      size="sm"
-                      className="text-xs"
-                    >
-                      <Link to="/schedules" data-testid="empty-schedules-link">
-                        <CalendarClock className="mr-1.5 h-3.5 w-3.5" />
-                        {t("setSchedule")}
-                      </Link>
-                    </Button>
-                  </div>
-                )}
-              </div>
+                    <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+                      <Button asChild size="sm" className="text-xs">
+                        <Link to="/scan/ip">
+                          <Plus className="mr-1.5 h-3.5 w-3.5" />
+                          {t("scanIp")}
+                        </Link>
+                      </Button>
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                      >
+                        <Link to="/schedules" data-testid="empty-schedules-link">
+                          <CalendarClock className="mr-1.5 h-3.5 w-3.5" />
+                          {t("setSchedule")}
+                        </Link>
+                      </Button>
+                    </div>
+                  )}
+                </div>
             ) : displayed.length === 0 ? (
               <p className="py-8 text-center text-xs text-muted-foreground">
                 {t("allLabRows")}

@@ -107,7 +107,7 @@ describe("Dashboard", () => {
 
   it("renders the Overview heading", () => {
     render(<Dashboard />);
-    expect(screen.getByText("Overview")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Overview" })).toBeInTheDocument();
   });
 
   it("renders primary New scan CTA", () => {
@@ -163,7 +163,7 @@ describe("Dashboard", () => {
       isFetching: false,
     });
     render(<Dashboard />);
-    expect(screen.getByText("Overview")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Overview" })).toBeInTheDocument();
   });
 
   it("renders scan items when history has data", () => {
