@@ -140,12 +140,12 @@ export default function Ai() {
               <CardDescription>{t("baseUrlHint")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <p className="text-xs text-muted-foreground">{t("balance")}</p>
-                <p className="text-2xl font-semibold tabular-nums">
-                  {formatIdr(walletQ.data?.balance_idr)}
-                </p>
-              </div>
+               <div>
+                 <p className="text-xs font-medium text-foreground">{t("balance")}</p>
+                 <p className="text-2xl font-semibold tabular-nums text-foreground">
+                   {formatIdr(walletQ.data?.balance_idr)}
+                 </p>
+               </div>
               {(walletQ.data?.balance_idr == null || walletQ.data.balance_idr === 0) && (
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">{t("walletEmpty")}</p>
@@ -154,10 +154,10 @@ export default function Ai() {
                   </Button>
                 </div>
               )}
-              <div className="flex max-sm:flex-col flex-wrap items-start sm:items-center gap-2">
-                <code className="rounded border border-border bg-muted/40 px-2 py-1 text-xs">
-                  {baseUrl}
-                </code>
+               <div className="flex max-sm:flex-col flex-wrap items-start sm:items-center gap-2">
+                 <code className="max-w-full break-all rounded border border-border bg-muted/40 px-2 py-1 text-xs text-foreground">
+                   {baseUrl}
+                 </code>
                 <Button
                   type="button"
                   variant="outline"
@@ -188,11 +188,12 @@ export default function Ai() {
                   onChange={(e) => setKeyName(e.target.value)}
                 />
               </div>
-              <Button
-                type="button"
-                onClick={() => createMut.mutate()}
-                disabled={createMut.isPending}
-              >
+               <Button
+                 type="button"
+                 className="w-full sm:w-auto"
+                 onClick={() => createMut.mutate()}
+                 disabled={createMut.isPending}
+               >
                 {t("createKey")}
               </Button>
               {onceKey ? (
@@ -202,10 +203,11 @@ export default function Ai() {
                   </AlertDescription>
                 </Alert>
               ) : null}
+              <div className="max-w-full overflow-x-auto">
               <Table className="min-w-[36rem]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("colName")}</TableHead>
+                 <TableHeader>
+                   <TableRow>
+                     <TableHead>{t("colName")}</TableHead>
                     <TableHead>{t("colPrefix")}</TableHead>
                     <TableHead>{t("colActive")}</TableHead>
                     <TableHead />
@@ -237,12 +239,13 @@ export default function Ai() {
                       </TableRow>
                     ))
                   )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="usage">
+                 </TableBody>
+               </Table>
+               </div>
+             </CardContent>
+           </Card>
+         </TabsContent>
+         <TabsContent value="usage">
           <Card>
             <CardHeader>
               <CardTitle>{t("tabUsage")}</CardTitle>
@@ -261,11 +264,12 @@ export default function Ai() {
                   </Button>
                 </p>
               ) : (
+              <div className="max-w-full overflow-x-auto">
               <Table className="min-w-[36rem]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("colModel")}</TableHead>
-                    <TableHead>{t("colTokens")}</TableHead>
+                 <TableHeader>
+                   <TableRow>
+                     <TableHead>{t("colModel")}</TableHead>
+                     <TableHead>{t("colTokens")}</TableHead>
                     <TableHead>{t("colBilled")}</TableHead>
                     <TableHead>{t("colTime")}</TableHead>
                   </TableRow>
@@ -281,43 +285,46 @@ export default function Ai() {
                         <TableCell>{u.created_at}</TableCell>
                       </TableRow>
                     ))}
-                </TableBody>
-              </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="catalog">
+                 </TableBody>
+               </Table>
+               </div>
+               )}
+             </CardContent>
+           </Card>
+         </TabsContent>
+         <TabsContent value="catalog">
           <Card>
             <CardHeader>
               <CardTitle>{t("tabCatalog")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table className="min-w-[36rem]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("colModel")}</TableHead>
-                    <TableHead>{t("colIn")}</TableHead>
-                    <TableHead>{t("colOut")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(modelsQ.data?.items ?? []).length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={3}>{t("catalogEmpty")}</TableCell>
-                    </TableRow>
-                  ) : (
-                    (modelsQ.data?.items ?? []).map((m) => (
-                      <TableRow key={m.public_id}>
-                        <TableCell>{m.public_id}</TableCell>
-                        <TableCell>{formatIdr(m.price_idr_per_1k_in)}</TableCell>
-                        <TableCell>{formatIdr(m.price_idr_per_1k_out)}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
+               {(modelsQ.data?.items ?? []).length === 0 ? (
+                 <div className="flex min-h-[12rem] items-center justify-center py-16 md:min-h-[16rem] md:py-20">
+                   <p className="text-sm text-muted-foreground">{t("catalogEmpty")}</p>
+                 </div>
+               ) : (
+               <div className="max-w-full overflow-x-auto">
+               <Table className="min-w-[36rem]">
+                 <TableHeader>
+                   <TableRow>
+                     <TableHead>{t("colModel")}</TableHead>
+                     <TableHead>{t("colIn")}</TableHead>
+                     <TableHead>{t("colOut")}</TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                     {(modelsQ.data?.items ?? []).map((m) => (
+                       <TableRow key={m.public_id}>
+                         <TableCell>{m.public_id}</TableCell>
+                         <TableCell>{formatIdr(m.price_idr_per_1k_in)}</TableCell>
+                         <TableCell>{formatIdr(m.price_idr_per_1k_out)}</TableCell>
+                       </TableRow>
+                     ))}
+                 </TableBody>
+               </Table>
+               </div>
+               )}
+             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>

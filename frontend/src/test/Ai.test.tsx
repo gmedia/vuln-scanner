@@ -80,7 +80,9 @@ describe("AI Gateway page", () => {
     vi.mocked(aiApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
     renderAi();
     expect(
-      await screen.findByText("Wallet is empty. Add credits to use the AI Gateway."),
+      await screen.findByText(
+        "AI wallet is empty (IDR prepaid, not scan credits). Top up the org wallet to use the gateway.",
+      ),
     ).toBeInTheDocument();
     expect(await screen.findByText("Rp 0")).toBeInTheDocument();
     const cta = screen.getByRole("link", { name: "Top up credits" });
