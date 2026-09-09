@@ -264,3 +264,47 @@ rule sinexis_php_eval_files
     condition:
         any of them
 }
+
+rule sinexis_php_eval_cookie
+{
+    meta:
+        id = "sinexis.php.eval_cookie"
+        hit_class = "webshell"
+    strings:
+        $a = "eval($_COOKIE"
+        $b = "assert($_COOKIE"
+        $c = "eval($_SERVER"
+    condition:
+        any of them
+}
+
+rule sinexis_php_call_user_input
+{
+    meta:
+        id = "sinexis.php.call_user_input"
+        hit_class = "webshell"
+    strings:
+        $a = "call_user_func($_POST"
+        $b = "call_user_func($_GET"
+        $c = "call_user_func($_REQUEST"
+        $d = "call_user_func_array($_POST"
+        $e = "call_user_func_array($_GET"
+    condition:
+        any of them
+}
+
+rule sinexis_php_include_input
+{
+    meta:
+        id = "sinexis.php.include_input"
+        hit_class = "dropper"
+    strings:
+        $a = "include($_GET"
+        $b = "include($_POST"
+        $c = "include($_REQUEST"
+        $d = "require($_GET"
+        $e = "require($_POST"
+        $f = "require_once($_GET"
+    condition:
+        any of them
+}
