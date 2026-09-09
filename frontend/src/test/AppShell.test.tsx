@@ -61,6 +61,18 @@ describe("AppShell", () => {
     expect(trigger!.querySelector("svg")).toBeInTheDocument();
   });
 
+  it("keeps the mobile sidebar trigger in document flow so it does not overlay page titles", () => {
+    renderShell();
+    const trigger = screen
+      .getAllByRole("button", { name: /toggle sidebar/i })
+      .find((el) => el.getAttribute("data-slot") === "sidebar-trigger");
+    expect(trigger).toBeDefined();
+    expect(trigger!.className.split(/\s+/)).not.toContain("fixed");
+    const wrap = trigger!.parentElement;
+    expect(wrap).toBeInstanceOf(HTMLElement);
+    expect(wrap!.className).toMatch(/md:hidden/);
+  });
+
   it("does not open the mobile sheet overlay by default", () => {
     renderShell();
     expect(document.querySelector("[data-slot='sheet-overlay']")).toBeNull();
