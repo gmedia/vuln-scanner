@@ -27,6 +27,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/Pagination";
+import PageHeader from "@/components/layout/PageHeader";
 import { adminApi, type EmailSendLogItem } from "@/api/admin";
 import { useTranslation } from "react-i18next";
 import { htmlLang, isAppLocale } from "@/i18n/locales";
@@ -87,17 +88,11 @@ function AdminEmailLogs() {
 
   return (
     <div className="w-full space-y-6">
-      <div className="flex items-center gap-3">
-        <Mail className="h-6 w-6 text-primary" />
-        <div>
-          <h2 className="text-lg font-bold tracking-wide text-foreground">
-            {t("emailLogsTitle")}
-          </h2>
-          <p className="text-[11px] text-muted-foreground">
-            {t("emailLogsSubtitle")}
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        leading={<Mail className="h-6 w-6 shrink-0 text-primary" />}
+        title={t("emailLogsTitle")}
+        description={t("emailLogsSubtitle")}
+      />
 
       <Card>
         <CardHeader className="space-y-4">

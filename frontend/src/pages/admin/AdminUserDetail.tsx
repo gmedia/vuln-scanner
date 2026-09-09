@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
+import PageHeader from "@/components/layout/PageHeader";
 import { adminApi } from "@/api/admin";
 import { formatCredits } from "@/lib/utils";
 import { Trans, useTranslation } from "react-i18next";
@@ -116,17 +117,11 @@ function AdminUserDetail() {
         </Button>
       </div>
 
-      <div className="flex items-center gap-3">
-        <User className="h-6 w-6 text-primary" />
-        <div>
-          <h2 className="text-lg font-bold tracking-wide text-foreground">
-            {t("detailTitle")}
-          </h2>
-          <p className="text-[11px] text-muted-foreground">
-            {t("detailSubtitle")}
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        leading={<User className="h-6 w-6 shrink-0 text-primary" />}
+        title={t("detailTitle")}
+        description={t("detailSubtitle")}
+      />
 
       {isLoading ? (
         <div className="grid gap-6 lg:grid-cols-2 lg:items-start">

@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import PageHeader from "@/components/layout/PageHeader";
 import { adminApi, type PricingItem } from "@/api/admin";
 import { useTranslation } from "react-i18next";
 import { htmlLang, isAppLocale } from "@/i18n/locales";
@@ -61,12 +62,10 @@ function AdminPricing() {
 
   return (
     <div className="w-full space-y-6">
-      <div className="flex items-center gap-3">
-        <DollarSign className="h-6 w-6 text-primary" />
-        <h2 className="text-lg font-bold tracking-wide text-foreground">
-          {t("pricingTitle")}
-        </h2>
-      </div>
+      <PageHeader
+        leading={<DollarSign className="h-6 w-6 shrink-0 text-primary" />}
+        title={t("pricingTitle")}
+      />
 
       <Card>
         <CardHeader>

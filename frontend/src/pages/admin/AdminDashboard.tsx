@@ -21,6 +21,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/Skeleton";
+import PageHeader from "@/components/layout/PageHeader";
 import { adminApi } from "@/api/admin";
 import { useTranslation } from "react-i18next";
 
@@ -113,17 +114,11 @@ function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Shield className="h-6 w-6 text-primary" />
-        <div>
-          <h2 className="text-lg font-bold tracking-wide text-foreground">
-            {t("dashboardTitle")}
-          </h2>
-          <p className="text-[11px] text-muted-foreground">
-            {t("dashboardSubtitle")}
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        leading={<Shield className="h-6 w-6 shrink-0 text-primary" />}
+        title={t("dashboardTitle")}
+        description={t("dashboardSubtitle")}
+      />
 
       <div className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
