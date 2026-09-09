@@ -28,7 +28,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/Accordion";
 import { BrandMark } from "@/components/brand/BrandMark";
-import { BRAND } from "@/lib/brand";
+import { Footer } from "@/components/Footer";
 import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
 import ThemeSwitcher from "@/components/theme/ThemeSwitcher";
 import { useTranslation } from "react-i18next";
@@ -252,46 +252,7 @@ function Landing() {
         </section>
       </main>
 
-      <footer className="mt-auto shrink-0 border-t border-border py-6">
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 px-4 sm:flex-row sm:justify-between 2xl:max-w-[90rem]">
-          <p className="text-center text-xs text-muted-foreground sm:text-left">
-            {BRAND.footerLine}
-          </p>
-          <div className="flex w-full flex-col items-stretch gap-2 sm:hidden [&_button]:min-h-11 [&_button]:min-w-11">
-            <ThemeSwitcher className="h-11 min-h-11 w-full justify-stretch [&_button]:flex-1" />
-            <LanguageSwitcher className="h-11 min-h-11 w-full justify-stretch [&_button]:flex-1" />
-          </div>
-          <nav className="flex w-full flex-col items-stretch gap-1 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-4">
-            <a
-              href="/blog"
-              className="inline-flex min-h-11 items-center justify-center px-2 text-sm text-foreground transition-colors hover:text-primary sm:justify-start sm:px-0"
-            >
-              {t("blog")}
-            </a>
-            <a
-              href="/terms"
-              className="inline-flex min-h-11 items-center justify-center px-2 text-sm text-foreground transition-colors hover:text-primary sm:justify-start sm:px-0"
-            >
-              {t("terms")}
-            </a>
-            <a
-              href="/privacy"
-              className="inline-flex min-h-11 items-center justify-center px-2 text-sm text-foreground transition-colors hover:text-primary sm:justify-start sm:px-0"
-            >
-              {t("privacy")}
-            </a>
-            <Link
-              to="/login"
-              className="inline-flex min-h-11 items-center justify-center px-2 text-sm text-foreground transition-colors hover:text-primary sm:justify-start sm:px-0"
-            >
-              {tc("signIn")}
-            </Link>
-            <Button asChild size="sm" className="min-h-11 text-xs sm:w-auto">
-              <Link to="/register">{tc("getStarted")}</Link>
-            </Button>
-          </nav>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
