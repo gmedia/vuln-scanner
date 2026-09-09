@@ -67,7 +67,7 @@ describe("Assets page", () => {
     expect(screen.queryByTestId("assets-pack-html")).not.toBeInTheDocument();
   });
 
-  it("shows card skeletons while the list is loading", () => {
+  it("shows row skeletons while the list is loading", () => {
     mockList.mockReturnValue(new Promise(() => undefined));
     renderPage();
     expect(screen.getByTestId("assets-loading")).toBeInTheDocument();
@@ -122,9 +122,12 @@ describe("Assets page", () => {
         tags: ["prod"],
       },
     ]);
-    renderPage();
-    await waitFor(() => expect(screen.getByTestId("assets-pack")).toBeInTheDocument());
-    expect(screen.getByTestId("assets-pack-html")).toBeInTheDocument();
+      const user = userEvent.setup();
+      renderPage();
+      await waitFor(() => expect(screen.getByText("Export pack")).toBeInTheDocument());
+      await user.click(screen.getByText("Export pack"));
+      expect(await screen.findByTestId("assets-pack")).toBeInTheDocument();
+      expect(screen.getByTestId("assets-pack-html")).toBeInTheDocument();
     expect(screen.getByTestId("asset-tag-prod")).toBeInTheDocument();
     expect(screen.getByTestId("asset-tag-filter")).toBeInTheDocument();
   });
@@ -369,5 +372,43 @@ describe("Assets page", () => {
     expect(screen.queryByTestId("asset-schedule-a2")).not.toBeInTheDocument();
     expect(screen.queryByTestId("assets-watch-http")).not.toBeInTheDocument();
     expect(screen.getByTestId("asset-delete-a2")).toBeInTheDocument();
+  });
+
+  it("filters by type and search", async () => {
+    mockList.mockResolvedValue([
+      {
+        id: "a1",
+        name: "Web",
+        scan_type: "domain",
+        target: "example.com",
+        notes: null,
+        schedule_id: null,
+        sku: "multi",
+        sku_limit: 10,
+        tags: ["prod"],
+      },
+      {
+        id: "a2",
+        name: "Lab",
+        scan_type: "ip",
+        target: "10.0.0.1",
+        notes: null,
+        schedule_id: null,
+        sku: "multi",
+        sku_limit: 10,
+        tags: ["lab"],
+      },
+    ]);
+    const user = userEvent.setup();
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("asset-search")).toBeInTheDocument(),
+    );
+    await user.type(screen.getByTestId("asset-search"), "10.0");
+    expect(screen.getByText("Lab")).toBeInTheDocument();
+    expect(screen.queryByText("Web")).not.toBeInTheDocument();
+    await user.clear(screen.getByTestId("asset-search"));
+    expect(screen.getByText("Web")).toBeInTheDocument();
+    expect(screen.getByText("Lab")).toBeInTheDocument();
   });
 });
