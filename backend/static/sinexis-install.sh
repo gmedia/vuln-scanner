@@ -871,8 +871,11 @@ SecRule REQUEST_URI "@rx (?i)/backup\\.sql\\.gz" "id:1136,phase:1,t:none,deny,st
 SecRule REQUEST_URI "@rx (?i)/phpmyadmin/setup" "id:1137,phase:1,t:none,deny,status:403,msg:\'sinexis.pma.setup\'"
 SecRule REQUEST_URI "@rx (?i)/setup\\.php($|[?])" "id:1138,phase:1,t:none,deny,status:403,msg:\'sinexis.setup.php\'"
 SecRule REQUEST_URI "@rx (?i)/install\\.php($|[?])" "id:1139,phase:1,t:none,deny,status:403,msg:\'sinexis.install.php\'"
-SecRule REQUEST_URI "@rx (?i)/solr/update" "id:1140,phase:1,t:none,deny,status:403,msg:\'sinexis.solr.update\'"
-';
+ SecRule REQUEST_URI "@rx (?i)/solr/update" "id:1140,phase:1,t:none,deny,status:403,msg:\'sinexis.solr.update\'"
+ SecRule REQUEST_URI "@rx (?i)/\\.env\\.local" "id:1141,phase:1,t:none,deny,status:403,msg:\'sinexis.env.local\'"
+ SecRule REQUEST_URI "@rx (?i)/web\\.config($|[/?])" "id:1142,phase:1,t:none,deny,status:403,msg:\'sinexis.web.config\'"
+ SecRule REQUEST_URI "@rx (?i)/configuration\\.php($|[?])" "id:1143,phase:1,t:none,deny,status:403,msg:\'sinexis.joomla.config\'"
+ ';
 EOF
   chmod 644 "$dest"
   log "ok: wrote ${dest}. Include it in the customer site vhost yourself. No nginx reload."
