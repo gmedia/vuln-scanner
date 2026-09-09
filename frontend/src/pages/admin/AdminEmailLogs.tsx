@@ -23,7 +23,9 @@ import {
 import {
   Pagination,
   PaginationContent,
+  PaginationEllipsis,
   PaginationItem,
+  PaginationLink,
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/Pagination";
@@ -34,6 +36,30 @@ import { htmlLang, isAppLocale } from "@/i18n/locales";
 import i18n from "@/i18n";
 
 const PAGE_SIZE = 20;
+const PAGE_WINDOW = 7;
+
+export function emailLogPageItems(
+  current: number,
+  total: number,
+): Array<number | "ellipsis"> {
+  if (total < 1) return [];
+  if (total <= PAGE_WINDOW) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  const pages = new Set<number>([1, total]);
+  for (let i = current - 1; i <= current + 1; i += 1) {
+    if (i >= 1 && i <= total) pages.add(i);
+  }
+  const sorted = [...pages].sort((a, b) => a - b);
+  const out: Array<number | "ellipsis"> = [];
+  let prev = 0;
+  for (const n of sorted) {
+    if (prev > 0 && n - prev > 1) out.push("ellipsis");
+    out.push(n);
+    prev = n;
+  }
+  return out;
+}
 const KIND_ALL = "all";
 const STATUS_ALL = "all";
 const KINDS = [
@@ -257,19 +283,38 @@ function AdminEmailLogs() {
                 </Table>
               </div>
               {totalPages > 1 ? (
-                <Pagination className="mt-4">
+                <Pagination className="mt-4" data-testid="email-logs-pagination">
                   <PaginationContent>
                     <PaginationItem>
                       <PaginationPrevious
                         onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        disabled={page <= 1}
                         aria-disabled={page <= 1}
                       />
                     </PaginationItem>
+                    {emailLogPageItems(page, totalPages).map((item, idx) =>
+                      item === "ellipsis" ? (
+                        <PaginationItem key={`e-${idx}`}>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      ) : (
+                        <PaginationItem key={item}>
+                          <PaginationLink
+                            isActive={item === page}
+                            onClick={() => setPage(item)}
+                            aria-label={`Page ${item}`}
+                          >
+                            {item}
+                          </PaginationLink>
+                        </PaginationItem>
+                      ),
+                    )}
                     <PaginationItem>
                       <PaginationNext
                         onClick={() =>
                           setPage((p) => Math.min(totalPages, p + 1))
                         }
+                        disabled={page >= totalPages}
                         aria-disabled={page >= totalPages}
                       />
                     </PaginationItem>
