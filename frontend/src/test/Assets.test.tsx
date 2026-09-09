@@ -234,9 +234,10 @@ describe("Assets page", () => {
     const user = userEvent.setup();
     renderPage();
     await waitFor(() =>
-      expect(screen.getByTestId("asset-edit-a1")).toBeInTheDocument(),
+      expect(screen.getByTestId("asset-menu-a1")).toBeInTheDocument(),
     );
-    await user.click(screen.getByTestId("asset-edit-a1"));
+    await user.click(screen.getByTestId("asset-menu-a1"));
+    await user.click(await screen.findByTestId("asset-edit-a1"));
     const nameInput = screen.getByTestId("asset-name");
     await user.clear(nameInput);
     await user.type(nameInput, "Web prod");
@@ -316,5 +317,57 @@ describe("Assets page", () => {
     await waitFor(() =>
       expect(mockPatchColors).toHaveBeenCalledWith({ prod: "#ff00aa" }),
     );
+  });
+
+  it("opens kebab with edit, schedule, watch HTTP, and delete for a domain without schedule", async () => {
+    mockList.mockResolvedValue([
+      {
+        id: "a1",
+        name: "Web",
+        scan_type: "domain",
+        target: "example.com",
+        notes: null,
+        schedule_id: null,
+        sku: "multi",
+        sku_limit: 10,
+        tags: [],
+      },
+    ]);
+    const user = userEvent.setup();
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("asset-menu-a1")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("asset-menu-a1"));
+    expect(await screen.findByTestId("asset-edit-a1")).toBeInTheDocument();
+    expect(screen.getByTestId("asset-schedule-a1")).toBeInTheDocument();
+    expect(screen.getByTestId("assets-watch-http")).toBeInTheDocument();
+    expect(screen.getByTestId("asset-delete-a1")).toBeInTheDocument();
+  });
+
+  it("hides schedule and watch HTTP for an IP that already has a schedule", async () => {
+    mockList.mockResolvedValue([
+      {
+        id: "a2",
+        name: "Lab",
+        scan_type: "ip",
+        target: "10.0.0.1",
+        notes: null,
+        schedule_id: "s1",
+        sku: "multi",
+        sku_limit: 10,
+        tags: [],
+      },
+    ]);
+    const user = userEvent.setup();
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("asset-menu-a2")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("asset-menu-a2"));
+    expect(await screen.findByTestId("asset-edit-a2")).toBeInTheDocument();
+    expect(screen.queryByTestId("asset-schedule-a2")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("assets-watch-http")).not.toBeInTheDocument();
+    expect(screen.getByTestId("asset-delete-a2")).toBeInTheDocument();
   });
 });
