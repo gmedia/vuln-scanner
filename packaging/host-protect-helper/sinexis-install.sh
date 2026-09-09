@@ -875,6 +875,9 @@ SecRule REQUEST_URI "@rx (?i)/install\\.php($|[?])" "id:1139,phase:1,t:none,deny
  SecRule REQUEST_URI "@rx (?i)/\\.env\\.local" "id:1141,phase:1,t:none,deny,status:403,msg:\'sinexis.env.local\'"
  SecRule REQUEST_URI "@rx (?i)/web\\.config($|[/?])" "id:1142,phase:1,t:none,deny,status:403,msg:\'sinexis.web.config\'"
  SecRule REQUEST_URI "@rx (?i)/configuration\\.php($|[?])" "id:1143,phase:1,t:none,deny,status:403,msg:\'sinexis.joomla.config\'"
+ SecRule REQUEST_URI "@rx (?i)/\\.env\\.production" "id:1144,phase:1,t:none,deny,status:403,msg:\'sinexis.env.production\'"
+ SecRule REQUEST_URI "@rx (?i)/wp-config\\.php\\.save" "id:1145,phase:1,t:none,deny,status:403,msg:\'sinexis.wp.config.save\'"
+ SecRule REQUEST_URI "@rx (?i)/app/etc/local\\.xml" "id:1146,phase:1,t:none,deny,status:403,msg:\'sinexis.mage.localxml\'"
  ';
 EOF
   chmod 644 "$dest"
