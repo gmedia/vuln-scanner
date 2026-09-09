@@ -110,6 +110,11 @@ def test_lab_fixture_snippet_has_probe_rule():
     assert "id:1093" in text
     assert "id:1094" in text
     assert "id:1095" in text
+    assert "id:1096" in text
+    for _rid in range(1097, 1141):
+        assert f"id:{_rid}" in text
+    assert "/solr/update" in text
+    assert "/solr/#/" not in text
     assert "wp-admin" not in text
     assert "listen" not in text.lower()
     assert "modsecurity_rules '" in text
@@ -215,6 +220,11 @@ def test_customer_snippet_omits_lab_probe():
     assert "id:1093" in text
     assert "id:1094" in text
     assert "id:1095" in text
+    assert "id:1096" in text
+    for _rid in range(1097, 1141):
+        assert f"id:{_rid}" in text
+    assert "/solr/update" in text
+    assert "/solr/#/" not in text
     assert "wp-admin" not in text
     assert "do not paste onto sinexis.app" in text
 

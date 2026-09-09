@@ -1288,11 +1288,25 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
                             "path": "/glassfish",
                             "http_status": 403,
                         },
+                        {
+                            "action": "block",
+                            "rule_id": "1096",
+                            "method": "GET",
+                            "path": "/solr/select",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1140",
+                            "method": "GET",
+                            "path": "/solr/update",
+                            "http_status": 403,
+                        },
                     ],
                 },
             )
             assert r.status_code == 200, r.text
-            assert r.json()["accepted"] == 92
+            assert r.json()["accepted"] == 94
     finally:
         app.dependency_overrides.clear()
     rows = (await db_session.execute(select(HostWafEvent).where(HostWafEvent.site_id == site.id))).scalars().all()
@@ -1389,6 +1403,8 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
         "1093",
         "1094",
         "1095",
+        "1096",
+        "1140",
     }
 
 
