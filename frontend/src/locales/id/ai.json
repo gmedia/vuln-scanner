@@ -28,7 +28,7 @@
   "colTime": "Waktu",
   "colIn": "IDR / 1K in",
   "colOut": "IDR / 1K out",
-  "walletEmpty": "Wallet kosong. Tambah kredit untuk memakai AI Gateway.",
+   "walletEmpty": "Wallet AI kosong (prepaid IDR, bukan kredit scan). Isi wallet org untuk memakai gateway.",
   "walletTopUp": "Isi kredit",
   "usageEmptyHint": "Lihat katalog"
 }

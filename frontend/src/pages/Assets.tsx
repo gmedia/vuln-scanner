@@ -193,9 +193,9 @@ export default function Assets() {
         description={
           <>
             <span className="block">{t("subtitle")}</span>
-            <span className="mt-1 block text-xs">
-              {t("skuLabel", { sku, count: items.length, limit })}
-            </span>
+             <span className="mt-1 block text-sm font-medium text-foreground">
+               {t("skuLabel", { sku, count: items.length, limit })}
+             </span>
           </>
         }
         actions={
@@ -563,7 +563,7 @@ export default function Assets() {
         </div>
       ) : items.length === 0 ? (
         <Card data-testid="assets-empty">
-          <CardContent className="flex min-h-[8rem] flex-col items-center justify-center gap-2 px-6 py-8 text-center">
+           <CardContent className="flex min-h-[12rem] flex-col items-center justify-center gap-3 px-6 py-16 text-center md:min-h-[16rem] md:py-20">
             <p className="text-balance text-sm font-medium text-foreground">
               {t("empty")}
             </p>

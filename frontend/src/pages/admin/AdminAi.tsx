@@ -223,11 +223,12 @@ export default function AdminAi() {
               >
                 {t("aiAddProvider")}
               </Button>
+              <div className="max-w-full overflow-x-auto">
               <Table className="min-w-[40rem]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("aiName")}</TableHead>
-                    <TableHead>{t("aiBaseUrl")}</TableHead>
+                 <TableHeader>
+                   <TableRow>
+                     <TableHead>{t("aiName")}</TableHead>
+                     <TableHead>{t("aiBaseUrl")}</TableHead>
                     <TableHead>{t("colActions")}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -319,12 +320,13 @@ export default function AdminAi() {
                       </TableRow>
                     ))
                   )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="models">
+                 </TableBody>
+               </Table>
+               </div>
+             </CardContent>
+           </Card>
+         </TabsContent>
+         <TabsContent value="models">
           <Card>
             <CardHeader>
               <CardTitle>{t("aiTabModels")}</CardTitle>
@@ -362,20 +364,23 @@ export default function AdminAi() {
               >
                 {t("aiAddModel")}
               </Button>
+              <div className="max-w-full overflow-x-auto">
               <Table className="min-w-[40rem]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("aiPublicId")}</TableHead>
-                    <TableHead>{t("aiUpstreamId")}</TableHead>
-                    <TableHead>{t("colActions")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {models.length === 0 ? (
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={3}>{t("aiModelsEmpty")}</TableCell>
-                    </TableRow>
-                  ) : (
+                      <TableHead>{t("aiPublicId")}</TableHead>
+                      <TableHead>{t("aiUpstreamId")}</TableHead>
+                     <TableHead className="hidden md:table-cell">{t("aiPriceIn")}</TableHead>
+                     <TableHead className="hidden md:table-cell">{t("aiPriceOut")}</TableHead>
+                     <TableHead>{t("colActions")}</TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {models.length === 0 ? (
+                     <TableRow>
+                       <TableCell colSpan={5}>{t("aiModelsEmpty")}</TableCell>
+                     </TableRow>
+                   ) : (
                     models.map((m) => (
                       <TableRow key={m.id}>
                         <TableCell>
@@ -410,11 +415,17 @@ export default function AdminAi() {
                                 onChange={setEditPriceOut}
                               />
                             </div>
-                          ) : (
-                            m.upstream_id
-                          )}
-                        </TableCell>
-                         <TableCell className="whitespace-nowrap space-x-2">
+                           ) : (
+                             m.upstream_id
+                           )}
+                         </TableCell>
+                         <TableCell className="hidden md:table-cell tabular-nums">
+                           {formatIdr(m.price_idr_per_1k_in)}
+                         </TableCell>
+                         <TableCell className="hidden md:table-cell tabular-nums">
+                           {formatIdr(m.price_idr_per_1k_out)}
+                         </TableCell>
+                          <TableCell className="whitespace-nowrap space-x-2">
                            {editingModel?.id === m.id ? (
                             <>
                               <Button
@@ -464,24 +475,26 @@ export default function AdminAi() {
                       </TableRow>
                     ))
                   )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="usage">
+                 </TableBody>
+               </Table>
+               </div>
+             </CardContent>
+           </Card>
+         </TabsContent>
+         <TabsContent value="usage">
           <Card>
             <CardHeader>
               <CardTitle>{t("aiTabUsage")}</CardTitle>
             </CardHeader>
             <CardContent>
+              <div className="max-w-full overflow-x-auto">
               <Table className="min-w-[40rem]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("aiPublicId")}</TableHead>
-                    <TableHead>source</TableHead>
-                    <TableHead>billed</TableHead>
-                    <TableHead>{t("colActions")}</TableHead>
+                 <TableHeader>
+                   <TableRow>
+                      <TableHead>{t("aiPublicId")}</TableHead>
+                      <TableHead>{t("aiSource")}</TableHead>
+                     <TableHead>{t("aiBilled")}</TableHead>
+                     <TableHead>{t("colActions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -501,12 +514,13 @@ export default function AdminAi() {
                       />
                     ))
                   )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="topup">
+                 </TableBody>
+               </Table>
+               </div>
+             </CardContent>
+           </Card>
+         </TabsContent>
+         <TabsContent value="topup">
           <Card>
             <CardHeader>
               <CardTitle>{t("aiTabTopup")}</CardTitle>
@@ -522,9 +536,14 @@ export default function AdminAi() {
                 />
                 <Field id="ai-amt" label={t("aiAmount")} value={amount} onChange={setAmount} />
               </div>
-              <Button type="button" onClick={() => topupMut.mutate()} disabled={topupMut.isPending}>
-                {t("aiTopup")}
-              </Button>
+               <Button
+                 type="button"
+                 className="w-full sm:w-auto"
+                 onClick={() => topupMut.mutate()}
+                 disabled={topupMut.isPending}
+               >
+                 {t("aiTopup")}
+               </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -586,11 +605,12 @@ export default function AdminAi() {
                   onChange={(e) => setTrialPrompt(e.target.value)}
                 />
               </div>
-              <Button
-                type="button"
-                onClick={() => chatMut.mutate()}
-                disabled={chatMut.isPending || !trialModel}
-              >
+               <Button
+                 type="button"
+                 className="w-full sm:w-auto"
+                 onClick={() => chatMut.mutate()}
+                 disabled={chatMut.isPending || !trialModel}
+               >
                 {t("aiTrialSend")}
               </Button>
               {trialReply ? (

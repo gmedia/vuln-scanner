@@ -58,6 +58,7 @@ describe("Assets page", () => {
   it("shows an empty state with a CTA", async () => {
     renderPage();
     await waitFor(() => expect(screen.getByTestId("assets-empty")).toBeInTheDocument());
+    expect(screen.getByText(/Plan multi — 0 \/ 10 assets/)).toBeInTheDocument();
     const emptyCta = screen.getByTestId("assets-empty-cta");
     expect(emptyCta).toBeInTheDocument();
     expect(emptyCta.className).toMatch(/bg-primary/);

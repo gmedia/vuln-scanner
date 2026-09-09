@@ -193,7 +193,9 @@
   "aiDelete": "Hapus",
   "aiSelectProvider": "Pilih provider",
   "aiSelectModel": "Pilih model",
-  "aiRequest": "Request",
-  "aiResponse": "Response",
-  "aiNoPayload": "Tidak ada payload."
+   "aiRequest": "Request",
+   "aiResponse": "Response",
+   "aiNoPayload": "Tidak ada payload.",
+   "aiSource": "Sumber",
+   "aiBilled": "Tagihan (IDR)"
 }

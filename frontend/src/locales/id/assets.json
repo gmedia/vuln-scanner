@@ -28,7 +28,7 @@
   "schedule": "Buat jadwal",
   "hasSchedule": "Ada jadwal",
   "limitReached": "Batas aset untuk SKU ini tercapai.",
-  "skuLabel": "SKU {{sku}} — {{count}} / {{limit}}",
+   "skuLabel": "Paket {{sku}} — {{count}} / {{limit}} aset",
   "confirmDelete": "Hapus aset ini?",
   "pack": "Unduh pack JSON",
   "packHtml": "Unduh pack HTML",
