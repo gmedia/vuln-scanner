@@ -141,6 +141,10 @@ Talk track (Bahasa, honest):
 | Scan waits until helper POSTs | Green completed + mock webshell |
 | Guard enroll ≠ Host Protect helper | One click on `/host` installs files |
 
+Optional **ClamAV** on the VM (not in CI): `apt install clamav clamav-daemon` then `freshclam` and enable `clamav-daemon`. Helper uses `clamdscan --fdpass` when present; if the daemon is down it falls back to one `clamscan` run. Empty output while clamd is unreachable is **not** “clean.” Do not set `ProtectSystem=false`.
+
+Optional **YARA CLI**: if `yara` is on PATH and our pack compiles, the helper posts `engine=yara`. Otherwise it posts `engine=needles` (substring walk). Never label needles as yara.
+
 Package metadata: [`packaging/host-protect-helper/README.md`](../packaging/host-protect-helper/README.md). Spec slice C: [`specs/imunify-class-onbox.md`](specs/imunify-class-onbox.md).
 
 ## 6) Host WAF on the same helper (one page)
