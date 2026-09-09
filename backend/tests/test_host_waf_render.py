@@ -111,7 +111,7 @@ def test_lab_fixture_snippet_has_probe_rule():
     assert "id:1094" in text
     assert "id:1095" in text
     assert "id:1096" in text
-    for _rid in range(1097, 1141):
+    for _rid in range(1097, 1144):
         assert f"id:{_rid}" in text
     assert "/solr/update" in text
     assert "/solr/#/" not in text
@@ -221,7 +221,7 @@ def test_customer_snippet_omits_lab_probe():
     assert "id:1094" in text
     assert "id:1095" in text
     assert "id:1096" in text
-    for _rid in range(1097, 1141):
+    for _rid in range(1097, 1144):
         assert f"id:{_rid}" in text
     assert "/solr/update" in text
     assert "/solr/#/" not in text
