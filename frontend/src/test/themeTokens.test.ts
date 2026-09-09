@@ -1,12 +1,5 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-
-const css = readFileSync(
-  join(dirname(fileURLToPath(import.meta.url)), "../index.css"),
-  "utf8",
-);
+import css from "../index.css?raw";
 
 function block(name: string): string {
   const match = css.match(new RegExp(`${name}\\s*\\{([\\s\\S]*?)\\n\\}`));
