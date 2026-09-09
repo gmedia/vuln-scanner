@@ -56,16 +56,11 @@ describe("Header", () => {
         : creditState) as typeof useCreditStore);
   });
 
-  it("renders brand name SINEXIS", () => {
-    renderWithRouter(<Header />);
-    expect(screen.getByText("SINE")).toBeInTheDocument();
-    expect(screen.getByText("XIS")).toBeInTheDocument();
-  });
-
-  it("uses a 48px-tall header bar", () => {
+  it("does not render a sticky 48px app banner", () => {
     renderWithRouter(<Header />);
     const header = screen.getByRole("banner");
-    expect(header).toHaveClass("h-12", "min-h-12");
+    expect(header).not.toHaveClass("h-12");
+    expect(header).not.toHaveClass("sticky");
   });
 
   it("renders children", () => {
