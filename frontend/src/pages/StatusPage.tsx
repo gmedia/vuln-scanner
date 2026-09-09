@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -194,28 +195,28 @@ export default function StatusPage() {
 
   return (
     <div className="space-y-6" data-testid="status-page">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
-        </div>
-        {page ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant={page.published ? "outline" : "default"}
-              onClick={() => publishMut.mutate(!page.published)}
-              data-testid="status-page-publish"
-            >
-              {page.published ? t("unpublish") : t("publish")}
-            </Button>
-            <Button variant="outline" asChild>
-              <a href={publicHref} target="_blank" rel="noreferrer">
-                {t("openPublic")}
-              </a>
-            </Button>
-          </div>
-        ) : null}
-      </div>
+      <PageHeader
+        title={t("title")}
+        description={t("subtitle")}
+        actions={
+          page ? (
+            <>
+              <Button
+                variant={page.published ? "outline" : "default"}
+                onClick={() => publishMut.mutate(!page.published)}
+                data-testid="status-page-publish"
+              >
+                {page.published ? t("unpublish") : t("publish")}
+              </Button>
+              <Button variant="outline" asChild>
+                <a href={publicHref} target="_blank" rel="noreferrer">
+                  {t("openPublic")}
+                </a>
+              </Button>
+            </>
+          ) : null
+        }
+      />
 
       {!page && (
         <Card>
