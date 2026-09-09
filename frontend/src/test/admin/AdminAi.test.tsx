@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AdminAi from "@/pages/admin/AdminAi";
@@ -114,6 +115,40 @@ describe("AdminAi", () => {
     expect(await screen.findByText("OpenRouter")).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Edit" }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: "Delete" }).length).toBeGreaterThan(0);
+    await userEvent.click(screen.getByRole("tab", { name: "Models" }));
+    expect(await screen.findByRole("columnheader", { name: "Price IDR / 1K in" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Price IDR / 1K out" })).toBeInTheDocument();
+    expect(screen.getByText("Rp 1")).toBeInTheDocument();
+    expect(screen.getByText("Rp 2")).toBeInTheDocument();
+  });
+
+  it("uses i18n labels for usage source and billed columns", async () => {
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({
+      items: [
+        {
+          id: "u1",
+          organization_id: null,
+          source: "admin_trial",
+          model_public_id: "sinexis/demo",
+          prompt_tokens: 1,
+          completion_tokens: 1,
+          billed_idr: 0,
+          cogs_idr: 0,
+          http_status: 200,
+          created_at: "",
+          request_payload: null,
+          response_payload: null,
+        },
+      ],
+      total: 1,
+    });
+    renderPage();
+    await userEvent.click(await screen.findByRole("tab", { name: "Usage" }));
+    expect(await screen.findByRole("columnheader", { name: "Source" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Billed (IDR)" })).toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "source" })).not.toBeInTheDocument();
   });
 
   it("shows feature-off on 404", async () => {
