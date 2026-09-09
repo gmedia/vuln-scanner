@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -11,6 +12,18 @@ HELPER_DIR = Path(__file__).resolve().parents[2] / "packaging" / "host-protect-h
 sys.path.insert(0, str(HELPER_DIR))
 
 import sinexis_host_scan as helper  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _hide_optional_engines(monkeypatch: pytest.MonkeyPatch) -> None:
+    real_which = shutil.which
+
+    def fake_which(name: str, path: str | None = None) -> str | None:
+        if name in {"yara", "clamscan", "clamdscan"}:
+            return None
+        return real_which(name, path=path)
+
+    monkeypatch.setattr(helper.shutil, "which", fake_which)
 
 
 def test_outside_jail_nonzero_no_post(monkeypatch: pytest.MonkeyPatch):
@@ -62,7 +75,7 @@ def test_needles_hit_dry_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     )
     assert rc == 0
     payload = json.loads(out.read_text(encoding="utf-8"))
-    assert payload["engine"] in ("needles", "yara")
+    assert payload["engine"] == "needles"
     assert any(
         f["rel_path"].endswith("cache.php") and f["rule_id"] == "sinexis.php.eval_post" for f in payload["findings"]
     )
@@ -389,7 +402,7 @@ def test_post_called_on_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     assert args[0] == "https://example.invalid"
     assert args[1] == "secret-token"
     payload = args[2]
-    assert payload["engine"] in ("needles", "yara")
+    assert payload["engine"] == "needles"
     assert payload["scan_id"] == "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 
 
@@ -784,3 +797,90 @@ def test_parse_modsec_drops_vendor_and_static():
     assert len(events) == 1
     assert events[0]["rule_id"] == "1001"
     assert events[0]["path"] == "/xmlrpc.php"
+
+
+def test_yara_cli_maps_meta_id(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(helper, "ALLOWED_PREFIXES", (str(tmp_path),))
+    uploads = tmp_path / "wp-content" / "uploads"
+    uploads.mkdir(parents=True)
+    shell = uploads / "cache.php"
+    shell.write_text("<?php eval($_POST['x']); ?>", encoding="utf-8")
+    pack = helper.load_signature_pack(HELPER_DIR / "rules")
+    ident_map = {str(s["ident"]): (str(s["rule_id"]), str(s["hit_class"])) for s in pack}
+    monkeypatch.setattr(helper.shutil, "which", lambda _n, path=None: "/usr/bin/yara")
+
+    class Fake:
+        returncode = 0
+        stdout = f"sinexis_php_eval_post {shell}\n"
+        stderr = ""
+
+    monkeypatch.setattr(helper.subprocess, "run", lambda *_a, **_k: Fake())
+    hits = helper.scan_yara_cli(str(tmp_path), HELPER_DIR / "rules" / "php_webshell.yar", ident_map, 30)
+    assert hits is not None
+    assert any(h["rule_id"] == "sinexis.php.eval_post" and h["rel_path"].endswith("cache.php") for h in hits)
+
+
+def test_yara_compile_fail_falls_to_needles(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(helper, "ALLOWED_PREFIXES", (str(tmp_path),))
+    uploads = tmp_path / "wp-content" / "uploads"
+    uploads.mkdir(parents=True)
+    (uploads / "cache.php").write_text("<?php eval($_POST['x']); ?>", encoding="utf-8")
+    monkeypatch.setattr(helper.shutil, "which", lambda _n, path=None: "/usr/bin/yara")
+
+    class Fake:
+        returncode = 1
+        stdout = ""
+        stderr = "error: syntax error\n"
+
+    monkeypatch.setattr(helper.subprocess, "run", lambda *_a, **_k: Fake())
+    out = tmp_path / "out.json"
+    rc = helper.run(
+        [
+            "--root",
+            str(tmp_path),
+            "--scan-id",
+            "11111111-1111-1111-1111-111111111111",
+            "--agent-id",
+            "22222222-2222-2222-2222-222222222222",
+            "--rules-dir",
+            str(HELPER_DIR / "rules"),
+            "--dry-run",
+            "--json-out",
+            str(out),
+        ]
+    )
+    assert rc == 0
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    assert payload["engine"] == "needles"
+
+
+def test_clam_connect_fail_falls_back_to_clamscan(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(helper, "ALLOWED_PREFIXES", (str(tmp_path),))
+    infected = tmp_path / "eicar.txt"
+    infected.write_text("eicar", encoding="utf-8")
+    calls: list[list[str]] = []
+
+    def which(name: str, path: str | None = None) -> str | None:
+        if name == "clamdscan":
+            return "/usr/bin/clamdscan"
+        if name == "clamscan":
+            return "/usr/bin/clamscan"
+        return None
+
+    monkeypatch.setattr(helper.shutil, "which", which)
+
+    class Fake:
+        def __init__(self, cmd: list[str]) -> None:
+            self.returncode = 2 if "clamdscan" in cmd[0] else 1
+            self.stderr = "Can't connect to clamd" if "clamdscan" in cmd[0] else ""
+            self.stdout = "" if "clamdscan" in cmd[0] else f"{infected}: Eicar-Test-Signature FOUND\n"
+
+    def run(cmd: list[str], **_k: object) -> Fake:
+        calls.append(cmd)
+        return Fake(cmd)
+
+    monkeypatch.setattr(helper.subprocess, "run", run)
+    hits = helper.scan_clam(str(tmp_path))
+    assert any("clamdscan" in c[0] for c in calls)
+    assert any(c[0].endswith("clamscan") for c in calls)
+    assert hits[0]["rule_id"].startswith("clam.")
