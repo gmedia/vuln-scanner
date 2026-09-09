@@ -68,6 +68,7 @@ import type { ApiError } from "@/lib/utils";
 import { canMutateWorkspace } from "@/api/orgs";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
+import PageHeader from "@/components/layout/PageHeader";
 import { useTranslation } from "react-i18next";
 
 export { mapScheduleError };
@@ -369,18 +370,17 @@ function Schedules() {
 
   return (
     <div className="w-full space-y-6">
-      <div className="flex items-center gap-3">
-        <Link
-          to="/dashboard"
-          className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <CalendarClock className="h-6 w-6 text-primary" />
-        <h2 className="text-lg font-bold tracking-wide text-foreground">
-          {t("title")}
-        </h2>
-      </div>
+      <PageHeader
+        title={t("title")}
+        leading={
+          <Link
+            to="/dashboard"
+            className="mt-1 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+        }
+      />
 
       <Card>
         <CardHeader className="space-y-3">

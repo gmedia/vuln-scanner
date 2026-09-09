@@ -34,6 +34,7 @@ import SeverityChart from "@/components/results/SeverityChart";
 import FindingsTable from "@/components/results/FindingsTable";
 import { ScanError } from "@/components/scan/ScanError";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
+import PageHeader from "@/components/layout/PageHeader";
 import { useTranslation } from "react-i18next";
 
 function rescanPath(scanType: string): string {
@@ -160,8 +161,33 @@ function ScanDetail() {
 
   return (
     <div className="w-full space-y-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex min-w-0 items-start gap-3">
+      <PageHeader
+        title={
+          <span className="inline-flex flex-wrap items-center gap-2">
+            {t("scanDetails")}
+            <Badge
+              variant={
+                scan.status as "running" | "completed" | "failed" | "pending"
+              }
+              className="text-[10px] capitalize"
+            >
+              {scan.status}
+            </Badge>
+          </span>
+        }
+        description={
+          <>
+            <span className="block truncate font-mono text-xs">{scan.target}</span>
+            {scan.completed_at ? (
+              <span className="mt-0.5 block text-[11px]">
+                {t("finishedAt", {
+                  when: new Date(scan.completed_at).toLocaleString(),
+                })}
+              </span>
+            ) : null}
+          </>
+        }
+        leading={
           <Link
             to="/dashboard"
             className="mt-0.5 inline-flex min-h-11 min-w-11 items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
@@ -169,52 +195,28 @@ function ScanDetail() {
             <ArrowLeft className="h-5 w-5" />
             <span className="sr-only">{t("backToDashboard")}</span>
           </Link>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-bold tracking-wide text-foreground">
-                {t("scanDetails")}
-              </h2>
-              <Badge
-                variant={
-                  scan.status as "running" | "completed" | "failed" | "pending"
-                }
-                className="text-[10px] capitalize"
-              >
-                {scan.status}
-              </Badge>
-            </div>
-            <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
-              {scan.target}
-            </p>
-            {scan.completed_at && (
-              <p className="mt-0.5 text-[11px] text-muted-foreground">
-                {t("finishedAt", {
-                  when: new Date(scan.completed_at).toLocaleString(),
-                })}
-              </p>
+        }
+        actions={
+          <>
+            {(scan.scan_type === "ip" || scan.scan_type === "domain") && (
+              <Button asChild variant="outline" size="lg">
+                <Link
+                  to={`/schedules?target=${encodeURIComponent(scan.target)}&scan_type=${scan.scan_type}`}
+                  data-testid="attach-schedule-button"
+                >
+                  {t("setSchedule")}
+                </Link>
+              </Button>
             )}
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-          {(scan.scan_type === "ip" || scan.scan_type === "domain") && (
-            <Button asChild variant="outline" size="lg">
-              <Link
-                to={`/schedules?target=${encodeURIComponent(scan.target)}&scan_type=${scan.scan_type}`}
-                data-testid="attach-schedule-button"
-              >
-                {t("setSchedule")}
+            <Button asChild size="lg">
+              <Link to={reScanTo} data-testid="rescan-button">
+                <RefreshCw className="mr-1 h-3.5 w-3.5" />
+                {t("rescan")}
               </Link>
             </Button>
-          )}
-          <Button asChild size="lg">
-            <Link to={reScanTo} data-testid="rescan-button">
-              <RefreshCw className="mr-1 h-3.5 w-3.5" />
-              {t("rescan")}
-            </Link>
-          </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {scan.status === "failed" && <ScanError showIcon message={failMessage} />}
 

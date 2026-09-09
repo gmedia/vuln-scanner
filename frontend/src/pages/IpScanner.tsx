@@ -1,5 +1,6 @@
-import { Radar, ArrowLeft, CheckCircle2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, AlertTriangle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import PageHeader from "@/components/layout/PageHeader";
 import IpScanForm from "@/components/scan/IpScanForm";
 import ScanProgress from "@/components/scan/ScanProgress";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
@@ -19,15 +20,17 @@ function IpScanner() {
   return (
     <div className="grid w-full items-start gap-6 lg:grid-cols-2">
       <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <Link to="/dashboard" className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <Radar className="h-6 w-6 text-primary" />
-          <h2 className="text-lg font-bold tracking-wide text-foreground">
-            IP scanner
-          </h2>
-        </div>
+        <PageHeader
+          title="IP scanner"
+          leading={
+            <Link
+              to="/dashboard"
+              className="mt-1 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          }
+        />
 
         <Card>
           <CardHeader>

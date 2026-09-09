@@ -21,4 +21,17 @@ describe("PageHeader", () => {
     expect(screen.getByText("One-off scans")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "New scan" })).toBeInTheDocument();
   });
+
+  it("renders optional leading control", () => {
+    render(
+      <PageHeader
+        title="IP scanner"
+        leading={<a href="/dashboard">Back</a>}
+      />,
+    );
+    expect(screen.getByRole("link", { name: "Back" })).toHaveAttribute(
+      "href",
+      "/dashboard",
+    );
+  });
 });
