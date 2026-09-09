@@ -18,11 +18,15 @@ function renderShell() {
 }
 
 describe("AppShell", () => {
-  it("renders sidebar and header", () => {
+  it("renders sidebar without a sticky app banner", () => {
     renderShell();
-    expect(screen.getByRole("banner")).toBeInTheDocument();
     expect(screen.getByRole("complementary")).toBeInTheDocument();
     expect(document.querySelector("aside")).toBeInstanceOf(HTMLElement);
+    const banners = screen.queryAllByRole("banner");
+    banners.forEach((el) => {
+      expect(el).not.toHaveClass("sticky");
+      expect(el).not.toHaveClass("h-12");
+    });
   });
 
   it("renders main content area", () => {
@@ -62,10 +66,10 @@ describe("AppShell", () => {
     expect(document.querySelector("[data-slot='sheet-overlay']")).toBeNull();
   });
 
-  it("renders SINEXIS brand text in header", () => {
+  it("renders SINEXIS brand text in the sidebar", () => {
     renderShell();
-    const header = screen.getByRole("banner");
-    expect(header).toHaveTextContent("SINE");
-    expect(header).toHaveTextContent("XIS");
+    const sidebar = screen.getByRole("complementary");
+    expect(sidebar).toHaveTextContent("SINE");
+    expect(sidebar).toHaveTextContent("XIS");
   });
 });
