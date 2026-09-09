@@ -1,6 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import CreditHistory from "@/pages/credit/CreditHistory";
+
+function renderHistory() {
+  return render(
+    <MemoryRouter initialEntries={["/credit-history"]}>
+      <CreditHistory />
+    </MemoryRouter>,
+  );
+}
 
 const mockFetchBalance = vi.fn();
 
@@ -49,20 +58,7 @@ vi.mock("@/store/creditStore", () => ({
   ),
 }));
 
-vi.mock("react-router-dom", () => ({
-  Link: ({
-    to,
-    children,
-    ...props
-  }: {
-    to: string;
-    children?: React.ReactNode;
-  } & React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
-    <a href={to} {...props}>
-      {children}
-    </a>
-  ),
-}));
+
 
 vi.mock("@/components/ui/Card", () => ({
   Card: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
@@ -224,21 +220,12 @@ describe("CreditHistory", () => {
       isLoading: true,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
-    expect(screen.getByText("Credit history")).toBeInTheDocument();
-  });
-
-  it("renders the History icon", () => {
-    vi.mocked(useQuery).mockReturnValue({
-      data: undefined,
-      isLoading: true,
-    } as ReturnType<typeof useQuery>);
-
-    render(<CreditHistory />);
-    const svg = document.querySelector(
-      "svg.lucide-rotate-ccw-clock, svg.lucide-history",
-    );
-    expect(svg).toBeInTheDocument();
+    renderHistory();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Credit history" }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("account-nav")).toBeInTheDocument();
+    expect(screen.getByTestId("credit-history-filters")).toBeInTheDocument();
   });
 
   it("shows loading skeletons when isLoading is true", () => {
@@ -247,7 +234,7 @@ describe("CreditHistory", () => {
       isLoading: true,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     const skeletons = screen.getAllByTestId("skeleton");
     expect(skeletons).toHaveLength(5);
   });
@@ -258,7 +245,7 @@ describe("CreditHistory", () => {
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     expect(screen.getByText("No transactions yet")).toBeInTheDocument();
   });
 
@@ -268,7 +255,7 @@ describe("CreditHistory", () => {
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     expect(screen.getByText("No transactions yet")).toBeInTheDocument();
   });
 
@@ -278,7 +265,7 @@ describe("CreditHistory", () => {
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     expect(
       screen.getByText("Credit adjustments will appear here."),
     ).toBeInTheDocument();
@@ -290,7 +277,7 @@ describe("CreditHistory", () => {
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     const headers = screen.getAllByRole("columnheader");
     expect(headers.map((h) => h.textContent)).toEqual([
       "Date",
@@ -306,7 +293,7 @@ describe("CreditHistory", () => {
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     expect(screen.getAllByText("Bonus").length).toBeGreaterThan(0);
     expect(screen.getAllByText("IP scan").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Refund").length).toBeGreaterThan(0);
@@ -318,7 +305,7 @@ describe("CreditHistory", () => {
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     expect(screen.getAllByText("+100").length).toBeGreaterThan(0);
   });
 
@@ -340,7 +327,7 @@ describe("CreditHistory", () => {
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     const debitCells = screen.getAllByText("-50");
     expect(debitCells.length).toBeGreaterThanOrEqual(1);
     expect(debitCells.every((el) => el.className.match(/text-red/))).toBe(true);
@@ -352,7 +339,7 @@ describe("CreditHistory", () => {
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     const amounts = screen.getAllByText("-50");
     expect(amounts.length).toBeGreaterThanOrEqual(1);
     expect(amounts.some((el) => el.tagName === "SPAN")).toBe(true);
@@ -364,7 +351,7 @@ describe("CreditHistory", () => {
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     expect(screen.getAllByText("+25").length).toBeGreaterThan(0);
   });
 
@@ -374,7 +361,7 @@ describe("CreditHistory", () => {
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     const creditBadges = screen.getAllByText("credit");
     const deductBadges = screen.getAllByText("deduct");
     const refundBadges = screen.getAllByText("refund");
@@ -389,7 +376,7 @@ describe("CreditHistory", () => {
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     expect(screen.getByText("3 total")).toBeInTheDocument();
   });
 
@@ -399,7 +386,7 @@ describe("CreditHistory", () => {
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     expect(screen.queryByText("0 total")).not.toBeInTheDocument();
   });
 
@@ -418,7 +405,7 @@ describe("CreditHistory", () => {
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     expect(screen.getByText("Page 1 of 2")).toBeInTheDocument();
   });
 
@@ -437,7 +424,7 @@ describe("CreditHistory", () => {
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     expect(screen.getByText("Page 1 of 2")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /previous page/i }),
@@ -462,7 +449,7 @@ describe("CreditHistory", () => {
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     const prev = screen.getByRole("button", { name: /previous page/i });
     const next = screen.getByRole("button", { name: /next page/i });
     expect(prev).toBeDisabled();
@@ -475,7 +462,7 @@ describe("CreditHistory", () => {
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     expect(screen.getByTestId("card")).toBeInTheDocument();
     expect(screen.getByTestId("card-header")).toBeInTheDocument();
     expect(screen.getByTestId("card-title")).toBeInTheDocument();
@@ -488,7 +475,7 @@ describe("CreditHistory", () => {
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     expect(screen.getByText("Transactions")).toBeInTheDocument();
   });
 
@@ -498,7 +485,7 @@ describe("CreditHistory", () => {
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     expect(screen.queryByText(/Page \d+ of \d+/)).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /previous page/i }),
@@ -514,7 +501,7 @@ describe("CreditHistory", () => {
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     const summary = screen.getByTestId("credit-history-summary");
     expect(summary).toBeInTheDocument();
     expect(summary).toHaveTextContent("150");
@@ -530,7 +517,7 @@ describe("CreditHistory", () => {
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     const filters = screen.getByTestId("credit-history-filters");
     expect(filters).toBeInTheDocument();
     expect(screen.getByLabelText("Type")).toBeInTheDocument();
@@ -561,7 +548,7 @@ describe("CreditHistory", () => {
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
-    render(<CreditHistory />);
+    renderHistory();
     const link = screen.getByRole("link", { name: "IP scan job" });
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute("href", "/scan/scan-abc");
