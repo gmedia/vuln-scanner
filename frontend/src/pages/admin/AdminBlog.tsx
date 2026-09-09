@@ -28,6 +28,7 @@ import {
   type BlogPostAdmin,
   type BlogPostWrite,
 } from "@/api/admin";
+import PageHeader from "@/components/layout/PageHeader";
 import { useTranslation } from "react-i18next";
 
 const emptyForm: BlogPostWrite = {
@@ -107,12 +108,10 @@ function AdminBlog() {
 
   return (
     <div className="w-full space-y-6">
-      <div className="flex items-center gap-3">
-        <FileText className="h-6 w-6 text-primary" />
-        <h2 className="text-lg font-bold tracking-wide text-foreground">
-          {t("blogTitle")}
-        </h2>
-      </div>
+      <PageHeader
+        leading={<FileText className="h-6 w-6 shrink-0 text-primary" />}
+        title={t("blogTitle")}
+      />
 
       <Card>
         <CardHeader>
