@@ -2,7 +2,7 @@
 
 Public-repo safe: **no production IPs, SSH ports, emails, or secrets** in this file. Keep inventory in a private ops note.
 
-Agent/session priority: [`AGENT_EXECUTION_GUIDE.md`](AGENT_EXECUTION_GUIDE.md). Multi-host roles: [`multi-host-ops.md`](multi-host-ops.md). Workflow rules: [`../AGENTS.md`](../AGENTS.md) (**CI deploy vs Alembic**).
+Agent/session priority: [`AGENT_EXECUTION_GUIDE.md`](AGENT_EXECUTION_GUIDE.md). Multi-host roles: [`multi-host-ops.md`](multi-host-ops.md). Host vCPU/RAM/disk (Compose lock, no tc6): [`compose-host-sizing.md`](compose-host-sizing.md). Workflow rules: [`../AGENTS.md`](../AGENTS.md) (**CI deploy vs Alembic**).
 
 ---
 
