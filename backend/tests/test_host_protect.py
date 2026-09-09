@@ -930,6 +930,47 @@ async def test_agent_ingest_accepts_clam_engine(db_session: AsyncSession, ctx):
 
 
 @pytest.mark.asyncio
+async def test_agent_ingest_clam_adds_to_needles_hit_count(db_session: AsyncSession, ctx):
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    raw, token_hash = generate_results_token()
+    agent.results_token_hash = token_hash
+    _, scan = await _queued_scan(db_session, org, owner, agent)
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            first = await client.post(
+                "/api/host/agent/results",
+                headers={"X-Host-Agent-Token": raw},
+                json={
+                    "scan_id": str(scan.id),
+                    "agent_id": str(agent.id),
+                    "engine": "needles",
+                    "findings": [_finding()],
+                },
+            )
+            assert first.status_code == 200, first.text
+            assert first.json()["hit_count"] == 1
+            second = await client.post(
+                "/api/host/agent/results",
+                headers={"X-Host-Agent-Token": raw},
+                json={
+                    "scan_id": str(scan.id),
+                    "agent_id": str(agent.id),
+                    "engine": "clam",
+                    "findings": [_finding(**{"rel_path": "eicar.txt", "class": "malware", "rule_id": "clam.Eicar"})],
+                },
+            )
+            assert second.status_code == 200, second.text
+            assert second.json()["hit_count"] == 2
+    finally:
+        app.dependency_overrides.clear()
+    await db_session.refresh(scan)
+    assert scan.hit_count == 2
+
+
+@pytest.mark.asyncio
 async def test_agent_ingest_bad_token_401(db_session: AsyncSession, ctx):
     org: Organization = ctx["org"]
     owner: User = ctx["owner"]

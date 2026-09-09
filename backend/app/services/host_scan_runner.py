@@ -148,7 +148,7 @@ async def run_host_scan_job(db: AsyncSession, scan_id: UUID) -> dict[str, Any]:
     allow_walk = bool(settings.host_protect_allow_local_walk)
     if allow_walk and os.path.isdir(root):
         specs = scan_local_root(root)
-        engine = "yara"
+        engine = "needles"
         for clam_hit in scan_clam(root):
             row = dict(clam_hit)
             row["engine"] = "clam"
@@ -219,10 +219,13 @@ async def _finish_scan(
     await db.flush()
     if engine != "mock":
         await _ignore_open_mock_hits(db, site.id)
-    hit_count = await _persist_hits(db, scan, site, specs, engine)
+    added = await _persist_hits(db, scan, site, specs, engine)
     scan.status = "completed"
     scan.finished_at = datetime.now(UTC)
-    scan.hit_count = hit_count
+    if engine == "clam":
+        scan.hit_count = int(scan.hit_count or 0) + added
+    else:
+        scan.hit_count = added
     scan.error = None
     await db.commit()
-    return {"ok": True, "hit_count": hit_count, "scan_id": str(scan.id), "engine": engine}
+    return {"ok": True, "hit_count": scan.hit_count, "scan_id": str(scan.id), "engine": engine}

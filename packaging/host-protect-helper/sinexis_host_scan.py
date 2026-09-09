@@ -25,7 +25,17 @@ ALLOWED_PREFIXES = ("/var/www", "/srv/www", "/home")
 _SKIP_DIRS = {".git", "node_modules", "__pycache__", ".quarantine"}
 _MAX_FILES = 500
 _MAX_BYTES = 1_048_576
-_RULE_RE = re.compile(r"rule\s+\w+\s*\{(.*?)\n\}", re.DOTALL)
+_RULE_RE = re.compile(r"rule\s+(\w+)\s*\{(.*?)\n\}", re.DOTALL)
+_INGEST_HIT_CLASS = {
+    "webshell": "webshell",
+    "backdoor": "backdoor",
+    "malware": "malware",
+    "spam_seo": "spam_seo",
+    "suspicious": "suspicious",
+    "adminer": "suspicious",
+    "dropper": "malware",
+}
+_YARA_CHUNK = 40
 _META_ID = re.compile(r'id\s*=\s*"([^"]+)"')
 _META_CLASS = re.compile(r'hit_class\s*=\s*"([^"]+)"')
 _STR = re.compile(r'\$\w+\s*=\s*"((?:\\.|[^"\\])*)"')
@@ -68,7 +78,7 @@ def load_signature_pack(rules_dir: Path) -> list[dict[str, object]]:
         return pack
     for path in sorted(rules_dir.glob("*.yar")):
         text = path.read_text(encoding="utf-8")
-        for body in _RULE_RE.findall(text):
+        for ident, body in _RULE_RE.findall(text):
             id_m = _META_ID.search(body)
             class_m = _META_CLASS.search(body)
             if id_m is None:
@@ -76,10 +86,12 @@ def load_signature_pack(rules_dir: Path) -> list[dict[str, object]]:
             needles = [bytes(_unescape(s), "utf-8") for s in _STR.findall(body)]
             if not needles:
                 continue
+            raw_class = class_m.group(1) if class_m is not None else "suspicious"
             pack.append(
                 {
+                    "ident": ident,
                     "rule_id": id_m.group(1),
-                    "hit_class": class_m.group(1) if class_m is not None else "suspicious",
+                    "hit_class": _INGEST_HIT_CLASS.get(raw_class, "suspicious"),
                     "needles": needles,
                 }
             )
@@ -151,19 +163,131 @@ def yara_available() -> bool:
     return shutil.which("yara") is not None
 
 
+def _iter_scan_files(root: str) -> list[str]:
+    files: list[str] = []
+    nfiles = 0
+    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+        dirnames[:] = [d for d in dirnames if d not in _SKIP_DIRS and ".." not in d]
+        for name in filenames:
+            nfiles += 1
+            if nfiles > _MAX_FILES:
+                return files
+            full = os.path.join(dirpath, name)
+            rel = os.path.relpath(full, root).replace(os.sep, "/")
+            if ".." in rel.split("/") or _NUL in rel:
+                continue
+            try:
+                size = os.path.getsize(full)
+            except OSError:
+                continue
+            if size > _MAX_BYTES or size == 0:
+                continue
+            files.append(full)
+    return files
+
+
+def _yara_compile_ok(pack_path: Path, timeout: int) -> bool:
+    binary = shutil.which("yara")
+    if binary is None or not pack_path.is_file() or timeout <= 0:
+        return False
+    try:
+        proc = subprocess.run(
+            [binary, "-w", str(pack_path), "/dev/null"],
+            capture_output=True,
+            text=True,
+            timeout=min(timeout, 15),
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    err = (proc.stderr or "").lower()
+    if "error:" in err or proc.returncode not in (0, 1):
+        return False
+    return True
+
+
+def scan_yara_cli(
+    root: str,
+    pack_path: Path,
+    ident_map: dict[str, tuple[str, str]],
+    timeout: int,
+) -> list[dict[str, str]] | None:
+    binary = shutil.which("yara")
+    if binary is None or timeout <= 0:
+        return None
+    files = _iter_scan_files(root)
+    hits: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    deadline = time.monotonic() + timeout
+    if not files:
+        return []
+    for i in range(0, len(files), _YARA_CHUNK):
+        remain = deadline - time.monotonic()
+        if remain <= 0:
+            return None
+        chunk = files[i : i + _YARA_CHUNK]
+        try:
+            proc = subprocess.run(
+                [binary, "-w", str(pack_path), *chunk],
+                capture_output=True,
+                text=True,
+                timeout=remain,
+                check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            return None
+        err = (proc.stderr or "").lower()
+        if "error:" in err:
+            return None
+        if proc.returncode not in (0, 1):
+            return None
+        for line in (proc.stdout or "").splitlines():
+            ident, sep, path = line.partition(" ")
+            if not sep or not ident or not path:
+                continue
+            path = path.strip()
+            mapped = ident_map.get(ident)
+            if mapped is None:
+                continue
+            rule_id, hit_class = mapped
+            if not path.startswith(root + os.sep) and path != root:
+                continue
+            rel = os.path.relpath(path, root).replace(os.sep, "/")
+            if ".." in rel.split("/") or _NUL in rel:
+                continue
+            key = (rel, rule_id)
+            if key in seen:
+                continue
+            seen.add(key)
+            item = {
+                "rel_path": rel,
+                "class": hit_class,
+                "rule_id": rule_id,
+            }
+            try:
+                item["sha256"] = _sha256_file(path)
+            except OSError:
+                pass
+            hits.append(item)
+    return hits
+
+
 def clam_binary() -> str | None:
     return shutil.which("clamdscan") or shutil.which("clamscan")
 
 
-def scan_clam(root: str, timeout: int = 120) -> list[dict[str, str]]:
-    binary = clam_binary()
-    if binary is None:
-        return []
-    cmd = [binary, "--no-summary", "-r", root]
-    if os.path.basename(binary) == "clamdscan":
-        cmd.insert(1, "--fdpass")
+def _clam_daemon_unreachable(proc: subprocess.CompletedProcess[str]) -> bool:
+    if proc.returncode == 2:
+        return True
+    err = (proc.stderr or "").lower()
+    return "can't connect" in err or "cannot connect" in err or "unable to connect" in err
+
+
+def _run_clam_cmd(cmd: list[str], timeout: int) -> subprocess.CompletedProcess[str] | None:
+    if timeout <= 0:
+        return None
     try:
-        proc = subprocess.run(
+        return subprocess.run(
             cmd,
             capture_output=True,
             text=True,
@@ -171,7 +295,26 @@ def scan_clam(root: str, timeout: int = 120) -> list[dict[str, str]]:
             check=False,
         )
     except (OSError, subprocess.TimeoutExpired):
+        return None
+
+
+def scan_clam(root: str, timeout: int = 120) -> list[dict[str, str]]:
+    binary = clam_binary()
+    if binary is None or timeout <= 0:
         return []
+    cmd = [binary, "--no-summary", "-r", root]
+    if os.path.basename(binary) == "clamdscan":
+        cmd.insert(1, "--fdpass")
+    proc = _run_clam_cmd(cmd, timeout)
+    if proc is None:
+        return []
+    if os.path.basename(binary) == "clamdscan" and _clam_daemon_unreachable(proc):
+        fallback = shutil.which("clamscan")
+        if fallback is None:
+            return []
+        proc = _run_clam_cmd([fallback, "--no-summary", "-r", root], timeout)
+        if proc is None:
+            return []
     hits: list[dict[str, str]] = []
     seen: set[str] = set()
     for line in (proc.stdout or "").splitlines():
@@ -711,10 +854,25 @@ def run(argv: list[str] | None = None) -> int:
         return 2
     if not os.path.isdir(root):
         return 3
+    deadline = time.monotonic() + max(1, args.timeout)
     pack = load_signature_pack(Path(args.rules_dir))
-    findings = scan_needles(root, pack)
-    engine = "yara" if yara_available() else "needles"
-    clam_hits = scan_clam(root, args.timeout)
+    ident_map = {
+        str(spec.get("ident") or ""): (str(spec["rule_id"]), str(spec["hit_class"])) for spec in pack if spec.get("ident")
+    }
+    pack_path = Path(args.rules_dir) / "php_webshell.yar"
+    remain = int(deadline - time.monotonic())
+    yara_hits: list[dict[str, str]] | None = None
+    if yara_available() and _yara_compile_ok(pack_path, min(remain, 15)):
+        remain = int(deadline - time.monotonic())
+        yara_hits = scan_yara_cli(root, pack_path, ident_map, remain)
+    if yara_hits is not None:
+        findings = yara_hits
+        engine = "yara"
+    else:
+        findings = scan_needles(root, pack)
+        engine = "needles"
+    remain = int(deadline - time.monotonic())
+    clam_hits = scan_clam(root, remain)
     payload = {
         "scan_id": args.scan_id,
         "agent_id": args.agent_id,

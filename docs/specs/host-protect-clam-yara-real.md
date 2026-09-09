@@ -1,6 +1,6 @@
 # Plan: Host Protect — honest ClamAV + real YARA CLI
 
-**Status:** **plan only** (2026-09-09). **Oracle: conditional APPROVE** (MUST-FIX folded into §4–§5). Do **not** implement until the user names a slice **and** says `buat` / `kerjakan`.
+**Status:** **implemented** (Y0 honesty + Y1 CLI + C1 clamscan fallback + additive ingest). Lab Clam on tc5 remains ops residual.
 **Epic:** follow-on to **P12 S10/S12** (already on `main`). Not a new WAF pack. Not P14 **G/H**.
 **Legal:** original pack only. No Imunify/CloudAV/CRS dump. No community YARA vendor into git. Never paste WAF onto `sinexis.app` edge.
 **CI:** must stay green **without** `clamscan` / `yara` packages.
