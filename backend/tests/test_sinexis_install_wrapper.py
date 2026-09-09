@@ -145,7 +145,7 @@ def test_wrapper_write_waf_snippet_file(tmp_path: Path) -> None:
     assert "id:1051" in text
     assert "id:1095" in text
     assert "id:1096" in text
-    for _rid in range(1097, 1141):
+    for _rid in range(1097, 1144):
         assert f"id:{_rid}" in text
     assert "/solr/update" in text
     assert "/solr/#/" not in text

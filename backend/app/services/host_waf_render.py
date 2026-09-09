@@ -589,6 +589,18 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         'SecRule REQUEST_URI "@rx (?i)/solr/update" '
         "\"id:1140,phase:1,t:none,deny,status:403,msg:\\'sinexis.solr.update\\'\""
     )
+    rule_1141 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.env\\.local" '
+        "\"id:1141,phase:1,t:none,deny,status:403,msg:\\'sinexis.env.local\\'\""
+    )
+    rule_1142 = (
+        'SecRule REQUEST_URI "@rx (?i)/web\\.config($|[/?])" '
+        "\"id:1142,phase:1,t:none,deny,status:403,msg:\\'sinexis.web.config\\'\""
+    )
+    rule_1143 = (
+        'SecRule REQUEST_URI "@rx (?i)/configuration\\.php($|[?])" '
+        "\"id:1143,phase:1,t:none,deny,status:403,msg:\\'sinexis.joomla.config\\'\""
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -738,8 +750,11 @@ SecRule REQUEST_METHOD "@streq POST" "t:none,chain"
        {rule_1137}
        {rule_1138}
        {rule_1139}
-       {rule_1140}
-       {extra}';
+        {rule_1140}
+        {rule_1141}
+        {rule_1142}
+        {rule_1143}
+        {extra}';
 # Paranoia {paranoia}: keep starter rules only. Do not raise to 4 in v1.
 """
 
