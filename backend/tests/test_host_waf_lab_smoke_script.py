@@ -65,5 +65,7 @@ def test_lab_script_safety_markers():
     assert "id:1050" in text
     assert "id:1051" in text
     assert "id:1095" in text
+    assert "id:1096" in text
+    assert "id:1140" in text
     assert "must not match /wp-admin/" in text
     assert "POST /wp-login.php" in text

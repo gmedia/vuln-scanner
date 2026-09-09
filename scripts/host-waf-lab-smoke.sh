@@ -359,6 +359,8 @@ fetch_snippet() {
   printf '%s' "$SNIPPET" | grep -q 'id:1050' || die "snippet missing original rule 1050"
   printf '%s' "$SNIPPET" | grep -q 'id:1051' || die "snippet missing original rule 1051"
   printf '%s' "$SNIPPET" | grep -q 'id:1095' || die "snippet missing original rule 1095"
+  printf '%s' "$SNIPPET" | grep -q 'id:1096' || die "snippet missing original rule 1096"
+  printf '%s' "$SNIPPET" | grep -q 'id:1140' || die "snippet missing original rule 1140"
   printf '%s' "$SNIPPET" | grep -qi 'wp-admin' && die "snippet must not match /wp-admin/"
   log "snippet ok (not printed)"
 }
