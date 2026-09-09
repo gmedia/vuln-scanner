@@ -13,7 +13,7 @@ Related: [`host-protect-v1.md`](host-protect-v1.md) §10.1 S10–S12 · [`imunif
 
 | User said | Plan implication |
 |-----------|------------------|
-| Tired of copy-paste WAF/YARA **ID slices** | **Do not** default to WAF 1147+ or more needles. Open PRs **#706** / **#708** are pack-widen; merge is human/CI, not this epic. |
+| Tired of copy-paste WAF/YARA **ID slices** | **Do not** default to WAF 1147+ or more needles. **#708** (WAF 1144–1146) is on `main`. Pack-widen beyond that is parked. |
 | Interested in **ClamAV** and **YARA sungguhan** | Use engines already specified in S10 (optional CLI) and S12 (optional Clam). |
 | Asked if existing rules become **garbage / conflict** | They do **not**. Three pipelines. See §1. |
 
@@ -25,7 +25,7 @@ Related: [`host-protect-v1.md`](host-protect-v1.md) §10.1 S10–S12 · [`imunif
 Customer VM (helper poll)
   scan_needles(php_webshell.yar)  → POST engine=needles (today may lie as yara)  findings sinexis.php.*
   scan_clam() if clamdscan|clamscan on PATH → POST engine=clam  findings clam.*
-  WAF tail (separate) → POST /api/host/agent/waf-events  rule_id 1001–1143 (main)
+  WAF tail (separate) → POST /api/host/agent/waf-events  rule_id 1001–1146 (main)
 
 SaaS ingest
   /api/host/agent/results   HIT_ENGINES yara|needles|clam|mock
@@ -35,7 +35,7 @@ SaaS ingest
 
 | Layer | What it is | Collision with Clam/YARA CLI? |
 |-------|------------|-------------------------------|
-| **Host WAF** | ModSecurity IDs **1001–1143** on `main` (**1144–1146** if **#708** merges) | **None.** Different URL, table, ID shape. |
+| **Host WAF** | ModSecurity IDs **1001–1146** on `main` (**#708**) | **None.** Different URL, table, ID shape. |
 | **Needles S10** | Dual `.yar` parsed for `meta.id`, `hit_class`, `$a="..."`. **`condition:` ignored at runtime.** Pack **does** include `condition: any of them`. | Keep as **fallback**. Do **not** unbounded `yara -r` on jail root. |
 | **Clam S12** | `scan_clam()` already POSTs `engine=clam`, `rule_id=clam.<sig>`. `Recommends: clamav`. No CVD in git. | **Ops/lab gap**, not a missing function. |
 
