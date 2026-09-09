@@ -354,3 +354,48 @@ rule sinexis_php_array_map_input
     condition:
         any of them
 }
+
+rule sinexis_php_register_shutdown
+{
+    meta:
+        id = "sinexis.php.register_shutdown"
+        hit_class = "webshell"
+    strings:
+        $a = "register_shutdown_function($_POST"
+        $b = "register_shutdown_function($_GET"
+        $c = "register_shutdown_function($_REQUEST"
+        $d = "register_tick_function($_POST"
+        $e = "register_tick_function($_GET"
+    condition:
+        any of them
+}
+
+rule sinexis_php_preg_callback_input
+{
+    meta:
+        id = "sinexis.php.preg_callback_input"
+        hit_class = "webshell"
+    strings:
+        $a = "preg_replace_callback($_POST"
+        $b = "preg_replace_callback($_GET"
+        $c = "preg_replace_callback($_REQUEST"
+        $d = "mb_ereg_replace($_POST"
+        $e = "preg_filter($_GET"
+    condition:
+        any of them
+}
+
+rule sinexis_php_eval_gzuncompress
+{
+    meta:
+        id = "sinexis.php.eval_gzuncompress"
+        hit_class = "webshell"
+    strings:
+        $a = "eval(gzuncompress"
+        $b = "eval(gzdecode"
+        $c = "eval(strrev"
+        $d = "eval(rawurldecode"
+        $e = "eval(urldecode"
+    condition:
+        any of them
+}

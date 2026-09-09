@@ -37,6 +37,9 @@ def test_load_signature_pack_has_webshell_rule():
     assert "sinexis.php.system_cookie" in ids
     assert "sinexis.php.extract_input" in ids
     assert "sinexis.php.array_map_input" in ids
+    assert "sinexis.php.register_shutdown" in ids
+    assert "sinexis.php.preg_callback_input" in ids
+    assert "sinexis.php.eval_gzuncompress" in ids
 
 
 def test_scan_local_root_matches_eval_post(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
@@ -191,6 +194,24 @@ def test_scan_local_root_matches_system_cookie_extract_arraymap(tmp_path: Path, 
     assert ("s.php", "sinexis.php.system_cookie") in ids
     assert ("e.php", "sinexis.php.extract_input") in ids
     assert ("m.php", "sinexis.php.array_map_input") in ids
+    assert not any(h["rel_path"].endswith("clean.php") for h in hits)
+
+
+def test_scan_local_root_matches_shutdown_preg_evalgz(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(host_path, "ALLOWED_PREFIXES", (str(tmp_path),))
+    monkeypatch.setattr(host_engine, "validate_root_path", lambda p: str(Path(p)))
+    monkeypatch.setattr(host_engine, "jail_rel_path", lambda root, rel: str(Path(root) / rel))
+    uploads = tmp_path / "wp-content" / "uploads"
+    uploads.mkdir(parents=True)
+    (uploads / "r.php").write_text("<?php register_shutdown_function($_POST['f']); ?>", encoding="utf-8")
+    (uploads / "p.php").write_text("<?php preg_replace_callback($_GET['p'], 'x'); ?>", encoding="utf-8")
+    (uploads / "z.php").write_text("<?php eval(gzuncompress($b)); ?>", encoding="utf-8")
+    (uploads / "clean.php").write_text("<?php echo 1; ?>", encoding="utf-8")
+    hits = scan_local_root(str(tmp_path))
+    ids = {(h["rel_path"].split("/")[-1], h["rule_id"]) for h in hits}
+    assert ("r.php", "sinexis.php.register_shutdown") in ids
+    assert ("p.php", "sinexis.php.preg_callback_input") in ids
+    assert ("z.php", "sinexis.php.eval_gzuncompress") in ids
     assert not any(h["rel_path"].endswith("clean.php") for h in hits)
 
 
