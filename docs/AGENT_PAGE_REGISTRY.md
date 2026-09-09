@@ -2,7 +2,7 @@
 
 **Purpose:** After session reset, know **every user-facing URL**, who owns it (SPA vs FastAPI HTML), auth, chrome, and where to recapture / e2e. Source of truth for **routes** is `frontend/src/App.tsx` plus FastAPI HTML routers. This file is a **map**, not a backlog — epic order still [`AGENT_EXECUTION_GUIDE.md`](AGENT_EXECUTION_GUIDE.md).
 
-**Last updated:** 2026-08-30
+**Last updated:** 2026-09-09
 **Do not** put production hosts/ports, emails, passwords, enroll keys, or customer IPs here.
 
 ---
@@ -129,6 +129,25 @@ Minimum authenticated set (2k + mobile, light + dark) after a chrome/token chang
 Auth for prod visual: `E2E_EMAIL` / `E2E_PASSWORD` from **tc1 env** — never commit. Do not `POST /register` for the shared mailbox.
 
 **Do not** git-add recapture PNGs or `.tmp-*`.
+
+### P15 grok-chrome recapture (S9)
+
+Run **locally after deploy of S0–S8** (light + dark, 2k + mobile). Compare to Grok2API chrome **density**, not palette: keep Sinexis `--primary` `hsl(142 71% 45%)`.
+
+| Slice | Must recapture | Pass if |
+|-------|----------------|---------|
+| S1 sidebar | App shell any authenticated page | Flush tokens; no second green |
+| S2 AppShell | `/dashboard` | No sticky top bar; content starts under sidebar |
+| S3 header | `/dashboard` | `h2` PageHeader + description `div` |
+| S4 scan | `/scan/ip` `/scan/domain` `/scan/mobile` `/scan/:id` `/schedules` `/assets` `/host` | Density + PageHeader; frozen testids |
+| S5 account | `/profile` `/credit-history` `/settings/workspace` | Two-pane / filter-bar rhythm |
+| S6 attach | `/guard` `/siem` `/uptime` `/uptime/status-page` `/ai` `/guide` | Same chrome family |
+| S7 admin | `/admin` `/admin/users` `/admin/pricing` `/admin/hpp` `/admin/blog` `/admin/email-logs` `/admin/ai` | PageHeader |
+| S8 auth | `/login` `/register` `/forgot-password` `/reset-password` `/verify-email` 404 | Hairline `border-border/80 shadow-none`; **Landing `h-12` unchanged** |
+
+Also recapture `/` logged-out only to confirm Landing was **not** restyled in this epic.
+
+Fix regressions in a **follow-up slice PR**, not by adding PNGs here.
 
 ---
 
