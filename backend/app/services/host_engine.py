@@ -15,9 +15,18 @@ _MAX_BYTES = 1_048_576
 _SKIP_DIRS = {".git", "node_modules", "__pycache__", ".quarantine"}
 
 _RULE_RE = re.compile(
-    r"rule\s+\w+\s*\{(.*?)\n\}",
+    r"rule\s+(\w+)\s*\{(.*?)\n\}",
     re.DOTALL,
 )
+_INGEST_HIT_CLASS = {
+    "webshell": "webshell",
+    "backdoor": "backdoor",
+    "malware": "malware",
+    "spam_seo": "spam_seo",
+    "suspicious": "suspicious",
+    "adminer": "suspicious",
+    "dropper": "malware",
+}
 _META_ID = re.compile(r'id\s*=\s*"([^"]+)"')
 _META_CLASS = re.compile(r'hit_class\s*=\s*"([^"]+)"')
 _STR = re.compile(r'\$\w+\s*=\s*"((?:\\.|[^"\\])*)"')
@@ -30,7 +39,7 @@ def load_signature_pack(rules_dir: Path | None = None) -> list[dict[str, object]
         return pack
     for path in sorted(root.glob("*.yar")):
         text = path.read_text(encoding="utf-8")
-        for body in _RULE_RE.findall(text):
+        for ident, body in _RULE_RE.findall(text):
             id_m = _META_ID.search(body)
             class_m = _META_CLASS.search(body)
             if id_m is None:
@@ -38,10 +47,12 @@ def load_signature_pack(rules_dir: Path | None = None) -> list[dict[str, object]
             needles = [bytes(_unescape(s), "utf-8") for s in _STR.findall(body)]
             if not needles:
                 continue
+            raw_class = class_m.group(1) if class_m is not None else "suspicious"
             pack.append(
                 {
+                    "ident": ident,
                     "rule_id": id_m.group(1),
-                    "hit_class": class_m.group(1) if class_m is not None else "suspicious",
+                    "hit_class": _INGEST_HIT_CLASS.get(raw_class, "suspicious"),
                     "needles": needles,
                 }
             )
