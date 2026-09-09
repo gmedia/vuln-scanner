@@ -87,9 +87,8 @@ test.describe("Landing @smoke @shell", () => {
 
   test("footer shows platform line without engine dump", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("footer")).toContainText(
-      "Sinexis · Scan · Guard · SIEM",
-    );
+    await expect(page.locator("footer")).toContainText("Sinexis · Scan · Guard");
+    await expect(page.locator("footer")).not.toContainText("SIEM");
     await expect(page.locator("footer")).not.toContainText("VulnScanner");
   });
 });
