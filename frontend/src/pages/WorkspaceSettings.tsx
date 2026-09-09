@@ -9,9 +9,10 @@ import {
   Mail,
   Trash2,
   UserPlus,
-  Users,
   AlertTriangle,
 } from "lucide-react";
+import PageHeader from "@/components/layout/PageHeader";
+import AccountNav from "@/components/layout/AccountNav";
 import {
   Card,
   CardContent,
@@ -216,26 +217,26 @@ function WorkspaceSettings() {
 
   return (
     <div className="w-full space-y-6">
-      <div className="flex items-center gap-3">
-        <Link
-          to="/dashboard"
-          className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <Users className="h-6 w-6 text-primary" />
-        <div>
-          <h2 className="text-lg font-bold tracking-wide text-foreground">
-            {t("title")}
-          </h2>
-          <p className="text-[11px] text-muted-foreground">
-            {activeOrg
-              ? t("roleLine", { name: activeOrg.name, role: activeOrg.role })
-              : t("subtitleMembers")}
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title={t("title")}
+        description={
+          activeOrg
+            ? t("roleLine", { name: activeOrg.name, role: activeOrg.role })
+            : t("subtitleMembers")
+        }
+        leading={
+          <Link
+            to="/dashboard"
+            className="mt-1 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+        }
+      />
 
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        <AccountNav />
+        <div className="min-w-0 flex-1 space-y-6">
       {inviteToken && (
         <Card data-testid="accept-invite-card">
           <CardHeader>
@@ -598,6 +599,8 @@ function WorkspaceSettings() {
       {!canManage && orgId && role && (
         <p className="text-xs text-muted-foreground">{t("onlyAdminsInvite")}</p>
       )}
+        </div>
+      </div>
     </div>
   );
 }
