@@ -10,32 +10,32 @@
 3. Do **not** implement until the user says so (`implement` / `buat` / `kerjakan` / …) or points at an approved `docs/specs/*` section.
 4. **Hosts:** the machine used for OpenCode / day-to-day coding is **coding only**. **Production** is the host that serves **`sinexis.app`** (public DNS; legacy `vs.appmedia.id` may still exist). Do **not** treat coding-host Docker or local health as production attach proof. Prefer full-stack Docker on the **edge** host; on the coding host keep Docker **off or minimal** (RAM for the agent).
 
-## Session snapshot (2026-09-09 — Host Protect original pack after #696)
+## Session snapshot (2026-09-09 — Host Protect original pack after #699)
 
 | Item | State |
 |------|--------|
-| **`main` tip (coding)** | Re-`git pull`. Expect **`ba902799`** or newer: **#696** YARA `eval_cookie` / `call_user_input` / `include_input`. Before that: **#695** WAF 1096–1140, **#693** 1051–1095, **#691** 1048–1050, **#689** 1045–1047, **#679** file_put/move_uploaded/eval_files (merged). |
+| **`main` tip (coding)** | Re-`git pull`. Expect **`29f2484e`** or newer: **#700** docs/compose host sizing, then **#699** WAF 1141–1143 (`5fa988bf`). Before that: **#698** YARA `system_cookie` / `extract_input` / `array_map_input` (`c7dc5874`), **#696** `eval_cookie` / `call_user_input` / `include_input`, **#695** WAF 1096–1140. |
 | **Open PRs (agent)** | None for this wave. Dependabot: **do not mass-merge**. |
-| **WAF starter** | Allowlist **`_WAF_STARTER_IDS` 1001–1140**. Renderer emits **all** of those IDs (`host_waf_render.py`). **Do not** add IDs past 1140 without expanding the frozenset **and** dual-shipping helper/static install wrappers. Ingest tests must match count. |
-| **YARA pack** | Dual: `backend/app/host_protect_rules/php_webshell.yar` + `packaging/host-protect-helper/rules/php_webshell.yar`. On `main` after **#696**: previous needles **plus** `sinexis.php.eval_cookie`, `sinexis.php.call_user_input`, `sinexis.php.include_input`. |
-| **Pattern** | Alternate **WAF IDs then YARA needles**. WAF room **inside 1001–1140 is full** until allowlist grows. Next original slice = **more YARA** (or raise 1141+ **only** with allowlist + render + tests). Original only. **Not** Imunify/CloudAV/CRS dump. **No** “Imunify compatible” in UI. **Do not implement G/H.** |
+| **WAF starter** | Allowlist **`_WAF_STARTER_IDS` 1001–1143**. Renderer + helper/static `sinexis-install.sh` emit those IDs. Last IDs: **1141** `sinexis.env.local` (`/.env.local`), **1142** `sinexis.web.config`, **1143** `sinexis.joomla.config` (`/configuration.php`). Ingest test `accepted == 97` (fixture includes 1001, 1005–1096, 1140–1143 — not every ID in the pack). **Do not** add IDs past 1143 without expanding the frozenset **and** dual-shipping helper/static wrappers. |
+| **YARA pack** | Dual: `backend/app/host_protect_rules/php_webshell.yar` + `packaging/host-protect-helper/rules/php_webshell.yar`. On `main` after **#698**: previous needles **plus** `sinexis.php.system_cookie`, `sinexis.php.extract_input`, `sinexis.php.array_map_input`. |
+| **Pattern** | Alternate **WAF IDs then YARA needles**. Last merged slice was **WAF** (#699) after **YARA** (#698). Next original slice = **more YARA** (or WAF **1144–1146** with allowlist + render + dual-ship + tests). Original only. **Not** Imunify/CloudAV/CRS dump. **No** “Imunify compatible” in UI. **Do not implement G/H.** |
 | **Legal freeze** | [`docs/commercial/imunify-beside-not-roadmap.md`](docs/commercial/imunify-beside-not-roadmap.md). Spek: [`docs/specs/vps-displace-imunify-dev-plan.md`](docs/specs/vps-displace-imunify-dev-plan.md), [`docs/specs/imunify-class-onbox.md`](docs/specs/imunify-class-onbox.md). P14 **A–F** + DL0–DL3 **shipped in code**. **G/H** parked. |
 | **Still human** | GTM; Host Protect invoice `service_id`; `/admin/hpp` hostscan; lab demo-ok (helper tc5, real hits). Not clone work. |
 | **Git** | Prefix **`GIT_MASTER=1`**. Never work on `main`. Never poll CI. Never commit secrets/IPs. |
-| **Engineering default** | User **“sudah saya merge”** → next original **YARA** (WAF 1140 cap). Speak **Bahasa Indonesia**. Do **not** implement until `buat` / `kerjakan`. |
+| **Engineering default** | User **“sudah saya merge”** → next original **YARA** (WAF just grew to 1143). Speak **Bahasa Indonesia**. Do **not** implement until `buat` / `kerjakan`. |
 
 ### Next OpenCode session
 
-1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. Expect **`ba902799`** (**#696**). `gh pr list --state open --assignee @me`. CI green → squash-merge then delete branch. **Do not poll CI.** Do **not** mass-merge Dependabot.
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. Expect **`29f2484e`** or this handoff squash. `gh pr list --state open --assignee @me`. CI green → squash-merge then delete branch. **Do not poll CI.** Do **not** mass-merge Dependabot.
 2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** then **`AGENTS.md`**. P14: **`docs/specs/imunify-class-onbox.md`**. Legal: **`imunify-beside-not-roadmap.md`**.
 3. Speak **Bahasa Indonesia**; prefix git with `GIT_MASTER=1`. Never work on `main`. Never commit secrets/IPs/tokens/PNGs.
 4. **Do not** tell the user to SSH Alembic after a green **main** deploy.
-5. If user says continue Imunify-shaped **jobs**: **next original YARA** (dual pack + `test_host_engine.py` + `test_host_protect_helper.py`). WAF 1141+ only if expanding `_WAF_STARTER_IDS` + render + ingest tests. Dual-pack always.
+5. If user says continue Imunify-shaped **jobs**: **next original YARA** (dual pack + `test_host_engine.py` + `test_host_protect_helper.py`) — last product slice was WAF. WAF 1144+ only if expanding `_WAF_STARTER_IDS` + render + dual-ship + ingest tests. Dual-pack always.
 6. **Do not implement G/H.** Do **not** clone Imunify. Do **not** paste WAF onto `sinexis.app` edge.
 
 ## Session snapshot (2026-09-08 — Host Protect original WAF/YARA vs Imunify gap)
 
-> **Stale vs `main`.** Kept for history. Tip after **#696** is **`ba902799`**. WAF on `main` is **1001–1140**, not 1023. **#679** is merged. Use the **2026-09-09** snapshot above.
+> **Stale vs `main`.** Kept for history. Tip after **#699/#700** is **`29f2484e`**. WAF on `main` is **1001–1143**, not 1023. **#679** is merged. Use the **2026-09-09 after #699** snapshot above.
 
 | Item | State |
 |------|--------|
