@@ -1,6 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
-import { AuthLayout, AUTH_SECONDARY_LINK } from "@/components/layout/AuthLayout";
+import {
+  AuthLayout,
+  AUTH_CARD_CLASS,
+  AUTH_SECONDARY_LINK,
+} from "@/components/layout/AuthLayout";
 
 vi.mock("react-router-dom", () => ({
   Link: ({
@@ -65,6 +69,11 @@ describe("AuthLayout", () => {
   it("sizes secondary auth links for 44pt taps", () => {
     expect(AUTH_SECONDARY_LINK).toMatch(/min-h-11/);
     expect(AUTH_SECONDARY_LINK).toMatch(/min-w-11/);
+  });
+
+  it("uses a hairline auth card class without kit restyle", () => {
+    expect(AUTH_CARD_CLASS).toMatch(/border-border\/80/);
+    expect(AUTH_CARD_CLASS).toMatch(/shadow-none/);
   });
 
   it("keeps theme and locale switcher testids", () => {
