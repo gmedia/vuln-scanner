@@ -23,7 +23,7 @@
 |--------|---------|----------------|
 | **Landing** | No AppShell | `max-w-6xl` / `2xl:max-w-[90rem]`, `h-12` header, BrandMark |
 | **Auth** | No AppShell | Auth cards, same tokens |
-| **App** | `ProtectedRoute` + `AppShell` | Sidebar + `2xl:max-w-[90rem]` main |
+| **App** | `ProtectedRoute` + `AppShell` | Sidebar + chrome cluster in `SidebarFooter` (no sticky `h-12`); `2xl:max-w-[90rem]` main |
 | **HTML island** | FastAPI `_shell` in `blog_html.py` | Landing-like header/footer; **no** ThemeSwitcher / i18n hydrate |
 
 ---

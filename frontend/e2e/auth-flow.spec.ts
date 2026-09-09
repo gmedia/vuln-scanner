@@ -106,7 +106,9 @@ test.describe("Auth — Register @smoke", () => {
 test.describe("Auth — Logout @smoke", () => {
   test("logout redirects to login page", async ({ page }) => {
     await page.goto("/dashboard");
-    await page.waitForSelector("header", { timeout: 10_000 });
+    await page.waitForSelector('[data-testid="header-credits"], header', {
+      timeout: 10_000,
+    });
     const userBtn = page.locator("header button:has(svg.lucide-user)");
     await expect(userBtn).toBeVisible({ timeout: 10_000 });
     await userBtn.click();

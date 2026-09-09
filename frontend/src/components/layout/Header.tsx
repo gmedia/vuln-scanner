@@ -15,7 +15,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { BrandMark } from "@/components/brand/BrandMark";
 import OrgSwitcher from "@/components/workspace/OrgSwitcher";
 import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
 import ThemeSwitcher from "@/components/theme/ThemeSwitcher";
@@ -52,42 +51,28 @@ function Header({ children }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-40 flex h-12 min-h-12 min-w-0 shrink-0 items-center gap-2 overflow-x-hidden border-b border-border bg-background px-3 pt-[env(safe-area-inset-top)] sm:gap-4 sm:px-4">
+    <header className="flex min-w-0 flex-col gap-2 px-1">
       {children}
-      <div className="flex flex-1 items-center justify-between gap-3">
-        <h1 className="lg:sr-only">
-          <BrandMark
-            to={false}
-            className="font-mono text-sm font-bold tracking-wider text-foreground"
-          />
-        </h1>
+      {activeJobId ? (
+        <div className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
+          <span className="hidden text-xs text-muted-foreground sm:inline">
+            {scanType ? (SCAN_TYPE_LABELS[scanType] ?? scanType) : "Scan"}
+          </span>
+          <Badge variant="running" className="text-[10px]">
+            {progress}%
+          </Badge>
+        </div>
+      ) : null}
 
-        {activeJobId && (
-          <div className="flex items-center gap-2">
-            <span className="hidden text-xs text-muted-foreground sm:inline">
-              {scanType ? (SCAN_TYPE_LABELS[scanType] ?? scanType) : "Scan"}
-            </span>
-            <Badge variant="running" className="text-[10px]">
-              {progress}%
-            </Badge>
-          </div>
-        )}
+      <div className="flex min-h-11 flex-wrap items-center gap-2 [&_button[aria-pressed=true]]:!bg-secondary [&_button[aria-pressed=true]]:!text-secondary-foreground">
+        <ThemeSwitcher />
+        <LanguageSwitcher />
       </div>
 
-      <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
-        <div
-          className="hidden min-h-11 md:flex md:items-center md:gap-2 [&_button[aria-pressed=true]]:!bg-secondary [&_button[aria-pressed=true]]:!text-secondary-foreground"
-        >
-          <ThemeSwitcher />
-          <LanguageSwitcher />
-        </div>
-        {isAuthenticated && (
-          <div className="hidden sm:block">
-            <OrgSwitcher />
-          </div>
-        )}
+      {isAuthenticated ? <OrgSwitcher className="w-full" /> : null}
 
-        {isAuthenticated && (
+      <div className="flex min-w-0 flex-wrap items-center gap-2 group-data-[collapsible=icon]:flex-col">
+        {isAuthenticated ? (
           <Button
             variant="outline"
             size="sm"
@@ -96,7 +81,7 @@ function Header({ children }: HeaderProps) {
           >
             <Link to="/credit-history" title={tNav("creditsTitle")}>
               <Coins className="h-3.5 w-3.5 text-primary" aria-hidden />
-              <span className="hidden text-muted-foreground sm:inline">
+              <span className="hidden text-muted-foreground group-data-[collapsible=icon]:hidden sm:inline">
                 {t("credits")}
               </span>
               <span
@@ -107,9 +92,9 @@ function Header({ children }: HeaderProps) {
               </span>
             </Link>
           </Button>
-        )}
+        ) : null}
 
-        {isAuthenticated && user && (
+        {isAuthenticated && user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -118,10 +103,10 @@ function Header({ children }: HeaderProps) {
                 className="h-11 min-h-11 gap-2 px-2 text-sm text-muted-foreground"
               >
                 <User className="h-4 w-4" />
-                <span className="hidden max-w-[10rem] truncate text-xs sm:inline">
+                <span className="hidden max-w-[10rem] truncate text-xs group-data-[collapsible=icon]:hidden sm:inline">
                   {user.email}
                 </span>
-                <ChevronDown className="h-3 w-3" />
+                <ChevronDown className="h-3 w-3 group-data-[collapsible=icon]:hidden" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -146,7 +131,7 @@ function Header({ children }: HeaderProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        )}
+        ) : null}
       </div>
     </header>
   );

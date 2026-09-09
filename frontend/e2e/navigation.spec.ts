@@ -51,9 +51,11 @@ test.describe("Navigation @smoke", () => {
     await expect(page).toHaveURL("/scan/domain");
   });
 
-  test("header shows SINEXIS branding", async ({ page }) => {
+  test("sidebar shows SINEXIS branding", async ({ page }) => {
     await page.goto("/dashboard");
-    await expect(page.locator("header")).toContainText("SINEXIS");
+    const sidebar = page.getByRole("complementary");
+    await expect(sidebar).toContainText("SINE");
+    await expect(sidebar).toContainText("XIS");
   });
 
   test("sidebar shows version info", async ({ page }) => {
