@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { User, Loader2, AlertCircle, Timer, Eye, EyeOff } from "lucide-react";
+import { Loader2, AlertCircle, Timer, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
 import { useRateLimitCooldown } from "@/hooks/useRateLimitCooldown";
@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import PageHeader from "@/components/layout/PageHeader";
+import AccountNav from "@/components/layout/AccountNav";
 
 function Profile() {
   const { user, updateProfile, changePassword, error } = useAuthStore();
@@ -78,18 +80,14 @@ function Profile() {
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 2xl:max-w-6xl">
-      <div className="flex items-center gap-3">
-        <User className="h-6 w-6 text-primary" />
-        <div>
-          <h2 className="text-lg font-bold tracking-wide text-foreground">
-            Profile
-          </h2>
-          <p className="text-[11px] text-muted-foreground">
-            Manage your account email and password
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Profile"
+        description="Manage your account email and password"
+      />
 
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        <AccountNav />
+        <div className="min-w-0 flex-1 space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="text-sm tracking-wide">
@@ -336,6 +334,8 @@ function Profile() {
           </form>
         </CardContent>
       </Card>
+        </div>
+      </div>
     </div>
   );
 }
