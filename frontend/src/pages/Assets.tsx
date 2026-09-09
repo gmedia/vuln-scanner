@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import PageHeader from "@/components/layout/PageHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
 import {
   Select,
@@ -187,71 +188,75 @@ export default function Assets() {
 
   return (
     <div className="space-y-6" data-testid="assets-page">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">{t("title")}</h1>
-          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {t("skuLabel", { sku, count: items.length, limit })}
-          </p>
-        </div>
-          <div className="flex flex-wrap justify-end gap-2">
+      <PageHeader
+        title={t("title")}
+        description={
+          <>
+            <span className="block">{t("subtitle")}</span>
+            <span className="mt-1 block text-xs">
+              {t("skuLabel", { sku, count: items.length, limit })}
+            </span>
+          </>
+        }
+        actions={
+          <>
             {items.length > 0 ? (
-            <>
+              <>
+                <Button
+                  variant="outline"
+                  className="hidden sm:flex"
+                  data-testid="assets-pack"
+                  onClick={async () => {
+                    const pack = await fetchAssetPack();
+                    const blob = new Blob([JSON.stringify(pack, null, 2)], {
+                      type: "application/json",
+                    });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "assets-pack.json";
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                >
+                  {t("pack")}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="hidden sm:flex"
+                  data-testid="assets-pack-html"
+                  onClick={async () => {
+                    const blob = await fetchAssetPackHtml();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "assets-pack.html";
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                >
+                  {t("packHtml")}
+                </Button>
+              </>
+            ) : null}
+            {items.length > 0 || open ? (
               <Button
-                variant="outline"
-                className="hidden sm:flex"
-                data-testid="assets-pack"
-                onClick={async () => {
-                  const pack = await fetchAssetPack();
-                  const blob = new Blob([JSON.stringify(pack, null, 2)], {
-                    type: "application/json",
-                  });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = "assets-pack.json";
-                  a.click();
-                  URL.revokeObjectURL(url);
+                data-testid="assets-add"
+                disabled={atCap}
+                onClick={() => {
+                  if (open) resetForm();
+                  else {
+                    setEditing(null);
+                    setOpen(true);
+                  }
                 }}
               >
-                {t("pack")}
+                {t("add")}
               </Button>
-              <Button
-                variant="outline"
-                className="hidden sm:flex"
-                data-testid="assets-pack-html"
-                onClick={async () => {
-                  const blob = await fetchAssetPackHtml();
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = "assets-pack.html";
-                  a.click();
-                  URL.revokeObjectURL(url);
-                }}
-              >
-                {t("packHtml")}
-              </Button>
-            </>
-          ) : null}
-          {items.length > 0 || open ? (
-          <Button
-            data-testid="assets-add"
-            disabled={atCap}
-            onClick={() => {
-              if (open) resetForm();
-              else {
-                setEditing(null);
-                setOpen(true);
-              }
-            }}
-          >
-            {t("add")}
-          </Button>
-          ) : null}
-        </div>
-      </div>
+            ) : null}
+          </>
+        }
+      />
 
       {open ? (
         <Card>
