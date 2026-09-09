@@ -14,7 +14,7 @@ import { useRateLimitCooldown } from "@/hooks/useRateLimitCooldown";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
-import AuthLayout from "@/components/layout/AuthLayout";
+import AuthLayout, { AUTH_CARD_CLASS } from "@/components/layout/AuthLayout";
 import { useTranslation } from "react-i18next";
 
 function ResetPassword() {
@@ -41,7 +41,7 @@ function ResetPassword() {
   if (!token) {
     return (
       <AuthLayout title={t("invalidReset")}>
-        <Card className="w-full">
+        <Card className={AUTH_CARD_CLASS}>
           <CardContent className="pt-6 text-center space-y-4">
             <AlertCircle className="h-12 w-12 text-red-400 mx-auto" />
             <p className="text-xs text-muted-foreground">
@@ -97,7 +97,7 @@ function ResetPassword() {
   if (success) {
     return (
       <AuthLayout title={t("resetSuccess")}>
-        <Card className="w-full">
+        <Card className={AUTH_CARD_CLASS}>
           <CardContent className="pt-6 text-center space-y-4">
             <CheckCircle className="h-12 w-12 text-primary mx-auto" />
             <p className="text-xs text-muted-foreground">
@@ -114,7 +114,7 @@ function ResetPassword() {
 
   return (
     <AuthLayout title={t("setNewPassword")}>
-      <Card className="w-full">
+      <Card className={AUTH_CARD_CLASS}>
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="min-h-[1.25rem]">

@@ -6,7 +6,7 @@ import { useRateLimitCooldown } from "@/hooks/useRateLimitCooldown";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
-import AuthLayout from "@/components/layout/AuthLayout";
+import AuthLayout, { AUTH_CARD_CLASS } from "@/components/layout/AuthLayout";
 import { useTranslation } from "react-i18next";
 
 function maskSignupEmail(email: string): string {
@@ -78,7 +78,7 @@ function VerifyEmail() {
         subtitle={t("verifySubtitle")}
         maxWidth="lg"
       >
-        <Card className="w-full">
+        <Card className={AUTH_CARD_CLASS}>
           <CardContent className="pt-6 text-center space-y-4">
             <Mail className="h-10 w-10 text-primary mx-auto" />
             {signupHint && (
@@ -180,7 +180,7 @@ function VerifyEmail() {
       }
       maxWidth="lg"
     >
-      <Card className="w-full">
+      <Card className={AUTH_CARD_CLASS}>
         <CardContent className="pt-6 text-center">
           {status === "idle" && (
             <div className="flex flex-col items-center gap-3">
