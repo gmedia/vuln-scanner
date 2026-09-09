@@ -65,4 +65,14 @@ describe("WorkspaceSettings pilot checklist", () => {
     renderPage();
     expect(screen.queryByTestId("pilot-checklist")).not.toBeInTheDocument();
   });
+
+  it("renders PageHeader and account nav", () => {
+    renderPage();
+    expect(
+      screen.getByRole("heading", { level: 2, name: /workspace/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("account-nav")).toBeInTheDocument();
+    expect(screen.getByTestId("invite-form-card")).toBeInTheDocument();
+  });
 });
+

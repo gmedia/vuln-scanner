@@ -1,8 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import Profile from "@/pages/Profile";
 import { useAuthStore } from "@/store/authStore";
 import { Toaster } from "@/components/ui/sonner";
+
+function renderProfile() {
+  return render(
+    <MemoryRouter initialEntries={["/profile"]}>
+      <Profile />
+    </MemoryRouter>,
+  );
+}
 
 let mockUpdateProfile: ReturnType<typeof vi.fn>;
 let mockChangePassword: ReturnType<typeof vi.fn>;
@@ -74,31 +83,32 @@ describe("Profile", () => {
 
   describe("rendering", () => {
     it("renders Profile heading", () => {
-      render(<Profile />);
+      renderProfile();
       expect(
         screen.getByRole("heading", { name: "Profile" }),
       ).toBeInTheDocument();
+      expect(screen.getByTestId("account-nav")).toBeInTheDocument();
     });
 
     it("displays current email", () => {
-      render(<Profile />);
+      renderProfile();
       expect(screen.getByText("user@example.com")).toBeInTheDocument();
     });
 
     it("starts New email field empty (not prefilled)", () => {
-      render(<Profile />);
+      renderProfile();
       const emailInput = screen.getByPlaceholderText("new@example.com");
       expect(emailInput).toHaveValue("");
       expect(emailInput).not.toHaveValue("user@example.com");
     });
 
     it("shows password confirmation helper", () => {
-      render(<Profile />);
+      renderProfile();
       expect(screen.getByText("Password required to confirm")).toBeInTheDocument();
     });
 
     it("shows page subtitle", () => {
-      render(<Profile />);
+      renderProfile();
       expect(
         screen.getByText("Manage your account email and password"),
       ).toBeInTheDocument();
@@ -107,21 +117,21 @@ describe("Profile", () => {
 
   describe("Update Email form", () => {
     it("renders New Email and Current Password inputs", () => {
-      render(<Profile />);
+      renderProfile();
       expect(screen.getByPlaceholderText("new@example.com")).toBeInTheDocument();
       const passwordInputs = screen.getAllByPlaceholderText("••••••••");
       expect(passwordInputs.length).toBeGreaterThanOrEqual(1);
     });
 
     it("has Update email button", () => {
-      render(<Profile />);
+      renderProfile();
       expect(
         screen.getByRole("button", { name: "Update email" }),
       ).toBeInTheDocument();
     });
 
     it("calls updateProfile on submit", async () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.change(screen.getByPlaceholderText("new@example.com"), {
         target: { value: "new@example.com" },
       });
@@ -141,10 +151,10 @@ describe("Profile", () => {
 
     it("shows success message after successful update", async () => {
       render(
-        <>
+        <MemoryRouter initialEntries={["/profile"]}>
           <Toaster />
           <Profile />
-        </>,
+        </MemoryRouter>,
       );
       fireEvent.change(screen.getByPlaceholderText("new@example.com"), {
         target: { value: "new@example.com" },
@@ -163,13 +173,13 @@ describe("Profile", () => {
     it("shows error message when error is set", () => {
       mockError = "Wrong password";
 
-      render(<Profile />);
+      renderProfile();
       expect(screen.getByText("Wrong password")).toBeInTheDocument();
     });
 
     it("shows cooldown timer when profileCooldown > 0", () => {
       profileCooldownValue = 20;
-      render(<Profile />);
+      renderProfile();
       expect(screen.getByText(/Too many attempts. Wait 20s/)).toBeInTheDocument();
     });
 
@@ -177,7 +187,7 @@ describe("Profile", () => {
       mockUpdateProfile = vi.fn().mockImplementation(
         () => new Promise((resolve) => setTimeout(() => resolve(true), 100)),
       );
-      render(<Profile />);
+      renderProfile();
       fireEvent.change(screen.getByPlaceholderText("new@example.com"), {
         target: { value: "new@example.com" },
       });
@@ -195,7 +205,7 @@ describe("Profile", () => {
 
   describe("Change Password form", () => {
     it("renders Current Password, New Password, Confirm New Password inputs", () => {
-      render(<Profile />);
+      renderProfile();
       expect(
         screen.getByRole("heading", { name: "Change password" }),
       ).toBeInTheDocument();
@@ -206,14 +216,14 @@ describe("Profile", () => {
     });
 
     it("has Change password button", () => {
-      render(<Profile />);
+      renderProfile();
       expect(
         screen.getByRole("button", { name: "Change password" }),
       ).toBeInTheDocument();
     });
 
     it("calls changePassword on submit", async () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.change(document.getElementById("current-password")!, {
         target: { value: "current" },
       });
@@ -237,10 +247,10 @@ describe("Profile", () => {
 
     it("shows success message after successful change", async () => {
       render(
-        <>
+        <MemoryRouter initialEntries={["/profile"]}>
           <Toaster />
           <Profile />
-        </>,
+        </MemoryRouter>,
       );
       fireEvent.change(document.getElementById("current-password")!, {
         target: { value: "current" },
@@ -263,7 +273,7 @@ describe("Profile", () => {
       mockChangePassword = vi.fn().mockResolvedValue(false);
       mockError = "Invalid current password";
 
-      render(<Profile />);
+      renderProfile();
       fireEvent.change(document.getElementById("current-password")!, {
         target: { value: "wrong" },
       });
@@ -283,7 +293,7 @@ describe("Profile", () => {
 
     it("shows cooldown timer when passwordCooldown > 0", () => {
       passwordCooldownValue = 60;
-      render(<Profile />);
+      renderProfile();
       expect(screen.getByText(/Too many attempts. Wait 60s/)).toBeInTheDocument();
     });
 
@@ -291,7 +301,7 @@ describe("Profile", () => {
       mockChangePassword = vi.fn().mockImplementation(
         () => new Promise((resolve) => setTimeout(() => resolve(true), 100)),
       );
-      render(<Profile />);
+      renderProfile();
       fireEvent.change(document.getElementById("current-password")!, {
         target: { value: "current" },
       });

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import { History } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { History } from "lucide-react";
+import PageHeader from "@/components/layout/PageHeader";
+import AccountNav from "@/components/layout/AccountNav";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -120,13 +122,11 @@ function CreditHistory() {
 
   return (
     <div className="w-full space-y-6">
-      <div className="flex items-center gap-3">
-        <History className="h-6 w-6 text-primary" />
-        <h2 className="text-lg font-bold tracking-wide text-foreground">
-          Credit history
-        </h2>
-      </div>
+      <PageHeader title="Credit history" />
 
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        <AccountNav />
+        <div className="min-w-0 flex-1 space-y-6">
       <div
         data-testid="credit-history-summary"
         className="grid grid-cols-1 gap-3 sm:grid-cols-3"
@@ -354,6 +354,8 @@ function CreditHistory() {
           )}
         </CardContent>
       </Card>
+        </div>
+      </div>
     </div>
   );
 }
