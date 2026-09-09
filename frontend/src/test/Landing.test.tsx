@@ -94,8 +94,12 @@ describe("Landing Page", () => {
   });
 
   it("renders brand logo in top nav", () => {
-    expect(screen.getByText("SINE")).toBeInTheDocument();
-    expect(screen.getByText("XIS")).toBeInTheDocument();
+    const header = document.querySelector("header");
+    expect(header).toBeTruthy();
+    expect(header!.textContent).toMatch(/SINE/);
+    expect(header!.textContent).toMatch(/XIS/);
+    expect(screen.getAllByText("SINE").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("XIS").length).toBeGreaterThanOrEqual(2);
   });
 
   it('renders "Get Started" links pointing to /register', () => {
@@ -212,9 +216,11 @@ describe("Landing Page", () => {
     expect(footer!.textContent).not.toMatch(/SIEM/);
     expect(footer!.textContent).not.toMatch(/v1\.2\.0/);
     expect(footer!.textContent).not.toMatch(/VulnScanner/i);
-    const inner = footer!.querySelector(":scope > div");
-    expect(inner).toHaveClass("flex-wrap");
-    expect(inner).not.toHaveClass("flex-col");
+    const grid = footer!.querySelector(".grid");
+    expect(grid).toHaveClass("lg:grid-cols-4");
+    expect(screen.getByRole("navigation", { name: "Product" })).toBeTruthy();
+    expect(screen.getByRole("navigation", { name: "Legal" })).toBeTruthy();
+    expect(screen.getByRole("navigation", { name: "Account" })).toBeTruthy();
   });
 
   it("uses sticky-footer shell so footer pins on tall viewports", () => {
