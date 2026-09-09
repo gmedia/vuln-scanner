@@ -42,6 +42,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/Popover";
+import { MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 function parseTags(raw: string): string[] {
   const seen = new Set<string>();
@@ -637,45 +645,57 @@ export default function Assets() {
                        </div>
                      ) : null}
                   </div>
-                  <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
-                    {a.scan_type === "domain" ? (
-                      <Button variant="outline" size="sm" asChild>
-                        <Link
-                          to="/uptime"
-                          data-testid="assets-watch-http"
-                        >
-                          {t("watchHttp")}
-                        </Link>
-                      </Button>
-                    ) : null}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      data-testid={`asset-edit-${a.id}`}
-                      onClick={() => startEdit(a)}
-                    >
-                      {t("edit")}
-                    </Button>
-                    {!a.schedule_id ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
                       <Button
-                        variant="outline"
+                        type="button"
+                        variant="ghost"
                         size="sm"
-                        onClick={() => schedMut.mutate(a.id)}
+                        className="ml-auto h-9 w-9 p-0"
+                        data-testid={`asset-menu-${a.id}`}
+                        aria-label={t("actionsMenu")}
                       >
-                        {t("schedule")}
+                        <MoreHorizontal className="h-4 w-4" />
                       </Button>
-                    ) : null}
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => {
-                        if (window.confirm(t("confirmDelete")))
-                          delMut.mutate(a.id);
-                      }}
-                    >
-                      {t("delete")}
-                    </Button>
-                  </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem
+                        data-testid={`asset-edit-${a.id}`}
+                        onSelect={() => startEdit(a)}
+                      >
+                        {t("edit")}
+                      </DropdownMenuItem>
+                      {!a.schedule_id ? (
+                        <DropdownMenuItem
+                          data-testid={`asset-schedule-${a.id}`}
+                          onSelect={() => schedMut.mutate(a.id)}
+                        >
+                          {t("schedule")}
+                        </DropdownMenuItem>
+                      ) : null}
+                      {a.scan_type === "domain" ? (
+                        <DropdownMenuItem asChild>
+                          <Link
+                            to="/uptime"
+                            data-testid="assets-watch-http"
+                          >
+                            {t("watchHttp")}
+                          </Link>
+                        </DropdownMenuItem>
+                      ) : null}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        variant="destructive"
+                        data-testid={`asset-delete-${a.id}`}
+                        onSelect={() => {
+                          if (window.confirm(t("confirmDelete")))
+                            delMut.mutate(a.id);
+                        }}
+                      >
+                        {t("delete")}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </CardContent>
               </Card>
             </li>
