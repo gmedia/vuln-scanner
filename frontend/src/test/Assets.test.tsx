@@ -58,7 +58,9 @@ describe("Assets page", () => {
   it("shows an empty state with a CTA", async () => {
     renderPage();
     await waitFor(() => expect(screen.getByTestId("assets-empty")).toBeInTheDocument());
-    expect(screen.getByTestId("assets-empty-cta")).toBeInTheDocument();
+    const emptyCta = screen.getByTestId("assets-empty-cta");
+    expect(emptyCta).toBeInTheDocument();
+    expect(emptyCta.className).toMatch(/bg-primary/);
     expect(screen.queryByTestId("assets-add")).not.toBeInTheDocument();
     expect(screen.queryByTestId("assets-pack")).not.toBeInTheDocument();
     expect(screen.queryByTestId("assets-pack-html")).not.toBeInTheDocument();
