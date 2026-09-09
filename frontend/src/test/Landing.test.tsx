@@ -208,9 +208,13 @@ describe("Landing Page", () => {
   it("renders footer without version dump", () => {
     const footer = document.querySelector("footer");
     expect(footer).toBeTruthy();
-    expect(footer!.textContent).toMatch(/Sinexis · Scan · Guard · SIEM/);
+    expect(footer!.textContent).toMatch(/Sinexis · Scan · Guard/);
+    expect(footer!.textContent).not.toMatch(/SIEM/);
     expect(footer!.textContent).not.toMatch(/v1\.2\.0/);
     expect(footer!.textContent).not.toMatch(/VulnScanner/i);
+    const inner = footer!.querySelector(":scope > div");
+    expect(inner).toHaveClass("flex-wrap");
+    expect(inner).not.toHaveClass("flex-col");
   });
 
   it("uses sticky-footer shell so footer pins on tall viewports", () => {

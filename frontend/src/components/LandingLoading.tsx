@@ -67,12 +67,14 @@ export function LandingLoading() {
       </main>
 
       <footer className="mt-auto shrink-0 border-t border-border py-6">
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 px-4 sm:flex-row sm:justify-between 2xl:max-w-[90rem]">
-          <Skeleton className="h-3 w-48" />
-          <div className="flex items-center gap-4">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-3 px-4 2xl:max-w-[90rem]">
+          <Skeleton className="h-3 w-40" />
+          <div className="flex flex-wrap items-center gap-2">
+            <Skeleton className="h-3 w-8" />
             <Skeleton className="h-3 w-10" />
             <Skeleton className="h-3 w-12" />
-            <Skeleton className="h-3 w-14" />
+            <Skeleton className="h-3 w-12" />
+            <Skeleton className="h-8 w-24 rounded-md" />
           </div>
         </div>
       </footer>

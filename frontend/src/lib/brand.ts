@@ -17,6 +17,6 @@ export const BRAND = {
   heroProduct: "Security attach for colo, VPS, and hospitality stacks",
   heroSub:
     "Periodic scan is not 24/7 SIEM. Host Protect reads disk on your VM. One wazuh-agent. Not a human pentest.",
-  footerLine: "Sinexis · Scan · Guard · SIEM",
+  footerLine: "Sinexis · Scan · Guard",
   sidebarVersion: "Sinexis Scan v1.2.0",
 } as const;
