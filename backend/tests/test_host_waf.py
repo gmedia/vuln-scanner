@@ -1302,11 +1302,32 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
                             "path": "/solr/update",
                             "http_status": 403,
                         },
+                        {
+                            "action": "block",
+                            "rule_id": "1141",
+                            "method": "GET",
+                            "path": "/.env.local",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1142",
+                            "method": "GET",
+                            "path": "/web.config",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1143",
+                            "method": "GET",
+                            "path": "/configuration.php",
+                            "http_status": 403,
+                        },
                     ],
                 },
             )
             assert r.status_code == 200, r.text
-            assert r.json()["accepted"] == 94
+            assert r.json()["accepted"] == 97
     finally:
         app.dependency_overrides.clear()
     rows = (await db_session.execute(select(HostWafEvent).where(HostWafEvent.site_id == site.id))).scalars().all()
@@ -1405,6 +1426,9 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
         "1095",
         "1096",
         "1140",
+        "1141",
+        "1142",
+        "1143",
     }
 
 
