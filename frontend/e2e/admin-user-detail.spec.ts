@@ -36,7 +36,7 @@ test.describe("Admin — User Detail @admin", () => {
       })
       .catch(() => {});
 
-    await page.locator("button:has-text('Kembali')").click();
+    await page.getByRole("link", { name: "Kembali" }).click();
     await page.waitForURL("/admin/users", { timeout: 15_000 });
     await expect(
       page.locator("h2:has-text('Manajemen pengguna')"),
