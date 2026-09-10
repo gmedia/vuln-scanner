@@ -35,6 +35,7 @@ import FindingsTable from "@/components/results/FindingsTable";
 import { ScanError } from "@/components/scan/ScanError";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import PageHeader from "@/components/layout/PageHeader";
+import PageHeaderBack from "@/components/layout/PageHeaderBack";
 import { useTranslation } from "react-i18next";
 
 function rescanPath(scanType: string): string {
@@ -188,13 +189,7 @@ function ScanDetail() {
           </>
         }
         leading={
-          <Link
-            to="/dashboard"
-            className="mt-0.5 inline-flex min-h-11 min-w-11 items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span className="sr-only">{t("backToDashboard")}</span>
-          </Link>
+          <PageHeaderBack to="/dashboard" label={t("backToDashboard")} />
         }
         actions={
           <>
