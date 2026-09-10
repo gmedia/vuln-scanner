@@ -238,4 +238,25 @@ describe("SIEM page", () => {
     });
     expect(siemApi.listSiemEvents).not.toHaveBeenCalled();
   });
+
+  it("shows the event pager when more than 25 events are returned", async () => {
+    vi.mocked(siemApi.listSiemEvents).mockResolvedValue({
+      items: Array.from({ length: 26 }, (_, i) => ({
+        external_id: `evt-${i + 1}`,
+        rule_id: "5503",
+        rule_level: 10,
+        rule_description: `Login failed ${i + 1}`,
+        agent_wazuh_id: "001",
+        agent_name: "web-1",
+        occurred_at: "2026-08-14T10:00:00Z",
+      })),
+      degraded: false,
+      last_error: null,
+    });
+    renderSiem();
+    await waitFor(() => {
+      expect(screen.getAllByTestId("siem-event-pager").length).toBeGreaterThan(0);
+    });
+    expect(screen.getAllByTestId("siem-event-row")).toHaveLength(25);
+  });
 });

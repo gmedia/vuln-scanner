@@ -49,6 +49,7 @@ import { useAuthStore } from "@/store/authStore";
 import { cn, type ApiError } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import PageHeader from "@/components/layout/PageHeader";
+import { EventPager } from "@/components/siem/EventPager";
 import { formatSiemWhen } from "@/components/siem/formatSiemWhen";
 import { SiemEventDetail } from "@/components/siem/SiemEventDetail";
 import { useIsXl } from "@/hooks/use-mobile";
@@ -467,6 +468,18 @@ export default function Siem() {
                 <TableRowSkeleton rows={6} />
               ) : (
                 <>
+                {allEvents.length > pageSize && (
+                  <EventPager
+                    count={allEvents.length}
+                    page={safeEventPage + 1}
+                    pages={eventPageCount}
+                    onPrev={() => setEventPage((p) => Math.max(0, p - 1))}
+                    onNext={() =>
+                      setEventPage((p) => Math.min(eventPageCount - 1, p + 1))
+                    }
+                    t={t}
+                  />
+                )}
                 {!isXl ? (
                 <div className="space-y-2">
                   {events.length === 0 ? (
@@ -612,41 +625,18 @@ export default function Siem() {
                   </TableBody>
                  </Table>
                 )}
-                 {allEvents.length > pageSize && (
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                    <span>
-                      {t("eventPager", {
-                        count: allEvents.length,
-                        page: safeEventPage + 1,
-                        pages: eventPageCount,
-                      })}
-                    </span>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={safeEventPage === 0}
-                        onClick={() => setEventPage((p) => Math.max(0, p - 1))}
-                      >
-                        {t("prev")}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={safeEventPage >= eventPageCount - 1}
-                        onClick={() =>
-                          setEventPage((p) =>
-                            Math.min(eventPageCount - 1, p + 1),
-                          )
-                        }
-                      >
-                        {t("next")}
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                  {allEvents.length > pageSize && (
+                  <EventPager
+                    count={allEvents.length}
+                    page={safeEventPage + 1}
+                    pages={eventPageCount}
+                    onPrev={() => setEventPage((p) => Math.max(0, p - 1))}
+                    onNext={() =>
+                      setEventPage((p) => Math.min(eventPageCount - 1, p + 1))
+                    }
+                    t={t}
+                  />
+                 )}
                 </>
               )}
             </CardContent>
