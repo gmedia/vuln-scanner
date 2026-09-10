@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowLeft,
-  User,
   Shield,
   Mail,
   Calendar,
@@ -21,6 +19,7 @@ import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import PageHeader from "@/components/layout/PageHeader";
+import PageHeaderBack from "@/components/layout/PageHeaderBack";
 import { adminApi } from "@/api/admin";
 import { formatCredits } from "@/lib/utils";
 import { Trans, useTranslation } from "react-i18next";
@@ -50,7 +49,6 @@ function formatDateTime(iso: string): string {
 function AdminUserDetail() {
   const { t } = useTranslation("admin");
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
@@ -105,20 +103,8 @@ function AdminUserDetail() {
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6">
-      <div className="flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate("/admin/users")}
-          className="text-xs"
-        >
-          <ArrowLeft className="mr-1 h-4 w-4" />
-          {t("detailBack")}
-        </Button>
-      </div>
-
       <PageHeader
-        leading={<User className="h-6 w-6 shrink-0 text-primary" />}
+        leading={<PageHeaderBack to="/admin/users" label={t("detailBack")} />}
         title={t("detailTitle")}
         description={t("detailSubtitle")}
       />
