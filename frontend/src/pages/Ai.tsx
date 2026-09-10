@@ -203,45 +203,37 @@ export default function Ai() {
                   </AlertDescription>
                 </Alert>
               ) : null}
-              <div className="max-w-full overflow-x-auto">
-              <Table className="min-w-[36rem]">
-                 <TableHeader>
-                   <TableRow>
-                     <TableHead>{t("colName")}</TableHead>
-                    <TableHead>{t("colPrefix")}</TableHead>
-                    <TableHead>{t("colActive")}</TableHead>
-                    <TableHead />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(keysQ.data?.items ?? []).length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4}>{t("keysEmpty")}</TableCell>
-                    </TableRow>
-                  ) : (
-                    (keysQ.data?.items ?? []).map((k) => (
-                      <TableRow key={k.id}>
-                        <TableCell>{k.name}</TableCell>
-                        <TableCell className="font-mono text-xs">{k.prefix}</TableCell>
-                        <TableCell>{String(k.is_active)}</TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            {k.is_active ? (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => revokeMut.mutate(k.id)}
-                            >
-                              {t("revoke")}
-                            </Button>
-                          ) : null}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                 </TableBody>
-               </Table>
-               </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {(keysQ.data?.items ?? []).length === 0 ? (
+                      <div className="col-span-full p-8 text-center text-muted-foreground">
+                        {t("keysEmpty")}
+                      </div>
+                    ) : (
+                      (keysQ.data?.items ?? []).map((k) => (
+                        <Card key={k.id}>
+                          <CardContent className="p-4">
+                            <div className="font-mono text-xs mb-2">{k.prefix}</div>
+                            <div className="font-medium">{k.name}</div>
+                              <div className="text-sm text-muted-foreground mt-1">
+                                {k.is_active ? t("colActive") : t("colInactive")}
+                              </div>
+
+                            {k.is_active && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="mt-3"
+                                onClick={() => revokeMut.mutate(k.id)}
+                              >
+                                {t("revoke")}
+                              </Button>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))
+                    )}
+                  </div>
              </CardContent>
            </Card>
          </TabsContent>
@@ -303,26 +295,27 @@ export default function Ai() {
                    <p className="text-sm text-muted-foreground">{t("catalogEmpty")}</p>
                  </div>
                ) : (
-               <div className="max-w-full overflow-x-auto">
-               <Table className="min-w-[36rem]">
-                 <TableHeader>
-                   <TableRow>
-                     <TableHead>{t("colModel")}</TableHead>
-                     <TableHead>{t("colIn")}</TableHead>
-                     <TableHead>{t("colOut")}</TableHead>
-                   </TableRow>
-                 </TableHeader>
-                 <TableBody>
-                     {(modelsQ.data?.items ?? []).map((m) => (
-                       <TableRow key={m.public_id}>
-                         <TableCell>{m.public_id}</TableCell>
-                         <TableCell>{formatIdr(m.price_idr_per_1k_in)}</TableCell>
-                         <TableCell>{formatIdr(m.price_idr_per_1k_out)}</TableCell>
-                       </TableRow>
-                     ))}
-                 </TableBody>
-               </Table>
-               </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {(modelsQ.data?.items ?? []).length === 0 ? (
+                      <div className="col-span-full p-8 text-center text-muted-foreground">
+                        {t("catalogEmpty")}
+                      </div>
+                    ) : (
+                      (modelsQ.data?.items ?? []).map((m) => (
+                        <Card key={m.public_id}>
+                          <CardContent className="p-4">
+                            <div className="font-medium mb-2">{m.public_id}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {t("colIn")}: {formatIdr(m.price_idr_per_1k_in)}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {t("colOut")}: {formatIdr(m.price_idr_per_1k_out)}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    )}
+                  </div>
                )}
              </CardContent>
           </Card>
