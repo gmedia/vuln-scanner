@@ -235,9 +235,13 @@ export default function StatusPage() {
                 createMut.mutate();
               }}
             >
-              <p className="text-sm text-muted-foreground" data-testid="status-page-empty">
-                {t("empty")}
-              </p>
+              <div
+                className="space-y-2"
+                data-testid="status-page-empty"
+              >
+                <p className="text-sm font-medium text-foreground">{t("empty")}</p>
+                <p className="text-sm text-muted-foreground">{t("emptyHint")}</p>
+              </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <Label htmlFor="sp-slug">{t("slug")}</Label>
@@ -263,7 +267,7 @@ export default function StatusPage() {
                 </div>
               </div>
               <Button type="submit" data-testid="status-page-create" className="min-h-11 w-full sm:w-auto">
-                {t("create")}
+                {t("emptyCta")}
               </Button>
             </form>
           </CardContent>

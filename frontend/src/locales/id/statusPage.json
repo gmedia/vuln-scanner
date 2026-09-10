@@ -33,6 +33,8 @@
   "status": "Status",
   "save": "Simpan",
   "empty": "Belum ada halaman status.",
+  "emptyHint": "Buat halaman publik agar pengunjung melihat komponen Uptime dan insiden.",
+  "emptyCta": "Buat halaman status pertama",
   "disclaimer": "Pemeriksaan outside-in sebisanya. Bukan SLA.",
   "openPublic": "Buka halaman publik",
   "statPublished": "Visibilitas",

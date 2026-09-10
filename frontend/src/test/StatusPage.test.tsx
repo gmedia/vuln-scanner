@@ -67,7 +67,7 @@ describe("StatusPage admin", () => {
     });
   });
 
-  it("shows empty create form", async () => {
+it("shows empty state with create form", async () => {
     renderPage();
     await waitFor(() =>
       expect(screen.getByTestId("status-page-empty")).toBeInTheDocument(),
