@@ -93,6 +93,12 @@ Do **not** combine S2 layout with a page restyle. Do **not** work on `main`. `GI
 
 **Do:** Large in-content title. KPI row density (`gap-4`). Keep `new-scan-cta`. Empty state = island panel, **real** Scan IP / schedule links (theme-v1).
 
+**`PageHeader.leading` rule (locked):**
+- **Child/detail only:** back via `PageHeaderBack` (`ScanDetail` → dashboard; `AdminUserDetail` → `/admin/users`).
+- **Top-level sidebar pages:** title ± description ± `actions`. **No** back. **No** decorative product icon (match `/assets`).
+- **Admin list pages:** decorative icon in `leading` is allowed.
+- Do **not** add a `showBack` prop. Scan-not-found error CTAs are not `PageHeader`.
+
 **DoD:** `Dashboard.test.tsx` / `e2e/dashboard.spec.ts` testids intact.
 
 **Out:** charts geometry rewrite.
@@ -103,7 +109,7 @@ Do **not** combine S2 layout with a page restyle. Do **not** work on `main`. `GI
 
 **Pages:** `IpScanner`, `DomainScanner`, `MobileScanner`, `ScanDetail`, `Schedules`, `Assets`.
 
-**Do:** PageHeader; keep two-column scan forms; frozen ids (`export-executive`, `rescan-button`, `schedule-create-card`). Filter/toolbar `h-10` law.
+**Do:** PageHeader; keep two-column scan forms; frozen ids (`export-executive`, `rescan-button`, `schedule-create-card`). Filter/toolbar `h-10` law. Scan **forms** (IP/domain/mobile) and **Schedules** follow the S3 top-level rule (no header back). **ScanDetail** keeps `PageHeaderBack`.
 
 **Out:** scanner API, coverage copy.
 
@@ -111,7 +117,7 @@ Do **not** combine S2 layout with a page restyle. Do **not** work on `main`. `GI
 
 ### S5 — Account: Profile + Workspace + Credit History
 
-**Do:** Profile/Workspace **two-pane** inner nav (pills) **only if** it does not break `invite-*` / `members-list`. Credit History **filter bar unchanged** (reference for other lists).
+**Do:** Profile/Workspace **two-pane** inner nav (pills) **only if** it does not break `invite-*` / `members-list`. Credit History **filter bar unchanged** (reference for other lists). Workspace is a sidebar destination — **no** header back.
 
 **Out:** org API.
 
@@ -119,7 +125,7 @@ Do **not** combine S2 layout with a page restyle. Do **not** work on `main`. `GI
 
 ### S6 — Attach: Guard, SIEM, Uptime, Status editor, Host Protect, AI, Guide
 
-**Do:** PageHeader + empty islands (Guard empty = large rounded panel, **no fake Connect**). Keep all `guard-*`, `siem-since` / `siem-until` ids. **Playwright ≠ enroll.**
+**Do:** PageHeader + empty islands (Guard empty = large rounded panel, **no fake Connect**). Keep all `guard-*`, `siem-since` / `siem-until` ids. **Playwright ≠ enroll.** Guard / SIEM / AI / Guide headers: **no** decorative `leading` icon (empty-state icons stay).
 
 **Out:** Wazuh, flags, Host Protect honesty rules.
 
@@ -129,7 +135,7 @@ Do **not** combine S2 layout with a page restyle. Do **not** work on `main`. `GI
 
 **Pages:** AdminDashboard, Users, UserDetail, Pricing, Hpp, Blog, EmailLogs, AdminAi.
 
-**Do:** Same PageHeader + tables. Keep `nav-admin-*`. Do not mix HPP vs Pricing.
+**Do:** Same PageHeader + tables. Keep `nav-admin-*`. Do not mix HPP vs Pricing. Admin **lists** may keep a decorative icon. Admin **user detail** uses `PageHeaderBack` in `leading` (no extra back row, no `User` icon).
 
 **Out:** HPP rates, CMS behaviour.
 

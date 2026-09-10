@@ -280,7 +280,6 @@ export default function Siem() {
       <PageHeader
         title={t("title")}
         description={t("subtitle")}
-        leading={<Siren className="mt-1 h-6 w-6 text-primary" aria-hidden />}
       />
 
       {actionError && (

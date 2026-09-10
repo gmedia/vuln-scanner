@@ -4,15 +4,6 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import AdminUserDetail from "@/pages/admin/AdminUserDetail";
 
-const mockNavigate = vi.fn();
-vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual("react-router-dom");
-  return {
-    ...actual,
-    useNavigate: () => mockNavigate,
-  };
-});
-
 vi.mock("@tanstack/react-query", () => ({
   useQuery: vi.fn(),
   useMutation: vi.fn(),
@@ -55,7 +46,6 @@ function renderPage(userId = "user-1") {
 describe("AdminUserDetail", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockNavigate.mockClear();
     vi.mocked(useMutation).mockReturnValue({
       mutate: vi.fn(),
       isPending: false,
@@ -159,8 +149,8 @@ describe("AdminUserDetail", () => {
     } as ReturnType<typeof useQuery>);
 
     renderPage();
-    await userEvent.click(screen.getByRole("button", { name: /Back/i }));
-    expect(mockNavigate).toHaveBeenCalledWith("/admin/users");
+    const back = screen.getByRole("link", { name: /Back/i });
+    expect(back).toHaveAttribute("href", "/admin/users");
   });
 
   it("copies email to clipboard", async () => {

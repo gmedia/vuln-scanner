@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bot, Copy } from "lucide-react";
+import { Copy } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import {
   Card,
@@ -338,7 +338,6 @@ function Header() {
     <PageHeader
       title={t("title")}
       description={t("subtitle")}
-      leading={<Bot className="mt-1 h-6 w-6 text-primary" aria-hidden />}
     />
   );
 }

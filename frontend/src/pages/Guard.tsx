@@ -431,7 +431,6 @@ export default function Guard() {
       <PageHeader
         title={t("title")}
         description={t("subtitle")}
-        leading={<Shield className="mt-1 h-6 w-6 text-primary" aria-hidden />}
         actions={
           canAdmin && !enabled ? (
             <Button
