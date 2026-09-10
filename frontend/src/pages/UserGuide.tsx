@@ -268,12 +268,6 @@ function UserGuide() {
         <PageHeader
           title={t("title")}
           description={t("intro", { product: BRAND.product })}
-          leading={
-            <div className="mt-1 flex flex-col items-center gap-1 text-primary">
-              <BookOpen className="h-5 w-5" aria-hidden />
-              <span className="sr-only">{t("kicker")}</span>
-            </div>
-          }
         />
         <p className="mt-2 text-xs font-medium uppercase tracking-wider text-primary">
           {t("kicker")}
