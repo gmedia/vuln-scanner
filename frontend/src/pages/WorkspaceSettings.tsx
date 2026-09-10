@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowLeft,
   Building2,
   ClipboardList,
   Loader2,
@@ -223,14 +222,6 @@ function WorkspaceSettings() {
           activeOrg
             ? t("roleLine", { name: activeOrg.name, role: activeOrg.role })
             : t("subtitleMembers")
-        }
-        leading={
-          <Link
-            to="/dashboard"
-            className="mt-1 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
         }
       />
 

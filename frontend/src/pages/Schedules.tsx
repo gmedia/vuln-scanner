@@ -3,7 +3,6 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarClock,
-  ArrowLeft,
   Plus,
   Trash2,
   ChevronDown,
@@ -370,17 +369,7 @@ function Schedules() {
 
   return (
     <div className="w-full space-y-6">
-      <PageHeader
-        title={t("title")}
-        leading={
-          <Link
-            to="/dashboard"
-            className="mt-1 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-        }
-      />
+      <PageHeader title={t("title")} />
 
       <Card>
         <CardHeader className="space-y-3">
