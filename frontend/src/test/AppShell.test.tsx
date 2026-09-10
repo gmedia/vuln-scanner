@@ -31,7 +31,9 @@ describe("AppShell", () => {
 
   it("renders main content area", () => {
     renderShell();
-    expect(screen.getByRole("main")).toBeInTheDocument();
+    const main = screen.getByRole("main");
+    expect(main).toBeInTheDocument();
+    expect(main).toHaveClass("overflow-y-auto");
   });
 
   it("uses a wide content wrap for 2K layouts", () => {
