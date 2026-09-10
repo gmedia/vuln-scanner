@@ -16,8 +16,8 @@ describe("Badge", () => {
     ["medium", "bg-yellow-500/20"],
     ["low", "bg-blue-500/20"],
     ["info", "bg-gray-500/20"],
-    ["success", "bg-primary/20"],
-    ["completed", "bg-primary/20"],
+    ["success", "bg-primary/15"],
+    ["completed", "bg-primary/15"],
     ["failed", "bg-red-600/20"],
     ["running", "bg-blue-500/20"],
   ] as const)("renders %s variant with correct styling", (variant, expectedClass) => {
