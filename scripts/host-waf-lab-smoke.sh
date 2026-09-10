@@ -108,7 +108,9 @@
 #   GET  /.hgignore  → expect 403 (id 1094)
 #   GET  /glassfish  → expect 403 (id 1095)
 #   GET  /wp-admin/  → expect 200 (not in pack)
-# This script only asserts the snippet contains id:1005–1095 and no wp-admin.
+# This script only asserts the snippet contains id:1005–1146 and no wp-admin.
+# POST simulate writes mock.sqli.1; GET /api/host/waf/events filters to product
+# ids 1001–1146, so this smoke must not require events>=1 after simulate.
 
 set -euo pipefail
 
@@ -372,21 +374,24 @@ printf '%s' "$SNIPPET" | grep -q 'id:1146' || die "snippet missing original rule
 }
 
 simulate_and_events() {
-  log "POST simulate"
-  local blob action
+  log "POST simulate (lab mock.sqli.1 — not a product 1001–1146 event)"
+  local blob action rule_id path
   blob="$(curl_api POST "/api/host/waf/sites/${SITE_ID}/simulate" '{}')"
   split_body_code "$blob"
   [[ "$HTTP_CODE" == "201" ]] || die "simulate HTTP ${HTTP_CODE}"
   action="$(json_get "$HTTP_BODY" "o.get('action') or ''")"
   [[ "$action" == "block" ]] || die "expected action=block got ${action}"
+  rule_id="$(json_get "$HTTP_BODY" "o.get('rule_id') or ''")"
+  [[ "$rule_id" == "mock.sqli.1" ]] || die "expected rule_id=mock.sqli.1 got ${rule_id}"
+  path="$(json_get "$HTTP_BODY" "o.get('path') or ''")"
+  [[ "$path" == "/sinexis-waf-lab" ]] || die "expected path=/sinexis-waf-lab got ${path}"
   printf '%s' "$HTTP_BODY" | grep -q full_log && die "simulate body must not include full_log"
   blob="$(curl_api GET "/api/host/waf/events?site_id=${SITE_ID}")"
   split_body_code "$blob"
   [[ "$HTTP_CODE" == "200" ]] || die "events HTTP ${HTTP_CODE}"
   local n
   n="$(json_get "$HTTP_BODY" "len(o) if isinstance(o, list) else 0")"
-  [[ "$n" != "0" ]] || die "expected at least one WAF event"
-  log "events=${n}"
+  log "product_events=${n} (mock simulate must not require events>=1)"
 }
 
 apply_vhost() {
