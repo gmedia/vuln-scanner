@@ -75,3 +75,6 @@ def test_lab_script_safety_markers():
     assert "id:1146" in text
     assert "must not match /wp-admin/" in text
     assert "POST /wp-login.php" in text
+    assert "expected at least one WAF event" not in text
+    assert "mock.sqli.1" in text
+    assert "must not require events>=1" in text
