@@ -42,6 +42,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/Accordion";
+import { Sparkline } from "@/components/uptime/Sparkline";
+import { MonitorActionsMenu } from "@/components/uptime/MonitorActionsMenu";
 
 export function mapUptimeError(message: string): string {
   if (/seat limit/i.test(message)) return "limit";
@@ -81,51 +83,6 @@ export function explainUptimeError(
 
 type StateFilter = "all" | "up" | "down" | "unknown" | "degraded";
 type TypeFilter = "all" | UptimeCheckType;
-
-function Sparkline({
-  monitorId,
-  state,
-}: {
-  monitorId: string;
-  state: string;
-}) {
-  const samples = useQuery({
-    queryKey: ["uptime-samples", monitorId],
-    queryFn: () => listSamples(monitorId),
-  });
-  const points = (samples.data ?? []).slice(0, 24).reverse();
-  if (points.length < 2) return null;
-  const w = 96;
-  const h = 24;
-  const maxLat = Math.max(
-    ...points.map((p: UptimeSample) => p.latency_ms ?? 1),
-    1,
-  );
-  const d = points
-    .map((p, i) => {
-      const x = (i / (points.length - 1)) * w;
-      const y = h - ((p.latency_ms ?? 0) / maxLat) * (h - 2) - 1;
-      return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
-  const strokeClass =
-    state === "up"
-      ? "text-primary"
-      : state === "down"
-        ? "text-destructive"
-        : "text-muted-foreground";
-  return (
-    <svg
-      width={w}
-      height={h}
-      className={strokeClass}
-      data-testid="uptime-sparkline"
-      aria-hidden
-    >
-      <path d={d} fill="none" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  );
-}
 
 function stateBadgeVariant(state: string) {
   if (state === "up") return "completed" as const;
@@ -832,41 +789,20 @@ export default function Uptime() {
                         ? ` · ${m.last_latency_ms}ms`
                         : ""}
                     </p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
+                    <div className="mt-2 flex justify-end">
+                      <MonitorActionsMenu
+                        monitor={m}
+                        historyTestId="uptime-history-mobile"
+                        onHistory={() =>
                           setHistoryId((cur) => (cur === m.id ? null : m.id))
                         }
-                      >
-                        {t("history")}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => fillFromMonitor(m)}
-                      >
-                        {t("edit")}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => pauseMut.mutate(m.id)}
-                      >
-                        {m.enabled ? t("pause") : t("resume")}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-destructive"
-                        onClick={() => {
+                        onEdit={() => fillFromMonitor(m)}
+                        onPause={() => pauseMut.mutate(m.id)}
+                        onDelete={() => {
                           if (window.confirm(t("confirmDelete")))
                             delMut.mutate(m.id);
                         }}
-                      >
-                        {t("delete")}
-                      </Button>
+                      />
                     </div>
                   </div>
                 ))}
@@ -933,47 +869,22 @@ export default function Uptime() {
                         <Sparkline monitorId={m.id} state={m.state} />
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            data-testid="uptime-history"
-                            onClick={() =>
+                        <div className="flex justify-end">
+                          <MonitorActionsMenu
+                            monitor={m}
+                            historyTestId="uptime-history"
+                            onHistory={() =>
                               setHistoryId((cur) =>
                                 cur === m.id ? null : m.id,
                               )
                             }
-                          >
-                            {t("history")}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            data-testid="uptime-edit"
-                            onClick={() => fillFromMonitor(m)}
-                          >
-                            {t("edit")}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            data-testid="uptime-pause"
-                            onClick={() => pauseMut.mutate(m.id)}
-                          >
-                            {m.enabled ? t("pause") : t("resume")}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-destructive"
-                            data-testid="uptime-delete"
-                            onClick={() => {
+                            onEdit={() => fillFromMonitor(m)}
+                            onPause={() => pauseMut.mutate(m.id)}
+                            onDelete={() => {
                               if (window.confirm(t("confirmDelete")))
                                 delMut.mutate(m.id);
                             }}
-                          >
-                            {t("delete")}
-                          </Button>
+                          />
                         </div>
                       </TableCell>
                     </TableRow>
