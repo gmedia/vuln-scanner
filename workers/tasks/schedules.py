@@ -104,63 +104,8 @@ def run_due_schedules(limit: int = 50) -> dict[str, Any]:
                     skipped += 1
                     continue
 
-            pricing = session.execute(
-                text("SELECT credit_cost FROM pricing WHERE scan_type = :st LIMIT 1"),
-                {"st": scan_type},
-            ).scalar()
-            credit_cost = int(pricing) if pricing is not None else 0
-
-            credits = session.execute(
-                text("SELECT credits FROM users WHERE id = :uid"),
-                {"uid": user_id},
-            ).scalar()
-            if credits is None:
-                errors += 1
-                continue
-            if credit_cost > 0 and int(credits) < credit_cost:
-                session.execute(
-                    text(
-                        """
-                        UPDATE scan_schedules
-                        SET last_error = :err, enabled = false, updated_at = NOW()
-                        WHERE id = :sid
-                        """
-                    ),
-                    {
-                        "err": f"Insufficient credits. Need {credit_cost}, have {credits}.",
-                        "sid": schedule_id,
-                    },
-                )
-                session.commit()
-                errors += 1
-                continue
-
+            credit_cost = 0
             job_id = uuid.uuid4()
-            if credit_cost > 0:
-                upd = session.execute(
-                    text(
-                        """
-                        UPDATE users SET credits = credits - :cost
-                        WHERE id = :uid AND credits >= :cost
-                        RETURNING credits
-                        """
-                    ),
-                    {"cost": credit_cost, "uid": user_id},
-                ).scalar()
-                if upd is None:
-                    session.execute(
-                        text(
-                            """
-                            UPDATE scan_schedules
-                            SET last_error = :err, enabled = false, updated_at = NOW()
-                            WHERE id = :sid
-                            """
-                        ),
-                        {"err": "Insufficient credits (race)", "sid": schedule_id},
-                    )
-                    session.commit()
-                    errors += 1
-                    continue
 
             session.execute(
                 text(
@@ -183,30 +128,9 @@ def run_due_schedules(limit: int = 50) -> dict[str, Any]:
                     "credit_cost": credit_cost,
                 },
             )
-            if credit_cost > 0:
-                session.execute(
-                    text(
-                        """
-                        INSERT INTO credit_logs (id, user_id, amount, type, description, reference_id, created_at)
-                        VALUES (:id, :uid, :amount, 'deduct', :desc, :ref, NOW())
-                        """
-                    ),
-                    {
-                        "id": uuid.uuid4(),
-                        "uid": user_id,
-                        "amount": credit_cost,
-                        "desc": f"Scheduled scan: {scan_type} on {target}",
-                        "ref": job_id,
-                    },
-                )
 
             task_id = _dispatch_scan(str(job_id), scan_type, target)
             if not task_id:
-                if credit_cost > 0:
-                    session.execute(
-                        text("UPDATE users SET credits = credits + :cost WHERE id = :uid"),
-                        {"cost": credit_cost, "uid": user_id},
-                    )
                 session.execute(
                     text(
                         """
