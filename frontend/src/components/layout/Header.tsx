@@ -82,7 +82,7 @@ function Header({ children }: HeaderProps) {
             <Link to="/credit-history" title={tNav("creditsTitle")}>
               <Coins className="h-3.5 w-3.5 text-primary" aria-hidden />
               <span className="hidden text-muted-foreground group-data-[collapsible=icon]:hidden sm:inline">
-                {t("credits")}
+                {t("scanCredits")}
               </span>
               <span
                 className="font-mono font-bold text-primary tabular-nums"
