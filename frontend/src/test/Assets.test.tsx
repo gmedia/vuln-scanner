@@ -62,7 +62,11 @@ describe("Assets page", () => {
     const emptyCta = screen.getByTestId("assets-empty-cta");
     expect(emptyCta).toBeInTheDocument();
     expect(emptyCta.className).toMatch(/bg-primary/);
-    expect(screen.getByTestId("assets-add")).toBeInTheDocument();
+    const headerAdd = screen.getByTestId("assets-add");
+    expect(headerAdd).toBeInTheDocument();
+    expect(headerAdd.className).toMatch(/border-border|bg-transparent/);
+    expect(headerAdd.className).not.toMatch(/bg-primary/);
+
     expect(screen.queryByTestId("assets-pack")).not.toBeInTheDocument();
     expect(screen.queryByTestId("assets-pack-html")).not.toBeInTheDocument();
   });
