@@ -217,6 +217,8 @@ function FindingsTable({
         ) : (
           sorted.map((finding) => {
             const isExpanded = expandedId === finding.id;
+            const titleDuplicatesCve =
+              Boolean(finding.cve_id) && finding.title === finding.cve_id;
             return (
               <div
                 key={finding.id}
@@ -246,7 +248,7 @@ function FindingsTable({
                   </Badge>
                   <span className="min-w-0 flex-1">
                     <span className="block text-xs font-medium text-foreground">
-                      {finding.title}
+                      {titleDuplicatesCve ? finding.cve_id : finding.title}
                     </span>
                     <span className="mt-0.5 block break-all text-[11px] text-muted-foreground">
                       {finding.category || "-"}
@@ -325,10 +327,8 @@ function FindingsTable({
                 const remediationLine = finding.remediation
                   ? (finding.remediation.split("\n")[0] ?? "")
                   : "";
-                const remediationSnippet =
-                  remediationLine.length > 48
-                    ? `${remediationLine.slice(0, 48)}…`
-                    : remediationLine;
+                const titleDuplicatesCve =
+                  Boolean(finding.cve_id) && finding.title === finding.cve_id;
                 return (
                   <Fragment key={finding.id}>
                     <TableRow
@@ -359,7 +359,11 @@ function FindingsTable({
                         </Badge>
                       </TableCell>
                       <TableCell className="max-w-[200px] truncate px-3 py-2.5 text-xs text-foreground">
-                        {finding.title}
+                        {titleDuplicatesCve ? (
+                          <span className="text-muted-foreground">—</span>
+                        ) : (
+                          finding.title
+                        )}
                       </TableCell>
                       <TableCell className="px-3 py-2.5 text-xs text-muted-foreground">
                         {finding.category || "-"}
@@ -412,10 +416,10 @@ function FindingsTable({
                       <TableCell className="px-3 py-2.5 text-xs">
                         {finding.remediation ? (
                           <span
-                            className="block max-w-[12rem] truncate text-foreground"
+                            className="block max-w-[16rem] whitespace-normal break-words text-foreground"
                             title={finding.remediation}
                           >
-                            {remediationSnippet}
+                            {remediationLine}
                           </span>
                         ) : (
                           <span className="text-muted-foreground">-</span>
