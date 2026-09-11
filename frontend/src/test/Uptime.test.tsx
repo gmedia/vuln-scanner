@@ -100,6 +100,7 @@ describe("Uptime page", () => {
     expect(screen.getByTestId("uptime-filters")).toBeInTheDocument();
     await user.click(within(row).getByTestId("uptime-actions"));
     expect(screen.getByTestId("uptime-edit")).toBeInTheDocument();
+    expect(screen.getByTestId("uptime-sparkline")).toHaveTextContent("—");
   });
 
   it("opens advanced accordion on create", async () => {

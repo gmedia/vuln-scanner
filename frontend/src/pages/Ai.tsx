@@ -43,6 +43,7 @@ function formatIdr(n: number | null | undefined): string {
 export default function Ai() {
   const { t } = useTranslation("ai");
   const orgId = useAuthStore((s) => s.activeOrgId);
+  const isAdmin = useAuthStore((s) => s.user?.is_admin === true);
   const qc = useQueryClient();
   const [keyName, setKeyName] = useState("sdk");
   const [onceKey, setOnceKey] = useState<string | null>(null);
@@ -150,7 +151,9 @@ export default function Ai() {
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">{t("walletEmpty")}</p>
                   <Button type="button" size="sm" asChild>
-                    <Link to="/credit-history">{t("walletTopUp")}</Link>
+                    <Link to={isAdmin ? "/admin/ai" : "/guide"}>
+                      {t("walletTopUp")}
+                    </Link>
                   </Button>
                 </div>
               )}

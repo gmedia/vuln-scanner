@@ -200,11 +200,22 @@ function apiDetail(err: unknown, fallback: string): string {
 }
 
 function tokenStatusBadge(
-  tok: { revoked_at: string | null; used_at: string | null },
+  tok: {
+    revoked_at: string | null;
+    used_at: string | null;
+    expires_at: string;
+  },
   t: (key: string) => string,
 ) {
   if (tok.revoked_at) {
     return <Badge variant="info">{t("statusRevoked")}</Badge>;
+  }
+  if (new Date(tok.expires_at).getTime() < Date.now()) {
+    return (
+      <Badge className="border border-border bg-muted text-foreground">
+        {t("statusExpired")}
+      </Badge>
+    );
   }
   if (tok.used_at) {
     return (

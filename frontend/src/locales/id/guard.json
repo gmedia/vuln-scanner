@@ -43,6 +43,7 @@
   "statusRevoked": "dicabut",
   "statusUsed": "terpakai",
   "statusReady": "siap pakai",
+  "statusExpired": "kedaluwarsa",
   "revokeTokenAria": "Cabut token {{label}}",
   "revoke": "Cabut",
   "revokeConfirmTitle": "Cabut token enroll?",

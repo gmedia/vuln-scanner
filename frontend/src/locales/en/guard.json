@@ -43,6 +43,7 @@
   "statusRevoked": "revoked",
   "statusUsed": "used",
   "statusReady": "ready",
+  "statusExpired": "expired",
   "revokeTokenAria": "Revoke token {{label}}",
   "revoke": "Revoke",
   "revokeConfirmTitle": "Revoke enroll token?",

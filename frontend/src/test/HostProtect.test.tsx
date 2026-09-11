@@ -802,9 +802,7 @@ describe("Host Protect page", () => {
     await waitFor(() =>
       expect(screen.getByTestId("host-waf-simulate")).toBeEnabled(),
     );
-    expect(screen.getByTestId("host-waf-simulate-hint").textContent).toMatch(
-      /Preview only/i,
-    );
+    expect(screen.queryByTestId("host-waf-simulate-hint")).not.toBeInTheDocument();
   });
 
   it("copies WAF snippet to clipboard", async () => {

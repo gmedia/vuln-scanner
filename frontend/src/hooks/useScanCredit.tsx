@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Coins } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useCreditStore } from "@/store/creditStore";
 import { formatCredits } from "@/lib/utils";
 
@@ -9,6 +10,7 @@ interface EligibilityResult {
 }
 
 export function useScanCredit(scanType: string) {
+  const { t } = useTranslation("scan");
   const { credits, fetchBalance, checkEligibility } = useCreditStore();
   const [cost, setCost] = useState(0);
   const [eligible, setEligible] = useState(true);
@@ -51,24 +53,24 @@ export function useScanCredit(scanType: string) {
   const costPreview = (
     <div data-testid="scan-cost-preview" className="space-y-1 text-xs">
       {eligibilityLoading ? (
-        <p className="text-muted-foreground">Checking cost…</p>
+        <p className="text-muted-foreground">{t("checkingCost")}</p>
       ) : (
         <>
           <p className="text-muted-foreground">
-            Scan cost:{" "}
+            {t("scanCost")}{" "}
             <span className="font-mono font-medium text-foreground tabular-nums">
               {formatCredits(cost)}
             </span>
           </p>
           <p className="text-muted-foreground">
-            Balance after:{" "}
+            {t("balanceAfter")}{" "}
             <span className="font-mono font-medium text-foreground tabular-nums">
               {balanceAfter}
             </span>
           </p>
           {!eligible && (
             <p className="text-red-400">
-              Insufficient credits. Required: {cost}, Available: {credits}
+              {t("insufficientCredits", { required: cost, available: credits })}
             </p>
           )}
         </>
@@ -86,7 +88,10 @@ export function useScanCredit(scanType: string) {
     if (!eligibility.eligible) {
       return {
         eligible: false,
-        error: `Insufficient credits. Required: ${eligibility.required_credits}, Available: ${eligibility.current_credits}`,
+        error: t("insufficientCredits", {
+          required: eligibility.required_credits,
+          available: eligibility.current_credits,
+        }),
       };
     }
     return { eligible: true, error: null };

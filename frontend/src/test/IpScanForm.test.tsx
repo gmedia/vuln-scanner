@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import React from "react";
 import IpScanForm from "@/components/scan/IpScanForm";
+import { useScanCredit } from "@/hooks/useScanCredit";
 
 vi.mock("@/hooks/useScan", () => ({
   useStartIpScan: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
@@ -22,17 +23,19 @@ vi.mock("@/store/scanStore", () => ({
     return selector ? selector(state) : state;
   }),
 }));
+const defaultScanCredit = {
+  credits: 100,
+  cost: 10,
+  eligible: true,
+  eligibilityLoading: false,
+  creditDisplay: React.createElement("div", { "data-testid": "credit-display" }, "Available Credits: 100"),
+  costPreview: React.createElement("div", { "data-testid": "scan-cost-preview" }, "cost"),
+  checkAndDeduct: vi.fn().mockResolvedValue({ eligible: true, error: null }),
+  refreshAfterScan: vi.fn(),
+};
+
 vi.mock("@/hooks/useScanCredit", () => ({
-  useScanCredit: vi.fn(() => ({
-    credits: 100,
-    cost: 10,
-    eligible: true,
-    eligibilityLoading: false,
-    creditDisplay: React.createElement("div", { "data-testid": "credit-display" }, "Available Credits: 100"),
-    costPreview: React.createElement("div", { "data-testid": "scan-cost-preview" }, "cost"),
-    checkAndDeduct: vi.fn().mockResolvedValue({ eligible: true, error: null }),
-    refreshAfterScan: vi.fn(),
-  })),
+  useScanCredit: vi.fn(() => defaultScanCredit),
 }));
 vi.mock("react-router-dom", () => ({
   useNavigate: vi.fn(() => vi.fn()),
@@ -41,6 +44,11 @@ vi.mock("react-router-dom", () => ({
 describe("IpScanForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useScanCredit).mockReturnValue({
+      ...defaultScanCredit,
+      checkAndDeduct: vi.fn().mockResolvedValue({ eligible: true, error: null }),
+      refreshAfterScan: vi.fn(),
+    });
   });
 
   it("renders target IP input with label", () => {
@@ -244,5 +252,16 @@ describe("IpScanForm", () => {
     render(<IpScanForm />);
     const input = screen.getByPlaceholderText("1-1000");
     expect(input).toHaveAttribute("placeholder", "1-1000");
+  });
+
+  it("disables Start IP scan while eligibility is loading", () => {
+    vi.mocked(useScanCredit).mockReturnValue({
+      ...defaultScanCredit,
+      eligibilityLoading: true,
+      checkAndDeduct: vi.fn().mockResolvedValue({ eligible: true, error: null }),
+      refreshAfterScan: vi.fn(),
+    });
+    render(<IpScanForm />);
+    expect(screen.getByRole("button", { name: /start ip scan/i })).toBeDisabled();
   });
 });

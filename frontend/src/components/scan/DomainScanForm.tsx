@@ -63,7 +63,7 @@ function DomainScanForm() {
   };
 
   const submitDisabled =
-    startDomainScan.isPending || (!eligibilityLoading && !eligible);
+    startDomainScan.isPending || eligibilityLoading || !eligible;
 
   return (
     <div className="space-y-4">

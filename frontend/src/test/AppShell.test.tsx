@@ -61,6 +61,7 @@ describe("AppShell", () => {
     const trigger = toggles.find((el) => el.getAttribute("data-slot") === "sidebar-trigger");
     expect(trigger).toBeDefined();
     expect(trigger!.querySelector("svg")).toBeInTheDocument();
+    expect(trigger!.className.split(/\s+/)).toContain("min-h-11");
   });
 
   it("keeps the mobile sidebar trigger in document flow so it does not overlay page titles", () => {

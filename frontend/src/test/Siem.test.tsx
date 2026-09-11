@@ -156,7 +156,9 @@ describe("SIEM page", () => {
     expect(filters).toBeInTheDocument();
     expect(filters.className).toContain("gap-3");
     expect(filters.className).toContain("lg:grid-cols-3");
+    expect(filters.className).toContain("xl:grid-cols-6");
     expect(filters.className).not.toContain("grid-cols-12");
+    expect(filters.className).not.toContain("invisible");
     expect(screen.getByLabelText("Search box")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Apply" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Search events" })).toBeInTheDocument();
@@ -258,5 +260,45 @@ describe("SIEM page", () => {
       expect(screen.getAllByTestId("siem-event-pager").length).toBeGreaterThan(0);
     });
     expect(screen.getAllByTestId("siem-event-row")).toHaveLength(25);
+  });
+
+  it("lists cases in a table with status severity and event count", async () => {
+    const user = userEvent.setup();
+    vi.mocked(siemApi.listSiemCases).mockResolvedValue({
+      items: [
+        {
+          id: "c1",
+          organization_id: "org1",
+          title: "Host WAF block",
+          status: "open",
+          severity: 10,
+          created_by_user_id: "u1",
+          assignee_user_id: null,
+          created_at: "2026-08-14T10:00:00Z",
+          updated_at: "2026-08-14T11:00:00Z",
+          closed_at: null,
+          events: [
+            {
+              id: "ce1",
+              external_id: "evt-1",
+              rule_id: "5503",
+              rule_level: 10,
+              rule_description: "Login failed",
+              agent_wazuh_id: "001",
+              agent_name: "web-1",
+              occurred_at: "2026-08-14T10:00:00Z",
+            },
+          ],
+          notes: [],
+        },
+      ],
+    });
+    renderSiem();
+    await user.click(await screen.findByRole("tab", { name: "Cases" }));
+    expect((await screen.findAllByText("Host WAF block")).length).toBeGreaterThan(0);
+    expect(screen.getByText("Title")).toBeInTheDocument();
+    expect(screen.getByText("Updated")).toBeInTheDocument();
+    await user.click(screen.getAllByText("Host WAF block")[0]);
+    expect(screen.getByTestId("siem-case-detail")).toBeInTheDocument();
   });
 });

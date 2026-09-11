@@ -221,7 +221,7 @@ function Landing() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm leading-relaxed text-muted-foreground">
+                    <p className="text-pretty text-sm leading-relaxed text-muted-foreground">
                       {t(feature.descKey)}
                     </p>
                   </CardContent>

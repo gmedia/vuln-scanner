@@ -62,7 +62,7 @@ describe("Assets page", () => {
     const emptyCta = screen.getByTestId("assets-empty-cta");
     expect(emptyCta).toBeInTheDocument();
     expect(emptyCta.className).toMatch(/bg-primary/);
-    expect(screen.queryByTestId("assets-add")).not.toBeInTheDocument();
+    expect(screen.getByTestId("assets-add")).toBeInTheDocument();
     expect(screen.queryByTestId("assets-pack")).not.toBeInTheDocument();
     expect(screen.queryByTestId("assets-pack-html")).not.toBeInTheDocument();
   });

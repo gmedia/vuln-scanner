@@ -266,9 +266,14 @@ export default function HostWafPanel({
           </p>
         </>
       )}
-      <p className="text-xs text-muted-foreground" data-testid="host-waf-simulate-hint">
-        {showSimulate ? t("wafSimulateHint") : t("wafSimulateProdHint")}
-      </p>
+      {mode === "off" ? (
+        <p
+          className="text-xs text-muted-foreground"
+          data-testid="host-waf-simulate-hint"
+        >
+          {showSimulate ? t("wafSimulateHint") : t("wafSimulateProdHint")}
+        </p>
+      ) : null}
       <h3 className="text-sm font-medium">{t("wafEvents")}</h3>
       <p className="text-xs text-muted-foreground" data-testid="host-waf-events-hint">
         {t("wafEventsHint")}

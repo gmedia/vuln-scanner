@@ -111,5 +111,9 @@
   "colCvss": "CVSS",
   "colRemediation": "Saran aksi",
   "hasRemediation": "Ada saran",
-  "noMatchingFindings": "Tidak ada temuan yang cocok"
+  "noMatchingFindings": "Tidak ada temuan yang cocok",
+  "checkingCost": "Memeriksa biaya…",
+  "scanCost": "Biaya scan:",
+  "balanceAfter": "Saldo setelah:",
+  "insufficientCredits": "Kredit tidak cukup. Diperlukan: {{required}}, Tersedia: {{available}}"
 }

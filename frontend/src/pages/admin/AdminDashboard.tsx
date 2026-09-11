@@ -193,7 +193,7 @@ function AdminDashboard() {
                   />
                   <Bar
                     dataKey="counts"
-                    fill="var(--color-counts)"
+                    fill={kpiChartConfig.counts.color}
                     radius={[4, 4, 0, 0]}
                   />
                 </BarChart>
@@ -248,7 +248,7 @@ function AdminDashboard() {
                   />
                   <Bar
                     dataKey="credits"
-                    fill="var(--color-credits)"
+                    fill={kpiChartConfig.credits.color}
                     radius={[4, 4, 0, 0]}
                   />
                 </BarChart>
