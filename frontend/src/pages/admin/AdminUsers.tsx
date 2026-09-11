@@ -87,7 +87,7 @@ function AdminUsers() {
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="flex min-w-0 flex-col gap-1.5">
-              <Label htmlFor="admin-users-search">{t("searchEmail")}</Label>
+              <Label htmlFor="admin-users-search">{t("colEmail")}</Label>
               <div className="relative">
                 <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input
