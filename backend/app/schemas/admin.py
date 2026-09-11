@@ -114,17 +114,14 @@ class HppReportLine(BaseModel):
     fully_loaded_unit_idr: int
 
 
-class HppSkuEstimate(BaseModel):
-    sku: str
-    list_idr: int
-    credits_per_month: int
+class HppLineMargin(BaseModel):
+    line: str
     label: str
-    hpp_if_all_ip_idr: int | None
-    hpp_if_all_domain_idr: int | None
-    margin_if_all_ip_idr: int | None
-    margin_if_all_domain_idr: int | None
-    margin_if_all_ip_pct: int | None
-    margin_if_all_domain_pct: int | None
+    org_count: int
+    revenue_idr: int
+    cogs_idr: int
+    margin_idr: int
+    margin_pct: int | None
 
 
 class HppReportResponse(BaseModel):
@@ -138,7 +135,7 @@ class HppReportResponse(BaseModel):
     journal_variable_idr: int
     total_fully_loaded_hpp_idr: int
     unallocated_overhead_idr: int
-    sku_estimates: list[HppSkuEstimate]
+    line_margins: list[HppLineMargin]
 
 
 class EmailSendLogItem(BaseModel):
