@@ -155,7 +155,7 @@ function AdminDashboard() {
           {isLoading ? (
             <Skeleton className="aspect-auto h-[280px] w-full min-h-[220px] 2xl:h-[320px]" />
           ) : (
-            <div data-testid="admin-kpi-chart">
+            <div data-testid="admin-kpi-chart" data-bars="scans,findings">
               <ChartContainer
                 config={kpiChartConfig}
                 className="aspect-auto h-[280px] w-full min-h-[220px] 2xl:h-[320px]"
@@ -164,12 +164,12 @@ function AdminDashboard() {
                 <BarChart
                   data={[
                     {
-                      name: t("chartUsers"),
-                      counts: stats?.total_users ?? 0,
-                    },
-                    {
                       name: t("chartScans"),
                       counts: stats?.total_scans ?? 0,
+                    },
+                    {
+                      name: t("chartFindings"),
+                      counts: stats?.total_findings ?? 0,
                     },
                   ]}
                   margin={{ left: 12, right: 12, top: 8, bottom: 0 }}
