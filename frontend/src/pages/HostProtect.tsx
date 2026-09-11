@@ -264,26 +264,31 @@ export default function HostProtect() {
           ) : null
         }
       />
-      <div className="max-w-xl space-y-2">
-        <p className="text-sm text-muted-foreground">{t("installHint")}</p>
-        <Button variant="outline" size="sm" asChild>
-          <a
-            href={SINEXIS_INSTALL_RAW_URL}
-            download="sinexis-install.sh"
-            rel="noreferrer"
-            data-testid="host-install-download"
+      <details className="max-w-xl space-y-2" open={items.length === 0}>
+        <summary className="cursor-pointer text-sm font-medium text-foreground">
+          {t("installDetails")}
+        </summary>
+        <div className="mt-2 space-y-2">
+          <p className="text-sm text-muted-foreground">{t("installHint")}</p>
+          <Button variant="outline" size="sm" asChild>
+            <a
+              href={SINEXIS_INSTALL_RAW_URL}
+              download="sinexis-install.sh"
+              rel="noreferrer"
+              data-testid="host-install-download"
+            >
+              {t("installDownload")}
+            </a>
+          </Button>
+          <pre
+            className="overflow-x-auto whitespace-pre-wrap break-all rounded-md border border-border bg-muted/40 p-3 font-mono text-[11px] leading-relaxed text-foreground"
+            data-testid="host-install-wget"
           >
-            {t("installDownload")}
-          </a>
-        </Button>
-        <pre
-          className="overflow-x-auto whitespace-pre-wrap break-all rounded-md border border-border bg-muted/40 p-3 font-mono text-[11px] leading-relaxed text-foreground"
-          data-testid="host-install-wget"
-        >
-          {SINEXIS_INSTALL_WGET}
-        </pre>
-        <p className="text-xs text-muted-foreground">{t("installCheck")}</p>
-      </div>
+            {SINEXIS_INSTALL_WGET}
+          </pre>
+          <p className="text-xs text-muted-foreground">{t("installCheck")}</p>
+        </div>
+      </details>
 
       {agents.length === 0 && !agentsQ.isLoading ? (
         <p
