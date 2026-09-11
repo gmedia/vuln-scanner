@@ -478,22 +478,20 @@ export default function Assets() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : null}
-            {items.length > 0 || open ? (
-              <Button
-                data-testid="assets-add"
-                className="min-h-11 sm:min-h-10"
-                disabled={atCap}
-                onClick={() => {
-                  if (open) resetForm();
-                  else {
-                    setEditing(null);
-                    setOpen(true);
-                  }
-                }}
-              >
-                {t("add")}
-              </Button>
-            ) : null}
+            <Button
+              data-testid="assets-add"
+              className="min-h-11 sm:min-h-10"
+              disabled={atCap}
+              onClick={() => {
+                if (open) resetForm();
+                else {
+                  setEditing(null);
+                  setOpen(true);
+                }
+              }}
+            >
+              {t("add")}
+            </Button>
           </>
         }
       />
