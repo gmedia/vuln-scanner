@@ -30,6 +30,6 @@
   "colIn": "IDR / 1K in",
   "colOut": "IDR / 1K out",
    "walletEmpty": "AI wallet is empty (IDR prepaid, not scan credits). Top up the org wallet to use the gateway.",
-  "walletTopUp": "Top up credits",
+  "walletTopUp": "Top up IDR wallet",
   "usageEmptyHint": "See catalog"
 }

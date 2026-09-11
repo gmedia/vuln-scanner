@@ -85,8 +85,8 @@ describe("AI Gateway page", () => {
       ),
     ).toBeInTheDocument();
     expect(await screen.findByText("Rp 0")).toBeInTheDocument();
-    const cta = screen.getByRole("link", { name: "Top up credits" });
-    expect(cta).toHaveAttribute("href", "/credit-history");
+    const cta = screen.getByRole("link", { name: "Top up IDR wallet" });
+    expect(cta).toHaveAttribute("href", "/guide");
     expect(cta.className).toMatch(/bg-primary/);
   });
 
