@@ -111,5 +111,9 @@
   "colCvss": "CVSS",
   "colRemediation": "Suggested action",
   "hasRemediation": "Has suggestion",
-  "noMatchingFindings": "No matching findings"
+  "noMatchingFindings": "No matching findings",
+  "checkingCost": "Checking cost…",
+  "scanCost": "Scan cost:",
+  "balanceAfter": "Balance after:",
+  "insufficientCredits": "Insufficient credits. Required: {{required}}, Available: {{available}}"
 }
