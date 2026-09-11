@@ -760,6 +760,8 @@ SecRule REQUEST_URI "@rx (?i)/actuator(/|$)" "id:1025,phase:1,t:none,deny,status
 SecRule REQUEST_URI "@rx (?i)/telescope(/|$)" "id:1026,phase:1,t:none,deny,status:403,msg:\'sinexis.telescope\'"
 SecRule REQUEST_URI "@rx (?i)/\\.DS_Store" "id:1027,phase:1,t:none,deny,status:403,msg:\'sinexis.dsstore\'"
 SecRule REQUEST_URI "@rx (?i)/wlwmanifest\\.xml" "id:1028,phase:1,t:none,deny,status:403,msg:\'sinexis.wlwmanifest\'"
+';
+modsecurity_rules '
 SecRule REQUEST_URI "@rx (?i)/wp-json/wp/v2/users" "id:1029,phase:1,t:none,deny,status:403,msg:\'sinexis.wpjson.users\'"
 SecRule REQUEST_URI "@rx (?i)/adminer\\.php" "id:1030,phase:1,t:none,deny,status:403,msg:\'sinexis.adminer\'"
 SecRule REQUEST_URI "@rx (?i)/elmah\\.axd" "id:1031,phase:1,t:none,deny,status:403,msg:\'sinexis.elmah\'"
@@ -790,6 +792,8 @@ SecRule REQUEST_URI "@rx (?i)/wp-config\\.php\\.bak" "id:1055,phase:1,t:none,den
 SecRule REQUEST_URI "@rx (?i)/pma(/|$)" "id:1056,phase:1,t:none,deny,status:403,msg:\'sinexis.pma\'"
 SecRule REQUEST_URI "@rx (?i)/myadmin(/|$)" "id:1057,phase:1,t:none,deny,status:403,msg:\'sinexis.myadmin\'"
 SecRule REQUEST_URI "@rx (?i)/administrator(/|$)" "id:1058,phase:1,t:none,deny,status:403,msg:\'sinexis.joomla.admin\'"
+';
+modsecurity_rules '
 SecRule REQUEST_URI "@rx (?i)/user/login" "id:1059,phase:1,t:none,deny,status:403,msg:\'sinexis.drupal.login\'"
 SecRule REQUEST_URI "@rx (?i)/__debug__/" "id:1060,phase:1,t:none,deny,status:403,msg:\'sinexis.flask.debug\'"
 SecRule REQUEST_URI "@rx (?i)/rails/info/properties" "id:1061,phase:1,t:none,deny,status:403,msg:\'sinexis.rails.info\'"
@@ -820,6 +824,8 @@ SecRule REQUEST_URI "@rx (?i)/docker-compose\\.yml" "id:1085,phase:1,t:none,deny
 SecRule REQUEST_URI "@rx (?i)/\\.dockerignore" "id:1086,phase:1,t:none,deny,status:403,msg:\'sinexis.dockerignore\'"
 SecRule REQUEST_URI "@rx (?i)/id_dsa" "id:1087,phase:1,t:none,deny,status:403,msg:\'sinexis.id.dsa\'"
 SecRule REQUEST_URI "@rx (?i)/authorized_keys" "id:1088,phase:1,t:none,deny,status:403,msg:\'sinexis.authorized.keys\'"
+';
+modsecurity_rules '
 SecRule REQUEST_URI "@rx (?i)/wp-config\\.php\\.old" "id:1089,phase:1,t:none,deny,status:403,msg:\'sinexis.wpconfig.old\'"
 SecRule REQUEST_URI "@rx (?i)/settings\\.py" "id:1090,phase:1,t:none,deny,status:403,msg:\'sinexis.settings.py\'"
 SecRule REQUEST_URI "@rx (?i)/application\\.yml" "id:1091,phase:1,t:none,deny,status:403,msg:\'sinexis.application.yml\'"
@@ -850,6 +856,8 @@ SecRule REQUEST_URI "@rx (?i)/\\.gitlab-ci\\.yml" "id:1115,phase:1,t:none,deny,s
 SecRule REQUEST_URI "@rx (?i)/bitbucket-pipelines\\.yml" "id:1116,phase:1,t:none,deny,status:403,msg:\'sinexis.bitbucket.pipelines\'"
 SecRule REQUEST_URI "@rx (?i)/error_log($|[/?])" "id:1117,phase:1,t:none,deny,status:403,msg:\'sinexis.error.log\'"
 SecRule REQUEST_URI "@rx (?i)/php_error\\.log" "id:1118,phase:1,t:none,deny,status:403,msg:\'sinexis.php.errorlog\'"
+';
+modsecurity_rules '
 SecRule REQUEST_URI "@rx (?i)/storage/logs/laravel\\.log" "id:1119,phase:1,t:none,deny,status:403,msg:\'sinexis.laravel.log\'"
 SecRule REQUEST_URI "@rx (?i)/webmail(/|$)" "id:1120,phase:1,t:none,deny,status:403,msg:\'sinexis.webmail\'"
 SecRule REQUEST_URI "@rx (?i)/roundcube(/|$|[?])" "id:1121,phase:1,t:none,deny,status:403,msg:\'sinexis.roundcube\'"
@@ -871,14 +879,15 @@ SecRule REQUEST_URI "@rx (?i)/backup\\.sql\\.gz" "id:1136,phase:1,t:none,deny,st
 SecRule REQUEST_URI "@rx (?i)/phpmyadmin/setup" "id:1137,phase:1,t:none,deny,status:403,msg:\'sinexis.pma.setup\'"
 SecRule REQUEST_URI "@rx (?i)/setup\\.php($|[?])" "id:1138,phase:1,t:none,deny,status:403,msg:\'sinexis.setup.php\'"
 SecRule REQUEST_URI "@rx (?i)/install\\.php($|[?])" "id:1139,phase:1,t:none,deny,status:403,msg:\'sinexis.install.php\'"
- SecRule REQUEST_URI "@rx (?i)/solr/update" "id:1140,phase:1,t:none,deny,status:403,msg:\'sinexis.solr.update\'"
- SecRule REQUEST_URI "@rx (?i)/\\.env\\.local" "id:1141,phase:1,t:none,deny,status:403,msg:\'sinexis.env.local\'"
- SecRule REQUEST_URI "@rx (?i)/web\\.config($|[/?])" "id:1142,phase:1,t:none,deny,status:403,msg:\'sinexis.web.config\'"
- SecRule REQUEST_URI "@rx (?i)/configuration\\.php($|[?])" "id:1143,phase:1,t:none,deny,status:403,msg:\'sinexis.joomla.config\'"
- SecRule REQUEST_URI "@rx (?i)/\\.env\\.production" "id:1144,phase:1,t:none,deny,status:403,msg:\'sinexis.env.production\'"
- SecRule REQUEST_URI "@rx (?i)/wp-config\\.php\\.save" "id:1145,phase:1,t:none,deny,status:403,msg:\'sinexis.wp.config.save\'"
- SecRule REQUEST_URI "@rx (?i)/app/etc/local\\.xml" "id:1146,phase:1,t:none,deny,status:403,msg:\'sinexis.mage.localxml\'"
- ';
+SecRule REQUEST_URI "@rx (?i)/solr/update" "id:1140,phase:1,t:none,deny,status:403,msg:\'sinexis.solr.update\'"
+SecRule REQUEST_URI "@rx (?i)/\\.env\\.local" "id:1141,phase:1,t:none,deny,status:403,msg:\'sinexis.env.local\'"
+SecRule REQUEST_URI "@rx (?i)/web\\.config($|[/?])" "id:1142,phase:1,t:none,deny,status:403,msg:\'sinexis.web.config\'"
+SecRule REQUEST_URI "@rx (?i)/configuration\\.php($|[?])" "id:1143,phase:1,t:none,deny,status:403,msg:\'sinexis.joomla.config\'"
+SecRule REQUEST_URI "@rx (?i)/\\.env\\.production" "id:1144,phase:1,t:none,deny,status:403,msg:\'sinexis.env.production\'"
+SecRule REQUEST_URI "@rx (?i)/wp-config\\.php\\.save" "id:1145,phase:1,t:none,deny,status:403,msg:\'sinexis.wp.config.save\'"
+SecRule REQUEST_URI "@rx (?i)/app/etc/local\\.xml" "id:1146,phase:1,t:none,deny,status:403,msg:\'sinexis.mage.localxml\'"
+';
+
 EOF
   chmod 644 "$dest"
   log "ok: wrote ${dest}. Include it in the customer site vhost yourself. No nginx reload."

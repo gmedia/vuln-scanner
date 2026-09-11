@@ -22,6 +22,49 @@ _LAB_ROOT_MARKERS = (
     "/srv/www/host-waf-fixture",
 )
 
+# nginx 1.24 rejects one quoted `modsecurity_rules` param around ~18kB
+# (`[emerg] too long parameter, probably missing terminating "'" character`).
+# Lab packs ~3500 chars per quoted body; chain SecRules stay in one unit.
+NGINX_MODSEC_RULES_MAX_CHARS = 3500
+
+
+def _wrap_modsecurity_rules_block(parts: list[str]) -> str:
+    inner = "\n".join(parts)
+    return f"modsecurity_rules '\n{inner}\n';"
+
+
+def _quoted_modsecurity_param_len(parts: list[str]) -> int:
+    if not parts:
+        return 0
+    return len("\n".join(parts)) + 2
+
+
+def pack_modsecurity_rules(
+    units: list[str],
+    *,
+    max_chars: int = NGINX_MODSEC_RULES_MAX_CHARS,
+) -> str:
+    """Pack atomic SecRule units into several `modsecurity_rules` directives.
+
+    A unit is either the engine trio, one id-bearing SecRule, or a chain
+    (id + following no-id SecRules). Units are never split across blocks.
+    """
+    packed: list[str] = []
+    current: list[str] = []
+    for raw in units:
+        unit = raw.strip()
+        if not unit:
+            continue
+        candidate = [*current, unit]
+        if current and _quoted_modsecurity_param_len(candidate) > max_chars:
+            packed.append(_wrap_modsecurity_rules_block(current))
+            current = [unit]
+            continue
+        current = candidate
+    if current:
+        packed.append(_wrap_modsecurity_rules_block(current))
+    return "\n".join(packed)
+
 
 def is_lab_waf_site(site: HostSite) -> bool:
     root = (site.root_path or "").replace("\n", "").replace("\r", "")
@@ -616,162 +659,182 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
-    return f"""{header}
-modsecurity on;
-modsecurity_rules '
-SecRuleEngine {engine}
-SecRequestBodyAccess Off
-SecResponseBodyAccess Off
-SecRule REQUEST_URI "@beginsWith /xmlrpc.php" "id:1001,phase:1,t:none,deny,status:403,msg:\\'sinexis.xmlrpc\\'"
-SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1)" "id:1002,phase:2,t:none,deny,status:403,msg:\\'sinexis.sqli\\'"
-SecRule REQUEST_URI "@rx \\\\.\\\\./" "id:1003,phase:1,t:none,deny,status:403,msg:\\'sinexis.path.traversal\\'"
-{rule_1005}
-SecRule REQUEST_METHOD "@streq POST" "t:none,chain"
-{args_chain}
-{rule_1006}
-{rule_1007}
-{rule_1008}
-    {rule_1009}
-    {rule_1010}
-    {rule_1011}
-    {rule_1012}
-    {rule_1013}
-    {rule_1014}
-    {rule_1015}
-    {rule_1016}
-    {rule_1017}
-    {rule_1018}
-    {rule_1019}
-    {rule_1020}
-    {rule_1021}
-    {rule_1022}
-    {rule_1023}
-    {rule_1024}
-    {rule_1025}
-    {rule_1026}
-     {rule_1027}
-     {rule_1028}
-     {rule_1029}
-     {rule_1030}
-     {rule_1031}
-     {rule_1032}
-     {rule_1033}
-     {rule_1034}
-     {rule_1035}
-     {rule_1036}
-     {rule_1037}
-     {rule_1038}
-     {rule_1039}
-     {rule_1040}
-     {rule_1041}
-     {rule_1042}
-     {rule_1043}
-     {rule_1044}
-     {rule_1045}
-     {rule_1046}
-     {rule_1047}
-     {rule_1048}
-     {rule_1049}
-      {rule_1050}
-      {rule_1051}
-      {rule_1052}
-      {rule_1053}
-      {rule_1054}
-      {rule_1055}
-      {rule_1056}
-      {rule_1057}
-      {rule_1058}
-      {rule_1059}
-      {rule_1060}
-      {rule_1061}
-      {rule_1062}
-      {rule_1063}
-      {rule_1064}
-      {rule_1065}
-      {rule_1066}
-      {rule_1067}
-      {rule_1068}
-      {rule_1069}
-      {rule_1070}
-      {rule_1071}
-      {rule_1072}
-      {rule_1073}
-      {rule_1074}
-      {rule_1075}
-      {rule_1076}
-      {rule_1077}
-      {rule_1078}
-      {rule_1079}
-      {rule_1080}
-      {rule_1081}
-      {rule_1082}
-      {rule_1083}
-      {rule_1084}
-      {rule_1085}
-      {rule_1086}
-      {rule_1087}
-      {rule_1088}
-      {rule_1089}
-      {rule_1090}
-      {rule_1091}
-      {rule_1092}
-      {rule_1093}
-      {rule_1094}
-       {rule_1095}
-       {rule_1096}
-       {rule_1097}
-       {rule_1098}
-       {rule_1099}
-       {rule_1100}
-       {rule_1101}
-       {rule_1102}
-       {rule_1103}
-       {rule_1104}
-       {rule_1105}
-       {rule_1106}
-       {rule_1107}
-       {rule_1108}
-       {rule_1109}
-       {rule_1110}
-       {rule_1111}
-       {rule_1112}
-       {rule_1113}
-       {rule_1114}
-       {rule_1115}
-       {rule_1116}
-       {rule_1117}
-       {rule_1118}
-       {rule_1119}
-       {rule_1120}
-       {rule_1121}
-       {rule_1122}
-       {rule_1123}
-       {rule_1124}
-       {rule_1125}
-       {rule_1126}
-       {rule_1127}
-       {rule_1128}
-       {rule_1129}
-       {rule_1130}
-       {rule_1131}
-       {rule_1132}
-       {rule_1133}
-       {rule_1134}
-       {rule_1135}
-       {rule_1136}
-       {rule_1137}
-       {rule_1138}
-       {rule_1139}
-        {rule_1140}
-         {rule_1141}
-         {rule_1142}
-         {rule_1143}
-         {rule_1144}
-         {rule_1145}
-         {rule_1146}
-         {extra}';
-# Paranoia {paranoia}: keep starter rules only. Do not raise to 4 in v1.
-"""
+    rule_1001 = (
+        'SecRule REQUEST_URI "@beginsWith /xmlrpc.php" '
+        "\"id:1001,phase:1,t:none,deny,status:403,msg:\\'sinexis.xmlrpc\\'\""
+    )
+    rule_1002 = (
+        'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1)" '
+        "\"id:1002,phase:2,t:none,deny,status:403,msg:\\'sinexis.sqli\\'\""
+    )
+    rule_1003 = (
+        'SecRule REQUEST_URI "@rx \\\\.\\\\./" '
+        "\"id:1003,phase:1,t:none,deny,status:403,msg:\\'sinexis.path.traversal\\'\""
+    )
+    chain_1005 = "\n".join(
+        (
+            rule_1005,
+            'SecRule REQUEST_METHOD "@streq POST" "t:none,chain"',
+            args_chain,
+        )
+    )
+    engine_unit = f"SecRuleEngine {engine}\nSecRequestBodyAccess Off\nSecResponseBodyAccess Off"
+    units = [
+        engine_unit,
+        rule_1001,
+        rule_1002,
+        rule_1003,
+        chain_1005,
+        rule_1006,
+        rule_1007,
+        rule_1008,
+        rule_1009,
+        rule_1010,
+        rule_1011,
+        rule_1012,
+        rule_1013,
+        rule_1014,
+        rule_1015,
+        rule_1016,
+        rule_1017,
+        rule_1018,
+        rule_1019,
+        rule_1020,
+        rule_1021,
+        rule_1022,
+        rule_1023,
+        rule_1024,
+        rule_1025,
+        rule_1026,
+        rule_1027,
+        rule_1028,
+        rule_1029,
+        rule_1030,
+        rule_1031,
+        rule_1032,
+        rule_1033,
+        rule_1034,
+        rule_1035,
+        rule_1036,
+        rule_1037,
+        rule_1038,
+        rule_1039,
+        rule_1040,
+        rule_1041,
+        rule_1042,
+        rule_1043,
+        rule_1044,
+        rule_1045,
+        rule_1046,
+        rule_1047,
+        rule_1048,
+        rule_1049,
+        rule_1050,
+        rule_1051,
+        rule_1052,
+        rule_1053,
+        rule_1054,
+        rule_1055,
+        rule_1056,
+        rule_1057,
+        rule_1058,
+        rule_1059,
+        rule_1060,
+        rule_1061,
+        rule_1062,
+        rule_1063,
+        rule_1064,
+        rule_1065,
+        rule_1066,
+        rule_1067,
+        rule_1068,
+        rule_1069,
+        rule_1070,
+        rule_1071,
+        rule_1072,
+        rule_1073,
+        rule_1074,
+        rule_1075,
+        rule_1076,
+        rule_1077,
+        rule_1078,
+        rule_1079,
+        rule_1080,
+        rule_1081,
+        rule_1082,
+        rule_1083,
+        rule_1084,
+        rule_1085,
+        rule_1086,
+        rule_1087,
+        rule_1088,
+        rule_1089,
+        rule_1090,
+        rule_1091,
+        rule_1092,
+        rule_1093,
+        rule_1094,
+        rule_1095,
+        rule_1096,
+        rule_1097,
+        rule_1098,
+        rule_1099,
+        rule_1100,
+        rule_1101,
+        rule_1102,
+        rule_1103,
+        rule_1104,
+        rule_1105,
+        rule_1106,
+        rule_1107,
+        rule_1108,
+        rule_1109,
+        rule_1110,
+        rule_1111,
+        rule_1112,
+        rule_1113,
+        rule_1114,
+        rule_1115,
+        rule_1116,
+        rule_1117,
+        rule_1118,
+        rule_1119,
+        rule_1120,
+        rule_1121,
+        rule_1122,
+        rule_1123,
+        rule_1124,
+        rule_1125,
+        rule_1126,
+        rule_1127,
+        rule_1128,
+        rule_1129,
+        rule_1130,
+        rule_1131,
+        rule_1132,
+        rule_1133,
+        rule_1134,
+        rule_1135,
+        rule_1136,
+        rule_1137,
+        rule_1138,
+        rule_1139,
+        rule_1140,
+        rule_1141,
+        rule_1142,
+        rule_1143,
+        rule_1144,
+        rule_1145,
+        rule_1146,
+        extra.strip(),
+    ]
+    rules_body = pack_modsecurity_rules(units)
+    return (
+        f"{header}\n"
+        "modsecurity on;\n"
+        f"{rules_body}\n"
+        f"# Paranoia {paranoia}: keep starter rules only. Do not raise to 4 in v1.\n"
+    )
 
 
 def render_coraza_include(policy: HostWafPolicy, site: HostSite) -> str:

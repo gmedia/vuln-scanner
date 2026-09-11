@@ -1,6 +1,55 @@
 from types import SimpleNamespace
 
-from app.services.host_waf_render import is_lab_waf_site, render_nginx_modsec
+from app.services.host_waf_render import (
+    NGINX_MODSEC_RULES_MAX_CHARS,
+    is_lab_waf_site,
+    pack_modsecurity_rules,
+    render_nginx_modsec,
+)
+
+_CHAIN_1005 = (
+    'SecRule REQUEST_URI "@beginsWith /wp-login.php" '
+    '"id:1005,phase:1,t:none,deny,status:403,'
+    "msg:\\'sinexis.wplogin.payload\\',chain\"\n"
+    'SecRule REQUEST_METHOD "@streq POST" "t:none,chain"\n'
+    'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
+)
+
+
+def _quoted_modsec_bodies(text: str) -> list[str]:
+    bodies: list[str] = []
+    marker = "modsecurity_rules '"
+    start = 0
+    while True:
+        i = text.find(marker, start)
+        if i < 0:
+            break
+        i += len(marker)
+        j = text.find("';", i)
+        if j < 0:
+            break
+        bodies.append(text[i:j])
+        start = j + 2
+    return bodies
+
+
+def _assert_split_modsec_shape(text: str, *, expect_lab: bool) -> None:
+    assert text.count("modsecurity on;") == 1
+    bodies = _quoted_modsec_bodies(text)
+    assert len(bodies) >= 2
+    for body in bodies:
+        assert len(body) <= NGINX_MODSEC_RULES_MAX_CHARS
+        assert "modsecurity on;" not in body
+    assert _CHAIN_1005 in text
+    chain_hits = [body for body in bodies if "id:1005" in body]
+    assert len(chain_hits) == 1
+    assert _CHAIN_1005 in chain_hits[0]
+    assert "SecRule REQUEST_METHOD" in chain_hits[0]
+    assert "SecRule ARGS" in chain_hits[0]
+    if expect_lab:
+        assert "id:1004" in text
+    else:
+        assert "id:1004" not in text
 
 
 def _site(*, name: str, root: str) -> SimpleNamespace:
@@ -117,9 +166,7 @@ def test_lab_fixture_snippet_has_probe_rule():
     assert "/solr/#/" not in text
     assert "wp-admin" not in text
     assert "listen" not in text.lower()
-    assert "modsecurity_rules '" in text
-    assert text.rstrip().endswith("v1.") or "';" in text
-    assert "';" in text.split("modsecurity_rules", 1)[1]
+    _assert_split_modsec_shape(text, expect_lab=True)
 
 
 def test_customer_snippet_omits_lab_probe():
@@ -227,6 +274,25 @@ def test_customer_snippet_omits_lab_probe():
     assert "/solr/#/" not in text
     assert "wp-admin" not in text
     assert "do not paste onto sinexis.app" in text
+    _assert_split_modsec_shape(text, expect_lab=False)
+
+
+def test_pack_modsecurity_rules_keeps_chain_and_caps() -> None:
+    chain = "id-a\nno-id-b\nno-id-c"
+    packed = pack_modsecurity_rules(
+        ["SecRuleEngine On", "short-1", chain, "short-2"],
+        max_chars=40,
+    )
+    assert packed.count("modsecurity_rules '") >= 2
+    assert chain in packed
+    bodies = _quoted_modsec_bodies(packed)
+    assert bodies
+    for body in bodies:
+        assert len(body) <= 40
+    chain_bodies = [body for body in bodies if "id-a" in body]
+    assert len(chain_bodies) == 1
+    assert "no-id-b" in chain_bodies[0]
+    assert "no-id-c" in chain_bodies[0]
 
 
 def test_erp_root_is_not_lab():
