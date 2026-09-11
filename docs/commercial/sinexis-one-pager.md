@@ -1,7 +1,7 @@
 # Sinexis — one-pager (P0 locked)
 
 **Status:** **P0 commercial lock (user-approved 2026-08-08)**. Working list for AM — not a legal offer. Finance may ± adjust IDR; policy defaults are locked in [`sku-scan-secure-addon.md`](sku-scan-secure-addon.md) §0.
-**Product readiness:** **Scan Attach (P1) live** — schedule, new critical/high notify, baseline diff, executive HTML, credit debit, max 10 schedules/user.
+**Product readiness:** **Scan Attach (P1) live** — schedule, new critical/high notify, baseline diff, executive HTML, max 10 schedules/org. **Metering v2:** scheduled attach included (no credit debit).
 **Surface:** repo/product **VulnScanner** (`vs.appmedia.id`); attach brand **Sinexis** (soft dual-brand **6–12 months**).
 **Evidence:** GMD mix colo/rack + VPS/cloud heavy; security lines thin; hospitality = relationship beachhead, not mass invoice count.
 
@@ -26,7 +26,7 @@
 | Role | Typical | Needs |
 |------|---------|--------|
 | **Buyer** | Owner, GM, IT manager, AM GMD | Price, risk story, one HTML/email |
-| **Daily user** | IT / MSP / GMD NOC hybrid | Schedule, findings, credits |
+| **Daily user** | IT / MSP / GMD NOC hybrid | Schedule, findings, optional overage credits |
 | **Viewer** (P2+ only if pain) | Hotel ops / compliance | Read-only history |
 
 **Near-term:** one login = one technical contact; pilot may add **human review** of critical findings.
@@ -59,14 +59,14 @@ Mobile APK/IPA = engine feature, **not** hero SKU for GMD servers/domains.
 
 ## 5. Working list price (AM)
 
-| Tier | Targets | Credits / mo | IDR / mo |
-|------|---------|--------------|----------|
-| **Basic** | 1 | 10 | **300.000** |
-| **Pro** | ≤3 | 24 | **650.000** |
-| **Multi-asset** | ≤10 | 60 | **2.000.000** |
+| Tier | Targets | Cadence | IDR / mo |
+|------|---------|---------|----------|
+| **Basic** | 1 | Monthly | **300.000** |
+| **Pro** | ≤3 | Weekly or monthly | **650.000** |
+| **Multi-asset** | ≤10 | Weekly | **2.000.000** |
 
 **Pilot #1:** **1 bulan sponsored**; pattern = multi-service / VPS+domain; **1–3 targets**.
-**Overage:** top-up kredit or upgrade. **Invoice:** new service_id per tier (no silent VPS bundle).
+**Overage:** extra manual/mobile → credit top-up or upgrade. Scheduled attach does **not** spend credits. **Invoice:** new service_id per tier (no silent VPS bundle).
 
 Detail: [`sku-scan-secure-addon.md`](sku-scan-secure-addon.md).
 

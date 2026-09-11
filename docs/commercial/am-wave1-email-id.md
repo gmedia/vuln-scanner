@@ -14,9 +14,9 @@
 2. Ganti semua `{…}` di draft privat.
 3. Kirim dari identitas AM / GMD yang biasa dipakai pelanggan (bukan mailbox produk anonim).
 4. Catat di CRM: tanggal kirim, tier ditawarkan, next follow-up.
-5. Jika setuju: serahkan ke ops fulfillment (kredit + schedule) — checklist di SKU §3.
+5. Jika setuju: serahkan ke ops fulfillment (org `sku` + schedule; kredit overage opsional) — checklist di SKU §3.
 
-**Jangan janjikan:** SIEM, “aman 100%”, Guard/Wazuh, unlimited scan, 24/7 SOC, nested multi-property. **Boleh sebut** undang rekan (Workspace sudah live) untuk Pro/Multi — kredit tetap personal, bukan org wallet.
+**Jangan janjikan:** SIEM, “aman 100%”, Guard/Wazuh, unlimited on-demand scan, 24/7 SOC, nested multi-property. **Boleh sebut** undang rekan (Workspace sudah live) untuk Pro/Multi — kredit overage tetap personal, bukan org wallet. Jadwal paket **termasuk**; kredit hanya extra/manual/mobile.
 
 ---
 
@@ -123,8 +123,8 @@ Pak/Bu {Nama}, {Nama_AM} GMD. Ikut tawar add-on cek berkala IP/domain di atas VP
 
 - [ ] Tier + jumlah target + cadence (weekly/monthly)
 - [ ] Email notifikasi
-- [ ] Kredit bundle sesuai tier (10 / 24 / 60) atau grant pilot
-- [ ] Schedule dibuat; cap 10 enabled/user
+- [ ] Org `sku` sesuai tier; schedule dibuat (cap 10 enabled/org)
+- [ ] Kredit overage opsional (manual/mobile); **bukan** syarat jadwal attach
 - [ ] CRM: service line / service_id, renew owner = AM
 - [ ] Siklus 1: kirim/tunjukkan executive HTML + cerita diff
 

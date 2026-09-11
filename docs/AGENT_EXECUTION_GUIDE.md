@@ -186,7 +186,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | SKU + decision log | [`docs/commercial/sku-scan-secure-addon.md`](commercial/sku-scan-secure-addon.md) |
 | AM wave-1 email (Bahasa) | [`docs/commercial/am-wave1-email-id.md`](commercial/am-wave1-email-id.md) |
 
-**Working list (see SKU §0):** Basic **300k** / Pro **650k** / Multi **2M** IDR/mo; credits **10/24/60**; AM owns renew; hybrid email; attach ARPU primary; pilot #1 multi-service, 1 mo sponsored; Guard parked; report Bahasa.
+**Working list (see SKU §0):** Basic **300k** / Pro **650k** / Multi **2M** IDR/mo; headline = **assets + cadence** (metering v2 — scheduled attach included, credits = overage); AM owns renew; hybrid email; attach ARPU primary; pilot #1 multi-service, 1 mo sponsored; Guard parked; report Bahasa.
 
 **Still human/GTM (not “re-litigate policy” in git):**
 
@@ -213,12 +213,13 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | [`docs/specs/imunify-class-onbox.md`](specs/imunify-class-onbox.md) | **P14 docs** (#555); slices A–H | Implement **only** named slice + `buat`. Jobs not clone. |
 | [`docs/specs/vps-displace-imunify-dev-plan.md`](specs/vps-displace-imunify-dev-plan.md) | **P14 follow-on plan** (2026-09-07) | Speech gate: Demo-ok / Invoice-ok / **Sentence-ok**. Slices **DL0–DL2**. Caddy out. No PD/WebShield/clone. |
 | [`docs/specs/ai-gateway-v1.md`](specs/ai-gateway-v1.md) | **S1–S5 on `main` (this PR)** | OpenAI-compat resale; flag **off**. Ops: [`ai-gateway-ops.md`](ai-gateway-ops.md). Residual: human catalog/FX/enable. |
+| [`docs/specs/metering-v2.md`](specs/metering-v2.md) | **Implementing** | SKU = assets + cadence included; credits = overage/mobile. E2 superseded. HPP line margins Scan vs Host. |
 
 **Agent:** wait for **explicit implement** even when spec exists. Prefer **draft spec** over silent coding for new epics; P3 assets already shipped.
 
 ### Phase C1 / P1 — Scan Attach Loop (upsell engine) — **DONE**
 
-**Shipped:** schedule entity + beat due tick; baseline diff; new critical/high notify; executive HTML; credit debit + auto-disable; cap 10; ops docs; **production smoke A** (due+credits, zero-credit gate). Detail: root `handoff.md`, `docs/scan-schedules-ops.md`.
+**Shipped:** schedule entity + beat due tick; baseline diff; new critical/high notify; executive HTML; cap 10; ops docs. **Metering v2:** scheduled attach included (no credit debit / no auto-disable). Manual still 402. Detail: [`metering-v2.md`](specs/metering-v2.md), `docs/scan-schedules-ops.md`.
 
 **Residual engineering:** bugfixes only; optional edge tip pull for docs-only SHAs; no second “implement P1” epic.
 

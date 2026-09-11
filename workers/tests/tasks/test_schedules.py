@@ -33,42 +33,41 @@ def _row(
     )
 
 
-class TestRunDueInsufficientCredits:
-    def test_disables_schedule_and_sets_last_error_without_job(self):
+class TestRunDueIncludedAttach:
+    def test_enqueues_when_wallet_would_have_been_short(self):
         schedule_id = uuid4()
         user_id = uuid4()
         due = _row(schedule_id=schedule_id, user_id=user_id)
+        job_id = uuid4()
 
         session = MagicMock()
         select_due = MagicMock()
         select_due.fetchall.return_value = [due]
-        pricing = MagicMock()
-        pricing.scalar.return_value = 5
-        credits = MagicMock()
-        credits.scalar.return_value = 2
-        update_result = MagicMock()
-
-        session.execute.side_effect = [select_due, pricing, credits, update_result]
+        insert_job = MagicMock()
+        update_task = MagicMock()
+        update_schedule = MagicMock()
+        session.execute.side_effect = [select_due, insert_job, update_task, update_schedule]
 
         with (
             patch("tasks.schedules.get_sync_session", return_value=session),
-            patch("tasks.schedules._dispatch_scan") as dispatch,
+            patch("tasks.schedules._dispatch_scan", return_value="celery-task-1") as dispatch,
+            patch("tasks.schedules.uuid.uuid4", return_value=job_id),
         ):
             result = run_due_schedules(limit=10)
 
-        assert result["enqueued"] == 0
-        assert result["errors"] == 1
+        assert result["enqueued"] == 1
+        assert result["errors"] == 0
         assert result["examined"] == 1
-        dispatch.assert_not_called()
+        dispatch.assert_called_once()
         session.commit.assert_called()
         session.close.assert_called_once()
 
-        update_call = session.execute.call_args_list[3]
-        params = update_call[0][1]
-        assert params["sid"] == schedule_id
-        assert "Insufficient credits" in params["err"]
-        assert "Need 5" in params["err"]
-        assert "have 2" in params["err"]
+        insert_params = session.execute.call_args_list[1][0][1]
+        assert insert_params["credit_cost"] == 0
+        assert insert_params["user_id"] == user_id
+        sql_blobs = " ".join(str(c[0][0]) for c in session.execute.call_args_list).lower()
+        assert "from users" not in sql_blobs
+        assert "enabled = false" not in sql_blobs
 
 
 class TestRunDueSkipInFlight:

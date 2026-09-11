@@ -37,15 +37,15 @@ COMPOSE_PROJECT_NAME=<from_inspect> ./scripts/deploy-services.sh . \
 
 **DB names on edge (typical):** Postgres user/db often `vuln_scanner`; pricing table is **`pricing`** (not `pricing_configs`). Schedule jobs link via `scan_schedules.last_job_id` → `scan_jobs.id` (no `schedule_id` column on jobs).
 
-## Credits gate (scheduled)
+## Credits (metering v2)
 
-Before enqueue, the beat tick uses the **same cost** as manual scans (`pricing.credit_cost` for `ip` / `domain`):
+Scheduled attach is **included** in the Scan SKU ([`specs/metering-v2.md`](specs/metering-v2.md)):
 
-- **Enough credits** → deduct, insert `scan_jobs`, dispatch Celery task, advance `next_run_at`, clear `last_error`.
-- **Insufficient credits** → **no job**, set `last_error` (e.g. `Insufficient credits. Need N, have M.`), set **`enabled = false`** so beat does not thrash. UI lists show `last_error`.
+- Beat tick **does not** debit `users.credits`. Job `credit_cost = 0`. Empty wallet **does not** disable the schedule.
+- Insert `scan_jobs`, dispatch Celery task, advance `next_run_at`, clear `last_error`.
 - Prior job still **pending/running** for that schedule → skip (no pile-up). Overlapping ticks use `FOR UPDATE SKIP LOCKED`.
 
-Manual start still returns **HTTP 402** with the same insufficient-credits message.
+Manual / on-demand start still returns **HTTP 402** when the wallet is short (`pricing.credit_cost` for `ip` / `domain` / mobile).
 
 ## Caps (abuse)
 
@@ -70,9 +70,8 @@ Do not put production hostnames, passwords, or API keys in tracked markdown.
 
 1. Confirm git tip on disk ≥ attach tip (`0eb7d42` or newer) and beat process up (`celery_beat`).
 2. Create a weekly/monthly schedule in UI or `POST /api/schedules` (JWT; body uses **`cadence`**: `weekly` \| `monthly`).
-3. Optionally set `next_run_at` due in DB for a dogfood user with **zero** credits → after next tick, schedule **disabled**, `last_error` set, **no** new job.
-4. User with credits + due schedule → job appears, credits deducted.
-5. Regression: schedule list shows `last_error`; Scan Attach S1–S4 (diff / notify / executive) still work when credits allow.
+3. Optionally set `next_run_at` due in DB for a dogfood user with **zero** credits → after next tick, schedule **stays enabled**, job appears, **no** credit debit.
+4. Regression: Scan Attach S1–S4 (diff / notify / executive) still work. Manual scan with zero credits still HTTP 402.
 
 ### B — Remote API checks (optional, from any host with JWT)
 

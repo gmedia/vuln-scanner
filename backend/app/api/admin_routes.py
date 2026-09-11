@@ -13,7 +13,7 @@ from app.middleware.rate_limit import RateLimiter
 from app.models.credit_log import CreditLog
 from app.models.email_send_log import EMAIL_SEND_KINDS, EMAIL_SEND_STATUSES, EmailSendLog
 from app.models.email_verification import EmailVerificationToken
-from app.models.host_protect import HostScan
+from app.models.host_protect import HostScan, HostSite
 from app.models.hpp import (
     HPP_COST_CATEGORIES,
     HPP_KEYS,
@@ -22,9 +22,11 @@ from app.models.hpp import (
     HppOverhead,
     HppRate,
 )
+from app.models.organization import Organization
 from app.models.pricing import PricingConfig
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
+from app.models.scan_schedule import ScanSchedule
 from app.models.user import User
 from app.schemas.admin import (
     AdminStats,
@@ -36,6 +38,7 @@ from app.schemas.admin import (
     HppCostLineCreateRequest,
     HppCostLineItem,
     HppCostLineListResponse,
+    HppLineMargin,
     HppOverheadItem,
     HppOverheadUpdateRequest,
     HppRateItem,
@@ -43,7 +46,6 @@ from app.schemas.admin import (
     HppRateUpdateRequest,
     HppReportLine,
     HppReportResponse,
-    HppSkuEstimate,
     PricingItem,
     PricingListResponse,
     PricingUpdateRequest,
@@ -380,11 +382,9 @@ async def update_pricing(
     return PricingItem.model_validate(pricing)
 
 
-_SKU_LIST: tuple[tuple[str, int, int], ...] = (
-    ("basic", 300_000, 10),
-    ("pro", 650_000, 24),
-    ("multi", 2_000_000, 60),
-)
+_SCAN_LIST_IDR: dict[str, int] = {"basic": 300_000, "pro": 650_000, "multi": 2_000_000}
+_HOST_LIST_IDR: dict[str, int] = {"basic": 150_000, "pro": 350_000, "multi": 900_000}
+_SCAN_COGS_KEYS: tuple[str, ...] = ("ip", "domain", "apk", "ipa", "statushost")
 
 
 def _month_bounds_utc() -> tuple[datetime, datetime]:
@@ -531,39 +531,49 @@ async def get_hpp_report(
 
     unallocated = overhead_idr if total_count == 0 else 0
 
-    pricing_result = await db.execute(select(PricingConfig))
-    credit_cost = {p.scan_type: p.credit_cost for p in pricing_result.scalars().all()}
-    ip_credits = max(int(credit_cost.get("ip") or 0), 0)
-    domain_credits = max(int(credit_cost.get("domain") or 0), 0)
-    ip_rate = rates["ip"]
-    domain_rate = rates["domain"]
+    fully_by_key = {line.key: line.fully_loaded_hpp_idr for line in lines}
+    scan_cogs = sum(fully_by_key.get(k, 0) for k in _SCAN_COGS_KEYS)
+    host_cogs = fully_by_key.get("hostscan", 0)
 
-    sku_estimates: list[HppSkuEstimate] = []
-    for sku, list_idr, credits in _SKU_LIST:
-        ip_jobs = (credits // ip_credits) if ip_credits else None
-        domain_jobs = (credits // domain_credits) if domain_credits else None
-        hpp_ip = (ip_jobs * ip_rate) if ip_jobs is not None else None
-        hpp_domain = (domain_jobs * domain_rate) if domain_jobs is not None else None
-        margin_ip = (list_idr - hpp_ip) if hpp_ip is not None else None
-        margin_domain = (list_idr - hpp_domain) if hpp_domain is not None else None
-        sku_estimates.append(
-            HppSkuEstimate(
-                sku=sku,
-                list_idr=list_idr,
-                credits_per_month=credits,
-                label="estimasi",
-                hpp_if_all_ip_idr=hpp_ip,
-                hpp_if_all_domain_idr=hpp_domain,
-                margin_if_all_ip_idr=margin_ip,
-                margin_if_all_domain_idr=margin_domain,
-                margin_if_all_ip_pct=(
-                    round(margin_ip * 100 / list_idr) if margin_ip is not None and list_idr else None
-                ),
-                margin_if_all_domain_pct=(
-                    round(margin_domain * 100 / list_idr) if margin_domain is not None and list_idr else None
-                ),
-            )
+    scan_sku_rows = (
+        await db.execute(
+            select(Organization.sku, func.count(func.distinct(Organization.id)))
+            .join(ScanSchedule, ScanSchedule.organization_id == Organization.id)
+            .where(ScanSchedule.enabled.is_(True))
+            .group_by(Organization.sku)
         )
+    ).all()
+    host_sku_rows = (
+        await db.execute(
+            select(Organization.sku, func.count(func.distinct(Organization.id)))
+            .join(HostSite, HostSite.organization_id == Organization.id)
+            .group_by(Organization.sku)
+        )
+    ).all()
+
+    def _margin(line: str, sku_rows: list[tuple[str, int]], price: dict[str, int], cogs: int) -> HppLineMargin:
+        org_count = 0
+        revenue = 0
+        for sku, n in sku_rows:
+            count = int(n)
+            org_count += count
+            revenue += count * int(price.get(sku, 0))
+        margin = revenue - cogs
+        pct = round(margin * 100 / revenue) if revenue else None
+        return HppLineMargin(
+            line=line,
+            label="estimasi",
+            org_count=org_count,
+            revenue_idr=revenue,
+            cogs_idr=cogs,
+            margin_idr=margin,
+            margin_pct=pct,
+        )
+
+    line_margins = [
+        _margin("scan", [(str(s), int(n)) for s, n in scan_sku_rows], _SCAN_LIST_IDR, scan_cogs),
+        _margin("host", [(str(s), int(n)) for s, n in host_sku_rows], _HOST_LIST_IDR, host_cogs),
+    ]
 
     return HppReportResponse(
         from_date=start,
@@ -576,7 +586,7 @@ async def get_hpp_report(
         journal_variable_idr=journal_variable,
         total_fully_loaded_hpp_idr=total_fully,
         unallocated_overhead_idr=unallocated,
-        sku_estimates=sku_estimates,
+        line_margins=line_margins,
     )
 
 
