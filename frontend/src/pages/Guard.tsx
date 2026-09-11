@@ -429,13 +429,21 @@ export default function Guard() {
   const enabled = statusQ.data?.enabled ?? false;
 
   const tokens = tokensQ.data ?? [];
+  const tokenExpired = (tok: (typeof tokens)[number]) =>
+    new Date(tok.expires_at).getTime() < Date.now();
   const sortedTokens = [...tokens].sort((a, b) => {
-    const rank = (t: (typeof tokens)[number]) =>
-      t.revoked_at ? 2 : t.used_at ? 1 : 0;
+    const rank = (tok: (typeof tokens)[number]) => {
+      if (tok.revoked_at) return 3;
+      if (tokenExpired(tok)) return 2;
+      if (tok.used_at) return 1;
+      return 0;
+    };
     return rank(a) - rank(b);
   });
   const visibleTokens = showAllTokens ? sortedTokens : sortedTokens.slice(0, 5);
-  const unusedCount = tokens.filter((t) => !t.revoked_at && !t.used_at).length;
+  const unusedCount = tokens.filter(
+    (tok) => !tok.revoked_at && !tok.used_at && !tokenExpired(tok),
+  ).length;
 
   return (
     <div className="w-full space-y-6">
@@ -706,7 +714,11 @@ export default function Guard() {
                       {visibleTokens.map((tok) => (
                         <div
                           key={tok.id}
-                          className="rounded-lg border border-border bg-card p-3"
+                          className={
+                            tokenExpired(tok) && !tok.revoked_at
+                              ? "rounded-lg border border-border bg-card p-3 opacity-60"
+                              : "rounded-lg border border-border bg-card p-3"
+                          }
                           data-testid="guard-enroll-token-card"
                         >
                           <p
@@ -756,6 +768,11 @@ export default function Guard() {
                           <TableRow
                             key={tok.id}
                             data-testid="guard-enroll-token-row"
+                            className={
+                              tokenExpired(tok) && !tok.revoked_at
+                                ? "opacity-60"
+                                : undefined
+                            }
                           >
                             <TableCell className="max-w-[14rem]">
                               <span

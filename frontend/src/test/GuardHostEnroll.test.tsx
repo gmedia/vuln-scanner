@@ -353,6 +353,51 @@ describe("Guard host enroll UI", () => {
     expect(chips[0]).toHaveTextContent("Edge VPS");
   });
 
+  it("sorts valid enroll tokens first and excludes expired from unused count", async () => {
+    vi.mocked(guardApi.listEnrollTokens).mockResolvedValue([
+      {
+        id: "tok-expired",
+        label: "expired-host",
+        expires_at: "2020-01-01T00:00:00Z",
+        revoked_at: null,
+        used_at: null,
+        created_at: "2020-01-01T00:00:00Z",
+      },
+      {
+        id: "tok-ready",
+        label: "ready-host",
+        expires_at: "2099-01-01T00:00:00Z",
+        revoked_at: null,
+        used_at: null,
+        created_at: "2026-01-01T00:00:00Z",
+      },
+      {
+        id: "tok-used",
+        label: "used-host",
+        expires_at: "2099-01-01T00:00:00Z",
+        revoked_at: null,
+        used_at: "2026-02-01T00:00:00Z",
+        created_at: "2026-01-01T00:00:00Z",
+      },
+    ]);
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <Guard />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    const rows = await screen.findAllByTestId("guard-enroll-token-row");
+    expect(rows[0]).toHaveTextContent("ready-host");
+    expect(rows[1]).toHaveTextContent("used-host");
+    expect(rows[2]).toHaveTextContent("expired-host");
+    expect(screen.getByText(/1 valid/i)).toBeInTheDocument();
+    expect(rows[2].className).toMatch(/opacity-/);
+  });
+
   it("links empty critical alerts to SIEM", async () => {
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false } },
