@@ -101,6 +101,57 @@ describe("Uptime page", () => {
     await user.click(within(row).getByTestId("uptime-actions"));
     expect(screen.getByTestId("uptime-edit")).toBeInTheDocument();
     expect(screen.getByTestId("uptime-sparkline")).toHaveTextContent("—");
+    const table = row.closest("table");
+    expect(table?.className ?? "").toMatch(/table-fixed/);
+  });
+
+  it("renders a filled 24h sparkline when samples exist", async () => {
+    mockList.mockResolvedValue([
+      {
+        id: "m1",
+        organization_id: "o1",
+        name: "web",
+        check_type: "http",
+        target: "https://example.com",
+        interval_seconds: 60,
+        timeout_seconds: 10,
+        expect_status: 200,
+        keyword: null,
+        keyword_invert: false,
+        enabled: true,
+        state: "up",
+        consecutive_fails: 0,
+        last_checked_at: null,
+        last_status_code: 200,
+        last_latency_ms: 12,
+        last_error: null,
+        next_check_at: "2026-08-25T00:00:00Z",
+        notify_email: null,
+        asset_id: null,
+        created_at: "2026-08-25T00:00:00Z",
+        updated_at: "2026-08-25T00:00:00Z",
+        sku: "multi",
+        sku_limit: 10,
+        uptime_24h: 99.9,
+      },
+    ]);
+    mockSamples.mockResolvedValue(
+      Array.from({ length: 8 }, (_, i) => ({
+        id: `s${i}`,
+        checked_at: `2026-08-25T0${i}:00:00Z`,
+        ok: true,
+        latency_ms: 10 + i,
+        status_code: 200,
+        error: null,
+      })),
+    );
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("uptime-sparkline")).not.toHaveTextContent("—"),
+    );
+    const spark = screen.getByTestId("uptime-sparkline");
+    expect(spark.querySelector("path[fill]:not([fill='none'])")).toBeTruthy();
+    expect(Number(spark.getAttribute("height"))).toBeGreaterThanOrEqual(28);
   });
 
   it("opens advanced accordion on create", async () => {
