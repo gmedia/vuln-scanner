@@ -12,7 +12,16 @@ export function Sparkline({ monitorId, state }: SparklineProps) {
     queryFn: () => listSamples(monitorId),
   });
   const points = (samples.data ?? []).slice(0, 24).reverse();
-  if (points.length < 2) return null;
+  if (points.length < 2) {
+    return (
+      <span
+        data-testid="uptime-sparkline"
+        className="text-xs text-muted-foreground"
+      >
+        —
+      </span>
+    );
+  }
   const w = 96;
   const h = 24;
   const maxLat = Math.max(
