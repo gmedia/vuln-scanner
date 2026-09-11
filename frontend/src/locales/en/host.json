@@ -1,6 +1,7 @@
 {
   "title": "Host Protect",
   "subtitle": "Malware checks that run on your server. Not Guard and not SIEM.",
+  "subtitleWaf": "HTTP filter per site on your server. Not Guard and not SIEM.",
   "featureOff": "Host Protect is not enabled in this environment.",
   "pickOrg": "Select an organization first.",
   "empty": "No sites yet.",

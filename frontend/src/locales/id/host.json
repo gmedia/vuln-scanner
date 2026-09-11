@@ -1,6 +1,7 @@
 {
   "title": "Host Protect",
   "subtitle": "Pemeriksaan malware yang jalan di server Anda. Bukan Guard dan bukan SIEM.",
+  "subtitleWaf": "Filter HTTP per situs di server Anda. Bukan Guard dan bukan SIEM.",
   "featureOff": "Host Protect belum diaktifkan di lingkungan ini.",
   "pickOrg": "Pilih organisasi dulu.",
   "empty": "Belum ada situs.",

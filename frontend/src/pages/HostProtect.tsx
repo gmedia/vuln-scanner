@@ -77,6 +77,7 @@ export default function HostProtect() {
   const [showIgnoredBySite, setShowIgnoredBySite] = useState<
     Record<string, boolean>
   >({});
+  const [hostTab, setHostTab] = useState("malware");
 
   const sitesQ = useQuery({
     queryKey: ["host", activeOrgId, "sites"],
@@ -247,7 +248,9 @@ export default function HostProtect() {
         title={t("title")}
         description={
           <div className="space-y-1">
-            <p>{t("subtitle")}</p>
+            <p data-testid="host-page-subtitle">
+              {t(hostTab === "waf" ? "subtitleWaf" : "subtitle")}
+            </p>
             <p className="text-xs">{t("skuLabel", { sku, count: items.length, limit })}</p>
             <p className="text-xs">{t("honestyHint")}</p>
           </div>
@@ -474,7 +477,7 @@ export default function HostProtect() {
         </Card>
       ) : null}
 
-      <Tabs defaultValue="malware">
+      <Tabs value={hostTab} onValueChange={setHostTab}>
         <TabsList>
           <TabsTrigger value="malware" data-testid="host-tab-malware">
             {t("tabMalware")}
