@@ -395,5 +395,8 @@ describe("Dashboard", () => {
       .getByText("Recent work")
       .closest('[class*="lg:grid-cols-12"]');
     expect(jobs?.className).toMatch(/items-stretch/);
+    const recent = screen.getByText("Recent work").closest("[class*='flex-col']");
+    const content = recent?.querySelector("[class*='pb-\\[max']");
+    expect(content?.className ?? "").toMatch(/4rem/);
   });
 });

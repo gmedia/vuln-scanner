@@ -183,4 +183,37 @@ describe("FindingsTable", () => {
     expect(screen.getAllByText(/Use parameterized/).length).toBeGreaterThan(0);
     expect(screen.queryByText("Has suggestion")).not.toBeInTheDocument();
   });
+
+  it("wraps long suggested action instead of ellipsizing at 48 chars", () => {
+    const line =
+      "Upgrade the vendor package and restart the service after applying the security patch.";
+    renderTable(
+      <FindingsTable
+        findings={[mockFinding({ remediation: line })]}
+        isLoading={false}
+      />,
+    );
+    const snippet = screen.getByText(line);
+    expect(snippet.className).toMatch(/break-words/);
+    expect(snippet.className).toMatch(/whitespace-normal/);
+    expect(snippet.className).not.toMatch(/truncate/);
+    expect(snippet.textContent).not.toMatch(/…$/);
+  });
+
+  it("hides the title cell when title duplicates the CVE id", () => {
+    renderTable(
+      <FindingsTable
+        findings={[
+          mockFinding({ title: "CVE-2024-1234", cve_id: "CVE-2024-1234" }),
+        ]}
+        isLoading={false}
+      />,
+    );
+    const titleCell = document.querySelector("table tbody tr td:nth-child(2)");
+    expect(titleCell?.textContent?.trim()).toBe("—");
+    expect(
+      screen.getByRole("link", { name: "CVE-2024-1234" }),
+    ).toBeInTheDocument();
+  });
 });
+

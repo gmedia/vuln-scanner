@@ -29,6 +29,7 @@ const defaultScanCredit = {
   cost: 10,
   eligible: true,
   eligibilityLoading: false,
+  costUnavailable: false,
   creditDisplay: React.createElement("div", { "data-testid": "credit-display" }, "Available Credits: 100"),
   costPreview: React.createElement("div", { "data-testid": "scan-cost-preview" }, "cost"),
   checkAndDeduct: vi.fn().mockResolvedValue({ eligible: true, error: null }),

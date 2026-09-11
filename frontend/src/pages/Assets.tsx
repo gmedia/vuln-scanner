@@ -480,6 +480,7 @@ export default function Assets() {
             ) : null}
             <Button
               data-testid="assets-add"
+              variant={items.length === 0 ? "outline" : "default"}
               className="min-h-11 sm:min-h-10"
               disabled={atCap}
               onClick={() => {

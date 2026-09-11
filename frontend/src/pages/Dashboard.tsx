@@ -376,7 +376,7 @@ function Dashboard() {
               </CardAction>
             )}
           </CardHeader>
-          <CardContent className="flex-1 pb-[max(2rem,env(safe-area-inset-bottom))]">
+          <CardContent className="flex-1 pb-[max(4rem,env(safe-area-inset-bottom))]">
             {isFirstLoad ? (
               <TableRowSkeleton rows={6} />
               ) : scans.length === 0 ? (

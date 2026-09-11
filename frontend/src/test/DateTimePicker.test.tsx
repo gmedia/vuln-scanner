@@ -22,7 +22,9 @@ describe("DateTimePicker", () => {
     const trigger = screen.getByRole("button", { name: "Sejak" });
     expect(trigger).toHaveTextContent("06/08/2026 14:30");
     expect(trigger.className).toContain("overflow-hidden");
+    expect(trigger.className).toMatch(/min-w-\[12rem\]/);
     expect(trigger.querySelector(".truncate")).toBeTruthy();
+
   });
 
   it("opens calendar and 24h hour/minute selects", async () => {

@@ -808,16 +808,16 @@ export default function Uptime() {
                 ))}
               </div>
               <div className="hidden overflow-x-auto md:block">
-              <Table>
+              <Table className="table-fixed">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{t("colName")}</TableHead>
-                    <TableHead>{t("colStatus")}</TableHead>
-                    <TableHead>{t("colTarget")}</TableHead>
-                    <TableHead className="text-right">{t("colUptime")}</TableHead>
-                    <TableHead className="text-right">{t("latency")}</TableHead>
-                    <TableHead>{t("colSpark")}</TableHead>
-                    <TableHead className="text-right">{t("colActions")}</TableHead>
+                    <TableHead className="w-[18%]">{t("colName")}</TableHead>
+                    <TableHead className="w-[12%]">{t("colStatus")}</TableHead>
+                    <TableHead className="w-[28%]">{t("colTarget")}</TableHead>
+                    <TableHead className="w-[10%] text-right">{t("colUptime")}</TableHead>
+                    <TableHead className="w-[10%] text-right">{t("latency")}</TableHead>
+                    <TableHead className="w-[12%]">{t("colSpark")}</TableHead>
+                    <TableHead className="w-[10%] text-right">{t("colActions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

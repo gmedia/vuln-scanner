@@ -28,6 +28,7 @@ const defaultScanCredit = {
   cost: 10,
   eligible: true,
   eligibilityLoading: false,
+  costUnavailable: false,
   creditDisplay: React.createElement("div", { "data-testid": "credit-display" }, "Available Credits: 100"),
   costPreview: React.createElement("div", { "data-testid": "scan-cost-preview" }, "cost"),
   checkAndDeduct: vi.fn().mockResolvedValue({ eligible: true, error: null }),
@@ -264,4 +265,17 @@ describe("IpScanForm", () => {
     render(<IpScanForm />);
     expect(screen.getByRole("button", { name: /start ip scan/i })).toBeDisabled();
   });
+
+  it("disables Start IP scan when cost is unavailable", () => {
+    vi.mocked(useScanCredit).mockReturnValue({
+      ...defaultScanCredit,
+      eligible: false,
+      costUnavailable: true,
+      checkAndDeduct: vi.fn().mockResolvedValue({ eligible: false, error: "Scan cost unavailable." }),
+      refreshAfterScan: vi.fn(),
+    });
+    render(<IpScanForm />);
+    expect(screen.getByRole("button", { name: /start ip scan/i })).toBeDisabled();
+  });
 });
+

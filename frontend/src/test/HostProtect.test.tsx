@@ -757,6 +757,12 @@ describe("Host Protect page", () => {
     expect(screen.getByTestId("host-waf-panel").textContent).toMatch(
       /preview only|helper posts|customer VPS|Host Multi|Malware tab/i,
     );
+    expect(screen.getByTestId("host-page-subtitle").textContent).toMatch(
+      /HTTP filter|WAF/i,
+    );
+    expect(screen.getByTestId("host-page-subtitle").textContent).not.toMatch(
+      /Malware checks that run/i,
+    );
   });
 
   it("enables WAF simulate when policy is detect", async () => {

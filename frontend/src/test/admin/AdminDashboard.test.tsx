@@ -151,6 +151,10 @@ describe("AdminDashboard", () => {
     expect(screen.getByTestId("admin-kpi-chart")).toBeInTheDocument();
     expect(screen.getByTestId("admin-credits-chart")).toBeInTheDocument();
     expect(screen.getByText("Overview")).toBeInTheDocument();
+    expect(screen.getByTestId("admin-kpi-chart")).toHaveAttribute(
+      "data-bars",
+      "scans,findings",
+    );
   });
 
   it("renders quick links to user management and pricing", () => {
