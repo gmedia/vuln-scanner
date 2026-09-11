@@ -13,7 +13,7 @@ Today users run **one-shot** IP/domain scans from the dashboard. Upsell needs:
 1. **Schedule** (cadence without babysitting)
 2. **What changed** (baseline diff vs prior completed job on same target)
 3. **Manager-readable** summary (email and/or executive HTML)
-4. **Credits** that still make sense with existing metering
+4. **Credits** for overage / manual / mobile only — scheduled attach is included (metering v2)
 
 ---
 
@@ -103,7 +103,7 @@ Prefer **derived** from last two **completed** jobs for `(user_id, scan_type, ta
   `SELECT schedules WHERE enabled AND next_run_at <= now() LIMIT N`
   For each: create `ScanJob`, enqueue existing ip/domain task, set `last_run_at`, compute `next_run_at`, link `last_job_id` when terminal.
 - **Concurrency:** skip if prior scheduled job for same schedule still `pending`/`running` (no pile-up).
-- **Credits:** before enqueue, same eligibility check as manual scan; if insufficient credits → disable notify once + mark schedule error state / last_error (do not infinite retry burn).
+- **Credits (metering v2):** scheduled enqueue does **not** debit the wallet and does **not** disable on empty credits. Manual scans still use the eligibility check.
 - **Idempotency:** beat tick safe to overlap (row lock or `FOR UPDATE SKIP LOCKED`).
 
 ---
@@ -181,7 +181,7 @@ OpenAPI descriptions in Bahasa or EN — match existing API style.
 
 ### S5
 
-- [ ] Insufficient credits → no enqueue + visible error
+- [ ] Insufficient credits → **manual** 402; scheduled attach still enqueues (metering v2)
 - [ ] CI green; deploy via `deploy-services.sh` for backend/workers/beat
 - [ ] Docs: short operator note (env, beat must run)
 
