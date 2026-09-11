@@ -359,7 +359,7 @@ export default function Siem() {
             <CardContent className="space-y-4">
               <div
                 data-testid="siem-search-filters"
-                className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+                className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
               >
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <Label htmlFor="siem-since">{t("sinceLabel")}</Label>
@@ -431,9 +431,7 @@ export default function Siem() {
                   />
                 </div>
                 <div className="flex min-w-0 flex-col gap-1.5">
-                  <Label htmlFor="siem-apply" className="invisible select-none">
-                    {t("apply")}
-                  </Label>
+                  <Label htmlFor="siem-apply">{t("apply")}</Label>
                   <Button
                     id="siem-apply"
                     className="h-10 min-h-10 w-full"
@@ -690,21 +688,54 @@ export default function Siem() {
                   {t("casesEmpty")}
                 </p>
               ) : (
-                <ul className="space-y-2">
+                <div className="space-y-2 md:hidden">
                   {cases.map((c) => (
-                    <li key={c.id}>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-auto w-full justify-between px-3 py-2 text-left text-sm font-normal"
-                        onClick={() => setActiveCaseId(c.id)}
-                      >
-                        <span>{c.title}</span>
-                        {statusBadge(c.status, t)}
-                      </Button>
-                    </li>
+                    <Button
+                      key={c.id}
+                      type="button"
+                      variant="outline"
+                      className="h-auto w-full justify-between px-3 py-2 text-left text-sm font-normal"
+                      onClick={() => setActiveCaseId(c.id)}
+                    >
+                      <span>{c.title}</span>
+                      {statusBadge(c.status, t)}
+                    </Button>
                   ))}
-                </ul>
+                </div>
+                <div className="hidden overflow-x-auto md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t("colCaseTitle")}</TableHead>
+                        <TableHead>{t("colCaseStatus")}</TableHead>
+                        <TableHead>{t("colSeverity")}</TableHead>
+                        <TableHead>{t("colUpdated")}</TableHead>
+                        <TableHead className="text-right">{t("colEventCount")}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {cases.map((c) => (
+                        <TableRow
+                          key={c.id}
+                          className="cursor-pointer"
+                          onClick={() => setActiveCaseId(c.id)}
+                        >
+                          <TableCell className="font-medium">{c.title}</TableCell>
+                          <TableCell>{statusBadge(c.status, t)}</TableCell>
+                          <TableCell className="font-mono text-xs tabular-nums">
+                            {c.severity ?? "—"}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap text-muted-foreground">
+                            {formatSiemWhen(c.updated_at)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-xs tabular-nums">
+                            {c.events.length}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
 
               {activeCase && (
