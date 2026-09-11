@@ -67,7 +67,7 @@ function IpScanForm() {
   };
 
   const submitDisabled =
-    startIpScan.isPending || (!eligibilityLoading && !eligible);
+    startIpScan.isPending || eligibilityLoading || !eligible;
 
   return (
     <div className="space-y-4">
