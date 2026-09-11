@@ -160,7 +160,11 @@ describe("SIEM page", () => {
     expect(filters.className).not.toContain("grid-cols-12");
     expect(filters.className).not.toContain("invisible");
     expect(screen.getByLabelText("Search box")).toBeInTheDocument();
+    expect(screen.getByLabelText("Since")).toBeInTheDocument();
+    expect(screen.getByLabelText("Until")).toBeInTheDocument();
+    expect(screen.queryByText(/24h/i)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Apply" })).toBeInTheDocument();
+
     expect(screen.getByRole("tab", { name: "Search events" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Cases" })).toBeInTheDocument();
     expect(screen.queryByTestId("siem-event-detail")).not.toBeInTheDocument();
