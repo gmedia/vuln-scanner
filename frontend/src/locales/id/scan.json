@@ -113,6 +113,7 @@
   "hasRemediation": "Ada saran",
   "noMatchingFindings": "Tidak ada temuan yang cocok",
   "checkingCost": "Memeriksa biaya…",
+  "costUnavailable": "Biaya scan tidak tersedia. Coba lagi sebentar.",
   "scanCost": "Biaya scan:",
   "balanceAfter": "Saldo setelah:",
   "insufficientCredits": "Kredit tidak cukup. Diperlukan: {{required}}, Tersedia: {{available}}"
