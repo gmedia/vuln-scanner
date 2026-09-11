@@ -206,11 +206,12 @@ function tokenStatusBadge(
     expires_at: string;
   },
   t: (key: string) => string,
+  nowMs: number,
 ) {
   if (tok.revoked_at) {
     return <Badge variant="info">{t("statusRevoked")}</Badge>;
   }
-  if (new Date(tok.expires_at).getTime() < Date.now()) {
+  if (new Date(tok.expires_at).getTime() < nowMs) {
     return (
       <Badge className="border border-border bg-muted text-foreground">
         {t("statusExpired")}
@@ -429,8 +430,9 @@ export default function Guard() {
   const enabled = statusQ.data?.enabled ?? false;
 
   const tokens = tokensQ.data ?? [];
+  const [nowMs] = useState(() => Date.now());
   const tokenExpired = (tok: (typeof tokens)[number]) =>
-    new Date(tok.expires_at).getTime() < Date.now();
+    new Date(tok.expires_at).getTime() < nowMs;
   const sortedTokens = [...tokens].sort((a, b) => {
     const rank = (tok: (typeof tokens)[number]) => {
       if (tok.revoked_at) return 3;
@@ -732,7 +734,7 @@ export default function Guard() {
                             {t("colExpires")}: {formatWhen(tok.expires_at, dateLocale)}
                           </p>
                           <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                            {tokenStatusBadge(tok, t)}
+                            {tokenStatusBadge(tok, t, nowMs)}
                             {!tok.revoked_at && (
                               <TokenRevokeButton
                                 tok={tok}
@@ -786,7 +788,7 @@ export default function Guard() {
                             <TableCell className="whitespace-nowrap text-muted-foreground">
                               {formatWhen(tok.expires_at, dateLocale)}
                             </TableCell>
-                            <TableCell>{tokenStatusBadge(tok, t)}</TableCell>
+                            <TableCell>{tokenStatusBadge(tok, t, nowMs)}</TableCell>
                             <TableCell>
                               {!tok.revoked_at && (
                                 <TokenRevokeButton
