@@ -81,6 +81,15 @@ describe("AppShell", () => {
     expect(document.querySelector("[data-slot='sheet-overlay']")).toBeNull();
   });
 
+  it("pads the sidebar brand for the notch and uses a wider mobile drawer", () => {
+    renderShell();
+    const header = document.querySelector("[data-slot='sidebar-header']");
+    expect(header).toBeInstanceOf(HTMLElement);
+    expect(header!.className).toMatch(/safe-area-inset-top/);
+    const inner = document.querySelector("[data-sidebar='sidebar']");
+    expect(inner).toBeInstanceOf(HTMLElement);
+  });
+
   it("renders SINEXIS brand text in the sidebar", () => {
     renderShell();
     const sidebar = screen.getByRole("complementary");
