@@ -155,4 +155,32 @@ describe("FindingsTable", () => {
     await user.click(screen.getAllByText("XSS Attack")[0]);
     expect(screen.queryByTestId("finding-detail-row-2")).not.toBeInTheDocument();
   });
+
+  it("renders full Debian CVE ids without truncating last digits", () => {
+    const findings = [
+      mockFinding({ id: "1", cve_id: "DEBIAN-CVE-2026-42946" }),
+      mockFinding({
+        id: "2",
+        title: "Heap overflow",
+        cve_id: "DEBIAN-CVE-2026-42945",
+      }),
+    ];
+    renderTable(<FindingsTable findings={findings} isLoading={false} />);
+    expect(screen.getAllByText("DEBIAN-CVE-2026-42946").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("DEBIAN-CVE-2026-42945").length).toBeGreaterThan(0);
+  });
+
+  it("renders an em dash without a CVSS bar when cvss_score is null", () => {
+    const findings = [mockFinding({ cvss_score: null, remediation: null })];
+    renderTable(<FindingsTable findings={findings} isLoading={false} />);
+    expect(document.querySelector(".h-1\\.5.w-12")).not.toBeInTheDocument();
+    expect(screen.getAllByText("—").length).toBeGreaterThan(0);
+  });
+
+  it("shows a remediation snippet instead of a boolean pill", () => {
+    const findings = [mockFinding({ remediation: "Use parameterized queries" })];
+    renderTable(<FindingsTable findings={findings} isLoading={false} />);
+    expect(screen.getAllByText(/Use parameterized/).length).toBeGreaterThan(0);
+    expect(screen.queryByText("Has suggestion")).not.toBeInTheDocument();
+  });
 });

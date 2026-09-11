@@ -322,6 +322,13 @@ function FindingsTable({
             ) : (
               sorted.map((finding) => {
                 const isExpanded = expandedId === finding.id;
+                const remediationLine = finding.remediation
+                  ? (finding.remediation.split("\n")[0] ?? "")
+                  : "";
+                const remediationSnippet =
+                  remediationLine.length > 48
+                    ? `${remediationLine.slice(0, 48)}…`
+                    : remediationLine;
                 return (
                   <Fragment key={finding.id}>
                     <TableRow
@@ -357,12 +364,13 @@ function FindingsTable({
                       <TableCell className="px-3 py-2.5 text-xs text-muted-foreground">
                         {finding.category || "-"}
                       </TableCell>
-                      <TableCell className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
+                      <TableCell className="min-w-[14rem] whitespace-nowrap px-3 py-2.5 font-mono text-xs text-muted-foreground">
                         {finding.cve_id ? (
                           <a
                             href={`https://nvd.nist.gov/vuln/detail/${finding.cve_id}`}
                             target="_blank"
                             rel="noopener noreferrer"
+                            title={finding.cve_id}
                             onClick={(e) => e.stopPropagation()}
                             className="text-primary hover:underline"
                           >
@@ -373,33 +381,41 @@ function FindingsTable({
                         )}
                       </TableCell>
                       <TableCell className="px-3 py-2.5">
-                        <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-12 overflow-hidden rounded-full bg-muted">
-                            <div
-                              className={cn(
-                                "h-full rounded-full transition-all",
-                                cvssBarColor(finding.cvss_score),
-                              )}
-                              style={{
-                                width: `${((finding.cvss_score ?? 0) / 10) * 100}%`,
-                              }}
-                            />
-                          </div>
-                          <span
-                            className={cn(
-                              "font-mono text-xs font-medium tabular-nums",
-                              cvssColor(finding.cvss_score),
-                            )}
-                          >
-                            {finding.cvss_score?.toFixed(1) ?? "-"}
+                        {finding.cvss_score == null ? (
+                          <span className="font-mono text-xs font-medium text-muted-foreground">
+                            —
                           </span>
-                        </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <div className="h-1.5 w-12 overflow-hidden rounded-full bg-muted">
+                              <div
+                                className={cn(
+                                  "h-full rounded-full transition-all",
+                                  cvssBarColor(finding.cvss_score),
+                                )}
+                                style={{
+                                  width: `${(finding.cvss_score / 10) * 100}%`,
+                                }}
+                              />
+                            </div>
+                            <span
+                              className={cn(
+                                "font-mono text-xs font-medium tabular-nums",
+                                cvssColor(finding.cvss_score),
+                              )}
+                            >
+                              {finding.cvss_score.toFixed(1)}
+                            </span>
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell className="px-3 py-2.5 text-xs">
                         {finding.remediation ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                            {t("hasRemediation")}
+                          <span
+                            className="block max-w-[12rem] truncate text-foreground"
+                            title={finding.remediation}
+                          >
+                            {remediationSnippet}
                           </span>
                         ) : (
                           <span className="text-muted-foreground">-</span>
