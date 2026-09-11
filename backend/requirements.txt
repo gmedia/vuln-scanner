@@ -35,4 +35,4 @@ markdown==3.8.2
 types-bleach==6.2.0.20241123
 types-Markdown==3.8.0.20250809
 langsmith==0.10.14
-protobuf==7.35.1
+protobuf==7.36.0
