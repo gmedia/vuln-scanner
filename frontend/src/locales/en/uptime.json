@@ -52,6 +52,7 @@
   "colUptime": "24h %",
   "colSpark": "24h",
   "colActions": "Actions",
+  "actionsMenu": "Monitor actions",
   "lastError": "Last error",
   "advanced": "Advanced",
   "timeout": "Timeout (seconds)",

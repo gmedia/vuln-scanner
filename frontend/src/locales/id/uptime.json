@@ -52,6 +52,7 @@
   "colUptime": "24j %",
   "colSpark": "24j",
   "colActions": "Aksi",
+  "actionsMenu": "Aksi monitor",
   "lastError": "Error terakhir",
   "advanced": "Lanjutan",
   "timeout": "Timeout (detik)",

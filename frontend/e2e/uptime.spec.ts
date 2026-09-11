@@ -1,3 +1,4 @@
+import { type Locator, type Page } from "@playwright/test";
 import { test, expect } from "./fixtures";
 
 function httpTarget(): string {
@@ -7,6 +8,11 @@ function httpTarget(): string {
 function tcpTarget(): string | undefined {
   const raw = process.env.E2E_UPTIME_TCP?.trim();
   return raw || undefined;
+}
+
+async function deleteUptimeRow(page: Page, row: Locator): Promise<void> {
+  await row.getByTestId("uptime-actions").click();
+  await page.getByTestId("uptime-delete").click();
 }
 
 test.describe("Uptime @uptime", () => {
@@ -52,10 +58,7 @@ test.describe("Uptime @uptime", () => {
       .filter({ hasText: /e2e-up-/ });
     while ((await leftovers.count()) > 0) {
       const n = await leftovers.count();
-      await leftovers
-        .first()
-        .getByRole("button", { name: /hapus|delete/i })
-        .click();
+      await deleteUptimeRow(page, leftovers.first());
       await expect.poll(async () => leftovers.count()).toBeLessThan(n);
     }
     await page.getByTestId("uptime-add").click();
@@ -75,7 +78,7 @@ test.describe("Uptime @uptime", () => {
     await expect(row).toContainText(/http/i);
     await expect(row).toContainText(/unknown|up|down|degraded/i);
 
-    await row.getByRole("button", { name: /hapus|delete/i }).click();
+    await deleteUptimeRow(page, row);
     await expect(row).toHaveCount(0, { timeout: 20_000 });
   });
 
@@ -95,10 +98,7 @@ test.describe("Uptime @uptime", () => {
     });
     await expect(row).toBeVisible({ timeout: 20_000 });
     page.once("dialog", (d) => d.accept());
-    const del = row
-      .getByTestId("uptime-delete")
-      .or(row.getByRole("button", { name: /hapus|delete/i }));
-    await del.click();
+    await deleteUptimeRow(page, row);
     await expect(row).toHaveCount(0, { timeout: 20_000 });
   });
 });

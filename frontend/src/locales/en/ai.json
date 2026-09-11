@@ -22,6 +22,7 @@
   "colName": "Name",
   "colPrefix": "Prefix",
   "colActive": "Active",
+  "colInactive": "Inactive",
   "colModel": "Model",
   "colTokens": "Tokens",
   "colBilled": "Billed (IDR)",

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Uptime, { explainUptimeError, mapUptimeError } from "@/pages/Uptime";
@@ -62,6 +63,7 @@ describe("Uptime page", () => {
   });
 
   it("shows KPI badges when monitors exist", async () => {
+    const user = userEvent.setup();
     mockList.mockResolvedValue([
       {
         id: "m1",
@@ -93,8 +95,10 @@ describe("Uptime page", () => {
     ]);
     renderPage();
     await waitFor(() => expect(screen.getByTestId("uptime-kpi")).toBeInTheDocument());
-    expect(screen.getByTestId("uptime-row")).toBeInTheDocument();
+    const row = screen.getByTestId("uptime-row");
+    expect(row).toBeInTheDocument();
     expect(screen.getByTestId("uptime-filters")).toBeInTheDocument();
+    await user.click(within(row).getByTestId("uptime-actions"));
     expect(screen.getByTestId("uptime-edit")).toBeInTheDocument();
   });
 
@@ -145,6 +149,7 @@ describe("Uptime page", () => {
   });
 
   it("opens check history for a down monitor", async () => {
+    const user = userEvent.setup();
     mockList.mockResolvedValue([
       {
         id: "m1",
@@ -185,8 +190,10 @@ describe("Uptime page", () => {
       },
     ]);
     renderPage();
-    await waitFor(() => expect(screen.getByTestId("uptime-history")).toBeInTheDocument());
-    screen.getByTestId("uptime-history").click();
+    await waitFor(() => expect(screen.getByTestId("uptime-row")).toBeInTheDocument());
+    const row = screen.getByTestId("uptime-row");
+    await user.click(within(row).getByTestId("uptime-actions"));
+    await user.click(screen.getByTestId("uptime-history"));
     await waitFor(() =>
       expect(screen.getByTestId("uptime-history-panel")).toBeInTheDocument(),
     );

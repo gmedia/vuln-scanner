@@ -33,6 +33,8 @@
   "status": "Status",
   "save": "Save",
   "empty": "No status page yet.",
+  "emptyHint": "Create a public page so visitors can see Uptime components and incidents.",
+  "emptyCta": "Create your first status page",
   "disclaimer": "Best-effort outside-in checks. Not an SLA.",
   "openPublic": "Open public page",
   "statPublished": "Visibility",
