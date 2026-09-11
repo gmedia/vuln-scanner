@@ -150,7 +150,28 @@ def test_wrapper_write_waf_snippet_file(tmp_path: Path) -> None:
     assert "/solr/update" in text
     assert "/solr/#/" not in text
     assert "wp-admin" not in text
-    assert "';" in text.split("modsecurity_rules", 1)[1]
+    assert text.count("modsecurity on;") == 1
+    assert text.count("modsecurity_rules '") >= 2
+    bodies: list[str] = []
+    marker = "modsecurity_rules '"
+    start = 0
+    while True:
+        i = text.find(marker, start)
+        if i < 0:
+            break
+        i += len(marker)
+        j = text.find("';", i)
+        assert j > i
+        bodies.append(text[i:j])
+        start = j + 2
+    assert len(bodies) >= 2
+    for body in bodies:
+        assert len(body) <= 3500
+        assert "modsecurity on;" not in body
+    chain_hits = [body for body in bodies if "id:1005" in body]
+    assert len(chain_hits) == 1
+    assert "SecRule REQUEST_METHOD" in chain_hits[0]
+    assert "SecRule ARGS" in chain_hits[0]
     combined = proc.stdout + proc.stderr
     assert "No nginx reload" in combined
 
