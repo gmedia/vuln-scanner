@@ -599,51 +599,40 @@ function AdminHpp() {
         <p className="mb-3 text-[11px] text-muted-foreground">
           {t("hppSkuHint")}
         </p>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {report?.sku_estimates.map((sku) => (
-            <Card key={sku.sku} data-testid={`hpp-sku-${sku.sku}`}>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {(report?.line_margins ?? []).map((row) => (
+            <Card key={row.line} data-testid={`hpp-line-${row.line}`}>
               <CardHeader>
-                <CardTitle className="text-sm uppercase">{sku.sku}</CardTitle>
+                <CardTitle className="text-sm uppercase">
+                  {row.line === "host" ? t("hppLineHost") : t("hppLineScan")}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-1 text-xs">
                 <p>
-                  {t("hppListPrice")}:{" "}
+                  {t("hppOrgCount")}:{" "}
+                  <span className="font-mono tabular-nums">{row.org_count}</span>
+                </p>
+                <p>
+                  {t("hppRevenue")}:{" "}
                   <span className="font-mono tabular-nums">
-                    {formatIdr(sku.list_idr)}
+                    {formatIdr(row.revenue_idr)}
                   </span>
                 </p>
                 <p>
-                  {t("hppIfAllIp")}:{" "}
+                  {t("hppCogs")}:{" "}
                   <span className="font-mono tabular-nums">
-                    {formatIdr(sku.hpp_if_all_ip_idr)}
+                    {formatIdr(row.cogs_idr)}
                   </span>
                 </p>
                 <p>
-                  {t("hppIfAllDomain")}:{" "}
+                  {t("hppMargin")}:{" "}
                   <span className="font-mono tabular-nums">
-                    {formatIdr(sku.hpp_if_all_domain_idr)}
+                    {formatIdr(row.margin_idr)}
                   </span>
-                </p>
-                <p>
-                  {t("hppMarginIfAllIp")}:{" "}
-                  <span className="font-mono tabular-nums">
-                    {formatIdr(sku.margin_if_all_ip_idr)}
-                  </span>
-                  {sku.margin_if_all_ip_pct != null
-                    ? ` (${sku.margin_if_all_ip_pct}%)`
-                    : ""}
-                </p>
-                <p>
-                  {t("hppMarginIfAllDomain")}:{" "}
-                  <span className="font-mono tabular-nums">
-                    {formatIdr(sku.margin_if_all_domain_idr)}
-                  </span>
-                  {sku.margin_if_all_domain_pct != null
-                    ? ` (${sku.margin_if_all_domain_pct}%)`
-                    : ""}
+                  {row.margin_pct != null ? ` (${row.margin_pct}%)` : ""}
                 </p>
                 <Badge variant="info" className="text-[10px]">
-                  {sku.label}
+                  {row.label}
                 </Badge>
               </CardContent>
             </Card>

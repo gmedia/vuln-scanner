@@ -354,17 +354,14 @@ export interface HppReportLine {
   fully_loaded_unit_idr: number;
 }
 
-export interface HppSkuEstimate {
-  sku: string;
-  list_idr: number;
-  credits_per_month: number;
+export interface HppLineMargin {
+  line: string;
   label: string;
-  hpp_if_all_ip_idr: number | null;
-  hpp_if_all_domain_idr: number | null;
-  margin_if_all_ip_idr: number | null;
-  margin_if_all_domain_idr: number | null;
-  margin_if_all_ip_pct: number | null;
-  margin_if_all_domain_pct: number | null;
+  org_count: number;
+  revenue_idr: number;
+  cogs_idr: number;
+  margin_idr: number;
+  margin_pct: number | null;
 }
 
 export interface HppReportResponse {
@@ -378,7 +375,7 @@ export interface HppReportResponse {
   journal_variable_idr: number;
   total_fully_loaded_hpp_idr: number;
   unallocated_overhead_idr: number;
-  sku_estimates: HppSkuEstimate[];
+  line_margins: HppLineMargin[];
 }
 
 export interface HppCostLineItem {
@@ -501,9 +498,9 @@ export const adminApi = {
   getHppOverhead,
   updateHppOverhead,
   listHppCosts,
-    createHppCost,
-    deleteHppCost,
-    getEmailLogs,
+  createHppCost,
+  deleteHppCost,
+  getEmailLogs,
   listAiProviders,
   createAiProvider,
   updateAiProvider,

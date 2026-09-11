@@ -126,7 +126,7 @@ describe("hpp admin api", () => {
         lines: [],
         total_count: 0,
         total_hpp_idr: 0,
-        sku_estimates: [],
+        line_margins: [],
       },
     });
     await getHppReport({ from: "2026-08-01", to: "2026-08-31" });

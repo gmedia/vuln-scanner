@@ -180,18 +180,24 @@ const report = {
   journal_variable_idr: 0,
   total_fully_loaded_hpp_idr: 2100,
   unallocated_overhead_idr: 0,
-  sku_estimates: [
+  line_margins: [
     {
-      sku: "basic",
-      list_idr: 300000,
-      credits_per_month: 10,
+      line: "scan",
       label: "estimasi",
-      hpp_if_all_ip_idr: 10000,
-      hpp_if_all_domain_idr: 0,
-      margin_if_all_ip_idr: 290000,
-      margin_if_all_domain_idr: 300000,
-      margin_if_all_ip_pct: 97,
-      margin_if_all_domain_pct: 100,
+      org_count: 1,
+      revenue_idr: 300000,
+      cogs_idr: 10000,
+      margin_idr: 290000,
+      margin_pct: 97,
+    },
+    {
+      line: "host",
+      label: "estimasi",
+      org_count: 0,
+      revenue_idr: 0,
+      cogs_idr: 0,
+      margin_idr: 0,
+      margin_pct: null,
     },
   ],
 };
@@ -271,9 +277,10 @@ describe("AdminHpp", () => {
     expect(screen.getByTestId("hpp-report-filters")).toBeInTheDocument();
     expect(screen.getByTestId("hpp-overhead-card")).toBeInTheDocument();
     expect(screen.getByTestId("hpp-costs-card")).toBeInTheDocument();
-    expect(screen.getByTestId("hpp-sku-basic")).toBeInTheDocument();
-    expect(screen.getByText("estimasi")).toBeInTheDocument();
-    expect(screen.getByText(/Margin if all IP/)).toBeInTheDocument();
+    expect(screen.getByTestId("hpp-line-scan")).toBeInTheDocument();
+    expect(screen.getByTestId("hpp-line-host")).toBeInTheDocument();
+    expect(screen.getAllByText("estimasi").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Margin \(estimasi\)/).length).toBe(2);
     expect(screen.getByText(/290.000/)).toBeInTheDocument();
     expect(screen.getByText(/\(97%\)/)).toBeInTheDocument();
   });
