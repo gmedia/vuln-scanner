@@ -688,6 +688,7 @@ export default function Siem() {
                   {t("casesEmpty")}
                 </p>
               ) : (
+                <>
                 <div className="space-y-2 md:hidden">
                   {cases.map((c) => (
                     <Button
@@ -736,6 +737,7 @@ export default function Siem() {
                     </TableBody>
                   </Table>
                 </div>
+                </>
               )}
 
               {activeCase && (
