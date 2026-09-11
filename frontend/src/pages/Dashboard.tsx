@@ -179,6 +179,7 @@ function Dashboard() {
     },
     { critical: 0, high: 0 },
   );
+  const riskCount = openRisk.critical + openRisk.high;
 
   const weekCounts = scans.reduce(
     (acc, s) => {
@@ -202,10 +203,10 @@ function Dashboard() {
   const criticalAlerts = alerts.filter((a) => a.rule_level >= 12);
 
   const attention: { key: string; text: string; to: string }[] = [];
-  if (openRisk.critical + openRisk.high > 0) {
+  if (riskCount > 0) {
     attention.push({
       key: "risk",
-      text: t("attentionRisk", { count: openRisk.critical + openRisk.high }),
+      text: t("attentionRisk", { count: riskCount }),
       to: "#pekerjaan-terakhir",
     });
   }
@@ -323,10 +324,10 @@ function Dashboard() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
           label={t("openRisk")}
-          value={openRisk.critical + openRisk.high}
+          value={riskCount}
           isLoading={isFirstLoad}
-          className="border-red-600/30"
-          valueClassName="text-red-400"
+          className={riskCount > 0 ? "border-red-600/30" : "border-primary/30"}
+          valueClassName={riskCount > 0 ? "text-red-400" : "text-foreground"}
         />
         <StatCard
           label={t("weekChm")}
@@ -375,7 +376,7 @@ function Dashboard() {
               </CardAction>
             )}
           </CardHeader>
-          <CardContent className="flex-1">
+          <CardContent className="flex-1 pb-[max(2rem,env(safe-area-inset-bottom))]">
             {isFirstLoad ? (
               <TableRowSkeleton rows={6} />
               ) : scans.length === 0 ? (

@@ -131,6 +131,14 @@ describe("Dashboard", () => {
     expect(screen.getByText("Credits")).toBeInTheDocument();
   });
 
+  it("does not paint Open Risk red when count is zero", () => {
+    render(<Dashboard />);
+    const value = screen.getByText("Open risk").previousElementSibling;
+    expect(value).toHaveTextContent("0");
+    expect(value).not.toHaveClass("text-red-400");
+    expect(value).toHaveClass("text-foreground");
+  });
+
   it("renders Recent work section", () => {
     render(<Dashboard />);
     expect(screen.getByText("Recent work")).toBeInTheDocument();
@@ -377,7 +385,9 @@ describe("Dashboard", () => {
     });
     render(<Dashboard />);
     expect(screen.queryByText("NaN")).not.toBeInTheDocument();
-    expect(screen.getByText("Open risk").previousElementSibling?.textContent).toBe("1");
+    const openRiskValue = screen.getByText("Open risk").previousElementSibling;
+    expect(openRiskValue?.textContent).toBe("1");
+    expect(openRiskValue).toHaveClass("text-red-400");
     expect(screen.getAllByText("Failed").length).toBeGreaterThan(0);
     expect(screen.getAllByText("1C").length).toBeGreaterThan(0);
     expect(screen.getAllByText("2M").length).toBeGreaterThan(0);
