@@ -125,7 +125,7 @@ function MobileUpload() {
   };
 
   const submitDisabled =
-    !file || startMobileScan.isPending || (!eligibilityLoading && !eligible);
+    !file || startMobileScan.isPending || eligibilityLoading || !eligible;
 
   return (
     <div className="space-y-4">
