@@ -639,7 +639,16 @@ export default function Siem() {
             </CardContent>
           </Card>
 
-          {isXl && selected ? (
+          {isXl && eventsQ.isLoading ? (
+            <Card className="xl:sticky xl:top-4">
+              <CardHeader>
+                <CardTitle>{t("eventDetail")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TableRowSkeleton rows={4} />
+              </CardContent>
+            </Card>
+          ) : isXl && selected ? (
             <Card className="xl:sticky xl:top-4">
               <CardHeader>
                 <CardTitle>{t("eventDetail")}</CardTitle>
