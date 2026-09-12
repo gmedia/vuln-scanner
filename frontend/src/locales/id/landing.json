@@ -40,7 +40,7 @@
   "stepScan": "Scan",
   "stepScanDesc": "Pilih satu IP, domain, atau build mobile yang Anda miliki. Mesin jalan dari sisi internet. Hasilnya laporan HTML yang bisa diserahkan ke klien atau auditor.",
   "stepAttach": "Attach",
-  "stepAttachDesc": "Atur interval sesuai seberapa sering infra benar-benar berubah. Mingguan, bulanan, terserah Anda. Setiap hasil dibanding yang terakhir, jadi yang dibaca selisihnya, bukan seluruh laporan lagi.",
+    "stepAttachDesc": "Atur interval sesuai seberapa sering infra benar\u2011benar berubah. Mingguan, bulanan, terserah Anda. Setiap hasil dibanding yang terakhir, jadi yang dibaca selisihnya, bukan seluruh laporan lagi.",
   "stepWorkspace": "Workspace",
   "stepWorkspaceDesc": "Undang tim ke satu organisasi. Aset punya nama yang orang sudah ucapkan. Riwayat di satu tempat. Shift malam ini melihat temuan terakhir.",
   "stepGuard": "Guard",

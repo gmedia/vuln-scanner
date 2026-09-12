@@ -143,7 +143,7 @@ function Landing() {
             <p className="text-balance text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {t("heroEyebrow")}
             </p>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+            <h1 className="text-pretty text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
               {t("heroHeadline")}
             </h1>
             <p className="text-pretty text-base text-muted-foreground sm:text-lg">
@@ -191,7 +191,7 @@ function Landing() {
                   <p className="mt-1 text-sm font-semibold tracking-wide text-foreground">
                     {t(step.titleKey)}
                   </p>
-                  <p className="mt-2 flex-1 text-pretty text-sm leading-relaxed text-muted-foreground">
+                  <p className="mt-2 flex-1 text-pretty hyphens-none text-sm leading-relaxed text-muted-foreground">
                     {t(step.descKey)}
                   </p>
                 </li>
