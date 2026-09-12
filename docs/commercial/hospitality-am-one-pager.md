@@ -17,7 +17,7 @@ You already pay for **colo, VPS, or cloud**. Public IPs and booking/Wi‑Fi doma
 | Scheduled check of named targets | Replace firewall / WAF |
 | Email when **new critical/high** appears | 24/7 SOC |
 | What changed vs last run | Full log search (SIEM) on day one |
-| One **executive HTML** in Bahasa | Unlimited scans |
+| One **executive HTML** in Bahasa | Unlimited on-demand scans |
 
 **Pilot #1:** 1 month sponsored, **1–3 targets**, list price still recorded. Convert or disable schedules at month end.
 
@@ -25,13 +25,13 @@ You already pay for **colo, VPS, or cloud**. Public IPs and booking/Wi‑Fi doma
 
 ## Working list (AM quote)
 
-| Tier | Targets | Credits / mo | IDR / mo |
-|------|---------|--------------|----------|
-| **Basic** | 1 | 10 | **300.000** |
-| **Pro** | ≤3 | 24 | **650.000** |
-| **Multi-asset** | ≤10 | 60 | **2.000.000** |
+| Tier | Targets | Cadence | IDR / mo |
+|------|---------|---------|----------|
+| **Basic** | 1 | Monthly | **300.000** |
+| **Pro** | ≤3 | Weekly or monthly | **650.000** |
+| **Multi-asset** | ≤10 | Weekly | **2.000.000** |
 
-Invoice = **new `service_id` per tier**. Do not silent-bundle into VPS.
+Invoice = **new `service_id` per tier**. Do not silent-bundle into VPS. Headline = **assets + cadence**. Credits = optional overage (manual / mobile), not required for the attach loop ([`../specs/metering-v2.md`](../specs/metering-v2.md)).
 
 **Hotel language → product:** property / PMS / booking site = **asset**; weekly check = **schedule**; GM PDF/HTML = **executive report**; IT login = **workspace** (invite viewer). Hybrid review of criticals: **5 business days**, not a SOC SLA.
 
@@ -42,7 +42,7 @@ Invoice = **new `service_id` per tier**. Do not silent-bundle into VPS.
 1. Confirm SID pattern (VPS+domain, colo IP, or multi-service).
 2. Offer Basic or Pro; Multi only if ≥4 named targets.
 3. Send wave-1 email; log CRM date + tier.
-4. Ops: credits, org SKU, `/assets`, 1:1 schedule, first HTML.
+4. Ops: org `sku`, `/assets`, 1:1 schedule, first HTML. Overage credits optional.
 5. Follow-up 7–10d. **AM owns renew.**
 
-**Do not promise:** Guard/Wazuh, SIEM, nested multi-property Projects, org wallet, unlimited, “aman 100%”.
+**Do not promise:** Guard/Wazuh, SIEM, nested multi-property Projects, org wallet, unlimited on-demand, “aman 100%”.

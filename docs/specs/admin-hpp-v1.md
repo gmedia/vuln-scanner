@@ -57,7 +57,7 @@ Table `hpp_rates`:
 
 Report rows: per key `count`, `rate_idr`, `hpp_idr` (= count × rate). Totals. Statushost count = `credit_logs` with `type=deduct` and description prefix `Status hostname:` in range. Hostscan count = `host_scans` with `status=completed` and `finished_at` in range. Seed `hostscan` **0** — no real COGS in git.
 
-S3 overlay **replaced (metering v2):** `line_margins` for **scan** vs **host**. Revenue = list × orgs with an enabled Scan schedule or a Host site (do not count default `sku=multi` personal orgs with neither). COGS = fully loaded keys for that line. Label **estimasi** — not invoice P&L. What-if “all credits → IP vs domain” is **out**.
+S3 overlay **replaced (metering v2):** `line_margins` for **scan** vs **host**. Revenue = list × orgs with an enabled Scan schedule or a Host site (do not count default `sku=multi` personal orgs with neither). Scan COGS = fully loaded ip/domain/apk/ipa/statushost. Host COGS = `hostscan` fully loaded **capped** at included cadence (sites × days in range; hourly × 24) when recorded volume exceeds that (`host_cogs_capped`). Table volume rows stay uncapped. Label **estimasi** — not invoice P&L.
 
 ---
 

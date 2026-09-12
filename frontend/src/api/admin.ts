@@ -362,6 +362,9 @@ export interface HppLineMargin {
   cogs_idr: number;
   margin_idr: number;
   margin_pct: number | null;
+  host_cogs_capped?: boolean;
+  host_scans_raw?: number;
+  host_scans_cap?: number;
 }
 
 export interface HppReportResponse {

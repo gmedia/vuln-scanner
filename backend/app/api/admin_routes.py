@@ -551,6 +551,19 @@ async def get_hpp_report(
         )
     ).all()
 
+    range_days = max((end.date() - start.date()).days + 1, 1)
+    host_interval_rows = (
+        await db.execute(select(HostSite.scan_interval, func.count(HostSite.id)).group_by(HostSite.scan_interval))
+    ).all()
+    host_scan_cap = 0
+    for interval, n in host_interval_rows:
+        sites = int(n)
+        if str(interval) == "hourly":
+            host_scan_cap += sites * range_days * 24
+        else:
+            host_scan_cap += sites * range_days
+    host_scan_count = counts.get("hostscan", 0)
+
     def _margin(line: str, sku_rows: list[tuple[str, int]], price: dict[str, int], cogs: int) -> HppLineMargin:
         org_count = 0
         revenue = 0
@@ -570,9 +583,33 @@ async def get_hpp_report(
             margin_pct=pct,
         )
 
+    def _margin_host(sku_rows: list[tuple[str, int]], price: dict[str, int]) -> HppLineMargin:
+        org_count = 0
+        revenue = 0
+        for sku, n in sku_rows:
+            count = int(n)
+            org_count += count
+            revenue += count * int(price.get(sku, 0))
+        capped = org_count > 0 and host_scan_cap > 0 and host_scan_count > host_scan_cap
+        display_cogs = (host_cogs * host_scan_cap) // host_scan_count if capped else host_cogs
+        margin = revenue - display_cogs
+        pct = round(margin * 100 / revenue) if revenue else None
+        return HppLineMargin(
+            line="host",
+            label="estimasi",
+            org_count=org_count,
+            revenue_idr=revenue,
+            cogs_idr=display_cogs,
+            margin_idr=margin,
+            margin_pct=pct,
+            host_cogs_capped=capped,
+            host_scans_raw=host_scan_count,
+            host_scans_cap=host_scan_cap,
+        )
+
     line_margins = [
         _margin("scan", [(str(s), int(n)) for s, n in scan_sku_rows], _SCAN_LIST_IDR, scan_cogs),
-        _margin("host", [(str(s), int(n)) for s, n in host_sku_rows], _HOST_LIST_IDR, host_cogs),
+        _margin_host([(str(s), int(n)) for s, n in host_sku_rows], _HOST_LIST_IDR),
     ]
 
     return HppReportResponse(

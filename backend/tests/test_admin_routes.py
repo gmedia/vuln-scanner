@@ -1203,26 +1203,31 @@ class TestAdminHpp:
         db_session.add(site)
         await db_session.flush()
         db_session.add(HppRate(key="hostscan", amount_idr=250, updated_at=datetime.now(UTC)))
-        db_session.add(
-            HostScan(
-                id=uuid.uuid4(),
-                organization_id=org.id,
-                site_id=site.id,
-                status="completed",
-                trigger="manual",
-                finished_at=datetime.now(UTC),
+        for _ in range(3):
+            db_session.add(
+                HostScan(
+                    id=uuid.uuid4(),
+                    organization_id=org.id,
+                    site_id=site.id,
+                    status="completed",
+                    trigger="manual",
+                    finished_at=datetime.now(UTC),
+                )
             )
-        )
         await db_session.commit()
-        resp = client.get("/api/admin/hpp/report", headers=API_HEADERS)
+        day = datetime.now(UTC).date().isoformat()
+        resp = client.get(f"/api/admin/hpp/report?from={day}&to={day}", headers=API_HEADERS)
         assert resp.status_code == 200
         body = resp.json()
         line = next(x for x in body["lines"] if x["key"] == "hostscan")
-        assert line["count"] == 1
-        assert line["hpp_idr"] == 250
+        assert line["count"] == 3
+        assert line["hpp_idr"] == 750
         host_margin = next(x for x in body["line_margins"] if x["line"] == "host")
         assert host_margin["org_count"] == 1
         assert host_margin["revenue_idr"] == 900_000
+        assert host_margin["host_scans_raw"] == 3
+        assert host_margin["host_scans_cap"] == 1
+        assert host_margin["host_cogs_capped"] is True
         assert host_margin["cogs_idr"] == 250
         assert host_margin["margin_idr"] == 899_750
 
