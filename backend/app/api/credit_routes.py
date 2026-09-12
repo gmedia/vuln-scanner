@@ -5,7 +5,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.database import get_db
 from app.models.credit_log import CreditLog
-from app.models.pricing import PricingConfig
 from app.models.user import User
 from app.schemas.credit import (
     CreditHistoryResponse,
@@ -56,27 +55,14 @@ async def get_history(
 async def get_scan_eligibility(
     scan_type: str,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
 ) -> ScanEligibility:
     """Check whether the current user has enough credits for a given scan type."""
     if scan_type not in settings.scan_type_pricing_map:
         raise HTTPException(status_code=400, detail=f"Invalid scan type: {scan_type}")
 
-    # Look up pricing from the database first, fall back to config defaults
-    result = await db.execute(select(PricingConfig).where(PricingConfig.scan_type == scan_type))
-    pricing = result.scalar_one_or_none()
-
-    if pricing:
-        required_credits = pricing.credit_cost
-    else:
-        config_attr = settings.scan_type_pricing_map[scan_type]
-        required_credits = getattr(settings, config_attr, 0)
-
-    eligible = current_user.credits >= required_credits
-
     return ScanEligibility(
-        eligible=eligible,
-        required_credits=required_credits,
+        eligible=True,
+        required_credits=0,
         current_credits=current_user.credits,
         scan_type=scan_type,
     )

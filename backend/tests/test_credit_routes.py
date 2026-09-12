@@ -254,7 +254,7 @@ class TestScanEligibility:
         assert resp.status_code == 200
         data = resp.json()
         assert data["eligible"] is True
-        assert data["required_credits"] == 1
+        assert data["required_credits"] == 0
         assert data["current_credits"] == 100
         assert data["scan_type"] == "ip"
 
@@ -264,7 +264,7 @@ class TestScanEligibility:
         assert resp.status_code == 200
         data = resp.json()
         assert data["eligible"] is True
-        assert data["required_credits"] == 2
+        assert data["required_credits"] == 0
         assert data["scan_type"] == "domain"
 
     def test_eligible_apk_scan(self, client):
@@ -273,7 +273,7 @@ class TestScanEligibility:
         assert resp.status_code == 200
         data = resp.json()
         assert data["eligible"] is True
-        assert data["required_credits"] == 3
+        assert data["required_credits"] == 0
         assert data["scan_type"] == "apk"
 
     def test_eligible_ipa_scan(self, client):
@@ -282,7 +282,7 @@ class TestScanEligibility:
         assert resp.status_code == 200
         data = resp.json()
         assert data["eligible"] is True
-        assert data["required_credits"] == 3
+        assert data["required_credits"] == 0
         assert data["scan_type"] == "ipa"
 
     def test_insufficient_credits(self, client, db_session, sample_user):
@@ -295,8 +295,8 @@ class TestScanEligibility:
         resp = client.get("/api/credits/eligibility/apk", headers=HEADERS)
         assert resp.status_code == 200
         data = resp.json()
-        assert data["eligible"] is False
-        assert data["required_credits"] == 3
+        assert data["eligible"] is True
+        assert data["required_credits"] == 0
         assert data["current_credits"] == 0
 
     def test_just_enough_credits(self, client, db_session, sample_user):
@@ -311,7 +311,7 @@ class TestScanEligibility:
         data = resp.json()
         assert data["eligible"] is True
         assert data["current_credits"] == 3
-        assert data["required_credits"] == 3
+        assert data["required_credits"] == 0
 
     def test_invalid_scan_type_returns_400(self, client):
         resp = client.get("/api/credits/eligibility/invalid_scan", headers=HEADERS)
@@ -336,8 +336,7 @@ class TestScanEligibility:
         resp = client.get("/api/credits/eligibility/ip", headers=HEADERS)
         assert resp.status_code == 200
         data = resp.json()
-        assert data["required_credits"] == 10  # DB override, not config default of 1
-        # User has 100 credits, so still eligible
+        assert data["required_credits"] == 0
         assert data["eligible"] is True
         assert data["current_credits"] == 100
 
@@ -355,6 +354,6 @@ class TestScanEligibility:
         resp = client.get("/api/credits/eligibility/domain", headers=HEADERS)
         assert resp.status_code == 200
         data = resp.json()
-        assert data["required_credits"] == 200
-        assert data["eligible"] is False
+        assert data["required_credits"] == 0
+        assert data["eligible"] is True
         assert data["current_credits"] == 100

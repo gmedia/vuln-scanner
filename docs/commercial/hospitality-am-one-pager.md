@@ -42,7 +42,7 @@ Invoice = **new `service_id` per tier**. Do not silent-bundle into VPS. Headline
 1. Confirm SID pattern (VPS+domain, colo IP, or multi-service).
 2. Offer Basic or Pro; Multi only if ≥4 named targets.
 3. Send wave-1 email; log CRM date + tier.
-4. Ops: org `sku`, `/assets`, 1:1 schedule, first HTML. Overage credits optional.
+4. Ops: org `sku`, `/assets`, 1:1 schedule, first HTML. Extra targets = upgrade SKU.
 5. Follow-up 7–10d. **AM owns renew.**
 
 **Do not promise:** Guard/Wazuh, SIEM, nested multi-property Projects, org wallet, unlimited on-demand, “aman 100%”.

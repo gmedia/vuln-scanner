@@ -37,15 +37,15 @@ COMPOSE_PROJECT_NAME=<from_inspect> ./scripts/deploy-services.sh . \
 
 **DB names on edge (typical):** Postgres user/db often `vuln_scanner`; pricing table is **`pricing`** (not `pricing_configs`). Schedule jobs link via `scan_schedules.last_job_id` → `scan_jobs.id` (no `schedule_id` column on jobs).
 
-## Credits (metering v2)
+## Credits (metering v3 — seats)
 
-Scheduled attach is **included** in the Scan SKU ([`specs/metering-v2.md`](specs/metering-v2.md)):
+Scan SKU is **seats** ([`specs/metering-v3-sku-seats.md`](specs/metering-v3-sku-seats.md)):
 
 - Beat tick **does not** debit `users.credits`. Job `credit_cost = 0`. Empty wallet **does not** disable the schedule.
 - Insert `scan_jobs`, dispatch Celery task, advance `next_run_at`, clear `last_error`.
 - Prior job still **pending/running** for that schedule → skip (no pile-up). Overlapping ticks use `FOR UPDATE SKIP LOCKED`.
 
-Manual / on-demand start still returns **HTTP 402** when the wallet is short (`pricing.credit_cost` for `ip` / `domain` / mobile).
+Manual / on-demand IP/domain/mobile also **do not** debit Scan credits (no HTTP 402 for empty wallet). Extra targets = upgrade SKU. AI Gateway keeps a separate IDR wallet.
 
 ## Caps (abuse)
 
@@ -71,7 +71,7 @@ Do not put production hostnames, passwords, or API keys in tracked markdown.
 1. Confirm git tip on disk ≥ attach tip (`0eb7d42` or newer) and beat process up (`celery_beat`).
 2. Create a weekly/monthly schedule in UI or `POST /api/schedules` (JWT; body uses **`cadence`**: `weekly` \| `monthly`).
 3. Optionally set `next_run_at` due in DB for a dogfood user with **zero** credits → after next tick, schedule **stays enabled**, job appears, **no** credit debit.
-4. Regression: Scan Attach S1–S4 (diff / notify / executive) still work. Manual scan with zero credits still HTTP 402.
+4. Regression: Scan Attach S1–S4 (diff / notify / executive) still work. Manual scan with zero credits still **starts** (no HTTP 402).
 
 ### B — Remote API checks (optional, from any host with JWT)
 

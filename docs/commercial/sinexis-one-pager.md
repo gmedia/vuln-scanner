@@ -66,7 +66,7 @@ Mobile APK/IPA = engine feature, **not** hero SKU for GMD servers/domains.
 | **Multi-asset** | ≤10 | Weekly | **2.000.000** |
 
 **Pilot #1:** **1 bulan sponsored**; pattern = multi-service / VPS+domain; **1–3 targets**.
-**Overage:** extra manual/mobile → credit top-up or upgrade. Scheduled attach does **not** spend credits. **Invoice:** new service_id per tier (no silent VPS bundle).
+**Overage:** more named targets → upgrade tier. Scans (manual and scheduled) do **not** spend credits. **Invoice:** new service_id per tier (no silent VPS bundle).
 
 Detail: [`sku-scan-secure-addon.md`](sku-scan-secure-addon.md).
 

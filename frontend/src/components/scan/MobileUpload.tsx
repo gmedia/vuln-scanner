@@ -22,14 +22,9 @@ function MobileUpload() {
   const startMobileScan = useStartMobileScan();
   const handleScanError = useScanError();
   const setActiveScan = useScanStore((s) => s.setActiveScan);
-  const {
-    creditDisplay,
-    costPreview,
-    checkAndDeduct,
-    refreshAfterScan,
-    eligible,
-    eligibilityLoading,
-  } = useScanCredit(platform === "android" ? "apk" : "ipa");
+  const { creditDisplay, costPreview } = useScanCredit(
+    platform === "android" ? "apk" : "ipa",
+  );
 
   const validateFile = useCallback((f: File): string | null => {
     const ext = f.name.split(".").pop()?.toLowerCase();
@@ -84,18 +79,11 @@ function MobileUpload() {
     }
 
     const scanType = platform === "android" ? "apk" : "ipa";
-    const { eligible: canScan, error: creditError } = await checkAndDeduct(scanType);
-    if (!canScan) {
-      setError(creditError!);
-      return;
-    }
-
     startMobileScan.mutate(
       { file, platform },
       {
         onSuccess: (data) => {
           setActiveScan(data.id, scanType);
-          refreshAfterScan();
           navigate(`/scan/${data.id}`);
         },
         onError: (err) => {
@@ -124,8 +112,7 @@ function MobileUpload() {
     if (fileRef.current) fileRef.current.value = "";
   };
 
-  const submitDisabled =
-    !file || startMobileScan.isPending || eligibilityLoading || !eligible;
+  const submitDisabled = !file || startMobileScan.isPending;
 
   return (
     <div className="space-y-4">

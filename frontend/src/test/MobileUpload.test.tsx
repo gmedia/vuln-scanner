@@ -396,7 +396,7 @@ describe("MobileUpload", () => {
     });
   });
 
-  it("disables Start mobile scan while eligibility is loading even with a file", async () => {
+  it("keeps Start mobile scan enabled while eligibility is loading when a file is selected", async () => {
     vi.mocked(useScanCredit).mockReturnValue({
       ...defaultScanCredit,
       eligibilityLoading: true,
@@ -410,7 +410,7 @@ describe("MobileUpload", () => {
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [file] } });
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /start mobile scan/i })).toBeDisabled();
+      expect(screen.getByRole("button", { name: /start mobile scan/i })).toBeEnabled();
     });
   });
 });

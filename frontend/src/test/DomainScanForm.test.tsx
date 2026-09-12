@@ -214,7 +214,7 @@ describe("DomainScanForm", () => {
     expect(input).toHaveValue("a.b.c.example.com");
   });
 
-  it("disables Start domain scan while eligibility is loading", () => {
+  it("keeps Start domain scan enabled while eligibility is loading", () => {
     vi.mocked(useScanCredit).mockReturnValue({
       ...defaultScanCredit,
       eligibilityLoading: true,
@@ -222,6 +222,6 @@ describe("DomainScanForm", () => {
       refreshAfterScan: vi.fn(),
     });
     render(<DomainScanForm />);
-    expect(screen.getByRole("button", { name: /start domain scan/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /start domain scan/i })).toBeEnabled();
   });
 });

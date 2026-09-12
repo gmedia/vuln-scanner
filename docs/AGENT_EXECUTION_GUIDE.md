@@ -213,13 +213,14 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | [`docs/specs/imunify-class-onbox.md`](specs/imunify-class-onbox.md) | **P14 docs** (#555); slices A–H | Implement **only** named slice + `buat`. Jobs not clone. |
 | [`docs/specs/vps-displace-imunify-dev-plan.md`](specs/vps-displace-imunify-dev-plan.md) | **P14 follow-on plan** (2026-09-07) | Speech gate: Demo-ok / Invoice-ok / **Sentence-ok**. Slices **DL0–DL2**. Caddy out. No PD/WebShield/clone. |
 | [`docs/specs/ai-gateway-v1.md`](specs/ai-gateway-v1.md) | **S1–S5 on `main` (this PR)** | OpenAI-compat resale; flag **off**. Ops: [`ai-gateway-ops.md`](ai-gateway-ops.md). Residual: human catalog/FX/enable. |
-| [`docs/specs/metering-v2.md`](specs/metering-v2.md) | **Shipped** (#736) | SKU = assets + cadence included; credits = overage/mobile. E2 superseded. HPP line margins Scan vs Host; Host COGS capped at included cadence when lab volume spikes. |
+| [`docs/specs/metering-v2.md`](specs/metering-v2.md) | **Shipped** (#736) | Scheduled attach included. Superseded for on-demand credits by v3. |
+| [`docs/specs/metering-v3-sku-seats.md`](specs/metering-v3-sku-seats.md) | **Implementing** | Scan/Host/Uptime = SKU seats only. No Scan credit debit (ip/domain/apk/ipa/statushost). AI IDR wallet stays. |
 
 **Agent:** wait for **explicit implement** even when spec exists. Prefer **draft spec** over silent coding for new epics; P3 assets already shipped.
 
 ### Phase C1 / P1 — Scan Attach Loop (upsell engine) — **DONE**
 
-**Shipped:** schedule entity + beat due tick; baseline diff; new critical/high notify; executive HTML; cap 10; ops docs. **Metering v2:** scheduled attach included (no credit debit / no auto-disable). Manual still 402. Detail: [`metering-v2.md`](specs/metering-v2.md), `docs/scan-schedules-ops.md`.
+**Shipped:** schedule entity + beat due tick; baseline diff; new critical/high notify; executive HTML; cap 10; ops docs. **Metering v3:** Scan seats only — manual and scheduled jobs `credit_cost = 0`. Detail: [`metering-v3-sku-seats.md`](specs/metering-v3-sku-seats.md), `docs/scan-schedules-ops.md`.
 
 **Residual engineering:** bugfixes only; optional edge tip pull for docs-only SHAs; no second “implement P1” epic.
 

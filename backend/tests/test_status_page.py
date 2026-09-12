@@ -378,18 +378,18 @@ async def test_hostname_check_debits_pricing_once(ctx, db_session: AsyncSession,
         assert chk.status_code == 200
         assert chk.json()["hostname_status"] == "active"
         await db_session.refresh(owner)
-        assert owner.credits == credits_before - 4
+        assert owner.credits == credits_before
         logs = (await db_session.execute(select(CreditLog).where(CreditLog.user_id == owner.id))).scalars().all()
         deducts = [row for row in logs if row.type == "deduct" and row.amount == 4]
-        assert len(deducts) == 1
+        assert deducts == []
         chk2 = await client.post("/api/status-page/hostname/check", headers=headers)
         assert chk2.status_code == 200
         await db_session.refresh(owner)
-        assert owner.credits == credits_before - 4
+        assert owner.credits == credits_before
         gone = await client.delete("/api/status-page/hostname", headers=headers)
         assert gone.status_code == 200
         await db_session.refresh(owner)
-        assert owner.credits == credits_before - 4
+        assert owner.credits == credits_before
 
 
 @pytest.mark.asyncio

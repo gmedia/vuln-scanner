@@ -6,14 +6,12 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import HTTPException
-from sqlalchemy import select, text
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.config import settings
-from app.models.credit_log import CreditLog
 from app.models.organization import Organization
-from app.models.pricing import PricingConfig
 from app.models.status_page import (
     PLATFORM_HOSTS,
     RESERVED_HOST_SUFFIXES,
@@ -49,8 +47,6 @@ from app.services.cloudflare_custom_hostnames import (
 from app.services.organization import require_membership
 
 logger = logging.getLogger(__name__)
-
-STATUS_HOST_PRICING_KEY = "statushost"
 
 
 def _cname_target() -> str:
@@ -273,43 +269,8 @@ class StatusPageService:
         page.ssl_status = cf.ssl_status
         page.hostname_status = map_hostname_status(cf.ssl_status, cf.status)
 
-    async def _hostname_credit_cost(self) -> int:
-        result = await self.db.execute(select(PricingConfig).where(PricingConfig.scan_type == STATUS_HOST_PRICING_KEY))
-        pricing = result.scalar_one_or_none()
-        if pricing is None:
-            return 0
-        return int(pricing.credit_cost)
-
     async def _debit_hostname_if_activated(self, user: User, page: StatusPage, previous_status: str) -> None:
-        if page.hostname_status != "active" or previous_status == "active":
-            return
-        cost = await self._hostname_credit_cost()
-        if cost <= 0:
-            return
-        await self.db.execute(
-            text("UPDATE users SET credits = credits - :cost WHERE id = :uid AND credits >= :cost"),
-            {"cost": cost, "uid": user.id.hex},
-        )
-        await self.db.flush()
-        check_result = await self.db.execute(select(User.credits).where(User.id == user.id))
-        current_credits = check_result.scalar_one()
-        if current_credits == user.credits:
-            page.hostname_status = previous_status
-            raise HTTPException(
-                status_code=402,
-                detail=f"Insufficient credits. Need {cost}, have {user.credits}.",
-            )
-        user.credits = current_credits
-        self.db.add(
-            CreditLog(
-                user_id=user.id,
-                amount=cost,
-                type="deduct",
-                description=f"Status hostname: {page.custom_hostname}",
-                reference_id=page.id,
-            )
-        )
-        await self.db.flush()
+        return
 
     def _clear_cf(self, page: StatusPage) -> None:
         page.cf_hostname_id = None

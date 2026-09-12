@@ -2,7 +2,7 @@
 
 **Status:** **P0 commercial lock (user-approved 2026-08-08)** — decisions below follow the recommended defaults the product owner accepted. **Not a legal contract**; finance may still tweak IDR ± band before first invoice, but AM may use these as **working list**.
 **Product (P1 Scan Attach):** live on production — schedules, baseline diff, notify, executive HTML, cap **10** enabled schedules/org.
-**Metering v2** ([`metering-v2.md`](../specs/metering-v2.md)): invoice sells **named assets + cadence**. Scheduled attach is **included** (no credit debit; empty wallet does **not** disable the schedule). **Credits** = overage / mobile / on-demand only (`pricing.credit_cost`). Typical on-demand: **domain = 2**, **ip = 1**. Host/Guard/WAF stay off the credit wallet.
+**Metering v3** ([`metering-v3-sku-seats.md`](../specs/metering-v3-sku-seats.md)): invoice sells **named assets + cadence**. Manual IP/domain/APK/IPA and scheduled attach **do not debit** Scan credits. Host/Guard/WAF stay off the Scan wallet. AI Gateway keeps a **separate IDR wallet**.
 
 ---
 
@@ -12,9 +12,9 @@
 |----|--------|----------|
 | **A1** | List price IDR / mo | **Basic 300.000** · **Pro 650.000** · **Multi-asset 2.000.000** (mid of recommended bands; GMD finance may ± adjust) |
 | **A2** | Pilot discount | **1 bulan sponsored** untuk **pilot #1 only**; list price tetap tercatat di CRM |
-| **A3** | Overage | **Top-up kredit** (manual/mobile) **dan/atau upgrade tier** — **bukan** unlimited fair-use. Scheduled attach is included. |
-| **A4** | Credit bundle / mo | Optional overage pack: **Basic 10** · **Pro 24** · **Multi-asset 60** — **not** the invoice headline. Attach runs without this top-up (**metering v2**). |
-| **A5** | Mobile scan | **À la carte** on credits — not required for attach SKU |
+| **A3** | Overage | **Upgrade tier** (more seats) — **bukan** unlimited fair-use. Extra targets = Pro/Multi, not a credit pack. |
+| **A4** | Credit bundle / mo | **Superseded (v3):** do not sell 10/24/60 credits. Wallet leftover is not a gate. |
+| **A5** | Mobile scan | Included in Scan SKU seats (same org). Not a second currency. |
 | **B1** | Invoice packaging | **New `service_id` per tier**; pilot boleh baris manual dulu lalu migrate. **Jangan** silent-bundle ke VPS |
 | **B2** | Line names | Internal: **Sinexis Scan – {Tier}**. Invoice pelanggan (soft dual, 6–12 bln): **Secure Scan Add-on – {Tier}** OK |
 | **B3** | Renew ownership | **AM GMD owns renew + upsell**; product owns fulfillment & report quality |
@@ -67,9 +67,9 @@ Bundle with colo/VPS as **add-on line item**; do not reprice rack.
 
 **Out of this Scan SKU v1:** full SIEM, Windows depth, org wallet, unlimited targets, 24/7 SOC. **Guard / Host Protect / Host WAF** exist as **other** SKUs — do not imply they are unshipped.
 
-**Headline = assets + cadence.** Optional overage packs (A4: 10 / 24 / 60 credits) are for **manual / mobile** only. Scheduled attach does **not** consume them. On-demand: domain ≈ 2 credits, IP ≈ 1.
+**Headline = assets + cadence.** Manual and scheduled scans are **included**. Abuse = rate limits + seat caps, not a credit wallet.
 
-**Mobile:** à la carte on credits only.
+**Mobile:** included (same SKU).
 
 ---
 
@@ -87,25 +87,24 @@ Bundle with colo/VPS as **add-on line item**; do not reprice rack.
 
 ### Fulfillment checklist (ops after sold)
 
-1. Set org **`sku`** (`basic` / `pro` / `multi`) so `/assets` hard cap matches the sold tier. Attach schedules run **without** a credit top-up.
-2. Optional: top up **overage credits** (A4 pack or pilot grant) if the buyer will run extra manual/mobile scans.
-3. Create **named assets** on SPA `/assets`, then **Create schedule** (1:1) — enabled schedules still cap **10 / org**.
-4. Confirm **notify email** + beat/workers healthy (`docs/scan-schedules-ops.md`, `docs/scan-assets-ops.md`).
-5. After first completed run: buyer gets **executive HTML** + diff story (Bahasa). Optional `GET /api/assets/pack` JSON for Multi-asset.
-6. Renew in **CRM** (AM); no in-app subscription v1.
-7. Pilot #1 only: optional **human review** of critical findings 1×/month.
+1. Set org **`sku`** (`basic` / `pro` / `multi`) so `/assets` hard cap matches the sold tier. Manual and scheduled scans run **without** a credit top-up.
+2. Create **named assets** on SPA `/assets`, then **Create schedule** (1:1) — enabled schedules still cap **10 / org**. Extra targets = upgrade SKU.
+3. Confirm **notify email** + beat/workers healthy (`docs/scan-schedules-ops.md`, `docs/scan-assets-ops.md`).
+4. After first completed run: buyer gets **executive HTML** + diff story (Bahasa). Optional `GET /api/assets/pack` JSON for Multi-asset.
+5. Renew in **CRM** (AM); no in-app subscription v1.
+6. Pilot #1 only: optional **human review** of critical findings 1×/month.
 
 ---
 
-## 4. Credit policy (metering v2)
+## 4. Credit policy (metering v3 — seats)
 
-1. Scheduled attach runs **do not debit** credits (`credit_cost = 0` on the job).
-2. Worker/infra failure → **no charge** or one auto-retry (manual path unchanged).
-3. Optional overage pack on invoice date (admin credits + CRM note) — not required for the attach loop.
-4. Overage (extra manual / mobile) → credit top-up **or** upgrade tier.
-5. Insufficient credits → **manual** scan HTTP 402. Sold schedules **stay enabled**.
+1. Manual IP/domain/APK/IPA **do not debit** `users.credits`. Job `credit_cost = 0`.
+2. Scheduled attach already `credit_cost = 0` (v2). Empty wallet **does not** 402 or disable.
+3. Custom status hostname **does not debit** `statushost`.
+4. Extra targets → **upgrade SKU** (more seats), not a credit pack.
+5. Leftover wallet + `/credits` history remain; **not a gate**. AI Gateway keeps a **separate IDR wallet**.
 
-**Code hooks:** table **`pricing`**; `User.credits`; `CreditLog` (manual only). Worker: `workers/tasks/schedules.py`.
+**Code:** `ScannerService.start_scan`; eligibility always `required_credits=0`. Worker schedules unchanged from v2.
 
 ---
 
@@ -155,11 +154,11 @@ Bundle with colo/VPS as **add-on line item**; do not reprice rack.
 
 - [ ] Finance creates **three service_id** rows
 - [ ] AM picks **10 wave-1 SIDs** in private CRM
-- [ ] Name **pilot #1** privately; org `sku` + schedules (overage credits optional)
+- [ ] Name **pilot #1** privately; org `sku` + schedules
 - [x] Product **email template** (Bahasa) for AM wave-1 — [`am-wave1-email-id.md`](am-wave1-email-id.md)
-- [ ] Confirm live `pricing` domain/IP still 2 / 1 before quoting
+- [ ] Confirm org `sku` seat cap before quoting (not credit_cost)
 - [ ] AM sends wave-1 using template; log outreach in CRM
-- [ ] Ops fulfills first “yes” / pilot (sku + schedule + HTML; credits optional)
+- [ ] Ops fulfills first “yes” / pilot (sku + schedule + HTML)
 
 ---
 
@@ -168,6 +167,6 @@ Bundle with colo/VPS as **add-on line item**; do not reprice rack.
 - One-pager: [`sinexis-one-pager.md`](sinexis-one-pager.md)
 - AM email template: [`am-wave1-email-id.md`](am-wave1-email-id.md)
 - Engineering: [`../specs/scan-attach-v1.md`](../specs/scan-attach-v1.md)
-- Metering v2: [`../specs/metering-v2.md`](../specs/metering-v2.md)
+- Metering v3 (seats): [`../specs/metering-v3-sku-seats.md`](../specs/metering-v3-sku-seats.md)
 - Schedule ops: [`../scan-schedules-ops.md`](../scan-schedules-ops.md)
 - Priority: [`../AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) §1.3
