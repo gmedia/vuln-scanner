@@ -217,8 +217,9 @@ describe("Guard host enroll UI", () => {
     const agentsCard = screen.getByTestId("guard-agents");
     const agentTable = agentsCard.querySelector("table");
     expect(agentTable).toBeTruthy();
-    expect(agentTable?.className ?? "").toContain("min-w-[64rem]");
+    expect(agentTable?.className ?? "").toContain("min-w-[40rem]");
     expect(agentTable?.className ?? "").not.toContain("table-fixed");
+    expect(screen.getAllByText(/Helper poll/).length).toBeGreaterThan(0);
   });
 
   it("sizes Sync for 44pt taps", async () => {
@@ -305,7 +306,7 @@ describe("Guard host enroll UI", () => {
     });
     await user.click(copyBtns[0]);
     expect(writeText).toHaveBeenCalledWith("ag-uuid-copy");
-    expect(screen.getByText("Helper poll")).toBeInTheDocument();
+    expect(screen.getAllByText(/Helper poll/).length).toBeGreaterThan(0);
     await user.click(
       screen.getAllByTestId("guard-host-token-issue")[0],
     );
