@@ -156,12 +156,17 @@ describe("SIEM page", () => {
     expect(filters).toBeInTheDocument();
     expect(filters.className).toContain("gap-3");
     expect(filters.className).toContain("lg:grid-cols-3");
-    expect(filters.className).toContain("xl:grid-cols-6");
+    expect(filters.className).not.toContain("xl:grid-cols-6");
     expect(filters.className).not.toContain("grid-cols-12");
     expect(filters.className).not.toContain("invisible");
     expect(screen.getByLabelText("Search box")).toBeInTheDocument();
-    expect(screen.getByLabelText("Since")).toBeInTheDocument();
-    expect(screen.getByLabelText("Until")).toBeInTheDocument();
+    const sinceTrigger = screen.getByLabelText("Since");
+    expect(sinceTrigger).toHaveTextContent("dd/mm/yyyy HH:mm");
+    expect(sinceTrigger.querySelector(".truncate")).toBeNull();
+    expect(screen.getByLabelText("Until")).toHaveTextContent("dd/mm/yyyy HH:mm");
+    const agentTrigger = screen.getByLabelText("Agent");
+    expect(agentTrigger).toHaveTextContent("All org agents");
+    expect(agentTrigger.className).toMatch(/line-clamp-none/);
     expect(screen.queryByText(/24h/i)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Apply" })).toBeInTheDocument();
 
@@ -206,7 +211,17 @@ describe("SIEM page", () => {
       expect(screen.getByTestId("siem-event-detail")).toBeInTheDocument();
     });
     expect(screen.getByText("evt-1")).toBeInTheDocument();
-    expect(screen.getByRole("table")).toBeInTheDocument();
+    const table = screen.getByRole("table");
+    expect(table.className).toContain("table-fixed");
+    expect(screen.getByRole("columnheader", { name: "Agent" }).className).not.toContain(
+      "w-[10rem]",
+    );
+    const ruleCell = screen.getByRole("cell", { name: /Login failed/ });
+    expect(ruleCell.className).not.toContain("truncate");
+    expect(ruleCell.className).toMatch(/break-words/);
+    const agentCell = screen.getByRole("cell", { name: "web-1" });
+    expect(agentCell.className).not.toContain("truncate");
+    expect(agentCell.className).toMatch(/break-all/);
   });
 
   it("shows Guard-first empty copy when no agents", async () => {
