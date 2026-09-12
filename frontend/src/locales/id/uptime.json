@@ -50,7 +50,7 @@
   "colStatus": "Status",
   "colTarget": "Target",
   "colUptime": "24j %",
-  "colSpark": "24j",
+  "colSpark": "Grafik",
   "colActions": "Aksi",
   "actionsMenu": "Aksi monitor",
   "lastError": "Error terakhir",
