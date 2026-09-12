@@ -279,6 +279,17 @@ describe("AdminHpp", () => {
     expect(screen.getByTestId("hpp-costs-card")).toBeInTheDocument();
     expect(screen.getByTestId("hpp-line-scan")).toBeInTheDocument();
     expect(screen.getByTestId("hpp-line-host")).toBeInTheDocument();
+    expect(screen.getByText("Report range")).toBeInTheDocument();
+    const costs = screen.getByTestId("hpp-costs-card");
+    const labels = Array.from(costs.querySelectorAll("label")).map(
+      (el) => el.textContent,
+    );
+    expect(labels.slice(0, 4)).toEqual([
+      "Date",
+      "Category",
+      "Amount (IDR)",
+      "Note",
+    ]);
     expect(screen.getAllByText("estimasi").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Margin \(estimasi\)/).length).toBe(2);
     expect(screen.getByText(/290.000/)).toBeInTheDocument();

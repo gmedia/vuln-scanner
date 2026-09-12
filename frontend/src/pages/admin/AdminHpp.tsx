@@ -175,16 +175,16 @@ function AdminHpp() {
             <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[28%] text-[10px] uppercase tracking-wider">
+                    <TableHead className="w-[28%] py-2 text-[10px] uppercase tracking-wider">
                       {t("hppColKey")}
                     </TableHead>
-                    <TableHead className="w-[32%] text-[10px] uppercase tracking-wider">
+                    <TableHead className="w-[32%] py-2 text-[10px] uppercase tracking-wider">
                       {t("hppColAmount")}
                     </TableHead>
-                    <TableHead className="w-[20%] text-[10px] uppercase tracking-wider">
+                    <TableHead className="w-[20%] py-2 text-[10px] uppercase tracking-wider">
                       {t("colUpdated")}
                     </TableHead>
-                    <TableHead className="w-[20%] text-right text-[10px] uppercase tracking-wider">
+                    <TableHead className="w-[20%] py-2 text-right text-[10px] uppercase tracking-wider">
                       {t("colActions")}
                     </TableHead>
                   </TableRow>
@@ -192,7 +192,7 @@ function AdminHpp() {
                 <TableBody>
                   {rates.map((item) => (
                     <TableRow key={item.key}>
-                      <TableCell>
+                      <TableCell className="py-1.5">
                         <Badge
                           variant="default"
                           className="text-[10px] uppercase"
@@ -200,7 +200,7 @@ function AdminHpp() {
                           {item.key}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-1.5">
                         <Input
                           type="number"
                           min={0}
@@ -212,12 +212,12 @@ function AdminHpp() {
                           className="h-8 w-full max-w-[10rem] font-mono text-xs tabular-nums"
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-1.5">
                         <span className="font-mono text-xs tabular-nums text-muted-foreground">
                           {new Date(item.updated_at).toLocaleDateString(locale)}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="py-1.5 text-right">
                         <Button
                           variant="outline"
                           size="sm"
@@ -307,6 +307,9 @@ function AdminHpp() {
                 }
                 className="h-10 min-h-10 font-mono text-xs tabular-nums"
               />
+              <p className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                {formatIdr(overheadEdit ?? overhead?.amount_idr ?? 0)} IDR
+              </p>
               <Button
                 variant="outline"
                 size="sm"
@@ -355,17 +358,6 @@ function AdminHpp() {
               />
             </div>
             <div className="flex min-w-0 flex-col gap-1.5">
-              <Label htmlFor="hpp-cost-amount">{t("hppCostAmount")}</Label>
-              <Input
-                id="hpp-cost-amount"
-                type="number"
-                min={0}
-                value={costAmount}
-                onChange={(e) => setCostAmount(e.target.value)}
-                className="h-10 min-h-10 font-mono text-xs tabular-nums"
-              />
-            </div>
-            <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="hpp-cost-category">{t("hppCostCategory")}</Label>
               <Select
                 value={costCategory}
@@ -381,6 +373,17 @@ function AdminHpp() {
                   </SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="hpp-cost-amount">{t("hppCostAmount")}</Label>
+              <Input
+                id="hpp-cost-amount"
+                type="number"
+                min={0}
+                value={costAmount}
+                onChange={(e) => setCostAmount(e.target.value)}
+                className="h-10 min-h-10 font-mono text-xs tabular-nums"
+              />
             </div>
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="hpp-cost-note">{t("hppCostNote")}</Label>
@@ -473,6 +476,9 @@ function AdminHpp() {
         data-testid="hpp-report-filters"
         className="grid grid-cols-1 gap-3 rounded-md border border-border bg-card p-4 sm:grid-cols-2"
       >
+        <p className="text-sm font-medium tracking-wide text-foreground sm:col-span-2">
+          {t("hppReportRange")}
+        </p>
         <div className="flex min-w-0 flex-col gap-1.5">
           <Label htmlFor="hpp-date-from">{t("hppFrom")}</Label>
           <DatePicker
@@ -529,7 +535,13 @@ function AdminHpp() {
                 </p>
                 <p>
                   {t("hppMargin")}:{" "}
-                  <span className="font-mono tabular-nums">
+                  <span
+                    className={
+                      row.margin_idr < 0
+                        ? "font-mono tabular-nums text-destructive"
+                        : "font-mono tabular-nums"
+                    }
+                  >
                     {formatIdr(row.margin_idr)}
                   </span>
                   {row.margin_pct != null ? ` (${row.margin_pct}%)` : ""}

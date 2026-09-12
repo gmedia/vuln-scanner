@@ -55,7 +55,7 @@
   "colClass": "Class",
   "colEngine": "Engine",
   "colStatus": "Status",
-  "noAgents": "Install a Guard agent first, then register a site here.",
+  "noAgents": "No Guard agent in this workspace yet. Open Guard to enroll, then use Add site.",
   "helperRequired": "Adding a site does not scan the disk. Install the Host Protect helper on the Guard VPS (timer + token). Without a recent check-in from that helper, Scan now will not finish.",
   "helperNeverPolled": "The helper has not checked in from this agent yet.",
   "helperPolled": "Helper last checked in {{when}}.",

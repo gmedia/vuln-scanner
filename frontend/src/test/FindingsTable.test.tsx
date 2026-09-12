@@ -200,7 +200,7 @@ describe("FindingsTable", () => {
     expect(snippet.textContent).not.toMatch(/…$/);
   });
 
-  it("hides the title cell when title duplicates the CVE id", () => {
+  it("shows category in the title cell when title duplicates the CVE id", () => {
     renderTable(
       <FindingsTable
         findings={[
@@ -210,7 +210,7 @@ describe("FindingsTable", () => {
       />,
     );
     const titleCell = document.querySelector("table tbody tr td:nth-child(2)");
-    expect(titleCell?.textContent?.trim()).toBe("—");
+    expect(titleCell?.textContent?.trim()).toBe("auth");
     expect(
       screen.getByRole("link", { name: "CVE-2024-1234" }),
     ).toBeInTheDocument();

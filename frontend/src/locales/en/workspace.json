@@ -54,7 +54,7 @@
   "pilotStepInvite": "Invite IT as owner/admin and GM as viewer if they only need reports.",
   "pilotStepAssets": "Name 1–3 assets (Basic/Pro). Multi-10 only after renew works.",
   "pilotStepSchedules": "Enable a schedule (monthly Basic, weekly Pro+). Notify on new critical/high.",
-  "pilotStepCredits": "Credits stay personal for overage and mobile. A sold schedule stays enabled without a top-up.",
+  "pilotStepCredits": "Credits stay personal for overage and mobile. A sold schedule stays enabled without a top up.",
   "pilotStepReport": "Send the Bahasa executive HTML. Hybrid review is 5 business days, not 24/7 SOC.",
   "pilotLinkAssets": "Open assets",
   "pilotLinkSchedules": "Open schedules",

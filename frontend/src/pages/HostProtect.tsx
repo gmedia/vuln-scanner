@@ -292,12 +292,15 @@ export default function HostProtect() {
       </details>
 
       {agents.length === 0 && !agentsQ.isLoading ? (
-        <p
-          className="text-sm text-muted-foreground"
+        <div
+          className="flex flex-col gap-2 sm:flex-row sm:items-center"
           data-testid="host-no-agents"
         >
-          {t("noAgents")}
-        </p>
+          <p className="text-sm text-muted-foreground">{t("noAgents")}</p>
+          <Button variant="outline" size="sm" className="h-10 min-h-10 w-fit" asChild>
+            <Link to="/guard">{t("openGuard")}</Link>
+          </Button>
+        </div>
       ) : null}
 
       {featureOn && agents.length > 0 && fleetStale ? (

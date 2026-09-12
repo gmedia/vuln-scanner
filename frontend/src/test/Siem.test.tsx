@@ -224,6 +224,35 @@ describe("SIEM page", () => {
     expect(agentCell.className).toMatch(/break-all/);
   });
 
+  it("shows empty copy instead of skeletons when search returns no events", async () => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 1440,
+    });
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes("min-width: 1280px"),
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia;
+    vi.mocked(siemApi.listSiemEvents).mockResolvedValue({
+      items: [],
+      degraded: false,
+      last_error: null,
+    });
+    renderSiem();
+    await waitFor(() => {
+      expect(screen.getByTestId("siem-events-empty")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("siem-event-detail-empty")).toBeInTheDocument();
+    expect(document.querySelectorAll(".animate-pulse").length).toBe(0);
+  });
+
   it("shows Guard-first empty copy when no agents", async () => {
     vi.mocked(guardApi.listGuardAgents).mockResolvedValue([]);
     renderSiem();

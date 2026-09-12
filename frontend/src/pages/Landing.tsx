@@ -197,7 +197,7 @@ function Landing() {
                 </li>
               ))}
             </ol>
-            <p className="mt-6 text-center text-sm leading-relaxed text-foreground/80">
+            <p className="mt-6 text-center text-sm leading-relaxed text-foreground">
               {t("siemNote")}
             </p>
           </div>

@@ -55,7 +55,7 @@
   "colClass": "Kelas",
   "colEngine": "Mesin",
   "colStatus": "Status",
-  "noAgents": "Pasang agen Guard dulu, lalu daftarkan situs di sini.",
+  "noAgents": "Belum ada agen Guard di workspace ini. Buka Guard untuk enroll, lalu Add site.",
   "helperRequired": "Menambah situs tidak memindai disk. Pasang Host Protect helper di VPS Guard (timer + token). Tanpa laporan baru dari helper itu, Scan sekarang tidak selesai.",
   "helperNeverPolled": "Helper belum pernah laporan dari agen ini.",
   "helperPolled": "Helper terakhir laporan {{when}}.",

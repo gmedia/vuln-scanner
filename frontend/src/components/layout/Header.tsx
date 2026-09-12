@@ -88,7 +88,7 @@ function Header({ children }: HeaderProps) {
                 className="font-mono font-bold text-primary tabular-nums"
                 data-testid="header-credits"
               >
-                {credits.toLocaleString()}
+                {credits.toLocaleString("en-US")}
               </span>
             </Link>
           </Button>

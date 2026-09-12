@@ -41,7 +41,7 @@ describe("Header", () => {
       activeOrgId: null,
     });
     const creditState = {
-      credits: 42,
+      credits: 2951,
       isAdmin: false,
       isLoading: false,
       error: null,
@@ -127,7 +127,10 @@ describe("Header", () => {
       error: null,
     });
     renderWithRouter(<Header />);
-    expect(screen.getByTestId("header-credits")).toHaveTextContent("42");
+    expect(screen.getByTestId("header-credits")).toHaveTextContent("2,951");
+    expect(screen.getByTestId("header-credits").textContent).not.toMatch(
+      /2,\s951/,
+    );
     expect(screen.getByText("Scan credits")).toBeInTheDocument();
     expect(screen.getByTitle("Personal credit balance")).toBeInTheDocument();
     expect(screen.getByTitle("Personal credit balance")).toHaveClass("min-h-11");

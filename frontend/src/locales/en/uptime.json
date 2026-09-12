@@ -50,7 +50,7 @@
   "colStatus": "Status",
   "colTarget": "Target",
   "colUptime": "24h %",
-  "colSpark": "24h",
+  "colSpark": "Spark",
   "colActions": "Actions",
   "actionsMenu": "Monitor actions",
   "lastError": "Last error",
