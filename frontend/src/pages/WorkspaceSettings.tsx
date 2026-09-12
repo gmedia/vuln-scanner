@@ -277,7 +277,7 @@ function WorkspaceSettings() {
               <li>{t("pilotStepInvite")}</li>
               <li>{t("pilotStepAssets")}</li>
               <li>{t("pilotStepSchedules")}</li>
-              <li>{t("pilotStepCredits")}</li>
+              <li className="text-pretty">{t("pilotStepCredits")}</li>
               <li>{t("pilotStepReport")}</li>
             </ol>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
