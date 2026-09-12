@@ -19,13 +19,7 @@ function IpScanForm() {
   const startIpScan = useStartIpScan();
   const handleScanError = useScanError();
   const setActiveScan = useScanStore((s) => s.setActiveScan);
-  const {
-    costPreview,
-    checkAndDeduct,
-    refreshAfterScan,
-    eligible,
-    eligibilityLoading,
-  } = useScanCredit("ip");
+  const { costPreview } = useScanCredit("ip");
 
   const isValidIp = (ip: string) =>
     /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/.test(ip);
@@ -45,18 +39,11 @@ function IpScanForm() {
       return;
     }
 
-    const { eligible: canScan, error: creditError } = await checkAndDeduct("ip");
-    if (!canScan) {
-      setError(creditError!);
-      return;
-    }
-
     startIpScan.mutate(
       { target: target.trim(), ports: ports.trim() || "1-1000" },
       {
         onSuccess: (data) => {
           setActiveScan(data.id, "ip");
-          refreshAfterScan();
           navigate(`/scan/${data.id}`);
         },
         onError: (err) => {
@@ -66,8 +53,7 @@ function IpScanForm() {
     );
   };
 
-  const submitDisabled =
-    startIpScan.isPending || eligibilityLoading || !eligible;
+  const submitDisabled = startIpScan.isPending;
 
   return (
     <div className="space-y-4">

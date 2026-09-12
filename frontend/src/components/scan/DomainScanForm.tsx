@@ -17,14 +17,7 @@ function DomainScanForm() {
   const startDomainScan = useStartDomainScan();
   const handleScanError = useScanError();
   const setActiveScan = useScanStore((s) => s.setActiveScan);
-  const {
-    creditDisplay,
-    costPreview,
-    checkAndDeduct,
-    refreshAfterScan,
-    eligible,
-    eligibilityLoading,
-  } = useScanCredit("domain");
+  const { creditDisplay, costPreview } = useScanCredit("domain");
 
   const isValidDomain = (d: string) =>
     /^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/.test(d);
@@ -41,18 +34,11 @@ function DomainScanForm() {
       return;
     }
 
-    const { eligible: canScan, error: creditError } = await checkAndDeduct("domain");
-    if (!canScan) {
-      setError(creditError!);
-      return;
-    }
-
     startDomainScan.mutate(
       { domain: trimmed },
       {
         onSuccess: (data) => {
           setActiveScan(data.id, "domain");
-          refreshAfterScan();
           navigate(`/scan/${data.id}`);
         },
         onError: (err) => {
@@ -62,8 +48,7 @@ function DomainScanForm() {
     );
   };
 
-  const submitDisabled =
-    startDomainScan.isPending || eligibilityLoading || !eligible;
+  const submitDisabled = startDomainScan.isPending;
 
   return (
     <div className="space-y-4">

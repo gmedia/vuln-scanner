@@ -255,7 +255,7 @@ describe("IpScanForm", () => {
     expect(input).toHaveAttribute("placeholder", "1-1000");
   });
 
-  it("disables Start IP scan while eligibility is loading", () => {
+  it("keeps Start IP scan enabled while eligibility is loading", () => {
     vi.mocked(useScanCredit).mockReturnValue({
       ...defaultScanCredit,
       eligibilityLoading: true,
@@ -263,10 +263,10 @@ describe("IpScanForm", () => {
       refreshAfterScan: vi.fn(),
     });
     render(<IpScanForm />);
-    expect(screen.getByRole("button", { name: /start ip scan/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /start ip scan/i })).toBeEnabled();
   });
 
-  it("disables Start IP scan when cost is unavailable", () => {
+  it("keeps Start IP scan enabled when cost is unavailable", () => {
     vi.mocked(useScanCredit).mockReturnValue({
       ...defaultScanCredit,
       eligible: false,
@@ -275,7 +275,6 @@ describe("IpScanForm", () => {
       refreshAfterScan: vi.fn(),
     });
     render(<IpScanForm />);
-    expect(screen.getByRole("button", { name: /start ip scan/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /start ip scan/i })).toBeEnabled();
   });
 });
-

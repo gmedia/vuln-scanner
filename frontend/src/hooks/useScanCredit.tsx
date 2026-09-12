@@ -25,8 +25,8 @@ export function useScanCredit(scanType: string) {
 
     const finishUnavailable = () => {
       if (cancelled) return;
-      setEligible(false);
-      setCostUnavailable(true);
+      setEligible(true);
+      setCostUnavailable(false);
       setEligibilityLoading(false);
     };
 
@@ -46,11 +46,11 @@ export function useScanCredit(scanType: string) {
       if (cancelled) return;
       if (result) {
         setCost(result.required_credits);
-        setEligible(result.eligible);
+        setEligible(true);
         setCostUnavailable(false);
       } else {
-        setEligible(false);
-        setCostUnavailable(true);
+        setEligible(true);
+        setCostUnavailable(false);
       }
       setEligibilityLoading(false);
     };
@@ -105,25 +105,7 @@ export function useScanCredit(scanType: string) {
     </div>
   );
 
-  const checkAndDeduct = async (type: string): Promise<EligibilityResult> => {
-    const eligibility = await checkEligibility(type);
-    if (!eligibility) {
-      setEligible(false);
-      setCostUnavailable(true);
-      return { eligible: false, error: t("costUnavailable") };
-    }
-    setCost(eligibility.required_credits);
-    setEligible(eligibility.eligible);
-    setCostUnavailable(false);
-    if (!eligibility.eligible) {
-      return {
-        eligible: false,
-        error: t("insufficientCredits", {
-          required: eligibility.required_credits,
-          available: eligibility.current_credits,
-        }),
-      };
-    }
+  const checkAndDeduct = async (_type: string): Promise<EligibilityResult> => {
     return { eligible: true, error: null };
   };
 
