@@ -129,7 +129,7 @@ describe("Host Protect page", () => {
     );
     expect(screen.getByTestId("host-page")).toBeInTheDocument();
     expect(screen.getByTestId("host-empty-cta")).toBeInTheDocument();
-    expect(screen.queryByTestId("host-add")).not.toBeInTheDocument();
+    expect(screen.getByTestId("host-add")).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Host Protect" }),
     ).toBeInTheDocument();
