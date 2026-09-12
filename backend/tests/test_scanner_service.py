@@ -180,10 +180,9 @@ async def test_start_scan_with_db_pricing(db_session, sample_user, mock_celery):
     svc = ScannerService(db_session)
     job = await svc.start_scan(user=sample_user, scan_type="ip", target="10.0.0.1", ports="22-80")
 
-    assert job.credit_cost == 99
-    # User started with 100 credits, DB pricing says 99 → should have 1 left
+    assert job.credit_cost == 0
     await db_session.refresh(sample_user)
-    assert sample_user.credits == 1
+    assert sample_user.credits == 100
 
 
 # --- New tests: insufficient credits ---
@@ -191,15 +190,16 @@ async def test_start_scan_with_db_pricing(db_session, sample_user, mock_celery):
 
 @pytest.mark.asyncio
 async def test_start_scan_insufficient_credits(db_session, sample_user, mock_celery):
-    """When user has 0 credits and scan costs > 0, raise 402."""
+    """Zero wallet still starts a scan."""
     sample_user.credits = 0
     await db_session.commit()
 
     svc = ScannerService(db_session)
-    with pytest.raises(HTTPException) as exc_info:
-        await svc.start_scan(user=sample_user, scan_type="ip", target="10.0.0.1")
-    assert exc_info.value.status_code == 402
-    assert "Insufficient credits" in exc_info.value.detail
+    job = await svc.start_scan(user=sample_user, scan_type="ip", target="10.0.0.1")
+    assert job.status == "pending"
+    assert job.credit_cost == 0
+    await db_session.refresh(sample_user)
+    assert sample_user.credits == 0
 
 
 # --- New tests: dispatch failure rollback ---
@@ -207,10 +207,9 @@ async def test_start_scan_insufficient_credits(db_session, sample_user, mock_cel
 
 @pytest.mark.asyncio
 async def test_start_scan_dispatch_failure_rollback(db_session, sample_user, mock_celery):
-    """When send_task raises, credits are refunded and a refund CreditLog is created."""
+    """When send_task raises, credits are unchanged."""
     original_credits = sample_user.credits
 
-    # Override the already-patched send_task to raise
     mock_celery.side_effect = CeleryError("Celery broker down")
 
     svc = ScannerService(db_session)
@@ -219,16 +218,10 @@ async def test_start_scan_dispatch_failure_rollback(db_session, sample_user, moc
     assert exc_info.value.status_code == 500
     assert "Failed to dispatch scan task" in exc_info.value.detail
 
-    # Credits should be restored
     await db_session.refresh(sample_user)
     assert sample_user.credits == original_credits
-
-    # Refund CreditLog should exist
     refund_result = await db_session.execute(select(CreditLog).where(CreditLog.type == "refund"))
-    refund_logs = refund_result.scalars().all()
-    assert len(refund_logs) == 1
-    assert refund_logs[0].amount == 1  # ip scan default cost
-    assert refund_logs[0].user_id == sample_user.id
+    assert refund_result.scalars().all() == []
 
 
 # --- New tests: get_job IDOR protection ---
@@ -482,12 +475,8 @@ async def test_start_scan_creates_credit_log(db_session, sample_user, mock_celer
 
     log_result = await db_session.execute(select(CreditLog).where(CreditLog.reference_id == job.id))
     logs = log_result.scalars().all()
-    assert len(logs) == 1
-    log = logs[0]
-    assert log.amount == 1  # ip default
-    assert log.type == "deduct"
-    assert log.description == "Scan: ip on 10.0.0.1"
-    assert log.user_id == sample_user.id
+    assert logs == []
+    assert job.credit_cost == 0
 
 
 # --- New tests: ipa scan type ---
@@ -528,10 +517,10 @@ async def test_start_scan_just_enough_credits(db_session, sample_user, mock_cele
     job = await svc.start_scan(user=sample_user, scan_type="domain", target="example.com")
 
     assert job.status == "pending"
-    assert job.credit_cost == 2
+    assert job.credit_cost == 0
 
     await db_session.refresh(sample_user)
-    assert sample_user.credits == 0
+    assert sample_user.credits == 2
 
 
 # --- New tests: fallback pricing (no DB PricingConfig row) ---
@@ -545,9 +534,9 @@ async def test_start_scan_fallback_pricing_uses_settings_default(db_session, sam
     svc = ScannerService(db_session)
     job = await svc.start_scan(user=sample_user, scan_type="domain", target="example.com")
 
-    assert job.credit_cost == 2
+    assert job.credit_cost == 0
     await db_session.refresh(sample_user)
-    assert sample_user.credits == 98
+    assert sample_user.credits == 100
 
 
 # --- New tests: 0-cost scans ---

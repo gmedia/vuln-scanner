@@ -6,13 +6,11 @@ from celery import Celery
 from celery.exceptions import CeleryError
 from celery.result import AsyncResult
 from fastapi import HTTPException
-from sqlalchemy import func, select, text
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import defer
 
 from app.config import settings
-from app.models.credit_log import CreditLog
-from app.models.pricing import PricingConfig
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.user import User
@@ -67,28 +65,6 @@ class ScannerService:
             if not role_at_least(membership.role, "member"):
                 raise HTTPException(status_code=403, detail="Insufficient organization role")
 
-        result = await self.db.execute(select(PricingConfig).where(PricingConfig.scan_type == scan_type))
-        pricing = result.scalar_one_or_none()
-        if pricing:
-            credit_cost = pricing.credit_cost
-        else:
-            config_attr = settings.scan_type_pricing_map.get(scan_type, "")
-            credit_cost = getattr(settings, config_attr, 0) if config_attr else 0
-
-        if credit_cost > 0:
-            await self.db.execute(
-                text("UPDATE users SET credits = credits - :cost WHERE id = :uid AND credits >= :cost"),
-                {"cost": credit_cost, "uid": user.id.hex},
-            )
-            await self.db.flush()
-            check_result = await self.db.execute(select(User.credits).where(User.id == user.id))
-            current_credits = check_result.scalar_one()
-            if current_credits == user.credits:
-                raise HTTPException(
-                    status_code=402,
-                    detail=f"Insufficient credits. Need {credit_cost}, have {user.credits}.",
-                )
-
         job = ScanJob(
             id=uuid.uuid4(),
             scan_type=scan_type,
@@ -97,37 +73,14 @@ class ScannerService:
             progress=0,
             user_id=user.id,
             organization_id=organization_id,
-            credit_cost=credit_cost,
+            credit_cost=0,
         )
         self.db.add(job)
-        await self.db.flush()
-
-        credit_log = CreditLog(
-            user_id=user.id,
-            amount=credit_cost,
-            type="deduct",
-            description=f"Scan: {scan_type} on {target}",
-            reference_id=job.id,
-        )
-        self.db.add(credit_log)
         await self.db.flush()
 
         try:
             task = self._dispatch_task(str(job.id), scan_type, target, ports, platform, file_path)
         except CeleryError:
-            # Rollback credit deduction and job creation
-            await self.db.execute(
-                text("UPDATE users SET credits = credits + :cost WHERE id = :uid"),
-                {"cost": credit_cost, "uid": user.id.hex},
-            )
-            refund_log = CreditLog(
-                user_id=user.id,
-                amount=credit_cost,
-                type="refund",
-                description=f"Refund: failed to dispatch {scan_type} scan on {target}",
-                reference_id=job.id,
-            )
-            self.db.add(refund_log)
             await self.db.commit()
             raise HTTPException(status_code=500, detail="Failed to dispatch scan task") from None
 
