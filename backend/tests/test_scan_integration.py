@@ -99,13 +99,12 @@ async def test_scan_history_with_jobs(client, db_session, sample_user):
 
 
 def test_scan_credit_deduction(client, mock_celery):
-    """POST /api/scan/ip → verify user credits decrease after starting a scan."""
-    # Get current credits via a scan history call (user is the same across calls)
+    """POST /api/scan/ip → verify 202 and job id (seats, not credit debit)."""
     payload = {"target": "10.0.0.1", "ports": "22-80"}
     resp = client.post("/api/scan/ip", json=payload, headers=HEADERS)
     assert resp.status_code == 202
     data = resp.json()
-    assert data["credit_cost"] > 0
+    assert data["credit_cost"] == 0
     assert "id" in data
 
 
