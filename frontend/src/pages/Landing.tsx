@@ -67,7 +67,9 @@ function Landing() {
     <div className="min-h-dvh bg-background flex flex-col">
       <header className="border-b border-border pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex h-12 w-full max-w-6xl min-w-0 items-center justify-between gap-2 overflow-x-hidden px-4 2xl:max-w-[90rem]">
-          <BrandMark to="/" />
+          <div className="shrink-0">
+            <BrandMark to="/" />
+          </div>
           <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
             <a
               href="/blog"
@@ -195,7 +197,7 @@ function Landing() {
                 </li>
               ))}
             </ol>
-            <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">
+            <p className="mt-6 text-center text-sm leading-relaxed text-foreground/80">
               {t("siemNote")}
             </p>
           </div>
