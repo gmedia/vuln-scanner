@@ -51,7 +51,7 @@ function Header({ children }: HeaderProps) {
   }
 
   return (
-    <header className="flex min-w-0 flex-col gap-2 px-1">
+    <header className="flex min-w-0 flex-col gap-1.5 px-1">
       {children}
       {activeJobId ? (
         <div className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
@@ -64,9 +64,9 @@ function Header({ children }: HeaderProps) {
         </div>
       ) : null}
 
-      <div className="flex min-h-11 flex-wrap items-center gap-2 [&_button[aria-pressed=true]]:!bg-secondary [&_button[aria-pressed=true]]:!text-secondary-foreground">
-        <ThemeSwitcher />
-        <LanguageSwitcher />
+      <div className="flex min-h-9 flex-wrap items-center gap-1.5 [&_button[aria-pressed=true]]:!bg-secondary [&_button[aria-pressed=true]]:!text-secondary-foreground">
+        <ThemeSwitcher className="h-9 min-h-9" />
+        <LanguageSwitcher className="h-9 min-h-9" />
       </div>
 
       {isAuthenticated ? <OrgSwitcher className="w-full" /> : null}

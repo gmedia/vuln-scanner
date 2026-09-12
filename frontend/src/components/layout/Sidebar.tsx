@@ -144,7 +144,7 @@ function NavItem({
           <span className="flex min-w-0 flex-col leading-tight">
             <span>{label}</span>
             {hint ? (
-              <span className="truncate text-[10px] font-normal text-sidebar-foreground/80">
+              <span className="sr-only truncate text-[10px] font-normal text-sidebar-foreground/80 md:not-sr-only md:block">
                 {hint}
               </span>
             ) : null}
@@ -249,7 +249,7 @@ function Sidebar() {
           </SidebarGroup>
         ) : null}
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="shrink-0">
         <Header />
         {activeJobId ? (
           <div className="rounded-md bg-muted p-3 group-data-[collapsible=icon]:hidden">
