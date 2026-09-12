@@ -546,6 +546,14 @@ function AdminHpp() {
                   </span>
                   {row.margin_pct != null ? ` (${row.margin_pct}%)` : ""}
                 </p>
+                {row.line === "host" && row.host_cogs_capped ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    {t("hppHostCogsCapped", {
+                      cap: row.host_scans_cap ?? 0,
+                      raw: row.host_scans_raw ?? 0,
+                    })}
+                  </p>
+                ) : null}
                 <Badge variant="info" className="text-[10px]">
                   {row.label}
                 </Badge>

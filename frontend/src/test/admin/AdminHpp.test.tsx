@@ -193,11 +193,14 @@ const report = {
     {
       line: "host",
       label: "estimasi",
-      org_count: 0,
-      revenue_idr: 0,
-      cogs_idr: 0,
-      margin_idr: 0,
-      margin_pct: null,
+      org_count: 1,
+      revenue_idr: 900000,
+      cogs_idr: 250,
+      margin_idr: 899750,
+      margin_pct: 100,
+      host_cogs_capped: true,
+      host_scans_raw: 3,
+      host_scans_cap: 1,
     },
   ],
 };
@@ -294,5 +297,8 @@ describe("AdminHpp", () => {
     expect(screen.getAllByText(/Margin \(estimasi\)/).length).toBe(2);
     expect(screen.getByText(/290.000/)).toBeInTheDocument();
     expect(screen.getByText(/\(97%\)/)).toBeInTheDocument();
+    expect(
+      screen.getByText("Host COGS capped at included cadence (1 scans vs 3 recorded)."),
+    ).toBeInTheDocument();
   });
 });
