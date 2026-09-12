@@ -11,6 +11,7 @@ import {
   FileText,
   Calculator,
   Mail,
+  Sparkles,
 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -109,6 +110,12 @@ function AdminDashboard() {
         label: t("linkEmailLogs"),
         desc: t("linkEmailLogsDesc"),
         icon: Mail,
+      },
+      {
+        to: "/admin/ai",
+        label: t("linkAi"),
+        desc: t("linkAiDesc"),
+        icon: Sparkles,
       },
   ];
 
@@ -266,7 +273,7 @@ function AdminDashboard() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {quickLinks.map((link) => (
               <Link
                 key={link.to}
