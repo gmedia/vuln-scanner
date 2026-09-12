@@ -116,7 +116,7 @@ function DomainScanner() {
       })()}
       </div>
       {!isScanning && !hasResults && (
-        <Card className="h-full">
+        <Card>
           <CardHeader>
             <CardTitle className="text-sm tracking-wide">
               What this scan covers

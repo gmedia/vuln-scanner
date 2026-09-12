@@ -355,7 +355,7 @@ function Dashboard() {
         />
       </div>
 
-      <div className="grid items-stretch gap-4 lg:grid-cols-12">
+      <div className="grid items-start gap-4 lg:grid-cols-12">
         <Card className="flex min-h-0 flex-col lg:col-span-8">
           <CardHeader className="pb-3">
             <CardTitle
@@ -380,7 +380,7 @@ function Dashboard() {
               </CardAction>
             )}
           </CardHeader>
-          <CardContent className="flex-1 pb-[max(4rem,env(safe-area-inset-bottom))]">
+          <CardContent className="pb-[max(2rem,env(safe-area-inset-bottom))]">
             {isFirstLoad ? (
               <TableRowSkeleton rows={6} />
               ) : scans.length === 0 ? (
@@ -578,12 +578,12 @@ function Dashboard() {
           </CardContent>
         </Card>
 
-        <div className="flex h-full min-h-0 flex-col gap-4 lg:col-span-4">
-          <Card className="flex flex-1 flex-col">
+        <div className="flex min-h-0 flex-col gap-4 lg:col-span-4">
+          <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm tracking-wide">{t("attachCoverage")}</CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-1 flex-col space-y-2 text-xs">
+            <CardContent className="space-y-2 text-xs">
               {enabledSchedules.length === 0 ? (
                 <p className="text-muted-foreground">
                   {t("noSchedulesHint")}
@@ -607,11 +607,11 @@ function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="flex flex-1 flex-col">
+          <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm tracking-wide">{t("guard")}</CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-1 flex-col space-y-2 text-xs">
+            <CardContent className="space-y-2 text-xs">
               <p className="text-muted-foreground">
                 {t("agentsCount", { count: agents.length })}
                 {staleAgents.length > 0

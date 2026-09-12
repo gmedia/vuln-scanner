@@ -200,6 +200,26 @@ describe("FindingsTable", () => {
     expect(snippet.textContent).not.toMatch(/…$/);
   });
 
+  it("shows CVE in the title cell when title duplicates a generic category", () => {
+    renderTable(
+      <FindingsTable
+        findings={[
+          mockFinding({
+            title: "vulnerability",
+            category: "vulnerability",
+            cve_id: "DSA-2026-1",
+          }),
+        ]}
+        isLoading={false}
+      />,
+    );
+    const titleCell = document.querySelector("table tbody tr td:nth-child(2)");
+    expect(titleCell?.textContent?.trim()).toBe("DSA-2026-1");
+    expect(
+      screen.getByRole("link", { name: "DSA-2026-1" }),
+    ).toBeInTheDocument();
+  });
+
   it("shows category in the title cell when title duplicates the CVE id", () => {
     renderTable(
       <FindingsTable

@@ -292,15 +292,18 @@ export default function HostProtect() {
       </details>
 
       {agents.length === 0 && !agentsQ.isLoading ? (
-        <div
-          className="flex flex-col gap-2 sm:flex-row sm:items-center"
-          data-testid="host-no-agents"
-        >
-          <p className="text-sm text-muted-foreground">{t("noAgents")}</p>
-          <Button variant="outline" size="sm" className="h-10 min-h-10 w-fit" asChild>
-            <Link to="/guard">{t("openGuard")}</Link>
-          </Button>
-        </div>
+        <Card data-testid="host-no-agents">
+          <CardContent className="flex min-h-[8rem] flex-col items-center justify-center gap-2 px-6 py-8 text-center">
+            <Shield className="h-8 w-8 text-muted-foreground" aria-hidden />
+            <p className="text-sm font-medium text-foreground">{t("noAgents")}</p>
+            <p className="max-w-md text-xs text-muted-foreground">
+              {t("emptyHint")}
+            </p>
+            <Button variant="outline" size="sm" className="mt-1" asChild>
+              <Link to="/guard">{t("openGuard")}</Link>
+            </Button>
+          </CardContent>
+        </Card>
       ) : null}
 
       {featureOn && agents.length > 0 && fleetStale ? (
@@ -488,13 +491,14 @@ export default function HostProtect() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="malware" className="space-y-6">
-          {items.length === 0 && !sitesQ.isLoading ? (
+          {items.length === 0 && !sitesQ.isLoading && agents.length > 0 ? (
             <Card data-testid="host-empty">
               <CardContent className="flex min-h-[8rem] flex-col items-center justify-center gap-2 px-6 py-8 text-center">
+                <Shield className="h-8 w-8 text-muted-foreground" aria-hidden />
                 <p className="text-sm font-medium text-foreground">
                   {t("empty")}
                 </p>
-                <p className="max-w-md text-sm text-muted-foreground">
+                <p className="max-w-md text-xs text-muted-foreground">
                   {t("emptyHint")}
                 </p>
                 <Button

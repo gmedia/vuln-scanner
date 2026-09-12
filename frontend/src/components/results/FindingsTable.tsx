@@ -46,6 +46,24 @@ const SEVERITY_ORDER: Record<string, number> = {
 
 const SEVERITY_FILTERS = ["critical", "high", "medium", "low", "info"] as const;
 
+const GENERIC_TITLES = new Set(["vulnerability", "vuln", "unknown", "-"]);
+
+function findingDisplayTitle(finding: ScanFinding): string {
+  const title = finding.title.trim();
+  const category = finding.category?.trim() ?? "";
+  if (finding.cve_id && title === finding.cve_id) {
+    return category || finding.cve_id;
+  }
+  if (
+    category &&
+    title.toLowerCase() === category.toLowerCase() &&
+    (GENERIC_TITLES.has(title.toLowerCase()) || Boolean(finding.cve_id))
+  ) {
+    return finding.cve_id || category;
+  }
+  return title;
+}
+
 function FindingsTable({
   findings,
   isLoading,
@@ -217,8 +235,6 @@ function FindingsTable({
         ) : (
           sorted.map((finding) => {
             const isExpanded = expandedId === finding.id;
-            const titleDuplicatesCve =
-              Boolean(finding.cve_id) && finding.title === finding.cve_id;
             return (
               <div
                 key={finding.id}
@@ -248,9 +264,7 @@ function FindingsTable({
                   </Badge>
                   <span className="min-w-0 flex-1">
                     <span className="block text-xs font-medium text-foreground">
-                      {titleDuplicatesCve
-                        ? finding.category || finding.cve_id
-                        : finding.title}
+                      {findingDisplayTitle(finding)}
                     </span>
                     <span className="mt-0.5 block break-all text-[11px] text-muted-foreground">
                       {finding.category || "-"}
@@ -329,8 +343,6 @@ function FindingsTable({
                 const remediationLine = finding.remediation
                   ? (finding.remediation.split("\n")[0] ?? "")
                   : "";
-                const titleDuplicatesCve =
-                  Boolean(finding.cve_id) && finding.title === finding.cve_id;
                 return (
                   <Fragment key={finding.id}>
                     <TableRow
@@ -361,9 +373,7 @@ function FindingsTable({
                         </Badge>
                       </TableCell>
                       <TableCell className="max-w-[200px] truncate px-3 py-2.5 text-xs text-foreground">
-                        {titleDuplicatesCve
-                          ? finding.category || finding.cve_id
-                          : finding.title}
+                        {findingDisplayTitle(finding)}
                       </TableCell>
                       <TableCell className="px-3 py-2.5 text-xs text-muted-foreground">
                         {finding.category || "-"}

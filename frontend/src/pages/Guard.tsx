@@ -980,14 +980,11 @@ export default function Guard() {
                     ))}
                   </div>
                   <div className="hidden overflow-x-auto md:block">
-                  <Table className="min-w-[64rem]">
+                  <Table className="min-w-[40rem]">
                     <TableHeader>
                       <TableRow>
                         <TableHead className="min-w-[14rem]">
                           {t("colName")}
-                        </TableHead>
-                        <TableHead className="min-w-[10rem]">
-                          {t("copyAgentId")}
                         </TableHead>
                         <TableHead className="min-w-[7rem]">
                           {t("colStatus")}
@@ -995,20 +992,12 @@ export default function Guard() {
                         <TableHead className="min-w-[11rem]">
                           {t("colLastSeen")}
                         </TableHead>
-                        <TableHead className="min-w-[11rem]">
-                          {t("colHelperPoll")}
-                        </TableHead>
                         <TableHead className="min-w-[6rem]">
                           {t("colVersion")}
                         </TableHead>
-                        <TableHead className="min-w-[10rem]">
-                          {t("linkAsset")}
+                        <TableHead className="min-w-[12rem]">
+                          {t("colAction")}
                         </TableHead>
-                        {canAdmin ? (
-                          <TableHead className="min-w-[10rem]">
-                            {t("hostToken")}
-                          </TableHead>
-                        ) : null}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1018,22 +1007,23 @@ export default function Guard() {
                           data-testid="guard-agent-row"
                         >
                           <TableCell
-                            className="min-w-[14rem] max-w-[min(48rem,55vw)] truncate font-mono text-xs font-medium 2xl:max-w-none 2xl:overflow-visible 2xl:whitespace-normal"
+                            className="min-w-[14rem] max-w-[min(28rem,40vw)]"
                             title={a.name}
                           >
-                            {a.name}
-                          </TableCell>
-                          <TableCell>
+                            <span className="block truncate font-mono text-xs font-medium">
+                              {a.name}
+                            </span>
                             <CopyableId value={a.id} label={t("copyAgentId")} />
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
                             {statusBadge(a.status, t)}
                           </TableCell>
                           <TableCell className="whitespace-nowrap text-muted-foreground">
-                            {formatWhen(a.last_keep_alive, dateLocale)}
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap text-muted-foreground">
-                          {formatWhen(a.last_helper_poll_at, dateLocale)}
+                            <div>{formatWhen(a.last_keep_alive, dateLocale)}</div>
+                            <div className="text-[11px]">
+                              {t("colHelperPoll")}:{" "}
+                              {formatWhen(a.last_helper_poll_at, dateLocale)}
+                            </div>
                           </TableCell>
                           <TableCell
                             className="max-w-[8rem] truncate text-muted-foreground"
@@ -1087,18 +1077,16 @@ export default function Guard() {
                               ) : a.asset_id ? null : (
                                 <span className="text-xs text-muted-foreground">—</span>
                               )}
+                              {canAdmin ? (
+                                <HostTokenIssueButton
+                                  agent={a}
+                                  t={t}
+                                  pending={hostTokenMut.isPending}
+                                  onIssue={(id) => hostTokenMut.mutate(id)}
+                                />
+                              ) : null}
                             </div>
                           </TableCell>
-                          {canAdmin ? (
-                            <TableCell>
-                              <HostTokenIssueButton
-                                agent={a}
-                                t={t}
-                                pending={hostTokenMut.isPending}
-                                onIssue={(id) => hostTokenMut.mutate(id)}
-                              />
-                            </TableCell>
-                          ) : null}
                         </TableRow>
                       ))}
                     </TableBody>
