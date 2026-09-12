@@ -122,6 +122,9 @@ class HppLineMargin(BaseModel):
     cogs_idr: int
     margin_idr: int
     margin_pct: int | None
+    host_cogs_capped: bool = False
+    host_scans_raw: int = 0
+    host_scans_cap: int = 0
 
 
 class HppReportResponse(BaseModel):
