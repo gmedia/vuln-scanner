@@ -4,7 +4,7 @@
 **Goal:** Make custom hostname onboarding **understandable** (buttons + states) and **operable** (TXT + CNAME, poll Cloudflare — not CNAME-only `dig`). Product `active` only when CF **SSL** is active.
 **Epic:** **P11.x** follow-on to [`status-page-v1.md`](status-page-v1.md). Does **not** replace Uptime probes, Scan, Guard, or SIEM.
 **Depends:** P11 S1–S5 tables (`custom_hostname`, `hostname_status`); Cloudflare for SaaS on zone `sinexis.app`; origin nginx custom-host apex (PR #464).
-**Commercial:** still **not** a list-price SKU. Custom host remains **Multi** until a later meter slice. **Do not** hardcode “3 credits / month” in product copy.
+**Commercial:** still **not** a list-price SKU. Custom host remains **Multi** until a later meter slice. **Metering v3:** no Scan-credit debit on Active (`statushost` ignored). **Do not** hardcode “3 credits / month” in product copy.
 **Not this epic (first implement):** Cloudflare API token in app, auto-create hostname, credit debit, CNAME-to-this-zone as the only validation method, opening origin `:443` to the internet, ACME in-app.
 
 ---
@@ -59,7 +59,7 @@ Operators can type a hostname and click **Save** / **Verify DNS**. That mixes th
 | Slice | When |
 |-------|------|
 | **P11.x-B** CF API **create/delete** hostname on Pasang/Lepas | In repo: `STATUS_PAGE_CF_API_TOKEN` + `STATUS_PAGE_CF_ZONE_ID` on deploy host; CI uses stub |
-| **P11.x-C** Meter: `N` credits / active hostname / calendar month; `N` from admin pricing; charge on **Active**, not on Save | After 1–2 live hostnames; grace before suspend |
+| **P11.x-C** Meter: was Scan credits on Active — **superseded by metering v3** (SKU seats; no `statushost` debit) | Do not re-enable debit |
 
 ---
 
