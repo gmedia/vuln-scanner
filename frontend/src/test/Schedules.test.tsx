@@ -111,6 +111,12 @@ describe("Schedules page", () => {
     expect(screen.getByText("New schedule")).toBeInTheDocument();
     expect(screen.getByText(/Active schedule quota/)).toBeInTheDocument();
     expect(screen.getByText("0/10")).toBeInTheDocument();
+    expect(screen.queryByText(/charged each run/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Scheduled attach is included\. Credits are for on-demand, overage, and mobile only\./,
+      ),
+    ).toBeInTheDocument();
   });
 
   it("prefills target and scan_type from URL", async () => {
@@ -119,7 +125,7 @@ describe("Schedules page", () => {
     expect(target).toHaveValue("acme.example.com");
   });
 
-  it("shows credit-disable callout with credit-history link", async () => {
+  it("shows leftover credit last_error without a credit-history callout", async () => {
     mockList.mockResolvedValue([
       {
         ...sampleSchedule,
@@ -131,10 +137,10 @@ describe("Schedules page", () => {
     expect(
       (await screen.findAllByText(/Kredit tidak mencukupi/)).length,
     ).toBeGreaterThan(0);
-    const link = screen.getAllByRole("link", {
-      name: /View credit history/i,
-    })[0];
-    expect(link).toHaveAttribute("href", "/credit-history");
+    expect(
+      screen.queryByRole("link", { name: /View credit history/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/charged each run/i)).not.toBeInTheDocument();
   });
 
   it("disables create when at cap", async () => {

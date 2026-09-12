@@ -56,14 +56,15 @@ describe("AuthLayout", () => {
     expect(island).toHaveClass("2xl:max-w-4xl");
   });
 
-  it("keeps the brand tagline hidden until the sm breakpoint", () => {
+  it("shows the brand tagline on mobile", () => {
     render(
       <AuthLayout title="Sign in">
         <div>form</div>
       </AuthLayout>,
     );
     const tagline = screen.getByText(/colo, VPS, and hospitality/i);
-    expect(tagline).toHaveClass("hidden", "sm:block");
+    expect(tagline).not.toHaveClass("hidden");
+    expect(tagline).toHaveClass("px-2", "text-pretty", "text-sm");
   });
 
   it("sizes secondary auth links for 44pt taps", () => {

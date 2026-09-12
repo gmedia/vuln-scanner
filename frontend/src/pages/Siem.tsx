@@ -359,7 +359,7 @@ export default function Siem() {
             <CardContent className="space-y-4">
               <div
                 data-testid="siem-search-filters"
-                className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+                className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
               >
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <Label htmlFor="siem-since">{t("sinceLabel")}</Label>
@@ -405,7 +405,7 @@ export default function Siem() {
                     <SelectTrigger
                       id="siem-agent"
                       aria-label={t("agent")}
-                      className="h-10 min-h-10"
+                      className="h-10 min-h-10 [&>span]:line-clamp-none [&>span]:whitespace-nowrap"
                     >
                       <SelectValue placeholder={t("allAgents")} />
                     </SelectTrigger>
@@ -569,7 +569,7 @@ export default function Siem() {
                       <TableHead className="w-[12rem]">{t("colTime")}</TableHead>
                       <TableHead className="w-[8rem]">{t("colLevel")}</TableHead>
                       <TableHead>{t("colRule")}</TableHead>
-                      <TableHead className="w-[10rem]">{t("colAgent")}</TableHead>
+                       <TableHead>{t("colAgent")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -597,7 +597,7 @@ export default function Siem() {
                           <LevelChip level={ev.rule_level} t={t} />
                         </TableCell>
                         <TableCell
-                          className="truncate"
+                          className="whitespace-normal break-words"
                           title={
                             ev.rule_id
                               ? `${ev.rule_description} · ${ev.rule_id}`
@@ -612,7 +612,7 @@ export default function Siem() {
                           ) : null}
                         </TableCell>
                         <TableCell
-                          className="truncate font-mono text-xs"
+                          className="break-all font-mono text-xs"
                           title={ev.agent_name ?? ev.agent_wazuh_id ?? undefined}
                         >
                           {ev.agent_name ?? ev.agent_wazuh_id ?? "—"}

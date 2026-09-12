@@ -495,6 +495,54 @@ function AdminHpp() {
         </div>
       </div>
 
+      <div>
+        <h3 className="mb-2 text-sm font-semibold tracking-wide">
+          {t("hppSkuTitle")}
+        </h3>
+        <p className="mb-3 text-[11px] text-muted-foreground">
+          {t("hppSkuHint")}
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {(report?.line_margins ?? []).map((row) => (
+            <Card key={row.line} data-testid={`hpp-line-${row.line}`}>
+              <CardHeader>
+                <CardTitle className="text-sm uppercase">
+                  {row.line === "host" ? t("hppLineHost") : t("hppLineScan")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1 text-xs">
+                <p>
+                  {t("hppOrgCount")}:{" "}
+                  <span className="font-mono tabular-nums">{row.org_count}</span>
+                </p>
+                <p>
+                  {t("hppRevenue")}:{" "}
+                  <span className="font-mono tabular-nums">
+                    {formatIdr(row.revenue_idr)}
+                  </span>
+                </p>
+                <p>
+                  {t("hppCogs")}:{" "}
+                  <span className="font-mono tabular-nums">
+                    {formatIdr(row.cogs_idr)}
+                  </span>
+                </p>
+                <p>
+                  {t("hppMargin")}:{" "}
+                  <span className="font-mono tabular-nums">
+                    {formatIdr(row.margin_idr)}
+                  </span>
+                  {row.margin_pct != null ? ` (${row.margin_pct}%)` : ""}
+                </p>
+                <Badge variant="info" className="text-[10px]">
+                  {row.label}
+                </Badge>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-sm tracking-wide">
@@ -591,54 +639,6 @@ function AdminHpp() {
           )}
         </CardContent>
       </Card>
-
-      <div>
-        <h3 className="mb-2 text-sm font-semibold tracking-wide">
-          {t("hppSkuTitle")}
-        </h3>
-        <p className="mb-3 text-[11px] text-muted-foreground">
-          {t("hppSkuHint")}
-        </p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {(report?.line_margins ?? []).map((row) => (
-            <Card key={row.line} data-testid={`hpp-line-${row.line}`}>
-              <CardHeader>
-                <CardTitle className="text-sm uppercase">
-                  {row.line === "host" ? t("hppLineHost") : t("hppLineScan")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-1 text-xs">
-                <p>
-                  {t("hppOrgCount")}:{" "}
-                  <span className="font-mono tabular-nums">{row.org_count}</span>
-                </p>
-                <p>
-                  {t("hppRevenue")}:{" "}
-                  <span className="font-mono tabular-nums">
-                    {formatIdr(row.revenue_idr)}
-                  </span>
-                </p>
-                <p>
-                  {t("hppCogs")}:{" "}
-                  <span className="font-mono tabular-nums">
-                    {formatIdr(row.cogs_idr)}
-                  </span>
-                </p>
-                <p>
-                  {t("hppMargin")}:{" "}
-                  <span className="font-mono tabular-nums">
-                    {formatIdr(row.margin_idr)}
-                  </span>
-                  {row.margin_pct != null ? ` (${row.margin_pct}%)` : ""}
-                </p>
-                <Badge variant="info" className="text-[10px]">
-                  {row.label}
-                </Badge>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

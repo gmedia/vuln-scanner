@@ -132,7 +132,7 @@ function AdminEmailLogs() {
               </span>
             )}
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="email-log-kind">{t("emailLogsKind")}</Label>
               <Select

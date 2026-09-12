@@ -91,10 +91,6 @@ function apiDetail(err: unknown, fallback: string): string {
   return fallback;
 }
 
-function isCreditError(raw: string | null | undefined): boolean {
-  return !!raw && raw.toLowerCase().includes("insufficient credits");
-}
-
 function parseScanType(value: string | null): "domain" | "ip" {
   return value === "ip" ? "ip" : "domain";
 }
@@ -528,8 +524,6 @@ function Schedules() {
                 {data.map((s: ScanSchedule) => {
                   const runsOpen = !!expandedRuns[s.id];
                   const mappedErr = mapScheduleError(s.last_error);
-                  const creditDisabled =
-                    !s.enabled && isCreditError(s.last_error);
                   return (
                     <li
                       key={s.id}
@@ -582,28 +576,11 @@ function Schedules() {
                       </div>
                       {mappedErr && (
                         <Alert
-                          variant={creditDisabled ? "default" : "destructive"}
-                          className={
-                            creditDisabled
-                              ? "mt-3 border-amber-500/40 bg-amber-500/10 text-xs text-amber-200"
-                              : "mt-3 border-destructive/40 text-xs"
-                          }
+                          variant="destructive"
+                          className="mt-3 border-destructive/40 text-xs"
                         >
                           <AlertTriangle />
-                          <AlertDescription>
-                            <p>{mappedErr}</p>
-                            {creditDisabled && (
-                              <p className="mt-1">
-                                <Link
-                                  to="/credit-history"
-                                  className="font-medium text-primary hover:underline"
-                                >
-                                  {t("creditHistory")}
-                                </Link>{" "}
-                                {t("creditReenable")}
-                              </p>
-                            )}
-                          </AlertDescription>
+                          <AlertDescription>{mappedErr}</AlertDescription>
                         </Alert>
                       )}
                       <Button
@@ -645,8 +622,6 @@ function Schedules() {
                     {data.map((s: ScanSchedule) => {
                       const runsOpen = !!expandedRuns[s.id];
                       const mappedErr = mapScheduleError(s.last_error);
-                      const creditDisabled =
-                        !s.enabled && isCreditError(s.last_error);
                       return (
                         <Fragment key={s.id}>
                           <TableRow>
@@ -708,30 +683,11 @@ function Schedules() {
                             <TableCell colSpan={3} className="space-y-2 pt-0">
                               {mappedErr && (
                                 <Alert
-                                  variant={
-                                    creditDisabled ? "default" : "destructive"
-                                  }
-                                  className={
-                                    creditDisabled
-                                      ? "border-amber-500/40 bg-amber-500/10 text-xs text-amber-200"
-                                      : "border-destructive/40 text-xs"
-                                  }
+                                  variant="destructive"
+                                  className="border-destructive/40 text-xs"
                                 >
                                   <AlertTriangle />
-                                  <AlertDescription>
-                                    <p>{mappedErr}</p>
-                                    {creditDisabled && (
-                                      <p className="mt-1">
-                                        <Link
-                                          to="/credit-history"
-                                          className="font-medium text-primary hover:underline"
-                                        >
-                                          {t("creditHistory")}
-                                        </Link>{" "}
-                                        {t("creditReenable")}
-                                      </p>
-                                    )}
-                                  </AlertDescription>
+                                  <AlertDescription>{mappedErr}</AlertDescription>
                                 </Alert>
                               )}
                               <Button

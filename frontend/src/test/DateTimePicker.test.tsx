@@ -6,9 +6,17 @@ import { DateTimePicker } from "@/components/ui/DateTimePicker";
 describe("DateTimePicker", () => {
   it("renders placeholder when empty", () => {
     render(
-      <DateTimePicker value="" onChange={() => {}} aria-label="Sejak" />,
+      <DateTimePicker
+        value=""
+        onChange={() => {}}
+        aria-label="Sejak"
+        placeholder="dd/mm/yyyy HH:mm"
+      />,
     );
-    expect(screen.getByRole("button", { name: "Sejak" })).toBeInTheDocument();
+    const trigger = screen.getByRole("button", { name: "Sejak" });
+    expect(trigger).toHaveTextContent("dd/mm/yyyy HH:mm");
+    expect(trigger.className).not.toContain("overflow-hidden");
+    expect(trigger.querySelector(".truncate")).toBeNull();
   });
 
   it("shows dd/MM/yyyy HH:mm when value is set", () => {
@@ -21,10 +29,9 @@ describe("DateTimePicker", () => {
     );
     const trigger = screen.getByRole("button", { name: "Sejak" });
     expect(trigger).toHaveTextContent("06/08/2026 14:30");
-    expect(trigger.className).toContain("overflow-hidden");
+    expect(trigger.className).not.toContain("overflow-hidden");
     expect(trigger.className).toMatch(/min-w-\[12rem\]/);
-    expect(trigger.querySelector(".truncate")).toBeTruthy();
-
+    expect(trigger.querySelector(".truncate")).toBeNull();
   });
 
   it("opens calendar and 24h hour/minute selects", async () => {

@@ -18,6 +18,7 @@ import {
   isHelperPollStale,
 } from "@/lib/sinexisInstall";
 import { Button } from "@/components/ui/Button";
+import { Card, CardContent } from "@/components/ui/Card";
 import { Label } from "@/components/ui/Label";
 import {
   Select,
@@ -279,12 +280,16 @@ export default function HostWafPanel({
         {t("wafEventsHint")}
       </p>
       {(eventsQ.data ?? []).length === 0 ? (
-        <p
-          className="text-sm text-muted-foreground"
-          data-testid="host-waf-events-empty"
-        >
-          {t("wafEventsEmpty")}
-        </p>
+        <Card data-testid="host-waf-events-empty">
+          <CardContent className="flex min-h-[8rem] flex-col items-center justify-center gap-2 px-6 py-8 text-center">
+            <p className="text-sm font-medium text-foreground">
+              {t("wafEvents")}
+            </p>
+            <p className="max-w-md text-sm text-muted-foreground">
+              {t("wafEventsEmpty")}
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <Table data-testid="host-waf-events">
           <TableHeader>

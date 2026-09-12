@@ -256,15 +256,13 @@ export default function HostProtect() {
           </div>
         }
         actions={
-          items.length > 0 || open ? (
-            <Button
-              data-testid="host-add"
-              disabled={atCap || agents.length === 0}
-              onClick={() => setOpen((v) => !v)}
-            >
-              {t("add")}
-            </Button>
-          ) : null
+          <Button
+            data-testid="host-add"
+            disabled={atCap || agents.length === 0}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {t("add")}
+          </Button>
         }
       />
       <details className="max-w-xl space-y-2" open={items.length === 0}>

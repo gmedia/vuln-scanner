@@ -250,14 +250,18 @@ function Dashboard() {
           canCreateScans ? (
             <>
               {primaryIsJadwal ? (
-                <Button asChild className="min-h-11 text-sm">
+                <Button asChild className="min-h-11 w-full text-sm sm:w-auto">
                   <Link to="/schedules" data-testid="primary-jadwal-cta">
                     <CalendarClock className="mr-2 h-4 w-4" />
                     {t("setSchedule")}
                   </Link>
                 </Button>
               ) : (
-                <Button asChild variant="outline" className="min-h-11 text-sm">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="min-h-11 w-full text-sm sm:w-auto"
+                >
                   <Link to="/schedules">
                     <CalendarClock className="mr-2 h-4 w-4" />
                     {t("setSchedule")}

@@ -35,7 +35,7 @@ function AuthLayout({
       <div className={cn("w-full", maxWidthClass[maxWidth])}>
         <div className="mb-5 flex flex-col items-center gap-1.5 text-center sm:mb-6">
           <BrandMark to="/" aria-label={t("homeAria")} />
-          <p className="hidden text-sm text-muted-foreground sm:block">
+          <p className="px-2 text-pretty text-sm text-muted-foreground">
             {t("authSubtitle")}
           </p>
           <div
