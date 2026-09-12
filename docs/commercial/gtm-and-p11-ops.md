@@ -17,10 +17,10 @@ Do in order. Success = CRM + billing, **not** a GitHub PR.
 | 3 | AM | Pick **10 wave-1 SIDs** matching SKU §5 patterns (VPS+domain, colo IP, multi-service, existing security line, CORPORATE) | Private CRM list only |
 | 4 | AM | Send [`am-wave1-email-id.md`](am-wave1-email-id.md) from AM identity; log date + tier | CRM activity |
 | 5 | AM + product | Name **pilot #1** (prefer multi-service VPS+domain; hotel = #2) | CRM + 1 mo sponsored flag; **list price still recorded** |
-| 6 | Ops | Fulfill SKU §3: credits, org `sku`, `/assets`, 1:1 schedule, notify, first executive HTML (Bahasa) | Buyer has HTML; beat healthy |
+| 6 | Ops | Fulfill SKU §3: org `sku`, `/assets`, 1:1 schedule, notify, first executive HTML (Bahasa). Overage credits optional (metering v2 — attach runs without a pack) | Buyer has HTML; beat healthy |
 | 7 | AM | Follow-up 7–10d; **AM owns renew** | Next date in CRM |
 
-**Do not promise in wave-1:** SIEM, Guard/Wazuh, “100% aman”, unlimited scans, 24/7 SOC, nested multi-property Projects.
+**Do not promise in wave-1:** SIEM, Guard/Wazuh, “100% aman”, unlimited on-demand scans, 24/7 SOC, nested multi-property Projects. Scheduled attach is **included** in the SKU.
 
 **Workspace:** multi-user **is shipped** (P2). AM may mention “undang rekan (viewer)” for Pro/Multi. Do **not** sell org wallet.
 
