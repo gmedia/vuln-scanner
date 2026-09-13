@@ -92,6 +92,7 @@
   "wafEvents": "Event WAF",
   "wafEventsHint": "Baris ini event filter HTTP, bukan File mencurigakan. Baris hidup muncul setelah helper mengirim kecocokan dari nginx di VPS — bukan dari dashboard ini.",
   "wafEventsEmpty": "Belum ada event WAF. Simulasi hanya pratinjau. Hit hidup butuh snippet di VPS plus poll helper yang mengirim ke sini.",
+  "wafPageOf": "Halaman {{page}} dari {{total}}",
   "wafColAction": "Aksi",
   "wafColRule": "Aturan",
   "wafColMethod": "Metode",
