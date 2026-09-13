@@ -107,7 +107,7 @@ docker exec vuln-backend alembic current        # only if you need to confirm he
 
 ## 6) Flags ops actually cares about
 
-Set on the **app host `.env`** and/or GitHub **repository** secrets (CI overwrite on `push` to `main` **drops** host-only keys that are missing from GitHub). Empty `WAZUH_*` secrets are **skipped** (`append_if_set`) so blank GitHub values do not wipe lab URLs.
+Set on the **app host `.env`** and/or GitHub **repository** secrets (CI overwrite on `push` to `main` **drops** host-only keys that are missing from GitHub). Empty `WAZUH_*` and `INVOICE_BANK_*` secrets are **skipped** (`append_if_set`) so blank GitHub values do not wipe lab URLs or bank copy.
 
 | Flag | Notes |
 |------|--------|
@@ -118,6 +118,7 @@ Set on the **app host `.env`** and/or GitHub **repository** secrets (CI overwrit
 | `HOST_WAF_ENABLED` | API flag; per-site mode still off until detect. **Not** edge nginx |
 | `UPTIME_ENABLED` / `STATUS_PAGE_*` | Uptime + custom hostname (Cloudflare secrets; no ACME in-app) |
 | `OBJECT_STORAGE_BACKEND` | `cos` for mobile uploads across hosts; default `local` |
+| `INVOICE_BANK_NAME` / `ACCOUNT` / `HOLDER` | Scan invoice bank copy (`/admin/invoices`). CI injects only if the GitHub secret is **non-empty**. Never commit real numbers. |
 
 Do not invent extra enroll daemons. Do not wipe live ERP agent `sx-erpstg`. Guard e2e enroll: wipe **tc5** first ([guide §4.1](AGENT_EXECUTION_GUIDE.md)).
 
