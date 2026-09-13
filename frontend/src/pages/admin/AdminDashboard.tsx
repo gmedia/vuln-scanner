@@ -12,6 +12,7 @@ import {
   Calculator,
   Mail,
   Sparkles,
+  Receipt,
 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -93,12 +94,18 @@ function AdminDashboard() {
       desc: t("linkPricingDesc"),
       icon: Tag,
     },
-    {
-      to: "/admin/hpp",
-      label: t("linkHpp"),
-      desc: t("linkHppDesc"),
-      icon: Calculator,
-    },
+      {
+        to: "/admin/hpp",
+        label: t("linkHpp"),
+        desc: t("linkHppDesc"),
+        icon: Calculator,
+      },
+      {
+        to: "/admin/invoices",
+        label: t("linkInvoices"),
+        desc: t("linkInvoicesDesc"),
+        icon: Receipt,
+      },
       {
         to: "/admin/blog",
         label: t("linkBlog"),
