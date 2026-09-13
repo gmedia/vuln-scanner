@@ -86,7 +86,7 @@ Nav groups match Sidebar: **Scan** · **Attach** · **Account** · **Admin** (ad
 | `/admin` | `pages/admin/AdminDashboard.tsx` | Admin | `end: true` | `admin/AdminDashboard.test.tsx`, `e2e/admin.spec.ts` |
 | `/admin/users` | `pages/admin/AdminUsers.tsx` | Admin | | `admin/AdminUsers.test.tsx`, `e2e/admin-users.spec.ts` |
 | `/admin/users/:id` | `pages/admin/AdminUserDetail.tsx` | — | | `admin/AdminUserDetail.test.tsx`, `e2e/admin-user-detail.spec.ts` |
-| `/admin/pricing` | `pages/admin/AdminPricing.tsx` | Admin | Credit `credit_cost` per scan type + `statushost`. **Not** IDR COGS. | `admin/AdminPricing.test.tsx` |
+| `/admin/pricing` | `pages/admin/AdminPricing.tsx` | Admin | Read-only seed `credit_cost` archive (not a meter). Banner + HPP link. **Not** IDR COGS. | `admin/AdminPricing.test.tsx` |
 | `/admin/hpp` | `pages/admin/AdminHpp.tsx` | Admin | IDR unit rates + monthly overhead + cost journal + date-range report + SKU overlay **estimasi**. Not mixed with Pricing. `nav-admin-hpp`. Spec: `docs/specs/admin-hpp-v1.md`. | `admin/AdminHpp.test.tsx` |
 | `/admin/blog` | `pages/admin/AdminBlog.tsx` | Admin | CMS; `nav-admin-blog`. Locale key `blogStatus`. | `admin/AdminBlog.test.tsx` |
 | `/admin/email-logs` | `pages/admin/AdminEmailLogs.tsx` | Admin | Outbound SMTP log; masked recipient. `nav-admin-email-logs`. | `admin/AdminEmailLogs.test.tsx` |
