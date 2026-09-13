@@ -73,8 +73,10 @@ def test_public_html_index(client):
     assert "Scan Attach dari luar, temuan di workspace, alarm kritis di box" in resp.text
     assert "tanpa istilah konsol" not in resp.text
     assert "Scan · Guard · SIEM" not in resp.text
-    assert "footer-grid" in resp.text
-    assert "footer-col" in resp.text
+    assert "footer-top" in resp.text
+    assert "footer-nav" in resp.text
+    assert "footer-grid" not in resp.text
+    assert "footer-col" not in resp.text
     assert "Sinexis · Scan · Guard" in resp.text
     assert "page-intro" in resp.text or "Belum ada artikel" in resp.text
     assert "brand-text" in resp.text
