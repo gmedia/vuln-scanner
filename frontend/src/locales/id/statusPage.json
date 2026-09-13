@@ -48,6 +48,9 @@
   "colActions": "Aksi",
   "incidentTitle": "Judul insiden",
   "noIncidents": "Belum ada insiden.",
+  "actionsMenu": "Aksi insiden",
+  "edit": "Ubah",
+  "postUpdate": "Kirim pembaruan",
   "stateUp": "up",
   "stateDown": "down",
   "stateUnknown": "unknown"

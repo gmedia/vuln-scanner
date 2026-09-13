@@ -48,6 +48,9 @@
   "colActions": "Actions",
   "incidentTitle": "Incident title",
   "noIncidents": "No incidents posted.",
+  "actionsMenu": "Incident actions",
+  "edit": "Edit",
+  "postUpdate": "Post update",
   "stateUp": "up",
   "stateDown": "down",
   "stateUnknown": "unknown"
