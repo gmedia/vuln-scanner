@@ -995,6 +995,9 @@ jobs:
             append_if_set WAZUH_AGENT_MANAGER_HOST "${{ secrets.WAZUH_AGENT_MANAGER_HOST }}"
             append_if_set STATUS_PAGE_CF_API_TOKEN "${{ secrets.STATUS_PAGE_CF_API_TOKEN }}"
             append_if_set STATUS_PAGE_CF_ZONE_ID "${{ secrets.STATUS_PAGE_CF_ZONE_ID }}"
+            append_if_set INVOICE_BANK_NAME "${{ secrets.INVOICE_BANK_NAME }}"
+            append_if_set INVOICE_BANK_ACCOUNT "${{ secrets.INVOICE_BANK_ACCOUNT }}"
+            append_if_set INVOICE_BANK_HOLDER "${{ secrets.INVOICE_BANK_HOLDER }}"
             printf 'STATUS_PAGE_CF_STUB_ACTIVE=%s\n' "${{ secrets.STATUS_PAGE_CF_STUB_ACTIVE || 'false' }}" >> .env
             echo ".env written from GitHub Secrets"
             chmod 600 .env
