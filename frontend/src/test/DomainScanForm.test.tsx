@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import React from "react";
 import DomainScanForm from "@/components/scan/DomainScanForm";
-import { useScanCredit } from "@/hooks/useScanCredit";
 
 vi.mock("@/hooks/useScan", () => ({
   useStartIpScan: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
@@ -23,21 +21,6 @@ vi.mock("@/store/scanStore", () => ({
     return selector ? selector(state) : state;
   }),
 }));
-const defaultScanCredit = {
-  credits: 100,
-  cost: 10,
-  eligible: true,
-  eligibilityLoading: false,
-  costUnavailable: false,
-  creditDisplay: React.createElement("div", { "data-testid": "credit-display" }, "Available Credits: 100"),
-  costPreview: React.createElement("div", { "data-testid": "scan-cost-preview" }, "cost"),
-  checkAndDeduct: vi.fn().mockResolvedValue({ eligible: true, error: null }),
-  refreshAfterScan: vi.fn(),
-};
-
-vi.mock("@/hooks/useScanCredit", () => ({
-  useScanCredit: vi.fn(() => defaultScanCredit),
-}));
 vi.mock("react-router-dom", () => ({
   useNavigate: vi.fn(() => vi.fn()),
 }));
@@ -45,11 +28,6 @@ vi.mock("react-router-dom", () => ({
 describe("DomainScanForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useScanCredit).mockReturnValue({
-      ...defaultScanCredit,
-      checkAndDeduct: vi.fn().mockResolvedValue({ eligible: true, error: null }),
-      refreshAfterScan: vi.fn(),
-    });
   });
 
   it("renders domain input with label", () => {
@@ -98,9 +76,11 @@ describe("DomainScanForm", () => {
     ).toBeInTheDocument();
   });
 
-  it("displays available credits", () => {
+  it("does not render credits chip or cost preview", () => {
     render(<DomainScanForm />);
-    expect(screen.getByTestId("credit-display")).toBeInTheDocument();
+    expect(screen.queryByTestId("credit-display")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("scan-credits-chip")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("scan-cost-preview")).not.toBeInTheDocument();
   });
 
   it("clears error when typing in input", () => {
@@ -214,13 +194,7 @@ describe("DomainScanForm", () => {
     expect(input).toHaveValue("a.b.c.example.com");
   });
 
-  it("keeps Start domain scan enabled while eligibility is loading", () => {
-    vi.mocked(useScanCredit).mockReturnValue({
-      ...defaultScanCredit,
-      eligibilityLoading: true,
-      checkAndDeduct: vi.fn().mockResolvedValue({ eligible: true, error: null }),
-      refreshAfterScan: vi.fn(),
-    });
+  it("keeps Start domain scan enabled without a credit gate", () => {
     render(<DomainScanForm />);
     expect(screen.getByRole("button", { name: /start domain scan/i })).toBeEnabled();
   });
