@@ -49,14 +49,12 @@
   "inviteLinkCopied": "Tautan undangan disalin",
   "inviteLinkCopyFail": "Gagal menyalin tautan",
   "pilotTitle": "Checklist pilot",
-  "pilotDescription": "Scan attach untuk satu org. Kredit tetap pribadi. Guard dan SIEM SKU terpisah — jangan digabung.",
+  "pilotDescription": "Scan attach untuk satu org. Meter adalah kursi SKU (Basic 1 / Pro 3 / Multi 10), bukan kredit. Guard dan SIEM SKU terpisah — jangan digabung.",
   "pilotStepOrg": "Pastikan workspace ini hotel atau perusahaan (satu org, bukan properti bersarang).",
   "pilotStepInvite": "Undang IT sebagai owner/admin dan GM sebagai viewer jika hanya butuh laporan.",
   "pilotStepAssets": "Beri nama 1–3 aset (Basic/Pro). Multi-10 hanya setelah proses perpanjang terbukti.",
   "pilotStepSchedules": "Aktifkan jadwal (bulanan Basic, mingguan Pro+). Notifikasi critical/high baru.",
-  "pilotStepCredits": "Kredit tetap pribadi untuk overage dan mobile. Jadwal yang terjual tetap aktif tanpa top\u00a0up.",
   "pilotStepReport": "Kirim HTML eksekutif Bahasa. Tinjauan hybrid 5 hari kerja, bukan SOC 24/7.",
   "pilotLinkAssets": "Buka aset",
-  "pilotLinkSchedules": "Buka jadwal",
-  "pilotLinkCredits": "Buka kredit"
+  "pilotLinkSchedules": "Buka jadwal"
 }
