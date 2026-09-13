@@ -8,11 +8,6 @@ const LINKS = [
     label: "Workspace",
     testId: "account-nav-workspace",
   },
-  {
-    to: "/credit-history",
-    label: "Credit history",
-    testId: "account-nav-credits",
-  },
 ] as const;
 
 function AccountNav() {
