@@ -40,7 +40,7 @@ async def next_invoice_number(db: AsyncSession, period_start: datetime) -> str:
     return f"{prefix}{n:04d}"
 
 
-def to_item(inv: OrgInvoice, *, org_name: str | None, include_bank: bool) -> dict:
+def to_item(inv: OrgInvoice, *, org_name: str | None, include_bank: bool) -> dict[str, object]:
     return {
         "id": inv.id,
         "organization_id": inv.organization_id,
