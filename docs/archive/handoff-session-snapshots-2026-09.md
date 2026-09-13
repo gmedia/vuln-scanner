@@ -1,4 +1,4 @@
-# ARCHIVED / STALE — stacked OpenCode session snapshots (through 2026-09-09)
+# ARCHIVED / STALE — stacked OpenCode session snapshots (through 2026-09-13)
 
 > **Do not treat this file as the current product backlog or session north star.**
 >
@@ -6,7 +6,21 @@
 > **Git/PR workflow:** [`AGENTS.md`](../../AGENTS.md)
 > **Live stub:** [`handoff.md`](../../handoff.md)
 >
-> Archived 2026-09-09. Older SHA/WAF caps below are **history** (pre-#716 honest YARA/Clam; WAF now **1001–1146** on `main`).
+> Older SHA/WAF caps below are **history** (pre-#716 honest YARA/Clam; WAF now **1001–1146** on `main`). Snapshot **2026-09-11 #733 / tc5 lab** archived here when **2026-09-13** SPA chrome/mobile lists became the live stub.
+
+---
+
+## Session snapshot (2026-09-11 — #733 merged + live tc5)
+
+| Item | State |
+|------|--------|
+| **`main` tip** | Re-`git pull`. Expect **`6666c42c`** (`feat: split Host WAF modsecurity_rules to dodge nginx 18kB cap` **#733**) or newer. User confirmed **merged + deployed**. Do **not** SSH Alembic after a green `main` deploy. |
+| **This session** | (1) Packed Host WAF starter (IDs **1001–1146**) into several `modsecurity_rules` quoted bodies (~3500 chars) so nginx 1.24 does not `[emerg] too long parameter`. Chain **1005** (`POST /wp-login.php` + ARGS `union select`) stays one unit. Dual-ship installer heredoc split the same way. (2) After deploy: leftover lab site wiped, `scripts/host-waf-lab-smoke.sh --apply-vhost` green, snippet copied to **tc5**, operator include on **lab vhost only**, `nginx -t` + reload, live probes. Lab fixture site deleted again (anti-409). |
+| **P13 Host WAF** | **S0–S5 + starter 1001–1146** on `main` (**#708**). **#733** = pack split (not new IDs). **#731** = smoke must not require events after mock simulate. DL0–DL3 shipped. **Do not** default to WAF **1147+**. Never paste onto `sinexis.app` edge. |
+| **Lab residual of #733** | **Done that session (tc5 only).** Packed snippet live: **5** `modsecurity_rules` blocks, quoted bodies ≤3500, **146** rules loaded. `nginx -t` ok (no too-long param). Probes on **lab vhost loopback** (not public edge): `POST /wp-login.php?q=union+select` **403**; GET same URL **not** 1005; `/eval(` **403**; `/wp-cron.php` **403**; `/wp-admin/` **200**. Smoke `--apply-vhost` is **scp only** — include + `nginx -t` is operator on the lab vhost. `/tmp/sinexis-host-waf-lab.conf` may still be an old 1-block copy; live include is what nginx loads. **Not** Guard enroll wipe (§4.1) unless identity is dirty. **Never** wipe `sx-erpstg`. Playwright ≠ this lab. |
+| **Host Protect engines** | **Shipped (#716).** `engine=yara` only after batched `yara -w` on original pack; else `needles`. Clam fallback. Lab Clam on **tc5** = **ops residual**, not another code epic. Spek [`host-protect-clam-yara-real.md`](../specs/host-protect-clam-yara-real.md). |
+| **Still human** | **GTM**; Host invoice `service_id`; fill `/admin/hpp` `hostscan`; Demo-ok narrative. |
+| **Engineering default** | **Do not** re-implement P12/P13. **Do not** start WAF 1147+, P14 **G/H**, pack-widen, or YARA/Clam code unless named + `buat`. |
 
 ---
 
