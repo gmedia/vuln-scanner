@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
 from app.middleware.rate_limit import RateLimiter
 from app.models.user import User
+from app.schemas.invoice import InvoiceItem, InvoiceListResponse
 from app.schemas.organization import (
     InviteAcceptRequest,
     InviteCreateRequest,
@@ -23,7 +24,8 @@ from app.schemas.organization import (
     OrgUpdateRequest,
 )
 from app.services.auth import create_access_token, create_refresh_token, get_current_user
-from app.services.organization import OrganizationService
+from app.services.invoice import InvoiceService, to_item
+from app.services.organization import OrganizationService, require_membership
 
 router = APIRouter(tags=["organizations"])
 
@@ -207,3 +209,33 @@ async def accept_invite(
         created_at=m.created_at,
         organization_id=m.organization_id,
     )
+
+
+@router.get("/orgs/{org_id}/invoices", response_model=InvoiceListResponse)
+async def list_org_invoices(
+    org_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> InvoiceListResponse:
+    await require_membership(db, org_id, current_user.id, min_role="admin")
+    items = await InvoiceService(db).list_org(org_id)
+    return InvoiceListResponse(
+        items=[
+            InvoiceItem.model_validate(to_item(inv, org_name=None, include_bank=inv.status == "sent")) for inv in items
+        ],
+        total=len(items),
+    )
+
+
+@router.get("/orgs/{org_id}/invoices/{invoice_id}", response_model=InvoiceItem)
+async def get_org_invoice(
+    org_id: UUID,
+    invoice_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> InvoiceItem:
+    await require_membership(db, org_id, current_user.id, min_role="admin")
+    inv = await InvoiceService(db).get(invoice_id)
+    if inv.organization_id != org_id:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    return InvoiceItem.model_validate(to_item(inv, org_name=None, include_bank=inv.status == "sent"))
