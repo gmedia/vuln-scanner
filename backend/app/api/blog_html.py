@@ -141,44 +141,40 @@ ol.index .read{
 .back{margin-top:2.5rem;font-size:0.875rem;display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center}
 .site-footer{
   margin-top:auto;border-top:1px solid var(--border);
-  background:color-mix(in srgb, var(--muted) 40%, var(--background));
+  background:linear-gradient(to bottom, color-mix(in srgb, var(--muted) 40%, var(--background)), var(--background));
 }
 .site-footer-inner{
-  width:min(var(--rail),100%);margin:0 auto;padding:3rem 1rem 1.5rem;
+  width:min(var(--rail),100%);margin:0 auto;padding:2.5rem 1rem 2rem;
   display:block;
 }
-.footer-grid{
-  display:grid;grid-template-columns:1fr;gap:2.5rem;
+.footer-top{
+  display:flex;flex-direction:column;gap:1.5rem;
 }
 .footer-brand p.blurb{
-  margin:1rem 0 0;max-width:20rem;font-size:0.875rem;line-height:1.55;
+  margin:0.75rem 0 0;max-width:20rem;font-size:0.875rem;line-height:1.55;
   color:var(--muted-foreground);
 }
-.footer-col p.col-head{
-  margin:0;font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;
-  text-transform:uppercase;color:var(--primary);
+.footer-nav{
+  display:flex;flex-wrap:wrap;align-items:center;gap:0 0.75rem;
 }
-.footer-col nav{display:flex;flex-direction:column;margin-top:0.75rem}
-.footer-col a{
+.footer-nav a{
   font-size:0.875rem;color:var(--muted-foreground);text-decoration:none;
-  min-height:2.75rem;display:inline-flex;align-items:center;
+  min-height:2.75rem;display:inline-flex;align-items:center;border-radius:0.125rem;
 }
-.footer-col a:hover{color:var(--foreground)}
-.footer-col a.primary{
-  margin-top:0.25rem;align-self:flex-start;
-  background:var(--primary);color:var(--primary-foreground);border-radius:0.375rem;
-  padding:0 0.75rem;font-weight:600;font-size:0.75rem;
+.footer-nav a:hover{color:var(--foreground)}
+.footer-nav a:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.footer-nav a.primary{
+  color:var(--primary);font-weight:500;text-underline-offset:0.25rem;
 }
+.footer-nav a.primary:hover{color:var(--foreground);text-decoration:underline}
 .footer-meta{
   display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
-  gap:0.5rem;margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);
+  gap:0.5rem;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border);
 }
 .footer-meta p{margin:0;font-size:0.75rem;color:var(--muted-foreground)}
-@media (min-width:640px){
-  .footer-grid{grid-template-columns:1fr 1fr;gap:2rem}
-}
 @media (min-width:1024px){
-  .footer-grid{grid-template-columns:1.4fr 1fr 1fr 1fr}
+  .footer-top{flex-direction:row;align-items:flex-start;justify-content:space-between;gap:3rem}
+  .footer-nav{justify-content:flex-end;max-width:28rem;gap:0 1.25rem}
 }
 @media (max-width:640px){
   .header-actions a.sm-hide{display:none}
@@ -265,7 +261,7 @@ def _shell(
 </main>
 <footer class="site-footer">
   <div class="site-footer-inner">
-    <div class="footer-grid">
+    <div class="footer-top">
       <div class="footer-brand">
         <a class="brand" href="/" aria-label="Sinexis home">
           {_CROSSHAIR_SVG}
@@ -274,27 +270,14 @@ def _shell(
         <p class="blurb">Menempel di colo, VPS, dan hospitality yang sudah di tagihan.
         Scan dari luar, lalu satu agen tipis di mesin.</p>
       </div>
-      <div class="footer-col">
-        <p class="col-head">Produk</p>
-        <nav aria-label="Produk">
-          <a href="/">Beranda</a>
-          <a href="/blog"{blog_cur}>Blog</a>
-        </nav>
-      </div>
-      <div class="footer-col">
-        <p class="col-head">Legal</p>
-        <nav aria-label="Legal">
-          <a href="/terms"{terms_cur}>Syarat</a>
-          <a href="/privacy"{privacy_cur}>Privasi</a>
-        </nav>
-      </div>
-      <div class="footer-col">
-        <p class="col-head">Akun</p>
-        <nav aria-label="Akun">
-          <a href="/login">Sign in</a>
-          <a class="primary" href="/register">Get started</a>
-        </nav>
-      </div>
+      <nav class="footer-nav" aria-label="Situs">
+        <a href="/">Beranda</a>
+        <a href="/blog"{blog_cur}>Blog</a>
+        <a href="/terms"{terms_cur}>Syarat</a>
+        <a href="/privacy"{privacy_cur}>Privasi</a>
+        <a href="/login">Sign in</a>
+        <a class="primary" href="/register">Get started</a>
+      </nav>
     </div>
     <div class="footer-meta">
       <p>Sinexis · Scan · Guard</p>

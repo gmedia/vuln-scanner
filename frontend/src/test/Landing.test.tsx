@@ -216,11 +216,11 @@ describe("Landing Page", () => {
     expect(footer!.textContent).not.toMatch(/SIEM/);
     expect(footer!.textContent).not.toMatch(/v1\.2\.0/);
     expect(footer!.textContent).not.toMatch(/VulnScanner/i);
-    const grid = footer!.querySelector(".grid");
-    expect(grid).toHaveClass("lg:grid-cols-4");
-    expect(screen.getByRole("navigation", { name: "Product" })).toBeTruthy();
-    expect(screen.getByRole("navigation", { name: "Legal" })).toBeTruthy();
-    expect(screen.getByRole("navigation", { name: "Account" })).toBeTruthy();
+    expect(footer!.querySelector(".lg\\:grid-cols-4")).toBeNull();
+    expect(screen.getByRole("navigation", { name: "Site" })).toBeTruthy();
+    expect(screen.queryByRole("navigation", { name: "Product" })).toBeNull();
+    expect(screen.queryByRole("navigation", { name: "Legal" })).toBeNull();
+    expect(screen.queryByRole("navigation", { name: "Account" })).toBeNull();
   });
 
   it("uses sticky-footer shell so footer pins on tall viewports", () => {
