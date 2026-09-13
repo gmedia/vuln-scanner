@@ -487,6 +487,111 @@ export async function getEmailLogs(params: {
   return data;
 }
 
+export interface SkuCatalogItem {
+  product: string;
+  sku: string;
+  list_idr: number;
+  seats: number;
+  invoicable: boolean;
+  updated_at: string;
+}
+
+export interface AdminOrgItem {
+  id: string;
+  name: string;
+  slug: string;
+  sku: string;
+  kind: string;
+}
+
+export interface InvoiceBankCopy {
+  bank_name: string | null;
+  bank_account: string | null;
+  bank_holder: string | null;
+}
+
+export interface InvoiceItem {
+  id: string;
+  organization_id: string;
+  number: string;
+  product: string;
+  sku: string;
+  amount_idr: number;
+  period_start: string;
+  period_end: string;
+  status: string;
+  bank_ref: string | null;
+  notes: string;
+  paid_at: string | null;
+  created_at: string;
+  updated_at: string;
+  organization_name?: string | null;
+  bank?: InvoiceBankCopy | null;
+}
+
+export async function getSkuCatalog(): Promise<SkuCatalogItem[]> {
+  const { data } = await api.get<{ items: SkuCatalogItem[] }>(
+    "/api/admin/sku-catalog",
+  );
+  return data.items;
+}
+
+export async function listAdminOrgs(params?: {
+  q?: string;
+}): Promise<{ items: AdminOrgItem[]; total: number }> {
+  const { data } = await api.get<{ items: AdminOrgItem[]; total: number }>(
+    "/api/admin/orgs",
+    { params },
+  );
+  return data;
+}
+
+export async function listAdminInvoices(params?: {
+  status?: string;
+  organization_id?: string;
+  page?: number;
+}): Promise<{ items: InvoiceItem[]; total: number }> {
+  const { data } = await api.get<{ items: InvoiceItem[]; total: number }>(
+    "/api/admin/invoices",
+    { params },
+  );
+  return data;
+}
+
+export async function createAdminInvoice(body: {
+  organization_id: string;
+  sku: string;
+  notes?: string;
+}): Promise<InvoiceItem> {
+  const { data } = await api.post<InvoiceItem>("/api/admin/invoices", body);
+  return data;
+}
+
+export async function sendAdminInvoice(id: string): Promise<InvoiceItem> {
+  const { data } = await api.post<InvoiceItem>(
+    `/api/admin/invoices/${id}/send`,
+  );
+  return data;
+}
+
+export async function payAdminInvoice(
+  id: string,
+  bankRef?: string,
+): Promise<InvoiceItem> {
+  const { data } = await api.post<InvoiceItem>(
+    `/api/admin/invoices/${id}/paid`,
+    { bank_ref: bankRef || null },
+  );
+  return data;
+}
+
+export async function voidAdminInvoice(id: string): Promise<InvoiceItem> {
+  const { data } = await api.post<InvoiceItem>(
+    `/api/admin/invoices/${id}/void`,
+  );
+  return data;
+}
+
 export const adminApi = {
   getStats: getAdminStats,
   getUsers: getAdminUsers,
@@ -520,4 +625,11 @@ export const adminApi = {
   updateBlogPost,
   publishBlogPost,
   unpublishBlogPost,
+  getSkuCatalog,
+  listAdminOrgs,
+  listAdminInvoices,
+  createAdminInvoice,
+  sendAdminInvoice,
+  payAdminInvoice,
+  voidAdminInvoice,
 };

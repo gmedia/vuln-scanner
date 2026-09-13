@@ -143,6 +143,36 @@ export async function revokeInvite(
   await api.delete(`/api/orgs/${orgId}/invites/${inviteId}`);
 }
 
+export interface OrgInvoiceItem {
+  id: string;
+  organization_id: string;
+  number: string;
+  product: string;
+  sku: string;
+  amount_idr: number;
+  period_start: string;
+  period_end: string;
+  status: string;
+  bank_ref: string | null;
+  notes: string;
+  paid_at: string | null;
+  created_at: string;
+  bank?: {
+    bank_name: string | null;
+    bank_account: string | null;
+    bank_holder: string | null;
+  } | null;
+}
+
+export async function listOrgInvoices(
+  orgId: string,
+): Promise<{ items: OrgInvoiceItem[]; total: number }> {
+  const { data } = await api.get<{ items: OrgInvoiceItem[]; total: number }>(
+    `/api/orgs/${orgId}/invoices`,
+  );
+  return data;
+}
+
 export async function acceptInvite(
   token: string,
 ): Promise<AcceptInviteResponse> {
