@@ -10,7 +10,7 @@ import {
   Shield,
   Siren,
   Users,
-  Coins,
+  Layers,
   LayoutDashboard,
   LogIn,
   ListOrdered,
@@ -677,24 +677,11 @@ function UserGuide() {
 
           <Card>
             <CardContent className="space-y-3 pt-6">
-              <SectionHeading id="kredit" icon={Coins} title={t("hKredit")} />
+              <SectionHeading id="kredit" icon={Layers} title={t("hKredit")} />
               <Steps>
                 <li>{t("cr1")}</li>
                 <li>{t("cr2")}</li>
-                <li>
-                  <Trans
-                    i18nKey="cr3"
-                    ns="guide"
-                    components={{
-                      ch: (
-                        <Link
-                          to="/credit-history"
-                          className="text-primary hover:underline"
-                        />
-                      ),
-                    }}
-                  />
-                </li>
+                <li>{t("cr3")}</li>
                 <li>{t("cr4")}</li>
                 <li>
                   <Trans i18nKey="cr5" ns="guide" components={transUi} />

@@ -62,7 +62,7 @@ describe("UserGuide", () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Credits on this login" }),
+      screen.getByRole("heading", { name: "SKU seats" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {

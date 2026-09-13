@@ -58,11 +58,6 @@ vi.mock("react-router-dom", () => ({
   useNavigate: vi.fn(() => vi.fn()),
 }));
 
-vi.mock("@/store/creditStore", () => ({
-  useCreditStore: (sel: (s: { credits: number; fetchBalance: () => Promise<void> }) => unknown) =>
-    sel({ credits: 6996, fetchBalance: vi.fn(async () => {}) }),
-}));
-
 describe("Dashboard", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -128,7 +123,7 @@ describe("Dashboard", () => {
     expect(screen.getByText("Open risk")).toBeInTheDocument();
     expect(screen.getByText("7 days (C/H/M)")).toBeInTheDocument();
     expect(screen.getAllByText("Schedules").length).toBeGreaterThan(0);
-    expect(screen.getByText("Credits")).toBeInTheDocument();
+    expect(screen.queryByText("Credits")).toBeNull();
   });
 
   it("does not paint Open Risk red when count is zero", () => {

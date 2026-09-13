@@ -277,7 +277,6 @@ function WorkspaceSettings() {
               <li>{t("pilotStepInvite")}</li>
               <li>{t("pilotStepAssets")}</li>
               <li>{t("pilotStepSchedules")}</li>
-              <li className="text-pretty">{t("pilotStepCredits")}</li>
               <li>{t("pilotStepReport")}</li>
             </ol>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -289,11 +288,6 @@ function WorkspaceSettings() {
               <Button asChild variant="outline" size="sm">
                 <Link to="/schedules" data-testid="pilot-link-schedules">
                   {t("pilotLinkSchedules")}
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/credit-history" data-testid="pilot-link-credits">
-                  {t("pilotLinkCredits")}
                 </Link>
               </Button>
             </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -43,7 +43,6 @@ import { canMutateWorkspace } from "@/api/orgs";
 import { listSchedules, MAX_ENABLED_SCHEDULES } from "@/api/schedules";
 import { listGuardAgents, listGuardAlerts } from "@/api/guard";
 import { useAuthStore } from "@/store/authStore";
-import { useCreditStore } from "@/store/creditStore";
 import { cn } from "@/lib/utils";
 import PageHeader from "@/components/layout/PageHeader";
 import { useTranslation } from "react-i18next";
@@ -85,10 +84,6 @@ function formatIdDate(iso: string | null | undefined, locale: string): string {
   });
 }
 
-function formatCredits(n: number, locale: string): string {
-  return n.toLocaleString(locale === "en" ? "en-US" : "id-ID");
-}
-
 function latestPerTarget(scans: ScanJob[]): ScanJob[] {
   const seen = new Set<string>();
   const out: ScanJob[] = [];
@@ -113,12 +108,6 @@ function Dashboard() {
   const activeRole = useAuthStore((s) => s.activeRole);
   const activeOrgId = useAuthStore((s) => s.activeOrgId);
   const canCreateScans = canMutateWorkspace(activeRole());
-  const credits = useCreditStore((s) => s.credits);
-  const fetchBalance = useCreditStore((s) => s.fetchBalance);
-
-  useEffect(() => {
-    void fetchBalance();
-  }, [fetchBalance, activeOrgId]);
 
   const { data: schedules = [] } = useQuery({
     queryKey: ["schedules", activeOrgId],
@@ -345,12 +334,6 @@ function Dashboard() {
           value={`${enabledSchedules.length} / ${MAX_ENABLED_SCHEDULES}`}
           isLoading={false}
           className="border-primary/30"
-          valueClassName="text-foreground"
-        />
-        <StatCard
-          label={t("credits")}
-          value={formatCredits(credits, i18n.language)}
-          isLoading={false}
           valueClassName="text-foreground"
         />
       </div>

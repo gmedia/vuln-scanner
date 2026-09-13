@@ -4,7 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import AccountNav from "@/components/layout/AccountNav";
 
 describe("AccountNav", () => {
-  it("renders profile, workspace, and credit links", () => {
+  it("renders profile and workspace links without credit history", () => {
     render(
       <MemoryRouter initialEntries={["/profile"]}>
         <AccountNav />
@@ -19,9 +19,6 @@ describe("AccountNav", () => {
       "href",
       "/settings/workspace",
     );
-    expect(screen.getByTestId("account-nav-credits")).toHaveAttribute(
-      "href",
-      "/credit-history",
-    );
+    expect(screen.queryByTestId("account-nav-credits")).toBeNull();
   });
 });

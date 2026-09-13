@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import React from "react";
 import IpScanForm from "@/components/scan/IpScanForm";
-import { useScanCredit } from "@/hooks/useScanCredit";
 
 vi.mock("@/hooks/useScan", () => ({
   useStartIpScan: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
@@ -23,21 +21,6 @@ vi.mock("@/store/scanStore", () => ({
     return selector ? selector(state) : state;
   }),
 }));
-const defaultScanCredit = {
-  credits: 100,
-  cost: 10,
-  eligible: true,
-  eligibilityLoading: false,
-  costUnavailable: false,
-  creditDisplay: React.createElement("div", { "data-testid": "credit-display" }, "Available Credits: 100"),
-  costPreview: React.createElement("div", { "data-testid": "scan-cost-preview" }, "cost"),
-  checkAndDeduct: vi.fn().mockResolvedValue({ eligible: true, error: null }),
-  refreshAfterScan: vi.fn(),
-};
-
-vi.mock("@/hooks/useScanCredit", () => ({
-  useScanCredit: vi.fn(() => defaultScanCredit),
-}));
 vi.mock("react-router-dom", () => ({
   useNavigate: vi.fn(() => vi.fn()),
 }));
@@ -45,11 +28,6 @@ vi.mock("react-router-dom", () => ({
 describe("IpScanForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useScanCredit).mockReturnValue({
-      ...defaultScanCredit,
-      checkAndDeduct: vi.fn().mockResolvedValue({ eligible: true, error: null }),
-      refreshAfterScan: vi.fn(),
-    });
   });
 
   it("renders target IP input with label", () => {
@@ -97,9 +75,10 @@ describe("IpScanForm", () => {
     expect(input).toHaveValue("1-1000");
   });
 
-  it("shows scan cost preview without a duplicate credits chip", () => {
+  it("does not render scan cost preview or credits chip", () => {
     render(<IpScanForm />);
-    expect(screen.getByTestId("scan-cost-preview")).toBeInTheDocument();
+    expect(screen.queryByTestId("scan-cost-preview")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("scan-credits-chip")).not.toBeInTheDocument();
     expect(screen.queryByTestId("credit-display")).not.toBeInTheDocument();
   });
 
@@ -255,25 +234,7 @@ describe("IpScanForm", () => {
     expect(input).toHaveAttribute("placeholder", "1-1000");
   });
 
-  it("keeps Start IP scan enabled while eligibility is loading", () => {
-    vi.mocked(useScanCredit).mockReturnValue({
-      ...defaultScanCredit,
-      eligibilityLoading: true,
-      checkAndDeduct: vi.fn().mockResolvedValue({ eligible: true, error: null }),
-      refreshAfterScan: vi.fn(),
-    });
-    render(<IpScanForm />);
-    expect(screen.getByRole("button", { name: /start ip scan/i })).toBeEnabled();
-  });
-
-  it("keeps Start IP scan enabled when cost is unavailable", () => {
-    vi.mocked(useScanCredit).mockReturnValue({
-      ...defaultScanCredit,
-      eligible: false,
-      costUnavailable: true,
-      checkAndDeduct: vi.fn().mockResolvedValue({ eligible: false, error: "Scan cost unavailable." }),
-      refreshAfterScan: vi.fn(),
-    });
+  it("keeps Start IP scan enabled without a credit gate", () => {
     render(<IpScanForm />);
     expect(screen.getByRole("button", { name: /start ip scan/i })).toBeEnabled();
   });
