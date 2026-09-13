@@ -10,6 +10,7 @@ from app.schemas.host_waf import (
     HostWafPolicyResponse,
     HostWafPolicyUpsert,
     HostWafSnippetResponse,
+    PaginatedHostWafEventsResponse,
 )
 from app.services.auth import get_active_org_id, get_current_user
 from app.services.host_waf import HostWafService
@@ -37,14 +38,22 @@ async def upsert_policy(
     return await HostWafService(db).upsert_policy(current_user, get_active_org_id(request), site_id, body)
 
 
-@router.get("/events", response_model=list[HostWafEventResponse])
+@router.get("/events", response_model=PaginatedHostWafEventsResponse)
 async def list_events(
     request: Request,
     site_id: UUID | None = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=20, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> list[HostWafEventResponse]:
-    return await HostWafService(db).list_events(current_user, get_active_org_id(request), site_id)
+) -> PaginatedHostWafEventsResponse:
+    return await HostWafService(db).list_events(
+        current_user,
+        get_active_org_id(request),
+        site_id,
+        page=page,
+        limit=limit,
+    )
 
 
 @router.post("/sites/{site_id}/simulate", response_model=HostWafEventResponse, status_code=201)

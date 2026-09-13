@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import math
 from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -17,6 +18,7 @@ from app.schemas.host_waf import (
     HostWafPolicyResponse,
     HostWafPolicyUpsert,
     HostWafSnippetResponse,
+    PaginatedHostWafEventsResponse,
 )
 from app.services.host_handoff import handoff_waf_block
 from app.services.host_waf_render import is_lab_waf_site, render_coraza_include, render_nginx_modsec
@@ -271,16 +273,38 @@ class HostWafService:
         return self._to_policy(existing, site.name)
 
     async def list_events(
-        self, user: User, organization_id: UUID | None, site_id: UUID | None
-    ) -> list[HostWafEventResponse]:
+        self,
+        user: User,
+        organization_id: UUID | None,
+        site_id: UUID | None,
+        *,
+        page: int = 1,
+        limit: int = 20,
+    ) -> PaginatedHostWafEventsResponse:
         self._require_feature()
         org_id = await self._require_org(user, organization_id, min_role="viewer")
-        stmt = select(HostWafEvent).where(HostWafEvent.organization_id == org_id)
+        filters = [
+            HostWafEvent.organization_id == org_id,
+            HostWafEvent.rule_id.in_(_WAF_STARTER_IDS),
+        ]
         if site_id is not None:
-            stmt = stmt.where(HostWafEvent.site_id == site_id)
-        stmt = stmt.order_by(HostWafEvent.created_at.desc()).limit(100)
-        rows = (await self.db.execute(stmt)).scalars().all()
-        return [HostWafEventResponse.model_validate(r) for r in rows if is_product_waf_rule(r.rule_id)]
+            filters.append(HostWafEvent.site_id == site_id)
+        total = (await self.db.execute(select(func.count(HostWafEvent.id)).where(*filters))).scalar() or 0
+        result = await self.db.execute(
+            select(HostWafEvent)
+            .where(*filters)
+            .order_by(HostWafEvent.created_at.desc(), HostWafEvent.id.desc())
+            .offset((page - 1) * limit)
+            .limit(limit)
+        )
+        rows = result.scalars().all()
+        return PaginatedHostWafEventsResponse(
+            items=[HostWafEventResponse.model_validate(r) for r in rows],
+            total=total,
+            page=page,
+            limit=limit,
+            pages=math.ceil(total / limit) if total > 0 else 0,
+        )
 
     async def simulate(self, user: User, organization_id: UUID | None, site_id: UUID) -> HostWafEventResponse:
         self._require_feature()

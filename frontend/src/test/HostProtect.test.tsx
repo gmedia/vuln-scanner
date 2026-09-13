@@ -93,7 +93,13 @@ describe("Host Protect page", () => {
     vi.mocked(hostApi.listHostHits).mockResolvedValue([]);
     vi.mocked(hostApi.listHostScans).mockResolvedValue([]);
     vi.mocked(hostWafApi.listHostWafPolicies).mockResolvedValue([]);
-    vi.mocked(hostWafApi.listHostWafEvents).mockResolvedValue([]);
+    vi.mocked(hostWafApi.listHostWafEvents).mockResolvedValue({
+      items: [],
+      total: 0,
+      page: 1,
+      limit: 20,
+      pages: 0,
+    });
     vi.mocked(hostWafApi.fetchHostWafSnippet).mockResolvedValue({
       site_id: "s1",
       engine: "mock",
@@ -893,20 +899,26 @@ describe("Host Protect page", () => {
         sku_limit: 10,
       },
     ]);
-    vi.mocked(hostWafApi.listHostWafEvents).mockResolvedValue([
-      {
-        id: "e1",
-        organization_id: "org1",
-        site_id: "s1",
-        policy_id: "p1",
-        action: "log",
-        rule_id: "1001",
-        method: "GET",
-        path: "/wp-login.php?q=1",
-        http_status: 403,
-        created_at: "2026-09-13T10:00:00Z",
-      },
-    ]);
+    vi.mocked(hostWafApi.listHostWafEvents).mockResolvedValue({
+      items: [
+        {
+          id: "e1",
+          organization_id: "org1",
+          site_id: "s1",
+          policy_id: "p1",
+          action: "log",
+          rule_id: "1001",
+          method: "GET",
+          path: "/wp-login.php?q=1",
+          http_status: 403,
+          created_at: "2026-09-13T10:00:00Z",
+        },
+      ],
+      total: 1,
+      page: 1,
+      limit: 20,
+      pages: 1,
+    });
     const user = userEvent.setup();
     renderHost();
     await waitFor(() =>
@@ -928,6 +940,76 @@ describe("Host Protect page", () => {
     const desktop = screen.getByTestId("host-waf-events-desktop");
     expect(desktop).toHaveClass("hidden", "md:block", "overflow-x-auto");
     expect(desktop.querySelector("table")).toBeTruthy();
+    expect(screen.queryByTestId("host-waf-events-pagination")).not.toBeInTheDocument();
+  });
+
+  it("pages WAF events when the API reports more than one page", async () => {
+    const event = (id: string, path: string) => ({
+      id,
+      organization_id: "org1",
+      site_id: "s1",
+      policy_id: "p1",
+      action: "log" as const,
+      rule_id: "1001",
+      method: "GET",
+      path,
+      http_status: 403,
+      created_at: "2026-09-13T10:00:00Z",
+    });
+    vi.mocked(hostApi.listHostSites).mockResolvedValue([
+      {
+        id: "s1",
+        organization_id: "org1",
+        guard_agent_id: "a1",
+        asset_id: null,
+        name: "Web",
+        root_path: "/var/www/html",
+        cms_hint: "wordpress",
+        enabled: true,
+        auto_quarantine: false,
+        scan_interval: "daily",
+        created_by: "u1",
+        created_at: "2026-08-30T00:00:00Z",
+        updated_at: "2026-08-30T00:00:00Z",
+        sku: "multi",
+        sku_limit: 10,
+      },
+    ]);
+    vi.mocked(hostWafApi.listHostWafEvents).mockImplementation(
+      async (_siteId, opts) => {
+        const page = opts?.page ?? 1;
+        if (page === 2) {
+          return {
+            items: [event("e21", "/page-2")],
+            total: 21,
+            page: 2,
+            limit: 20,
+            pages: 2,
+          };
+        }
+        return {
+          items: [event("e1", "/page-1")],
+          total: 21,
+          page: 1,
+          limit: 20,
+          pages: 2,
+        };
+      },
+    );
+    const user = userEvent.setup();
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByTestId("host-tab-waf")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("host-tab-waf"));
+    expect(await screen.findByTestId("host-waf-events-pagination")).toBeInTheDocument();
+    expect(screen.getByTestId("host-waf-event-card-e1")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /next page/i }));
+    expect(await screen.findByTestId("host-waf-event-card-e21")).toBeInTheDocument();
+    expect(hostWafApi.listHostWafEvents).toHaveBeenCalledWith("s1", {
+      page: 2,
+      limit: 20,
+    });
   });
 
   it("treats WAF list 404 as feature off", async () => {

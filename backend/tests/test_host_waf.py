@@ -196,7 +196,7 @@ async def test_upsert_simulate_and_list(db_session: AsyncSession, ctx):
             assert "?" not in body["path"]
             events = await client.get("/api/host/waf/events", headers=_auth(owner, org.id))
             assert events.status_code == 200
-            assert events.json() == []
+            assert events.json() == {"items": [], "total": 0, "page": 1, "limit": 20, "pages": 0}
             listed = await client.get("/api/host/waf/policies", headers=_auth(owner, org.id))
             assert listed.status_code == 200
             assert len(listed.json()) == 2
@@ -224,7 +224,7 @@ async def test_upsert_simulate_and_list(db_session: AsyncSession, ctx):
                 headers=_auth(owner, org.id),
             )
             assert filtered.status_code == 200
-            assert filtered.json() == []
+            assert filtered.json() == {"items": [], "total": 0, "page": 1, "limit": 20, "pages": 0}
             off = await client.put(
                 f"/api/host/waf/sites/{site.id}/policy",
                 headers=_auth(owner, org.id),
@@ -1522,5 +1522,68 @@ async def test_agent_waf_ingest_413_too_many_events(db_session: AsyncSession, ct
                 },
             )
             assert r.status_code == 413
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_list_events_paginated_skips_vendor_rules(db_session: AsyncSession, ctx):
+    org: Organization = ctx["org"]
+    owner: User = ctx["owner"]
+    site: HostSite = ctx["site"]
+    now = datetime.now(UTC)
+    rows = [
+        HostWafEvent(
+            organization_id=org.id,
+            site_id=site.id,
+            action="log",
+            rule_id="1001",
+            method="GET",
+            path=f"/p{i}",
+            http_status=403,
+            created_at=now,
+        )
+        for i in range(21)
+    ]
+    rows.append(
+        HostWafEvent(
+            organization_id=org.id,
+            site_id=site.id,
+            action="log",
+            rule_id="77350396",
+            method="GET",
+            path="/vendor.js",
+            http_status=200,
+            created_at=now,
+        )
+    )
+    db_session.add_all(rows)
+    await db_session.commit()
+    _bind_db(db_session)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            first = await client.get(
+                f"/api/host/waf/events?site_id={site.id}",
+                headers=_auth(owner, org.id),
+            )
+            assert first.status_code == 200
+            body = first.json()
+            assert body["total"] == 21
+            assert body["page"] == 1
+            assert body["limit"] == 20
+            assert body["pages"] == 2
+            assert len(body["items"]) == 20
+            assert all(item["rule_id"] == "1001" for item in body["items"])
+            second = await client.get(
+                f"/api/host/waf/events?site_id={site.id}&page=2&limit=20",
+                headers=_auth(owner, org.id),
+            )
+            assert second.status_code == 200
+            page_two = second.json()
+            assert page_two["page"] == 2
+            assert page_two["total"] == 21
+            assert len(page_two["items"]) == 1
+            assert page_two["items"][0]["rule_id"] == "1001"
+            assert page_two["items"][0]["path"] not in {item["path"] for item in body["items"]}
     finally:
         app.dependency_overrides.clear()

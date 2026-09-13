@@ -92,6 +92,7 @@
   "wafEvents": "WAF events",
   "wafEventsHint": "These rows are HTTP filter events, not Suspicious files. Live rows appear after the helper posts matches from nginx on your VPS — not from this dashboard.",
   "wafEventsEmpty": "No WAF events yet. Simulate is preview only. Live hits need the snippet on the VPS plus a helper poll that posts them here.",
+  "wafPageOf": "Page {{page}} of {{total}}",
   "wafColAction": "Action",
   "wafColRule": "Rule",
   "wafColMethod": "Method",

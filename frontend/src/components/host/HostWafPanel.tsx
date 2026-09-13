@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
@@ -17,9 +22,7 @@ import {
   formatHelperPollAt,
   isHelperPollStale,
 } from "@/lib/sinexisInstall";
-import { Shield } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent } from "@/components/ui/Card";
 import { Label } from "@/components/ui/Label";
 import {
   Select,
@@ -29,13 +32,9 @@ import {
   SelectValue,
 } from "@/components/ui/Select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/Table";
+  HOST_WAF_EVENTS_PAGE_SIZE,
+  HostWafEventsList,
+} from "@/components/host/HostWafEventsList";
 import { useAuthStore } from "@/store/authStore";
 
 export default function HostWafPanel({
@@ -49,6 +48,7 @@ export default function HostWafPanel({
   const qc = useQueryClient();
   const activeOrgId = useAuthStore((s) => s.activeOrgId);
   const [siteId, setSiteId] = useState(sites[0]?.id ?? "");
+  const [eventsPage, setEventsPage] = useState(1);
   const selected = siteId || sites[0]?.id || "";
 
   const policiesQ = useQuery({
@@ -62,10 +62,15 @@ export default function HostWafPanel({
     policiesQ.isError && isHostWafDisabledError(policiesQ.error);
 
   const eventsQ = useQuery({
-    queryKey: ["host-waf", activeOrgId, "events", selected],
-    queryFn: () => listHostWafEvents(selected || undefined),
+    queryKey: ["host-waf", activeOrgId, "events", selected, eventsPage],
+    queryFn: () =>
+      listHostWafEvents(selected || undefined, {
+        page: eventsPage,
+        limit: HOST_WAF_EVENTS_PAGE_SIZE,
+      }),
     enabled: !!activeOrgId && !featureOff,
     retry: false,
+    placeholderData: keepPreviousData,
   });
 
   const policyForSite = (policiesQ.data ?? []).find(
@@ -143,7 +148,13 @@ export default function HostWafPanel({
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="host-waf-site">{t("wafSite")}</Label>
-              <Select value={selected} onValueChange={setSiteId}>
+              <Select
+                value={selected}
+                onValueChange={(id) => {
+                  setSiteId(id);
+                  setEventsPage(1);
+                }}
+              >
                 <SelectTrigger
                   id="host-waf-site"
                   data-testid="host-waf-site"
@@ -276,75 +287,12 @@ export default function HostWafPanel({
           {showSimulate ? t("wafSimulateHint") : t("wafSimulateProdHint")}
         </p>
       ) : null}
-      <h3 className="text-sm font-medium">{t("wafEvents")}</h3>
-      <p className="text-xs text-muted-foreground" data-testid="host-waf-events-hint">
-        {t("wafEventsHint")}
-      </p>
-      {(eventsQ.data ?? []).length === 0 ? (
-        <Card data-testid="host-waf-events-empty">
-          <CardContent className="flex min-h-[8rem] flex-col items-center justify-center gap-2 px-6 py-8 text-center">
-            <Shield className="h-8 w-8 text-muted-foreground" aria-hidden />
-            <p className="text-sm font-medium text-foreground">{t("wafEvents")}</p>
-            <p className="max-w-md text-xs text-muted-foreground">
-              {t("wafEventsEmpty")}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div data-testid="host-waf-events">
-          <div
-            className="space-y-2 md:hidden"
-            data-testid="host-waf-events-mobile"
-          >
-            {(eventsQ.data ?? []).map((e) => (
-              <div
-                key={e.id}
-                className="rounded-lg border border-border bg-card p-3"
-                data-testid={`host-waf-event-card-${e.id}`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <p className="min-w-0 break-all font-mono text-sm font-medium text-foreground">
-                    {e.path}
-                  </p>
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    {e.method}
-                  </span>
-                </div>
-                <p className="mt-1 font-mono text-xs text-muted-foreground">
-                  {e.action} · {e.rule_id}
-                </p>
-              </div>
-            ))}
-          </div>
-          <div
-            className="hidden overflow-x-auto md:block"
-            data-testid="host-waf-events-desktop"
-          >
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("wafColAction")}</TableHead>
-                  <TableHead>{t("wafColRule")}</TableHead>
-                  <TableHead>{t("wafColMethod")}</TableHead>
-                  <TableHead>{t("colPath")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(eventsQ.data ?? []).map((e) => (
-                  <TableRow key={e.id}>
-                    <TableCell>{e.action}</TableCell>
-                    <TableCell className="font-mono">{e.rule_id}</TableCell>
-                    <TableCell>{e.method}</TableCell>
-                    <TableCell className="break-all font-mono">
-                      {e.path}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-      )}
+      <HostWafEventsList
+        events={eventsQ.data?.items ?? []}
+        page={eventsQ.data?.page ?? eventsPage}
+        pages={eventsQ.data?.pages ?? 0}
+        onPageChange={setEventsPage}
+      />
     </div>
   );
 }
