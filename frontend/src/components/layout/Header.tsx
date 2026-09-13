@@ -1,10 +1,8 @@
 import type { ReactNode } from "react";
-import { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { User, LogOut, ChevronDown, Coins } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { User, LogOut, ChevronDown } from "lucide-react";
 import { useScanStore } from "@/store/scanStore";
 import { useAuthStore } from "@/store/authStore";
-import { useCreditStore } from "@/store/creditStore";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import {
@@ -28,7 +26,6 @@ interface HeaderProps {
 function Header({ children }: HeaderProps) {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { t: tNav } = useTranslation("nav");
 
   const activeJobId = useScanStore((s) => s.activeJobId);
   const scanType = useScanStore((s) => s.scanType);
@@ -36,14 +33,6 @@ function Header({ children }: HeaderProps) {
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const logout = useAuthStore((s) => s.logout);
-  const credits = useCreditStore((s) => s.credits);
-  const fetchBalance = useCreditStore((s) => s.fetchBalance);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      void fetchBalance();
-    }
-  }, [isAuthenticated, fetchBalance]);
 
   async function handleSignOut() {
     await logout();
@@ -72,28 +61,6 @@ function Header({ children }: HeaderProps) {
       {isAuthenticated ? <OrgSwitcher className="w-full" /> : null}
 
       <div className="flex min-w-0 flex-wrap items-center gap-2 group-data-[collapsible=icon]:flex-col">
-        {isAuthenticated ? (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-11 min-h-11 gap-1.5 bg-muted/40 px-2.5 text-xs text-foreground hover:text-primary"
-            asChild
-          >
-            <Link to="/credit-history" title={tNav("creditsTitle")}>
-              <Coins className="h-3.5 w-3.5 text-primary" aria-hidden />
-              <span className="hidden text-muted-foreground group-data-[collapsible=icon]:hidden sm:inline">
-                {t("scanCredits")}
-              </span>
-              <span
-                className="font-mono font-bold text-primary tabular-nums"
-                data-testid="header-credits"
-              >
-                {credits.toLocaleString("en-US")}
-              </span>
-            </Link>
-          </Button>
-        ) : null}
-
         {isAuthenticated && user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

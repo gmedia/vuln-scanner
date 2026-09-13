@@ -8,7 +8,6 @@ import {
   Users,
   DollarSign,
   Calculator,
-  History,
   User,
   CalendarClock,
   BookOpen,
@@ -99,7 +98,6 @@ const productNav = [
 ];
 
 const accountNav = [
-  { to: "/credit-history", labelKey: "creditHistory", icon: History },
   { to: "/profile", labelKey: "profile", icon: User },
   { to: "/settings/workspace", labelKey: "workspace", icon: Users },
 ];

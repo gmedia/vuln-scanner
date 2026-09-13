@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { useStartDomainScan } from "@/hooks/useScan";
 import { useScanError } from "@/hooks/useScanError";
-import { useScanCredit } from "@/hooks/useScanCredit";
 import { useScanStore } from "@/store/scanStore";
 import { ScanError } from "./ScanError";
 
@@ -17,7 +16,6 @@ function DomainScanForm() {
   const startDomainScan = useStartDomainScan();
   const handleScanError = useScanError();
   const setActiveScan = useScanStore((s) => s.setActiveScan);
-  const { creditDisplay, costPreview } = useScanCredit("domain");
 
   const isValidDomain = (d: string) =>
     /^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/.test(d);
@@ -52,8 +50,6 @@ function DomainScanForm() {
 
   return (
     <div className="space-y-4">
-      {creditDisplay}
-
       <div>
         <Label htmlFor="domain-scan-target" className="mb-1.5 block text-foreground/70">
           Target domain
@@ -91,8 +87,6 @@ function DomainScanForm() {
       </div>
 
       {error && <ScanError message={error} />}
-
-      {costPreview}
 
       <Button
         onClick={handleSubmit}

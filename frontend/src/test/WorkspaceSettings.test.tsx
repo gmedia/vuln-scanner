@@ -54,10 +54,7 @@ describe("WorkspaceSettings pilot checklist", () => {
       "href",
       "/schedules",
     );
-    expect(screen.getByTestId("pilot-link-credits")).toHaveAttribute(
-      "href",
-      "/credit-history",
-    );
+    expect(screen.queryByTestId("pilot-link-credits")).not.toBeInTheDocument();
   });
 
   it("hides checklist when there is no org", () => {
@@ -75,4 +72,3 @@ describe("WorkspaceSettings pilot checklist", () => {
     expect(screen.getByTestId("invite-form-card")).toBeInTheDocument();
   });
 });
-

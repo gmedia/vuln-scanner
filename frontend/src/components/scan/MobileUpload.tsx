@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { useStartMobileScan } from "@/hooks/useScan";
 import { useScanError } from "@/hooks/useScanError";
-import { useScanCredit } from "@/hooks/useScanCredit";
 import { useScanStore } from "@/store/scanStore";
 import { cn } from "@/lib/utils";
 import { ScanError } from "./ScanError";
@@ -22,9 +21,6 @@ function MobileUpload() {
   const startMobileScan = useStartMobileScan();
   const handleScanError = useScanError();
   const setActiveScan = useScanStore((s) => s.setActiveScan);
-  const { creditDisplay, costPreview } = useScanCredit(
-    platform === "android" ? "apk" : "ipa",
-  );
 
   const validateFile = useCallback((f: File): string | null => {
     const ext = f.name.split(".").pop()?.toLowerCase();
@@ -116,8 +112,6 @@ function MobileUpload() {
 
   return (
     <div className="space-y-4">
-      {creditDisplay}
-
       <div>
         <label className="mb-1.5 block text-xs font-medium text-foreground/70">
           Platform
@@ -237,8 +231,6 @@ function MobileUpload() {
       )}
 
       {error && <ScanError message={error} showIcon />}
-
-      {costPreview}
 
       <Button
         onClick={handleSubmit}

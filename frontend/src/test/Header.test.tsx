@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
@@ -6,11 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Header from "@/components/layout/Header";
 import { useScanStore } from "@/store/scanStore";
 import { useAuthStore } from "@/store/authStore";
-import { useCreditStore } from "@/store/creditStore";
-
-vi.mock("@/store/creditStore", () => ({
-  useCreditStore: vi.fn(),
-}));
 
 function renderWithRouter(ui: React.ReactElement) {
   const client = new QueryClient({
@@ -40,20 +35,6 @@ describe("Header", () => {
       organizations: [],
       activeOrgId: null,
     });
-    const creditState = {
-      credits: 2951,
-      isAdmin: false,
-      isLoading: false,
-      error: null,
-      fetchBalance: vi.fn(),
-      checkEligibility: vi.fn(),
-    };
-    vi.mocked(useCreditStore).mockImplementation(((
-      selector?: (s: typeof creditState) => unknown,
-    ) =>
-      typeof selector === "function"
-        ? selector(creditState)
-        : creditState) as typeof useCreditStore);
   });
 
   it("does not render a sticky 48px app banner", () => {
@@ -112,7 +93,7 @@ describe("Header", () => {
     expect(screen.getByText("10%")).toBeInTheDocument();
   });
 
-  it("shows credits chip when authenticated", () => {
+  it("does not render credits chip when authenticated", () => {
     useAuthStore.setState({
       isAuthenticated: true,
       user: {
@@ -127,13 +108,8 @@ describe("Header", () => {
       error: null,
     });
     renderWithRouter(<Header />);
-    expect(screen.getByTestId("header-credits")).toHaveTextContent("2,951");
-    expect(screen.getByTestId("header-credits").textContent).not.toMatch(
-      /2,\s951/,
-    );
-    expect(screen.getByText("Scan credits")).toBeInTheDocument();
-    expect(screen.getByTitle("Personal credit balance")).toBeInTheDocument();
-    expect(screen.getByTitle("Personal credit balance")).toHaveClass("min-h-11");
+    expect(screen.queryByTestId("header-credits")).toBeNull();
+    expect(screen.queryByText("Scan credits")).toBeNull();
   });
 
   it("shows org switcher when organizations present", () => {

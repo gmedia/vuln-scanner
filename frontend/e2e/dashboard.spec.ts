@@ -6,8 +6,9 @@ test.describe("Dashboard @smoke", () => {
     await expect(page.locator("h2:has-text('Ringkasan')")).toBeVisible();
     await expect(page.locator("text=SINEXIS").first()).toBeVisible();
     await expect(page.locator("text=Risiko terbuka")).toBeVisible();
+    await expect(page.locator("text=7 hari (C/H/M)")).toBeVisible();
     await expect(page.locator("text=Jadwal").first()).toBeVisible();
-    await expect(page.locator("text=Kredit").first()).toBeVisible();
+    await expect(page.locator("text=Kredit")).toHaveCount(0);
   });
 
   test("shows Scan baru menu links", async ({ page }) => {

@@ -1,9 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import React from "react";
 import userEvent from "@testing-library/user-event";
 import MobileUpload from "@/components/scan/MobileUpload";
-import { useScanCredit } from "@/hooks/useScanCredit";
 
 vi.mock("@/hooks/useScan", () => ({
   useStartIpScan: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
@@ -24,21 +22,6 @@ vi.mock("@/store/scanStore", () => ({
     return selector ? selector(state) : state;
   }),
 }));
-const defaultScanCredit = {
-  credits: 100,
-  cost: 10,
-  eligible: true,
-  eligibilityLoading: false,
-  costUnavailable: false,
-  creditDisplay: React.createElement("div", { "data-testid": "credit-display" }, "Available Credits: 100"),
-  costPreview: React.createElement("div", { "data-testid": "scan-cost-preview" }, "cost"),
-  checkAndDeduct: vi.fn().mockResolvedValue({ eligible: true, error: null }),
-  refreshAfterScan: vi.fn(),
-};
-
-vi.mock("@/hooks/useScanCredit", () => ({
-  useScanCredit: vi.fn(() => defaultScanCredit),
-}));
 vi.mock("react-router-dom", () => ({
   useNavigate: vi.fn(() => vi.fn()),
 }));
@@ -46,11 +29,6 @@ vi.mock("react-router-dom", () => ({
 describe("MobileUpload", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useScanCredit).mockReturnValue({
-      ...defaultScanCredit,
-      checkAndDeduct: vi.fn().mockResolvedValue({ eligible: true, error: null }),
-      refreshAfterScan: vi.fn(),
-    });
   });
 
   it("renders platform selector with Android and iOS buttons", () => {
@@ -120,9 +98,11 @@ describe("MobileUpload", () => {
     ).toBeInTheDocument();
   });
 
-  it("displays available credits", () => {
+  it("does not render credits chip or cost preview", () => {
     render(<MobileUpload />);
-    expect(screen.getByTestId("credit-display")).toBeInTheDocument();
+    expect(screen.queryByTestId("credit-display")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("scan-credits-chip")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("scan-cost-preview")).not.toBeInTheDocument();
   });
 
   it("switches to iOS platform when iOS button is clicked", async () => {
@@ -396,13 +376,7 @@ describe("MobileUpload", () => {
     });
   });
 
-  it("keeps Start mobile scan enabled while eligibility is loading when a file is selected", async () => {
-    vi.mocked(useScanCredit).mockReturnValue({
-      ...defaultScanCredit,
-      eligibilityLoading: true,
-      checkAndDeduct: vi.fn().mockResolvedValue({ eligible: true, error: null }),
-      refreshAfterScan: vi.fn(),
-    });
+  it("keeps Start mobile scan enabled without a credit gate when a file is selected", async () => {
     render(<MobileUpload />);
     const file = new File(["test"], "app.apk", {
       type: "application/vnd.android.package-archive",

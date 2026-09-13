@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { useStartIpScan } from "@/hooks/useScan";
 import { useScanError } from "@/hooks/useScanError";
-import { useScanCredit } from "@/hooks/useScanCredit";
 import { useScanStore } from "@/store/scanStore";
 import { isValidPort } from "@/lib/utils";
 import { ScanError } from "./ScanError";
@@ -19,7 +18,6 @@ function IpScanForm() {
   const startIpScan = useStartIpScan();
   const handleScanError = useScanError();
   const setActiveScan = useScanStore((s) => s.setActiveScan);
-  const { costPreview } = useScanCredit("ip");
 
   const isValidIp = (ip: string) =>
     /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/.test(ip);
@@ -96,8 +94,6 @@ function IpScanForm() {
       </div>
 
       {error && <ScanError message={error} />}
-
-      {costPreview}
 
       <Button
         onClick={handleSubmit}
