@@ -83,6 +83,7 @@ async def ensure_personal_org(db: AsyncSession, user: User) -> Organization:
         name=f"{local}'s workspace"[:255],
         slug=make_unique_slug(local),
         kind="personal",
+        sku="basic",
         created_by_user_id=user.id,
     )
     db.add(org)
@@ -238,6 +239,7 @@ class OrganizationService:
             name=name.strip()[:255],
             slug=candidate,
             kind=kind,
+            sku="basic",
             created_by_user_id=user.id,
         )
         self.db.add(org)
@@ -292,6 +294,11 @@ class OrganizationService:
         if sku is not None:
             if sku not in ("basic", "pro", "multi"):
                 raise HTTPException(status_code=400, detail="sku must be basic, pro, or multi")
+            if not user.is_admin:
+                raise HTTPException(
+                    status_code=403,
+                    detail="sku is billed; ask ops to issue a Scan invoice",
+                )
             org.sku = sku
         org.updated_at = datetime.now(UTC)
         await self.db.commit()

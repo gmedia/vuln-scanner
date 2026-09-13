@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -44,6 +45,13 @@ from app.models.email_verification import EmailVerificationToken  # noqa: F401
 from app.models.guard import GuardAgent, GuardAlert, GuardEnrollToken, GuardOrgBinding  # noqa: F401
 from app.models.host_protect import HostHit, HostQuarantineEvent, HostScan, HostSite  # noqa: F401
 from app.models.hpp import HppCostLine, HppOverhead, HppRate  # noqa: F401
+from app.models.invoice import (  # noqa: F401
+    HOST_SKU_LIST_IDR,
+    SCAN_SKU_LIST_IDR,
+    SCAN_SKU_SEATS,
+    OrgInvoice,
+    SkuCatalog,
+)
 from app.models.organization import (  # noqa: F401
     Organization,
     OrganizationInvite,
@@ -167,6 +175,20 @@ async def db_session(engine):
         await conn.run_sync(Base.metadata.create_all)
     async_session_local = async_sessionmaker(engine, expire_on_commit=False)
     async with async_session_local() as session:
+        now = datetime.now(UTC)
+        for product, prices in (("scan", SCAN_SKU_LIST_IDR), ("host", HOST_SKU_LIST_IDR)):
+            for sku, list_idr in prices.items():
+                session.add(
+                    SkuCatalog(
+                        product=product,
+                        sku=sku,
+                        list_idr=list_idr,
+                        seats=SCAN_SKU_SEATS[sku],
+                        invoicable=product == "scan",
+                        updated_at=now,
+                    )
+                )
+        await session.commit()
         yield session
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)

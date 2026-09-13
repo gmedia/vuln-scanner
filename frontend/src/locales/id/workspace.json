@@ -56,5 +56,9 @@
   "pilotStepSchedules": "Aktifkan jadwal (bulanan Basic, mingguan Pro+). Notifikasi critical/high baru.",
   "pilotStepReport": "Kirim HTML eksekutif Bahasa. Tinjauan hybrid 5 hari kerja, bukan SOC 24/7.",
   "pilotLinkAssets": "Buka aset",
-  "pilotLinkSchedules": "Buka jadwal"
+  "pilotLinkSchedules": "Buka jadwal",
+  "billingTitle": "Tagihan",
+  "billingDescription": "Invoice Sinexis Scan untuk workspace ini. Bayar transfer bank; ops menandai lunas. Kursi SKU mengikuti invoice yang sudah dibayar.",
+  "billingEmpty": "Belum ada invoice.",
+  "billingBank": "Transfer ke {{name}} {{account}} ({{holder}})"
 }

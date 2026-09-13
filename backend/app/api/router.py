@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.api.admin_ai_routes import router as admin_ai_router
 from app.api.admin_blog_routes import router as admin_blog_router
+from app.api.admin_invoice_routes import router as admin_invoice_router
 from app.api.admin_routes import router as admin_router
 from app.api.ai_routes import router as ai_router
 from app.api.asset_routes import router as asset_router
@@ -29,6 +30,7 @@ api_router.include_router(key_router)
 api_router.include_router(auth_router)
 api_router.include_router(credit_router)
 api_router.include_router(admin_router)
+api_router.include_router(admin_invoice_router)
 api_router.include_router(admin_blog_router)
 api_router.include_router(admin_ai_router)
 api_router.include_router(ai_router)

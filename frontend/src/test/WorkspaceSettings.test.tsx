@@ -12,6 +12,7 @@ vi.mock("@/api/orgs", async () => {
     ...actual,
     listMembers: vi.fn(async () => []),
     listInvites: vi.fn(async () => []),
+    listOrgInvoices: vi.fn(async () => ({ items: [], total: 0 })),
   };
 });
 
@@ -70,5 +71,6 @@ describe("WorkspaceSettings pilot checklist", () => {
     ).toBeInTheDocument();
     expect(screen.getByTestId("account-nav")).toBeInTheDocument();
     expect(screen.getByTestId("invite-form-card")).toBeInTheDocument();
+    expect(screen.getByTestId("workspace-billing")).toBeInTheDocument();
   });
 });

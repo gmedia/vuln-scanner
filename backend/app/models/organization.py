@@ -25,7 +25,7 @@ class Organization(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     slug: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     kind: Mapped[str] = mapped_column(String(20), nullable=False, default="personal")
-    sku: Mapped[str] = mapped_column(String(20), nullable=False, default="multi")
+    sku: Mapped[str] = mapped_column(String(20), nullable=False, default="basic")
     tag_colors: Mapped[dict[str, str]] = mapped_column(JSONB, nullable=False, default=dict, server_default="{}")
     created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True

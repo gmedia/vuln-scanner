@@ -22,6 +22,7 @@ from app.models.hpp import (
     HppOverhead,
     HppRate,
 )
+from app.models.invoice import HOST_SKU_LIST_IDR, SCAN_SKU_LIST_IDR, SkuCatalog
 from app.models.organization import Organization
 from app.models.pricing import PricingConfig
 from app.models.scan_finding import ScanFinding
@@ -382,8 +383,14 @@ async def update_pricing(
     return PricingItem.model_validate(pricing)
 
 
-_SCAN_LIST_IDR: dict[str, int] = {"basic": 300_000, "pro": 650_000, "multi": 2_000_000}
-_HOST_LIST_IDR: dict[str, int] = {"basic": 150_000, "pro": 350_000, "multi": 900_000}
+async def _list_idr_from_catalog(db: AsyncSession, product: str, fallback: dict[str, int]) -> dict[str, int]:
+    prices = dict(fallback)
+    result = await db.execute(select(SkuCatalog).where(SkuCatalog.product == product))
+    for row in result.scalars().all():
+        prices[str(row.sku)] = int(row.list_idr)
+    return prices
+
+
 _SCAN_COGS_KEYS: tuple[str, ...] = ("ip", "domain", "apk", "ipa", "statushost")
 
 
@@ -607,9 +614,11 @@ async def get_hpp_report(
             host_scans_cap=host_scan_cap,
         )
 
+    scan_list = await _list_idr_from_catalog(db, "scan", SCAN_SKU_LIST_IDR)
+    host_list = await _list_idr_from_catalog(db, "host", HOST_SKU_LIST_IDR)
     line_margins = [
-        _margin("scan", [(str(s), int(n)) for s, n in scan_sku_rows], _SCAN_LIST_IDR, scan_cogs),
-        _margin_host([(str(s), int(n)) for s, n in host_sku_rows], _HOST_LIST_IDR),
+        _margin("scan", [(str(s), int(n)) for s, n in scan_sku_rows], scan_list, scan_cogs),
+        _margin_host([(str(s), int(n)) for s, n in host_sku_rows], host_list),
     ]
 
     return HppReportResponse(

@@ -6,6 +6,7 @@ import {
   ClipboardList,
   Loader2,
   Mail,
+  Receipt,
   Trash2,
   UserPlus,
   AlertTriangle,
@@ -40,6 +41,7 @@ import {
   createOrg,
   listInvites,
   listMembers,
+  listOrgInvoices,
   revokeInvite,
   type InviteRole,
 } from "@/api/orgs";
@@ -115,6 +117,13 @@ function WorkspaceSettings() {
   const invitesQuery = useQuery({
     queryKey: ["org-invites", orgId],
     queryFn: () => listInvites(orgId!),
+    enabled: !!orgId && canManage,
+    retry: false,
+  });
+
+  const invoicesQuery = useQuery({
+    queryKey: ["org-invoices", orgId],
+    queryFn: () => listOrgInvoices(orgId!),
     enabled: !!orgId && canManage,
     retry: false,
   });
@@ -291,6 +300,51 @@ function WorkspaceSettings() {
                 </Link>
               </Button>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {orgId && canManage && (
+        <Card data-testid="workspace-billing">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
+              <Receipt className="h-4 w-4 text-primary" />
+              {t("billingTitle")}
+            </CardTitle>
+            <CardDescription className="text-xs">
+              {t("billingDescription")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {invoicesQuery.isLoading ? (
+              <TableRowSkeleton rows={2} />
+            ) : (invoicesQuery.data?.items.length ?? 0) === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("billingEmpty")}</p>
+            ) : (
+              <ul className="space-y-2 text-sm">
+                {invoicesQuery.data?.items.map((inv) => (
+                  <li
+                    key={inv.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border px-3 py-2"
+                  >
+                    <span className="font-mono text-xs">{inv.number}</span>
+                    <Badge variant="default">{inv.status}</Badge>
+                    <span className="font-mono tabular-nums">
+                      Rp {inv.amount_idr.toLocaleString("id-ID")}
+                    </span>
+                    {inv.status === "sent" && inv.bank ? (
+                      <span className="w-full text-xs text-muted-foreground">
+                        {t("billingBank", {
+                          name: inv.bank.bank_name ?? "—",
+                          account: inv.bank.bank_account ?? "—",
+                          holder: inv.bank.bank_holder ?? "—",
+                        })}
+                      </span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
           </CardContent>
         </Card>
       )}

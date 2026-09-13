@@ -29,7 +29,7 @@ class OrgMembershipResponse(BaseModel):
     name: str
     slug: str
     kind: str
-    sku: str = "multi"
+    sku: str = "basic"
     role: str
     created_at: datetime
 
@@ -41,7 +41,7 @@ class OrgDetailResponse(BaseModel):
     name: str
     slug: str
     kind: str
-    sku: str = "multi"
+    sku: str = "basic"
     created_by_user_id: uuid.UUID | None
     created_at: datetime
     updated_at: datetime

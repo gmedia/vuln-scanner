@@ -18,6 +18,7 @@ import {
   FolderLock,
   Mail,
   Bot,
+  Receipt,
 } from "lucide-react";
 import { BRAND } from "@/lib/brand";
 import { useTranslation } from "react-i18next";
@@ -223,6 +224,12 @@ function Sidebar() {
                   labelKey="hpp"
                   icon={Calculator}
                   testId="nav-admin-hpp"
+                />
+                <NavItem
+                  to="/admin/invoices"
+                  labelKey="invoices"
+                  icon={Receipt}
+                  testId="nav-admin-invoices"
                 />
                 <NavItem
                   to="/admin/blog"
