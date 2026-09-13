@@ -13,7 +13,7 @@
 | **S1** | Customer meter for Scan | **Seats:** named assets + cadence. Manual IP/domain/APK/IPA **do not debit** `users.credits`. Job `credit_cost = 0`. |
 | **S2** | `statushost` | **No debit.** Custom hostname activation is SKU/ops, not Scan credits. Seed cost ignored. |
 | **S3** | Host / WAF / Uptime | Unchanged: `host_sites` / monitors / WAF protect = **Multi**. Scan on-box still 0. |
-| **S4** | Wallet leftover | `users.credits` + `/credits` + admin adjust **remain** (history, e2e, ops). **Not** a gate and **not** customer chrome. Eligibility always `eligible=true`, `required_credits=0`. SPA hides Header chip, Account/Sidebar credit nav, Dashboard KPI, scan-form cost preview, and workspace pilot credit links. `/credit-history` stays reachable by URL. AI wallet is out (S6). |
+| **S4** | Wallet leftover | `users.credits` + `/credits` + admin adjust **remain** (history, e2e, ops). **Not** a gate and **not** customer chrome. Eligibility always `eligible=true`, `required_credits=0`. SPA hides Header chip, Account/Sidebar credit nav, Dashboard KPI, scan-form cost preview, and workspace pilot credit links. `/credit-history` stays reachable by URL. `/admin/pricing` is **read-only archive** (banner + seed table, no Save). PUT API may remain for ops scripts. AI wallet is out (S6). |
 | **S5** | Abuse | Existing rate limits + SKU asset cap + 10 schedules/org. Not a second currency. |
 | **S6** | AI Gateway | **Out.** Still `ai_wallets.balance_idr`. Do not merge into Scan credits. |
 | **S7** | A4 packs | Dead as a sell line. Do not quote “10/24/60 credits.” |
