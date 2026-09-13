@@ -112,14 +112,33 @@ describe("AdminAi", () => {
       total: 1,
     });
     renderPage();
-    expect(await screen.findByText("OpenRouter")).toBeInTheDocument();
+    expect(await screen.findByTestId("admin-ai-provider-card-p1")).toBeInTheDocument();
+    expect(screen.getAllByText("OpenRouter").length).toBeGreaterThan(0);
+    expect(screen.getByTestId("admin-ai-providers-mobile")).toHaveClass(
+      "space-y-2",
+      "md:hidden",
+    );
+    expect(screen.getByTestId("admin-ai-provider-card-p1")).toBeInTheDocument();
+    expect(screen.getByTestId("admin-ai-providers-desktop")).toHaveClass(
+      "hidden",
+      "md:block",
+    );
     expect(screen.getAllByRole("button", { name: "Edit" }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: "Delete" }).length).toBeGreaterThan(0);
     await userEvent.click(screen.getByRole("tab", { name: "Models" }));
-    expect(await screen.findByRole("columnheader", { name: "Price IDR / 1K in" })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "Price IDR / 1K out" })).toBeInTheDocument();
-    expect(screen.getByText("Rp 1")).toBeInTheDocument();
-    expect(screen.getByText("Rp 2")).toBeInTheDocument();
+    expect(await screen.findByTestId("admin-ai-models-mobile")).toHaveClass(
+      "space-y-2",
+      "md:hidden",
+    );
+    expect(screen.getByTestId("admin-ai-model-card-m1")).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: "Price IDR / 1K in", hidden: true }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: "Price IDR / 1K out", hidden: true }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText("Rp 1").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Rp 2").length).toBeGreaterThan(0);
   });
 
   it("uses i18n labels for usage source and billed columns", async () => {
@@ -146,8 +165,17 @@ describe("AdminAi", () => {
     });
     renderPage();
     await userEvent.click(await screen.findByRole("tab", { name: "Usage" }));
-    expect(await screen.findByRole("columnheader", { name: "Source" })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "Billed (IDR)" })).toBeInTheDocument();
+    expect(await screen.findByTestId("admin-ai-usage-mobile")).toHaveClass(
+      "space-y-2",
+      "md:hidden",
+    );
+    expect(screen.getByTestId("admin-ai-usage-card-u1")).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: "Source", hidden: true }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: "Billed (IDR)", hidden: true }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("columnheader", { name: "source" })).not.toBeInTheDocument();
   });
 
