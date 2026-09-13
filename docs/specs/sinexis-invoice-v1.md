@@ -1,0 +1,137 @@
+# Spec: Sinexis Invoice v1 (independent of GMD)
+
+**Status:** **implementing** (this PR). Owner: Sinexis bills Scan SKU **in-app**, not as a GMD colo/VPS `service_id`.
+**Seller copy:** env `INVOICE_BANK_*` only. No NPWP/PPN engine in v1 (tax_idr implicit 0). HTML print later.
+**Does not** add Midtrans/Xendit. Does **not** merge AI Gateway IDR wallet. Does **not** mix HPP COGS into invoices. Does **not** revive Scan credits as a meter.
+
+---
+
+## 0) Locked
+
+| ID | Topic | Decision |
+|----|--------|----------|
+| **I1** | Who bills | **Sinexis** issues invoices. GMD rack/VPS invoices stay in GMD. No silent-bundle. |
+| **I2** | What is sold | **Scan SKU seats** only: Basic / Pro / Multi. List IDR from P0 lock (300_000 / 650_000 / 2_000_000). Host Protect catalog rows may be seeded **working** but **not invoiced** in v1 (H9 still open). |
+| **I3** | Payment | **Manual bank transfer.** Admin marks `paid` after ops sees the transfer. No gateway, no auto-charge, no tax line. |
+| **I4** | Period | Calendar month (UTC). One **paid** Scan invoice per org per period (unique). |
+| **I5** | SKU mutation | Org admin **cannot** `PATCH /orgs/{id}` `sku` (403). Paid Scan invoice (or platform-admin set) is the gate. |
+| **I6** | New org default | `organizations.sku` default **`basic`** for **new** rows. Existing orgs unchanged. |
+| **I7** | Unpaid | Does **not** auto-downgrade `org.sku`. Void + admin set sku is ops. Seat caps still follow current `org.sku`. |
+| **I8** | Customer surface | Org owner/admin: read-only invoice list + bank copy when `sent`. No self-serve upgrade. |
+| **I9** | Bank copy | Env `INVOICE_BANK_NAME` / `INVOICE_BANK_ACCOUNT` / `INVOICE_BANK_HOLDER`. Empty → UI says ops must set env. Never commit real account numbers. |
+| **I10** | Out | Gateway, PDF library, dunning, PPN, subscriptions auto-renew job, Host-only invoice, AI top-up, GMD API, customer SID/PII in git. |
+
+List prices (do not invent):
+
+| SKU | Seats | IDR / mo |
+|-----|-------|----------|
+| basic | 1 | 300_000 |
+| pro | 3 | 650_000 |
+| multi | 10 | 2_000_000 |
+
+---
+
+## 1) Runtime
+
+### Catalog `sku_catalog`
+
+PK `(product, sku)`. v1 product = `scan` (required) + `host` (seeded, `invoicable=false`).
+
+| Column | Type |
+|--------|------|
+| product | `scan` \| `host` |
+| sku | `basic` \| `pro` \| `multi` |
+| list_idr | int ≥ 0 |
+| seats | int ≥ 1 |
+| invoicable | bool |
+| updated_at | timestamptz |
+
+Seed Scan from I2. Seed Host 150_000 / 350_000 / 900_000, `invoicable=false`.
+
+HPP overlay `_SCAN_LIST_IDR` / `_HOST_LIST_IDR` **read from catalog** (fallback to the same constants if a row is missing).
+
+### Invoices `org_invoices`
+
+| Column | Type |
+|--------|------|
+| id | UUID PK |
+| organization_id | FK orgs CASCADE |
+| number | unique `SX-YYYYMM-NNNN` |
+| product | `scan` (v1) |
+| sku | basic\|pro\|multi |
+| amount_idr | int ≥ 0 (snapshot of catalog at create) |
+| period_start / period_end | timestamptz UTC month bounds |
+| status | `draft` \| `sent` \| `paid` \| `void` |
+| bank_ref | varchar 64 nullable (ops paste) |
+| notes | varchar 500 default '' |
+| paid_at | timestamptz nullable |
+| created_by_user_id | FK users SET NULL |
+| created_at / updated_at | timestamptz |
+
+Unique: one non-void Scan invoice per `(organization_id, product, period_start)`.
+
+**Mark paid:** set `paid_at`, `status=paid`. If `product=scan`, set `organizations.sku` to invoice sku.
+
+**Void:** only `draft` or `sent`. Does not change sku.
+
+### SKU PATCH
+
+`OrganizationService.update_org`: if `sku` is set and user is **not** platform `is_admin` → **403** `sku is billed; ask ops`. Platform admin may still PATCH (ops escape).
+
+### New orgs
+
+`ensure_personal_org` / `create_org`: pass `sku="basic"`. Alembic: change **server_default** to `basic` (existing rows untouched).
+
+---
+
+## 2) API
+
+Admin (`get_current_admin` + existing limiter):
+
+| Method | Path | Notes |
+|--------|------|--------|
+| GET | `/api/admin/sku-catalog` | all rows |
+| PUT | `/api/admin/sku-catalog/{product}/{sku}` | `{ list_idr }` only; seats immutable in v1 |
+| GET | `/api/admin/invoices` | filter `status`, `organization_id`; page |
+| POST | `/api/admin/invoices` | `{ organization_id, sku, period_start? }` product=scan; amount from catalog |
+| POST | `/api/admin/invoices/{id}/send` | draft→sent |
+| POST | `/api/admin/invoices/{id}/paid` | `{ bank_ref? }` → paid + apply sku |
+| POST | `/api/admin/invoices/{id}/void` | draft\|sent → void |
+
+Org (membership admin+):
+
+| Method | Path | Notes |
+|--------|------|--------|
+| GET | `/api/orgs/{org_id}/invoices` | own invoices; include bank fields only when status=`sent` and env set |
+| GET | `/api/orgs/{org_id}/invoices/{id}` | same |
+
+Bank payload on customer GET when `sent`: `{ bank_name, bank_account, bank_holder }` from env (may be null).
+
+---
+
+## 3) SPA
+
+- `/admin/invoices` — catalog table + invoice list + create/send/paid/void. Filter bar = Credit History (`gap-3`, `h-10`). `nav-admin-invoices`.
+- Workspace: card **Billing** (owner/admin) — list invoices; if `sent`, show bank copy. No pay button.
+
+Do **not** restyle kit. Tokens from `:root`. `Button` / `Select` only.
+
+---
+
+## 4) Out
+
+- Payment gateway, e-meterai, PDF binary, auto-renew beat job.
+- Host invoice, Guard/SIEM `service_id`.
+- Writing `users.credits` or `ai_wallets`.
+- Mixing this page into `/admin/hpp` or leftover `/admin/pricing`.
+
+---
+
+## 5) DoD
+
+- [x] pytest: org admin PATCH sku → 403; platform admin PATCH sku → 200.
+- [x] pytest: new org sku == basic.
+- [x] pytest: create invoice snapshots list_idr; second Scan invoice same period → 409.
+- [x] pytest: mark paid sets org.sku; void does not.
+- [x] Vitest: `/admin/invoices` paid action; Workspace billing card read-only.
+- [x] No real bank account in git.
