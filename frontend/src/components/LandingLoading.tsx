@@ -66,30 +66,23 @@ export function LandingLoading() {
         </section>
       </main>
 
-      <footer className="mt-auto shrink-0 border-t border-border bg-muted/40">
-        <div className="mx-auto w-full max-w-6xl px-4 py-12 2xl:max-w-[90rem]">
-          <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
-            <div className="sm:col-span-2 lg:col-span-1">
+      <footer className="mt-auto shrink-0 border-t border-border bg-gradient-to-b from-muted/40 to-background">
+        <div className="mx-auto w-full max-w-6xl px-4 pb-8 pt-10 2xl:max-w-[90rem]">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between lg:gap-12">
+            <div className="max-w-sm">
               <Skeleton className="h-5 w-28" />
-              <Skeleton className="mt-4 h-10 w-full max-w-xs" />
+              <Skeleton className="mt-3 h-10 w-full max-w-xs" />
             </div>
-            <div className="flex flex-col gap-3">
-              <Skeleton className="h-3 w-16" />
+            <div className="flex flex-wrap items-center gap-x-4">
+              <Skeleton className="h-4 w-14" />
+              <Skeleton className="h-4 w-10" />
+              <Skeleton className="h-4 w-12" />
               <Skeleton className="h-4 w-14" />
               <Skeleton className="h-4 w-12" />
-            </div>
-            <div className="flex flex-col gap-3">
-              <Skeleton className="h-3 w-12" />
-              <Skeleton className="h-4 w-16" />
-              <Skeleton className="h-4 w-14" />
-            </div>
-            <div className="flex flex-col gap-3">
-              <Skeleton className="h-3 w-16" />
-              <Skeleton className="h-4 w-14" />
-              <Skeleton className="h-8 w-24 rounded-md" />
+              <Skeleton className="h-4 w-12" />
             </div>
           </div>
-          <div className="mt-10 flex justify-between border-t border-border pt-6">
+          <div className="mt-8 flex justify-between border-t border-border pt-6">
             <Skeleton className="h-3 w-40" />
             <Skeleton className="h-3 w-24" />
           </div>
