@@ -209,8 +209,12 @@ it("shows empty state with create form", async () => {
     vi.mocked(statusApi.deleteIncident).mockResolvedValue();
     renderPage();
     await waitFor(() =>
-      expect(screen.getByTestId("status-incident-title-i1")).toBeInTheDocument(),
+      expect(screen.getByTestId("status-incident-card-i1")).toBeInTheDocument(),
     );
+    expect(screen.queryByTestId("status-incident-title-i1")).not.toBeInTheDocument();
+    expect(screen.getByTestId("status-incident-post-update-i1")).toBeInTheDocument();
+    await user.click(screen.getByTestId("status-incident-menu-i1"));
+    await user.click(screen.getByTestId("status-incident-edit-i1"));
     const titleInput = screen.getByTestId("status-incident-title-i1");
     await user.clear(titleInput);
     await user.type(titleInput, "API outage");
@@ -219,9 +223,57 @@ it("shows empty state with create form", async () => {
       title: "API outage",
       impact: "minor",
     });
+    await user.click(screen.getByTestId("status-incident-menu-i1"));
     await user.click(screen.getByTestId("status-incident-delete-i1"));
     await user.click(screen.getByTestId("status-incident-delete-confirm-i1"));
     expect(statusApi.deleteIncident).toHaveBeenCalledWith("i1");
+  });
+
+  it("posts an incident update from the card CTA", async () => {
+    const user = userEvent.setup();
+    mockGet.mockResolvedValue({
+      id: "p1",
+      organization_id: "o1",
+      slug: "erp-stg",
+      title: "ERP",
+      published: true,
+      custom_hostname: null,
+      hostname_status: "none",
+      cname_target: "status-edge.sinexis.app",
+      ...pageFields,
+      public_path: "/status/erp-stg",
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+      components: [],
+      incidents: [
+        {
+          id: "i1",
+          title: "API blip",
+          impact: "minor",
+          status: "investigating",
+          started_at: "2026-01-01T00:00:00Z",
+          resolved_at: null,
+          created_at: "2026-01-01T00:00:00Z",
+          updates: [],
+        },
+      ],
+      overall: "degraded",
+    });
+    vi.mocked(statusApi.addIncidentUpdate).mockResolvedValue({} as never);
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("status-incident-card-i1")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("status-incident-post-update-i1"));
+    await user.type(
+      screen.getByTestId("status-incident-update-body-i1"),
+      "Still looking",
+    );
+    await user.click(screen.getByTestId("status-incident-update-save-i1"));
+    expect(statusApi.addIncidentUpdate).toHaveBeenCalledWith("i1", {
+      body: "Still looking",
+      status: "monitoring",
+    });
   });
 
   it("hides the new-incident form until New incident is clicked", async () => {

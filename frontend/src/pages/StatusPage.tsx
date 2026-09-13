@@ -26,30 +26,17 @@ import {
 } from "@/components/ui/Table";
 import { listMonitors } from "@/api/uptime";
 import type { ApiError } from "@/lib/utils";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { canManageMembers } from "@/api/orgs";
 import { useAuthStore } from "@/store/authStore";
+import { StatusIncidentCard } from "@/components/status/StatusIncidentCard";
 import {
   addComponent,
-  addIncidentUpdate,
   attachHostname,
   checkHostname,
   createIncident,
   deleteComponent,
-  deleteIncident,
   detachHostname,
   getStatusPage,
-  patchIncident,
   patchStatusPage,
   replaceHostname,
   upsertStatusPage,
@@ -636,13 +623,13 @@ export default function StatusPage() {
               {page.incidents.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t("noIncidents")}</p>
               ) : (
-                <ul className="space-y-3">
+                <ul
+                  className="space-y-2"
+                  data-testid="status-incidents-list"
+                >
                   {page.incidents.map((i) => (
-                    <li
-                      key={i.id}
-                      className="rounded-md border border-border bg-card p-4"
-                    >
-                      <IncidentEditor
+                    <li key={i.id}>
+                      <StatusIncidentCard
                         incident={i}
                         canDelete={canDeleteIncident}
                         onDone={invalidate}
@@ -656,169 +643,6 @@ export default function StatusPage() {
           <p className="text-xs text-muted-foreground">{t("disclaimer")}</p>
         </>
       )}
-    </div>
-  );
-}
-
-function IncidentEditor({
-  incident,
-  canDelete,
-  onDone,
-}: {
-  incident: {
-    id: string;
-    title: string;
-    impact: string;
-    status: string;
-  };
-  canDelete: boolean;
-  onDone: () => void;
-}) {
-  const { t } = useTranslation("statusPage");
-  const [title, setTitle] = useState(incident.title);
-  const [impact, setImpact] = useState(incident.impact);
-  const saveMut = useMutation({
-    mutationFn: () => patchIncident(incident.id, { title: title.trim(), impact }),
-    onSuccess: onDone,
-    onError: (err) => toast.error(apiDetail(err, t("saveIncident"))),
-  });
-  const delMut = useMutation({
-    mutationFn: () => deleteIncident(incident.id),
-    onSuccess: onDone,
-    onError: (err) => toast.error(apiDetail(err, t("deleteIncident"))),
-  });
-  return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <Label htmlFor={`inc-title-${incident.id}`}>{t("incidentTitle")}</Label>
-          <Input
-            id={`inc-title-${incident.id}`}
-            data-testid={`status-incident-title-${incident.id}`}
-            className="h-10 min-h-10"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-        </div>
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <Label>{t("impact")}</Label>
-          <Select value={impact} onValueChange={setImpact}>
-            <SelectTrigger className="h-10 min-h-10">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {["none", "minor", "major", "critical"].map((v) => (
-                <SelectItem key={v} value={v}>
-                  {v}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      <p className="text-sm text-muted-foreground">{incident.status}</p>
-      <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          size="sm"
-          data-testid={`status-incident-save-${incident.id}`}
-          disabled={!title.trim() || saveMut.isPending}
-          onClick={() => saveMut.mutate()}
-        >
-          {t("saveIncident")}
-        </Button>
-        {canDelete ? (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                type="button"
-                size="sm"
-                variant="destructive"
-                data-testid={`status-incident-delete-${incident.id}`}
-              >
-                {t("deleteIncident")}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>{t("deleteIncident")}</AlertDialogTitle>
-                <AlertDialogDescription>
-                  {t("deleteIncidentConfirm")}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                <AlertDialogAction
-                  data-testid={`status-incident-delete-confirm-${incident.id}`}
-                  onClick={() => delMut.mutate()}
-                >
-                  {t("deleteIncident")}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        ) : null}
-      </div>
-      <IncidentQuickUpdate
-        incidentId={incident.id}
-        onDone={onDone}
-        addUpdate={addIncidentUpdate}
-      />
-    </div>
-  );
-}
-
-function IncidentQuickUpdate({
-  incidentId,
-  onDone,
-  addUpdate,
-}: {
-  incidentId: string;
-  onDone: () => void;
-  addUpdate: typeof addIncidentUpdate;
-}) {
-  const { t } = useTranslation("statusPage");
-  const [body, setBody] = useState("");
-  const [status, setStatus] = useState("monitoring");
-  const mut = useMutation({
-    mutationFn: () => addUpdate(incidentId, { body, status }),
-    onSuccess: () => {
-      setBody("");
-      onDone();
-    },
-  });
-  return (
-    <div className="mt-3 space-y-2">
-      <Label htmlFor={`inc-upd-${incidentId}`}>{t("body")}</Label>
-      <Textarea
-        id={`inc-upd-${incidentId}`}
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-      />
-      <div className="flex flex-wrap gap-2">
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="h-10 min-h-10 w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {["investigating", "identified", "monitoring", "resolved"].map(
-              (v) => (
-                <SelectItem key={v} value={v}>
-                  {v}
-                </SelectItem>
-              ),
-            )}
-          </SelectContent>
-        </Select>
-        <Button
-          type="button"
-          size="sm"
-          disabled={!body}
-          onClick={() => mut.mutate()}
-        >
-          {t("save")}
-        </Button>
-      </div>
     </div>
   );
 }
