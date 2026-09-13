@@ -52,11 +52,24 @@ export async function upsertHostWafPolicy(
   return data;
 }
 
+export interface PaginatedHostWafEvents {
+  items: HostWafEvent[];
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+}
+
 export async function listHostWafEvents(
   siteId?: string,
-): Promise<HostWafEvent[]> {
-  const { data } = await api.get<HostWafEvent[]>("/api/host/waf/events", {
-    params: siteId ? { site_id: siteId } : undefined,
+  opts?: { page?: number; limit?: number },
+): Promise<PaginatedHostWafEvents> {
+  const { data } = await api.get<PaginatedHostWafEvents>("/api/host/waf/events", {
+    params: {
+      ...(siteId ? { site_id: siteId } : {}),
+      page: opts?.page ?? 1,
+      limit: opts?.limit ?? 20,
+    },
   });
   return data;
 }
