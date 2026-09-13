@@ -87,7 +87,7 @@ describe("Profile", () => {
       expect(
         screen.getByRole("heading", { name: "Profile" }),
       ).toBeInTheDocument();
-      expect(screen.getByTestId("account-nav")).toBeInTheDocument();
+      expect(screen.queryByTestId("account-nav")).not.toBeInTheDocument();
     });
 
     it("displays current email", () => {

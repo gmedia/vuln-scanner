@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import PageHeader from "@/components/layout/PageHeader";
-import AccountNav from "@/components/layout/AccountNav";
 
 function Profile() {
   const { user, updateProfile, changePassword, error } = useAuthStore();
@@ -85,9 +84,6 @@ function Profile() {
         description="Manage your account email and password"
       />
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-        <AccountNav />
-        <div className="min-w-0 flex-1 space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="text-sm tracking-wide">
@@ -334,8 +330,6 @@ function Profile() {
           </form>
         </CardContent>
       </Card>
-        </div>
-      </div>
     </div>
   );
 }

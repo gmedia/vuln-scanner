@@ -12,7 +12,6 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
-import AccountNav from "@/components/layout/AccountNav";
 import {
   Card,
   CardContent,
@@ -234,9 +233,6 @@ function WorkspaceSettings() {
         }
       />
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-        <AccountNav />
-        <div className="min-w-0 flex-1 space-y-6">
       {inviteToken && (
         <Card data-testid="accept-invite-card">
           <CardHeader>
@@ -638,8 +634,6 @@ function WorkspaceSettings() {
       {!canManage && orgId && role && (
         <p className="text-xs text-muted-foreground">{t("onlyAdminsInvite")}</p>
       )}
-        </div>
-      </div>
     </div>
   );
 }

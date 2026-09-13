@@ -64,12 +64,12 @@ describe("WorkspaceSettings pilot checklist", () => {
     expect(screen.queryByTestId("pilot-checklist")).not.toBeInTheDocument();
   });
 
-  it("renders PageHeader and account nav", () => {
+  it("renders PageHeader without in-page account tabs", () => {
     renderPage();
     expect(
       screen.getByRole("heading", { level: 2, name: /workspace/i }),
     ).toBeInTheDocument();
-    expect(screen.getByTestId("account-nav")).toBeInTheDocument();
+    expect(screen.queryByTestId("account-nav")).not.toBeInTheDocument();
     expect(screen.getByTestId("invite-form-card")).toBeInTheDocument();
     expect(screen.getByTestId("workspace-billing")).toBeInTheDocument();
   });
