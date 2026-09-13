@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { DollarSign, Loader2, Check } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { DollarSign } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Table,
   TableBody,
@@ -15,50 +15,28 @@ import {
   TableRow,
 } from "@/components/ui/Table";
 import PageHeader from "@/components/layout/PageHeader";
-import { adminApi, type PricingItem } from "@/api/admin";
+import { adminApi } from "@/api/admin";
 import { useTranslation } from "react-i18next";
 import { htmlLang, isAppLocale } from "@/i18n/locales";
 import i18n from "@/i18n";
 
+function formatUpdatedAt(iso: string, language: string): string {
+  return new Date(iso).toLocaleDateString(
+    isAppLocale(language)
+      ? htmlLang(language) === "en"
+        ? "en-US"
+        : "id-ID"
+      : "id-ID",
+  );
+}
+
 function AdminPricing() {
   const { t } = useTranslation("admin");
-  const queryClient = useQueryClient();
-  const [editedCosts, setEditedCosts] = useState<Record<string, number>>({});
-  const [saving, setSaving] = useState<string | null>(null);
 
   const { data: pricing, isLoading } = useQuery({
     queryKey: ["admin-pricing"],
     queryFn: adminApi.getPricing,
   });
-
-  const updatePricing = useMutation({
-    mutationFn: ({ scanType, creditCost }: { scanType: string; creditCost: number }) =>
-      adminApi.updatePricing(scanType, { credit_cost: creditCost }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-pricing"] });
-      setSaving(null);
-    },
-    onError: () => {
-      setSaving(null);
-    },
-  });
-
-  const handleCostChange = (scanType: string, value: string) => {
-    const numValue = parseInt(value, 10) || 0;
-    setEditedCosts((prev) => ({ ...prev, [scanType]: numValue }));
-  };
-
-  const handleSave = (item: PricingItem) => {
-    const newCost = editedCosts[item.scan_type] ?? item.credit_cost;
-    if (newCost === item.credit_cost) return;
-    setSaving(item.scan_type);
-    updatePricing.mutate({ scanType: item.scan_type, creditCost: newCost });
-  };
-
-  const hasChanges = (item: PricingItem) => {
-    const editedCost = editedCosts[item.scan_type];
-    return editedCost !== undefined && editedCost !== item.credit_cost;
-  };
 
   return (
     <div className="w-full space-y-6">
@@ -66,6 +44,18 @@ function AdminPricing() {
         leading={<DollarSign className="h-6 w-6 shrink-0 text-primary" />}
         title={t("pricingTitle")}
       />
+
+      <Alert data-testid="pricing-leftover-banner">
+        <AlertTitle>{t("pricingLeftoverTitle")}</AlertTitle>
+        <AlertDescription className="space-y-2">
+          <p>{t("pricingLeftoverBody")}</p>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/admin/hpp" data-testid="pricing-link-hpp">
+              {t("linkHpp")}
+            </Link>
+          </Button>
+        </AlertDescription>
+      </Alert>
 
       <Card>
         <CardHeader>
@@ -81,131 +71,69 @@ function AdminPricing() {
               <div className="mb-3 rounded-full bg-muted p-3">
                 <DollarSign className="h-6 w-6 text-muted-foreground opacity-40" />
               </div>
-              <p className="text-sm text-foreground">
-                {t("pricingEmpty")}
-              </p>
+              <p className="text-sm text-foreground">{t("pricingEmpty")}</p>
             </div>
           ) : (
             <>
-            <div className="space-y-3 md:hidden">
-              {pricing?.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-lg border border-border bg-card p-3 space-y-2"
-                >
-                  <Badge variant="default" className="text-[10px] uppercase">
-                    {item.scan_type}
-                  </Badge>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={editedCosts[item.scan_type] ?? item.credit_cost}
-                    onChange={(e) =>
-                      handleCostChange(item.scan_type, e.target.value)
-                    }
-                    className="h-11 w-full font-mono text-xs tabular-nums"
-                  />
-                  <p className="font-mono text-[11px] text-muted-foreground">
-                    {new Date(item.updated_at).toLocaleDateString(
-                      isAppLocale(i18n.language)
-                        ? htmlLang(i18n.language) === "en"
-                          ? "en-US"
-                          : "id-ID"
-                        : "id-ID",
-                    )}
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleSave(item)}
-                    disabled={!hasChanges(item) || saving === item.scan_type}
-                    className="min-h-11 w-full text-xs disabled:opacity-80"
-                  >
-                    {saving === item.scan_type ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : hasChanges(item) ? (
-                      <>
-                        <Check className="mr-1 h-3 w-3" />
-                        {t("save")}
-                      </>
-                    ) : (
-                      <span className="text-muted-foreground">{t("saved")}</span>
-                    )}
-                  </Button>
-                </div>
-              ))}
-            </div>
-            <div className="hidden md:block">
-            <Table className="table-fixed">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[28%] text-[10px] uppercase tracking-wider">
-                    {t("colScanType")}
-                  </TableHead>
-                  <TableHead className="w-[24%] text-[10px] uppercase tracking-wider">
-                    {t("colCreditCost")}
-                  </TableHead>
-                  <TableHead className="w-[28%] text-[10px] uppercase tracking-wider">
-                    {t("colUpdated")}
-                  </TableHead>
-                  <TableHead className="w-[20%] whitespace-nowrap text-right text-[10px] uppercase tracking-wider">
-                    {t("colActions")}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+              <div className="space-y-3 md:hidden">
                 {pricing?.map((item) => (
-                  <TableRow key={item.id} className="group">
-                    <TableCell>
-                      <Badge variant="default" className="text-[10px] uppercase">
-                        {item.scan_type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        min={0}
-                        value={editedCosts[item.scan_type] ?? item.credit_cost}
-                        onChange={(e) => handleCostChange(item.scan_type, e.target.value)}
-                        className="h-8 w-full max-w-[8rem] font-mono text-xs tabular-nums"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                        {new Date(item.updated_at).toLocaleDateString(
-                          isAppLocale(i18n.language)
-                            ? htmlLang(i18n.language) === "en"
-                              ? "en-US"
-                              : "id-ID"
-                            : "id-ID",
-                        )}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSave(item)}
-                        disabled={!hasChanges(item) || saving === item.scan_type}
-                        className="text-xs"
-                      >
-                        {saving === item.scan_type ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : hasChanges(item) ? (
-                          <>
-                            <Check className="mr-1 h-3 w-3" />
-                            {t("save")}
-                          </>
-                        ) : (
-                          <span className="text-muted-foreground">{t("saved")}</span>
-                        )}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                  <div
+                    key={item.id}
+                    className="space-y-2 rounded-lg border border-border bg-card p-3"
+                  >
+                    <Badge variant="default" className="text-[10px] uppercase">
+                      {item.scan_type}
+                    </Badge>
+                    <p className="font-mono text-sm tabular-nums">
+                      {item.credit_cost}
+                    </p>
+                    <p className="font-mono text-[11px] text-muted-foreground">
+                      {formatUpdatedAt(item.updated_at, i18n.language)}
+                    </p>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
-            </div>
+              </div>
+              <div className="hidden md:block">
+                <Table className="table-fixed">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[36%] text-[10px] uppercase tracking-wider">
+                        {t("colScanType")}
+                      </TableHead>
+                      <TableHead className="w-[32%] text-[10px] uppercase tracking-wider">
+                        {t("colCreditCost")}
+                      </TableHead>
+                      <TableHead className="w-[32%] text-[10px] uppercase tracking-wider">
+                        {t("colUpdated")}
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pricing?.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <Badge
+                            variant="default"
+                            className="text-[10px] uppercase"
+                          >
+                            {item.scan_type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-mono text-xs tabular-nums">
+                            {item.credit_cost}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                            {formatUpdatedAt(item.updated_at, i18n.language)}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </>
           )}
         </CardContent>
