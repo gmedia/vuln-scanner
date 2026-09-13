@@ -49,6 +49,14 @@ class HostWafEventResponse(BaseModel):
     created_at: datetime
 
 
+class PaginatedHostWafEventsResponse(BaseModel):
+    items: list[HostWafEventResponse]
+    total: int
+    page: int
+    limit: int
+    pages: int
+
+
 class HostWafSnippetResponse(BaseModel):
     site_id: uuid.UUID
     engine: str
