@@ -291,26 +291,59 @@ export default function HostWafPanel({
           </CardContent>
         </Card>
       ) : (
-        <Table data-testid="host-waf-events">
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t("wafColAction")}</TableHead>
-              <TableHead>{t("wafColRule")}</TableHead>
-              <TableHead>{t("wafColMethod")}</TableHead>
-              <TableHead>{t("colPath")}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+        <div data-testid="host-waf-events">
+          <div
+            className="space-y-2 md:hidden"
+            data-testid="host-waf-events-mobile"
+          >
             {(eventsQ.data ?? []).map((e) => (
-              <TableRow key={e.id}>
-                <TableCell>{e.action}</TableCell>
-                <TableCell>{e.rule_id}</TableCell>
-                <TableCell>{e.method}</TableCell>
-                <TableCell>{e.path}</TableCell>
-              </TableRow>
+              <div
+                key={e.id}
+                className="rounded-lg border border-border bg-card p-3"
+                data-testid={`host-waf-event-card-${e.id}`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="min-w-0 break-all font-mono text-sm font-medium text-foreground">
+                    {e.path}
+                  </p>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {e.method}
+                  </span>
+                </div>
+                <p className="mt-1 font-mono text-xs text-muted-foreground">
+                  {e.action} · {e.rule_id}
+                </p>
+              </div>
             ))}
-          </TableBody>
-        </Table>
+          </div>
+          <div
+            className="hidden overflow-x-auto md:block"
+            data-testid="host-waf-events-desktop"
+          >
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("wafColAction")}</TableHead>
+                  <TableHead>{t("wafColRule")}</TableHead>
+                  <TableHead>{t("wafColMethod")}</TableHead>
+                  <TableHead>{t("colPath")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(eventsQ.data ?? []).map((e) => (
+                  <TableRow key={e.id}>
+                    <TableCell>{e.action}</TableCell>
+                    <TableCell className="font-mono">{e.rule_id}</TableCell>
+                    <TableCell>{e.method}</TableCell>
+                    <TableCell className="break-all font-mono">
+                      {e.path}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
       )}
     </div>
   );

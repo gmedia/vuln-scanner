@@ -873,6 +873,63 @@ describe("Host Protect page", () => {
     );
   });
 
+  it("renders stacked WAF event cards on small screens and a table from md", async () => {
+    vi.mocked(hostApi.listHostSites).mockResolvedValue([
+      {
+        id: "s1",
+        organization_id: "org1",
+        guard_agent_id: "a1",
+        asset_id: null,
+        name: "Web",
+        root_path: "/var/www/html",
+        cms_hint: "wordpress",
+        enabled: true,
+        auto_quarantine: false,
+        scan_interval: "daily",
+        created_by: "u1",
+        created_at: "2026-08-30T00:00:00Z",
+        updated_at: "2026-08-30T00:00:00Z",
+        sku: "multi",
+        sku_limit: 10,
+      },
+    ]);
+    vi.mocked(hostWafApi.listHostWafEvents).mockResolvedValue([
+      {
+        id: "e1",
+        organization_id: "org1",
+        site_id: "s1",
+        policy_id: "p1",
+        action: "log",
+        rule_id: "1001",
+        method: "GET",
+        path: "/wp-login.php?q=1",
+        http_status: 403,
+        created_at: "2026-09-13T10:00:00Z",
+      },
+    ]);
+    const user = userEvent.setup();
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByTestId("host-tab-waf")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("host-tab-waf"));
+    expect(await screen.findByTestId("host-waf-events")).toBeInTheDocument();
+    expect(screen.getByTestId("host-waf-events-mobile")).toHaveClass(
+      "space-y-2",
+      "md:hidden",
+    );
+    const card = screen.getByTestId("host-waf-event-card-e1");
+    expect(card.textContent).toMatch(/wp-login\.php/);
+    expect(card.textContent).toMatch(/GET/);
+    expect(card.textContent).toMatch(/log/);
+    expect(card.textContent).toMatch(/1001/);
+    expect(card.className).toMatch(/rounded-lg/);
+    expect(card.className).toMatch(/border-border/);
+    const desktop = screen.getByTestId("host-waf-events-desktop");
+    expect(desktop).toHaveClass("hidden", "md:block", "overflow-x-auto");
+    expect(desktop.querySelector("table")).toBeTruthy();
+  });
+
   it("treats WAF list 404 as feature off", async () => {
     vi.mocked(hostWafApi.listHostWafPolicies).mockRejectedValue({
       response: { status: 404, data: { detail: "Not found" } },
