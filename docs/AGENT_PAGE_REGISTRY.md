@@ -88,6 +88,7 @@ Nav groups match Sidebar: **Scan** · **Attach** · **Account** · **Admin** (ad
 | `/admin/users/:id` | `pages/admin/AdminUserDetail.tsx` | — | | `admin/AdminUserDetail.test.tsx`, `e2e/admin-user-detail.spec.ts` |
 | `/admin/pricing` | `pages/admin/AdminPricing.tsx` | Admin | Read-only seed `credit_cost` archive (not a meter). Banner + HPP link. **Not** IDR COGS. | `admin/AdminPricing.test.tsx` |
 | `/admin/hpp` | `pages/admin/AdminHpp.tsx` | Admin | IDR unit rates + monthly overhead + cost journal + date-range report + SKU overlay **estimasi**. Not mixed with Pricing. `nav-admin-hpp`. Spec: `docs/specs/admin-hpp-v1.md`. | `admin/AdminHpp.test.tsx` |
+| `/admin/invoices` | `pages/admin/AdminInvoices.tsx` | Admin | Sinexis Scan invoices (bank transfer). Catalog + draft/send/paid/void. `nav-admin-invoices`. Spec: `docs/specs/sinexis-invoice-v1.md`. | `admin/AdminInvoices.test.tsx` |
 | `/admin/blog` | `pages/admin/AdminBlog.tsx` | Admin | CMS; `nav-admin-blog`. Locale key `blogStatus`. | `admin/AdminBlog.test.tsx` |
 | `/admin/email-logs` | `pages/admin/AdminEmailLogs.tsx` | Admin | Outbound SMTP log; masked recipient. `nav-admin-email-logs`. | `admin/AdminEmailLogs.test.tsx` |
 | `/admin/ai` | `pages/admin/AdminAi.tsx` | Admin | Catalog, usage, top-up, trial chat. `nav-admin-ai`. Flag `AI_GATEWAY_ENABLED`. | `admin/AdminAi.test.tsx` |
@@ -124,7 +125,7 @@ Minimum authenticated set (2k + mobile, light + dark) after a chrome/token chang
 5. `/schedules` `/assets` `/host`
 6. `/guard` `/siem` `/uptime` `/uptime/status-page`
 7. `/credit-history` `/profile` `/settings/workspace` `/guide`
-8. Admin: `/admin` `/admin/users` `/admin/pricing` `/admin/hpp` `/admin/blog`
+8. Admin: `/admin` `/admin/users` `/admin/pricing` `/admin/hpp` `/admin/invoices` `/admin/blog`
 
 Auth for prod visual: `E2E_EMAIL` / `E2E_PASSWORD` from **tc1 env** — never commit. Do not `POST /register` for the shared mailbox.
 
@@ -142,7 +143,7 @@ Run **locally after deploy of S0–S8** (light + dark, 2k + mobile). Compare to 
 | S4 scan | `/scan/ip` `/scan/domain` `/scan/mobile` `/scan/:id` `/schedules` `/assets` `/host` | Density + PageHeader; frozen testids |
 | S5 account | `/profile` `/credit-history` `/settings/workspace` | Two-pane / filter-bar rhythm |
 | S6 attach | `/guard` `/siem` `/uptime` `/uptime/status-page` `/ai` `/guide` | Same chrome family |
-| S7 admin | `/admin` `/admin/users` `/admin/pricing` `/admin/hpp` `/admin/blog` `/admin/email-logs` `/admin/ai` | PageHeader |
+| S7 admin | `/admin` `/admin/users` `/admin/pricing` `/admin/hpp` `/admin/invoices` `/admin/blog` `/admin/email-logs` `/admin/ai` | PageHeader |
 | S8 auth | `/login` `/register` `/forgot-password` `/reset-password` `/verify-email` 404 | Hairline `border-border/80 shadow-none`; **Landing `h-12` unchanged** |
 
 Also recapture `/` logged-out only to confirm Landing was **not** restyled in this epic.
