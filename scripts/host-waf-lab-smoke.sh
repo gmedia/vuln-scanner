@@ -390,7 +390,7 @@ simulate_and_events() {
   split_body_code "$blob"
   [[ "$HTTP_CODE" == "200" ]] || die "events HTTP ${HTTP_CODE}"
   local n
-  n="$(json_get "$HTTP_BODY" "len(o) if isinstance(o, list) else 0")"
+  n="$(json_get "$HTTP_BODY" "len((o or {}).get('items') or []) if isinstance(o, dict) else 0")"
   log "product_events=${n} (mock simulate must not require events>=1)"
 }
 
