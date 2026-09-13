@@ -56,5 +56,9 @@
   "pilotStepSchedules": "Enable a schedule (monthly Basic, weekly Pro+). Notify on new critical/high.",
   "pilotStepReport": "Send the Bahasa executive HTML. Hybrid review is 5 business days, not 24/7 SOC.",
   "pilotLinkAssets": "Open assets",
-  "pilotLinkSchedules": "Open schedules"
+  "pilotLinkSchedules": "Open schedules",
+  "billingTitle": "Billing",
+  "billingDescription": "Sinexis Scan invoices for this workspace. Pay by bank transfer; ops marks paid. SKU seats follow a paid invoice.",
+  "billingEmpty": "No invoices yet.",
+  "billingBank": "Transfer to {{name}} {{account}} ({{holder}})"
 }
