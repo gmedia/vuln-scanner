@@ -177,6 +177,40 @@ describe("AdminAi", () => {
       screen.getByRole("columnheader", { name: "Billed (IDR)", hidden: true }),
     ).toBeInTheDocument();
     expect(screen.queryByRole("columnheader", { name: "source" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("admin-ai-usage-pagination")).not.toBeInTheDocument();
+  });
+
+  it("pages usage when the API reports more than one page", async () => {
+    const row = (id: string, model: string) => ({
+      id,
+      organization_id: null,
+      source: "admin_trial",
+      model_public_id: model,
+      prompt_tokens: 1,
+      completion_tokens: 1,
+      billed_idr: 0,
+      cogs_idr: 0,
+      http_status: 200,
+      created_at: "",
+      request_payload: null,
+      response_payload: null,
+    });
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.listAiUsage).mockImplementation(async (params) => {
+      const page = params?.page ?? 1;
+      if (page === 2) {
+        return { items: [row("u21", "sinexis/page-2")], total: 21 };
+      }
+      return { items: [row("u1", "sinexis/page-1")], total: 21 };
+    });
+    renderPage();
+    await userEvent.click(await screen.findByRole("tab", { name: "Usage" }));
+    expect(await screen.findByTestId("admin-ai-usage-pagination")).toBeInTheDocument();
+    expect(screen.getByTestId("admin-ai-usage-card-u1")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /next page/i }));
+    expect(await screen.findByTestId("admin-ai-usage-card-u21")).toBeInTheDocument();
+    expect(adminApi.listAiUsage).toHaveBeenCalledWith({ page: 2, limit: 20 });
   });
 
   it("shows feature-off on 404", async () => {

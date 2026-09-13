@@ -265,6 +265,7 @@ export interface AiUsageAdmin {
 
 export async function listAiUsage(params?: {
   org_id?: string;
+  page?: number;
   limit?: number;
 }): Promise<{ items: AiUsageAdmin[]; total: number }> {
   const { data } = await api.get<{ items: AiUsageAdmin[]; total: number }>(
