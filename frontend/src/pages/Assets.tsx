@@ -274,7 +274,7 @@ export default function Assets() {
     });
   }
 
-  function tagBadges(a: ScanAsset) {
+  function tagBadges(a: ScanAsset, testIdPrefix = "asset-tag") {
     if ((a.tags ?? []).length === 0) return null;
     return (
       <div className="flex flex-wrap gap-1.5">
@@ -284,12 +284,12 @@ export default function Assets() {
             type="button"
             variant="ghost"
             size="sm"
-            className="h-auto p-0"
+            className="h-auto min-h-11 p-0 md:min-h-0"
             onClick={() => toggleTagFilter(tag)}
           >
             <Badge
               variant="default"
-              data-testid={`asset-tag-${tag}`}
+              data-testid={`${testIdPrefix}-${tag}`}
               className={tagColorClass(tag, colorMap)}
               style={tagColorStyle(tag, colorMap)}
             >
@@ -301,7 +301,9 @@ export default function Assets() {
     );
   }
 
-  function rowMenu(a: ScanAsset) {
+  function rowMenu(a: ScanAsset, surface: "card" | "row" = "row") {
+    const tid = (base: string) =>
+      surface === "card" ? `${base}-card` : base;
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -309,8 +311,8 @@ export default function Assets() {
             type="button"
             variant="ghost"
             size="sm"
-            className="ml-auto h-9 w-9 p-0"
-            data-testid={`asset-menu-${a.id}`}
+            className="ml-auto h-11 w-11 min-h-11 min-w-11 p-0 md:h-9 md:w-9 md:min-h-9 md:min-w-9"
+            data-testid={tid(`asset-menu-${a.id}`)}
             aria-label={t("actionsMenu")}
           >
             <MoreHorizontal className="h-4 w-4" />
@@ -318,14 +320,14 @@ export default function Assets() {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuItem
-            data-testid={`asset-edit-${a.id}`}
+            data-testid={tid(`asset-edit-${a.id}`)}
             onSelect={() => startEdit(a)}
           >
             {t("edit")}
           </DropdownMenuItem>
           {!a.schedule_id ? (
             <DropdownMenuItem
-              data-testid={`asset-schedule-${a.id}`}
+              data-testid={tid(`asset-schedule-${a.id}`)}
               onSelect={() => schedMut.mutate(a.id)}
             >
               {t("schedule")}
@@ -333,7 +335,7 @@ export default function Assets() {
           ) : null}
           {a.scan_type === "domain" ? (
             <DropdownMenuItem asChild>
-              <Link to="/uptime" data-testid="assets-watch-http">
+              <Link to="/uptime" data-testid={tid("assets-watch-http")}>
                 {t("watchHttp")}
               </Link>
             </DropdownMenuItem>
@@ -341,7 +343,7 @@ export default function Assets() {
           <DropdownMenuSeparator />
           <DropdownMenuItem
             variant="destructive"
-            data-testid={`asset-delete-${a.id}`}
+            data-testid={tid(`asset-delete-${a.id}`)}
             onSelect={() => {
               if (window.confirm(t("confirmDelete"))) delMut.mutate(a.id);
             }}
@@ -795,7 +797,59 @@ export default function Assets() {
           </CardContent>
         </Card>
       ) : (
-        <Table>
+        <>
+          <div className="space-y-2 md:hidden" data-testid="assets-list-mobile">
+            {visible.map((a: ScanAsset) => (
+              <div
+                key={a.id}
+                className="rounded-lg border border-border bg-card p-3"
+                data-testid={`asset-card-${a.id}`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="min-w-0 break-words text-sm font-medium text-foreground">
+                    {a.name}
+                  </p>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {a.scan_type === "ip" ? t("typeIp") : t("typeDomain")}
+                  </span>
+                </div>
+                <p className="mt-1 break-all font-mono text-xs tabular-nums text-muted-foreground">
+                  {a.target}
+                </p>
+                {(a.tags ?? []).length > 0 || a.guard_agent_id ? (
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    {tagBadges(a, "asset-tag-card")}
+                    {a.guard_agent_id ? (
+                      <>
+                        <Badge
+                          variant="info"
+                          data-testid={`asset-guard-chip-${a.id}-card`}
+                        >
+                          {t("guardLinked", {
+                            name: a.guard_agent_name ?? a.guard_agent_id,
+                          })}
+                        </Badge>
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="h-auto min-h-11 p-0 md:min-h-0"
+                          asChild
+                        >
+                          <Link to="/guard">{t("openGuard")}</Link>
+                        </Button>
+                      </>
+                    ) : null}
+                  </div>
+                ) : null}
+                <div className="mt-2 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                  <span>{a.schedule_id ? t("hasSchedule") : "—"}</span>
+                  {rowMenu(a, "card")}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto md:block" data-testid="assets-list-desktop">
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("name")}</TableHead>
@@ -829,6 +883,8 @@ export default function Assets() {
                 ))}
               </TableBody>
             </Table>
+          </div>
+        </>
       )}
     </div>
   );

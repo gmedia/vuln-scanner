@@ -136,6 +136,38 @@ describe("Assets page", () => {
     expect(screen.getByTestId("asset-tag-filter")).toBeInTheDocument();
   });
 
+  it("renders stacked cards for small screens and a table from md", async () => {
+    mockList.mockResolvedValue([
+      {
+        id: "a1",
+        name: "Web",
+        scan_type: "domain",
+        target: "example.com",
+        notes: null,
+        schedule_id: null,
+        sku: "multi",
+        sku_limit: 10,
+        tags: ["prod"],
+      },
+    ]);
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("assets-list-mobile")).toBeInTheDocument(),
+    );
+    expect(screen.getByTestId("assets-list-mobile")).toHaveClass(
+      "space-y-2",
+      "md:hidden",
+    );
+    const card = screen.getByTestId("asset-card-a1");
+    expect(card).toBeInTheDocument();
+    expect(card.textContent).toMatch(/example\.com/);
+    expect(card.className).toMatch(/rounded-lg/);
+    expect(card.className).toMatch(/border-border/);
+    const desktop = screen.getByTestId("assets-list-desktop");
+    expect(desktop).toHaveClass("hidden", "md:block", "overflow-x-auto");
+    expect(desktop.querySelector("table")).toBeTruthy();
+  });
+
   it("shows Guard chip when asset is linked", async () => {
     mockList.mockResolvedValue([
       {
@@ -155,6 +187,9 @@ describe("Assets page", () => {
     renderPage();
     await waitFor(() =>
       expect(screen.getByTestId("asset-guard-chip-a1")).toHaveTextContent("vps-edge-01"),
+    );
+    expect(screen.getByTestId("asset-guard-chip-a1-card")).toHaveTextContent(
+      "vps-edge-01",
     );
   });
 
@@ -211,8 +246,8 @@ describe("Assets page", () => {
     await user.click(screen.getByTestId("asset-tag-filter-opt-hotel"));
     await user.clear(screen.getByTestId("asset-tag-filter-search"));
     await user.click(screen.getByTestId("asset-tag-filter-opt-prod"));
-    expect(screen.getByText("Web")).toBeInTheDocument();
-    expect(screen.getByText("Staging")).toBeInTheDocument();
+    expect(screen.getAllByText("Web").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Staging").length).toBeGreaterThan(0);
     expect(screen.queryByText("Lab")).not.toBeInTheDocument();
   });
 
@@ -409,10 +444,10 @@ describe("Assets page", () => {
       expect(screen.getByTestId("asset-search")).toBeInTheDocument(),
     );
     await user.type(screen.getByTestId("asset-search"), "10.0");
-    expect(screen.getByText("Lab")).toBeInTheDocument();
+    expect(screen.getAllByText("Lab").length).toBeGreaterThan(0);
     expect(screen.queryByText("Web")).not.toBeInTheDocument();
     await user.clear(screen.getByTestId("asset-search"));
-    expect(screen.getByText("Web")).toBeInTheDocument();
-    expect(screen.getByText("Lab")).toBeInTheDocument();
+    expect(screen.getAllByText("Web").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Lab").length).toBeGreaterThan(0);
   });
 });
