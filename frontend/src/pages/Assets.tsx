@@ -480,9 +480,9 @@ export default function Assets() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : null}
+            {items.length > 0 ? (
             <Button
               data-testid="assets-add"
-              variant={items.length === 0 ? "outline" : "default"}
               className="min-h-11 sm:min-h-10"
               disabled={atCap}
               onClick={() => {
@@ -495,6 +495,7 @@ export default function Assets() {
             >
               {t("add")}
             </Button>
+            ) : null}
           </>
         }
       />

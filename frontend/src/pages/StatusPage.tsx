@@ -210,7 +210,7 @@ export default function StatusPage() {
       />
 
       {!page && (
-        <Card>
+        <Card className="max-w-xl">
           <CardHeader>
             <CardTitle className="text-sm tracking-wide">{t("create")}</CardTitle>
           </CardHeader>

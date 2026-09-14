@@ -286,7 +286,7 @@ function UserGuide() {
             >
               <span className="flex min-w-0 items-center gap-2">
                 <ListOrdered className="h-4 w-4 shrink-0 text-primary" />
-                <span className="truncate leading-none">
+                <span className="min-w-0 whitespace-normal text-left leading-snug">
                   {t("tocTitle")}
                   <span className="ml-2 font-normal text-muted-foreground">
                     · {activeLabel}

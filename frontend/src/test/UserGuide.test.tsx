@@ -19,6 +19,10 @@ describe("UserGuide", () => {
       screen.getByRole("heading", { name: "Run the scan account" }),
     ).toBeInTheDocument();
     expect(screen.getAllByText("On this page").length).toBeGreaterThanOrEqual(1);
+    const tocLabels = screen.getAllByText("On this page");
+    expect(tocLabels[0]?.closest("span")?.className ?? "").toMatch(
+      /whitespace-normal/,
+    );
     expect(
       screen.getByRole("heading", {
         name: "Open the scan account",

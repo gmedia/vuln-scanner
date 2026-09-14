@@ -83,13 +83,13 @@ export function HostWafEventsList({
             className="hidden overflow-x-auto md:block"
             data-testid="host-waf-events-desktop"
           >
-            <Table>
+            <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t("wafColAction")}</TableHead>
-                  <TableHead>{t("wafColRule")}</TableHead>
-                  <TableHead>{t("wafColMethod")}</TableHead>
-                  <TableHead>{t("colPath")}</TableHead>
+                  <TableHead className="w-[15%]">{t("wafColAction")}</TableHead>
+                  <TableHead className="w-[20%]">{t("wafColRule")}</TableHead>
+                  <TableHead className="w-[15%]">{t("wafColMethod")}</TableHead>
+                  <TableHead className="w-1/2">{t("colPath")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
