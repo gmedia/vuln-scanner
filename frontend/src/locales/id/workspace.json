@@ -59,6 +59,8 @@
   "pilotLinkSchedules": "Buka jadwal",
   "billingTitle": "Tagihan",
   "billingDescription": "Invoice Sinexis Scan untuk workspace ini. Bayar transfer bank; ops menandai lunas. Kursi SKU mengikuti invoice yang sudah dibayar.",
-  "billingEmpty": "Belum ada invoice.",
+  "billingEmpty": "Belum ada invoice Scan. Ops yang menerbitkan; tidak ada upgrade mandiri.",
+  "billingLoadError": "Gagal memuat invoice.",
+  "billingAdminLink": "Buka invoice admin",
   "billingBank": "Transfer ke {{name}} {{account}} ({{holder}})"
 }
