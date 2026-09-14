@@ -9,6 +9,7 @@ import {
   listSamples,
   pauseMonitor,
   updateMonitor,
+  type UptimeCheckType,
   type UptimeCreatePayload,
   type UptimeMonitor,
   type UptimeSample,
