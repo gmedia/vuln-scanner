@@ -59,6 +59,8 @@
   "pilotLinkSchedules": "Open schedules",
   "billingTitle": "Billing",
   "billingDescription": "Sinexis Scan invoices for this workspace. Pay by bank transfer; ops marks paid. SKU seats follow a paid invoice.",
-  "billingEmpty": "No invoices yet.",
+  "billingEmpty": "No Scan invoices yet. Ops will issue one here; there is no self-serve upgrade.",
+  "billingLoadError": "Could not load invoices.",
+  "billingAdminLink": "Open admin invoices",
   "billingBank": "Transfer to {{name}} {{account}} ({{holder}})"
 }
