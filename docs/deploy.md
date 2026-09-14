@@ -107,7 +107,7 @@ docker exec vuln-backend alembic current        # only if you need to confirm he
 
 ## 6) Flags ops actually cares about
 
-Set on the **app host `.env`** and/or GitHub **repository** secrets (CI overwrite on `push` to `main` **drops** host-only keys that are missing from GitHub). Empty `WAZUH_*` and `INVOICE_BANK_*` secrets are **skipped** (`append_if_set`) so blank GitHub values do not wipe lab URLs or bank copy.
+Set on the **app host `.env`** and/or GitHub **repository** secrets (CI overwrite on `push` to `main` **drops** host-only keys that are missing from GitHub). Empty `WAZUH_*` and `INVOICE_BANK_*` secrets are **skipped** (`append_if_set`) so blank GitHub values do not wipe lab URLs or bank copy. `append_if_set` **double-quotes** values so spaces in holder/name survive `deploy.sh` sourcing `.env`.
 
 | Flag | Notes |
 |------|--------|
