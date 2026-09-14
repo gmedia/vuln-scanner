@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
 import WorkspaceSettings from "@/pages/WorkspaceSettings";
+import { listOrgInvoices } from "@/api/orgs";
 
 vi.mock("@/api/orgs", async () => {
   const actual =
@@ -29,6 +30,8 @@ function renderPage() {
 
 describe("WorkspaceSettings pilot checklist", () => {
   beforeEach(() => {
+    vi.mocked(listOrgInvoices).mockReset();
+    vi.mocked(listOrgInvoices).mockResolvedValue({ items: [], total: 0 });
     useAuthStore.setState({
       activeOrgId: "org-a",
       organizations: [
@@ -72,5 +75,94 @@ describe("WorkspaceSettings pilot checklist", () => {
     expect(screen.queryByTestId("account-nav")).not.toBeInTheDocument();
     expect(screen.getByTestId("invite-form-card")).toBeInTheDocument();
     expect(screen.getByTestId("workspace-billing")).toBeInTheDocument();
+  });
+
+  it("shows bank copy on a sent invoice", async () => {
+    vi.mocked(listOrgInvoices).mockResolvedValueOnce({
+      items: [
+        {
+          id: "inv-1",
+          organization_id: "org-a",
+          number: "SX-202609-0001",
+          product: "scan",
+          sku: "basic",
+          amount_idr: 300000,
+          period_start: "2026-09-01T00:00:00Z",
+          period_end: "2026-09-30T23:59:59Z",
+          status: "sent",
+          bank_ref: null,
+          notes: "",
+          paid_at: null,
+          created_at: "2026-09-14T00:00:00Z",
+          bank: {
+            bank_name: "Bank Contoh",
+            bank_account: "0000000000",
+            bank_holder: "Acme Holder",
+          },
+        },
+      ],
+      total: 1,
+    });
+    renderPage();
+    expect(
+      await screen.findByText("Transfer to Bank Contoh 0000000000 (Acme Holder)"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows dashes when sent invoice bank fields are null", async () => {
+    vi.mocked(listOrgInvoices).mockResolvedValueOnce({
+      items: [
+        {
+          id: "inv-2",
+          organization_id: "org-a",
+          number: "SX-202609-0002",
+          product: "scan",
+          sku: "basic",
+          amount_idr: 300000,
+          period_start: "2026-09-01T00:00:00Z",
+          period_end: "2026-09-30T23:59:59Z",
+          status: "sent",
+          bank_ref: null,
+          notes: "",
+          paid_at: null,
+          created_at: "2026-09-14T00:00:00Z",
+          bank: {
+            bank_name: null,
+            bank_account: null,
+            bank_holder: null,
+          },
+        },
+      ],
+      total: 1,
+    });
+    renderPage();
+    expect(await screen.findByText("Transfer to — — (—)")).toBeInTheDocument();
+  });
+
+  it("does not show bank copy on a draft invoice", async () => {
+    vi.mocked(listOrgInvoices).mockResolvedValueOnce({
+      items: [
+        {
+          id: "inv-3",
+          organization_id: "org-a",
+          number: "SX-202609-0003",
+          product: "scan",
+          sku: "basic",
+          amount_idr: 300000,
+          period_start: "2026-09-01T00:00:00Z",
+          period_end: "2026-09-30T23:59:59Z",
+          status: "draft",
+          bank_ref: null,
+          notes: "",
+          paid_at: null,
+          created_at: "2026-09-14T00:00:00Z",
+          bank: null,
+        },
+      ],
+      total: 1,
+    });
+    renderPage();
+    expect(await screen.findByText("SX-202609-0003")).toBeInTheDocument();
+    expect(screen.queryByText(/Transfer to/)).not.toBeInTheDocument();
   });
 });
