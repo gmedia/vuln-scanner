@@ -982,8 +982,10 @@ jobs:
             append_if_set() {
               local key="$1"
               local val="$2"
+              local escaped
               if [ -n "$val" ]; then
-                printf '%s=%s\n' "$key" "$val" >> .env
+                escaped=$(printf '%s' "$val" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\$/\\$/g; s/`/\\`/g')
+                printf '%s="%s"\n' "$key" "$escaped" >> .env
               fi
             }
             append_if_set WAZUH_MANAGER_URL "${{ secrets.WAZUH_MANAGER_URL }}"
