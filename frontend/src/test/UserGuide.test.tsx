@@ -15,19 +15,16 @@ describe("UserGuide", () => {
         </SidebarProvider>
       </MemoryRouter>,
     );
-    expect(
-      screen.getByRole("heading", { name: "Run the scan account" }),
-    ).toBeInTheDocument();
+    const openHeadings = screen.getAllByRole("heading", {
+      name: "Open the scan account",
+    });
+    expect(openHeadings.length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByRole("heading", { name: "Run the scan account" })).toBeNull();
     expect(screen.getAllByText("On this page").length).toBeGreaterThanOrEqual(1);
     const tocLabels = screen.getAllByText("On this page");
     expect(tocLabels[0]?.closest("span")?.className ?? "").toMatch(
       /whitespace-normal/,
     );
-    expect(
-      screen.getByRole("heading", {
-        name: "Open the scan account",
-      }),
-    ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
         name: "IP scan",

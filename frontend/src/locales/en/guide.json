@@ -1,6 +1,6 @@
 {
   "kicker": "How-to",
-  "title": "Run the scan account",
+  "title": "Open the scan account",
   "intro": "{{product}} is the VulnScanner engine behind a Sinexis login. Walk the modules in the order you actually use them. Each section says what the module does and what it will never do. Scan is an outside-in snapshot of ports, DNS/TLS, and known CVEs on a target you control, not 24/7 monitoring. Guard is the thin agent side: inventory of enrolled hosts plus critical alerts, not a full Wazuh stack. SIEM searches those events and lets you open a case, which is an incident ticket in this app. Host Protect reads web files on your own VPS through a helper. Button labels below match the UI as shipped. No production hosts, IPs, or credentials appear here. Only assets you are authorized to touch.",
   "tocAria": "Guide sections",
   "tocTitle": "On this page",
