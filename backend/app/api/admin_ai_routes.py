@@ -283,6 +283,7 @@ async def topup_wallet(
 async def admin_list_usage(
     request: Request,
     org_id: uuid.UUID | None = Query(default=None),
+    page: int = Query(default=1, ge=1),
     limit: int = Query(default=50, ge=1, le=200),
     _admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
@@ -297,7 +298,17 @@ async def admin_list_usage(
         q = q.where(AiUsageEvent.organization_id == org_id)
         cq = cq.where(AiUsageEvent.organization_id == org_id)
     total = (await db.execute(cq)).scalar() or 0
-    rows = list((await db.execute(q.order_by(AiUsageEvent.created_at.desc()).limit(limit))).scalars().all())
+    rows = list(
+        (
+            await db.execute(
+                q.order_by(AiUsageEvent.created_at.desc(), AiUsageEvent.id.desc())
+                .offset((page - 1) * limit)
+                .limit(limit)
+            )
+        )
+        .scalars()
+        .all()
+    )
     return AiAdminUsageList(items=[AiAdminUsageOut.model_validate(r) for r in rows], total=total)
 
 

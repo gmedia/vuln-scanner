@@ -1,7 +1,14 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Bot } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/Pagination";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { listAiModels, listAiProviders, listAiUsage } from "@/api/admin";
@@ -14,9 +21,12 @@ import { AdminAiTopupTab } from "@/components/admin/AdminAiTopupTab";
 import { AdminAiTrialTab } from "@/components/admin/AdminAiTrialTab";
 import { AdminAiUsageList } from "@/components/admin/AdminAiUsageList";
 
+const USAGE_PAGE_SIZE = 20;
+
 export default function AdminAi() {
   const { t } = useTranslation("admin");
   const [openUsageId, setOpenUsageId] = useState<string | null>(null);
+  const [usagePage, setUsagePage] = useState(1);
   const providersQ = useQuery({
     queryKey: ["admin-ai-providers"],
     queryFn: listAiProviders,
@@ -29,11 +39,14 @@ export default function AdminAi() {
     retry: false,
   });
   const usageQ = useQuery({
-    queryKey: ["admin-ai-usage"],
-    queryFn: () => listAiUsage({ limit: 50 }),
+    queryKey: ["admin-ai-usage", usagePage],
+    queryFn: () => listAiUsage({ page: usagePage, limit: USAGE_PAGE_SIZE }),
     enabled: !isAiDisabledError(providersQ.error),
     retry: false,
+    placeholderData: keepPreviousData,
   });
+  const usageTotal = usageQ.data?.total ?? 0;
+  const usagePages = Math.ceil(usageTotal / USAGE_PAGE_SIZE);
 
   const providers = providersQ.data?.items ?? [];
   const models = modelsQ.data?.items ?? [];
@@ -79,6 +92,35 @@ export default function AdminAi() {
                 openUsageId={openUsageId}
                 onToggle={(id) => setOpenUsageId((cur) => (cur === id ? null : id))}
               />
+              {usagePages > 1 ? (
+                <Pagination className="mt-4" data-testid="admin-ai-usage-pagination">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => {
+                          setOpenUsageId(null);
+                          setUsagePage((p) => Math.max(1, p - 1));
+                        }}
+                        disabled={usagePage === 1}
+                      />
+                    </PaginationItem>
+                    <PaginationItem>
+                      <span className="px-2 font-mono text-xs tabular-nums text-muted-foreground">
+                        {t("pageOf", { page: usagePage, total: usagePages })}
+                      </span>
+                    </PaginationItem>
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => {
+                          setOpenUsageId(null);
+                          setUsagePage((p) => Math.min(usagePages, p + 1));
+                        }}
+                        disabled={usagePage === usagePages}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              ) : null}
             </CardContent>
           </Card>
         </TabsContent>

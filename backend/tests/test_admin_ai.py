@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from app.config import settings
+from app.models.ai_gateway import AiUsageEvent
 from app.services.ai_crypto import decrypt_credential, encrypt_credential
 
 API_HEADERS = {"X-API-Key": settings.api_key, "X-E2E-Test": "1"}
@@ -259,3 +261,32 @@ def test_admin_trial_chat_stream_rejected_and_ok(client, ai_on) -> None:
     assert items[0].get("response_payload", {}).get("id") == "chatcmpl-admin"
     assert client.delete(f"/api/admin/ai/models/{mid}", headers=API_HEADERS).status_code == 204
     assert client.delete(f"/api/admin/ai/providers/{pid}", headers=API_HEADERS).status_code == 204
+
+
+@pytest.mark.asyncio
+async def test_admin_usage_paginated(client, db_session, ai_on) -> None:
+    now = datetime.now(UTC)
+    for i in range(3):
+        db_session.add(
+            AiUsageEvent(
+                source="admin_trial",
+                model_public_id=f"sinexis/page-{i}",
+                prompt_tokens=1,
+                completion_tokens=1,
+                billed_idr=i,
+                created_at=now + timedelta(seconds=i),
+            )
+        )
+    await db_session.commit()
+    first = client.get("/api/admin/ai/usage?page=1&limit=2", headers=API_HEADERS)
+    assert first.status_code == 200, first.text
+    body = first.json()
+    assert body["total"] == 3
+    assert len(body["items"]) == 2
+    assert body["items"][0]["model_public_id"] == "sinexis/page-2"
+    second = client.get("/api/admin/ai/usage?page=2&limit=2", headers=API_HEADERS)
+    assert second.status_code == 200
+    page_two = second.json()
+    assert page_two["total"] == 3
+    assert len(page_two["items"]) == 1
+    assert page_two["items"][0]["model_public_id"] == "sinexis/page-0"
