@@ -579,56 +579,80 @@ export default function HostProtect() {
                 return (
                 <li key={s.id}>
                   <Card>
-                    <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
-                      <div>
-                        <p className="font-medium">{s.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {s.root_path}
-                        </p>
-                        <p
-                          className="mt-1 font-mono text-xs text-muted-foreground break-all"
-                          data-testid="host-site-id"
-                        >
-                          {t("siteId")}: {s.id}
-                        </p>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="mt-1"
-                          data-testid="host-copy-site-id"
-                          onClick={() => {
-                            void navigator.clipboard
-                              .writeText(s.id)
-                              .then(() => toast.success(t("copySiteIdOk")))
-                              .catch(() => toast.error(t("copySiteIdFail")));
-                          }}
-                        >
-                          {t("copySiteId")}
-                        </Button>
-                        <p
-                          className={
-                            helperStale
-                              ? "mt-1 text-sm font-medium text-destructive"
-                              : "mt-1 text-sm text-foreground"
-                          }
-                          data-testid="host-helper-poll"
-                        >
-                          {helperWhen
-                            ? helperStale
-                              ? t("helperStale", { when: helperWhen })
-                              : t("helperPolled", { when: helperWhen })
-                            : t("helperNeverPolled")}
-                        </p>
-                        {scanStatusCopy ? (
-                          <p
-                            className="mt-1 text-xs text-muted-foreground"
-                            data-testid="host-scan-status"
-                          >
-                            {scanStatusCopy}
+                    <CardContent className="space-y-4 pt-6">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-medium">{s.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {s.root_path}
                           </p>
-                        ) : null}
-                        <div className="mt-2 max-w-xs">
+                          <p
+                            className="mt-1 break-all font-mono text-xs text-muted-foreground"
+                            data-testid="host-site-id"
+                          >
+                            {t("siteId")}: {s.id}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="mt-1"
+                            data-testid="host-copy-site-id"
+                            onClick={() => {
+                              void navigator.clipboard
+                                .writeText(s.id)
+                                .then(() => toast.success(t("copySiteIdOk")))
+                                .catch(() => toast.error(t("copySiteIdFail")));
+                            }}
+                          >
+                            {t("copySiteId")}
+                          </Button>
+                          <p
+                            className={
+                              helperStale
+                                ? "mt-1 text-sm font-medium text-destructive"
+                                : "mt-1 text-sm text-foreground"
+                            }
+                            data-testid="host-helper-poll"
+                          >
+                            {helperWhen
+                              ? helperStale
+                                ? t("helperStale", { when: helperWhen })
+                                : t("helperPolled", { when: helperWhen })
+                              : t("helperNeverPolled")}
+                          </p>
+                          {scanStatusCopy ? (
+                            <p
+                              className="mt-1 text-xs text-muted-foreground"
+                              data-testid="host-scan-status"
+                            >
+                              {scanStatusCopy}
+                            </p>
+                          ) : null}
+                        </div>
+                        <div className="flex shrink-0 gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            data-testid="host-scan"
+                            onClick={() => scanMut.mutate(s.id)}
+                          >
+                            {t("scanNow")}
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => {
+                              if (window.confirm(t("confirmDelete")))
+                                delMut.mutate(s.id);
+                            }}
+                          >
+                            {t("delete")}
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="max-w-xs min-w-0">
                           <Label htmlFor={`host-enabled-${s.id}`}>
                             {t("siteEnabled")}
                           </Label>
@@ -661,7 +685,7 @@ export default function HostProtect() {
                             {t("siteEnabledHint")}
                           </p>
                         </div>
-                        <div className="mt-2 max-w-xs">
+                        <div className="max-w-xs min-w-0">
                           <Label htmlFor={`host-interval-${s.id}`}>
                             {t("scanInterval")}
                           </Label>
@@ -691,7 +715,7 @@ export default function HostProtect() {
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="mt-2 max-w-xs">
+                        <div className="max-w-xs min-w-0">
                           <Label htmlFor={`host-auto-quarantine-${s.id}`}>
                             {t("autoQuarantine")}
                           </Label>
@@ -724,26 +748,6 @@ export default function HostProtect() {
                             {t("autoQuarantineHint")}
                           </p>
                         </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          data-testid="host-scan"
-                          onClick={() => scanMut.mutate(s.id)}
-                        >
-                          {t("scanNow")}
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => {
-                            if (window.confirm(t("confirmDelete")))
-                              delMut.mutate(s.id);
-                          }}
-                        >
-                          {t("delete")}
-                        </Button>
                       </div>
                     </CardContent>
                     <CardContent className="pt-0">
