@@ -112,7 +112,7 @@ Bank payload on customer GET when `sent`: `{ bank_name, bank_account, bank_holde
 ## 3) SPA
 
 - `/admin/invoices` — catalog table + invoice list + create/send/paid/void. Filter bar = Credit History (`gap-3`, `h-10`). `nav-admin-invoices`.
-- Workspace: card **Billing** (owner/admin) — list invoices; if `sent`, show bank copy. No pay button.
+- Workspace: card **Billing** (owner/admin) — list invoices; if `sent`, show bank copy. No pay button. Empty: ops-issued, no self-serve upgrade. Load error is not painted as empty. Platform admin may link to `/admin/invoices`.
 
 Do **not** restyle kit. Tokens from `:root`. `Button` / `Select` only.
 
@@ -136,4 +136,5 @@ Do **not** restyle kit. Tokens from `:root`. `Button` / `Select` only.
 - [x] Vitest: `/admin/invoices` paid action; Workspace billing card read-only.
 - [x] pytest: `bank_copy` empty vs set; send includes bank, draft does not.
 - [x] Vitest: Workspace Billing shows bank copy on `sent`, dashes when null, hidden on draft.
+- [x] Vitest: empty Billing is ops-issued (no upgrade CTA); load error is not empty; platform admin may link `/admin/invoices`.
 - [x] No real bank account in git.
