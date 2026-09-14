@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import {
   createMonitor,
   deleteMonitor,
@@ -9,114 +8,34 @@ import {
   listSamples,
   pauseMonitor,
   updateMonitor,
-  type UptimeCheckType,
   type UptimeCreatePayload,
   type UptimeMonitor,
-  type UptimeSample,
 } from "@/api/uptime";
 import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { Label } from "@/components/ui/Label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
-import { Skeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
+import { TableRowSkeleton } from "@/components/ui/Skeleton";
+import { UptimeFiltersSection } from "@/components/uptime/UptimeFiltersSection";
+import { UptimeHistoryPanel } from "@/components/uptime/UptimeHistoryPanel";
+import { UptimeKpiRow } from "@/components/uptime/UptimeKpiRow";
+import { UptimeMonitorListCard } from "@/components/uptime/UptimeMonitorList";
+import { UptimeMonitorSheet } from "@/components/uptime/UptimeMonitorSheet";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/Select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/Table";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/Accordion";
-import { Sparkline } from "@/components/uptime/Sparkline";
-import { MonitorActionsMenu } from "@/components/uptime/MonitorActionsMenu";
-import {
-  UptimeFilterBar,
   type UptimeStateFilter,
   type UptimeTypeFilter,
 } from "@/components/uptime/UptimeFilterBar";
+import { toastUptimeApiError } from "@/components/uptime/uptimeErrors";
 
-export function mapUptimeError(message: string): string {
-  if (/seat limit/i.test(message)) return "limit";
-  if (/already exists/i.test(message)) return "dup";
-  if (/not allowed/i.test(message)) return "ssrf";
-  return message;
-}
-
-export function explainUptimeError(
-  error: string | null | undefined,
-): string | null {
-  if (!error) return null;
-  const e = error.toLowerCase();
-  if (e.includes("111") || e.includes("connection refused")) return "hintRefused";
-  if (e.includes("timed out") || e.includes("timeout")) return "hintTimeout";
-  if (/\b403\b/.test(e)) return "hint403";
-  if (/\b401\b/.test(e)) return "hint401";
-  if (/\b5\d\d\b/.test(e)) return "hint5xx";
-  if (/status \d+/.test(e) || e.startsWith("expected ")) return "hintStatus";
-  if (
-    e.includes("certificate") ||
-    e.includes("ssl") ||
-    e.includes("tls")
-  ) {
-    return "hintTls";
-  }
-  if (
-    e.includes("name or service not known") ||
-    e.includes("getaddrinfo") ||
-    e.includes("nxdomain") ||
-    e.includes("did not resolve")
-  ) {
-    return "hintDns";
-  }
-  return null;
-}
-
-type StateFilter = UptimeStateFilter;
-type TypeFilter = UptimeTypeFilter;
-
-function stateBadgeVariant(state: string) {
-  if (state === "up") return "completed" as const;
-  if (state === "down") return "critical" as const;
-  return "info" as const;
-}
+export { explainUptimeError, mapUptimeError } from "@/components/uptime/uptimeErrors";
 
 export default function Uptime() {
   const { t } = useTranslation("uptime");
   const qc = useQueryClient();
-  const [name, setName] = useState("");
-  const [target, setTarget] = useState("");
-  const [checkType, setCheckType] = useState<UptimeCheckType>("http");
-  const [interval, setInterval] = useState("60");
-  const [keyword, setKeyword] = useState("");
-  const [keywordInvert, setKeywordInvert] = useState(false);
-  const [httpMethod, setHttpMethod] = useState("GET");
-  const [requestHeaders, setRequestHeaders] = useState("");
-  const [requestBody, setRequestBody] = useState("");
-  const [dnsRecord, setDnsRecord] = useState("A");
-  const [expectedValues, setExpectedValues] = useState("");
   const [heartbeatUrl, setHeartbeatUrl] = useState<string | null>(null);
-  const [notify, setNotify] = useState("");
-  const [timeoutSeconds, setTimeoutSeconds] = useState("10");
-  const [expectStatus, setExpectStatus] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<UptimeMonitor | null>(null);
-  const [stateFilter, setStateFilter] = useState<StateFilter>("all");
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [stateFilter, setStateFilter] = useState<UptimeStateFilter>("all");
+  const [typeFilter, setTypeFilter] = useState<UptimeTypeFilter>("all");
   const [search, setSearch] = useState("");
   const [historyId, setHistoryId] = useState<string | null>(null);
 
@@ -133,8 +52,6 @@ export default function Uptime() {
   const limit = items[0]?.sku_limit ?? 10;
   const enabledCount = items.filter((m) => m.enabled).length;
   const atCap = enabledCount >= limit;
-  const upCount = items.filter((m) => m.state === "up").length;
-  const downCount = items.filter((m) => m.state === "down").length;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -152,82 +69,20 @@ export default function Uptime() {
   const filtersActive =
     stateFilter !== "all" || typeFilter !== "all" || Boolean(search.trim());
 
-  const resetForm = () => {
-    setName("");
-    setTarget("");
-    setCheckType("http");
-    setKeyword("");
-    setKeywordInvert(false);
-    setHttpMethod("GET");
-    setRequestHeaders("");
-    setRequestBody("");
-    setDnsRecord("A");
-    setExpectedValues("");
-    setNotify("");
-    setInterval("60");
-    setTimeoutSeconds("10");
-    setExpectStatus("");
+  const closeSheet = () => {
     setEditing(null);
     setHeartbeatUrl(null);
+    setOpen(false);
   };
 
   const fillFromMonitor = (m: UptimeMonitor) => {
-    setName(m.name);
-    setTarget(m.target);
-    setCheckType((m.check_type as UptimeCheckType) || "http");
-    setInterval(String(m.interval_seconds));
-    setTimeoutSeconds(String(m.timeout_seconds ?? 10));
-    setExpectStatus(m.expect_status != null ? String(m.expect_status) : "");
-    setKeyword(m.keyword ?? "");
-    setKeywordInvert(Boolean(m.keyword_invert));
-    setHttpMethod(m.http_method ?? "GET");
-    setRequestHeaders(
-      m.request_headers ? JSON.stringify(m.request_headers) : "",
-    );
-    setRequestBody(m.request_body ?? "");
-    setDnsRecord(m.dns_record ?? "A");
-    setExpectedValues((m.expected_values ?? []).join(", "));
-    setNotify(m.notify_email ?? "");
     setEditing(m);
-    setOpen(true);
     setHeartbeatUrl(null);
+    setOpen(true);
   };
 
-  const parseFormPayload = (): UptimeCreatePayload | null => {
-    let headers: Record<string, string> | undefined;
-    if (requestHeaders.trim()) {
-      try {
-        headers = JSON.parse(requestHeaders) as Record<string, string>;
-      } catch {
-        toast.error("Invalid headers JSON");
-        return null;
-      }
-    }
-    const timeout = Number(timeoutSeconds) || 10;
-    const expectRaw = expectStatus.trim();
-    const expectNum = expectRaw ? Number(expectRaw) : undefined;
-    return {
-      name: name.trim(),
-      check_type: checkType,
-      target:
-        checkType === "heartbeat" ? "heartbeat://pending" : target.trim(),
-      interval_seconds: Number(interval) || 60,
-      timeout_seconds: checkType === "heartbeat" ? undefined : timeout,
-      expect_status:
-        checkType === "http" && expectNum != null && !Number.isNaN(expectNum)
-          ? expectNum
-          : undefined,
-      keyword: keyword.trim() || undefined,
-      keyword_invert: keywordInvert,
-      http_method: checkType === "http" ? httpMethod : undefined,
-      request_headers: headers,
-      request_body: requestBody.trim() || undefined,
-      dns_record: checkType === "dns" ? dnsRecord : undefined,
-      expected_values: expectedValues.trim()
-        ? expectedValues.split(",").map((s) => s.trim())
-        : undefined,
-      notify_email: notify.trim() || undefined,
-    };
+  const onApiError = (err: { response?: { data?: { detail?: unknown } } }) => {
+    toastUptimeApiError(err, t("limitReached"));
   };
 
   const createMut = useMutation({
@@ -235,28 +90,11 @@ export default function Uptime() {
     onSuccess: (created) => {
       const hb = created.heartbeat_url ?? null;
       void qc.invalidateQueries({ queryKey: ["uptime"] });
-      resetForm();
+      setEditing(null);
       if (!hb) setOpen(false);
       else setHeartbeatUrl(hb);
     },
-    onError: (err: { response?: { data?: { detail?: unknown } } }) => {
-      const raw = err.response?.data?.detail;
-      const detail =
-        typeof raw === "string"
-          ? raw
-          : Array.isArray(raw)
-            ? raw
-                .map((item) =>
-                  typeof item === "string"
-                    ? item
-                    : String((item as { msg?: string }).msg ?? item),
-                )
-                .join("; ")
-            : String(raw ?? "");
-      toast.error(
-        mapUptimeError(detail) === "limit" ? t("limitReached") : detail,
-      );
-    },
+    onError: onApiError,
   });
 
   const delMut = useMutation({
@@ -277,34 +115,14 @@ export default function Uptime() {
       id: string;
       payload: UptimeCreatePayload;
     }) => {
-      const { check_type, target, ...rest } = payload;
-      void check_type;
-      void target;
+      const { check_type: _checkType, target: _target, ...rest } = payload;
       return updateMonitor(id, rest);
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["uptime"] });
-      resetForm();
-      setOpen(false);
+      closeSheet();
     },
-    onError: (err: { response?: { data?: { detail?: unknown } } }) => {
-      const raw = err.response?.data?.detail;
-      const detail =
-        typeof raw === "string"
-          ? raw
-          : Array.isArray(raw)
-            ? raw
-                .map((item) =>
-                  typeof item === "string"
-                    ? item
-                    : String((item as { msg?: string }).msg ?? item),
-                )
-                .join("; ")
-            : String(raw ?? "");
-      toast.error(
-        mapUptimeError(detail) === "limit" ? t("limitReached") : detail,
-      );
-    },
+    onError: onApiError,
   });
 
   const historyQuery = useQuery({
@@ -314,13 +132,7 @@ export default function Uptime() {
   });
   const historyMonitor = items.find((m) => m.id === historyId);
   const historyRows = (historyQuery.data ?? []).slice(0, 24);
-
   const formBusy = createMut.isPending || updateMut.isPending;
-  const advancedDefault =
-    editing &&
-    (Number(timeoutSeconds) !== 10 || Boolean(expectStatus.trim()))
-      ? "advanced"
-      : undefined;
 
   const stateLabel = (state: string) => {
     if (state === "up") return t("stateUp");
@@ -339,11 +151,10 @@ export default function Uptime() {
             data-testid="uptime-add"
             disabled={atCap}
             onClick={() => {
-              if (open) {
-                resetForm();
-                setOpen(false);
-              } else {
-                resetForm();
+              if (open) closeSheet();
+              else {
+                setEditing(null);
+                setHeartbeatUrl(null);
                 setOpen(true);
               }
             }}
@@ -354,357 +165,43 @@ export default function Uptime() {
       />
 
       {items.length > 0 ? (
-        <div
-          data-testid="uptime-kpi"
-          className="grid grid-cols-3 gap-2 sm:gap-3"
-        >
-          <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card p-3">
-            <p className="font-mono text-lg font-bold tabular-nums text-primary sm:text-2xl">
-              {upCount}
-            </p>
-            <p className="mt-1 text-center text-[10px] uppercase tracking-wider text-muted-foreground">
-              {t("statUp")}
-            </p>
-          </div>
-          <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card p-3">
-            <p
-              className={
-                downCount > 0
-                  ? "font-mono text-lg font-bold tabular-nums text-destructive sm:text-2xl"
-                  : "font-mono text-lg font-bold tabular-nums text-muted-foreground sm:text-2xl"
-              }
-            >
-              {downCount}
-            </p>
-            <p className="mt-1 text-center text-[10px] uppercase tracking-wider text-muted-foreground">
-              {t("statDown")}
-            </p>
-          </div>
-          <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card p-3">
-            <p className="font-mono text-lg font-bold tabular-nums text-foreground sm:text-2xl">
-              {t("skuShort", { count: enabledCount, limit, sku })}
-            </p>
-            <p className="mt-1 text-center text-[10px] uppercase tracking-wider text-muted-foreground">
-              {t("statSku")}
-            </p>
-          </div>
-        </div>
+        <UptimeKpiRow
+          upCount={items.filter((m) => m.state === "up").length}
+          downCount={items.filter((m) => m.state === "down").length}
+          enabledCount={enabledCount}
+          limit={limit}
+          sku={sku}
+        />
       ) : null}
 
       {items.length > 0 ? (
-        <>
-        <div className="sm:hidden">
-          <Accordion type="single" collapsible>
-            <AccordionItem value="filters" className="rounded-md border border-border bg-card px-4">
-              <AccordionTrigger data-testid="uptime-filters-toggle">
-                {t("filtersToggle")}
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="grid grid-cols-1 gap-3">
-                  <UptimeFilterBar
-                    idPrefix="uptime-filter-m"
-                    stateFilter={stateFilter}
-                    onStateFilter={setStateFilter}
-                    typeFilter={typeFilter}
-                    onTypeFilter={setTypeFilter}
-                    search={search}
-                    onSearch={setSearch}
-                    filtersActive={filtersActive}
-                    filteredCount={filtered.length}
-                    totalCount={items.length}
-                  />
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </div>
-        <div
-          data-testid="uptime-filters"
-          className="hidden grid-cols-1 gap-3 rounded-md border border-border bg-card p-4 sm:grid sm:grid-cols-2 lg:grid-cols-3"
-        >
-          <UptimeFilterBar
-            idPrefix="uptime-filter"
-            stateFilter={stateFilter}
-            onStateFilter={setStateFilter}
-            typeFilter={typeFilter}
-            onTypeFilter={setTypeFilter}
-            search={search}
-            onSearch={setSearch}
-            filtersActive={filtersActive}
-            filteredCount={filtered.length}
-            totalCount={items.length}
-            hintClassName="text-xs text-muted-foreground sm:col-span-2 lg:col-span-3"
-          />
-        </div>
-        </>
+        <UptimeFiltersSection
+          stateFilter={stateFilter}
+          onStateFilter={setStateFilter}
+          typeFilter={typeFilter}
+          onTypeFilter={setTypeFilter}
+          search={search}
+          onSearch={setSearch}
+          filtersActive={filtersActive}
+          filteredCount={filtered.length}
+          totalCount={items.length}
+        />
       ) : null}
 
-      {open ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>{editing ? t("edit") : t("add")}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <Label htmlFor="up-name">{t("name")}</Label>
-              <Input
-                id="up-name"
-                data-testid="uptime-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="up-type">{t("type")}</Label>
-              <Select
-                value={checkType}
-                disabled={Boolean(editing)}
-                onValueChange={(value) =>
-                  setCheckType(value as UptimeCheckType)
-                }
-              >
-                <SelectTrigger
-                  id="up-type"
-                  data-testid="uptime-type"
-                  aria-label={t("type")}
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="http">http</SelectItem>
-                  <SelectItem value="tcp">tcp</SelectItem>
-                  <SelectItem value="heartbeat">heartbeat</SelectItem>
-                  <SelectItem value="dns">dns</SelectItem>
-                  <SelectItem value="ping">ping</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {checkType !== "heartbeat" ? (
-              <div>
-                <Label htmlFor="up-target">{t("target")}</Label>
-                <Input
-                  id="up-target"
-                    data-testid="uptime-target"
-                    value={target}
-                    disabled={Boolean(editing)}
-                    onChange={(e) => setTarget(e.target.value)}
-                  placeholder={
-                    checkType === "http"
-                      ? "https://example.com"
-                      : checkType === "tcp"
-                        ? "example.com:443"
-                        : "example.com"
-                  }
-                />
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">{t("heartbeatHint")}</p>
-            )}
-            {checkType === "ping" ? (
-              <p className="text-sm text-muted-foreground">{t("pingDisabled")}</p>
-            ) : null}
-            <div>
-              <Label htmlFor="up-interval">{t("interval")}</Label>
-              <Input
-                id="up-interval"
-                data-testid="uptime-interval"
-                type="number"
-                min={60}
-                max={900}
-                value={interval}
-                onChange={(e) => setInterval(e.target.value)}
-              />
-            </div>
-            <Accordion
-              type="single"
-              collapsible
-              key={editing?.id ?? "create"}
-              defaultValue={advancedDefault}
-              className="rounded-md border border-border px-3"
-              data-testid="uptime-advanced"
-            >
-              <AccordionItem value="advanced" className="border-b-0">
-                <AccordionTrigger>{t("advanced")}</AccordionTrigger>
-                <AccordionContent className="space-y-3">
-                  {checkType !== "heartbeat" ? (
-                    <div>
-                      <Label htmlFor="up-timeout">{t("timeout")}</Label>
-                      <Input
-                        id="up-timeout"
-                        data-testid="uptime-timeout"
-                        className="h-10 min-h-10"
-                        type="number"
-                        min={1}
-                        max={30}
-                        value={timeoutSeconds}
-                        onChange={(e) => setTimeoutSeconds(e.target.value)}
-                      />
-                    </div>
-                  ) : null}
-                  {checkType === "http" ? (
-                    <>
-                      <div>
-                        <Label htmlFor="up-expect-status">
-                          {t("expectStatus")}
-                        </Label>
-                        <Input
-                          id="up-expect-status"
-                          data-testid="uptime-expect-status"
-                          className="h-10 min-h-10"
-                          type="number"
-                          min={100}
-                          max={599}
-                          placeholder="200"
-                          value={expectStatus}
-                          onChange={(e) => setExpectStatus(e.target.value)}
-                        />
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {t("expectStatusHint")}
-                        </p>
-                      </div>
-                      <div>
-                        <Label htmlFor="up-method">{t("httpMethod")}</Label>
-                        <Select
-                          value={httpMethod}
-                          onValueChange={setHttpMethod}
-                        >
-                          <SelectTrigger
-                            id="up-method"
-                            className="h-10 min-h-10"
-                            aria-label={t("httpMethod")}
-                          >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="GET">GET</SelectItem>
-                            <SelectItem value="HEAD">HEAD</SelectItem>
-                            <SelectItem value="POST">POST</SelectItem>
-                            <SelectItem value="PUT">PUT</SelectItem>
-                            <SelectItem value="PATCH">PATCH</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="up-keyword">{t("keyword")}</Label>
-                        <Input
-                          id="up-keyword"
-                          data-testid="uptime-keyword"
-                          className="h-10 min-h-10"
-                          value={keyword}
-                          onChange={(e) => setKeyword(e.target.value)}
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          id="up-invert"
-                          data-testid="uptime-keyword-invert"
-                          type="checkbox"
-                          checked={keywordInvert}
-                          onChange={(e) => setKeywordInvert(e.target.checked)}
-                        />
-                        <Label htmlFor="up-invert">{t("keywordInvert")}</Label>
-                      </div>
-                      <div>
-                        <Label htmlFor="up-headers">{t("requestHeaders")}</Label>
-                        <Input
-                          id="up-headers"
-                          className="h-10 min-h-10"
-                          value={requestHeaders}
-                          onChange={(e) => setRequestHeaders(e.target.value)}
-                          placeholder='{"Accept":"application/json"}'
-                        />
-                      </div>
-                      {httpMethod !== "GET" && httpMethod !== "HEAD" ? (
-                        <div>
-                          <Label htmlFor="up-body">{t("requestBody")}</Label>
-                          <Input
-                            id="up-body"
-                            className="h-10 min-h-10"
-                            value={requestBody}
-                            onChange={(e) => setRequestBody(e.target.value)}
-                          />
-                        </div>
-                      ) : null}
-                    </>
-                  ) : null}
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-            {checkType === "dns" ? (
-              <>
-                <div>
-                  <Label htmlFor="up-dns">{t("dnsRecord")}</Label>
-                  <Select value={dnsRecord} onValueChange={setDnsRecord}>
-                    <SelectTrigger id="up-dns" aria-label={t("dnsRecord")}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="A">A</SelectItem>
-                      <SelectItem value="AAAA">AAAA</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="up-expect">{t("expectedValues")}</Label>
-                  <Input
-                    id="up-expect"
-                    value={expectedValues}
-                    onChange={(e) => setExpectedValues(e.target.value)}
-                  />
-                </div>
-              </>
-            ) : null}
-            <div>
-              <Label htmlFor="up-notify">{t("notify")}</Label>
-              <Input
-                id="up-notify"
-                data-testid="uptime-notify"
-                type="email"
-                value={notify}
-                onChange={(e) => setNotify(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button
-                data-testid="uptime-save"
-                disabled={
-                  !name.trim() ||
-                  (checkType !== "heartbeat" && !target.trim()) ||
-                  formBusy
-                }
-                onClick={() => {
-                  const payload = parseFormPayload();
-                  if (!payload) return;
-                  if (editing) {
-                    updateMut.mutate({ id: editing.id, payload });
-                  } else {
-                    createMut.mutate(payload);
-                  }
-                }}
-              >
-                {t("save")}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  resetForm();
-                  setOpen(false);
-                }}
-              >
-                {t("cancel")}
-              </Button>
-            </div>
-            {heartbeatUrl ? (
-              <p
-                className="break-all font-mono text-xs"
-                data-testid="uptime-heartbeat-url"
-              >
-                {t("heartbeatUrl")}: {heartbeatUrl}
-              </p>
-            ) : null}
-          </CardContent>
-        </Card>
-      ) : null}
+      <UptimeMonitorSheet
+        open={open}
+        editing={editing}
+        busy={formBusy}
+        heartbeatUrl={heartbeatUrl}
+        onOpenChange={(next) => {
+          if (!next) closeSheet();
+          else setOpen(true);
+        }}
+        onSave={(payload) => {
+          if (editing) updateMut.mutate({ id: editing.id, payload });
+          else createMut.mutate(payload);
+        }}
+      />
 
       {list.isLoading && items.length === 0 ? (
         <Card>
@@ -728,222 +225,35 @@ export default function Uptime() {
               className="mt-2"
               data-testid="uptime-empty-cta"
               disabled={atCap}
-              onClick={() => setOpen(true)}
+              onClick={() => {
+                setEditing(null);
+                setHeartbeatUrl(null);
+                setOpen(true);
+              }}
             >
               {t("emptyCta")}
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm tracking-wide">
-              {t("tableTitle")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {filtered.length === 0 ? (
-              <p className="px-6 py-8 text-center text-sm text-muted-foreground">
-                {t("filterEmpty")}
-              </p>
-            ) : (
-              <>
-              <div className="space-y-2 p-3 md:hidden">
-                {filtered.map((m: UptimeMonitor) => (
-                  <div
-                    key={m.id}
-                    className="rounded-lg border border-border bg-card p-3 text-left"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="min-w-0 break-all font-medium text-foreground">
-                        {m.name}
-                      </p>
-                      <Badge variant={stateBadgeVariant(m.state)}>
-                        {stateLabel(m.state)}
-                      </Badge>
-                    </div>
-                    <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
-                      {m.check_type} · {m.target}
-                    </p>
-                    <p className="mt-1 font-mono text-xs tabular-nums text-muted-foreground">
-                      {m.uptime_24h != null ? `${m.uptime_24h}%` : "—"}
-                      {m.last_latency_ms != null
-                        ? ` · ${m.last_latency_ms}ms`
-                        : ""}
-                    </p>
-                    <div className="mt-2 flex justify-end">
-                      <MonitorActionsMenu
-                        monitor={m}
-                        historyTestId="uptime-history-mobile"
-                        onHistory={() =>
-                          setHistoryId((cur) => (cur === m.id ? null : m.id))
-                        }
-                        onEdit={() => fillFromMonitor(m)}
-                        onPause={() => pauseMut.mutate(m.id)}
-                        onDelete={() => {
-                          if (window.confirm(t("confirmDelete")))
-                            delMut.mutate(m.id);
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="hidden overflow-x-auto md:block">
-              <Table className="table-fixed">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[18%]">{t("colName")}</TableHead>
-                    <TableHead className="w-[12%]">{t("colStatus")}</TableHead>
-                    <TableHead className="w-[28%]">{t("colTarget")}</TableHead>
-                    <TableHead className="w-[10%] text-right">{t("colUptime")}</TableHead>
-                    <TableHead className="w-[10%] text-right">{t("latency")}</TableHead>
-                    <TableHead className="w-[12%]">{t("colSpark")}</TableHead>
-                    <TableHead className="w-[10%] text-right">{t("colActions")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((m: UptimeMonitor) => (
-                    <TableRow
-                      key={m.id}
-                      data-testid="uptime-row"
-                      className={
-                        m.state === "down"
-                          ? "border-l-2 border-l-destructive"
-                          : undefined
-                      }
-                    >
-                      <TableCell className="font-medium">{m.name}</TableCell>
-                      <TableCell>
-                        <Badge variant={stateBadgeVariant(m.state)}>
-                          {stateLabel(m.state)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <p className="font-mono text-sm text-foreground">
-                          {m.check_type} · {m.target}
-                        </p>
-                        {m.last_error ? (
-                          <div className="mt-1 max-w-md space-y-1">
-                            <p className="truncate text-xs text-destructive">
-                              <span className="text-muted-foreground">
-                                {t("lastError")}:{" "}
-                              </span>
-                              {m.last_error}
-                            </p>
-                            {explainUptimeError(m.last_error) ? (
-                              <p className="text-xs text-muted-foreground">
-                                {t(explainUptimeError(m.last_error) as string)}
-                              </p>
-                            ) : null}
-                          </div>
-                        ) : null}
-                      </TableCell>
-                      <TableCell className="text-right font-mono tabular-nums">
-                        {m.uptime_24h != null ? `${m.uptime_24h}%` : "—"}
-                      </TableCell>
-                      <TableCell className="text-right font-mono tabular-nums">
-                        {m.last_latency_ms != null
-                          ? `${m.last_latency_ms}ms`
-                          : "—"}
-                      </TableCell>
-                      <TableCell>
-                        <Sparkline monitorId={m.id} state={m.state} />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end">
-                          <MonitorActionsMenu
-                            monitor={m}
-                            historyTestId="uptime-history"
-                            onHistory={() =>
-                              setHistoryId((cur) =>
-                                cur === m.id ? null : m.id,
-                              )
-                            }
-                            onEdit={() => fillFromMonitor(m)}
-                            onPause={() => pauseMut.mutate(m.id)}
-                            onDelete={() => {
-                              if (window.confirm(t("confirmDelete")))
-                                delMut.mutate(m.id);
-                            }}
-                          />
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+        <UptimeMonitorListCard
+          monitors={filtered}
+          onHistory={(id) => setHistoryId((cur) => (cur === id ? null : id))}
+          onEdit={fillFromMonitor}
+          onPause={(id) => pauseMut.mutate(id)}
+          onDelete={(id) => {
+            if (window.confirm(t("confirmDelete"))) delMut.mutate(id);
+          }}
+          stateLabel={stateLabel}
+        />
       )}
 
       {historyId && historyMonitor ? (
-        <Card data-testid="uptime-history-panel">
-          <CardHeader>
-            <CardTitle className="text-sm tracking-wide">
-              {t("historyTitle", { name: historyMonitor.name })}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-xs text-muted-foreground">{t("probeRule")}</p>
-            {historyQuery.isLoading ? (
-              <Skeleton className="h-24 w-full" />
-            ) : historyRows.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t("historyEmpty")}</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("colTime")}</TableHead>
-                      <TableHead>{t("colStatus")}</TableHead>
-                      <TableHead className="text-right">{t("latency")}</TableHead>
-                      <TableHead>{t("lastError")}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {historyRows.map((s) => (
-                      <TableRow key={s.id} data-testid="uptime-history-row">
-                        <TableCell className="whitespace-nowrap font-mono text-xs">
-                          {new Date(s.checked_at).toISOString().replace("T", " ").slice(0, 19)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={s.ok ? "completed" : "critical"}>
-                            {s.ok
-                              ? t("stateUp")
-                              : s.status_code != null
-                                ? String(s.status_code)
-                                : t("stateDown")}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-mono tabular-nums">
-                          {s.latency_ms != null ? `${s.latency_ms}ms` : "—"}
-                        </TableCell>
-                        <TableCell className="max-w-md text-xs">
-                          {s.error ? (
-                            <div className="space-y-0.5">
-                              <p className="truncate text-destructive">{s.error}</p>
-                              {explainUptimeError(s.error) ? (
-                                <p className="text-muted-foreground">
-                                  {t(explainUptimeError(s.error) as string)}
-                                </p>
-                              ) : null}
-                            </div>
-                          ) : (
-                            "—"
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-              </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <UptimeHistoryPanel
+          monitor={historyMonitor}
+          rows={historyRows}
+          loading={historyQuery.isLoading}
+        />
       ) : null}
     </div>
   );

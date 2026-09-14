@@ -62,6 +62,22 @@ describe("Uptime page", () => {
     expect(screen.getByTestId("uptime-empty-cta")).toBeInTheDocument();
   });
 
+  it("opens the add form in a right sheet without replacing the empty card", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("uptime-empty-cta")).toBeInTheDocument(),
+    );
+    expect(screen.queryByTestId("uptime-sheet")).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("uptime-empty-cta"));
+    const sheet = await screen.findByTestId("uptime-sheet");
+    expect(sheet).toHaveAttribute("data-slot", "sheet-content");
+    expect(sheet.className).toMatch(/right-0/);
+    expect(within(sheet).getByTestId("uptime-name")).toBeInTheDocument();
+    expect(within(sheet).getByTestId("uptime-save")).toBeInTheDocument();
+    expect(screen.getByTestId("uptime-empty")).toBeInTheDocument();
+  });
+
   it("shows KPI badges when monitors exist", async () => {
     const user = userEvent.setup();
     mockList.mockResolvedValue([
@@ -102,6 +118,14 @@ describe("Uptime page", () => {
     expect(screen.getByTestId("uptime-filters-toggle")).toBeInTheDocument();
     await user.click(within(row).getByTestId("uptime-actions"));
     expect(screen.getByTestId("uptime-edit")).toBeInTheDocument();
+    await user.click(screen.getByTestId("uptime-edit"));
+    const sheet = await screen.findByTestId("uptime-sheet");
+    expect(sheet.className).toMatch(/right-0/);
+    expect(within(sheet).getByTestId("uptime-name")).toHaveValue("web");
+    expect(within(sheet).getByTestId("uptime-target")).toHaveValue(
+      "https://example.com",
+    );
+    expect(screen.getByTestId("uptime-kpi")).toBeInTheDocument();
     expect(screen.getByTestId("uptime-sparkline")).toHaveTextContent("—");
     const table = row.closest("table");
     expect(table?.className ?? "").toMatch(/table-fixed/);
