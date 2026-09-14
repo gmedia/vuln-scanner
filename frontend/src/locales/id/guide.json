@@ -1,6 +1,6 @@
 {
   "kicker": "Cara pakai",
-  "title": "Jalankan akun scan",
+  "title": "Buka akun scan",
   "intro": "{{product}} adalah mesin VulnScanner di belakang login Sinexis. Ikuti modul sesuai urutan kerja yang biasa. Tiap bagian menjelaskan apa yang dikerjakan, dan apa yang tidak. Scan adalah snapshot from-outside atas port, DNS/TLS, dan CVE yang sudah dikenal pada target yang Anda kuasai, bukan pantauan 24 jam. Guard adalah sisi agen yang tipis: inventori host yang sudah di-enroll plus alert kritis, bukan tumpukan Wazuh lengkap. SIEM mencari event itu dan memungkinkan Anda membuka kasus, yaitu tiket insiden di aplikasi ini. Host Protect membaca file web di VPS Anda sendiri lewat helper. Label tombol di bawah mengikuti UI apa adanya. Tidak ada host produksi, IP, atau kredensial di halaman ini. Hanya aset yang Anda berwenang sentuh.",
   "tocAria": "Bagian panduan",
   "tocTitle": "Di halaman ini",
