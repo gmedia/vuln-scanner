@@ -83,6 +83,7 @@ function WorkspaceSettings() {
   const organizations = useAuthStore((s) => s.organizations);
   const activeOrgId = useAuthStore((s) => s.activeOrgId);
   const activeRole = useAuthStore((s) => s.activeRole);
+  const isPlatformAdmin = useAuthStore((s) => s.user?.is_admin === true);
   const loadOrganizations = useAuthStore((s) => s.loadOrganizations);
   const switchOrganization = useAuthStore((s) => s.switchOrganization);
 
@@ -314,8 +315,29 @@ function WorkspaceSettings() {
           <CardContent className="space-y-3">
             {invoicesQuery.isLoading ? (
               <TableRowSkeleton rows={2} />
+            ) : invoicesQuery.isError ? (
+              <p
+                className="text-sm text-muted-foreground"
+                data-testid="workspace-billing-error"
+              >
+                {t("billingLoadError")}
+              </p>
             ) : (invoicesQuery.data?.items.length ?? 0) === 0 ? (
-              <p className="text-sm text-muted-foreground">{t("billingEmpty")}</p>
+              <div className="space-y-2" data-testid="workspace-billing-empty">
+                <p className="text-sm text-muted-foreground">
+                  {t("billingEmpty")}
+                </p>
+                {isPlatformAdmin ? (
+                  <Button asChild variant="outline" size="sm">
+                    <Link
+                      to="/admin/invoices"
+                      data-testid="workspace-billing-admin-link"
+                    >
+                      {t("billingAdminLink")}
+                    </Link>
+                  </Button>
+                ) : null}
+              </div>
             ) : (
               <ul className="space-y-2 text-sm">
                 {invoicesQuery.data?.items.map((inv) => (

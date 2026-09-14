@@ -33,6 +33,13 @@ describe("WorkspaceSettings pilot checklist", () => {
     vi.mocked(listOrgInvoices).mockReset();
     vi.mocked(listOrgInvoices).mockResolvedValue({ items: [], total: 0 });
     useAuthStore.setState({
+      user: {
+        id: "u-1",
+        email: "owner@example.com",
+        is_verified: true,
+        is_admin: false,
+        credits: 0,
+      },
       activeOrgId: "org-a",
       organizations: [
         {
@@ -75,6 +82,47 @@ describe("WorkspaceSettings pilot checklist", () => {
     expect(screen.queryByTestId("account-nav")).not.toBeInTheDocument();
     expect(screen.getByTestId("invite-form-card")).toBeInTheDocument();
     expect(screen.getByTestId("workspace-billing")).toBeInTheDocument();
+  });
+
+  it("explains empty billing without an upgrade CTA", async () => {
+    renderPage();
+    expect(
+      await screen.findByTestId("workspace-billing-empty"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /No Scan invoices yet\. Ops will issue one here; there is no self-serve upgrade\./,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("workspace-billing-admin-link"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("links platform admin to admin invoices when empty", async () => {
+    useAuthStore.setState({
+      user: {
+        id: "u-admin",
+        email: "admin@example.com",
+        is_verified: true,
+        is_admin: true,
+        credits: 0,
+      },
+    });
+    renderPage();
+    const link = await screen.findByTestId("workspace-billing-admin-link");
+    expect(link).toHaveAttribute("href", "/admin/invoices");
+  });
+
+  it("does not paint a load error as empty", async () => {
+    vi.mocked(listOrgInvoices).mockRejectedValueOnce(new Error("boom"));
+    renderPage();
+    expect(
+      await screen.findByTestId("workspace-billing-error"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("workspace-billing-empty"),
+    ).not.toBeInTheDocument();
   });
 
   it("shows bank copy on a sent invoice", async () => {
