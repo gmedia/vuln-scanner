@@ -128,6 +128,99 @@ describe("AI Gateway page", () => {
     await user.click(await screen.findByTestId("ai-tab-usage"));
     expect(await screen.findByTestId("ai-usage-empty")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "See catalog" })).toBeInTheDocument();
+    expect(screen.getByTestId("ai-usage-card")).toHaveClass("max-w-xl");
+  });
+
+  it("caps keys card and fills the create form when fewer than 3 keys", async () => {
+    vi.mocked(aiApi.getAiWallet).mockResolvedValue({
+      organization_id: "org1",
+      balance_idr: 0,
+      currency: "IDR",
+    });
+    vi.mocked(aiApi.listAiKeys).mockResolvedValue({
+      items: [
+        {
+          id: "k1",
+          name: "sinexis",
+          prefix: "sx-mQ0HsrDRmy4XV",
+          is_active: true,
+          rate_limit_rpm: 60,
+          created_at: "2026-09-13T10:00:00Z",
+          last_used_at: null,
+        },
+      ],
+      total: 1,
+    });
+    vi.mocked(aiApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(aiApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
+    const user = userEvent.setup();
+    renderAi();
+    await user.click(await screen.findByTestId("ai-tab-keys"));
+    expect(await screen.findByTestId("ai-keys-card")).toHaveClass("max-w-xl");
+    const nameWrap = screen.getByLabelText("Key name").closest("div");
+    expect(nameWrap?.className).not.toMatch(/max-w-sm/);
+    const grid = screen.getByTestId("ai-keys-grid");
+    expect(grid.className).toMatch(/grid-cols-1/);
+    expect(grid.className).not.toMatch(/max-w-md/);
+    expect(grid.className).not.toMatch(/lg:grid-cols-3/);
+  });
+
+  it("uses a full-width 3-col keys grid when there are 3 keys", async () => {
+    vi.mocked(aiApi.getAiWallet).mockResolvedValue({
+      organization_id: "org1",
+      balance_idr: 0,
+      currency: "IDR",
+    });
+    vi.mocked(aiApi.listAiKeys).mockResolvedValue({
+      items: [1, 2, 3].map((n) => ({
+        id: `k${n}`,
+        name: `key-${n}`,
+        prefix: `sx-${n}`,
+        is_active: true,
+        rate_limit_rpm: 60,
+        created_at: "2026-09-13T10:00:00Z",
+        last_used_at: null,
+      })),
+      total: 3,
+    });
+    vi.mocked(aiApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(aiApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
+    const user = userEvent.setup();
+    renderAi();
+    await user.click(await screen.findByTestId("ai-tab-keys"));
+    expect(await screen.findByTestId("ai-keys-card")).not.toHaveClass("max-w-xl");
+    const grid = screen.getByTestId("ai-keys-grid");
+    expect(grid.className).toMatch(/lg:grid-cols-3/);
+    expect(grid.className).not.toMatch(/max-w-md/);
+  });
+
+  it("caps catalog card to max-w-xl when fewer than 3 models", async () => {
+    vi.mocked(aiApi.getAiWallet).mockResolvedValue({
+      organization_id: "org1",
+      balance_idr: 0,
+      currency: "IDR",
+    });
+    vi.mocked(aiApi.listAiKeys).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(aiApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(aiApi.listAiModels).mockResolvedValue({
+      items: [
+        {
+          public_id: "sx/minimax-m3",
+          price_idr_per_1k_in: 1000,
+          price_idr_per_1k_out: 3000,
+          max_ctx: 8192,
+          max_tokens_cap: 2048,
+        },
+      ],
+      total: 1,
+    });
+    const user = userEvent.setup();
+    renderAi();
+    await user.click(await screen.findByTestId("ai-tab-catalog"));
+    expect(await screen.findByTestId("ai-catalog-card")).toHaveClass("max-w-xl");
+    const grid = screen.getByTestId("ai-catalog-grid");
+    expect(grid.className).not.toMatch(/max-w-md/);
+    expect(grid.className).not.toMatch(/lg:grid-cols-3/);
   });
 
   it("shows feature-off on 404", async () => {
