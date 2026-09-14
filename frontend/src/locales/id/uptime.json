@@ -37,6 +37,7 @@
   "statDown": "Down",
   "statSku": "Kursi SKU",
   "skuShort": "{{count}} / {{limit}} · {{sku}}",
+  "filtersToggle": "Filter",
   "filterStatus": "Status",
   "filterProtocol": "Protokol",
   "filterSearch": "Cari",

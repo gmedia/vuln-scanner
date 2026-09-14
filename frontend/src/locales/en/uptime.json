@@ -37,6 +37,7 @@
   "statDown": "Down",
   "statSku": "SKU seats",
   "skuShort": "{{count}} / {{limit}} · {{sku}}",
+  "filtersToggle": "Filters",
   "filterStatus": "Status",
   "filterProtocol": "Protocol",
   "filterSearch": "Search",

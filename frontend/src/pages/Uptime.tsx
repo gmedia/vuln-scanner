@@ -9,7 +9,6 @@ import {
   listSamples,
   pauseMonitor,
   updateMonitor,
-  type UptimeCheckType,
   type UptimeCreatePayload,
   type UptimeMonitor,
   type UptimeSample,
@@ -44,6 +43,11 @@ import {
 } from "@/components/ui/Accordion";
 import { Sparkline } from "@/components/uptime/Sparkline";
 import { MonitorActionsMenu } from "@/components/uptime/MonitorActionsMenu";
+import {
+  UptimeFilterBar,
+  type UptimeStateFilter,
+  type UptimeTypeFilter,
+} from "@/components/uptime/UptimeFilterBar";
 
 export function mapUptimeError(message: string): string {
   if (/seat limit/i.test(message)) return "limit";
@@ -81,8 +85,8 @@ export function explainUptimeError(
   return null;
 }
 
-type StateFilter = "all" | "up" | "down" | "unknown" | "degraded";
-type TypeFilter = "all" | UptimeCheckType;
+type StateFilter = UptimeStateFilter;
+type TypeFilter = UptimeTypeFilter;
 
 function stateBadgeVariant(state: string) {
   if (state === "up") return "completed" as const;
@@ -351,10 +355,10 @@ export default function Uptime() {
       {items.length > 0 ? (
         <div
           data-testid="uptime-kpi"
-          className="grid grid-cols-1 gap-3 sm:grid-cols-3"
+          className="grid grid-cols-3 gap-2 sm:gap-3"
         >
           <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card p-3">
-            <p className="font-mono text-xl font-bold tabular-nums text-primary sm:text-2xl">
+            <p className="font-mono text-lg font-bold tabular-nums text-primary sm:text-2xl">
               {upCount}
             </p>
             <p className="mt-1 text-center text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -365,8 +369,8 @@ export default function Uptime() {
             <p
               className={
                 downCount > 0
-                  ? "font-mono text-xl font-bold tabular-nums text-destructive sm:text-2xl"
-                  : "font-mono text-xl font-bold tabular-nums text-muted-foreground sm:text-2xl"
+                  ? "font-mono text-lg font-bold tabular-nums text-destructive sm:text-2xl"
+                  : "font-mono text-lg font-bold tabular-nums text-muted-foreground sm:text-2xl"
               }
             >
               {downCount}
@@ -376,7 +380,7 @@ export default function Uptime() {
             </p>
           </div>
           <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card p-3">
-            <p className="font-mono text-xl font-bold tabular-nums text-foreground sm:text-2xl">
+            <p className="font-mono text-lg font-bold tabular-nums text-foreground sm:text-2xl">
               {t("skuShort", { count: enabledCount, limit, sku })}
             </p>
             <p className="mt-1 text-center text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -387,74 +391,51 @@ export default function Uptime() {
       ) : null}
 
       {items.length > 0 ? (
+        <>
+        <div className="sm:hidden">
+          <Accordion type="single" collapsible>
+            <AccordionItem value="filters" className="rounded-md border border-border bg-card px-4">
+              <AccordionTrigger data-testid="uptime-filters-toggle">
+                {t("filtersToggle")}
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-1 gap-3">
+                  <UptimeFilterBar
+                    idPrefix="uptime-filter-m"
+                    stateFilter={stateFilter}
+                    onStateFilter={setStateFilter}
+                    typeFilter={typeFilter}
+                    onTypeFilter={setTypeFilter}
+                    search={search}
+                    onSearch={setSearch}
+                    filtersActive={filtersActive}
+                    filteredCount={filtered.length}
+                    totalCount={items.length}
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
         <div
           data-testid="uptime-filters"
-          className="grid grid-cols-1 gap-3 rounded-md border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-3"
+          className="hidden grid-cols-1 gap-3 rounded-md border border-border bg-card p-4 sm:grid sm:grid-cols-2 lg:grid-cols-3"
         >
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <Label htmlFor="uptime-filter-status">{t("filterStatus")}</Label>
-            <Select
-              value={stateFilter}
-              onValueChange={(value) => setStateFilter(value as StateFilter)}
-            >
-              <SelectTrigger
-                id="uptime-filter-status"
-                aria-label={t("filterStatus")}
-                className="h-10 min-h-10"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("filterAll")}</SelectItem>
-                <SelectItem value="up">{t("stateUp")}</SelectItem>
-                <SelectItem value="down">{t("stateDown")}</SelectItem>
-                <SelectItem value="unknown">{t("stateUnknown")}</SelectItem>
-                <SelectItem value="degraded">{t("stateDegraded")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <Label htmlFor="uptime-filter-type">{t("filterProtocol")}</Label>
-            <Select
-              value={typeFilter}
-              onValueChange={(value) => setTypeFilter(value as TypeFilter)}
-            >
-              <SelectTrigger
-                id="uptime-filter-type"
-                aria-label={t("filterProtocol")}
-                className="h-10 min-h-10"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("filterAll")}</SelectItem>
-                <SelectItem value="http">http</SelectItem>
-                <SelectItem value="tcp">tcp</SelectItem>
-                <SelectItem value="heartbeat">heartbeat</SelectItem>
-                <SelectItem value="dns">dns</SelectItem>
-                <SelectItem value="ping">ping</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <Label htmlFor="uptime-filter-search">{t("filterSearch")}</Label>
-            <Input
-              id="uptime-filter-search"
-              className="h-10 min-h-10"
-              placeholder={t("filterSearchPlaceholder")}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-3">
-            {filtersActive
-              ? t("filterShowing", {
-                  shown: filtered.length,
-                  total: items.length,
-                })
-              : t("filterHint")}
-          </p>
+          <UptimeFilterBar
+            idPrefix="uptime-filter"
+            stateFilter={stateFilter}
+            onStateFilter={setStateFilter}
+            typeFilter={typeFilter}
+            onTypeFilter={setTypeFilter}
+            search={search}
+            onSearch={setSearch}
+            filtersActive={filtersActive}
+            filteredCount={filtered.length}
+            totalCount={items.length}
+            hintClassName="text-xs text-muted-foreground sm:col-span-2 lg:col-span-3"
+          />
         </div>
+        </>
       ) : null}
 
       {open ? (

@@ -98,6 +98,8 @@ describe("Uptime page", () => {
     const row = screen.getByTestId("uptime-row");
     expect(row).toBeInTheDocument();
     expect(screen.getByTestId("uptime-filters")).toBeInTheDocument();
+    expect(screen.getByTestId("uptime-kpi").className).toMatch(/grid-cols-3/);
+    expect(screen.getByTestId("uptime-filters-toggle")).toBeInTheDocument();
     await user.click(within(row).getByTestId("uptime-actions"));
     expect(screen.getByTestId("uptime-edit")).toBeInTheDocument();
     expect(screen.getByTestId("uptime-sparkline")).toHaveTextContent("—");
