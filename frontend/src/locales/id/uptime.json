@@ -60,6 +60,7 @@
   "expectStatus": "Status HTTP yang diharapkan",
   "expectStatusHint": "Kosong = 200–399. Isi kode persis (mis. 204).",
   "edit": "Ubah",
+  "editTitle": "Ubah monitor",
   "history": "Riwayat",
   "historyTitle": "Cek — {{name}}",
   "historyEmpty": "Tidak ada sampel dalam 7 hari terakhir.",
