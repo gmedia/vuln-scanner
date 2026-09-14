@@ -214,7 +214,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | [`docs/specs/vps-displace-imunify-dev-plan.md`](specs/vps-displace-imunify-dev-plan.md) | **P14 follow-on plan** (2026-09-07) | Speech gate: Demo-ok / Invoice-ok / **Sentence-ok**. Slices **DL0–DL2**. Caddy out. No PD/WebShield/clone. |
 | [`docs/specs/ai-gateway-v1.md`](specs/ai-gateway-v1.md) | **S1–S5 on `main` (this PR)** | OpenAI-compat resale; flag **off**. Ops: [`ai-gateway-ops.md`](ai-gateway-ops.md). Residual: human catalog/FX/enable. |
 | [`docs/specs/metering-v2.md`](specs/metering-v2.md) | **Shipped** (#736) | Scheduled attach included. Superseded for on-demand credits by v3. |
-| [`docs/specs/metering-v3-sku-seats.md`](specs/metering-v3-sku-seats.md) | **Implementing** | Scan/Host/Uptime = SKU seats only. No Scan credit debit (ip/domain/apk/ipa/statushost). AI IDR wallet stays. |
+| [`docs/specs/metering-v3-sku-seats.md`](specs/metering-v3-sku-seats.md) | **Shipped** (#742–#744) | Scan/Host/Uptime = SKU seats only. No Scan credit debit (ip/domain/apk/ipa/statushost). AI IDR wallet stays. |
 
 **Agent:** wait for **explicit implement** even when spec exists. Prefer **draft spec** over silent coding for new epics; P3 assets already shipped.
 

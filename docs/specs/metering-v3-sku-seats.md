@@ -1,6 +1,6 @@
 # Spec: Metering v3 — Scan/Host/Uptime = SKU seats only
 
-**Status:** **implementing** (this PR). Owner: drop the Scan **credit wallet** as a customer meter. Everything attach-shaped uses **org SKU seats** (Basic 1 / Pro 3 / Multi 10).
+**Status:** **shipped** on `main` (#742 seats / `credit_cost = 0`, #743 hide Scan credit chrome, #744 admin pricing read-only archive). Owner: drop the Scan **credit wallet** as a customer meter. Everything attach-shaped uses **org SKU seats** (Basic 1 / Pro 3 / Multi 10).
 **Does not** change AI Gateway (org **IDR wallet** stays). Does **not** invent Guard/SIEM invoice `service_id`.
 **Supersedes:** metering v2 **M4** (credits as overage for ip/domain/mobile/`statushost`). Scheduled attach already `credit_cost = 0` (v2 M2).
 
@@ -63,8 +63,8 @@ SKU / one-pager / AM / GTM: no credit packs. Seats + cadence only.
 
 ## 4) DoD
 
-- [ ] pytest: `start_scan` with 0 credits succeeds; user.credits unchanged; `credit_cost == 0`.
-- [ ] pytest: hostname activate does not 402 on 0 credits.
-- [ ] eligibility `required_credits == 0`.
-- [ ] Vitest: IP/domain/mobile submit not blocked; no `scan-cost-preview` / `scan-credits-chip` / `header-credits` on customer chrome.
-- [ ] Commercial docs: no A4 headline.
+- [x] pytest: `start_scan` with 0 credits succeeds; user.credits unchanged; `credit_cost == 0`.
+- [x] pytest: hostname activate does not 402 on 0 credits.
+- [x] eligibility `required_credits == 0`.
+- [x] Vitest: IP/domain/mobile submit not blocked; no `scan-cost-preview` / `scan-credits-chip` / `header-credits` on customer chrome.
+- [x] Commercial docs: no A4 headline.
