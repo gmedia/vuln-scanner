@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import type { UptimeCheckType, UptimeCreatePayload, UptimeMonitor } from "@/api/uptime";
@@ -57,14 +57,45 @@ export function UptimeMonitorSheet({
   readonly onOpenChange: (next: boolean) => void;
   readonly onSave: (payload: UptimeCreatePayload) => boolean | void;
 }) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className="overflow-y-auto"
+        data-testid="uptime-sheet"
+      >
+        {open ? (
+          <UptimeMonitorForm
+            key={editing?.id ?? "create"}
+            editing={editing}
+            busy={busy}
+            heartbeatUrl={heartbeatUrl}
+            onOpenChange={onOpenChange}
+            onSave={onSave}
+          />
+        ) : null}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function UptimeMonitorForm({
+  editing,
+  busy,
+  heartbeatUrl,
+  onOpenChange,
+  onSave,
+}: {
+  readonly editing: UptimeMonitor | null;
+  readonly busy: boolean;
+  readonly heartbeatUrl: string | null;
+  readonly onOpenChange: (next: boolean) => void;
+  readonly onSave: (payload: UptimeCreatePayload) => boolean | void;
+}) {
   const { t } = useTranslation("uptime");
   const [values, setValues] = useState<UptimeMonitorFormValues>(() =>
     formFromMonitor(editing),
   );
-
-  useEffect(() => {
-    if (open) setValues(formFromMonitor(editing));
-  }, [open, editing]);
 
   const patch = (partial: Partial<UptimeMonitorFormValues>) =>
     setValues((prev) => ({ ...prev, ...partial }));
@@ -81,12 +112,7 @@ export function UptimeMonitorSheet({
     busy;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="overflow-y-auto"
-        data-testid="uptime-sheet"
-      >
+    <>
         <SheetHeader>
           <SheetTitle>{editing ? t("editTitle") : t("add")}</SheetTitle>
         </SheetHeader>
@@ -244,8 +270,7 @@ export function UptimeMonitorSheet({
             {t("cancel")}
           </Button>
         </SheetFooter>
-      </SheetContent>
-    </Sheet>
+    </>
   );
 }
 

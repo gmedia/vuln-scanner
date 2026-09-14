@@ -3,7 +3,11 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import Uptime, { explainUptimeError, mapUptimeError } from "@/pages/Uptime";
+import Uptime from "@/pages/Uptime";
+import {
+  explainUptimeError,
+  mapUptimeError,
+} from "@/components/uptime/uptimeErrors";
 
 const mockList = vi.fn();
 const mockSamples = vi.fn();
@@ -76,6 +80,25 @@ describe("Uptime page", () => {
     expect(within(sheet).getByTestId("uptime-name")).toBeInTheDocument();
     expect(within(sheet).getByTestId("uptime-save")).toBeInTheDocument();
     expect(screen.getByTestId("uptime-empty")).toBeInTheDocument();
+  });
+
+  it("clears the create form when the sheet is closed and opened again", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("uptime-empty-cta")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("uptime-empty-cta"));
+    const name = await screen.findByTestId("uptime-name");
+    await user.clear(name);
+    await user.type(name, "leftover");
+    expect(name).toHaveValue("leftover");
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitFor(() =>
+      expect(screen.queryByTestId("uptime-name")).not.toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("uptime-empty-cta"));
+    expect(await screen.findByTestId("uptime-name")).toHaveValue("");
   });
 
   it("shows KPI badges when monitors exist", async () => {
