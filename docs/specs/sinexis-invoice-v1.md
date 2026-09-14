@@ -134,4 +134,6 @@ Do **not** restyle kit. Tokens from `:root`. `Button` / `Select` only.
 - [x] pytest: create invoice snapshots list_idr; second Scan invoice same period → 409.
 - [x] pytest: mark paid sets org.sku; void does not.
 - [x] Vitest: `/admin/invoices` paid action; Workspace billing card read-only.
+- [x] pytest: `bank_copy` empty vs set; send includes bank, draft does not.
+- [x] Vitest: Workspace Billing shows bank copy on `sent`, dashes when null, hidden on draft.
 - [x] No real bank account in git.
