@@ -18,7 +18,7 @@
 | **I6** | New org default | `organizations.sku` default **`basic`** for **new** rows. Existing orgs unchanged. |
 | **I7** | Unpaid | Does **not** auto-downgrade `org.sku`. Void + admin set sku is ops. Seat caps still follow current `org.sku`. |
 | **I8** | Customer surface | Org owner/admin: read-only invoice list + bank copy when `sent`. No self-serve upgrade. |
-| **I9** | Bank copy | Env `INVOICE_BANK_NAME` / `INVOICE_BANK_ACCOUNT` / `INVOICE_BANK_HOLDER`. Empty → UI says ops must set env. Never commit real account numbers. |
+| **I9** | Bank copy | Env `INVOICE_BANK_NAME` / `INVOICE_BANK_ACCOUNT` / `INVOICE_BANK_HOLDER`. CI `append_if_set` on `push` to `main` (empty GitHub secret does not wipe host). Never commit real account numbers. |
 | **I10** | Out | Gateway, PDF library, dunning, PPN, subscriptions auto-renew job, Host-only invoice, AI top-up, GMD API, customer SID/PII in git. |
 
 List prices (do not invent):
