@@ -7,11 +7,13 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
 from app.main import app
 from app.models.organization import Organization, OrganizationMembership
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
+from app.services.invoice import bank_copy
 from app.services.organization import ensure_personal_org
 
 
@@ -250,5 +252,81 @@ async def test_owner_lists_invoices_and_catalog(db_session, ctx):
             )
             assert listed.status_code == 200
             assert listed.json()["total"] == 1
+            assert listed.json()["items"][0]["bank"] is None
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_bank_copy_include_false():
+    assert bank_copy(include=False) is None
+
+
+def test_bank_copy_all_empty(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "invoice_bank_name", "")
+    monkeypatch.setattr(settings, "invoice_bank_account", "  ")
+    monkeypatch.setattr(settings, "invoice_bank_holder", "")
+    assert bank_copy(include=True) == {"bank_name": None, "bank_account": None, "bank_holder": None}
+
+
+def test_bank_copy_set_and_strip(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "invoice_bank_name", " Bank Contoh ")
+    monkeypatch.setattr(settings, "invoice_bank_account", "0000000000")
+    monkeypatch.setattr(settings, "invoice_bank_holder", "Acme Holder")
+    assert bank_copy(include=True) == {
+        "bank_name": "Bank Contoh",
+        "bank_account": "0000000000",
+        "bank_holder": "Acme Holder",
+    }
+
+
+def test_bank_copy_partial(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "invoice_bank_name", "Bank Contoh")
+    monkeypatch.setattr(settings, "invoice_bank_account", "")
+    monkeypatch.setattr(settings, "invoice_bank_holder", "")
+    assert bank_copy(include=True) == {
+        "bank_name": "Bank Contoh",
+        "bank_account": None,
+        "bank_holder": None,
+    }
+
+
+@pytest.mark.asyncio
+async def test_send_includes_bank_draft_does_not(db_session, ctx, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "invoice_bank_name", "Bank Contoh")
+    monkeypatch.setattr(settings, "invoice_bank_account", "0000000000")
+    monkeypatch.setattr(settings, "invoice_bank_holder", "Acme Holder")
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={"organization_id": str(ctx["org"].id), "sku": "basic"},
+            )
+            assert created.status_code == 201
+            assert created.json()["bank"] is None
+            inv_id = created.json()["id"]
+            sent = await client.post(
+                f"/api/admin/invoices/{inv_id}/send",
+                headers=_auth(ctx["admin"]),
+            )
+            assert sent.status_code == 200
+            assert sent.json()["status"] == "sent"
+            assert sent.json()["bank"] == {
+                "bank_name": "Bank Contoh",
+                "bank_account": "0000000000",
+                "bank_holder": "Acme Holder",
+            }
+            listed = await client.get(
+                f"/api/orgs/{ctx['org'].id}/invoices",
+                headers=_auth(ctx["owner"], ctx["org"].id),
+            )
+            assert listed.status_code == 200
+            assert listed.json()["items"][0]["bank"] == {
+                "bank_name": "Bank Contoh",
+                "bank_account": "0000000000",
+                "bank_holder": "Acme Holder",
+            }
     finally:
         app.dependency_overrides.clear()
