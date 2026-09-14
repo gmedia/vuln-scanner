@@ -140,13 +140,13 @@ export default function HostWafPanel({
 
   return (
     <div className="space-y-4" data-testid="host-waf-panel">
-      <p className="text-sm text-muted-foreground">{t("wafHint")}</p>
+      <p className="max-w-prose text-sm text-muted-foreground">{t("wafHint")}</p>
       {sites.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("wafNeedSite")}</p>
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="flex min-w-0 flex-col gap-1.5">
+          <div className="grid max-w-xl gap-3 sm:grid-cols-2">
+            <div className="flex min-w-0 max-w-sm flex-col gap-1.5">
               <Label htmlFor="host-waf-site">{t("wafSite")}</Label>
               <Select
                 value={selected}
@@ -171,7 +171,7 @@ export default function HostWafPanel({
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex min-w-0 flex-col gap-1.5">
+            <div className="flex min-w-0 max-w-sm flex-col gap-1.5">
               <Label htmlFor="host-waf-mode">{t("wafMode")}</Label>
               <Select
                 value={mode}
@@ -248,7 +248,7 @@ export default function HostWafPanel({
                 {t("copySiteId")}
               </Button>
               <p
-                className="text-xs text-muted-foreground"
+                className="max-w-prose text-xs text-muted-foreground"
                 data-testid="host-waf-site-id-hint"
               >
                 {t("siteIdHint", { id: selected })}
@@ -256,19 +256,19 @@ export default function HostWafPanel({
             </div>
           ) : null}
           <p
-            className="text-xs text-muted-foreground"
+            className="max-w-prose text-xs text-muted-foreground"
             data-testid="host-waf-copy-hint"
           >
             {t("wafCopyHint")}
           </p>
           <p
-            className="text-xs text-muted-foreground"
+            className="max-w-prose text-xs text-muted-foreground"
             data-testid="host-waf-snippet-status"
           >
             {t("wafSnippetNotIncluded")}
           </p>
           <p
-            className="text-xs text-muted-foreground"
+            className="max-w-prose text-xs text-muted-foreground"
             data-testid="host-waf-helper-poll"
           >
             {pollLabel
@@ -281,7 +281,7 @@ export default function HostWafPanel({
       )}
       {mode === "off" ? (
         <p
-          className="text-xs text-muted-foreground"
+          className="max-w-prose text-xs text-muted-foreground"
           data-testid="host-waf-simulate-hint"
         >
           {showSimulate ? t("wafSimulateHint") : t("wafSimulateProdHint")}
