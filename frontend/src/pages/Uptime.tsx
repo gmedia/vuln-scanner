@@ -25,8 +25,7 @@ import {
   type UptimeTypeFilter,
 } from "@/components/uptime/UptimeFilterBar";
 import { toastUptimeApiError } from "@/components/uptime/uptimeErrors";
-
-export { explainUptimeError, mapUptimeError } from "@/components/uptime/uptimeErrors";
+import { toUptimeUpdatePayload } from "@/components/uptime/uptimeForm";
 
 export default function Uptime() {
   const { t } = useTranslation("uptime");
@@ -47,7 +46,7 @@ export default function Uptime() {
       return rows.some((m) => m.enabled && m.state === "unknown") ? 4000 : false;
     },
   });
-  const items = list.data ?? [];
+  const items = useMemo(() => list.data ?? [], [list.data]);
   const sku = items[0]?.sku ?? "multi";
   const limit = items[0]?.sku_limit ?? 10;
   const enabledCount = items.filter((m) => m.enabled).length;
@@ -115,8 +114,7 @@ export default function Uptime() {
       id: string;
       payload: UptimeCreatePayload;
     }) => {
-      const { check_type: _checkType, target: _target, ...rest } = payload;
-      return updateMonitor(id, rest);
+      return updateMonitor(id, toUptimeUpdatePayload(payload));
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["uptime"] });

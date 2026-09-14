@@ -1,4 +1,8 @@
-import type { UptimeCheckType, UptimeCreatePayload } from "@/api/uptime";
+import type {
+  UptimeCheckType,
+  UptimeCreatePayload,
+  UptimeUpdatePayload,
+} from "@/api/uptime";
 
 export const UPTIME_CHECK_TYPES = [
   "http",
@@ -135,5 +139,24 @@ export function parseUptimeFormPayload(
         : undefined,
       notify_email: values.notify.trim() || undefined,
     },
+  };
+}
+
+export function toUptimeUpdatePayload(
+  payload: UptimeCreatePayload,
+): UptimeUpdatePayload {
+  return {
+    name: payload.name,
+    interval_seconds: payload.interval_seconds,
+    timeout_seconds: payload.timeout_seconds,
+    expect_status: payload.expect_status,
+    keyword: payload.keyword,
+    keyword_invert: payload.keyword_invert,
+    http_method: payload.http_method,
+    request_headers: payload.request_headers,
+    request_body: payload.request_body,
+    dns_record: payload.dns_record,
+    expected_values: payload.expected_values,
+    notify_email: payload.notify_email,
   };
 }
