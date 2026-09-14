@@ -108,6 +108,26 @@ describe("AI Gateway page", () => {
     const list = screen.getByRole("tablist");
     expect(list.className).toMatch(/min-w-max/);
     expect(list.className).not.toMatch(/\bw-full\b/);
+    expect(screen.getByTestId("ai-tab-wallet")).toBeInTheDocument();
+    expect(screen.getByTestId("ai-tab-keys")).toBeInTheDocument();
+    expect(screen.getByTestId("ai-tab-usage")).toBeInTheDocument();
+    expect(screen.getByTestId("ai-tab-catalog")).toBeInTheDocument();
+  });
+
+  it("shows a usage empty well with catalog CTA", async () => {
+    vi.mocked(aiApi.getAiWallet).mockResolvedValue({
+      organization_id: "org1",
+      balance_idr: 0,
+      currency: "IDR",
+    });
+    vi.mocked(aiApi.listAiKeys).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(aiApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(aiApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
+    const user = userEvent.setup();
+    renderAi();
+    await user.click(await screen.findByTestId("ai-tab-usage"));
+    expect(await screen.findByTestId("ai-usage-empty")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "See catalog" })).toBeInTheDocument();
   });
 
   it("shows feature-off on 404", async () => {

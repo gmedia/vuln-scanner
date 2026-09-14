@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy } from "lucide-react";
+import { Copy, KeyRound, ScrollText } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import {
   Card,
@@ -128,10 +128,18 @@ export default function Ai() {
       <Tabs value={tab} onValueChange={setTab}>
         <div className="max-w-full overflow-x-auto">
         <TabsList className="inline-flex h-auto min-w-max flex-nowrap justify-start">
-          <TabsTrigger value="wallet">{t("tabWallet")}</TabsTrigger>
-          <TabsTrigger value="keys">{t("tabKeys")}</TabsTrigger>
-          <TabsTrigger value="usage">{t("tabUsage")}</TabsTrigger>
-          <TabsTrigger value="catalog">{t("tabCatalog")}</TabsTrigger>
+          <TabsTrigger value="wallet" data-testid="ai-tab-wallet">
+            {t("tabWallet")}
+          </TabsTrigger>
+          <TabsTrigger value="keys" data-testid="ai-tab-keys">
+            {t("tabKeys")}
+          </TabsTrigger>
+          <TabsTrigger value="usage" data-testid="ai-tab-usage">
+            {t("tabUsage")}
+          </TabsTrigger>
+          <TabsTrigger value="catalog" data-testid="ai-tab-catalog">
+            {t("tabCatalog")}
+          </TabsTrigger>
         </TabsList>
         </div>
         <TabsContent value="wallet">
@@ -206,37 +214,54 @@ export default function Ai() {
                   </AlertDescription>
                 </Alert>
               ) : null}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {(keysQ.data?.items ?? []).length === 0 ? (
-                      <div className="col-span-full p-8 text-center text-muted-foreground">
-                        {t("keysEmpty")}
-                      </div>
-                    ) : (
-                      (keysQ.data?.items ?? []).map((k) => (
-                        <Card key={k.id}>
-                          <CardContent className="p-4">
-                            <div className="font-mono text-xs mb-2">{k.prefix}</div>
-                            <div className="font-medium">{k.name}</div>
-                              <div className="text-sm text-muted-foreground mt-1">
+                  {(() => {
+                    const keys = keysQ.data?.items ?? [];
+                    if (keys.length === 0) {
+                      return (
+                        <div className="flex min-h-[8rem] flex-col items-center justify-center gap-2 px-6 py-8 text-center">
+                          <KeyRound
+                            className="h-8 w-8 text-muted-foreground"
+                            aria-hidden
+                          />
+                          <p className="text-sm text-muted-foreground">
+                            {t("keysEmpty")}
+                          </p>
+                        </div>
+                      );
+                    }
+                    const keyGrid =
+                      keys.length >= 3
+                        ? "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+                        : "grid max-w-md grid-cols-1 gap-4";
+                    return (
+                      <div className={keyGrid}>
+                        {keys.map((k) => (
+                          <Card key={k.id}>
+                            <CardContent className="p-4">
+                              <div className="mb-2 break-all font-mono text-xs">
+                                {k.prefix}
+                              </div>
+                              <div className="font-medium">{k.name}</div>
+                              <div className="mt-1 text-sm text-muted-foreground">
                                 {k.is_active ? t("colActive") : t("colInactive")}
                               </div>
-
-                            {k.is_active && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="mt-3"
-                                onClick={() => revokeMut.mutate(k.id)}
-                              >
-                                {t("revoke")}
-                              </Button>
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))
-                    )}
-                  </div>
+                              {k.is_active ? (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="mt-3 w-full sm:w-auto"
+                                  onClick={() => revokeMut.mutate(k.id)}
+                                >
+                                  {t("revoke")}
+                                </Button>
+                              ) : null}
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    );
+                  })()}
              </CardContent>
            </Card>
          </TabsContent>
@@ -247,17 +272,27 @@ export default function Ai() {
             </CardHeader>
             <CardContent className="space-y-4">
               {(usageQ.data?.items ?? []).length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  {t("usageEmpty")}{" "}
+                <div
+                  className="flex min-h-[8rem] flex-col items-center justify-center gap-2 px-6 py-8 text-center"
+                  data-testid="ai-usage-empty"
+                >
+                  <ScrollText
+                    className="h-8 w-8 text-muted-foreground"
+                    aria-hidden
+                  />
+                  <p className="text-sm font-medium text-foreground">
+                    {t("usageEmpty")}
+                  </p>
                   <Button
                     type="button"
-                    variant="link"
-                    className="h-auto p-0"
+                    variant="outline"
+                    size="sm"
+                    className="min-h-11"
                     onClick={() => setTab("catalog")}
                   >
                     {t("usageEmptyHint")}
                   </Button>
-                </p>
+                </div>
               ) : (
                 <>
                   <div
@@ -331,29 +366,34 @@ export default function Ai() {
                  <div className="flex min-h-[12rem] items-center justify-center py-16 md:min-h-[16rem] md:py-20">
                    <p className="text-sm text-muted-foreground">{t("catalogEmpty")}</p>
                  </div>
-               ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {(modelsQ.data?.items ?? []).length === 0 ? (
-                      <div className="col-span-full p-8 text-center text-muted-foreground">
-                        {t("catalogEmpty")}
+                ) : (
+                  (() => {
+                    const models = modelsQ.data?.items ?? [];
+                    const catalogGrid =
+                      models.length >= 3
+                        ? "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+                        : "grid max-w-md grid-cols-1 gap-4";
+                    return (
+                      <div className={catalogGrid}>
+                        {models.map((m) => (
+                          <Card key={m.public_id}>
+                            <CardContent className="p-4">
+                              <div className="mb-2 break-all font-medium">
+                                {m.public_id}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {t("colIn")}: {formatIdr(m.price_idr_per_1k_in)}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {t("colOut")}: {formatIdr(m.price_idr_per_1k_out)}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
                       </div>
-                    ) : (
-                      (modelsQ.data?.items ?? []).map((m) => (
-                        <Card key={m.public_id}>
-                          <CardContent className="p-4">
-                            <div className="font-medium mb-2">{m.public_id}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {t("colIn")}: {formatIdr(m.price_idr_per_1k_in)}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {t("colOut")}: {formatIdr(m.price_idr_per_1k_out)}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))
-                    )}
-                  </div>
-               )}
+                    );
+                  })()
+                )}
              </CardContent>
           </Card>
         </TabsContent>
