@@ -8,7 +8,8 @@
 - **Full prod e2e + Guard enroll/unenroll:** wipe lab agent `tc5` (and leftover Manager/`guard_agents` smoke rows) **first**. See guide **§4.1**. Playwright ≠ host enroll.
 - **Standing permission (user, 2026-08-26):** agents **may execute Guard live lab** (wipe `tc5` → Manager cleanup from `tc1` → enroll/unenroll/sync) **without asking again**. Still: wipe-first §4.1; never print tokens/keys/IPs; never commit secrets; `GUARD_LAB_ALLOW_PUBLIC_PROD=1` on public origin; Playwright ≠ enroll. **Revoke only if the user says so.**
 - North star: **Sinexis** — security attach (upsell on colo/VPS + hospitality beachhead); repo still ships as VulnScanner scan SaaS.
-- Build order (detail in guide **§1.3**): **P0 SKU lock → P1 Scan Attach Loop → P2 Workspace → P3 assets → P4 soft rebrand → P5 Guard (Wazuh thin)**. Do not implement Guard/Wazuh in the same epic as Workspace; do not block upsell attach on rebrand.
+- **Owner (2026-09-15):** chat user is **product**, not AM. After reset, recommend **product-depth** slices in guide **§1.3.1** (default: Uptime advanced). **Do not** pitch GTM / wave-1 email / 10 SIDs as next work unless the user asks.
+- Historical build order (detail in guide **§1.3**, **shipped** — do not re-implement): **P0 SKU lock → P1 Scan Attach Loop → P2 Workspace → P3 assets → P4 soft rebrand → P5 Guard (Wazuh thin)** … through P14 A–F. Do not implement Guard/Wazuh in the same epic as Workspace; do not block upsell attach on rebrand.
 - Speak **Bahasa Indonesia** with the user unless they switch language.
 - Prefix every git command with `GIT_MASTER=1`.
 - Root **`handoff.md` is a stub + pointer** (archived stuck-job notes under `docs/archive/`). Not the product backlog; **`docs/AGENT_EXECUTION_GUIDE.md` wins** on priority.
@@ -28,7 +29,7 @@ When **`main` CI is green including the `deploy` job**, production already ran *
 
 - **Do not** tell the user to SSH and run Alembic “next” after a successful `main` deploy. Schema for that SHA (e.g. `hpp_rates`) is already applied if deploy succeeded.
 - **Do not** treat “CI green” as tests-only: on `push` to `main`, workflow **CI/CD** includes **deploy** (unless `workflow_dispatch` `skip_deploy`).
-- Residual after deploy is **product/ops** (fill HPP rates in `/admin/hpp`, GTM, live SSL/SMTP smoke) — not a second migration.
+- Residual after deploy is **ops** (fill HPP rates in `/admin/hpp`, live SSL/SMTP smoke) — not a second migration. **Do not** treat GTM as the agent’s next task.
 - Manual Alembic only if **deploy failed**, user asked for a **host without CI**, or they used **`deploy-services.sh --skip-migrate`**. Prefer `deploy-services.sh` (non-destructive) for routine app deploys; it also migrates when `backend` is in the service list and `--skip-migrate` is unset.
 - Never print deploy hosts, SSH ports, or secrets.
 - Human ops: [`docs/deploy.md`](docs/deploy.md).
@@ -82,8 +83,8 @@ Public marketing and in-app SPA share **one visual family**. Detail: `docs/AGENT
 
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-09-03  
-**Code snapshot:** `192d7ee` (`main` at map time; not this PR tip)  
+**Generated:** 2026-09-03
+**Code snapshot:** `192d7ee` (`main` at map time; not this PR tip)
 
 Child maps: [`backend/AGENTS.md`](backend/AGENTS.md) · [`frontend/AGENTS.md`](frontend/AGENTS.md) · [`workers/AGENTS.md`](workers/AGENTS.md) · [`scripts/AGENTS.md`](scripts/AGENTS.md)
 
