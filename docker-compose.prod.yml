@@ -101,6 +101,9 @@ services:
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-Sinexis <noreply@sinexis.app>}
       FRONTEND_URL: ${FRONTEND_URL:-https://sinexis.app}
+      INVOICE_BANK_NAME: ${INVOICE_BANK_NAME:-}
+      INVOICE_BANK_ACCOUNT: ${INVOICE_BANK_ACCOUNT:-}
+      INVOICE_BANK_HOLDER: ${INVOICE_BANK_HOLDER:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       CORS_ORIGINS: ${CORS_ORIGINS:-https://sinexis.app}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}

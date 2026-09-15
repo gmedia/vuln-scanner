@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from pathlib import Path
 
 import pytest
 import pytest_asyncio
@@ -330,3 +331,19 @@ async def test_send_includes_bank_draft_does_not(db_session, ctx, monkeypatch: p
             }
     finally:
         app.dependency_overrides.clear()
+
+
+def test_compose_backend_passes_invoice_bank_env() -> None:
+    root = Path(__file__).resolve().parents[2]
+    required = (
+        "INVOICE_BANK_NAME:",
+        "INVOICE_BANK_ACCOUNT:",
+        "INVOICE_BANK_HOLDER:",
+    )
+    for rel in ("docker-compose.yml", "docker-compose.prod.yml"):
+        text = (root / rel).read_text(encoding="utf-8")
+        idx = text.find("container_name: vuln-backend")
+        assert idx != -1, rel
+        window = text[idx : idx + 2500]
+        for needle in required:
+            assert needle in window, (rel, needle)

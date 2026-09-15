@@ -118,7 +118,7 @@ Set on the **app host `.env`** and/or GitHub **repository** secrets (CI overwrit
 | `HOST_WAF_ENABLED` | API flag; per-site mode still off until detect. **Not** edge nginx |
 | `UPTIME_ENABLED` / `STATUS_PAGE_*` | Uptime + custom hostname (Cloudflare secrets; no ACME in-app) |
 | `OBJECT_STORAGE_BACKEND` | `cos` for mobile uploads across hosts; default `local` |
-| `INVOICE_BANK_NAME` / `ACCOUNT` / `HOLDER` | Scan invoice bank copy (`/admin/invoices`). CI injects only if the GitHub secret is **non-empty**. Never commit real numbers. |
+| `INVOICE_BANK_NAME` / `ACCOUNT` / `HOLDER` | Scan invoice bank copy (Workspace Billing on `sent`). CI `append_if_set` writes host `.env`; **compose `backend` environment must pass them** (host `.env` alone is not in the container). Never commit real numbers. |
 
 Do not invent extra enroll daemons. Do not wipe live ERP agent `sx-erpstg`. Guard e2e enroll: wipe **tc5** first ([guide §4.1](AGENT_EXECUTION_GUIDE.md)).
 
