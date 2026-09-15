@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -504,11 +505,16 @@ export default function StatusPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <Button
-                            variant="destructive"
+                            type="button"
+                            variant="ghost"
                             size="sm"
+                            className="h-11 w-11 min-h-11 min-w-11 p-0 md:h-9 md:w-9 md:min-h-9 md:min-w-9"
+                            data-testid={`status-component-remove-${c.id}`}
+                            aria-label={t("remove")}
+                            disabled={delCompMut.isPending}
                             onClick={() => delCompMut.mutate(c.id)}
                           >
-                            {t("remove")}
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </TableCell>
                       </TableRow>

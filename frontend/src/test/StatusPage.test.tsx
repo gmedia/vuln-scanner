@@ -411,6 +411,48 @@ it("shows empty state with create form", async () => {
     );
   });
 
+  it("removes a component with an icon button", async () => {
+    const user = userEvent.setup();
+    mockGet.mockResolvedValue({
+      id: "p1",
+      organization_id: "o1",
+      slug: "erp-stg",
+      title: "ERP",
+      published: true,
+      custom_hostname: null,
+      hostname_status: "none",
+      cname_target: "status-edge.sinexis.app",
+      ...pageFields,
+      public_path: "/status/erp-stg",
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+      components: [
+        {
+          id: "c1",
+          monitor_id: "m1",
+          display_name: "API",
+          sort_order: 0,
+          state: "up",
+        },
+      ],
+      incidents: [],
+      overall: "operational",
+    });
+    vi.mocked(statusApi.deleteComponent).mockResolvedValue();
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByText("API")).toBeInTheDocument(),
+    );
+    const remove = screen.getByTestId("status-component-remove-c1");
+    expect(remove).toHaveAttribute("aria-label", "Remove");
+    expect(remove.textContent).not.toMatch(/Remove/);
+    await user.click(remove);
+    expect(statusApi.deleteComponent).toHaveBeenCalledWith(
+      "c1",
+      expect.anything(),
+    );
+  });
+
   it("shows TXT card while hostname_status is pending_txt", async () => {
     mockGet.mockResolvedValue({
       id: "p1",
