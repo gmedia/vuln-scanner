@@ -115,6 +115,7 @@
   "invoiceSent": "Invoice sent",
   "invoiceMarkPaid": "Mark paid",
   "invoicePaid": "Marked paid — org SKU applied",
+  "invoicePrint": "Print",
   "invoiceVoid": "Void",
   "invoiceVoided": "Invoice voided",
   "invoicesEmpty": "No invoices yet.",

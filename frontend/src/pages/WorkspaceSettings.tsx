@@ -6,6 +6,7 @@ import {
   ClipboardList,
   Loader2,
   Mail,
+  Printer,
   Receipt,
   Trash2,
   UserPlus,
@@ -48,6 +49,10 @@ import type { ApiError } from "@/lib/utils";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import {
+  InvoicePrintSheet,
+  useInvoicePrint,
+} from "@/components/invoice/InvoicePrintSheet";
+import {
   clearInviteToken,
   persistInviteToken,
   publicInviteUrl,
@@ -75,8 +80,7 @@ function WorkspaceSettings() {
   const { t, i18n } = useTranslation("workspace");
   const qc = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
-  const inviteFromUrl =
-    searchParams.get("invite") ?? searchParams.get("token");
+  const inviteFromUrl = searchParams.get("invite") ?? searchParams.get("token");
   persistInviteToken(inviteFromUrl);
   const inviteToken = inviteFromUrl || readInviteToken();
 
@@ -90,6 +94,7 @@ function WorkspaceSettings() {
   const orgId = activeOrgId ?? organizations[0]?.id ?? null;
   const role = activeRole();
   const canManage = canManageMembers(role);
+  const { printing, startPrint } = useInvoicePrint();
 
   const activeOrg = useMemo(
     () => organizations.find((o) => o.id === orgId),
@@ -350,6 +355,20 @@ function WorkspaceSettings() {
                     <span className="font-mono tabular-nums">
                       Rp {inv.amount_idr.toLocaleString("id-ID")}
                     </span>
+                    {inv.status === "sent" || inv.status === "paid" ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="no-print"
+                        data-testid="invoice-print"
+                        aria-label={inv.number}
+                        onClick={() => startPrint(inv)}
+                      >
+                        <Printer className="mr-1 h-3.5 w-3.5" />
+                        {t("invoicePrint")}
+                      </Button>
+                    ) : null}
                     {inv.status === "sent" && inv.bank ? (
                       <span className="w-full text-xs text-muted-foreground">
                         {t("billingBank", {
@@ -542,9 +561,7 @@ function WorkspaceSettings() {
           {!orgId && (
             <p className="text-sm text-muted-foreground">{t("noOrgYet")}</p>
           )}
-          {orgId && membersQuery.isLoading && (
-            <TableRowSkeleton rows={3} />
-          )}
+          {orgId && membersQuery.isLoading && <TableRowSkeleton rows={3} />}
           {orgId && membersQuery.isError && (
             <p className="text-sm text-muted-foreground" role="status">
               {t("membersUnavailable")}
@@ -656,6 +673,7 @@ function WorkspaceSettings() {
       {!canManage && orgId && role && (
         <p className="text-xs text-muted-foreground">{t("onlyAdminsInvite")}</p>
       )}
+      <InvoicePrintSheet invoice={printing} billTo={activeOrg?.name} />
     </div>
   );
 }

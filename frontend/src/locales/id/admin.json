@@ -115,6 +115,7 @@
   "invoiceSent": "Invoice dikirim",
   "invoiceMarkPaid": "Tandai lunas",
   "invoicePaid": "Ditandai lunas — SKU org diterapkan",
+  "invoicePrint": "Cetak",
   "invoiceVoid": "Batalkan",
   "invoiceVoided": "Invoice dibatalkan",
   "invoicesEmpty": "Belum ada invoice.",

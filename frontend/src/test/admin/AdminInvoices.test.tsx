@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AdminInvoices from "@/pages/admin/AdminInvoices";
 
@@ -109,5 +109,62 @@ describe("AdminInvoices", () => {
     render(<AdminInvoices />);
     await userEvent.click(screen.getByTestId("invoice-paid-inv-1"));
     expect(mutate).toHaveBeenCalledWith("inv-1");
+  });
+
+  it("does not show print on a draft invoice", () => {
+    render(<AdminInvoices />);
+    expect(screen.queryByTestId("admin-invoice-print")).not.toBeInTheDocument();
+  });
+
+  it("prints a sent invoice with bank on the sheet", async () => {
+    const print = vi.fn();
+    window.print = print;
+    vi.mocked(useQuery).mockImplementation(((opts: { queryKey: unknown[] }) => {
+      const key = String(opts.queryKey[0]);
+      if (key === "admin-sku-catalog") {
+        return { data: catalog, isLoading: false };
+      }
+      if (key === "admin-orgs") {
+        return {
+          data: {
+            items: [
+              {
+                id: "org-1",
+                name: "Acme",
+                slug: "acme",
+                sku: "basic",
+                kind: "company",
+              },
+            ],
+            total: 1,
+          },
+          isLoading: false,
+        };
+      }
+      return {
+        data: {
+          items: [
+            {
+              ...invoices[0],
+              status: "sent",
+              bank: {
+                bank_name: "Bank Contoh",
+                bank_account: "0000000000",
+                bank_holder: "Acme Holder",
+              },
+            },
+          ],
+          total: 1,
+        },
+        isLoading: false,
+      };
+    }) as typeof useQuery);
+    render(<AdminInvoices />);
+    await userEvent.click(screen.getByTestId("admin-invoice-print"));
+    expect(screen.getByTestId("invoice-print-sheet")).toBeInTheDocument();
+    expect(screen.getByTestId("invoice-print-bank")).toHaveTextContent(
+      "0000000000",
+    );
+    await waitFor(() => expect(print).toHaveBeenCalled());
   });
 });
