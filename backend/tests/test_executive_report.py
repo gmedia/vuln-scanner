@@ -131,6 +131,9 @@ def test_render_includes_cover_diff_top_no_raw_secret():
     assert "xyz" not in html_out
     assert "exploit" not in html_out.lower() or "bukan exploit" in html_out.lower()
     assert 'lang="id"' in html_out
+    assert "@page" in html_out
+    assert "@media print" in html_out
+    assert "size: A4" in html_out
 
 
 def test_render_executive_html_en_chrome_keeps_finding_titles():
