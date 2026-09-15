@@ -1,7 +1,7 @@
 # Spec: Sinexis Invoice v1 (independent of GMD)
 
-**Status:** **implementing** (this PR). Owner: Sinexis bills Scan SKU **in-app**, not as a GMD colo/VPS `service_id`.
-**Seller copy:** env `INVOICE_BANK_*` only. No NPWP/PPN engine in v1 (tax_idr implicit 0). HTML print later.
+**Status:** **Shipped on `main`** (I1–I9 pay loop). Owner: Sinexis bills Scan SKU **in-app**, not as a GMD colo/VPS `service_id`.
+**Seller copy:** env `INVOICE_BANK_*` only. No NPWP/PPN engine in v1 (tax_idr implicit 0). **HTML print** = product-depth track **S1b** in [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md) — not this pay-loop PR. **PDF library stays out (I10).**
 **Does not** add Midtrans/Xendit. Does **not** merge AI Gateway IDR wallet. Does **not** mix HPP COGS into invoices. Does **not** revive Scan credits as a meter.
 
 ---
@@ -19,7 +19,7 @@
 | **I7** | Unpaid | Does **not** auto-downgrade `org.sku`. Void + admin set sku is ops. Seat caps still follow current `org.sku`. |
 | **I8** | Customer surface | Org owner/admin: read-only invoice list + bank copy when `sent`. No self-serve upgrade. |
 | **I9** | Bank copy | Env `INVOICE_BANK_NAME` / `INVOICE_BANK_ACCOUNT` / `INVOICE_BANK_HOLDER`. CI `append_if_set` on `push` to `main` (empty GitHub secret does not wipe host). Compose **backend** must interpolate those keys (host `.env` is not auto-mounted). Never commit real account numbers. |
-| **I10** | Out | Gateway, PDF library, dunning, PPN, subscriptions auto-renew job, Host-only invoice, AI top-up, GMD API, customer SID/PII in git. |
+| **I10** | Out | Gateway, **PDF library**, dunning, PPN, subscriptions auto-renew job, Host-only invoice, AI top-up, GMD API, customer SID/PII in git. HTML print is **not** a PDF library — follow-on [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md) **S1b**. |
 
 List prices (do not invent):
 
@@ -122,6 +122,7 @@ Do **not** restyle kit. Tokens from `:root`. `Button` / `Select` only.
 
 - Payment gateway, e-meterai, PDF binary, auto-renew beat job.
 - Host invoice, Guard/SIEM `service_id`.
+- HTML print UI — deferred to [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md) **S1b** (browser `window.print`; still **no** PDF library).
 - Writing `users.credits` or `ai_wallets`.
 - Mixing this page into `/admin/hpp` or leftover `/admin/pricing`.
 
