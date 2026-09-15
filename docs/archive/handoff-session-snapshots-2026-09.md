@@ -6,7 +6,29 @@
 > **Git/PR workflow:** [`AGENTS.md`](../../AGENTS.md)
 > **Live stub:** [`handoff.md`](../../handoff.md)
 >
-> Older SHA/WAF caps below are **history** (pre-#716 honest YARA/Clam; WAF now **1001–1146** on `main`). Snapshot **2026-09-14 invoice bank CI + quoting** archived here when **#763** bank_copy tests + **#764** metering v3 spec shipped became the live stub.
+> Older SHA/WAF caps below are **history** (pre-#716 honest YARA/Clam; WAF now **1001–1146** on `main`). Snapshot **2026-09-14 invoice tests + metering v3** archived here when **#766** Billing empty-state + **#767** Uptime monitor sheet became the live stub.
+
+---
+
+## Session snapshot (2026-09-14 — invoice tests + metering v3 spec)
+
+| Item | State |
+|------|--------|
+| **`main` tip** | Re-`git pull`. Expect **`57ed3d05`** (`docs: mark metering v3 spec shipped` **#764**) or newer. Invoice bank env + quoting already on this tip via **#755** + **#759**. Do **not** SSH Alembic after a green `main` deploy. |
+| **This session** | After user confirmed **#759** merged + CI/`deploy` green: (1) pytest + vitest for I9 `bank_copy` empty vs set, send includes bank, draft does not; Workspace Billing `sent` / dashes / hidden on draft — **#763**. Fictional strings only. (2) Metering v3 spec + guide Phase B: **shipped** (#742–#744 already on `main`; DoD ticked) — **#764**. User confirmed both merged, `main` CI green. Local leftover invoice CI branches already deleted earlier. **Never** put real account numbers / holder names in git. |
+| **Invoice product** | **#749** I1–I10 shipped. Bank copy only on `sent` invoices (`bank_copy()` in `backend/app/services/invoice.py`). Customer surface: Workspace Billing card (`WorkspaceSettings.tsx`). Admin invoices SPA does **not** render bank copy. Empty env → API still returns `bank` with all-null fields; SPA shows `"—"`. Tests: `backend/tests/test_invoices.py`, `frontend/src/test/WorkspaceSettings.test.tsx`. |
+| **Metering v3** | **Shipped.** Spec [`docs/specs/metering-v3-sku-seats.md`](../specs/metering-v3-sku-seats.md) DoD all `[x]`. Scan/Host/Uptime = SKU seats; `credit_cost = 0`; no Scan credit debit. AI IDR wallet stays. **Do not** re-open Scan credit debit. |
+| **Open PRs** | Boot: `gh pr list --state open --assignee @me`. Dependabot: **do not mass-merge**. |
+| **Still human** | **GTM** (finance `service_id`, AM wave-1, pilot #1); Host invoice `service_id`; fill `/admin/hpp` `hostscan`; Demo-ok narrative. **Invoice bank smoke:** open a `sent` invoice in Workspace Billing — copy must show bank name/account/holder, not `"—"`. If dashes: GitHub **production** environment secrets missing (not a code bug). Guide **§1.3 P0** + **§7 “lanjut”**. |
+| **Engineering default** | Invoice v1 and metering v3 spec hygiene are **closed**. **Do not** re-implement P12/P13. **Do not** start WAF **1147+**, P14 **G/H**, pack-widen, or YARA/Clam code unless named + `buat`. |
+
+### Next OpenCode session (as of 2026-09-14 tests + metering)
+
+1. `GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull`. `gh pr list --state open --assignee @me`. CI green on **your** PRs → squash-merge then delete branch. **Do not poll CI.** Do **not** mass-merge Dependabot.
+2. Read **`docs/AGENT_EXECUTION_GUIDE.md`** then **`AGENTS.md`**. Guide **wins** on epic order vs this stub.
+3. If user says **“lanjut”** without a named slice: report **GTM / HPP / invoice bank smoke** still human; **do not** silent-code WAF/YARA/G/H or more list pages. Invoice I9 and metering v3 docs are shipped — do **not** re-open bank env CI unless deploy is red again.
+4. Invoice files if asked: `backend/app/services/invoice.py` (`bank_copy`), `backend/app/config.py` (`invoice_bank_*`), `.github/workflows/ci.yml` (`append_if_set`), `frontend/src/pages/WorkspaceSettings.tsx` (Billing card), spec [`docs/specs/sinexis-invoice-v1.md`](../specs/sinexis-invoice-v1.md).
+5. Host WAF live lab (only if asked again): leftover `lab-host-waf-fixture` `DELETE /api/host/sites` first; `HOST_WAF_LAB_ALLOW_PUBLIC_PROD=1`; `HOST_WAF_LAB_VHOST_SSH=tc5`; `./scripts/host-waf-lab-smoke.sh --apply-vhost`; include packed snippet on **lab vhost**; `sudo nginx -t`. Standing permission **2026-08-26** is **Guard enroll/unenroll** (wipe `tc5` first, guide **§4.1**), not a blank cheque to keep applying vhosts. **Never** wipe `sx-erpstg`. Playwright ≠ enroll.
 
 ---
 
