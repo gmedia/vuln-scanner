@@ -78,7 +78,8 @@ function AdminInvoices() {
     },
   });
   const payMut = useMutation({
-    mutationFn: (id: string) => adminApi.payAdminInvoice(id, bankRef || undefined),
+    mutationFn: (id: string) =>
+      adminApi.payAdminInvoice(id, bankRef || undefined),
     onSuccess: () => {
       toast.success(t("invoicePaid"));
       setBankRef("");
@@ -237,7 +238,9 @@ function AdminInvoices() {
           {invoicesQ.isLoading ? (
             <TableRowSkeleton rows={4} />
           ) : invoices.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("invoicesEmpty")}</p>
+            <p className="text-sm text-muted-foreground">
+              {t("invoicesEmpty")}
+            </p>
           ) : (
             <Table>
               <TableHeader>
@@ -247,13 +250,17 @@ function AdminInvoices() {
                   <TableHead>{t("colSku")}</TableHead>
                   <TableHead>{t("colListIdr")}</TableHead>
                   <TableHead>{t("colStatus")}</TableHead>
-                  <TableHead className="text-right">{t("colActions")}</TableHead>
+                  <TableHead className="text-right">
+                    {t("colActions")}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {invoices.map((inv: InvoiceItem) => (
                   <TableRow key={inv.id}>
-                    <TableCell className="font-mono text-xs">{inv.number}</TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {inv.number}
+                    </TableCell>
                     <TableCell>{inv.organization_name ?? "—"}</TableCell>
                     <TableCell className="uppercase">{inv.sku}</TableCell>
                     <TableCell className="font-mono tabular-nums">
