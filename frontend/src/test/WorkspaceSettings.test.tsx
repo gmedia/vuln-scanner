@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
@@ -212,5 +213,79 @@ describe("WorkspaceSettings pilot checklist", () => {
     renderPage();
     expect(await screen.findByText("SX-202609-0003")).toBeInTheDocument();
     expect(screen.queryByText(/Transfer to/)).not.toBeInTheDocument();
+    expect(screen.queryByTestId("invoice-print")).not.toBeInTheDocument();
+  });
+
+  it("prints a sent invoice with bank copy on the sheet", async () => {
+    const print = vi.fn();
+    window.print = print;
+    vi.mocked(listOrgInvoices).mockResolvedValueOnce({
+      items: [
+        {
+          id: "inv-1",
+          organization_id: "org-a",
+          number: "SX-202609-0001",
+          product: "scan",
+          sku: "basic",
+          amount_idr: 300000,
+          period_start: "2026-09-01T00:00:00Z",
+          period_end: "2026-09-30T23:59:59Z",
+          status: "sent",
+          bank_ref: null,
+          notes: "",
+          paid_at: null,
+          created_at: "2026-09-14T00:00:00Z",
+          bank: {
+            bank_name: "Bank Contoh",
+            bank_account: "0000000000",
+            bank_holder: "Acme Holder",
+          },
+        },
+      ],
+      total: 1,
+    });
+    renderPage();
+    await userEvent.click(await screen.findByTestId("invoice-print"));
+    expect(screen.getByTestId("invoice-print-sheet")).toBeInTheDocument();
+    expect(screen.getByTestId("invoice-print-bank")).toHaveTextContent(
+      "0000000000",
+    );
+    await waitFor(() => expect(print).toHaveBeenCalled());
+  });
+
+  it("prints a paid invoice without bank account", async () => {
+    const print = vi.fn();
+    window.print = print;
+    vi.mocked(listOrgInvoices).mockResolvedValueOnce({
+      items: [
+        {
+          id: "inv-4",
+          organization_id: "org-a",
+          number: "SX-202609-0004",
+          product: "scan",
+          sku: "basic",
+          amount_idr: 300000,
+          period_start: "2026-09-01T00:00:00Z",
+          period_end: "2026-09-30T23:59:59Z",
+          status: "paid",
+          bank_ref: "TRX-1",
+          notes: "",
+          paid_at: "2026-09-15T00:00:00Z",
+          created_at: "2026-09-14T00:00:00Z",
+          bank: {
+            bank_name: "Bank Contoh",
+            bank_account: "SHOULD-NOT-PRINT",
+            bank_holder: "Acme Holder",
+          },
+        },
+      ],
+      total: 1,
+    });
+    renderPage();
+    await userEvent.click(await screen.findByTestId("invoice-print"));
+    expect(screen.getByTestId("invoice-print-sheet")).toBeInTheDocument();
+    expect(screen.queryByTestId("invoice-print-bank")).not.toBeInTheDocument();
+    expect(screen.queryByText("SHOULD-NOT-PRINT")).not.toBeInTheDocument();
+    await waitFor(() => expect(print).toHaveBeenCalled());
   });
 });

@@ -62,5 +62,14 @@
   "billingEmpty": "No Scan invoices yet. Ops will issue one here; there is no self-serve upgrade.",
   "billingLoadError": "Could not load invoices.",
   "billingAdminLink": "Open admin invoices",
-  "billingBank": "Transfer to {{name}} {{account}} ({{holder}})"
+  "billingBank": "Transfer to {{name}} {{account}} ({{holder}})",
+  "invoicePrint": "Print",
+  "invoicePrintTitle": "Sinexis Scan invoice",
+  "invoicePrintNumber": "Number",
+  "invoicePrintBillTo": "Bill to",
+  "invoicePrintSku": "SKU",
+  "invoicePrintPeriod": "Period",
+  "invoicePrintStatus": "Status",
+  "invoicePrintAmount": "Amount",
+  "invoicePrintRef": "Bank ref"
 }

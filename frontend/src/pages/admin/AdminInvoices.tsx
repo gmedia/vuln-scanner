@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Receipt, Loader2 } from "lucide-react";
+import { Receipt, Loader2, Printer } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -27,6 +27,10 @@ import PageHeader from "@/components/layout/PageHeader";
 import { adminApi, type InvoiceItem } from "@/api/admin";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import {
+  InvoicePrintSheet,
+  useInvoicePrint,
+} from "@/components/invoice/InvoicePrintSheet";
 
 function formatIdr(n: number): string {
   return `Rp ${n.toLocaleString("id-ID")}`;
@@ -39,6 +43,7 @@ function AdminInvoices() {
   const [orgId, setOrgId] = useState("");
   const [sku, setSku] = useState("basic");
   const [bankRef, setBankRef] = useState("");
+  const { printing, startPrint } = useInvoicePrint();
 
   const catalogQ = useQuery({
     queryKey: ["admin-sku-catalog"],
@@ -258,6 +263,20 @@ function AdminInvoices() {
                       <Badge variant="default">{inv.status}</Badge>
                     </TableCell>
                     <TableCell className="space-x-1 text-right">
+                      {inv.status === "sent" || inv.status === "paid" ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="no-print"
+                          data-testid="admin-invoice-print"
+                          aria-label={inv.number}
+                          onClick={() => startPrint(inv)}
+                        >
+                          <Printer className="mr-1 h-3.5 w-3.5" />
+                          {t("invoicePrint")}
+                        </Button>
+                      ) : null}
                       {inv.status === "draft" ? (
                         <Button
                           type="button"
@@ -298,6 +317,7 @@ function AdminInvoices() {
           )}
         </CardContent>
       </Card>
+      <InvoicePrintSheet invoice={printing} />
     </div>
   );
 }

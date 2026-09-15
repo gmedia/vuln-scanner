@@ -366,3 +366,55 @@ body {
 @utility animate-accordion-up {
   animation: accordion-up 200ms ease-out;
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm;
+  }
+  nav,
+  aside,
+  [data-sidebar],
+  .no-print {
+    display: none !important;
+  }
+  body.invoice-printing * {
+    visibility: hidden !important;
+  }
+  body.invoice-printing .invoice-print-sheet,
+  body.invoice-printing .invoice-print-sheet * {
+    visibility: visible !important;
+  }
+  .invoice-print-sheet {
+    display: block !important;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    padding: 0;
+    font-family:
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      "Segoe UI",
+      sans-serif;
+    color: hsl(0 0% 7%);
+    background: #fff;
+  }
+  .invoice-print-brand {
+    font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin: 0 0 1.25rem;
+  }
+  .invoice-print-accent {
+    color: hsl(142 71% 45%);
+  }
+  .invoice-print-sheet h1 {
+    font-size: 1.375rem;
+    font-weight: 650;
+    margin: 0 0 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid hsl(0 0% 90%);
+  }
+}

@@ -44,7 +44,10 @@ export function InvoicePrintSheet({
   const to = billTo ?? invoice.organization_name ?? "—";
 
   return (
-    <div className="invoice-print-sheet hidden" data-testid="invoice-print-sheet">
+    <div
+      className="invoice-print-sheet hidden"
+      data-testid="invoice-print-sheet"
+    >
       <p className="invoice-print-brand">
         SINE<span className="invoice-print-accent">XIS</span>
       </p>
@@ -57,10 +60,12 @@ export function InvoicePrintSheet({
         <strong>{t("invoicePrintBillTo")}</strong> {to}
       </p>
       <p>
-        <strong>{t("invoicePrintSku")}</strong> {invoice.sku.toUpperCase()} ({invoice.product})
+        <strong>{t("invoicePrintSku")}</strong> {invoice.sku.toUpperCase()} (
+        {invoice.product})
       </p>
       <p>
-        <strong>{t("invoicePrintPeriod")}</strong> {formatPeriod(invoice.period_start)} —{" "}
+        <strong>{t("invoicePrintPeriod")}</strong>{" "}
+        {formatPeriod(invoice.period_start)} —{" "}
         {formatPeriod(invoice.period_end)}
       </p>
       <p>
@@ -68,7 +73,9 @@ export function InvoicePrintSheet({
       </p>
       <p>
         <strong>{t("invoicePrintAmount")}</strong>{" "}
-        <span className="font-mono tabular-nums">{formatIdr(invoice.amount_idr)}</span>
+        <span className="font-mono tabular-nums">
+          {formatIdr(invoice.amount_idr)}
+        </span>
       </p>
       {showBank ? (
         <p data-testid="invoice-print-bank">
