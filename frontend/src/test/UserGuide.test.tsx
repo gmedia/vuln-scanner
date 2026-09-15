@@ -209,7 +209,10 @@ describe("UserGuide", () => {
     expect(tocNavs.length).toBeGreaterThanOrEqual(2);
     const mobileToc = tocNavs[0]?.closest("[data-slot='card']");
     expect(mobileToc).toBeTruthy();
-    expect(mobileToc?.parentElement).toHaveClass("sticky", "top-14");
+    const tocBar = mobileToc?.parentElement;
+    expect(tocBar).toHaveClass("sticky", "top-0", "bg-background");
+    expect(tocBar?.className ?? "").not.toMatch(/top-14/);
+    expect(tocBar?.className ?? "").toMatch(/safe-area-inset-top/);
     const contentsToggle = screen.getByRole("button", { name: /On this page/ });
     expect(contentsToggle).toHaveAttribute("aria-expanded", "false");
     const tocLink = screen.getAllByRole("link", {
