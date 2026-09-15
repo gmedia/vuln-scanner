@@ -168,9 +168,11 @@ td {{
   margin-top: 2.5rem; text-align: center; color: var(--muted-foreground); font-size: 12px;
   border-top: 1px solid var(--border); padding-top: 1rem;
 }}
+@page {{ size: A4; margin: 16mm; }}
 @media print {{
-  body {{ padding: 0; max-width: none; }}
-  .cover {{ break-inside: avoid; }}
+  body {{ padding: 0; max-width: none; background: #fff; }}
+  .cover, tr {{ break-inside: avoid; }}
+  a.brand {{ color: var(--foreground); }}
 }}
 </style></head><body>
 <a class="brand" href="https://sinexis.app">

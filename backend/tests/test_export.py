@@ -59,6 +59,9 @@ async def test_export_html_content_type_is_html(client, db_session, sample_user)
     assert resp.status_code == 200
     content_type = resp.headers.get("content-type", "")
     assert "text/html" in content_type
+    assert "@page" in resp.text
+    assert "@media print" in resp.text
+    assert "size: A4" in resp.text
 
 
 # ── Default format (no parameter) ──────────────────────────────────────────
