@@ -1,6 +1,6 @@
 # Spec: SPA chrome redesign (Grok2API reference, Sinexis green)
 
-**Status:** **S0 draft** (this file). **Do not implement S1+ until the user names a slice + `buat` / `implement`.**
+**Status:** **S0 draft** (this file). **S1 shipped** (flush `--sidebar` = canvas; no leftover contrast strip). **Do not implement S2+ until the user names that slice + `buat` / `implement`.**
 **Goal:** Authenticated SPA chrome and page density closer to `/home/ubuntu/referensi_design_light_dark.zip` (Grok2API light/dark), while **keeping Sinexis `--primary` green** `hsl(142 71% 45%)`.
 **Suggested epic label:** **P15** (visual). Does **not** jump P12–P14 product work. Does **not** change Guard/SIEM/WAF behaviour.
 **Reference PNGs:** extract locally from the zip; **do not commit** PNGs or the zip.
@@ -59,15 +59,15 @@ Do **not** combine S2 layout with a page restyle. Do **not** work on `main`. `GI
 
 ---
 
-### S1 — tokens / density only (no layout)
+### S1 — tokens / density only (no layout) — **shipped**
 
 **Files:** `frontend/src/index.css` (and scrollbar if still hardcoded). Optional: Card default padding **only if** Vitest `Card.test.tsx` updated.
 
-**Do:** Confirm light/dark already match theme-v1 table (`#FAFAFA` / `#0A0A0A`). Tweak `--sidebar` to **same family as canvas** (flush). Table/input density utilities if missing.
+**Do:** Confirm light/dark already match theme-v1 table (`#FAFAFA` / `#0A0A0A`). Tweak `--sidebar` to **same family as canvas** (flush). Table/input density utilities if missing. **Do not** leave a second `.dark` block that reintroduces `--sidebar: hsl(0 0% 9%)`.
 
-**DoD:** Default dark still looks like today except flush sidebar tokens. `html.dark` default unchanged. Vitest theme + Card if touched.
+**DoD:** Default dark still looks like today except flush sidebar tokens. `html.dark` default unchanged. Vitest theme + Card if touched. Cascade: **every** `.dark` `--sidebar` equals `--background` `hsl(0 0% 4%)`.
 
-**Out:** AppShell, Header, pages.
+**Out:** AppShell, Header, pages. **Do not re-implement.** Next named slice = **S2**.
 
 ---
 
