@@ -2,7 +2,7 @@
 
 **Status:** execution checklist for **humans** (finance / AM / ops). Not a second SKU. **No** customer SIDs, FQDNs, IPs, tokens, or passwords in this file.
 **Policy:** [`sku-scan-secure-addon.md`](sku-scan-secure-addon.md) · email: [`am-wave1-email-id.md`](am-wave1-email-id.md) · P11: [`../specs/status-hostname-lifecycle.md`](../specs/status-hostname-lifecycle.md).
-**Agents:** may **remind** and update this checklist. May **not** invent CRM rows, merge Dependabot, or call Cloudflare with secrets from git.
+**Agents:** this file is for **humans who ask about GTM/AM**. **Do not** present it as the session’s next step after reset. Product-depth default: [`../AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) **§1.3.1**. May update this checklist on request. May **not** invent CRM rows, merge Dependabot, or call Cloudflare with secrets from git.
 
 ---
 
@@ -77,11 +77,12 @@ PRs **#464–#471** (apex, CF create/poll/delete, env inject, SSL-gated Active, 
 
 ## D. Engineering default (agents)
 
+- **Owner lock 2026-09-15:** agent “what next” = guide **§1.3.1** (product depth). **This GTM file is not that answer.**
 - **Do not** mass-merge Dependabot. Merge **one** PR only if the user **names the number** and CI is green.
-- **Do not** start P6 S1 UI, Uptime advanced settings, or legal pages without implement.
+- Uptime advanced / P15 / PDF: only when the user **names the slice** + `buat` / `implement` (guide §1.3.1). Legal pages still need implement.
 - **Do not** recapture screenshots in parallel (OOM).
 - Prefix git with `GIT_MASTER=1`. Never commit on `main`.
 
 ---
 
-*2026-08-28. If this file disagrees with the execution guide on epic order, the guide wins.*
+*2026-09-15. If this file disagrees with the execution guide on epic order, the guide **§1.3.1** wins (product depth, not GTM-as-next).*
