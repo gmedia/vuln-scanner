@@ -50,7 +50,7 @@ export function UptimeFiltersSection({
         <Accordion type="single" collapsible>
           <AccordionItem
             value="filters"
-            className="rounded-md border border-border bg-card px-4"
+            className="rounded-md border border-border bg-card px-4 last:border-b"
           >
             <AccordionTrigger data-testid="uptime-filters-toggle">
               {t("filtersToggle")}

@@ -140,7 +140,12 @@ describe("Uptime page", () => {
     expect(row).toBeInTheDocument();
     expect(screen.getByTestId("uptime-filters")).toBeInTheDocument();
     expect(screen.getByTestId("uptime-kpi").className).toMatch(/grid-cols-3/);
-    expect(screen.getByTestId("uptime-filters-toggle")).toBeInTheDocument();
+    const filtersToggle = screen.getByTestId("uptime-filters-toggle");
+    expect(filtersToggle).toBeInTheDocument();
+    const filtersCard = filtersToggle.closest("[class*='rounded-md']");
+    expect(filtersCard?.className ?? "").toMatch(/border-border/);
+    expect(filtersCard?.className ?? "").toMatch(/last:border-b(?:\s|$)/);
+    expect(filtersCard?.className ?? "").not.toMatch(/last:border-b-0/);
     await user.click(within(row).getByTestId("uptime-actions"));
     expect(screen.getByTestId("uptime-edit")).toBeInTheDocument();
     await user.click(screen.getByTestId("uptime-edit"));
