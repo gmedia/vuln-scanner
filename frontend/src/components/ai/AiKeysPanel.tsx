@@ -1,7 +1,7 @@
 import { KeyRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AiKey } from "@/api/ai";
-import { aiItemGridClass, aiSparseCardClass } from "@/components/ai/aiLayout";
+import { aiItemGridClass } from "@/components/ai/aiLayout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -27,7 +27,7 @@ export function AiKeysPanel({
 }) {
   const { t } = useTranslation("ai");
   return (
-    <Card className={aiSparseCardClass(keys.length)} data-testid="ai-keys-card">
+    <Card data-testid="ai-keys-card">
       <CardHeader>
         <CardTitle>{t("tabKeys")}</CardTitle>
       </CardHeader>
