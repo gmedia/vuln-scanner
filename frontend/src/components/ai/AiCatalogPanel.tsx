@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { AiPublicModel } from "@/api/ai";
 import { formatIdr } from "@/components/admin/aiFormat";
-import { aiItemGridClass, aiSparseCardClass } from "@/components/ai/aiLayout";
+import { aiItemGridClass } from "@/components/ai/aiLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 
 export function AiCatalogPanel({
@@ -11,10 +11,7 @@ export function AiCatalogPanel({
 }) {
   const { t } = useTranslation("ai");
   return (
-    <Card
-      className={aiSparseCardClass(models.length)}
-      data-testid="ai-catalog-card"
-    >
+    <Card data-testid="ai-catalog-card">
       <CardHeader>
         <CardTitle>{t("tabCatalog")}</CardTitle>
       </CardHeader>

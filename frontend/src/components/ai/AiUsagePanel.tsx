@@ -2,7 +2,6 @@ import { ScrollText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AiUsage } from "@/api/ai";
 import { formatIdr } from "@/components/admin/aiFormat";
-import { aiSparseCardClass } from "@/components/ai/aiLayout";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
@@ -23,7 +22,7 @@ export function AiUsagePanel({
 }) {
   const { t } = useTranslation("ai");
   return (
-    <Card className={aiSparseCardClass(items.length)} data-testid="ai-usage-card">
+    <Card data-testid="ai-usage-card">
       <CardHeader>
         <CardTitle>{t("tabUsage")}</CardTitle>
       </CardHeader>

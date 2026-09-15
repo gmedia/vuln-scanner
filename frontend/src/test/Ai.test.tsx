@@ -128,10 +128,10 @@ describe("AI Gateway page", () => {
     await user.click(await screen.findByTestId("ai-tab-usage"));
     expect(await screen.findByTestId("ai-usage-empty")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "See catalog" })).toBeInTheDocument();
-    expect(screen.getByTestId("ai-usage-card")).toHaveClass("max-w-xl");
+    expect(screen.getByTestId("ai-usage-card")).not.toHaveClass("max-w-xl");
   });
 
-  it("caps keys card and fills the create form when fewer than 3 keys", async () => {
+  it("keeps keys card full-width and fills the create form when fewer than 3 keys", async () => {
     vi.mocked(aiApi.getAiWallet).mockResolvedValue({
       organization_id: "org1",
       balance_idr: 0,
@@ -156,7 +156,7 @@ describe("AI Gateway page", () => {
     const user = userEvent.setup();
     renderAi();
     await user.click(await screen.findByTestId("ai-tab-keys"));
-    expect(await screen.findByTestId("ai-keys-card")).toHaveClass("max-w-xl");
+    expect(await screen.findByTestId("ai-keys-card")).not.toHaveClass("max-w-xl");
     const nameWrap = screen.getByLabelText("Key name").closest("div");
     expect(nameWrap?.className).not.toMatch(/max-w-sm/);
     const grid = screen.getByTestId("ai-keys-grid");
@@ -194,7 +194,7 @@ describe("AI Gateway page", () => {
     expect(grid.className).not.toMatch(/max-w-md/);
   });
 
-  it("caps catalog card to max-w-xl when fewer than 3 models", async () => {
+  it("keeps catalog card full-width when fewer than 3 models", async () => {
     vi.mocked(aiApi.getAiWallet).mockResolvedValue({
       organization_id: "org1",
       balance_idr: 0,
@@ -217,7 +217,9 @@ describe("AI Gateway page", () => {
     const user = userEvent.setup();
     renderAi();
     await user.click(await screen.findByTestId("ai-tab-catalog"));
-    expect(await screen.findByTestId("ai-catalog-card")).toHaveClass("max-w-xl");
+    expect(await screen.findByTestId("ai-catalog-card")).not.toHaveClass(
+      "max-w-xl",
+    );
     const grid = screen.getByTestId("ai-catalog-grid");
     expect(grid.className).not.toMatch(/max-w-md/);
     expect(grid.className).not.toMatch(/lg:grid-cols-3/);
@@ -263,6 +265,7 @@ describe("AI Gateway page", () => {
     const user = userEvent.setup();
     renderAi();
     await user.click(await screen.findByRole("tab", { name: "Usage" }));
+    expect(screen.getByTestId("ai-usage-card")).not.toHaveClass("max-w-xl");
     expect(await screen.findByTestId("ai-usage-list-mobile")).toHaveClass(
       "space-y-2",
       "md:hidden",
