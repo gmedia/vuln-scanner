@@ -54,7 +54,7 @@ Nav groups match Sidebar: **Scan** · **Attach** · **Account** · **Admin** (ad
 | `/scan/ip` | `pages/IpScanner.tsx` | Scan | Two-column form + coverage | `IpScanner.test.tsx`, `e2e/ip-scanner*.spec.ts` |
 | `/scan/domain` | `pages/DomainScanner.tsx` | Scan | Same layout family as IP | `DomainScanner.test.tsx`, `e2e/domain-scanner*.spec.ts` |
 | `/scan/mobile` | `pages/MobileScanner.tsx` | Scan | Upload APK/AAB/IPA | `MobileScanner.test.tsx`, `e2e/mobile-scanner*.spec.ts` |
-| `/scan/:id` | `pages/ScanDetail.tsx` | — | Job detail; not in sidebar | `ScanDetail.test.tsx`, `e2e/scan-detail.spec.ts`, `e2e/export.spec.ts` |
+| `/scan/:id` | `pages/ScanDetail.tsx` | — | Job detail; Export = JSON / technical HTML / executive HTML (`export-executive`). Print-to-PDF = spec S1a [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md) — **not** `format=pdf`. | `ScanDetail.test.tsx`, `e2e/scan-detail.spec.ts`, `e2e/export.spec.ts` |
 | `/schedules` | `pages/Schedules.tsx` | Scan | Attach loop | `Schedules.test.tsx` |
 | `/assets` | `pages/Assets.tsx` | Scan | `data-testid=nav-assets` | `Assets.test.tsx` |
 | `/host` | `pages/HostProtect.tsx` | Scan | Host Protect (malware + WAF tabs). Flag `HOST_PROTECT` / `HOST_WAF`. Not Guard enroll. | `HostProtect.test.tsx` |
@@ -76,7 +76,7 @@ Nav groups match Sidebar: **Scan** · **Attach** · **Account** · **Admin** (ad
 |------|-----------|-----|-------|-------|
 | `/credit-history` | `pages/credit/CreditHistory.tsx` | Account | **Filter-bar reference** (equal `gap-3`, `h-10`) | `e2e/credit-history.spec.ts` |
 | `/profile` | `pages/Profile.tsx` | Account | | `Profile.test.tsx`, `e2e/profile.spec.ts` |
-| `/settings/workspace` | `pages/WorkspaceSettings.tsx` | Account | Org members, invites, P6 pilot checklist | `WorkspaceSettings.test.tsx` |
+| `/settings/workspace` | `pages/WorkspaceSettings.tsx` | Account | Org members, invites, P6 pilot checklist, Billing card (`workspace-billing`). Invoice HTML print = S1b [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md). | `WorkspaceSettings.test.tsx` |
 | `/org/members` | **same** `WorkspaceSettings.tsx` | — | Alias route; keep in sync | same |
 
 ### Admin (`AdminRoute`)
@@ -88,7 +88,7 @@ Nav groups match Sidebar: **Scan** · **Attach** · **Account** · **Admin** (ad
 | `/admin/users/:id` | `pages/admin/AdminUserDetail.tsx` | — | | `admin/AdminUserDetail.test.tsx`, `e2e/admin-user-detail.spec.ts` |
 | `/admin/pricing` | `pages/admin/AdminPricing.tsx` | Admin | Read-only seed `credit_cost` archive (not a meter). Banner + HPP link. **Not** IDR COGS. | `admin/AdminPricing.test.tsx` |
 | `/admin/hpp` | `pages/admin/AdminHpp.tsx` | Admin | IDR unit rates + monthly overhead + cost journal + date-range report + SKU overlay **estimasi**. Not mixed with Pricing. `nav-admin-hpp`. Spec: `docs/specs/admin-hpp-v1.md`. | `admin/AdminHpp.test.tsx` |
-| `/admin/invoices` | `pages/admin/AdminInvoices.tsx` | Admin | Sinexis Scan invoices (bank transfer). Catalog + draft/send/paid/void. `nav-admin-invoices`. Spec: `docs/specs/sinexis-invoice-v1.md`. | `admin/AdminInvoices.test.tsx` |
+| `/admin/invoices` | `pages/admin/AdminInvoices.tsx` | Admin | Sinexis Scan invoices (bank transfer). Catalog + draft/send/paid/void. `nav-admin-invoices`. Pay loop: `docs/specs/sinexis-invoice-v1.md`. HTML print: S1b [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md). | `admin/AdminInvoices.test.tsx` |
 | `/admin/blog` | `pages/admin/AdminBlog.tsx` | Admin | CMS; `nav-admin-blog`. Locale key `blogStatus`. | `admin/AdminBlog.test.tsx` |
 | `/admin/email-logs` | `pages/admin/AdminEmailLogs.tsx` | Admin | Outbound SMTP log; masked recipient. `nav-admin-email-logs`. | `admin/AdminEmailLogs.test.tsx` |
 | `/admin/ai` | `pages/admin/AdminAi.tsx` | Admin | Catalog, usage, top-up, trial chat. `nav-admin-ai`. Flag `AI_GATEWAY_ENABLED`. | `admin/AdminAi.test.tsx` |
