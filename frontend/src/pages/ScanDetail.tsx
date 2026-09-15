@@ -5,12 +5,13 @@ import {
   Clock,
   Crosshair,
   Download,
+  Printer,
   RefreshCw,
   Shield,
   Target,
 } from "lucide-react";
 import { useScanDetail, useScanDiff, useScanFindings } from "@/hooks/useScan";
-import { type ScanDiff, type ScanFinding, downloadFile } from "@/api/scans";
+import { type ScanDiff, type ScanFinding, downloadFile, printFile } from "@/api/scans";
 import {
   Pagination,
   PaginationContent,
@@ -386,6 +387,7 @@ function ScanDetail() {
                 className="text-xs"
                 title={t("htmlTechTitle")}
                 aria-label={t("htmlTechAria")}
+                data-testid="export-html"
                 onClick={() => downloadFile(id, "html")}
               >
                 <Download className="mr-1 h-3.5 w-3.5" />
@@ -401,6 +403,29 @@ function ScanDetail() {
               >
                 <Download className="mr-1 h-3.5 w-3.5" />
                 {t("execReport")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                title={t("printHtmlTitle")}
+                aria-label={t("printHtmlAria")}
+                data-testid="export-print-html"
+                onClick={() => printFile(id, "html")}
+              >
+                <Printer className="mr-1 h-3.5 w-3.5" />
+                {t("printHtml")}
+              </Button>
+              <Button
+                size="sm"
+                className="text-xs"
+                title={t("printExecTitle")}
+                aria-label={t("printExecAria")}
+                data-testid="export-print-executive"
+                onClick={() => printFile(id, "executive")}
+              >
+                <Printer className="mr-1 h-3.5 w-3.5" />
+                {t("printExec")}
               </Button>
             </div>
           ) : (

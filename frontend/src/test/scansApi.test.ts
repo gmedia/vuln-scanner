@@ -40,6 +40,7 @@ import {
   getScanFindings,
   getScanHistory,
   getWsUrl,
+  printFile,
 } from "@/api/scans";
 import type { ScanJob, ScanJobDetail, ScanFinding } from "@/api/scans";
 
@@ -246,6 +247,44 @@ describe("scans API", () => {
       expect(mockAxios.get).toHaveBeenCalledWith("/api/scan/history", {
         params: { page: 1, limit: 10, scan_type: "ip" },
       });
+    });
+  });
+
+  describe("printFile", () => {
+    it("opens a blob tab and prints without download attribute", async () => {
+      localStorage.setItem("sinexis.locale", "id");
+      mockAxios.get.mockResolvedValueOnce({
+        data: new Blob(["<html></html>"], { type: "text/html" }),
+      });
+      const print = vi.fn();
+      const focus = vi.fn();
+      const addEventListener = vi.fn();
+      const tab = { print, focus, addEventListener };
+      const open = vi
+        .spyOn(window, "open")
+        .mockReturnValue(tab as unknown as Window);
+      const createObjectURL = vi
+        .spyOn(URL, "createObjectURL")
+        .mockReturnValue("blob:print-1");
+
+      await printFile("scan-1", "executive");
+
+      expect(mockAxios.get).toHaveBeenCalledWith("/api/scan/scan-1/export", {
+        params: { format: "executive", lang: "id" },
+        responseType: "blob",
+      });
+      expect(open).toHaveBeenCalledWith("blob:print-1", "_blank");
+      expect(addEventListener).toHaveBeenCalledWith(
+        "load",
+        expect.any(Function),
+      );
+      const loadHandler = addEventListener.mock.calls[0][1] as () => void;
+      loadHandler();
+      expect(focus).toHaveBeenCalled();
+      expect(print).toHaveBeenCalled();
+      createObjectURL.mockRestore();
+      open.mockRestore();
+      localStorage.removeItem("sinexis.locale");
     });
   });
 

@@ -56,10 +56,12 @@ test.describe("Export @scan", () => {
     });
     await page.getByRole("tab", { name: "Ekspor" }).click();
 
-    const jsonBtn = page.locator('button:has-text("JSON")');
-    const htmlBtn = page.locator('button:has-text("HTML")');
+    const jsonBtn = page.getByRole("button", { name: "Unduh ekspor JSON" });
+    const htmlBtn = page.getByTestId("export-html");
     await expect(jsonBtn).toBeVisible();
     await expect(htmlBtn).toBeVisible();
+    await expect(page.getByTestId("export-print-html")).toBeVisible();
+    await expect(page.getByTestId("export-print-executive")).toBeVisible();
 
     const [jsonResponse] = await Promise.all([
       page.waitForResponse(

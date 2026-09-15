@@ -266,9 +266,11 @@ td {{
   border-top: 1px solid var(--border); padding-top: 1rem;
 }}
 code {{ font-size: 12px; background: var(--muted); padding: 1px 4px; border-radius: 3px; }}
+@page {{ size: A4; margin: 16mm; }}
 @media print {{
-  body {{ padding: 0; max-width: none; }}
-  .cover {{ break-inside: avoid; }}
+  body {{ padding: 0; max-width: none; background: #fff; }}
+  .cover, .next, tr {{ break-inside: avoid; }}
+  a.brand {{ color: var(--foreground); }}
 }}
 </style></head><body>
 <a class="brand" href="https://sinexis.app">
