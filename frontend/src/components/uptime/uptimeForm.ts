@@ -110,7 +110,13 @@ export function parseUptimeFormPayload(
   }
   const timeout = Number(values.timeoutSeconds) || 10;
   const expectRaw = values.expectStatus.trim();
-  const expectNum = expectRaw ? Number(expectRaw) : undefined;
+  const expectNum = expectRaw ? Number(expectRaw) : Number.NaN;
+  const httpExpect =
+    values.checkType === "http"
+      ? expectRaw && !Number.isNaN(expectNum)
+        ? expectNum
+        : null
+      : undefined;
   return {
     ok: true,
     payload: {
@@ -122,12 +128,7 @@ export function parseUptimeFormPayload(
           : values.target.trim(),
       interval_seconds: Number(values.interval) || 60,
       timeout_seconds: values.checkType === "heartbeat" ? undefined : timeout,
-      expect_status:
-        values.checkType === "http" &&
-        expectNum != null &&
-        !Number.isNaN(expectNum)
-          ? expectNum
-          : undefined,
+      expect_status: httpExpect,
       keyword: values.keyword.trim() || undefined,
       keyword_invert: values.keywordInvert,
       http_method: values.checkType === "http" ? values.httpMethod : undefined,

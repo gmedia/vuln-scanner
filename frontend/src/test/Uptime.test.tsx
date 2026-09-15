@@ -8,6 +8,11 @@ import {
   explainUptimeError,
   mapUptimeError,
 } from "@/components/uptime/uptimeErrors";
+import {
+  EMPTY_UPTIME_FORM,
+  parseUptimeFormPayload,
+  toUptimeUpdatePayload,
+} from "@/components/uptime/uptimeForm";
 
 const mockList = vi.fn();
 const mockSamples = vi.fn();
@@ -312,5 +317,34 @@ describe("Uptime page", () => {
     expect(
       screen.getAllByText(/403 is a deny/i).length,
     ).toBeGreaterThanOrEqual(1);
+  });
+
+  it("sends null expect_status when the HTTP field is cleared", () => {
+    const parsed = parseUptimeFormPayload({
+      ...EMPTY_UPTIME_FORM,
+      name: "web",
+      target: "https://example.com",
+      expectStatus: "",
+      timeoutSeconds: "10",
+    });
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.payload.expect_status).toBeNull();
+    expect(parsed.payload.timeout_seconds).toBe(10);
+    expect(toUptimeUpdatePayload(parsed.payload).expect_status).toBeNull();
+  });
+
+  it("keeps an exact HTTP expect_status on create", () => {
+    const parsed = parseUptimeFormPayload({
+      ...EMPTY_UPTIME_FORM,
+      name: "web",
+      target: "https://example.com",
+      expectStatus: "204",
+      timeoutSeconds: "20",
+    });
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.payload.expect_status).toBe(204);
+    expect(parsed.payload.timeout_seconds).toBe(20);
   });
 });
