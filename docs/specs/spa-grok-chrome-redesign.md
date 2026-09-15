@@ -1,6 +1,6 @@
 # Spec: SPA chrome redesign (Grok2API reference, Sinexis green)
 
-**Status:** **S0–S9 on `main`.** **S1** flush tokens. **S2** AppShell (no sticky `h-12`; chrome in `SidebarFooter`) **#704**. **S3–S8** PageHeader waves **#705–#713**. **S9** recapture notes **#714**. **Do not re-implement.** Next product-depth default is **not** more P15 chrome — see guide **§1.3.1**.
+**Status:** **S0–S9 on `main`.** **S1** flush tokens. **S2** AppShell (no sticky `h-12`; chrome in `SidebarFooter`) **#704**. **S3–S8** PageHeader waves **#705–#713**. **S9** recapture notes **#714**. **Do not re-implement.** Next product-depth default is **not** more P15 chrome — [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md) (guide **§1.3.1**).
 **Goal:** Authenticated SPA chrome and page density closer to `/home/ubuntu/referensi_design_light_dark.zip` (Grok2API light/dark), while **keeping Sinexis `--primary` green** `hsl(142 71% 45%)`.
 **Suggested epic label:** **P15** (visual). Does **not** jump P12–P14 product work. Does **not** change Guard/SIEM/WAF behaviour.
 **Reference PNGs:** extract locally from the zip; **do not commit** PNGs or the zip.

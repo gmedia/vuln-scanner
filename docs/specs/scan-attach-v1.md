@@ -132,7 +132,7 @@ OpenAPI descriptions in Bahasa or EN — match existing API style.
 - Extend existing **HTML export** path with a **management** template:
   cover (target, period, risk counts), “what’s new”, top 5 critical/high, plain-language next steps (no exploit PoC).
 - Bahasa-friendly copy strings.
-- PDF: optional via HTML print or library — **stretch**; HTML download is MVP.
+- PDF: optional via HTML print or library — **stretch**; HTML download is MVP. Follow-on product-depth: [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md) (**S1a** = browser print, **not** a PDF library in S1).
 
 ---
 
