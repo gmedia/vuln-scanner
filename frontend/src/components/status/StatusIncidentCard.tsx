@@ -3,22 +3,13 @@ import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
-import { deleteIncident, patchIncident, type StatusIncident } from "@/api/statusPage";
+import { deleteIncident, type StatusIncident } from "@/api/statusPage";
 import { StatusIncidentQuickUpdate } from "@/components/status/StatusIncidentQuickUpdate";
 import { htmlLang, isAppLocale } from "@/i18n/locales";
 import i18n from "@/i18n";
 import type { ApiError } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { Label } from "@/components/ui/Label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/Select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,9 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const IMPACTS = ["none", "minor", "major", "critical"] as const;
-
-type Panel = "idle" | "edit" | "update";
+type Panel = "idle" | "update";
 
 function apiDetail(err: unknown, fallback: string): string {
   const detail = (err as ApiError).response?.data?.detail;
@@ -75,27 +64,18 @@ export function StatusIncidentCard({
   incident,
   canDelete,
   onDone,
+  onEdit,
 }: {
   readonly incident: StatusIncident;
   readonly canDelete: boolean;
   readonly onDone: () => void;
+  readonly onEdit: () => void;
 }) {
   const { t } = useTranslation("statusPage");
   const [panel, setPanel] = useState<Panel>("idle");
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [title, setTitle] = useState(incident.title);
-  const [impact, setImpact] = useState(incident.impact);
   const open = incident.status !== "resolved";
 
-  const saveMut = useMutation({
-    mutationFn: () =>
-      patchIncident(incident.id, { title: title.trim(), impact }),
-    onSuccess: () => {
-      setPanel("idle");
-      onDone();
-    },
-    onError: (err) => toast.error(apiDetail(err, t("saveIncident"))),
-  });
   const delMut = useMutation({
     mutationFn: () => deleteIncident(incident.id),
     onSuccess: onDone,
@@ -127,11 +107,7 @@ export function StatusIncidentCard({
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem
               data-testid={`status-incident-edit-${incident.id}`}
-              onSelect={() => {
-                setTitle(incident.title);
-                setImpact(incident.impact);
-                setPanel("edit");
-              }}
+              onSelect={onEdit}
             >
               {t("edit")}
             </DropdownMenuItem>
@@ -176,58 +152,6 @@ export function StatusIncidentCard({
           </Button>
         ) : null}
       </div>
-      {panel === "edit" ? (
-        <div className="mt-3 space-y-3">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <Label htmlFor={`inc-title-${incident.id}`}>
-                {t("incidentTitle")}
-              </Label>
-              <Input
-                id={`inc-title-${incident.id}`}
-                data-testid={`status-incident-title-${incident.id}`}
-                className="h-10 min-h-10"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </div>
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <Label>{t("impact")}</Label>
-              <Select value={impact} onValueChange={setImpact}>
-                <SelectTrigger className="h-10 min-h-10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {IMPACTS.map((v) => (
-                    <SelectItem key={v} value={v}>
-                      {v}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              size="sm"
-              data-testid={`status-incident-save-${incident.id}`}
-              disabled={!title.trim() || saveMut.isPending}
-              onClick={() => saveMut.mutate()}
-            >
-              {t("saveIncident")}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => setPanel("idle")}
-            >
-              {t("cancel")}
-            </Button>
-          </div>
-        </div>
-      ) : null}
       {panel === "update" ? (
         <StatusIncidentQuickUpdate
           incidentId={incident.id}

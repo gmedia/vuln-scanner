@@ -6,7 +6,6 @@ import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
-import { Textarea } from "@/components/ui/Textarea";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
@@ -29,6 +28,7 @@ import type { ApiError } from "@/lib/utils";
 import { canManageMembers } from "@/api/orgs";
 import { useAuthStore } from "@/store/authStore";
 import { StatusIncidentCard } from "@/components/status/StatusIncidentCard";
+import { StatusIncidentSheet } from "@/components/status/StatusIncidentSheet";
 import {
   addComponent,
   attachHostname,
@@ -37,9 +37,11 @@ import {
   deleteComponent,
   detachHostname,
   getStatusPage,
+  patchIncident,
   patchStatusPage,
   replaceHostname,
   upsertStatusPage,
+  type StatusIncident,
 } from "@/api/statusPage";
 
 function apiDetail(err: unknown, fallback: string): string {
@@ -74,11 +76,10 @@ export default function StatusPage() {
   const [host, setHost] = useState<string | null>(null);
   const [monitorId, setMonitorId] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [incTitle, setIncTitle] = useState("");
-  const [incBody, setIncBody] = useState("");
-  const [incImpact, setIncImpact] = useState("minor");
-  const [incStatus, setIncStatus] = useState("investigating");
   const [incOpen, setIncOpen] = useState(false);
+  const [editingIncident, setEditingIncident] = useState<StatusIncident | null>(
+    null,
+  );
 
   const slugDraft = editSlug ?? page?.slug ?? "";
   const titleDraft = editTitle ?? page?.title ?? "";
@@ -157,19 +158,29 @@ export default function StatusPage() {
     onSuccess: invalidate,
   });
   const incMut = useMutation({
-    mutationFn: () =>
-      createIncident({
-        title: incTitle,
-        impact: incImpact,
-        status: incStatus,
-        body: incBody,
-      }),
+    mutationFn: (payload: {
+      title: string;
+      impact: string;
+      status: string;
+      body: string;
+    }) => createIncident(payload),
     onSuccess: () => {
-      setIncTitle("");
-      setIncBody("");
-      setIncImpact("minor");
-      setIncStatus("investigating");
       setIncOpen(false);
+      setEditingIncident(null);
+      invalidate();
+    },
+  });
+  const saveIncMut = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: { title: string; impact: string };
+    }) => patchIncident(id, payload),
+    onSuccess: () => {
+      setIncOpen(false);
+      setEditingIncident(null);
       invalidate();
     },
   });
@@ -519,12 +530,10 @@ export default function StatusPage() {
                 data-testid="status-incident-add"
                 onClick={() => {
                   if (incOpen) {
-                    setIncTitle("");
-                    setIncBody("");
-                    setIncImpact("minor");
-                    setIncStatus("investigating");
+                    setEditingIncident(null);
                     setIncOpen(false);
                   } else {
+                    setEditingIncident(null);
                     setIncOpen(true);
                   }
                 }}
@@ -533,93 +542,24 @@ export default function StatusPage() {
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
-              {incOpen ? (
-                <div
-                  className="space-y-4"
-                  data-testid="status-incident-create"
-                >
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <div className="flex min-w-0 flex-col gap-1.5 lg:col-span-2">
-                      <Label htmlFor="sp-inc-title">{t("incidentTitle")}</Label>
-                      <Input
-                        id="sp-inc-title"
-                        data-testid="status-incident-title"
-                        className="h-10 min-h-10"
-                        value={incTitle}
-                        onChange={(e) => setIncTitle(e.target.value)}
-                      />
-                    </div>
-                    <div className="flex min-w-0 flex-col gap-1.5">
-                      <Label>{t("impact")}</Label>
-                      <Select value={incImpact} onValueChange={setIncImpact}>
-                        <SelectTrigger className="h-10 min-h-10">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {["none", "minor", "major", "critical"].map((v) => (
-                            <SelectItem key={v} value={v}>
-                              {v}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex min-w-0 flex-col gap-1.5">
-                      <Label>{t("status")}</Label>
-                      <Select value={incStatus} onValueChange={setIncStatus}>
-                        <SelectTrigger className="h-10 min-h-10">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[
-                            "investigating",
-                            "identified",
-                            "monitoring",
-                            "resolved",
-                          ].map((v) => (
-                            <SelectItem key={v} value={v}>
-                              {v}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2 lg:col-span-4">
-                      <Label htmlFor="sp-inc-body">{t("body")}</Label>
-                      <Textarea
-                        id="sp-inc-body"
-                        data-testid="status-incident-body"
-                        value={incBody}
-                        onChange={(e) => setIncBody(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      data-testid="status-incident-create-save"
-                      disabled={!incTitle.trim() || !incBody.trim() || incMut.isPending}
-                      onClick={() => incMut.mutate()}
-                    >
-                      {t("save")}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      data-testid="status-incident-create-cancel"
-                      onClick={() => {
-                        setIncTitle("");
-                        setIncBody("");
-                        setIncImpact("minor");
-                        setIncStatus("investigating");
-                        setIncOpen(false);
-                      }}
-                    >
-                      {t("cancel")}
-                    </Button>
-                  </div>
-                </div>
-              ) : null}
+              <StatusIncidentSheet
+                open={incOpen}
+                editing={editingIncident}
+                busy={incMut.isPending || saveIncMut.isPending}
+                onOpenChange={(next) => {
+                  if (!next) {
+                    setEditingIncident(null);
+                    setIncOpen(false);
+                  } else {
+                    setIncOpen(true);
+                  }
+                }}
+                onCreate={(payload) => incMut.mutate(payload)}
+                onSaveEdit={(payload) => {
+                  if (!editingIncident) return;
+                  saveIncMut.mutate({ id: editingIncident.id, payload });
+                }}
+              />
               {page.incidents.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t("noIncidents")}</p>
               ) : (
@@ -633,6 +573,10 @@ export default function StatusPage() {
                         incident={i}
                         canDelete={canDeleteIncident}
                         onDone={invalidate}
+                        onEdit={() => {
+                          setEditingIncident(i);
+                          setIncOpen(true);
+                        }}
                       />
                     </li>
                   ))}
