@@ -104,11 +104,11 @@ Then read, in order:
 | **P5** | **Guard MVP** (Wazuh thin) | Second upsell | Agent inventory, critical alerts, per-org enroll; spek [`guard-v1.md`](specs/guard-v1.md) | Full SIEM, SOAR, raw-log UI, per-tenant managers | **S0–S5 + Http on `main`** (#273–#275). E2E A+B **#299**. Host/guide: **#279** enroll, **#281** generic install, **#294** TOC. Mock default **CI** (`GUARD_MOCK_WAZUH=true`). **Live lab:** Manager+Indexer on **Guard host (`tc3`)**; app (`tc1`) `.env` `GUARD_MOCK_WAZUH=false` + `WAZUH_*` (compose must inject — do not assume `.env` auto-flows); agent VM **`tc5`**. **Do not** add Discover/cases on `/guard` |
 | **P6** | **Hospitality / pilot pack** | Beachhead A | Hotel runbooks, hybrid SLA | Logos-only builds | **S1–S3 on `main`**: Workspace checklist, pack HTML, AM one-pager [`hospitality-am-one-pager.md`](commercial/hospitality-am-one-pager.md) |
 | **P7** | **SIEM v1** (search + cases) | Analyst surface after Guard | Org-scoped Indexer search (structured), Postgres cases; spek [`siem-v1.md`](specs/siem-v1.md) | SOAR, customer Wazuh UI, raw DSL, Pattern B managers, merge into `scan_findings` | **S0–S5 on `main`** (#307). Host flag: GitHub secret `SIEM_ENABLED` **and** compose/CI `.env` inject (default `false`) |
-| **P8** | **Uptime v1** (external probe) | Cheap attach “is the site up?” | HTTP+TCP, SKU seats, email down/up, SPA `/uptime`; spek [`uptime-v1.md`](specs/uptime-v1.md) | Status page, multi-region, webhooks, merge into Guard/SIEM/scan | **S1–S5 + gaps + retention on `main`** (#397–#401). **v2 check types** (#451). **Advanced settings S0 draft** [`uptime-advanced-settings.md`](specs/uptime-advanced-settings.md) — docs only; do not implement until named. Flag `UPTIME_ENABLED` default true. Residual: **human UI/SMTP smoke**. |
+| **P8** | **Uptime v1** (external probe) | Cheap attach “is the site up?” | HTTP+TCP, SKU seats, email down/up, SPA `/uptime`; spek [`uptime-v1.md`](specs/uptime-v1.md) | Status page, multi-region, webhooks, merge into Guard/SIEM/scan | **S1–S5 + gaps + retention on `main`** (#397–#401). **v2 check types** (#451). **Advanced settings shipped** [`uptime-advanced-settings.md`](specs/uptime-advanced-settings.md) (sheet **#767** + PATCH clear). Flag `UPTIME_ENABLED` default true. Residual: **human UI/SMTP smoke**. Do **not** re-implement. |
 | **P8-i18n** | **i18n id/en** | Dual language SPA | Catalogs, switcher, executive/notify locale, `users.locale` | Extra locales, CVE translation, legal pages | **S1–S7 on `main`** (#367–#373). Spek [`i18n-v1.md`](specs/i18n-v1.md) — **not** a second P8; do not re-implement. |
 | **P9** | **Theme light/dark** | Operator appearance | Tokens + switcher; default dark | Per-org theme, Wave G layout | **S1–S3 on `main`** (#375–#378). Spek [`theme-v1.md`](specs/theme-v1.md). |
 | **P10** | **Public blog** (GTM content) | Trust / inbound copy without a deploy per post | Public `/blog`; platform-admin CMS; Markdown; SEO HTML island + path-only index | Comments, Next.js, org CMS, images, legal pages, Guard merge | Spek [`blog-v1.md`](specs/blog-v1.md). Q1–Q6 locked. **S1–S5 in PR #409.** |
-| **P12** | **Host Protect** (on-box web malware) | Attach for VPS/colo that want Imunify-**jobs** **without** cloning Imunify | Named web paths on Guard agent; YARA/Clam; hits; opt-in quarantine **queue** (`host_commands`); SPA `/host`; spek [`host-protect-v1.md`](specs/host-protect-v1.md) | PHP PD, KernelCare, **WAF (P13/P14-F)**, cPanel plugin, shared-UID farm, Imunify IP, dual enroll daemon | **S0–S12 on `main`**. Honesty **#556**. S11 queue **#558**. S12 Clam + systemd jail **#559**. Helper: `packaging/host-protect-helper/`. Lab **tc5**, never ERP. SKU = **working list IDR** (not invoice lock). **Do not** re-implement S1–S12. Agent next ≠ more P12 — see **§1.3.1** (Uptime advanced first; P14 **E** is #6). |
+| **P12** | **Host Protect** (on-box web malware) | Attach for VPS/colo that want Imunify-**jobs** **without** cloning Imunify | Named web paths on Guard agent; YARA/Clam; hits; opt-in quarantine **queue** (`host_commands`); SPA `/host`; spek [`host-protect-v1.md`](specs/host-protect-v1.md) | PHP PD, KernelCare, **WAF (P13/P14-F)**, cPanel plugin, shared-UID farm, Imunify IP, dual enroll daemon | **S0–S12 on `main`**. Honesty **#556**. S11 queue **#558**. S12 Clam + systemd jail **#559**. Helper: `packaging/host-protect-helper/`. Lab **tc5**, never ERP. SKU = **working list IDR** (not invoice lock). **Do not** re-implement S1–S12. Agent next ≠ more P12 — see **§1.3.1** (P15 S1 first; P14 **E** is #5). |
 | **P13** | **Host WAF** (on-box HTTP filter) | HTTP detect/block **on customer VPS** | Policy per `host_sites`; mock S1–S3; Coraza/nginx **on customer VPS** S4+; spek [`host-waf-v1.md`](specs/host-waf-v1.md) | Coraza on **Sinexis** edge; Imunify rules; PHP PD; ERP lab | **S0–S5 on `main`** (#512–#517) **+ live ingest + starter tab (#640) + DL2 1005/1006 + #708 through 1146**. Product events = rules **1001–1146**. IM360/CRS/static **dropped**. SPA Simulate `mock.sqli.1` = **DL0 shipped** (lab-only). `HOST_WAF_ENABLED`: **prod compose true**, local/CI **false**; per-site mode **off**. **P14 F** protect = Host Multi + customer snippet. Never WAF on `sinexis.app` nginx. Lab: [`host-waf-lab-smoke.sh`](../scripts/host-waf-lab-smoke.sh) — **`--apply-vhost` default `tc5`** (Sinexis lab VM); **refuses ERP** / `sx-erpstg`; never `sinexis.app` edge. |
 | **P14** | **Imunify-class on-box** | Owner lock: take **regional** Imunify-shaped budget (VPS/colo **without** ripping Imunify on cPanel farms) | Helper-first scan; worker never impersonates customer FS; isolate on VM; WAF on **customer** nginx; spek [`imunify-class-onbox.md`](specs/imunify-class-onbox.md); **VPS displace-lite plan** [`vps-displace-imunify-dev-plan.md`](specs/vps-displace-imunify-dev-plan.md) | Clone / “Imunify parity” PRs; trademarks; PHP PD/KernelCare v1; SaaS SSH; edge WAF; “ganti Imunify” on **shared cPanel** | **Docs + P12 S11/S12 landed.** Slices **A–H**. **Waves 0–3** in spek §7: **0** installer **#642** → **1** file loop → **2** WAF **F** (starter pack on `main`) → **3** **G/H** research. Displace **DL0–DL3 shipped**. Short “ganti Imunify” only after **Sentence-ok**. Default next: **not** more WAF IDs / **G/H** unless named + `buat`. Legal: [`imunify-beside-not-roadmap.md`](commercial/imunify-beside-not-roadmap.md). |
 
@@ -127,12 +127,12 @@ P0–P14 control planes are **on `main`**. Next engineering is **depth**, not a 
 
 | Order | Slice | Why | Spec | Out |
 |-------|--------|-----|------|-----|
-| **1 (default recommend)** | **P8.x Uptime advanced** | API already has `timeout_seconds` / `expect_status`; SPA is create-only; colo false-downs | [`uptime-advanced-settings.md`](specs/uptime-advanced-settings.md) | Pingdom, multi-region, webhooks, Pro-only 403 |
-| **2** | **P15 S1** tokens/density | Flush sidebar; no layout yet | [`spa-grok-chrome-redesign.md`](specs/spa-grok-chrome-redesign.md) S1 | Do **not** mix S2 AppShell in the same PR; keep `--primary` green |
-| **3** | **P15 S2** AppShell | Drop sticky `h-12` product header; move testids (`user-menu`, `header-credits`) | same spec S2 | Landing / blog island chrome; kit restyle |
-| **4** | **Scan PDF / invoice HTML print** | Attach still HTML-only; invoice I10 “print later” | **Needs S0** if user picks this — do not code from this row | Gateway, e-meterai, Host invoice (`invoicable=false`) |
-| **5** | **Inbox “Delivered” (user-side)** | Guide §3 backlog | **Needs S0** | Mixing into Guard Discover |
-| **6** | **P14 E** denser Host cadence | On-box honesty shipped; not more WAF IDs | [`imunify-class-onbox.md`](specs/imunify-class-onbox.md) slice **E** | 24×7 YARA on `/`; inotify unless named; WAF **1147+**; **G/H** |
+| **— shipped** | **P8.x Uptime advanced** | SPA Advanced + edit + timeout/`expect_status`; PATCH can clear status | [`uptime-advanced-settings.md`](specs/uptime-advanced-settings.md) | Do **not** re-implement; Pingdom / webhooks still out |
+| **1 (default recommend)** | **P15 S1** tokens/density | Flush sidebar; no layout yet | [`spa-grok-chrome-redesign.md`](specs/spa-grok-chrome-redesign.md) S1 | Do **not** mix S2 AppShell in the same PR; keep `--primary` green |
+| **2** | **P15 S2** AppShell | Drop sticky `h-12` product header; move testids (`user-menu`, `header-credits`) | same spec S2 | Landing / blog island chrome; kit restyle |
+| **3** | **Scan PDF / invoice HTML print** | Attach still HTML-only; invoice I10 “print later” | **Needs S0** if user picks this — do not code from this row | Gateway, e-meterai, Host invoice (`invoicable=false`) |
+| **4** | **Inbox “Delivered” (user-side)** | Guide §3 backlog | **Needs S0** | Mixing into Guard Discover |
+| **5** | **P14 E** denser Host cadence | On-box honesty shipped; not more WAF IDs | [`imunify-class-onbox.md`](specs/imunify-class-onbox.md) slice **E** | 24×7 YARA on `/`; inotify unless named; WAF **1147+**; **G/H** |
 
 **Parked (do not recommend):** Capacitor/PWA [`capacitor-shell-v1.md`](specs/capacitor-shell-v1.md); AI Gateway already S1–S5 flag-off; Host catalog invoice; cPanel plugin; PHP PD; org wallet; nested projects.
 
@@ -444,7 +444,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 
 | User says | Agent does |
 |-----------|------------|
-| “lanjut” / “next” without spec | Re-read **§1.3.1** + `handoff.md`; recommend **product-depth** default (**P8.x Uptime advanced**) and wait for `buat`; **do not** pitch GTM/AM/10 SIDs; **no** silent feature coding |
+| “lanjut” / “next” without spec | Re-read **§1.3.1** + `handoff.md`; recommend **product-depth** default (**P15 S1** tokens); Uptime advanced is **shipped**; **do not** pitch GTM/AM/10 SIDs; **no** silent feature coding |
 | “tulis spek workspace” | Update `docs/specs/workspace-v1.md` only (S1–S5 already shipped) |
 | “implement workspace” / “kerjakan fase workspace” | S1–S5 done — clarify **bug / residual** before coding |
 | “rebrand” / “sinexis.app” | Soft brand shipped; hard cut / DNS only on explicit ask; don’t invent Guard; don’t block attach GTM |
@@ -458,8 +458,8 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 | “tulis spek blog” / “blog” | Point to [`docs/specs/blog-v1.md`](specs/blog-v1.md) |
 | “implement blog” / “kerjakan blog” | S1–S5 in PR #409; platform admin only; no Guard merge |
 | “tulis spek hostname status” / custom host lifecycle | [`docs/specs/status-hostname-lifecycle.md`](specs/status-hostname-lifecycle.md) — docs only until named + implement verb |
-| “buat uptime advanced” / P8.x | [`uptime-advanced-settings.md`](specs/uptime-advanced-settings.md) — **default §1.3.1 #1** |
-| “buat P15 S1” / chrome tokens | [`spa-grok-chrome-redesign.md`](specs/spa-grok-chrome-redesign.md) S1 only; not S2 |
+| “buat uptime advanced” / P8.x | **Shipped** — [`uptime-advanced-settings.md`](specs/uptime-advanced-settings.md); clarify bug / residual only |
+| “buat P15 S1” / chrome tokens | [`spa-grok-chrome-redesign.md`](specs/spa-grok-chrome-redesign.md) S1 only; not S2 — **default §1.3.1 #1** |
 | “GTM” / “email AM” / “10 SID” | Point to [`gtm-and-p11-ops.md`](commercial/gtm-and-p11-ops.md); **do not** treat as engineering next |
 
 **Locked answers (do not re-ask every session):** chat user = **product owner** (2026-09-15) — agent default **§1.3.1**, not GTM. KPI commercial = **attach ARPU** (AM owns renew; **not** an agent task). Billing = **Sinexis invoice v1** (bank transfer, mark paid) + optional GMD `service_id`. Dual-brand = **6–12 mo soft**. Guard thin + SIEM flag-off unless ops. Invoice pay loop **closed**. Metering v3: Scan seats, `credit_cost = 0`.
@@ -524,7 +524,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 
 ## 11) Agent one-liner
 
-> After reset: **boot §0 → §1.3.1 product-depth queue (not GTM) → default recommend P8.x Uptime advanced, wait for `buat` → Guard live lab standing-permitted (wipe `tc5` first §4.1; do not re-ask) → no silent epics → no PII/SSH/IPs in git → Indonesian with user, `GIT_MASTER=1`.**
+> After reset: **boot §0 → §1.3.1 product-depth queue (not GTM) → default recommend P15 S1 tokens, wait for `buat` → Uptime advanced shipped → Guard live lab standing-permitted (wipe `tc5` first §4.1; do not re-ask) → no silent epics → no PII/SSH/IPs in git → Indonesian with user, `GIT_MASTER=1`.**
 
 ---
 

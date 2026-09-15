@@ -1,7 +1,7 @@
 # Spec: Uptime advanced probe settings (P8.x)
 
-**Status:** Draft — **docs only**. **Do not implement** until an explicit implement verb (`implement` / `buat` / `kerjakan`) **and** this spec is named.
-**Agent queue:** default recommend in [`../AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) **§1.3.1 #1** (owner lock 2026-09-15: product depth, not GTM). Still no code until named + `buat`.
+**Status:** **Shipped on `main`** (sheet Advanced + edit **#767**; PATCH clear `expect_status` + omit-timeout this PR). **Do not re-implement S1–S3.**
+**Agent queue:** was §1.3.1 #1; next product-depth default is **P15 S1**. Residual: human UI/SMTP smoke.
 **Goal:** Let operators set **probe reliability knobs** (timeout, expected HTTP status) on `/uptime` without false-downs on slow colo origins — **without** becoming Pingdom, Checkly, or a SKU entitlement matrix.
 **Epic:** **P8.x** follow-on to [`uptime-v1.md`](uptime-v1.md) (S1–S5) and [`uptime-v2-check-types.md`](uptime-v2-check-types.md) (check types on `main` #451). Does **not** replace Scan, Guard, SIEM, or public status HTML.
 **Depends:** Existing `UptimeMonitor` columns `timeout_seconds` / `expect_status`; SPA `/uptime`; queue `uptime_check`; SKU seats Basic 1 / Pro 3 / Multi 10.

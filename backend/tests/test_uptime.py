@@ -417,6 +417,13 @@ async def test_timeout_bounds_and_patch_idor(db_session: AsyncSession, ctx: dict
         )
         assert patched.status_code == 200
         assert patched.json()["timeout_seconds"] == 15
+        cleared = await client.patch(
+            f"/api/uptime/monitors/{mid}",
+            headers=_auth(owner, org.id),
+            json={"expect_status": None},
+        )
+        assert cleared.status_code == 200, cleared.text
+        assert cleared.json()["expect_status"] is None
         hidden = await client.patch(
             f"/api/uptime/monitors/{mid}",
             headers=_auth(outsider, None),
@@ -424,6 +431,22 @@ async def test_timeout_bounds_and_patch_idor(db_session: AsyncSession, ctx: dict
         )
         assert hidden.status_code in (400, 403, 404)
         await client.post(f"/api/uptime/monitors/{mid}/pause", headers=_auth(owner, org.id))
+        omitted = await client.post(
+            "/api/uptime/monitors",
+            headers=_auth(owner, org.id),
+            json={
+                "name": "default-to",
+                "check_type": "http",
+                "target": "https://example.com/ready",
+            },
+        )
+        assert omitted.status_code == 201, omitted.text
+        assert omitted.json()["timeout_seconds"] == 10
+        assert omitted.json()["expect_status"] is None
+        await client.post(
+            f"/api/uptime/monitors/{omitted.json()['id']}/pause",
+            headers=_auth(owner, org.id),
+        )
         tcp = await client.post(
             "/api/uptime/monitors",
             headers=_auth(owner, org.id),

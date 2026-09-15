@@ -79,7 +79,7 @@ PRs **#464–#471** (apex, CF create/poll/delete, env inject, SSL-gated Active, 
 
 - **Owner lock 2026-09-15:** agent “what next” = guide **§1.3.1** (product depth). **This GTM file is not that answer.**
 - **Do not** mass-merge Dependabot. Merge **one** PR only if the user **names the number** and CI is green.
-- Uptime advanced / P15 / PDF: only when the user **names the slice** + `buat` / `implement` (guide §1.3.1). Legal pages still need implement.
+- Uptime advanced is **shipped**. P15 / PDF: only when the user **names the slice** + `buat` / `implement` (guide §1.3.1). Legal pages still need implement.
 - **Do not** recapture screenshots in parallel (OOM).
 - Prefix git with `GIT_MASTER=1`. Never commit on `main`.
 
