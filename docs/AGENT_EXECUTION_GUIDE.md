@@ -2,11 +2,11 @@
 
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
-**Last updated:** 2026-09-09 (**#716** Host Protect honest YARA CLI + Clam fallback on `main`; WAF starter through **1146** `#708`; VPS displace-lite **DL0–DL3** `#659`; installer **#642**; P14 waves in `imunify-class-onbox.md` §7)
-**Repo tip at write time:** re-`git pull` after reset — **do not pin a SHA**. **P12 Host Protect S0–S12 on `main`**: honesty **#556**, quarantine queue **#558**, helper systemd jail **#559**, **YARA/Clam honesty #716**. **Do not** re-implement S1–S12. Missing on-box root: code status **`pending_agent`** (queued, 0 hits) until helper ingest, or **`failed`/`unreachable_root`** if abandoned — **never** mock hits on public origin (**#533**). **P13 Host WAF S0–S5** plus live ingest + **starter rules only** (**#640**/#651/#708: product IDs **1001–1146**; drop Imunify/CRS/static noise on ingest and GET). **#636** audit cursor vs log; **#633** snippet in every `server{}`. Compose: `HOST_PROTECT_ENABLED` / `HOST_WAF_ENABLED` prod **true**, local/CI **false**; **`HOST_PROTECT_ALLOW_LOCAL_WALK` default false** (P14 **B**). per-site WAF still **off** until admin sets detect/protect. `SIEM_ENABLED` **git prod compose default false** (ops secret may enable). Never paste WAF onto `sinexis.app` edge nginx. Residual human: **GTM**; Host Protect **invoice** (`service_id`); fill `/admin/hpp` `hostscan`. SPA Simulate `mock.sqli.1` is **lab-gated (DL0 shipped #647)** — not a new epic unless named + `buat`. Working list IDR in `docs/commercial/sku-host-protect.md` (**not** finance lock). **P14** = owner track: **Imunify360 jobs** (on-box files + HTTP), original stack — [`imunify-class-onbox.md`](specs/imunify-class-onbox.md). **Not** a clone. AM “ganti Imunify di **VPS**” = displace-lite after **Sentence-ok** — plan [`vps-displace-imunify-dev-plan.md`](specs/vps-displace-imunify-dev-plan.md) (**DL0–DL3**); **never** shared cPanel. Caddy out. **A–F** on this stream: **F** WAF protect = Host Multi SKU + customer nginx snippet (`SecRuleEngine On`); **never** Sinexis edge. Wave **0** installer: **#642** one-file from **sinexis.app**. **G/H** only with `buat`. Clone PRs forbidden: [`imunify-beside-not-roadmap.md`](commercial/imunify-beside-not-roadmap.md).
+**Last updated:** 2026-09-15 (**owner lock:** agent default = **product depth**, not GTM/AM pitch — §1.3. Invoice v1 pay loop closed **#775**; mobile finding titles **#776**. Prior: Host Protect YARA/Clam **#716**; WAF starter **1001–1146** `#708`; displace-lite **DL0–DL3** `#659`; installer **#642**.)
+**Repo tip at write time:** re-`git pull` after reset — **do not pin a SHA**. **P12 Host Protect S0–S12 on `main`**: honesty **#556**, quarantine queue **#558**, helper systemd jail **#559**, **YARA/Clam honesty #716**. **Do not** re-implement S1–S12. Missing on-box root: code status **`pending_agent`** (queued, 0 hits) until helper ingest, or **`failed`/`unreachable_root`** if abandoned — **never** mock hits on public origin (**#533**). **P13 Host WAF S0–S5** plus live ingest + **starter rules only** (**#640**/#651/#708: product IDs **1001–1146**; drop Imunify/CRS/static noise on ingest and GET). **#636** audit cursor vs log; **#633** snippet in every `server{}`. Compose: `HOST_PROTECT_ENABLED` / `HOST_WAF_ENABLED` prod **true**, local/CI **false**; **`HOST_PROTECT_ALLOW_LOCAL_WALK` default false** (P14 **B**). per-site WAF still **off** until admin sets detect/protect. `SIEM_ENABLED` **git prod compose default false** (ops secret may enable). Never paste WAF onto `sinexis.app` edge nginx. **Owner (2026-09-15):** chat user is **product**, not AM. **Do not** recommend wave-1 email / 10 SIDs / finance `service_id` as the session’s next step. GTM checklists stay in `docs/commercial/` for humans who **ask**. Residual off-repo (not agent default): Host Protect **invoice** (`service_id`); fill `/admin/hpp` `hostscan`. SPA Simulate `mock.sqli.1` is **lab-gated (DL0 shipped #647)** — not a new epic unless named + `buat`. Working list IDR in `docs/commercial/sku-host-protect.md` (**not** finance lock). **P14** = owner track: **Imunify360 jobs** (on-box files + HTTP), original stack — [`imunify-class-onbox.md`](specs/imunify-class-onbox.md). **Not** a clone. AM “ganti Imunify di **VPS**” = displace-lite after **Sentence-ok** — plan [`vps-displace-imunify-dev-plan.md`](specs/vps-displace-imunify-dev-plan.md) (**DL0–DL3**); **never** shared cPanel. Caddy out. **A–F** on this stream: **F** WAF protect = Host Multi SKU + customer nginx snippet (`SecRuleEngine On`); **never** Sinexis edge. Wave **0** installer: **#642** one-file from **sinexis.app**. **G/H** only with `buat`. Clone PRs forbidden: [`imunify-beside-not-roadmap.md`](commercial/imunify-beside-not-roadmap.md).
 **Guard e2e rule:** if the user asks for a **full prod e2e suite including Guard enroll/unenroll**, **wipe `tc5` + leftover Manager/DB smoke rows first** — see **§4.1**. Do not skip this. Do not treat Playwright as enroll/unenroll.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
-**Phase snapshot:** **P0 policy locked** · **P1 attach shipped** · **P2 Workspace S1–S5** · **P3 assets S1–S5** · **P4 soft dual-brand** · **P5 Guard thin** (mock CI; live `sx-erpstg` online — do not wipe) · **P6 hospitality S1–S3** · **P7 SIEM S0–S5** (`SIEM_ENABLED` compose default **false**; `SIEM_INCLUDE_FULL_LOG` false) · **P8 Uptime S1–S5 + v2** · **P10 blog shipped** · **P11 status page** · **P12 Host Protect S0–S12 on `main`** (#533–#537, #556, **#558**, **#559**; prod `HOST_PROTECT_ENABLED` true) · **P13 Host WAF S0–S5 + ingest + starter allowlist #640** (prod compose API **true**; per-site mode off until set; no edge Coraza) · **P14** A–F (WAF protect this stream; **#642** installer sinexis.app); **G/H** only if named + `buat` · **i18n S1–S7** · **theme S1–S3** · **GTM human still open** · residual eng = bugs, Dependabot only when named + CI green — **do not** implement SIEM under Guard PRs. Do **not** re-implement Host Protect S1–S12.
+**Phase snapshot:** **P0 policy locked** · **P1 attach shipped** · **P2 Workspace S1–S5** · **P3 assets S1–S5** · **P4 soft dual-brand** · **P5 Guard thin** (mock CI; live `sx-erpstg` online — do not wipe) · **P6 hospitality S1–S3** · **P7 SIEM S0–S5** (`SIEM_ENABLED` compose default **false**; `SIEM_INCLUDE_FULL_LOG` false) · **P8 Uptime S1–S5 + v2** · **P10 blog shipped** · **P11 status page** · **P12 Host Protect S0–S12 on `main`** (#533–#537, #556, **#558**, **#559**; prod `HOST_PROTECT_ENABLED` true) · **P13 Host WAF S0–S5 + ingest + starter allowlist #640** (prod compose API **true**; per-site mode off until set; no edge Coraza) · **P14** A–F (WAF protect this stream; **#642** installer sinexis.app); **G/H** only if named + `buat` · **i18n S1–S7** · **theme S1–S3** · **invoice v1 closed** · **metering v3 shipped** · **GTM off-repo (do not pitch as next)** · residual eng = **named product-depth slices** (§1.3 queue) + bugs + Dependabot only when named + CI green — **do not** implement SIEM under Guard PRs. Do **not** re-implement Host Protect S1–S12.
 
 ---
 
@@ -26,13 +26,13 @@ Then read, in order:
 1. This file — `docs/AGENT_EXECUTION_GUIDE.md` (**wins on product priority / epic order**)
 2. `AGENTS.md` — branch/PR/CI workflow
 3. [`docs/AGENT_PAGE_REGISTRY.md`](AGENT_PAGE_REGISTRY.md) — **all user-facing URLs** (SPA + HTML islands); recapture / e2e map
-4. Root `handoff.md` — **session snapshot + GTM checklist** (not a second roadmap; re-check this guide for *epic order*)
+4. Root `handoff.md` — **session snapshot** (not a second roadmap; re-check this guide **§1.3.1** for *what to build next*)
 5. `docs/dependency-pins.md` + `SECURITY.md` (accepted residual risks)
 6. Only if the user names an active **stuck-job / worker** incident: `docs/archive/handoff-scan-pending-2026.md` (historical — **re-verify**)
 
-**Priority rule:** If `handoff.md`, the archive, or any old session note **disagrees with this guide** on *what to build next*, **this guide wins**, unless the user explicitly scopes a stuck-job/ops incident.
+**Priority rule:** If `handoff.md`, the archive, `docs/commercial/*`, or any old session note **disagrees with this guide** on *what to build next*, **this guide wins** (**§1.3.1**), unless the user explicitly scopes a stuck-job/ops incident **or** asks for GTM/AM work.
 
-**Do not implement** until the user uses an explicit verb (`implement` / `buat` / `kerjakan` / `fix` / …) **or** points at an approved spec section.
+**Do not implement** until the user uses an explicit verb (`implement` / `buat` / `kerjakan` / `fix` / …) **or** points at an approved spec section. **Do not** answer “lanjut” with a sales checklist.
 
 ---
 
@@ -90,11 +90,13 @@ Then read, in order:
 
 ### 1.3 Feature development priority (upsell-first)
 
-Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales/runbook may start before full UI.
+**Historical ship order** (P0→P14) stays in the table. **Do not re-implement** shipped rows. “Hybrid” = sales/runbook may start before full UI — that is **AM work**, not the agent default after **2026-09-15**.
+
+**Owner lock (2026-09-15):** the chat user is **product owner**, not AM/sales/marketing. Agent sessions **deepen shipped modules**. **Do not** open with wave-1 email, 10 CRM SIDs, finance `service_id`, or “GTM still open so don’t code.” GTM docs remain valid for humans who **ask**; they are **not** the next-step pitch. Acceptance of the product in the market is **out of agent scope**.
 
 | P | Epic | Goal for upsell | In scope | Out of scope | **Status (2026-08-10)** |
 |---|------|-----------------|----------|--------------|-------------------------|
-| **P0** | **Commercial lock** (user-led + docs) | Something sales can quote | One-pager; **SKU** tiers/prices; SID *patterns*; AM email kit; defaults §1 | Guard coding; finance CSV in repo | **Policy locked in git** (#245–#246). **GTM still open:** finance `service_id`, 10 CRM SIDs, named pilot, AM send, ops fulfill |
+| **P0** | **Commercial lock** (user-led + docs) | Something sales can quote | One-pager; **SKU** tiers/prices; SID *patterns*; AM email kit; defaults §1 | Guard coding; finance CSV in repo | **Policy locked in git** (#245–#246). Off-repo GTM (finance `service_id`, 10 SIDs, pilot, AM send) is **human/AM** — **not** the agent “lanjut” answer |
 | **P1** | **Scan Attach Loop** | Recurring reason to pay monthly | **Scheduled** domain/IP; new critical/high notify; **baseline diff**; **executive HTML**; credits on schedule; cap 10 | Org rewrite; Wazuh; full rebrand | **Shipped on `main` + production smoke closed** (S1–S5, edge DoD). **Wave B UX** (#271): Dashboard Jadwal CTAs, ScanDetail export labels, baseline empty copy — on tip `98756de` |
 | **P2** | **Workspace v1** | B2B multi-user | orgs, memberships, invites, org-scoped scans, personal credits, backfill; JWT `org_id`; WS membership AuthZ; **S5** schedule cap per-org | Nested projects; org wallet; Wazuh; per-org ApiKey | **S1–S5 shipped** (#267 S1–S4 → then #270 S5 @ `6b600fb`; tip with Wave B `98756de`). Cap **10 enabled / org** (`MAX_SCHEDULES_PER_ORG`). Spek D1–D6; edge Alembic **`add_workspace_orgs`**. **Residual:** multi-member S5 + login/UI multi-org smoke (manual) |
 | **P3** | **Asset registry (light)** | Multi-target tiers | Named assets; scan pack; SKU hard caps | Full CMDB; IoT; PMS | **S1–S5 on `main`** (#380 + pack/docs follow-up) — [`docs/specs/assets-v1.md`](specs/assets-v1.md). Hard cap Basic 1 / Pro 3 / Multi 10. SPA `/assets`. Residual: **edge Alembic + UI smoke** (human) |
@@ -106,18 +108,33 @@ Ship in this order unless the user **explicitly** reorders. “Hybrid” = sales
 | **P8-i18n** | **i18n id/en** | Dual language SPA | Catalogs, switcher, executive/notify locale, `users.locale` | Extra locales, CVE translation, legal pages | **S1–S7 on `main`** (#367–#373). Spek [`i18n-v1.md`](specs/i18n-v1.md) — **not** a second P8; do not re-implement. |
 | **P9** | **Theme light/dark** | Operator appearance | Tokens + switcher; default dark | Per-org theme, Wave G layout | **S1–S3 on `main`** (#375–#378). Spek [`theme-v1.md`](specs/theme-v1.md). |
 | **P10** | **Public blog** (GTM content) | Trust / inbound copy without a deploy per post | Public `/blog`; platform-admin CMS; Markdown; SEO HTML island + path-only index | Comments, Next.js, org CMS, images, legal pages, Guard merge | Spek [`blog-v1.md`](specs/blog-v1.md). Q1–Q6 locked. **S1–S5 in PR #409.** |
-| **P12** | **Host Protect** (on-box web malware) | Attach for VPS/colo that want Imunify-**jobs** **without** cloning Imunify | Named web paths on Guard agent; YARA/Clam; hits; opt-in quarantine **queue** (`host_commands`); SPA `/host`; spek [`host-protect-v1.md`](specs/host-protect-v1.md) | PHP PD, KernelCare, **WAF (P13/P14-F)**, cPanel plugin, shared-UID farm, Imunify IP, dual enroll daemon | **S0–S12 on `main`**. Honesty **#556**. S11 queue **#558**. S12 Clam + systemd jail **#559**. Helper: `packaging/host-protect-helper/`. Lab **tc5**, never ERP. SKU = **working list IDR** (not invoice lock). **Do not** re-implement S1–S12. Next product depth = **P14** slices. |
+| **P12** | **Host Protect** (on-box web malware) | Attach for VPS/colo that want Imunify-**jobs** **without** cloning Imunify | Named web paths on Guard agent; YARA/Clam; hits; opt-in quarantine **queue** (`host_commands`); SPA `/host`; spek [`host-protect-v1.md`](specs/host-protect-v1.md) | PHP PD, KernelCare, **WAF (P13/P14-F)**, cPanel plugin, shared-UID farm, Imunify IP, dual enroll daemon | **S0–S12 on `main`**. Honesty **#556**. S11 queue **#558**. S12 Clam + systemd jail **#559**. Helper: `packaging/host-protect-helper/`. Lab **tc5**, never ERP. SKU = **working list IDR** (not invoice lock). **Do not** re-implement S1–S12. Agent next ≠ more P12 — see **§1.3.1** (Uptime advanced first; P14 **E** is #6). |
 | **P13** | **Host WAF** (on-box HTTP filter) | HTTP detect/block **on customer VPS** | Policy per `host_sites`; mock S1–S3; Coraza/nginx **on customer VPS** S4+; spek [`host-waf-v1.md`](specs/host-waf-v1.md) | Coraza on **Sinexis** edge; Imunify rules; PHP PD; ERP lab | **S0–S5 on `main`** (#512–#517) **+ live ingest + starter tab (#640) + DL2 1005/1006 + #708 through 1146**. Product events = rules **1001–1146**. IM360/CRS/static **dropped**. SPA Simulate `mock.sqli.1` = **DL0 shipped** (lab-only). `HOST_WAF_ENABLED`: **prod compose true**, local/CI **false**; per-site mode **off**. **P14 F** protect = Host Multi + customer snippet. Never WAF on `sinexis.app` nginx. Lab: [`host-waf-lab-smoke.sh`](../scripts/host-waf-lab-smoke.sh) — **`--apply-vhost` default `tc5`** (Sinexis lab VM); **refuses ERP** / `sx-erpstg`; never `sinexis.app` edge. |
 | **P14** | **Imunify-class on-box** | Owner lock: take **regional** Imunify-shaped budget (VPS/colo **without** ripping Imunify on cPanel farms) | Helper-first scan; worker never impersonates customer FS; isolate on VM; WAF on **customer** nginx; spek [`imunify-class-onbox.md`](specs/imunify-class-onbox.md); **VPS displace-lite plan** [`vps-displace-imunify-dev-plan.md`](specs/vps-displace-imunify-dev-plan.md) | Clone / “Imunify parity” PRs; trademarks; PHP PD/KernelCare v1; SaaS SSH; edge WAF; “ganti Imunify” on **shared cPanel** | **Docs + P12 S11/S12 landed.** Slices **A–H**. **Waves 0–3** in spek §7: **0** installer **#642** → **1** file loop → **2** WAF **F** (starter pack on `main`) → **3** **G/H** research. Displace **DL0–DL3 shipped**. Short “ganti Imunify” only after **Sentence-ok**. Default next: **not** more WAF IDs / **G/H** unless named + `buat`. Legal: [`imunify-beside-not-roadmap.md`](commercial/imunify-beside-not-roadmap.md). |
 
-**Priority rule for agents (post–#295 tip `8546ef3`):**
+**Priority rule for agents (2026-09-15 owner lock; supersedes “GTM first” post–#295):**
 
-1. **Human default** remains **GTM execution** (finance / AM / ops) + **edge apply this tip** (Alembic `drop_placeholder_admin`, SPA `/guide`, leftover ip/domain workers, AAB worker) + **Guard live lab** — parallel to eng.
-2. **Further Guard code** only on **explicit** implement verb; stay inside **thin DoD** (D1–D10 / non-goals). Prefer bugfixes from live smoke over new surfaces.
-3. **P7 SIEM** only after user **implement** + isolation questions; never as “improve /guard”.
-4. Other code: **bugfix** (attach/workspace/assets/Guard/org cache), docs/ops hygiene, Dependabot **only if CI green + user names the PR** (do not mass-merge). **Do not** re-implement P3 S1–S5.
-5. Ordering still true: P1/P2 before Guard; P4 must not block attach revenue. P7 does **not** jump ahead of GTM/P3 unless user reorders.
-6. **Do not** re-implement P2 S1–S5, Wave B, Guard S1–S5/Http, guide TOC, or placeholder-seed cleanup “because docs were stale.” **Do not** ship SIEM-scope PRs under “Guard.”
+1. **Agent default = product depth** on modules already on `main`. Recommend **named slices** from **§1.3.1**. Still **no silent coding** — wait for `buat` / `implement` / `kerjakan` / `fix` + a named slice.
+2. **Do not** recommend AM/GTM as next work (wave-1 mail, 10 SIDs, finance `service_id`, “sell Scan first”). Point to [`gtm-and-p11-ops.md`](commercial/gtm-and-p11-ops.md) **only if the user asks**.
+3. **Further Guard code** only on **explicit** implement verb; stay inside **thin DoD** (D1–D10 / non-goals). Prefer bugfixes from live smoke over new surfaces.
+4. **P7 SIEM** only after user **implement** + isolation questions; never as “improve /guard”.
+5. Other code: **named depth slices**, then **bugfix**, docs/ops hygiene, Dependabot **only if CI green + user names the PR** (do not mass-merge). **Do not** re-implement P2/P3 S1–S5, Wave B, Guard S1–S5/Http, Host Protect S1–S12, WAF **1147+**, P14 **G/H**.
+6. **Do not** ship SIEM-scope PRs under “Guard.” Invoice v1 pay loop is **closed** — no upgrade CTA / gateway / auto-create on signup unless named.
+
+### 1.3.1 Product-depth queue (agent “what next” — 2026-09-15)
+
+P0–P14 control planes are **on `main`**. Next engineering is **depth**, not a new epic letter, unless the user names one. **Do not implement** until the slice is **named** + `buat` / `kerjakan` / `implement`.
+
+| Order | Slice | Why | Spec | Out |
+|-------|--------|-----|------|-----|
+| **1 (default recommend)** | **P8.x Uptime advanced** | API already has `timeout_seconds` / `expect_status`; SPA is create-only; colo false-downs | [`uptime-advanced-settings.md`](specs/uptime-advanced-settings.md) | Pingdom, multi-region, webhooks, Pro-only 403 |
+| **2** | **P15 S1** tokens/density | Flush sidebar; no layout yet | [`spa-grok-chrome-redesign.md`](specs/spa-grok-chrome-redesign.md) S1 | Do **not** mix S2 AppShell in the same PR; keep `--primary` green |
+| **3** | **P15 S2** AppShell | Drop sticky `h-12` product header; move testids (`user-menu`, `header-credits`) | same spec S2 | Landing / blog island chrome; kit restyle |
+| **4** | **Scan PDF / invoice HTML print** | Attach still HTML-only; invoice I10 “print later” | **Needs S0** if user picks this — do not code from this row | Gateway, e-meterai, Host invoice (`invoicable=false`) |
+| **5** | **Inbox “Delivered” (user-side)** | Guide §3 backlog | **Needs S0** | Mixing into Guard Discover |
+| **6** | **P14 E** denser Host cadence | On-box honesty shipped; not more WAF IDs | [`imunify-class-onbox.md`](specs/imunify-class-onbox.md) slice **E** | 24×7 YARA on `/`; inotify unless named; WAF **1147+**; **G/H** |
+
+**Parked (do not recommend):** Capacitor/PWA [`capacitor-shell-v1.md`](specs/capacitor-shell-v1.md); AI Gateway already S1–S5 flag-off; Host catalog invoice; cPanel plugin; PHP PD; org wallet; nested projects.
 
 ### 1.4 What *not* to prioritize for upsell
 
@@ -188,7 +205,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 
 **Working list (see SKU §0):** Basic **300k** / Pro **650k** / Multi **2M** IDR/mo; headline = **assets + cadence** (metering v2 — scheduled attach included, credits = overage); AM owns renew; hybrid email; attach ARPU primary; pilot #1 multi-service, 1 mo sponsored; Guard parked; report Bahasa.
 
-**Still human/GTM (not “re-litigate policy” in git):**
+**Still human/GTM (not “re-litigate policy” in git; not the agent default after 2026-09-15):**
 
 - [ ] Finance: three **service_id** rows (no silent VPS bundle)
 - [ ] AM: **10 wave-1 SIDs** in private CRM only
@@ -196,7 +213,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 - [ ] AM **sends** wave-1 using email template; log CRM
 - [ ] Confirm live `pricing` domain/IP before each quote wave
 
-**Agent:** maintain commercial docs on request; **do not** invent new list prices without user. Guard/Wazuh **feature** branches only after S0 spek on `main` (or same series) **and** explicit implement; keep thin scope.
+**Agent:** **do not** lead a session with this checklist. Maintain commercial docs **on request**; **do not** invent new list prices without user. Guard/Wazuh **feature** branches only after S0 spek on `main` (or same series) **and** explicit implement; keep thin scope. Product-depth default: **§1.3.1**.
 
 ### Phase B — Specs before code
 
@@ -427,7 +444,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 
 | User says | Agent does |
 |-----------|------------|
-| “lanjut” / “next” without spec | Re-read §1.3 + `handoff.md`; report **GTM open items** + residual P2 smoke / P3–P6; **no** silent feature coding |
+| “lanjut” / “next” without spec | Re-read **§1.3.1** + `handoff.md`; recommend **product-depth** default (**P8.x Uptime advanced**) and wait for `buat`; **do not** pitch GTM/AM/10 SIDs; **no** silent feature coding |
 | “tulis spek workspace” | Update `docs/specs/workspace-v1.md` only (S1–S5 already shipped) |
 | “implement workspace” / “kerjakan fase workspace” | S1–S5 done — clarify **bug / residual** before coding |
 | “rebrand” / “sinexis.app” | Soft brand shipped; hard cut / DNS only on explicit ask; don’t invent Guard; don’t block attach GTM |
@@ -441,10 +458,13 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 | “tulis spek blog” / “blog” | Point to [`docs/specs/blog-v1.md`](specs/blog-v1.md) |
 | “implement blog” / “kerjakan blog” | S1–S5 in PR #409; platform admin only; no Guard merge |
 | “tulis spek hostname status” / custom host lifecycle | [`docs/specs/status-hostname-lifecycle.md`](specs/status-hostname-lifecycle.md) — docs only until named + implement verb |
+| “buat uptime advanced” / P8.x | [`uptime-advanced-settings.md`](specs/uptime-advanced-settings.md) — **default §1.3.1 #1** |
+| “buat P15 S1” / chrome tokens | [`spa-grok-chrome-redesign.md`](specs/spa-grok-chrome-redesign.md) S1 only; not S2 |
+| “GTM” / “email AM” / “10 SID” | Point to [`gtm-and-p11-ops.md`](commercial/gtm-and-p11-ops.md); **do not** treat as engineering next |
 
-**Locked answers (P0 — do not re-ask every session):** KPI = **attach ARPU primary**; renew = **AM**; billing v1 = **GMD invoice + app credit top-up**; dual-brand = **6–12 mo soft** (soft UI shipped); after P0/P1/P2-S1–S5 + Wave B = **GTM parallel** + **Guard thin** only with spek + explicit implement (risk-accepted 2026-08-10) — still **no** SIEM default.
+**Locked answers (do not re-ask every session):** chat user = **product owner** (2026-09-15) — agent default **§1.3.1**, not GTM. KPI commercial = **attach ARPU** (AM owns renew; **not** an agent task). Billing = **Sinexis invoice v1** (bank transfer, mark paid) + optional GMD `service_id`. Dual-brand = **6–12 mo soft**. Guard thin + SIEM flag-off unless ops. Invoice pay loop **closed**. Metering v3: Scan seats, `credit_cost = 0`.
 
-**Still open (human, off-repo):** concrete 10 SIDs, pilot #1 identity, finance service_id creation, live quote ± on IDR.
+**Still open (human, off-repo — do not lead with these):** concrete 10 SIDs, pilot #1 identity, finance service_id, live quote ± on IDR, `/admin/hpp` `hostscan`. Remind **only if asked**.
 
 ---
 
@@ -476,7 +496,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 | `docs/scan-schedules-ops.md` | Beat, credits gate, smoke A/B, compose project notes |
 | `docs/ai-gateway-ops.md` | AI Gateway flag, Redis limits, nginx `/v1/` SSE |
 | `docs/commercial/*` | P0 one-pager, SKU lock, AM email |
-| `handoff.md` | Session snapshot + GTM checklist — **epic order** still this guide |
+| `handoff.md` | Session snapshot — **epic order** still this guide (**§1.3.1** product depth, not GTM) |
 | `docs/archive/handoff-scan-pending-2026.md` | **ARCHIVED** stuck-pending (re-verify) |
 | `docs/multi-host-ops.md` | Lab roles + Guard enroll wipe-first |
 | `docs/specs/guard-v1.md` | P5 Guard thin spek + status (S0–S5 + Http on main) |
@@ -504,7 +524,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 
 ## 11) Agent one-liner
 
-> After reset: **boot §0 → §1.3 → Guard live lab is standing-permitted (wipe `tc5` first §4.1; do not re-ask) → live Guard = tc3 Manager + tc1 mock off + tc5 agent → no silent epics → no PII/SSH/IPs in git → Indonesian with user, `GIT_MASTER=1`.**
+> After reset: **boot §0 → §1.3.1 product-depth queue (not GTM) → default recommend P8.x Uptime advanced, wait for `buat` → Guard live lab standing-permitted (wipe `tc5` first §4.1; do not re-ask) → no silent epics → no PII/SSH/IPs in git → Indonesian with user, `GIT_MASTER=1`.**
 
 ---
 
