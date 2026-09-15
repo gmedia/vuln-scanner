@@ -30,6 +30,7 @@ vi.mock("@/api/scans", async () => {
   return {
     ...actual,
     downloadFile: vi.fn(),
+    printFile: vi.fn(),
   };
 });
 
@@ -90,7 +91,7 @@ vi.mock("@/components/results/FindingsTable", () => ({
 }));
 
 import { useScanDetail, useScanDiff, useScanFindings } from "@/hooks/useScan";
-import { downloadFile } from "@/api/scans";
+import { downloadFile, printFile } from "@/api/scans";
 
 const mockUseScanDiff = useScanDiff as ReturnType<typeof vi.fn>;
 
@@ -478,6 +479,23 @@ describe("ScanDetail", () => {
       await userEvent.click(screen.getByRole("tab", { name: "Export" }));
       await userEvent.click(screen.getByTestId("export-executive"));
       expect(downloadFile).toHaveBeenCalledWith("scan-1", "executive");
+    });
+
+    it("calls printFile executive on print executive click", async () => {
+      mockUseScanDetailReturn({ data: baseScan as any });
+      renderPage();
+      await userEvent.click(screen.getByRole("tab", { name: "Export" }));
+      await userEvent.click(screen.getByTestId("export-print-executive"));
+      expect(printFile).toHaveBeenCalledWith("scan-1", "executive");
+      expect(downloadFile).not.toHaveBeenCalled();
+    });
+
+    it("calls printFile html on print technical click", async () => {
+      mockUseScanDetailReturn({ data: baseScan as any });
+      renderPage();
+      await userEvent.click(screen.getByRole("tab", { name: "Export" }));
+      await userEvent.click(screen.getByTestId("export-print-html"));
+      expect(printFile).toHaveBeenCalledWith("scan-1", "html");
     });
 
     it("shows no-baseline hint when diff has no baseline and no delta", async () => {

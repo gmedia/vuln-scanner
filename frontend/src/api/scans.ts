@@ -160,23 +160,31 @@ export async function getScanHistory(
   return data;
 }
 
-export async function downloadFile(
+async function fetchExportBlob(
   jobId: string,
   format: "json" | "html" | "executive",
-): Promise<void> {
+): Promise<Blob> {
   const stored = localStorage.getItem("sinexis.locale");
   const lang = stored === "en" || stored === "id" ? stored : "id";
   const resp = await api.get(`/api/scan/${jobId}/export`, {
     params: { format, ...(format === "executive" ? { lang } : {}) },
     responseType: "blob",
   });
+  return resp.data as Blob;
+}
+
+export async function downloadFile(
+  jobId: string,
+  format: "json" | "html" | "executive",
+): Promise<void> {
+  const blob = await fetchExportBlob(jobId, format);
   const ext =
     format === "json"
       ? "json"
       : format === "executive"
         ? "executive.html"
         : "html";
-  const url = window.URL.createObjectURL(new Blob([resp.data]));
+  const url = window.URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
   a.download = `scan_${jobId}.${ext}`;
@@ -184,6 +192,25 @@ export async function downloadFile(
   a.click();
   a.remove();
   window.URL.revokeObjectURL(url);
+}
+
+export async function printFile(
+  jobId: string,
+  format: "html" | "executive",
+): Promise<void> {
+  const blob = await fetchExportBlob(jobId, format);
+  const htmlBlob = new Blob([blob], { type: "text/html;charset=utf-8" });
+  const url = window.URL.createObjectURL(htmlBlob);
+  const tab = window.open(url, "_blank");
+  if (!tab) {
+    window.URL.revokeObjectURL(url);
+    return;
+  }
+  tab.addEventListener("load", () => {
+    tab.focus();
+    tab.print();
+    window.setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
+  });
 }
 
 export function getWsUrl(jobId: string): string {
