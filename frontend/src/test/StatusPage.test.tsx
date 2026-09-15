@@ -215,6 +215,9 @@ it("shows empty state with create form", async () => {
     expect(screen.getByTestId("status-incident-post-update-i1")).toBeInTheDocument();
     await user.click(screen.getByTestId("status-incident-menu-i1"));
     await user.click(screen.getByTestId("status-incident-edit-i1"));
+    const sheet = await screen.findByTestId("status-incident-sheet");
+    expect(sheet.className).toMatch(/right-0/);
+    expect(screen.getByTestId("status-incident-card-i1")).toBeInTheDocument();
     const titleInput = screen.getByTestId("status-incident-title-i1");
     await user.clear(titleInput);
     await user.type(titleInput, "API outage");
@@ -300,11 +303,20 @@ it("shows empty state with create form", async () => {
       expect(screen.getByTestId("status-incident-add")).toBeInTheDocument(),
     );
     expect(screen.queryByTestId("status-incident-create")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("status-incident-sheet")).not.toBeInTheDocument();
     await user.click(screen.getByTestId("status-incident-add"));
+    const sheet = await screen.findByTestId("status-incident-sheet");
+    expect(sheet).toHaveAttribute("data-slot", "sheet-content");
+    expect(sheet.className).toMatch(/right-0/);
+    expect(sheet.className).toMatch(/sm:max-w-lg/);
+    expect(sheet.className).not.toMatch(/sm:max-w-sm/);
     expect(screen.getByTestId("status-incident-create")).toBeInTheDocument();
     expect(screen.getByTestId("status-incident-title")).toBeInTheDocument();
+    expect(screen.getByTestId("status-incident-add")).toBeInTheDocument();
     await user.click(screen.getByTestId("status-incident-create-cancel"));
-    expect(screen.queryByTestId("status-incident-create")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByTestId("status-incident-create")).not.toBeInTheDocument(),
+    );
   });
 
   it("posts a new incident from the create card then closes it", async () => {
