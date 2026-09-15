@@ -387,6 +387,7 @@ function ScanDetail() {
                 className="text-xs"
                 title={t("htmlTechTitle")}
                 aria-label={t("htmlTechAria")}
+                data-testid="export-html"
                 onClick={() => downloadFile(id, "html")}
               >
                 <Download className="mr-1 h-3.5 w-3.5" />

@@ -432,7 +432,9 @@ describe("ScanDetail", () => {
       renderPage();
       await userEvent.click(screen.getByRole("tab", { name: "Export" }));
       expect(screen.getByText("JSON")).toBeInTheDocument();
-      expect(screen.getByText("Technical HTML")).toBeInTheDocument();
+      expect(screen.getByTestId("export-html")).toHaveTextContent(
+        /Technical HTML/,
+      );
       expect(screen.getByTestId("export-executive")).toHaveTextContent(
         /Executive report/,
       );
@@ -469,7 +471,7 @@ describe("ScanDetail", () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
       await userEvent.click(screen.getByRole("tab", { name: "Export" }));
-      await userEvent.click(screen.getByText("Technical HTML"));
+      await userEvent.click(screen.getByTestId("export-html"));
       expect(downloadFile).toHaveBeenCalledWith("scan-1", "html");
     });
 
