@@ -48,20 +48,51 @@ const SEVERITY_FILTERS = ["critical", "high", "medium", "low", "info"] as const;
 
 const GENERIC_TITLES = new Set(["vulnerability", "vuln", "unknown", "-"]);
 
+function descriptionHeadline(description: string | null | undefined): string {
+  if (!description) return "";
+  return description.split("\n")[0]?.trim() ?? "";
+}
+
+function isGenericLabel(value: string): boolean {
+  return Boolean(value) && GENERIC_TITLES.has(value.toLowerCase());
+}
+
 function findingDisplayTitle(finding: ScanFinding): string {
   const title = finding.title.trim();
   const category = finding.category?.trim() ?? "";
-  if (finding.cve_id && title === finding.cve_id) {
-    return category || finding.cve_id;
+  const cveId = finding.cve_id?.trim() ?? "";
+  const headline = descriptionHeadline(finding.description);
+
+  if (cveId && title === cveId) {
+    if (title && !isGenericLabel(title)) return title;
+    if (headline && !isGenericLabel(headline)) return headline;
+    return cveId || category;
   }
   if (
     category &&
     title.toLowerCase() === category.toLowerCase() &&
-    (GENERIC_TITLES.has(title.toLowerCase()) || Boolean(finding.cve_id))
+    (isGenericLabel(title) || Boolean(cveId))
   ) {
-    return finding.cve_id || category;
+    if (cveId && !isGenericLabel(cveId)) return cveId;
+    if (headline && !isGenericLabel(headline)) return headline;
+    return cveId || category;
   }
   return title;
+}
+
+function findingMobileSubtitle(
+  finding: ScanFinding,
+  displayTitle: string,
+): string {
+  const category = finding.category?.trim() ?? "";
+  const cveId = finding.cve_id?.trim() ?? "";
+  const headline = descriptionHeadline(finding.description);
+  if (category === displayTitle || isGenericLabel(category)) {
+    if (cveId && cveId !== displayTitle) return cveId;
+    if (headline && headline !== displayTitle) return headline;
+    return "";
+  }
+  return finding.category || "-";
 }
 
 function FindingsTable({
@@ -235,6 +266,8 @@ function FindingsTable({
         ) : (
           sorted.map((finding) => {
             const isExpanded = expandedId === finding.id;
+            const displayTitle = findingDisplayTitle(finding);
+            const mobileSubtitle = findingMobileSubtitle(finding, displayTitle);
             return (
               <div
                 key={finding.id}
@@ -264,11 +297,13 @@ function FindingsTable({
                   </Badge>
                   <span className="min-w-0 flex-1">
                     <span className="block text-xs font-medium text-foreground">
-                      {findingDisplayTitle(finding)}
+                      {displayTitle}
                     </span>
-                    <span className="mt-0.5 block break-all text-[11px] text-muted-foreground">
-                      {finding.category || "-"}
-                    </span>
+                    {mobileSubtitle ? (
+                      <span className="mt-0.5 block break-all text-[11px] text-muted-foreground">
+                        {mobileSubtitle}
+                      </span>
+                    ) : null}
                   </span>
                   {isExpanded ? (
                     <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />

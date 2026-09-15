@@ -220,7 +220,7 @@ describe("FindingsTable", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows category in the title cell when title duplicates the CVE id", () => {
+  it("shows CVE id in the title cell when title duplicates the CVE id", () => {
     renderTable(
       <FindingsTable
         findings={[
@@ -230,10 +230,70 @@ describe("FindingsTable", () => {
       />,
     );
     const titleCell = document.querySelector("table tbody tr td:nth-child(2)");
-    expect(titleCell?.textContent?.trim()).toBe("auth");
+    expect(titleCell?.textContent?.trim()).toBe("CVE-2024-1234");
     expect(
       screen.getByRole("link", { name: "CVE-2024-1234" }),
     ).toBeInTheDocument();
+  });
+
+  it("uses the CVE id as the mobile card title when the row only carries a generic category", () => {
+    renderTable(
+      <FindingsTable
+        findings={[
+          mockFinding({
+            id: "1",
+            title: "CVE-2024-1234",
+            category: "vulnerability",
+            cve_id: "CVE-2024-1234",
+            description:
+              "Remote code execution in example module via crafted payload.",
+          }),
+        ]}
+        isLoading={false}
+      />,
+    );
+    const mobileCard = document.querySelector(".md\\:hidden");
+    expect(mobileCard).not.toBeNull();
+    const titleSpan = mobileCard?.querySelector(
+      "span.block.text-xs.font-medium",
+    );
+    expect(titleSpan?.textContent?.trim()).toBe("CVE-2024-1234");
+    const subtitleSpan = mobileCard?.querySelector(
+      "span.mt-0\\.5.block.break-all",
+    );
+    expect(subtitleSpan?.textContent?.trim()).toBe(
+      "Remote code execution in example module via crafted payload.",
+    );
+  });
+
+  it("falls back to the description headline for the mobile card title when there is no CVE id", () => {
+    renderTable(
+      <FindingsTable
+        findings={[
+          mockFinding({
+            id: "1",
+            title: "vulnerability",
+            category: "vulnerability",
+            cve_id: null,
+            description:
+              "Heap overflow in parser when handling nested input\nFurther detail on the next line.",
+          }),
+        ]}
+        isLoading={false}
+      />,
+    );
+    const mobileCard = document.querySelector(".md\\:hidden");
+    expect(mobileCard).not.toBeNull();
+    const titleSpan = mobileCard?.querySelector(
+      "span.block.text-xs.font-medium",
+    );
+    expect(titleSpan?.textContent?.trim()).toBe(
+      "Heap overflow in parser when handling nested input",
+    );
+    const subtitleSpan = mobileCard?.querySelector(
+      "span.mt-0\\.5.block.break-all",
+    );
+    expect(subtitleSpan).toBeNull();
   });
 });
 
