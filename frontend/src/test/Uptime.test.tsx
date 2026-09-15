@@ -77,6 +77,8 @@ describe("Uptime page", () => {
     const sheet = await screen.findByTestId("uptime-sheet");
     expect(sheet).toHaveAttribute("data-slot", "sheet-content");
     expect(sheet.className).toMatch(/right-0/);
+    expect(sheet.className).toMatch(/sm:max-w-lg/);
+    expect(sheet.className).not.toMatch(/sm:max-w-sm/);
     expect(within(sheet).getByTestId("uptime-name")).toBeInTheDocument();
     expect(within(sheet).getByTestId("uptime-save")).toBeInTheDocument();
     expect(screen.getByTestId("uptime-empty")).toBeInTheDocument();

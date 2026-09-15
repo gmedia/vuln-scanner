@@ -61,7 +61,7 @@ export function UptimeMonitorSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="overflow-y-auto"
+        className="overflow-y-auto sm:max-w-lg lg:max-w-xl"
         data-testid="uptime-sheet"
       >
         {open ? (
