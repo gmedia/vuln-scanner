@@ -128,11 +128,11 @@ P0–P14 control planes are **on `main`**. Next engineering is **depth**, not a 
 | Order | Slice | Why | Spec | Out |
 |-------|--------|-----|------|-----|
 | **— shipped** | **P8.x Uptime advanced** | SPA Advanced + edit + timeout/`expect_status`; PATCH can clear status | [`uptime-advanced-settings.md`](specs/uptime-advanced-settings.md) | Do **not** re-implement; Pingdom / webhooks still out |
-| **1 (default recommend)** | **P15 S1** tokens/density | Flush sidebar; no layout yet | [`spa-grok-chrome-redesign.md`](specs/spa-grok-chrome-redesign.md) S1 | Do **not** mix S2 AppShell in the same PR; keep `--primary` green |
-| **2** | **P15 S2** AppShell | Drop sticky `h-12` product header; move testids (`user-menu`, `header-credits`) | same spec S2 | Landing / blog island chrome; kit restyle |
-| **3** | **Scan PDF / invoice HTML print** | Attach still HTML-only; invoice I10 “print later” | **Needs S0** if user picks this — do not code from this row | Gateway, e-meterai, Host invoice (`invoicable=false`) |
-| **4** | **Inbox “Delivered” (user-side)** | Guide §3 backlog | **Needs S0** | Mixing into Guard Discover |
-| **5** | **P14 E** denser Host cadence | On-box honesty shipped; not more WAF IDs | [`imunify-class-onbox.md`](specs/imunify-class-onbox.md) slice **E** | 24×7 YARA on `/`; inotify unless named; WAF **1147+**; **G/H** |
+| **— shipped** | **P15 S1** tokens/density | Flush `--sidebar` = canvas; density already on Card/Table | [`spa-grok-chrome-redesign.md`](specs/spa-grok-chrome-redesign.md) S1 | Do **not** re-implement; keep `--primary` green |
+| **1 (default recommend)** | **P15 S2** AppShell | Drop sticky `h-12` product header; move testids (`user-menu`, `header-credits`) | same spec S2 | Landing / blog island chrome; kit restyle; do **not** mix with S1 |
+| **2** | **Scan PDF / invoice HTML print** | Attach still HTML-only; invoice I10 “print later” | **Needs S0** if user picks this — do not code from this row | Gateway, e-meterai, Host invoice (`invoicable=false`) |
+| **3** | **Inbox “Delivered” (user-side)** | Guide §3 backlog | **Needs S0** | Mixing into Guard Discover |
+| **4** | **P14 E** denser Host cadence | On-box honesty shipped; not more WAF IDs | [`imunify-class-onbox.md`](specs/imunify-class-onbox.md) slice **E** | 24×7 YARA on `/`; inotify unless named; WAF **1147+**; **G/H** |
 
 **Parked (do not recommend):** Capacitor/PWA [`capacitor-shell-v1.md`](specs/capacitor-shell-v1.md); AI Gateway already S1–S5 flag-off; Host catalog invoice; cPanel plugin; PHP PD; org wallet; nested projects.
 
@@ -444,7 +444,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 
 | User says | Agent does |
 |-----------|------------|
-| “lanjut” / “next” without spec | Re-read **§1.3.1** + `handoff.md`; recommend **product-depth** default (**P15 S1** tokens); Uptime advanced is **shipped**; **do not** pitch GTM/AM/10 SIDs; **no** silent feature coding |
+| “lanjut” / “next” without spec | Re-read **§1.3.1** + `handoff.md`; recommend **product-depth** default (**P15 S2** AppShell); P15 S1 tokens **shipped**; **do not** pitch GTM/AM/10 SIDs; **no** silent feature coding |
 | “tulis spek workspace” | Update `docs/specs/workspace-v1.md` only (S1–S5 already shipped) |
 | “implement workspace” / “kerjakan fase workspace” | S1–S5 done — clarify **bug / residual** before coding |
 | “rebrand” / “sinexis.app” | Soft brand shipped; hard cut / DNS only on explicit ask; don’t invent Guard; don’t block attach GTM |
@@ -459,7 +459,8 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 | “implement blog” / “kerjakan blog” | S1–S5 in PR #409; platform admin only; no Guard merge |
 | “tulis spek hostname status” / custom host lifecycle | [`docs/specs/status-hostname-lifecycle.md`](specs/status-hostname-lifecycle.md) — docs only until named + implement verb |
 | “buat uptime advanced” / P8.x | **Shipped** — [`uptime-advanced-settings.md`](specs/uptime-advanced-settings.md); clarify bug / residual only |
-| “buat P15 S1” / chrome tokens | [`spa-grok-chrome-redesign.md`](specs/spa-grok-chrome-redesign.md) S1 only; not S2 — **default §1.3.1 #1** |
+| “buat P15 S1” / chrome tokens | **Shipped** — [`spa-grok-chrome-redesign.md`](specs/spa-grok-chrome-redesign.md) S1; clarify residual only |
+| “buat P15 S2” / AppShell | same spec **S2** — **default §1.3.1 #1**; do not mix S1 |
 | “GTM” / “email AM” / “10 SID” | Point to [`gtm-and-p11-ops.md`](commercial/gtm-and-p11-ops.md); **do not** treat as engineering next |
 
 **Locked answers (do not re-ask every session):** chat user = **product owner** (2026-09-15) — agent default **§1.3.1**, not GTM. KPI commercial = **attach ARPU** (AM owns renew; **not** an agent task). Billing = **Sinexis invoice v1** (bank transfer, mark paid) + optional GMD `service_id`. Dual-brand = **6–12 mo soft**. Guard thin + SIEM flag-off unless ops. Invoice pay loop **closed**. Metering v3: Scan seats, `credit_cost = 0`.
@@ -524,7 +525,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 
 ## 11) Agent one-liner
 
-> After reset: **boot §0 → §1.3.1 product-depth queue (not GTM) → default recommend P15 S1 tokens, wait for `buat` → Uptime advanced shipped → Guard live lab standing-permitted (wipe `tc5` first §4.1; do not re-ask) → no silent epics → no PII/SSH/IPs in git → Indonesian with user, `GIT_MASTER=1`.**
+> After reset: **boot §0 → §1.3.1 product-depth queue (not GTM) → default recommend P15 S2 AppShell, wait for `buat` → P15 S1 + Uptime advanced shipped → Guard live lab standing-permitted (wipe `tc5` first §4.1; do not re-ask) → no silent epics → no PII/SSH/IPs in git → Indonesian with user, `GIT_MASTER=1`.**
 
 ---
 
