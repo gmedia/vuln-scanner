@@ -71,7 +71,11 @@ describe("Assets page", () => {
   it("shows row skeletons while the list is loading", () => {
     mockList.mockReturnValue(new Promise(() => undefined));
     renderPage();
-    expect(screen.getByTestId("assets-loading")).toBeInTheDocument();
+    const loading = screen.getByTestId("assets-loading");
+    expect(loading).toBeInTheDocument();
+    expect(loading.querySelector('[data-slot="card-title"]')).toHaveTextContent(
+      "Assets",
+    );
     expect(screen.queryByTestId("assets-empty")).not.toBeInTheDocument();
   });
 
@@ -149,10 +153,15 @@ describe("Assets page", () => {
     ]);
     renderPage();
     await waitFor(() =>
-      expect(screen.getByTestId("assets-list-mobile")).toBeInTheDocument(),
+      expect(screen.getByTestId("assets-list")).toBeInTheDocument(),
+    );
+    const listCard = screen.getByTestId("assets-list");
+    expect(listCard.querySelector('[data-slot="card-title"]')).toHaveTextContent(
+      "Assets",
     );
     expect(screen.getByTestId("assets-list-mobile")).toHaveClass(
       "space-y-2",
+      "p-3",
       "md:hidden",
     );
     const card = screen.getByTestId("asset-card-a1");
