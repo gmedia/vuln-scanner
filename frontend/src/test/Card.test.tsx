@@ -23,6 +23,21 @@ describe("Card", () => {
     const card = container.querySelector("div");
     expect(card).toHaveClass("custom-card");
   });
+
+  it("uses theme-v1 density padding on header and content", () => {
+    const { container } = render(
+      <Card>
+        <CardHeader>Header</CardHeader>
+        <CardContent>Body</CardContent>
+      </Card>,
+    );
+    expect(container.querySelector('[data-slot="card-header"]')).toHaveClass(
+      "p-4",
+    );
+    expect(container.querySelector('[data-slot="card-content"]')).toHaveClass(
+      "p-4",
+    );
+  });
 });
 
 describe("CardHeader", () => {
