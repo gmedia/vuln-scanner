@@ -154,7 +154,9 @@ describe("WorkspaceSettings pilot checklist", () => {
     });
     renderPage();
     expect(
-      await screen.findByText("Transfer to Bank Contoh 0000000000 (Acme Holder)"),
+      await screen.findByText(
+        "Transfer to Bank Contoh 0000000000 (Acme Holder)",
+      ),
     ).toBeInTheDocument();
   });
 

@@ -80,8 +80,7 @@ function WorkspaceSettings() {
   const { t, i18n } = useTranslation("workspace");
   const qc = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
-  const inviteFromUrl =
-    searchParams.get("invite") ?? searchParams.get("token");
+  const inviteFromUrl = searchParams.get("invite") ?? searchParams.get("token");
   persistInviteToken(inviteFromUrl);
   const inviteToken = inviteFromUrl || readInviteToken();
 
@@ -562,9 +561,7 @@ function WorkspaceSettings() {
           {!orgId && (
             <p className="text-sm text-muted-foreground">{t("noOrgYet")}</p>
           )}
-          {orgId && membersQuery.isLoading && (
-            <TableRowSkeleton rows={3} />
-          )}
+          {orgId && membersQuery.isLoading && <TableRowSkeleton rows={3} />}
           {orgId && membersQuery.isError && (
             <p className="text-sm text-muted-foreground" role="status">
               {t("membersUnavailable")}
