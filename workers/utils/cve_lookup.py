@@ -207,7 +207,7 @@ def format_vuln_finding(vuln: CveVuln, cvss_score: float | None) -> ScanFinding:
     finding: ScanFinding = {
         "severity": severity,
         "category": "vulnerability",
-        "title": cve_id,
+        "title": summary or cve_id,
         "description": summary,
         "cve_id": cve_id,
         "cvss_score": cvss_score,
