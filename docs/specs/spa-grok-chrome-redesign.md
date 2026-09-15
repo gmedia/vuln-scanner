@@ -1,6 +1,6 @@
 # Spec: SPA chrome redesign (Grok2API reference, Sinexis green)
 
-**Status:** **S0 draft** (this file). **S1 shipped** (flush `--sidebar` = canvas; no leftover contrast strip). **Do not implement S2+ until the user names that slice + `buat` / `implement`.**
+**Status:** **S0–S9 on `main`.** **S1** flush tokens. **S2** AppShell (no sticky `h-12`; chrome in `SidebarFooter`) **#704**. **S3–S8** PageHeader waves **#705–#713**. **S9** recapture notes **#714**. **Do not re-implement.** Next product-depth default is **not** more P15 chrome — see guide **§1.3.1**.
 **Goal:** Authenticated SPA chrome and page density closer to `/home/ubuntu/referensi_design_light_dark.zip` (Grok2API light/dark), while **keeping Sinexis `--primary` green** `hsl(142 71% 45%)`.
 **Suggested epic label:** **P15** (visual). Does **not** jump P12–P14 product work. Does **not** change Guard/SIEM/WAF behaviour.
 **Reference PNGs:** extract locally from the zip; **do not commit** PNGs or the zip.
@@ -67,11 +67,11 @@ Do **not** combine S2 layout with a page restyle. Do **not** work on `main`. `GI
 
 **DoD:** Default dark still looks like today except flush sidebar tokens. `html.dark` default unchanged. Vitest theme + Card if touched. Cascade: **every** `.dark` `--sidebar` equals `--background` `hsl(0 0% 4%)`.
 
-**Out:** AppShell, Header, pages. **Do not re-implement.** Next named slice = **S2**.
+**Out:** AppShell, Header, pages. **Do not re-implement.** **S2–S9 shipped** — do not start another chrome wave unless the user names a bug.
 
 ---
 
-### S2 — AppShell chrome (the layout PR)
+### S2 — AppShell chrome (the layout PR) — **shipped (#704)**
 
 **Files:** `AppShell.tsx`, `Header.tsx`, `Sidebar.tsx`, tests `Header.test.tsx` / Sidebar tests, `docs/AGENT_PAGE_REGISTRY.md` chrome table, guide §10 **App** row only.
 
@@ -81,13 +81,13 @@ Do **not** combine S2 layout with a page restyle. Do **not** work on `main`. `GI
 - Content: `max-w-6xl` / `2xl:max-w-[90rem]` unchanged.
 - Safe-area inset moves to SidebarInset top padding.
 
-**DoD:** `Header.test.tsx` still finds `user-menu`, `sign-out`, `header-credits` (update queries if DOM parent changed). Playwright `e2e` that click those ids still pass locally if run. Landing **untouched**.
+**DoD (met on `main`):** no sticky product `h-12`; `user-menu` / `sign-out` live in the sidebar footer cluster (`Header` mounted from `SidebarFooter`). Scan-credits chip `header-credits` stays **absent** (metering v3 SKU seats — do not restore). Landing **untouched**. Registry chrome table already says SidebarFooter.
 
-**Out:** page-level KPI/tables; Landing; blog `_shell`.
+**Out:** page-level KPI/tables; Landing; blog `_shell`. **Do not re-implement.**
 
 ---
 
-### S3 — Dashboard + page title pattern
+### S3 — Dashboard + page title pattern — **shipped (#705)**
 
 **Files:** `pages/Dashboard.tsx`, shared `PageHeader` (new, layout-only) if needed.
 
@@ -105,7 +105,7 @@ Do **not** combine S2 layout with a page restyle. Do **not** work on `main`. `GI
 
 ---
 
-### S4 — Scan family (forms + detail)
+### S4 — Scan family (forms + detail) — **shipped (#707)**
 
 **Pages:** `IpScanner`, `DomainScanner`, `MobileScanner`, `ScanDetail`, `Schedules`, `Assets`.
 
@@ -115,7 +115,7 @@ Do **not** combine S2 layout with a page restyle. Do **not** work on `main`. `GI
 
 ---
 
-### S5 — Account: Profile + Workspace + Credit History
+### S5 — Account: Profile + Workspace + Credit History — **shipped**
 
 **Do:** Profile/Workspace **two-pane** inner nav (pills) **only if** it does not break `invite-*` / `members-list`. Credit History **filter bar unchanged** (reference for other lists). Workspace is a sidebar destination — **no** header back.
 
@@ -123,7 +123,7 @@ Do **not** combine S2 layout with a page restyle. Do **not** work on `main`. `GI
 
 ---
 
-### S6 — Attach: Guard, SIEM, Uptime, Status editor, Host Protect, AI, Guide
+### S6 — Attach: Guard, SIEM, Uptime, Status editor, Host Protect, AI, Guide — **shipped (#710)**
 
 **Do:** PageHeader + empty islands (Guard empty = large rounded panel, **no fake Connect**). Keep all `guard-*`, `siem-since` / `siem-until` ids. **Playwright ≠ enroll.** Guard / SIEM / AI / Guide headers: **no** decorative `leading` icon (empty-state icons stay).
 
@@ -131,7 +131,7 @@ Do **not** combine S2 layout with a page restyle. Do **not** work on `main`. `GI
 
 ---
 
-### S7 — Admin family
+### S7 — Admin family — **shipped (#711)**
 
 **Pages:** AdminDashboard, Users, UserDetail, Pricing, Hpp, Blog, EmailLogs, AdminAi.
 
@@ -141,7 +141,7 @@ Do **not** combine S2 layout with a page restyle. Do **not** work on `main`. `GI
 
 ---
 
-### S8 — Auth cards only (optional)
+### S8 — Auth cards only (optional) — **shipped (#713)**
 
 **Pages:** Login, Register, Forgot/Reset, VerifyEmail, NotFound.
 
@@ -151,7 +151,7 @@ Do **not** combine S2 layout with a page restyle. Do **not** work on `main`. `GI
 
 ---
 
-### S9 — Recapture + freeze
+### S9 — Recapture + freeze — **shipped (#714)**
 
 **Do:** Registry §D recapture locally (light+dark). Do **not** git-add PNGs. Fix regressions only.
 

@@ -2,11 +2,11 @@
 
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
-**Last updated:** 2026-09-15 (**owner lock:** agent default = **product depth**, not GTM/AM pitch — §1.3. Invoice v1 pay loop closed **#775**; mobile finding titles **#776**. Prior: Host Protect YARA/Clam **#716**; WAF starter **1001–1146** `#708`; displace-lite **DL0–DL3** `#659`; installer **#642**.)
+**Last updated:** 2026-09-15 (**owner lock:** agent default = **product depth**, not GTM/AM pitch — §1.3. **P15 S2 AppShell shipped #704** (S3–S9 also on `main`); do **not** re-implement chrome. Default next = **Scan PDF / invoice HTML print** (needs S0). Invoice v1 pay loop closed **#775**; mobile finding titles **#776**. Prior: Host Protect YARA/Clam **#716**; WAF starter **1001–1146** `#708`; displace-lite **DL0–DL3** `#659`; installer **#642**.)
 **Repo tip at write time:** re-`git pull` after reset — **do not pin a SHA**. **P12 Host Protect S0–S12 on `main`**: honesty **#556**, quarantine queue **#558**, helper systemd jail **#559**, **YARA/Clam honesty #716**. **Do not** re-implement S1–S12. Missing on-box root: code status **`pending_agent`** (queued, 0 hits) until helper ingest, or **`failed`/`unreachable_root`** if abandoned — **never** mock hits on public origin (**#533**). **P13 Host WAF S0–S5** plus live ingest + **starter rules only** (**#640**/#651/#708: product IDs **1001–1146**; drop Imunify/CRS/static noise on ingest and GET). **#636** audit cursor vs log; **#633** snippet in every `server{}`. Compose: `HOST_PROTECT_ENABLED` / `HOST_WAF_ENABLED` prod **true**, local/CI **false**; **`HOST_PROTECT_ALLOW_LOCAL_WALK` default false** (P14 **B**). per-site WAF still **off** until admin sets detect/protect. `SIEM_ENABLED` **git prod compose default false** (ops secret may enable). Never paste WAF onto `sinexis.app` edge nginx. **Owner (2026-09-15):** chat user is **product**, not AM. **Do not** recommend wave-1 email / 10 SIDs / finance `service_id` as the session’s next step. GTM checklists stay in `docs/commercial/` for humans who **ask**. Residual off-repo (not agent default): Host Protect **invoice** (`service_id`); fill `/admin/hpp` `hostscan`. SPA Simulate `mock.sqli.1` is **lab-gated (DL0 shipped #647)** — not a new epic unless named + `buat`. Working list IDR in `docs/commercial/sku-host-protect.md` (**not** finance lock). **P14** = owner track: **Imunify360 jobs** (on-box files + HTTP), original stack — [`imunify-class-onbox.md`](specs/imunify-class-onbox.md). **Not** a clone. AM “ganti Imunify di **VPS**” = displace-lite after **Sentence-ok** — plan [`vps-displace-imunify-dev-plan.md`](specs/vps-displace-imunify-dev-plan.md) (**DL0–DL3**); **never** shared cPanel. Caddy out. **A–F** on this stream: **F** WAF protect = Host Multi SKU + customer nginx snippet (`SecRuleEngine On`); **never** Sinexis edge. Wave **0** installer: **#642** one-file from **sinexis.app**. **G/H** only with `buat`. Clone PRs forbidden: [`imunify-beside-not-roadmap.md`](commercial/imunify-beside-not-roadmap.md).
 **Guard e2e rule:** if the user asks for a **full prod e2e suite including Guard enroll/unenroll**, **wipe `tc5` + leftover Manager/DB smoke rows first** — see **§4.1**. Do not skip this. Do not treat Playwright as enroll/unenroll.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
-**Phase snapshot:** **P0 policy locked** · **P1 attach shipped** · **P2 Workspace S1–S5** · **P3 assets S1–S5** · **P4 soft dual-brand** · **P5 Guard thin** (mock CI; live `sx-erpstg` online — do not wipe) · **P6 hospitality S1–S3** · **P7 SIEM S0–S5** (`SIEM_ENABLED` compose default **false**; `SIEM_INCLUDE_FULL_LOG` false) · **P8 Uptime S1–S5 + v2** · **P10 blog shipped** · **P11 status page** · **P12 Host Protect S0–S12 on `main`** (#533–#537, #556, **#558**, **#559**; prod `HOST_PROTECT_ENABLED` true) · **P13 Host WAF S0–S5 + ingest + starter allowlist #640** (prod compose API **true**; per-site mode off until set; no edge Coraza) · **P14** A–F (WAF protect this stream; **#642** installer sinexis.app); **G/H** only if named + `buat` · **i18n S1–S7** · **theme S1–S3** · **invoice v1 closed** · **metering v3 shipped** · **GTM off-repo (do not pitch as next)** · residual eng = **named product-depth slices** (§1.3 queue) + bugs + Dependabot only when named + CI green — **do not** implement SIEM under Guard PRs. Do **not** re-implement Host Protect S1–S12.
+**Phase snapshot:** **P0 policy locked** · **P1 attach shipped** · **P2 Workspace S1–S5** · **P3 assets S1–S5** · **P4 soft dual-brand** · **P5 Guard thin** (mock CI; live `sx-erpstg` online — do not wipe) · **P6 hospitality S1–S3** · **P7 SIEM S0–S5** (`SIEM_ENABLED` compose default **false**; `SIEM_INCLUDE_FULL_LOG` false) · **P8 Uptime S1–S5 + v2** · **P10 blog shipped** · **P11 status page** · **P12 Host Protect S0–S12 on `main`** (#533–#537, #556, **#558**, **#559**; prod `HOST_PROTECT_ENABLED` true) · **P13 Host WAF S0–S5 + ingest + starter allowlist #640** (prod compose API **true**; per-site mode off until set; no edge Coraza) · **P14** A–F (WAF protect this stream; **#642** installer sinexis.app); **G/H** only if named + `buat` · **i18n S1–S7** · **theme S1–S3** · **invoice v1 closed** · **metering v3 shipped** · **P15 S1–S9 chrome shipped** · **GTM off-repo (do not pitch as next)** · residual eng = **named product-depth slices** (§1.3 queue) + bugs + Dependabot only when named + CI green — **do not** implement SIEM under Guard PRs. Do **not** re-implement Host Protect S1–S12 or P15 chrome.
 
 ---
 
@@ -129,10 +129,10 @@ P0–P14 control planes are **on `main`**. Next engineering is **depth**, not a 
 |-------|--------|-----|------|-----|
 | **— shipped** | **P8.x Uptime advanced** | SPA Advanced + edit + timeout/`expect_status`; PATCH can clear status | [`uptime-advanced-settings.md`](specs/uptime-advanced-settings.md) | Do **not** re-implement; Pingdom / webhooks still out |
 | **— shipped** | **P15 S1** tokens/density | Flush `--sidebar` = canvas; density already on Card/Table | [`spa-grok-chrome-redesign.md`](specs/spa-grok-chrome-redesign.md) S1 | Do **not** re-implement; keep `--primary` green |
-| **1 (default recommend)** | **P15 S2** AppShell | Drop sticky `h-12` product header; move testids (`user-menu`, `header-credits`) | same spec S2 | Landing / blog island chrome; kit restyle; do **not** mix with S1 |
-| **2** | **Scan PDF / invoice HTML print** | Attach still HTML-only; invoice I10 “print later” | **Needs S0** if user picks this — do not code from this row | Gateway, e-meterai, Host invoice (`invoicable=false`) |
-| **3** | **Inbox “Delivered” (user-side)** | Guide §3 backlog | **Needs S0** | Mixing into Guard Discover |
-| **4** | **P14 E** denser Host cadence | On-box honesty shipped; not more WAF IDs | [`imunify-class-onbox.md`](specs/imunify-class-onbox.md) slice **E** | 24×7 YARA on `/`; inotify unless named; WAF **1147+**; **G/H** |
+| **— shipped** | **P15 S2** AppShell | No sticky `h-12`; chrome cluster in `SidebarFooter` (`user-menu`, `sign-out`). Credits chip stays hidden (metering v3). | same spec S2 **#704**. S3–S9 also on `main` | Do **not** re-implement chrome; Landing / blog island keep `h-12` |
+| **1 (default recommend)** | **Scan PDF / invoice HTML print** | Attach still HTML-only; invoice I10 “print later” | **Needs S0** if user picks this — do not code from this row | Gateway, e-meterai, Host invoice (`invoicable=false`) |
+| **2** | **Inbox “Delivered” (user-side)** | Guide §3 backlog | **Needs S0** | Mixing into Guard Discover |
+| **3** | **P14 E** denser Host cadence | On-box honesty shipped; not more WAF IDs | [`imunify-class-onbox.md`](specs/imunify-class-onbox.md) slice **E** | 24×7 YARA on `/`; inotify unless named; WAF **1147+**; **G/H** |
 
 **Parked (do not recommend):** Capacitor/PWA [`capacitor-shell-v1.md`](specs/capacitor-shell-v1.md); AI Gateway already S1–S5 flag-off; Host catalog invoice; cPanel plugin; PHP PD; org wallet; nested projects.
 
@@ -444,7 +444,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 
 | User says | Agent does |
 |-----------|------------|
-| “lanjut” / “next” without spec | Re-read **§1.3.1** + `handoff.md`; recommend **product-depth** default (**P15 S2** AppShell); P15 S1 tokens **shipped**; **do not** pitch GTM/AM/10 SIDs; **no** silent feature coding |
+| “lanjut” / “next” without spec | Re-read **§1.3.1** + `handoff.md`; recommend **product-depth** default (**Scan PDF / invoice HTML print** — needs S0); P15 S1–S9 chrome **shipped**; **do not** pitch GTM/AM/10 SIDs; **no** silent feature coding |
 | “tulis spek workspace” | Update `docs/specs/workspace-v1.md` only (S1–S5 already shipped) |
 | “implement workspace” / “kerjakan fase workspace” | S1–S5 done — clarify **bug / residual** before coding |
 | “rebrand” / “sinexis.app” | Soft brand shipped; hard cut / DNS only on explicit ask; don’t invent Guard; don’t block attach GTM |
@@ -460,7 +460,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 | “tulis spek hostname status” / custom host lifecycle | [`docs/specs/status-hostname-lifecycle.md`](specs/status-hostname-lifecycle.md) — docs only until named + implement verb |
 | “buat uptime advanced” / P8.x | **Shipped** — [`uptime-advanced-settings.md`](specs/uptime-advanced-settings.md); clarify bug / residual only |
 | “buat P15 S1” / chrome tokens | **Shipped** — [`spa-grok-chrome-redesign.md`](specs/spa-grok-chrome-redesign.md) S1; clarify residual only |
-| “buat P15 S2” / AppShell | same spec **S2** — **default §1.3.1 #1**; do not mix S1 |
+| “buat P15 S2” / AppShell | **Shipped #704** — same spec **S2**; S3–S9 also on `main`. Clarify bug / residual only. Do **not** re-implement |
 | “GTM” / “email AM” / “10 SID” | Point to [`gtm-and-p11-ops.md`](commercial/gtm-and-p11-ops.md); **do not** treat as engineering next |
 
 **Locked answers (do not re-ask every session):** chat user = **product owner** (2026-09-15) — agent default **§1.3.1**, not GTM. KPI commercial = **attach ARPU** (AM owns renew; **not** an agent task). Billing = **Sinexis invoice v1** (bank transfer, mark paid) + optional GMD `service_id`. Dual-brand = **6–12 mo soft**. Guard thin + SIEM flag-off unless ops. Invoice pay loop **closed**. Metering v3: Scan seats, `credit_cost = 0`.
@@ -503,7 +503,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 | `docs/specs/guard-v1.md` | P5 Guard thin spek + status (S0–S5 + Http on main) |
 | `docs/specs/blog-v1.md` | P10 public blog (CMS + SEO path) |
 | `docs/specs/shadcn-ui-migration.md` | SPA kit; Wave A–F shipped |
-| `docs/specs/spa-grok-chrome-redesign.md` | **P15 S0 draft** — SPA chrome vs Grok2API zip; **layout overrides** theme-v1 “header stays”; green primary stays. Code only if named slice + `buat` |
+| `docs/specs/spa-grok-chrome-redesign.md` | **P15 S0–S9 on `main`** — SPA chrome vs Grok2API zip; **layout overrides** theme-v1 “header stays”; green primary stays. **Do not re-implement.** Bug/residual only if named |
 | `docs/specs/*` | Attach/workspace/assets/uptime/i18n/theme shipped; blog S1–S5; status page P11; hostname lifecycle **draft** |
 
 ---
@@ -516,7 +516,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 |---------|------|
 | **Landing `/`** | Source of truth for **public** chrome: `BrandMark`, `h-12` `border-b`, `max-w-6xl` / `2xl:max-w-[90rem]`, `Button`, theme/i18n, footer `BRAND.footerLine` + `/blog` + login/register |
 | **HTML islands** (`GET /blog`, `/blog/{slug}`) | Same **tokens + chrome geometry**. FastAPI string is OK for SEO; **not** a second brand. Header: wordmark `SINE`+`XIS` (primary accent) + home/blog/sign-in/get-started. Body: `font-sans` stack matching `--font-sans` (Inter, ui-sans-serif). Background `--background` `hsl(0 0% 98%)`, text `--foreground`, links/CTAs `--primary` `hsl(142 71% 45%)`. One `h1` including empty index. |
-| **In-app SPA** | `frontend/src/components/ui/*` only. New forms: `Label` + kit controls. **Forbidden:** native `<select>` (eslint `no-restricted-syntax` in `frontend/eslint.config.js`; use `Select`). Raw `<button>` only for icon toggles and full-width list/card rows — primary actions use `Button`. No placeholder-only fields without `Label`. **Filter bars:** equal `gap-3` grid, `h-10 min-h-10` on Input/Select/DatePicker/DateTimePicker/Apply; DateTimePicker trigger must match DatePicker (`border-border bg-input`). Pattern: Credit History. |
+| **In-app SPA (AppShell)** | **P15 S2 shipped:** no sticky product `h-12`. Chrome cluster (`user-menu`, `sign-out`, org-switcher, theme, i18n) lives in `SidebarFooter`. Page title is in-content `PageHeader`. Kit only: `frontend/src/components/ui/*`. New forms: `Label` + kit controls. **Forbidden:** native `<select>` (eslint `no-restricted-syntax` in `frontend/eslint.config.js`; use `Select`). Raw `<button>` only for icon toggles and full-width list/card rows — primary actions use `Button`. No placeholder-only fields without `Label`. **Filter bars:** equal `gap-3` grid, `h-10 min-h-10` on Input/Select/DatePicker/DateTimePicker/Apply; DateTimePicker trigger must match DatePicker (`border-border bg-input`). Pattern: Credit History. |
 | **Kit files** | Do not one-off restyle `components/ui` for a screenshot. See `docs/specs/shadcn-ui-migration.md`. |
 
 **Not required on the island:** React Router, ThemeSwitcher, LanguageSwitcher (no JS hydrate). Optional later: `blog.json` chrome if SPA wraps the same URLs.
@@ -525,7 +525,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 
 ## 11) Agent one-liner
 
-> After reset: **boot §0 → §1.3.1 product-depth queue (not GTM) → default recommend P15 S2 AppShell, wait for `buat` → P15 S1 + Uptime advanced shipped → Guard live lab standing-permitted (wipe `tc5` first §4.1; do not re-ask) → no silent epics → no PII/SSH/IPs in git → Indonesian with user, `GIT_MASTER=1`.**
+> After reset: **boot §0 → §1.3.1 product-depth queue (not GTM) → default recommend Scan PDF / invoice HTML print (needs S0), wait for `buat` → P15 S1–S9 + Uptime advanced shipped → Guard live lab standing-permitted (wipe `tc5` first §4.1; do not re-ask) → no silent epics → no PII/SSH/IPs in git → Indonesian with user, `GIT_MASTER=1`.**
 
 ---
 
