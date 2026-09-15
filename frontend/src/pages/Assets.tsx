@@ -27,7 +27,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
-import { Card, CardContent } from "@/components/ui/Card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import PageHeader from "@/components/layout/PageHeader";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import { Progress } from "@/components/ui/Progress";
@@ -761,9 +761,16 @@ export default function Assets() {
       ) : null}
 
       {list.isLoading ? (
-        <div data-testid="assets-loading">
-          <TableRowSkeleton rows={5} />
-        </div>
+        <Card data-testid="assets-loading">
+          <CardHeader>
+            <CardTitle className="text-sm tracking-wide">
+              {t("tableTitle")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TableRowSkeleton rows={5} />
+          </CardContent>
+        </Card>
       ) : items.length === 0 ? (
         <Card data-testid="assets-empty">
           <CardContent className="flex min-h-[12rem] flex-col items-center justify-center gap-3 px-6 py-16 text-center md:min-h-[16rem] md:py-20">
@@ -798,94 +805,101 @@ export default function Assets() {
           </CardContent>
         </Card>
       ) : (
-        <>
-          <div className="space-y-2 md:hidden" data-testid="assets-list-mobile">
-            {visible.map((a: ScanAsset) => (
-              <div
-                key={a.id}
-                className="rounded-lg border border-border bg-card p-3"
-                data-testid={`asset-card-${a.id}`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <p className="min-w-0 break-words text-sm font-medium text-foreground">
-                    {a.name}
-                  </p>
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    {a.scan_type === "ip" ? t("typeIp") : t("typeDomain")}
-                  </span>
-                </div>
-                <p className="mt-1 break-all font-mono text-xs tabular-nums text-muted-foreground">
-                  {a.target}
-                </p>
-                {(a.tags ?? []).length > 0 || a.guard_agent_id ? (
-                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                    {tagBadges(a, "asset-tag-card")}
-                    {a.guard_agent_id ? (
-                      <>
-                        <Badge
-                          variant="info"
-                          data-testid={`asset-guard-chip-${a.id}-card`}
-                        >
-                          {t("guardLinked", {
-                            name: a.guard_agent_name ?? a.guard_agent_id,
-                          })}
-                        </Badge>
-                        <Button
-                          variant="link"
-                          size="sm"
-                          className="h-auto min-h-11 p-0 md:min-h-0"
-                          asChild
-                        >
-                          <Link to="/guard">{t("openGuard")}</Link>
-                        </Button>
-                      </>
-                    ) : null}
-                  </div>
-                ) : null}
-                <div className="mt-2 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                  <span>{a.schedule_id ? t("hasSchedule") : "—"}</span>
-                  {rowMenu(a, "card")}
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="hidden overflow-x-auto md:block" data-testid="assets-list-desktop">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("name")}</TableHead>
-                  <TableHead>{t("type")}</TableHead>
-                  <TableHead>{t("target")}</TableHead>
-                  <TableHead>{t("tags")}</TableHead>
-                  <TableHead>{t("colSchedule")}</TableHead>
-                  <TableHead>{t("colGuard")}</TableHead>
-                  <TableHead className="w-12 text-right">
-                    <span className="sr-only">{t("colActions")}</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+        <Card data-testid="assets-list">
+          <CardHeader>
+            <CardTitle className="text-sm tracking-wide">
+              {t("tableTitle")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+              <div className="space-y-2 p-3 md:hidden" data-testid="assets-list-mobile">
                 {visible.map((a: ScanAsset) => (
-                  <TableRow key={a.id} className="h-12">
-                    <TableCell className="font-medium">{a.name}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {a.scan_type === "ip" ? t("typeIp") : t("typeDomain")}
-                    </TableCell>
-                    <TableCell className="font-mono tabular-nums">
+                  <div
+                    key={a.id}
+                    className="rounded-lg border border-border bg-card p-3"
+                    data-testid={`asset-card-${a.id}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="min-w-0 break-words text-sm font-medium text-foreground">
+                        {a.name}
+                      </p>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {a.scan_type === "ip" ? t("typeIp") : t("typeDomain")}
+                      </span>
+                    </div>
+                    <p className="mt-1 break-all font-mono text-xs tabular-nums text-muted-foreground">
                       {a.target}
-                    </TableCell>
-                    <TableCell>{tagBadges(a)}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {a.schedule_id ? t("hasSchedule") : "—"}
-                    </TableCell>
-                    <TableCell>{guardCell(a)}</TableCell>
-                    <TableCell className="text-right">{rowMenu(a)}</TableCell>
-                  </TableRow>
+                    </p>
+                    {(a.tags ?? []).length > 0 || a.guard_agent_id ? (
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        {tagBadges(a, "asset-tag-card")}
+                        {a.guard_agent_id ? (
+                          <>
+                            <Badge
+                              variant="info"
+                              data-testid={`asset-guard-chip-${a.id}-card`}
+                            >
+                              {t("guardLinked", {
+                                name: a.guard_agent_name ?? a.guard_agent_id,
+                              })}
+                            </Badge>
+                            <Button
+                              variant="link"
+                              size="sm"
+                              className="h-auto min-h-11 p-0 md:min-h-0"
+                              asChild
+                            >
+                              <Link to="/guard">{t("openGuard")}</Link>
+                            </Button>
+                          </>
+                        ) : null}
+                      </div>
+                    ) : null}
+                    <div className="mt-2 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                      <span>{a.schedule_id ? t("hasSchedule") : "—"}</span>
+                      {rowMenu(a, "card")}
+                    </div>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
-          </div>
-        </>
+              </div>
+              <div className="hidden overflow-x-auto md:block" data-testid="assets-list-desktop">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("name")}</TableHead>
+                      <TableHead>{t("type")}</TableHead>
+                      <TableHead>{t("target")}</TableHead>
+                      <TableHead>{t("tags")}</TableHead>
+                      <TableHead>{t("colSchedule")}</TableHead>
+                      <TableHead>{t("colGuard")}</TableHead>
+                      <TableHead className="w-12 text-right">
+                        <span className="sr-only">{t("colActions")}</span>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {visible.map((a: ScanAsset) => (
+                      <TableRow key={a.id} className="h-12">
+                        <TableCell className="font-medium">{a.name}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {a.scan_type === "ip" ? t("typeIp") : t("typeDomain")}
+                        </TableCell>
+                        <TableCell className="font-mono tabular-nums">
+                          {a.target}
+                        </TableCell>
+                        <TableCell>{tagBadges(a)}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {a.schedule_id ? t("hasSchedule") : "—"}
+                        </TableCell>
+                        <TableCell>{guardCell(a)}</TableCell>
+                        <TableCell className="text-right">{rowMenu(a)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
