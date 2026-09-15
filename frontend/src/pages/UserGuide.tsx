@@ -274,7 +274,7 @@ function UserGuide() {
         </p>
       </div>
 
-      <div className="sticky top-14 z-30 -mx-4 mb-6 bg-background px-4 py-2 md:-mx-6 md:px-6 lg:hidden">
+      <div className="sticky top-0 z-30 -mx-4 mb-6 bg-background px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 md:-mx-6 md:px-6 lg:hidden">
         <Card>
           <CardHeader className="p-0">
             <Button
