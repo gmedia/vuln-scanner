@@ -320,7 +320,7 @@ class TestFormatVulnFinding:
     def test_cve_id_from_aliases(self, sample_osv_response):
         vuln = sample_osv_response["vulns"][0]
         finding = format_vuln_finding(vuln, 8.5)
-        assert finding["title"] == "CVE-2024-1234"
+        assert finding["title"] == "Example vulnerability in package"
         assert finding["cve_id"] == "CVE-2024-1234"
         assert finding["severity"] == "high"
         assert finding["cvss_score"] == 8.5
@@ -336,8 +336,24 @@ class TestFormatVulnFinding:
             "references": [],
         }
         finding = format_vuln_finding(vuln, 9.5)
-        assert finding["title"] == "GHSA-xxxx-yyyy-zzzz"
+        assert finding["title"] == "Bad vuln"
+        assert finding["cve_id"] == "GHSA-xxxx-yyyy-zzzz"
         assert finding["severity"] == "critical"
+
+    def test_title_falls_back_to_id_when_no_summary(self):
+        vuln = {
+            "id": "CVE-2024-0000",
+            "aliases": ["CVE-2024-0000"],
+            "severity": [],
+            "summary": "",
+            "details": "",
+            "database_specific": {},
+            "references": [],
+        }
+        finding = format_vuln_finding(vuln, None)
+        assert finding["title"] == "CVE-2024-0000"
+        assert finding["cve_id"] == "CVE-2024-0000"
+        assert finding["description"] == ""
 
     def test_summary_truncation(self):
         vuln = {
@@ -350,6 +366,8 @@ class TestFormatVulnFinding:
         }
         finding = format_vuln_finding(vuln, 5.0)
         assert len(finding["description"]) == 500
+        assert finding["title"] == finding["description"]
+        assert finding["cve_id"] == "CVE-2024-7777"
 
     def test_fallback_to_details(self):
         vuln = {
@@ -363,6 +381,8 @@ class TestFormatVulnFinding:
         }
         finding = format_vuln_finding(vuln, None)
         assert finding["description"] == "Fallback details text"
+        assert finding["title"] == "Fallback details text"
+        assert finding["cve_id"] == "CVE-2024-8888"
 
     def test_remediation_included(self, sample_vuln_with_remediation):
         finding = format_vuln_finding(sample_vuln_with_remediation, 9.2)
