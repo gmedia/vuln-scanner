@@ -2,7 +2,7 @@
 
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
-**Last updated:** 2026-09-15 (**owner lock:** agent default = **product depth**, not GTM/AM pitch — §1.3. **P15 S2 AppShell shipped #704** (S3–S9 also on `main`); do **not** re-implement chrome. Default next = **Scan PDF / invoice HTML print** — S0 spec [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md); S1a/S1b wait for named + `buat`. Invoice v1 pay loop closed **#775**; mobile finding titles **#776**. Prior: Host Protect YARA/Clam **#716**; WAF starter **1001–1146** `#708`; displace-lite **DL0–DL3** `#659`; installer **#642**.)
+**Last updated:** 2026-09-16 (**owner lock:** agent default = **product depth**, not GTM/AM pitch — §1.3. **P15 S2 AppShell shipped #704** (S3–S9 also on `main`); do **not** re-implement chrome. Print S1a/S1b **shipped** #785/#786. Default next = **Inbox “Delivered”** — S0 spec [`inbox-delivered-v1.md`](specs/inbox-delivered-v1.md); S1/S1b wait for named + `buat`. Invoice v1 pay loop closed **#775**; mobile finding titles **#776**. Prior: Host Protect YARA/Clam **#716**; WAF starter **1001–1146** `#708`; displace-lite **DL0–DL3** `#659`; installer **#642**.)
 **Repo tip at write time:** re-`git pull` after reset — **do not pin a SHA**. **P12 Host Protect S0–S12 on `main`**: honesty **#556**, quarantine queue **#558**, helper systemd jail **#559**, **YARA/Clam honesty #716**. **Do not** re-implement S1–S12. Missing on-box root: code status **`pending_agent`** (queued, 0 hits) until helper ingest, or **`failed`/`unreachable_root`** if abandoned — **never** mock hits on public origin (**#533**). **P13 Host WAF S0–S5** plus live ingest + **starter rules only** (**#640**/#651/#708: product IDs **1001–1146**; drop Imunify/CRS/static noise on ingest and GET). **#636** audit cursor vs log; **#633** snippet in every `server{}`. Compose: `HOST_PROTECT_ENABLED` / `HOST_WAF_ENABLED` prod **true**, local/CI **false**; **`HOST_PROTECT_ALLOW_LOCAL_WALK` default false** (P14 **B**). per-site WAF still **off** until admin sets detect/protect. `SIEM_ENABLED` **git prod compose default false** (ops secret may enable). Never paste WAF onto `sinexis.app` edge nginx. **Owner (2026-09-15):** chat user is **product**, not AM. **Do not** recommend wave-1 email / 10 SIDs / finance `service_id` as the session’s next step. GTM checklists stay in `docs/commercial/` for humans who **ask**. Residual off-repo (not agent default): Host Protect **invoice** (`service_id`); fill `/admin/hpp` `hostscan`. SPA Simulate `mock.sqli.1` is **lab-gated (DL0 shipped #647)** — not a new epic unless named + `buat`. Working list IDR in `docs/commercial/sku-host-protect.md` (**not** finance lock). **P14** = owner track: **Imunify360 jobs** (on-box files + HTTP), original stack — [`imunify-class-onbox.md`](specs/imunify-class-onbox.md). **Not** a clone. AM “ganti Imunify di **VPS**” = displace-lite after **Sentence-ok** — plan [`vps-displace-imunify-dev-plan.md`](specs/vps-displace-imunify-dev-plan.md) (**DL0–DL3**); **never** shared cPanel. Caddy out. **A–F** on this stream: **F** WAF protect = Host Multi SKU + customer nginx snippet (`SecRuleEngine On`); **never** Sinexis edge. Wave **0** installer: **#642** one-file from **sinexis.app**. **G/H** only with `buat`. Clone PRs forbidden: [`imunify-beside-not-roadmap.md`](commercial/imunify-beside-not-roadmap.md).
 **Guard e2e rule:** if the user asks for a **full prod e2e suite including Guard enroll/unenroll**, **wipe `tc5` + leftover Manager/DB smoke rows first** — see **§4.1**. Do not skip this. Do not treat Playwright as enroll/unenroll.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
@@ -130,8 +130,8 @@ P0–P14 control planes are **on `main`**. Next engineering is **depth**, not a 
 | **— shipped** | **P8.x Uptime advanced** | SPA Advanced + edit + timeout/`expect_status`; PATCH can clear status | [`uptime-advanced-settings.md`](specs/uptime-advanced-settings.md) | Do **not** re-implement; Pingdom / webhooks still out |
 | **— shipped** | **P15 S1** tokens/density | Flush `--sidebar` = canvas; density already on Card/Table | [`spa-grok-chrome-redesign.md`](specs/spa-grok-chrome-redesign.md) S1 | Do **not** re-implement; keep `--primary` green |
 | **— shipped** | **P15 S2** AppShell | No sticky `h-12`; chrome cluster in `SidebarFooter` (`user-menu`, `sign-out`). Credits chip stays hidden (metering v3). | same spec S2 **#704**. S3–S9 also on `main` | Do **not** re-implement chrome; Landing / blog island keep `h-12` |
-| **1 (default recommend)** | **Scan PDF / invoice HTML print** | Attach still HTML-only; invoice I10 “print later” | [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md) **S0**. Code = named **S1a** (scan browser print) or **S1b** (invoice HTML print) + `buat`. **No** `format=pdf` / WeasyPrint in S1. | Gateway, e-meterai, Host invoice (`invoicable=false`); PDF library (I10); server-side `.pdf` (S2 parked) |
-| **2** | **Inbox “Delivered” (user-side)** | Guide §3 backlog | **Needs S0** | Mixing into Guard Discover |
+| **— shipped** | **Scan PDF / invoice HTML print** | Browser print + invoice SPA print | [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md) S0 + **S1a #785** + **S1b #786** | Do **not** re-implement; `format=pdf` / WeasyPrint still S2 parked |
+| **1 (default recommend)** | **Inbox “Delivered” (user-side)** | Customer cannot see SMTP attempts; admin logs exist | [`inbox-delivered-v1.md`](specs/inbox-delivered-v1.md) **S0**. Code = named **S1** (schema+API) or **S1b** (SPA `/inbox`) + `buat`. Copy = Sent/Failed, not mailbox DSN. | Mixing into Guard Discover; bounce/SES; invoice SMTP; invite SMTP; admin dump as user API |
 | **3** | **P14 E** denser Host cadence | On-box honesty shipped; not more WAF IDs | [`imunify-class-onbox.md`](specs/imunify-class-onbox.md) slice **E** | 24×7 YARA on `/`; inotify unless named; WAF **1147+**; **G/H** |
 
 **Parked (do not recommend):** Capacitor/PWA [`capacitor-shell-v1.md`](specs/capacitor-shell-v1.md); AI Gateway already S1–S5 flag-off; Host catalog invoice; cPanel plugin; PHP PD; org wallet; nested projects.
@@ -232,7 +232,8 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | [`docs/specs/ai-gateway-v1.md`](specs/ai-gateway-v1.md) | **S1–S5 on `main` (this PR)** | OpenAI-compat resale; flag **off**. Ops: [`ai-gateway-ops.md`](ai-gateway-ops.md). Residual: human catalog/FX/enable. |
 | [`docs/specs/metering-v2.md`](specs/metering-v2.md) | **Shipped** (#736) | Scheduled attach included. Superseded for on-demand credits by v3. |
 | [`docs/specs/metering-v3-sku-seats.md`](specs/metering-v3-sku-seats.md) | **Shipped** (#742–#744) | Scan/Host/Uptime = SKU seats only. No Scan credit debit (ip/domain/apk/ipa/statushost). AI IDR wallet stays. |
-| [`docs/specs/scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md) | **S0** (this docs PR) | Browser print for executive HTML + invoice HTML print. **S1a/S1b** only if named + `buat`. **Not** WeasyPrint / `format=pdf`. |
+| [`docs/specs/scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md) | **S0 + S1a #785 + S1b #786 shipped** | Browser print. **Not** WeasyPrint / `format=pdf` (S2 parked). |
+| [`docs/specs/inbox-delivered-v1.md`](specs/inbox-delivered-v1.md) | **S0** (this docs PR) | User-side SMTP Sent/Failed log. **S1/S1b** only if named + `buat`. **Not** Guard Discover / bounce / invoice SMTP. |
 
 **Agent:** wait for **explicit implement** even when spec exists. Prefer **draft spec** over silent coding for new epics; P3 assets already shipped.
 
@@ -302,7 +303,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 - TypeScript 7 when `typescript-eslint` allows
 - Company Prometheus external access
 - Real AAB convert fixture
-- Inbox “Delivered” user-side
+- Inbox “Delivered” user-side — S0 [`inbox-delivered-v1.md`](specs/inbox-delivered-v1.md); S1/S1b wait for named + `buat`
 
 ---
 
@@ -445,7 +446,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 
 | User says | Agent does |
 |-----------|------------|
-| “lanjut” / “next” without spec | Re-read **§1.3.1** + `handoff.md`; recommend **S1a** scan browser print (then **S1b** invoice HTML) per [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md); **wait for named slice + `buat`**; P15 S1–S9 chrome **shipped**; **do not** pitch GTM/AM/10 SIDs; **no** silent feature coding |
+| “lanjut” / “next” without spec | Re-read **§1.3.1** + `handoff.md`; recommend **S1** inbox schema+API (then **S1b** SPA `/inbox`) per [`inbox-delivered-v1.md`](specs/inbox-delivered-v1.md); **wait for named slice + `buat`**; print S1a/S1b + P15 S1–S9 **shipped**; **do not** pitch GTM/AM/10 SIDs; **no** silent feature coding |
 | “tulis spek workspace” | Update `docs/specs/workspace-v1.md` only (S1–S5 already shipped) |
 | “implement workspace” / “kerjakan fase workspace” | S1–S5 done — clarify **bug / residual** before coding |
 | “rebrand” / “sinexis.app” | Soft brand shipped; hard cut / DNS only on explicit ask; don’t invent Guard; don’t block attach GTM |
@@ -462,7 +463,8 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 | “buat uptime advanced” / P8.x | **Shipped** — [`uptime-advanced-settings.md`](specs/uptime-advanced-settings.md); clarify bug / residual only |
 | “buat P15 S1” / chrome tokens | **Shipped** — [`spa-grok-chrome-redesign.md`](specs/spa-grok-chrome-redesign.md) S1; clarify residual only |
 | “buat P15 S2” / AppShell | **Shipped #704** — same spec **S2**; S3–S9 also on `main`. Clarify bug / residual only. Do **not** re-implement |
-| “buat” scan PDF / invoice print / S1a / S1b | Point to [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md). S0 = this spec (docs). Code only if slice **S1a** or **S1b** is named. **Not** WeasyPrint / `format=pdf` / gateway |
+| “buat” scan PDF / invoice print / S1a / S1b | **Shipped** #785/#786 — [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md). Clarify bug / residual only. **Not** WeasyPrint / `format=pdf` |
+| “buat” inbox / Delivered / S1 inbox | Point to [`inbox-delivered-v1.md`](specs/inbox-delivered-v1.md). S0 = this spec (docs). Code only if slice **S1** or **S1b** is named. **Not** Guard Discover / bounce / invoice SMTP |
 | “GTM” / “email AM” / “10 SID” | Point to [`gtm-and-p11-ops.md`](commercial/gtm-and-p11-ops.md); **do not** treat as engineering next |
 
 **Locked answers (do not re-ask every session):** chat user = **product owner** (2026-09-15) — agent default **§1.3.1**, not GTM. KPI commercial = **attach ARPU** (AM owns renew; **not** an agent task). Billing = **Sinexis invoice v1** (bank transfer, mark paid) + optional GMD `service_id`. Dual-brand = **6–12 mo soft**. Guard thin + SIEM flag-off unless ops. Invoice pay loop **closed**. Metering v3: Scan seats, `credit_cost = 0`.
@@ -506,7 +508,8 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 | `docs/specs/blog-v1.md` | P10 public blog (CMS + SEO path) |
 | `docs/specs/shadcn-ui-migration.md` | SPA kit; Wave A–F shipped |
 | `docs/specs/spa-grok-chrome-redesign.md` | **P15 S0–S9 on `main`** — SPA chrome vs Grok2API zip; **layout overrides** theme-v1 “header stays”; green primary stays. **Do not re-implement.** Bug/residual only if named |
-| `docs/specs/scan-pdf-invoice-print-v1.md` | **S0** scan browser print + invoice HTML print (two tracks). S1a/S1b wait for named + `buat`. **Not** WeasyPrint / `format=pdf` |
+| `docs/specs/scan-pdf-invoice-print-v1.md` | **S0 + S1a #785 + S1b #786 shipped.** Browser print. **Not** WeasyPrint / `format=pdf` |
+| `docs/specs/inbox-delivered-v1.md` | **S0** user-side SMTP Sent/Failed log. S1/S1b wait for named + `buat`. **Not** Guard Discover / bounce / invoice SMTP |
 | `docs/specs/*` | Attach/workspace/assets/uptime/i18n/theme shipped; blog S1–S5; status page P11; hostname lifecycle **draft** |
 
 ---
@@ -528,7 +531,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 
 ## 11) Agent one-liner
 
-> After reset: **boot §0 → §1.3.1 product-depth queue (not GTM) → default recommend S1a scan browser print then S1b invoice HTML ([`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md)), wait for named + `buat` → P15 S1–S9 + Uptime advanced shipped → Guard live lab standing-permitted (wipe `tc5` first §4.1; do not re-ask) → no silent epics → no PII/SSH/IPs in git → Indonesian with user, `GIT_MASTER=1`.**
+> After reset: **boot §0 → §1.3.1 product-depth queue (not GTM) → default recommend S1 inbox schema+API then S1b SPA ([`inbox-delivered-v1.md`](specs/inbox-delivered-v1.md)), wait for named + `buat` → print S1a/S1b + P15 S1–S9 + Uptime advanced shipped → Guard live lab standing-permitted (wipe `tc5` first §4.1; do not re-ask) → no silent epics → no PII/SSH/IPs in git → Indonesian with user, `GIT_MASTER=1`.**
 
 ---
 
