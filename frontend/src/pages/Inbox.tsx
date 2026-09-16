@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Inbox as InboxIcon } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
@@ -47,6 +49,16 @@ function formatTime(iso: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function ScanJobLink({ jobId, label }: { jobId: string; label: string }) {
+  return (
+    <Button asChild variant="link" size="sm" className="h-auto min-h-0 px-0 text-xs">
+      <Link to={`/scan/${jobId}`} data-testid="inbox-job-link">
+        {label}
+      </Link>
+    </Button>
+  );
 }
 
 function kindLabel(kind: string, t: (k: string) => string): string {
@@ -193,6 +205,11 @@ function Inbox() {
                     <p className="mt-1 text-[11px] text-muted-foreground">
                       {formatTime(row.created_at)} · {row.attempts}
                     </p>
+                    {row.kind === "scan_diff" && row.job_id ? (
+                      <div className="mt-2">
+                        <ScanJobLink jobId={row.job_id} label={t("openScan")} />
+                      </div>
+                    ) : null}
                   </div>
                 ))}
               </div>
@@ -200,19 +217,22 @@ function Inbox() {
                 <Table className="table-fixed">
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[22%] text-[10px] uppercase tracking-wider">
+                      <TableHead className="w-[20%] text-[10px] uppercase tracking-wider">
                         {t("colTime")}
                       </TableHead>
-                      <TableHead className="w-[18%] text-[10px] uppercase tracking-wider">
+                      <TableHead className="w-[16%] text-[10px] uppercase tracking-wider">
                         {t("colKind")}
                       </TableHead>
-                      <TableHead className="w-[14%] text-[10px] uppercase tracking-wider">
+                      <TableHead className="w-[12%] text-[10px] uppercase tracking-wider">
                         {t("colStatus")}
                       </TableHead>
-                      <TableHead className="w-[32%] text-[10px] uppercase tracking-wider">
+                      <TableHead className="w-[28%] text-[10px] uppercase tracking-wider">
                         {t("colRecipient")}
                       </TableHead>
-                      <TableHead className="w-[14%] text-right text-[10px] uppercase tracking-wider">
+                      <TableHead className="w-[14%] text-[10px] uppercase tracking-wider">
+                        {t("colJob")}
+                      </TableHead>
+                      <TableHead className="w-[10%] text-right text-[10px] uppercase tracking-wider">
                         {t("colAttempts")}
                       </TableHead>
                     </TableRow>
@@ -240,6 +260,11 @@ function Inbox() {
                         </TableCell>
                         <TableCell className="font-mono text-xs">
                           {row.recipient_masked}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {row.kind === "scan_diff" && row.job_id ? (
+                            <ScanJobLink jobId={row.job_id} label={t("openScan")} />
+                          ) : null}
                         </TableCell>
                         <TableCell className="text-right text-xs">
                           {row.attempts}

@@ -17,5 +17,7 @@
   "colStatus": "Status",
   "colRecipient": "Recipient",
   "colAttempts": "Attempts",
+  "colJob": "Scan",
+  "openScan": "Open scan",
   "totalCount": "{{count}} rows"
 }

@@ -87,12 +87,22 @@ def _build_message(*, email_to: str, subject: str, html_body: str) -> MIMEMultip
     return msg
 
 
+def _job_uuid(job_id: str | None) -> UUID | None:
+    if not job_id:
+        return None
+    try:
+        return UUID(str(job_id))
+    except ValueError:
+        return None
+
+
 async def _send_with_retry(
     msg: MIMEMultipart,
     email_to: str,
     label: str,
     *,
     user_id: UUID | None = None,
+    job_id: UUID | None = None,
 ) -> bool:
     last_error = ""
     for attempt in range(1, _MAX_RETRIES + 1):
@@ -121,6 +131,7 @@ async def _send_with_retry(
                 ok=True,
                 attempts=attempt,
                 user_id=user_id,
+                job_id=job_id,
             )
             return True
 
@@ -151,6 +162,7 @@ async def _send_with_retry(
                     attempts=attempt,
                     error=last_error,
                     user_id=user_id,
+                    job_id=job_id,
                 )
 
     return False
@@ -242,7 +254,7 @@ async def send_scan_diff_email(
         subject=t(locale, "notify", "subject", n=n_new, target=target),
         html_body=html_body,
     )
-    return await _send_with_retry(msg, email_to, "Scan diff", user_id=user_id)
+    return await _send_with_retry(msg, email_to, "Scan diff", user_id=user_id, job_id=_job_uuid(job_id))
 
 
 async def send_uptime_email(

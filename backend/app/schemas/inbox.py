@@ -13,6 +13,7 @@ class InboxItem(BaseModel):
     recipient_masked: str
     attempts: int
     created_at: datetime
+    job_id: uuid.UUID | None = None
 
 
 class InboxListResponse(BaseModel):

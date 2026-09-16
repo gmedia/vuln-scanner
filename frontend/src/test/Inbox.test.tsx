@@ -63,6 +63,7 @@ describe("Inbox", () => {
             recipient_masked: "t***@example.com",
             attempts: 1,
             created_at: "2026-09-16T12:00:00Z",
+            job_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
           },
         ],
       },
@@ -74,5 +75,33 @@ describe("Inbox", () => {
     expect(screen.getAllByText("Scan diff").length).toBeGreaterThan(0);
     expect(screen.queryByText("error_message")).not.toBeInTheDocument();
     expect(screen.queryByText("SMTP timeout")).not.toBeInTheDocument();
+    const links = screen.getAllByTestId("inbox-job-link");
+    expect(links.length).toBeGreaterThan(0);
+    expect(links[0]).toHaveAttribute(
+      "href",
+      "/scan/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    );
+  });
+
+  it("does not link uptime rows", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: {
+        total: 1,
+        items: [
+          {
+            id: "2",
+            kind: "uptime",
+            status: "sent",
+            recipient_masked: "t***@example.com",
+            attempts: 1,
+            created_at: "2026-09-16T12:00:00Z",
+            job_id: null,
+          },
+        ],
+      },
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+    renderPage();
+    expect(screen.queryByTestId("inbox-job-link")).not.toBeInTheDocument();
   });
 });
