@@ -28,7 +28,7 @@ import { listMonitors } from "@/api/uptime";
 import type { ApiError } from "@/lib/utils";
 import { canManageMembers } from "@/api/orgs";
 import { useAuthStore } from "@/store/authStore";
-import { StatusIncidentCard } from "@/components/status/StatusIncidentCard";
+import { StatusIncidentList } from "@/components/status/StatusIncidentList";
 import { StatusIncidentSheet } from "@/components/status/StatusIncidentSheet";
 import {
   addComponent,
@@ -686,24 +686,15 @@ export default function StatusPage() {
               {page.incidents.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t("noIncidents")}</p>
               ) : (
-                <ul
-                  className="space-y-2"
-                  data-testid="status-incidents-list"
-                >
-                  {page.incidents.map((i) => (
-                    <li key={i.id}>
-                      <StatusIncidentCard
-                        incident={i}
-                        canDelete={canDeleteIncident}
-                        onDone={invalidate}
-                        onEdit={() => {
-                          setEditingIncident(i);
-                          setIncOpen(true);
-                        }}
-                      />
-                    </li>
-                  ))}
-                </ul>
+                <StatusIncidentList
+                  incidents={page.incidents}
+                  canDelete={canDeleteIncident}
+                  onDone={invalidate}
+                  onEdit={(i) => {
+                    setEditingIncident(i);
+                    setIncOpen(true);
+                  }}
+                />
               )}
             </CardContent>
           </Card>

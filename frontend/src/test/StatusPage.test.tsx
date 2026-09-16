@@ -213,6 +213,14 @@ it("shows empty state with create form", async () => {
     );
     expect(screen.queryByTestId("status-incident-title-i1")).not.toBeInTheDocument();
     expect(screen.getByTestId("status-incident-post-update-i1")).toBeInTheDocument();
+    expect(screen.getByTestId("status-incidents-list-mobile")).toHaveClass(
+      "space-y-2",
+      "md:hidden",
+    );
+    const desktop = screen.getByTestId("status-incidents-list-desktop");
+    expect(desktop).toHaveClass("hidden", "md:block", "overflow-x-auto");
+    expect(desktop.querySelector("table")).toBeTruthy();
+    expect(screen.getByTestId("status-incident-row-i1")).toBeInTheDocument();
     await user.click(screen.getByTestId("status-incident-menu-i1"));
     await user.click(screen.getByTestId("status-incident-edit-i1"));
     const sheet = await screen.findByTestId("status-incident-sheet");
