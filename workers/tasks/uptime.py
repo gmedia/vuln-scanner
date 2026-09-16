@@ -130,6 +130,7 @@ def check_one(monitor_id: str) -> dict[str, Any]:
                     target=monitor.target,
                     locale=locale,
                     detail=event.detail,
+                    user_id=monitor.created_by,
                 )
                 event.notified = bool(sent)
                 await db.commit()
