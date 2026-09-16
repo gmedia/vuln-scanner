@@ -159,39 +159,22 @@ describe("AI Gateway page", () => {
     expect(await screen.findByTestId("ai-keys-card")).not.toHaveClass("max-w-xl");
     const nameWrap = screen.getByLabelText("Key name").closest("div");
     expect(nameWrap?.className).not.toMatch(/max-w-sm/);
-    const grid = screen.getByTestId("ai-keys-grid");
-    expect(grid.className).toMatch(/grid-cols-1/);
-    expect(grid.className).not.toMatch(/max-w-md/);
-    expect(grid.className).not.toMatch(/lg:grid-cols-3/);
-  });
-
-  it("uses a full-width 3-col keys grid when there are 3 keys", async () => {
-    vi.mocked(aiApi.getAiWallet).mockResolvedValue({
-      organization_id: "org1",
-      balance_idr: 0,
-      currency: "IDR",
-    });
-    vi.mocked(aiApi.listAiKeys).mockResolvedValue({
-      items: [1, 2, 3].map((n) => ({
-        id: `k${n}`,
-        name: `key-${n}`,
-        prefix: `sx-${n}`,
-        is_active: true,
-        rate_limit_rpm: 60,
-        created_at: "2026-09-13T10:00:00Z",
-        last_used_at: null,
-      })),
-      total: 3,
-    });
-    vi.mocked(aiApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
-    vi.mocked(aiApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
-    const user = userEvent.setup();
-    renderAi();
-    await user.click(await screen.findByTestId("ai-tab-keys"));
-    expect(await screen.findByTestId("ai-keys-card")).not.toHaveClass("max-w-xl");
-    const grid = screen.getByTestId("ai-keys-grid");
-    expect(grid.className).toMatch(/lg:grid-cols-3/);
-    expect(grid.className).not.toMatch(/max-w-md/);
+    expect(screen.queryByTestId("ai-keys-grid")).not.toBeInTheDocument();
+    expect(await screen.findByTestId("ai-keys-list-mobile")).toHaveClass(
+      "space-y-2",
+      "md:hidden",
+    );
+    const card = screen.getByTestId("ai-keys-card-k1");
+    expect(card.textContent).toMatch(/sx-mQ0HsrDRmy4XV/);
+    expect(card.textContent).toMatch(/sinexis/);
+    expect(card.className).toMatch(/rounded-lg/);
+    expect(card.className).toMatch(/border-border/);
+    const desktop = screen.getByTestId("ai-keys-list-desktop");
+    expect(desktop).toHaveClass("hidden", "md:block", "overflow-x-auto");
+    expect(desktop.querySelector("table")).toBeTruthy();
+    expect(
+      screen.getAllByRole("button", { name: "Revoke" }).length,
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it("keeps catalog card full-width when fewer than 3 models", async () => {
@@ -220,9 +203,20 @@ describe("AI Gateway page", () => {
     expect(await screen.findByTestId("ai-catalog-card")).not.toHaveClass(
       "max-w-xl",
     );
-    const grid = screen.getByTestId("ai-catalog-grid");
-    expect(grid.className).not.toMatch(/max-w-md/);
-    expect(grid.className).not.toMatch(/lg:grid-cols-3/);
+    expect(screen.queryByTestId("ai-catalog-grid")).not.toBeInTheDocument();
+    expect(await screen.findByTestId("ai-catalog-list-mobile")).toHaveClass(
+      "space-y-2",
+      "md:hidden",
+    );
+    const card = screen.getByTestId("ai-catalog-card-sx/minimax-m3");
+    expect(card.textContent).toMatch(/sx\/minimax-m3/);
+    expect(card.textContent).toMatch(/Rp 1\.000/);
+    expect(card.textContent).toMatch(/Rp 3\.000/);
+    expect(card.className).toMatch(/rounded-lg/);
+    expect(card.className).toMatch(/border-border/);
+    const desktop = screen.getByTestId("ai-catalog-list-desktop");
+    expect(desktop).toHaveClass("hidden", "md:block", "overflow-x-auto");
+    expect(desktop.querySelector("table")).toBeTruthy();
   });
 
   it("shows feature-off on 404", async () => {
