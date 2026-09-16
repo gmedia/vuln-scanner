@@ -6,7 +6,7 @@ from celery import Celery
 from celery.exceptions import CeleryError
 from celery.result import AsyncResult
 from fastapi import HTTPException
-from sqlalchemy import func, or_, select
+from sqlalchemy import case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import defer
 
@@ -44,6 +44,16 @@ celery_app.conf.update(
 )
 
 FINDING_SEVERITIES = frozenset({"critical", "high", "medium", "low", "info"})
+FINDING_SORT_FIELDS = frozenset({"severity", "title", "category", "cvss_score"})
+FINDING_SORT_DIRS = frozenset({"asc", "desc"})
+SEVERITY_RANK = case(
+    (ScanFinding.severity == "critical", 0),
+    (ScanFinding.severity == "high", 1),
+    (ScanFinding.severity == "medium", 2),
+    (ScanFinding.severity == "low", 3),
+    (ScanFinding.severity == "info", 4),
+    else_=99,
+)
 
 
 class ScannerService:
@@ -160,6 +170,8 @@ class ScannerService:
         limit: int = 50,
         severity: str | None = None,
         q: str | None = None,
+        sort_by: str | None = None,
+        sort_dir: str = "asc",
     ) -> PaginatedFindingsResponse:
         result = await self.db.execute(select(ScanJob).where(ScanJob.id == job_id))
         job = result.scalar_one_or_none()
@@ -177,16 +189,47 @@ class ScannerService:
                 or_(
                     ScanFinding.title.ilike(like),
                     ScanFinding.description.ilike(like),
+                    ScanFinding.category.ilike(like),
+                    ScanFinding.cve_id.ilike(like),
                 )
             )
 
+        direction = sort_dir.lower()
+        if direction not in FINDING_SORT_DIRS:
+            raise HTTPException(status_code=400, detail="Invalid sort_dir")
+        order_field = sort_by.strip() if sort_by else None
+        if order_field:
+            if order_field not in FINDING_SORT_FIELDS:
+                raise HTTPException(status_code=400, detail="Invalid sort_by")
+            if order_field == "severity":
+                primary = SEVERITY_RANK.asc() if direction == "asc" else SEVERITY_RANK.desc()
+            elif order_field == "title":
+                primary = ScanFinding.title.asc() if direction == "asc" else ScanFinding.title.desc()
+            elif order_field == "category":
+                col = func.coalesce(ScanFinding.category, "")
+                primary = col.asc() if direction == "asc" else col.desc()
+            else:
+                col = func.coalesce(ScanFinding.cvss_score, 0)
+                primary = col.asc() if direction == "asc" else col.desc()
+            order_by = (primary, ScanFinding.id.desc())
+        else:
+            order_by = (ScanFinding.found_at.desc(), ScanFinding.id.desc())
+
         count_result = await self.db.execute(select(func.count(ScanFinding.id)).where(*filters))
         total = count_result.scalar() or 0
+        remediated_result = await self.db.execute(
+            select(func.count(ScanFinding.id)).where(
+                ScanFinding.job_id == job_id,
+                ScanFinding.remediation.is_not(None),
+                ScanFinding.remediation != "",
+            )
+        )
+        with_remediation = remediated_result.scalar() or 0
         findings_result = await self.db.execute(
             select(ScanFinding)
             .where(*filters)
             .options(defer(ScanFinding.raw_data))
-            .order_by(ScanFinding.found_at.desc(), ScanFinding.id.desc())
+            .order_by(*order_by)
             .offset((page - 1) * limit)
             .limit(limit)
         )
@@ -197,6 +240,7 @@ class ScannerService:
             page=page,
             limit=limit,
             pages=math.ceil(total / limit) if total > 0 else 0,
+            with_remediation=with_remediation,
         )
 
     async def get_finding(self, job_id: str, finding_id: str, user_id: UUID) -> ScanFindingResponse:

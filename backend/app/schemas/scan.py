@@ -122,6 +122,7 @@ class PaginatedFindingsResponse(BaseModel):
     page: int
     limit: int
     pages: int
+    with_remediation: int = 0
 
 
 class ErrorResponse(BaseModel):
