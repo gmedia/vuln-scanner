@@ -1,7 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AdminInvoices from "@/pages/admin/AdminInvoices";
+import i18n from "@/i18n";
+import { toast } from "sonner";
 
 vi.mock("@tanstack/react-query", () => ({
   useQuery: vi.fn(),
@@ -56,8 +58,13 @@ const invoices = [
 ];
 
 describe("AdminInvoices", () => {
+  afterEach(() => {
+    void i18n.changeLanguage("en");
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
+    void i18n.changeLanguage("en");
     vi.mocked(useQueryClient).mockReturnValue({
       invalidateQueries: vi.fn(),
     } as unknown as ReturnType<typeof useQueryClient>);
@@ -98,6 +105,49 @@ describe("AdminInvoices", () => {
     expect(screen.getByText("SX-202609-0001")).toBeInTheDocument();
     expect(screen.getByTestId("invoice-create")).toBeDisabled();
     expect(screen.getByTestId("invoice-paid-inv-1")).toBeInTheDocument();
+  });
+
+  it("shows Mark sent on a draft row and toasts status-flip copy, not emailed", async () => {
+    type MutOpts = {
+      mutationFn: (id: string) => unknown;
+      onSuccess?: () => void;
+    };
+    vi.mocked(useMutation).mockImplementation(((opts: MutOpts) => ({
+      mutate: (id: string) => {
+        opts.mutationFn(id);
+        opts.onSuccess?.();
+      },
+      isPending: false,
+    })) as typeof useMutation);
+
+    render(<AdminInvoices />);
+    const sendBtn = screen.getByTestId("invoice-send-inv-1");
+    expect(sendBtn).toBeVisible();
+    expect(sendBtn).toHaveTextContent("Mark sent");
+    expect(sendBtn.textContent).not.toMatch(/emailed/i);
+    expect(screen.queryByText(/emailed/i)).not.toBeInTheDocument();
+
+    await userEvent.click(sendBtn);
+    expect(toast.success).toHaveBeenCalledWith(
+      "Invoice marked sent (no email)",
+    );
+    expect(
+      vi.mocked(toast.success).mock.calls.flat().join(" "),
+    ).not.toMatch(/emailed/i);
+  });
+
+  it("says Mark sent after switching locale back to en", async () => {
+    await i18n.changeLanguage("id");
+    const first = render(<AdminInvoices />);
+    expect(screen.getByTestId("invoice-send-inv-1")).toHaveTextContent(
+      "Tandai terkirim",
+    );
+    first.unmount();
+    await i18n.changeLanguage("en");
+    render(<AdminInvoices />);
+    expect(screen.getByTestId("invoice-send-inv-1")).toHaveTextContent(
+      "Mark sent",
+    );
   });
 
   it("calls paid mutate from the draft row", async () => {

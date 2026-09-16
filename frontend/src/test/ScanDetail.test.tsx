@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import ScanDetail from "@/pages/ScanDetail";
+
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 const mockNavigate = vi.fn();
 vi.mock("react-router-dom", async () => {
@@ -30,7 +32,7 @@ vi.mock("@/api/scans", async () => {
   return {
     ...actual,
     downloadFile: vi.fn(),
-    printFile: vi.fn(),
+    printFile: vi.fn(() => Promise.resolve()),
   };
 });
 
@@ -92,6 +94,7 @@ vi.mock("@/components/results/FindingsTable", () => ({
 
 import { useScanDetail, useScanDiff, useScanFindings } from "@/hooks/useScan";
 import { downloadFile, printFile } from "@/api/scans";
+import { toast } from "sonner";
 
 const mockUseScanDiff = useScanDiff as ReturnType<typeof vi.fn>;
 
@@ -498,6 +501,19 @@ describe("ScanDetail", () => {
       await userEvent.click(screen.getByRole("tab", { name: "Export" }));
       await userEvent.click(screen.getByTestId("export-print-html"));
       expect(printFile).toHaveBeenCalledWith("scan-1", "html");
+    });
+
+    it("toasts when printFile reports a blocked popup", async () => {
+      vi.mocked(printFile).mockRejectedValueOnce(new Error("popup_blocked"));
+      mockUseScanDetailReturn({ data: baseScan as any });
+      renderPage();
+      await userEvent.click(screen.getByRole("tab", { name: "Export" }));
+      await userEvent.click(screen.getByTestId("export-print-executive"));
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          "Pop-up blocked. Allow pop-ups for this site to print.",
+        );
+      });
     });
 
     it("shows no-baseline hint when diff has no baseline and no delta", async () => {

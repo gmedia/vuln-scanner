@@ -85,6 +85,7 @@
   "printExec": "Print executive",
   "printExecTitle": "Open executive report then print / save as PDF",
   "printExecAria": "Print executive report (save as PDF)",
+  "printPopupBlocked": "Pop-up blocked. Allow pop-ups for this site to print.",
   "noExport": "No scan to export.",
   "noBaseline": "No baseline yet — schedule recurring scans to compare new critical/high findings.",
   "vsBaseline": "vs baseline",

@@ -198,19 +198,22 @@ export async function printFile(
   jobId: string,
   format: "html" | "executive",
 ): Promise<void> {
-  const blob = await fetchExportBlob(jobId, format);
-  const htmlBlob = new Blob([blob], { type: "text/html;charset=utf-8" });
-  const url = window.URL.createObjectURL(htmlBlob);
-  const tab = window.open(url, "_blank");
+  const tab = window.open("about:blank", "_blank");
   if (!tab) {
-    window.URL.revokeObjectURL(url);
-    return;
+    throw new Error("popup_blocked");
   }
-  tab.addEventListener("load", () => {
+  try {
+    const blob = await fetchExportBlob(jobId, format);
+    const html = await blob.text();
+    tab.document.open();
+    tab.document.write(html);
+    tab.document.close();
     tab.focus();
     tab.print();
-    window.setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
-  });
+  } catch (err) {
+    tab.close();
+    throw err;
+  }
 }
 
 export function getWsUrl(jobId: string): string {
