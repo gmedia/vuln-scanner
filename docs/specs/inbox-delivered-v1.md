@@ -1,6 +1,6 @@
 # Spec: Inbox “Delivered” (user-side SMTP log)
 
-**Status:** **S0–S1b shipped on `main`** (#787 docs, #788 `GET /api/inbox` + `user_id`, #789 SPA `/inbox`). Bounce/SES = **S2 parked**. Do **not** re-implement. Bug/residual only if named + `buat`.
+**Status:** **S0–S1c shipped** (#787 docs, #788 `GET /api/inbox` + `user_id`, #789 SPA `/inbox`, **S1c `job_id` + scan_diff link**). Bounce/SES = **S2 parked**. Do **not** re-implement S0–S1b.
 **Goal:** Let a workspace user see whether **product mail the app already sent** was **accepted by SMTP** (Sent) or **failed** — without a second notification center, Guard Discover, bounce/DSN infra, or exposing other tenants’ addresses.
 **Epic:** product-depth follow-on to P1 S3 notify + admin `email_send_logs`. **Not** a new P-letter. Guide §1.3.1 row **2**.
 **Depends:** `backend/app/services/email.py` · `EmailSendLog` / `email_send_logs` (`sent` \| `failed`) · `record_email_send` · `GET /api/admin/email-logs` · scan notify (`scan_diff`) · i18n notify locale (`id` default).
@@ -170,9 +170,10 @@ S1b catalogs `frontend/src/locales/{id,en}/inbox.json`. Labels: Sent / Terkirim,
 | **S0** | This spec + pointers | **This PR — docs only** | File exists; guide §1.3.1 links here; invoice send called out as non-email; schema gap documented; `git diff` markdown only | App code |
 | **S1** | Schema + `GET /api/inbox` | Own `feat/inbox-s1-*` | user_id on new rows; IDOR; admin logs unchanged; invoice send still no SMTP | Bounce, SPA optional |
 | **S1b** | SPA `/inbox` | Own `feat/inbox-s1b-*` | `nav-inbox`; Sent/Failed copy; no Guard nav mix | Discover |
+| **S1c** | scan_diff job link | Own `feat/inbox-s1c-*` | nullable `job_id` FK; `GET /api/inbox` includes it; SPA `inbox-job-link` → `/scan/:id` for `scan_diff` only; uptime/host stay null | Bounce/SES, notify rule change, invoice SMTP |
 | **S2** | Mailbox DSN / SES | **Do not start** unless named | New provider | Default: parked |
 
-**Order:** S0 → S1 → S1b. **Do not** combine S0 with S1. Prefer S1 and S1b **separate** (print pattern).
+**Order:** S0 → S1 → S1b → S1c. **Do not** combine S0 with S1. Prefer S1 and S1b **separate** (print pattern).
 
 Suggested titles: `docs: S0 inbox delivered (user-side SMTP log)` · `feat: inbox API tenancy for SMTP send log` · `feat: SPA /inbox sent-failed list`.
 
@@ -216,6 +217,19 @@ cd backend && python -m pytest tests/test_inbox.py tests/test_admin_routes.py -q
 cd frontend && npx vitest run src/test/Inbox.test.tsx src/test/Sidebar.test.tsx
 # expect: data-testid="nav-inbox" under Account
 # expect: nav-guard unchanged; no inbox under Guard
+```
+
+### S1c (this PR)
+
+```bash
+cd backend && python -m pytest tests/test_inbox.py tests/test_scan_notify.py -q
+# expect: scan_diff item includes job_id; uptime job_id is null
+# expect: send_scan_diff_email records UUID job_id; invalid string → null
+# expect: still no error_message on GET /api/inbox
+
+cd frontend && npx vitest run src/test/Inbox.test.tsx
+# expect: scan_diff row has data-testid="inbox-job-link" href /scan/{job_id}
+# expect: uptime row has no inbox-job-link
 ```
 
 **Not required:** “user confirms mail in Gmail”; live SMTP to a real mailbox; Guard enroll; bounce.
