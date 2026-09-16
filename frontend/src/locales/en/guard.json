@@ -87,5 +87,13 @@
   "unlinkAsset": "Unlinked",
   "assetLinkedToast": "Asset linked",
   "assetUnlinkedToast": "Asset unlinked",
-  "assetLinkFail": "Could not link asset"
+  "assetLinkFail": "Could not link asset",
+  "disableAgent": "Remove from Guard",
+  "disableAgentAria": "Remove {{name}} from Guard",
+  "disableConfirmTitle": "Remove from Guard?",
+  "disableConfirmBody": "Sinexis stops watching this agent. Uninstalling the Wazuh package on the VM is still an ops step.",
+  "disableSubmit": "Remove from Guard",
+  "disabledToast": "Agent removed from Guard",
+  "disableFail": "Could not remove agent from Guard",
+  "statusDisabled": "Disabled"
 }
