@@ -21,6 +21,7 @@ _LABEL_TO_KIND = {
     "Uptime": "uptime",
     "Host Protect": "host_protect",
     "Host WAF": "host_waf",
+    "Invite": "invite",
 }
 
 _engine = None

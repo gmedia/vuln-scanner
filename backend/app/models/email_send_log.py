@@ -14,6 +14,7 @@ EMAIL_SEND_KINDS = (
     "uptime",
     "host_protect",
     "host_waf",
+    "invite",
 )
 EMAIL_SEND_STATUSES = ("sent", "failed")
 INBOX_KINDS = ("scan_diff", "uptime", "host_protect", "host_waf")
@@ -48,7 +49,7 @@ class EmailSendLog(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "kind IN ('verification', 'password_reset', 'scan_diff', 'uptime', 'host_protect', 'host_waf')",
+            "kind IN ('verification', 'password_reset', 'scan_diff', 'uptime', 'host_protect', 'host_waf', 'invite')",
             name="ck_email_send_log_kind",
         ),
         CheckConstraint(
