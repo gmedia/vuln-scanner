@@ -68,6 +68,57 @@ async def test_send_scan_diff_email_subject_and_link(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_send_scan_diff_email_records_job_id(monkeypatch):
+    job_id = str(uuid.uuid4())
+    monkeypatch.setattr(email_module, "FRONTEND_URL", "https://example.test")
+    mock_smtp = AsyncMock()
+    mock_smtp.connect = AsyncMock()
+    mock_smtp.send_message = AsyncMock()
+    mock_smtp.quit = AsyncMock()
+
+    with (
+        patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp),
+        patch("app.services.email.record_email_send") as rec,
+    ):
+        ok = await send_scan_diff_email(
+            "owner@example.com",
+            target="example.com",
+            job_id=job_id,
+            new_critical=1,
+            new_high=0,
+        )
+
+    assert ok is True
+    rec.assert_called_once()
+    assert rec.call_args.kwargs["job_id"] == uuid.UUID(job_id)
+    assert rec.call_args.kwargs["label"] == "Scan diff"
+
+
+@pytest.mark.asyncio
+async def test_send_scan_diff_email_invalid_job_id_records_null(monkeypatch):
+    mock_smtp = AsyncMock()
+    mock_smtp.connect = AsyncMock()
+    mock_smtp.send_message = AsyncMock()
+    mock_smtp.quit = AsyncMock()
+
+    with (
+        patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp),
+        patch("app.services.email.record_email_send") as rec,
+    ):
+        ok = await send_scan_diff_email(
+            "owner@example.com",
+            target="example.com",
+            job_id="job-abc",
+            new_critical=1,
+            new_high=0,
+        )
+
+    assert ok is True
+    rec.assert_called_once()
+    assert rec.call_args.kwargs["job_id"] is None
+
+
+@pytest.mark.asyncio
 async def test_send_scan_diff_email_en_subject(monkeypatch):
     monkeypatch.setattr(email_module, "FRONTEND_URL", "https://example.test")
     mock_smtp = AsyncMock()
