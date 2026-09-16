@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class GuardStatusResponse(BaseModel):
@@ -28,11 +28,19 @@ class GuardAgentResponse(BaseModel):
     last_keep_alive: datetime | None = None
     last_helper_poll_at: datetime | None = None
     has_host_agent_token: bool = False
+    disabled: bool = False
+    disabled_at: datetime | None = None
     asset_id: uuid.UUID | None = None
     asset_name: str | None = None
     asset_target: str | None = None
     synced_at: datetime
     created_at: datetime
+
+    @model_validator(mode="after")
+    def _disabled_from_timestamp(self) -> GuardAgentResponse:
+        if self.disabled_at is not None:
+            self.disabled = True
+        return self
 
 
 class GuardAgentAssetLink(BaseModel):
