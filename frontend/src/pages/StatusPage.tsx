@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Check, Copy, Trash2 } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -56,6 +56,69 @@ function stateBadgeVariant(state: string | null) {
   return "info" as const;
 }
 
+const HOSTNAME_STATUS_KEYS: Record<string, string> = {
+  pending_txt: "statusPendingTxt",
+  active: "statusActive",
+  failed: "statusFailed",
+  none: "statusNone",
+};
+
+function hostnameStatusVariant(status: string) {
+  if (status === "active") return "completed" as const;
+  if (status === "failed") return "failed" as const;
+  if (status === "pending_txt") return "pending" as const;
+  return "info" as const;
+}
+
+type CopyField = "cname" | "txt-name" | "txt-value";
+
+function CopyRecordRow({
+  label,
+  display,
+  testId,
+  copied,
+  onCopy,
+  copyLabel,
+  copiedLabel,
+}: {
+  label: string;
+  display: string;
+  testId: string;
+  copied: boolean;
+  onCopy: () => void;
+  copyLabel: string;
+  copiedLabel: string;
+}) {
+  return (
+    <div className="flex min-w-0 items-start gap-2">
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          {label}
+        </p>
+        <p className="mt-0.5 break-all font-mono text-xs text-foreground">
+          {display}
+        </p>
+      </div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="h-11 w-11 shrink-0 p-0"
+        data-testid={testId}
+        onClick={onCopy}
+        title={copied ? copiedLabel : copyLabel}
+        aria-label={copied ? copiedLabel : copyLabel}
+      >
+        {copied ? (
+          <Check className="h-3.5 w-3.5 text-primary" />
+        ) : (
+          <Copy className="h-3.5 w-3.5" />
+        )}
+      </Button>
+    </div>
+  );
+}
+
 export default function StatusPage() {
   const { t } = useTranslation("statusPage");
   const qc = useQueryClient();
@@ -81,12 +144,24 @@ export default function StatusPage() {
   const [editingIncident, setEditingIncident] = useState<StatusIncident | null>(
     null,
   );
+  const [copiedField, setCopiedField] = useState<CopyField | null>(null);
 
   const slugDraft = editSlug ?? page?.slug ?? "";
   const titleDraft = editTitle ?? page?.title ?? "";
   const hostDraft = host ?? page?.custom_hostname ?? "";
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["status-page"] });
+
+  const copyRecord = async (field: CopyField, value: string) => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedField(field);
+      window.setTimeout(() => setCopiedField(null), 1500);
+    } catch {
+      void 0;
+    }
+  };
 
   const createMut = useMutation({
     mutationFn: () => upsertStatusPage({ slug, title }),
@@ -368,24 +443,66 @@ export default function StatusPage() {
                 </div>
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <Label>{t("hostnameStatus")}</Label>
-                  <p className="flex h-10 min-h-10 items-center font-mono text-sm text-foreground">
-                    {page.hostname_status}
-                  </p>
+                  <div className="flex h-10 min-h-10 items-center">
+                    <Badge variant={hostnameStatusVariant(page.hostname_status)}>
+                      {HOSTNAME_STATUS_KEYS[page.hostname_status]
+                        ? t(HOSTNAME_STATUS_KEYS[page.hostname_status])
+                        : page.hostname_status}
+                    </Badge>
+                  </div>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">
                 {t("cnameHelp", { target: page.cname_target })}
               </p>
               {page.hostname_status === "pending_txt" ? (
-                <div className="space-y-1 rounded-md border border-border p-3 text-sm">
+                <div className="space-y-3 rounded-md border border-border bg-muted/40 p-3 text-sm">
                   <p className="font-medium">{t("txtCard")}</p>
-                  {page.txt_name ? (
-                    <p className="font-mono text-xs">
-                      {page.txt_name} → {page.txt_value}
-                    </p>
+                  {page.custom_hostname ? (
+                    <CopyRecordRow
+                      label="CNAME"
+                      display={t("cnameRecord", {
+                        host: page.custom_hostname,
+                        target: page.cname_target,
+                      })}
+                      testId="status-copy-cname"
+                      copied={copiedField === "cname"}
+                      onCopy={() =>
+                        void copyRecord("cname", page.cname_target)
+                      }
+                      copyLabel={t("copyCname")}
+                      copiedLabel={t("copied")}
+                    />
+                  ) : null}
+                  {page.txt_name && page.txt_value ? (
+                    <>
+                      <CopyRecordRow
+                        label="TXT"
+                        display={page.txt_name}
+                        testId="status-copy-txt-name"
+                        copied={copiedField === "txt-name"}
+                        onCopy={() =>
+                          void copyRecord("txt-name", page.txt_name ?? "")
+                        }
+                        copyLabel={t("copyTxtName")}
+                        copiedLabel={t("copied")}
+                      />
+                      <CopyRecordRow
+                        label="TXT"
+                        display={page.txt_value}
+                        testId="status-copy-txt-value"
+                        copied={copiedField === "txt-value"}
+                        onCopy={() =>
+                          void copyRecord("txt-value", page.txt_value ?? "")
+                        }
+                        copyLabel={t("copyTxtValue")}
+                        copiedLabel={t("copied")}
+                      />
+                    </>
                   ) : (
                     <p className="text-muted-foreground">{t("txtPending")}</p>
                   )}
+                  <p className="text-xs text-muted-foreground">{t("noAaaa")}</p>
                 </div>
               ) : null}
               <div className="flex flex-wrap gap-2">
