@@ -73,12 +73,13 @@ async def sync_org(
                 )
             else:
                 row.name = info.name
-                row.status = status_val
                 row.ip = info.ip
                 row.version = info.version
                 row.last_keep_alive = info.last_keep_alive
                 row.synced_at = now
                 row.updated_at = now
+                if row.disabled_at is None:
+                    row.status = status_val
         binding.last_inventory_sync_at = now
 
         alerts = await wazuh.search_alerts(

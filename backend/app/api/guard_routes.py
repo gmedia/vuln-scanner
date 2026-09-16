@@ -77,6 +77,8 @@ async def list_agents(
             GuardAgentResponse.model_validate(r).model_copy(
                 update={
                     "has_host_agent_token": bool(r.results_token_hash) and r.results_token_revoked_at is None,
+                    "disabled": r.disabled_at is not None,
+                    "disabled_at": r.disabled_at,
                     "asset_id": r.asset_id,
                     "asset_name": asset.name if asset else None,
                     "asset_target": asset.target if asset else None,
@@ -122,9 +124,25 @@ async def link_agent_asset(
     return GuardAgentResponse.model_validate(agent).model_copy(
         update={
             "has_host_agent_token": bool(agent.results_token_hash) and agent.results_token_revoked_at is None,
+            "disabled": agent.disabled_at is not None,
+            "disabled_at": agent.disabled_at,
             "asset_name": asset_name,
             "asset_target": asset_target,
         }
+    )
+
+
+@router.post("/agents/{agent_id}/disable", status_code=204)
+async def disable_agent(
+    agent_id: UUID,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    await GuardService(db).disable_agent(
+        current_user,
+        get_active_org_id(request),
+        agent_id,
     )
 
 
