@@ -30,6 +30,7 @@ const Ai = lazy(() => import("@/pages/Ai"));
 const HostProtect = lazy(() => import("@/pages/HostProtect"));
 const Uptime = lazy(() => import("@/pages/Uptime"));
 const StatusPage = lazy(() => import("@/pages/StatusPage"));
+const Inbox = lazy(() => import("@/pages/Inbox"));
 const Profile = lazy(() => import("@/pages/Profile"));
 const UserGuide = lazy(() => import("@/pages/UserGuide"));
 const WorkspaceSettings = lazy(() => import("@/pages/WorkspaceSettings"));
@@ -143,6 +144,7 @@ function App() {
               path="/uptime/status-page"
               element={<PageBoundary component={StatusPage} />}
             />
+            <Route path="/inbox" element={<PageBoundary component={Inbox} />} />
             <Route
               path="/profile"
               element={<PageBoundary component={Profile} />}

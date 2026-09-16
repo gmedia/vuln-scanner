@@ -1,0 +1,21 @@
+{
+  "title": "Kotak masuk",
+  "subtitle": "Email produk yang sudah dikirim aplikasi. Terkirim = SMTP menerima, bukan sampai ke mailbox.",
+  "card": "Percobaan kirim",
+  "empty": "Belum ada email produk.",
+  "kind": "Jenis",
+  "status": "Status",
+  "all": "Semua",
+  "kindScanDiff": "Diff scan",
+  "kindUptime": "Uptime",
+  "kindHostProtect": "Host Protect",
+  "kindHostWaf": "Host WAF",
+  "statusSent": "Terkirim",
+  "statusFailed": "Gagal",
+  "colTime": "Waktu",
+  "colKind": "Jenis",
+  "colStatus": "Status",
+  "colRecipient": "Penerima",
+  "colAttempts": "Percobaan",
+  "totalCount": "{{count}} baris"
+}

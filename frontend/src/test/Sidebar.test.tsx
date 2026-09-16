@@ -79,6 +79,9 @@ describe("Sidebar", () => {
     expect(screen.getByText("Uptime")).toBeInTheDocument();
     expect(screen.getByText("HTTP/TCP probes")).toBeInTheDocument();
     expect(screen.getByText("User Guide")).toBeInTheDocument();
+    expect(screen.getByText("Inbox")).toBeInTheDocument();
+    expect(screen.getByTestId("nav-inbox")).toHaveAttribute("href", "/inbox");
+    expect(screen.getByTestId("nav-guard")).toHaveAttribute("href", "/guard");
     const guide = screen
       .getAllByRole("link")
       .find((a) => a.getAttribute("href") === "/guide");
@@ -152,6 +155,17 @@ describe("Sidebar", () => {
     const status = screen.getByTestId("nav-status-page");
     expect(uptime.closest('[data-active="true"]')).toBeNull();
     expect(status.closest('[data-active="true"]')).toBeTruthy();
+  });
+
+  it("places inbox under Account, not Guard", () => {
+    renderSidebar(true);
+    const inbox = screen.getByTestId("nav-inbox");
+    const guard = screen.getByTestId("nav-guard");
+    const inboxGroup = inbox.closest('[data-sidebar="group"]');
+    const guardGroup = guard.closest('[data-sidebar="group"]');
+    expect(inboxGroup).not.toBe(guardGroup);
+    expect(inboxGroup?.textContent).toMatch(/Account/);
+    expect(guardGroup?.textContent).toMatch(/Attach/);
   });
 
   it("marks Uptime active on /uptime only", () => {

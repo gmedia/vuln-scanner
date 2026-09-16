@@ -23,6 +23,7 @@ import enAssets from "@/locales/en/assets.json";
 import enUptime from "@/locales/en/uptime.json";
 import enStatusPage from "@/locales/en/statusPage.json";
 import enAdmin from "@/locales/en/admin.json";
+import enInbox from "@/locales/en/inbox.json";
 import idCommon from "@/locales/id/common.json";
 import idAuth from "@/locales/id/auth.json";
 import idLanding from "@/locales/id/landing.json";
@@ -39,6 +40,7 @@ import idAssets from "@/locales/id/assets.json";
 import idUptime from "@/locales/id/uptime.json";
 import idStatusPage from "@/locales/id/statusPage.json";
 import idAdmin from "@/locales/id/admin.json";
+import idInbox from "@/locales/id/inbox.json";
 
 export const resources = {
   en: {
@@ -58,6 +60,7 @@ export const resources = {
     uptime: enUptime,
     statusPage: enStatusPage,
     admin: enAdmin,
+    inbox: enInbox,
   },
   id: {
     common: idCommon,
@@ -76,6 +79,7 @@ export const resources = {
     uptime: idUptime,
     statusPage: idStatusPage,
     admin: idAdmin,
+    inbox: idInbox,
   },
 } as const;
 
@@ -124,6 +128,7 @@ void i18n.use(initReactI18next).init({
     "uptime",
     "statusPage",
     "admin",
+    "inbox",
   ],
   interpolation: { escapeValue: false },
   returnNull: false,

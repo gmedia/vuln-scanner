@@ -1,0 +1,21 @@
+{
+  "title": "Inbox",
+  "subtitle": "Product email the app already sent. Sent means SMTP accepted, not mailbox delivery.",
+  "card": "Send attempts",
+  "empty": "No product email yet.",
+  "kind": "Kind",
+  "status": "Status",
+  "all": "All",
+  "kindScanDiff": "Scan diff",
+  "kindUptime": "Uptime",
+  "kindHostProtect": "Host Protect",
+  "kindHostWaf": "Host WAF",
+  "statusSent": "Sent",
+  "statusFailed": "Failed",
+  "colTime": "Time",
+  "colKind": "Kind",
+  "colStatus": "Status",
+  "colRecipient": "Recipient",
+  "colAttempts": "Attempts",
+  "totalCount": "{{count}} rows"
+}

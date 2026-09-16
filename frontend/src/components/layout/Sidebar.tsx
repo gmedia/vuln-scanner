@@ -17,6 +17,7 @@ import {
   FileText,
   FolderLock,
   Mail,
+  Inbox,
   Bot,
   Receipt,
 } from "lucide-react";
@@ -99,6 +100,7 @@ const productNav = [
 ];
 
 const accountNav = [
+  { to: "/inbox", labelKey: "inbox", icon: Inbox, testId: "nav-inbox" },
   { to: "/profile", labelKey: "profile", icon: User },
   { to: "/settings/workspace", labelKey: "workspace", icon: Users },
 ];
