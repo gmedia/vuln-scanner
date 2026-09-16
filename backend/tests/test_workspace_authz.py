@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, patch
 
 import pytest
 import pytest_asyncio
@@ -310,15 +311,27 @@ async def test_invite_create_returns_token_and_accept_sets_org(db_session, works
             owner = workspace["owner"]
             invitee = workspace["outsider"]
 
-            create_r = await client.post(
-                f"/api/orgs/{org_id}/invites",
-                headers=_auth_header(owner, org_id),
-                json={"email": invitee.email, "role": "member"},
-            )
+            with patch(
+                "app.api.org_routes.send_invite_email",
+                new_callable=AsyncMock,
+                return_value=True,
+            ) as send_mock:
+                create_r = await client.post(
+                    f"/api/orgs/{org_id}/invites",
+                    headers=_auth_header(owner, org_id),
+                    json={"email": invitee.email, "role": "member"},
+                )
             assert create_r.status_code == 201
             body = create_r.json()
             assert body["token"]
             assert body["email"] == invitee.email
+            send_mock.assert_awaited_once()
+            send_kwargs = send_mock.await_args.kwargs
+            assert send_kwargs["email_to"] == invitee.email
+            assert send_kwargs["token"] == body["token"]
+            assert send_kwargs["org_name"] == workspace["org"].name
+            assert send_kwargs["role"] == "member"
+            assert send_kwargs["user_id"] == owner.id
 
             accept_r = await client.post(
                 "/api/invites/accept",
@@ -330,5 +343,42 @@ async def test_invite_create_returns_token_and_accept_sets_org(db_session, works
             assert accepted["organization_id"] == str(org_id)
             assert accepted["role"] == "member"
             assert accepted["user_id"] == str(invitee.id)
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_invite_create_persists_when_smtp_fails(db_session, workspace):
+    from app.database import get_db
+    from app.models.organization import OrganizationInvite
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            org_id = workspace["org"].id
+            owner = workspace["owner"]
+            with patch(
+                "app.api.org_routes.send_invite_email",
+                new_callable=AsyncMock,
+                side_effect=OSError("smtp down"),
+            ) as send_mock:
+                create_r = await client.post(
+                    f"/api/orgs/{org_id}/invites",
+                    headers=_auth_header(owner, org_id),
+                    json={"email": "new.invitee@example.com", "role": "viewer"},
+                )
+            assert create_r.status_code == 201
+            body = create_r.json()
+            assert body["token"]
+            assert body["email"] == "new.invitee@example.com"
+            send_mock.assert_awaited_once()
+            stored = await db_session.get(OrganizationInvite, uuid.UUID(body["id"]))
+            assert stored is not None
+            assert stored.status == "pending"
+            assert stored.email == "new.invitee@example.com"
     finally:
         app.dependency_overrides.clear()
