@@ -251,40 +251,97 @@ describe("scans API", () => {
   });
 
   describe("printFile", () => {
-    it("opens a blob tab and prints without download attribute", async () => {
-      localStorage.setItem("sinexis.locale", "id");
-      mockAxios.get.mockResolvedValueOnce({
-        data: new Blob(["<html></html>"], { type: "text/html" }),
-      });
+    function mockPrintTab() {
       const print = vi.fn();
       const focus = vi.fn();
-      const addEventListener = vi.fn();
-      const tab = { print, focus, addEventListener };
-      const open = vi
-        .spyOn(window, "open")
-        .mockReturnValue(tab as unknown as Window);
-      const createObjectURL = vi
-        .spyOn(URL, "createObjectURL")
-        .mockReturnValue("blob:print-1");
+      const close = vi.fn();
+      const documentOpen = vi.fn();
+      const documentWrite = vi.fn();
+      const documentClose = vi.fn();
+      const tab = {
+        print,
+        focus,
+        close,
+        document: {
+          open: documentOpen,
+          write: documentWrite,
+          close: documentClose,
+        },
+      };
+      return { tab, print, focus, close, documentWrite };
+    }
 
-      await printFile("scan-1", "executive");
+    it("opens about:blank before the export fetch resolves and prints without download", async () => {
+      localStorage.setItem("sinexis.locale", "id");
+      const order: string[] = [];
+      let resolveGet!: (value: { data: Blob }) => void;
+      mockAxios.get.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            order.push("fetch-start");
+            resolveGet = (value) => {
+              order.push("fetch-resolve");
+              resolve(value);
+            };
+          }),
+      );
+      const { tab, print, focus, documentWrite } = mockPrintTab();
+      const open = vi.spyOn(window, "open").mockImplementation(() => {
+        order.push("open");
+        return tab as unknown as Window;
+      });
+      const createElement = vi.spyOn(document, "createElement");
+
+      const pending = printFile("scan-1", "executive");
+
+      expect(open).toHaveBeenCalledWith("about:blank", "_blank");
+      expect(order[0]).toBe("open");
+      expect(order.indexOf("open")).toBeLessThan(order.indexOf("fetch-start"));
+      expect(print).not.toHaveBeenCalled();
+
+      resolveGet({
+        data: new Blob(["<html>exec</html>"], { type: "text/html" }),
+      });
+      await pending;
 
       expect(mockAxios.get).toHaveBeenCalledWith("/api/scan/scan-1/export", {
         params: { format: "executive", lang: "id" },
         responseType: "blob",
       });
-      expect(open).toHaveBeenCalledWith("blob:print-1", "_blank");
-      expect(addEventListener).toHaveBeenCalledWith(
-        "load",
-        expect.any(Function),
-      );
-      const loadHandler = addEventListener.mock.calls[0][1] as () => void;
-      loadHandler();
+      expect(documentWrite).toHaveBeenCalledWith("<html>exec</html>");
       expect(focus).toHaveBeenCalled();
       expect(print).toHaveBeenCalled();
-      createObjectURL.mockRestore();
+      expect(createElement.mock.calls.some((c) => c[0] === "a")).toBe(false);
+      expect(document.querySelector("a[download]")).toBeNull();
+
+      createElement.mockRestore();
       open.mockRestore();
       localStorage.removeItem("sinexis.locale");
+    });
+
+    it("throws popup_blocked when window.open returns null", async () => {
+      const open = vi.spyOn(window, "open").mockReturnValue(null);
+      await expect(printFile("scan-1", "html")).rejects.toThrow(
+        "popup_blocked",
+      );
+      expect(open).toHaveBeenCalledWith("about:blank", "_blank");
+      expect(mockAxios.get).not.toHaveBeenCalled();
+      open.mockRestore();
+    });
+
+    it("closes the tab if the export fetch fails", async () => {
+      const { tab, close, print } = mockPrintTab();
+      const open = vi
+        .spyOn(window, "open")
+        .mockReturnValue(tab as unknown as Window);
+      mockAxios.get.mockRejectedValueOnce(new Error("export_failed"));
+
+      await expect(printFile("scan-1", "html")).rejects.toThrow(
+        "export_failed",
+      );
+      expect(close).toHaveBeenCalled();
+      expect(print).not.toHaveBeenCalled();
+      open.mockRestore();
     });
   });
 
