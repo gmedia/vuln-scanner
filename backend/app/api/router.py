@@ -12,6 +12,7 @@ from app.api.credit_routes import router as credit_router
 from app.api.guard_routes import router as guard_router
 from app.api.host_routes import router as host_router
 from app.api.host_waf_routes import router as host_waf_router
+from app.api.inbox_routes import router as inbox_router
 from app.api.key_routes import router as key_router
 from app.api.org_routes import router as org_router
 from app.api.scan_routes import router as scan_router
@@ -29,6 +30,7 @@ api_router.include_router(ws_router)
 api_router.include_router(key_router)
 api_router.include_router(auth_router)
 api_router.include_router(credit_router)
+api_router.include_router(inbox_router)
 api_router.include_router(admin_router)
 api_router.include_router(admin_invoice_router)
 api_router.include_router(admin_blog_router)
