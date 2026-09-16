@@ -225,6 +225,55 @@ async def test_incident_patch_and_admin_delete(ctx, db_session: AsyncSession):
 
 
 @pytest.mark.asyncio
+async def test_public_html_lists_incident_updates(ctx, db_session: AsyncSession):
+    _bind_db(db_session)
+    owner, org = ctx["owner"], ctx["org"]
+    headers = _auth(owner, org.id)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        r = await client.put(
+            "/api/status-page",
+            json={"slug": "upd-lab", "title": "Upd Lab"},
+            headers=headers,
+        )
+        assert r.status_code == 200, r.text
+        created = await client.post(
+            "/api/status-page/incidents",
+            json={
+                "title": "API blip",
+                "impact": "minor",
+                "status": "investigating",
+                "body": "Looking into 5xx.",
+            },
+            headers=headers,
+        )
+        assert created.status_code == 201, created.text
+        incident_id = created.json()["incidents"][0]["id"]
+        posted = await client.post(
+            f"/api/status-page/incidents/{incident_id}/updates",
+            json={"body": "Traffic is recovering.", "status": "monitoring"},
+            headers=headers,
+        )
+        assert posted.status_code == 201, posted.text
+        r = await client.patch("/api/status-page", json={"published": True}, headers=headers)
+        assert r.status_code == 200
+        pub = await client.get("/status/upd-lab", headers={"X-E2E-Test": "1"})
+        assert pub.status_code == 200, pub.text
+        assert "Looking into 5xx." in pub.text
+        assert "Traffic is recovering." in pub.text
+        assert "class='upd'" in pub.text
+        assert "class='when'" in pub.text
+        first = pub.text.index("Looking into 5xx.")
+        second = pub.text.index("Traffic is recovering.")
+        assert first < second
+        investigating_meta = pub.text[pub.text.find("class='when'") : pub.text.find("Looking into 5xx.")]
+        assert "investigating" in investigating_meta
+        assert "UTC" in investigating_meta
+        monitoring_meta = pub.text[pub.text.find("Traffic is recovering.") - 400 : pub.text.find("Traffic is recovering.")]
+        assert "monitoring" in monitoring_meta
+
+
+@pytest.mark.asyncio
 async def test_basic_sku_cannot_publish(ctx, db_session: AsyncSession):
     _bind_db(db_session)
     org: Organization = ctx["org"]

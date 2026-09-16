@@ -681,6 +681,9 @@ h1{font-size:clamp(1.75rem,3vw,2.25rem);line-height:1.15;font-weight:700;letter-
 .inc .meta{font-size:0.75rem;color:var(--muted-foreground);margin:0 0 0.65rem}
 .inc p{margin:0 0 0.5rem;font-size:0.9375rem;color:var(--muted-foreground)}
 .inc p:last-child{margin-bottom:0}
+.inc .upd{margin:0 0 0.75rem;padding:0 0 0 0.75rem;border-left:2px solid var(--border)}
+.inc .upd:last-child{margin-bottom:0}
+.inc .upd .when{font-size:0.75rem;color:var(--muted-foreground);margin:0 0 0.2rem}
 .empty{padding:1.15rem;color:var(--muted-foreground);font-size:0.875rem}
 .disclaimer{font-size:0.75rem;color:var(--muted-foreground);margin:0}
 """
@@ -750,7 +753,16 @@ def render_status_html(page: StatusPageResponse) -> str:
     past_incs = [i for i in page.incidents if i.status == "resolved"]
 
     def _inc_html(inc: StatusIncidentResponse) -> str:
-        updates = "".join(f"<p>{_escape(u.body)}</p>" for u in inc.updates)
+        updates = "".join(
+            (
+                "<div class='upd'>"
+                f"<p class='when'>{_escape(u.status)}"
+                f"{' · ' + _escape(u.created_at.strftime('%d %b %Y %H:%M UTC')) if u.created_at else ''}</p>"
+                f"<p>{_escape(u.body)}</p>"
+                "</div>"
+            )
+            for u in inc.updates
+        )
         started = inc.started_at.strftime("%d %b %Y %H:%M UTC") if inc.started_at else ""
         return (
             "<article class='inc'>"
