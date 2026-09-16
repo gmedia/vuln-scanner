@@ -1,7 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import CheckConstraint, DateTime, Integer, String, Text
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -16,6 +16,7 @@ EMAIL_SEND_KINDS = (
     "host_waf",
 )
 EMAIL_SEND_STATUSES = ("sent", "failed")
+INBOX_KINDS = ("scan_diff", "uptime", "host_protect", "host_waf")
 
 
 class EmailSendLog(Base):
@@ -25,6 +26,12 @@ class EmailSendLog(Base):
     kind: Mapped[str] = mapped_column(String(32), nullable=False)
     status: Mapped[str] = mapped_column(String(16), nullable=False)
     recipient_masked: Mapped[str] = mapped_column(String(255), nullable=False)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(

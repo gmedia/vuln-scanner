@@ -57,6 +57,7 @@ def maybe_notify_scan_complete(session: Session, job_id: str) -> dict[str, Any]:
                     resolved=ctx.diff.resolved,
                     worsened=ctx.diff.worsened,
                     lang=ctx.locale,
+                    user_id=ctx.owner_user_id,
                 )
             )
         )

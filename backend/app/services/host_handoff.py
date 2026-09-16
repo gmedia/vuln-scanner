@@ -70,6 +70,7 @@ async def handoff_critical_hit(db: AsyncSession, hit: HostHit, site: HostSite) -
                 rule_id=hit.rule_id,
                 hit_id=str(hit.id),
                 locale=getattr(owner, "locale", None),
+                user_id=owner.id,
             )
         except Exception:
             logger.exception("Host Protect email failed for hit %s", hit.id)
@@ -105,6 +106,7 @@ async def notify_live_waf_block(event: HostWafEvent, site: HostSite, owner: User
             action=event.action,
             event_id=str(event.id),
             locale=getattr(owner, "locale", None),
+            user_id=owner.id,
         )
     except Exception:
         logger.exception("Host WAF email failed for event %s", event.id)

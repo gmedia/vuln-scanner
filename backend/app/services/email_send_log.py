@@ -69,6 +69,7 @@ def record_email_send(
     ok: bool,
     attempts: int,
     error: str | None = None,
+    user_id: uuid.UUID | None = None,
 ) -> None:
     session = _get_session()
     if session is None:
@@ -80,6 +81,7 @@ def record_email_send(
             kind=kind_from_label(label),
             status="sent" if ok else "failed",
             recipient_masked=mask_recipient(email_to),
+            user_id=user_id,
             attempts=max(1, int(attempts)),
             error_message=None if ok else err,
             created_at=datetime.now(UTC),
