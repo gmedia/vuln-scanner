@@ -4,6 +4,7 @@ import os
 import re
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from uuid import UUID
 
 import aiosmtplib
 from aiosmtplib.errors import SMTPException
@@ -86,7 +87,13 @@ def _build_message(*, email_to: str, subject: str, html_body: str) -> MIMEMultip
     return msg
 
 
-async def _send_with_retry(msg: MIMEMultipart, email_to: str, label: str) -> bool:
+async def _send_with_retry(
+    msg: MIMEMultipart,
+    email_to: str,
+    label: str,
+    *,
+    user_id: UUID | None = None,
+) -> bool:
     last_error = ""
     for attempt in range(1, _MAX_RETRIES + 1):
         try:
@@ -113,6 +120,7 @@ async def _send_with_retry(msg: MIMEMultipart, email_to: str, label: str) -> boo
                 email_to=email_to,
                 ok=True,
                 attempts=attempt,
+                user_id=user_id,
             )
             return True
 
@@ -142,6 +150,7 @@ async def _send_with_retry(msg: MIMEMultipart, email_to: str, label: str) -> boo
                     ok=False,
                     attempts=attempt,
                     error=last_error,
+                    user_id=user_id,
                 )
 
     return False
@@ -167,7 +176,7 @@ async def send_verification_email(email_to: str, token: str, lang: str | None = 
         subject=t(locale, "auth_email", "verify_subject"),
         html_body=html_body,
     )
-    return await _send_with_retry(msg, email_to, "Verification")
+    return await _send_with_retry(msg, email_to, "Verification", user_id=None)
 
 
 async def send_password_reset_email(email_to: str, token: str, lang: str | None = None) -> bool:
@@ -190,7 +199,7 @@ async def send_password_reset_email(email_to: str, token: str, lang: str | None 
         subject=t(locale, "auth_email", "reset_subject"),
         html_body=html_body,
     )
-    return await _send_with_retry(msg, email_to, "Password reset")
+    return await _send_with_retry(msg, email_to, "Password reset", user_id=None)
 
 
 async def send_scan_diff_email(
@@ -203,6 +212,7 @@ async def send_scan_diff_email(
     resolved: int = 0,
     worsened: int = 0,
     lang: str | None = None,
+    user_id: UUID | None = None,
 ) -> bool:
     locale = normalize_lang(lang)
     n_new = int(new_critical) + int(new_high)
@@ -232,7 +242,7 @@ async def send_scan_diff_email(
         subject=t(locale, "notify", "subject", n=n_new, target=target),
         html_body=html_body,
     )
-    return await _send_with_retry(msg, email_to, "Scan diff")
+    return await _send_with_retry(msg, email_to, "Scan diff", user_id=user_id)
 
 
 async def send_uptime_email(
@@ -243,6 +253,7 @@ async def send_uptime_email(
     target: str,
     locale: str | None = None,
     detail: str | None = None,
+    user_id: UUID | None = None,
 ) -> bool:
     loc = normalize_lang(locale)
     key = kind if kind in ("down", "up", "tls") else "down"
@@ -262,7 +273,7 @@ async def send_uptime_email(
         subject=t(loc, "uptime", f"subject_{key}", name=name),
         html_body=html_body,
     )
-    return await _send_with_retry(msg, email_to, "Uptime")
+    return await _send_with_retry(msg, email_to, "Uptime", user_id=user_id)
 
 
 async def send_host_protect_email(
@@ -274,6 +285,7 @@ async def send_host_protect_email(
     rule_id: str,
     hit_id: str,
     locale: str | None = None,
+    user_id: UUID | None = None,
 ) -> bool:
     loc = normalize_lang(locale)
     heading = t(loc, "host_notify", "heading")
@@ -297,7 +309,7 @@ async def send_host_protect_email(
         subject=t(loc, "host_notify", "subject", hit_class=hit_class, site=site_name),
         html_body=html_body,
     )
-    return await _send_with_retry(msg, email_to, "Host Protect")
+    return await _send_with_retry(msg, email_to, "Host Protect", user_id=user_id)
 
 
 async def send_host_waf_email(
@@ -310,6 +322,7 @@ async def send_host_waf_email(
     action: str,
     event_id: str,
     locale: str | None = None,
+    user_id: UUID | None = None,
 ) -> bool:
     loc = normalize_lang(locale)
     heading = t(loc, "host_notify", "waf_heading")
@@ -333,4 +346,4 @@ async def send_host_waf_email(
         subject=t(loc, "host_notify", "waf_subject", site=site_name),
         html_body=html_body,
     )
-    return await _send_with_retry(msg, email_to, "Host WAF")
+    return await _send_with_retry(msg, email_to, "Host WAF", user_id=user_id)
