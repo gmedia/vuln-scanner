@@ -235,7 +235,7 @@ Match existing patterns: Alembic migration, pytest, no `as any` / bare except, c
 
 - [ ] Exact finding fingerprint fields per scan_type
 - [ ] Store diff on job row vs separate table
-- [ ] In-app notification center vs email-only v1
+- [ ] In-app notification center vs email-only v1 — follow-on [`inbox-delivered-v1.md`](inbox-delivered-v1.md) (user SMTP Sent/Failed log, **not** Guard Discover)
 - [ ] Cap limits: settings vs hardcode
 
 ---
