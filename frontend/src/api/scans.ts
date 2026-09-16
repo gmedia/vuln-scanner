@@ -71,6 +71,7 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
   pages: number;
+  with_remediation?: number;
 }
 
 export interface ScanDiff {
@@ -125,10 +126,14 @@ export async function getScanFindings(
   limit = 50,
   severity?: string,
   q?: string,
+  sortBy?: string,
+  sortDir?: string,
 ): Promise<PaginatedResponse<ScanFinding>> {
   const params: Record<string, string | number> = { page, limit };
   if (severity) params.severity = severity;
   if (q) params.q = q;
+  if (sortBy) params.sort_by = sortBy;
+  if (sortDir) params.sort_dir = sortDir;
   const { data } = await api.get<PaginatedResponse<ScanFinding>>(
     `/api/scan/${jobId}/findings`,
     { params },
