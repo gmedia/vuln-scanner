@@ -9,5 +9,9 @@
   "open_detail": "Open scan detail",
   "or_copy": "Or copy this link:",
   "footer": "You received this email because scan notifications (schedule or baseline diff) are enabled.",
-  "preheader": "{n} new critical/high findings on {target}."
+  "preheader": "{n} new critical/high findings on {target}.",
+  "initial_subject": "[Sinexis Scan] {n} critical/high findings — {target}",
+  "initial_heading": "Sinexis Scan — first report",
+  "initial_intro": "The first scan of <strong>{target}</strong> finished with <strong>{n}</strong> critical/high findings.",
+  "initial_preheader": "{n} critical/high findings on {target}."
 }
