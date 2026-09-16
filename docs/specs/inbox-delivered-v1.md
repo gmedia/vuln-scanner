@@ -1,6 +1,6 @@
 # Spec: Inbox “Delivered” (user-side SMTP log)
 
-**Status:** **S0 draft** (this file). S1+ only after explicit `implement` / `buat` / `kerjakan` **and** a named slice (`S1` or `S1b`). **Do not** ship app code in the S0 PR.
+**Status:** **S0–S1b shipped on `main`** (#787 docs, #788 `GET /api/inbox` + `user_id`, #789 SPA `/inbox`). Bounce/SES = **S2 parked**. Do **not** re-implement. Bug/residual only if named + `buat`.
 **Goal:** Let a workspace user see whether **product mail the app already sent** was **accepted by SMTP** (Sent) or **failed** — without a second notification center, Guard Discover, bounce/DSN infra, or exposing other tenants’ addresses.
 **Epic:** product-depth follow-on to P1 S3 notify + admin `email_send_logs`. **Not** a new P-letter. Guide §1.3.1 row **2**.
 **Depends:** `backend/app/services/email.py` · `EmailSendLog` / `email_send_logs` (`sent` \| `failed`) · `record_email_send` · `GET /api/admin/email-logs` · scan notify (`scan_diff`) · i18n notify locale (`id` default).
