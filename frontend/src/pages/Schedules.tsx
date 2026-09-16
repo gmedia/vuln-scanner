@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronRight,
   Download,
+  Printer,
   AlertTriangle,
 } from "lucide-react";
 import {
@@ -51,7 +52,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/Select";
-import { downloadFile } from "@/api/scans";
+import { downloadFile, printFile } from "@/api/scans";
 import {
   createSchedule,
   deleteSchedule,
@@ -116,21 +117,44 @@ function ScheduleRowActions({
   return (
     <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
       {s.last_job_id && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="min-h-11 flex-1 sm:min-h-8 sm:flex-none"
-          onClick={() => {
-            if (s.last_job_id) {
-              void downloadFile(s.last_job_id, "executive");
-            }
-          }}
-          aria-label={t("execAria")}
-        >
-          <Download className="mr-1 h-3.5 w-3.5" />
-          {t("executive")}
-        </Button>
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="min-h-11 flex-1 sm:min-h-8 sm:flex-none"
+            onClick={() => {
+              if (s.last_job_id) {
+                void downloadFile(s.last_job_id, "executive");
+              }
+            }}
+            aria-label={t("execAria")}
+          >
+            <Download className="mr-1 h-3.5 w-3.5" />
+            {t("executive")}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="min-h-11 flex-1 sm:min-h-8 sm:flex-none"
+            onClick={() => {
+              if (!s.last_job_id) return;
+              void Promise.resolve(printFile(s.last_job_id, "executive")).catch(
+                (err: unknown) => {
+                  if (err instanceof Error && err.message === "popup_blocked") {
+                    toast.error(t("printPopupBlocked"));
+                  }
+                },
+              );
+            }}
+            aria-label={t("printExecAria")}
+            data-testid="schedule-print-executive"
+          >
+            <Printer className="mr-1 h-3.5 w-3.5" />
+            {t("printExec")}
+          </Button>
+        </>
       )}
       {canCreate && (
         <Button
