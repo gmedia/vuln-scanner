@@ -38,6 +38,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import PageHeader from "@/components/layout/PageHeader";
 import PageHeaderBack from "@/components/layout/PageHeaderBack";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 function rescanPath(scanType: string): string {
   if (scanType === "domain") return "/scan/domain";
@@ -66,6 +67,15 @@ function ScanDetail() {
   const findings = findingsData?.items ?? [];
   const findingsTotal = findingsData?.total ?? 0;
   const findingsPages = findingsData?.pages ?? 0;
+
+  const onPrint = (format: "html" | "executive") => {
+    if (!id) return;
+    void Promise.resolve(printFile(id, format)).catch((err: unknown) => {
+      if (err instanceof Error && err.message === "popup_blocked") {
+        toast.error(t("printPopupBlocked"));
+      }
+    });
+  };
 
   if (isLoading) {
     return (
@@ -411,7 +421,7 @@ function ScanDetail() {
                 title={t("printHtmlTitle")}
                 aria-label={t("printHtmlAria")}
                 data-testid="export-print-html"
-                onClick={() => printFile(id, "html")}
+                onClick={() => onPrint("html")}
               >
                 <Printer className="mr-1 h-3.5 w-3.5" />
                 {t("printHtml")}
@@ -422,7 +432,7 @@ function ScanDetail() {
                 title={t("printExecTitle")}
                 aria-label={t("printExecAria")}
                 data-testid="export-print-executive"
-                onClick={() => printFile(id, "executive")}
+                onClick={() => onPrint("executive")}
               >
                 <Printer className="mr-1 h-3.5 w-3.5" />
                 {t("printExec")}

@@ -85,6 +85,7 @@
   "printExec": "Cetak eksekutif",
   "printExecTitle": "Buka laporan eksekutif lalu cetak / simpan sebagai PDF",
   "printExecAria": "Cetak laporan eksekutif (simpan sebagai PDF)",
+  "printPopupBlocked": "Pop-up diblokir. Izinkan pop-up di situs ini untuk mencetak.",
   "noExport": "Tidak ada scan untuk diekspor.",
   "noBaseline": "Belum ada baseline — jadwalkan scan berulang untuk bandingkan critical/high baru.",
   "vsBaseline": "vs baseline",
