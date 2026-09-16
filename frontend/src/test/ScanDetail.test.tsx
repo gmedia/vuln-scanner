@@ -21,7 +21,14 @@ vi.mock("@/hooks/useScan", () => ({
   useScanDiff: vi.fn(() => ({ data: undefined, isLoading: false, isError: false })),
   useScanFinding: vi.fn(() => ({ data: undefined, isFetching: false })),
   useScanFindings: vi.fn(() => ({
-    data: { items: [], total: 0, page: 1, limit: 50, pages: 0 },
+    data: {
+      items: [],
+      total: 0,
+      page: 1,
+      limit: 20,
+      pages: 0,
+      with_remediation: 0,
+    },
     isLoading: false,
     isError: false,
   })),
@@ -83,12 +90,24 @@ vi.mock("@/components/results/SeverityChart", () => ({
 }));
 
 vi.mock("@/components/results/FindingsTable", () => ({
-  default: ({ findings, emptyReason, severity, onSeverityChange }: any) => (
+  default: ({
+    findings,
+    emptyReason,
+    severity,
+    onSeverityChange,
+    search,
+    onSearchChange,
+    sortKey,
+    sortDir,
+  }: any) => (
     <div
       data-testid="findings-table"
       data-findings-count={findings?.length}
       data-empty-reason={emptyReason}
       data-severity={severity ?? ""}
+      data-search={search ?? ""}
+      data-sort-key={sortKey ?? ""}
+      data-sort-dir={sortDir ?? ""}
     >
       {onSeverityChange ? (
         <button
@@ -97,6 +116,15 @@ vi.mock("@/components/results/FindingsTable", () => ({
           onClick={() => onSeverityChange("high")}
         >
           filter high
+        </button>
+      ) : null}
+      {onSearchChange ? (
+        <button
+          type="button"
+          data-testid="set-search-ssh"
+          onClick={() => onSearchChange("ssh")}
+        >
+          search ssh
         </button>
       ) : null}
     </div>
@@ -189,8 +217,9 @@ function mockUseScanDetailReturn(overrides: Partial<ReturnType<typeof useScanDet
       items,
       total: items.length,
       page: 1,
-      limit: 50,
+      limit: 20,
       pages: items.length > 0 ? 1 : 0,
+      with_remediation: items.filter((f) => f.remediation).length,
     },
     isLoading: false,
     isError: false,
@@ -416,7 +445,11 @@ describe("ScanDetail", () => {
 
     it("does not render RemediationCard when no findings", () => {
       mockUseScanDetailReturn({
-        data: { ...baseScan, findings: [] } as any,
+        data: {
+          ...baseScan,
+          findings: [],
+          result_summary: { ...baseScan.result_summary, total_findings: 0 },
+        } as any,
       });
       renderPage();
       expect(
@@ -444,9 +477,73 @@ describe("ScanDetail", () => {
     it("passes severity into useScanFindings and resets to page 1 on change", async () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
-      expect(useScanFindings).toHaveBeenCalledWith("scan-1", 1, 50, undefined);
+      expect(useScanFindings).toHaveBeenCalledWith(
+        "scan-1",
+        1,
+        20,
+        undefined,
+        undefined,
+        "severity",
+        "asc",
+      );
       await userEvent.click(screen.getByTestId("set-severity-high"));
-      expect(useScanFindings).toHaveBeenCalledWith("scan-1", 1, 50, "high");
+      expect(useScanFindings).toHaveBeenCalledWith(
+        "scan-1",
+        1,
+        20,
+        "high",
+        undefined,
+        "severity",
+        "asc",
+      );
+    });
+
+    it("shows an honest findings range for the current page", () => {
+      mockUseScanDetailReturn({ data: baseScan as any });
+      renderPage();
+      expect(screen.getByTestId("findings-range")).toHaveTextContent(
+        "Showing 1–3 of 3",
+      );
+    });
+
+    it("uses job-wide with_remediation instead of the current page length", () => {
+      mockUseScanDetailReturn({ data: baseScan as any });
+      vi.mocked(useScanFindings).mockReturnValue({
+        data: {
+          items: baseScan.findings.slice(0, 1),
+          total: 3,
+          page: 1,
+          limit: 20,
+          pages: 1,
+          with_remediation: 2,
+        },
+        isLoading: false,
+        isError: false,
+      } as ReturnType<typeof useScanFindings>);
+      renderPage();
+      expect(screen.getByText("Suggested actions available")).toBeInTheDocument();
+      expect(screen.getByTestId("progress").dataset.value).toBe("67");
+    });
+
+    it("shows pager controls when findings span more than one page", () => {
+      mockUseScanDetailReturn({ data: baseScan as any });
+      vi.mocked(useScanFindings).mockReturnValue({
+        data: {
+          items: baseScan.findings,
+          total: 25,
+          page: 1,
+          limit: 20,
+          pages: 2,
+          with_remediation: 2,
+        },
+        isLoading: false,
+        isError: false,
+      } as ReturnType<typeof useScanFindings>);
+      renderPage();
+      expect(screen.getByTestId("findings-pagination")).toBeInTheDocument();
+      expect(screen.getByTestId("findings-range")).toHaveTextContent(
+        "Showing 1–20 of 25",
+      );
     });
 
     it("renders download buttons", async () => {

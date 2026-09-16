@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import { useParams, useSearchParams, Link } from "react-router-dom";
 import {
   ArrowLeft,
   Clock,
@@ -11,7 +11,12 @@ import {
   Target,
 } from "lucide-react";
 import { useScanDetail, useScanDiff, useScanFindings } from "@/hooks/useScan";
-import { type ScanDiff, type ScanFinding, downloadFile, printFile } from "@/api/scans";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { type ScanDiff, downloadFile, printFile } from "@/api/scans";
+import type {
+  FindingsSortDir,
+  FindingsSortKey,
+} from "@/components/results/FindingsTable";
 import {
   Pagination,
   PaginationContent,
@@ -48,19 +53,87 @@ function rescanPath(scanType: string): string {
   return "/scan/ip";
 }
 
-const FINDINGS_PAGE_SIZE = 50;
+const FINDINGS_PAGE_SIZE = 20;
+const FINDING_SORT_KEYS: readonly FindingsSortKey[] = [
+  "severity",
+  "title",
+  "category",
+  "cvss_score",
+];
+const FINDING_SEVERITIES = new Set([
+  "critical",
+  "high",
+  "medium",
+  "low",
+  "info",
+]);
+
+function parsePage(raw: string | null): number {
+  const n = Number(raw);
+  return Number.isInteger(n) && n >= 1 ? n : 1;
+}
+
+function parseSeverity(raw: string | null): string | undefined {
+  if (!raw || !FINDING_SEVERITIES.has(raw)) return undefined;
+  return raw;
+}
+
+function parseSortKey(raw: string | null): FindingsSortKey {
+  return FINDING_SORT_KEYS.includes(raw as FindingsSortKey)
+    ? (raw as FindingsSortKey)
+    : "severity";
+}
+
+function parseSortDir(raw: string | null): FindingsSortDir {
+  return raw === "desc" ? "desc" : "asc";
+}
 
 function ScanDetail() {
   const { t } = useTranslation("scan");
   const { id } = useParams<{ id: string }>();
-  const [findingsPage, setFindingsPage] = useState(1);
-  const [severity, setSeverity] = useState<string | undefined>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const findingsPage = parsePage(searchParams.get("page"));
+  const severity = parseSeverity(searchParams.get("severity"));
+  const sortKey = parseSortKey(searchParams.get("sort"));
+  const sortDir = parseSortDir(searchParams.get("dir"));
+  const urlQ = searchParams.get("q") ?? "";
+  const [searchDraft, setSearchDraft] = useState(urlQ);
+  const debouncedQ = useDebouncedValue(searchDraft, 300);
+  const queryQ = debouncedQ.trim();
+
+  const patchFindingsParams = useCallback(
+    (next: Record<string, string | undefined>) => {
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev);
+          for (const [key, value] of Object.entries(next)) {
+            if (!value) params.delete(key);
+            else params.set(key, value);
+          }
+          return params;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  useEffect(() => {
+    const next = queryQ || undefined;
+    const current = urlQ.trim() || undefined;
+    if (next === current) return;
+    patchFindingsParams({ q: next, page: undefined });
+  }, [queryQ, urlQ, patchFindingsParams]);
+
   const { data: scan, isLoading, isError } = useScanDetail(id ?? null);
   const { data: findingsData, isLoading: findingsLoading } = useScanFindings(
     id ?? null,
     findingsPage,
     FINDINGS_PAGE_SIZE,
     severity,
+    queryQ || undefined,
+    sortKey,
+    sortDir,
   );
   const { data: diff } = useScanDiff(
     id ?? null,
@@ -69,6 +142,11 @@ function ScanDetail() {
   const findings = findingsData?.items ?? [];
   const findingsTotal = findingsData?.total ?? 0;
   const findingsPages = findingsData?.pages ?? 0;
+  const findingsLimit = findingsData?.limit ?? FINDINGS_PAGE_SIZE;
+  const rangeFrom =
+    findingsTotal === 0 ? 0 : (findingsPage - 1) * findingsLimit + 1;
+  const rangeTo = Math.min(findingsPage * findingsLimit, findingsTotal);
+  const withRemediation = findingsData?.with_remediation ?? 0;
 
   const onPrint = (format: "html" | "executive") => {
     if (!id) return;
@@ -272,6 +350,18 @@ function ScanDetail() {
                       count: findingsTotal,
                     })}
                   </CardTitle>
+                  {findingsTotal > 0 ? (
+                    <p
+                      className="mt-1 font-mono text-[11px] tabular-nums text-muted-foreground"
+                      data-testid="findings-range"
+                    >
+                      {t("findingsRange", {
+                        from: rangeFrom,
+                        to: rangeTo,
+                        total: findingsTotal,
+                      })}
+                    </p>
+                  ) : null}
                 </div>
               </div>
             </CardHeader>
@@ -281,8 +371,26 @@ function ScanDetail() {
                 isLoading={findingsLoading}
                 severity={severity}
                 onSeverityChange={(next) => {
-                  setSeverity(next);
-                  setFindingsPage(1);
+                  patchFindingsParams({
+                    severity: next,
+                    page: undefined,
+                  });
+                }}
+                search={searchDraft}
+                onSearchChange={(next) => {
+                  setSearchDraft(next);
+                  if (findingsPage !== 1) {
+                    patchFindingsParams({ page: undefined });
+                  }
+                }}
+                sortKey={sortKey}
+                sortDir={sortDir}
+                onSortChange={(key, dir) => {
+                  patchFindingsParams({
+                    sort: key === "severity" ? undefined : key,
+                    dir: dir === "asc" ? undefined : dir,
+                    page: undefined,
+                  });
                 }}
                 emptyReason={
                   scan.status === "failed"
@@ -298,7 +406,12 @@ function ScanDetail() {
                     <PaginationItem>
                       <PaginationPrevious
                         onClick={() =>
-                          setFindingsPage((p) => Math.max(1, p - 1))
+                          patchFindingsParams({
+                            page:
+                              findingsPage <= 2
+                                ? undefined
+                                : String(findingsPage - 1),
+                          })
                         }
                         disabled={findingsPage === 1}
                       />
@@ -311,9 +424,11 @@ function ScanDetail() {
                     <PaginationItem>
                       <PaginationNext
                         onClick={() =>
-                          setFindingsPage((p) =>
-                            Math.min(findingsPages, p + 1),
-                          )
+                          patchFindingsParams({
+                            page: String(
+                              Math.min(findingsPages, findingsPage + 1),
+                            ),
+                          })
                         }
                         disabled={findingsPage === findingsPages}
                       />
@@ -369,8 +484,11 @@ function ScanDetail() {
           </div>
           </div>
 
-          {scan.status === "completed" && findings.length > 0 && (
-            <RemediationCard findings={findings} />
+          {scan.status === "completed" && findingsCount > 0 && (
+            <RemediationCard
+              total={Number(findingsCount) || 0}
+              remediated={withRemediation}
+            />
           )}
         </TabsContent>
 
@@ -576,10 +694,14 @@ function InfoRow({
   );
 }
 
-function RemediationCard({ findings }: { findings: ScanFinding[] }) {
+function RemediationCard({
+  total,
+  remediated,
+}: {
+  total: number;
+  remediated: number;
+}) {
   const { t } = useTranslation("scan");
-  const total = findings.length;
-  const remediated = findings.filter((f) => f.remediation !== null).length;
   const pct = total > 0 ? Math.round((remediated / total) * 100) : 0;
 
   return (
