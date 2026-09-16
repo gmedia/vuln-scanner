@@ -13,7 +13,7 @@ const mockUpdate = vi.fn();
 const mockDelete = vi.fn();
 const mockRuns = vi.fn();
 const mockDownload = vi.fn();
-const mockPrint = vi.fn(() => Promise.resolve());
+const mockPrint = vi.fn();
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -38,7 +38,7 @@ vi.mock("@/api/scans", async () => {
   return {
     ...actual,
     downloadFile: (...args: unknown[]) => mockDownload(...args),
-    printFile: (...args: unknown[]) => mockPrint(...args),
+    printFile: (...args: unknown[]) => mockPrint(...args) as Promise<void>,
   };
 });
 
