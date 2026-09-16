@@ -17,5 +17,7 @@
   "colStatus": "Status",
   "colRecipient": "Penerima",
   "colAttempts": "Percobaan",
+  "colJob": "Scan",
+  "openScan": "Buka scan",
   "totalCount": "{{count}} baris"
 }
