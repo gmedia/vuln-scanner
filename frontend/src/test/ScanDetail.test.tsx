@@ -81,12 +81,23 @@ vi.mock("@/components/results/SeverityChart", () => ({
 }));
 
 vi.mock("@/components/results/FindingsTable", () => ({
-  default: ({ findings, emptyReason }: any) => (
+  default: ({ findings, emptyReason, severity, onSeverityChange }: any) => (
     <div
       data-testid="findings-table"
       data-findings-count={findings?.length}
       data-empty-reason={emptyReason}
-    />
+      data-severity={severity ?? ""}
+    >
+      {onSeverityChange ? (
+        <button
+          type="button"
+          data-testid="set-severity-high"
+          onClick={() => onSeverityChange("high")}
+        >
+          filter high
+        </button>
+      ) : null}
+    </div>
   ),
 }));
 
@@ -425,6 +436,14 @@ describe("ScanDetail", () => {
       expect(
         table.compareDocumentPosition(chart) & Node.DOCUMENT_POSITION_FOLLOWING,
       ).toBeTruthy();
+    });
+
+    it("passes severity into useScanFindings and resets to page 1 on change", async () => {
+      mockUseScanDetailReturn({ data: baseScan as any });
+      renderPage();
+      expect(useScanFindings).toHaveBeenCalledWith("scan-1", 1, 50, undefined);
+      await userEvent.click(screen.getByTestId("set-severity-high"));
+      expect(useScanFindings).toHaveBeenCalledWith("scan-1", 1, 50, "high");
     });
 
     it("renders download buttons", async () => {

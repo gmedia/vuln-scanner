@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import {
+  getScanFindings,
   getScanHistory,
   startIpScan,
   startDomainScan,
@@ -139,9 +140,23 @@ describe("useScanFindings", () => {
     renderHook(() => useScanFindings("job-123"), { wrapper: Wrapper });
     expect(mockUseQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        queryKey: ["scan-findings", "org-a", "job-123", 1, 50],
+        queryKey: ["scan-findings", "org-a", "job-123", 1, 50, undefined],
       }),
     );
+  });
+
+  it("includes severity in the query key and queryFn", async () => {
+    renderHook(() => useScanFindings("job-123", 2, 25, "high"), {
+      wrapper: Wrapper,
+    });
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryKey: ["scan-findings", "org-a", "job-123", 2, 25, "high"],
+      }),
+    );
+    const { queryFn } = mockUseQuery.mock.calls[0][0];
+    await queryFn();
+    expect(getScanFindings).toHaveBeenCalledWith("job-123", 2, 25, "high");
   });
 });
 

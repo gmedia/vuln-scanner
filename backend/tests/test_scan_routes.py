@@ -189,6 +189,98 @@ async def test_get_scan_findings(client, db_session, sample_user):
     assert data["items"][0]["raw_data"] is None
 
 
+@pytest.mark.asyncio
+async def test_get_scan_findings_filter_severity(client, db_session, sample_user):
+    job = ScanJob(
+        id=uuid.uuid4(),
+        scan_type="ip",
+        target="10.0.0.2",
+        status="completed",
+        progress=100,
+        user_id=sample_user.id,
+    )
+    db_session.add(job)
+    await db_session.commit()
+    await db_session.refresh(job)
+    for sev, title in (("high", "Open SSH"), ("medium", "Open HTTP"), ("high", "Weak key")):
+        db_session.add(
+            ScanFinding(
+                id=uuid.uuid4(),
+                job_id=job.id,
+                severity=sev,
+                title=title,
+            )
+        )
+    await db_session.commit()
+
+    resp = client.get(f"/api/scan/{job.id}/findings?severity=high", headers=HEADERS)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total"] == 2
+    assert data["pages"] == 1
+    assert len(data["items"]) == 2
+    assert {item["severity"] for item in data["items"]} == {"high"}
+    assert {item["title"] for item in data["items"]} == {"Open SSH", "Weak key"}
+
+
+@pytest.mark.asyncio
+async def test_get_scan_findings_invalid_severity(client, db_session, sample_user):
+    job = ScanJob(
+        id=uuid.uuid4(),
+        scan_type="ip",
+        target="10.0.0.3",
+        status="completed",
+        progress=100,
+        user_id=sample_user.id,
+    )
+    db_session.add(job)
+    await db_session.commit()
+
+    resp = client.get(f"/api/scan/{job.id}/findings?severity=urgent", headers=HEADERS)
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "Invalid severity"
+
+
+@pytest.mark.asyncio
+async def test_get_scan_findings_q_search(client, db_session, sample_user):
+    job = ScanJob(
+        id=uuid.uuid4(),
+        scan_type="ip",
+        target="10.0.0.4",
+        status="completed",
+        progress=100,
+        user_id=sample_user.id,
+    )
+    db_session.add(job)
+    await db_session.commit()
+    await db_session.refresh(job)
+    db_session.add(
+        ScanFinding(
+            id=uuid.uuid4(),
+            job_id=job.id,
+            severity="high",
+            title="Open SSH port",
+            description="Banner leak",
+        )
+    )
+    db_session.add(
+        ScanFinding(
+            id=uuid.uuid4(),
+            job_id=job.id,
+            severity="low",
+            title="Info only",
+            description="TLS certificate expired",
+        )
+    )
+    await db_session.commit()
+
+    resp = client.get(f"/api/scan/{job.id}/findings?q=ssh", headers=HEADERS)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total"] == 1
+    assert data["items"][0]["title"] == "Open SSH port"
+
+
 # ── GET /api/scan/history ──────────────────────────────────────────────────
 
 

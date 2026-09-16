@@ -301,6 +301,106 @@ async def test_get_findings_paginates(db_session, sample_user):
 
 
 @pytest.mark.asyncio
+async def test_get_findings_filtered_by_severity(db_session, sample_user):
+    job = ScanJob(
+        id=uuid.uuid4(),
+        scan_type="ip",
+        target="10.0.0.8",
+        status="completed",
+        progress=100,
+        user_id=sample_user.id,
+    )
+    db_session.add(job)
+    await db_session.commit()
+    for i, sev in enumerate(("critical", "high", "high", "low")):
+        db_session.add(
+            ScanFinding(
+                id=uuid.uuid4(),
+                job_id=job.id,
+                severity=sev,
+                title=f"{sev} finding {i}",
+            )
+        )
+    await db_session.commit()
+
+    svc = ScannerService(db_session)
+    page = await svc.get_findings(str(job.id), user_id=sample_user.id, severity="high")
+    assert page.total == 2
+    assert page.pages == 1
+    assert len(page.items) == 2
+    assert {item.severity for item in page.items} == {"high"}
+
+    none_match = await svc.get_findings(str(job.id), user_id=sample_user.id, severity="info")
+    assert none_match.total == 0
+    assert none_match.items == []
+    assert none_match.pages == 0
+
+
+@pytest.mark.asyncio
+async def test_get_findings_invalid_severity(db_session, sample_job, sample_user):
+    svc = ScannerService(db_session)
+    with pytest.raises(HTTPException) as exc_info:
+        await svc.get_findings(str(sample_job.id), user_id=sample_user.id, severity="urgent")
+    assert exc_info.value.status_code == 400
+    assert exc_info.value.detail == "Invalid severity"
+
+
+@pytest.mark.asyncio
+async def test_get_findings_q_ilike_title_and_description(db_session, sample_user):
+    job = ScanJob(
+        id=uuid.uuid4(),
+        scan_type="ip",
+        target="10.0.0.7",
+        status="completed",
+        progress=100,
+        user_id=sample_user.id,
+    )
+    db_session.add(job)
+    await db_session.commit()
+    db_session.add(
+        ScanFinding(
+            id=uuid.uuid4(),
+            job_id=job.id,
+            severity="high",
+            title="Open SSH port",
+            description="Port 22 is reachable",
+        )
+    )
+    db_session.add(
+        ScanFinding(
+            id=uuid.uuid4(),
+            job_id=job.id,
+            severity="medium",
+            title="Weak TLS cipher",
+            description="SQL injection vector in login",
+        )
+    )
+    db_session.add(
+        ScanFinding(
+            id=uuid.uuid4(),
+            job_id=job.id,
+            severity="low",
+            title="Info banner",
+            description="Nothing here",
+        )
+    )
+    await db_session.commit()
+
+    svc = ScannerService(db_session)
+    by_title = await svc.get_findings(str(job.id), user_id=sample_user.id, q="ssh")
+    assert by_title.total == 1
+    assert by_title.items[0].title == "Open SSH port"
+
+    by_desc = await svc.get_findings(str(job.id), user_id=sample_user.id, q="injection")
+    assert by_desc.total == 1
+    assert by_desc.items[0].title == "Weak TLS cipher"
+
+    combined = await svc.get_findings(str(job.id), user_id=sample_user.id, severity="medium", q="TLS")
+    assert combined.total == 1
+    assert combined.items[0].severity == "medium"
+
+
+@pytest.mark.asyncio
 async def test_get_findings_idor(db_session, sample_job, sample_finding):
     """get_findings raises 404 when job belongs to a different user."""
     other_user = User(

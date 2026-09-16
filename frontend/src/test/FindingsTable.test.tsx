@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -104,6 +104,29 @@ describe("FindingsTable", () => {
     expect(screen.queryByText("SQL Injection")).not.toBeInTheDocument();
     expect(screen.getAllByText("XSS Attack").length).toBeGreaterThan(0);
     expect(screen.queryByText("Open Redirect")).not.toBeInTheDocument();
+  });
+
+  it("calls onSeverityChange instead of filtering the current page when controlled", async () => {
+    const user = userEvent.setup();
+    const onSeverityChange = vi.fn();
+    const findings = [
+      mockFinding(),
+      mockFinding({ id: "2", title: "XSS Attack", severity: "high", cvss_score: 7.5 }),
+      mockFinding({ id: "3", title: "Open Redirect", severity: "medium", cvss_score: 5.0 }),
+    ];
+    renderTable(
+      <FindingsTable
+        findings={findings}
+        isLoading={false}
+        onSeverityChange={onSeverityChange}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Filter by severity" }));
+    await user.click(screen.getByRole("menuitemcheckbox", { name: "high" }));
+    expect(onSeverityChange).toHaveBeenCalledWith("high");
+    expect(screen.getAllByText("SQL Injection").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("XSS Attack").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Open Redirect").length).toBeGreaterThan(0);
   });
 
   it("renders severity badges for each finding", () => {
@@ -296,4 +319,3 @@ describe("FindingsTable", () => {
     expect(subtitleSpan).toBeNull();
   });
 });
-
