@@ -53,11 +53,13 @@ function ScanDetail() {
   const { t } = useTranslation("scan");
   const { id } = useParams<{ id: string }>();
   const [findingsPage, setFindingsPage] = useState(1);
+  const [severity, setSeverity] = useState<string | undefined>();
   const { data: scan, isLoading, isError } = useScanDetail(id ?? null);
   const { data: findingsData, isLoading: findingsLoading } = useScanFindings(
     id ?? null,
     findingsPage,
     FINDINGS_PAGE_SIZE,
+    severity,
   );
   const { data: diff } = useScanDiff(
     id ?? null,
@@ -267,6 +269,11 @@ function ScanDetail() {
               <FindingsTable
                 findings={findings}
                 isLoading={findingsLoading}
+                severity={severity}
+                onSeverityChange={(next) => {
+                  setSeverity(next);
+                  setFindingsPage(1);
+                }}
                 emptyReason={
                   scan.status === "failed"
                     ? "failed"

@@ -29,11 +29,16 @@ export function useScanDetail(jobId: string | null) {
   });
 }
 
-export function useScanFindings(jobId: string | null, page = 1, limit = 50) {
+export function useScanFindings(
+  jobId: string | null,
+  page = 1,
+  limit = 50,
+  severity?: string,
+) {
   const activeOrgId = useAuthStore((s) => s.activeOrgId);
   return useQuery({
-    queryKey: ["scan-findings", activeOrgId, jobId, page, limit],
-    queryFn: () => getScanFindings(jobId!, page, limit),
+    queryKey: ["scan-findings", activeOrgId, jobId, page, limit, severity],
+    queryFn: () => getScanFindings(jobId!, page, limit, severity),
     enabled: !!jobId && !!activeOrgId,
   });
 }

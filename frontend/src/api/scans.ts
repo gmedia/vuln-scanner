@@ -123,10 +123,15 @@ export async function getScanFindings(
   jobId: string,
   page = 1,
   limit = 50,
+  severity?: string,
+  q?: string,
 ): Promise<PaginatedResponse<ScanFinding>> {
+  const params: Record<string, string | number> = { page, limit };
+  if (severity) params.severity = severity;
+  if (q) params.q = q;
   const { data } = await api.get<PaginatedResponse<ScanFinding>>(
     `/api/scan/${jobId}/findings`,
-    { params: { page, limit } },
+    { params },
   );
   return data;
 }
