@@ -287,6 +287,65 @@ it("shows empty state with create form", async () => {
     });
   });
 
+  it("lists posted incident updates on the card and desktop row", async () => {
+    mockGet.mockResolvedValue({
+      id: "p1",
+      organization_id: "o1",
+      slug: "erp-stg",
+      title: "ERP",
+      published: true,
+      custom_hostname: null,
+      hostname_status: "none",
+      cname_target: "status-edge.sinexis.app",
+      ...pageFields,
+      public_path: "/status/erp-stg",
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+      components: [],
+      incidents: [
+        {
+          id: "i1",
+          title: "API blip",
+          impact: "minor",
+          status: "monitoring",
+          started_at: "2026-01-01T00:00:00Z",
+          resolved_at: null,
+          created_at: "2026-01-01T00:00:00Z",
+          updates: [
+            {
+              id: "u1",
+              body: "Looking into 5xx.",
+              status: "investigating",
+              created_at: "2026-01-01T00:00:00Z",
+            },
+            {
+              id: "u2",
+              body: "Traffic is recovering.",
+              status: "monitoring",
+              created_at: "2026-01-01T00:20:00Z",
+            },
+          ],
+        },
+      ],
+      overall: "degraded",
+    });
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("status-incident-card-i1")).toBeInTheDocument(),
+    );
+    const cardList = screen.getByTestId("status-incident-updates-i1");
+    expect(cardList).toBeInTheDocument();
+    expect(screen.getByTestId("status-incident-row-updates-i1")).toBeInTheDocument();
+    expect(screen.getByTestId("status-incident-update-u1")).toBeInTheDocument();
+    expect(screen.getByTestId("status-incident-update-u2")).toBeInTheDocument();
+    expect(screen.getAllByText("Looking into 5xx.")).not.toHaveLength(0);
+    expect(screen.getAllByText("Traffic is recovering.")).not.toHaveLength(0);
+    const bodies = [...cardList.querySelectorAll("p")].map((el) => el.textContent);
+    expect(bodies.indexOf("Looking into 5xx.")).toBeLessThan(
+      bodies.indexOf("Traffic is recovering."),
+    );
+  });
+
   it("hides the new-incident form until New incident is clicked", async () => {
     const user = userEvent.setup();
     mockGet.mockResolvedValue({

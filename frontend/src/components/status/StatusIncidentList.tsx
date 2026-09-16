@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { StatusIncident } from "@/api/statusPage";
 import { StatusIncidentActions } from "@/components/status/StatusIncidentActions";
 import { StatusIncidentCard } from "@/components/status/StatusIncidentCard";
 import { StatusIncidentQuickUpdate } from "@/components/status/StatusIncidentQuickUpdate";
+import { StatusIncidentUpdates } from "@/components/status/StatusIncidentUpdates";
 import {
   formatStartedAt,
   impactBadge,
@@ -65,33 +66,43 @@ export function StatusIncidentList({
           </TableHeader>
           <TableBody>
             {incidents.map((i) => (
-              <TableRow
-                key={i.id}
-                data-testid={`status-incident-row-${i.id}`}
-              >
-                <TableCell className="font-medium">{i.title}</TableCell>
-                <TableCell>
-                  <Badge variant={impactBadge(i.impact)}>{i.impact}</Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={statusBadge(i.status)}>{i.status}</Badge>
-                </TableCell>
-                <TableCell className="font-mono text-xs tabular-nums text-muted-foreground">
-                  {formatStartedAt(i.started_at)}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end">
-                    <StatusIncidentActions
-                      incident={i}
-                      canDelete={canDelete}
-                      testIdPrefix="status-incident-row"
-                      onEdit={() => onEdit(i)}
-                      onPostUpdate={() => setUpdatingId(i.id)}
-                      onDone={onDone}
-                    />
-                  </div>
-                </TableCell>
-              </TableRow>
+              <Fragment key={i.id}>
+                <TableRow data-testid={`status-incident-row-${i.id}`}>
+                  <TableCell className="font-medium">{i.title}</TableCell>
+                  <TableCell>
+                    <Badge variant={impactBadge(i.impact)}>{i.impact}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={statusBadge(i.status)}>{i.status}</Badge>
+                  </TableCell>
+                  <TableCell className="font-mono text-xs tabular-nums text-muted-foreground">
+                    {formatStartedAt(i.started_at)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end">
+                      <StatusIncidentActions
+                        incident={i}
+                        canDelete={canDelete}
+                        testIdPrefix="status-incident-row"
+                        onEdit={() => onEdit(i)}
+                        onPostUpdate={() => setUpdatingId(i.id)}
+                        onDone={onDone}
+                      />
+                    </div>
+                  </TableCell>
+                </TableRow>
+                {i.updates.length > 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="bg-muted/30">
+                      <StatusIncidentUpdates
+                        incidentId={i.id}
+                        updates={i.updates}
+                        testIdPrefix="status-incident-row"
+                      />
+                    </TableCell>
+                  </TableRow>
+                ) : null}
+              </Fragment>
             ))}
           </TableBody>
         </Table>
