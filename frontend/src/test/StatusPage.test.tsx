@@ -477,8 +477,21 @@ it("shows empty state with create form", async () => {
     await waitFor(() =>
       expect(screen.getByText("TXT validation")).toBeInTheDocument(),
     );
+    expect(screen.getByText("Waiting for TXT")).toBeInTheDocument();
+    expect(screen.queryByText("pending_txt")).not.toBeInTheDocument();
+    expect(screen.getByTestId("status-page-host")).toBeInTheDocument();
+    expect(screen.getByTestId("status-copy-cname")).toBeInTheDocument();
+    expect(screen.getByTestId("status-copy-txt-name")).toBeInTheDocument();
+    expect(screen.getByTestId("status-copy-txt-value")).toBeInTheDocument();
+    expect(
+      screen.getByText("status.example.com → customers.sinexis.app"),
+    ).toBeInTheDocument();
     expect(
       screen.getByText(/_cf-custom-hostname.status.example.com/),
+    ).toBeInTheDocument();
+    expect(screen.getByText("uuid-token")).toBeInTheDocument();
+    expect(
+      screen.getByText("Do not point A/AAAA at the origin."),
     ).toBeInTheDocument();
   });
 });
