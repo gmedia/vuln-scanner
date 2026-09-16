@@ -56,6 +56,7 @@
   "noComponents": "Belum ada komponen. Petakan monitor Uptime.",
   "remove": "Hapus",
   "colActions": "Aksi",
+  "colStarted": "Mulai",
   "incidentTitle": "Judul insiden",
   "noIncidents": "Belum ada insiden.",
   "actionsMenu": "Aksi insiden",

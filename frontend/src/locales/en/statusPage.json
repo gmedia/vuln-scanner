@@ -56,6 +56,7 @@
   "noComponents": "No components yet. Map an Uptime monitor.",
   "remove": "Remove",
   "colActions": "Actions",
+  "colStarted": "Started",
   "incidentTitle": "Incident title",
   "noIncidents": "No incidents posted.",
   "actionsMenu": "Incident actions",
