@@ -22,6 +22,7 @@ vi.mock("@/api/guard", async () => {
     revokeEnrollToken: vi.fn(),
     issueHostAgentToken: vi.fn(),
     linkGuardAgentAsset: vi.fn(),
+    disableGuardAgent: vi.fn(),
   };
 });
 
@@ -65,6 +66,7 @@ describe("Guard host enroll UI", () => {
     vi.mocked(guardApi.listGuardAlerts).mockResolvedValue([]);
     vi.mocked(guardApi.listEnrollTokens).mockResolvedValue([]);
     vi.mocked(guardApi.revokeEnrollToken).mockResolvedValue(undefined);
+    vi.mocked(guardApi.disableGuardAgent).mockResolvedValue(undefined);
     vi.mocked(guardApi.createEnrollToken).mockResolvedValue({
       id: "tok1",
       label: "lab",
@@ -412,5 +414,95 @@ describe("Guard host enroll UI", () => {
     );
     const link = await screen.findByTestId("guard-open-siem");
     expect(link).toHaveAttribute("href", "/siem");
+  });
+
+  it("lets admin remove an agent from Guard", async () => {
+    const user = userEvent.setup();
+    vi.mocked(guardApi.listGuardAgents).mockResolvedValue([
+      {
+        id: "ag-disable",
+        organization_id: "org1",
+        wazuh_agent_id: "009",
+        name: "vps-d10-01",
+        status: "active",
+        ip: null,
+        version: "4.7.0",
+        last_keep_alive: "2026-08-17T14:05:00Z",
+        last_helper_poll_at: null,
+        has_host_agent_token: true,
+        disabled: false,
+        synced_at: "2026-08-17T14:05:00Z",
+        created_at: "2026-08-17T14:05:00Z",
+      },
+    ]);
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <Guard />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    const disableBtns = await screen.findAllByTestId("guard-disable-ag-disable");
+    expect(disableBtns.length).toBeGreaterThan(0);
+    await user.click(disableBtns[0]);
+    expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Sinexis stops watching this agent/),
+    ).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: "Remove from Guard" }),
+    );
+    await waitFor(() => {
+      expect(guardApi.disableGuardAgent).toHaveBeenCalledWith("ag-disable");
+    });
+  });
+
+  it("hides remove-from-Guard for viewers", async () => {
+    useAuthStore.setState({
+      organizations: [
+        {
+          id: "org1",
+          name: "Org",
+          slug: "org",
+          role: "viewer",
+        } as never,
+      ],
+      activeOrgId: "org1",
+    });
+    vi.mocked(guardApi.listGuardAgents).mockResolvedValue([
+      {
+        id: "ag-viewer",
+        organization_id: "org1",
+        wazuh_agent_id: "010",
+        name: "vps-viewer",
+        status: "active",
+        ip: null,
+        version: "4.7.0",
+        last_keep_alive: "2026-08-17T14:05:00Z",
+        last_helper_poll_at: null,
+        has_host_agent_token: false,
+        disabled: false,
+        synced_at: "2026-08-17T14:05:00Z",
+        created_at: "2026-08-17T14:05:00Z",
+      },
+    ]);
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <Guard />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByTestId("guard-agent-row")).toBeInTheDocument();
+    expect(screen.queryByTestId("guard-disable-ag-viewer")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Remove from Guard/ }),
+    ).not.toBeInTheDocument();
   });
 });
