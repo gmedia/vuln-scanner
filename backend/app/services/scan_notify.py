@@ -41,6 +41,7 @@ class NotifyDiffContext:
     has_baseline: bool
     schedule_id: str | None
     locale: str = DEFAULT_LOCALE
+    owner_user_id: UUID | None = None
 
 
 def resolve_notify_email(session: Session, job: ScanJob) -> str | None:
@@ -154,4 +155,5 @@ def build_notify_context(session: Session, job_id: str) -> NotifyDiffContext | N
         has_baseline=has_baseline,
         schedule_id=str(sched.id) if sched is not None else None,
         locale=locale,
+        owner_user_id=job.user_id,
     )
