@@ -5,7 +5,6 @@ import {
   Building2,
   ClipboardList,
   Loader2,
-  Mail,
   Printer,
   Receipt,
   Trash2,
@@ -537,7 +536,7 @@ function WorkspaceSettings() {
                   {inviteMut.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  <Mail className="mr-2 h-4 w-4" />
+                  <UserPlus className="mr-2 h-4 w-4" />
                   {t("sendInvite")}
                 </Button>
               </form>
