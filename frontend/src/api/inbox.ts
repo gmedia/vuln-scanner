@@ -7,6 +7,7 @@ export interface InboxItem {
   recipient_masked: string;
   attempts: number;
   created_at: string;
+  job_id?: string | null;
 }
 
 export interface InboxListResponse {
