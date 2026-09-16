@@ -12,5 +12,12 @@
   "reset_cta": "Atur ulang kata sandi",
   "reset_or_copy": "Atau salin tautan:",
   "reset_footer": "Tautan ini kedaluwarsa dalam 1 jam. Jika Anda tidak meminta reset, abaikan email ini.",
-  "reset_preheader": "Atur ulang kata sandi Sinexis. Kedaluwarsa dalam 1 jam."
+  "reset_preheader": "Atur ulang kata sandi Sinexis. Kedaluwarsa dalam 1 jam.",
+  "invite_subject": "Sinexis — undangan ke {org} sebagai {role}",
+  "invite_heading": "Bergabung ke {org} di Sinexis",
+  "invite_intro": "Anda diundang ke workspace {org} sebagai {role}. Masuk dengan email ini untuk menerima.",
+  "invite_cta": "Terima undangan",
+  "invite_or_copy": "Atau salin tautan:",
+  "invite_footer": "Tautan ini kedaluwarsa dalam 14 hari. Jika Anda tidak mengharapkan undangan ini, abaikan email ini.",
+  "invite_preheader": "Bergabung ke {org} sebagai {role}. Kedaluwarsa dalam 14 hari."
 }

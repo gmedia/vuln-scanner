@@ -359,3 +359,34 @@ async def send_host_waf_email(
         html_body=html_body,
     )
     return await _send_with_retry(msg, email_to, "Host WAF", user_id=user_id)
+
+
+async def send_invite_email(
+    email_to: str,
+    token: str,
+    *,
+    org_name: str,
+    role: str,
+    lang: str | None = None,
+    user_id: UUID | None = None,
+) -> bool:
+    locale = normalize_lang(lang)
+    invite_link = f"{FRONTEND_URL}/settings/workspace?invite={token}"
+    heading = t(locale, "auth_email", "invite_heading", org=org_name)
+    inner = f"""\
+  <p style="color: #374151;">{t(locale, "auth_email", "invite_intro", org=org_name, role=role)}</p>
+{_cta_block(invite_link, t(locale, "auth_email", "invite_cta"), t(locale, "auth_email", "invite_or_copy"))}
+  <p style="color: #6b7280; font-size: 14px;">
+    {t(locale, "auth_email", "invite_footer")}
+  </p>"""
+    html_body = _wrap_html(
+        heading=heading,
+        inner=inner,
+        preheader=t(locale, "auth_email", "invite_preheader", org=org_name, role=role),
+    )
+    msg = _build_message(
+        email_to=email_to,
+        subject=t(locale, "auth_email", "invite_subject", org=org_name, role=role),
+        html_body=html_body,
+    )
+    return await _send_with_retry(msg, email_to, "Invite", user_id=user_id)

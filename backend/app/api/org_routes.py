@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -24,10 +25,12 @@ from app.schemas.organization import (
     OrgUpdateRequest,
 )
 from app.services.auth import create_access_token, create_refresh_token, get_current_user
+from app.services.email import send_invite_email
 from app.services.invoice import InvoiceService, to_item
 from app.services.organization import OrganizationService, require_membership
 
 router = APIRouter(tags=["organizations"])
+logger = logging.getLogger(__name__)
 
 invite_create_limiter = RateLimiter(max_requests=10, window_seconds=60, prefix="ratelimit:org_invite")
 
@@ -167,9 +170,23 @@ async def create_invite(
     limit_response = await invite_create_limiter(request)
     if limit_response:
         return limit_response
-    invite, raw = await OrganizationService(db).create_invite(
-        org_id, current_user, email=str(body.email), role=body.role
-    )
+    svc = OrganizationService(db)
+    invite, raw = await svc.create_invite(org_id, current_user, email=str(body.email), role=body.role)
+    org = await svc.get_org(org_id, current_user)
+    try:
+        sent = await send_invite_email(
+            email_to=invite.email,
+            token=raw,
+            org_name=org.name,
+            role=invite.role,
+            lang=getattr(current_user, "locale", None),
+            user_id=current_user.id,
+        )
+    except Exception:
+        logger.exception("Unexpected error sending invite email to %s", invite.email)
+        sent = False
+    if not sent:
+        logger.error("Invite email was not sent to %s", invite.email)
     resp = InviteResponse.model_validate(invite)
     resp.token = raw
     return resp
