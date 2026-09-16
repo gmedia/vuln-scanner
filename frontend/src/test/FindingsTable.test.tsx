@@ -106,6 +106,50 @@ describe("FindingsTable", () => {
     expect(screen.queryByText("Open Redirect")).not.toBeInTheDocument();
   });
 
+  it("calls onSearchChange instead of filtering the current page when search is controlled", async () => {
+    const user = userEvent.setup();
+    const onSearchChange = vi.fn();
+    const findings = [
+      mockFinding(),
+      mockFinding({ id: "2", title: "XSS Attack", severity: "high", cvss_score: 7.5 }),
+    ];
+    renderTable(
+      <FindingsTable
+        findings={findings}
+        isLoading={false}
+        search=""
+        onSearchChange={onSearchChange}
+      />,
+    );
+    await user.type(
+      screen.getByPlaceholderText("Filter findings..."),
+      "zzz_nonexistent_pattern_zzz",
+    );
+    expect(onSearchChange).toHaveBeenCalled();
+    expect(screen.getAllByText("SQL Injection").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("XSS Attack").length).toBeGreaterThan(0);
+  });
+
+  it("calls onSortChange instead of reordering the current page when sort is controlled", async () => {
+    const user = userEvent.setup();
+    const onSortChange = vi.fn();
+    const findings = [
+      mockFinding({ id: "1", title: "SQL Injection", severity: "critical" }),
+      mockFinding({ id: "2", title: "XSS Attack", severity: "high", cvss_score: 7.5 }),
+    ];
+    renderTable(
+      <FindingsTable
+        findings={findings}
+        isLoading={false}
+        sortKey="severity"
+        sortDir="asc"
+        onSortChange={onSortChange}
+      />,
+    );
+    await user.click(screen.getByText("Title"));
+    expect(onSortChange).toHaveBeenCalledWith("title", "asc");
+  });
+
   it("calls onSeverityChange instead of filtering the current page when controlled", async () => {
     const user = userEvent.setup();
     const onSeverityChange = vi.fn();

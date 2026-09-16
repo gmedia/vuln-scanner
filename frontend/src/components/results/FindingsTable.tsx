@@ -26,6 +26,8 @@ import { cn } from "@/lib/utils";
 import FindingDetail from "@/components/results/FindingDetail";
 
 export type FindingsEmptyReason = "clean" | "failed" | "incomplete";
+export type FindingsSortKey = "severity" | "title" | "category" | "cvss_score";
+export type FindingsSortDir = "asc" | "desc";
 
 interface FindingsTableProps {
   findings: ScanFinding[] | undefined;
@@ -33,10 +35,15 @@ interface FindingsTableProps {
   emptyReason?: FindingsEmptyReason;
   severity?: string;
   onSeverityChange?: (severity: string | undefined) => void;
+  search?: string;
+  onSearchChange?: (search: string) => void;
+  sortKey?: FindingsSortKey;
+  sortDir?: FindingsSortDir;
+  onSortChange?: (key: FindingsSortKey, dir: FindingsSortDir) => void;
 }
 
-type SortKey = "severity" | "title" | "category" | "cvss_score";
-type SortDir = "asc" | "desc";
+type SortKey = FindingsSortKey;
+type SortDir = FindingsSortDir;
 
 const SEVERITY_ORDER: Record<string, number> = {
   critical: 0,
@@ -103,15 +110,25 @@ function FindingsTable({
   emptyReason = "clean",
   severity,
   onSeverityChange,
+  search: searchProp,
+  onSearchChange,
+  sortKey: sortKeyProp,
+  sortDir: sortDirProp,
+  onSortChange,
 }: FindingsTableProps) {
   const { t } = useTranslation("scan");
-  const [sortKey, setSortKey] = useState<SortKey>("severity");
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const [search, setSearch] = useState("");
+  const [localSortKey, setLocalSortKey] = useState<SortKey>("severity");
+  const [localSortDir, setLocalSortDir] = useState<SortDir>("asc");
+  const [localSearch, setLocalSearch] = useState("");
   const [localSeverity, setLocalSeverity] = useState<string | undefined>();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const isSeverityControlled = onSeverityChange != null;
+  const isSearchControlled = onSearchChange != null;
+  const isSortControlled = onSortChange != null;
   const activeSeverity = isSeverityControlled ? severity : localSeverity;
+  const search = isSearchControlled ? (searchProp ?? "") : localSearch;
+  const sortKey = isSortControlled ? (sortKeyProp ?? "severity") : localSortKey;
+  const sortDir = isSortControlled ? (sortDirProp ?? "asc") : localSortDir;
 
   const setActiveSeverity = (next: string | undefined) => {
     if (isSeverityControlled) {
@@ -121,18 +138,29 @@ function FindingsTable({
     setLocalSeverity(next);
   };
 
-  const toggleSort = (key: SortKey) => {
-    if (sortKey === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(key);
-      setSortDir("asc");
+  const setSearch = (next: string) => {
+    if (isSearchControlled) {
+      onSearchChange(next);
+      return;
     }
+    setLocalSearch(next);
+  };
+
+  const toggleSort = (key: SortKey) => {
+    const nextDir: SortDir =
+      sortKey === key ? (sortDir === "asc" ? "desc" : "asc") : "asc";
+    if (isSortControlled) {
+      onSortChange(key, nextDir);
+      return;
+    }
+    setLocalSortKey(key);
+    setLocalSortDir(nextDir);
   };
 
   const filtered = useMemo(() => {
     if (!findings) return [];
-    const q = search.trim().toLowerCase();
+    if (isSearchControlled && isSeverityControlled) return findings;
+    const q = isSearchControlled ? "" : search.trim().toLowerCase();
     return findings.filter((f) => {
       if (
         !isSeverityControlled &&
@@ -149,9 +177,16 @@ function FindingsTable({
         f.severity.toLowerCase().includes(q)
       );
     });
-  }, [findings, search, isSeverityControlled, activeSeverity]);
+  }, [
+    findings,
+    search,
+    isSearchControlled,
+    isSeverityControlled,
+    activeSeverity,
+  ]);
 
   const sorted = useMemo(() => {
+    if (isSortControlled) return filtered;
     return [...filtered].sort((a, b) => {
       let va: number | string = 0;
       let vb: number | string = 0;
@@ -178,7 +213,7 @@ function FindingsTable({
       if (va > vb) return sortDir === "asc" ? 1 : -1;
       return 0;
     });
-  }, [filtered, sortKey, sortDir]);
+  }, [filtered, sortKey, sortDir, isSortControlled]);
 
   const cvssColor = (score: number | null) => {
     if (score === null) return "text-muted-foreground";
@@ -200,7 +235,7 @@ function FindingsTable({
     return <TableRowSkeleton rows={6} />;
   }
 
-  if ((!findings || findings.length === 0) && !activeSeverity) {
+  if ((!findings || findings.length === 0) && !activeSeverity && !search.trim()) {
     const titleKey =
       emptyReason === "failed"
         ? "failedNoFindings"
