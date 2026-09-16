@@ -122,7 +122,8 @@ Do **not** restyle kit. Tokens from `:root`. `Button` / `Select` only.
 
 - Payment gateway, e-meterai, PDF binary, auto-renew beat job.
 - Host invoice, Guard/SIEM `service_id`.
-- HTML print UI — deferred to [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md) **S1b** (browser `window.print`; still **no** PDF library).
+- HTML print UI — **S1b shipped** [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md) (browser `window.print`; still **no** PDF library).
+- Invoice **Send** is a **status flip**, not SMTP. User-side mail log is [`inbox-delivered-v1.md`](inbox-delivered-v1.md) — **do not** email invoices in that epic.
 - Writing `users.credits` or `ai_wallets`.
 - Mixing this page into `/admin/hpp` or leftover `/admin/pricing`.
 
