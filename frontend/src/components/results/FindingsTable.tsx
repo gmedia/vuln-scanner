@@ -31,6 +31,8 @@ interface FindingsTableProps {
   findings: ScanFinding[] | undefined;
   isLoading: boolean;
   emptyReason?: FindingsEmptyReason;
+  severity?: string;
+  onSeverityChange?: (severity: string | undefined) => void;
 }
 
 type SortKey = "severity" | "title" | "category" | "cvss_score";
@@ -99,15 +101,25 @@ function FindingsTable({
   findings,
   isLoading,
   emptyReason = "clean",
+  severity,
+  onSeverityChange,
 }: FindingsTableProps) {
   const { t } = useTranslation("scan");
   const [sortKey, setSortKey] = useState<SortKey>("severity");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [search, setSearch] = useState("");
-  const [severityFilter, setSeverityFilter] = useState<Set<string>>(
-    () => new Set(),
-  );
+  const [localSeverity, setLocalSeverity] = useState<string | undefined>();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const isSeverityControlled = onSeverityChange != null;
+  const activeSeverity = isSeverityControlled ? severity : localSeverity;
+
+  const setActiveSeverity = (next: string | undefined) => {
+    if (isSeverityControlled) {
+      onSeverityChange(next);
+      return;
+    }
+    setLocalSeverity(next);
+  };
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -122,7 +134,11 @@ function FindingsTable({
     if (!findings) return [];
     const q = search.trim().toLowerCase();
     return findings.filter((f) => {
-      if (severityFilter.size > 0 && !severityFilter.has(f.severity)) {
+      if (
+        !isSeverityControlled &&
+        activeSeverity &&
+        f.severity !== activeSeverity
+      ) {
         return false;
       }
       if (!q) return true;
@@ -133,7 +149,7 @@ function FindingsTable({
         f.severity.toLowerCase().includes(q)
       );
     });
-  }, [findings, search, severityFilter]);
+  }, [findings, search, isSeverityControlled, activeSeverity]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
@@ -184,7 +200,7 @@ function FindingsTable({
     return <TableRowSkeleton rows={6} />;
   }
 
-  if (!findings || findings.length === 0) {
+  if ((!findings || findings.length === 0) && !activeSeverity) {
     const titleKey =
       emptyReason === "failed"
         ? "failedNoFindings"
@@ -231,7 +247,7 @@ function FindingsTable({
             >
               <ListFilter className="h-4 w-4" />
               {t("severity")}
-              {severityFilter.size > 0 ? ` (${severityFilter.size})` : ""}
+              {activeSeverity ? " (1)" : ""}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -240,14 +256,9 @@ function FindingsTable({
             {SEVERITY_FILTERS.map((sev) => (
               <DropdownMenuCheckboxItem
                 key={sev}
-                checked={severityFilter.has(sev)}
+                checked={activeSeverity === sev}
                 onCheckedChange={(checked) => {
-                  setSeverityFilter((prev) => {
-                    const next = new Set(prev);
-                    if (checked) next.add(sev);
-                    else next.delete(sev);
-                    return next;
-                  });
+                  setActiveSeverity(checked ? sev : undefined);
                 }}
                 className="capitalize"
               >

@@ -432,11 +432,20 @@ async def get_scan_findings(
     job_id: str,
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1, le=100),
+    severity: str | None = Query(default=None),
+    q: str | None = Query(default=None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> PaginatedFindingsResponse:
     svc = ScannerService(db)
-    return await svc.get_findings(job_id, user_id=current_user.id, page=page, limit=limit)
+    return await svc.get_findings(
+        job_id,
+        user_id=current_user.id,
+        page=page,
+        limit=limit,
+        severity=severity,
+        q=q,
+    )
 
 
 @router.get("/scan/{job_id}/diff", response_model=ScanDiffResponse)

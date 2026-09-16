@@ -6,7 +6,7 @@ from celery import Celery
 from celery.exceptions import CeleryError
 from celery.result import AsyncResult
 from fastapi import HTTPException
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import defer
 
@@ -42,6 +42,8 @@ celery_app.conf.update(
     },
     broker_connection_retry_on_startup=True,
 )
+
+FINDING_SEVERITIES = frozenset({"critical", "high", "medium", "low", "info"})
 
 
 class ScannerService:
@@ -156,16 +158,33 @@ class ScannerService:
         *,
         page: int = 1,
         limit: int = 50,
+        severity: str | None = None,
+        q: str | None = None,
     ) -> PaginatedFindingsResponse:
         result = await self.db.execute(select(ScanJob).where(ScanJob.id == job_id))
         job = result.scalar_one_or_none()
         if job is None or not await self._can_access_job(job, user_id):
             raise HTTPException(status_code=404, detail="Scan job not found")
-        count_result = await self.db.execute(select(func.count(ScanFinding.id)).where(ScanFinding.job_id == job_id))
+
+        filters = [ScanFinding.job_id == job_id]
+        if severity:
+            if severity not in FINDING_SEVERITIES:
+                raise HTTPException(status_code=400, detail="Invalid severity")
+            filters.append(ScanFinding.severity == severity)
+        if q and (term := q.strip()):
+            like = f"%{term}%"
+            filters.append(
+                or_(
+                    ScanFinding.title.ilike(like),
+                    ScanFinding.description.ilike(like),
+                )
+            )
+
+        count_result = await self.db.execute(select(func.count(ScanFinding.id)).where(*filters))
         total = count_result.scalar() or 0
         findings_result = await self.db.execute(
             select(ScanFinding)
-            .where(ScanFinding.job_id == job_id)
+            .where(*filters)
             .options(defer(ScanFinding.raw_data))
             .order_by(ScanFinding.found_at.desc(), ScanFinding.id.desc())
             .offset((page - 1) * limit)

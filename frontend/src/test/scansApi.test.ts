@@ -195,6 +195,22 @@ describe("scans API", () => {
       });
       expect(result).toEqual(page);
     });
+
+    it("passes severity filter when provided", async () => {
+      mockAxios.get.mockResolvedValueOnce({ data: {} });
+      await getScanFindings("scan-1", 1, 50, "high");
+      expect(mockAxios.get).toHaveBeenCalledWith("/api/scan/scan-1/findings", {
+        params: { page: 1, limit: 50, severity: "high" },
+      });
+    });
+
+    it("passes q search when provided", async () => {
+      mockAxios.get.mockResolvedValueOnce({ data: {} });
+      await getScanFindings("scan-1", 2, 25, "medium", "ssh");
+      expect(mockAxios.get).toHaveBeenCalledWith("/api/scan/scan-1/findings", {
+        params: { page: 2, limit: 25, severity: "medium", q: "ssh" },
+      });
+    });
   });
 
   describe("getScanFinding", () => {
