@@ -32,6 +32,12 @@ class EmailSendLog(Base):
         nullable=True,
         index=True,
     )
+    job_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("scan_jobs.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
