@@ -46,7 +46,7 @@ def test_inbox_unauthenticated_returns_401(inbox_auth_client):
 
 
 @pytest.mark.asyncio
-async def test_inbox_lists_own_product_mail_only(client, db_session, sample_user):
+async def test_inbox_lists_own_product_mail_only(client, db_session, sample_user, sample_job):
     other = User(
         id=uuid.uuid4(),
         email="other-inbox@example.com",
@@ -61,6 +61,7 @@ async def test_inbox_lists_own_product_mail_only(client, db_session, sample_user
         status="sent",
         recipient_masked="t***@example.com",
         user_id=sample_user.id,
+        job_id=sample_job.id,
         attempts=1,
         created_at=datetime.now(UTC),
     )
@@ -105,8 +106,32 @@ async def test_inbox_lists_own_product_mail_only(client, db_session, sample_user
     assert item["kind"] == "scan_diff"
     assert item["status"] == "sent"
     assert item["recipient_masked"] == "t***@example.com"
+    assert item["job_id"] == str(sample_job.id)
     assert "error_message" not in item
     assert "o***@example.com" not in str(body)
+
+
+@pytest.mark.asyncio
+async def test_inbox_uptime_job_id_is_null(client, db_session, sample_user):
+    row = EmailSendLog(
+        id=uuid.uuid4(),
+        kind="uptime",
+        status="sent",
+        recipient_masked="t***@example.com",
+        user_id=sample_user.id,
+        job_id=None,
+        attempts=1,
+        created_at=datetime.now(UTC),
+    )
+    db_session.add(row)
+    await db_session.commit()
+
+    resp = client.get("/api/inbox", headers=HEADERS)
+    assert resp.status_code == 200
+    item = resp.json()["items"][0]
+    assert item["kind"] == "uptime"
+    assert item["job_id"] is None
+    assert "error_message" not in item
 
 
 def test_inbox_rejects_auth_kind_filter(client):
