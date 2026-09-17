@@ -281,6 +281,54 @@ async def test_get_scan_findings_q_search(client, db_session, sample_user):
     assert data["items"][0]["title"] == "Open SSH port"
 
 
+@pytest.mark.asyncio
+async def test_get_scan_findings_sort_and_remediation(client, db_session, sample_user):
+    job = ScanJob(
+        id=uuid.uuid4(),
+        scan_type="ip",
+        target="10.0.0.5",
+        status="completed",
+        progress=100,
+        user_id=sample_user.id,
+    )
+    db_session.add(job)
+    await db_session.commit()
+    await db_session.refresh(job)
+    db_session.add(
+        ScanFinding(
+            id=uuid.uuid4(),
+            job_id=job.id,
+            severity="low",
+            title="Low issue",
+            cvss_score=1.0,
+            remediation="Fix low",
+        )
+    )
+    db_session.add(
+        ScanFinding(
+            id=uuid.uuid4(),
+            job_id=job.id,
+            severity="critical",
+            title="Crit issue",
+            cvss_score=9.9,
+            remediation=None,
+        )
+    )
+    await db_session.commit()
+
+    resp = client.get(
+        f"/api/scan/{job.id}/findings?sort_by=severity&sort_dir=asc",
+        headers=HEADERS,
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert [item["severity"] for item in data["items"]] == ["critical", "low"]
+    assert data["with_remediation"] == 1
+
+    bad = client.get(f"/api/scan/{job.id}/findings?sort_by=nope", headers=HEADERS)
+    assert bad.status_code == 400
+
+
 # ── GET /api/scan/history ──────────────────────────────────────────────────
 
 

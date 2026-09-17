@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   startIpScan,
   startDomainScan,
@@ -34,12 +34,27 @@ export function useScanFindings(
   page = 1,
   limit = 50,
   severity?: string,
+  q?: string,
+  sortBy?: string,
+  sortDir?: string,
 ) {
   const activeOrgId = useAuthStore((s) => s.activeOrgId);
   return useQuery({
-    queryKey: ["scan-findings", activeOrgId, jobId, page, limit, severity],
-    queryFn: () => getScanFindings(jobId!, page, limit, severity),
+    queryKey: [
+      "scan-findings",
+      activeOrgId,
+      jobId,
+      page,
+      limit,
+      severity,
+      q,
+      sortBy,
+      sortDir,
+    ],
+    queryFn: () =>
+      getScanFindings(jobId!, page, limit, severity, q, sortBy, sortDir),
     enabled: !!jobId && !!activeOrgId,
+    placeholderData: keepPreviousData,
   });
 }
 

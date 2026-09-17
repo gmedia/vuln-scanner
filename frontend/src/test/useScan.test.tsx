@@ -25,6 +25,7 @@ const mockInvalidateQueries = vi.hoisted(() => vi.fn());
 
 vi.mock("@tanstack/react-query", () => ({
   useQuery: mockUseQuery,
+  keepPreviousData: "keepPreviousData",
   useMutation: vi.fn(({ mutationFn, onSuccess }) => ({
     mutate: async (args: unknown) => {
       const result = await (
@@ -140,7 +141,18 @@ describe("useScanFindings", () => {
     renderHook(() => useScanFindings("job-123"), { wrapper: Wrapper });
     expect(mockUseQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        queryKey: ["scan-findings", "org-a", "job-123", 1, 50, undefined],
+        queryKey: [
+          "scan-findings",
+          "org-a",
+          "job-123",
+          1,
+          50,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+        ],
+        placeholderData: "keepPreviousData",
       }),
     );
   });
@@ -151,12 +163,63 @@ describe("useScanFindings", () => {
     });
     expect(mockUseQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        queryKey: ["scan-findings", "org-a", "job-123", 2, 25, "high"],
+        queryKey: [
+          "scan-findings",
+          "org-a",
+          "job-123",
+          2,
+          25,
+          "high",
+          undefined,
+          undefined,
+          undefined,
+        ],
       }),
     );
     const { queryFn } = mockUseQuery.mock.calls[0][0];
     await queryFn();
-    expect(getScanFindings).toHaveBeenCalledWith("job-123", 2, 25, "high");
+    expect(getScanFindings).toHaveBeenCalledWith(
+      "job-123",
+      2,
+      25,
+      "high",
+      undefined,
+      undefined,
+      undefined,
+    );
+  });
+
+  it("includes q and sort in the query key and queryFn", async () => {
+    renderHook(
+      () => useScanFindings("job-123", 1, 20, "high", "ssh", "cvss_score", "desc"),
+      { wrapper: Wrapper },
+    );
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryKey: [
+          "scan-findings",
+          "org-a",
+          "job-123",
+          1,
+          20,
+          "high",
+          "ssh",
+          "cvss_score",
+          "desc",
+        ],
+      }),
+    );
+    const { queryFn } = mockUseQuery.mock.calls[0][0];
+    await queryFn();
+    expect(getScanFindings).toHaveBeenCalledWith(
+      "job-123",
+      1,
+      20,
+      "high",
+      "ssh",
+      "cvss_score",
+      "desc",
+    );
   });
 });
 

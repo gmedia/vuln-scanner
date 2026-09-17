@@ -211,6 +211,22 @@ describe("scans API", () => {
         params: { page: 2, limit: 25, severity: "medium", q: "ssh" },
       });
     });
+
+    it("passes sort_by and sort_dir when provided", async () => {
+      mockAxios.get.mockResolvedValueOnce({ data: {} });
+      await getScanFindings(
+        "scan-1",
+        1,
+        20,
+        undefined,
+        undefined,
+        "cvss_score",
+        "desc",
+      );
+      expect(mockAxios.get).toHaveBeenCalledWith("/api/scan/scan-1/findings", {
+        params: { page: 1, limit: 20, sort_by: "cvss_score", sort_dir: "desc" },
+      });
+    });
   });
 
   describe("getScanFinding", () => {

@@ -399,6 +399,90 @@ async def test_get_findings_q_ilike_title_and_description(db_session, sample_use
     assert combined.total == 1
     assert combined.items[0].severity == "medium"
 
+    by_cve_job = ScanJob(
+        id=uuid.uuid4(),
+        scan_type="ip",
+        target="10.0.0.6",
+        status="completed",
+        progress=100,
+        user_id=sample_user.id,
+    )
+    db_session.add(by_cve_job)
+    await db_session.commit()
+    db_session.add(
+        ScanFinding(
+            id=uuid.uuid4(),
+            job_id=by_cve_job.id,
+            severity="high",
+            title="Generic",
+            category="network",
+            cve_id="CVE-2024-9999",
+        )
+    )
+    await db_session.commit()
+    by_cve = await svc.get_findings(str(by_cve_job.id), user_id=sample_user.id, q="2024-9999")
+    assert by_cve.total == 1
+    by_cat = await svc.get_findings(str(by_cve_job.id), user_id=sample_user.id, q="network")
+    assert by_cat.total == 1
+
+
+@pytest.mark.asyncio
+async def test_get_findings_sort_by_severity_and_cvss(db_session, sample_user):
+    job = ScanJob(
+        id=uuid.uuid4(),
+        scan_type="ip",
+        target="10.0.1.1",
+        status="completed",
+        progress=100,
+        user_id=sample_user.id,
+    )
+    db_session.add(job)
+    await db_session.commit()
+    rows = (
+        ("low", "Later low", 2.0, "patch me"),
+        ("critical", "First crit", 9.8, None),
+        ("high", "Mid high", None, "do this"),
+    )
+    for sev, title, cvss, remediation in rows:
+        db_session.add(
+            ScanFinding(
+                id=uuid.uuid4(),
+                job_id=job.id,
+                severity=sev,
+                title=title,
+                cvss_score=cvss,
+                remediation=remediation,
+            )
+        )
+    await db_session.commit()
+    svc = ScannerService(db_session)
+    by_sev = await svc.get_findings(
+        str(job.id), user_id=sample_user.id, sort_by="severity", sort_dir="asc"
+    )
+    assert [item.severity for item in by_sev.items] == ["critical", "high", "low"]
+    assert by_sev.with_remediation == 2
+
+    by_cvss = await svc.get_findings(
+        str(job.id), user_id=sample_user.id, sort_by="cvss_score", sort_dir="desc"
+    )
+    assert by_cvss.items[0].title == "First crit"
+    assert by_cvss.items[-1].title == "Mid high"
+
+
+@pytest.mark.asyncio
+async def test_get_findings_invalid_sort(db_session, sample_job, sample_user):
+    svc = ScannerService(db_session)
+    with pytest.raises(HTTPException) as exc_info:
+        await svc.get_findings(str(sample_job.id), user_id=sample_user.id, sort_by="nope")
+    assert exc_info.value.status_code == 400
+    assert exc_info.value.detail == "Invalid sort_by"
+    with pytest.raises(HTTPException) as dir_exc:
+        await svc.get_findings(
+            str(sample_job.id), user_id=sample_user.id, sort_by="title", sort_dir="sideways"
+        )
+    assert dir_exc.value.status_code == 400
+    assert dir_exc.value.detail == "Invalid sort_dir"
+
 
 @pytest.mark.asyncio
 async def test_get_findings_idor(db_session, sample_job, sample_finding):

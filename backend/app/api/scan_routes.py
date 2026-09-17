@@ -434,6 +434,8 @@ async def get_scan_findings(
     limit: int = Query(50, ge=1, le=100),
     severity: str | None = Query(default=None),
     q: str | None = Query(default=None),
+    sort_by: str | None = Query(default=None),
+    sort_dir: str = Query(default="asc"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> PaginatedFindingsResponse:
@@ -445,6 +447,8 @@ async def get_scan_findings(
         limit=limit,
         severity=severity,
         q=q,
+        sort_by=sort_by,
+        sort_dir=sort_dir,
     )
 
 

@@ -61,6 +61,7 @@
   "tabDiff": "Diff",
   "tabExport": "Export",
   "findingsDetected": "{{count}} vulnerability findings detected",
+  "findingsRange": "Showing {{from}}–{{to}} of {{total}}",
   "severity": "Severity",
   "severityDist": "Distribution of {{count}} findings",
   "scanInfo": "Scan info",

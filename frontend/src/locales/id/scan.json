@@ -61,6 +61,7 @@
   "tabDiff": "Diff",
   "tabExport": "Ekspor",
   "findingsDetected": "{{count}} temuan kerentanan terdeteksi",
+  "findingsRange": "Menampilkan {{from}}–{{to}} dari {{total}}",
   "severity": "Severity",
   "severityDist": "Distribusi {{count}} temuan",
   "scanInfo": "Info scan",
