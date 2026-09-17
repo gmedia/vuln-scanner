@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Schedules, { mapScheduleError } from "@/pages/Schedules";
 import { useAuthStore } from "@/store/authStore";
+import { toast } from "sonner";
 
 const mockList = vi.fn();
 const mockCreate = vi.fn();
@@ -12,6 +13,9 @@ const mockUpdate = vi.fn();
 const mockDelete = vi.fn();
 const mockRuns = vi.fn();
 const mockDownload = vi.fn();
+const mockPrint = vi.fn();
+
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 vi.mock("@/api/schedules", async () => {
   const actual = await vi.importActual<typeof import("@/api/schedules")>(
@@ -34,6 +38,7 @@ vi.mock("@/api/scans", async () => {
   return {
     ...actual,
     downloadFile: (...args: unknown[]) => mockDownload(...args),
+    printFile: (...args: unknown[]) => mockPrint(...args) as Promise<void>,
   };
 });
 
@@ -201,6 +206,30 @@ describe("Schedules page", () => {
       })[0],
     );
     expect(mockDownload).toHaveBeenCalledWith("job-1", "executive");
+  });
+
+  it("prints executive report from last_job_id", async () => {
+    mockList.mockResolvedValue([sampleSchedule]);
+    const user = userEvent.setup();
+    renderAt();
+    await screen.findAllByText("Weekly external");
+    await user.click(screen.getAllByTestId("schedule-print-executive")[0]);
+    expect(mockPrint).toHaveBeenCalledWith("job-1", "executive");
+    expect(mockDownload).not.toHaveBeenCalled();
+  });
+
+  it("toasts when printFile reports a blocked popup", async () => {
+    mockPrint.mockRejectedValueOnce(new Error("popup_blocked"));
+    mockList.mockResolvedValue([sampleSchedule]);
+    const user = userEvent.setup();
+    renderAt();
+    await screen.findAllByText("Weekly external");
+    await user.click(screen.getAllByTestId("schedule-print-executive")[0]);
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "Pop-up blocked. Allow pop-ups for this site to print.",
+      );
+    });
   });
 
   it("confirms schedule delete in AlertDialog then calls delete", async () => {
