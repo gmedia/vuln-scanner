@@ -253,6 +253,7 @@ def _worker_notify():
     import sys
     from pathlib import Path
 
+    sys.modules.setdefault("loguru", MagicMock())
     workers_root = str(Path(__file__).resolve().parents[2] / "workers")
     if workers_root not in sys.path:
         sys.path.insert(0, workers_root)
