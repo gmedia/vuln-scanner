@@ -208,9 +208,10 @@ class ScannerService:
             elif order_field == "category":
                 col = func.coalesce(ScanFinding.category, "")
                 primary = col.asc() if direction == "asc" else col.desc()
+            elif direction == "asc":
+                primary = ScanFinding.cvss_score.asc().nulls_first()
             else:
-                col = func.coalesce(ScanFinding.cvss_score, 0)
-                primary = col.asc() if direction == "asc" else col.desc()
+                primary = ScanFinding.cvss_score.desc().nulls_last()
             order_by = (primary, ScanFinding.id.desc())
         else:
             order_by = (ScanFinding.found_at.desc(), ScanFinding.id.desc())
