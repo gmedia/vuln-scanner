@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -98,6 +98,7 @@ function ScanDetail() {
   const sortDir = parseSortDir(searchParams.get("dir"));
   const urlQ = searchParams.get("q") ?? "";
   const [searchDraft, setSearchDraft] = useState(urlQ);
+  const lastPushedQ = useRef(urlQ);
   const debouncedQ = useDebouncedValue(searchDraft, 300);
   const queryQ = debouncedQ.trim();
 
@@ -122,8 +123,15 @@ function ScanDetail() {
     const next = queryQ || undefined;
     const current = urlQ.trim() || undefined;
     if (next === current) return;
+    lastPushedQ.current = queryQ;
     patchFindingsParams({ q: next, page: undefined });
   }, [queryQ, urlQ, patchFindingsParams]);
+
+  useEffect(() => {
+    if (urlQ === lastPushedQ.current) return;
+    lastPushedQ.current = urlQ;
+    setSearchDraft(urlQ);
+  }, [urlQ]);
 
   const { data: scan, isLoading, isError } = useScanDetail(id ?? null);
   const { data: findingsData, isLoading: findingsLoading } = useScanFindings(

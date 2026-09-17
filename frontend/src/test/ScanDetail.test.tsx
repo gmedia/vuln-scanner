@@ -231,9 +231,9 @@ describe("ScanDetail", () => {
     vi.clearAllMocks();
   });
 
-  function renderPage() {
+  function renderPage(search = "") {
     return render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[`/scan/scan-1${search}`]}>
         <ScanDetail />
       </MemoryRouter>,
     );
@@ -493,6 +493,24 @@ describe("ScanDetail", () => {
         20,
         "high",
         undefined,
+        "severity",
+        "asc",
+      );
+    });
+
+    it("seeds search and API q from the URL", () => {
+      mockUseScanDetailReturn({ data: baseScan as any });
+      renderPage("?q=ssh");
+      expect(screen.getByTestId("findings-table")).toHaveAttribute(
+        "data-search",
+        "ssh",
+      );
+      expect(useScanFindings).toHaveBeenCalledWith(
+        "scan-1",
+        1,
+        20,
+        undefined,
+        "ssh",
         "severity",
         "asc",
       );
