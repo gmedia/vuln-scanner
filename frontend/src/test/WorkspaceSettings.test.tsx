@@ -85,13 +85,11 @@ describe("WorkspaceSettings pilot checklist", () => {
     expect(screen.getByTestId("workspace-billing")).toBeInTheDocument();
   });
 
-  it("invite copy does not imply email was sent", () => {
+  it("invite submit says send and keeps copy-link as backup", () => {
     renderPage();
     const submit = screen.getByTestId("invite-submit");
-    expect(submit).toHaveTextContent("Create invite");
-    expect(submit).not.toHaveTextContent("Send invite");
-    expect(screen.queryByText(/Invite sent to/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/dikirim ke/i)).not.toBeInTheDocument();
+    expect(submit).toHaveTextContent("Send invite");
+    expect(submit).not.toHaveTextContent("Create invite");
     expect(screen.getByTestId("invite-form-card")).toBeInTheDocument();
     expect(screen.queryByTestId("invite-link-box")).not.toBeInTheDocument();
     expect(screen.queryByTestId("copy-invite-link")).not.toBeInTheDocument();

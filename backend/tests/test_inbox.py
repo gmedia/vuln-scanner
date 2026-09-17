@@ -139,6 +139,11 @@ def test_inbox_rejects_auth_kind_filter(client):
     assert resp.status_code == 400
 
 
+def test_inbox_rejects_invite_kind_filter(client):
+    resp = client.get("/api/inbox?kind=invite", headers=HEADERS)
+    assert resp.status_code == 400
+
+
 def test_admin_email_logs_unauthenticated_not_200(inbox_auth_client):
     resp = inbox_auth_client.get("/api/admin/email-logs")
     assert resp.status_code in (401, 403)

@@ -12,5 +12,12 @@
   "reset_cta": "Reset password",
   "reset_or_copy": "Or copy this link:",
   "reset_footer": "This link expires in 1 hour. If you did not request a password reset, ignore this email.",
-  "reset_preheader": "Reset your Sinexis password. Expires in 1 hour."
+  "reset_preheader": "Reset your Sinexis password. Expires in 1 hour.",
+  "invite_subject": "Sinexis — invite to {org} as {role}",
+  "invite_heading": "Join {org} on Sinexis",
+  "invite_intro": "You were invited to the {org} workspace as {role}. Sign in with this email to accept.",
+  "invite_cta": "Accept invite",
+  "invite_or_copy": "Or copy this link:",
+  "invite_footer": "This link expires in 14 days. If you were not expecting this invite, ignore this email.",
+  "invite_preheader": "Join {org} as {role}. Expires in 14 days."
 }
