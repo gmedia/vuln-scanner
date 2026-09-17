@@ -2,7 +2,7 @@
 
 **Purpose:** Survive OpenCode / Sisyphus **session reset**. Read this **before** coding after a new session.
 
-**Last updated:** 2026-09-16 (**owner lock:** agent default = **product depth**, not GTM/AM pitch — §1.3. **P15 S2 AppShell shipped #704** (S3–S9 also on `main`); do **not** re-implement chrome. Print S1a/S1b **#785/#786**. Inbox S0–S1b **#787/#788/#789**. P14 E hourly **already on `main`**. **No default next code** — wait for named + `buat`. Invoice v1 pay loop closed **#775**; mobile finding titles **#776**. Prior: Host Protect YARA/Clam **#716**; WAF starter **1001–1146** `#708`; displace-lite **DL0–DL3** `#659`; installer **#642**.)
+**Last updated:** 2026-09-17 (**owner lock:** agent default = **product depth**, not GTM/AM pitch — §1.3. First-scan notify **#801**; invite SMTP **#800**; Guard D10 **#802**; schedules print **#799**; findings filter **#797** + pager **#803**; status copy **#795** + incidents **#798/#804**; Alembic merge **#805**. Print S1a/S1b **#785/#786**. Inbox S0–S1c **#787–#789/#793**. P14 E hourly **already on `main`**. **No default next code** — wait for named + `buat`. Invoice v1 pay loop closed **#775**. Do **not** re-implement chrome / Host Protect S1–S12 / WAF 1147+.)
 **Repo tip at write time:** re-`git pull` after reset — **do not pin a SHA**. **P12 Host Protect S0–S12 on `main`**: honesty **#556**, quarantine queue **#558**, helper systemd jail **#559**, **YARA/Clam honesty #716**. **Do not** re-implement S1–S12. Missing on-box root: code status **`pending_agent`** (queued, 0 hits) until helper ingest, or **`failed`/`unreachable_root`** if abandoned — **never** mock hits on public origin (**#533**). **P13 Host WAF S0–S5** plus live ingest + **starter rules only** (**#640**/#651/#708: product IDs **1001–1146**; drop Imunify/CRS/static noise on ingest and GET). **#636** audit cursor vs log; **#633** snippet in every `server{}`. Compose: `HOST_PROTECT_ENABLED` / `HOST_WAF_ENABLED` prod **true**, local/CI **false**; **`HOST_PROTECT_ALLOW_LOCAL_WALK` default false** (P14 **B**). per-site WAF still **off** until admin sets detect/protect. `SIEM_ENABLED` **git prod compose default false** (ops secret may enable). Never paste WAF onto `sinexis.app` edge nginx. **Owner (2026-09-15):** chat user is **product**, not AM. **Do not** recommend wave-1 email / 10 SIDs / finance `service_id` as the session’s next step. GTM checklists stay in `docs/commercial/` for humans who **ask**. Residual off-repo (not agent default): Host Protect **invoice** (`service_id`); fill `/admin/hpp` `hostscan`. SPA Simulate `mock.sqli.1` is **lab-gated (DL0 shipped #647)** — not a new epic unless named + `buat`. Working list IDR in `docs/commercial/sku-host-protect.md` (**not** finance lock). **P14** = owner track: **Imunify360 jobs** (on-box files + HTTP), original stack — [`imunify-class-onbox.md`](specs/imunify-class-onbox.md). **Not** a clone. AM “ganti Imunify di **VPS**” = displace-lite after **Sentence-ok** — plan [`vps-displace-imunify-dev-plan.md`](specs/vps-displace-imunify-dev-plan.md) (**DL0–DL3**); **never** shared cPanel. Caddy out. **A–F** on this stream: **F** WAF protect = Host Multi SKU + customer nginx snippet (`SecRuleEngine On`); **never** Sinexis edge. Wave **0** installer: **#642** one-file from **sinexis.app**. **G/H** only with `buat`. Clone PRs forbidden: [`imunify-beside-not-roadmap.md`](commercial/imunify-beside-not-roadmap.md).
 **Guard e2e rule:** if the user asks for a **full prod e2e suite including Guard enroll/unenroll**, **wipe `tc5` + leftover Manager/DB smoke rows first** — see **§4.1**. Do not skip this. Do not treat Playwright as enroll/unenroll.
 **Language with user:** **Bahasa Indonesia** (preferensi sesi). Code/commits/PR bodies: English OK (repo convention).
@@ -121,7 +121,7 @@ Then read, in order:
 5. Other code: **named depth slices**, then **bugfix**, docs/ops hygiene, Dependabot **only if CI green + user names the PR** (do not mass-merge). **Do not** re-implement P2/P3 S1–S5, Wave B, Guard S1–S5/Http, Host Protect S1–S12, WAF **1147+**, P14 **G/H**.
 6. **Do not** ship SIEM-scope PRs under “Guard.” Invoice v1 pay loop is **closed** — no upgrade CTA / gateway / auto-create on signup unless named.
 
-### 1.3.1 Product-depth queue (agent “what next” — 2026-09-15)
+### 1.3.1 Product-depth queue (agent “what next” — 2026-09-17)
 
 P0–P14 control planes are **on `main`**. Next engineering is **depth**, not a new epic letter, unless the user names one. **Do not implement** until the slice is **named** + `buat` / `kerjakan` / `implement`.
 
@@ -131,8 +131,15 @@ P0–P14 control planes are **on `main`**. Next engineering is **depth**, not a 
 | **— shipped** | **P15 S1** tokens/density | Flush `--sidebar` = canvas; density already on Card/Table | [`spa-grok-chrome-redesign.md`](specs/spa-grok-chrome-redesign.md) S1 | Do **not** re-implement; keep `--primary` green |
 | **— shipped** | **P15 S2** AppShell | No sticky `h-12`; chrome cluster in `SidebarFooter` (`user-menu`, `sign-out`). Credits chip stays hidden (metering v3). | same spec S2 **#704**. S3–S9 also on `main` | Do **not** re-implement chrome; Landing / blog island keep `h-12` |
 | **— shipped** | **Scan PDF / invoice HTML print** | Browser print + invoice SPA print | [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md) S0 + **S1a #785** + **S1b #786** | Do **not** re-implement; `format=pdf` / WeasyPrint still S2 parked |
-| **— shipped** | **Inbox “Delivered” (user-side)** | SMTP Sent/Failed log + SPA `/inbox` + **S1c scan_diff job link** | [`inbox-delivered-v1.md`](specs/inbox-delivered-v1.md) S0 **#787** + S1 **#788** + S1b **#789** + **S1c** | Do **not** re-implement; bounce/SES still S2 parked; no Guard Discover |
+| **— shipped** | **Inbox “Delivered” (user-side)** | SMTP Sent/Failed log + SPA `/inbox` + **S1c scan_diff job link** | [`inbox-delivered-v1.md`](specs/inbox-delivered-v1.md) S0 **#787** + S1 **#788** + S1b **#789** + **S1c #793** | Do **not** re-implement; bounce/SES still S2 parked; no Guard Discover |
 | **— shipped** | **P14 E** denser Host cadence | `host_sites.scan_interval` daily\|hourly; Beat org cap 2 | [`imunify-class-onbox.md`](specs/imunify-class-onbox.md) slice **E** (Alembic `add_host_site_scan_interval`) | Do **not** re-implement; 24×7 YARA on `/`; inotify unless named; WAF **1147+**; **G/H** |
+| **— shipped** | **First-scan notify** | Worker passes `initial_report=True`; first IP/domain with no baseline emails | inbox §13 residual closed **#801** | Do **not** re-implement; mobile still no notify |
+| **— shipped** | **Invite SMTP** | `send_invite_email` after create; copy-link stays; kind `invite` **not** in Inbox | workspace + **#800** | Do **not** re-implement; invoice SMTP still I8 out |
+| **— shipped** | **Guard D10 soft-disable** | SPA “lepas dari Guard”; `disabled_at`; no Wazuh DELETE | [`guard-v1.md`](specs/guard-v1.md) D10 **#802** | Do **not** re-implement Discover; hard delete still ops |
+| **— shipped** | **Schedules last-run Print** | `printFile(last_job_id, "executive")` beside Download | **#799** | Do **not** re-implement; **not** `format=pdf` |
+| **— shipped** | **Findings severity filter + pager** | `GET /findings?severity=&q=` before count/offset; honest pager | **#797** + **#803** | Do **not** re-implement |
+| **— shipped** | **Status hostname copy + incidents list** | Copyable CNAME/TXT; incident updates list | **#795** + **#798/#804** | Do **not** re-implement |
+| **— shipped** | **Alembic single head** | Merge invite kind + guard `disabled_at` | **#805** `merge_invite_kind_guard_disabled` | Do **not** SSH Alembic after green `main` deploy |
 
 **No default next code.** “lanjut” without a named slice → wait for named + `buat`. Do **not** re-implement shipped rows.
 
@@ -224,7 +231,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | [`docs/specs/scan-attach-v1.md`](specs/scan-attach-v1.md) | **Implemented** (S1–S5 on main; keep as historical acceptance) | N/A for new attach features unless extending |
 | [`docs/specs/workspace-v1.md`](specs/workspace-v1.md) | **Approved** D1–D6; **S1–S5 implemented** on main (#267 + #270) | Residual smoke / bugs only with explicit verb |
 | [`docs/specs/assets-v1.md`](specs/assets-v1.md) | **S1–S5 implemented** (#380) | Residual smoke / bugs only |
-| [`docs/specs/guard-v1.md`](specs/guard-v1.md) | **S0–S5 + Http on `main`** (#273–#275); host/guide #279–#281 + #294 | Edge lab + secrets on deploy host only; no SIEM on `/guard` |
+| [`docs/specs/guard-v1.md`](specs/guard-v1.md) | **S0–S5 + Http + D10 soft-disable on `main`** (#273–#275, **#802**) | Edge lab + secrets on deploy host only; no SIEM on `/guard`; hard delete still ops |
 | [`docs/specs/siem-v1.md`](specs/siem-v1.md) | **S0–S5 on `main`** (#307) | Flag-off until ops |
 | [`docs/specs/blog-v1.md`](specs/blog-v1.md) | **S0 + S1–S5** (PR #409) | Public `/blog` HTML island; admin CMS |
 | [`docs/specs/host-protect-v1.md`](specs/host-protect-v1.md) | **S0–S12 on `main`** (#533–#537, #556, #558, #559) | Do **not** re-implement. Lab [`scripts/host-protect-lab-smoke.sh`](../scripts/host-protect-lab-smoke.sh) (`--require-helper-heartbeat`). AM install: [`host-protect-helper-am.md`](host-protect-helper-am.md). Fail-closed: `pending_agent` / `unreachable_root`, not mock hits. SKU working IDR. |
@@ -235,7 +242,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | [`docs/specs/metering-v2.md`](specs/metering-v2.md) | **Shipped** (#736) | Scheduled attach included. Superseded for on-demand credits by v3. |
 | [`docs/specs/metering-v3-sku-seats.md`](specs/metering-v3-sku-seats.md) | **Shipped** (#742–#744) | Scan/Host/Uptime = SKU seats only. No Scan credit debit (ip/domain/apk/ipa/statushost). AI IDR wallet stays. |
 | [`docs/specs/scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md) | **S0 + S1a #785 + S1b #786 shipped** | Browser print. **Not** WeasyPrint / `format=pdf` (S2 parked). |
-| [`docs/specs/inbox-delivered-v1.md`](specs/inbox-delivered-v1.md) | **S0 #787 + S1 #788 + S1b #789 shipped** | User-side SMTP Sent/Failed log + SPA `/inbox`. **Not** Guard Discover / bounce / invoice SMTP. |
+| [`docs/specs/inbox-delivered-v1.md`](specs/inbox-delivered-v1.md) | **S0–S1c shipped** #787–#789 + **#793** job link; first-scan **#801** | User-side SMTP Sent/Failed + SPA `/inbox`. **Not** Guard Discover / bounce / invoice SMTP. |
 
 **Agent:** wait for **explicit implement** even when spec exists. Prefer **draft spec** over silent coding for new epics; P3 assets already shipped.
 
@@ -448,7 +455,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 
 | User says | Agent does |
 |-----------|------------|
-| “lanjut” / “next” without spec | Re-read **§1.3.1** + `handoff.md`; **no default next code** (print, inbox, P14 E **shipped**); **wait for named slice + `buat`**; **do not** pitch GTM/AM/10 SIDs; **no** silent feature coding |
+| “lanjut” / “next” without spec | Re-read **§1.3.1** + `handoff.md`; **no default next code** (print, inbox, P14 E, first-scan, D10, invite SMTP, schedules print **shipped**); **wait for named slice + `buat`**; **do not** pitch GTM/AM/10 SIDs; **no** silent feature coding |
 | “tulis spek workspace” | Update `docs/specs/workspace-v1.md` only (S1–S5 already shipped) |
 | “implement workspace” / “kerjakan fase workspace” | S1–S5 done — clarify **bug / residual** before coding |
 | “rebrand” / “sinexis.app” | Soft brand shipped; hard cut / DNS only on explicit ask; don’t invent Guard; don’t block attach GTM |
@@ -466,8 +473,12 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 | “buat P15 S1” / chrome tokens | **Shipped** — [`spa-grok-chrome-redesign.md`](specs/spa-grok-chrome-redesign.md) S1; clarify residual only |
 | “buat P15 S2” / AppShell | **Shipped #704** — same spec **S2**; S3–S9 also on `main`. Clarify bug / residual only. Do **not** re-implement |
 | “buat” scan PDF / invoice print / S1a / S1b | **Shipped** #785/#786 — [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md). Clarify bug / residual only. **Not** WeasyPrint / `format=pdf` |
-| “buat” inbox / Delivered / S1 inbox | **Shipped** #787–#789 — [`inbox-delivered-v1.md`](specs/inbox-delivered-v1.md). Clarify bug / residual only. **Not** Guard Discover / bounce / invoice SMTP |
+| “buat” inbox / Delivered / S1 inbox | **Shipped** #787–#789 + S1c **#793** — [`inbox-delivered-v1.md`](specs/inbox-delivered-v1.md). Clarify bug / residual only. **Not** Guard Discover / bounce / invoice SMTP |
 | “buat P14 E” / denser Host cadence | **Shipped** — `host_sites.scan_interval` daily\|hourly. Clarify bug / residual only. **Not** 24×7 YARA on `/` / inotify / WAF **1147+** / **G/H** |
+| “buat initial_report” / first-scan notify | **Shipped #801**. Clarify bug only. Mobile still no notify |
+| “buat Guard D10” / unenroll SPA | **Shipped #802**. Soft-disable in SaaS; Wazuh DELETE still ops. **Not** Discover |
+| “buat invite SMTP” | **Shipped #800**. Copy-link stays. Invite **not** an Inbox row. **Not** invoice SMTP |
+| “buat schedules print” | **Shipped #799**. Executive `printFile` only. **Not** `format=pdf` |
 | “GTM” / “email AM” / “10 SID” | Point to [`gtm-and-p11-ops.md`](commercial/gtm-and-p11-ops.md); **do not** treat as engineering next |
 
 **Locked answers (do not re-ask every session):** chat user = **product owner** (2026-09-15) — agent default **§1.3.1**, not GTM. KPI commercial = **attach ARPU** (AM owns renew; **not** an agent task). Billing = **Sinexis invoice v1** (bank transfer, mark paid) + optional GMD `service_id`. Dual-brand = **6–12 mo soft**. Guard thin + SIEM flag-off unless ops. Invoice pay loop **closed**. Metering v3: Scan seats, `credit_cost = 0`.
@@ -507,7 +518,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 | `handoff.md` | Session snapshot — **epic order** still this guide (**§1.3.1** product depth, not GTM) |
 | `docs/archive/handoff-scan-pending-2026.md` | **ARCHIVED** stuck-pending (re-verify) |
 | `docs/multi-host-ops.md` | Lab roles + Guard enroll wipe-first |
-| `docs/specs/guard-v1.md` | P5 Guard thin spek + status (S0–S5 + Http on main) |
+| `docs/specs/guard-v1.md` | P5 Guard thin spek + status (S0–S5 + Http + **D10 #802** on main) |
 | `docs/specs/blog-v1.md` | P10 public blog (CMS + SEO path) |
 | `docs/specs/shadcn-ui-migration.md` | SPA kit; Wave A–F shipped |
 | `docs/specs/spa-grok-chrome-redesign.md` | **P15 S0–S9 on `main`** — SPA chrome vs Grok2API zip; **layout overrides** theme-v1 “header stays”; green primary stays. **Do not re-implement.** Bug/residual only if named |
@@ -534,7 +545,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 
 ## 11) Agent one-liner
 
-> After reset: **boot §0 → §1.3.1 (print + inbox + P14 E shipped; no default next code) → wait for named + `buat` → Guard live lab standing-permitted (wipe `tc5` first §4.1; do not re-ask) → no silent epics → no PII/SSH/IPs in git → Indonesian with user, `GIT_MASTER=1`.**
+> After reset: **boot §0 → §1.3.1 (print + inbox + first-scan + D10 + invite SMTP + schedules print shipped; no default next code) → wait for named + `buat` → Guard live lab standing-permitted (wipe `tc5` first §4.1; do not re-ask) → no silent epics → no PII/SSH/IPs in git → Indonesian with user, `GIT_MASTER=1`.**
 
 ---
 
