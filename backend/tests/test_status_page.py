@@ -266,10 +266,13 @@ async def test_public_html_lists_incident_updates(ctx, db_session: AsyncSession)
         first = pub.text.index("Looking into 5xx.")
         second = pub.text.index("Traffic is recovering.")
         assert first < second
-        investigating_meta = pub.text[pub.text.find("class='when'") : pub.text.find("Looking into 5xx.")]
+        first_when = pub.text.find("class='when'")
+        investigating_meta = pub.text[first_when : first]
         assert "investigating" in investigating_meta
         assert "UTC" in investigating_meta
-        monitoring_meta = pub.text[pub.text.find("Traffic is recovering.") - 400 : pub.text.find("Traffic is recovering.")]
+        recovering = "Traffic is recovering."
+        recovering_at = pub.text.find(recovering)
+        monitoring_meta = pub.text[recovering_at - 400 : recovering_at]
         assert "monitoring" in monitoring_meta
 
 
