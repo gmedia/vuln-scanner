@@ -87,5 +87,13 @@
   "unlinkAsset": "Tidak tertaut",
   "assetLinkedToast": "Aset tertaut",
   "assetUnlinkedToast": "Tautan aset dilepas",
-  "assetLinkFail": "Gagal menautkan aset"
+  "assetLinkFail": "Gagal menautkan aset",
+  "disableAgent": "Hapus dari Guard",
+  "disableAgentAria": "Hapus {{name}} dari Guard",
+  "disableConfirmTitle": "Hapus dari Guard?",
+  "disableConfirmBody": "Agen tidak lagi dipantau di Sinexis. Hapus paket Wazuh di host tetap langkah ops.",
+  "disableSubmit": "Hapus dari Guard",
+  "disabledToast": "Agen dihapus dari Guard",
+  "disableFail": "Gagal menghapus agen dari Guard",
+  "statusDisabled": "Nonaktif"
 }

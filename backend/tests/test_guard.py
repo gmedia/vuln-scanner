@@ -452,3 +452,109 @@ async def test_link_agent_asset(db_session: AsyncSession, guard_ws):
         assert r.json()["asset_id"] is None
 
     app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_disable_agent_authz_and_sync(db_session: AsyncSession, guard_ws):
+    owner = guard_ws["owner"]
+    viewer = guard_ws["viewer"]
+    outsider = guard_ws["outsider"]
+    org = guard_ws["org"]
+    other = guard_ws["other"]
+    from sqlalchemy import select
+
+    from app.database import get_db
+    from app.models.guard import GuardAgent
+    from app.services.host_agent_ingest import generate_results_token
+
+    async def _db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = _db
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        assert (await client.post("/api/guard/enable", headers=_auth(owner, org.id))).status_code == 200
+        r = await client.post(
+            "/api/guard/enroll-tokens",
+            headers=_auth(owner, org.id),
+            json={"label": "d10"},
+        )
+        raw = r.json()["token"]
+        r = await client.post(
+            "/api/guard/enroll",
+            headers={"X-E2E-Test": "1"},
+            json={"token": raw, "agent_name": "vps-d10-01"},
+        )
+        assert r.status_code == 200
+
+        r = await client.get("/api/guard/agents", headers=_auth(owner, org.id))
+        agent = next(a for a in r.json() if a["name"] == "vps-d10-01")
+        aid = agent["id"]
+        assert agent["disabled"] is False
+        assert agent.get("disabled_at") is None
+
+        token_hash = generate_results_token()[1]
+        row = (await db_session.execute(select(GuardAgent).where(GuardAgent.id == uuid.UUID(aid)))).scalar_one()
+        row.results_token_hash = token_hash
+        row.results_token_revoked_at = None
+        await db_session.commit()
+
+        r = await client.post(
+            f"/api/guard/agents/{aid}/disable",
+            headers=_auth(viewer, org.id),
+        )
+        assert r.status_code == 403
+
+        r = await client.post(
+            f"/api/guard/agents/{aid}/disable",
+            headers=_auth(outsider, other.id),
+        )
+        assert r.status_code == 404
+
+        r = await client.post(
+            f"/api/guard/agents/{aid}/disable",
+            headers=_auth(owner, org.id),
+        )
+        assert r.status_code == 204
+
+        listed = (await client.get("/api/guard/agents", headers=_auth(viewer, org.id))).json()
+        disabled = next(a for a in listed if a["id"] == aid)
+        assert disabled["disabled"] is True
+        assert disabled["disabled_at"] is not None
+        assert disabled["has_host_agent_token"] is False
+        assert disabled["status"] == "pending"
+
+        row = (await db_session.execute(select(GuardAgent).where(GuardAgent.id == uuid.UUID(aid)))).scalar_one()
+        assert row.disabled_at is not None
+        assert row.results_token_revoked_at is not None
+        frozen_status = row.status
+        frozen_disabled_at = row.disabled_at
+
+        group = wazuh_group_for_org(org.id)
+        for mock_agent in MockWazuhClient._agents.get(group, []):
+            if mock_agent["name"] == "vps-d10-01":
+                mock_agent["status"] = "active"
+
+        r = await client.post("/api/guard/sync", headers=_auth(owner, org.id))
+        assert r.status_code == 200
+        assert r.json()["ok"] is True
+
+        row = (await db_session.execute(select(GuardAgent).where(GuardAgent.id == uuid.UUID(aid)))).scalar_one()
+        assert row.disabled_at == frozen_disabled_at
+        assert row.status == frozen_status
+        assert row.status != "active"
+
+        listed = (await client.get("/api/guard/agents", headers=_auth(owner, org.id))).json()
+        after_sync = next(a for a in listed if a["id"] == aid)
+        assert after_sync["disabled"] is True
+        assert after_sync["status"] != "active"
+
+        r = await client.post(
+            f"/api/guard/agents/{aid}/disable",
+            headers=_auth(owner, org.id),
+        )
+        assert r.status_code == 204
+        row = (await db_session.execute(select(GuardAgent).where(GuardAgent.id == uuid.UUID(aid)))).scalar_one()
+        assert row.disabled_at == frozen_disabled_at
+
+    app.dependency_overrides.clear()

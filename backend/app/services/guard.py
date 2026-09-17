@@ -188,6 +188,28 @@ class GuardService:
         await self.db.refresh(agent)
         return agent, raw
 
+    async def disable_agent(
+        self,
+        user: User,
+        organization_id: UUID | None,
+        agent_id: UUID,
+    ) -> None:
+        self._require_feature()
+        org_id = await self._require_org(user, organization_id, min_role="admin")
+        result = await self.db.execute(
+            select(GuardAgent).where(GuardAgent.id == agent_id, GuardAgent.organization_id == org_id)
+        )
+        agent = result.scalar_one_or_none()
+        if agent is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found")
+        now = datetime.now(UTC)
+        if agent.disabled_at is None:
+            agent.disabled_at = now
+        if agent.results_token_hash is not None and agent.results_token_revoked_at is None:
+            agent.results_token_revoked_at = now
+        agent.updated_at = now
+        await self.db.commit()
+
     async def list_alerts(
         self,
         user: User,

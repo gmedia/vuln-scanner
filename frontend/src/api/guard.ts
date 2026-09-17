@@ -20,6 +20,8 @@ export interface GuardAgent {
   last_keep_alive: string | null;
   last_helper_poll_at: string | null;
   has_host_agent_token?: boolean;
+  disabled?: boolean;
+  disabled_at?: string | null;
   asset_id?: string | null;
   asset_name?: string | null;
   asset_target?: string | null;
@@ -120,6 +122,10 @@ export async function issueHostAgentToken(
     `/api/guard/agents/${agentId}/host-token`,
   );
   return data;
+}
+
+export async function disableGuardAgent(agentId: string): Promise<void> {
+  await api.post(`/api/guard/agents/${agentId}/disable`);
 }
 
 export async function syncGuard(): Promise<{

@@ -82,6 +82,7 @@ class GuardAgent(Base):
     last_helper_poll_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     results_token_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True)
     results_token_revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    disabled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     asset_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("scan_assets.id", ondelete="SET NULL"), nullable=True
     )

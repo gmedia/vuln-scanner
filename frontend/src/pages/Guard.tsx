@@ -44,6 +44,7 @@ import {
 import {
   canManageGuard,
   createEnrollToken,
+  disableGuardAgent,
   enableGuard,
   getGuardStatus,
   issueHostAgentToken,
@@ -81,6 +82,53 @@ import {
 function truncateId(value: string): string {
   if (value.length <= 12) return value;
   return `${value.slice(0, 8)}…${value.slice(-4)}`;
+}
+
+function DisableAgentButton({
+  agent,
+  t,
+  pending,
+  onDisable,
+}: {
+  agent: GuardAgent;
+  t: (key: string, options?: { name: string }) => string;
+  pending: boolean;
+  onDisable: (id: string) => void;
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="min-h-9 text-destructive"
+          disabled={pending}
+          data-testid={`guard-disable-${agent.id}`}
+          aria-label={t("disableAgentAria", { name: agent.name })}
+        >
+          {t("disableAgent")}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t("disableConfirmTitle")}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {t("disableConfirmBody")}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+          <AlertDialogAction
+            className={buttonVariants({ variant: "destructive" })}
+            onClick={() => onDisable(agent.id)}
+          >
+            {t("disableSubmit")}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 }
 
 function HostTokenIssueButton({
@@ -280,7 +328,18 @@ function TokenRevokeButton({
   );
 }
 
-function statusBadge(status: string, t: (key: string) => string) {
+function statusBadge(
+  status: string,
+  t: (key: string) => string,
+  disabled?: boolean,
+) {
+  if (disabled) {
+    return (
+      <Badge className="border border-border bg-muted text-foreground">
+        {t("statusDisabled")}
+      </Badge>
+    );
+  }
   const s = status.toLowerCase();
   if (s === "active")
     return (
@@ -425,6 +484,16 @@ export default function Guard() {
       void queryClient.invalidateQueries({ queryKey: ["assets"] });
     },
     onError: (e) => setActionError(apiDetail(e, t("assetLinkFail"))),
+  });
+
+  const disableMut = useMutation({
+    mutationFn: (agentId: string) => disableGuardAgent(agentId),
+    onSuccess: () => {
+      setActionError(null);
+      toast.success(t("disabledToast"));
+      invalidate();
+    },
+    onError: (e) => setActionError(apiDetail(e, t("disableFail"))),
   });
 
   const enabled = statusQ.data?.enabled ?? false;
@@ -906,7 +975,7 @@ export default function Guard() {
                         </p>
                         <CopyableId value={a.id} label={t("copyAgentId")} />
                         <div className="mt-2 flex flex-wrap items-center gap-2">
-                          {statusBadge(a.status, t)}
+                          {statusBadge(a.status, t, a.disabled)}
                           <span className="text-xs text-muted-foreground">
                             {a.version ?? "—"}
                           </span>
@@ -974,6 +1043,14 @@ export default function Guard() {
                               pending={hostTokenMut.isPending}
                               onIssue={(id) => hostTokenMut.mutate(id)}
                             />
+                            {!a.disabled ? (
+                              <DisableAgentButton
+                                agent={a}
+                                t={t}
+                                pending={disableMut.isPending}
+                                onDisable={(id) => disableMut.mutate(id)}
+                              />
+                            ) : null}
                           </div>
                         ) : null}
                       </div>
@@ -1016,7 +1093,7 @@ export default function Guard() {
                             <CopyableId value={a.id} label={t("copyAgentId")} />
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            {statusBadge(a.status, t)}
+                            {statusBadge(a.status, t, a.disabled)}
                           </TableCell>
                           <TableCell className="whitespace-nowrap text-muted-foreground">
                             <div>{formatWhen(a.last_keep_alive, dateLocale)}</div>
@@ -1083,6 +1160,14 @@ export default function Guard() {
                                   t={t}
                                   pending={hostTokenMut.isPending}
                                   onIssue={(id) => hostTokenMut.mutate(id)}
+                                />
+                              ) : null}
+                              {canAdmin && !a.disabled ? (
+                                <DisableAgentButton
+                                  agent={a}
+                                  t={t}
+                                  pending={disableMut.isPending}
+                                  onDisable={(id) => disableMut.mutate(id)}
                                 />
                               ) : null}
                             </div>
