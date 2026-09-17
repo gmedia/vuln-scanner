@@ -225,14 +225,18 @@ async def send_scan_diff_email(
     worsened: int = 0,
     lang: str | None = None,
     user_id: UUID | None = None,
+    initial_report: bool = False,
+    has_baseline: bool = True,
 ) -> bool:
     locale = normalize_lang(lang)
     n_new = int(new_critical) + int(new_high)
     detail_link = f"{FRONTEND_URL}/scan/{job_id}"
-    heading = t(locale, "notify", "heading")
+    use_initial = bool(initial_report) and (n_new == 0 or not has_baseline)
+    key_prefix = "initial_" if use_initial else ""
+    heading = t(locale, "notify", f"{key_prefix}heading")
     inner = f"""\
   <p style="color: #374151;">
-    {t(locale, "notify", "intro", target=target, n=n_new)}
+    {t(locale, "notify", f"{key_prefix}intro", target=target, n=n_new)}
   </p>
   <ul style="color: #111827; line-height: 1.6;">
     <li>{t(locale, "notify", "new_critical", n=int(new_critical))}</li>
@@ -247,11 +251,11 @@ async def send_scan_diff_email(
     html_body = _wrap_html(
         heading=heading,
         inner=inner,
-        preheader=t(locale, "notify", "preheader", n=n_new, target=target),
+        preheader=t(locale, "notify", f"{key_prefix}preheader", n=n_new, target=target),
     )
     msg = _build_message(
         email_to=email_to,
-        subject=t(locale, "notify", "subject", n=n_new, target=target),
+        subject=t(locale, "notify", f"{key_prefix}subject", n=n_new, target=target),
         html_body=html_body,
     )
     return await _send_with_retry(msg, email_to, "Scan diff", user_id=user_id, job_id=_job_uuid(job_id))

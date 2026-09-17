@@ -39,6 +39,7 @@ def maybe_notify_scan_complete(session: Session, job_id: str) -> dict[str, Any]:
         if not should_send_diff_alert(
             ctx.diff.new_critical,
             ctx.diff.new_high,
+            initial_report=True,
             has_baseline=ctx.has_baseline,
         ):
             result["reason"] = "no_new_critical_high"
@@ -58,6 +59,8 @@ def maybe_notify_scan_complete(session: Session, job_id: str) -> dict[str, Any]:
                     worsened=ctx.diff.worsened,
                     lang=ctx.locale,
                     user_id=ctx.owner_user_id,
+                    initial_report=True,
+                    has_baseline=ctx.has_baseline,
                 )
             )
         )

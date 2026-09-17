@@ -16,7 +16,7 @@
 | Guide §3 backlog | One-liner: Inbox “Delivered” user-side | **This file.** |
 | Admin `/admin/email-logs` | Ops dump of SMTP **attempts**. Recipient **masked**. No `user_id` / `org_id`. Status `sent` \| `failed`. | **Unchanged.** Not the user inbox. Do **not** expose to org members. |
 | `email_send_logs` | Columns: kind, status, `recipient_masked`, attempts, `error_message`, `created_at`. Kinds: verification, password_reset, scan_diff, uptime, host_protect, host_waf. | **Cannot** list “my mail” until S1 adds owner FK (or a projection). S0 does **not** migrate. |
-| Scan notify P1 S3 | Email on **new** critical/high after completed IP/domain. Worker does **not** pass `initial_report`. Mobile: no notify. | Inbox **shows** those attempts. Do **not** change notify rules in S0. |
+| Scan notify P1 S3 | Email on **new** critical/high after completed IP/domain, plus **first scan** (`initial_report=True`). Mobile: no notify. | Inbox **shows** those attempts. Do **not** change notify rules in S0. |
 | Invoice `POST .../send` | **Status flip** `draft→sent`. **Zero SMTP.** Spec I8. | **Not a mail row.** Verb collision: invoice `sent` ≠ SMTP `sent`. |
 | Org invites | Copy-link / toast. **No mail.** | **Not a mail row.** |
 | Guard `/guard` | Agent inventory + critical alert cards. No Discover. | **Out.** Do not mix. |
@@ -73,7 +73,7 @@ This is a **user-safe projection of outbound SMTP attempts we already log** — 
 | Expose `GET /api/admin/email-logs` to org users | Cross-tenant dump |
 | Unmask recipient or return `error_message` to customers | PII |
 | Auth kinds (`verification`, `password_reset`) on user Inbox | Token/PII; stay admin-only |
-| Change scan notify rules (first-scan `initial_report`, mobile notify) | Unless a later named slice |
+| Change scan notify rules (mobile notify) | First-scan `initial_report` shipped; mobile still later |
 | Push / FCM / Capacitor notifications | Parked spec |
 | Print/PDF, WeasyPrint, `format=pdf`, gateway, Host invoice, WAF 1147+, P14 E/G/H, GTM, P15 restyle | Other queues / shipped |
 
@@ -250,7 +250,7 @@ cd frontend && npx vitest run src/test/Inbox.test.tsx
 ## 13. Open residual (not blocking S0)
 
 - Admin SPA kind filter omits `host_waf` (backend has the kind) — admin hygiene, not this epic.
-- First completed scan never emails (`initial_report` unused) — named follow-up only.
+- ~~First completed scan never emails (`initial_report` unused) — named follow-up only.~~ **Shipped:** worker passes `initial_report=True`; first IP/domain scan emails via `scan_diff`.
 - Old `email_send_logs` rows without `user_id` stay admin-only after S1 (no backfill guess).
 
 ---

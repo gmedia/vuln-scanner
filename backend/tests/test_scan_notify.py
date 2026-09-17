@@ -247,3 +247,145 @@ async def test_maybe_path_sends_only_on_new_high(monkeypatch):
         )
     assert sent is True
     mock_smtp.send_message.assert_awaited_once()
+
+
+def _worker_notify():
+    import sys
+    from pathlib import Path
+
+    sys.modules.setdefault("loguru", MagicMock())
+    workers_root = str(Path(__file__).resolve().parents[2] / "workers")
+    if workers_root not in sys.path:
+        sys.path.insert(0, workers_root)
+    from utils.scan_notify import maybe_notify_scan_complete
+
+    return maybe_notify_scan_complete
+
+
+def _zero_ctx(*, has_baseline: bool):
+    from app.services.baseline_diff import DiffResult
+    from app.services.scan_notify import NotifyDiffContext
+
+    return NotifyDiffContext(
+        job_id=str(uuid.uuid4()),
+        target="t.example",
+        scan_type="domain",
+        email_to="owner@example.com",
+        diff=DiffResult(0, 0, 0, 0, 0, [], []),
+        has_baseline=has_baseline,
+        schedule_id=None,
+    )
+
+
+def test_maybe_notify_sends_first_scan_without_baseline():
+    ctx = _zero_ctx(has_baseline=False)
+    assert (
+        should_send_diff_alert(
+            ctx.diff.new_critical,
+            ctx.diff.new_high,
+            initial_report=True,
+            has_baseline=ctx.has_baseline,
+        )
+        is True
+    )
+
+    maybe_notify = _worker_notify()
+    with (
+        patch("app.services.scan_notify.build_notify_context", return_value=ctx),
+        patch("app.services.email.send_scan_diff_email", new_callable=AsyncMock, return_value=True) as send,
+    ):
+        result = maybe_notify(MagicMock(), ctx.job_id)
+
+    assert result["sent"] is True
+    send.assert_awaited_once()
+    kwargs = send.call_args.kwargs
+    assert kwargs["initial_report"] is True
+    assert kwargs["has_baseline"] is False
+    assert kwargs["new_critical"] == 0
+    assert kwargs["new_high"] == 0
+
+
+def test_maybe_notify_skips_zero_with_baseline():
+    ctx = _zero_ctx(has_baseline=True)
+    assert (
+        should_send_diff_alert(
+            ctx.diff.new_critical,
+            ctx.diff.new_high,
+            initial_report=True,
+            has_baseline=ctx.has_baseline,
+        )
+        is False
+    )
+
+    maybe_notify = _worker_notify()
+    with (
+        patch("app.services.scan_notify.build_notify_context", return_value=ctx),
+        patch("app.services.email.send_scan_diff_email", new_callable=AsyncMock, return_value=True) as send,
+    ):
+        result = maybe_notify(MagicMock(), ctx.job_id)
+
+    assert result["sent"] is False
+    assert result["reason"] == "no_new_critical_high"
+    send.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_send_scan_diff_email_initial_report_copy(monkeypatch):
+    monkeypatch.setattr(email_module, "FRONTEND_URL", "https://example.test")
+    mock_smtp = AsyncMock()
+    mock_smtp.connect = AsyncMock()
+    mock_smtp.send_message = AsyncMock()
+    mock_smtp.quit = AsyncMock()
+
+    with (
+        patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp),
+        patch("app.services.email.record_email_send") as rec,
+    ):
+        ok = await send_scan_diff_email(
+            "owner@example.com",
+            target="example.com",
+            job_id="job-abc",
+            new_critical=0,
+            new_high=0,
+            initial_report=True,
+            has_baseline=False,
+        )
+
+    assert ok is True
+    sent = mock_smtp.send_message.call_args[0][0]
+    assert sent["Subject"] == "[Sinexis Scan] 0 temuan kritis/tinggi — example.com"
+    payload = sent.get_payload()
+    body = payload[1].get_payload(decode=True).decode("utf-8")
+    assert "laporan pertama" in body
+    assert "baseline sebelumnya" not in body
+    rec.assert_called_once()
+    assert rec.call_args.kwargs["label"] == "Scan diff"
+
+
+@pytest.mark.asyncio
+async def test_send_scan_diff_email_initial_report_en_copy(monkeypatch):
+    monkeypatch.setattr(email_module, "FRONTEND_URL", "https://example.test")
+    mock_smtp = AsyncMock()
+    mock_smtp.connect = AsyncMock()
+    mock_smtp.send_message = AsyncMock()
+    mock_smtp.quit = AsyncMock()
+
+    with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+        ok = await send_scan_diff_email(
+            "owner@example.com",
+            target="example.com",
+            job_id="job-abc",
+            new_critical=0,
+            new_high=0,
+            lang="en",
+            initial_report=True,
+            has_baseline=False,
+        )
+
+    assert ok is True
+    sent = mock_smtp.send_message.call_args[0][0]
+    assert sent["Subject"] == "[Sinexis Scan] 0 critical/high findings — example.com"
+    payload = sent.get_payload()
+    body = payload[1].get_payload(decode=True).decode("utf-8")
+    assert "first report" in body
+    assert "versus the previous baseline" not in body

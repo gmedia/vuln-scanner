@@ -9,5 +9,9 @@
   "open_detail": "Buka detail scan",
   "or_copy": "Atau salin tautan:",
   "footer": "Anda menerima email ini karena notifikasi scan (jadwal atau baseline diff) aktif.",
-  "preheader": "{n} temuan kritis/tinggi baru pada {target}."
+  "preheader": "{n} temuan kritis/tinggi baru pada {target}.",
+  "initial_subject": "[Sinexis Scan] {n} temuan kritis/tinggi — {target}",
+  "initial_heading": "Sinexis Scan — laporan pertama",
+  "initial_intro": "Scan pertama pada target <strong>{target}</strong> selesai dengan <strong>{n}</strong> temuan tingkat kritis atau tinggi.",
+  "initial_preheader": "{n} temuan kritis/tinggi pada {target}."
 }
