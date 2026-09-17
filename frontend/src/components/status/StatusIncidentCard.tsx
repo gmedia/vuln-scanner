@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { StatusIncident } from "@/api/statusPage";
 import { StatusIncidentActions } from "@/components/status/StatusIncidentActions";
 import { StatusIncidentQuickUpdate } from "@/components/status/StatusIncidentQuickUpdate";
+import { StatusIncidentUpdates } from "@/components/status/StatusIncidentUpdates";
 import {
   formatStartedAt,
   impactBadge,
@@ -66,6 +67,11 @@ export function StatusIncidentCard({
           </Button>
         ) : null}
       </div>
+      <StatusIncidentUpdates
+        incidentId={incident.id}
+        updates={incident.updates}
+        testIdPrefix="status-incident"
+      />
       {panel === "update" ? (
         <StatusIncidentQuickUpdate
           incidentId={incident.id}
