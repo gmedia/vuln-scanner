@@ -176,6 +176,14 @@ describe("Sidebar", () => {
     expect(status.closest('[data-active="true"]')).toBeNull();
   });
 
+  it("marks Uptime active on /uptime/:id but not status-page", () => {
+    renderSidebar(true, "/uptime/11111111-1111-1111-1111-111111111111");
+    const uptime = screen.getByTestId("nav-uptime");
+    const status = screen.getByTestId("nav-status-page");
+    expect(uptime.closest('[data-active="true"]')).toBeTruthy();
+    expect(status.closest('[data-active="true"]')).toBeNull();
+  });
+
   it("renders brand SINEXIS in sidebar header", () => {
     renderSidebar(true);
     const brandLinks = screen.getAllByText("SINE");

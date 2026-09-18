@@ -106,6 +106,11 @@ const accountNav = [
 ];
 
 function pathActive(pathname: string, to: string, end?: boolean) {
+  if (to === "/uptime") {
+    if (pathname === "/uptime") return true;
+    if (pathname === "/uptime/status-page") return false;
+    return pathname.startsWith("/uptime/");
+  }
   if (end) return pathname === to;
   return pathname === to || pathname.startsWith(`${to}/`);
 }

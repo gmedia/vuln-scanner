@@ -29,6 +29,7 @@ const Siem = lazy(() => import("@/pages/Siem"));
 const Ai = lazy(() => import("@/pages/Ai"));
 const HostProtect = lazy(() => import("@/pages/HostProtect"));
 const Uptime = lazy(() => import("@/pages/Uptime"));
+const UptimeDetail = lazy(() => import("@/pages/UptimeDetail"));
 const StatusPage = lazy(() => import("@/pages/StatusPage"));
 const Inbox = lazy(() => import("@/pages/Inbox"));
 const Profile = lazy(() => import("@/pages/Profile"));
@@ -143,6 +144,10 @@ function App() {
             <Route
               path="/uptime/status-page"
               element={<PageBoundary component={StatusPage} />}
+            />
+            <Route
+              path="/uptime/:id"
+              element={<PageBoundary component={UptimeDetail} />}
             />
             <Route path="/inbox" element={<PageBoundary component={Inbox} />} />
             <Route
