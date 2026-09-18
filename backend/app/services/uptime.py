@@ -349,38 +349,114 @@ class UptimeService:
         await self.db.delete(monitor)
         await self.db.commit()
 
+    def _sample_window(
+        self, since: datetime | None, until: datetime | None
+    ) -> tuple[datetime, datetime]:
+        now = datetime.now(UTC)
+        floor = now - timedelta(days=7)
+        until_at = until if until is not None else now
+        if until_at > now:
+            until_at = now
+        since_at = since if since is not None else floor
+        if since_at < floor:
+            since_at = floor
+        return since_at, until_at
+
     async def list_samples(
         self,
         user: User,
         organization_id: UUID | None,
         monitor_id: UUID,
         since: datetime | None = None,
-    ) -> list[UptimeSample]:
+        until: datetime | None = None,
+        *,
+        limit: int = 24,
+        offset: int = 0,
+    ) -> tuple[list[UptimeSample], int]:
         self._enabled()
         monitor = await self._get_in_org(monitor_id, organization_id, user.id)
-        floor = datetime.now(UTC) - timedelta(days=7)
-        if since is None or since < floor:
-            since = floor
+        since_at, until_at = self._sample_window(since, until)
+        filters = [
+            UptimeSample.monitor_id == monitor.id,
+            UptimeSample.checked_at >= since_at,
+            UptimeSample.checked_at <= until_at,
+        ]
+        total_q = await self.db.execute(select(func.count()).select_from(UptimeSample).where(*filters))
+        total = int(total_q.scalar() or 0)
         result = await self.db.execute(
             select(UptimeSample)
-            .where(UptimeSample.monitor_id == monitor.id, UptimeSample.checked_at >= since)
+            .where(*filters)
             .order_by(UptimeSample.checked_at.desc())
-            .limit(500)
+            .offset(offset)
+            .limit(limit)
         )
-        return list(result.scalars().all())
+        return list(result.scalars().all()), total
+
+    async def range_stats(
+        self,
+        user: User,
+        organization_id: UUID | None,
+        monitor_id: UUID,
+        since: datetime | None = None,
+        until: datetime | None = None,
+    ) -> tuple[float | None, int, int, datetime, datetime]:
+        self._enabled()
+        monitor = await self._get_in_org(monitor_id, organization_id, user.id)
+        since_at, until_at = self._sample_window(since, until)
+        filters = [
+            UptimeSample.monitor_id == monitor.id,
+            UptimeSample.checked_at >= since_at,
+            UptimeSample.checked_at <= until_at,
+        ]
+        total_q = await self.db.execute(select(func.count()).select_from(UptimeSample).where(*filters))
+        total = int(total_q.scalar() or 0)
+        if total == 0:
+            return None, 0, 0, since_at, until_at
+        ok_q = await self.db.execute(
+            select(func.count()).select_from(UptimeSample).where(*filters, UptimeSample.ok.is_(True))
+        )
+        ok_n = int(ok_q.scalar() or 0)
+        return round(100.0 * ok_n / total, 2), ok_n, total, since_at, until_at
 
     async def pause(
         self, user: User, organization_id: UUID | None, monitor_id: UUID, *, enabled: bool
     ) -> UptimeMonitorResponse:
         return await self.update(user, organization_id, monitor_id, UptimeMonitorUpdate(enabled=enabled))
 
-    async def list_events(self, user: User, organization_id: UUID | None, monitor_id: UUID) -> list[UptimeEvent]:
+    async def list_events(
+        self,
+        user: User,
+        organization_id: UUID | None,
+        monitor_id: UUID,
+        since: datetime | None = None,
+        until: datetime | None = None,
+        *,
+        limit: int = 100,
+    ) -> list[UptimeEvent]:
         self._enabled()
         monitor = await self._get_in_org(monitor_id, organization_id, user.id)
+        filters = [UptimeEvent.monitor_id == monitor.id]
+        if until is not None:
+            filters.append(UptimeEvent.at <= until)
+        window = list(filters)
+        if since is not None:
+            window.append(UptimeEvent.at >= since)
         result = await self.db.execute(
-            select(UptimeEvent).where(UptimeEvent.monitor_id == monitor.id).order_by(UptimeEvent.at.desc()).limit(100)
+            select(UptimeEvent).where(*window).order_by(UptimeEvent.at.desc()).limit(limit)
         )
-        return list(result.scalars().all())
+        rows = list(result.scalars().all())
+        if since is not None:
+            prior_q = await self.db.execute(
+                select(UptimeEvent)
+                .where(UptimeEvent.monitor_id == monitor.id, UptimeEvent.at < since)
+                .order_by(UptimeEvent.at.desc())
+                .limit(1)
+            )
+            prior = prior_q.scalar_one_or_none()
+            if prior is not None and all(row.id != prior.id for row in rows):
+                rows.append(prior)
+        rows.sort(key=lambda event: event.at, reverse=True)
+        return rows
 
     async def apply_probe(self, monitor: UptimeMonitor, result: ProbeResult) -> UptimeEvent | None:
         return await persist_probe(self.db, monitor, result)

@@ -2,7 +2,7 @@
 
 **Purpose:** After session reset, know **every user-facing URL**, who owns it (SPA vs FastAPI HTML), auth, chrome, and where to recapture / e2e. Source of truth for **routes** is `frontend/src/App.tsx` plus FastAPI HTML routers. This file is a **map**, not a backlog — epic order still [`AGENT_EXECUTION_GUIDE.md`](AGENT_EXECUTION_GUIDE.md).
 
-**Last updated:** 2026-09-09
+**Last updated:** 2026-09-17
 **Do not** put production hosts/ports, emails, passwords, enroll keys, or customer IPs here.
 
 ---
@@ -66,8 +66,9 @@ Nav groups match Sidebar: **Scan** · **Attach** · **Account** · **Admin** (ad
 | `/guard` | `pages/Guard.tsx` | Attach | Thin Wazuh. **Playwright ≠ enroll/unenroll.** Live lab: wipe `tc5` first (guide §4.1). | `GuardHostEnroll.test.tsx`, `e2e/guard.spec.ts` |
 | `/siem` | `pages/Siem.tsx` | Attach | Flag `SIEM_ENABLED` (default false). Do not merge into Guard. | `Siem.test.tsx`, `e2e/siem.spec.ts` |
 | `/ai` | `pages/Ai.tsx` | Attach | Flag `AI_GATEWAY_ENABLED` (default false). SPA route stays on API 404. `data-testid=ai-feature-off`. | `Ai.test.tsx`, `e2e/ai.spec.ts` |
-| `/uptime` | `pages/Uptime.tsx` | Attach | `end: true` so `/uptime/status-page` is not “active” on Uptime. Flag `UPTIME_ENABLED`. | `Uptime.test.tsx`, `e2e/uptime.spec.ts` |
-| `/uptime/status-page` | `pages/StatusPage.tsx` | Attach | **Editor** (auth). Public view is HTML `/status/{slug}`. Never leak URL/IP/headers/token on **public** status. | `StatusPage.test.tsx` |
+| `/uptime` | `pages/Uptime.tsx` | Attach | List. History **navigates** to `/uptime/:id`. Sparkline stays. Flag `UPTIME_ENABLED`. Nav active on `/uptime` and `/uptime/:id`, **not** on `/uptime/status-page`. | `Uptime.test.tsx`, `e2e/uptime.spec.ts` |
+| `/uptime/status-page` | `pages/StatusPage.tsx` | Attach | **Editor** (auth). Declare **before** `/uptime/:id`. Public view is HTML `/status/{slug}`. Never leak URL/IP/headers/token on **public** status. | `StatusPage.test.tsx` |
+| `/uptime/:id` | `pages/UptimeDetail.tsx` | — | Per-monitor overview (6h/24h/7d bar + outages + probe pager). Spec [`uptime-monitor-overview.md`](specs/uptime-monitor-overview.md). 404 + back like ScanDetail. | `UptimeDetail.test.tsx` |
 | `/guide` | `pages/UserGuide.tsx` | Attach | In-app guide | `UserGuide.test.tsx` |
 
 ### Account
@@ -124,7 +125,7 @@ Minimum authenticated set (2k + mobile, light + dark) after a chrome/token chang
 3. `/dashboard`
 4. `/scan/ip` `/scan/domain` `/scan/mobile`
 5. `/schedules` `/assets` `/host`
-6. `/guard` `/siem` `/uptime` `/uptime/status-page`
+6. `/guard` `/siem` `/uptime` `/uptime/:id` `/uptime/status-page`
 7. `/credit-history` `/profile` `/settings/workspace` `/guide`
 8. Admin: `/admin` `/admin/users` `/admin/pricing` `/admin/hpp` `/admin/invoices` `/admin/blog`
 
@@ -143,7 +144,7 @@ Run **locally after deploy of S0–S8** (light + dark, 2k + mobile). Compare to 
 | S3 header | `/dashboard` | `h2` PageHeader + description `div` |
 | S4 scan | `/scan/ip` `/scan/domain` `/scan/mobile` `/scan/:id` `/schedules` `/assets` `/host` | Density + PageHeader; frozen testids |
 | S5 account | `/profile` `/credit-history` `/settings/workspace` | Two-pane / filter-bar rhythm |
-| S6 attach | `/guard` `/siem` `/uptime` `/uptime/status-page` `/ai` `/guide` | Same chrome family |
+| S6 attach | `/guard` `/siem` `/uptime` `/uptime/:id` `/uptime/status-page` `/ai` `/guide` | Same chrome family |
 | S7 admin | `/admin` `/admin/users` `/admin/pricing` `/admin/hpp` `/admin/invoices` `/admin/blog` `/admin/email-logs` `/admin/ai` | PageHeader |
 | S8 auth | `/login` `/register` `/forgot-password` `/reset-password` `/verify-email` 404 | Hairline `border-border/80 shadow-none`; **Landing `h-12` unchanged** |
 

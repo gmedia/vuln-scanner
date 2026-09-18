@@ -12,6 +12,19 @@ import {
   TableRow,
 } from "@/components/ui/Table";
 import { explainUptimeError } from "@/components/uptime/uptimeErrors";
+import i18n from "@/i18n";
+import { htmlLang, isAppLocale } from "@/i18n/locales";
+
+function formatSampleTime(iso: string): string {
+  const lng = isAppLocale(i18n.language) ? htmlLang(i18n.language) : "id";
+  return new Date(iso).toLocaleString(lng === "en" ? "en-US" : "id-ID", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export function UptimeHistoryPanel({
   monitor,
@@ -51,10 +64,7 @@ export function UptimeHistoryPanel({
                 {rows.map((s) => (
                   <TableRow key={s.id} data-testid="uptime-history-row">
                     <TableCell className="whitespace-nowrap font-mono text-xs">
-                      {new Date(s.checked_at)
-                        .toISOString()
-                        .replace("T", " ")
-                        .slice(0, 19)}
+                      {formatSampleTime(s.checked_at)}
                     </TableCell>
                     <TableCell>
                       <Badge variant={s.ok ? "completed" : "critical"}>

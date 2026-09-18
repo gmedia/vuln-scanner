@@ -9,9 +9,9 @@ type SparklineProps = {
 export function Sparkline({ monitorId, state }: SparklineProps) {
   const samples = useQuery({
     queryKey: ["uptime-samples", monitorId],
-    queryFn: () => listSamples(monitorId),
+    queryFn: () => listSamples(monitorId, { limit: 24 }),
   });
-  const points = (samples.data ?? []).slice(0, 24).reverse();
+  const points = (samples.data?.items ?? []).slice(0, 24).reverse();
   if (points.length < 2) {
     return (
       <span

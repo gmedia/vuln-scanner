@@ -11,7 +11,9 @@ from app.schemas.uptime import (
     UptimeMonitorCreate,
     UptimeMonitorResponse,
     UptimeMonitorUpdate,
+    UptimeSampleListResponse,
     UptimeSampleResponse,
+    UptimeStatsResponse,
 )
 from app.services.auth import get_active_org_id, get_current_user
 from app.services.uptime import UptimeService
@@ -82,16 +84,44 @@ async def delete_monitor(
     await UptimeService(db).delete(current_user, get_active_org_id(request), monitor_id)
 
 
-@router.get("/monitors/{monitor_id}/samples", response_model=list[UptimeSampleResponse])
+@router.get("/monitors/{monitor_id}/samples", response_model=UptimeSampleListResponse)
 async def list_samples(
     request: Request,
     monitor_id: UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     since: datetime | None = Query(default=None, alias="from"),
-) -> list[UptimeSampleResponse]:
-    rows = await UptimeService(db).list_samples(current_user, get_active_org_id(request), monitor_id, since=since)
-    return [UptimeSampleResponse.model_validate(r) for r in rows]
+    until: datetime | None = Query(default=None),
+    limit: int = Query(default=24, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+) -> UptimeSampleListResponse:
+    rows, total = await UptimeService(db).list_samples(
+        current_user,
+        get_active_org_id(request),
+        monitor_id,
+        since=since,
+        until=until,
+        limit=limit,
+        offset=offset,
+    )
+    return UptimeSampleListResponse(items=[UptimeSampleResponse.model_validate(r) for r in rows], total=total)
+
+
+@router.get("/monitors/{monitor_id}/stats", response_model=UptimeStatsResponse)
+async def get_stats(
+    request: Request,
+    monitor_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    since: datetime | None = Query(default=None, alias="from"),
+    until: datetime | None = Query(default=None),
+) -> UptimeStatsResponse:
+    pct, ok_n, total, from_at, until_at = await UptimeService(db).range_stats(
+        current_user, get_active_org_id(request), monitor_id, since=since, until=until
+    )
+    return UptimeStatsResponse(
+        uptime_pct=pct, ok_count=ok_n, total_count=total, from_at=from_at, until_at=until_at
+    )
 
 
 @router.get("/monitors/{monitor_id}/events", response_model=list[UptimeEventResponse])
@@ -100,8 +130,18 @@ async def list_events(
     monitor_id: UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    since: datetime | None = Query(default=None, alias="from"),
+    until: datetime | None = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=200),
 ) -> list[UptimeEventResponse]:
-    rows = await UptimeService(db).list_events(current_user, get_active_org_id(request), monitor_id)
+    rows = await UptimeService(db).list_events(
+        current_user,
+        get_active_org_id(request),
+        monitor_id,
+        since=since,
+        until=until,
+        limit=limit,
+    )
     return [UptimeEventResponse.model_validate(r) for r in rows]
 
 

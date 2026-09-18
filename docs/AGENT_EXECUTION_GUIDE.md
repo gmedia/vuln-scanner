@@ -127,6 +127,7 @@ P0–P14 control planes are **on `main`**. Next engineering is **depth**, not a 
 
 | Order | Slice | Why | Spec | Out |
 |-------|--------|-----|------|-----|
+| **now** | **Uptime per-monitor overview** | List History was 24 samples; operators cannot see 5h / 10h / 3d | [`uptime-monitor-overview.md`](specs/uptime-monitor-overview.md) S0–S2 **this PR** | Pingdom / world map / 30d % from raw samples / webhooks |
 | **— shipped** | **P8.x Uptime advanced** | SPA Advanced + edit + timeout/`expect_status`; PATCH can clear status | [`uptime-advanced-settings.md`](specs/uptime-advanced-settings.md) | Do **not** re-implement; Pingdom / webhooks still out |
 | **— shipped** | **P15 S1** tokens/density | Flush `--sidebar` = canvas; density already on Card/Table | [`spa-grok-chrome-redesign.md`](specs/spa-grok-chrome-redesign.md) S1 | Do **not** re-implement; keep `--primary` green |
 | **— shipped** | **P15 S2** AppShell | No sticky `h-12`; chrome cluster in `SidebarFooter` (`user-menu`, `sign-out`). Credits chip stays hidden (metering v3). | same spec S2 **#704**. S3–S9 also on `main` | Do **not** re-implement chrome; Landing / blog island keep `h-12` |
@@ -243,6 +244,7 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | [`docs/specs/metering-v3-sku-seats.md`](specs/metering-v3-sku-seats.md) | **Shipped** (#742–#744) | Scan/Host/Uptime = SKU seats only. No Scan credit debit (ip/domain/apk/ipa/statushost). AI IDR wallet stays. |
 | [`docs/specs/scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md) | **S0 + S1a #785 + S1b #786 shipped** | Browser print. **Not** WeasyPrint / `format=pdf` (S2 parked). |
 | [`docs/specs/inbox-delivered-v1.md`](specs/inbox-delivered-v1.md) | **S0–S1c shipped** #787–#789 + **#793** job link; first-scan **#801** | User-side SMTP Sent/Failed + SPA `/inbox`. **Not** Guard Discover / bounce / invoice SMTP. |
+| [`docs/specs/uptime-monitor-overview.md`](specs/uptime-monitor-overview.md) | **S0–S2 this PR** | `/uptime/:id` range 6h/24h/7d + event bar + samples pager. **Not** Pingdom / 30d from 7d samples. |
 
 **Agent:** wait for **explicit implement** even when spec exists. Prefer **draft spec** over silent coding for new epics; P3 assets already shipped.
 
@@ -469,6 +471,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 | “tulis spek blog” / “blog” | Point to [`docs/specs/blog-v1.md`](specs/blog-v1.md) |
 | “implement blog” / “kerjakan blog” | S1–S5 in PR #409; platform admin only; no Guard merge |
 | “tulis spek hostname status” / custom host lifecycle | [`docs/specs/status-hostname-lifecycle.md`](specs/status-hostname-lifecycle.md) — docs only until named + implement verb |
+| “buat uptime overview” / `/uptime/:id` / history 5h | [`uptime-monitor-overview.md`](specs/uptime-monitor-overview.md) S0–S2 **this PR**. 30d rollup parked. **Not** Pingdom / webhooks |
 | “buat uptime advanced” / P8.x | **Shipped** — [`uptime-advanced-settings.md`](specs/uptime-advanced-settings.md); clarify bug / residual only |
 | “buat P15 S1” / chrome tokens | **Shipped** — [`spa-grok-chrome-redesign.md`](specs/spa-grok-chrome-redesign.md) S1; clarify residual only |
 | “buat P15 S2” / AppShell | **Shipped #704** — same spec **S2**; S3–S9 also on `main`. Clarify bug / residual only. Do **not** re-implement |

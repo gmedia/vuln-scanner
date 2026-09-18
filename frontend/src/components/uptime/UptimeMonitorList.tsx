@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { UptimeMonitor } from "@/api/uptime";
 import { Badge } from "@/components/ui/Badge";
@@ -52,9 +53,13 @@ export function UptimeMonitorList({
             className="rounded-lg border border-border bg-card p-3 text-left"
           >
             <div className="flex items-start justify-between gap-2">
-              <p className="min-w-0 break-all font-medium text-foreground">
+              <Link
+                to={`/uptime/${m.id}`}
+                className="min-w-0 break-all font-medium text-foreground hover:underline"
+                data-testid="uptime-open"
+              >
                 {m.name}
-              </p>
+              </Link>
               <Badge variant={stateBadgeVariant(m.state)}>
                 {stateLabel(m.state)}
               </Badge>
@@ -103,7 +108,15 @@ export function UptimeMonitorList({
                     : undefined
                 }
               >
-                <TableCell className="font-medium">{m.name}</TableCell>
+                <TableCell className="font-medium">
+                  <Link
+                    to={`/uptime/${m.id}`}
+                    className="hover:underline"
+                    data-testid="uptime-open"
+                  >
+                    {m.name}
+                  </Link>
+                </TableCell>
                 <TableCell>
                   <Badge variant={stateBadgeVariant(m.state)}>
                     {stateLabel(m.state)}
