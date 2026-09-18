@@ -272,6 +272,19 @@ class UptimeSampleResponse(BaseModel):
     error: str | None
 
 
+class UptimeSampleListResponse(BaseModel):
+    items: list[UptimeSampleResponse]
+    total: int
+
+
+class UptimeStatsResponse(BaseModel):
+    uptime_pct: float | None
+    ok_count: int
+    total_count: int
+    from_at: datetime
+    until_at: datetime
+
+
 class UptimeEventResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
