@@ -40,6 +40,10 @@ def sku_uptime_limit(sku: str | None) -> int:
     return UPTIME_SKU_LIMITS.get(sku or "multi", UPTIME_SKU_LIMITS["multi"])
 
 
+def _aware(dt: datetime) -> datetime:
+    return dt if dt.tzinfo is not None else dt.replace(tzinfo=UTC)
+
+
 _celery = Celery(
     "vuln_scanner",
     broker=settings.celery_broker_url,
@@ -354,10 +358,10 @@ class UptimeService:
     ) -> tuple[datetime, datetime]:
         now = datetime.now(UTC)
         floor = now - timedelta(days=7)
-        until_at = until if until is not None else now
+        until_at = _aware(until) if until is not None else now
         if until_at > now:
             until_at = now
-        since_at = since if since is not None else floor
+        since_at = _aware(since) if since is not None else floor
         if since_at < floor:
             since_at = floor
         return since_at, until_at
@@ -435,20 +439,22 @@ class UptimeService:
     ) -> list[UptimeEvent]:
         self._enabled()
         monitor = await self._get_in_org(monitor_id, organization_id, user.id)
+        since_at = _aware(since) if since is not None else None
+        until_at = _aware(until) if until is not None else None
         filters = [UptimeEvent.monitor_id == monitor.id]
-        if until is not None:
-            filters.append(UptimeEvent.at <= until)
+        if until_at is not None:
+            filters.append(UptimeEvent.at <= until_at)
         window = list(filters)
-        if since is not None:
-            window.append(UptimeEvent.at >= since)
-        result = await self.db.execute(
-            select(UptimeEvent).where(*window).order_by(UptimeEvent.at.desc()).limit(limit)
-        )
+        if since_at is not None:
+            window.append(UptimeEvent.at >= since_at)
+        keep_oldest_in_window = since_at is not None
+        order = UptimeEvent.at.asc() if keep_oldest_in_window else UptimeEvent.at.desc()
+        result = await self.db.execute(select(UptimeEvent).where(*window).order_by(order).limit(limit))
         rows = list(result.scalars().all())
-        if since is not None:
+        if since_at is not None:
             prior_q = await self.db.execute(
                 select(UptimeEvent)
-                .where(UptimeEvent.monitor_id == monitor.id, UptimeEvent.at < since)
+                .where(UptimeEvent.monitor_id == monitor.id, UptimeEvent.at < since_at)
                 .order_by(UptimeEvent.at.desc())
                 .limit(1)
             )
