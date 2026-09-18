@@ -200,6 +200,15 @@ async def test_crud_idor_and_sku(db_session: AsyncSession, ctx: dict, _stub_enqu
             params={"from": "2020-01-01T00:00:00Z"},
         )
         assert samples.status_code == 200
+        body = samples.json()
+        assert "items" in body
+        assert "total" in body
+        assert isinstance(body["items"], list)
+        hidden_samples = await client.get(
+            f"/api/uptime/monitors/{mid}/samples",
+            headers=_auth(outsider, None),
+        )
+        assert hidden_samples.status_code in (400, 404)
 
 
 @pytest.mark.asyncio
@@ -453,3 +462,173 @@ async def test_timeout_bounds_and_patch_idor(db_session: AsyncSession, ctx: dict
             json={"name": "tcp1", "check_type": "tcp", "target": "example.com:443", "expect_status": 200},
         )
         assert tcp.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_samples_pager_events_and_stats(db_session: AsyncSession, ctx: dict) -> None:
+    _bind_db(db_session)
+    owner, outsider, org = ctx["owner"], ctx["outsider"], ctx["org"]
+    now = datetime.now(UTC)
+    monitor = UptimeMonitor(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        created_by=owner.id,
+        name="pager",
+        check_type="http",
+        target="https://example.com/pager",
+        interval_seconds=60,
+        timeout_seconds=10,
+        enabled=True,
+        state="up",
+        consecutive_fails=0,
+        next_check_at=now,
+        notify_email=owner.email,
+    )
+    db_session.add(monitor)
+    await db_session.flush()
+    rows = []
+    for i in range(5):
+        rows.append(
+            UptimeSample(
+                id=uuid.uuid4(),
+                monitor_id=monitor.id,
+                checked_at=now - timedelta(hours=i),
+                ok=i != 1,
+                latency_ms=10 + i,
+                status_code=200 if i != 1 else 500,
+                error=None if i != 1 else "status 500",
+            )
+        )
+    too_old = UptimeSample(
+        id=uuid.uuid4(),
+        monitor_id=monitor.id,
+        checked_at=now - timedelta(days=8),
+        ok=True,
+        latency_ms=1,
+        status_code=200,
+        error=None,
+    )
+    after_until = UptimeSample(
+        id=uuid.uuid4(),
+        monitor_id=monitor.id,
+        checked_at=now - timedelta(minutes=5),
+        ok=True,
+        latency_ms=3,
+        status_code=200,
+        error=None,
+    )
+    down_at = now - timedelta(hours=10)
+    up_at = now - timedelta(hours=8)
+    prior_down = UptimeEvent(
+        id=uuid.uuid4(),
+        monitor_id=monitor.id,
+        from_state="up",
+        to_state="down",
+        at=now - timedelta(hours=20),
+        notified=False,
+        detail="prior",
+    )
+    window_up = UptimeEvent(
+        id=uuid.uuid4(),
+        monitor_id=monitor.id,
+        from_state="down",
+        to_state="up",
+        at=up_at,
+        notified=True,
+        detail="recovered",
+    )
+    window_down = UptimeEvent(
+        id=uuid.uuid4(),
+        monitor_id=monitor.id,
+        from_state="up",
+        to_state="down",
+        at=down_at,
+        notified=True,
+        detail="outage",
+    )
+    db_session.add_all([*rows, too_old, after_until, prior_down, window_up, window_down])
+    await db_session.commit()
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        paged = await client.get(
+            f"/api/uptime/monitors/{monitor.id}/samples",
+            headers=_auth(owner, org.id),
+            params={"limit": 2, "offset": 0},
+        )
+        assert paged.status_code == 200
+        body = paged.json()
+        assert body["total"] == 6
+        assert len(body["items"]) == 2
+        page2 = await client.get(
+            f"/api/uptime/monitors/{monitor.id}/samples",
+            headers=_auth(owner, org.id),
+            params={"limit": 2, "offset": 2},
+        )
+        assert page2.status_code == 200
+        assert page2.json()["total"] == 6
+        assert len(page2.json()["items"]) == 2
+        assert {row["id"] for row in paged.json()["items"]}.isdisjoint(
+            {row["id"] for row in page2.json()["items"]}
+        )
+        clamped = await client.get(
+            f"/api/uptime/monitors/{monitor.id}/samples",
+            headers=_auth(owner, org.id),
+            params={"from": (now - timedelta(days=30)).isoformat(), "limit": 500},
+        )
+        assert clamped.status_code == 200
+        ids = {row["id"] for row in clamped.json()["items"]}
+        assert str(too_old.id) not in ids
+        until_cut = now - timedelta(hours=2)
+        cut = await client.get(
+            f"/api/uptime/monitors/{monitor.id}/samples",
+            headers=_auth(owner, org.id),
+            params={"until": until_cut.isoformat(), "limit": 500},
+        )
+        assert cut.status_code == 200
+        cut_ids = {row["id"] for row in cut.json()["items"]}
+        assert str(after_until.id) not in cut_ids
+
+        stats = await client.get(
+            f"/api/uptime/monitors/{monitor.id}/stats",
+            headers=_auth(owner, org.id),
+            params={"from": (now - timedelta(hours=6)).isoformat(), "until": now.isoformat()},
+        )
+        assert stats.status_code == 200
+        sbody = stats.json()
+        assert sbody["total_count"] >= 1
+        assert sbody["ok_count"] <= sbody["total_count"]
+        expected = round(100.0 * sbody["ok_count"] / sbody["total_count"], 2)
+        assert sbody["uptime_pct"] == expected
+        empty = await client.get(
+            f"/api/uptime/monitors/{monitor.id}/stats",
+            headers=_auth(owner, org.id),
+            params={
+                "from": (now - timedelta(days=6, hours=23)).isoformat(),
+                "until": (now - timedelta(days=6, hours=22)).isoformat(),
+            },
+        )
+        assert empty.status_code == 200
+        assert empty.json()["uptime_pct"] is None
+        assert empty.json()["total_count"] == 0
+        hidden_stats = await client.get(
+            f"/api/uptime/monitors/{monitor.id}/stats",
+            headers=_auth(outsider, None),
+        )
+        assert hidden_stats.status_code in (400, 404)
+
+        events = await client.get(
+            f"/api/uptime/monitors/{monitor.id}/events",
+            headers=_auth(owner, org.id),
+            params={"from": (now - timedelta(hours=12)).isoformat(), "until": now.isoformat()},
+        )
+        assert events.status_code == 200
+        event_ids = {row["id"] for row in events.json()}
+        assert str(window_down.id) in event_ids
+        assert str(window_up.id) in event_ids
+        assert str(prior_down.id) in event_ids
+        hidden_events = await client.get(
+            f"/api/uptime/monitors/{monitor.id}/events",
+            headers=_auth(outsider, None),
+        )
+        assert hidden_events.status_code in (400, 404)
