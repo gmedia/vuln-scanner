@@ -171,9 +171,9 @@ function buildOutages(
     if (endMs < fromMs) continue;
     const ongoing = !recover;
     rows.push({
-      id: ev.id,
-      at: ev.at,
-      until: recover?.at ?? null,
+        id: ev.id,
+        at: startMs < fromMs ? fromIso : ev.at,
+        until: recover?.at ?? null,
       detail: ev.detail,
       ongoing,
       durationMs: Math.max(0, endMs - Math.max(startMs, fromMs)),
@@ -196,7 +196,6 @@ function AvailabilityBar({
     <div
       className="flex h-8 w-full overflow-hidden rounded-md border border-border bg-muted"
       data-testid="uptime-availability-bar"
-      role="img"
       aria-hidden
     >
       {segments.length === 0 ? (
@@ -268,8 +267,7 @@ export default function UptimeDetail() {
   const notFound =
     monitorQ.isError &&
     isAxiosError(monitorQ.error) &&
-    (monitorQ.error.response?.status === 404 ||
-      monitorQ.error.response?.status === 400);
+    monitorQ.error.response?.status === 404;
 
   const stateLabel = (state: string) => {
     if (state === "up") return t("stateUp");
@@ -293,7 +291,7 @@ export default function UptimeDetail() {
   const fromMs = new Date(window.from).getTime();
   const untilMs = new Date(window.until).getTime();
 
-  if (!id || notFound || (monitorQ.isError && !monitorQ.data)) {
+  if (!id || notFound) {
     return (
       <div data-testid="uptime-detail-not-found">
         <div className="flex flex-col items-center justify-center py-20 text-center">

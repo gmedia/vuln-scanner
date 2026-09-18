@@ -632,3 +632,112 @@ async def test_samples_pager_events_and_stats(db_session: AsyncSession, ctx: dic
             headers=_auth(outsider, None),
         )
         assert hidden_events.status_code in (400, 404)
+
+        naive_from = (now - timedelta(hours=6)).replace(tzinfo=None)
+        naive_until = now.replace(tzinfo=None)
+        naive_stats = await client.get(
+            f"/api/uptime/monitors/{monitor.id}/stats",
+            headers=_auth(owner, org.id),
+            params={"from": naive_from.isoformat(), "until": naive_until.isoformat()},
+        )
+        assert naive_stats.status_code == 200
+        naive_samples = await client.get(
+            f"/api/uptime/monitors/{monitor.id}/samples",
+            headers=_auth(owner, org.id),
+            params={"from": naive_from.isoformat(), "until": naive_until.isoformat(), "limit": 24},
+        )
+        assert naive_samples.status_code == 200
+        naive_old = await client.get(
+            f"/api/uptime/monitors/{monitor.id}/samples",
+            headers=_auth(owner, org.id),
+            params={"from": (now - timedelta(days=30)).replace(tzinfo=None).isoformat(), "limit": 500},
+        )
+        assert naive_old.status_code == 200
+        assert str(too_old.id) not in {row["id"] for row in naive_old.json()["items"]}
+        naive_events = await client.get(
+            f"/api/uptime/monitors/{monitor.id}/events",
+            headers=_auth(owner, org.id),
+            params={"from": naive_from.isoformat(), "until": naive_until.isoformat()},
+        )
+        assert naive_events.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_events_window_keeps_oldest_when_since_set(db_session: AsyncSession, ctx: dict) -> None:
+    _bind_db(db_session)
+    owner, org = ctx["owner"], ctx["org"]
+    now = datetime.now(UTC)
+    monitor = UptimeMonitor(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        created_by=owner.id,
+        name="overflow",
+        check_type="http",
+        target="https://example.com/overflow",
+        interval_seconds=60,
+        timeout_seconds=10,
+        enabled=True,
+        state="up",
+        consecutive_fails=0,
+        next_check_at=now,
+        notify_email=owner.email,
+    )
+    db_session.add(monitor)
+    await db_session.flush()
+    oldest = UptimeEvent(
+        id=uuid.uuid4(),
+        monitor_id=monitor.id,
+        from_state="up",
+        to_state="down",
+        at=now - timedelta(hours=5),
+        notified=True,
+        detail="oldest-in-window",
+    )
+    newest = UptimeEvent(
+        id=uuid.uuid4(),
+        monitor_id=monitor.id,
+        from_state="down",
+        to_state="up",
+        at=now - timedelta(hours=1),
+        notified=True,
+        detail="newest-in-window",
+    )
+    extras = [
+        UptimeEvent(
+            id=uuid.uuid4(),
+            monitor_id=monitor.id,
+            from_state="up" if i % 2 == 0 else "down",
+            to_state="down" if i % 2 == 0 else "up",
+            at=now - timedelta(hours=4, minutes=i),
+            notified=True,
+            detail=f"mid-{i}",
+        )
+        for i in range(5)
+    ]
+    db_session.add_all([oldest, newest, *extras])
+    await db_session.commit()
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        windowed = await client.get(
+            f"/api/uptime/monitors/{monitor.id}/events",
+            headers=_auth(owner, org.id),
+            params={
+                "from": (now - timedelta(hours=6)).isoformat(),
+                "until": now.isoformat(),
+                "limit": 3,
+            },
+        )
+        assert windowed.status_code == 200
+        window_ids = [row["id"] for row in windowed.json()]
+        assert str(oldest.id) in window_ids
+        assert str(newest.id) not in window_ids
+        default = await client.get(
+            f"/api/uptime/monitors/{monitor.id}/events",
+            headers=_auth(owner, org.id),
+            params={"limit": 3},
+        )
+        assert default.status_code == 200
+        default_ids = [row["id"] for row in default.json()]
+        assert str(newest.id) in default_ids
+        assert str(oldest.id) not in default_ids
