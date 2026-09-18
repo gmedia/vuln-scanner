@@ -56,7 +56,7 @@ const MONITOR: UptimeMonitor = {
 
 function renderDetail(id = "m1") {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
+  const view = render(
     <QueryClientProvider client={qc}>
       <MemoryRouter initialEntries={[`/uptime/${id}`]}>
         <Routes>
@@ -66,6 +66,17 @@ function renderDetail(id = "m1") {
       </MemoryRouter>
     </QueryClientProvider>,
   );
+  return { qc, ...view };
+}
+
+function formatStamp(iso: string): string {
+  return new Date(iso).toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 describe("UptimeDetail", () => {
@@ -89,12 +100,13 @@ describe("UptimeDetail", () => {
       ],
       total: 1,
     });
+    const nowMs = Date.now();
     mockEvents.mockResolvedValue([
       {
         id: "e-prior",
         from_state: "up",
         to_state: "down",
-        at: "2026-09-16T20:00:00Z",
+        at: new Date(nowMs - 30 * 60 * 60 * 1000).toISOString(),
         notified: true,
         detail: "prior",
       },
@@ -102,7 +114,7 @@ describe("UptimeDetail", () => {
         id: "e-down",
         from_state: "up",
         to_state: "down",
-        at: "2026-09-17T08:00:00Z",
+        at: new Date(nowMs - 4 * 60 * 60 * 1000).toISOString(),
         notified: true,
         detail: "timeout",
       },
@@ -110,7 +122,7 @@ describe("UptimeDetail", () => {
         id: "e-up",
         from_state: "down",
         to_state: "up",
-        at: "2026-09-17T09:00:00Z",
+        at: new Date(nowMs - 3 * 60 * 60 * 1000).toISOString(),
         notified: true,
         detail: "recovered",
       },
@@ -137,6 +149,20 @@ describe("UptimeDetail", () => {
     expect(screen.getByRole("link")).toHaveAttribute("href", "/uptime");
   });
 
+  it("does not treat a 400 as not-found", async () => {
+    mockGet.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 400 },
+      message: "Bad Request",
+    });
+    const { qc } = renderDetail();
+    await waitFor(() =>
+      expect(qc.getQueryState(["uptime-monitor", "m1"])?.status).toBe("error"),
+    );
+    expect(screen.queryByTestId("uptime-detail-not-found")).not.toBeInTheDocument();
+    expect(screen.getByTestId("uptime-detail")).toBeInTheDocument();
+  });
+
   it("renders range chips, availability bar, outages, and probe log", async () => {
     renderDetail();
     await waitFor(() =>
@@ -148,10 +174,11 @@ describe("UptimeDetail", () => {
     await waitFor(() =>
       expect(screen.getByTestId("uptime-detail-kpi")).toHaveTextContent("99.12%"),
     );
-    expect(screen.getByTestId("uptime-availability-bar")).toBeInTheDocument();
-    expect(
-      screen.getByTestId("uptime-availability-bar").querySelector('[data-state="down"]'),
-    ).toBeTruthy();
+    const bar = screen.getByTestId("uptime-availability-bar");
+    expect(bar).toBeInTheDocument();
+    expect(bar).toHaveAttribute("aria-hidden");
+    expect(bar).not.toHaveAttribute("role");
+    expect(bar.querySelector('[data-state="down"]')).toBeTruthy();
     expect(screen.getAllByTestId("uptime-outage-row").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByTestId("uptime-history-panel")).toBeInTheDocument();
     expect(screen.getByTestId("uptime-history-row")).toBeInTheDocument();
@@ -182,5 +209,35 @@ describe("UptimeDetail", () => {
       expect(last?.[1]).toMatchObject({ limit: 50, offset: 0 });
     });
     expect(mockStats.mock.calls.length).toBeGreaterThan(1);
+  });
+
+  it("clips a prior-down outage start to the selected range", async () => {
+    const priorAt = "2020-01-01T00:00:00.000Z";
+    const recoverAt = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    mockEvents.mockResolvedValue([
+      {
+        id: "e-prior",
+        from_state: "up",
+        to_state: "down",
+        at: priorAt,
+        notified: true,
+        detail: "prior",
+      },
+      {
+        id: "e-up",
+        from_state: "down",
+        to_state: "up",
+        at: recoverAt,
+        notified: true,
+        detail: "recovered",
+      },
+    ]);
+    renderDetail();
+    await waitFor(() =>
+      expect(screen.getAllByTestId("uptime-outage-row")).toHaveLength(1),
+    );
+    const row = screen.getByTestId("uptime-outage-row");
+    expect(row.textContent).not.toContain(formatStamp(priorAt));
+    expect(row.textContent).toContain(formatStamp(recoverAt));
   });
 });
