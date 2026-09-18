@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
   createMonitor,
   deleteMonitor,
   listMonitors,
-  listSamples,
   pauseMonitor,
   updateMonitor,
   type UptimeCreatePayload,
@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import { UptimeFiltersSection } from "@/components/uptime/UptimeFiltersSection";
-import { UptimeHistoryPanel } from "@/components/uptime/UptimeHistoryPanel";
 import { UptimeKpiRow } from "@/components/uptime/UptimeKpiRow";
 import { UptimeMonitorListCard } from "@/components/uptime/UptimeMonitorList";
 import { UptimeMonitorSheet } from "@/components/uptime/UptimeMonitorSheet";
@@ -29,6 +28,7 @@ import { toUptimeUpdatePayload } from "@/components/uptime/uptimeForm";
 
 export default function Uptime() {
   const { t } = useTranslation("uptime");
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [heartbeatUrl, setHeartbeatUrl] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -36,7 +36,6 @@ export default function Uptime() {
   const [stateFilter, setStateFilter] = useState<UptimeStateFilter>("all");
   const [typeFilter, setTypeFilter] = useState<UptimeTypeFilter>("all");
   const [search, setSearch] = useState("");
-  const [historyId, setHistoryId] = useState<string | null>(null);
 
   const list = useQuery({
     queryKey: ["uptime"],
@@ -123,13 +122,6 @@ export default function Uptime() {
     onError: onApiError,
   });
 
-  const historyQuery = useQuery({
-    queryKey: ["uptime-samples", historyId],
-    queryFn: () => listSamples(historyId as string),
-    enabled: Boolean(historyId),
-  });
-  const historyMonitor = items.find((m) => m.id === historyId);
-  const historyRows = (historyQuery.data ?? []).slice(0, 24);
   const formBusy = createMut.isPending || updateMut.isPending;
 
   const stateLabel = (state: string) => {
@@ -236,7 +228,7 @@ export default function Uptime() {
       ) : (
         <UptimeMonitorListCard
           monitors={filtered}
-          onHistory={(id) => setHistoryId((cur) => (cur === id ? null : id))}
+          onHistory={(id) => navigate(`/uptime/${id}`)}
           onEdit={fillFromMonitor}
           onPause={(id) => pauseMut.mutate(id)}
           onDelete={(id) => {
@@ -246,13 +238,6 @@ export default function Uptime() {
         />
       )}
 
-      {historyId && historyMonitor ? (
-        <UptimeHistoryPanel
-          monitor={historyMonitor}
-          rows={historyRows}
-          loading={historyQuery.isLoading}
-        />
-      ) : null}
     </div>
   );
 }

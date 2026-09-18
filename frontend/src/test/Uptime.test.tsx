@@ -37,6 +37,10 @@ function renderPage() {
       <MemoryRouter initialEntries={["/uptime"]}>
         <Routes>
           <Route path="/uptime" element={<Uptime />} />
+          <Route
+            path="/uptime/:id"
+            element={<div data-testid="uptime-detail-stub">detail</div>}
+          />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -48,7 +52,7 @@ describe("Uptime page", () => {
     mockList.mockReset();
     mockSamples.mockReset();
     mockList.mockResolvedValue([]);
-    mockSamples.mockResolvedValue([]);
+    mockSamples.mockResolvedValue({ items: [], total: 0 });
   });
 
   it("maps sku limit errors", () => {
@@ -199,8 +203,8 @@ describe("Uptime page", () => {
         uptime_24h: 99.9,
       },
     ]);
-    mockSamples.mockResolvedValue(
-      Array.from({ length: 8 }, (_, i) => ({
+    mockSamples.mockResolvedValue({
+      items: Array.from({ length: 8 }, (_, i) => ({
         id: `s${i}`,
         checked_at: `2026-08-25T0${i}:00:00Z`,
         ok: true,
@@ -208,7 +212,8 @@ describe("Uptime page", () => {
         status_code: 200,
         error: null,
       })),
-    );
+      total: 8,
+    });
     renderPage();
     await waitFor(() =>
       expect(screen.getByTestId("uptime-sparkline")).not.toHaveTextContent("—"),
@@ -264,7 +269,7 @@ describe("Uptime page", () => {
     expect(mockList.mock.calls.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("opens check history for a down monitor", async () => {
+  it("navigates to monitor overview from History", async () => {
     const user = userEvent.setup();
     mockList.mockResolvedValue([
       {
@@ -295,28 +300,16 @@ describe("Uptime page", () => {
         uptime_24h: 80,
       },
     ]);
-    mockSamples.mockResolvedValue([
-      {
-        id: "s1",
-        checked_at: "2026-08-28T00:00:00Z",
-        ok: false,
-        latency_ms: 40,
-        status_code: 403,
-        error: "status 403",
-      },
-    ]);
     renderPage();
     await waitFor(() => expect(screen.getByTestId("uptime-row")).toBeInTheDocument());
     const row = screen.getByTestId("uptime-row");
     await user.click(within(row).getByTestId("uptime-actions"));
     await user.click(screen.getByTestId("uptime-history"));
     await waitFor(() =>
-      expect(screen.getByTestId("uptime-history-panel")).toBeInTheDocument(),
+      expect(screen.getByTestId("uptime-detail-stub")).toBeInTheDocument(),
     );
-    expect(screen.getByTestId("uptime-history-row")).toBeInTheDocument();
-    expect(
-      screen.getAllByText(/403 is a deny/i).length,
-    ).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByTestId("uptime-history-panel")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("uptime-page")).not.toBeInTheDocument();
   });
 
   it("sends null expect_status when the HTTP field is cleared", () => {
