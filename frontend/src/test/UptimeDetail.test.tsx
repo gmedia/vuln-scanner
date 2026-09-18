@@ -177,7 +177,8 @@ describe("UptimeDetail", () => {
     );
     await user.click(screen.getByTestId("uptime-range-6h"));
     await waitFor(() => {
-      const last = mockSamples.mock.calls.at(-1);
+      const calls = mockSamples.mock.calls;
+      const last = calls[calls.length - 1];
       expect(last?.[1]).toMatchObject({ limit: 50, offset: 0 });
     });
     expect(mockStats.mock.calls.length).toBeGreaterThan(1);
