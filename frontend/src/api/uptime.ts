@@ -70,6 +70,37 @@ export interface UptimeSample {
   error: string | null;
 }
 
+export interface UptimeSampleList {
+  items: UptimeSample[];
+  total: number;
+}
+
+export interface UptimeEvent {
+  id: string;
+  from_state: string;
+  to_state: string;
+  at: string;
+  notified: boolean;
+  detail: string | null;
+}
+
+export interface UptimeStats {
+  uptime_pct: number | null;
+  ok_count: number;
+  total_count: number;
+  from_at: string;
+  until_at: string;
+}
+
+export type UptimeRange = "6h" | "24h" | "7d";
+
+export interface UptimeWindowParams {
+  from?: string;
+  until?: string;
+  limit?: number;
+  offset?: number;
+}
+
 export async function listMonitors(): Promise<UptimeMonitor[]> {
   const { data } = await api.get<UptimeMonitor[]>("/api/uptime/monitors");
   return data;
@@ -114,13 +145,40 @@ export async function rotateHeartbeatToken(id: string): Promise<UptimeMonitor> {
   return data;
 }
 
+export async function getMonitor(id: string): Promise<UptimeMonitor> {
+  const { data } = await api.get<UptimeMonitor>(`/api/uptime/monitors/${id}`);
+  return data;
+}
+
 export async function listSamples(
   id: string,
-  from?: string,
-): Promise<UptimeSample[]> {
-  const { data } = await api.get<UptimeSample[]>(
+  params?: UptimeWindowParams,
+): Promise<UptimeSampleList> {
+  const { data } = await api.get<UptimeSampleList>(
     `/api/uptime/monitors/${id}/samples`,
-    { params: from ? { from } : undefined },
+    { params },
+  );
+  return data;
+}
+
+export async function listEvents(
+  id: string,
+  params?: Pick<UptimeWindowParams, "from" | "until"> & { limit?: number },
+): Promise<UptimeEvent[]> {
+  const { data } = await api.get<UptimeEvent[]>(
+    `/api/uptime/monitors/${id}/events`,
+    { params },
+  );
+  return data;
+}
+
+export async function getMonitorStats(
+  id: string,
+  params?: Pick<UptimeWindowParams, "from" | "until">,
+): Promise<UptimeStats> {
+  const { data } = await api.get<UptimeStats>(
+    `/api/uptime/monitors/${id}/stats`,
+    { params },
   );
   return data;
 }
