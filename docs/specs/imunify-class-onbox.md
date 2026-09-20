@@ -106,7 +106,7 @@ Regional AM can demo: enroll Guard → helper on fixture → **real** hit on **t
 
 Slices **A–H** remain the **PR stream** names. Waves are **when sales can demo** vs remaining engineering. **Do not** re-implement S1–S12. Implement app code **only** when the user names a slice **and** says `buat` / `kerjakan`.
 
-**Control-plane fact:** P12 S0–S12 is on `main`. That is **not** ready to sell as a **full** Imunify360 replacement (PD/WebShield/cPanel). **Displace-lite** on nginx VPS is a **separate** AM sentence after **Sentence-ok** in [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) (**DL0–DL3 shipped**; **Sentence-ok OPEN** — closure **§7**). Residual is **ops Demo-ok + owner-dated §7 E**. Invoice-ok = **Sinexis in-app**, **not** GMD Host `service_id`. Not more WAF IDs / **G/H**. Do **not** treat pack-in-git as permission to say “ganti Imunify360”.
+**Control-plane fact:** P12 S0–S12 is on `main`. That is **not** ready to sell as a **full** Imunify360 replacement (PD/WebShield/cPanel). **Displace-lite** on nginx VPS is a **separate** AM sentence after **Sentence-ok** in [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) (**DL0–DL3 shipped**; **Sentence-ok OPEN** — closure **§7**). **Demo-ok `tc5` proven.** Residual = owner-dated **§7 E**. Invoice-ok = **Sinexis in-app**, **not** GMD Host `service_id`. Not more WAF IDs / **G/H**. Do **not** treat pack-in-git as permission to say “ganti Imunify360”.
 
 ### Job map (Imunify job → Sinexis wave)
 
@@ -119,7 +119,7 @@ Slices **A–H** remain the **PR stream** names. Waves are **when sales can demo
 | HTTP filter on same host | P13 detect + starter **1001–1146**; **F** protect Multi; **DL3** live notify | **2** — never `sinexis.app` edge; do not ingest IM360 IDs |
 | Panel / PHP PD | Out | **3** = **G/H** research only |
 
-### Wave 0 — sellable **install** (default next)
+### Wave 0 — sellable **install** (shipped **#642**; **not** agent default next)
 
 | In | Out |
 |----|-----|
