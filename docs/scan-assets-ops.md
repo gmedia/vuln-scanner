@@ -26,4 +26,4 @@ Do **not** treat this as Guard enroll. Playwright ≠ host enroll. Wipe `tc5` fi
 
 ## SKU vs sold tier
 
-Fulfillment: set `organizations.sku` to the **invoiced** tier so the product cap matches finance (`service_id` ×3 still human — see `docs/commercial/sku-scan-secure-addon.md`).
+Fulfillment: set `organizations.sku` to the **invoiced** tier so the product cap matches finance. Preferred: Sinexis `/admin/invoices` (I1/D5). Optional leftover: Scan GTM `service_id` ×3 — **not** Invoice-ok, **not** agent next (see `docs/commercial/sku-scan-secure-addon.md`).

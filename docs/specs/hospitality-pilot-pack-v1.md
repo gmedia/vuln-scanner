@@ -92,7 +92,7 @@ Wedge **A** (hospitality) is strategically useful and weak in current billing ex
 
 Copy this into **private CRM**, then fill names there.
 
-1. Finance `service_id` exists for the sold tier (do not silent-bundle VPS).
+1. Scan invoice exists for the sold tier — preferred: Sinexis `/admin/invoices` (I1/D5). Optional leftover: GMD `service_id` — **not** Invoice-ok, **not** agent next. Do not silent-bundle VPS.
 2. Create/verify org; set `sku`; invite hotel IT (owner) + GM (`viewer` OK).
 3. Top up credits to tier bundle (or sponsored grant).
 4. Named assets on `/assets` (1:1 schedules). Cadence monthly (Basic) or weekly (Pro+).

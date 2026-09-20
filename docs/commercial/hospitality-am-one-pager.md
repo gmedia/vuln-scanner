@@ -31,7 +31,7 @@ You already pay for **colo, VPS, or cloud**. Public IPs and booking/Wi‑Fi doma
 | **Pro** | ≤3 | Weekly or monthly | **650.000** |
 | **Multi-asset** | ≤10 | Weekly | **2.000.000** |
 
-Invoice = **new `service_id` per tier**. Do not silent-bundle into VPS. Headline = **assets + cadence**. Credits = optional overage (manual / mobile), not required for the attach loop ([`../specs/metering-v2.md`](../specs/metering-v2.md)).
+Invoice = Sinexis `/admin/invoices` (I1/D5 preferred). Optional leftover: GMD `service_id` per tier — **not** Invoice-ok, **not** agent next. Do not silent-bundle into VPS. Headline = **assets + cadence**. Credits = optional overage (manual / mobile), not required for the attach loop ([`../specs/metering-v2.md`](../specs/metering-v2.md)).
 
 **Hotel language → product:** property / PMS / booking site = **asset**; weekly check = **schedule**; GM PDF/HTML = **executive report**; IT login = **workspace** (invite viewer). Hybrid review of criticals: **5 business days**, not a SOC SLA.
 
