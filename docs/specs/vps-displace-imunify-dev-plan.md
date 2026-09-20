@@ -1,10 +1,10 @@
 # Spec: VPS displace-lite vs Imunify360 (development plan)
 
-**Status:** **docs** (2026-09-07). **DL0 shipped** (`main` #647). **DL1** runbook shipped (`main` #649). **DL2** pack 1005/1006 shipped (`main` #651). Owner **intent:** AM able to say **“ganti Imunify dengan Sinexis di VPS/server”** — **only** on a **single nginx VPS or dedicated**, **not** shared cPanel/CloudLinux farms. That short fragment is **internal intent**, **forbidden in customer meetings** until **Sentence-ok** (§1).
+**Status:** **docs** (updated **2026-09-20**). **Sentence-ok = OPEN** — short “ganti Imunify360 dengan Sinexis” is **still forbidden** in customer meetings. **DL0–DL3 shipped** (`main` #647 / #649 / #651 / #659). Remaining path is **not** more WAF IDs or P14 **G/H**: it is **Demo-ok ops on `tc5`**, **Invoice-ok GMD `service_id`**, and a **dated product-owner checklist** (§7). Owner **intent:** AM able to say **“ganti Imunify dengan Sinexis di VPS/server”** — **only** on a **single nginx VPS or dedicated**, **not** shared cPanel/CloudLinux farms. That short fragment is **internal intent**, **forbidden in customer meetings** until **Sentence-ok** (§1 + §7).
 **Epic:** **P14 follow-on honesty plan** (jobs + original stack). Does **not** reopen P12 S1–S12 or P13 S0–S5.
 **Legal:** [`imunify-beside-not-roadmap.md`](../commercial/imunify-beside-not-roadmap.md) still forbids clone PRs, trademarks, Imunify/CRS commercial DB in git, “Imunify compatible” in UI. This file is a **job + speech gate**, not parity.
 **HTTP stack:** **nginx + ModSecurity (or Coraza spoa) on the customer/lab vhost.** **Caddy = out** until a **named** slice. Do not say “nginx/Caddy” in AM copy.
-**Do not implement app code** until the user names **DL0 / DL1 / DL2** below **and** says `implement` / `buat` / `kerjakan`.
+**Do not implement app code** until the user names a slice **and** says `implement` / `buat` / `kerjakan`. **DL0–DL3 are shipped — do not rebuild.** Do **not** create a second spec (`sentence-ok-closure.md`).
 
 **Map (avoid colliding with P14 A–H):**
 
@@ -46,10 +46,18 @@ All of:
 
 Until Demo-ok: do not demo Host as “on-box proof.”
 
-### Invoice-ok (human / finance — not a code PR)
+### Invoice-ok (human / finance — not a default code PR)
 
-- `service_id` rows for Host Basic/Pro/Multi exist; not bundled into VPS or Scan.
+**Do not conflate two invoice surfaces:**
+
+| Surface | Today | Role |
+|---------|--------|------|
+| **C1 (this gate)** GMD ERP `service_id` Host Basic / Pro / Multi | [`sku-host-protect.md`](../commercial/sku-host-protect.md) **H9 open**, off-repo | **Invoice-ok** for the short sentence |
+| **C2** In-app `sku_catalog` `product=host` `invoicable=true` | Invoice v1: Host seeded, `invoicable=false`; I10 Host-only invoice **out** | **Parked** until owner **names H9** as a product slice |
+
+- C1: three Host `service_id` rows exist; **not** bundled into VPS or Scan.
 - Working IDR already in [`sku-host-protect.md`](../commercial/sku-host-protect.md) H4; lock is **open** as of this write.
+- Do **not** flip `invoicable` or invent Host invoice APIs to close this gate.
 
 ### Sentence-ok (short “ganti” line)
 
@@ -160,4 +168,100 @@ Regional AM demos **one** nginx VPS: Guard + helper + real file isolate + (Multi
 - No IPs, tokens, customer paths in git.
 - Playwright ≠ enroll. Clone PRs forbidden.
 - Do not implement “D1” as another quarantine queue.
-- Cross-links: [`imunify-class-onbox.md`](imunify-class-onbox.md) §7 waves · [`host-protect-v1.md`](host-protect-v1.md) · [`host-waf-v1.md`](host-waf-v1.md)
+- Cross-links: [`imunify-class-onbox.md`](imunify-class-onbox.md) §7 waves · [`host-protect-v1.md`](host-protect-v1.md) · [`host-waf-v1.md`](host-waf-v1.md) · Sentence-ok closure **this file §7**
+
+---
+
+## 7) Sentence-ok closure (2026-09-20) — **OPEN**, not GREEN
+
+**Goal of this section:** a dated path so AM **may** use the short fragment *“ganti Imunify360 dengan Sinexis”* on **one nginx VPS / dedicated without a panel**. It does **not** authorize that sentence today. It does **not** reopen product epics.
+
+**AND, not OR:**
+
+```
+Sentence-ok  =  Demo-ok  AND  Invoice-ok (C1)  AND  pack 1005+ (shipped)
+               AND  Simulate lab-gate (shipped)  AND  ModSec loaded on lab vhost
+               AND  product owner dates the private checklist
+```
+
+### 7.1 A — Already on `main` (MUST NOT rebuild)
+
+| Item | Evidence |
+|------|----------|
+| Host Protect S0–S12 | honesty, helper, quarantine `mv` |
+| Host WAF detect + protect (Host **Multi**) | customer nginx snippet; **never** `sinexis.app` edge |
+| P14 A–F (E hourly) | on `main` |
+| DL0 Simulate lab-gate | #647 — unlabeled `mock.sqli.1` not in prod UX |
+| DL1 file-loop runbook | [`dl1-file-loop-runbook.md`](dl1-file-loop-runbook.md) |
+| DL2 pack **1005** / **1006** | #651; live ingest **1001–1146** |
+| DL3 live notify | #659 — not Simulate |
+| Installer | `https://sinexis.app/install/sinexis-install.sh` #642 |
+| Invoice v1 Scan | pay loop closed; Host catalog `invoicable=false` |
+| Working list IDR | Basic 150k / Pro 350k / Multi 900k — **not** finance lock |
+
+**MUST NOT:** PRs titled “Imunify parity”; CRS / IM360 commercial DB in git; rebuild P12 / P13 / DL0–DL3; unpark P14 **G/H**; WAF **1147+**; inotify; Caddy; PHP PD; WebShield; KernelCare; cPanel plugin; wipe `sx-erpstg`; paste WAF onto `sinexis.app` edge; SSH Alembic after a green `main` deploy.
+
+### 7.2 B — Demo-ok (ops, lab `tc5`, not ERP)
+
+All four on **one** nginx VPS. Playwright ≠ enroll. Standing 2026-08-26 permission = Guard enroll/unenroll **wipe-first** ([`AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) §4.1) — **not** a blank cheque for `--apply-vhost`.
+
+| # | Bar | Honest proof | Not proof |
+|---|-----|----------------|-----------|
+| B1 | Helper from **sinexis.app**; `helperPolled` fresh on `/host` | SPA last POST not stale (&lt; 30 min) | Wazuh keep-alive |
+| B2 | Real file hit → SPA quarantine → SPA restore | Status leaves queued after helper; file under `/var/lib/sinexis/quarantine` then back | SSH `mv`; mock hits |
+| B3 | **Live** WAF (not Simulate) starter id **1001–1006**; GET `/wp-admin/` **200** | ModSec/Coraza **loaded** on **lab** vhost; curl 403 vs 200 | Snippet copy; Simulate `mock.sqli.1` |
+| B4 | Spoken exclusions | No PD, WebShield, MDS auto-clean DB, KernelCare | Silence |
+
+File loop: [`dl1-file-loop-runbook.md`](dl1-file-loop-runbook.md). WAF API smoke: `./scripts/host-waf-lab-smoke.sh` (refuses ERP). `--apply-vhost` **only** when the owner **names** vhost apply. Ubuntu often has **no** ModSec module — that is **ops/hybrid**, not a SaaS PR.
+
+**Fail-closed:** helper stale; quarantine stays queued; Simulate sold as a live block; `/wp-admin/` returns 403; module not loaded. Redact tokens/paths; **never** commit lab JSON.
+
+### 7.3 C — Invoice-ok (finance / product)
+
+AM **must not** invoice an Imunify replacement until **C1** is true.
+
+- **C1 (gate):** GMD `service_id` Host Basic / Pro / Multi exist; not a VPS or Scan bundle. Tick in **private** finance/CRM — **no SIDs in git**.
+- **C2:** in-app Host `invoicable=true` stays **parked** unless owner names **H9**.
+- File-only demo = quote **Host Basic**. WAF/protect sentence = org is **Host Multi before** the meeting. Never quote Basic and demo Protect.
+
+### 7.4 D — Docs hygiene (this PR)
+
+Update **this file** + pointers in legal / SKU / P14 / DL1 / Host Protect / Host WAF / invoice v1 / guide / `handoff.md`. **Do not** add `docs/specs/sentence-ok-closure.md`. **Do not** mark H4 / H9 **locked** without finance.
+
+### 7.5 E — Who signs (dated private checklist)
+
+AM **must not** self-authorize the short line. **Product owner** dates a private CRM/ops note (no customer SIDs in git). Copy (tick off-repo):
+
+```
+Sentence-ok  date: ____   signer: product owner
+Target: nginx dedicated / no panel     [required]
+Not shared cPanel / CloudLinux farm    [required]
+
+Demo-ok
+[ ] B1 helperPolled fresh from sinexis.app
+[ ] B2 real hit → SPA quarantine → SPA restore
+[ ] B3 ModSec loaded; live 403 on 1005/1006; GET /wp-admin/ = 200
+[ ] B4 spoken: no PD, WebShield, MDS auto-clean, KernelCare
+
+Invoice-ok
+[ ] C1 three Host service_id rows (Basic/Pro/Multi)
+[ ] not bundled into VPS or Scan
+[ ] IDR = working list H4 unless finance dated another band
+[ ] C2 in-app Host invoicable — N/A unless H9 named
+
+Product (already git)
+[x] pack 1005/1006
+[x] Simulate lab-gate
+
+Fail → short line STAYS FORBIDDEN
+[ ] buyer requires PD / KernelCare / WebShield
+[ ] quote Basic + demo Protect
+[ ] Simulate as live block
+[ ] shared cPanel meeting
+```
+
+Until every required box is dated **OPEN stays OPEN**. Use **only** the §0 long pitch. Fallback: *“file + HTTP tipis + scan luar; Imunify tetap lebih dalam di PHP runtime dan bot challenge.”*
+
+**Critical path (not more code):** B1–B2 file loop (hours, ops) → **B3 ModSec on lab vhost** (often the technical blocker) → **C1 finance `service_id`** (often the commercial long pole) → owner dates E.
+
+Buyer who **requires** PD, KernelCare, or WebShield is **not** a displace deal — sit **beside**; sell Scan attach.

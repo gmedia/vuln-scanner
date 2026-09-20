@@ -6,11 +6,11 @@
 **Depends:** P2 Workspace · P5 Guard enroll · P12 `host_sites` (policy is **per site**, same `root_path` / agent).
 **Commercial (working):** extend [`docs/commercial/sku-host-protect.md`](../commercial/sku-host-protect.md) **H7** — WAF is a **Host Multi+** (or later SKU line). List IDR **unset**. AM must not invoice from this file.
 
-**Inspiration (not a clone):** Imunify360 “Proactive Defense / WAF” job: *stop obvious HTTP exploit noise on a VPS without SSH-editing nginx*. Positioning: **sit beside** Imunify on cPanel farms; **attach** on GMD VPS/colo with nginx/Caddy and no panel suite.
+**Inspiration (not a clone):** Imunify360 “Proactive Defense / WAF” job: *stop obvious HTTP exploit noise on a VPS without SSH-editing nginx*. Positioning: **sit beside** Imunify on cPanel farms; **attach** on GMD VPS/colo with **nginx** and no panel suite. **Caddy = out** until a named slice (do not say “nginx/Caddy” in AM copy).
 
 **Not this epic:** Imunify trademarks/rulesets, PHP Proactive Defense, KernelCare, CAPTCHA/WebShield, email anti-spam, putting Coraza in `nginx/sinexis.app.conf`, CrowdSec as the product, CRS paid packs in git.
 
-**Follow-on:** protect-on-customer-nginx is **P14 slice F** / **wave 2** — [`imunify-class-onbox.md`](imunify-class-onbox.md) §7. Original pack widen = **DL2** in [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md). Protect mode is **Host Multi** only; snippet still never for `sinexis.app` edge.
+**Follow-on:** protect-on-customer-nginx is **P14 slice F** / **wave 2** — [`imunify-class-onbox.md`](imunify-class-onbox.md) §7. Original pack widen = **DL2** in [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) (**shipped**). Short “ganti Imunify360” still needs **Sentence-ok** (displace **§7**, **OPEN**) — live 403 on lab vhost is **ops**, not more rule IDs. Protect mode is **Host Multi** only; snippet still never for `sinexis.app` edge.
 
 **Lab probe (tc5, after ModSec on vhost; never `sinexis.app` edge):** `host-waf-lab-smoke.sh` asserts snippet `id:1005`/`id:1006` and no `wp-admin`. Live curl (ops): POST `/wp-login.php` + payload ARGS → **403**; URI `eval(` / `base64_decode(` → **403**; GET `/wp-admin/` → **200**.
 
