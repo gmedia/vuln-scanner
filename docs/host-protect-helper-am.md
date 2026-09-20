@@ -4,7 +4,7 @@ Public-repo safe: **no IPs, tokens, SSH users, or customer docroots** in this fi
 
 This is **not** a second enroll daemon. Guard (`wazuh-agent`) stays the identity. The helper only walks allowlisted web roots and POSTs JSON to Sinexis.
 
-**Lab:** SSH alias **`tc5` only**. Do **not** wipe `sx-erpstg`. Fixture path must stay under `/var/www`, `/srv/www`, or `/home` (default `/var/www/host-protect-fixture`).
+**Lab:** SSH alias **`tc5` only**. Do **not** wipe `sx-erpstg`. Fixture path must stay under `/var/www`, `/srv/www`, or `/home` (default `/var/www/host-protect-fixture`). Finishing this install is **Demo-ok B1** only — it does **not** unlock the short “ganti Imunify360…” line (**Sentence-ok OPEN**; [`vps-displace-imunify-dev-plan.md`](specs/vps-displace-imunify-dev-plan.md) §0 + §7).
 
 **Debian `.deb`:** build with `./scripts/build-host-protect-deb.sh` (writes `dist/sinexis-host-protect_*_all.deb`). Package **Depends: wazuh-agent** — do not install on machines without Guard. Env file is **not** in the package payload except as `/usr/share/doc/.../host-protect.env.example` (empty token). `postinst` copies the example to `/etc/sinexis/host-protect.env` only if missing (mode 600). Enable the timer with the Guard UUID after filling the token.
 
