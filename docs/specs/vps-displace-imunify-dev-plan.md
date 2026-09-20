@@ -1,6 +1,6 @@
 # Spec: VPS displace-lite vs Imunify360 (development plan)
 
-**Status:** **docs** (updated **2026-09-20**). **Sentence-ok = OPEN** — short “ganti Imunify360 dengan Sinexis” is **still forbidden** in customer meetings. **DL0–DL3 shipped** (`main` #647 / #649 / #651 / #659). **Billing lock:** Sinexis **in-app** invoices ([`sinexis-invoice-v1.md`](sinexis-invoice-v1.md) **I1/D5**) — **not** GMD `service_id`. Remaining path is **not** more WAF IDs, P14 **G/H**, or finance SIDs: it is **Demo-ok ops on `tc5`** (proven) and a **dated product-owner checklist** (§7). Owner **intent:** AM able to say **“ganti Imunify dengan Sinexis di VPS/server”** — **only** on a **single nginx VPS or dedicated**, **not** shared cPanel/CloudLinux farms. That short fragment is **internal intent**, **forbidden in customer meetings** until **Sentence-ok** (§1 + §7).
+**Status:** **docs** (updated **2026-09-20**). **Sentence-ok = OPEN** — short “ganti Imunify360 dengan Sinexis” is **still forbidden** in customer meetings. **DL0–DL3 shipped** (`main` #647 / #649 / #651 / #659). **Billing lock:** Sinexis **in-app** invoices ([`sinexis-invoice-v1.md`](sinexis-invoice-v1.md) **I1/D5**) — **not** GMD `service_id`. **Demo-ok `tc5` proven.** Remaining = dated product-owner checklist **§7 E**. Remaining path is **not** more WAF IDs, P14 **G/H**, or finance SIDs. Owner **intent:** AM able to say **“ganti Imunify dengan Sinexis di VPS/server”** — **only** on a **single nginx VPS or dedicated**, **not** shared cPanel/CloudLinux farms. That short fragment is **internal intent**, **forbidden in customer meetings** until **Sentence-ok** (§1 + §7).
 **Epic:** **P14 follow-on honesty plan** (jobs + original stack). Does **not** reopen P12 S1–S12 or P13 S0–S5.
 **Legal:** [`imunify-beside-not-roadmap.md`](../commercial/imunify-beside-not-roadmap.md) still forbids clone PRs, trademarks, Imunify/CRS commercial DB in git, “Imunify compatible” in UI. This file is a **job + speech gate**, not parity.
 **HTTP stack:** **nginx + ModSecurity (or Coraza spoa) on the customer/lab vhost.** **Caddy = out** until a **named** slice. Do not say “nginx/Caddy” in AM copy.
@@ -238,7 +238,7 @@ Update **this file** + pointers in legal / SKU / P14 / DL1 / Host Protect / Host
 
 ### 7.5 E — Who signs (dated private checklist)
 
-AM **must not** self-authorize the short line. **Product owner** dates a private CRM/ops note (no customer SIDs in git). Copy (tick off-repo):
+AM **must not** self-authorize the short line. **Product owner** dates a private CRM/ops note (no customer SIDs in git). **Demo-ok B1–B4 proven** 2026-09-20 on `tc5` — the `[ ]` boxes in the copy below are the **owner's private tick list**, **not** a signal that Demo-ok is still open in git. Remaining = owner dates **E**. Copy (tick off-repo):
 
 ```
 Sentence-ok  date: ____   signer: product owner
