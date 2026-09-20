@@ -131,7 +131,7 @@ Talk track (Bahasa, honest):
 4. SPA **`/host`**: add site whose folder exists **on that VM**. Empty list ≠ clean.
 5. **Scan now**. Finished check **or** honest fail. **Never** invent hits.
 6. Real hit: SPA **Quarantine** (status queued until helper `mv`) → then SPA **Restore**. Auto-clean / MDS is out.
-7. Do **not** say “Imunify replacement.” File demo = **Host Basic** (working list H4). Tagih di **Sinexis** in-app. **Do not** wait on GMD `service_id`. Host `invoicable` stays false until H9 named.
+7. Do **not** say “Imunify replacement.” File demo = **Host Basic** (working list H4). Tagih di **Sinexis** in-app (Invoice-ok = I1/D5, **not** GMD SID). **Do not** wait on GMD `service_id` — optional leftover, **not** agent next. Host `invoicable` stays false until H9 named.
 
 ## 5) Honesty for AM
 
