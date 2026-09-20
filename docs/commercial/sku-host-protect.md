@@ -1,6 +1,6 @@
 # Host Protect — SKU (P12 working, **not** P0 lock)
 
-**Status:** **Working commercial (2026-09-01)** — product **S0–S12 on `main`** (#556 honesty, #558 queue, #559 jail). Owner **has not** locked invoice `service_id`. AM may quote the **working list IDR** below; **must not** treat it as finance lock. Scan/Secure add-on remains the **only** P0-locked SKU ([`sku-scan-secure-addon.md`](sku-scan-secure-addon.md)).
+**Status:** **Working commercial (2026-09-01)** — product **S0–S12 on `main`** (#556 honesty, #558 queue, #559 jail). Owner **has not** locked Host list IDR (**H4**) or in-app Host `invoicable` (**H9**). That is **not** Invoice-ok C1 — Invoice-ok = Sinexis in-app (**I1/D5**), **not** GMD Host `service_id`. AM may quote the **working list IDR** below; **must not** treat it as finance lock. Scan/Secure add-on remains the **only** P0-locked SKU ([`sku-scan-secure-addon.md`](sku-scan-secure-addon.md)).
 **On-box:** S10 helper POST; S12 optional Clam if `clamscan`/`clamdscan` on PATH. Do not demo mock hits as disk proof. **P14** (Imunify-**class** jobs, regional GTM, **waves 0–3**): [`imunify-class-onbox.md`](../specs/imunify-class-onbox.md) — worker must not impersonate customer FS. Until finance lock, quote **Host Basic (1 site)** for wave 0 demos.
 **Product spec:** [`docs/specs/host-protect-v1.md`](../specs/host-protect-v1.md).
 **Metering:** Host Protect scan **bundled (credit 0)** — seats are `host_sites`, not Scan credits ([`metering-v2.md`](../specs/metering-v2.md)). **HPP** key `hostscan` is COGS per completed `host_scans` row; `/admin/hpp` line-margin **host** uses working list H4 × orgs with a site. Seed **0** in git. Do **not** mix HPP with Scan credit packs.
@@ -15,11 +15,11 @@
 | **H2** | Seat | **Web paths (sites)** on enrolled VPS, not per-domain DNS | Working |
 | **H3** | Caps | Basic **1** · Pro **3** · Multi **10** `host_sites` | Working (mirrors Scan assets) |
 | **H4** | List IDR / mo | **Working list** (not invoice lock): Host Basic **150.000** · Host Pro **350.000** · Host Multi **900.000** | Working |
-| **H5** | vs Imunify | **Beside** on cPanel farms. **Displace-lite** on GMD VPS/colo **without** panel suite **only after** [`vps-displace-imunify-dev-plan.md`](../specs/vps-displace-imunify-dev-plan.md) **Sentence-ok** — **OPEN** as of 2026-09-20 (closure §7). Pack **1005/1006** + Simulate lab-gate **shipped**; remaining = Demo-ok on `tc5` + Invoice-ok **C1** (`service_id`, not in-app `invoicable`) + dated product-owner checklist. **No** PD/WebShield/KernelCare. Not a CloudLinux replacement pitch | Working |
+| **H5** | vs Imunify | **Beside** on cPanel farms. **Displace-lite** on GMD VPS/colo **without** panel suite **only after** [`vps-displace-imunify-dev-plan.md`](../specs/vps-displace-imunify-dev-plan.md) **Sentence-ok** — **OPEN** as of 2026-09-20 (closure §7). Pack **1005/1006** + Simulate lab-gate **shipped**; Demo-ok `tc5` **proven**; Invoice-ok = **Sinexis in-app** (I1/D5), **not** GMD `service_id`. Remaining = dated product-owner checklist. **No** PD/WebShield/KernelCare. Not a CloudLinux replacement pitch | Working |
 | **H6** | Cleanup | Quarantine/restore in-app; reconstruct = **hybrid ticket**. No silent PHP rewrite | Working |
 | **H7** | WAF | **Not** in Host Protect **file** v1. **P13 Host WAF** = separate control plane; working: **detect** on Pro/Multi, **protect** Multi+; IDR unset | Working |
 | **H8** | Guard prerequisite | Host Protect v1 **requires** Guard agent on the VM | Working |
-| **H9** | Finance `service_id` | New rows **after** IDR lock; **do not** silent-bundle into VPS or Scan. **Invoice-ok C1** for the short “ganti” line = these GMD rows (off-repo). In-app Host `invoicable` (C2) stays **false** until this ID is **named** as a product slice. Closing Sentence-ok does **not** auto-flip C2 | Open |
+| **H9** | In-app Host `invoicable` | Host catalog seeded, `invoicable=false`. **Parked** until owner **names H9**. Closing Sentence-ok does **not** auto-flip this. **Struck:** Invoice-ok is **not** GMD Host `service_id` (same leftover pattern as Scan **D5** — optional, **not** agent next-step). Do **not** silent-bundle into VPS or Scan | Open |
 | **H10** | Public repo | No customer paths/SIDs/PII | Locked (hygiene) |
 
 ---
@@ -40,9 +40,9 @@
 
 - “Ini **bukan** ganti Imunify di cPanel shared.”
 - “Kalimat pendek ‘ganti Imunify…’ **belum boleh** (Sentence-ok OPEN). Pitch panjang saja sampai owner menandai checklist §7.”
-- “Ganti di **VPS tanpa panel** hanya jika **Sentence-ok** tertutup (Demo-ok + Invoice-ok C1 + pack 1005+ shipped + ModSec live); tanpa PD/kernel/email.”
+- “Ganti di **VPS tanpa panel** hanya jika **Sentence-ok** tertutup (Demo-ok + Invoice-ok Sinexis in-app + pack 1005+ shipped + ModSec live + owner date); tanpa PD/kernel/email. **Jangan** tunggu `service_id` GMD.”
 - “Untuk VPS/colo GMD: agent Guard + daftar folder web. Scan **on-box** = helper POST ke SaaS (P14 slice C). Worker cloud **bukan** Imunify. Sampai helper jalan, konsol **bukan** bukti disk VPS.”
-- “Working list (bukan invoice lock): Host Basic **Rp 150.000** · Host Pro **Rp 350.000** · Host Multi **Rp 900.000** / bulan. Finance boleh ± band sebelum `service_id`.”
+- “Working list (bukan H4/H9 lock): Host Basic **Rp 150.000** · Host Pro **Rp 350.000** · Host Multi **Rp 900.000** / bulan. Tagih di **Sinexis** (`/admin/invoices`). Invoice-ok = in-app, **bukan** `service_id` GMD. Finance boleh ± band sebelum H4 lock. GMD `service_id` **opsional**, bukan gerbang, **bukan** langkah agent.”
 - “Quarantine **bukan** reconstruct situs; restore CMS = tiket.”
 - Positioning vs Imunify: [`imunify-beside-not-roadmap.md`](imunify-beside-not-roadmap.md) — **bukan** backlog fitur. Development slices: [`vps-displace-imunify-dev-plan.md`](../specs/vps-displace-imunify-dev-plan.md).
 
@@ -53,6 +53,6 @@
 | Item | Owner | Done when |
 |------|--------|-----------|
 | Lock invoice IDR ± band | Product + finance | H4 marked **locked** like Scan SKU A1 |
-| `service_id` Host Basic/Pro/Multi | Finance | Rows exist; not bundled into VPS |
+| Optional GMD Host `service_id` (leftover, **not** Invoice-ok) | Finance | Only if ops still wants ERP rows; **not** agent next; no SIDs in git |
 | YARA extra rules (private) | Ops | Not committed if they contain customer samples |
 | Pilot VM (not ERP stg) | Ops | Lab path only; no IPs in git |

@@ -269,7 +269,7 @@ No raw file download of malware samples in v1 (exfil risk). Optional later: plat
 
 | Q | Topic | Default if unanswered |
 |---|--------|------------------------|
-| **Q1** | List IDR / `service_id` | SKU file stays **working**; AM must not invoice until lock |
+| **Q1** | List IDR (H4) / in-app Host `invoicable` (H9) | SKU file stays **working**; AM quotes working list, bills in **Sinexis** (`/admin/invoices`). Invoice-ok = **I1/D5**, **not** GMD Host `service_id`. H9 stays parked until named. |
 | **Q2** | Meter `hostscan` credits vs bundled 0 | **Bundled 0** |
 | **Q3** | Require Guard agent always | **Yes** v1 |
 | **Q4** | YARA pack source | In-repo **minimal** rules + ops-private extra later; no Imunify DB |

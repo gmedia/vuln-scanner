@@ -15,7 +15,7 @@
 | **A3** | Overage | **Upgrade tier** (more seats) — **bukan** unlimited fair-use. Extra targets = Pro/Multi, not a credit pack. |
 | **A4** | Credit bundle / mo | **Superseded (v3):** do not sell 10/24/60 credits. Wallet leftover is not a gate. |
 | **A5** | Mobile scan | Included in Scan SKU seats (same org). Not a second currency. |
-| **B1** | Invoice packaging | **New `service_id` per tier**; pilot boleh baris manual dulu lalu migrate. **Jangan** silent-bundle ke VPS |
+| **B1** | Invoice packaging | **Preferred:** Sinexis `/admin/invoices` (**D5**). Optional leftover: new GMD `service_id` per tier (pilot boleh baris manual dulu). **Not** Invoice-ok, **not** agent next. **Jangan** silent-bundle ke VPS |
 | **B2** | Line names | Internal: **Sinexis Scan – {Tier}**. Invoice pelanggan (soft dual, 6–12 bln): **Secure Scan Add-on – {Tier}** OK |
 | **B3** | Renew ownership | **AM GMD owns renew + upsell**; product owns fulfillment & report quality |
 | **B4** | First 10 emails | **Hybrid:** product = template + proof; **AM sends** to own SIDs |
@@ -27,7 +27,7 @@
 | **D1** | Report language v1 | **Bahasa Indonesia** (EN later) |
 | **D2** | Dual-brand window | **6–12 months** soft dual; no hard rebrand before attach ARPU |
 | **D3** | P2 Workspace | **Only if** multi-user / multi-property blocks paid delivery — spec first |
-| **D4** | P5 Guard | **Do not bundle into Scan SKU.** Guard/Host Protect/WAF are **separate** attach lines. Product code is on `main`; Host invoice `service_id` still open. Sell Scan attach first. |
+| **D4** | P5 Guard | **Do not bundle into Scan SKU.** Guard/Host Protect/WAF are **separate** attach lines. Product code is on `main`; Host H4/H9 (IDR / in-app `invoicable`) still open — **not** a GMD SID gate. Sell Scan attach first. |
 | **D5** | Billing in app | **Sinexis invoice v1:** org Scan invoices in-app (bank transfer, mark paid). GMD `service_id` optional, **not** required. Not silent-bundle into VPS. Spek [`sinexis-invoice-v1.md`](../specs/sinexis-invoice-v1.md). |
 | **E1** | Infra failure | **No charge** / one auto-retry (P1 direction) |
 | **E2** | Zero credits mid-cycle | **Superseded (metering v2 M3):** empty wallet **must not** disable a sold schedule. Manual/on-demand still HTTP 402. |
@@ -38,7 +38,7 @@
 
 | Human item | Owner | Done when |
 |------------|--------|-----------|
-| Finance **three `service_id`** rows (Basic / Pro / Multi) — optional if Sinexis invoices; **do not** silent-bundle into VPS | Finance | Rows exist **or** Sinexis `/admin/invoices` is used |
+| Optional Scan GTM leftover: three GMD `service_id` rows (Basic / Pro / Multi) — **not** Invoice-ok, **not** agent next; **do not** silent-bundle into VPS | Finance | Rows exist **or** Sinexis `/admin/invoices` is used (preferred) |
 | AM **10 wave-1 SIDs** matching §5 patterns | AM | Private CRM list only |
 | Named **pilot #1** (multi-service / VPS+domain) | AM + ops | CRM name + 1 mo sponsored noted |
 | AM **sends** wave-1 using [`am-wave1-email-id.md`](am-wave1-email-id.md) | AM | CRM log of send date |
@@ -153,7 +153,7 @@ Bundle with colo/VPS as **add-on line item**; do not reprice rack.
 
 ## 8. Remaining execution checklist (not re-litigate policy)
 
-- [ ] Ops issues Scan invoices in `/admin/invoices` (or finance creates **three service_id** rows if still using GMD)
+- [ ] Ops issues Scan invoices in `/admin/invoices` (preferred I1/D5). Optional leftover: finance creates **three Scan `service_id`** rows if still using GMD — **not** Invoice-ok, **not** agent next
 - [ ] AM picks **10 wave-1 SIDs** in private CRM
 - [ ] Name **pilot #1** privately; org `sku` + schedules
 - [x] Product **email template** (Bahasa) for AM wave-1 — [`am-wave1-email-id.md`](am-wave1-email-id.md)

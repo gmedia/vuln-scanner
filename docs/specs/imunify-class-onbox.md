@@ -1,7 +1,7 @@
 # Spec: Imunify-class on-box (P14 — regional attach, original stack)
 
 **Status:** **docs** (2026-09-03). Owner asked to **re-plan** Host Protect / Host WAF toward **Imunify360 jobs** (read files and HTTP on the **customer VM**) so GMD can take **regional** share where CloudLinux/cPanel+Imunify is weak or expensive. **Not** an Imunify clone, trademark, or ruleset dump. **Waves 0–3** (§7) sequence product work **after** P12 S0–S12; they do **not** re-open S1–S12.
-**Epic:** **P14**. Builds on **P12** (files) + **P13** (HTTP) + **P5** (Guard enroll). Does **not** jump Scan SKU lock, hospitality GTM, or finance `service_id`.
+**Epic:** **P14**. Builds on **P12** (files) + **P13** (HTTP) + **P5** (Guard enroll). Does **not** jump Scan SKU lock, hospitality GTM, or Host **H9**. Billing = **Sinexis in-app** (I1/D5); GMD `service_id` is **optional leftover**, **not** agent next-step.
 **Do not implement app code** until the user says `implement` / `buat` / `kerjakan` for a **named slice** below.
 **Legal:** original UX, original signatures, original nginx/Coraza config. No Imunify screenshots, no commercial Imunify/CloudLinux DB in git, no “Imunify compatible” in product UI.
 
@@ -106,7 +106,7 @@ Regional AM can demo: enroll Guard → helper on fixture → **real** hit on **t
 
 Slices **A–H** remain the **PR stream** names. Waves are **when sales can demo** vs remaining engineering. **Do not** re-implement S1–S12. Implement app code **only** when the user names a slice **and** says `buat` / `kerjakan`.
 
-**Control-plane fact:** P12 S0–S12 is on `main`. That is **not** ready to sell as a **full** Imunify360 replacement (PD/WebShield/cPanel). **Displace-lite** on nginx VPS is a **separate** AM sentence after **Sentence-ok** in [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) (**DL0–DL3 shipped**; **Sentence-ok OPEN** — closure **§7**). Residual is **ops Demo-ok + finance `service_id` C1**, not more WAF IDs / **G/H**. Do **not** treat pack-in-git as permission to say “ganti Imunify360”.
+**Control-plane fact:** P12 S0–S12 is on `main`. That is **not** ready to sell as a **full** Imunify360 replacement (PD/WebShield/cPanel). **Displace-lite** on nginx VPS is a **separate** AM sentence after **Sentence-ok** in [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) (**DL0–DL3 shipped**; **Sentence-ok OPEN** — closure **§7**). **Demo-ok `tc5` proven.** Residual = owner-dated **§7 E**. Invoice-ok = **Sinexis in-app**, **not** GMD Host `service_id`. Not more WAF IDs / **G/H**. Do **not** treat pack-in-git as permission to say “ganti Imunify360”.
 
 ### Job map (Imunify job → Sinexis wave)
 
@@ -119,14 +119,14 @@ Slices **A–H** remain the **PR stream** names. Waves are **when sales can demo
 | HTTP filter on same host | P13 detect + starter **1001–1146**; **F** protect Multi; **DL3** live notify | **2** — never `sinexis.app` edge; do not ingest IM360 IDs |
 | Panel / PHP PD | Out | **3** = **G/H** research only |
 
-### Wave 0 — sellable **install** (default next)
+### Wave 0 — sellable **install** (shipped **#642**; **not** agent default next)
 
 | In | Out |
 |----|-----|
 | Heartbeat / last helper POST on `/host` (if not already obvious) | New YARA pack |
 | One-file `sinexis-install.sh` from **product origin `sinexis.app`** (**#642** on `main`), not “clone the repo” | `curl \| bash` as the blessed path |
 | AM runbook already exists — keep it the source of truth | Wipe `sx-erpstg` |
-| SKU: quote **Host Basic 1 site** only until finance `service_id` | Invoice lock in git |
+| SKU: quote **Host Basic 1 site** from working list H4; bill in **Sinexis** | Invoice IDR lock in git without finance; GMD SID as a gate |
 
 **DoD:** AM on a **tc5** fixture: Guard enroll → download wrapper from **sinexis.app** → helper timer → `/host` shows **pending_agent** then a **real** ingest (or honest fail). No mock hits. Residual after **#642**: wget on **already-installed** VMs (not wipe `sx-erpstg`); heartbeat copy on `/host` if still unclear.
 

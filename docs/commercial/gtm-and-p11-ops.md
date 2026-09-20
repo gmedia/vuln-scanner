@@ -12,7 +12,7 @@ Do in order. Success = CRM + billing, **not** a GitHub PR.
 
 | # | Owner | Action | Done when (private) |
 |---|--------|--------|---------------------|
-| 1 | Finance | Three **`service_id`**: Basic / Pro / Multi. Line names per SKU B2. **Do not** silent-bundle into VPS | AM can quote a distinct add-on line |
+| 1 | Finance | Optional leftover (Scan GTM, **not** Invoice-ok, **not** agent next): three Scan **`service_id`**: Basic / Pro / Multi if still using GMD. Preferred: Sinexis `/admin/invoices` (I1/D5). Line names per SKU B2. **Do not** silent-bundle into VPS | AM can quote a distinct add-on line |
 | 2 | Ops | Confirm live admin **`pricing`**: domain / IP / mobile / **`statushost`**. Typical smoke: domain **2**, IP **1**; `statushost` seed **0** until N is set | Note in CRM (not git) |
 | 3 | AM | Pick **10 wave-1 SIDs** matching SKU §5 patterns (VPS+domain, colo IP, multi-service, existing security line, CORPORATE) | Private CRM list only |
 | 4 | AM | Send [`am-wave1-email-id.md`](am-wave1-email-id.md) from AM identity; log date + tier | CRM activity |

@@ -1,6 +1,6 @@
 # Spec: VPS displace-lite vs Imunify360 (development plan)
 
-**Status:** **docs** (updated **2026-09-20**). **Sentence-ok = OPEN** — short “ganti Imunify360 dengan Sinexis” is **still forbidden** in customer meetings. **DL0–DL3 shipped** (`main` #647 / #649 / #651 / #659). Remaining path is **not** more WAF IDs or P14 **G/H**: it is **Demo-ok ops on `tc5`**, **Invoice-ok GMD `service_id`**, and a **dated product-owner checklist** (§7). Owner **intent:** AM able to say **“ganti Imunify dengan Sinexis di VPS/server”** — **only** on a **single nginx VPS or dedicated**, **not** shared cPanel/CloudLinux farms. That short fragment is **internal intent**, **forbidden in customer meetings** until **Sentence-ok** (§1 + §7).
+**Status:** **docs** (updated **2026-09-20**). **Sentence-ok = OPEN** — short “ganti Imunify360 dengan Sinexis” is **still forbidden** in customer meetings. **DL0–DL3 shipped** (`main` #647 / #649 / #651 / #659). **Billing lock:** Sinexis **in-app** invoices ([`sinexis-invoice-v1.md`](sinexis-invoice-v1.md) **I1/D5**) — **not** GMD `service_id`. **Demo-ok `tc5` proven.** Remaining = dated product-owner checklist **§7 E**. Remaining path is **not** more WAF IDs, P14 **G/H**, or finance SIDs. Owner **intent:** AM able to say **“ganti Imunify dengan Sinexis di VPS/server”** — **only** on a **single nginx VPS or dedicated**, **not** shared cPanel/CloudLinux farms. That short fragment is **internal intent**, **forbidden in customer meetings** until **Sentence-ok** (§1 + §7).
 **Epic:** **P14 follow-on honesty plan** (jobs + original stack). Does **not** reopen P12 S1–S12 or P13 S0–S5.
 **Legal:** [`imunify-beside-not-roadmap.md`](../commercial/imunify-beside-not-roadmap.md) still forbids clone PRs, trademarks, Imunify/CRS commercial DB in git, “Imunify compatible” in UI. This file is a **job + speech gate**, not parity.
 **HTTP stack:** **nginx + ModSecurity (or Coraza spoa) on the customer/lab vhost.** **Caddy = out** until a **named** slice. Do not say “nginx/Caddy” in AM copy.
@@ -46,18 +46,22 @@ All of:
 
 Until Demo-ok: do not demo Host as “on-box proof.”
 
-### Invoice-ok (human / finance — not a default code PR)
+### Invoice-ok (Sinexis in-app — **not** GMD)
+
+**Locked (owner):** billing lives in **Sinexis** (`/admin/invoices`), independent of GMD. See [`sinexis-invoice-v1.md`](sinexis-invoice-v1.md) **I1** and [`sku-scan-secure-addon.md`](../commercial/sku-scan-secure-addon.md) **D5**. GMD rack/VPS invoices stay in GMD. **No silent-bundle.** GMD `service_id` is **optional leftover**, **not** this gate, **not** agent next-step.
 
 **Do not conflate two invoice surfaces:**
 
 | Surface | Today | Role |
 |---------|--------|------|
-| **C1 (this gate)** GMD ERP `service_id` Host Basic / Pro / Multi | [`sku-host-protect.md`](../commercial/sku-host-protect.md) **H9 open**, off-repo | **Invoice-ok** for the short sentence |
-| **C2** In-app `sku_catalog` `product=host` `invoicable=true` | Invoice v1: Host seeded, `invoicable=false`; I10 Host-only invoice **out** | **Parked** until owner **names H9** as a product slice |
+| **Invoice-ok (this gate)** Sinexis in-app Scan invoices | I1–I9 **shipped**; bank transfer, mark paid | AM **can** bill Scan attach without GMD SID |
+| **H9** In-app `sku_catalog` `product=host` `invoicable=true` | Host seeded, `invoicable=false`; I10 Host-only invoice **out** | **Parked** until owner **names H9**. Closing Sentence-ok does **not** auto-flip this |
+| **Struck C1** GMD ERP Host `service_id` | Off-repo optional | **Not** Invoice-ok. **Do not** tell the user the next step is three SIDs |
 
-- C1: three Host `service_id` rows exist; **not** bundled into VPS or Scan.
-- Working IDR already in [`sku-host-protect.md`](../commercial/sku-host-protect.md) H4; lock is **open** as of this write.
-- Do **not** flip `invoicable` or invent Host invoice APIs to close this gate.
+- Working IDR: Scan P0 lock; Host H4 working list ([`sku-host-protect.md`](../commercial/sku-host-protect.md)). Host IDR **not** finance-locked.
+- File-only demo = quote **Host Basic**. WAF/protect sentence = org is **Host Multi before** the meeting. Never quote Basic and demo Protect.
+- Do **not** flip `invoicable` or invent Host invoice APIs unless H9 is **named** + `buat`.
+- Do **not** invent GMD API / SID rows in git.
 
 ### Sentence-ok (short “ganti” line)
 
@@ -95,7 +99,7 @@ Sources: Imunify360 marketing (6 layers, PD, CloudAV, RapidScan, auto-cleanup, W
 | cPanel plugin / shared UID | None | **Out** (**G**) |
 | Outside-in scan + workspace | **Shipped** Scan SKU | **Keep as wedge** |
 | Crontab / Adminer-zero | None | **Park** |
-| Invoice SKU | Working IDR; `service_id` open | **Invoice-ok** — human |
+| Invoice SKU | Sinexis in-app Scan **shipped**; Host `invoicable=false` until **H9** | **Invoice-ok** = Sinexis path, not GMD SID |
 
 WAF IDs (`host_waf_render.py`): **1001** `/xmlrpc.php` (`sinexis.xmlrpc`); **1002** ARGS `union select` / `or 1=1` (`sinexis.sqli`); **1003** URI `../` (`sinexis.path.traversal`); **1004** lab `/sinexis-waf-lab`; **1005** POST `/wp-login.php` chained with payload ARGS; **1006** URI `eval(` / `base64_decode(`; **1007** `/wp-cron.php`; **1008** URI `php://` / `data://`; **1024** `/timthumb.php` (`sinexis.timthumb`); **1025** `/actuator` (`sinexis.actuator`); **1026** `/telescope` (`sinexis.telescope`); **1027** `/.DS_Store` (`sinexis.dsstore`); **1028** `/wlwmanifest.xml` (`sinexis.wlwmanifest`); **1029** `/wp-json/wp/v2/users` (`sinexis.wpjson.users`); **1030** `/adminer.php` (`sinexis.adminer`); **1031** `/elmah.axd` (`sinexis.elmah`); **1032** `/manager/html` (`sinexis.tomcat.manager`); **1033** `/solr/admin` (`sinexis.solr.admin`); **1034** `/jenkins` (`sinexis.jenkins`); **1035** `/jmx-console` (`sinexis.jmx.console`); **1036** `/trace.axd` (`sinexis.trace.axd`); **1037** `/.svn/entries` (`sinexis.svn.entries`); **1038** `/invoker/JMXInvokerServlet` (`sinexis.jmx.invoker`); **1039** `/web.config` (`sinexis.web.config`); **1040** `/server-info` (`sinexis.server.info`); **1041** `/axis2/axis2-admin` (`sinexis.axis2.admin`); **1042** `/console` (`sinexis.weblogic.console`); **1043** `/CFIDE/administrator` (`sinexis.cfide.admin`); **1044** `/_profiler` (`sinexis.symfony.profiler`); **1045** `/crossdomain.xml` (`sinexis.crossdomain`); **1046** `/clientaccesspolicy.xml` (`sinexis.clientaccesspolicy`); **1047** `/debug/default/view` (`sinexis.django.debug`); **1048** `/actuator/heapdump` (`sinexis.actuator.heapdump`); **1049** `/elmah.axd` (`sinexis.elmah`); **1050** `/trace.axd` (`sinexis.trace.axd`). Product GET/ingest = starter IDs **1001–1146**. **1096–1140** original URI pack (solr/select, host-manager, jmxrmi, nginx_status, editors, secrets.yml, CI files, webmail/zabbix/grafana, kube/docker config, dump.sql, pma setup, install.php). SPA Simulate is **lab-only** and is **not** listed on the live table (#647). **Not matched:** GET `/wp-admin/`.
 
@@ -179,10 +183,13 @@ Regional AM demos **one** nginx VPS: Guard + helper + real file isolate + (Multi
 **AND, not OR:**
 
 ```
-Sentence-ok  =  Demo-ok  AND  Invoice-ok (C1)  AND  pack 1005+ (shipped)
-               AND  Simulate lab-gate (shipped)  AND  ModSec loaded on lab vhost
+Sentence-ok  =  Demo-ok  AND  Invoice-ok (Sinexis in-app Scan path shipped)
+               AND  pack 1005+ (shipped)  AND  Simulate lab-gate (shipped)
+               AND  ModSec loaded on lab vhost
                AND  product owner dates the private checklist
 ```
+
+**Struck:** “Invoice-ok = three GMD Host `service_id`” (old C1). That contradicted I1/D5. Agents **must not** recommend finance SIDs as next work.
 
 ### 7.1 A — Already on `main` (MUST NOT rebuild)
 
@@ -196,8 +203,8 @@ Sentence-ok  =  Demo-ok  AND  Invoice-ok (C1)  AND  pack 1005+ (shipped)
 | DL2 pack **1005** / **1006** | #651; live ingest **1001–1146** |
 | DL3 live notify | #659 — not Simulate |
 | Installer | `https://sinexis.app/install/sinexis-install.sh` #642 |
-| Invoice v1 Scan | pay loop closed; Host catalog `invoicable=false` |
-| Working list IDR | Basic 150k / Pro 350k / Multi 900k — **not** finance lock |
+| Invoice v1 Scan | pay loop closed (**I1**: Sinexis bills, not GMD SID). Host catalog `invoicable=false` |
+| Working list IDR | Host Basic 150k / Pro 350k / Multi 900k — **not** finance lock |
 
 **MUST NOT:** PRs titled “Imunify parity”; CRS / IM360 commercial DB in git; rebuild P12 / P13 / DL0–DL3; unpark P14 **G/H**; WAF **1147+**; inotify; Caddy; PHP PD; WebShield; KernelCare; cPanel plugin; wipe `sx-erpstg`; paste WAF onto `sinexis.app` edge; SSH Alembic after a green `main` deploy.
 
@@ -216,12 +223,13 @@ File loop: [`dl1-file-loop-runbook.md`](dl1-file-loop-runbook.md). WAF API smoke
 
 **Fail-closed:** helper stale; quarantine stays queued; Simulate sold as a live block; `/wp-admin/` returns 403; module not loaded. Redact tokens/paths; **never** commit lab JSON.
 
-### 7.3 C — Invoice-ok (finance / product)
+### 7.3 C — Invoice-ok (Sinexis in-app)
 
-AM **must not** invoice an Imunify replacement until **C1** is true.
+AM bills **in Sinexis**, not via a GMD Host `service_id`.
 
-- **C1 (gate):** GMD `service_id` Host Basic / Pro / Multi exist; not a VPS or Scan bundle. Tick in **private** finance/CRM — **no SIDs in git**.
-- **C2:** in-app Host `invoicable=true` stays **parked** unless owner names **H9**.
+- **Gate (shipped):** Scan invoices at `/admin/invoices` (I1–I9). GMD `service_id` **optional**, **not required**, **not** agent next-step.
+- **H9 parked:** Host catalog `invoicable=false`. Do **not** flip it or add Host invoice APIs unless owner **names H9** + `buat`. Closing Sentence-ok does **not** auto-flip H9.
+- **Struck C1:** creating three GMD Host SIDs is **not** this gate. Do **not** put SIDs in git.
 - File-only demo = quote **Host Basic**. WAF/protect sentence = org is **Host Multi before** the meeting. Never quote Basic and demo Protect.
 
 ### 7.4 D — Docs hygiene (this PR)
@@ -230,7 +238,7 @@ Update **this file** + pointers in legal / SKU / P14 / DL1 / Host Protect / Host
 
 ### 7.5 E — Who signs (dated private checklist)
 
-AM **must not** self-authorize the short line. **Product owner** dates a private CRM/ops note (no customer SIDs in git). Copy (tick off-repo):
+AM **must not** self-authorize the short line. **Product owner** dates a private CRM/ops note (no customer SIDs in git). **Demo-ok B1–B4 proven** 2026-09-20 on `tc5` — the `[ ]` boxes in the copy below are the **owner's private tick list**, **not** a signal that Demo-ok is still open in git. Remaining = owner dates **E**. Copy (tick off-repo):
 
 ```
 Sentence-ok  date: ____   signer: product owner
@@ -244,10 +252,11 @@ Demo-ok
 [ ] B4 spoken: no PD, WebShield, MDS auto-clean, KernelCare
 
 Invoice-ok
-[ ] C1 three Host service_id rows (Basic/Pro/Multi)
-[ ] not bundled into VPS or Scan
-[ ] IDR = working list H4 unless finance dated another band
-[ ] C2 in-app Host invoicable — N/A unless H9 named
+[x] Sinexis in-app Scan invoices (I1–I9 shipped; not GMD SID)
+[ ] Host not bundled into VPS or Scan
+[ ] IDR Host = working list H4 unless finance dated another band
+[ ] H9 in-app Host invoicable — N/A unless named + buat
+[ ] Struck: do NOT wait on GMD Host service_id
 
 Product (already git)
 [x] pack 1005/1006
@@ -262,6 +271,6 @@ Fail → short line STAYS FORBIDDEN
 
 Until every required box is dated **OPEN stays OPEN**. Use **only** the §0 long pitch. Fallback: *“file + HTTP tipis + scan luar; Imunify tetap lebih dalam di PHP runtime dan bot challenge.”*
 
-**Critical path (not more code):** B1–B2 file loop (hours, ops) → **B3 ModSec on lab vhost** (often the technical blocker) → **C1 finance `service_id`** (often the commercial long pole) → owner dates E.
+**Critical path (not more code):** Demo-ok **B1–B4 proven** (2026-09-20). Remaining = **owner dates E**. **Struck:** waiting on GMD Host `service_id`. Do **not** flip H9 unless named + `buat`.
 
 Buyer who **requires** PD, KernelCare, or WebShield is **not** a displace deal — sit **beside**; sell Scan attach.
