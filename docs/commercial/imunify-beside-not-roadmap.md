@@ -1,6 +1,6 @@
 # Imunify360 — beside Sinexis, not a roadmap
 
-**Status:** frozen **legal/clone** positioning (2026-08-31; waves pointer **2026-09-03**; VPS displace-lite plan **2026-09-06**; Sentence-ok closure pointer **2026-09-20**). **Job roadmap** (on-box access, regional attach, **waves 0–3**) lives in [`imunify-class-onbox.md`](../specs/imunify-class-onbox.md) (**P14** §7). **AM “ganti Imunify di VPS”** (nginx/dedicated only): [`vps-displace-imunify-dev-plan.md`](../specs/vps-displace-imunify-dev-plan.md) — **Sentence-ok is OPEN** (closure **§7**). Short fragment still **forbidden** until Demo-ok + Invoice-ok C1 + dated product-owner checklist. Do **not** open PRs titled “Imunify parity” or copy CloudLinux IP. P14 is **jobs + original stack**, not a clone.
+**Status:** frozen **legal/clone** positioning (2026-08-31; waves pointer **2026-09-03**; VPS displace-lite plan **2026-09-06**; Sentence-ok closure pointer **2026-09-20**; Invoice-ok lock **Sinexis in-app**). **Job roadmap** (on-box access, regional attach, **waves 0–3**) lives in [`imunify-class-onbox.md`](../specs/imunify-class-onbox.md) (**P14** §7). **AM “ganti Imunify di VPS”** (nginx/dedicated only): [`vps-displace-imunify-dev-plan.md`](../specs/vps-displace-imunify-dev-plan.md) — **Sentence-ok is OPEN** (closure **§7**). Short fragment still **forbidden** until Demo-ok + Invoice-ok (**Sinexis in-app**, not GMD `service_id`) + dated product-owner checklist. Do **not** open PRs titled “Imunify parity” or copy CloudLinux IP. P14 is **jobs + original stack**, not a clone.
 
 Sinexis **sits beside** Imunify on cPanel/CloudLinux farms. It is **not** a clone. Scan attach (P0/P1) remains the sold SKU. Host Protect / Host WAF are VPS/colo attach — **IDR unset**; AM must not invoice from this file.
 
@@ -27,8 +27,8 @@ Cleanup: **quarantine ≠ reconstruct**. Reconstruct = hybrid ticket (backup/CMS
 ## AM one-liners (Bahasa)
 
 - “Ini **bukan** ganti Imunify di cPanel shared.” **Always.**
-- “Kalimat pendek ‘ganti Imunify360 dengan Sinexis’ **belum boleh** — Sentence-ok **OPEN**. Pakai pitch panjang §0 di [`vps-displace-imunify-dev-plan.md`](../specs/vps-displace-imunify-dev-plan.md). Penutupan gerbang = §7 (lab `tc5` + `service_id` Host, bukan WAF 1147+ / G/H).”
-- “Di **VPS nginx/dedicated tanpa panel**: *displace-lite* hanya setelah **Sentence-ok** (helper hidup, isolate SPA, ModSec live, Invoice-ok C1, owner bertanggal) — bukan setelah pack di git saja.”
+- “Kalimat pendek ‘ganti Imunify360 dengan Sinexis’ **belum boleh** — Sentence-ok **OPEN**. Pakai pitch panjang §0 di [`vps-displace-imunify-dev-plan.md`](../specs/vps-displace-imunify-dev-plan.md). Penutupan gerbang = §7 (lab `tc5` + Invoice-ok Sinexis in-app + owner date, **bukan** `service_id` GMD / WAF 1147+ / G/H).”
+- “Di **VPS nginx/dedicated tanpa panel**: *displace-lite* hanya setelah **Sentence-ok** (helper hidup, isolate SPA, ModSec live, Invoice-ok Sinexis in-app, owner bertanggal) — bukan setelah pack di git saja, **bukan** setelah tiga SID GMD.”
 - “Untuk VPS/colo GMD: Guard + folder web + scan malware **on-box** (helper) + isolate file. Konsol SaaS **bukan** bukti disk sampai helper POST.”
 - “WAF protect = Host Multi, snippet di nginx **pelanggan**; bukan edge Sinexis.”
 - “Harga Host **belum** list resmi.”
