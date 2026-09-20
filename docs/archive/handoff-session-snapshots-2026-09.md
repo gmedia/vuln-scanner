@@ -2,6 +2,8 @@
 
 > **Do not treat this file as the current product backlog or session north star.**
 >
+> **Live Invoice-ok is I1/D5 (Sinexis in-app), not GMD Host C1.** Historical snapshots below that still say Invoice-ok = Host `service_id` / C1 are **STALE** — do not treat as live gate.
+>
 > **Authoritative playbook after OpenCode reset:** [`docs/AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md)
 > **Git/PR workflow:** [`AGENTS.md`](../../AGENTS.md)
 > **Live stub:** [`handoff.md`](../../handoff.md)
