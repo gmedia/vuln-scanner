@@ -11,7 +11,7 @@
 | ID | Topic | Decision |
 |----|--------|----------|
 | **I1** | Who bills | **Sinexis** issues invoices. GMD rack/VPS invoices stay in GMD. No silent-bundle. |
-| **I2** | What is sold | **Scan SKU seats** only: Basic / Pro / Multi. List IDR from P0 lock (300_000 / 650_000 / 2_000_000). Host Protect catalog rows may be seeded **working** but **not invoiced** in v1 (H9 still open). |
+| **I2** | What is sold | **Scan SKU seats** only: Basic / Pro / Multi. List IDR from P0 lock (300_000 / 650_000 / 2_000_000). Host Protect catalog rows may be seeded **working** but **not invoiced** in v1 (H9 still open). **Invoice-ok** for the short “ganti Imunify” line is **GMD `service_id` C1**, not flipping `invoicable` here — see [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) §7.3. |
 | **I3** | Payment | **Manual bank transfer.** Admin marks `paid` after ops sees the transfer. No gateway, no auto-charge, no tax line. |
 | **I4** | Period | Calendar month (UTC). One **paid** Scan invoice per org per period (unique). |
 | **I5** | SKU mutation | Org admin **cannot** `PATCH /orgs/{id}` `sku` (403). Paid Scan invoice (or platform-admin set) is the gate. |
