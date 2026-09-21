@@ -27,7 +27,7 @@
 | **D1** | Report language v1 | **Bahasa Indonesia** (EN later) |
 | **D2** | Dual-brand window | **6–12 months** soft dual; no hard rebrand before attach ARPU |
 | **D3** | P2 Workspace | **Only if** multi-user / multi-property blocks paid delivery — spec first |
-| **D4** | P5 Guard | **Do not bundle into Scan SKU.** Guard/Host Protect/WAF are **separate** attach lines. Product code is on `main`; Host H4 (IDR) still open; **H9** = Guide §1.3.1 **#1** (named, wait `buat`; catalog still `invoicable=false`) — **not** a GMD SID gate. Sell Scan attach first. |
+| **D4** | P5 Guard | **Do not bundle into Scan SKU.** Guard/Host Protect/WAF are **separate** attach lines. Product code is on `main`; Host H4 (IDR) still open; **H9** Host `invoicable` **shipped** — **not** a GMD SID gate. Sell Scan attach first. |
 | **D5** | Billing in app | **Sinexis invoice v1:** org Scan invoices in-app (bank transfer, mark paid). GMD `service_id` optional, **not** required. Not silent-bundle into VPS. Spek [`sinexis-invoice-v1.md`](../specs/sinexis-invoice-v1.md). |
 | **E1** | Infra failure | **No charge** / one auto-retry (P1 direction) |
 | **E2** | Zero credits mid-cycle | **Superseded (metering v2 M3):** empty wallet **must not** disable a sold schedule. Manual/on-demand still HTTP 402. |
