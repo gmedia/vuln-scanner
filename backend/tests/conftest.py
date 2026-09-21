@@ -184,7 +184,7 @@ async def db_session(engine):
                         sku=sku,
                         list_idr=list_idr,
                         seats=SCAN_SKU_SEATS[sku],
-                        invoicable=product == "scan",
+                        invoicable=True,
                         updated_at=now,
                     )
                 )
