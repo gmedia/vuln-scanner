@@ -15,7 +15,7 @@
 | Org | Guard on; Host Protect flag on. Demo **file loop = Host Basic**. Do **not** quote Protect/WAF in the same meeting unless org is Host Multi. |
 | VM | Helper already installed **or** you have time for wget (see [`host-protect-helper-am.md`](../host-protect-helper-am.md)). |
 | Fixture | Web root exists **on that VM** (lab: `/var/www/host-protect-fixture` or `/var/www/host-waf-fixture`). Adding a SPA site whose folder is missing → fail closed, not mock hits. |
-| Speech | Long pitch in displace plan §0. **Forbidden until Sentence-ok** (still **OPEN**, displace §7): “ganti Imunify…”. **Always forbidden:** PD, KernelCare, WebShield, auto-clean DB, Caddy, shared cPanel “ganti”. This runbook is **B1–B2** of Demo-ok only — finishing it does **not** unlock the short line (still need B3 ModSec if not already proven, Invoice-ok = Sinexis in-app shipped, owner date). **Do not** wait on GMD Host `service_id`. |
+| Speech | Long pitch in displace plan §0. Short “ganti Imunify…” is **Sentence-ok GREEN** 2026-09-21 — **allowed** on **nginx dedicated / no panel**; still **forbidden** on shared cPanel. **Always forbidden:** PD, KernelCare, WebShield, auto-clean DB, Caddy, shared cPanel “ganti”. This runbook is **B1–B2** of Demo-ok only — finishing **this** install does **not** by itself unlock the short line (need the full §7 AND). **Do not** wait on GMD Host `service_id`. |
 
 ---
 
@@ -81,4 +81,4 @@ Then **Scan now** again. A hit must show **path + class** on `/host`. If still e
 - [ ] Scan finished (or honest fail) — no mock hits
 - [ ] Quarantine clicked in SPA → pending → on-disk isolate
 - [ ] Restore clicked in SPA → file back
-- [ ] Spoken: empty ≠ clean; SSH for install OK; **not** Imunify replacement; short “ganti Imunify…” still **forbidden** (Sentence-ok OPEN)
+- [ ] Spoken: empty ≠ clean; SSH for install OK; **not** a full Imunify replacement (no PD/WebShield/KernelCare); short “ganti Imunify…” **allowed** only on nginx dedicated / no panel (Sentence-ok GREEN); **forbidden** on shared cPanel
