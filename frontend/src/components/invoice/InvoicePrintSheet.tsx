@@ -17,7 +17,7 @@ export type InvoicePrintBank = {
 export type InvoicePrintData = {
   number: string;
   sku: string;
-  product: string;
+  product: "scan" | "host";
   amount_idr: number;
   period_start: string;
   period_end: string;
@@ -100,7 +100,10 @@ export function InvoicePrintSheet({
           <tr>
             <td>
               <p className="item-title">
-                {t("invoicePrintItem", { sku: skuLabel })}
+                {t(`invoicePrintItem_${invoice.product}`, {
+                  sku: skuLabel,
+                  defaultValue: t("invoicePrintItem", { sku: skuLabel }),
+                })}
               </p>
               <p className="item-period">{period}</p>
             </td>
@@ -161,7 +164,11 @@ export function InvoicePrintSheet({
         </section>
       ) : null}
 
-      <footer className="inv-footer">{t("invoicePrintFooter")}</footer>
+      <footer className="inv-footer" data-testid="invoice-print-footer">
+        {t(`invoicePrintFooter_${invoice.product}`, {
+          defaultValue: t("invoicePrintFooter"),
+        })}
+      </footer>
     </article>
   );
 }

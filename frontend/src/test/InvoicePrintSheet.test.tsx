@@ -70,4 +70,21 @@ describe("InvoicePrintSheet", () => {
     const { container } = render(<InvoicePrintSheet invoice={null} />);
     expect(container).toBeEmptyDOMElement();
   });
+
+  it("renders Host Protect line and footer on a Host invoice", () => {
+    const host: InvoicePrintData = {
+      ...sent,
+      number: "SX-202609-0008",
+      product: "host",
+      sku: "pro",
+      amount_idr: 350000,
+    };
+    render(<InvoicePrintSheet invoice={host} billTo="Hotel Example" />);
+
+    expect(screen.getByText("Sinexis Host Protect — PRO")).toBeInTheDocument();
+    expect(screen.getByTestId("invoice-print-footer")).toHaveTextContent(
+      "Thank you. Sinexis Host Protect — bank transfer, no self-serve upgrade.",
+    );
+    expect(screen.queryByText(/Sinexis Scan —/)).not.toBeInTheDocument();
+  });
 });
