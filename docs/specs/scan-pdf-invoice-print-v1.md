@@ -1,10 +1,10 @@
 # Spec: Scan print-to-PDF + invoice HTML print
 
 **Status:** **S0 draft** (this file). S1+ only after explicit `implement` / `buat` / `kerjakan` **and** a named slice (`S1a` or `S1b`). **Do not** ship app code in the S0 PR.
-**Goal:** Let a GM **Print / Save as PDF** the existing executive (and technical) scan HTML, and let org admin / platform admin **print a Scan invoice** — without a PDF library, payment gateway, or Host invoice.
+**Goal:** Let a GM **Print / Save as PDF** the existing executive (and technical) scan HTML, and let org admin / platform admin **print a Scan or Host invoice** — without a PDF library or payment gateway.
 **Epic:** product-depth follow-on to P1 S4 + invoice v1. **Not** a new P-letter. Does **not** replace Scan attach, invoice pay loop, or P15 chrome.
 **Depends:** `GET /api/scan/{id}/export` (`json` \| `html` \| `executive`) · `render_executive_html` · `_render_pdf_html` (legacy name — **HTML**, not PDF) · `org_invoices` + `InvoiceItem` · bank env `INVOICE_BANK_*` · i18n executive locale (`id` default).
-**Commercial:** not a new list-price SKU. Guide §1.3.1 **#2** = Print S2 (`format=pdf` / WeasyPrint). S1a/S1b **shipped**. Invoice PDF stays I10 **out**. Host invoice = queue **#1** (H9).
+**Commercial:** not a new list-price SKU. Guide §1.3.1 **#1** = Print S2 (`format=pdf` / WeasyPrint). S1a/S1b **shipped**. Invoice PDF stays I10 **out**. Host invoice = **H9 shipped**.
 **Not this epic:** WeasyPrint / reportlab / wkhtmltopdf / headless Chromium as a product PDF engine; `format=pdf` bytes; Celery PDF; public invoice URL; Palatino / `#0a7`; restyle `components/ui`; P15 chrome; GTM.
 
 ---
@@ -64,7 +64,7 @@ This is **print chrome on documents we already have** (scan) plus **one new prin
 |-----|-----|
 | Payment gateway, pay button, upgrade CTA, auto-create on signup | Invoice v1 pay loop **closed** |
 | E-meterai / digital stamp | Guide §1.3.1 Out |
-| Host Protect / Host WAF invoice (`invoicable=false`) | I2 / I10; `create_scan_invoice` stays scan-only |
+| Host Protect / Host WAF invoice | **H9 shipped** (`invoicable=true`). HTML print covers Scan **and** Host. PDF library still I10 **out** |
 | PDF library (WeasyPrint, reportlab, pdfkit, wkhtmltopdf, pypdf, Cairo/Pango in the backend image) | I10; Docker/CI bomb |
 | `GET /api/scan/{id}/export?format=pdf` returning `application/pdf` | Existing 400 contract; S2 only if owner **names** binary PDF |
 | Headless Chromium / Playwright as a **prod** PDF service | Playwright is e2e only |

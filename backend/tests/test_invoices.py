@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.database import get_db
 from app.main import app
+from app.models.invoice import SkuCatalog
 from app.models.organization import Organization, OrganizationMembership
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
@@ -143,6 +144,7 @@ async def test_create_invoice_snapshots_list_idr(db_session, ctx):
             assert r.status_code == 201
             body = r.json()
             assert body["amount_idr"] == 300_000
+            assert body["product"] == "scan"
             assert body["sku"] == "basic"
             assert body["status"] == "draft"
             assert body["number"].startswith("SX-")
@@ -254,6 +256,115 @@ async def test_owner_lists_invoices_and_catalog(db_session, ctx):
             assert listed.status_code == 200
             assert listed.json()["total"] == 1
             assert listed.json()["items"][0]["bank"] is None
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_create_host_invoice_snapshots_list_idr(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            r = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={"organization_id": str(ctx["org"].id), "sku": "basic", "product": "host"},
+            )
+            assert r.status_code == 201
+            body = r.json()
+            assert body["amount_idr"] == 150_000
+            assert body["product"] == "host"
+            assert body["sku"] == "basic"
+            assert body["status"] == "draft"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_scan_and_host_same_period_ok(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            scan = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={"organization_id": str(ctx["org"].id), "sku": "basic", "product": "scan"},
+            )
+            host = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={"organization_id": str(ctx["org"].id), "sku": "pro", "product": "host"},
+            )
+            assert scan.status_code == 201
+            assert host.status_code == 201
+            assert scan.json()["product"] == "scan"
+            assert host.json()["product"] == "host"
+            assert host.json()["amount_idr"] == 350_000
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_duplicate_host_invoice_same_period_409(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            payload = {"organization_id": str(ctx["org"].id), "sku": "basic", "product": "host"}
+            first = await client.post("/api/admin/invoices", headers=_auth(ctx["admin"]), json=payload)
+            assert first.status_code == 201
+            second = await client.post("/api/admin/invoices", headers=_auth(ctx["admin"]), json=payload)
+            assert second.status_code == 409
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_mark_paid_host_does_not_set_org_sku(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={"organization_id": str(ctx["org"].id), "sku": "multi", "product": "host"},
+            )
+            inv_id = created.json()["id"]
+            paid = await client.post(
+                f"/api/admin/invoices/{inv_id}/paid",
+                headers=_auth(ctx["admin"]),
+                json={"bank_ref": "TF-HOST-1"},
+            )
+            assert paid.status_code == 200
+            assert paid.json()["status"] == "paid"
+            org = await db_session.get(Organization, ctx["org"].id)
+            await db_session.refresh(org)
+            assert org is not None
+            assert org.sku == "basic"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_create_rejects_not_invoicable_product(db_session, ctx):
+    host_basic = await db_session.get(SkuCatalog, ("host", "basic"))
+    assert host_basic is not None
+    host_basic.invoicable = False
+    await db_session.commit()
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            r = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={"organization_id": str(ctx["org"].id), "sku": "basic", "product": "host"},
+            )
+            assert r.status_code == 400
+            assert "invoicable" in r.json()["detail"]
     finally:
         app.dependency_overrides.clear()
 

@@ -58,8 +58,8 @@
   "pilotLinkAssets": "Open assets",
   "pilotLinkSchedules": "Open schedules",
   "billingTitle": "Billing",
-  "billingDescription": "Sinexis Scan invoices for this workspace. Pay by bank transfer; ops marks paid. SKU seats follow a paid invoice.",
-  "billingEmpty": "No Scan invoices yet. Ops will issue one here; there is no self-serve upgrade.",
+  "billingDescription": "Sinexis Scan and Host invoices for this workspace. Pay by bank transfer; ops marks paid. Scan SKU seats follow a paid Scan invoice.",
+  "billingEmpty": "No invoices yet. Ops will issue Scan or Host invoices here; there is no self-serve upgrade.",
   "billingLoadError": "Could not load invoices.",
   "billingAdminLink": "Open admin invoices",
   "billingBank": "Transfer to {{name}} {{account}} ({{holder}})",
@@ -81,6 +81,8 @@
   "invoicePrintDescription": "Description",
   "invoicePrintSeats": "Seats",
   "invoicePrintItem": "Sinexis Scan — {{sku}}",
+  "invoicePrintItem_scan": "Sinexis Scan — {{sku}}",
+  "invoicePrintItem_host": "Sinexis Host Protect — {{sku}}",
   "invoicePrintSubtotal": "Subtotal",
   "invoicePrintTotal": "Total",
   "invoicePrintAmountDue": "Amount due",
@@ -90,5 +92,7 @@
   "invoicePrintBankAccount": "Account",
   "invoicePrintBankHolder": "Account holder",
   "invoicePrintPayHint": "Quote {{number}} as the transfer reference.",
-  "invoicePrintFooter": "Thank you. Sinexis Scan — bank transfer, no self-serve upgrade."
+  "invoicePrintFooter": "Thank you. Sinexis — bank transfer, no self-serve upgrade.",
+  "invoicePrintFooter_scan": "Thank you. Sinexis Scan — bank transfer, no self-serve upgrade.",
+  "invoicePrintFooter_host": "Thank you. Sinexis Host Protect — bank transfer, no self-serve upgrade."
 }

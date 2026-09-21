@@ -102,7 +102,7 @@ describe("WorkspaceSettings pilot checklist", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        /No Scan invoices yet\. Ops will issue one here; there is no self-serve upgrade\./,
+        /No invoices yet\. Ops will issue Scan or Host invoices here; there is no self-serve upgrade\./,
       ),
     ).toBeInTheDocument();
     expect(

@@ -11,15 +11,15 @@
 | ID | Topic | Decision |
 |----|--------|----------|
 | **I1** | Who bills | **Sinexis** issues invoices. GMD rack/VPS invoices stay in GMD. No silent-bundle. |
-| **I2** | What is sold | **Scan SKU seats** only: Basic / Pro / Multi. List IDR from P0 lock (300_000 / 650_000 / 2_000_000). Host Protect catalog rows may be seeded **working** but **not invoiced** until **H9** (Guide §1.3.1 **#1** — named, still wait for `buat`). **Invoice-ok** for the short “ganti Imunify” line is **this Sinexis in-app path** (I1), **not** GMD `service_id`, **not** flipping Host `invoicable` until H9 — see [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) §7.3. |
+| **I2** | What is sold | **Scan SKU seats** (Basic / Pro / Multi; P0 lock 300_000 / 650_000 / 2_000_000) **and Host Protect SKU seats** (working list 150_000 / 350_000 / 900_000; H4 not finance-locked). **H9 shipped:** Host catalog `invoicable=true`. Paid Host does **not** set `organizations.sku`. Unique period is per `(organization_id, product, period_start)` — Scan + Host same month OK. **Invoice-ok** for the short “ganti Imunify” line is **this Sinexis in-app path** (I1), **not** GMD `service_id` — see [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) §7.3. |
 | **I3** | Payment | **Manual bank transfer.** Admin marks `paid` after ops sees the transfer. No gateway, no auto-charge, no tax line. |
-| **I4** | Period | Calendar month (UTC). One **paid** Scan invoice per org per period (unique). |
+| **I4** | Period | Calendar month (UTC). One non-void invoice per `(organization_id, product, period_start)`. Scan + Host same month OK. |
 | **I5** | SKU mutation | Org admin **cannot** `PATCH /orgs/{id}` `sku` (403). Paid Scan invoice (or platform-admin set) is the gate. |
 | **I6** | New org default | `organizations.sku` default **`basic`** for **new** rows. Existing orgs unchanged. |
 | **I7** | Unpaid | Does **not** auto-downgrade `org.sku`. Void + admin set sku is ops. Seat caps still follow current `org.sku`. |
 | **I8** | Customer surface | Org owner/admin: read-only invoice list + bank copy when `sent`. No self-serve upgrade. |
 | **I9** | Bank copy | Env `INVOICE_BANK_NAME` / `INVOICE_BANK_ACCOUNT` / `INVOICE_BANK_HOLDER`. CI `append_if_set` on `push` to `main` (empty GitHub secret does not wipe host). Compose **backend** must interpolate those keys (host `.env` is not auto-mounted). Never commit real account numbers. |
-| **I10** | Out | Gateway, **PDF library**, dunning, PPN, subscriptions auto-renew job, Host-only invoice, AI top-up, GMD API, customer SID/PII in git. HTML print is **not** a PDF library — follow-on [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md) **S1b**. |
+| **I10** | Out | Gateway, **PDF library**, dunning, PPN, subscriptions auto-renew job, AI top-up, GMD API, customer SID/PII in git. **Host invoice is in** (H9). HTML print is **not** a PDF library — follow-on [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md) **S1b**. |
 
 List prices (do not invent):
 
@@ -35,7 +35,7 @@ List prices (do not invent):
 
 ### Catalog `sku_catalog`
 
-PK `(product, sku)`. v1 product = `scan` (required) + `host` (seeded, `invoicable=false`).
+PK `(product, sku)`. Products = `scan` + `host` (both `invoicable=true` after H9).
 
 | Column | Type |
 |--------|------|
@@ -46,7 +46,7 @@ PK `(product, sku)`. v1 product = `scan` (required) + `host` (seeded, `invoicabl
 | invoicable | bool |
 | updated_at | timestamptz |
 
-Seed Scan from I2. Seed Host 150_000 / 350_000 / 900_000, `invoicable=false`.
+Seed Scan from I2. Seed Host 150_000 / 350_000 / 900_000. Alembic `host_sku_invoicable` sets Host `invoicable=true`.
 
 HPP overlay `_SCAN_LIST_IDR` / `_HOST_LIST_IDR` **read from catalog** (fallback to the same constants if a row is missing).
 
@@ -57,7 +57,7 @@ HPP overlay `_SCAN_LIST_IDR` / `_HOST_LIST_IDR` **read from catalog** (fallback 
 | id | UUID PK |
 | organization_id | FK orgs CASCADE |
 | number | unique `SX-YYYYMM-NNNN` |
-| product | `scan` (v1) |
+| product | `scan` \| `host` |
 | sku | basic\|pro\|multi |
 | amount_idr | int ≥ 0 (snapshot of catalog at create) |
 | period_start / period_end | timestamptz UTC month bounds |
@@ -68,7 +68,7 @@ HPP overlay `_SCAN_LIST_IDR` / `_HOST_LIST_IDR` **read from catalog** (fallback 
 | created_by_user_id | FK users SET NULL |
 | created_at / updated_at | timestamptz |
 
-Unique: one non-void Scan invoice per `(organization_id, product, period_start)`.
+Unique: one non-void invoice per `(organization_id, product, period_start)`.
 
 **Mark paid:** set `paid_at`, `status=paid`. If `product=scan`, set `organizations.sku` to invoice sku.
 
@@ -93,9 +93,9 @@ Admin (`get_current_admin` + existing limiter):
 | GET | `/api/admin/sku-catalog` | all rows |
 | PUT | `/api/admin/sku-catalog/{product}/{sku}` | `{ list_idr }` only; seats immutable in v1 |
 | GET | `/api/admin/invoices` | filter `status`, `organization_id`; page |
-| POST | `/api/admin/invoices` | `{ organization_id, sku, period_start? }` product=scan; amount from catalog |
+| POST | `/api/admin/invoices` | `{ organization_id, sku, product?, period_start? }` `product` = `scan` (default) \| `host`; amount from catalog |
 | POST | `/api/admin/invoices/{id}/send` | draft→sent |
-| POST | `/api/admin/invoices/{id}/paid` | `{ bank_ref? }` → paid + apply sku |
+| POST | `/api/admin/invoices/{id}/paid` | `{ bank_ref? }` → paid; apply `org.sku` only when `product=scan` |
 | POST | `/api/admin/invoices/{id}/void` | draft\|sent → void |
 
 Org (membership admin+):
@@ -121,7 +121,7 @@ Do **not** restyle kit. Tokens from `:root`. `Button` / `Select` only.
 ## 4) Out
 
 - Payment gateway, e-meterai, PDF binary, auto-renew beat job.
-- Host invoice, Guard/SIEM `service_id`.
+- Guard/SIEM `service_id`. Host invoice is **in** (H9).
 - HTML print UI — **S1b shipped** [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md) (browser `window.print`; still **no** PDF library).
 - Invoice **Send** is a **status flip**, not SMTP. User-side mail log is [`inbox-delivered-v1.md`](inbox-delivered-v1.md) — **do not** email invoices in that epic.
 - Writing `users.credits` or `ai_wallets`.
@@ -139,4 +139,6 @@ Do **not** restyle kit. Tokens from `:root`. `Button` / `Select` only.
 - [x] pytest: `bank_copy` empty vs set; send includes bank, draft does not.
 - [x] Vitest: Workspace Billing shows bank copy on `sent`, dashes when null, hidden on draft.
 - [x] Vitest: empty Billing is ops-issued (no upgrade CTA); load error is not empty; platform admin may link `/admin/invoices`.
+- [x] pytest: create Host invoice snapshots Host list_idr; Scan+Host same period OK; duplicate Host 409; paid Host does not set `org.sku`; `invoicable=false` → 400.
+- [x] Vitest: admin Host product picker + SKU filter; print Host line/footer; billing copy Scan+Host.
 - [x] No real bank account in git.

@@ -80,19 +80,20 @@ class InvoiceService:
         await self.db.refresh(row)
         return row
 
-    async def create_scan_invoice(
+    async def create_invoice(
         self,
         *,
         organization_id: uuid.UUID,
         sku: str,
         actor: User,
+        product: str = "scan",
         period_start: datetime | None = None,
         notes: str = "",
     ) -> OrgInvoice:
         org = await self.db.get(Organization, organization_id)
         if org is None:
             raise HTTPException(status_code=404, detail="Organization not found")
-        catalog = await self.db.execute(select(SkuCatalog).where(SkuCatalog.product == "scan", SkuCatalog.sku == sku))
+        catalog = await self.db.execute(select(SkuCatalog).where(SkuCatalog.product == product, SkuCatalog.sku == sku))
         cat = catalog.scalar_one_or_none()
         if cat is None or not cat.invoicable:
             raise HTTPException(status_code=400, detail="SKU is not invoicable")
@@ -100,7 +101,7 @@ class InvoiceService:
         clash = await self.db.execute(
             select(OrgInvoice.id).where(
                 OrgInvoice.organization_id == organization_id,
-                OrgInvoice.product == "scan",
+                OrgInvoice.product == product,
                 OrgInvoice.period_start == start,
                 OrgInvoice.status != "void",
             )
@@ -108,13 +109,13 @@ class InvoiceService:
         if clash.scalar_one_or_none() is not None:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Scan invoice already exists for this period",
+                detail=f"{product.capitalize()} invoice already exists for this period",
             )
         inv = OrgInvoice(
             id=uuid.uuid4(),
             organization_id=organization_id,
             number=await next_invoice_number(self.db, start),
-            product="scan",
+            product=product,
             sku=sku,
             amount_idr=int(cat.list_idr),
             period_start=start,

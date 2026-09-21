@@ -488,8 +488,10 @@ export async function getEmailLogs(params: {
   return data;
 }
 
+export type InvoiceProduct = "scan" | "host";
+
 export interface SkuCatalogItem {
-  product: string;
+  product: InvoiceProduct;
   sku: string;
   list_idr: number;
   seats: number;
@@ -515,7 +517,7 @@ export interface InvoiceItem {
   id: string;
   organization_id: string;
   number: string;
-  product: string;
+  product: InvoiceProduct;
   sku: string;
   amount_idr: number;
   period_start: string;
@@ -562,6 +564,7 @@ export async function listAdminInvoices(params?: {
 export async function createAdminInvoice(body: {
   organization_id: string;
   sku: string;
+  product?: InvoiceProduct;
   notes?: string;
 }): Promise<InvoiceItem> {
   const { data } = await api.post<InvoiceItem>("/api/admin/invoices", body);
