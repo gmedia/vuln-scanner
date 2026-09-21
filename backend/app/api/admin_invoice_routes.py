@@ -128,10 +128,11 @@ async def create_invoice(
     limit_response = await admin_limiter(request)
     if limit_response:
         return limit_response
-    inv = await InvoiceService(db).create_scan_invoice(
+    inv = await InvoiceService(db).create_invoice(
         organization_id=body.organization_id,
         sku=body.sku,
         actor=current_admin,
+        product=body.product,
         period_start=body.period_start,
         notes=body.notes,
     )
