@@ -231,7 +231,7 @@ describe("AdminInvoices", () => {
         opts.onSuccess?.();
       },
       isPending: false,
-    })) as typeof useMutation);
+    })) as unknown as typeof useMutation);
 
     render(<AdminInvoices />);
     const sendBtn = screen.getByTestId("invoice-send-inv-1");
@@ -333,8 +333,8 @@ describe("AdminInvoices", () => {
 
   it("lists Host in the product picker and filters SKU to Host catalog rows", async () => {
     type MutOpts = {
-      mutationFn: () => unknown;
-      onSuccess?: () => void;
+      mutationFn: (...args: unknown[]) => unknown;
+      onSuccess?: (...args: unknown[]) => void;
     };
     vi.mocked(useMutation).mockImplementation(((opts: MutOpts) => ({
       mutate: () => {
@@ -342,7 +342,7 @@ describe("AdminInvoices", () => {
         opts.onSuccess?.();
       },
       isPending: false,
-    })) as typeof useMutation);
+    })) as unknown as typeof useMutation);
 
     render(<AdminInvoices />);
     expect(screen.getByTestId("invoice-product")).toBeInTheDocument();
@@ -385,7 +385,7 @@ describe("AdminInvoices", () => {
         opts.onSuccess?.(result);
       },
       isPending: false,
-    })) as typeof useMutation);
+    })) as unknown as typeof useMutation);
 
     render(<AdminInvoices />);
     await userEvent.click(screen.getByTestId("invoice-paid-inv-1"));
