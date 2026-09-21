@@ -217,7 +217,7 @@ curl http://localhost/api/scan/{id}/export?format=html \
 | **Imunify-class on-box (P14)** | **Docs** | Job roadmap: helper-first scan, regional attach — **not** an Imunify clone. Spek [`docs/specs/imunify-class-onbox.md`](docs/specs/imunify-class-onbox.md). VPS displace-lite (AM, nginx only): [`docs/specs/vps-displace-imunify-dev-plan.md`](docs/specs/vps-displace-imunify-dev-plan.md). |
 | Soft dual-brand (Sinexis) | **Shipped** | Public: **`sinexis.app`** (legacy `vs.appmedia.id` may still exist). |
 
-Agent/session priority after reset: [`docs/AGENT_EXECUTION_GUIDE.md`](docs/AGENT_EXECUTION_GUIDE.md) **§1.3.1** (development only; named queue H9 → Print S2 → Inbox S2 → inotify → WAF 1147+; never pitch GTM/AM/sales).
+Agent/session priority after reset: [`docs/AGENT_EXECUTION_GUIDE.md`](docs/AGENT_EXECUTION_GUIDE.md) **§1.3.1** (development only; named queue Print S2 → Inbox S2 → inotify → WAF 1147+; H9 Host invoicable shipped; never pitch GTM/AM/sales).
 
 ### Dependency pins & residual risks
 
