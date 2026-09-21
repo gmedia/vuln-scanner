@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AdminInvoices from "@/pages/admin/AdminInvoices";
 import i18n from "@/i18n";
 import { toast } from "sonner";
+import { adminApi } from "@/api/admin";
 
 vi.mock("@tanstack/react-query", () => ({
   useQuery: vi.fn(),
@@ -25,6 +26,77 @@ vi.mock("@/api/admin", () => ({
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
+vi.mock("@/components/ui/Select", () => {
+  function collectSelectValues(node: React.ReactNode): string[] {
+    const values: string[] = [];
+    const walk = (n: React.ReactNode) => {
+      if (Array.isArray(n)) {
+        n.forEach(walk);
+        return;
+      }
+      if (!n || typeof n !== "object" || !("props" in n)) return;
+      const props = (n as React.ReactElement<{ value?: unknown; children?: React.ReactNode }>).props;
+      if (typeof props.value === "string") values.push(props.value);
+      if (props.children != null) walk(props.children);
+    };
+    walk(node);
+    return [...new Set(values)];
+  }
+  return {
+  Select: ({
+    children,
+    value,
+    onValueChange,
+  }: {
+    children: React.ReactNode;
+    value: string;
+    onValueChange: (v: string) => void;
+  }) => {
+    const options = collectSelectValues(children);
+    const all = options.includes(value) ? options : [value, ...options];
+    return (
+      <div data-testid="select-root" data-value={value}>
+        {typeof children === "function" ? null : children}
+        <select
+          aria-hidden
+          value={value}
+          onChange={(e) => onValueChange(e.target.value)}
+          style={{ display: "none" }}
+        >
+          {all.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  },
+  SelectTrigger: ({
+    children,
+    id,
+    ...props
+  }: React.ButtonHTMLAttributes<HTMLButtonElement> & { id?: string }) => (
+    <button type="button" id={id} {...props}>
+      {children}
+    </button>
+  ),
+  SelectValue: ({ placeholder }: { placeholder?: string }) => (
+    <span>{placeholder}</span>
+  ),
+  SelectContent: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  SelectItem: ({
+    children,
+    value,
+  }: {
+    children: React.ReactNode;
+    value: string;
+  }) => <div data-value={value}>{children}</div>,
+  };
+});
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const catalog = [
@@ -36,7 +108,46 @@ const catalog = [
     invoicable: true,
     updated_at: "2026-09-13T00:00:00Z",
   },
+  {
+    product: "scan",
+    sku: "pro",
+    list_idr: 650_000,
+    seats: 3,
+    invoicable: true,
+    updated_at: "2026-09-13T00:00:00Z",
+  },
+  {
+    product: "scan",
+    sku: "multi",
+    list_idr: 2_000_000,
+    seats: 10,
+    invoicable: true,
+    updated_at: "2026-09-13T00:00:00Z",
+  },
+  {
+    product: "host",
+    sku: "basic",
+    list_idr: 150_000,
+    seats: 1,
+    invoicable: true,
+    updated_at: "2026-09-13T00:00:00Z",
+  },
+  {
+    product: "host",
+    sku: "pro",
+    list_idr: 350_000,
+    seats: 3,
+    invoicable: true,
+    updated_at: "2026-09-13T00:00:00Z",
+  },
 ];
+
+function changeSelect(trigger: HTMLElement, value: string) {
+  const root = trigger.closest("[data-testid=select-root]");
+  const sel = root?.querySelector("select");
+  expect(sel).toBeTruthy();
+  fireEvent.change(sel as HTMLSelectElement, { target: { value } });
+}
 const invoices = [
   {
     id: "inv-1",
@@ -101,7 +212,9 @@ describe("AdminInvoices", () => {
   it("renders page, catalog, and create control", () => {
     render(<AdminInvoices />);
     expect(screen.getByTestId("admin-invoices-page")).toBeInTheDocument();
-    expect(screen.getByText("Sinexis bills Scan SKUs")).toBeInTheDocument();
+    expect(
+      screen.getByText("Sinexis bills Scan and Host SKUs"),
+    ).toBeInTheDocument();
     expect(screen.getByText("SX-202609-0001")).toBeInTheDocument();
     expect(screen.getByTestId("invoice-create")).toBeDisabled();
     expect(screen.getByTestId("invoice-paid-inv-1")).toBeInTheDocument();
@@ -216,5 +329,68 @@ describe("AdminInvoices", () => {
       "0000000000",
     );
     await waitFor(() => expect(print).toHaveBeenCalled());
+  });
+
+  it("lists Host in the product picker and filters SKU to Host catalog rows", async () => {
+    type MutOpts = {
+      mutationFn: () => unknown;
+      onSuccess?: () => void;
+    };
+    vi.mocked(useMutation).mockImplementation(((opts: MutOpts) => ({
+      mutate: () => {
+        opts.mutationFn();
+        opts.onSuccess?.();
+      },
+      isPending: false,
+    })) as typeof useMutation);
+
+    render(<AdminInvoices />);
+    expect(screen.getByTestId("invoice-product")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("invoice-product").closest("[data-testid=select-root]")
+        ?.querySelector("[data-value=host]"),
+    ).toBeTruthy();
+    const skuRoot = () =>
+      screen.getByTestId("invoice-sku").closest("[data-testid=select-root]");
+    expect(skuRoot()?.querySelector("[data-value=multi]")).toBeTruthy();
+
+    const orgTrigger = document.getElementById("inv-org");
+    expect(orgTrigger).toBeTruthy();
+    changeSelect(orgTrigger as HTMLElement, "org-1");
+    changeSelect(screen.getByTestId("invoice-product"), "host");
+
+    expect(skuRoot()?.querySelector("[data-value=multi]")).toBeFalsy();
+    expect(screen.getByTestId("invoice-create")).not.toBeDisabled();
+    await userEvent.click(screen.getByTestId("invoice-create"));
+    expect(adminApi.createAdminInvoice).toHaveBeenCalledWith({
+      organization_id: "org-1",
+      sku: "basic",
+      product: "host",
+    });
+  });
+
+  it("toasts Host paid copy without implying Scan SKU apply", async () => {
+    vi.mocked(adminApi.payAdminInvoice).mockReturnValue({
+      ...invoices[0],
+      product: "host",
+      sku: "pro",
+    } as never);
+    type MutOpts = {
+      mutationFn: (id: string) => unknown;
+      onSuccess?: (inv: unknown) => void;
+    };
+    vi.mocked(useMutation).mockImplementation(((opts: MutOpts) => ({
+      mutate: (id: string) => {
+        const result = opts.mutationFn(id);
+        opts.onSuccess?.(result);
+      },
+      isPending: false,
+    })) as typeof useMutation);
+
+    render(<AdminInvoices />);
+    await userEvent.click(screen.getByTestId("invoice-paid-inv-1"));
+    expect(toast.success).toHaveBeenCalledWith(
+      "Marked paid — Host invoice; Scan org SKU unchanged",
+    );
   });
 });

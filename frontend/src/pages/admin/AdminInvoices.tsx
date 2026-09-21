@@ -24,7 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/Table";
 import PageHeader from "@/components/layout/PageHeader";
-import { adminApi, type InvoiceItem } from "@/api/admin";
+import { adminApi, type InvoiceItem, type InvoiceProduct } from "@/api/admin";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
@@ -36,11 +36,20 @@ function formatIdr(n: number): string {
   return `Rp ${n.toLocaleString("id-ID")}`;
 }
 
+function isInvoiceProduct(value: string): value is InvoiceProduct {
+  return value === "scan" || value === "host";
+}
+
+function skuLabel(sku: string): string {
+  return sku.charAt(0).toUpperCase() + sku.slice(1);
+}
+
 function AdminInvoices() {
   const { t } = useTranslation("admin");
   const qc = useQueryClient();
   const [status, setStatus] = useState("all");
   const [orgId, setOrgId] = useState("");
+  const [product, setProduct] = useState<InvoiceProduct>("scan");
   const [sku, setSku] = useState("basic");
   const [bankRef, setBankRef] = useState("");
   const { printing, startPrint } = useInvoicePrint();
@@ -61,9 +70,40 @@ function AdminInvoices() {
       }),
   });
 
+  const catalog = catalogQ.data ?? [];
+  const orgs = orgsQ.data?.items ?? [];
+  const invoices = invoicesQ.data?.items ?? [];
+  const invoicableProducts = catalog
+    .filter((row) => row.invoicable)
+    .reduce<InvoiceProduct[]>((acc, row) => {
+      if (!acc.includes(row.product)) acc.push(row.product);
+      return acc;
+    }, []);
+  const skuOptions = catalog.filter(
+    (row) => row.product === product && row.invoicable,
+  );
+  const skuValue = skuOptions.some((row) => row.sku === sku)
+    ? sku
+    : (skuOptions[0]?.sku ?? "");
+
+  function onProductChange(value: string) {
+    if (!isInvoiceProduct(value)) return;
+    setProduct(value);
+    const nextSkus = catalog.filter(
+      (row) => row.product === value && row.invoicable,
+    );
+    if (!nextSkus.some((row) => row.sku === sku)) {
+      setSku(nextSkus[0]?.sku ?? "basic");
+    }
+  }
+
   const createMut = useMutation({
     mutationFn: () =>
-      adminApi.createAdminInvoice({ organization_id: orgId, sku }),
+      adminApi.createAdminInvoice({
+        organization_id: orgId,
+        sku: skuValue,
+        product,
+      }),
     onSuccess: () => {
       toast.success(t("invoiceCreated"));
       void qc.invalidateQueries({ queryKey: ["admin-invoices"] });
@@ -80,8 +120,10 @@ function AdminInvoices() {
   const payMut = useMutation({
     mutationFn: (id: string) =>
       adminApi.payAdminInvoice(id, bankRef || undefined),
-    onSuccess: () => {
-      toast.success(t("invoicePaid"));
+    onSuccess: (inv) => {
+      toast.success(
+        t(`invoicePaid_${inv.product}`, { defaultValue: t("invoicePaid") }),
+      );
       setBankRef("");
       void qc.invalidateQueries({ queryKey: ["admin-invoices"] });
     },
@@ -93,10 +135,6 @@ function AdminInvoices() {
       void qc.invalidateQueries({ queryKey: ["admin-invoices"] });
     },
   });
-
-  const catalog = catalogQ.data ?? [];
-  const orgs = orgsQ.data?.items ?? [];
-  const invoices = invoicesQ.data?.items ?? [];
 
   return (
     <div className="w-full space-y-6" data-testid="admin-invoices-page">
@@ -155,7 +193,7 @@ function AdminInvoices() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-4">
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="inv-org">{t("colOrg")}</Label>
               <Select value={orgId} onValueChange={setOrgId}>
@@ -172,15 +210,44 @@ function AdminInvoices() {
               </Select>
             </div>
             <div className="flex min-w-0 flex-col gap-1.5">
-              <Label htmlFor="inv-sku">{t("colSku")}</Label>
-              <Select value={sku} onValueChange={setSku}>
-                <SelectTrigger id="inv-sku" className="h-10 min-h-10">
+              <Label htmlFor="inv-product">{t("colProduct")}</Label>
+              <Select value={product} onValueChange={onProductChange}>
+                <SelectTrigger
+                  id="inv-product"
+                  className="h-10 min-h-10"
+                  data-testid="invoice-product"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="basic">Basic</SelectItem>
-                  <SelectItem value="pro">Pro</SelectItem>
-                  <SelectItem value="multi">Multi</SelectItem>
+                  {invoicableProducts.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="inv-sku">{t("colSku")}</Label>
+              <Select
+                value={skuValue}
+                onValueChange={setSku}
+                disabled={skuOptions.length === 0}
+              >
+                <SelectTrigger
+                  id="inv-sku"
+                  className="h-10 min-h-10"
+                  data-testid="invoice-sku"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {skuOptions.map((row) => (
+                    <SelectItem key={row.sku} value={row.sku}>
+                      {skuLabel(row.sku)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -188,7 +255,7 @@ function AdminInvoices() {
               <Button
                 type="button"
                 data-testid="invoice-create"
-                disabled={!orgId || createMut.isPending}
+                disabled={!orgId || !skuValue || createMut.isPending}
                 onClick={() => createMut.mutate()}
               >
                 {createMut.isPending && (
@@ -247,6 +314,7 @@ function AdminInvoices() {
                 <TableRow>
                   <TableHead>{t("colNumber")}</TableHead>
                   <TableHead>{t("colOrg")}</TableHead>
+                  <TableHead>{t("colProduct")}</TableHead>
                   <TableHead>{t("colSku")}</TableHead>
                   <TableHead>{t("colListIdr")}</TableHead>
                   <TableHead>{t("colStatus")}</TableHead>
@@ -262,6 +330,7 @@ function AdminInvoices() {
                       {inv.number}
                     </TableCell>
                     <TableCell>{inv.organization_name ?? "—"}</TableCell>
+                    <TableCell>{inv.product}</TableCell>
                     <TableCell className="uppercase">{inv.sku}</TableCell>
                     <TableCell className="font-mono tabular-nums">
                       {formatIdr(inv.amount_idr)}
