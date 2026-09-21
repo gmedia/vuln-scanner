@@ -1,8 +1,8 @@
 # Spec: Inbox “Delivered” (user-side SMTP log)
 
-**Status:** **S0–S1c shipped** (#787 docs, #788 `GET /api/inbox` + `user_id`, #789 SPA `/inbox`, **S1c `job_id` + scan_diff link**). Bounce/SES = **S2 parked**. Do **not** re-implement S0–S1b.
+**Status:** **S0–S1c shipped** (#787 docs, #788 `GET /api/inbox` + `user_id`, #789 SPA `/inbox`, **S1c `job_id` + scan_diff link**). Bounce/SES = **S2** = Guide §1.3.1 **#3** (named, wait `buat`). Do **not** re-implement S0–S1b.
 **Goal:** Let a workspace user see whether **product mail the app already sent** was **accepted by SMTP** (Sent) or **failed** — without a second notification center, Guard Discover, bounce/DSN infra, or exposing other tenants’ addresses.
-**Epic:** product-depth follow-on to P1 S3 notify + admin `email_send_logs`. **Not** a new P-letter. Guide §1.3.1 row **2**.
+**Epic:** product-depth follow-on to P1 S3 notify + admin `email_send_logs`. **Not** a new P-letter. Guide §1.3.1 **#3** = Inbox S2 (bounce/SES). S0–S1c **shipped**.
 **Depends:** `backend/app/services/email.py` · `EmailSendLog` / `email_send_logs` (`sent` \| `failed`) · `record_email_send` · `GET /api/admin/email-logs` · scan notify (`scan_diff`) · i18n notify locale (`id` default).
 **Commercial:** not a SKU. Out already named: **Mixing into Guard Discover**.
 **Not this epic:** SES/DSN “mailbox delivered”; chat inbox; unread threads; invoice SMTP; invite SMTP; bounce webhooks; unmasking recipients; `/guard/inbox`; SIEM cases; print/PDF (S1a/S1b shipped).
@@ -57,7 +57,7 @@ This is a **user-safe projection of outbound SMTP attempts we already log** — 
 3. **S1b (later):** SPA `/inbox` under Account. Columns: time, kind, status (**Sent** / **Failed**), masked recipient or “you”, link to job when `scan_diff`. Empty: no product mail yet — **not** “check Guard”.
 4. i18n `id` / `en` catalogs `frontend/src/locales/{id,en}/inbox.json`. Default `id`.
 5. Tests: IDOR (user A empty/404 for user B’s `scan_diff`); admin logs still 403 for non-admin; invoice send still does not call `send_*email`.
-6. Docs: this file; guide §1.3.1 row 2; §3 backlog pointer. **No** live `/inbox` registry row until S1b.
+6. Docs: this file; guide §1.3.1 **#3** (Inbox S2); §3 backlog pointer. **No** live `/inbox` registry row until S1b.
 
 ---
 
@@ -190,7 +190,7 @@ GIT_MASTER=1 git rev-parse --abbrev-ref HEAD
 test -f docs/specs/inbox-delivered-v1.md
 
 rg -n "inbox-delivered-v1.md" docs/AGENT_EXECUTION_GUIDE.md
-# expect: §1.3.1 row 2 points at this spec
+# expect: §1.3.1 points at this spec (S0–S1c shipped; S2 = queue #3)
 
 rg -n "Guard Discover|/guard/inbox" docs/specs/inbox-delivered-v1.md
 rg -n "status flip|not SMTP|not email" docs/specs/inbox-delivered-v1.md

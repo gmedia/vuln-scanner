@@ -4,7 +4,7 @@
 **Goal:** Let a GM **Print / Save as PDF** the existing executive (and technical) scan HTML, and let org admin / platform admin **print a Scan invoice** — without a PDF library, payment gateway, or Host invoice.
 **Epic:** product-depth follow-on to P1 S4 + invoice v1. **Not** a new P-letter. Does **not** replace Scan attach, invoice pay loop, or P15 chrome.
 **Depends:** `GET /api/scan/{id}/export` (`json` \| `html` \| `executive`) · `render_executive_html` · `_render_pdf_html` (legacy name — **HTML**, not PDF) · `org_invoices` + `InvoiceItem` · bank env `INVOICE_BANK_*` · i18n executive locale (`id` default).
-**Commercial:** not a new list-price SKU. Guide §1.3.1 Out: Gateway, e-meterai, Host invoice (`invoicable=false`).
+**Commercial:** not a new list-price SKU. Guide §1.3.1 **#2** = Print S2 (`format=pdf` / WeasyPrint). S1a/S1b **shipped**. Invoice PDF stays I10 **out**. Host invoice = queue **#1** (H9).
 **Not this epic:** WeasyPrint / reportlab / wkhtmltopdf / headless Chromium as a product PDF engine; `format=pdf` bytes; Celery PDF; public invoice URL; Palatino / `#0a7`; restyle `components/ui`; P15 chrome; GTM.
 
 ---

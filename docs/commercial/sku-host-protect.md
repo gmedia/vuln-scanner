@@ -19,7 +19,7 @@
 | **H6** | Cleanup | Quarantine/restore in-app; reconstruct = **hybrid ticket**. No silent PHP rewrite | Working |
 | **H7** | WAF | **Not** in Host Protect **file** v1. **P13 Host WAF** = separate control plane; working: **detect** on Pro/Multi, **protect** Multi+; IDR unset | Working |
 | **H8** | Guard prerequisite | Host Protect v1 **requires** Guard agent on the VM | Working |
-| **H9** | In-app Host `invoicable` | Host catalog seeded, `invoicable=false`. **Parked** until owner **names H9**. Closing Sentence-ok does **not** auto-flip this. **Struck:** Invoice-ok is **not** GMD Host `service_id` (same leftover pattern as Scan **D5** — optional, **not** agent next-step). Do **not** silent-bundle into VPS or Scan | Open |
+| **H9** | In-app Host `invoicable` | Host catalog seeded, `invoicable=false`. Guide §1.3.1 **#1** (named 2026-09-21). Still wait for `buat`. Closing Sentence-ok does **not** auto-flip this. **Struck:** Invoice-ok is **not** GMD Host `service_id` (same leftover pattern as Scan **D5** — optional, **not** agent next-step). Do **not** silent-bundle into VPS or Scan | Named (not flipped) |
 | **H10** | Public repo | No customer paths/SIDs/PII | Locked (hygiene) |
 
 ---
@@ -40,7 +40,7 @@
 
 - “Ini **bukan** ganti Imunify di cPanel shared.”
 - “Kalimat pendek ‘ganti Imunify…’ **boleh** di **nginx dedicated / no panel** (Sentence-ok **GREEN** 2026-09-21). **Tetap dilarang** di cPanel shared. Pitch panjang §0 tetap dipakai jika buyer butuh kedalaman.”
-- “Ganti di **VPS tanpa panel**: **Sentence-ok tertutup** (Demo-ok + Invoice-ok Sinexis in-app + pack 1005+ shipped + ModSec live + owner date 2026-09-21); tanpa PD/kernel/email. **Jangan** tunggu `service_id` GMD. H9 `invoicable` **parked**.”
+- “Ganti di **VPS tanpa panel**: **Sentence-ok tertutup** (Demo-ok + Invoice-ok Sinexis in-app + pack 1005+ shipped + ModSec live + owner date 2026-09-21); tanpa PD/kernel/email. **Jangan** tunggu `service_id` GMD. H9 `invoicable` = Guide §1.3.1 **#1** (named, wait `buat`; catalog still false).”
 - “Untuk VPS/colo GMD: agent Guard + daftar folder web. Scan **on-box** = helper POST ke SaaS (P14 slice C). Worker cloud **bukan** Imunify. Sampai helper jalan, konsol **bukan** bukti disk VPS.”
 - “Working list (bukan H4/H9 lock): Host Basic **Rp 150.000** · Host Pro **Rp 350.000** · Host Multi **Rp 900.000** / bulan. Tagih di **Sinexis** (`/admin/invoices`). Invoice-ok = in-app, **bukan** `service_id` GMD. Finance boleh ± band sebelum H4 lock. GMD `service_id` **opsional**, bukan gerbang, **bukan** langkah agent.”
 - “Quarantine **bukan** reconstruct situs; restore CMS = tiket.”

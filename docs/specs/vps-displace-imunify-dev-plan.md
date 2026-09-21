@@ -1,6 +1,6 @@
 # Spec: VPS displace-lite vs Imunify360 (development plan)
 
-**Status:** **docs** (updated **2026-09-21**). **Sentence-ok = GREEN** (product owner **2026-09-21**, §7 E). Short “ganti Imunify360 dengan Sinexis” is **allowed** only on a **single nginx VPS or dedicated / no panel**. **Still forbidden** on shared cPanel/CloudLinux farms. **DL0–DL3 shipped** (`main` #647 / #649 / #651 / #659). **Billing lock:** Sinexis **in-app** invoices ([`sinexis-invoice-v1.md`](sinexis-invoice-v1.md) **I1/D5**) — **not** GMD `service_id`. **Demo-ok `tc5` proven.** H9 Host `invoicable` stays **parked** (closing Sentence-ok does **not** auto-flip H9). Remaining path is **not** more WAF IDs, P14 **G/H**, or finance SIDs.
+**Status:** **docs** (updated **2026-09-21**). **Sentence-ok = GREEN** (product owner **2026-09-21**, §7 E). Short “ganti Imunify360 dengan Sinexis” is **allowed** only on a **single nginx VPS or dedicated / no panel**. **Still forbidden** on shared cPanel/CloudLinux farms. **DL0–DL3 shipped** (`main` #647 / #649 / #651 / #659). **Billing lock:** Sinexis **in-app** invoices ([`sinexis-invoice-v1.md`](sinexis-invoice-v1.md) **I1/D5**) — **not** GMD `service_id`. **Demo-ok `tc5` proven.** H9 Host `invoicable` = Guide §1.3.1 **#1** (named 2026-09-21, still wait for `buat`; GREEN does **not** auto-flip). Remaining agent path is that named queue, **not** finance SIDs / P14 **G/H**.
 **Epic:** **P14 follow-on honesty plan** (jobs + original stack). Does **not** reopen P12 S1–S12 or P13 S0–S5.
 **Legal:** [`imunify-beside-not-roadmap.md`](../commercial/imunify-beside-not-roadmap.md) still forbids clone PRs, trademarks, Imunify/CRS commercial DB in git, “Imunify compatible” in UI. This file is a **job + speech gate**, not parity.
 **HTTP stack:** **nginx + ModSecurity (or Coraza spoa) on the customer/lab vhost.** **Caddy = out** until a **named** slice. Do not say “nginx/Caddy” in AM copy.
@@ -59,12 +59,12 @@ Until Demo-ok: do not demo Host as “on-box proof.”
 | Surface | Today | Role |
 |---------|--------|------|
 | **Invoice-ok (this gate)** Sinexis in-app Scan invoices | I1–I9 **shipped**; bank transfer, mark paid | AM **can** bill Scan attach without GMD SID |
-| **H9** In-app `sku_catalog` `product=host` `invoicable=true` | Host seeded, `invoicable=false`; I10 Host-only invoice **out** | **Parked** until owner **names H9**. Closing Sentence-ok does **not** auto-flip this |
+| **H9** In-app `sku_catalog` `product=host` `invoicable=true` | Host seeded, `invoicable=false`; I10 Host-only invoice **out** | **Named** §1.3.1 **#1** (2026-09-21). Catalog still `invoicable=false` until `buat`. GREEN does **not** auto-flip |
 | **Struck C1** GMD ERP Host `service_id` | Off-repo optional | **Not** Invoice-ok. **Do not** tell the user the next step is three SIDs |
 
 - Working IDR: Scan P0 lock; Host H4 working list ([`sku-host-protect.md`](../commercial/sku-host-protect.md)). Host IDR **not** finance-locked.
 - File-only demo = quote **Host Basic**. WAF/protect sentence = org is **Host Multi before** the meeting. Never quote Basic and demo Protect.
-- Do **not** flip `invoicable` or invent Host invoice APIs unless H9 is **named** + `buat`.
+- Do **not** flip `invoicable` or invent Host invoice APIs unless **H9** + `buat` (already named as queue #1).
 - Do **not** invent GMD API / SID rows in git.
 
 ### Sentence-ok (short “ganti” line) — **GREEN 2026-09-21**
@@ -211,7 +211,7 @@ Sentence-ok  =  Demo-ok  AND  Invoice-ok (Sinexis in-app Scan path shipped)
 | Invoice v1 Scan | pay loop closed (**I1**: Sinexis bills, not GMD SID). Host catalog `invoicable=false` |
 | Working list IDR | Host Basic 150k / Pro 350k / Multi 900k — **not** finance lock |
 
-**MUST NOT:** PRs titled “Imunify parity”; CRS / IM360 commercial DB in git; rebuild P12 / P13 / DL0–DL3; unpark P14 **G/H**; WAF **1147+**; inotify; Caddy; PHP PD; WebShield; KernelCare; cPanel plugin; wipe `sx-erpstg`; paste WAF onto `sinexis.app` edge; SSH Alembic after a green `main` deploy.
+**MUST NOT:** PRs titled “Imunify parity”; CRS / IM360 commercial DB in git; rebuild P12 / P13 / DL0–DL3; unpark P14 **G/H**; Caddy; PHP PD; WebShield; KernelCare; cPanel plugin; wipe `sx-erpstg`; paste WAF onto `sinexis.app` edge; SSH Alembic after a green `main` deploy. **inotify** / WAF **1147+** = Guide §1.3.1 **#4/#5** — only if named + `buat` after H9.
 
 ### 7.2 B — Demo-ok (ops, lab `tc5`, not ERP)
 
@@ -233,7 +233,7 @@ File loop: [`dl1-file-loop-runbook.md`](dl1-file-loop-runbook.md). WAF API smoke
 AM bills **in Sinexis**, not via a GMD Host `service_id`.
 
 - **Gate (shipped):** Scan invoices at `/admin/invoices` (I1–I9). GMD `service_id` **optional**, **not required**, **not** agent next-step.
-- **H9 parked:** Host catalog `invoicable=false`. Do **not** flip it or add Host invoice APIs unless owner **names H9** + `buat`. Closing Sentence-ok does **not** auto-flip H9.
+- **H9** = Guide §1.3.1 **#1** (named). Catalog still `invoicable=false` until `buat`. GREEN does **not** auto-flip. Do **not** add Host invoice APIs without `buat`.
 - **Struck C1:** creating three GMD Host SIDs is **not** this gate. Do **not** put SIDs in git.
 - File-only demo = quote **Host Basic**. WAF/protect sentence = org is **Host Multi before** the meeting. Never quote Basic and demo Protect.
 
@@ -260,7 +260,7 @@ Invoice-ok
 [x] Sinexis in-app Scan invoices (I1–I9 shipped; not GMD SID)
 [x] Host not bundled into VPS or Scan
 [x] IDR Host = working list H4 unless finance dated another band
-[x] H9 in-app Host invoicable — N/A (parked; closing Sentence-ok does not auto-flip)
+[x] H9 in-app Host invoicable — named §1.3.1 #1; catalog still false; GREEN does not auto-flip
 [x] Struck: do NOT wait on GMD Host service_id
 
 Product (already git)
@@ -276,6 +276,6 @@ Fail → short line STAYS FORBIDDEN (even after GREEN)
 
 **GREEN** does **not** authorize shared cPanel “ganti”, PD/KernelCare/WebShield claims, Basic+Protect mismatch, or Simulate-as-live. On those fails use: *“file + HTTP tipis + scan luar; Imunify tetap lebih dalam di PHP runtime dan bot challenge.”*
 
-**Critical path (not more code):** **done.** Do **not** flip H9 unless named + `buat`. **Struck:** waiting on GMD Host `service_id`.
+**Critical path (not more code):** **done.** Do **not** auto-flip H9. Queue **#1** still needs `buat`. **Struck:** waiting on GMD Host `service_id`.
 
 Buyer who **requires** PD, KernelCare, or WebShield is **not** a displace deal — sit **beside**; sell Scan attach.
