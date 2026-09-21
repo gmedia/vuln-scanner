@@ -4,7 +4,7 @@ Public-repo safe: **no IPs, tokens, SSH users, or customer docroots** in this fi
 
 This is **not** a second enroll daemon. Guard (`wazuh-agent`) stays the identity. The helper only walks allowlisted web roots and POSTs JSON to Sinexis.
 
-**Lab:** SSH alias **`tc5` only**. Do **not** wipe `sx-erpstg`. Fixture path must stay under `/var/www`, `/srv/www`, or `/home` (default `/var/www/host-protect-fixture`). Finishing this install is **Demo-ok B1** only — it does **not** unlock the short “ganti Imunify360…” line (**Sentence-ok OPEN**; [`vps-displace-imunify-dev-plan.md`](specs/vps-displace-imunify-dev-plan.md) §0 + §7).
+**Lab:** SSH alias **`tc5` only**. Do **not** wipe `sx-erpstg`. Fixture path must stay under `/var/www`, `/srv/www`, or `/home` (default `/var/www/host-protect-fixture`). Finishing this install is **Demo-ok B1** only — a helper install **alone** does **not** unlock the short “ganti Imunify360…” line. That line is **Sentence-ok GREEN** 2026-09-21 on **nginx dedicated / no panel** ([`vps-displace-imunify-dev-plan.md`](specs/vps-displace-imunify-dev-plan.md) §0 + §7); still **forbidden** on shared cPanel.
 
 **Debian `.deb`:** build with `./scripts/build-host-protect-deb.sh` (writes `dist/sinexis-host-protect_*_all.deb`). Package **Depends: wazuh-agent** — do not install on machines without Guard. Env file is **not** in the package payload except as `/usr/share/doc/.../host-protect.env.example` (empty token). `postinst` copies the example to `/etc/sinexis/host-protect.env` only if missing (mode 600). Enable the timer with the Guard UUID after filling the token.
 
@@ -131,7 +131,7 @@ Talk track (Bahasa, honest):
 4. SPA **`/host`**: add site whose folder exists **on that VM**. Empty list ≠ clean.
 5. **Scan now**. Finished check **or** honest fail. **Never** invent hits.
 6. Real hit: SPA **Quarantine** (status queued until helper `mv`) → then SPA **Restore**. Auto-clean / MDS is out.
-7. Do **not** say “Imunify replacement.” File demo = **Host Basic** (working list H4). Tagih di **Sinexis** in-app (Invoice-ok = I1/D5, **not** GMD SID). **Do not** wait on GMD `service_id` — optional leftover, **not** agent next. Host `invoicable` stays false until H9 named.
+7. Do **not** say “Imunify replacement” on **shared cPanel**. On **one nginx VPS / dedicated without a panel**, the short “ganti Imunify360 dengan Sinexis” line is **allowed** (**Sentence-ok GREEN** 2026-09-21) — still **without** PD / KernelCare / WebShield. File demo = **Host Basic** (working list H4). Tagih di **Sinexis** in-app (Invoice-ok = I1/D5, **not** GMD SID). **Do not** wait on GMD `service_id` — optional leftover, **not** agent next. Host `invoicable` stays false until H9 named.
 
 ## 5) Honesty for AM
 

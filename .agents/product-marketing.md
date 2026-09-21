@@ -66,7 +66,7 @@
 - “Is this a SIEM?” — No. SIEM is a separate flagged module; Guard is thin.
 - “Do I install two agents?” — No. One `wazuh-agent` per VM.
 - “Will you WAF sinexis.app edge?” — Never paste WAF onto public edge nginx.
-- “Can I replace Imunify with Sinexis?” — **Not** on shared cPanel. On a **nginx VPS without a panel suite**, only after helper + isolate + original WAF pack, and **without** claiming PHP PD, WebShield, or KernelCare.
+- “Can I replace Imunify with Sinexis?” — **Not** on shared cPanel. On a **nginx VPS / dedicated without a panel suite**, **yes** for the short displace-lite sentence (**Sentence-ok GREEN** 2026-09-21: helper + isolate + original WAF pack + owner date), still **without** claiming PHP PD, WebShield, or KernelCare.
 
 ## 7. Proof / constraints for copy
 

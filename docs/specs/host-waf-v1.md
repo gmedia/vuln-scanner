@@ -10,7 +10,7 @@
 
 **Not this epic:** Imunify trademarks/rulesets, PHP Proactive Defense, KernelCare, CAPTCHA/WebShield, email anti-spam, putting Coraza in `nginx/sinexis.app.conf`, CrowdSec as the product, CRS paid packs in git.
 
-**Follow-on:** protect-on-customer-nginx is **P14 slice F** / **wave 2** — [`imunify-class-onbox.md`](imunify-class-onbox.md) §7. Original pack widen = **DL2** in [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) (**shipped**). Short “ganti Imunify360” still needs **Sentence-ok** (displace **§7**, **OPEN**) — live 403 on lab vhost is **ops**, not more rule IDs. Protect mode is **Host Multi** only; snippet still never for `sinexis.app` edge.
+**Follow-on:** protect-on-customer-nginx is **P14 slice F** / **wave 2** — [`imunify-class-onbox.md`](imunify-class-onbox.md) §7. Original pack widen = **DL2** in [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) (**shipped**). Short “ganti Imunify360” is **Sentence-ok GREEN** 2026-09-21 (displace **§7**; nginx dedicated / no panel only) — live 403 on lab vhost is **ops**, not more rule IDs. Protect mode is **Host Multi** only; snippet still never for `sinexis.app` edge. Shared cPanel “ganti” still **forbidden**.
 
 **Lab probe (tc5, after ModSec on vhost; never `sinexis.app` edge):** `host-waf-lab-smoke.sh` asserts snippet `id:1005`/`id:1006` and no `wp-admin`. Live curl (ops): POST `/wp-login.php` + payload ARGS → **403**; URI `eval(` / `base64_decode(` → **403**; GET `/wp-admin/` → **200**.
 

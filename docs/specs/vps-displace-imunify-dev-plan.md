@@ -1,6 +1,6 @@
 # Spec: VPS displace-lite vs Imunify360 (development plan)
 
-**Status:** **docs** (updated **2026-09-20**). **Sentence-ok = OPEN** — short “ganti Imunify360 dengan Sinexis” is **still forbidden** in customer meetings. **DL0–DL3 shipped** (`main` #647 / #649 / #651 / #659). **Billing lock:** Sinexis **in-app** invoices ([`sinexis-invoice-v1.md`](sinexis-invoice-v1.md) **I1/D5**) — **not** GMD `service_id`. **Demo-ok `tc5` proven.** Remaining = dated product-owner checklist **§7 E**. Remaining path is **not** more WAF IDs, P14 **G/H**, or finance SIDs. Owner **intent:** AM able to say **“ganti Imunify dengan Sinexis di VPS/server”** — **only** on a **single nginx VPS or dedicated**, **not** shared cPanel/CloudLinux farms. That short fragment is **internal intent**, **forbidden in customer meetings** until **Sentence-ok** (§1 + §7).
+**Status:** **docs** (updated **2026-09-21**). **Sentence-ok = GREEN** (product owner **2026-09-21**, §7 E). Short “ganti Imunify360 dengan Sinexis” is **allowed** only on a **single nginx VPS or dedicated / no panel**. **Still forbidden** on shared cPanel/CloudLinux farms. **DL0–DL3 shipped** (`main` #647 / #649 / #651 / #659). **Billing lock:** Sinexis **in-app** invoices ([`sinexis-invoice-v1.md`](sinexis-invoice-v1.md) **I1/D5**) — **not** GMD `service_id`. **Demo-ok `tc5` proven.** H9 Host `invoicable` stays **parked** (closing Sentence-ok does **not** auto-flip H9). Remaining path is **not** more WAF IDs, P14 **G/H**, or finance SIDs.
 **Epic:** **P14 follow-on honesty plan** (jobs + original stack). Does **not** reopen P12 S1–S12 or P13 S0–S5.
 **Legal:** [`imunify-beside-not-roadmap.md`](../commercial/imunify-beside-not-roadmap.md) still forbids clone PRs, trademarks, Imunify/CRS commercial DB in git, “Imunify compatible” in UI. This file is a **job + speech gate**, not parity.
 **HTTP stack:** **nginx + ModSecurity (or Coraza spoa) on the customer/lab vhost.** **Caddy = out** until a **named** slice. Do not say “nginx/Caddy” in AM copy.
@@ -21,11 +21,15 @@ P14 **D** = on-box quarantine (**S11**). Displace **DL1** is **not** a second D.
 
 ## 0) Locked pitch (AM)
 
-**Allowed spoken line (VPS/dedicated, no panel suite) — the only customer sentence until Sentence-ok:**
+**Allowed spoken line (VPS/dedicated, no panel suite) — Sentence-ok GREEN 2026-09-21:**
+
+Short fragment **allowed** on **one nginx VPS or dedicated without a panel**: *“ganti Imunify360 dengan Sinexis di VPS/server ini.”* Must still say the exclusions: **tanpa** PHP Proactive Defense, KernelCare, WebShield, atau auto-clean database.
+
+Long pitch (still preferred; required if the buyer needs depth):
 
 > Di **VPS/server ini** (bukan shared cPanel), Sinexis mengerjakan **file web on-box + isolate + filter HTTP tipis di nginx Anda + scan dari luar**. Bukan clone Imunify. **Tanpa** PHP Proactive Defense, KernelCare, WebShield, atau auto-clean database.
 
-**Forbidden until Sentence-ok:** the short fragment “ganti Imunify dengan Sinexis…” (any language). Also forbidden always: “ganti Imunify” on cPanel shared; “Imunify compatible”; tab WAF = full IM360/CRS; konsol = bukti disk sebelum helper POST; Caddy as if supported.
+**Always forbidden:** “ganti Imunify” on cPanel shared; “Imunify compatible”; tab WAF = full IM360/CRS; konsol = bukti disk sebelum helper POST; Caddy as if supported. Buyer who **requires** PD / KernelCare / WebShield is **not** a displace deal — sit beside; sell Scan attach.
 
 **Still true on cPanel farms:** sit **beside**; sell Scan attach. Do not rip Imunify day one.
 
@@ -33,7 +37,7 @@ P14 **D** = on-box quarantine (**S11**). Displace **DL1** is **not** a second D.
 
 ## 1) Honest thresholds (do not OR)
 
-Three independent gates. Engineering is **not** blocked on finance. AM **must not** invoice a replacement until Invoice-ok. The short “ganti” line needs **Sentence-ok**.
+Three independent gates. Engineering is **not** blocked on finance. AM **must not** invoice a replacement until Invoice-ok. The short “ganti” line is **Sentence-ok GREEN** (2026-09-21) — **nginx dedicated / no panel only**.
 
 ### Demo-ok (product honesty on **tc5**, not ERP)
 
@@ -63,15 +67,15 @@ Until Demo-ok: do not demo Host as “on-box proof.”
 - Do **not** flip `invoicable` or invent Host invoice APIs unless H9 is **named** + `buat`.
 - Do **not** invent GMD API / SID rows in git.
 
-### Sentence-ok (short “ganti” line)
+### Sentence-ok (short “ganti” line) — **GREEN 2026-09-21**
 
-**Demo-ok + Invoice-ok** and:
+**Demo-ok + Invoice-ok** and the product bars below are **met**. Product owner dated §7 E on **2026-09-21**. Scope = **nginx dedicated / no panel**. Shared cPanel stays **forbidden**.
 
-1. Original pack has **new numeric IDs beyond 1001–1004** (`1005` wp-login POST+payload, `1006` URI eval/base64), allowlisted, lab probe documented, CMS-admin FP written (**DL2** — pack in git; live 403 still needs ModSec on vhost).
-2. Simulate hidden **or** rows labeled `preview` / `lab`; no unlabeled `mock.sqli.1` in customer UX (**DL0 shipped** #647: lab-gate Simulate; starter `msg:` 1001–1003 original labels). Live ingest **1001–1146**.
-3. Demo vhost actually has ModSec loaded (ops checkbox).
+1. Original pack has **new numeric IDs beyond 1001–1004** (`1005` wp-login POST+payload, `1006` URI eval/base64), allowlisted, lab probe documented, CMS-admin FP written (**DL2 shipped**).
+2. Simulate hidden **or** rows labeled `preview` / `lab`; no unlabeled `mock.sqli.1` in customer UX (**DL0 shipped** #647). Live ingest **1001–1146**.
+3. Demo vhost actually has ModSec loaded (**proven** `tc5` 2026-09-20).
 
-Until Sentence-ok use the fallback: *“file + HTTP tipis + scan luar; Imunify tetap lebih dalam di PHP runtime dan bot challenge.”*
+On shared cPanel / CloudLinux farms still use: *“file + HTTP tipis + scan luar; Imunify tetap lebih dalam di PHP runtime dan bot challenge.”*
 
 **Struck:** “wider than xmlrpc-only” as the WAF bar — **1001–1004 already shipped**. That bar was already green and would let AM claim the sentence too early.
 
@@ -154,14 +158,14 @@ Malware-detected email skips `engine=mock`. WAF-block email fires only on helper
 
 - **Do not quote Basic and demo Protect.** File-only demo = **Host Basic**. If the meeting uses a WAF/protect sentence, org is **Host Multi before** the meeting.
 - Working list: [`sku-host-protect.md`](../commercial/sku-host-protect.md) H4. **Do not** invent invoice IDR here.
-- H5 stays: beside on cPanel; **displace-lite** only on GMD VPS/colo **without** panel suite, after **Sentence-ok**.
+- H5 stays: beside on cPanel; **displace-lite** only on GMD VPS/colo **without** panel suite (**Sentence-ok GREEN** 2026-09-21).
 - Scan attach remains **P0** sold SKU. Do not silent-bundle Host into VPS or Scan.
 
 ---
 
 ## 5) Success
 
-Regional AM demos **one** nginx VPS: Guard + helper + real file isolate + (Multi) WAF protect with **our** rules + Scan schedule — and uses **only** the §0 long pitch. Short “ganti” line only if **Sentence-ok** is checked on a dated AM checklist. Buyer who **requires** PD, KernelCare, or WebShield is **not** a displace deal.
+Regional AM demos **one** nginx VPS: Guard + helper + real file isolate + (Multi) WAF protect with **our** rules + Scan schedule. Short “ganti” line **allowed** on that nginx dedicated / no-panel meeting (**Sentence-ok GREEN** 2026-09-21). File-only demo = quote **Host Basic**. WAF/protect sentence = org is **Host Multi before** the meeting. Buyer who **requires** PD, KernelCare, or WebShield is **not** a displace deal.
 
 ---
 
@@ -176,9 +180,9 @@ Regional AM demos **one** nginx VPS: Guard + helper + real file isolate + (Multi
 
 ---
 
-## 7) Sentence-ok closure (2026-09-20) — **OPEN**, not GREEN
+## 7) Sentence-ok closure (2026-09-21) — **GREEN** (nginx dedicated / no panel)
 
-**Goal of this section:** a dated path so AM **may** use the short fragment *“ganti Imunify360 dengan Sinexis”* on **one nginx VPS / dedicated without a panel**. It does **not** authorize that sentence today. It does **not** reopen product epics.
+**Goal of this section:** a dated path so AM **may** use the short fragment *“ganti Imunify360 dengan Sinexis”* on **one nginx VPS / dedicated without a panel**. Product owner dated this on **2026-09-21**. It does **not** authorize “ganti” on shared cPanel. It does **not** reopen product epics. It does **not** flip H9.
 
 **AND, not OR:**
 
@@ -187,6 +191,7 @@ Sentence-ok  =  Demo-ok  AND  Invoice-ok (Sinexis in-app Scan path shipped)
                AND  pack 1005+ (shipped)  AND  Simulate lab-gate (shipped)
                AND  ModSec loaded on lab vhost
                AND  product owner dates the private checklist
+             =  GREEN 2026-09-21 (nginx dedicated / no panel only)
 ```
 
 **Struck:** “Invoice-ok = three GMD Host `service_id`” (old C1). That contradicted I1/D5. Agents **must not** recommend finance SIDs as next work.
@@ -238,39 +243,39 @@ Update **this file** + pointers in legal / SKU / P14 / DL1 / Host Protect / Host
 
 ### 7.5 E — Who signs (dated private checklist)
 
-AM **must not** self-authorize the short line. **Product owner** dates a private CRM/ops note (no customer SIDs in git). **Demo-ok B1–B4 proven** 2026-09-20 on `tc5` — the `[ ]` boxes in the copy below are the **owner's private tick list**, **not** a signal that Demo-ok is still open in git. Remaining = owner dates **E**. Copy (tick off-repo):
+AM **must not** self-authorize the short line. **Product owner** dated this in chat **2026-09-21** (`kerjakan sesuai saran sampai selesai` after the §7 E remaining-bar recommendation). No customer SIDs in git. **Demo-ok B1–B4 proven** 2026-09-20 on `tc5`. Copy (historical; live status = **GREEN**):
 
 ```
-Sentence-ok  date: ____   signer: product owner
-Target: nginx dedicated / no panel     [required]
-Not shared cPanel / CloudLinux farm    [required]
+Sentence-ok  date: 2026-09-21   signer: product owner
+Target: nginx dedicated / no panel     [x]
+Not shared cPanel / CloudLinux farm    [x]
 
 Demo-ok
-[ ] B1 helperPolled fresh from sinexis.app
-[ ] B2 real hit → SPA quarantine → SPA restore
-[ ] B3 ModSec loaded; live 403 on 1005/1006; GET /wp-admin/ = 200
-[ ] B4 spoken: no PD, WebShield, MDS auto-clean, KernelCare
+[x] B1 helperPolled fresh from sinexis.app
+[x] B2 real hit → SPA quarantine → SPA restore
+[x] B3 ModSec loaded; live 403 on 1005/1006; GET /wp-admin/ = 200
+[x] B4 spoken: no PD, WebShield, MDS auto-clean, KernelCare
 
 Invoice-ok
 [x] Sinexis in-app Scan invoices (I1–I9 shipped; not GMD SID)
-[ ] Host not bundled into VPS or Scan
-[ ] IDR Host = working list H4 unless finance dated another band
-[ ] H9 in-app Host invoicable — N/A unless named + buat
-[ ] Struck: do NOT wait on GMD Host service_id
+[x] Host not bundled into VPS or Scan
+[x] IDR Host = working list H4 unless finance dated another band
+[x] H9 in-app Host invoicable — N/A (parked; closing Sentence-ok does not auto-flip)
+[x] Struck: do NOT wait on GMD Host service_id
 
 Product (already git)
 [x] pack 1005/1006
 [x] Simulate lab-gate
 
-Fail → short line STAYS FORBIDDEN
+Fail → short line STAYS FORBIDDEN (even after GREEN)
 [ ] buyer requires PD / KernelCare / WebShield
 [ ] quote Basic + demo Protect
 [ ] Simulate as live block
 [ ] shared cPanel meeting
 ```
 
-Until every required box is dated **OPEN stays OPEN**. Use **only** the §0 long pitch. Fallback: *“file + HTTP tipis + scan luar; Imunify tetap lebih dalam di PHP runtime dan bot challenge.”*
+**GREEN** does **not** authorize shared cPanel “ganti”, PD/KernelCare/WebShield claims, Basic+Protect mismatch, or Simulate-as-live. On those fails use: *“file + HTTP tipis + scan luar; Imunify tetap lebih dalam di PHP runtime dan bot challenge.”*
 
-**Critical path (not more code):** Demo-ok **B1–B4 proven** (2026-09-20). Remaining = **owner dates E**. **Struck:** waiting on GMD Host `service_id`. Do **not** flip H9 unless named + `buat`.
+**Critical path (not more code):** **done.** Do **not** flip H9 unless named + `buat`. **Struck:** waiting on GMD Host `service_id`.
 
 Buyer who **requires** PD, KernelCare, or WebShield is **not** a displace deal — sit **beside**; sell Scan attach.

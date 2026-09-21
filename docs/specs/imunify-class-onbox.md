@@ -106,7 +106,7 @@ Regional AM can demo: enroll Guard → helper on fixture → **real** hit on **t
 
 Slices **A–H** remain the **PR stream** names. Waves are **when sales can demo** vs remaining engineering. **Do not** re-implement S1–S12. Implement app code **only** when the user names a slice **and** says `buat` / `kerjakan`.
 
-**Control-plane fact:** P12 S0–S12 is on `main`. That is **not** ready to sell as a **full** Imunify360 replacement (PD/WebShield/cPanel). **Displace-lite** on nginx VPS is a **separate** AM sentence after **Sentence-ok** in [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) (**DL0–DL3 shipped**; **Sentence-ok OPEN** — closure **§7**). **Demo-ok `tc5` proven.** Residual = owner-dated **§7 E**. Invoice-ok = **Sinexis in-app**, **not** GMD Host `service_id`. Not more WAF IDs / **G/H**. Do **not** treat pack-in-git as permission to say “ganti Imunify360”.
+**Control-plane fact:** P12 S0–S12 is on `main`. That is **not** ready to sell as a **full** Imunify360 replacement (PD/WebShield/cPanel). **Displace-lite** on nginx VPS is a **separate** AM sentence after **Sentence-ok GREEN** in [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) (**DL0–DL3 shipped**; **GREEN 2026-09-21** — closure **§7**; nginx dedicated / no panel only). **Demo-ok `tc5` proven.** Invoice-ok = **Sinexis in-app**, **not** GMD Host `service_id`. H9 parked. Not more WAF IDs / **G/H**. Shared cPanel “ganti” still **forbidden**.
 
 ### Job map (Imunify job → Sinexis wave)
 
@@ -155,4 +155,4 @@ Slices **A–H** remain the **PR stream** names. Waves are **when sales can demo
 - File plane: [`host-protect-v1.md`](host-protect-v1.md) — **do not** re-implement S1–S12
 - HTTP plane: [`host-waf-v1.md`](host-waf-v1.md)
 - Working IDR: [`sku-host-protect.md`](../commercial/sku-host-protect.md)
-- **VPS displace-lite:** [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) — **Sentence-ok OPEN** (closure §7) before short “ganti” line; slices **DL0–DL3 shipped**; not shared cPanel; not clone; Caddy out; **G/H** and WAF **1147+** still parked
+- **VPS displace-lite:** [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) — **Sentence-ok GREEN** 2026-09-21 (closure §7); short “ganti” **allowed** nginx dedicated / no panel; slices **DL0–DL3 shipped**; not shared cPanel; not clone; Caddy out; **G/H** and WAF **1147+** still parked; H9 parked

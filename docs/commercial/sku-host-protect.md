@@ -15,7 +15,7 @@
 | **H2** | Seat | **Web paths (sites)** on enrolled VPS, not per-domain DNS | Working |
 | **H3** | Caps | Basic **1** · Pro **3** · Multi **10** `host_sites` | Working (mirrors Scan assets) |
 | **H4** | List IDR / mo | **Working list** (not invoice lock): Host Basic **150.000** · Host Pro **350.000** · Host Multi **900.000** | Working |
-| **H5** | vs Imunify | **Beside** on cPanel farms. **Displace-lite** on GMD VPS/colo **without** panel suite **only after** [`vps-displace-imunify-dev-plan.md`](../specs/vps-displace-imunify-dev-plan.md) **Sentence-ok** — **OPEN** as of 2026-09-20 (closure §7). Pack **1005/1006** + Simulate lab-gate **shipped**; Demo-ok `tc5` **proven**; Invoice-ok = **Sinexis in-app** (I1/D5), **not** GMD `service_id`. Remaining = dated product-owner checklist. **No** PD/WebShield/KernelCare. Not a CloudLinux replacement pitch | Working |
+| **H5** | vs Imunify | **Beside** on cPanel farms. **Displace-lite** on GMD VPS/colo **without** panel suite after [`vps-displace-imunify-dev-plan.md`](../specs/vps-displace-imunify-dev-plan.md) **Sentence-ok GREEN** 2026-09-21 (closure §7; nginx dedicated / no panel). Pack **1005/1006** + Simulate lab-gate **shipped**; Demo-ok `tc5` **proven**; Invoice-ok = **Sinexis in-app** (I1/D5), **not** GMD `service_id`. Short “ganti” **allowed** nginx-only; **forbidden** shared cPanel. **No** PD/WebShield/KernelCare. Not a CloudLinux replacement pitch | Working |
 | **H6** | Cleanup | Quarantine/restore in-app; reconstruct = **hybrid ticket**. No silent PHP rewrite | Working |
 | **H7** | WAF | **Not** in Host Protect **file** v1. **P13 Host WAF** = separate control plane; working: **detect** on Pro/Multi, **protect** Multi+; IDR unset | Working |
 | **H8** | Guard prerequisite | Host Protect v1 **requires** Guard agent on the VM | Working |
@@ -39,8 +39,8 @@
 ## 2. What AM may say (Bahasa, until IDR lock)
 
 - “Ini **bukan** ganti Imunify di cPanel shared.”
-- “Kalimat pendek ‘ganti Imunify…’ **belum boleh** (Sentence-ok OPEN). Pitch panjang saja sampai owner menandai checklist §7.”
-- “Ganti di **VPS tanpa panel** hanya jika **Sentence-ok** tertutup (Demo-ok + Invoice-ok Sinexis in-app + pack 1005+ shipped + ModSec live + owner date); tanpa PD/kernel/email. **Jangan** tunggu `service_id` GMD.”
+- “Kalimat pendek ‘ganti Imunify…’ **boleh** di **nginx dedicated / no panel** (Sentence-ok **GREEN** 2026-09-21). **Tetap dilarang** di cPanel shared. Pitch panjang §0 tetap dipakai jika buyer butuh kedalaman.”
+- “Ganti di **VPS tanpa panel**: **Sentence-ok tertutup** (Demo-ok + Invoice-ok Sinexis in-app + pack 1005+ shipped + ModSec live + owner date 2026-09-21); tanpa PD/kernel/email. **Jangan** tunggu `service_id` GMD. H9 `invoicable` **parked**.”
 - “Untuk VPS/colo GMD: agent Guard + daftar folder web. Scan **on-box** = helper POST ke SaaS (P14 slice C). Worker cloud **bukan** Imunify. Sampai helper jalan, konsol **bukan** bukti disk VPS.”
 - “Working list (bukan H4/H9 lock): Host Basic **Rp 150.000** · Host Pro **Rp 350.000** · Host Multi **Rp 900.000** / bulan. Tagih di **Sinexis** (`/admin/invoices`). Invoice-ok = in-app, **bukan** `service_id` GMD. Finance boleh ± band sebelum H4 lock. GMD `service_id` **opsional**, bukan gerbang, **bukan** langkah agent.”
 - “Quarantine **bukan** reconstruct situs; restore CMS = tiket.”
