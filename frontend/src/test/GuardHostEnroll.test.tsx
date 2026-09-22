@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -458,6 +458,45 @@ describe("Guard host enroll UI", () => {
     await waitFor(() => {
       expect(guardApi.disableGuardAgent).toHaveBeenCalledWith("ag-disable");
     });
+  });
+
+  it("stacks mobile Rotate and Remove actions with a gap", async () => {
+    vi.mocked(guardApi.listGuardAgents).mockResolvedValue([
+      {
+        id: "ag-gap",
+        organization_id: "org1",
+        wazuh_agent_id: "011",
+        name: "vps-gap",
+        status: "active",
+        ip: null,
+        version: "4.7.0",
+        last_keep_alive: "2026-08-17T14:05:00Z",
+        last_helper_poll_at: null,
+        has_host_agent_token: true,
+        disabled: false,
+        synced_at: "2026-08-17T14:05:00Z",
+        created_at: "2026-08-17T14:05:00Z",
+      },
+    ]);
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <Guard />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    const card = await screen.findByTestId("guard-agent-card");
+    const rotateBtn = within(card).getByTestId("guard-host-token-issue");
+    const removeBtn = within(card).getByTestId("guard-disable-ag-gap");
+    const actions = rotateBtn.parentElement;
+    expect(actions).toBe(removeBtn.parentElement);
+    expect(actions?.className ?? "").toContain("flex-col");
+    expect(actions?.className ?? "").toContain("gap-2");
+    expect(rotateBtn.className).toContain("w-full");
+    expect(removeBtn.className).toContain("w-full");
   });
 
   it("hides remove-from-Guard for viewers", async () => {
