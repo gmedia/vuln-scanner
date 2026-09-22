@@ -211,6 +211,143 @@ describe("UptimeDetail", () => {
     expect(mockStats.mock.calls.length).toBeGreaterThan(1);
   });
 
+  function makeOutageEvents(count: number) {
+    const nowMs = Date.now();
+    const baseMs = nowMs - count * 20 * 60 * 1000;
+    const events: Array<{
+      id: string;
+      from_state: string;
+      to_state: string;
+      at: string;
+      notified: boolean;
+      detail: string;
+    }> = [];
+    for (let k = 0; k < count; k += 1) {
+      const downMs = baseMs + k * 20 * 60 * 1000;
+      const upMs = downMs + 10 * 60 * 1000;
+      events.push({
+        id: `e-down-${k}`,
+        from_state: "up",
+        to_state: "down",
+        at: new Date(downMs).toISOString(),
+        notified: true,
+        detail: `down ${k}`,
+      });
+      events.push({
+        id: `e-up-${k}`,
+        from_state: "down",
+        to_state: "up",
+        at: new Date(upMs).toISOString(),
+        notified: true,
+        detail: `up ${k}`,
+      });
+    }
+    return events;
+  }
+
+  it("hides the outage pager when outages fit on one page", async () => {
+    renderDetail();
+    await waitFor(() =>
+      expect(screen.getAllByTestId("uptime-outage-row").length).toBeGreaterThanOrEqual(
+        1,
+      ),
+    );
+    expect(
+      screen.queryByTestId("uptime-outage-pagination"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("pages outages client-side with a value-based pager", async () => {
+    const user = userEvent.setup();
+    mockEvents.mockResolvedValue(makeOutageEvents(12));
+    renderDetail();
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("uptime-outage-pagination"),
+      ).toBeInTheDocument(),
+    );
+    expect(screen.getAllByTestId("uptime-outage-row")).toHaveLength(10);
+    expect(screen.getByTestId("uptime-outage-pagination")).toHaveTextContent(
+      "1/2",
+    );
+    await user.click(
+      screen
+        .getByTestId("uptime-outage-pagination")
+        .querySelector('button[aria-label="Next page"]') as HTMLElement,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("uptime-outage-pagination")).toHaveTextContent(
+        "2/2",
+      ),
+    );
+    expect(screen.getAllByTestId("uptime-outage-row")).toHaveLength(2);
+  });
+
+  it("resets the outage page when the range chip changes", async () => {
+    const user = userEvent.setup();
+    mockEvents.mockResolvedValue(makeOutageEvents(12));
+    renderDetail();
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("uptime-outage-pagination"),
+      ).toBeInTheDocument(),
+    );
+    await user.click(
+      screen
+        .getByTestId("uptime-outage-pagination")
+        .querySelector('button[aria-label="Next page"]') as HTMLElement,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("uptime-outage-pagination")).toHaveTextContent(
+        "2/2",
+      ),
+    );
+    expect(screen.getAllByTestId("uptime-outage-row")).toHaveLength(2);
+    await user.click(screen.getByTestId("uptime-range-6h"));
+    await waitFor(() =>
+      expect(screen.getByTestId("uptime-outage-pagination")).toHaveTextContent(
+        "1/2",
+      ),
+    );
+    expect(screen.getAllByTestId("uptime-outage-row")).toHaveLength(10);
+  });
+
+  it("shows the sample pager under the same value condition on mobile and desktop", async () => {
+    mockSamples.mockResolvedValue({
+      items: Array.from({ length: 50 }, (_, i) => ({
+        id: `s${i}`,
+        checked_at: `2026-09-17T11:${String(i).padStart(2, "0")}:00Z`,
+        ok: true,
+        latency_ms: 10,
+        status_code: 200,
+        error: null,
+      })),
+      total: 80,
+    });
+    const { unmount } = renderDetail();
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("uptime-sample-pagination"),
+      ).toBeInTheDocument(),
+    );
+    unmount();
+    Object.defineProperty(window, "innerWidth", {
+      writable: true,
+      configurable: true,
+      value: 375,
+    });
+    window.dispatchEvent(new Event("resize"));
+    renderDetail();
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("uptime-sample-pagination"),
+      ).toBeInTheDocument(),
+    );
+    expect(screen.getByTestId("uptime-sample-pagination")).toHaveTextContent(
+      "1/2",
+    );
+  });
+
   it("clips a prior-down outage start to the selected range", async () => {
     const priorAt = "2020-01-01T00:00:00.000Z";
     const recoverAt = new Date(Date.now() - 60 * 60 * 1000).toISOString();
