@@ -16,6 +16,6 @@ def render_scan_pdf(html: str) -> bytes:
     except OSError as exc:
         raise ScanPdfUnavailableError("PDF rendering unavailable") from exc
 
-    if not pdf:
+    if not isinstance(pdf, bytes) or not pdf:
         raise ScanPdfUnavailableError("PDF rendering unavailable")
     return pdf

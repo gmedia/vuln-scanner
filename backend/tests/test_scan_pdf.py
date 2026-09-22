@@ -122,3 +122,11 @@ def test_render_scan_pdf_empty_raises():
         html_cls.return_value.write_pdf.return_value = b""
         with pytest.raises(ScanPdfUnavailableError):
             render_scan_pdf("<html></html>")
+
+
+def test_render_scan_pdf_non_bytes_raises():
+    pytest.importorskip("weasyprint")
+    with patch("weasyprint.HTML") as html_cls:
+        html_cls.return_value.write_pdf.return_value = None
+        with pytest.raises(ScanPdfUnavailableError):
+            render_scan_pdf("<html></html>")
