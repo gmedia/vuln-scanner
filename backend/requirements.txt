@@ -32,6 +32,8 @@ msgpack==1.2.1
 tornado==6.5.7
 bleach==6.4.0
 markdown==3.8.2
+# Print S2: scan export format=pdf (executive HTML). Needs Pango at runtime — see Dockerfile + CI.
+weasyprint==70.0
 types-bleach==6.2.0.20241123
 types-Markdown==3.8.0.20250809
 langsmith==0.10.14
