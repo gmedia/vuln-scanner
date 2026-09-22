@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -181,7 +181,9 @@ describe("UptimeDetail", () => {
     expect(bar.querySelector('[data-state="down"]')).toBeTruthy();
     expect(screen.getAllByTestId("uptime-outage-row").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByTestId("uptime-history-panel")).toBeInTheDocument();
-    expect(screen.getByTestId("uptime-history-row")).toBeInTheDocument();
+    expect(
+      screen.getAllByTestId("uptime-history-row").length,
+    ).toBeGreaterThanOrEqual(1);
     expect(screen.queryByTestId("uptime-sample-pagination")).not.toBeInTheDocument();
   });
 
@@ -346,6 +348,45 @@ describe("UptimeDetail", () => {
     expect(screen.getByTestId("uptime-sample-pagination")).toHaveTextContent(
       "1/2",
     );
+  });
+
+  it("renders probe log as mobile cards and desktop table with the same rows", async () => {
+    mockSamples.mockResolvedValue({
+      items: [
+        {
+          id: "s1",
+          checked_at: "2026-09-17T12:00:00Z",
+          ok: true,
+          latency_ms: 42,
+          status_code: 200,
+          error: null,
+        },
+        {
+          id: "s2",
+          checked_at: "2026-09-17T11:59:00Z",
+          ok: false,
+          latency_ms: 10,
+          status_code: null,
+          error: "connection refused",
+        },
+      ],
+      total: 2,
+    });
+    renderDetail();
+    await waitFor(() =>
+      expect(screen.getByTestId("uptime-history-panel")).toBeInTheDocument(),
+    );
+    const mobile = await screen.findByTestId("uptime-history-mobile");
+    expect(mobile).toHaveClass("md:hidden");
+    const desktop = screen.getByTestId("uptime-history-desktop");
+    expect(desktop).toHaveClass("hidden", "md:block");
+    const mobileRows = within(mobile).getAllByTestId("uptime-history-row");
+    const desktopRows = within(desktop).getAllByTestId("uptime-history-row");
+    expect(mobileRows).toHaveLength(2);
+    expect(desktopRows).toHaveLength(2);
+    expect(mobileRows[1]?.textContent).toMatch(/connection refused/);
+    expect(mobileRows[1]?.textContent).toMatch(/TCP refused/);
+    expect(mobileRows[1]?.textContent).toMatch(/10ms/);
   });
 
   it("clips a prior-down outage start to the selected range", async () => {

@@ -50,7 +50,48 @@ export function UptimeHistoryPanel({
         ) : rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("historyEmpty")}</p>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            <div className="space-y-2 md:hidden" data-testid="uptime-history-mobile">
+              {rows.map((s) => (
+                <div
+                  key={s.id}
+                  data-testid="uptime-history-row"
+                  className="rounded-md border border-border p-3"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-mono text-xs">
+                      {formatSampleTime(s.checked_at)}
+                    </p>
+                    <Badge variant={s.ok ? "completed" : "critical"}>
+                      {s.ok
+                        ? t("stateUp")
+                        : s.status_code != null
+                          ? String(s.status_code)
+                          : t("stateDown")}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 font-mono text-xs tabular-nums text-muted-foreground">
+                    {s.latency_ms != null ? `${s.latency_ms}ms` : "—"}
+                  </p>
+                  {s.error ? (
+                    <div className="mt-1 space-y-0.5">
+                      <p className="break-all text-xs text-destructive">
+                        {s.error}
+                      </p>
+                      {explainUptimeError(s.error) ? (
+                        <p className="text-xs text-muted-foreground">
+                          {t(explainUptimeError(s.error) as string)}
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+            <div
+              className="hidden overflow-x-auto md:block"
+              data-testid="uptime-history-desktop"
+            >
             <Table>
               <TableHeader>
                 <TableRow>
@@ -95,8 +136,9 @@ export function UptimeHistoryPanel({
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
-          </div>
+              </Table>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>
