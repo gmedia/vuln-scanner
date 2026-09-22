@@ -41,6 +41,7 @@ import {
   getScanHistory,
   getWsUrl,
   printFile,
+  downloadFile,
 } from "@/api/scans";
 import type { ScanJob, ScanJobDetail, ScanFinding } from "@/api/scans";
 
@@ -279,6 +280,44 @@ describe("scans API", () => {
       expect(mockAxios.get).toHaveBeenCalledWith("/api/scan/history", {
         params: { page: 1, limit: 10, scan_type: "ip" },
       });
+    });
+  });
+
+  describe("downloadFile", () => {
+    it("requests pdf blob with lang and saves scan_{id}.pdf", async () => {
+      localStorage.setItem("sinexis.locale", "id");
+      const blob = new Blob(["%PDF-1.4"], { type: "application/pdf" });
+      mockAxios.get.mockResolvedValueOnce({ data: blob });
+      const click = vi.fn();
+      const remove = vi.fn();
+      const anchor = { href: "", download: "", click, remove };
+      const createElement = vi
+        .spyOn(document, "createElement")
+        .mockReturnValue(anchor as unknown as HTMLAnchorElement);
+      const append = vi
+        .spyOn(document.body, "appendChild")
+        .mockImplementation((n) => n);
+      const createObjectURL = vi
+        .spyOn(window.URL, "createObjectURL")
+        .mockReturnValue("blob:pdf");
+      const revokeObjectURL = vi
+        .spyOn(window.URL, "revokeObjectURL")
+        .mockImplementation(() => {});
+
+      await downloadFile("scan-1", "pdf");
+
+      expect(mockAxios.get).toHaveBeenCalledWith("/api/scan/scan-1/export", {
+        params: { format: "pdf", lang: "id" },
+        responseType: "blob",
+      });
+      expect(anchor.download).toBe("scan_scan-1.pdf");
+      expect(click).toHaveBeenCalled();
+
+      createElement.mockRestore();
+      append.mockRestore();
+      createObjectURL.mockRestore();
+      revokeObjectURL.mockRestore();
+      localStorage.removeItem("sinexis.locale");
     });
   });
 
