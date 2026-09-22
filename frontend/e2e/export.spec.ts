@@ -62,6 +62,7 @@ test.describe("Export @scan", () => {
     await expect(htmlBtn).toBeVisible();
     await expect(page.getByTestId("export-print-html")).toBeVisible();
     await expect(page.getByTestId("export-print-executive")).toBeVisible();
+    await expect(page.getByTestId("export-pdf")).toBeVisible();
 
     const [jsonResponse] = await Promise.all([
       page.waitForResponse(
