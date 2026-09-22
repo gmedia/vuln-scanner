@@ -12,6 +12,8 @@
   "kindHostWaf": "Host WAF",
   "statusSent": "Sent",
   "statusFailed": "Failed",
+  "statusBounced": "Bounced",
+  "statusComplained": "Complained",
   "colTime": "Time",
   "colKind": "Kind",
   "colStatus": "Status",

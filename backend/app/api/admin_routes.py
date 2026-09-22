@@ -788,6 +788,7 @@ async def list_email_send_logs(
     page_size: int = Query(default=20, ge=1, le=100),
     kind: str | None = Query(default=None),
     status_filter: str | None = Query(default=None, alias="status"),
+    provider_message_id: str | None = Query(default=None),
     current_admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
 ) -> EmailSendLogList | Response:
@@ -803,6 +804,8 @@ async def list_email_send_logs(
         if status_filter not in EMAIL_SEND_STATUSES:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
         filters.append(EmailSendLog.status == status_filter)
+    if provider_message_id:
+        filters.append(EmailSendLog.provider_message_id == provider_message_id)
     count_q = select(func.count(EmailSendLog.id))
     list_q = select(EmailSendLog)
     if filters:

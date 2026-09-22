@@ -61,6 +61,10 @@ class Settings(BaseSettings):
     smtp_pass: str = ""
     smtp_from: str = "Sinexis <noreply@sinexis.app>"
     frontend_url: str = "https://sinexis.app"
+    ses_enabled: bool = False
+    ses_region: str = "ap-southeast-1"
+    ses_config_set: str = ""
+    ses_from_arn: str = ""
     invoice_bank_name: str = ""
     invoice_bank_account: str = ""
     invoice_bank_holder: str = ""
@@ -164,6 +168,12 @@ class Settings(BaseSettings):
     status_page_cf_zone_id: str = ""
 
     blog_enabled: bool = True
+
+    # Inbox S2 (bounce/SES) — SNS webhook auth. Override SNS_TOPIC_ARN in production.
+    # Default matches backend/tests/test_ses_webhook.py TOPIC_ARN so B6 can
+    # distinguish the configured topic from a forged one without env overrides.
+    sns_topic_arn: str = "arn:aws:sns:us-east-1:123456789012:sinexis-bounces"
+    ses_webhook_token: str = ""
 
 
 settings = Settings()
