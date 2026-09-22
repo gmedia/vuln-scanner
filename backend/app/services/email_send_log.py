@@ -11,6 +11,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.models.email_send_log import EMAIL_SEND_KINDS, EmailSendLog
+from app.services.email_suppression import recipient_hash
+
+__all__ = [
+    "mask_recipient",
+    "kind_from_label",
+    "record_email_send",
+    "recipient_hash",
+]
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +80,10 @@ def record_email_send(
     error: str | None = None,
     user_id: uuid.UUID | None = None,
     job_id: uuid.UUID | None = None,
+    provider: str | None = None,
+    provider_message_id: str | None = None,
+    bounce_type: str | None = None,
+    bounce_subtype: str | None = None,
 ) -> None:
     session = _get_session()
     if session is None:
@@ -87,6 +99,10 @@ def record_email_send(
             job_id=job_id,
             attempts=max(1, int(attempts)),
             error_message=None if ok else err,
+            provider=provider or "smtp",
+            provider_message_id=provider_message_id,
+            bounce_type=bounce_type,
+            bounce_subtype=bounce_subtype,
             created_at=datetime.now(UTC),
         )
         session.add(row)

@@ -1,9 +1,11 @@
 import api from "./scans";
 
+export type InboxStatus = "sent" | "failed" | "bounced" | "complained";
+
 export interface InboxItem {
   id: string;
   kind: string;
-  status: string;
+  status: InboxStatus;
   recipient_masked: string;
   attempts: number;
   created_at: string;

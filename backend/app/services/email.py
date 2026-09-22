@@ -2,15 +2,19 @@ import asyncio
 import logging
 import os
 import re
+from email.message import Message
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from uuid import UUID
+from typing import Any
+from uuid import UUID, uuid4
 
 import aiosmtplib
 from aiosmtplib.errors import SMTPException
 
+from app.config import settings
 from app.i18n import normalize_lang, t
 from app.services.email_send_log import record_email_send
+from app.services.email_suppression import is_suppressed
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +24,10 @@ SMTP_USER = os.getenv("SMTP_USER", "")
 SMTP_PASS = os.getenv("SMTP_PASS", "")
 SMTP_FROM = os.getenv("SMTP_FROM", "Sinexis <noreply@sinexis.app>")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://sinexis.app")
+SES_ENABLED = os.getenv("SES_ENABLED", "").strip().lower() in ("1", "true", "yes", "on")
+SES_REGION = os.getenv("SES_REGION", "ap-southeast-1")
+SES_CONFIG_SET = os.getenv("SES_CONFIG_SET", "")
+SES_FROM_ARN = os.getenv("SES_FROM_ARN", "")
 
 _CTA_BG = "#22c55e"
 _MAX_RETRIES = 3
@@ -82,6 +90,10 @@ def _build_message(*, email_to: str, subject: str, html_body: str) -> MIMEMultip
     msg["From"] = SMTP_FROM
     msg["To"] = email_to
     msg["Subject"] = subject
+    msg["Message-ID"] = f"<{uuid4()}@sinexis.app>"
+    config_set = SES_CONFIG_SET or settings.ses_config_set
+    if config_set:
+        msg["X-SES-CONFIGURATION-SET"] = config_set
     msg.attach(MIMEText(_plain_from_html(html_body), "plain", "utf-8"))
     msg.attach(MIMEText(html_body, "html", "utf-8"))
     return msg
@@ -96,6 +108,74 @@ def _job_uuid(job_id: str | None) -> UUID | None:
         return None
 
 
+def _ses_enabled() -> bool:
+    return bool(SES_ENABLED or settings.ses_enabled)
+
+
+def _ses_send_sync(
+    *,
+    email_to: str,
+    subject: str,
+    text_body: str,
+    html_body: str,
+    config_set: str,
+    region: str,
+    from_arn: str,
+) -> str | None:
+    try:
+        import boto3
+    except ImportError:
+        logger.warning("boto3 unavailable; falling back to SMTP bridge")
+        return None
+    client: Any = boto3.client("sesv2", region_name=region or "ap-southeast-1")
+    kwargs: dict[str, Any] = {
+        "FromEmailAddress": SMTP_FROM,
+        "Destination": {"ToAddresses": [email_to]},
+        "Content": {
+            "Simple": {
+                "Subject": {"Data": subject, "Charset": "utf-8"},
+                "Body": {
+                    "Html": {"Data": html_body, "Charset": "utf-8"},
+                    "Text": {"Data": text_body, "Charset": "utf-8"},
+                },
+            }
+        },
+    }
+    if from_arn:
+        kwargs["FromEmailAddressIdentityArn"] = from_arn
+    if config_set:
+        kwargs["ConfigurationSetName"] = config_set
+    response = client.send_email(**kwargs)
+    message_id = response.get("MessageId")
+    return str(message_id) if message_id else None
+
+
+def _decode_part(part: Message) -> str:
+    raw = part.get_payload(decode=True)
+    if raw is None:
+        return ""
+    if isinstance(raw, str):
+        return raw
+    return bytes(raw).decode("utf-8", "replace")
+
+
+def _message_parts(msg: MIMEMultipart) -> tuple[str, str, str]:
+    subject = str(msg.get("Subject", "") or "")
+    text_body = ""
+    html_body = ""
+    try:
+        payload = msg.get_payload()
+        if isinstance(payload, list) and len(payload) >= 2:
+            text_part = payload[0]
+            html_part = payload[1]
+            if isinstance(text_part, Message) and isinstance(html_part, Message):
+                text_body = _decode_part(text_part)
+                html_body = _decode_part(html_part)
+    except Exception:
+        logger.warning("Failed to extract message parts for SES send")
+    return subject, text_body, html_body
+
+
 async def _send_with_retry(
     msg: MIMEMultipart,
     email_to: str,
@@ -104,6 +184,59 @@ async def _send_with_retry(
     user_id: UUID | None = None,
     job_id: UUID | None = None,
 ) -> bool:
+    try:
+        suppressed = is_suppressed(email_to)
+    except Exception:
+        logger.exception("Suppression gate failed; failing open to normal send")
+        suppressed = False
+    if suppressed:
+        record_email_send(
+            label=label,
+            email_to=email_to,
+            ok=False,
+            attempts=1,
+            error="suppressed: bounced",
+            user_id=user_id,
+            job_id=job_id,
+        )
+        return False
+    rfc_message_id = str(msg.get("Message-ID", "") or "").strip().strip("<>")
+    provider = "smtp"
+    provider_message_id: str | None = rfc_message_id or None
+    if _ses_enabled():
+        try:
+            subject, text_body, html_body = _message_parts(msg)
+            config_set = SES_CONFIG_SET or settings.ses_config_set
+            region = SES_REGION or settings.ses_region
+            from_arn = SES_FROM_ARN or settings.ses_from_arn
+            ses_id = await asyncio.to_thread(
+                _ses_send_sync,
+                email_to=email_to,
+                subject=subject,
+                text_body=text_body,
+                html_body=html_body,
+                config_set=config_set,
+                region=region,
+                from_arn=from_arn,
+            )
+        except Exception as exc:
+            logger.warning("SES send failed; falling back to SMTP bridge: %s", exc)
+            ses_id = None
+        if ses_id is not None:
+            provider = "ses-api"
+            provider_message_id = ses_id
+            logger.warning("%s email sent to %s via ses-api", label, email_to)
+            record_email_send(
+                label=label,
+                email_to=email_to,
+                ok=True,
+                attempts=1,
+                user_id=user_id,
+                job_id=job_id,
+                provider=provider,
+                provider_message_id=provider_message_id,
+            )
+            return True
     last_error = ""
     for attempt in range(1, _MAX_RETRIES + 1):
         try:
@@ -132,6 +265,8 @@ async def _send_with_retry(
                 attempts=attempt,
                 user_id=user_id,
                 job_id=job_id,
+                provider=provider,
+                provider_message_id=provider_message_id,
             )
             return True
 
@@ -163,6 +298,8 @@ async def _send_with_retry(
                     error=last_error,
                     user_id=user_id,
                     job_id=job_id,
+                    provider=provider,
+                    provider_message_id=provider_message_id,
                 )
 
     return False

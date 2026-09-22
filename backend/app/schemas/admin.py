@@ -150,6 +150,10 @@ class EmailSendLogItem(BaseModel):
     recipient_masked: str
     attempts: int
     error_message: str | None = None
+    user_id: uuid.UUID | None = None
+    job_id: uuid.UUID | None = None
+    provider_message_id: str | None = None
+    bounce_type: str | None = None
     created_at: datetime
 
 

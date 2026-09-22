@@ -71,6 +71,34 @@ function kindLabel(kind: string, t: (k: string) => string): string {
   return map[kind] ?? kind;
 }
 
+const STATUS_FALLBACK = {
+  statusBounced: "Bounced",
+  statusComplained: "Complained",
+} as const;
+
+function statusLabel(status: string, t: (k: string) => string): string {
+  switch (status) {
+    case "sent":
+      return t("statusSent");
+    case "failed":
+      return t("statusFailed");
+    case "bounced": {
+      const v = t("statusBounced");
+      return v === "statusBounced" ? STATUS_FALLBACK.statusBounced : v;
+    }
+    case "complained": {
+      const v = t("statusComplained");
+      return v === "statusComplained" ? STATUS_FALLBACK.statusComplained : v;
+    }
+    default:
+      return status;
+  }
+}
+
+function statusVariant(status: string): "completed" | "failed" {
+  return status === "sent" ? "completed" : "failed";
+}
+
 function Inbox() {
   const { t } = useTranslation("inbox");
   const [page, setPage] = useState(1);
@@ -159,6 +187,12 @@ function Inbox() {
                   <SelectItem value={STATUS_ALL}>{t("all")}</SelectItem>
                   <SelectItem value="sent">{t("statusSent")}</SelectItem>
                   <SelectItem value="failed">{t("statusFailed")}</SelectItem>
+                  <SelectItem value="bounced">
+                    {statusLabel("bounced", t)}
+                  </SelectItem>
+                  <SelectItem value="complained">
+                    {statusLabel("complained", t)}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -194,12 +228,10 @@ function Inbox() {
                         {kindLabel(row.kind, t)}
                       </Badge>
                       <Badge
-                        variant={row.status === "sent" ? "completed" : "failed"}
+                        variant={statusVariant(row.status)}
                         className="text-[11px]"
                       >
-                        {row.status === "sent"
-                          ? t("statusSent")
-                          : t("statusFailed")}
+                        {statusLabel(row.status, t)}
                       </Badge>
                     </div>
                     <p className="mt-1 text-[11px] text-muted-foreground">
@@ -248,14 +280,10 @@ function Inbox() {
                         </TableCell>
                         <TableCell>
                           <Badge
-                            variant={
-                              row.status === "sent" ? "completed" : "failed"
-                            }
+                            variant={statusVariant(row.status)}
                             className="text-[11px]"
                           >
-                            {row.status === "sent"
-                              ? t("statusSent")
-                              : t("statusFailed")}
+                            {statusLabel(row.status, t)}
                           </Badge>
                         </TableCell>
                         <TableCell className="font-mono text-xs">

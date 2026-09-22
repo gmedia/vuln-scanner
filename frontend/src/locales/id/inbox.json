@@ -12,6 +12,8 @@
   "kindHostWaf": "Host WAF",
   "statusSent": "Terkirim",
   "statusFailed": "Gagal",
+  "statusBounced": "Mental",
+  "statusComplained": "Dilaporkan",
   "colTime": "Waktu",
   "colKind": "Jenis",
   "colStatus": "Status",

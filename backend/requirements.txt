@@ -24,6 +24,8 @@ bcrypt==5.0.0
 sentry-sdk[fastapi]==2.66.1
 prometheus-fastapi-instrumentator==8.1.0
 aiosmtplib==5.1.2
+# S2 SES send (lazy import; SMTP fallback without it)
+boto3>=1.34
 email-validator==2.3.0
 # Transitive dependency pins for CVE fixes
 idna==3.18
