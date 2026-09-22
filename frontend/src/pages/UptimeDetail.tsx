@@ -33,6 +33,7 @@ import i18n from "@/i18n";
 import { htmlLang, isAppLocale } from "@/i18n/locales";
 
 const SAMPLE_PAGE_SIZE = 50;
+const OUTAGE_PAGE_SIZE = 10;
 const RANGES: readonly UptimeRange[] = ["6h", "24h", "7d"];
 const RANGE_LABEL: Record<UptimeRange, "range6h" | "range24h" | "range7d"> = {
   "6h": "range6h",
@@ -220,6 +221,7 @@ export default function UptimeDetail() {
   const qc = useQueryClient();
   const [range, setRange] = useState<UptimeRange>("24h");
   const [page, setPage] = useState(1);
+  const [outagePage, setOutagePage] = useState(1);
   const window = useMemo(() => rangeWindow(range), [range]);
 
   const monitorQ = useQuery({
@@ -288,6 +290,15 @@ export default function UptimeDetail() {
   const samples = samplesQ.data?.items ?? [];
   const sampleTotal = samplesQ.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(sampleTotal / SAMPLE_PAGE_SIZE));
+  const outageTotalPages = Math.max(
+    1,
+    Math.ceil(outages.length / OUTAGE_PAGE_SIZE),
+  );
+  const safeOutagePage = Math.min(outagePage, outageTotalPages);
+  const pagedOutages = outages.slice(
+    (safeOutagePage - 1) * OUTAGE_PAGE_SIZE,
+    safeOutagePage * OUTAGE_PAGE_SIZE,
+  );
   const fromMs = new Date(window.from).getTime();
   const untilMs = new Date(window.until).getTime();
 
@@ -376,6 +387,7 @@ export default function UptimeDetail() {
         onValueChange={(next) => {
           setRange(next as UptimeRange);
           setPage(1);
+          setOutagePage(1);
         }}
       >
         <TabsList data-testid="uptime-range-tabs">
@@ -450,7 +462,7 @@ export default function UptimeDetail() {
             <p className="text-sm text-muted-foreground">{t("outagesEmpty")}</p>
           ) : (
             <ul className="space-y-2">
-              {outages.map((row) => (
+              {pagedOutages.map((row) => (
                 <li
                   key={row.id}
                   className="rounded-md border border-border p-3"
@@ -476,6 +488,38 @@ export default function UptimeDetail() {
               ))}
             </ul>
           )}
+          {outages.length > OUTAGE_PAGE_SIZE ? (
+            <Pagination
+              className="mt-3"
+              data-testid="uptime-outage-pagination"
+            >
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() =>
+                      setOutagePage((p) => Math.max(1, p - 1))
+                    }
+                    disabled={safeOutagePage <= 1}
+                    aria-disabled={safeOutagePage <= 1}
+                  />
+                </PaginationItem>
+                <PaginationItem>
+                  <span className="px-2 font-mono text-xs tabular-nums text-muted-foreground">
+                    {safeOutagePage}/{outageTotalPages}
+                  </span>
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() =>
+                      setOutagePage((p) => Math.min(outageTotalPages, p + 1))
+                    }
+                    disabled={safeOutagePage >= outageTotalPages}
+                    aria-disabled={safeOutagePage >= outageTotalPages}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          ) : null}
         </CardContent>
       </Card>
 
