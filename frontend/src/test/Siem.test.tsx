@@ -310,6 +310,32 @@ describe("SIEM page", () => {
     expect(screen.getAllByTestId("siem-event-row")).toHaveLength(25);
   });
 
+  it("limits mobile event pages to 10 rows to avoid deep scroll", async () => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 375,
+    });
+    vi.mocked(siemApi.listSiemEvents).mockResolvedValue({
+      items: Array.from({ length: 15 }, (_, i) => ({
+        external_id: `evt-m-${i + 1}`,
+        rule_id: "5503",
+        rule_level: 10,
+        rule_description: `Mobile login failed ${i + 1}`,
+        agent_wazuh_id: "001",
+        agent_name: "web-1",
+        occurred_at: "2026-08-14T10:00:00Z",
+      })),
+      degraded: false,
+      last_error: null,
+    });
+    renderSiem();
+    await waitFor(() => {
+      expect(screen.getAllByTestId("siem-event-pager").length).toBeGreaterThan(0);
+    });
+    expect(screen.getAllByTestId("siem-event-row")).toHaveLength(10);
+  });
+
   it("lists cases in a table with status severity and event count", async () => {
     const user = userEvent.setup();
     vi.mocked(siemApi.listSiemCases).mockResolvedValue({

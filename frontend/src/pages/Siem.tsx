@@ -52,7 +52,7 @@ import PageHeader from "@/components/layout/PageHeader";
 import { EventPager } from "@/components/siem/EventPager";
 import { formatSiemWhen } from "@/components/siem/formatSiemWhen";
 import { SiemEventDetail } from "@/components/siem/SiemEventDetail";
-import { useIsXl } from "@/hooks/use-mobile";
+import { useIsMobile, useIsXl } from "@/hooks/use-mobile";
 
 const AUTH_SESSION_DETAILS = new Set([
   "Invalid or expired token",
@@ -163,6 +163,7 @@ export default function Siem() {
     agent_id: "",
     q: "",
   });
+  const isMobile = useIsMobile();
   const isXl = useIsXl();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [caseTitle, setCaseTitle] = useState("");
@@ -258,7 +259,7 @@ export default function Siem() {
 
   const agents = agentsQ.data ?? [];
   const allEvents = eventsQ.data?.items ?? [];
-  const pageSize = 25;
+  const pageSize = isMobile ? 10 : 25;
   const eventPageCount = Math.max(1, Math.ceil(allEvents.length / pageSize));
   const safeEventPage = Math.min(eventPage, eventPageCount - 1);
   const events = allEvents.slice(
