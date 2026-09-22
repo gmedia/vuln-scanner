@@ -54,7 +54,7 @@ Nav groups match Sidebar: **Scan** · **Attach** · **Account** · **Admin** (ad
 | `/scan/ip` | `pages/IpScanner.tsx` | Scan | Two-column form + coverage | `IpScanner.test.tsx`, `e2e/ip-scanner*.spec.ts` |
 | `/scan/domain` | `pages/DomainScanner.tsx` | Scan | Same layout family as IP | `DomainScanner.test.tsx`, `e2e/domain-scanner*.spec.ts` |
 | `/scan/mobile` | `pages/MobileScanner.tsx` | Scan | Upload APK/AAB/IPA | `MobileScanner.test.tsx`, `e2e/mobile-scanner*.spec.ts` |
-| `/scan/:id` | `pages/ScanDetail.tsx` | — | Job detail; Export = JSON / technical HTML / executive HTML (`export-executive`). Print-to-PDF = spec S1a [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md) — **not** `format=pdf`. | `ScanDetail.test.tsx`, `e2e/scan-detail.spec.ts`, `e2e/export.spec.ts` |
+| `/scan/:id` | `pages/ScanDetail.tsx` | — | Job detail; Export = JSON / technical HTML / executive HTML (`export-executive`) / PDF (`export-pdf`, `format=pdf` WeasyPrint). Browser print = S1a. Spec [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md). | `ScanDetail.test.tsx`, `e2e/scan-detail.spec.ts`, `e2e/export.spec.ts` |
 | `/schedules` | `pages/Schedules.tsx` | Scan | Attach loop | `Schedules.test.tsx` |
 | `/assets` | `pages/Assets.tsx` | Scan | `data-testid=nav-assets` | `Assets.test.tsx` |
 | `/host` | `pages/HostProtect.tsx` | Scan | Host Protect (malware + WAF tabs). Flag `HOST_PROTECT` / `HOST_WAF`. Not Guard enroll. | `HostProtect.test.tsx` |
