@@ -1344,11 +1344,32 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
                             "path": "/app/etc/local.xml",
                             "http_status": 403,
                         },
+                        {
+                            "action": "block",
+                            "rule_id": "1147",
+                            "method": "GET",
+                            "path": "/boaform/admin/formLogin",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1148",
+                            "method": "GET",
+                            "path": "/GponForm/diag_Form",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1149",
+                            "method": "GET",
+                            "path": "/.env.bak",
+                            "http_status": 403,
+                        },
                     ],
                 },
             )
             assert r.status_code == 200, r.text
-            assert r.json()["accepted"] == 100
+            assert r.json()["accepted"] == 103
     finally:
         app.dependency_overrides.clear()
     rows = (await db_session.execute(select(HostWafEvent).where(HostWafEvent.site_id == site.id))).scalars().all()
@@ -1453,6 +1474,9 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
         "1144",
         "1145",
         "1146",
+        "1147",
+        "1148",
+        "1149",
     }
 
 
