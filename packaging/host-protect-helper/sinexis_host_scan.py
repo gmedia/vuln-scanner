@@ -12,6 +12,7 @@ import hashlib
 import json
 import os
 import re
+import select
 import shutil
 import subprocess
 import sys
@@ -41,6 +42,9 @@ _META_CLASS = re.compile(r'hit_class\s*=\s*"([^"]+)"')
 _STR = re.compile(r'\$\w+\s*=\s*"((?:\\.|[^"\\])*)"')
 _PATH_CHARS = re.compile(r"^[\w./\-]+$")
 _NUL = "\x00"
+_WATCH_MTIME_SWEEP_SECONDS = 30.0
+_WATCH_MTIME_MAX_DEPTH_FILES = _MAX_FILES
+_WATCH_INOTIFY_EVENTS = "close_write,moved_to,create"
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_RULES = HERE / "rules"
@@ -354,7 +358,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "action",
         nargs="?",
         default="scan",
-        choices=("scan", "poll", "quarantine", "restore"),
+        choices=("scan", "poll", "watch", "quarantine", "restore"),
     )
     p.add_argument("--root", default="", help="Absolute web root on this VM")
     p.add_argument("--scan-id", default="")
@@ -363,6 +367,33 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--site-id", default="")
     p.add_argument("--hit-id", default="")
     p.add_argument("--dest-basename", default="")
+    p.add_argument(
+        "--debounce",
+        type=int,
+        default=int(os.environ.get("SINEXIS_WATCH_DEBOUNCE", "60")),
+        help="Quiet window in seconds before a site fires (default 60)",
+    )
+    p.add_argument(
+        "--cooldown",
+        type=int,
+        default=int(os.environ.get("SINEXIS_WATCH_COOLDOWN", "900")),
+        help="Per-site cooldown in seconds between request-scan calls (default 900)",
+    )
+    p.add_argument(
+        "--roots",
+        default=os.environ.get("SINEXIS_WATCH_ROOTS", ""),
+        help="Optional colon-separated allowlisted roots to watch",
+    )
+    p.add_argument(
+        "--state-dir",
+        default=os.environ.get("SINEXIS_WATCH_STATE_DIR", "/var/lib/sinexis/watch"),
+        help="Directory for watch cooldown/mtime state files",
+    )
+    p.add_argument(
+        "--watch-once",
+        action="store_true",
+        help="Run one detection pass and exit (used by tests/timer)",
+    )
     p.add_argument(
         "--quarantine-root",
         default=os.environ.get("SINEXIS_QUARANTINE_ROOT", "/var/lib/sinexis/quarantine"),
@@ -754,6 +785,343 @@ def _poll_lock_path(agent_id: str) -> str:
     return os.path.join(lock_dir, f"host-protect-poll-{safe}.lock")
 
 
+def _watch_lock_path(agent_id: str) -> str:
+    safe = re.sub(r"[^0-9a-fA-F-]", "_", agent_id)[:80] or "agent"
+    lock_dir = os.environ.get("SINEXIS_POLL_LOCK_DIR", "/var/lib/sinexis")
+    return os.path.join(lock_dir, f"watch-{safe}.lock")
+
+
+def _watch_site_key(site_id: str, root: str) -> str:
+    digest = hashlib.sha256(root.encode("utf-8")).hexdigest()[:16]
+    safe = re.sub(r"[^0-9a-fA-Za-z-]", "_", site_id or "")[:60] or "site"
+    return f"{safe}-{digest}"
+
+
+def _watch_cooldown_path(state_dir: str, agent_id: str, site_key: str) -> str:
+    safe_agent = re.sub(r"[^0-9a-fA-F-]", "_", agent_id)[:80] or "agent"
+    return os.path.join(state_dir, f"{safe_agent}-{site_key}.cooldown")
+
+
+def _watch_mtime_path(state_dir: str, agent_id: str, site_key: str) -> str:
+    safe_agent = re.sub(r"[^0-9a-fA-F-]", "_", agent_id)[:80] or "agent"
+    return os.path.join(state_dir, f"{safe_agent}-{site_key}.mtime")
+
+
+def _watch_cooldown_remaining(state_dir: str, agent_id: str, site_key: str, cooldown: int, now: float) -> float:
+    try:
+        with open(_watch_cooldown_path(state_dir, agent_id, site_key), encoding="utf-8") as fh:
+            last = float((fh.read() or "0").strip() or "0")
+    except (OSError, ValueError):
+        return 0.0
+    return max(0.0, (last + max(0, cooldown)) - now)
+
+
+def _watch_mark_fired(state_dir: str, agent_id: str, site_key: str, now: float) -> None:
+    try:
+        os.makedirs(state_dir, mode=0o700, exist_ok=True)
+        with open(_watch_cooldown_path(state_dir, agent_id, site_key), "w", encoding="utf-8") as fh:
+            fh.write(str(now))
+    except OSError:
+        pass
+
+
+def _watch_site_roots(api_base: str, token: str, agent_id: str, timeout: int) -> list[dict[str, str]]:
+    # Preferred: GET /api/host/agent/watch-sites; fallback: site list from
+    # GET /api/host/agent/jobs (backend shipped request-scan, not watch-sites).
+    watch_url = api_base.rstrip("/") + "/api/host/agent/watch-sites?agent_id=" + urllib.parse.quote(agent_id)
+    req = urllib.request.Request(watch_url, method="GET", headers=_agent_headers(token))
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            body = json.loads(resp.read().decode("utf-8"))
+        sites = body.get("sites") if isinstance(body, dict) else None
+        if isinstance(sites, list):
+            out: list[dict[str, str]] = []
+            for site in sites:
+                if not isinstance(site, dict):
+                    continue
+                root = str(site.get("root_path") or "")
+                watch_on = site.get("watch_on_write", True)
+                if root and watch_on is not False:
+                    out.append({"site_id": str(site.get("site_id") or site.get("id") or ""), "root_path": root})
+            if out:
+                return out
+    except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError, OSError):
+        pass
+    _, jobs = fetch_jobs(api_base, token, agent_id, timeout)
+    seen: set[str] = set()
+    fallback: list[dict[str, str]] = []
+    for job in jobs:
+        root = str(job.get("root_path") or "")
+        if not root or root in seen:
+            continue
+        seen.add(root)
+        fallback.append({"site_id": str(job.get("site_id") or ""), "root_path": root})
+    return fallback
+
+
+def _watch_roots_from_env(raw: str) -> list[dict[str, str]]:
+    sites: list[dict[str, str]] = []
+    for part in (raw or "").split(":"):
+        part = part.strip()
+        if not part:
+            continue
+        try:
+            sites.append({"site_id": "", "root_path": validate_root_path(part)})
+        except ValueError:
+            continue
+    return sites
+
+
+def _discover_watch_sites(args: argparse.Namespace) -> list[dict[str, str]]:
+    if args.roots:
+        return _watch_roots_from_env(args.roots)
+    sites = _watch_site_roots(args.api_base, args.token, args.agent_id, args.timeout)
+    valid: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for site in sites:
+        try:
+            root = validate_root_path(str(site.get("root_path") or ""))
+        except ValueError:
+            continue
+        if root in seen or not os.path.isdir(root):
+            continue
+        seen.add(root)
+        valid.append({"site_id": str(site.get("site_id") or ""), "root_path": root})
+    if valid:
+        return valid
+    return _watch_roots_from_env(os.environ.get("SINEXIS_WATCH_ROOTS", ""))
+
+
+def post_request_scan(api_base: str, token: str, agent_id: str, site_id: str, timeout: int) -> str:
+    url = api_base.rstrip("/") + "/api/host/agent/request-scan"
+    payload = {"agent_id": agent_id, "site_id": site_id}
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(url, data=data, method="POST", headers=_agent_headers(token, json_body=True))
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            body = json.loads(resp.read().decode("utf-8"))
+    except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError, OSError):
+        # No-op fallback: debounced/capped (429), endpoint absent (404), or
+        # network error. Cooldown already marked; the 5-minute poll drains
+        # queued scans, so a missed trigger is never lost.
+        return ""
+    if isinstance(body, dict):
+        return str(body.get("scan_id") or "")
+    return ""
+
+
+def _inotifywait_binary() -> str | None:
+    return shutil.which("inotifywait")
+
+
+def _watch_scan_mtime(root: str) -> float:
+    latest = 0.0
+    nfiles = 0
+    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+        dirnames[:] = [d for d in dirnames if d not in _SKIP_DIRS and ".." not in d]
+        for name in filenames:
+            nfiles += 1
+            if nfiles > _WATCH_MTIME_MAX_DEPTH_FILES:
+                return latest
+            full = os.path.join(dirpath, name)
+            rel = os.path.relpath(full, root).replace(os.sep, "/")
+            if ".." in rel.split("/") or _NUL in rel:
+                continue
+            try:
+                size = os.path.getsize(full)
+                if size > _MAX_BYTES or size == 0:
+                    continue
+                mtime = os.path.getmtime(full)
+            except OSError:
+                continue
+            if mtime > latest:
+                latest = mtime
+    return latest
+
+
+def _watch_mtime_changed(state_dir: str, agent_id: str, site_key: str, root: str) -> bool:
+    current = _watch_scan_mtime(root)
+    path = _watch_mtime_path(state_dir, agent_id, site_key)
+    try:
+        with open(path, encoding="utf-8") as fh:
+            previous = float((fh.read() or "0").strip() or "0")
+    except (OSError, ValueError):
+        previous = 0.0
+    try:
+        os.makedirs(state_dir, mode=0o700, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(str(current))
+    except OSError:
+        pass
+    return current > previous and previous > 0
+
+
+def _fire_watch_site(args: argparse.Namespace, site: dict[str, str]) -> int:
+    root = str(site.get("root_path") or "")
+    site_id = str(site.get("site_id") or "")
+    try:
+        root = validate_root_path(root)
+    except ValueError:
+        return 2
+    if not os.path.isdir(root):
+        return 3
+    if not site_id:
+        return run_poll(_poll_args_from_watch(args))
+    now = time.time()
+    key = _watch_site_key(site_id, root)
+    if _watch_cooldown_remaining(args.state_dir, args.agent_id, key, args.cooldown, now) > 0:
+        return 0
+    _watch_mark_fired(args.state_dir, args.agent_id, key, now)
+    scan_id = post_request_scan(args.api_base, args.token, args.agent_id, site_id, args.timeout)
+    if scan_id:
+        return run(
+            [
+                "scan",
+                "--root",
+                root,
+                "--scan-id",
+                scan_id,
+                "--agent-id",
+                args.agent_id,
+                "--api-base",
+                args.api_base,
+                "--token",
+                args.token,
+                "--rules-dir",
+                args.rules_dir,
+                "--timeout",
+                str(args.timeout),
+            ]
+        )
+    return run_poll(_poll_args_from_watch(args))
+
+
+def _poll_args_from_watch(args: argparse.Namespace) -> argparse.Namespace:
+    return parse_args(
+        [
+            "poll",
+            "--agent-id",
+            args.agent_id,
+            "--api-base",
+            args.api_base,
+            "--token",
+            args.token,
+            "--rules-dir",
+            args.rules_dir,
+            "--timeout",
+            str(args.timeout),
+            "--quarantine-root",
+            args.quarantine_root,
+        ]
+    )
+
+
+def _watch_run_inotify(args: argparse.Namespace, sites: list[dict[str, str]]) -> int:
+    binary = _inotifywait_binary()
+    assert binary is not None
+    roots = [s["root_path"] for s in sites]
+    cmd = [binary, "-m", "-r", "-e", _WATCH_INOTIFY_EVENTS, "--format", "%w%f", *roots]
+    try:
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+    except OSError:
+        return _watch_run_mtime_once(args, sites)
+    assert proc.stdout is not None
+    pending: dict[str, float] = {}
+    debounce = max(0, args.debounce)
+    try:
+        while True:
+            ready, _, _ = select.select([proc.stdout], [], [], 5.0)
+            now_monotonic = time.monotonic()
+            eof = False
+            if ready:
+                line = proc.stdout.readline()
+                if line == "":
+                    eof = True
+                else:
+                    changed = line.strip()
+                    if changed and _NUL not in changed:
+                        for site in sites:
+                            root = site["root_path"]
+                            if changed == root or changed.startswith(root + os.sep):
+                                pending[root] = now_monotonic
+                                break
+            fired: list[dict[str, str]] = []
+            for site in sites:
+                last = pending.get(site["root_path"])
+                if last is not None and (now_monotonic - last) >= debounce:
+                    fired.append(site)
+                    del pending[site["root_path"]]
+            for site in fired:
+                _fire_watch_site(args, site)
+            if eof:
+                break
+            if args.watch_once and debounce == 0 and pending:
+                for site in [s for s in sites if s["root_path"] in pending]:
+                    _fire_watch_site(args, site)
+                break
+    finally:
+        try:
+            proc.terminate()
+        except OSError:
+            pass
+    return 0
+
+
+def _watch_run_mtime_once(args: argparse.Namespace, sites: list[dict[str, str]]) -> int:
+    worst = 0
+    for site in sites:
+        key = _watch_site_key(str(site.get("site_id") or ""), site["root_path"])
+        if _watch_mtime_changed(args.state_dir, args.agent_id, key, site["root_path"]):
+            rc = _fire_watch_site(args, site)
+            if rc not in (0, 2, 3):
+                worst = rc
+    return worst
+
+
+def _watch_run_mtime_loop(args: argparse.Namespace, sites: list[dict[str, str]]) -> int:
+    while True:
+        _watch_run_mtime_once(args, sites)
+        if args.watch_once:
+            break
+        time.sleep(_WATCH_MTIME_SWEEP_SECONDS)
+    return 0
+
+
+def run_watch(args: argparse.Namespace) -> int:
+    if not args.api_base or not args.token or not args.agent_id:
+        return 4
+    if args.debounce < 0 or args.cooldown < 0:
+        return 2
+    sites = _discover_watch_sites(args)
+    if not sites:
+        return 0
+    lock_path = _watch_lock_path(args.agent_id)
+    try:
+        os.makedirs(os.path.dirname(lock_path), mode=0o700, exist_ok=True)
+        lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
+    except OSError:
+        lock_fd = None
+    if lock_fd is not None:
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            os.close(lock_fd)
+            return 0
+    try:
+        if _inotifywait_binary() is not None:
+            if args.watch_once:
+                return _watch_run_mtime_once(args, sites)
+            return _watch_run_inotify(args, sites)
+        return _watch_run_mtime_loop(args, sites)
+    finally:
+        if lock_fd is not None:
+            try:
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            except OSError:
+                pass
+            os.close(lock_fd)
+
+
 def run_poll(args: argparse.Namespace) -> int:
     if not args.api_base or not args.token or not args.agent_id:
         return 4
@@ -846,6 +1214,8 @@ def run(argv: list[str] | None = None) -> int:
         return run_restore(args)
     if args.action == "poll":
         return run_poll(args)
+    if args.action == "watch":
+        return run_watch(args)
     if not args.scan_id or not args.agent_id:
         return 4
     try:

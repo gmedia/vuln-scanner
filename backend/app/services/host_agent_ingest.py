@@ -2,25 +2,40 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import logging
 import secrets
+import uuid
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
+from celery import Celery
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models.guard import GuardAgent
-from app.models.host_protect import HostCommand, HostHit, HostQuarantineEvent, HostScan, HostSite
+from app.models.host_protect import (
+    HOST_PROTECT_ON_WRITE_DEBOUNCE_SECONDS,
+    HOST_PROTECT_ORG_CONCURRENT_CAP,
+    HostCommand,
+    HostHit,
+    HostQuarantineEvent,
+    HostScan,
+    HostSite,
+)
 from app.models.host_waf import HostWafEvent, HostWafPolicy
 from app.models.user import User
 from app.schemas.host_protect import (
     HostAgentCommandAck,
     HostAgentPollJob,
     HostAgentPollResponse,
+    HostAgentRequestScan,
+    HostAgentRequestScanResponse,
     HostAgentResultsIngest,
     HostAgentResultsResponse,
+    HostAgentWatchSite,
+    HostAgentWatchSitesResponse,
 )
 from app.schemas.host_waf import HostAgentWafEventsIngest, HostAgentWafEventsResponse
 from app.services.host_handoff import handoff_waf_block, notify_live_waf_block
@@ -62,6 +77,23 @@ async def _agent_from_token(db: AsyncSession, raw_token: str | None) -> GuardAge
 
 def touch_helper_poll(agent: GuardAgent) -> None:
     agent.last_helper_poll_at = datetime.now(UTC)
+
+
+logger = logging.getLogger(__name__)
+
+_celery = Celery(
+    "vuln_scanner",
+    broker=settings.celery_broker_url,
+    backend=settings.celery_result_backend,
+)
+_celery.conf.update(
+    task_serializer="json",
+    accept_content=["json"],
+    result_serializer="json",
+    timezone="UTC",
+    enable_utc=True,
+    broker_connection_retry_on_startup=True,
+)
 
 
 async def poll_agent_jobs(
@@ -125,6 +157,30 @@ async def poll_agent_jobs(
         )
     await db.commit()
     return HostAgentPollResponse(jobs=jobs)
+
+
+async def list_watch_sites(
+    db: AsyncSession,
+    raw_token: str | None,
+    agent_id: UUID,
+) -> HostAgentWatchSitesResponse:
+    agent = await _agent_from_token(db, raw_token)
+    if agent.id != agent_id:
+        raise _unauthorized()
+    touch_helper_poll(agent)
+    result = await db.execute(
+        select(HostSite)
+        .where(
+            HostSite.guard_agent_id == agent.id,
+            HostSite.organization_id == agent.organization_id,
+            HostSite.enabled.is_(True),
+            HostSite.watch_on_write.is_(True),
+        )
+        .order_by(HostSite.created_at.asc())
+    )
+    sites = [HostAgentWatchSite(site_id=s.id, root_path=s.root_path) for s in result.scalars().all()]
+    await db.commit()
+    return HostAgentWatchSitesResponse(sites=sites)
 
 
 async def ack_agent_command(
@@ -292,3 +348,63 @@ async def ingest_agent_waf_events(
         accepted += 1
     await db.commit()
     return HostAgentWafEventsResponse(ok=True, accepted=accepted)
+
+
+async def request_on_write_scan(
+    db: AsyncSession,
+    raw_token: str | None,
+    body: HostAgentRequestScan,
+) -> HostAgentRequestScanResponse:
+    agent = await _agent_from_token(db, raw_token)
+    if agent.id != body.agent_id:
+        raise _unauthorized()
+    touch_helper_poll(agent)
+    site_result = await db.execute(select(HostSite).where(HostSite.id == body.site_id))
+    site = site_result.scalar_one_or_none()
+    if site is None or site.guard_agent_id != agent.id or site.organization_id != agent.organization_id:
+        raise _unauthorized()
+    if not site.enabled:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Site disabled")
+    if not site.watch_on_write:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="on-write watch not enabled")
+    inflight = await db.execute(
+        select(func.count())
+        .select_from(HostScan)
+        .where(
+            HostScan.organization_id == site.organization_id,
+            HostScan.status.in_(("queued", "running")),
+        )
+    )
+    if int(inflight.scalar() or 0) >= HOST_PROTECT_ORG_CONCURRENT_CAP:
+        raise HTTPException(status_code=429, detail="Organization scan cap reached")
+    latest = (
+        await db.execute(
+            select(HostScan)
+            .where(HostScan.site_id == site.id, HostScan.trigger == "on_write")
+            .order_by(HostScan.created_at.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    if latest is not None and latest.created_at is not None:
+        created = latest.created_at
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=UTC)
+        age = (datetime.now(UTC) - created).total_seconds()
+        if age < HOST_PROTECT_ON_WRITE_DEBOUNCE_SECONDS:
+            raise HTTPException(status_code=429, detail="on-write scan debounced")
+    scan = HostScan(
+        id=uuid.uuid4(),
+        organization_id=site.organization_id,
+        site_id=site.id,
+        status="queued",
+        trigger="on_write",
+    )
+    db.add(scan)
+    await db.flush()
+    try:
+        _celery.send_task("host_protect.run_scan", args=[str(scan.id)], queue="ip_scan")
+    except Exception as exc:
+        logger.warning("Host Protect on-write dispatch failed: %s", exc)
+    await db.commit()
+    await db.refresh(scan)
+    return HostAgentRequestScanResponse(ok=True, scan_id=scan.id)

@@ -884,3 +884,186 @@ def test_clam_connect_fail_falls_back_to_clamscan(tmp_path: Path, monkeypatch: p
     assert any("clamdscan" in c[0] for c in calls)
     assert any(c[0].endswith("clamscan") for c in calls)
     assert hits[0]["rule_id"].startswith("clam.")
+
+
+def _watch_args(tmp_path: Path, root: Path, **over: str) -> list[str]:
+    argv = [
+        "watch",
+        "--agent-id",
+        "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+        "--api-base",
+        "https://example.invalid",
+        "--token",
+        "secret-token",
+        "--roots",
+        str(root),
+        "--state-dir",
+        str(tmp_path / "watch-state"),
+        "--watch-once",
+    ]
+    for key, value in over.items():
+        argv += [f"--{key}", value]
+    return argv
+
+
+def test_watch_missing_creds():
+    assert helper.run(["watch", "--agent-id", "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"]) == 4
+
+
+def test_watch_roots_outside_jail_ignored(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(helper, "ALLOWED_PREFIXES", (str(tmp_path),))
+    assert helper._watch_roots_from_env("/etc:/tmp/traverse-..") == []
+    with pytest.raises(ValueError):
+        helper.validate_root_path("/etc/passwd")
+    with pytest.raises(ValueError):
+        helper.validate_root_path("/var/www/../etc")
+
+
+def test_watch_mtime_fallback_triggers_request_scan(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(helper, "ALLOWED_PREFIXES", (str(tmp_path),))
+    monkeypatch.setenv("SINEXIS_POLL_LOCK_DIR", str(tmp_path / "locks"))
+    monkeypatch.setattr(helper, "_inotifywait_binary", lambda: None)
+    root = tmp_path / "www"
+    root.mkdir()
+    (root / "index.php").write_text("<?php echo 1; ?>", encoding="utf-8")
+    site_id = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    monkeypatch.setattr(
+        helper,
+        "_discover_watch_sites",
+        lambda _a: [{"site_id": site_id, "root_path": str(root)}],
+    )
+    requested: list[tuple[str, str, str, str, int]] = []
+    monkeypatch.setattr(
+        helper, "post_request_scan", lambda *a, **k: (requested.append(a), "scan-1")[1]
+    )
+    scanned: list[list[str]] = []
+    monkeypatch.setattr(helper, "run", lambda argv: (scanned.append(argv), 0)[1])
+    assert helper.run_watch(helper.parse_args(_watch_args(tmp_path, root))) == 0
+    assert requested == []
+    (root / "index.php").write_text("<?php echo 2; ?>", encoding="utf-8")
+    assert helper.run_watch(helper.parse_args(_watch_args(tmp_path, root))) == 0
+    assert len(requested) == 1
+    assert requested[0][0] == "https://example.invalid"
+    assert requested[0][1] == "secret-token"
+    assert requested[0][2] == "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+    assert requested[0][3] == site_id
+    assert scanned and scanned[0][0] == "scan" and "scan-1" in scanned[0]
+
+
+def test_watch_cooldown_blocks_second_fire(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(helper, "ALLOWED_PREFIXES", (str(tmp_path),))
+    monkeypatch.setenv("SINEXIS_POLL_LOCK_DIR", str(tmp_path / "locks"))
+    root = tmp_path / "www"
+    root.mkdir()
+    (root / "index.php").write_text("<?php echo 1; ?>", encoding="utf-8")
+    site_id = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    monkeypatch.setattr(
+        helper,
+        "_discover_watch_sites",
+        lambda _a: [{"site_id": site_id, "root_path": str(root)}],
+    )
+    fired = {"n": 0}
+    monkeypatch.setattr(helper, "post_request_scan", lambda *a, **k: (fired.__setitem__("n", fired["n"] + 1), "")[1])
+    monkeypatch.setattr(helper, "run_poll", lambda _a: 0)
+    args = helper.parse_args(_watch_args(tmp_path, root, cooldown="900"))
+    assert helper._fire_watch_site(args, {"site_id": site_id, "root_path": str(root)}) == 0
+    assert fired["n"] == 1
+    assert helper._fire_watch_site(args, {"site_id": site_id, "root_path": str(root)}) == 0
+    assert fired["n"] == 1
+
+
+def test_watch_request_scan_payload_and_headers(monkeypatch: pytest.MonkeyPatch):
+    seen: dict[str, object] = {}
+
+    class FakeResp:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_a):
+            return False
+
+        def read(self):
+            return b'{"ok": true, "scan_id": "scan-9"}'
+
+    def fake_open(req, timeout=None):
+        seen["url"] = req.full_url
+        seen["headers"] = dict(req.header_items())
+        seen["body"] = json.loads(req.data.decode("utf-8"))
+        return FakeResp()
+
+    monkeypatch.setattr(helper.urllib.request, "urlopen", fake_open)
+    scan_id = helper.post_request_scan(
+        "https://example.invalid", "tok", "agent-1", "site-1", 10
+    )
+    assert scan_id == "scan-9"
+    assert seen["url"] == "https://example.invalid/api/host/agent/request-scan"
+    assert seen["body"] == {"agent_id": "agent-1", "site_id": "site-1"}
+    lowered = {k.lower(): v for k, v in seen["headers"].items()}
+    assert lowered["x-host-agent-token"] == "tok"
+    assert lowered["content-type"] == "application/json"
+
+
+def test_watch_request_scan_noop_on_error(monkeypatch: pytest.MonkeyPatch):
+    import urllib.error
+
+    def boom(*_a, **_k):
+        raise urllib.error.HTTPError("u", 429, "cap", {}, None)
+
+    monkeypatch.setattr(helper.urllib.request, "urlopen", boom)
+    assert helper.post_request_scan("https://example.invalid", "t", "a", "s", 5) == ""
+
+
+def test_watch_jail_traversal_rejected(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(helper, "ALLOWED_PREFIXES", (str(tmp_path),))
+    monkeypatch.setattr(helper, "run_poll", lambda _a: 0)
+    args = helper.parse_args(_watch_args(tmp_path, tmp_path))
+    assert helper._fire_watch_site(args, {"site_id": "s", "root_path": "/etc/passwd"}) == 2
+    assert helper._fire_watch_site(args, {"site_id": "s", "root_path": "/var/www/../etc"}) == 2
+
+
+def test_watch_debounce_coalesces_events(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(helper, "ALLOWED_PREFIXES", (str(tmp_path),))
+    monkeypatch.setenv("SINEXIS_POLL_LOCK_DIR", str(tmp_path / "locks"))
+    root = tmp_path / "www"
+    root.mkdir()
+    (root / "a.php").write_text("x", encoding="utf-8")
+    site_id = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    monkeypatch.setattr(
+        helper,
+        "_discover_watch_sites",
+        lambda _a: [{"site_id": site_id, "root_path": str(root)}],
+    )
+    fired: list[str] = []
+    monkeypatch.setattr(helper, "_fire_watch_site", lambda _a, s: (fired.append(s["root_path"]), 0)[1])
+    monkeypatch.setattr(helper, "_inotifywait_binary", lambda: "/usr/bin/inotifywait")
+
+    class FakeStdout:
+        def __init__(self, lines):
+            self._lines = list(lines)
+
+        def readline(self):
+            return self._lines.pop(0) if self._lines else ""
+
+    class FakeProc:
+        def __init__(self, lines):
+            self.stdout = FakeStdout(lines)
+
+        def terminate(self):
+            pass
+
+    events = [f"{root}/a.php\n", f"{root}/a.php\n", f"{root}/b.php\n"]
+    monkeypatch.setattr(helper.subprocess, "Popen", lambda *a, **k: FakeProc(events))
+
+    monkey_clock = {"t": 1000.0}
+
+    def fake_select(rlist, _w, _x, _timeout=None):
+        monkey_clock["t"] += 61.0
+        if events:
+            return (rlist, [], [])
+        return (rlist, [], [])
+
+    monkeypatch.setattr(helper.select, "select", fake_select)
+    monkeypatch.setattr(helper.time, "monotonic", lambda: monkey_clock["t"])
+    args = helper.parse_args(_watch_args(tmp_path, root, debounce="60"))
+    assert helper._watch_run_inotify(args, [{"site_id": site_id, "root_path": str(root)}]) == 0
+    assert fired == [str(root)]

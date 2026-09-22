@@ -51,6 +51,25 @@ vi.mock("@/api/guard", async () => {
   };
 });
 
+// jsdom lacks the pointer-capture APIs Radix Select relies on; stub them so
+// Select triggers can open in tests (test-only, no production impact).
+if (typeof Element !== "undefined") {
+  if (!Element.prototype.hasPointerCapture) {
+    Element.prototype.hasPointerCapture = function () {
+      return false;
+    };
+  }
+  if (!Element.prototype.setPointerCapture) {
+    Element.prototype.setPointerCapture = function () {};
+  }
+  if (!Element.prototype.releasePointerCapture) {
+    Element.prototype.releasePointerCapture = function () {};
+  }
+  if (!Element.prototype.scrollIntoView) {
+    Element.prototype.scrollIntoView = function () {};
+  }
+}
+
 function renderHost() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -342,6 +361,129 @@ describe("Host Protect page", () => {
       screen.getByTestId("host-auto-quarantine-existing"),
     ).toBeInTheDocument();
     expect(screen.getByTestId("host-enabled-existing")).toBeInTheDocument();
+  });
+
+  it("renders watch_on_write toggle in create form and sends it in payload", async () => {
+    vi.mocked(hostApi.createHostSite).mockResolvedValue({
+      id: "s1",
+      organization_id: "org1",
+      guard_agent_id: "a1",
+      asset_id: null,
+      name: "Web",
+      root_path: "/var/www/html",
+      cms_hint: "unknown",
+      enabled: true,
+      auto_quarantine: false,
+      watch_on_write: false,
+      scan_interval: "daily",
+      created_by: "u1",
+      created_at: "2026-08-30T00:00:00Z",
+      updated_at: "2026-08-30T00:00:00Z",
+      sku: "multi",
+      sku_limit: 10,
+    });
+    const user = userEvent.setup();
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByTestId("host-empty-cta")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("host-empty-cta"));
+    expect(screen.getByTestId("host-watch")).toBeInTheDocument();
+    expect(screen.getByText(/helper watcher/i)).toBeInTheDocument();
+    await user.type(screen.getByTestId("host-name"), "Web");
+    await user.type(screen.getByTestId("host-root"), "/var/www/html");
+    await waitFor(() =>
+      expect(screen.getByTestId("host-save")).not.toBeDisabled(),
+    );
+    await user.click(screen.getByTestId("host-save"));
+    await waitFor(() => expect(hostApi.createHostSite).toHaveBeenCalled());
+    expect(vi.mocked(hostApi.createHostSite).mock.calls[0][0]).toMatchObject({
+      watch_on_write: false,
+    });
+  });
+
+  it("updates watch_on_write per site via existing Select", async () => {
+    vi.mocked(hostApi.listHostSites).mockResolvedValue([
+      {
+        id: "s1",
+        organization_id: "org1",
+        guard_agent_id: "a1",
+        asset_id: null,
+        name: "Web",
+        root_path: "/var/www/html",
+        cms_hint: "wordpress",
+        enabled: true,
+        auto_quarantine: false,
+        watch_on_write: false,
+        scan_interval: "daily",
+        created_by: "u1",
+        created_at: "2026-08-30T00:00:00Z",
+        updated_at: "2026-08-30T00:00:00Z",
+        sku: "multi",
+        sku_limit: 10,
+      },
+    ]);
+    vi.mocked(hostApi.updateHostSite).mockResolvedValue({
+      id: "s1",
+      organization_id: "org1",
+      guard_agent_id: "a1",
+      asset_id: null,
+      name: "Web",
+      root_path: "/var/www/html",
+      cms_hint: "wordpress",
+      enabled: true,
+      auto_quarantine: false,
+      watch_on_write: true,
+      scan_interval: "daily",
+      created_by: "u1",
+      created_at: "2026-08-30T00:00:00Z",
+      updated_at: "2026-08-30T00:00:00Z",
+      sku: "multi",
+      sku_limit: 10,
+    });
+    const user = userEvent.setup();
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByTestId("host-watch-existing")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("host-watch-existing"));
+    const onOption = await screen.findByRole("option", {
+      name: /check the site folder after a file write/i,
+    });
+    await user.click(onOption);
+    await waitFor(() => expect(hostApi.updateHostSite).toHaveBeenCalled());
+    expect(vi.mocked(hostApi.updateHostSite)).toHaveBeenCalledWith("s1", {
+      watch_on_write: true,
+    });
+  });
+
+  it("renders watch toggle off when backend omits the flag", async () => {
+    vi.mocked(hostApi.listHostSites).mockResolvedValue([
+      {
+        id: "s1",
+        organization_id: "org1",
+        guard_agent_id: "a1",
+        asset_id: null,
+        name: "Web",
+        root_path: "/var/www/html",
+        cms_hint: "wordpress",
+        enabled: true,
+        auto_quarantine: false,
+        scan_interval: "daily",
+        created_by: "u1",
+        created_at: "2026-08-30T00:00:00Z",
+        updated_at: "2026-08-30T00:00:00Z",
+        sku: "multi",
+        sku_limit: 10,
+      },
+    ]);
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByTestId("host-watch-existing")).toBeInTheDocument(),
+    );
+    expect(screen.getByTestId("host-watch-existing")).toHaveTextContent(
+      /only/i,
+    );
   });
 
   it("sends auto_quarantine false by default when creating a site", async () => {

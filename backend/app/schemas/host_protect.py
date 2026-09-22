@@ -20,6 +20,7 @@ class HostSiteCreate(BaseModel):
     enabled: bool = True
     auto_quarantine: bool = False
     scan_interval: str = Field(default="daily", pattern=r"^(daily|hourly)$")
+    watch_on_write: bool = False
 
     @field_validator("name")
     @classmethod
@@ -38,6 +39,7 @@ class HostSiteUpdate(BaseModel):
     enabled: bool | None = None
     auto_quarantine: bool | None = None
     scan_interval: str | None = Field(default=None, pattern=r"^(daily|hourly)$")
+    watch_on_write: bool | None = None
 
     @field_validator("name")
     @classmethod
@@ -60,6 +62,7 @@ class HostSiteResponse(BaseModel):
     enabled: bool
     auto_quarantine: bool
     scan_interval: str = "daily"
+    watch_on_write: bool = False
     created_by: uuid.UUID
     created_at: datetime
     updated_at: datetime
@@ -116,6 +119,16 @@ class HostAgentResultsResponse(BaseModel):
     status: str | None = None
 
 
+class HostAgentRequestScan(BaseModel):
+    agent_id: uuid.UUID
+    site_id: uuid.UUID
+
+
+class HostAgentRequestScanResponse(BaseModel):
+    ok: bool
+    scan_id: uuid.UUID
+
+
 class HostAgentCommandAck(BaseModel):
     command_id: uuid.UUID
     agent_id: uuid.UUID
@@ -137,6 +150,15 @@ class HostAgentPollJob(BaseModel):
 
 class HostAgentPollResponse(BaseModel):
     jobs: list[HostAgentPollJob]
+
+
+class HostAgentWatchSite(BaseModel):
+    site_id: uuid.UUID
+    root_path: str
+
+
+class HostAgentWatchSitesResponse(BaseModel):
+    sites: list[HostAgentWatchSite]
 
 
 class HostHitResponse(BaseModel):
