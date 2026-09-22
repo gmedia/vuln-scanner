@@ -172,12 +172,13 @@ export async function getScanHistory(
 
 async function fetchExportBlob(
   jobId: string,
-  format: "json" | "html" | "executive",
+  format: "json" | "html" | "executive" | "pdf",
 ): Promise<Blob> {
   const stored = localStorage.getItem("sinexis.locale");
   const lang = stored === "en" || stored === "id" ? stored : "id";
+  const withLang = format === "executive" || format === "pdf";
   const resp = await api.get(`/api/scan/${jobId}/export`, {
-    params: { format, ...(format === "executive" ? { lang } : {}) },
+    params: { format, ...(withLang ? { lang } : {}) },
     responseType: "blob",
   });
   return resp.data as Blob;
@@ -185,7 +186,7 @@ async function fetchExportBlob(
 
 export async function downloadFile(
   jobId: string,
-  format: "json" | "html" | "executive",
+  format: "json" | "html" | "executive" | "pdf",
 ): Promise<void> {
   const blob = await fetchExportBlob(jobId, format);
   const ext =
@@ -193,7 +194,9 @@ export async function downloadFile(
       ? "json"
       : format === "executive"
         ? "executive.html"
-        : "html";
+        : format === "pdf"
+          ? "pdf"
+          : "html";
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

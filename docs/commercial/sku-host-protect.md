@@ -40,7 +40,7 @@
 
 - “Ini **bukan** ganti Imunify di cPanel shared.”
 - “Kalimat pendek ‘ganti Imunify…’ **boleh** di **nginx dedicated / no panel** (Sentence-ok **GREEN** 2026-09-21). **Tetap dilarang** di cPanel shared. Pitch panjang §0 tetap dipakai jika buyer butuh kedalaman.”
-- “Ganti di **VPS tanpa panel**: **Sentence-ok tertutup** (Demo-ok + Invoice-ok Sinexis in-app + pack 1005+ shipped + ModSec live + owner date 2026-09-21); tanpa PD/kernel/email. **Jangan** tunggu `service_id` GMD. H9 `invoicable` **sudah** — tagih Host di Sinexis. Residual agent = Guide §1.3.1 **Print S2**.”
+- “Ganti di **VPS tanpa panel**: **Sentence-ok tertutup** (Demo-ok + Invoice-ok Sinexis in-app + pack 1005+ shipped + ModSec live + owner date 2026-09-21); tanpa PD/kernel/email. **Jangan** tunggu `service_id` GMD. H9 `invoicable` **sudah** — tagih Host di Sinexis. Residual agent = Guide §1.3.1 **Inbox S2**. Print S2 **shipped**.”
 - “Untuk VPS/colo GMD: agent Guard + daftar folder web. Scan **on-box** = helper POST ke SaaS (P14 slice C). Worker cloud **bukan** Imunify. Sampai helper jalan, konsol **bukan** bukti disk VPS.”
 - “Working list (bukan H4 lock; H9 invoicable **sudah**): Host Basic **Rp 150.000** · Host Pro **Rp 350.000** · Host Multi **Rp 900.000** / bulan. Tagih di **Sinexis** (`/admin/invoices`). Invoice-ok = in-app, **bukan** `service_id` GMD. Finance boleh ± band sebelum H4 lock. GMD `service_id` **opsional**, bukan gerbang, **bukan** langkah agent.”
 - “Quarantine **bukan** reconstruct situs; restore CMS = tiket.”

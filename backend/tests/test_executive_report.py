@@ -281,6 +281,8 @@ async def test_export_invalid_format_mentions_executive(client, db_session, samp
     )
     db_session.add(job)
     await db_session.commit()
-    resp = client.get(f"/api/scan/{job.id}/export?format=pdf", headers=HEADERS)
+    resp = client.get(f"/api/scan/{job.id}/export?format=xml", headers=HEADERS)
     assert resp.status_code == 400
-    assert "executive" in resp.json()["detail"]
+    detail = resp.json()["detail"]
+    assert "executive" in detail
+    assert "pdf" in detail

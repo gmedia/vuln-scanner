@@ -18,7 +18,11 @@ vi.mock("react-router-dom", async () => {
 
 vi.mock("@/hooks/useScan", () => ({
   useScanDetail: vi.fn(),
-  useScanDiff: vi.fn(() => ({ data: undefined, isLoading: false, isError: false })),
+  useScanDiff: vi.fn(() => ({
+    data: undefined,
+    isLoading: false,
+    isError: false,
+  })),
   useScanFinding: vi.fn(() => ({ data: undefined, isFetching: false })),
   useScanFindings: vi.fn(() => ({
     data: {
@@ -44,19 +48,45 @@ vi.mock("@/api/scans", async () => {
 });
 
 vi.mock("@/components/ui/Card", () => ({
-  Card: ({ children, ...props }: any) => <div data-testid="card" {...props}>{children}</div>,
-  CardHeader: ({ children, ...props }: any) => <div data-testid="card-header" {...props}>{children}</div>,
-  CardTitle: ({ children, ...props }: any) => <h3 data-testid="card-title" {...props}>{children}</h3>,
-  CardDescription: ({ children, ...props }: any) => <p data-testid="card-desc" {...props}>{children}</p>,
-  CardContent: ({ children, ...props }: any) => <div data-testid="card-content" {...props}>{children}</div>,
+  Card: ({ children, ...props }: any) => (
+    <div data-testid="card" {...props}>
+      {children}
+    </div>
+  ),
+  CardHeader: ({ children, ...props }: any) => (
+    <div data-testid="card-header" {...props}>
+      {children}
+    </div>
+  ),
+  CardTitle: ({ children, ...props }: any) => (
+    <h3 data-testid="card-title" {...props}>
+      {children}
+    </h3>
+  ),
+  CardDescription: ({ children, ...props }: any) => (
+    <p data-testid="card-desc" {...props}>
+      {children}
+    </p>
+  ),
+  CardContent: ({ children, ...props }: any) => (
+    <div data-testid="card-content" {...props}>
+      {children}
+    </div>
+  ),
 }));
 
 vi.mock("@/components/ui/Progress", () => ({
-  Progress: ({ value, ...props }: any) => <div data-testid="progress" data-value={value} {...props} />,
+  Progress: ({ value, ...props }: any) => (
+    <div data-testid="progress" data-value={value} {...props} />
+  ),
 }));
 
 vi.mock("@/components/ui/Badge", () => ({
-  Badge: ({ children, ...props }: any) => <span data-testid="badge" {...props}>{children}</span>,
+  Badge: ({ children, ...props }: any) => (
+    <span data-testid="badge" {...props}>
+      {children}
+    </span>
+  ),
 }));
 
 vi.mock("@/components/ui/Button", () => ({
@@ -65,7 +95,9 @@ vi.mock("@/components/ui/Button", () => ({
       return children;
     }
     return (
-      <button onClick={onClick} {...props}>{children}</button>
+      <button onClick={onClick} {...props}>
+        {children}
+      </button>
     );
   },
 }));
@@ -82,11 +114,17 @@ vi.mock("@/components/ui/Skeleton", () => ({
 }));
 
 vi.mock("@/lib/constants", () => ({
-  SCAN_TYPE_LABELS: { ip: "IP Scan", domain: "Domain Scan", mobile: "Mobile Scan" },
+  SCAN_TYPE_LABELS: {
+    ip: "IP Scan",
+    domain: "Domain Scan",
+    mobile: "Mobile Scan",
+  },
 }));
 
 vi.mock("@/components/results/SeverityChart", () => ({
-  default: ({ summary }: any) => <div data-testid="severity-chart" data-summary={JSON.stringify(summary)} />,
+  default: ({ summary }: any) => (
+    <div data-testid="severity-chart" data-summary={JSON.stringify(summary)} />
+  ),
 }));
 
 vi.mock("@/components/results/FindingsTable", () => ({
@@ -165,8 +203,10 @@ const baseScan = {
       cve_id: "CVE-2025-0001",
       cvss_score: 9.8,
       remediation: "Remove hardcoded password",
-      impact: "Secrets in the binary can be extracted and reused against backends.",
-      attacker_benefit: "Extracted secrets can be reused against backends as the app.",
+      impact:
+        "Secrets in the binary can be extracted and reused against backends.",
+      attacker_benefit:
+        "Extracted secrets can be reused against backends as the app.",
       raw_data: null,
       found_at: "2025-06-01T10:01:00Z",
     },
@@ -196,14 +236,17 @@ const baseScan = {
       cvss_score: 5.0,
       remediation: "Upgrade cipher",
       impact: "Weak TLS may allow interception of session data.",
-      attacker_benefit: "Weak TLS lets attackers try protocol downgrade on the path.",
+      attacker_benefit:
+        "Weak TLS lets attackers try protocol downgrade on the path.",
       raw_data: null,
       found_at: "2025-06-01T10:01:20Z",
     },
   ],
 };
 
-function mockUseScanDetailReturn(overrides: Partial<ReturnType<typeof useScanDetail>> = {}) {
+function mockUseScanDetailReturn(
+  overrides: Partial<ReturnType<typeof useScanDetail>> = {},
+) {
   vi.mocked(useScanDetail).mockReturnValue({
     data: undefined,
     isLoading: false,
@@ -438,7 +481,9 @@ describe("ScanDetail", () => {
     it("renders RemediationCard when findings have remediation", () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
-      expect(screen.getByText("Suggested actions available")).toBeInTheDocument();
+      expect(
+        screen.getByText("Suggested actions available"),
+      ).toBeInTheDocument();
       const progress = screen.getByTestId("progress");
       expect(progress.dataset.value).toBe("67");
     });
@@ -539,7 +584,9 @@ describe("ScanDetail", () => {
         isError: false,
       } as ReturnType<typeof useScanFindings>);
       renderPage();
-      expect(screen.getByText("Suggested actions available")).toBeInTheDocument();
+      expect(
+        screen.getByText("Suggested actions available"),
+      ).toBeInTheDocument();
       expect(screen.getByTestId("progress").dataset.value).toBe("67");
     });
 
@@ -575,6 +622,7 @@ describe("ScanDetail", () => {
       expect(screen.getByTestId("export-executive")).toHaveTextContent(
         /Executive report/,
       );
+      expect(screen.getByTestId("export-pdf")).toHaveTextContent("PDF");
     });
 
     it("renders Re-scan link for IP scan type", () => {
@@ -582,7 +630,9 @@ describe("ScanDetail", () => {
       renderPage();
       const rescan = screen.getByTestId("rescan-button");
       expect(rescan).toHaveAttribute("href", "/scan/ip");
-      expect(screen.getByRole("link", { name: /Re-scan/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: /Re-scan/i }),
+      ).toBeInTheDocument();
     });
 
     it("routes Re-scan to domain scanner for domain scans", () => {
@@ -618,6 +668,14 @@ describe("ScanDetail", () => {
       await userEvent.click(screen.getByRole("tab", { name: "Export" }));
       await userEvent.click(screen.getByTestId("export-executive"));
       expect(downloadFile).toHaveBeenCalledWith("scan-1", "executive");
+    });
+
+    it("calls downloadFile pdf on PDF button click", async () => {
+      mockUseScanDetailReturn({ data: baseScan as any });
+      renderPage();
+      await userEvent.click(screen.getByRole("tab", { name: "Export" }));
+      await userEvent.click(screen.getByTestId("export-pdf"));
+      expect(downloadFile).toHaveBeenCalledWith("scan-1", "pdf");
     });
 
     it("calls printFile executive on print executive click", async () => {

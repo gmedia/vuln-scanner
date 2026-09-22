@@ -56,6 +56,15 @@ docker exec vuln-worker-ip celery -A celery_app inspect ping -d celery@$HOSTNAME
 
 Helper script (host with repo + `.env`): [`scripts/smoke-broker.sh`](../scripts/smoke-broker.sh).
 
+## WeasyPrint (scan PDF, Print S2)
+
+| Layer | Pin | Notes |
+|-------|-----|--------|
+| **weasyprint** (backend only) | `weasyprint==70.0` | `GET /api/scan/{id}/export?format=pdf` → executive HTML. **Not** in `workers/`. Invoice PDF stays I10 **out**. |
+| System (Docker runtime + CI `python-tests-backend`) | `libpango-1.0-0` `libpangoft2-1.0-0` `libharfbuzz-subset0` `fonts-dejavu-core` | Debian/Ubuntu runtime libs. Do **not** `apt install weasyprint` (distro package ≠ this pin). |
+
+Missing Pango on a laptop `pip` install → API **503** `PDF rendering unavailable`. Prod image and CI must have the apt list.
+
 ## Do not
 
 - Blind `pip install -U redis` past 6.4 while Kombu still has `<6.5`.

@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 
 from celery.exceptions import CeleryError
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -26,6 +26,7 @@ from app.schemas.scan import (
 from app.services.auth import get_active_org_id, get_current_user
 from app.services.baseline_diff import get_scan_diff
 from app.services.executive_report import render_executive_html
+from app.services.scan_pdf import ScanPdfUnavailableError, render_scan_pdf
 from app.services.scanner import ScannerService
 
 MOBILE_UPLOAD_MAX_SIZE = 500 * 1024 * 1024  # 500 MB
@@ -465,7 +466,7 @@ async def get_scan_baseline_diff(
 @router.get(
     "/scan/{job_id}/export",
     response_model=None,
-    responses={200: {"content": {"application/json": {}, "text/html": {}}}},
+    responses={200: {"content": {"application/json": {}, "text/html": {}, "application/pdf": {}}}},
 )
 async def export_scan(
     job_id: str,
@@ -473,7 +474,7 @@ async def export_scan(
     lang: str | None = Query(default=None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse | HTMLResponse:
+) -> JSONResponse | HTMLResponse | Response:
     svc = ScannerService(db)
     job = await svc.get_job(job_id, user_id=current_user.id, include_raw=True)
     if not job:
@@ -492,7 +493,7 @@ async def export_scan(
     if format == "html":
         return HTMLResponse(content=_render_pdf_html(job))
 
-    if format == "executive":
+    if format in ("executive", "pdf"):
         diff: ScanDiffResponse | None = None
         if job.status == "completed":
             diff = await get_scan_diff(db, job_id, user_id=current_user.id)
@@ -502,14 +503,26 @@ async def export_scan(
             account_email=getattr(current_user, "email", None),
             lang=lang,
         )
-        return HTMLResponse(
-            content=body,
+        if format == "executive":
+            return HTMLResponse(
+                content=body,
+                headers={
+                    "Content-Disposition": f'attachment; filename="scan_{job_id}_executive.html"',
+                },
+            )
+        try:
+            pdf = render_scan_pdf(body)
+        except ScanPdfUnavailableError as exc:
+            raise HTTPException(status_code=503, detail="PDF rendering unavailable") from exc
+        return Response(
+            content=pdf,
+            media_type="application/pdf",
             headers={
-                "Content-Disposition": f'attachment; filename="scan_{job_id}_executive.html"',
+                "Content-Disposition": f'attachment; filename="scan_{job_id}.pdf"',
             },
         )
 
     raise HTTPException(
         status_code=400,
-        detail="format must be 'json', 'html', or 'executive'",
+        detail="format must be 'json', 'html', 'executive', or 'pdf'",
     )

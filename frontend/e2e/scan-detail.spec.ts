@@ -96,5 +96,6 @@ test.describe("Scan Detail Page @scan", () => {
     await page.getByRole("tab", { name: "Ekspor" }).click();
     await expect(page.getByTestId("export-executive")).toBeVisible();
     await expect(page.getByTestId("export-print-executive")).toBeVisible();
+    await expect(page.getByTestId("export-pdf")).toBeVisible();
   });
 });
