@@ -656,6 +656,18 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         'SecRule REQUEST_URI "@rx (?i)/app/etc/local\\.xml" '
         "\"id:1146,phase:1,t:none,deny,status:403,msg:\\'sinexis.mage.localxml\\'\""
     )
+    rule_1147 = (
+        'SecRule REQUEST_URI "@rx (?i)/boaform/admin/formLogin" '
+        "\"id:1147,phase:1,t:none,deny,status:403,msg:\\'sinexis.boaform.login\\'\""
+    )
+    rule_1148 = (
+        'SecRule REQUEST_URI "@rx (?i)/GponForm/diag_Form" '
+        "\"id:1148,phase:1,t:none,deny,status:403,msg:\\'sinexis.gpon.diag\\'\""
+    )
+    rule_1149 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.env\\.bak($|[/?])" '
+        "\"id:1149,phase:1,t:none,deny,status:403,msg:\\'sinexis.env.bak\\'\""
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -826,6 +838,9 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         rule_1144,
         rule_1145,
         rule_1146,
+        rule_1147,
+        rule_1148,
+        rule_1149,
         extra.strip(),
     ]
     rules_body = pack_modsecurity_rules(units)

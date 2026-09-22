@@ -876,6 +876,8 @@ SecRule REQUEST_URI "@rx (?i)/consul(/|$)" "id:1131,phase:1,t:none,deny,status:4
 SecRule REQUEST_URI "@rx (?i)/vault/ui" "id:1132,phase:1,t:none,deny,status:403,msg:\'sinexis.vault.ui\'"
 SecRule REQUEST_URI "@rx (?i)/\\.kube/config" "id:1133,phase:1,t:none,deny,status:403,msg:\'sinexis.kube.config\'"
 SecRule REQUEST_URI "@rx (?i)/\\.docker/config\\.json" "id:1134,phase:1,t:none,deny,status:403,msg:\'sinexis.docker.config\'"
+';
+modsecurity_rules '
 SecRule REQUEST_URI "@rx (?i)/wp-content/uploads/dump\\.sql" "id:1135,phase:1,t:none,deny,status:403,msg:\'sinexis.wp.dump\'"
 SecRule REQUEST_URI "@rx (?i)/backup\\.sql\\.gz" "id:1136,phase:1,t:none,deny,status:403,msg:\'sinexis.backup.sqlgz\'"
 SecRule REQUEST_URI "@rx (?i)/phpmyadmin/setup" "id:1137,phase:1,t:none,deny,status:403,msg:\'sinexis.pma.setup\'"
@@ -888,6 +890,9 @@ SecRule REQUEST_URI "@rx (?i)/configuration\\.php($|[?])" "id:1143,phase:1,t:non
 SecRule REQUEST_URI "@rx (?i)/\\.env\\.production" "id:1144,phase:1,t:none,deny,status:403,msg:\'sinexis.env.production\'"
 SecRule REQUEST_URI "@rx (?i)/wp-config\\.php\\.save" "id:1145,phase:1,t:none,deny,status:403,msg:\'sinexis.wp.config.save\'"
 SecRule REQUEST_URI "@rx (?i)/app/etc/local\\.xml" "id:1146,phase:1,t:none,deny,status:403,msg:\'sinexis.mage.localxml\'"
+SecRule REQUEST_URI "@rx (?i)/boaform/admin/formLogin" "id:1147,phase:1,t:none,deny,status:403,msg:\'sinexis.boaform.login\'"
+SecRule REQUEST_URI "@rx (?i)/GponForm/diag_Form" "id:1148,phase:1,t:none,deny,status:403,msg:\'sinexis.gpon.diag\'"
+SecRule REQUEST_URI "@rx (?i)/\\.env\\.bak($|[/?])" "id:1149,phase:1,t:none,deny,status:403,msg:\'sinexis.env.bak\'"
 ';
 
 EOF

@@ -107,10 +107,13 @@
 #   GET  /sites/default/settings.php  → expect 403 (id 1093)
 #   GET  /.hgignore  → expect 403 (id 1094)
 #   GET  /glassfish  → expect 403 (id 1095)
+#   GET  /boaform/admin/formLogin  → expect 403 (id 1147)
+#   GET  /GponForm/diag_Form  → expect 403 (id 1148)
+#   GET  /.env.bak  → expect 403 (id 1149)
 #   GET  /wp-admin/  → expect 200 (not in pack)
-# This script only asserts the snippet contains id:1005–1146 and no wp-admin.
+# This script only asserts the snippet contains id:1005–1149 and no wp-admin.
 # POST simulate writes mock.sqli.1; GET /api/host/waf/events filters to product
-# ids 1001–1146, so this smoke must not require events>=1 after simulate.
+# ids 1001–1149, so this smoke must not require events>=1 after simulate.
 
 set -euo pipefail
 
@@ -369,6 +372,9 @@ fetch_snippet() {
 printf '%s' "$SNIPPET" | grep -q 'id:1144' || die "snippet missing original rule 1144"
 printf '%s' "$SNIPPET" | grep -q 'id:1145' || die "snippet missing original rule 1145"
 printf '%s' "$SNIPPET" | grep -q 'id:1146' || die "snippet missing original rule 1146"
+printf '%s' "$SNIPPET" | grep -q 'id:1147' || die "snippet missing original rule 1147"
+printf '%s' "$SNIPPET" | grep -q 'id:1148' || die "snippet missing original rule 1148"
+printf '%s' "$SNIPPET" | grep -q 'id:1149' || die "snippet missing original rule 1149"
   printf '%s' "$SNIPPET" | grep -qi 'wp-admin' && die "snippet must not match /wp-admin/"
   log "snippet ok (not printed)"
 }
