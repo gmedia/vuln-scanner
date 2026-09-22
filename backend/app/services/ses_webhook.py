@@ -211,15 +211,19 @@ async def ingest_notification(inner: dict[str, Any], sns_message_id: str, db: As
         recipients = _recipients(inner, kind) if kind in ("bounce", "complaint", "delivery") else []
         first = recipients[0] if recipients else ""
         bounce_type, bounce_subtype = _bounce_detail(inner) if kind == "bounce" else (None, None)
+        subtype_value: str | None = None
+        if kind == "bounce":
+            if bounce_type:
+                subtype_value = f"{bounce_type}/{bounce_subtype or ''}"[:64]
+            elif bounce_subtype:
+                subtype_value = bounce_subtype[:64]
         now = datetime.now(UTC)
         db.add(
             EmailBounceEvent(
                 sns_message_id=sns_message_id,
                 provider_message_id=provider_message_id,
                 type=kind[:32] or "unknown",
-                subtype=(f"{bounce_type}/{bounce_subtype}" if bounce_type else bounce_subtype)[:64]
-                if kind == "bounce"
-                else None,
+                subtype=subtype_value,
                 recipient_hash=hashlib.sha256(first.strip().lower().encode("utf-8")).hexdigest(),
                 raw=json.loads(json.dumps(inner)),
                 created_at=now,
