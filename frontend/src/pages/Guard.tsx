@@ -102,7 +102,7 @@ function DisableAgentButton({
           type="button"
           variant="outline"
           size="sm"
-          className="min-h-9 text-destructive"
+          className="min-h-9 w-full text-destructive"
           disabled={pending}
           data-testid={`guard-disable-${agent.id}`}
           aria-label={t("disableAgentAria", { name: agent.name })}
@@ -149,7 +149,7 @@ function HostTokenIssueButton({
           type="button"
           variant="outline"
           size="sm"
-          className="min-h-9"
+          className="min-h-9 w-full"
           disabled={pending}
           data-testid="guard-host-token-issue"
           aria-label={
@@ -1008,7 +1008,7 @@ export default function Guard() {
                           </div>
                         ) : null}
                         {canAdmin ? (
-                          <div className="mt-2 space-y-2">
+                          <div className="mt-2 flex flex-col gap-2">
                             <Label htmlFor={`guard-link-${a.id}`} className="sr-only">
                               {t("linkAsset")}
                             </Label>
