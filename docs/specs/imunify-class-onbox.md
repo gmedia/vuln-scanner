@@ -1,7 +1,7 @@
 # Spec: Imunify-class on-box (P14 — regional attach, original stack)
 
 **Status:** **docs** (2026-09-03). Owner asked to **re-plan** Host Protect / Host WAF toward **Imunify360 jobs** (read files and HTTP on the **customer VM**) so GMD can take **regional** share where CloudLinux/cPanel+Imunify is weak or expensive. **Not** an Imunify clone, trademark, or ruleset dump. **Waves 0–3** (§7) sequence product work **after** P12 S0–S12; they do **not** re-open S1–S12.
-**Epic:** **P14**. Builds on **P12** (files) + **P13** (HTTP) + **P5** (Guard enroll). Does **not** jump Scan SKU lock or hospitality GTM. **H9 Host invoicable shipped.** Billing = **Sinexis in-app** (I1/D5); GMD `service_id` is **optional leftover**, **not** agent next-step. Residual queue starts at Print S2.
+**Epic:** **P14**. Builds on **P12** (files) + **P13** (HTTP) + **P5** (Guard enroll). Does **not** jump Scan SKU lock or hospitality GTM. **H9 Host invoicable shipped.** Billing = **Sinexis in-app** (I1/D5); GMD `service_id` is **optional leftover**, **not** agent next-step. Residual queue starts at Inbox S2. Print S2 **shipped**.
 **Do not implement app code** until the user says `implement` / `buat` / `kerjakan` for a **named slice** below.
 **Legal:** original UX, original signatures, original nginx/Coraza config. No Imunify screenshots, no commercial Imunify/CloudLinux DB in git, no “Imunify compatible” in product UI.
 
@@ -155,4 +155,4 @@ Slices **A–H** remain the **PR stream** names. Waves are **when sales can demo
 - File plane: [`host-protect-v1.md`](host-protect-v1.md) — **do not** re-implement S1–S12
 - HTTP plane: [`host-waf-v1.md`](host-waf-v1.md)
 - Working IDR: [`sku-host-protect.md`](../commercial/sku-host-protect.md)
-- **VPS displace-lite:** [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) — **Sentence-ok GREEN** 2026-09-21 (closure §7); short “ganti” **allowed** nginx dedicated / no panel; slices **DL0–DL3 shipped**; not shared cPanel; not clone; Caddy out; **G/H** research only; WAF **1147+** = §1.3.1 **#4**; **H9 shipped**; residual queue starts at Print S2
+- **VPS displace-lite:** [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) — **Sentence-ok GREEN** 2026-09-21 (closure §7); short “ganti” **allowed** nginx dedicated / no panel; slices **DL0–DL3 shipped**; not shared cPanel; not clone; Caddy out; **G/H** research only; WAF **1147+** = §1.3.1 **#3**; **H9 shipped**; residual queue starts at Inbox S2; Print S2 **shipped**

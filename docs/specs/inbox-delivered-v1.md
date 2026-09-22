@@ -1,8 +1,8 @@
 # Spec: Inbox “Delivered” (user-side SMTP log)
 
-**Status:** **S0–S1c shipped** (#787 docs, #788 `GET /api/inbox` + `user_id`, #789 SPA `/inbox`, **S1c `job_id` + scan_diff link**). Bounce/SES = **S2** = Guide §1.3.1 **#2** (named, wait `buat`). Do **not** re-implement S0–S1b.
+**Status:** **S0–S1c shipped** (#787 docs, #788 `GET /api/inbox` + `user_id`, #789 SPA `/inbox`, **S1c `job_id` + scan_diff link**). Bounce/SES = **S2** = Guide §1.3.1 **#1** (named, wait `buat`). Do **not** re-implement S0–S1b.
 **Goal:** Let a workspace user see whether **product mail the app already sent** was **accepted by SMTP** (Sent) or **failed** — without a second notification center, Guard Discover, bounce/DSN infra, or exposing other tenants’ addresses.
-**Epic:** product-depth follow-on to P1 S3 notify + admin `email_send_logs`. **Not** a new P-letter. Guide §1.3.1 **#2** = Inbox S2 (bounce/SES). S0–S1c **shipped**.
+**Epic:** product-depth follow-on to P1 S3 notify + admin `email_send_logs`. **Not** a new P-letter. Guide §1.3.1 **#1** = Inbox S2 (bounce/SES). S0–S1c **shipped**. Print S2 **shipped**.
 **Depends:** `backend/app/services/email.py` · `EmailSendLog` / `email_send_logs` (`sent` \| `failed`) · `record_email_send` · `GET /api/admin/email-logs` · scan notify (`scan_diff`) · i18n notify locale (`id` default).
 **Commercial:** not a SKU. Out already named: **Mixing into Guard Discover**.
 **Not this epic:** SES/DSN “mailbox delivered”; chat inbox; unread threads; invoice SMTP; invite SMTP; bounce webhooks; unmasking recipients; `/guard/inbox`; SIEM cases; print/PDF (S1a/S1b shipped).
