@@ -30,7 +30,8 @@ SCAN_INTERVALS = ("daily", "hourly")
 SCAN_INTERVAL_SECONDS = {"daily": 86400, "hourly": 3600}
 HOST_PROTECT_ORG_CONCURRENT_CAP = 2
 SCAN_STATUSES = ("queued", "running", "completed", "failed")
-SCAN_TRIGGERS = ("schedule", "manual")
+SCAN_TRIGGERS = ("schedule", "manual", "on_write")
+HOST_PROTECT_ON_WRITE_DEBOUNCE_SECONDS = 15 * 60
 HIT_CLASSES = ("webshell", "backdoor", "malware", "spam_seo", "suspicious")
 HIT_ENGINES = ("yara", "clam", "mock", "needles")
 HIT_STATUSES = (
@@ -65,6 +66,7 @@ class HostSite(Base):
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     auto_quarantine: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     scan_interval: Mapped[str] = mapped_column(String(16), nullable=False, default="daily")
+    watch_on_write: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(

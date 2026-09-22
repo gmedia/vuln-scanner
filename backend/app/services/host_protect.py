@@ -85,6 +85,7 @@ class HostProtectService:
             enabled=site.enabled,
             auto_quarantine=site.auto_quarantine,
             scan_interval=site.scan_interval,
+            watch_on_write=site.watch_on_write,
             created_by=site.created_by,
             created_at=site.created_at,
             updated_at=site.updated_at,
@@ -150,6 +151,7 @@ class HostProtectService:
             enabled=body.enabled,
             auto_quarantine=body.auto_quarantine,
             scan_interval=body.scan_interval,
+            watch_on_write=body.watch_on_write,
             created_by=user.id,
         )
         self.db.add(site)

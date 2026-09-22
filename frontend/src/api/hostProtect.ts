@@ -11,6 +11,7 @@ export interface HostSite {
   cms_hint: string | null;
   enabled: boolean;
   auto_quarantine: boolean;
+  watch_on_write?: boolean;
   scan_interval: "daily" | "hourly";
   created_by: string;
   created_at: string;
@@ -55,6 +56,7 @@ export interface HostSiteCreatePayload {
   asset_id?: string;
   enabled?: boolean;
   auto_quarantine?: boolean;
+  watch_on_write?: boolean;
   scan_interval?: "daily" | "hourly";
 }
 
@@ -63,6 +65,7 @@ export async function updateHostSite(
   payload: {
     scan_interval?: "daily" | "hourly";
     auto_quarantine?: boolean;
+    watch_on_write?: boolean;
     enabled?: boolean;
   },
 ): Promise<HostSite> {

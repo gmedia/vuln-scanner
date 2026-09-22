@@ -10,8 +10,11 @@ from app.schemas.host_protect import (
     MAX_AGENT_FINDINGS,
     HostAgentCommandAck,
     HostAgentPollResponse,
+    HostAgentRequestScan,
+    HostAgentRequestScanResponse,
     HostAgentResultsIngest,
     HostAgentResultsResponse,
+    HostAgentWatchSitesResponse,
     HostHitResponse,
     HostScanResponse,
     HostSiteCreate,
@@ -24,7 +27,9 @@ from app.services.host_agent_ingest import (
     ack_agent_command,
     ingest_agent_results,
     ingest_agent_waf_events,
+    list_watch_sites,
     poll_agent_jobs,
+    request_on_write_scan,
 )
 from app.services.host_protect import HostProtectService
 
@@ -148,6 +153,15 @@ async def poll_host_agent_jobs(
     return await poll_agent_jobs(db, x_host_agent_token, agent_id)
 
 
+@router.get("/agent/watch-sites", response_model=HostAgentWatchSitesResponse)
+async def list_host_agent_watch_sites(
+    agent_id: UUID = Query(...),
+    db: AsyncSession = Depends(get_db),
+    x_host_agent_token: str | None = Header(default=None, alias="X-Host-Agent-Token"),
+) -> HostAgentWatchSitesResponse:
+    return await list_watch_sites(db, x_host_agent_token, agent_id)
+
+
 @router.post("/agent/results", response_model=HostAgentResultsResponse)
 async def ingest_host_agent_results(
     request: Request,
@@ -186,6 +200,15 @@ async def ingest_host_agent_waf_events(
     if len(body.events) > MAX_AGENT_WAF_EVENTS:
         raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Payload too large")
     return await ingest_agent_waf_events(db, x_host_agent_token, body)
+
+
+@router.post("/agent/request-scan", response_model=HostAgentRequestScanResponse)
+async def request_host_agent_scan(
+    body: HostAgentRequestScan,
+    db: AsyncSession = Depends(get_db),
+    x_host_agent_token: str | None = Header(default=None, alias="X-Host-Agent-Token"),
+) -> HostAgentRequestScanResponse:
+    return await request_on_write_scan(db, x_host_agent_token, body)
 
 
 @router.post("/agent/commands/ack", response_model=HostAgentResultsResponse)

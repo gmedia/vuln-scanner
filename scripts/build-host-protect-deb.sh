@@ -17,6 +17,7 @@ install -m 755 "$PKG_SRC/sinexis_host_scan.py" "$STAGE/usr/lib/sinexis/host-prot
 install -m 644 "$PKG_SRC/rules/php_webshell.yar" "$STAGE/usr/lib/sinexis/host-protect/rules/php_webshell.yar"
 install -m 644 "$PKG_SRC/systemd/sinexis-host-protect@.service" "$STAGE/usr/lib/systemd/system/sinexis-host-protect@.service"
 install -m 644 "$PKG_SRC/systemd/sinexis-host-protect@.timer" "$STAGE/usr/lib/systemd/system/sinexis-host-protect@.timer"
+install -m 644 "$PKG_SRC/systemd/sinexis-host-watch@.service" "$STAGE/usr/lib/systemd/system/sinexis-host-watch@.service"
 install -m 644 "$PKG_SRC/host-protect.env.example" "$STAGE/usr/share/doc/sinexis-host-protect/host-protect.env.example"
 install -m 644 "$PKG_SRC/README.md" "$STAGE/usr/share/doc/sinexis-host-protect/README.md"
 

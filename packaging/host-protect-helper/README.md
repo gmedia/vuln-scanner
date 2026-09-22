@@ -18,3 +18,12 @@ Do **not** wipe `sx-erpstg`. Use a fixture folder under `/var/www`, `/srv/www`, 
 Smoke: enqueue a Host Protect scan in the SPA, then run `python3 sinexis_host_scan.py poll --agent-id <uuid>` on **tc5**. Hits appear only after POST. Poll also runs queued **quarantine/restore** jobs and POSTs `/api/host/agent/commands/ack`. Pending SPA status is not on-disk quarantine. Lab API: [`scripts/host-protect-lab-smoke.sh`](../../scripts/host-protect-lab-smoke.sh) `--require-helper-heartbeat` (optional `--trigger-helper-poll`).
 
 ClamAV is optional (`Recommends: clamav`). Skip if `clamscan`/`clamdscan` is absent. CI images must not require Clam.
+
+## On-write watch (inotify, lab tc5 only)
+
+`python3 sinexis_host_scan.py watch --agent-id <uuid>` watches **only allowlisted site roots** (`/var/www`, `/srv/www`, `/home` — never whole disk) and fires `POST /api/host/agent/request-scan {agent_id, site_id}` on write, then runs the existing poll/scan flow once. Per-site cooldown defaults to 15 min to avoid storms; debounce defaults to 60 s quiet window.
+
+- Install: `sinexis-host-watch@.service` (`Requires=wazuh-agent`, `Restart=always`) — enable with the Guard agent UUID: `systemctl enable --now sinexis-host-watch@<uuid>.service`. Alternative: keep the 5-min `sinexis-host-protect@.timer` poll and run `watch --watch-once` from cron — the fallback mtime sweep needs no daemon.
+- Optional dependency: `inotify-tools` provides `inotifywait` (`-m -r -e close_write,moved_to,create`). When absent, the helper falls back to an mtime sweep every 30 s with the same file/byte caps as scan (500 files, 1 MB, skips `.git`/`node_modules`/`__pycache__`/`.quarantine`).
+- Roots: discovered from SaaS (`GET /api/host/agent/watch-sites`, else jobs site list filtered `watch_on_write`), else `SINEXIS_WATCH_ROOTS` (colon-separated, jail-validated). Env knobs in `host-protect.env.example`: `SINEXIS_WATCH_DEBOUNCE`, `SINEXIS_WATCH_COOLDOWN`, `SINEXIS_WATCH_STATE_DIR`, `SINEXIS_WATCH_ROOTS` (env file stays mode 600).
+- Lab tc5 only. Enable `watch_on_write` per site in SPA `/host` first; backend debounces per site (15 min) and caps org concurrency (2).

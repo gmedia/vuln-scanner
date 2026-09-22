@@ -74,6 +74,7 @@ export default function HostProtect() {
   );
   const [scanInterval, setScanInterval] = useState<"daily" | "hourly">("daily");
   const [autoQuarantine, setAutoQuarantine] = useState(false);
+  const [watchOnWrite, setWatchOnWrite] = useState(false);
   const [showIgnoredBySite, setShowIgnoredBySite] = useState<
     Record<string, boolean>
   >({});
@@ -141,6 +142,7 @@ export default function HostProtect() {
       setAgentId("");
       setScanInterval("daily");
       setAutoQuarantine(false);
+      setWatchOnWrite(false);
       setOpen(false);
     },
     onError: (err: { response?: { data?: { detail?: string } } }) => {
@@ -177,6 +179,17 @@ export default function HostProtect() {
       id: string;
       auto_quarantine: boolean;
     }) => updateHostSite(id, { auto_quarantine }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["host"] }),
+  });
+
+  const watchMut = useMutation({
+    mutationFn: ({
+      id,
+      watch_on_write,
+    }: {
+      id: string;
+      watch_on_write: boolean;
+    }) => updateHostSite(id, { watch_on_write }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["host"] }),
   });
 
@@ -451,6 +464,28 @@ export default function HostProtect() {
                 {t("autoQuarantineHint")}
               </p>
             </div>
+            <div>
+              <Label htmlFor="host-watch">{t("watchTitle")}</Label>
+              <Select
+                value={watchOnWrite ? "on" : "off"}
+                onValueChange={(v) => setWatchOnWrite(v === "on")}
+              >
+                <SelectTrigger
+                  id="host-watch"
+                  data-testid="host-watch"
+                  aria-label={t("watchTitle")}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="off">{t("watchOff")}</SelectItem>
+                  <SelectItem value="on">{t("watchOn")}</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                {t("watchHint")}
+              </p>
+            </div>
             <div className="flex gap-2">
               <Button
                 data-testid="host-save"
@@ -468,6 +503,7 @@ export default function HostProtect() {
                     cms_hint: cmsHint,
                     scan_interval: scanInterval,
                     auto_quarantine: autoQuarantine,
+                    watch_on_write: watchOnWrite,
                   })
                 }
               >
@@ -746,6 +782,39 @@ export default function HostProtect() {
                           </Select>
                           <p className="mt-1.5 text-xs text-muted-foreground">
                             {t("autoQuarantineHint")}
+                          </p>
+                        </div>
+                        <div className="max-w-xs min-w-0">
+                          <Label htmlFor={`host-watch-${s.id}`}>
+                            {t("watchTitle")}
+                          </Label>
+                          <Select
+                            value={(s.watch_on_write ?? false) ? "on" : "off"}
+                            onValueChange={(v) =>
+                              watchMut.mutate({
+                                id: s.id,
+                                watch_on_write: v === "on",
+                              })
+                            }
+                          >
+                            <SelectTrigger
+                              id={`host-watch-${s.id}`}
+                              data-testid="host-watch-existing"
+                              aria-label={t("watchTitle")}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="off">
+                                {t("watchOff")}
+                              </SelectItem>
+                              <SelectItem value="on">
+                                {t("watchOn")}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <p className="mt-1.5 text-xs text-muted-foreground">
+                            {t("watchHint")}
                           </p>
                         </div>
                       </div>
