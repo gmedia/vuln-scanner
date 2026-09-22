@@ -250,8 +250,7 @@ function ScanDetail() {
     return `${m}m ${s}s`;
   };
 
-  const findingsCount =
-    scan.result_summary?.total_findings ?? findingsTotal;
+  const findingsCount = scan.result_summary?.total_findings ?? findingsTotal;
   const reScanTo = rescanPath(scan.scan_type);
   const failMessage =
     typeof scan.result_summary?.error === "string" &&
@@ -277,7 +276,9 @@ function ScanDetail() {
         }
         description={
           <>
-            <span className="block truncate font-mono text-xs">{scan.target}</span>
+            <span className="block truncate font-mono text-xs">
+              {scan.target}
+            </span>
             {scan.completed_at ? (
               <span className="mt-0.5 block text-[11px]">
                 {t("finishedAt", {
@@ -349,147 +350,158 @@ function ScanDetail() {
 
         <TabsContent value="findings" className="space-y-5">
           <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.6fr)_minmax(22rem,0.9fr)] 2xl:items-start">
-          <Card>
-            <CardHeader className="py-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <CardTitle className="text-sm tracking-wide">
-                    {t("findingsDetected", {
-                      count: findingsTotal,
-                    })}
-                  </CardTitle>
-                  {findingsTotal > 0 ? (
-                    <p
-                      className="mt-1 font-mono text-[11px] tabular-nums text-muted-foreground"
-                      data-testid="findings-range"
-                    >
-                      {t("findingsRange", {
-                        from: rangeFrom,
-                        to: rangeTo,
-                        total: findingsTotal,
-                      })}
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <FindingsTable
-                findings={findings}
-                isLoading={findingsLoading}
-                severity={severity}
-                onSeverityChange={(next) => {
-                  patchFindingsParams({
-                    severity: next,
-                    page: undefined,
-                  });
-                }}
-                search={searchDraft}
-                onSearchChange={(next) => {
-                  setSearchDraft(next);
-                  if (findingsPage !== 1) {
-                    patchFindingsParams({ page: undefined });
-                  }
-                }}
-                sortKey={sortKey}
-                sortDir={sortDir}
-                onSortChange={(key, dir) => {
-                  patchFindingsParams({
-                    sort: key === "severity" ? undefined : key,
-                    dir: dir === "asc" ? undefined : dir,
-                    page: undefined,
-                  });
-                }}
-                emptyReason={
-                  scan.status === "failed"
-                    ? "failed"
-                    : scan.status === "completed"
-                      ? "clean"
-                      : "incomplete"
-                }
-              />
-              {findingsPages > 1 && (
-                <Pagination className="mt-4" data-testid="findings-pagination">
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        onClick={() =>
-                          patchFindingsParams({
-                            page:
-                              findingsPage <= 2
-                                ? undefined
-                                : String(findingsPage - 1),
-                          })
-                        }
-                        disabled={findingsPage === 1}
-                      />
-                    </PaginationItem>
-                    <PaginationItem>
-                      <span className="px-2 font-mono text-xs tabular-nums text-muted-foreground">
-                        {findingsPage}/{findingsPages}
-                      </span>
-                    </PaginationItem>
-                    <PaginationItem>
-                      <PaginationNext
-                        onClick={() =>
-                          patchFindingsParams({
-                            page: String(
-                              Math.min(findingsPages, findingsPage + 1),
-                            ),
-                          })
-                        }
-                        disabled={findingsPage === findingsPages}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              )}
-            </CardContent>
-          </Card>
-
-          <div className="grid gap-5 lg:grid-cols-3 2xl:grid-cols-1">
-            {findingsCount > 0 ? (
-            <Card className="lg:col-span-1">
+            <Card>
               <CardHeader className="py-3">
-                <CardTitle className="text-sm tracking-wide">{t("severity")}</CardTitle>
-                <CardDescription className="text-xs">
-                  {t("severityDist", { count: findingsCount })}
-                </CardDescription>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <CardTitle className="text-sm tracking-wide">
+                      {t("findingsDetected", {
+                        count: findingsTotal,
+                      })}
+                    </CardTitle>
+                    {findingsTotal > 0 ? (
+                      <p
+                        className="mt-1 font-mono text-[11px] tabular-nums text-muted-foreground"
+                        data-testid="findings-range"
+                      >
+                        {t("findingsRange", {
+                          from: rangeFrom,
+                          to: rangeTo,
+                          total: findingsTotal,
+                        })}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="pt-0">
-                <SeverityChart summary={scan.result_summary} />
-              </CardContent>
-            </Card>
-            ) : null}
-
-            <Card className="lg:col-span-2">
-              <CardHeader className="py-3">
-                <CardTitle className="text-sm tracking-wide">{t("scanInfo")}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 pt-0">
-                <InfoRow label={t("scanId")} value={scan.id} mono />
-                <InfoRow
-                  label={t("created")}
-                  value={new Date(scan.created_at).toLocaleString()}
+                <FindingsTable
+                  findings={findings}
+                  isLoading={findingsLoading}
+                  severity={severity}
+                  onSeverityChange={(next) => {
+                    patchFindingsParams({
+                      severity: next,
+                      page: undefined,
+                    });
+                  }}
+                  search={searchDraft}
+                  onSearchChange={(next) => {
+                    setSearchDraft(next);
+                    if (findingsPage !== 1) {
+                      patchFindingsParams({ page: undefined });
+                    }
+                  }}
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSortChange={(key, dir) => {
+                    patchFindingsParams({
+                      sort: key === "severity" ? undefined : key,
+                      dir: dir === "asc" ? undefined : dir,
+                      page: undefined,
+                    });
+                  }}
+                  emptyReason={
+                    scan.status === "failed"
+                      ? "failed"
+                      : scan.status === "completed"
+                        ? "clean"
+                        : "incomplete"
+                  }
                 />
-                {scan.started_at && (
-                  <InfoRow
-                    label={t("started")}
-                    value={new Date(scan.started_at).toLocaleString()}
-                  />
-                )}
-                {scan.completed_at && (
-                  <InfoRow
-                    label={t("completed")}
-                    value={new Date(scan.completed_at).toLocaleString()}
-                  />
-                )}
-                {scan.celery_task_id && (
-                  <InfoRow label={t("taskId")} value={scan.celery_task_id} mono />
+                {findingsPages > 1 && (
+                  <Pagination
+                    className="mt-4"
+                    data-testid="findings-pagination"
+                  >
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          onClick={() =>
+                            patchFindingsParams({
+                              page:
+                                findingsPage <= 2
+                                  ? undefined
+                                  : String(findingsPage - 1),
+                            })
+                          }
+                          disabled={findingsPage === 1}
+                        />
+                      </PaginationItem>
+                      <PaginationItem>
+                        <span className="px-2 font-mono text-xs tabular-nums text-muted-foreground">
+                          {findingsPage}/{findingsPages}
+                        </span>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <PaginationNext
+                          onClick={() =>
+                            patchFindingsParams({
+                              page: String(
+                                Math.min(findingsPages, findingsPage + 1),
+                              ),
+                            })
+                          }
+                          disabled={findingsPage === findingsPages}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
                 )}
               </CardContent>
             </Card>
-          </div>
+
+            <div className="grid gap-5 lg:grid-cols-3 2xl:grid-cols-1">
+              {findingsCount > 0 ? (
+                <Card className="lg:col-span-1">
+                  <CardHeader className="py-3">
+                    <CardTitle className="text-sm tracking-wide">
+                      {t("severity")}
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      {t("severityDist", { count: findingsCount })}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <SeverityChart summary={scan.result_summary} />
+                  </CardContent>
+                </Card>
+              ) : null}
+
+              <Card className="lg:col-span-2">
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm tracking-wide">
+                    {t("scanInfo")}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 pt-0">
+                  <InfoRow label={t("scanId")} value={scan.id} mono />
+                  <InfoRow
+                    label={t("created")}
+                    value={new Date(scan.created_at).toLocaleString()}
+                  />
+                  {scan.started_at && (
+                    <InfoRow
+                      label={t("started")}
+                      value={new Date(scan.started_at).toLocaleString()}
+                    />
+                  )}
+                  {scan.completed_at && (
+                    <InfoRow
+                      label={t("completed")}
+                      value={new Date(scan.completed_at).toLocaleString()}
+                    />
+                  )}
+                  {scan.celery_task_id && (
+                    <InfoRow
+                      label={t("taskId")}
+                      value={scan.celery_task_id}
+                      mono
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           {scan.status === "completed" && findingsCount > 0 && (
@@ -546,6 +558,18 @@ function ScanDetail() {
               >
                 <Download className="mr-1 h-3.5 w-3.5" />
                 {t("execReport")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                title={t("pdfTitle")}
+                aria-label={t("pdfAria")}
+                data-testid="export-pdf"
+                onClick={() => downloadFile(id, "pdf")}
+              >
+                <Download className="mr-1 h-3.5 w-3.5" />
+                {t("pdf")}
               </Button>
               <Button
                 variant="outline"
