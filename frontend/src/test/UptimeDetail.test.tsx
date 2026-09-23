@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { render, screen, waitFor, within, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -69,6 +69,41 @@ function renderDetail(id = "m1") {
   return { qc, ...view };
 }
 
+const mobileListeners = new Set<() => void>();
+
+function setViewport(width: number) {
+  Object.defineProperty(window, "innerWidth", {
+    writable: true,
+    configurable: true,
+    value: width,
+  });
+  window.matchMedia = ((query: string) => ({
+    matches:
+      query.includes("max-width") && width < 768
+        ? true
+        : query.includes("min-width: 1280px") && width >= 1280,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: (...args: unknown[]) => {
+      const listener = args[1];
+      if (typeof listener === "function") mobileListeners.add(listener as () => void);
+    },
+    removeEventListener: (...args: unknown[]) => {
+      mobileListeners.delete(args[1] as () => void);
+    },
+    dispatchEvent: () => false,
+  })) as typeof window.matchMedia;
+}
+
+function fireViewportChange() {
+  act(() => {
+    mobileListeners.forEach((listener) => listener());
+    window.dispatchEvent(new Event("resize"));
+  });
+}
+
 function formatStamp(iso: string): string {
   return new Date(iso).toLocaleString("en-US", {
     year: "numeric",
@@ -80,7 +115,21 @@ function formatStamp(iso: string): string {
 }
 
 describe("UptimeDetail", () => {
+  const originalMatchMedia = window.matchMedia;
+  const originalInnerWidth = window.innerWidth;
+
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia;
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: originalInnerWidth,
+    });
+    mobileListeners.clear();
+  });
+
   beforeEach(() => {
+    setViewport(1024);
     mockGet.mockReset();
     mockSamples.mockReset();
     mockEvents.mockReset();
@@ -333,12 +382,8 @@ describe("UptimeDetail", () => {
       ).toBeInTheDocument(),
     );
     unmount();
-    Object.defineProperty(window, "innerWidth", {
-      writable: true,
-      configurable: true,
-      value: 375,
-    });
-    window.dispatchEvent(new Event("resize"));
+    setViewport(375);
+    fireViewportChange();
     renderDetail();
     await waitFor(() =>
       expect(
@@ -346,8 +391,110 @@ describe("UptimeDetail", () => {
       ).toBeInTheDocument(),
     );
     expect(screen.getByTestId("uptime-sample-pagination")).toHaveTextContent(
-      "1/2",
+      "1/8",
     );
+  });
+
+  it("caps mobile outage pages at 5 rows with a 1/3 pager for 12 outages", async () => {
+    const user = userEvent.setup();
+    setViewport(375);
+    mockEvents.mockResolvedValue(makeOutageEvents(12));
+    renderDetail();
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("uptime-outage-pagination"),
+      ).toBeInTheDocument(),
+    );
+    expect(screen.getAllByTestId("uptime-outage-row")).toHaveLength(5);
+    expect(screen.getByTestId("uptime-outage-pagination")).toHaveTextContent(
+      "1/3",
+    );
+    await user.click(
+      screen
+        .getByTestId("uptime-outage-pagination")
+        .querySelector('button[aria-label="Next page"]') as HTMLElement,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("uptime-outage-pagination")).toHaveTextContent(
+        "2/3",
+      ),
+    );
+    expect(screen.getAllByTestId("uptime-outage-row")).toHaveLength(5);
+  });
+
+  it("requests mobile check pages with limit 10 and shows the pager", async () => {
+    setViewport(375);
+    mockSamples.mockResolvedValue({
+      items: Array.from({ length: 10 }, (_, i) => ({
+        id: `s${i}`,
+        checked_at: `2026-09-17T11:${String(i).padStart(2, "0")}:00Z`,
+        ok: true,
+        latency_ms: 10,
+        status_code: 200,
+        error: null,
+      })),
+      total: 25,
+    });
+    renderDetail();
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("uptime-sample-pagination"),
+      ).toBeInTheDocument(),
+    );
+    await waitFor(() => {
+      const calls = mockSamples.mock.calls;
+      const last = calls[calls.length - 1];
+      expect(last?.[1]).toMatchObject({ limit: 10, offset: 0 });
+    });
+    expect(screen.getByTestId("uptime-sample-pagination")).toHaveTextContent(
+      "1/3",
+    );
+    expect(screen.getAllByTestId("uptime-history-row")).toHaveLength(20);
+  });
+
+  it("resets both pages when the viewport crosses the mobile breakpoint", async () => {
+    const user = userEvent.setup();
+    mockEvents.mockResolvedValue(makeOutageEvents(12));
+    mockSamples.mockResolvedValue({
+      items: Array.from({ length: 50 }, (_, i) => ({
+        id: `s${i}`,
+        checked_at: `2026-09-17T11:${String(i).padStart(2, "0")}:00Z`,
+        ok: true,
+        latency_ms: 10,
+        status_code: 200,
+        error: null,
+      })),
+      total: 80,
+    });
+    renderDetail();
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("uptime-outage-pagination"),
+      ).toBeInTheDocument(),
+    );
+    await user.click(
+      screen
+        .getByTestId("uptime-outage-pagination")
+        .querySelector('button[aria-label="Next page"]') as HTMLElement,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("uptime-outage-pagination")).toHaveTextContent(
+        "2/2",
+      ),
+    );
+    setViewport(375);
+    fireViewportChange();
+    await waitFor(() =>
+      expect(screen.getByTestId("uptime-outage-pagination")).toHaveTextContent(
+        "1/3",
+      ),
+    );
+    expect(screen.getAllByTestId("uptime-outage-row")).toHaveLength(5);
+    await waitFor(() => {
+      const calls = mockSamples.mock.calls;
+      const last = calls[calls.length - 1];
+      expect(last?.[1]).toMatchObject({ limit: 10, offset: 0 });
+    });
   });
 
   it("renders probe log as mobile cards and desktop table with the same rows", async () => {
