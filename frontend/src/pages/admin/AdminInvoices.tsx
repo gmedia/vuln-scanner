@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Receipt, Loader2, Printer } from "lucide-react";
+import { Download, Loader2, Printer, Receipt } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -24,7 +24,12 @@ import {
   TableRow,
 } from "@/components/ui/Table";
 import PageHeader from "@/components/layout/PageHeader";
-import { adminApi, type InvoiceItem, type InvoiceProduct } from "@/api/admin";
+import {
+  adminApi,
+  downloadAdminInvoicePdf,
+  type InvoiceItem,
+  type InvoiceProduct,
+} from "@/api/admin";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
@@ -135,6 +140,14 @@ function AdminInvoices() {
       void qc.invalidateQueries({ queryKey: ["admin-invoices"] });
     },
   });
+
+  async function downloadPdf(inv: InvoiceItem) {
+    try {
+      await downloadAdminInvoicePdf(inv.id, inv.number);
+    } catch {
+      toast.error(t("invoicePdfFail"));
+    }
+  }
 
   return (
     <div className="w-full space-y-6" data-testid="admin-invoices-page">
@@ -351,6 +364,20 @@ function AdminInvoices() {
                         >
                           <Printer className="mr-1 h-3.5 w-3.5" />
                           {t("invoicePrint")}
+                        </Button>
+                      ) : null}
+                      {inv.status === "sent" || inv.status === "paid" ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="no-print"
+                          data-testid="admin-invoice-pdf"
+                          aria-label={`${inv.number} pdf`}
+                          onClick={() => void downloadPdf(inv)}
+                        >
+                          <Download className="mr-1 h-3.5 w-3.5" />
+                          {t("invoicePdf")}
                         </Button>
                       ) : null}
                       {inv.status === "draft" ? (

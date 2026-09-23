@@ -596,6 +596,32 @@ export async function voidAdminInvoice(id: string): Promise<InvoiceItem> {
   return data;
 }
 
+function saveBlob(blob: Blob, filename: string): void {
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+export async function downloadAdminInvoicePdf(
+  id: string,
+  number: string,
+): Promise<void> {
+  const resp = await api.get<Blob>(`/api/admin/invoices/${id}/export`, {
+    params: { format: "pdf" },
+    responseType: "blob",
+  });
+  const data: unknown = resp.data;
+  if (!(data instanceof Blob)) {
+    throw new Error("invoice_pdf_not_blob");
+  }
+  saveBlob(data, `invoice_${number}.pdf`);
+}
+
 export const adminApi = {
   getStats: getAdminStats,
   getUsers: getAdminUsers,
@@ -636,4 +662,5 @@ export const adminApi = {
   sendAdminInvoice,
   payAdminInvoice,
   voidAdminInvoice,
+  downloadAdminInvoicePdf,
 };

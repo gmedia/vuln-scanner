@@ -64,6 +64,8 @@
   "billingAdminLink": "Buka invoice admin",
   "billingBank": "Transfer ke {{name}} {{account}} ({{holder}})",
   "invoicePrint": "Cetak",
+  "invoicePdf": "PDF",
+  "invoicePdfFail": "Gagal mengunduh PDF invoice",
   "invoicePrintTitle": "Invoice",
   "invoicePrintNumber": "Nomor",
   "invoicePrintBillTo": "Tagih ke",

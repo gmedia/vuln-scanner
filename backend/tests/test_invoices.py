@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
@@ -11,12 +13,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.database import get_db
 from app.main import app
-from app.models.invoice import SkuCatalog
+from app.models.invoice import OrgInvoice, SkuCatalog
 from app.models.organization import Organization, OrganizationMembership
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
 from app.services.invoice import bank_copy
+from app.services.invoice_html import render_invoice_html
 from app.services.organization import ensure_personal_org
+from app.services.scan_pdf import ScanPdfUnavailableError
 
 
 async def _make_user(db: AsyncSession, email: str, *, is_admin: bool = False) -> User:
@@ -440,6 +444,284 @@ async def test_send_includes_bank_draft_does_not(db_session, ctx, monkeypatch: p
                 "bank_account": "0000000000",
                 "bank_holder": "Acme Holder",
             }
+    finally:
+        app.dependency_overrides.clear()
+
+
+_FAKE_PDF = b"%PDF-1.4\n mock"
+
+
+def _sample_invoice(*, status: str, product: str = "host", sku: str = "multi") -> OrgInvoice:
+    return OrgInvoice(
+        id=uuid.uuid4(),
+        organization_id=uuid.uuid4(),
+        number="SX-202609-0099",
+        product=product,
+        sku=sku,
+        amount_idr=900_000,
+        period_start=datetime(2026, 9, 1, tzinfo=UTC),
+        period_end=datetime(2026, 9, 30, tzinfo=UTC),
+        status=status,
+        bank_ref="TF-UNIT" if status == "paid" else None,
+        created_at=datetime(2026, 9, 2, tzinfo=UTC),
+    )
+
+
+def test_render_invoice_html_sent_includes_bank_and_host_seats() -> None:
+    html = render_invoice_html(
+        _sample_invoice(status="sent"),
+        org_name="Acme <x>",
+        bank={"bank_name": "Bank Contoh", "bank_account": "999", "bank_holder": "Holder"},
+    )
+    assert "Sinexis Host Protect" in html
+    assert "<td class=\"num\">10</td>" in html
+    assert "999" in html
+    assert "Acme &lt;x&gt;" in html
+    assert "Payment" in html
+
+
+def test_render_invoice_html_paid_omits_bank_account() -> None:
+    html = render_invoice_html(
+        _sample_invoice(status="paid", product="scan", sku="basic"),
+        org_name="Acme",
+        bank={"bank_name": "Bank Contoh", "bank_account": "SHOULD-NOT", "bank_holder": "Holder"},
+    )
+    assert "SHOULD-NOT" not in html
+    assert "Payment" not in html
+    assert "TF-UNIT" in html
+    assert "<td class=\"num\">1</td>" in html
+
+
+def test_render_invoice_html_draft_omits_bank() -> None:
+    html = render_invoice_html(
+        _sample_invoice(status="draft", product="scan", sku="pro"),
+        org_name=None,
+        bank={"bank_name": "Bank Contoh", "bank_account": "SHOULD-NOT", "bank_holder": "Holder"},
+    )
+    assert "SHOULD-NOT" not in html
+    assert "Bill to —" in html
+    assert "<td class=\"num\">3</td>" in html
+
+
+async def _create_and_send(client: AsyncClient, ctx: dict[str, object]) -> tuple[str, str]:
+    org = ctx["org"]
+    admin = ctx["admin"]
+    assert isinstance(org, Organization)
+    assert isinstance(admin, User)
+    created = await client.post(
+        "/api/admin/invoices",
+        headers=_auth(admin),
+        json={"organization_id": str(org.id), "sku": "basic"},
+    )
+    assert created.status_code == 201
+    inv_id = str(created.json()["id"])
+    number = str(created.json()["number"])
+    sent = await client.post(f"/api/admin/invoices/{inv_id}/send", headers=_auth(admin))
+    assert sent.status_code == 200
+    return inv_id, number
+
+
+@pytest.mark.asyncio
+async def test_admin_export_pdf_sent_includes_bank(db_session, ctx, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "invoice_bank_name", "Bank Contoh")
+    monkeypatch.setattr(settings, "invoice_bank_account", "0000000000")
+    monkeypatch.setattr(settings, "invoice_bank_holder", "Acme Holder")
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            inv_id, number = await _create_and_send(client, ctx)
+            with patch("app.services.invoice.render_scan_pdf", return_value=_FAKE_PDF) as mock_pdf:
+                resp = await client.get(
+                    f"/api/admin/invoices/{inv_id}/export",
+                    headers=_auth(ctx["admin"]),
+                    params={"format": "pdf"},
+                )
+            assert resp.status_code == 200
+            assert "application/pdf" in resp.headers.get("content-type", "")
+            disposition = resp.headers.get("content-disposition", "")
+            assert "attachment" in disposition
+            assert f'filename="invoice_{number}.pdf"' in disposition
+            assert resp.content.startswith(b"%PDF")
+            html_arg = mock_pdf.call_args[0][0]
+            assert "0000000000" in html_arg
+            assert "Invoice Org" in html_arg
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_admin_export_pdf_paid_omits_bank_account(db_session, ctx, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "invoice_bank_account", "SHOULD-NOT")
+    monkeypatch.setattr(settings, "invoice_bank_name", "Bank Contoh")
+    monkeypatch.setattr(settings, "invoice_bank_holder", "Acme Holder")
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            inv_id, _number = await _create_and_send(client, ctx)
+            paid = await client.post(
+                f"/api/admin/invoices/{inv_id}/paid",
+                headers=_auth(ctx["admin"]),
+                json={"bank_ref": "TF-PDF-1"},
+            )
+            assert paid.status_code == 200
+            with patch("app.services.invoice.render_scan_pdf", return_value=_FAKE_PDF) as mock_pdf:
+                resp = await client.get(
+                    f"/api/admin/invoices/{inv_id}/export",
+                    headers=_auth(ctx["admin"]),
+                    params={"format": "pdf"},
+                )
+            assert resp.status_code == 200
+            html_arg = mock_pdf.call_args[0][0]
+            assert "SHOULD-NOT" not in html_arg
+            assert "TF-PDF-1" in html_arg
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_admin_export_pdf_draft_omits_bank(db_session, ctx, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "invoice_bank_account", "SHOULD-NOT")
+    monkeypatch.setattr(settings, "invoice_bank_name", "Bank Contoh")
+    monkeypatch.setattr(settings, "invoice_bank_holder", "Acme Holder")
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={"organization_id": str(ctx["org"].id), "sku": "basic"},
+            )
+            inv_id = created.json()["id"]
+            with patch("app.services.invoice.render_scan_pdf", return_value=_FAKE_PDF) as mock_pdf:
+                resp = await client.get(
+                    f"/api/admin/invoices/{inv_id}/export",
+                    headers=_auth(ctx["admin"]),
+                    params={"format": "pdf"},
+                )
+            assert resp.status_code == 200
+            assert "SHOULD-NOT" not in mock_pdf.call_args[0][0]
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_admin_export_pdf_404_and_403_and_400(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            missing = await client.get(
+                f"/api/admin/invoices/{uuid.uuid4()}/export",
+                headers=_auth(ctx["admin"]),
+                params={"format": "pdf"},
+            )
+            assert missing.status_code == 404
+            assert missing.json()["detail"] == "Invoice not found"
+            forbidden = await client.get(
+                f"/api/admin/invoices/{uuid.uuid4()}/export",
+                headers=_auth(ctx["owner"]),
+                params={"format": "pdf"},
+            )
+            assert forbidden.status_code == 403
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={"organization_id": str(ctx["org"].id), "sku": "basic"},
+            )
+            bad = await client.get(
+                f"/api/admin/invoices/{created.json()['id']}/export",
+                headers=_auth(ctx["admin"]),
+                params={"format": "html"},
+            )
+            assert bad.status_code == 400
+            assert bad.json()["detail"] == "format must be 'pdf'"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_admin_export_pdf_unavailable_503(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            inv_id, _number = await _create_and_send(client, ctx)
+            with patch(
+                "app.services.invoice.render_scan_pdf",
+                side_effect=ScanPdfUnavailableError("PDF rendering unavailable"),
+            ):
+                resp = await client.get(
+                    f"/api/admin/invoices/{inv_id}/export",
+                    headers=_auth(ctx["admin"]),
+                    params={"format": "pdf"},
+                )
+            assert resp.status_code == 503
+            assert resp.json()["detail"] == "PDF rendering unavailable"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_org_export_pdf_owner_member_and_other_org(db_session, ctx, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "invoice_bank_account", "0000000000")
+    monkeypatch.setattr(settings, "invoice_bank_name", "Bank Contoh")
+    monkeypatch.setattr(settings, "invoice_bank_holder", "Acme Holder")
+    other = Organization(
+        id=uuid.uuid4(),
+        name="Other Org",
+        slug=f"other-org-{uuid.uuid4().hex[:6]}",
+        kind="company",
+        sku="basic",
+        created_by_user_id=ctx["owner"].id,
+    )
+    db_session.add(other)
+    await db_session.flush()
+    db_session.add(
+        OrganizationMembership(
+            id=uuid.uuid4(),
+            organization_id=other.id,
+            user_id=ctx["owner"].id,
+            role="owner",
+        )
+    )
+    await db_session.commit()
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            inv_id, number = await _create_and_send(client, ctx)
+            with patch("app.services.invoice.render_scan_pdf", return_value=_FAKE_PDF):
+                owner = await client.get(
+                    f"/api/orgs/{ctx['org'].id}/invoices/{inv_id}/export",
+                    headers=_auth(ctx["owner"], ctx["org"].id),
+                    params={"format": "pdf"},
+                )
+            assert owner.status_code == 200
+            assert owner.content.startswith(b"%PDF")
+            assert f'filename="invoice_{number}.pdf"' in owner.headers.get("content-disposition", "")
+            member = await client.get(
+                f"/api/orgs/{ctx['org'].id}/invoices/{inv_id}/export",
+                headers=_auth(ctx["member"], ctx["org"].id),
+                params={"format": "pdf"},
+            )
+            assert member.status_code == 403
+            foreign = await client.get(
+                f"/api/orgs/{other.id}/invoices/{inv_id}/export",
+                headers=_auth(ctx["owner"], other.id),
+                params={"format": "pdf"},
+            )
+            assert foreign.status_code == 404
+            assert foreign.json()["detail"] == "Invoice not found"
+            bad = await client.get(
+                f"/api/orgs/{ctx['org'].id}/invoices/{inv_id}/export",
+                headers=_auth(ctx["owner"], ctx["org"].id),
+                params={"format": "html"},
+            )
+            assert bad.status_code == 400
+            assert bad.json()["detail"] == "format must be 'pdf'"
     finally:
         app.dependency_overrides.clear()
 

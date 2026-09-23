@@ -1,7 +1,7 @@
 # Spec: Sinexis Invoice v1 (independent of GMD)
 
 **Status:** **Shipped on `main`** (I1–I9 pay loop). Owner: Sinexis bills Scan SKU **in-app**, not as a GMD colo/VPS `service_id`.
-**Seller copy:** env `INVOICE_BANK_*` only. No NPWP/PPN engine in v1 (tax_idr implicit 0). **HTML print** = product-depth track **S1b** in [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md) — not this pay-loop PR. **PDF library stays out (I10).**
+**Seller copy:** env `INVOICE_BANK_*` only. No NPWP/PPN engine in v1 (tax_idr implicit 0). **HTML print** = product-depth track **S1b** in [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md). **I10 PDF shipped:** `GET .../export?format=pdf` reuses `render_scan_pdf` (no new PDF library, no gateway).
 **Does not** add Midtrans/Xendit. Does **not** merge AI Gateway IDR wallet. Does **not** mix HPP COGS into invoices. Does **not** revive Scan credits as a meter.
 
 ---
@@ -19,7 +19,7 @@
 | **I7** | Unpaid | Does **not** auto-downgrade `org.sku`. Void + admin set sku is ops. Seat caps still follow current `org.sku`. |
 | **I8** | Customer surface | Org owner/admin: read-only invoice list + bank copy when `sent`. No self-serve upgrade. |
 | **I9** | Bank copy | Env `INVOICE_BANK_NAME` / `INVOICE_BANK_ACCOUNT` / `INVOICE_BANK_HOLDER`. CI `append_if_set` on `push` to `main` (empty GitHub secret does not wipe host). Compose **backend** must interpolate those keys (host `.env` is not auto-mounted). Never commit real account numbers. |
-| **I10** | Out | Gateway, **PDF library**, dunning, PPN, subscriptions auto-renew job, AI top-up, GMD API, customer SID/PII in git. **Host invoice is in** (H9). HTML print is **not** a PDF library — follow-on [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md) **S1b**. |
+| **I10** | **PDF shipped** | `format=pdf` on admin and org invoice export. Reuses `render_scan_pdf`. Bank block only when `sent`. Still **out:** gateway, dunning, PPN, auto-renew, AI top-up, GMD API, customer SID/PII in git. HTML print remains [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md) **S1b**. |
 
 List prices (do not invent):
 
@@ -120,9 +120,9 @@ Do **not** restyle kit. Tokens from `:root`. `Button` / `Select` only.
 
 ## 4) Out
 
-- Payment gateway, e-meterai, PDF binary, auto-renew beat job.
+- Payment gateway, e-meterai, auto-renew beat job.
 - Guard/SIEM `service_id`. Host invoice is **in** (H9).
-- HTML print UI — **S1b shipped** [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md) (browser `window.print`; still **no** PDF library).
+- HTML print UI — **S1b shipped** [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md) (browser `window.print`). **I10 PDF** is `format=pdf` via `render_scan_pdf`, not a second library.
 - Invoice **Send** is a **status flip**, not SMTP. User-side mail log is [`inbox-delivered-v1.md`](inbox-delivered-v1.md) — **do not** email invoices in that epic.
 - Writing `users.credits` or `ai_wallets`.
 - Mixing this page into `/admin/hpp` or leftover `/admin/pricing`.
@@ -142,3 +142,5 @@ Do **not** restyle kit. Tokens from `:root`. `Button` / `Select` only.
 - [x] pytest: create Host invoice snapshots Host list_idr; Scan+Host same period OK; duplicate Host 409; paid Host does not set `org.sku`; `invoicable=false` → 400.
 - [x] Vitest: admin Host product picker + SKU filter; print Host line/footer; billing copy Scan+Host.
 - [x] No real bank account in git.
+- [x] pytest: admin and org `export?format=pdf` returns `%PDF`; bank account only when `sent`; 404/403; 503 detail `PDF rendering unavailable`.
+- [x] Vitest: PDF button on `sent`/`paid` only; download uses invoice number.

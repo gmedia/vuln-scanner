@@ -3,12 +3,13 @@ from __future__ import annotations
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
 from app.middleware.rate_limit import RateLimiter
+from app.models.organization import Organization
 from app.models.user import User
 from app.schemas.invoice import InvoiceItem, InvoiceListResponse
 from app.schemas.organization import (
@@ -26,7 +27,7 @@ from app.schemas.organization import (
 )
 from app.services.auth import create_access_token, create_refresh_token, get_current_user
 from app.services.email import send_invite_email
-from app.services.invoice import InvoiceService, to_item
+from app.services.invoice import InvoiceService, invoice_pdf_response, to_item
 from app.services.organization import OrganizationService, require_membership
 
 router = APIRouter(tags=["organizations"])
@@ -256,3 +257,21 @@ async def get_org_invoice(
     if inv.organization_id != org_id:
         raise HTTPException(status_code=404, detail="Invoice not found")
     return InvoiceItem.model_validate(to_item(inv, org_name=None, include_bank=inv.status == "sent"))
+
+
+@router.get("/orgs/{org_id}/invoices/{invoice_id}/export")
+async def export_org_invoice_pdf(
+    org_id: UUID,
+    invoice_id: UUID,
+    format: str = Query(default="pdf"),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    await require_membership(db, org_id, current_user.id, min_role="admin")
+    inv = await InvoiceService(db).get(invoice_id)
+    if inv.organization_id != org_id:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    if format != "pdf":
+        raise HTTPException(status_code=400, detail="format must be 'pdf'")
+    org = await db.get(Organization, org_id)
+    return invoice_pdf_response(inv, org_name=org.name if org is not None else None)

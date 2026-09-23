@@ -2,14 +2,15 @@ import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  AlertTriangle,
   Building2,
   ClipboardList,
+  Download,
   Loader2,
   Printer,
   Receipt,
   Trash2,
   UserPlus,
-  AlertTriangle,
 } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import {
@@ -38,11 +39,13 @@ import {
   canManageMembers,
   createInvite,
   createOrg,
+  downloadOrgInvoicePdf,
   listInvites,
   listMembers,
   listOrgInvoices,
   revokeInvite,
   type InviteRole,
+  type OrgInvoiceItem,
 } from "@/api/orgs";
 import type { ApiError } from "@/lib/utils";
 import { toast } from "sonner";
@@ -94,6 +97,15 @@ function WorkspaceSettings() {
   const role = activeRole();
   const canManage = canManageMembers(role);
   const { printing, startPrint } = useInvoicePrint();
+
+  async function downloadPdf(inv: OrgInvoiceItem) {
+    if (!orgId) return;
+    try {
+      await downloadOrgInvoicePdf(orgId, inv.id, inv.number);
+    } catch {
+      toast.error(t("invoicePdfFail"));
+    }
+  }
 
   const activeOrg = useMemo(
     () => organizations.find((o) => o.id === orgId),
@@ -366,6 +378,20 @@ function WorkspaceSettings() {
                       >
                         <Printer className="mr-1 h-3.5 w-3.5" />
                         {t("invoicePrint")}
+                      </Button>
+                    ) : null}
+                    {inv.status === "sent" || inv.status === "paid" ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="no-print"
+                        data-testid="invoice-pdf"
+                        aria-label={`${inv.number} pdf`}
+                        onClick={() => void downloadPdf(inv)}
+                      >
+                        <Download className="mr-1 h-3.5 w-3.5" />
+                        {t("invoicePdf")}
                       </Button>
                     ) : null}
                     {inv.status === "sent" && inv.bank ? (

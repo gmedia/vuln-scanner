@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,7 +21,7 @@ from app.schemas.invoice import (
     SkuCatalogUpdateRequest,
 )
 from app.services.auth import get_current_admin
-from app.services.invoice import InvoiceService, to_item
+from app.services.invoice import InvoiceService, invoice_pdf_response, to_item
 
 router = APIRouter(prefix="/admin", tags=["admin-invoices"])
 admin_limiter = RateLimiter(
@@ -180,3 +180,21 @@ async def void_invoice(
         return limit_response
     inv = await InvoiceService(db).void(invoice_id)
     return InvoiceItem.model_validate(to_item(inv, org_name=None, include_bank=False))
+
+
+@router.get("/invoices/{invoice_id}/export")
+async def export_invoice_pdf(
+    invoice_id: UUID,
+    request: Request,
+    current_admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+    format: str = Query(default="pdf"),
+) -> Response:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        return limit_response
+    inv = await InvoiceService(db).get(invoice_id)
+    if format != "pdf":
+        raise HTTPException(status_code=400, detail="format must be 'pdf'")
+    org = await db.get(Organization, inv.organization_id)
+    return invoice_pdf_response(inv, org_name=org.name if org is not None else None)
