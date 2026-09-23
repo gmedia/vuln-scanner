@@ -192,6 +192,7 @@
   "emailLogsKindScanDiff": "Scan diff",
   "emailLogsKindUptime": "Uptime",
   "emailLogsKindHostProtect": "Host Protect",
+  "emailLogsKindHostWaf": "Host WAF",
   "emailLogsStatusSent": "Sent",
   "emailLogsStatusFailed": "Failed",
   "colKind": "Kind",
