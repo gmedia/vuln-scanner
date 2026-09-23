@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import AdminInvoices from "@/pages/admin/AdminInvoices";
 import i18n from "@/i18n";
 import { toast } from "sonner";
-import { adminApi } from "@/api/admin";
+import { adminApi, downloadAdminInvoicePdf } from "@/api/admin";
 
 vi.mock("@tanstack/react-query", () => ({
   useQuery: vi.fn(),
@@ -22,6 +22,7 @@ vi.mock("@/api/admin", () => ({
     payAdminInvoice: vi.fn(),
     voidAdminInvoice: vi.fn(),
   },
+  downloadAdminInvoicePdf: vi.fn(),
 }));
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -277,6 +278,7 @@ describe("AdminInvoices", () => {
   it("does not show print on a draft invoice", () => {
     render(<AdminInvoices />);
     expect(screen.queryByTestId("admin-invoice-print")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("admin-invoice-pdf")).not.toBeInTheDocument();
   });
 
   it("prints a sent invoice with bank on the sheet", async () => {
@@ -329,6 +331,31 @@ describe("AdminInvoices", () => {
       "0000000000",
     );
     await waitFor(() => expect(print).toHaveBeenCalled());
+    await userEvent.click(screen.getByTestId("admin-invoice-pdf"));
+    expect(downloadAdminInvoicePdf).toHaveBeenCalledWith(
+      "inv-1",
+      "SX-202609-0001",
+    );
+  });
+
+  it("toasts when invoice pdf download fails", async () => {
+    vi.mocked(downloadAdminInvoicePdf).mockRejectedValueOnce(new Error("down"));
+    vi.mocked(useQuery).mockImplementation(((opts: { queryKey: unknown[] }) => {
+      const key = String(opts.queryKey[0]);
+      if (key === "admin-sku-catalog") {
+        return { data: catalog, isLoading: false };
+      }
+      if (key === "admin-orgs") {
+        return { data: { items: [], total: 0 }, isLoading: false };
+      }
+      return {
+        data: { items: [{ ...invoices[0], status: "paid" }], total: 1 },
+        isLoading: false,
+      };
+    }) as typeof useQuery);
+    render(<AdminInvoices />);
+    await userEvent.click(screen.getByTestId("admin-invoice-pdf"));
+    expect(toast.error).toHaveBeenCalledWith("Could not download invoice PDF");
   });
 
   it("lists Host in the product picker and filters SKU to Host catalog rows", async () => {

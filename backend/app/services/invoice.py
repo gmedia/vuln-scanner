@@ -4,7 +4,7 @@ import uuid
 from calendar import monthrange
 from datetime import UTC, datetime
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +12,8 @@ from app.config import settings
 from app.models.invoice import OrgInvoice, SkuCatalog
 from app.models.organization import Organization
 from app.models.user import User
+from app.services.invoice_html import render_invoice_html
+from app.services.scan_pdf import ScanPdfUnavailableError, render_scan_pdf
 
 
 def month_bounds_utc(when: datetime | None = None) -> tuple[datetime, datetime]:
@@ -59,6 +61,24 @@ def to_item(inv: OrgInvoice, *, org_name: str | None, include_bank: bool) -> dic
         "organization_name": org_name,
         "bank": bank_copy(include=include_bank),
     }
+
+
+def invoice_pdf_response(inv: OrgInvoice, *, org_name: str | None) -> Response:
+    html = render_invoice_html(
+        inv,
+        org_name=org_name,
+        bank=bank_copy(include=inv.status == "sent"),
+    )
+    try:
+        pdf = render_scan_pdf(html)
+    except ScanPdfUnavailableError as exc:
+        raise HTTPException(status_code=503, detail="PDF rendering unavailable") from exc
+    filename = f'attachment; filename="invoice_{inv.number}.pdf"'
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": filename},
+    )
 
 
 class InvoiceService:

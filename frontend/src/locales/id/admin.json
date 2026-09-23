@@ -118,6 +118,8 @@
   "invoicePaid_scan": "Ditandai lunas — SKU Scan org diterapkan",
   "invoicePaid_host": "Ditandai lunas — invoice Host; SKU Scan org tidak berubah",
   "invoicePrint": "Cetak",
+  "invoicePdf": "PDF",
+  "invoicePdfFail": "Gagal mengunduh PDF invoice",
   "invoiceVoid": "Batalkan",
   "invoiceVoided": "Invoice dibatalkan",
   "invoicesEmpty": "Belum ada invoice.",

@@ -5,7 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
 import WorkspaceSettings from "@/pages/WorkspaceSettings";
-import { listOrgInvoices } from "@/api/orgs";
+import { downloadOrgInvoicePdf, listOrgInvoices } from "@/api/orgs";
 
 vi.mock("@/api/orgs", async () => {
   const actual =
@@ -15,6 +15,7 @@ vi.mock("@/api/orgs", async () => {
     listMembers: vi.fn(async () => []),
     listInvites: vi.fn(async () => []),
     listOrgInvoices: vi.fn(async () => ({ items: [], total: 0 })),
+    downloadOrgInvoicePdf: vi.fn(async () => {}),
   };
 });
 
@@ -226,6 +227,7 @@ describe("WorkspaceSettings pilot checklist", () => {
     expect(await screen.findByText("SX-202609-0003")).toBeInTheDocument();
     expect(screen.queryByText(/Transfer to/)).not.toBeInTheDocument();
     expect(screen.queryByTestId("invoice-print")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("invoice-pdf")).not.toBeInTheDocument();
   });
 
   it("prints a sent invoice with bank copy on the sheet", async () => {
@@ -263,6 +265,12 @@ describe("WorkspaceSettings pilot checklist", () => {
       "0000000000",
     );
     await waitFor(() => expect(print).toHaveBeenCalled());
+    await userEvent.click(screen.getByTestId("invoice-pdf"));
+    expect(downloadOrgInvoicePdf).toHaveBeenCalledWith(
+      "org-a",
+      "inv-1",
+      "SX-202609-0001",
+    );
   });
 
   it("prints a paid invoice without bank account", async () => {

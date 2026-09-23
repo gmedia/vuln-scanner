@@ -118,6 +118,8 @@
   "invoicePaid_scan": "Marked paid — Scan org SKU applied",
   "invoicePaid_host": "Marked paid — Host invoice; Scan org SKU unchanged",
   "invoicePrint": "Print",
+  "invoicePdf": "PDF",
+  "invoicePdfFail": "Could not download invoice PDF",
   "invoiceVoid": "Void",
   "invoiceVoided": "Invoice voided",
   "invoicesEmpty": "No invoices yet.",

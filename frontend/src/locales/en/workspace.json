@@ -64,6 +64,8 @@
   "billingAdminLink": "Open admin invoices",
   "billingBank": "Transfer to {{name}} {{account}} ({{holder}})",
   "invoicePrint": "Print",
+  "invoicePdf": "PDF",
+  "invoicePdfFail": "Could not download invoice PDF",
   "invoicePrintTitle": "Invoice",
   "invoicePrintNumber": "Number",
   "invoicePrintBillTo": "Bill to",
