@@ -192,6 +192,7 @@
   "emailLogsKindScanDiff": "Diff scan",
   "emailLogsKindUptime": "Uptime",
   "emailLogsKindHostProtect": "Host Protect",
+  "emailLogsKindHostWaf": "Host WAF",
   "emailLogsStatusSent": "Terkirim",
   "emailLogsStatusFailed": "Gagal",
   "colKind": "Jenis",

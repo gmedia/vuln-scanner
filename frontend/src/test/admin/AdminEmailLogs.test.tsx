@@ -14,6 +14,46 @@ vi.mock("@/api/admin", () => ({
   adminApi: { getEmailLogs: vi.fn() },
 }));
 
+vi.mock("@/components/ui/Select", () => ({
+  Select: ({
+    children,
+    value,
+    onValueChange,
+  }: {
+    children?: React.ReactNode;
+    value?: string;
+    onValueChange?: (v: string) => void;
+  }) => (
+    <div data-testid="select-mock" data-value={value}>
+      {children}
+      <input
+        aria-label="select-probe"
+        value={value ?? ""}
+        onChange={(e) => onValueChange?.(e.target.value)}
+        style={{ display: "none" }}
+      />
+    </div>
+  ),
+  SelectTrigger: ({ children }: { children?: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  SelectValue: () => <span />,
+  SelectContent: ({ children }: { children?: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  SelectItem: ({
+    children,
+    value,
+  }: {
+    children?: React.ReactNode;
+    value?: string;
+  }) => (
+    <div role="option" aria-selected="false" data-value={value}>
+      {children}
+    </div>
+  ),
+}));
+
 function renderPage() {
   return render(
     <MemoryRouter>
@@ -67,6 +107,39 @@ describe("AdminEmailLogs", () => {
     expect(screen.getAllByText("u***@example.com").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Failed").length).toBeGreaterThan(0);
     expect(screen.getAllByText("SMTP timeout").length).toBeGreaterThan(0);
+  });
+
+  it("renders Host WAF label for host_waf rows", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: {
+        total: 1,
+        items: [
+          {
+            id: "2",
+            kind: "host_waf",
+            status: "sent",
+            recipient_masked: "w***@example.com",
+            attempts: 1,
+            error_message: null,
+            created_at: "2026-09-01T12:00:00Z",
+          },
+        ],
+      },
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+    renderPage();
+    expect(screen.getAllByText("Host WAF").length).toBeGreaterThan(0);
+  });
+
+  it("offers Host WAF in the kind filter", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: { items: [], total: 0 },
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+    renderPage();
+    expect(
+      screen.getByRole("option", { name: "Host WAF" }),
+    ).toBeInTheDocument();
   });
 
   it("shows page number buttons when total spans multiple pages", async () => {

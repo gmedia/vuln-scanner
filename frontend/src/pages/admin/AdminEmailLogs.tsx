@@ -68,6 +68,7 @@ const KINDS = [
   "scan_diff",
   "uptime",
   "host_protect",
+  "host_waf",
 ] as const;
 
 function formatTime(iso: string): string {
@@ -88,6 +89,7 @@ function kindLabel(kind: string, t: (k: string) => string): string {
     scan_diff: t("emailLogsKindScanDiff"),
     uptime: t("emailLogsKindUptime"),
     host_protect: t("emailLogsKindHostProtect"),
+    host_waf: t("emailLogsKindHostWaf"),
   };
   return map[kind] ?? kind;
 }
