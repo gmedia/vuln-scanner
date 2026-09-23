@@ -1,5 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { render, screen, waitFor, within, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  within,
+  act,
+  fireEvent,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -11,6 +18,31 @@ const mockSamples = vi.fn();
 const mockEvents = vi.fn();
 const mockStats = vi.fn();
 const mockPause = vi.fn();
+
+vi.mock("@/components/ui/DatePicker", () => ({
+  DatePicker: ({
+    id,
+    value,
+    onChange,
+    placeholder,
+    "aria-label": ariaLabel,
+  }: {
+    id?: string;
+    value: string;
+    onChange: (v: string) => void;
+    placeholder?: string;
+    "aria-label"?: string;
+  }) => (
+    <input
+      id={id}
+      data-testid={id}
+      aria-label={ariaLabel}
+      placeholder={placeholder}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  ),
+}));
 
 vi.mock("@/api/uptime", async () => {
   const actual = await vi.importActual<typeof import("@/api/uptime")>(
@@ -575,5 +607,235 @@ describe("UptimeDetail", () => {
     const row = screen.getByTestId("uptime-outage-row");
     expect(row.textContent).not.toContain(formatStamp(priorAt));
     expect(row.textContent).toContain(formatStamp(recoverAt));
+  });
+
+  it("drives events fetch with custom outage window", async () => {
+    renderDetail();
+    await waitFor(() =>
+      expect(screen.getByTestId("uptime-outage-filters")).toBeInTheDocument(),
+    );
+    expect(screen.getByTestId("uptime-outage-from")).toBeInTheDocument();
+    expect(screen.getByTestId("uptime-outage-to")).toBeInTheDocument();
+    const before = mockEvents.mock.calls.length;
+    const fromDay = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000);
+    const toDay = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const day = (d: Date) =>
+      d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+    fireEvent.change(screen.getByTestId("uptime-outage-from-input"), {
+      target: { value: day(fromDay) },
+    });
+    fireEvent.change(screen.getByTestId("uptime-outage-to-input"), {
+      target: { value: day(toDay) },
+    });
+    await waitFor(() =>
+      expect(mockEvents.mock.calls.length).toBeGreaterThan(before),
+    );
+    const last = mockEvents.mock.calls[mockEvents.mock.calls.length - 1]?.[1] as {
+      from: string;
+      until: string;
+      limit: number;
+    };
+    expect(last.limit).toBe(200);
+    const wantFrom = new Date(
+      fromDay.getFullYear(),
+      fromDay.getMonth(),
+      fromDay.getDate(),
+    );
+    const wantUntil = new Date(
+      toDay.getFullYear(),
+      toDay.getMonth(),
+      toDay.getDate(),
+      23,
+      59,
+      59,
+      999,
+    );
+    expect(new Date(last.from).getTime()).toBe(wantFrom.getTime());
+    expect(new Date(last.until).getTime()).toBe(wantUntil.getTime());
+    expect(
+      screen.queryByTestId("uptime-outage-range-error"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows error and falls back for reversed custom range", async () => {
+    renderDetail();
+    await waitFor(() =>
+      expect(screen.getByTestId("uptime-outage-filters")).toBeInTheDocument(),
+    );
+    const before = mockEvents.mock.calls.length;
+    const fromDay = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    const toDay = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const day = (d: Date) =>
+      d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+    fireEvent.change(screen.getByTestId("uptime-outage-from-input"), {
+      target: { value: day(fromDay) },
+    });
+    fireEvent.change(screen.getByTestId("uptime-outage-to-input"), {
+      target: { value: day(toDay) },
+    });
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("uptime-outage-range-error"),
+      ).toBeInTheDocument(),
+    );
+    expect(mockEvents.mock.calls.slice(before)).toHaveLength(0);
+  });
+
+  it("keeps tab window for partial custom range", async () => {
+    renderDetail();
+    await waitFor(() =>
+      expect(screen.getByTestId("uptime-outage-filters")).toBeInTheDocument(),
+    );
+    const before = mockEvents.mock.calls.length;
+    const fromDay = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const day =
+      fromDay.getFullYear() +
+      "-" +
+      pad(fromDay.getMonth() + 1) +
+      "-" +
+      pad(fromDay.getDate());
+    fireEvent.change(screen.getByTestId("uptime-outage-from-input"), {
+      target: { value: day },
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId("uptime-outage-from-input")).toHaveValue(day),
+    );
+    expect(
+      screen.queryByTestId("uptime-outage-range-error"),
+    ).not.toBeInTheDocument();
+    expect(mockEvents.mock.calls.slice(before)).toHaveLength(0);
+  });
+
+  it("rejects custom from older than 90 days", async () => {
+    renderDetail();
+    await waitFor(() =>
+      expect(screen.getByTestId("uptime-outage-filters")).toBeInTheDocument(),
+    );
+    const before = mockEvents.mock.calls.length;
+    const fromDay = new Date(Date.now() - 120 * 24 * 60 * 60 * 1000);
+    const toDay = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const day = (d: Date) =>
+      d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+    fireEvent.change(screen.getByTestId("uptime-outage-from-input"), {
+      target: { value: day(fromDay) },
+    });
+    fireEvent.change(screen.getByTestId("uptime-outage-to-input"), {
+      target: { value: day(toDay) },
+    });
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("uptime-outage-range-error"),
+      ).toBeInTheDocument(),
+    );
+    expect(mockEvents.mock.calls.slice(before)).toHaveLength(0);
+  });
+
+  it("clears custom window back to tab window", async () => {
+    renderDetail();
+    await waitFor(() =>
+      expect(screen.getByTestId("uptime-outage-filters")).toBeInTheDocument(),
+    );
+    const fromDay = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000);
+    const toDay = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const day = (d: Date) =>
+      d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+    fireEvent.change(screen.getByTestId("uptime-outage-from-input"), {
+      target: { value: day(fromDay) },
+    });
+    fireEvent.change(screen.getByTestId("uptime-outage-to-input"), {
+      target: { value: day(toDay) },
+    });
+    await waitFor(() =>
+      expect(mockEvents.mock.calls.length).toBeGreaterThan(1),
+    );
+    fireEvent.click(screen.getByTestId("uptime-outage-clear"));
+    await waitFor(() =>
+      expect(screen.getByTestId("uptime-outage-from-input")).toHaveValue(""),
+    );
+    expect(screen.getByTestId("uptime-outage-to-input")).toHaveValue("");
+    await waitFor(() => {
+      const calls = mockEvents.mock.calls;
+      const last = calls[calls.length - 1]?.[1] as {
+        from: string;
+        until: string;
+      };
+      const span =
+        new Date(last.until).getTime() - new Date(last.from).getTime();
+      expect(span).toBeLessThan(2 * 24 * 60 * 60 * 1000);
+    });
+    expect(
+      screen.queryByTestId("uptime-outage-range-error"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("resets outage pager on custom window change", async () => {
+    mockEvents.mockResolvedValue(makeOutageEvents(12));
+    renderDetail();
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("uptime-outage-pagination"),
+      ).toBeInTheDocument(),
+    );
+    fireEvent.click(
+      screen
+        .getByTestId("uptime-outage-pagination")
+        .querySelector('[aria-label="Next page"]') as HTMLElement,
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("uptime-outage-pagination"),
+      ).toHaveTextContent("2/3"),
+    );
+    const pairAt = new Date(Date.now() - 3 * 60 * 60 * 1000);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const today =
+      pairAt.getFullYear() +
+      "-" +
+      pad(pairAt.getMonth() + 1) +
+      "-" +
+      pad(pairAt.getDate());
+    mockEvents.mockResolvedValue([
+      {
+        id: "e-down-x",
+        from_state: "up",
+        to_state: "down",
+        at: new Date(pairAt.getTime() - 30 * 60 * 1000).toISOString(),
+        notified: true,
+        detail: "down x",
+      },
+      {
+        id: "e-up-x",
+        from_state: "down",
+        to_state: "up",
+        at: pairAt.toISOString(),
+        notified: true,
+        detail: "up x",
+      },
+    ]);
+    fireEvent.change(screen.getByTestId("uptime-outage-from-input"), {
+      target: { value: today },
+    });
+    fireEvent.change(screen.getByTestId("uptime-outage-to-input"), {
+      target: { value: today },
+    });
+    await waitFor(() => {
+      const calls = mockEvents.mock.calls;
+      const last = calls[calls.length - 1]?.[1] as {
+        from: string;
+        until: string;
+      };
+      expect(new Date(last.from).toISOString().slice(0, 10)).toBe(today);
+    });
+    await waitFor(() =>
+      expect(screen.getAllByTestId("uptime-outage-row")).toHaveLength(1),
+    );
+    expect(
+      screen.queryByTestId("uptime-outage-pagination"),
+    ).not.toBeInTheDocument();
   });
 });

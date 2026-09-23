@@ -87,5 +87,10 @@
   "timelineHint": "Bar is from state changes, not latency. Green = up, red = down.",
   "outagesTitle": "Outages",
   "outagesEmpty": "No outages in this range.",
-  "outageOngoing": "ongoing"
+  "outageOngoing": "ongoing",
+  "outageFrom": "From date",
+  "outageTo": "To date",
+  "outageClear": "Clear",
+  "outageCustomHint": "Custom window applies to outages and the bar only, up to 90 days back.",
+  "outageRangeError": "Invalid range. Keep start on or before end, within the last 90 days, and not in the future."
 }
