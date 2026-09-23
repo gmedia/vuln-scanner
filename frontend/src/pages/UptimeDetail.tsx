@@ -33,8 +33,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import i18n from "@/i18n";
 import { htmlLang, isAppLocale } from "@/i18n/locales";
 
-const SAMPLE_PAGE_SIZE = 50;
-const OUTAGE_PAGE_SIZE = 10;
+const SAMPLE_PAGE_SIZE = 20;
+const OUTAGE_PAGE_SIZE = 5;
 const RANGES: readonly UptimeRange[] = ["6h", "24h", "7d"];
 const RANGE_LABEL: Record<UptimeRange, "range6h" | "range24h" | "range7d"> = {
   "6h": "range6h",

@@ -239,7 +239,7 @@ describe("UptimeDetail", () => {
   it("resets sample page when the range chip changes", async () => {
     const user = userEvent.setup();
     mockSamples.mockResolvedValue({
-      items: Array.from({ length: 50 }, (_, i) => ({
+      items: Array.from({ length: 20 }, (_, i) => ({
         id: `s${i}`,
         checked_at: `2026-09-17T11:${String(i).padStart(2, "0")}:00Z`,
         ok: true,
@@ -257,7 +257,7 @@ describe("UptimeDetail", () => {
     await waitFor(() => {
       const calls = mockSamples.mock.calls;
       const last = calls[calls.length - 1];
-      expect(last?.[1]).toMatchObject({ limit: 50, offset: 0 });
+      expect(last?.[1]).toMatchObject({ limit: 20, offset: 0 });
     });
     expect(mockStats.mock.calls.length).toBeGreaterThan(1);
   });
@@ -317,9 +317,9 @@ describe("UptimeDetail", () => {
         screen.getByTestId("uptime-outage-pagination"),
       ).toBeInTheDocument(),
     );
-    expect(screen.getAllByTestId("uptime-outage-row")).toHaveLength(10);
+    expect(screen.getAllByTestId("uptime-outage-row")).toHaveLength(5);
     expect(screen.getByTestId("uptime-outage-pagination")).toHaveTextContent(
-      "1/2",
+      "1/3",
     );
     await user.click(
       screen
@@ -328,10 +328,10 @@ describe("UptimeDetail", () => {
     );
     await waitFor(() =>
       expect(screen.getByTestId("uptime-outage-pagination")).toHaveTextContent(
-        "2/2",
+        "2/3",
       ),
     );
-    expect(screen.getAllByTestId("uptime-outage-row")).toHaveLength(2);
+    expect(screen.getAllByTestId("uptime-outage-row")).toHaveLength(5);
   });
 
   it("resets the outage page when the range chip changes", async () => {
@@ -350,22 +350,23 @@ describe("UptimeDetail", () => {
     );
     await waitFor(() =>
       expect(screen.getByTestId("uptime-outage-pagination")).toHaveTextContent(
-        "2/2",
+        "2/3",
       ),
     );
-    expect(screen.getAllByTestId("uptime-outage-row")).toHaveLength(2);
+    expect(screen.getAllByTestId("uptime-outage-row")).toHaveLength(5);
     await user.click(screen.getByTestId("uptime-range-6h"));
     await waitFor(() =>
       expect(screen.getByTestId("uptime-outage-pagination")).toHaveTextContent(
-        "1/2",
+        "1/3",
       ),
     );
-    expect(screen.getAllByTestId("uptime-outage-row")).toHaveLength(10);
+    expect(screen.getAllByTestId("uptime-outage-row")).toHaveLength(5);
   });
 
   it("shows the sample pager under the same value condition on mobile and desktop", async () => {
+    setViewport(1024);
     mockSamples.mockResolvedValue({
-      items: Array.from({ length: 50 }, (_, i) => ({
+      items: Array.from({ length: 20 }, (_, i) => ({
         id: `s${i}`,
         checked_at: `2026-09-17T11:${String(i).padStart(2, "0")}:00Z`,
         ok: true,
@@ -381,6 +382,9 @@ describe("UptimeDetail", () => {
         screen.getByTestId("uptime-sample-pagination"),
       ).toBeInTheDocument(),
     );
+    expect(screen.getByTestId("uptime-sample-pagination")).toHaveTextContent(
+      "1/4",
+    );
     unmount();
     setViewport(375);
     fireViewportChange();
@@ -393,6 +397,9 @@ describe("UptimeDetail", () => {
     expect(screen.getByTestId("uptime-sample-pagination")).toHaveTextContent(
       "1/8",
     );
+    expect(
+      screen.getAllByTestId("uptime-history-row").length,
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it("caps mobile outage pages at 5 rows with a 1/3 pager for 12 outages", async () => {
@@ -456,7 +463,7 @@ describe("UptimeDetail", () => {
     const user = userEvent.setup();
     mockEvents.mockResolvedValue(makeOutageEvents(12));
     mockSamples.mockResolvedValue({
-      items: Array.from({ length: 50 }, (_, i) => ({
+      items: Array.from({ length: 20 }, (_, i) => ({
         id: `s${i}`,
         checked_at: `2026-09-17T11:${String(i).padStart(2, "0")}:00Z`,
         ok: true,
@@ -472,6 +479,10 @@ describe("UptimeDetail", () => {
         screen.getByTestId("uptime-outage-pagination"),
       ).toBeInTheDocument(),
     );
+    expect(screen.getByTestId("uptime-outage-pagination")).toHaveTextContent(
+      "1/3",
+    );
+    expect(screen.getAllByTestId("uptime-outage-row")).toHaveLength(5);
     await user.click(
       screen
         .getByTestId("uptime-outage-pagination")
@@ -479,7 +490,7 @@ describe("UptimeDetail", () => {
     );
     await waitFor(() =>
       expect(screen.getByTestId("uptime-outage-pagination")).toHaveTextContent(
-        "2/2",
+        "2/3",
       ),
     );
     setViewport(375);
