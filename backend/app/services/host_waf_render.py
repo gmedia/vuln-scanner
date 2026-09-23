@@ -668,6 +668,18 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         'SecRule REQUEST_URI "@rx (?i)/\\.env\\.bak($|[/?])" '
         "\"id:1149,phase:1,t:none,deny,status:403,msg:\\'sinexis.env.bak\\'\""
     )
+    rule_1150 = (
+        'SecRule REQUEST_URI "@rx (?i)/HNAP1" '
+        "\"id:1150,phase:1,t:none,deny,status:403,msg:\\'sinexis.hnap1\\'\""
+    )
+    rule_1151 = (
+        'SecRule REQUEST_URI "@rx (?i)(\\\\$\\\\{|jndi:(ldap|rmi|dns))" '
+        "\"id:1151,phase:1,t:none,deny,status:403,msg:\\'sinexis.jndi.probe\\'\""
+    )
+    rule_1152 = (
+        'SecRule REQUEST_URI "@rx (?i)invokefunction" '
+        "\"id:1152,phase:1,t:none,deny,status:403,msg:\\'sinexis.thinkphp.invoke\\'\""
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -841,6 +853,9 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         rule_1147,
         rule_1148,
         rule_1149,
+        rule_1150,
+        rule_1151,
+        rule_1152,
         extra.strip(),
     ]
     rules_body = pack_modsecurity_rules(units)

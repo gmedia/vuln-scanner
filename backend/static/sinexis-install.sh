@@ -893,6 +893,9 @@ SecRule REQUEST_URI "@rx (?i)/app/etc/local\\.xml" "id:1146,phase:1,t:none,deny,
 SecRule REQUEST_URI "@rx (?i)/boaform/admin/formLogin" "id:1147,phase:1,t:none,deny,status:403,msg:\'sinexis.boaform.login\'"
 SecRule REQUEST_URI "@rx (?i)/GponForm/diag_Form" "id:1148,phase:1,t:none,deny,status:403,msg:\'sinexis.gpon.diag\'"
 SecRule REQUEST_URI "@rx (?i)/\\.env\\.bak($|[/?])" "id:1149,phase:1,t:none,deny,status:403,msg:\'sinexis.env.bak\'"
+SecRule REQUEST_URI "@rx (?i)/HNAP1" "id:1150,phase:1,t:none,deny,status:403,msg:\'sinexis.hnap1\'"
+SecRule REQUEST_URI "@rx (?i)(\\$\\{|jndi:(ldap|rmi|dns))" "id:1151,phase:1,t:none,deny,status:403,msg:\'sinexis.jndi.probe\'"
+SecRule REQUEST_URI "@rx (?i)invokefunction" "id:1152,phase:1,t:none,deny,status:403,msg:\'sinexis.thinkphp.invoke\'"
 ';
 
 EOF
