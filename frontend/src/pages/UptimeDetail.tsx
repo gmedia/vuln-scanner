@@ -29,6 +29,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { UptimeHistoryPanel } from "@/components/uptime/UptimeHistoryPanel";
 import { explainUptimeError } from "@/components/uptime/uptimeErrors";
+import { useIsMobile } from "@/hooks/use-mobile";
 import i18n from "@/i18n";
 import { htmlLang, isAppLocale } from "@/i18n/locales";
 
@@ -222,6 +223,15 @@ export default function UptimeDetail() {
   const [range, setRange] = useState<UptimeRange>("24h");
   const [page, setPage] = useState(1);
   const [outagePage, setOutagePage] = useState(1);
+  const isMobile = useIsMobile();
+  const outageSize = isMobile ? 5 : OUTAGE_PAGE_SIZE;
+  const sampleSize = isMobile ? 10 : SAMPLE_PAGE_SIZE;
+  const [prevIsMobile, setPrevIsMobile] = useState(isMobile);
+  if (prevIsMobile !== isMobile) {
+    setPrevIsMobile(isMobile);
+    setPage(1);
+    setOutagePage(1);
+  }
   const window = useMemo(() => rangeWindow(range), [range]);
 
   const monitorQ = useQuery({
@@ -247,13 +257,13 @@ export default function UptimeDetail() {
     enabled: Boolean(id) && monitorQ.isSuccess,
   });
   const samplesQ = useQuery({
-    queryKey: ["uptime-samples", id, window.from, window.until, page],
+    queryKey: ["uptime-samples", id, window.from, window.until, page, sampleSize],
     queryFn: () =>
       listSamples(id as string, {
         from: window.from,
         until: window.until,
-        limit: SAMPLE_PAGE_SIZE,
-        offset: (page - 1) * SAMPLE_PAGE_SIZE,
+        limit: sampleSize,
+        offset: (page - 1) * sampleSize,
       }),
     enabled: Boolean(id) && monitorQ.isSuccess,
   });
@@ -289,15 +299,16 @@ export default function UptimeDetail() {
   );
   const samples = samplesQ.data?.items ?? [];
   const sampleTotal = samplesQ.data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(sampleTotal / SAMPLE_PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(sampleTotal / sampleSize));
+  const safePage = Math.min(page, totalPages);
   const outageTotalPages = Math.max(
     1,
-    Math.ceil(outages.length / OUTAGE_PAGE_SIZE),
+    Math.ceil(outages.length / outageSize),
   );
   const safeOutagePage = Math.min(outagePage, outageTotalPages);
   const pagedOutages = outages.slice(
-    (safeOutagePage - 1) * OUTAGE_PAGE_SIZE,
-    safeOutagePage * OUTAGE_PAGE_SIZE,
+    (safeOutagePage - 1) * outageSize,
+    safeOutagePage * outageSize,
   );
   const fromMs = new Date(window.from).getTime();
   const untilMs = new Date(window.until).getTime();
@@ -488,7 +499,7 @@ export default function UptimeDetail() {
               ))}
             </ul>
           )}
-          {outages.length > OUTAGE_PAGE_SIZE ? (
+          {outages.length > outageSize ? (
             <Pagination
               className="mt-3"
               data-testid="uptime-outage-pagination"
@@ -528,26 +539,26 @@ export default function UptimeDetail() {
         rows={samples}
         loading={samplesQ.isLoading}
       />
-      {sampleTotal > SAMPLE_PAGE_SIZE ? (
+      {sampleTotal > sampleSize ? (
         <Pagination className="mt-2" data-testid="uptime-sample-pagination">
           <PaginationContent>
             <PaginationItem>
               <PaginationPrevious
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-                aria-disabled={page <= 1}
+                disabled={safePage <= 1}
+                aria-disabled={safePage <= 1}
               />
             </PaginationItem>
             <PaginationItem>
               <span className="px-2 font-mono text-xs tabular-nums text-muted-foreground">
-                {page}/{totalPages}
+                {safePage}/{totalPages}
               </span>
             </PaginationItem>
             <PaginationItem>
               <PaginationNext
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages}
-                aria-disabled={page >= totalPages}
+                disabled={safePage >= totalPages}
+                aria-disabled={safePage >= totalPages}
               />
             </PaginationItem>
           </PaginationContent>
