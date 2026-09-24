@@ -8,6 +8,8 @@ import {
   ChevronDown,
   ChevronRight,
   Download,
+  Pause,
+  Play,
   Printer,
   AlertTriangle,
 } from "lucide-react";
@@ -114,15 +116,18 @@ function ScheduleRowActions({
   onDelete: (id: string) => void;
 }) {
   const { t } = useTranslation("schedules");
+  const rowActionClass =
+    "min-h-11 w-full min-w-0 px-3 sm:h-8 sm:min-h-8 sm:w-8 sm:min-w-8 sm:shrink-0 sm:px-0";
   return (
-    <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-end">
+    <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-nowrap sm:items-center sm:justify-end sm:gap-1">
       {s.last_job_id && (
         <>
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="min-h-11 w-full min-w-0 sm:w-auto"
+            className={rowActionClass}
+            title={t("executive")}
             onClick={() => {
               if (s.last_job_id) {
                 void downloadFile(s.last_job_id, "executive");
@@ -130,14 +135,15 @@ function ScheduleRowActions({
             }}
             aria-label={t("execAria")}
           >
-            <Download className="mr-1 h-3.5 w-3.5 shrink-0" />
-            <span className="min-w-0 truncate">{t("executive")}</span>
+            <Download className="mr-1 h-4 w-4 shrink-0 sm:mr-0" />
+            <span className="min-w-0 truncate sm:sr-only">{t("executive")}</span>
           </Button>
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="min-h-11 w-full min-w-0 sm:w-auto"
+            className={rowActionClass}
+            title={t("printExec")}
             onClick={() => {
               if (!s.last_job_id) return;
               void Promise.resolve(printFile(s.last_job_id, "executive")).catch(
@@ -151,8 +157,8 @@ function ScheduleRowActions({
             aria-label={t("printExecAria")}
             data-testid="schedule-print-executive"
           >
-            <Printer className="mr-1 h-3.5 w-3.5 shrink-0" />
-            <span className="min-w-0 truncate">{t("printExec")}</span>
+            <Printer className="mr-1 h-4 w-4 shrink-0 sm:mr-0" />
+            <span className="min-w-0 truncate sm:sr-only">{t("printExec")}</span>
           </Button>
         </>
       )}
@@ -161,17 +167,24 @@ function ScheduleRowActions({
           type="button"
           variant="outline"
           size="sm"
-          className="min-h-11 w-full min-w-0 sm:w-auto"
+          className={rowActionClass}
           disabled={togglePending || (!s.enabled && atCap)}
           title={
             !s.enabled && atCap
               ? t("capReachedShort", { max: MAX_ENABLED_SCHEDULES })
-              : undefined
+              : s.enabled
+                ? t("disable")
+                : t("enable")
           }
           aria-label={s.enabled ? t("disable") : t("enable")}
           onClick={() => onToggle(s.id, !s.enabled)}
         >
-          <span className="min-w-0 truncate">
+          {s.enabled ? (
+            <Pause className="mr-1 h-4 w-4 shrink-0 sm:mr-0" />
+          ) : (
+            <Play className="mr-1 h-4 w-4 shrink-0 sm:mr-0" />
+          )}
+          <span className="min-w-0 truncate sm:sr-only">
             {s.enabled ? t("disable") : t("enable")}
           </span>
         </Button>
@@ -183,12 +196,13 @@ function ScheduleRowActions({
               type="button"
               variant="ghost"
               size="sm"
-              className="min-h-11 w-full min-w-11 sm:w-auto"
+              className={rowActionClass}
               disabled={deletePending}
+              title={t("delete")}
               aria-label={t("deleteAria")}
             >
               <Trash2 className="h-4 w-4 shrink-0 text-destructive" />
-              <span className="ml-1 text-destructive sm:hidden">
+              <span className="ml-1 truncate text-destructive sm:sr-only">
                 {t("delete")}
               </span>
             </Button>
@@ -633,16 +647,16 @@ function Schedules() {
                 })}
               </ul>
               <div className="hidden sm:block">
-                <Table className="w-full table-fixed text-sm">
+                <Table className="w-full text-sm">
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-[40%] text-[10px] uppercase tracking-wider">
+                      <TableHead className="text-[10px] uppercase tracking-wider">
                         {t("colSchedule")}
                       </TableHead>
-                      <TableHead className="w-[32%] text-[10px] uppercase tracking-wider">
+                      <TableHead className="text-[10px] uppercase tracking-wider">
                         {t("colNext")}
                       </TableHead>
-                      <TableHead className="w-[28%] text-right text-[10px] uppercase tracking-wider">
+                      <TableHead className="w-[1%] whitespace-nowrap text-right text-[10px] uppercase tracking-wider">
                         {t("colActions")}
                       </TableHead>
                     </TableRow>
@@ -694,7 +708,7 @@ function Schedules() {
                                 </>
                               )}
                             </TableCell>
-                            <TableCell className="align-top">
+                            <TableCell className="w-[1%] whitespace-nowrap align-top">
                               <ScheduleRowActions
                                 schedule={s}
                                 canCreate={canCreate}
