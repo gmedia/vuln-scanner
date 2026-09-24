@@ -359,49 +359,53 @@ function WorkspaceSettings() {
                 {invoicesQuery.data?.items.map((inv) => (
                   <li
                     key={inv.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border px-3 py-2"
+                    className="space-y-3 rounded-md border border-border p-3"
                   >
-                    <span className="font-mono text-xs">{inv.number}</span>
-                    <Badge variant="default">{inv.status}</Badge>
-                    <span className="font-mono tabular-nums">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="min-w-0 break-all font-mono text-xs">
+                        {inv.number}
+                      </span>
+                      <Badge variant="default">{inv.status}</Badge>
+                    </div>
+                    <p className="font-mono text-sm tabular-nums">
                       Rp {inv.amount_idr.toLocaleString("id-ID")}
-                    </span>
+                    </p>
                     {inv.status === "sent" || inv.status === "paid" ? (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="no-print"
-                        data-testid="invoice-print"
-                        aria-label={inv.number}
-                        onClick={() => startPrint(inv)}
-                      >
-                        <Printer className="mr-1 h-3.5 w-3.5" />
-                        {t("invoicePrint")}
-                      </Button>
-                    ) : null}
-                    {inv.status === "sent" || inv.status === "paid" ? (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="no-print"
-                        data-testid="invoice-pdf"
-                        aria-label={`${inv.number} pdf`}
-                        onClick={() => void downloadPdf(inv)}
-                      >
-                        <Download className="mr-1 h-3.5 w-3.5" />
-                        {t("invoicePdf")}
-                      </Button>
+                      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="no-print min-h-11 w-full sm:w-auto"
+                          data-testid="invoice-print"
+                          aria-label={inv.number}
+                          onClick={() => startPrint(inv)}
+                        >
+                          <Printer className="mr-1 h-3.5 w-3.5 shrink-0" />
+                          {t("invoicePrint")}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="no-print min-h-11 w-full sm:w-auto"
+                          data-testid="invoice-pdf"
+                          aria-label={`${inv.number} pdf`}
+                          onClick={() => void downloadPdf(inv)}
+                        >
+                          <Download className="mr-1 h-3.5 w-3.5 shrink-0" />
+                          {t("invoicePdf")}
+                        </Button>
+                      </div>
                     ) : null}
                     {inv.status === "sent" && inv.bank ? (
-                      <span className="w-full text-xs text-muted-foreground">
+                      <p className="w-full text-xs text-muted-foreground">
                         {t("billingBank", {
                           name: inv.bank.bank_name ?? "—",
                           account: inv.bank.bank_account ?? "—",
                           holder: inv.bank.bank_holder ?? "—",
                         })}
-                      </span>
+                      </p>
                     ) : null}
                   </li>
                 ))}
