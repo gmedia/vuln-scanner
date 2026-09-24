@@ -702,6 +702,18 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
     rule_1158 = (
         'SecRule REQUEST_URI "@rx (?i)fgt_lang" "id:1158,phase:1,t:none,deny,status:403,msg:\\\'sinexis.forti.lang\\\'"'
     )
+    rule_1159 = (
+        'SecRule REQUEST_URI "@rx (?i)/dana-na/auth/authLogin" '
+        "\"id:1159,phase:1,t:none,deny,status:403,msg:\\'sinexis.pulse.authlogin\\'\""
+    )
+    rule_1160 = (
+        'SecRule REQUEST_URI "@rx (?i)/Microsoft-Server-ActiveSync" '
+        "\"id:1160,phase:1,t:none,deny,status:403,msg:\\'sinexis.exchange.activesync\\'\""
+    )
+    rule_1161 = (
+        'SecRule REQUEST_URI "@rx (?i)/api/jsonws" '
+        "\"id:1161,phase:1,t:none,deny,status:403,msg:\\'sinexis.liferay.jsonws\\'\""
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -884,6 +896,9 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         rule_1156,
         rule_1157,
         rule_1158,
+        rule_1159,
+        rule_1160,
+        rule_1161,
         extra.strip(),
     ]
     rules_body = pack_modsecurity_rules(units)
