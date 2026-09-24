@@ -115,14 +115,14 @@ function ScheduleRowActions({
 }) {
   const { t } = useTranslation("schedules");
   return (
-    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+    <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-end">
       {s.last_job_id && (
         <>
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="min-h-11 flex-1 sm:min-h-8 sm:flex-none"
+            className="min-h-11 w-full min-w-0 sm:w-auto"
             onClick={() => {
               if (s.last_job_id) {
                 void downloadFile(s.last_job_id, "executive");
@@ -130,14 +130,14 @@ function ScheduleRowActions({
             }}
             aria-label={t("execAria")}
           >
-            <Download className="mr-1 h-3.5 w-3.5" />
-            {t("executive")}
+            <Download className="mr-1 h-3.5 w-3.5 shrink-0" />
+            <span className="min-w-0 truncate">{t("executive")}</span>
           </Button>
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="min-h-11 flex-1 sm:min-h-8 sm:flex-none"
+            className="min-h-11 w-full min-w-0 sm:w-auto"
             onClick={() => {
               if (!s.last_job_id) return;
               void Promise.resolve(printFile(s.last_job_id, "executive")).catch(
@@ -151,8 +151,8 @@ function ScheduleRowActions({
             aria-label={t("printExecAria")}
             data-testid="schedule-print-executive"
           >
-            <Printer className="mr-1 h-3.5 w-3.5" />
-            {t("printExec")}
+            <Printer className="mr-1 h-3.5 w-3.5 shrink-0" />
+            <span className="min-w-0 truncate">{t("printExec")}</span>
           </Button>
         </>
       )}
@@ -161,7 +161,7 @@ function ScheduleRowActions({
           type="button"
           variant="outline"
           size="sm"
-          className="min-h-11 flex-1 sm:min-h-8 sm:flex-none"
+          className="min-h-11 w-full min-w-0 sm:w-auto"
           disabled={togglePending || (!s.enabled && atCap)}
           title={
             !s.enabled && atCap
@@ -171,7 +171,9 @@ function ScheduleRowActions({
           aria-label={s.enabled ? t("disable") : t("enable")}
           onClick={() => onToggle(s.id, !s.enabled)}
         >
-          {s.enabled ? t("disable") : t("enable")}
+          <span className="min-w-0 truncate">
+            {s.enabled ? t("disable") : t("enable")}
+          </span>
         </Button>
       )}
       {canCreate && (
@@ -181,11 +183,14 @@ function ScheduleRowActions({
               type="button"
               variant="ghost"
               size="sm"
-              className="min-h-11 sm:min-h-8"
+              className="min-h-11 w-full min-w-11 sm:w-auto"
               disabled={deletePending}
               aria-label={t("deleteAria")}
             >
-              <Trash2 className="h-4 w-4 text-destructive" />
+              <Trash2 className="h-4 w-4 shrink-0 text-destructive" />
+              <span className="ml-1 text-destructive sm:hidden">
+                {t("delete")}
+              </span>
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
