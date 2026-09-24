@@ -1407,11 +1407,32 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
                             "path": "/SDK/webLanguage",
                             "http_status": 403,
                         },
+                        {
+                            "action": "block",
+                            "rule_id": "1156",
+                            "method": "GET",
+                            "path": "/wls-wsat/CoordinatorPortType",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1157",
+                            "method": "GET",
+                            "path": "/autodiscover/autodiscover.xml",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1158",
+                            "method": "GET",
+                            "path": "/login?fgt_lang=en",
+                            "http_status": 403,
+                        },
                     ],
                 },
             )
             assert r.status_code == 200, r.text
-            assert r.json()["accepted"] == 109
+            assert r.json()["accepted"] == 112
     finally:
         app.dependency_overrides.clear()
     rows = (await db_session.execute(select(HostWafEvent).where(HostWafEvent.site_id == site.id))).scalars().all()
@@ -1525,6 +1546,9 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
         "1153",
         "1154",
         "1155",
+        "1156",
+        "1157",
+        "1158",
     }
 
 
