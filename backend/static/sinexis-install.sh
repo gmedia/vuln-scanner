@@ -896,6 +896,9 @@ SecRule REQUEST_URI "@rx (?i)/\\.env\\.bak($|[/?])" "id:1149,phase:1,t:none,deny
 SecRule REQUEST_URI "@rx (?i)/HNAP1" "id:1150,phase:1,t:none,deny,status:403,msg:\'sinexis.hnap1\'"
 SecRule REQUEST_URI "@rx (?i)(\\$\\{|jndi:(ldap|rmi|dns))" "id:1151,phase:1,t:none,deny,status:403,msg:\'sinexis.jndi.probe\'"
 SecRule REQUEST_URI "@rx (?i)invokefunction" "id:1152,phase:1,t:none,deny,status:403,msg:\'sinexis.thinkphp.invoke\'"
+SecRule REQUEST_URI "@rx (?i)class\.(module\.)?classLoader" "id:1153,phase:1,t:none,deny,status:403,msg:\'sinexis.spring.classloader\'"
+SecRule REQUEST_URI "@rx (?i)/mgmt/tm/util/bash" "id:1154,phase:1,t:none,deny,status:403,msg:\'sinexis.f5.icontrol\'"
+SecRule REQUEST_URI "@rx (?i)/SDK/webLanguage" "id:1155,phase:1,t:none,deny,status:403,msg:\'sinexis.hikvision.sdklang\'"
 ';
 
 EOF

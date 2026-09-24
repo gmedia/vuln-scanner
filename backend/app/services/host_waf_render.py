@@ -669,8 +669,7 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         "\"id:1149,phase:1,t:none,deny,status:403,msg:\\'sinexis.env.bak\\'\""
     )
     rule_1150 = (
-        'SecRule REQUEST_URI "@rx (?i)/HNAP1" '
-        "\"id:1150,phase:1,t:none,deny,status:403,msg:\\'sinexis.hnap1\\'\""
+        'SecRule REQUEST_URI "@rx (?i)/HNAP1" "id:1150,phase:1,t:none,deny,status:403,msg:\\\'sinexis.hnap1\\\'"'
     )
     rule_1151 = (
         'SecRule REQUEST_URI "@rx (?i)(\\\\$\\\\{|jndi:(ldap|rmi|dns))" '
@@ -679,6 +678,18 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
     rule_1152 = (
         'SecRule REQUEST_URI "@rx (?i)invokefunction" '
         "\"id:1152,phase:1,t:none,deny,status:403,msg:\\'sinexis.thinkphp.invoke\\'\""
+    )
+    rule_1153 = (
+        'SecRule REQUEST_URI "@rx (?i)class\\.(module\\.)?classLoader" '
+        "\"id:1153,phase:1,t:none,deny,status:403,msg:\\'sinexis.spring.classloader\\'\""
+    )
+    rule_1154 = (
+        'SecRule REQUEST_URI "@rx (?i)/mgmt/tm/util/bash" '
+        "\"id:1154,phase:1,t:none,deny,status:403,msg:\\'sinexis.f5.icontrol\\'\""
+    )
+    rule_1155 = (
+        'SecRule REQUEST_URI "@rx (?i)/SDK/webLanguage" '
+        "\"id:1155,phase:1,t:none,deny,status:403,msg:\\'sinexis.hikvision.sdklang\\'\""
     )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
@@ -856,6 +867,9 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         rule_1150,
         rule_1151,
         rule_1152,
+        rule_1153,
+        rule_1154,
+        rule_1155,
         extra.strip(),
     ]
     rules_body = pack_modsecurity_rules(units)
