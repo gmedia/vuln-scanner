@@ -691,6 +691,17 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         'SecRule REQUEST_URI "@rx (?i)/SDK/webLanguage" '
         "\"id:1155,phase:1,t:none,deny,status:403,msg:\\'sinexis.hikvision.sdklang\\'\""
     )
+    rule_1156 = (
+        'SecRule REQUEST_URI "@rx (?i)/wls-wsat" '
+        "\"id:1156,phase:1,t:none,deny,status:403,msg:\\'sinexis.weblogic.wsat\\'\""
+    )
+    rule_1157 = (
+        'SecRule REQUEST_URI "@rx (?i)/autodiscover/autodiscover\\.xml" '
+        "\"id:1157,phase:1,t:none,deny,status:403,msg:\\'sinexis.exchange.autodiscover\\'\""
+    )
+    rule_1158 = (
+        'SecRule REQUEST_URI "@rx (?i)fgt_lang" "id:1158,phase:1,t:none,deny,status:403,msg:\\\'sinexis.forti.lang\\\'"'
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -870,6 +881,9 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         rule_1153,
         rule_1154,
         rule_1155,
+        rule_1156,
+        rule_1157,
+        rule_1158,
         extra.strip(),
     ]
     rules_body = pack_modsecurity_rules(units)

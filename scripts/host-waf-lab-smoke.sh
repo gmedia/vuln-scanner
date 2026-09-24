@@ -116,10 +116,13 @@
 #   GET  /?class.module.classLoader.xxx  → expect 403 (id 1153)
 #   GET  /mgmt/tm/util/bash  → expect 403 (id 1154)
 #   GET  /SDK/webLanguage  → expect 403 (id 1155)
+#   GET  /wls-wsat/CoordinatorPortType  → expect 403 (id 1156)
+#   GET  /autodiscover/autodiscover.xml  → expect 403 (id 1157)
+#   GET  /?lang=fgt_lang  → expect 403 (id 1158)
 #   GET  /wp-admin/  → expect 200 (not in pack)
-# This script only asserts the snippet contains id:1005–1155 and no wp-admin.
+# This script only asserts the snippet contains id:1005–1158 and no wp-admin.
 # POST simulate writes mock.sqli.1; GET /api/host/waf/events filters to product
-# ids 1001–1155, so this smoke must not require events>=1 after simulate.
+# ids 1001–1158, so this smoke must not require events>=1 after simulate.
 
 set -euo pipefail
 
@@ -387,6 +390,9 @@ printf '%s' "$SNIPPET" | grep -q 'id:1152' || die "snippet missing original rule
 printf '%s' "$SNIPPET" | grep -q 'id:1153' || die "snippet missing original rule 1153"
 printf '%s' "$SNIPPET" | grep -q 'id:1154' || die "snippet missing original rule 1154"
 printf '%s' "$SNIPPET" | grep -q 'id:1155' || die "snippet missing original rule 1155"
+printf '%s' "$SNIPPET" | grep -q 'id:1156' || die "snippet missing original rule 1156"
+printf '%s' "$SNIPPET" | grep -q 'id:1157' || die "snippet missing original rule 1157"
+printf '%s' "$SNIPPET" | grep -q 'id:1158' || die "snippet missing original rule 1158"
   printf '%s' "$SNIPPET" | grep -qi 'wp-admin' && die "snippet must not match /wp-admin/"
   log "snippet ok (not printed)"
 }
