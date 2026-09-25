@@ -1449,11 +1449,32 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
                             "path": "/api/jsonws",
                             "http_status": 403,
                         },
+                        {
+                            "action": "block",
+                            "rule_id": "1162",
+                            "method": "GET",
+                            "path": "/global-protect/login",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1163",
+                            "method": "GET",
+                            "path": "/+CSCOE+/logon",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1164",
+                            "method": "GET",
+                            "path": "/geoserver/wms",
+                            "http_status": 403,
+                        },
                     ],
                 },
             )
             assert r.status_code == 200, r.text
-            assert r.json()["accepted"] == 115
+            assert r.json()["accepted"] == 118
     finally:
         app.dependency_overrides.clear()
     rows = (await db_session.execute(select(HostWafEvent).where(HostWafEvent.site_id == site.id))).scalars().all()
@@ -1573,6 +1594,9 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
         "1159",
         "1160",
         "1161",
+        "1162",
+        "1163",
+        "1164",
     }
 
 
