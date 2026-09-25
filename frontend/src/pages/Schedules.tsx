@@ -230,6 +230,35 @@ function ScheduleRowActions({
   );
 }
 
+type ScheduleRunStatus = ScheduleRunJob["status"];
+
+function RunStatusCell({ status }: { status: ScheduleRunStatus }) {
+  return (
+    <Badge
+      variant={
+        status === "completed"
+          ? "completed"
+          : status === "failed"
+            ? "failed"
+            : status === "running"
+              ? "running"
+              : "pending"
+      }
+      className="min-w-[5.5rem] justify-center whitespace-nowrap text-[10px] uppercase"
+    >
+      {status}
+    </Badge>
+  );
+}
+
+function RunTimeCell({ value, locale }: { value?: string; locale: string }) {
+  return (
+    <span className="min-w-0 truncate font-mono text-xs tabular-nums">
+      {formatWhen(value ?? null, locale)}
+    </span>
+  );
+}
+
 function ScheduleRunsPanel({ scheduleId }: { scheduleId: string }) {
   const { t, i18n } = useTranslation("schedules");
   const activeOrgId = useAuthStore((s) => s.activeOrgId);
@@ -267,24 +296,14 @@ function ScheduleRunsPanel({ scheduleId }: { scheduleId: string }) {
       {data.map((job: ScheduleRunJob) => (
         <li
           key={job.id}
-          className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"
+          className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 text-xs text-muted-foreground"
         >
-          <Badge
-            variant={
-              job.status === "completed"
-                ? "completed"
-                : job.status === "failed"
-                  ? "failed"
-                  : job.status === "running"
-                    ? "running"
-                    : "pending"
-            }
-            className="text-[10px]"
+          <RunStatusCell status={job.status} />
+          <RunTimeCell value={job.created_at} locale={i18n.language} />
+          <Link
+            to={`/scan/${job.id}`}
+            className="justify-self-end whitespace-nowrap text-primary hover:underline"
           >
-            {job.status}
-          </Badge>
-          <span>{formatWhen(job.created_at ?? null, i18n.language)}</span>
-          <Link to={`/scan/${job.id}`} className="text-primary hover:underline">
             {t("openScan")}
           </Link>
         </li>
