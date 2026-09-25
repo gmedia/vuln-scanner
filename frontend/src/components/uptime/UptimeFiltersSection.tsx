@@ -56,7 +56,7 @@ export function UptimeFiltersSection({
               {t("filtersToggle")}
             </AccordionTrigger>
             <AccordionContent>
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-1 gap-3 px-1">
                 <UptimeFilterBar idPrefix="uptime-filter-m" {...bar} />
               </div>
             </AccordionContent>
