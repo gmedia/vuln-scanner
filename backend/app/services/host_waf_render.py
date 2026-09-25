@@ -714,6 +714,18 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         'SecRule REQUEST_URI "@rx (?i)/api/jsonws" '
         "\"id:1161,phase:1,t:none,deny,status:403,msg:\\'sinexis.liferay.jsonws\\'\""
     )
+    rule_1162 = (
+        'SecRule REQUEST_URI "@rx (?i)/global-protect/login" '
+        "\"id:1162,phase:1,t:none,deny,status:403,msg:\\'sinexis.palo.globalprotect\\'\""
+    )
+    rule_1163 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\+CSCOE\\+/logon" '
+        "\"id:1163,phase:1,t:none,deny,status:403,msg:\\'sinexis.cisco.asa\\'\""
+    )
+    rule_1164 = (
+        'SecRule REQUEST_URI "@rx (?i)/geoserver/wms" '
+        "\"id:1164,phase:1,t:none,deny,status:403,msg:\\'sinexis.geoserver.wms\\'\""
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -899,6 +911,9 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         rule_1159,
         rule_1160,
         rule_1161,
+        rule_1162,
+        rule_1163,
+        rule_1164,
         extra.strip(),
     ]
     rules_body = pack_modsecurity_rules(units)

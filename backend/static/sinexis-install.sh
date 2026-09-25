@@ -906,6 +906,11 @@ SecRule REQUEST_URI "@rx (?i)/wls-wsat" "id:1156,phase:1,t:none,deny,status:403,
 SecRule REQUEST_URI "@rx (?i)/autodiscover/autodiscover\.xml" "id:1157,phase:1,t:none,deny,status:403,msg:\'sinexis.exchange.autodiscover\'"
 SecRule REQUEST_URI "@rx (?i)fgt_lang" "id:1158,phase:1,t:none,deny,status:403,msg:\'sinexis.forti.lang\'"
 ';
+modsecurity_rules '
+SecRule REQUEST_URI "@rx (?i)/global-protect/login" "id:1162,phase:1,t:none,deny,status:403,msg:\'sinexis.palo.globalprotect\'"
+SecRule REQUEST_URI "@rx (?i)/\+CSCOE\+/logon" "id:1163,phase:1,t:none,deny,status:403,msg:\'sinexis.cisco.asa\'"
+SecRule REQUEST_URI "@rx (?i)/geoserver/wms" "id:1164,phase:1,t:none,deny,status:403,msg:\'sinexis.geoserver.wms\'"
+';
 
 EOF
   chmod 644 "$dest"
