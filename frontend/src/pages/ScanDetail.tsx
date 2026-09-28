@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import {
   ArrowLeft,
+  Braces,
+  Briefcase,
   Clock,
   Crosshair,
   Download,
@@ -9,6 +11,7 @@ import {
   RefreshCw,
   Shield,
   Target,
+  Wrench,
 } from "lucide-react";
 import { useScanDetail, useScanDiff, useScanFindings } from "@/hooks/useScan";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -524,76 +527,117 @@ function ScanDetail() {
 
         <TabsContent value="export">
           {id ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs"
-                title={t("jsonTitle")}
-                aria-label={t("jsonAria")}
-                onClick={() => downloadFile(id, "json")}
-              >
-                <Download className="mr-1 h-3.5 w-3.5" />
-                {t("json")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs"
-                title={t("htmlTechTitle")}
-                aria-label={t("htmlTechAria")}
-                data-testid="export-html"
-                onClick={() => downloadFile(id, "html")}
-              >
-                <Download className="mr-1 h-3.5 w-3.5" />
-                {t("htmlTech")}
-              </Button>
-              <Button
-                size="sm"
-                className="text-xs"
-                title={t("execTitle")}
-                aria-label={t("execAria")}
-                data-testid="export-executive"
-                onClick={() => downloadFile(id, "executive")}
-              >
-                <Download className="mr-1 h-3.5 w-3.5" />
-                {t("execReport")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs"
-                title={t("pdfTitle")}
-                aria-label={t("pdfAria")}
-                data-testid="export-pdf"
-                onClick={() => downloadFile(id, "pdf")}
-              >
-                <Download className="mr-1 h-3.5 w-3.5" />
-                {t("pdf")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs"
-                title={t("printHtmlTitle")}
-                aria-label={t("printHtmlAria")}
-                data-testid="export-print-html"
-                onClick={() => onPrint("html")}
-              >
-                <Printer className="mr-1 h-3.5 w-3.5" />
-                {t("printHtml")}
-              </Button>
-              <Button
-                size="sm"
-                className="text-xs"
-                title={t("printExecTitle")}
-                aria-label={t("printExecAria")}
-                data-testid="export-print-executive"
-                onClick={() => onPrint("executive")}
-              >
-                <Printer className="mr-1 h-3.5 w-3.5" />
-                {t("printExec")}
-              </Button>
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                {t("exportHelper")}
+              </p>
+              <div className="grid gap-3 md:grid-cols-3">
+                <Card>
+                  <CardHeader className="py-3">
+                    <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
+                      <Briefcase className="h-4 w-4 text-muted-foreground" />
+                      {t("exportMgmtTitle")}
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      {t("execTitle")}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-2 pt-0">
+                    <Button
+                      title={t("execTitle")}
+                      aria-label={t("execAria")}
+                      data-testid="export-executive"
+                      onClick={() => downloadFile(id, "executive")}
+                      className="w-full"
+                    >
+                      <Download className="mr-1 h-3.5 w-3.5" />
+                      {t("execDownload")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      title={t("pdfTitle")}
+                      aria-label={t("pdfAria")}
+                      data-testid="export-pdf"
+                      onClick={() => downloadFile(id, "pdf")}
+                      className="w-full"
+                    >
+                      <Download className="mr-1 h-3.5 w-3.5" />
+                      {t("pdfDownload")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      title={t("printExecTitle")}
+                      aria-label={t("printExecAria")}
+                      data-testid="export-print-executive"
+                      onClick={() => onPrint("executive")}
+                      className="w-full"
+                    >
+                      <Printer className="mr-1 h-3.5 w-3.5" />
+                      {t("printExec")}
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="py-3">
+                    <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
+                      <Wrench className="h-4 w-4 text-muted-foreground" />
+                      {t("exportTechTitle")}
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      {t("htmlTechTitle")}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-2 pt-0">
+                    <Button
+                      variant="outline"
+                      title={t("htmlTechTitle")}
+                      aria-label={t("htmlTechAria")}
+                      data-testid="export-html"
+                      onClick={() => downloadFile(id, "html")}
+                      className="w-full"
+                    >
+                      <Download className="mr-1 h-3.5 w-3.5" />
+                      {t("htmlTechDownload")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      title={t("printHtmlTitle")}
+                      aria-label={t("printHtmlAria")}
+                      data-testid="export-print-html"
+                      onClick={() => onPrint("html")}
+                      className="w-full"
+                    >
+                      <Printer className="mr-1 h-3.5 w-3.5" />
+                      {t("printHtml")}
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="py-3">
+                    <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
+                      <Braces className="h-4 w-4 text-muted-foreground" />
+                      {t("exportRawTitle")}
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      {t("jsonTitle")}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-2 pt-0">
+                    <Button
+                      variant="outline"
+                      title={t("jsonTitle")}
+                      aria-label={t("jsonAria")}
+                      onClick={() => downloadFile(id, "json")}
+                      className="w-full"
+                    >
+                      <Download className="mr-1 h-3.5 w-3.5" />
+                      {t("jsonDownload")}
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">{t("noExport")}</p>

@@ -611,18 +611,22 @@ describe("ScanDetail", () => {
       );
     });
 
-    it("renders download buttons", async () => {
+    it("renders grouped export cards", async () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
       await userEvent.click(screen.getByRole("tab", { name: "Export" }));
-      expect(screen.getByText("JSON")).toBeInTheDocument();
+      expect(screen.getByText("For management")).toBeInTheDocument();
+      expect(screen.getByText("For technicians")).toBeInTheDocument();
+      expect(screen.getByText("Raw data")).toBeInTheDocument();
       expect(screen.getByTestId("export-html")).toHaveTextContent(
-        /Technical HTML/,
+        /Download technical/,
       );
       expect(screen.getByTestId("export-executive")).toHaveTextContent(
-        /Executive report/,
+        /Download executive/,
       );
-      expect(screen.getByTestId("export-pdf")).toHaveTextContent("PDF");
+      expect(screen.getByTestId("export-pdf")).toHaveTextContent(
+        /Download PDF/,
+      );
     });
 
     it("renders Re-scan link for IP scan type", () => {
@@ -650,7 +654,7 @@ describe("ScanDetail", () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
       await userEvent.click(screen.getByRole("tab", { name: "Export" }));
-      await userEvent.click(screen.getByText("JSON"));
+      await userEvent.click(screen.getByText(/Download JSON/));
       expect(downloadFile).toHaveBeenCalledWith("scan-1", "json");
     });
 
