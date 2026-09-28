@@ -5,9 +5,7 @@ import {
   AlertTriangle,
   Building2,
   ClipboardList,
-  Download,
   Loader2,
-  Printer,
   Receipt,
   Trash2,
   UserPlus,
@@ -50,6 +48,7 @@ import {
 import type { ApiError } from "@/lib/utils";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { WorkspaceInvoiceCard } from "@/components/invoice/WorkspaceInvoiceCard";
 import {
   InvoicePrintSheet,
   useInvoicePrint,
@@ -355,59 +354,17 @@ function WorkspaceSettings() {
                 ) : null}
               </div>
             ) : (
-              <ul className="space-y-2 text-sm">
+              <ul
+                className="grid gap-3 lg:grid-cols-2"
+                data-testid="workspace-billing-list"
+              >
                 {invoicesQuery.data?.items.map((inv) => (
-                  <li
+                  <WorkspaceInvoiceCard
                     key={inv.id}
-                    className="space-y-3 rounded-md border border-border p-3"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="min-w-0 break-all font-mono text-xs">
-                        {inv.number}
-                      </span>
-                      <Badge variant="default">{inv.status}</Badge>
-                    </div>
-                    <p className="font-mono text-sm tabular-nums">
-                      Rp {inv.amount_idr.toLocaleString("id-ID")}
-                    </p>
-                    {inv.status === "sent" || inv.status === "paid" ? (
-                      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="no-print min-h-11 w-full sm:w-auto"
-                          data-testid="invoice-print"
-                          aria-label={inv.number}
-                          onClick={() => startPrint(inv)}
-                        >
-                          <Printer className="mr-1 h-3.5 w-3.5 shrink-0" />
-                          {t("invoicePrint")}
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="no-print min-h-11 w-full sm:w-auto"
-                          data-testid="invoice-pdf"
-                          aria-label={`${inv.number} pdf`}
-                          onClick={() => void downloadPdf(inv)}
-                        >
-                          <Download className="mr-1 h-3.5 w-3.5 shrink-0" />
-                          {t("invoicePdf")}
-                        </Button>
-                      </div>
-                    ) : null}
-                    {inv.status === "sent" && inv.bank ? (
-                      <p className="w-full text-xs text-muted-foreground">
-                        {t("billingBank", {
-                          name: inv.bank.bank_name ?? "—",
-                          account: inv.bank.bank_account ?? "—",
-                          holder: inv.bank.bank_holder ?? "—",
-                        })}
-                      </p>
-                    ) : null}
-                  </li>
+                    invoice={inv}
+                    onPrint={() => startPrint(inv)}
+                    onDownload={() => void downloadPdf(inv)}
+                  />
                 ))}
               </ul>
             )}
