@@ -6,6 +6,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Activity, FileText, Info } from "lucide-react";
 import { toast } from "sonner";
 import {
   fetchHostWafSnippet,
@@ -22,7 +23,9 @@ import {
   formatHelperPollAt,
   isHelperPollStale,
 } from "@/lib/sinexisInstall";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Card, CardContent } from "@/components/ui/Card";
 import { Label } from "@/components/ui/Label";
 import {
   Select,
@@ -36,6 +39,12 @@ import {
   HostWafEventsList,
 } from "@/components/host/HostWafEventsList";
 import { useAuthStore } from "@/store/authStore";
+
+function modeBadgeVariant(mode: HostWafPolicy["mode"]) {
+  if (mode === "protect") return "success" as const;
+  if (mode === "detect") return "running" as const;
+  return "default" as const;
+}
 
 export default function HostWafPanel({
   sites,
@@ -145,138 +154,198 @@ export default function HostWafPanel({
         <p className="text-sm text-muted-foreground">{t("wafNeedSite")}</p>
       ) : (
         <>
-          <div className="grid max-w-xl gap-3 sm:grid-cols-2">
-            <div className="flex min-w-0 max-w-sm flex-col gap-1.5">
-              <Label htmlFor="host-waf-site">{t("wafSite")}</Label>
-              <Select
-                value={selected}
-                onValueChange={(id) => {
-                  setSiteId(id);
-                  setEventsPage(1);
-                }}
-              >
-                <SelectTrigger
-                  id="host-waf-site"
-                  data-testid="host-waf-site"
-                  aria-label={t("wafSite")}
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {sites.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex min-w-0 max-w-sm flex-col gap-1.5">
-              <Label htmlFor="host-waf-mode">{t("wafMode")}</Label>
-              <Select
-                value={mode}
-                onValueChange={(v) =>
-                  saveMut.mutate(v as HostWafPolicy["mode"])
-                }
-                disabled={!selected || saveMut.isPending}
-              >
-                <SelectTrigger
-                  id="host-waf-mode"
-                  data-testid="host-waf-mode"
-                  aria-label={t("wafMode")}
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="off">{t("wafOff")}</SelectItem>
-                  <SelectItem value="detect">{t("wafDetect")}</SelectItem>
-                  {canProtect ? (
-                    <SelectItem value="protect">{t("wafProtect")}</SelectItem>
+          <Card>
+            <CardContent className="space-y-3 pt-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label htmlFor="host-waf-site">{t("wafSite")}</Label>
+                  <Select
+                    value={selected}
+                    onValueChange={(id) => {
+                      setSiteId(id);
+                      setEventsPage(1);
+                    }}
+                  >
+                    <SelectTrigger
+                      id="host-waf-site"
+                      data-testid="host-waf-site"
+                      aria-label={t("wafSite")}
+                      className="h-10 min-h-10"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sites.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label htmlFor="host-waf-mode">{t("wafMode")}</Label>
+                  <div className="flex items-center gap-2">
+                    <div className="min-w-0 flex-1">
+                      <Select
+                        value={mode}
+                        onValueChange={(v) =>
+                          saveMut.mutate(v as HostWafPolicy["mode"])
+                        }
+                        disabled={!selected || saveMut.isPending}
+                      >
+                        <SelectTrigger
+                          id="host-waf-mode"
+                          data-testid="host-waf-mode"
+                          aria-label={t("wafMode")}
+                          className="h-10 min-h-10"
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="off">{t("wafOff")}</SelectItem>
+                          <SelectItem value="detect">
+                            {t("wafDetect")}
+                          </SelectItem>
+                          {canProtect ? (
+                            <SelectItem value="protect">
+                              {t("wafProtect")}
+                            </SelectItem>
+                          ) : null}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Badge
+                      variant={modeBadgeVariant(mode)}
+                      className="shrink-0"
+                    >
+                      {mode === "off"
+                        ? t("wafOff")
+                        : mode === "detect"
+                          ? t("wafDetect")
+                          : t("wafProtect")}
+                    </Badge>
+                  </div>
+                  {!canProtect ? (
+                    <p
+                      className="text-xs text-muted-foreground"
+                      data-testid="host-waf-protect-locked"
+                    >
+                      {t("wafProtectLocked")}
+                    </p>
                   ) : null}
-                </SelectContent>
-              </Select>
-              {!canProtect ? (
-                <p
-                  className="text-xs text-muted-foreground"
-                  data-testid="host-waf-protect-locked"
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {showSimulate ? (
+                  <Button
+                    variant="outline"
+                    data-testid="host-waf-simulate"
+                    disabled={mode === "off" || simMut.isPending}
+                    onClick={() => simMut.mutate()}
+                    className="w-full sm:w-auto"
+                  >
+                    {t("wafSimulate")}
+                  </Button>
+                ) : null}
+                <Button
+                  variant="outline"
+                  data-testid="host-waf-copy-snippet"
+                  disabled={!selected || copyMut.isPending}
+                  onClick={() => copyMut.mutate()}
+                  className="w-full sm:w-auto"
                 >
-                  {t("wafProtectLocked")}
-                </p>
-              ) : null}
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {showSimulate ? (
-              <Button
-                variant="outline"
-                data-testid="host-waf-simulate"
-                disabled={mode === "off" || simMut.isPending}
-                onClick={() => simMut.mutate()}
-              >
-                {t("wafSimulate")}
-              </Button>
-            ) : null}
-            <Button
-              variant="outline"
-              data-testid="host-waf-copy-snippet"
-              disabled={!selected || copyMut.isPending}
-              onClick={() => copyMut.mutate()}
-            >
-              {t("wafCopySnippet")}
-            </Button>
-          </div>
+                  {t("wafCopySnippet")}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
           {selected ? (
-            <div className="space-y-2">
-              <p
-                className="font-mono text-xs text-muted-foreground break-all"
-                data-testid="host-waf-site-id"
-              >
-                {t("siteId")}: {selected}
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                data-testid="host-waf-copy-site-id"
-                disabled={!selected}
-                onClick={() => {
-                  void navigator.clipboard
-                    .writeText(selected)
-                    .then(() => toast.success(t("copySiteIdOk")))
-                    .catch(() => toast.error(t("copySiteIdFail")));
-                }}
-              >
-                {t("copySiteId")}
-              </Button>
-              <p
-                className="max-w-prose text-xs text-muted-foreground"
-                data-testid="host-waf-site-id-hint"
-              >
-                {t("siteIdHint", { id: selected })}
-              </p>
-            </div>
+            <Card>
+              <CardContent className="space-y-2 pt-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <p
+                    className="min-w-0 flex-1 break-all font-mono text-xs text-muted-foreground"
+                    data-testid="host-waf-site-id"
+                  >
+                    {t("siteId")}: {selected}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    data-testid="host-waf-copy-site-id"
+                    disabled={!selected}
+                    onClick={() => {
+                      void navigator.clipboard
+                        .writeText(selected)
+                        .then(() => toast.success(t("copySiteIdOk")))
+                        .catch(() => toast.error(t("copySiteIdFail")));
+                    }}
+                    className="w-full shrink-0 sm:w-auto"
+                  >
+                    {t("copySiteId")}
+                  </Button>
+                </div>
+                <p
+                  className="max-w-prose text-xs text-muted-foreground"
+                  data-testid="host-waf-site-id-hint"
+                >
+                  {t("siteIdHint", { id: selected })}
+                </p>
+              </CardContent>
+            </Card>
           ) : null}
-          <p
-            className="max-w-prose text-xs text-muted-foreground"
-            data-testid="host-waf-copy-hint"
-          >
-            {t("wafCopyHint")}
-          </p>
-          <p
-            className="max-w-prose text-xs text-muted-foreground"
-            data-testid="host-waf-snippet-status"
-          >
-            {t("wafSnippetNotIncluded")}
-          </p>
-          <p
-            className="max-w-prose text-xs text-muted-foreground"
-            data-testid="host-waf-helper-poll"
-          >
-            {pollLabel
-              ? pollStale
-                ? t("wafHelperStale", { when: pollLabel })
-                : t("wafHelperPolled", { when: pollLabel })
-              : t("wafHelperNever")}
-          </p>
+          <Card>
+            <CardContent className="pt-4">
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2">
+                  <Info
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground"
+                    aria-hidden
+                  />
+                  <p
+                    className="max-w-prose text-xs text-muted-foreground"
+                    data-testid="host-waf-copy-hint"
+                  >
+                    {t("wafCopyHint")}
+                  </p>
+                </li>
+                <li className="flex items-start gap-2">
+                  <FileText
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground"
+                    aria-hidden
+                  />
+                  <p
+                    className="max-w-prose text-xs text-muted-foreground"
+                    data-testid="host-waf-snippet-status"
+                  >
+                    {t("wafSnippetNotIncluded")}
+                  </p>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Activity
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground"
+                    aria-hidden
+                  />
+                  <p
+                    className={
+                      pollStale
+                        ? "max-w-prose text-xs font-medium text-destructive"
+                        : "max-w-prose text-xs text-muted-foreground"
+                    }
+                    data-testid="host-waf-helper-poll"
+                  >
+                    {pollLabel
+                      ? pollStale
+                        ? t("wafHelperStale", { when: pollLabel })
+                        : t("wafHelperPolled", { when: pollLabel })
+                      : t("wafHelperNever")}
+                  </p>
+                </li>
+              </ul>
+            </CardContent>
+          </Card>
         </>
       )}
       {mode === "off" ? (

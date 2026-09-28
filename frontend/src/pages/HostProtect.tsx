@@ -28,6 +28,7 @@ import { AlertTriangle, Shield } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -612,18 +613,66 @@ export default function HostProtect() {
                             : lastScan?.status === "completed"
                               ? t("scanCompletedNone")
                               : null;
+                const needsDecision = activeHits.length > 0;
+                const isWaiting = lastScan?.status === "queued";
+                const isFailed = lastScan?.status === "failed";
+                const siteBadgeVariant = needsDecision
+                  ? ("critical" as const)
+                  : isWaiting
+                    ? ("running" as const)
+                    : isFailed || helperStale
+                      ? ("failed" as const)
+                      : lastScan?.status === "completed"
+                        ? ("completed" as const)
+                        : ("pending" as const);
+                const siteBadgeLabel = scanStatusCopy ?? emptyHitsCopy;
+                const hitStatusVariant = (
+                  status: string,
+                ): "critical" | "high" | "completed" | "pending" | "running" | "default" =>
+                  status === "open" || status === "restored"
+                    ? "critical"
+                    : status === "quarantined"
+                      ? "completed"
+                      : status === "pending_quarantine"
+                        ? "pending"
+                        : status === "pending_restore"
+                          ? "running"
+                          : status === "ignored"
+                            ? "default"
+                            : "default";
+                const hitStatusLabel = (status: string): string =>
+                  status === "pending_quarantine"
+                    ? t("statusPendingQuarantine")
+                    : status === "pending_restore"
+                      ? t("statusPendingRestore")
+                      : status === "ignored"
+                        ? t("statusIgnored")
+                        : status;
+                const hitClassVariant = (
+                  cls: string,
+                ): "critical" | "default" =>
+                  cls === "webshell" || cls === "backdoor"
+                    ? "critical"
+                    : "default";
                 return (
                 <li key={s.id}>
                   <Card>
-                    <CardContent className="space-y-4 pt-6">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="font-medium">{s.name}</p>
-                          <p className="text-sm text-muted-foreground">
+                    <CardHeader className="space-y-2">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <CardTitle className="text-base">
+                              {s.name}
+                            </CardTitle>
+                            <Badge variant={siteBadgeVariant}>
+                              {siteBadgeLabel}
+                            </Badge>
+                          </div>
+                          <p className="break-all font-mono text-xs text-muted-foreground">
                             {s.root_path}
                           </p>
                           <p
-                            className="mt-1 break-all font-mono text-xs text-muted-foreground"
+                            className="break-all font-mono text-xs text-muted-foreground"
                             data-testid="host-site-id"
                           >
                             {t("siteId")}: {s.id}
@@ -643,33 +692,12 @@ export default function HostProtect() {
                           >
                             {t("copySiteId")}
                           </Button>
-                          <p
-                            className={
-                              helperStale
-                                ? "mt-1 text-sm font-medium text-destructive"
-                                : "mt-1 text-sm text-foreground"
-                            }
-                            data-testid="host-helper-poll"
-                          >
-                            {helperWhen
-                              ? helperStale
-                                ? t("helperStale", { when: helperWhen })
-                                : t("helperPolled", { when: helperWhen })
-                              : t("helperNeverPolled")}
-                          </p>
-                          {scanStatusCopy ? (
-                            <p
-                              className="mt-1 text-xs text-muted-foreground"
-                              data-testid="host-scan-status"
-                            >
-                              {scanStatusCopy}
-                            </p>
-                          ) : null}
                         </div>
-                        <div className="flex shrink-0 gap-2">
+                        <div className="flex w-full flex-col gap-2 sm:w-auto sm:shrink-0 sm:flex-row">
                           <Button
                             variant="outline"
                             size="sm"
+                            className="w-full sm:w-auto"
                             data-testid="host-scan"
                             onClick={() => scanMut.mutate(s.id)}
                           >
@@ -678,6 +706,7 @@ export default function HostProtect() {
                           <Button
                             variant="destructive"
                             size="sm"
+                            className="w-full sm:w-auto"
                             onClick={() => {
                               if (window.confirm(t("confirmDelete")))
                                 delMut.mutate(s.id);
@@ -687,8 +716,32 @@ export default function HostProtect() {
                           </Button>
                         </div>
                       </div>
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        <div className="max-w-xs min-w-0">
+                      <p
+                        className={
+                          helperStale
+                            ? "text-sm font-medium text-destructive"
+                            : "text-sm text-muted-foreground"
+                        }
+                        data-testid="host-helper-poll"
+                      >
+                        {helperWhen
+                          ? helperStale
+                            ? t("helperStale", { when: helperWhen })
+                            : t("helperPolled", { when: helperWhen })
+                          : t("helperNeverPolled")}
+                      </p>
+                      {scanStatusCopy ? (
+                        <p
+                          className="text-xs text-muted-foreground"
+                          data-testid="host-scan-status"
+                        >
+                          {scanStatusCopy}
+                        </p>
+                      ) : null}
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div className="flex min-w-0 flex-col gap-1.5">
                           <Label htmlFor={`host-enabled-${s.id}`}>
                             {t("siteEnabled")}
                           </Label>
@@ -705,6 +758,7 @@ export default function HostProtect() {
                               id={`host-enabled-${s.id}`}
                               data-testid="host-enabled-existing"
                               aria-label={t("siteEnabled")}
+                              className="h-10 min-h-10"
                             >
                               <SelectValue />
                             </SelectTrigger>
@@ -717,11 +771,11 @@ export default function HostProtect() {
                               </SelectItem>
                             </SelectContent>
                           </Select>
-                          <p className="mt-1 text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground">
                             {t("siteEnabledHint")}
                           </p>
                         </div>
-                        <div className="max-w-xs min-w-0">
+                        <div className="flex min-w-0 flex-col gap-1.5">
                           <Label htmlFor={`host-interval-${s.id}`}>
                             {t("scanInterval")}
                           </Label>
@@ -738,6 +792,7 @@ export default function HostProtect() {
                               id={`host-interval-${s.id}`}
                               data-testid="host-interval-existing"
                               aria-label={t("scanInterval")}
+                              className="h-10 min-h-10"
                             >
                               <SelectValue />
                             </SelectTrigger>
@@ -750,8 +805,11 @@ export default function HostProtect() {
                               </SelectItem>
                             </SelectContent>
                           </Select>
+                          <p className="text-xs text-muted-foreground">
+                            {t("intervalHint")}
+                          </p>
                         </div>
-                        <div className="max-w-xs min-w-0">
+                        <div className="flex min-w-0 flex-col gap-1.5">
                           <Label htmlFor={`host-auto-quarantine-${s.id}`}>
                             {t("autoQuarantine")}
                           </Label>
@@ -768,6 +826,7 @@ export default function HostProtect() {
                               id={`host-auto-quarantine-${s.id}`}
                               data-testid="host-auto-quarantine-existing"
                               aria-label={t("autoQuarantine")}
+                              className="h-10 min-h-10"
                             >
                               <SelectValue />
                             </SelectTrigger>
@@ -780,11 +839,11 @@ export default function HostProtect() {
                               </SelectItem>
                             </SelectContent>
                           </Select>
-                          <p className="mt-1.5 text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground">
                             {t("autoQuarantineHint")}
                           </p>
                         </div>
-                        <div className="max-w-xs min-w-0">
+                        <div className="flex min-w-0 flex-col gap-1.5">
                           <Label htmlFor={`host-watch-${s.id}`}>
                             {t("watchTitle")}
                           </Label>
@@ -801,6 +860,7 @@ export default function HostProtect() {
                               id={`host-watch-${s.id}`}
                               data-testid="host-watch-existing"
                               aria-label={t("watchTitle")}
+                              className="h-10 min-h-10"
                             >
                               <SelectValue />
                             </SelectTrigger>
@@ -813,7 +873,7 @@ export default function HostProtect() {
                               </SelectItem>
                             </SelectContent>
                           </Select>
-                          <p className="mt-1.5 text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground">
                             {t("watchHint")}
                           </p>
                         </div>
@@ -850,38 +910,35 @@ export default function HostProtect() {
                           {emptyHitsCopy}
                         </p>
                       ) : (
-                        <Table data-testid="host-hits">
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>{t("colPath")}</TableHead>
-                              <TableHead>{t("colClass")}</TableHead>
-                              <TableHead>{t("colEngine")}</TableHead>
-                              <TableHead>{t("colStatus")}</TableHead>
-                              <TableHead />
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
+                        <div data-testid="host-hits">
+                          <div className="space-y-2 md:hidden">
                             {siteHits.map((h) => (
-                              <TableRow key={h.id}>
-                                <TableCell>{h.rel_path}</TableCell>
-                                <TableCell>{h.class}</TableCell>
-                                <TableCell>{h.engine}</TableCell>
-                                <TableCell>
-                                  {h.status === "pending_quarantine"
-                                    ? t("statusPendingQuarantine")
-                                    : h.status === "pending_restore"
-                                      ? t("statusPendingRestore")
-                                      : h.status === "ignored"
-                                        ? t("statusIgnored")
-                                        : h.status}
-                                </TableCell>
-                                <TableCell className="flex flex-wrap gap-2">
+                              <div
+                                key={h.id}
+                                className="rounded-lg border border-border bg-card p-3"
+                              >
+                                <p className="min-w-0 break-all font-mono text-xs font-medium text-foreground">
+                                  {h.rel_path}
+                                </p>
+                                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                                  <Badge variant={hitClassVariant(h.class)}>
+                                    {h.class}
+                                  </Badge>
+                                  <Badge variant="default" className="font-mono">
+                                    {h.engine}
+                                  </Badge>
+                                  <Badge variant={hitStatusVariant(h.status)}>
+                                    {hitStatusLabel(h.status)}
+                                  </Badge>
+                                </div>
+                                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                                   {(h.status === "open" ||
                                     h.status === "restored") && (
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      data-testid="host-quarantine"
+                                      className="w-full sm:w-auto"
+                                      data-testid={`host-quarantine-m-${h.id}`}
                                       onClick={() => qMut.mutate(h.id)}
                                     >
                                       {t("quarantine")}
@@ -891,7 +948,8 @@ export default function HostProtect() {
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      data-testid="host-restore"
+                                      className="w-full sm:w-auto"
+                                      data-testid={`host-restore-m-${h.id}`}
                                       onClick={() => rMut.mutate(h.id)}
                                     >
                                       {t("restore")}
@@ -901,7 +959,8 @@ export default function HostProtect() {
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      data-testid="host-ignore"
+                                      className="w-full sm:w-auto"
+                                      data-testid={`host-ignore-m-${h.id}`}
                                       onClick={() => iMut.mutate(h.id)}
                                     >
                                       {t("ignore")}
@@ -909,15 +968,121 @@ export default function HostProtect() {
                                   )}
                                   {(h.class === "webshell" ||
                                     h.class === "backdoor") && (
-                                    <Button size="sm" variant="ghost" asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="w-full sm:w-auto"
+                                      asChild
+                                    >
                                       <Link to="/guard">{t("openGuard")}</Link>
                                     </Button>
                                   )}
-                                </TableCell>
-                              </TableRow>
+                                </div>
+                              </div>
                             ))}
-                          </TableBody>
-                        </Table>
+                          </div>
+                          <div className="hidden overflow-x-auto md:block">
+                            <div className="overflow-hidden rounded-md border border-border bg-card">
+                              <Table className="table-fixed">
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="w-[40%]">
+                                      {t("colPath")}
+                                    </TableHead>
+                                    <TableHead className="w-[15%]">
+                                      {t("colClass")}
+                                    </TableHead>
+                                    <TableHead className="w-[15%]">
+                                      {t("colEngine")}
+                                    </TableHead>
+                                    <TableHead className="w-[15%]">
+                                      {t("colStatus")}
+                                    </TableHead>
+                                    <TableHead className="w-[15%]" />
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {siteHits.map((h) => (
+                                    <TableRow key={h.id}>
+                                      <TableCell className="break-all font-mono text-xs">
+                                        {h.rel_path}
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge
+                                          variant={hitClassVariant(h.class)}
+                                        >
+                                          {h.class}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge
+                                          variant="default"
+                                          className="font-mono"
+                                        >
+                                          {h.engine}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge
+                                          variant={hitStatusVariant(h.status)}
+                                        >
+                                          {hitStatusLabel(h.status)}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell>
+                                        <div className="flex flex-wrap gap-2">
+                                          {(h.status === "open" ||
+                                            h.status === "restored") && (
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              data-testid="host-quarantine"
+                                              onClick={() => qMut.mutate(h.id)}
+                                            >
+                                              {t("quarantine")}
+                                            </Button>
+                                          )}
+                                          {h.status === "quarantined" && (
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              data-testid="host-restore"
+                                              onClick={() => rMut.mutate(h.id)}
+                                            >
+                                              {t("restore")}
+                                            </Button>
+                                          )}
+                                          {h.status === "open" && (
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              data-testid="host-ignore"
+                                              onClick={() => iMut.mutate(h.id)}
+                                            >
+                                              {t("ignore")}
+                                            </Button>
+                                          )}
+                                          {(h.class === "webshell" ||
+                                            h.class === "backdoor") && (
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              asChild
+                                            >
+                                              <Link to="/guard">
+                                                {t("openGuard")}
+                                              </Link>
+                                            </Button>
+                                          )}
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </div>
+                        </div>
                       )}
                     </CardContent>
                   </Card>

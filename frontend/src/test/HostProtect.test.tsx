@@ -603,8 +603,8 @@ describe("Host Protect page", () => {
     );
     expect(screen.getByTestId("host-show-ignored")).toBeInTheDocument();
     await userEvent.setup().click(screen.getByTestId("host-show-ignored"));
-    expect(screen.getByText("cache.php")).toBeInTheDocument();
-    expect(screen.getByText("Ignored")).toBeInTheDocument();
+    expect(screen.getAllByText("cache.php").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Ignored").length).toBeGreaterThan(0);
   });
 
   it("does not say files need review when the list is empty", async () => {
