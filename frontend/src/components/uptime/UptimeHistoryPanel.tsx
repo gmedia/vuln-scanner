@@ -30,10 +30,12 @@ export function UptimeHistoryPanel({
   monitor,
   rows,
   loading,
+  emptyHint,
 }: {
   readonly monitor: UptimeMonitor;
   readonly rows: readonly UptimeSample[];
   readonly loading: boolean;
+  readonly emptyHint?: string;
 }) {
   const { t } = useTranslation("uptime");
   return (
@@ -48,7 +50,9 @@ export function UptimeHistoryPanel({
         {loading ? (
           <Skeleton className="h-24 w-full" />
         ) : rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("historyEmpty")}</p>
+          <p className="text-sm text-muted-foreground">
+            {emptyHint ?? t("historyEmpty")}
+          </p>
         ) : (
           <>
             <div className="space-y-2 md:hidden" data-testid="uptime-history-mobile">

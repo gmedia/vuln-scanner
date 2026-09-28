@@ -609,14 +609,16 @@ describe("UptimeDetail", () => {
     expect(row.textContent).toContain(formatStamp(recoverAt));
   });
 
-  it("drives events fetch with custom outage window", async () => {
+  it("drives all sections with the custom global window", async () => {
     renderDetail();
     await waitFor(() =>
       expect(screen.getByTestId("uptime-outage-filters")).toBeInTheDocument(),
     );
     expect(screen.getByTestId("uptime-outage-from")).toBeInTheDocument();
     expect(screen.getByTestId("uptime-outage-to")).toBeInTheDocument();
-    const before = mockEvents.mock.calls.length;
+    const eventsBefore = mockEvents.mock.calls.length;
+    const statsBefore = mockStats.mock.calls.length;
+    const samplesBefore = mockSamples.mock.calls.length;
     const fromDay = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000);
     const toDay = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
     const pad = (n: number) => String(n).padStart(2, "0");
@@ -629,7 +631,7 @@ describe("UptimeDetail", () => {
       target: { value: day(toDay) },
     });
     await waitFor(() =>
-      expect(mockEvents.mock.calls.length).toBeGreaterThan(before),
+      expect(mockEvents.mock.calls.length).toBeGreaterThan(eventsBefore),
     );
     const last = mockEvents.mock.calls[mockEvents.mock.calls.length - 1]?.[1] as {
       from: string;
@@ -653,6 +655,61 @@ describe("UptimeDetail", () => {
     );
     expect(new Date(last.from).getTime()).toBe(wantFrom.getTime());
     expect(new Date(last.until).getTime()).toBe(wantUntil.getTime());
+    await waitFor(() =>
+      expect(mockStats.mock.calls.length).toBeGreaterThan(statsBefore),
+    );
+    const lastStats = mockStats.mock.calls[
+      mockStats.mock.calls.length - 1
+    ]?.[1] as { from: string; until: string };
+    expect(new Date(lastStats.from).getTime()).toBe(wantFrom.getTime());
+    expect(new Date(lastStats.until).getTime()).toBe(wantUntil.getTime());
+    await waitFor(() =>
+      expect(mockSamples.mock.calls.length).toBeGreaterThan(samplesBefore),
+    );
+    const lastSamples = mockSamples.mock.calls[
+      mockSamples.mock.calls.length - 1
+    ]?.[1] as { from: string; until: string; limit: number; offset: number };
+    expect(new Date(lastSamples.from).getTime()).toBe(wantFrom.getTime());
+    expect(new Date(lastSamples.until).getTime()).toBe(wantUntil.getTime());
+    expect(lastSamples.offset).toBe(0);
+    expect(
+      screen.queryByTestId("uptime-outage-range-error"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("uptime-samples-retention-note"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("blanks samples sections beyond 7-day retention with an honest note", async () => {
+    renderDetail();
+    await waitFor(() =>
+      expect(screen.getByTestId("uptime-outage-filters")).toBeInTheDocument(),
+    );
+    const statsBefore = mockStats.mock.calls.length;
+    const samplesBefore = mockSamples.mock.calls.length;
+    const eventsBefore = mockEvents.mock.calls.length;
+    const fromDay = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const toDay = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const day = (d: Date) =>
+      d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+    fireEvent.change(screen.getByTestId("uptime-outage-from-input"), {
+      target: { value: day(fromDay) },
+    });
+    fireEvent.change(screen.getByTestId("uptime-outage-to-input"), {
+      target: { value: day(toDay) },
+    });
+    await waitFor(() =>
+      expect(mockEvents.mock.calls.length).toBeGreaterThan(eventsBefore),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("uptime-samples-retention-note"),
+      ).toBeInTheDocument(),
+    );
+    expect(mockStats.mock.calls.slice(statsBefore)).toHaveLength(0);
+    expect(mockSamples.mock.calls.slice(samplesBefore)).toHaveLength(0);
+    expect(screen.queryByTestId("uptime-sample-pagination")).not.toBeInTheDocument();
     expect(
       screen.queryByTestId("uptime-outage-range-error"),
     ).not.toBeInTheDocument();
