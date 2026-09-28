@@ -114,5 +114,16 @@
   "siteIdHint": "Ini id situs Host Protect — bukan Guard. Di VPS: sudo ./sinexis-install.sh --configure-waf-ingest --waf-site-id {{id}}",
   "wafHelperNever": "Helper belum laporan dari agen Guard situs ini. Baris WAF hidup menunggu laporan itu.",
   "wafHelperPolled": "Helper terakhir laporan {{when}}.",
-  "wafHelperStale": "Helper terakhir laporan {{when}} — lebih dari 30 menit. Baris WAF hidup mungkin tertunda."
+  "wafHelperStale": "Helper terakhir laporan {{when}} — lebih dari 30 menit. Baris WAF hidup mungkin tertunda.",
+  "overviewSites": "Situs",
+  "overviewAgents": "Agen",
+  "overviewNeedsDecision": "Perlu keputusan",
+  "overviewWaiting": "Menunggu cek",
+  "overviewOf": "{{count}} dari {{limit}}",
+  "overviewNoAgents": "Tanpa agen",
+  "overviewHelperOk": "Helper laporan",
+  "overviewHelperStale": "Helper basi",
+  "overviewFilesSuffix": "file",
+  "overviewSitesHint": "SKU {{sku}}",
+  "addSheetHint": "Hanya folder situs yang dicek — bukan seluruh disk."
 }

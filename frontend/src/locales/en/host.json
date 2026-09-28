@@ -114,5 +114,16 @@
   "siteIdHint": "This is Host Protect site id — not Guard. On the VPS: sudo ./sinexis-install.sh --configure-waf-ingest --waf-site-id {{id}}",
   "wafHelperNever": "The helper has not checked in from this site’s Guard agent yet. Live WAF rows wait on that check-in.",
   "wafHelperPolled": "Helper last checked in {{when}}.",
-  "wafHelperStale": "Helper last checked in {{when}} — older than 30 minutes. Live WAF rows may be delayed."
+  "wafHelperStale": "Helper last checked in {{when}} — older than 30 minutes. Live WAF rows may be delayed.",
+  "overviewSites": "Sites",
+  "overviewAgents": "Agents",
+  "overviewNeedsDecision": "Need decision",
+  "overviewWaiting": "Waiting check",
+  "overviewOf": "{{count}} of {{limit}}",
+  "overviewNoAgents": "No agents",
+  "overviewHelperOk": "Helper checking in",
+  "overviewHelperStale": "Helper stale",
+  "overviewFilesSuffix": "file(s)",
+  "overviewSitesHint": "SKU {{sku}}",
+  "addSheetHint": "Only the site folder is checked — never the whole disk."
 }
