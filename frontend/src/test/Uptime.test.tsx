@@ -148,7 +148,7 @@ describe("Uptime page", () => {
     const row = screen.getByTestId("uptime-row");
     expect(row).toBeInTheDocument();
     expect(screen.getByTestId("uptime-filters")).toBeInTheDocument();
-    expect(screen.getByTestId("uptime-kpi").className).toMatch(/grid-cols-3/);
+    expect(screen.getByTestId("uptime-kpi").className).toMatch(/grid-cols-2/);
     const filtersToggle = screen.getByTestId("uptime-filters-toggle");
     expect(filtersToggle).toBeInTheDocument();
     const filtersCard = filtersToggle.closest("[class*='rounded-md']");
