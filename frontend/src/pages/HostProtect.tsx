@@ -24,14 +24,19 @@ import {
   type HostSite,
 } from "@/api/hostProtect";
 import { Link } from "react-router-dom";
-import { AlertTriangle, Shield } from "lucide-react";
+import { AlertTriangle, Download, Shield, Terminal } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/Card";
 import {
   Select,
   SelectContent,
@@ -49,6 +54,8 @@ import {
 } from "@/components/ui/Table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import HostWafPanel from "@/components/host/HostWafPanel";
+import HostOverview from "@/components/host/HostOverview";
+import HostAddSiteSheet from "@/components/host/HostAddSiteSheet";
 import {
   SINEXIS_INSTALL_RAW_URL,
   SINEXIS_INSTALL_WGET,
@@ -133,6 +140,9 @@ export default function HostProtect() {
   }, null);
   const fleetWhen = formatHelperPollAt(fleetPollIso);
   const fleetStale = isHelperPollStale(fleetPollIso);
+  const overviewNeedsDecision = (hitsQ.data ?? []).filter(
+    (h) => h.engine !== "mock" && h.status !== "ignored",
+  ).length;
 
   const createMut = useMutation({
     mutationFn: createHostSite,
@@ -279,22 +289,44 @@ export default function HostProtect() {
           </Button>
         }
       />
-      <details className="max-w-xl space-y-2" open={items.length === 0}>
-        <summary className="cursor-pointer text-sm font-medium text-foreground">
-          {t("installDetails")}
-        </summary>
-        <div className="mt-2 space-y-2">
-          <p className="text-sm text-muted-foreground">{t("installHint")}</p>
-          <Button variant="outline" size="sm" asChild>
+      <HostOverview
+        sku={sku}
+        count={items.length}
+        limit={limit}
+        agentsCount={agents.length}
+        needsDecision={overviewNeedsDecision}
+        waiting={waitingAgent}
+        fleetStale={fleetStale}
+        featureOn={featureOn}
+      />
+
+      <Card data-testid="host-install-card">
+        <CardHeader className="flex flex-row items-start gap-3 space-y-0 pb-2">
+          <span
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted/40"
+            aria-hidden
+          >
+            <Terminal className="h-4 w-4" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <CardTitle className="text-sm">{t("installDetails")}</CardTitle>
+            <CardDescription className="mt-0.5">
+              {t("installHint")}
+            </CardDescription>
+          </span>
+          <Button variant="outline" size="sm" asChild className="shrink-0">
             <a
               href={SINEXIS_INSTALL_RAW_URL}
               download="sinexis-install.sh"
               rel="noreferrer"
               data-testid="host-install-download"
             >
+              <Download className="mr-1.5 h-3.5 w-3.5" aria-hidden />
               {t("installDownload")}
             </a>
           </Button>
+        </CardHeader>
+        <CardContent className="space-y-2">
           <pre
             className="overflow-x-auto whitespace-pre-wrap break-all rounded-md border border-border bg-muted/40 p-3 font-mono text-[11px] leading-relaxed text-foreground"
             data-testid="host-install-wget"
@@ -302,8 +334,8 @@ export default function HostProtect() {
             {SINEXIS_INSTALL_WGET}
           </pre>
           <p className="text-xs text-muted-foreground">{t("installCheck")}</p>
-        </div>
-      </details>
+        </CardContent>
+      </Card>
 
       {agents.length === 0 && !agentsQ.isLoading ? (
         <Card data-testid="host-no-agents">
@@ -331,197 +363,47 @@ export default function HostProtect() {
         </Alert>
       ) : null}
 
-      {open ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("add")}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <Label htmlFor="host-name">{t("name")}</Label>
-              <Input
-                id="host-name"
-                data-testid="host-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="host-root">{t("rootPath")}</Label>
-              <Input
-                id="host-root"
-                data-testid="host-root"
-                value={rootPath}
-                onChange={(e) => setRootPath(e.target.value)}
-              />
-            </div>
-            <p
-              className="text-sm text-muted-foreground"
-              data-testid="host-helper-required"
-            >
-              {t("helperRequired")}
-            </p>
-            <div>
-              <Label htmlFor="host-agent">{t("guardAgent")}</Label>
-              <Select value={selectedAgentId} onValueChange={setAgentId}>
-                <SelectTrigger
-                  id="host-agent"
-                  data-testid="host-agent"
-                  aria-label={t("guardAgent")}
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {agents.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedAgentId ? (
-                <p
-                  className="mt-1.5 text-xs text-muted-foreground"
-                  data-testid="host-helper-poll-add"
-                >
-                  {(() => {
-                    const ag = agents.find((a) => a.id === selectedAgentId);
-                    const iso = ag?.last_helper_poll_at ?? null;
-                    const when = formatHelperPollAt(iso);
-                    if (!when) return t("helperNeverPolled");
-                    if (isHelperPollStale(iso)) {
-                      return t("helperStale", { when });
-                    }
-                    return t("helperPolled", { when });
-                  })()}
-                </p>
-              ) : null}
-            </div>
-            <div>
-              <Label htmlFor="host-cms">{t("cmsHint")}</Label>
-              <Select
-                value={cmsHint}
-                onValueChange={(v) =>
-                  setCmsHint(v as "wordpress" | "laravel" | "unknown")
-                }
-              >
-                <SelectTrigger
-                  id="host-cms"
-                  data-testid="host-cms"
-                  aria-label={t("cmsHint")}
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unknown">{t("cmsUnknown")}</SelectItem>
-                  <SelectItem value="wordpress">{t("cmsWordpress")}</SelectItem>
-                  <SelectItem value="laravel">{t("cmsLaravel")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="host-interval">{t("scanInterval")}</Label>
-              <Select
-                value={scanInterval}
-                onValueChange={(v) =>
-                  setScanInterval(v as "daily" | "hourly")
-                }
-              >
-                <SelectTrigger
-                  id="host-interval"
-                  data-testid="host-interval"
-                  aria-label={t("scanInterval")}
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">{t("intervalDaily")}</SelectItem>
-                  <SelectItem value="hourly">{t("intervalHourly")}</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                {t("intervalHint")}
-              </p>
-            </div>
-            <div>
-              <Label htmlFor="host-auto-quarantine">{t("autoQuarantine")}</Label>
-              <Select
-                value={autoQuarantine ? "on" : "off"}
-                onValueChange={(v) => setAutoQuarantine(v === "on")}
-              >
-                <SelectTrigger
-                  id="host-auto-quarantine"
-                  data-testid="host-auto-quarantine"
-                  aria-label={t("autoQuarantine")}
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="off">{t("autoQuarantineOff")}</SelectItem>
-                  <SelectItem value="on">{t("autoQuarantineOn")}</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                {t("autoQuarantineHint")}
-              </p>
-            </div>
-            <div>
-              <Label htmlFor="host-watch">{t("watchTitle")}</Label>
-              <Select
-                value={watchOnWrite ? "on" : "off"}
-                onValueChange={(v) => setWatchOnWrite(v === "on")}
-              >
-                <SelectTrigger
-                  id="host-watch"
-                  data-testid="host-watch"
-                  aria-label={t("watchTitle")}
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="off">{t("watchOff")}</SelectItem>
-                  <SelectItem value="on">{t("watchOn")}</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                {t("watchHint")}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                data-testid="host-save"
-                disabled={
-                  !name.trim() ||
-                  !rootPath.trim() ||
-                  !selectedAgentId ||
-                  createMut.isPending
-                }
-                onClick={() =>
-                  createMut.mutate({
-                    name: name.trim(),
-                    root_path: rootPath.trim(),
-                    guard_agent_id: selectedAgentId,
-                    cms_hint: cmsHint,
-                    scan_interval: scanInterval,
-                    auto_quarantine: autoQuarantine,
-                    watch_on_write: watchOnWrite,
-                  })
-                }
-              >
-                {t("save")}
-              </Button>
-              <Button variant="outline" onClick={() => setOpen(false)}>
-                {t("cancel")}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
+      <HostAddSiteSheet
+        open={open}
+        onOpenChange={setOpen}
+        name={name}
+        onNameChange={setName}
+        rootPath={rootPath}
+        onRootPathChange={setRootPath}
+        agents={agents}
+        selectedAgentId={selectedAgentId}
+        onAgentChange={setAgentId}
+        cmsHint={cmsHint}
+        onCmsHintChange={setCmsHint}
+        scanInterval={scanInterval}
+        onScanIntervalChange={setScanInterval}
+        autoQuarantine={autoQuarantine}
+        onAutoQuarantineChange={setAutoQuarantine}
+        watchOnWrite={watchOnWrite}
+        onWatchOnWriteChange={setWatchOnWrite}
+        saving={createMut.isPending}
+        onSave={() =>
+          createMut.mutate({
+            name: name.trim(),
+            root_path: rootPath.trim(),
+            guard_agent_id: selectedAgentId,
+            cms_hint: cmsHint,
+            scan_interval: scanInterval,
+            auto_quarantine: autoQuarantine,
+            watch_on_write: watchOnWrite,
+          })
+        }
+      />
 
       <Tabs value={hostTab} onValueChange={setHostTab}>
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-2 sm:w-auto sm:min-w-[22rem]">
           <TabsTrigger value="malware" data-testid="host-tab-malware">
             {t("tabMalware")}
+            {overviewNeedsDecision > 0 ? (
+              <Badge variant="critical" className="ml-2">
+                {overviewNeedsDecision}
+              </Badge>
+            ) : null}
           </TabsTrigger>
           <TabsTrigger value="waf" data-testid="host-tab-waf">
             {t("tabWaf")}
@@ -656,57 +538,80 @@ export default function HostProtect() {
                     : "default";
                 return (
                 <li key={s.id}>
-                  <Card>
-                    <CardHeader className="space-y-2">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0 flex-1 space-y-1">
+                  <Card data-testid={`host-site-card-${s.id}`}>
+                    <CardHeader className="space-y-3">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <CardTitle className="text-base">
+                            <CardTitle className="text-base leading-tight">
                               {s.name}
                             </CardTitle>
-                            <Badge variant={siteBadgeVariant}>
+                            <Badge
+                              variant={siteBadgeVariant}
+                              data-testid={`host-site-badge-${s.id}`}
+                            >
                               {siteBadgeLabel}
                             </Badge>
+                            {activeHits.length > 0 ? (
+                              <Badge variant="critical">
+                                {activeHits.length} {t("overviewFilesSuffix")}
+                              </Badge>
+                            ) : null}
                           </div>
-                          <p className="break-all font-mono text-xs text-muted-foreground">
+                          <p className="mt-1.5 break-all font-mono text-xs text-muted-foreground">
                             {s.root_path}
                           </p>
                           <p
-                            className="break-all font-mono text-xs text-muted-foreground"
+                            className="mt-1 break-all font-mono text-xs text-muted-foreground"
                             data-testid="host-site-id"
                           >
                             {t("siteId")}: {s.id}
                           </p>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="mt-1"
-                            data-testid="host-copy-site-id"
-                            onClick={() => {
-                              void navigator.clipboard
-                                .writeText(s.id)
-                                .then(() => toast.success(t("copySiteIdOk")))
-                                .catch(() => toast.error(t("copySiteIdFail")));
-                            }}
-                          >
-                            {t("copySiteId")}
-                          </Button>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              data-testid="host-copy-site-id"
+                              onClick={() => {
+                                void navigator.clipboard
+                                  .writeText(s.id)
+                                  .then(() => toast.success(t("copySiteIdOk")))
+                                  .catch(() => toast.error(t("copySiteIdFail")));
+                              }}
+                            >
+                              {t("copySiteId")}
+                            </Button>
+                            <span
+                              className={
+                                helperStale
+                                  ? "text-xs font-medium text-destructive"
+                                  : "text-xs text-muted-foreground"
+                              }
+                              data-testid="host-helper-poll"
+                            >
+                              {helperWhen
+                                ? helperStale
+                                  ? t("helperStale", { when: helperWhen })
+                                  : t("helperPolled", { when: helperWhen })
+                                : t("helperNeverPolled")}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex w-full flex-col gap-2 sm:w-auto sm:shrink-0 sm:flex-row">
+                        <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto lg:shrink-0">
                           <Button
-                            variant="outline"
                             size="sm"
-                            className="w-full sm:w-auto"
+                            className="w-full sm:flex-1 lg:w-auto"
                             data-testid="host-scan"
+                            disabled={scanMut.isPending}
                             onClick={() => scanMut.mutate(s.id)}
                           >
                             {t("scanNow")}
                           </Button>
                           <Button
-                            variant="destructive"
+                            variant="outline"
                             size="sm"
-                            className="w-full sm:w-auto"
+                            className="w-full text-destructive hover:text-destructive sm:flex-1 lg:w-auto"
                             onClick={() => {
                               if (window.confirm(t("confirmDelete")))
                                 delMut.mutate(s.id);
@@ -716,23 +621,9 @@ export default function HostProtect() {
                           </Button>
                         </div>
                       </div>
-                      <p
-                        className={
-                          helperStale
-                            ? "text-sm font-medium text-destructive"
-                            : "text-sm text-muted-foreground"
-                        }
-                        data-testid="host-helper-poll"
-                      >
-                        {helperWhen
-                          ? helperStale
-                            ? t("helperStale", { when: helperWhen })
-                            : t("helperPolled", { when: helperWhen })
-                          : t("helperNeverPolled")}
-                      </p>
                       {scanStatusCopy ? (
                         <p
-                          className="text-xs text-muted-foreground"
+                          className="max-w-prose text-xs text-muted-foreground"
                           data-testid="host-scan-status"
                         >
                           {scanStatusCopy}
