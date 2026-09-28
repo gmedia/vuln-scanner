@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { Checkbox } from "@/components/ui/Checkbox";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import {
@@ -85,12 +86,13 @@ export function UptimeMonitorHttpFields({
         />
       </Field>
       <div className="flex items-center gap-2">
-        <input
+        <Checkbox
           id="up-invert"
           data-testid="uptime-keyword-invert"
-          type="checkbox"
           checked={values.keywordInvert}
-          onChange={(e) => patch({ keywordInvert: e.target.checked })}
+          onCheckedChange={(checked) =>
+            patch({ keywordInvert: checked === true })
+          }
         />
         <Label htmlFor="up-invert">{t("keywordInvert")}</Label>
       </div>
