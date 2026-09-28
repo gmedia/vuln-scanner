@@ -1,6 +1,7 @@
 import { Shield } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { HostWafEvent } from "@/api/hostWaf";
+import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent } from "@/components/ui/Card";
 import {
   Pagination,
@@ -27,6 +28,10 @@ type HostWafEventsListProps = {
   readonly onPageChange: (page: number) => void;
 };
 
+function actionVariant(action: HostWafEvent["action"]) {
+  return action === "block" ? ("failed" as const) : ("default" as const);
+}
+
 export function HostWafEventsList({
   events,
   page,
@@ -35,14 +40,16 @@ export function HostWafEventsList({
 }: HostWafEventsListProps) {
   const { t } = useTranslation("host");
   return (
-    <>
-      <h3 className="text-sm font-medium">{t("wafEvents")}</h3>
-      <p
-        className="text-xs text-muted-foreground"
-        data-testid="host-waf-events-hint"
-      >
-        {t("wafEventsHint")}
-      </p>
+    <div className="space-y-3">
+      <div className="space-y-1">
+        <h3 className="text-sm font-medium">{t("wafEvents")}</h3>
+        <p
+          className="max-w-prose text-xs text-muted-foreground"
+          data-testid="host-waf-events-hint"
+        >
+          {t("wafEventsHint")}
+        </p>
+      </div>
       {events.length === 0 ? (
         <Card data-testid="host-waf-events-empty">
           <CardContent className="flex min-h-[8rem] flex-col items-center justify-center gap-2 px-6 py-8 text-center">
@@ -66,16 +73,19 @@ export function HostWafEventsList({
                 data-testid={`host-waf-event-card-${e.id}`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <p className="min-w-0 break-all font-mono text-sm font-medium text-foreground">
+                  <p className="min-w-0 flex-1 break-all font-mono text-xs font-medium text-foreground">
                     {e.path}
                   </p>
-                  <span className="shrink-0 text-xs text-muted-foreground">
+                  <Badge variant="default" className="shrink-0">
                     {e.method}
-                  </span>
+                  </Badge>
                 </div>
-                <p className="mt-1 font-mono text-xs text-muted-foreground">
-                  {e.action} · {e.rule_id}
-                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <Badge variant={actionVariant(e.action)}>{e.action}</Badge>
+                  <Badge variant="default" className="font-mono">
+                    {e.rule_id}
+                  </Badge>
+                </div>
               </div>
             ))}
           </div>
@@ -83,32 +93,46 @@ export function HostWafEventsList({
             className="hidden overflow-x-auto md:block"
             data-testid="host-waf-events-desktop"
           >
-            <Table className="table-fixed">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[15%]">{t("wafColAction")}</TableHead>
-                  <TableHead className="w-[20%]">{t("wafColRule")}</TableHead>
-                  <TableHead className="w-[15%]">{t("wafColMethod")}</TableHead>
-                  <TableHead className="w-1/2">{t("colPath")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {events.map((e) => (
-                  <TableRow key={e.id}>
-                    <TableCell>{e.action}</TableCell>
-                    <TableCell className="font-mono">{e.rule_id}</TableCell>
-                    <TableCell>{e.method}</TableCell>
-                    <TableCell className="break-all font-mono">{e.path}</TableCell>
+            <div className="overflow-hidden rounded-md border border-border bg-card">
+              <Table className="table-fixed">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[15%]">{t("wafColAction")}</TableHead>
+                    <TableHead className="w-[20%]">{t("wafColRule")}</TableHead>
+                    <TableHead className="w-[15%]">{t("wafColMethod")}</TableHead>
+                    <TableHead className="w-1/2">{t("colPath")}</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {events.map((e) => (
+                    <TableRow key={e.id}>
+                      <TableCell>
+                        <Badge variant={actionVariant(e.action)}>
+                          {e.action}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="default" className="font-mono">
+                          {e.rule_id}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="default">{e.method}</Badge>
+                      </TableCell>
+                      <TableCell className="break-all font-mono text-xs">
+                        {e.path}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </div>
       )}
       {pages > 1 ? (
         <Pagination className="mt-4" data-testid="host-waf-events-pagination">
-          <PaginationContent>
+          <PaginationContent className="flex-wrap justify-center gap-1">
             <PaginationItem>
               <PaginationPrevious
                 onClick={() => onPageChange(Math.max(1, page - 1))}
@@ -129,6 +153,6 @@ export function HostWafEventsList({
           </PaginationContent>
         </Pagination>
       ) : null}
-    </>
+    </div>
   );
 }
