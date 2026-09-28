@@ -187,7 +187,7 @@ function UptimeMonitorForm({
           >
             <AccordionItem value="advanced" className="border-b-0">
               <AccordionTrigger>{t("advanced")}</AccordionTrigger>
-              <AccordionContent className="space-y-3">
+              <AccordionContent className="space-y-3 px-1 pt-1">
                 {values.checkType !== "heartbeat" ? (
                   <Field id="up-timeout" label={t("timeout")}>
                     <Input
@@ -273,5 +273,3 @@ function UptimeMonitorForm({
     </>
   );
 }
-
-
