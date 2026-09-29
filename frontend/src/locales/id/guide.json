@@ -12,6 +12,12 @@
     "runtime": "Di mesin",
     "limits": "Batas"
   },
+  "groupBlurb": {
+    "scan": "Login, tiga scanner, dan laporan",
+    "attach": "Jadwal, aset bernama, workspace, kursi SKU",
+    "runtime": "Guard, SIEM, uptime, halaman status, Host Protect",
+    "limits": "Apa yang produk ini tidak pernah kerjakan"
+  },
   "toc": {
     "mulai": "1. Buka akun scan",
     "scan-ip": "2. Scan IP",
