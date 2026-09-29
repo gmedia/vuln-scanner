@@ -12,17 +12,12 @@ import {
   fetchTagColors,
   listAssets,
   patchTagColors,
-  TAG_COLOR_KEYS,
   updateAsset,
   type ScanAsset,
   type TagColorValue,
 } from "@/api/assets";
-import {
-  TAG_COLOR_DOT,
-  tagColorClass,
-  tagColorHex,
-  tagColorStyle,
-} from "@/lib/tagColors";
+import { tagColorClass, tagColorStyle } from "@/lib/tagColors";
+import { AssetFilters } from "@/components/assets/AssetFilters";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -38,11 +33,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/Select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/Popover";
 import {
   Sheet,
   SheetContent,
@@ -533,231 +523,22 @@ export default function Assets() {
       </Sheet>
 
       {items.length > 0 ? (
-        <div
-          data-testid="assets-filters"
-          className="grid grid-cols-1 gap-3 rounded-md border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4"
-        >
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <Label htmlFor="asset-search">{t("search")}</Label>
-            <Input
-              id="asset-search"
-              data-testid="asset-search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t("searchPlaceholder")}
-              className="h-10 min-h-10"
-            />
-          </div>
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <Label htmlFor="asset-type-filter">{t("type")}</Label>
-            <Select
-              value={typeFilter}
-              onValueChange={(value) => setTypeFilter(value as TypeFilter)}
-            >
-              <SelectTrigger
-                id="asset-type-filter"
-                data-testid="asset-type-filter"
-                aria-label={t("type")}
-                className="h-10 min-h-10"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("typeAll")}</SelectItem>
-                <SelectItem value="domain">{t("typeDomain")}</SelectItem>
-                <SelectItem value="ip">{t("typeIp")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {allTags.length > 0 ? (
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <Label htmlFor="asset-tag-filter">{t("filterTag")}</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    id="asset-tag-filter"
-                    type="button"
-                    variant="outline"
-                    data-testid="asset-tag-filter"
-                    className="h-10 min-h-10 w-full justify-start font-normal"
-                    aria-label={t("filterTag")}
-                  >
-                    {tagFilters.length === 0
-                      ? t("allTags")
-                      : t("filterTagCount", { count: tagFilters.length })}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  align="start"
-                  className="w-[min(24rem,calc(100vw-2rem))] p-3"
-                >
-                  <Input
-                    data-testid="asset-tag-filter-search"
-                    value={tagQuery}
-                    onChange={(e) => setTagQuery(e.target.value)}
-                    placeholder={t("filterTagSearch")}
-                    aria-label={t("filterTagSearch")}
-                    className="h-10 min-h-10"
-                  />
-                  <ul
-                    className="mt-2 max-h-56 overflow-y-auto"
-                    data-testid="asset-tag-filter-list"
-                  >
-                    {tagOptions.length === 0 ? (
-                      <li className="px-1 py-2 text-sm text-muted-foreground">
-                        {t("filterTagNone")}
-                      </li>
-                    ) : (
-                      tagOptions.map((tag) => {
-                        const on = tagFilters.includes(tag);
-                        return (
-                          <li key={tag}>
-                            <Button
-                              type="button"
-                              variant={on ? "outline" : "ghost"}
-                              className="h-9 w-full justify-start font-normal"
-                              data-testid={`asset-tag-filter-opt-${tag}`}
-                              aria-pressed={on}
-                              onClick={() => toggleTagFilter(tag)}
-                            >
-                              {tag}
-                            </Button>
-                          </li>
-                        );
-                      })
-                    )}
-                  </ul>
-                  {tagFilters.length > 0 ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="mt-2"
-                      data-testid="asset-tag-filter-clear"
-                      onClick={() => setTagFilters([])}
-                    >
-                      {t("clearTagFilter")}
-                    </Button>
-                  ) : null}
-                </PopoverContent>
-              </Popover>
-            </div>
-          ) : (
-            <div className="hidden lg:block" />
-          )}
-          {allTags.length > 0 ? (
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <Label htmlFor="asset-tag-colors-toggle">{t("manageColors")}</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    id="asset-tag-colors-toggle"
-                    type="button"
-                    variant="outline"
-                    data-testid="asset-tag-colors-toggle"
-                    className="h-10 min-h-10 w-full justify-start font-normal"
-                    aria-label={t("manageColors")}
-                  >
-                    {t("manageColors")}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  align="start"
-                  className="w-[min(24rem,calc(100vw-2rem))] p-3"
-                >
-                  <ul
-                    className="flex flex-col gap-2"
-                    data-testid="asset-tag-colors"
-                  >
-                    {allTags.map((tag) => (
-                      <li
-                        key={tag}
-                        className="flex flex-wrap items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1"
-                      >
-                        <Badge
-                          variant="default"
-                          className={tagColorClass(tag, colorMap)}
-                          style={tagColorStyle(tag, colorMap)}
-                        >
-                          {tag}
-                        </Badge>
-                        <div
-                          className="flex gap-1"
-                          role="group"
-                          aria-label={t("tagColorFor", { tag })}
-                        >
-                          {TAG_COLOR_KEYS.map((key) => (
-                            <Button
-                              key={key}
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 min-h-6 p-0"
-                              data-testid={`asset-tag-color-${tag}-${key}`}
-                              aria-label={t("tagColorPick", {
-                                tag,
-                                color: key,
-                              })}
-                              aria-pressed={(colorMap[tag] ?? "gray") === key}
-                              onClick={() => colorMut.mutate({ [tag]: key })}
-                            >
-                              <span
-                                className={`block h-3.5 w-3.5 rounded-full ${TAG_COLOR_DOT[key]} ${(colorMap[tag] ?? "gray") === key ? "ring-2 ring-ring ring-offset-1" : ""}`}
-                              />
-                            </Button>
-                          ))}
-                          <Label
-                            htmlFor={`asset-tag-picker-${tag}`}
-                            className="sr-only"
-                          >
-                            {t("tagColorPicker", { tag })}
-                          </Label>
-                          <input
-                            id={`asset-tag-picker-${tag}`}
-                            type="color"
-                            className="h-6 w-6 cursor-pointer rounded-md border border-border bg-transparent p-0"
-                            data-testid={`asset-tag-color-picker-${tag}`}
-                            aria-label={t("tagColorPicker", { tag })}
-                            value={tagColorHex(tag, colorMap)}
-                            onChange={(e) =>
-                              colorMut.mutate({
-                                [tag]: e.target
-                                  .value
-                                  .toLowerCase() as TagColorValue,
-                              })
-                            }
-                          />
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </PopoverContent>
-              </Popover>
-            </div>
-          ) : null}
-          {tagFilters.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5 sm:col-span-2 lg:col-span-4">
-              {tagFilters.map((tag) => (
-                <Button
-                  key={tag}
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-auto p-0"
-                  onClick={() => toggleTagFilter(tag)}
-                >
-                  <Badge
-                    variant="default"
-                    className={tagColorClass(tag, colorMap)}
-                    data-testid={`asset-tag-chip-${tag}`}
-                  >
-                    {tag} ×
-                  </Badge>
-                </Button>
-              ))}
-            </div>
-          ) : null}
-        </div>
+        <AssetFilters
+          search={search}
+          typeFilter={typeFilter}
+          allTags={allTags}
+          tagOptions={tagOptions}
+          tagFilters={tagFilters}
+          tagQuery={tagQuery}
+          colorMap={colorMap}
+          onSearch={setSearch}
+          onTypeFilter={setTypeFilter}
+          onToggleTag={toggleTagFilter}
+          onClearTags={() => setTagFilters([])}
+          onTagQuery={setTagQuery}
+          onPickColor={(tag, color) => colorMut.mutate({ [tag]: color })}
+          counts={{ shown: visible.length, total: items.length }}
+        />
       ) : null}
 
       {list.isLoading ? (

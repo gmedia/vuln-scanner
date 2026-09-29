@@ -39,7 +39,7 @@
   "schedule": "Buat jadwal",
   "hasSchedule": "Ada jadwal",
   "limitReached": "Batas aset untuk SKU ini tercapai.",
-   "skuLabel": "Paket {{sku}} — {{count}} / {{limit}} aset",
+  "skuLabel": "Paket {{sku}} — {{count}} / {{limit}} aset",
   "confirmDelete": "Hapus aset ini?",
   "pack": "Unduh pack JSON",
   "packHtml": "Unduh pack HTML",
@@ -49,5 +49,7 @@
   "tagColorPick": "{{tag}}: {{color}}",
   "tagColorPicker": "{{tag}}: warna kustom",
   "guardLinked": "Guard: {{name}}",
-  "openGuard": "Buka Guard"
+  "openGuard": "Buka Guard",
+  "filterHint": "Filter berlaku pada aset yang dimuat",
+  "filterShowing": "Menampilkan {{shown}} dari {{total}}"
 }
