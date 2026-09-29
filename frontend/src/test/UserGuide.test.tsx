@@ -203,6 +203,18 @@ describe("UserGuide", () => {
     expect(screen.getByText("Add monitor")).toBeInTheDocument();
     expect(screen.getByText("Create page")).toBeInTheDocument();
     expect(screen.getByText("Add asset")).toBeInTheDocument();
+    const jumpNav = screen.getByRole("navigation", {
+      name: "Jump to a module",
+    });
+    const jumpLinks = jumpNav.querySelectorAll("a");
+    expect(jumpLinks).toHaveLength(4);
+    expect(jumpNav.querySelector('a[href="#mulai"]')).toBeTruthy();
+    expect(jumpNav.querySelector('a[href="#jadwal"]')).toBeTruthy();
+    expect(jumpNav.querySelector('a[href="#guard"]')).toBeTruthy();
+    expect(jumpNav.querySelector('a[href="#tips"]')).toBeTruthy();
+    expect(
+      screen.getByText("Login, the three scanners, and the report"),
+    ).toBeInTheDocument();
     const tocNavs = screen.getAllByRole("navigation", {
       name: "Guide sections",
     });
