@@ -522,25 +522,6 @@ export default function Assets() {
         </SheetContent>
       </Sheet>
 
-      {items.length > 0 ? (
-        <AssetFilters
-          search={search}
-          typeFilter={typeFilter}
-          allTags={allTags}
-          tagOptions={tagOptions}
-          tagFilters={tagFilters}
-          tagQuery={tagQuery}
-          colorMap={colorMap}
-          onSearch={setSearch}
-          onTypeFilter={setTypeFilter}
-          onToggleTag={toggleTagFilter}
-          onClearTags={() => setTagFilters([])}
-          onTagQuery={setTagQuery}
-          onPickColor={(tag, color) => colorMut.mutate({ [tag]: color })}
-          counts={{ shown: visible.length, total: items.length }}
-        />
-      ) : null}
-
       {list.isLoading ? (
         <Card data-testid="assets-loading">
           <CardHeader>
@@ -571,29 +552,47 @@ export default function Assets() {
             </Button>
           </CardContent>
         </Card>
-      ) : visible.length === 0 ? (
-        <Card data-testid="assets-no-match">
-          <CardContent className="flex min-h-[8rem] flex-col items-center justify-center gap-3 px-6 py-10 text-center">
-            <p className="text-sm text-muted-foreground">{t("noTagMatch")}</p>
-            <Button
-              type="button"
-              variant="outline"
-              data-testid="assets-clear-filters"
-              onClick={clearFilters}
-            >
-              {t("clearFilters")}
-            </Button>
-          </CardContent>
-        </Card>
       ) : (
         <Card data-testid="assets-list">
-          <CardHeader>
-            <CardTitle className="text-sm tracking-wide">
-              {t("tableTitle")}
-            </CardTitle>
+          <CardHeader className="flex flex-col gap-0 space-y-0 border-b border-border p-3">
+            <CardTitle className="sr-only">{t("tableTitle")}</CardTitle>
+            <AssetFilters
+              search={search}
+              typeFilter={typeFilter}
+              allTags={allTags}
+              tagOptions={tagOptions}
+              tagFilters={tagFilters}
+              tagQuery={tagQuery}
+              colorMap={colorMap}
+              onSearch={setSearch}
+              onTypeFilter={setTypeFilter}
+              onToggleTag={toggleTagFilter}
+              onClearTags={() => setTagFilters([])}
+              onTagQuery={setTagQuery}
+              onPickColor={(tag, color) => colorMut.mutate({ [tag]: color })}
+              onClearAll={clearFilters}
+              counts={{ shown: visible.length, total: items.length }}
+            />
           </CardHeader>
           <CardContent className="p-0">
-              <div className="space-y-2 p-3 md:hidden" data-testid="assets-list-mobile">
+            {visible.length === 0 ? (
+              <div
+                className="flex min-h-[8rem] flex-col items-center justify-center gap-3 px-6 py-10 text-center"
+                data-testid="assets-no-match"
+              >
+                <p className="text-sm text-muted-foreground">{t("noTagMatch")}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  data-testid="assets-clear-filters"
+                  onClick={clearFilters}
+                >
+                  {t("clearFilters")}
+                </Button>
+              </div>
+            ) : (
+              <>
+               <div className="space-y-2 p-3 md:hidden" data-testid="assets-list-mobile">
                 {visible.map((a: ScanAsset) => (
                   <div
                     key={a.id}
@@ -679,6 +678,8 @@ export default function Assets() {
                   </TableBody>
                 </Table>
               </div>
+              </>
+            )}
           </CardContent>
         </Card>
       )}

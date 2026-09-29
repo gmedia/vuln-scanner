@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -453,6 +453,45 @@ describe("Assets page", () => {
     expect(screen.getAllByText("Lab").length).toBeGreaterThan(0);
     expect(screen.queryByText("Web")).not.toBeInTheDocument();
     await user.clear(screen.getByTestId("asset-search"));
+    expect(screen.getAllByText("Web").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Lab").length).toBeGreaterThan(0);
+  });
+
+  it("filters by type with the segmented control and clears all filters", async () => {
+    mockList.mockResolvedValue([
+      {
+        id: "a1",
+        name: "Web",
+        scan_type: "domain",
+        target: "example.com",
+        notes: null,
+        schedule_id: null,
+        sku: "multi",
+        sku_limit: 10,
+        tags: ["prod"],
+      },
+      {
+        id: "a2",
+        name: "Lab",
+        scan_type: "ip",
+        target: "10.0.0.1",
+        notes: null,
+        schedule_id: null,
+        sku: "multi",
+        sku_limit: 10,
+        tags: ["lab"],
+      },
+    ]);
+    const user = userEvent.setup();
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("asset-type-filter")).toBeInTheDocument(),
+    );
+    const typeGroup = screen.getByTestId("asset-type-filter");
+    await user.click(within(typeGroup).getByRole("button", { name: "IP" }));
+    expect(screen.getAllByText("Lab").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Web")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Clear filters" }));
     expect(screen.getAllByText("Web").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Lab").length).toBeGreaterThan(0);
   });
