@@ -47,24 +47,22 @@ export const GUIDE_GROUPS = [
 ] as const;
 
 export type GuideGroupId = (typeof GUIDE_GROUPS)[number]["id"];
+export type GuideGroup = (typeof GUIDE_GROUPS)[number];
 
-export const HEADING_KEYS: Record<TocId, string> = {
-  mulai: "hMulai",
-  "scan-ip": "hScanIp",
-  "scan-domain": "hScanDomain",
-  "scan-mobile": "hScanMobile",
-  hasil: "hHasil",
-  jadwal: "hJadwal",
-  aset: "hAset",
-  workspace: "hWorkspace",
-  kredit: "hKredit",
-  guard: "hGuard",
-  siem: "hSiem",
-  uptime: "hUptime",
-  "status-page": "hStatus",
-  host: "hHost",
-  tips: "hTips",
+export const GROUP_ICONS: Record<GuideGroupId, LucideIcon> = {
+  scan: Radar,
+  attach: CalendarClock,
+  runtime: Shield,
+  limits: BookOpen,
 };
+
+export function groupAnchor(group: GuideGroup): TocId {
+  return group.ids[0];
+}
+
+export function groupContains(group: GuideGroup, id: TocId): boolean {
+  return (group.ids as readonly TocId[]).includes(id);
+}
 
 export const ICON_BY_ID: Record<TocId, LucideIcon> = {
   mulai: LogIn,

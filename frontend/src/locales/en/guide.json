@@ -12,6 +12,12 @@
     "runtime": "On-box",
     "limits": "Limits"
   },
+  "groupBlurb": {
+    "scan": "Login, the three scanners, and the report",
+    "attach": "Schedules, named assets, workspace, SKU seats",
+    "runtime": "Guard, SIEM, uptime, status page, Host Protect",
+    "limits": "What this product will never do"
+  },
   "toc": {
     "mulai": "1. Open the scan account",
     "scan-ip": "2. IP scan",
