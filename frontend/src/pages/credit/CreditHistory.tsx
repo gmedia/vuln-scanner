@@ -92,12 +92,7 @@ function StatTile({
   valueClassName?: string;
 }) {
   return (
-    <div
-      className={cn(
-        "rounded-md border border-border bg-card px-4 py-3",
-        emphasize && "ring-1 ring-primary/20",
-      )}
-    >
+    <div className="rounded-md border border-border bg-card px-4 py-3">
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
@@ -403,24 +398,19 @@ function CreditHistory() {
   return (
     <div className="w-full space-y-6">
       <PageHeader
-        leading={<Coins className="h-6 w-6 shrink-0 text-primary" />}
         title="Credit history"
         description="Personal scan credits — top-ups, charges, and refunds."
       />
 
       <article
         data-testid="credit-history-identity"
-        className="relative overflow-hidden rounded-lg border border-border bg-card"
+        className="rounded-lg border border-border bg-card"
       >
-        <div
-          aria-hidden
-          className="h-1 w-full bg-linear-to-r from-primary/80 via-primary to-primary/40"
-        />
-        <div className="flex flex-col gap-4 p-4 sm:p-5 md:flex-row md:items-start md:justify-between md:p-6">
+        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 items-start gap-4">
             <span
               aria-hidden
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"
             >
               <Coins className="h-5 w-5" />
             </span>
@@ -463,7 +453,7 @@ function CreditHistory() {
         </div>
         <div
           data-testid="credit-history-summary"
-          className="grid grid-cols-1 gap-3 border-t border-border p-4 sm:grid-cols-3 sm:p-5 md:px-6 md:pb-6"
+          className="grid grid-cols-1 gap-3 border-t border-border p-4 sm:grid-cols-3"
         >
           <StatTile
             label="Current balance"
