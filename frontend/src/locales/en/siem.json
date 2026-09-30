@@ -61,5 +61,16 @@
   "events": "Events",
   "notes": "Notes",
   "newNote": "New note",
-  "addNote": "Add note"
+  "addNote": "Add note",
+  "kpiIndexer": "Indexer",
+  "kpiIndexerLive": "Live",
+  "kpiIndexerDegraded": "Degraded",
+  "kpiIndexerDown": "Down",
+  "kpiMinLevel": "Min level",
+  "kpiLookback": "Lookback",
+  "kpiAgents": "Agents",
+  "lookbackHours": "{{hours}}h",
+  "inspectorId": "Event id",
+  "emptyInspectorHint": "Select an event in the stream to inspect it.",
+  "casesOpenCount": "{{count}} open"
 }
