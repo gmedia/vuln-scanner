@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { HostWafEvent } from "@/api/hostWaf";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent } from "@/components/ui/Card";
+import { cn } from "@/lib/utils";
 import {
   Pagination,
   PaginationContent,
@@ -32,6 +33,10 @@ function actionVariant(action: HostWafEvent["action"]) {
   return action === "block" ? ("failed" as const) : ("default" as const);
 }
 
+function actionRailClass(action: HostWafEvent["action"]): string {
+  return action === "block" ? "bg-destructive" : "bg-muted-foreground/40";
+}
+
 export function HostWafEventsList({
   events,
   page,
@@ -51,9 +56,12 @@ export function HostWafEventsList({
         </p>
       </div>
       {events.length === 0 ? (
-        <Card data-testid="host-waf-events-empty">
-          <CardContent className="flex min-h-[8rem] flex-col items-center justify-center gap-2 px-6 py-8 text-center">
-            <Shield className="h-8 w-8 text-muted-foreground" aria-hidden />
+        <Card data-testid="host-waf-events-empty" className="overflow-hidden">
+          <div className="h-0.5 bg-muted-foreground/30" aria-hidden />
+          <CardContent className="flex min-h-[8rem] flex-col items-center justify-center gap-2 px-6 py-10 text-center">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+              <Shield className="h-6 w-6 text-muted-foreground" aria-hidden />
+            </span>
             <p className="text-sm font-medium text-foreground">{t("wafEvents")}</p>
             <p className="max-w-md text-xs text-muted-foreground">
               {t("wafEventsEmpty")}
@@ -69,10 +77,20 @@ export function HostWafEventsList({
             {events.map((e) => (
               <div
                 key={e.id}
-                className="rounded-lg border border-border bg-card p-3"
+                className={cn(
+                  "relative rounded-lg border border-border bg-card p-3",
+                  e.action === "block" && "bg-destructive/[0.04]",
+                )}
                 data-testid={`host-waf-event-card-${e.id}`}
               >
-                <div className="flex items-start justify-between gap-2">
+                <span
+                  className={cn(
+                    "absolute inset-y-2 left-0 w-0.5 rounded-full",
+                    actionRailClass(e.action),
+                  )}
+                  aria-hidden
+                />
+                <div className="flex items-start justify-between gap-2 pl-3">
                   <p className="min-w-0 flex-1 break-all font-mono text-xs font-medium text-foreground">
                     {e.path}
                   </p>
@@ -80,7 +98,7 @@ export function HostWafEventsList({
                     {e.method}
                   </Badge>
                 </div>
-                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <div className="mt-2 flex flex-wrap items-center gap-1.5 pl-3">
                   <Badge variant={actionVariant(e.action)}>{e.action}</Badge>
                   <Badge variant="default" className="font-mono">
                     {e.rule_id}
@@ -97,15 +115,30 @@ export function HostWafEventsList({
               <Table className="table-fixed">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[15%]">{t("wafColAction")}</TableHead>
-                    <TableHead className="w-[20%]">{t("wafColRule")}</TableHead>
-                    <TableHead className="w-[15%]">{t("wafColMethod")}</TableHead>
-                    <TableHead className="w-1/2">{t("colPath")}</TableHead>
+                    <TableHead className="w-[15%] text-[10px] uppercase tracking-wider">
+                      {t("wafColAction")}
+                    </TableHead>
+                    <TableHead className="w-[20%] text-[10px] uppercase tracking-wider">
+                      {t("wafColRule")}
+                    </TableHead>
+                    <TableHead className="w-[15%] text-[10px] uppercase tracking-wider">
+                      {t("wafColMethod")}
+                    </TableHead>
+                    <TableHead className="w-1/2 text-[10px] uppercase tracking-wider">
+                      {t("colPath")}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {events.map((e) => (
-                    <TableRow key={e.id}>
+                    <TableRow
+                      key={e.id}
+                      className={cn(
+                        "h-12 hover:bg-muted/50",
+                        e.action === "block" &&
+                          "border-l-2 border-l-destructive bg-destructive/[0.04]",
+                      )}
+                    >
                       <TableCell>
                         <Badge variant={actionVariant(e.action)}>
                           {e.action}
