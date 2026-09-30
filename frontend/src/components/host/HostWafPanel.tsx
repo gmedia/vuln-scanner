@@ -6,7 +6,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Activity, FileText, Info } from "lucide-react";
+import { Activity, FileText, Info, Shield } from "lucide-react";
 import { toast } from "sonner";
 import {
   fetchHostWafSnippet,
@@ -38,13 +38,10 @@ import {
   HOST_WAF_EVENTS_PAGE_SIZE,
   HostWafEventsList,
 } from "@/components/host/HostWafEventsList";
+import { wafModeBadgeVariant, wafModeRailClass } from "@/components/host/hostChrome";
+import { HostLiveDot } from "@/components/host/HostChrome";
 import { useAuthStore } from "@/store/authStore";
-
-function modeBadgeVariant(mode: HostWafPolicy["mode"]) {
-  if (mode === "protect") return "success" as const;
-  if (mode === "detect") return "running" as const;
-  return "default" as const;
-}
+import { cn } from "@/lib/utils";
 
 export default function HostWafPanel({
   sites,
@@ -140,9 +137,20 @@ export default function HostWafPanel({
   if (featureOff) {
     return (
       <div data-testid="host-waf-panel">
-        <p className="text-sm text-muted-foreground" data-testid="host-waf-off">
-          {t("wafFeatureOff")}
-        </p>
+        <Card className="overflow-hidden">
+          <div className="h-0.5 bg-muted-foreground/40" aria-hidden />
+          <CardContent className="flex min-h-[8rem] flex-col items-center justify-center gap-2 px-6 py-10 text-center">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+              <Shield className="h-6 w-6 text-muted-foreground" aria-hidden />
+            </span>
+            <p
+              className="max-w-md text-sm text-muted-foreground"
+              data-testid="host-waf-off"
+            >
+              {t("wafFeatureOff")}
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -151,11 +159,26 @@ export default function HostWafPanel({
     <div className="space-y-4" data-testid="host-waf-panel">
       <p className="max-w-prose text-sm text-muted-foreground">{t("wafHint")}</p>
       {sites.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t("wafNeedSite")}</p>
+        <Card className="overflow-hidden">
+          <div className="h-0.5 bg-muted-foreground/40" aria-hidden />
+          <CardContent className="flex min-h-[8rem] flex-col items-center justify-center gap-2 px-6 py-10 text-center">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+              <Shield className="h-6 w-6 text-muted-foreground" aria-hidden />
+            </span>
+            <p className="text-sm text-muted-foreground">{t("wafNeedSite")}</p>
+          </CardContent>
+        </Card>
       ) : (
         <>
-          <Card>
-            <CardContent className="space-y-3 pt-4">
+          <Card className="relative overflow-hidden">
+            <span
+              className={cn(
+                "absolute inset-y-2 left-0 w-0.5 rounded-full",
+                wafModeRailClass(mode),
+              )}
+              aria-hidden
+            />
+            <CardContent className="space-y-3 p-4 pl-5">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <Label htmlFor="host-waf-site">{t("wafSite")}</Label>
@@ -215,8 +238,13 @@ export default function HostWafPanel({
                         </SelectContent>
                       </Select>
                     </div>
+                    {mode === "protect" ? (
+                      <HostLiveDot />
+                    ) : mode === "detect" ? (
+                      <HostLiveDot tone="info" />
+                    ) : null}
                     <Badge
-                      variant={modeBadgeVariant(mode)}
+                      variant={wafModeBadgeVariant(mode)}
                       className="shrink-0"
                     >
                       {mode === "off"
@@ -261,8 +289,8 @@ export default function HostWafPanel({
             </CardContent>
           </Card>
           {selected ? (
-            <Card>
-              <CardContent className="space-y-2 pt-4">
+            <Card className="overflow-hidden">
+              <CardContent className="space-y-2 p-4">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <p
                     className="min-w-0 flex-1 break-all font-mono text-xs text-muted-foreground"
@@ -296,8 +324,8 @@ export default function HostWafPanel({
               </CardContent>
             </Card>
           ) : null}
-          <Card>
-            <CardContent className="pt-4">
+          <Card className="overflow-hidden">
+            <CardContent className="p-4">
               <ul className="space-y-2">
                 <li className="flex items-start gap-2">
                   <Info
