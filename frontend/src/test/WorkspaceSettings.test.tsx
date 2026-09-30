@@ -86,6 +86,26 @@ describe("WorkspaceSettings pilot checklist", () => {
     expect(screen.getByTestId("workspace-billing")).toBeInTheDocument();
   });
 
+  it("shows the active workspace identity before members and billing", () => {
+    renderPage();
+    expect(screen.getByText("Active workspace")).toBeInTheDocument();
+    expect(screen.getByText("org-a")).toBeInTheDocument();
+    const membersHeading = screen.getByRole("heading", {
+      level: 3,
+      name: /members/i,
+    });
+    const billing = screen.getByTestId("workspace-billing");
+    const checklist = screen.getByTestId("pilot-checklist");
+    expect(
+      membersHeading.compareDocumentPosition(billing) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      billing.compareDocumentPosition(checklist) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it("invite submit says send and keeps copy-link as backup", () => {
     renderPage();
     const submit = screen.getByTestId("invite-submit");
