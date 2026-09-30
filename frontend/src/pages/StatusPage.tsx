@@ -246,11 +246,8 @@ export default function StatusPage() {
 
       {!page && !pageQ.isLoading ? (
         <Card className="overflow-hidden">
-          <div className="h-0.5 bg-primary" aria-hidden />
           <CardContent className="flex min-h-[12rem] flex-col items-center justify-center gap-3 px-6 py-12 text-center md:min-h-[16rem] md:py-16">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/15">
-              <Radio className="h-6 w-6 text-primary" aria-hidden />
-            </span>
+            <Radio className="h-8 w-8 text-muted-foreground" aria-hidden />
             <form
               className="flex w-full max-w-lg flex-col items-center gap-4"
               onSubmit={(e) => {
