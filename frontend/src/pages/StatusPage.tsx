@@ -2,13 +2,14 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Check, Copy, Trash2 } from "lucide-react";
+import { Radio } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
   Select,
   SelectContent,
@@ -16,20 +17,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/Select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/Table";
 import { listMonitors } from "@/api/uptime";
 import type { ApiError } from "@/lib/utils";
 import { canManageMembers } from "@/api/orgs";
 import { useAuthStore } from "@/store/authStore";
+import { StatusComponentBoard } from "@/components/status/StatusComponentBoard";
+import { StatusCopyRecord } from "@/components/status/StatusCopyRecord";
+import { StatusHealthHero } from "@/components/status/StatusHealthHero";
 import { StatusIncidentList } from "@/components/status/StatusIncidentList";
 import { StatusIncidentSheet } from "@/components/status/StatusIncidentSheet";
+import { StatusKpiRow } from "@/components/status/StatusKpiRow";
+import {
+  HOSTNAME_STATUS_KEYS,
+  hostnameStatusVariant,
+} from "@/components/status/statusChrome";
 import {
   addComponent,
   attachHostname,
@@ -50,74 +51,7 @@ function apiDetail(err: unknown, fallback: string): string {
   return typeof detail === "string" && detail.trim() ? detail : fallback;
 }
 
-function stateBadgeVariant(state: string | null) {
-  if (state === "up") return "completed" as const;
-  if (state === "down") return "critical" as const;
-  return "info" as const;
-}
-
-const HOSTNAME_STATUS_KEYS: Record<string, string> = {
-  pending_txt: "statusPendingTxt",
-  active: "statusActive",
-  failed: "statusFailed",
-  none: "statusNone",
-};
-
-function hostnameStatusVariant(status: string) {
-  if (status === "active") return "completed" as const;
-  if (status === "failed") return "failed" as const;
-  if (status === "pending_txt") return "pending" as const;
-  return "info" as const;
-}
-
 type CopyField = "cname" | "txt-name" | "txt-value";
-
-function CopyRecordRow({
-  label,
-  display,
-  testId,
-  copied,
-  onCopy,
-  copyLabel,
-  copiedLabel,
-}: {
-  label: string;
-  display: string;
-  testId: string;
-  copied: boolean;
-  onCopy: () => void;
-  copyLabel: string;
-  copiedLabel: string;
-}) {
-  return (
-    <div className="flex min-w-0 items-start gap-2">
-      <div className="min-w-0 flex-1">
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          {label}
-        </p>
-        <p className="mt-0.5 break-all font-mono text-xs text-foreground">
-          {display}
-        </p>
-      </div>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="h-11 w-11 shrink-0 p-0"
-        data-testid={testId}
-        onClick={onCopy}
-        title={copied ? copiedLabel : copyLabel}
-        aria-label={copied ? copiedLabel : copyLabel}
-      >
-        {copied ? (
-          <Check className="h-3.5 w-3.5 text-primary" />
-        ) : (
-          <Copy className="h-3.5 w-3.5" />
-        )}
-      </Button>
-    </div>
-  );
-}
 
 export default function StatusPage() {
   const { t } = useTranslation("statusPage");
@@ -270,6 +204,9 @@ export default function StatusPage() {
   const downCount =
     page?.components.filter((c) => c.state === "down").length ?? 0;
   const upCount = page?.components.filter((c) => c.state === "up").length ?? 0;
+  const hostStatusKey = page
+    ? HOSTNAME_STATUS_KEYS[page.hostname_status]
+    : undefined;
 
   return (
     <div className="space-y-6" data-testid="status-page">
@@ -296,27 +233,40 @@ export default function StatusPage() {
         }
       />
 
-      {!page && (
-        <Card className="max-w-xl">
-          <CardHeader>
-            <CardTitle className="text-sm tracking-wide">{t("create")}</CardTitle>
+      {pageQ.isLoading && !page ? (
+        <Card className="overflow-hidden">
+          <CardHeader className="border-b border-border pb-4">
+            <CardTitle className="text-sm tracking-wide">{t("title")}</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 py-4">
+            <TableRowSkeleton rows={4} />
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {!page && !pageQ.isLoading ? (
+        <Card className="overflow-hidden">
+          <div className="h-0.5 bg-primary" aria-hidden />
+          <CardContent className="flex min-h-[12rem] flex-col items-center justify-center gap-3 px-6 py-12 text-center md:min-h-[16rem] md:py-16">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/15">
+              <Radio className="h-6 w-6 text-primary" aria-hidden />
+            </span>
             <form
-              className="space-y-4"
+              className="flex w-full max-w-lg flex-col items-center gap-4"
               onSubmit={(e) => {
                 e.preventDefault();
                 createMut.mutate();
               }}
             >
-              <div
-                className="space-y-2"
-                data-testid="status-page-empty"
-              >
-                <p className="text-sm font-medium text-foreground">{t("empty")}</p>
-                <p className="text-sm text-muted-foreground">{t("emptyHint")}</p>
+              <div className="space-y-2" data-testid="status-page-empty">
+                <p className="text-balance text-sm font-medium text-foreground">
+                  {t("empty")}
+                </p>
+                <p className="text-balance text-sm text-muted-foreground">
+                  {t("emptyHint")}
+                </p>
               </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid w-full grid-cols-1 gap-3 text-left sm:grid-cols-2">
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <Label htmlFor="sp-slug">{t("slug")}</Label>
                   <Input
@@ -340,50 +290,42 @@ export default function StatusPage() {
                   />
                 </div>
               </div>
-              <Button type="submit" data-testid="status-page-create" className="min-h-11 w-full sm:w-auto">
+              <Button
+                type="submit"
+                data-testid="status-page-create"
+                className="min-h-11 w-full sm:w-auto"
+              >
                 {t("emptyCta")}
               </Button>
             </form>
           </CardContent>
         </Card>
-      )}
+      ) : null}
 
-      {page && (
+      {page ? (
         <>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-md border border-border bg-card px-4 py-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                {t("statPublished")}
-              </p>
-              <p className="mt-1 text-lg font-semibold text-foreground">
-                {page.published ? t("visibilityOn") : t("visibilityOff")}
-              </p>
-            </div>
-            <div className="rounded-md border border-border bg-card px-4 py-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                {t("statComponents")}
-              </p>
-              <p className="mt-1 font-mono text-lg font-bold tabular-nums text-foreground">
-                {upCount} {t("stateUp")} · {downCount} {t("stateDown")}
-              </p>
-            </div>
-            <div className="rounded-md border border-border bg-card px-4 py-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                {t("publicUrl")}
-              </p>
-              <p className="mt-1 truncate font-mono text-sm text-foreground">
-                {page.public_path}
-              </p>
-            </div>
-          </div>
+          <StatusHealthHero
+            title={page.title}
+            published={page.published}
+            overall={page.overall}
+          />
 
-          <Card>
-            <CardHeader>
+          <StatusKpiRow
+            published={page.published}
+            publishedLabel={t("visibilityOn")}
+            unpublishedLabel={t("visibilityOff")}
+            upCount={upCount}
+            downCount={downCount}
+            publicPath={page.public_path}
+          />
+
+          <Card className="overflow-hidden">
+            <CardHeader className="border-b border-border pb-4">
               <CardTitle className="text-sm tracking-wide">
                 {t("pageIdentity")}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 pt-4">
               <p className="text-sm text-muted-foreground">{t("publicUrlHelp")}</p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="flex min-w-0 flex-col gap-1.5">
@@ -423,13 +365,13 @@ export default function StatusPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
+          <Card className="overflow-hidden">
+            <CardHeader className="border-b border-border pb-4">
               <CardTitle className="text-sm tracking-wide">
                 {t("customHost")}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 pt-4">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <Label htmlFor="sp-host">{t("customHost")}</Label>
@@ -445,9 +387,7 @@ export default function StatusPage() {
                   <Label>{t("hostnameStatus")}</Label>
                   <div className="flex h-10 min-h-10 items-center">
                     <Badge variant={hostnameStatusVariant(page.hostname_status)}>
-                      {HOSTNAME_STATUS_KEYS[page.hostname_status]
-                        ? t(HOSTNAME_STATUS_KEYS[page.hostname_status])
-                        : page.hostname_status}
+                      {hostStatusKey ? t(hostStatusKey) : page.hostname_status}
                     </Badge>
                   </div>
                 </div>
@@ -456,10 +396,10 @@ export default function StatusPage() {
                 {t("cnameHelp", { target: page.cname_target })}
               </p>
               {page.hostname_status === "pending_txt" ? (
-                <div className="space-y-3 rounded-md border border-border bg-muted/40 p-3 text-sm">
+                <div className="space-y-3 rounded-lg border border-border bg-muted/40 p-3 text-sm">
                   <p className="font-medium">{t("txtCard")}</p>
                   {page.custom_hostname ? (
-                    <CopyRecordRow
+                    <StatusCopyRecord
                       label="CNAME"
                       display={t("cnameRecord", {
                         host: page.custom_hostname,
@@ -467,16 +407,14 @@ export default function StatusPage() {
                       })}
                       testId="status-copy-cname"
                       copied={copiedField === "cname"}
-                      onCopy={() =>
-                        void copyRecord("cname", page.cname_target)
-                      }
+                      onCopy={() => void copyRecord("cname", page.cname_target)}
                       copyLabel={t("copyCname")}
                       copiedLabel={t("copied")}
                     />
                   ) : null}
                   {page.txt_name && page.txt_value ? (
                     <>
-                      <CopyRecordRow
+                      <StatusCopyRecord
                         label="TXT"
                         display={page.txt_name}
                         testId="status-copy-txt-name"
@@ -487,7 +425,7 @@ export default function StatusPage() {
                         copyLabel={t("copyTxtName")}
                         copiedLabel={t("copied")}
                       />
-                      <CopyRecordRow
+                      <StatusCopyRecord
                         label="TXT"
                         display={page.txt_value}
                         testId="status-copy-txt-value"
@@ -547,14 +485,14 @@ export default function StatusPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
+          <Card className="overflow-hidden">
+            <CardHeader className="border-b border-border pb-4">
               <CardTitle className="text-sm tracking-wide">
                 {t("components")}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 gap-3 rounded-md border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-3">
+            <CardContent className="space-y-4 pt-4">
+              <div className="grid grid-cols-1 gap-3 rounded-md border border-border bg-muted/30 p-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <Label>{t("monitor")}</Label>
                   <Select value={monitorId} onValueChange={setMonitorId}>
@@ -591,59 +529,16 @@ export default function StatusPage() {
                   </Button>
                 </div>
               </div>
-              {page.components.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t("noComponents")}</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("displayName")}</TableHead>
-                      <TableHead>{t("status")}</TableHead>
-                      <TableHead className="text-right">{t("colActions")}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {page.components.map((c) => (
-                      <TableRow
-                        key={c.id}
-                        className={
-                          c.state === "down"
-                            ? "border-l-2 border-l-destructive"
-                            : undefined
-                        }
-                      >
-                        <TableCell className="font-medium">
-                          {c.display_name}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={stateBadgeVariant(c.state)}>
-                            {c.state ?? t("stateUnknown")}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-11 w-11 min-h-11 min-w-11 p-0 md:h-9 md:w-9 md:min-h-9 md:min-w-9"
-                            data-testid={`status-component-remove-${c.id}`}
-                            aria-label={t("remove")}
-                            disabled={delCompMut.isPending}
-                            onClick={() => delCompMut.mutate(c.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
+              <StatusComponentBoard
+                components={page.components}
+                removing={delCompMut.isPending}
+                onRemove={(id) => delCompMut.mutate(id)}
+              />
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <Card className="overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b border-border pb-4">
               <CardTitle className="text-sm tracking-wide">
                 {t("incidents")}
               </CardTitle>
@@ -664,7 +559,11 @@ export default function StatusPage() {
                 {t("newIncident")}
               </Button>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent
+              className={
+                page.incidents.length === 0 ? "p-0 pt-0" : "space-y-4 pt-4"
+              }
+            >
               <StatusIncidentSheet
                 open={incOpen}
                 editing={editingIncident}
@@ -684,7 +583,10 @@ export default function StatusPage() {
                 }}
               />
               {page.incidents.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t("noIncidents")}</p>
+                <div className="m-4 flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
+                  <Radio className="h-8 w-8 text-muted-foreground" aria-hidden />
+                  <p className="text-sm text-muted-foreground">{t("noIncidents")}</p>
+                </div>
               ) : (
                 <StatusIncidentList
                   incidents={page.incidents}
@@ -700,7 +602,7 @@ export default function StatusPage() {
           </Card>
           <p className="text-xs text-muted-foreground">{t("disclaimer")}</p>
         </>
-      )}
+      ) : null}
     </div>
   );
 }

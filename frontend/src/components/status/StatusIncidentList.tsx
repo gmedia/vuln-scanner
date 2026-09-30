@@ -57,17 +57,34 @@ export function StatusIncidentList({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t("incidentTitle")}</TableHead>
-              <TableHead>{t("impact")}</TableHead>
-              <TableHead>{t("status")}</TableHead>
-              <TableHead>{t("colStarted")}</TableHead>
-              <TableHead className="text-right">{t("colActions")}</TableHead>
+              <TableHead className="text-[10px] uppercase tracking-wider">
+                {t("incidentTitle")}
+              </TableHead>
+              <TableHead className="text-[10px] uppercase tracking-wider">
+                {t("impact")}
+              </TableHead>
+              <TableHead className="text-[10px] uppercase tracking-wider">
+                {t("status")}
+              </TableHead>
+              <TableHead className="text-[10px] uppercase tracking-wider">
+                {t("colStarted")}
+              </TableHead>
+              <TableHead className="text-right text-[10px] uppercase tracking-wider">
+                {t("colActions")}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {incidents.map((i) => (
               <Fragment key={i.id}>
-                <TableRow data-testid={`status-incident-row-${i.id}`}>
+                <TableRow
+                  data-testid={`status-incident-row-${i.id}`}
+                  className={
+                    i.status !== "resolved"
+                      ? "border-l-2 border-l-amber-500"
+                      : "border-l-2 border-l-primary/40"
+                  }
+                >
                   <TableCell className="font-medium">{i.title}</TableCell>
                   <TableCell>
                     <Badge variant={impactBadge(i.impact)}>{i.impact}</Badge>

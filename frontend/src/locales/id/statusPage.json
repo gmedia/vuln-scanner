@@ -66,5 +66,11 @@
   "updates": "Pembaruan",
   "stateUp": "up",
   "stateDown": "down",
-  "stateUnknown": "unknown"
+  "stateUnknown": "unknown",
+  "overallLabel": "Kesehatan publik",
+  "overallOperational": "Semua sistem beroperasi",
+  "overallDegraded": "Kinerja menurun",
+  "overallPartial": "Gangguan sebagian",
+  "overallMajor": "Gangguan besar",
+  "overallUnknown": "Tidak diketahui"
 }
