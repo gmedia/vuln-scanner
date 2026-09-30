@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import Profile from "@/pages/Profile";
-import { useAuthStore } from "@/store/authStore";
 import { Toaster } from "@/components/ui/sonner";
 
 function renderProfile() {
@@ -46,6 +45,15 @@ vi.mock("@/store/authStore", () => {
       updateProfile: mockUpdateProfile,
       changePassword: mockChangePassword,
       error: mockError,
+      organizations: [
+        {
+          id: "org-1",
+          name: "Acme",
+          slug: "acme",
+          role: "member" as const,
+        },
+      ],
+      activeOrgId: "org-1",
     };
     if (selector) return selector(state);
     return state;
@@ -58,8 +66,6 @@ vi.mock("@/store/authStore", () => {
   });
   return { useAuthStore: mockFn };
 });
-
-const mockUseAuthStore = useAuthStore as unknown as ReturnType<typeof vi.fn>;
 
 describe("Profile", () => {
   beforeEach(() => {
@@ -112,6 +118,42 @@ describe("Profile", () => {
       expect(
         screen.getByText("Manage your account email and password"),
       ).toBeInTheDocument();
+    });
+
+    it("renders identity band with initials, badges, and org", () => {
+      renderProfile();
+      expect(screen.getByTestId("profile-identity")).toBeInTheDocument();
+      expect(screen.getByText("US")).toBeInTheDocument();
+      expect(screen.getAllByText("Verified").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText("Operator").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByText(/Acme/)).toBeInTheDocument();
+    });
+
+    it("renders credit and workspace outbound links", () => {
+      renderProfile();
+      expect(
+        screen.getByRole("link", { name: "Credit history" }),
+      ).toHaveAttribute("href", "/credit-history");
+      expect(screen.getByRole("link", { name: "Workspace" })).toHaveAttribute(
+        "href",
+        "/settings/workspace",
+      );
+    });
+
+    it("renders KPI credits from the signed-in user", () => {
+      renderProfile();
+      expect(screen.getByTestId("profile-kpis")).toBeInTheDocument();
+      expect(screen.getByText("10")).toBeInTheDocument();
+    });
+
+    it("copies current email from the identity band", async () => {
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.assign(navigator, { clipboard: { writeText } });
+      renderProfile();
+      fireEvent.click(screen.getByRole("button", { name: "Copy email" }));
+      await waitFor(() => {
+        expect(writeText).toHaveBeenCalledWith("user@example.com");
+      });
     });
   });
 
