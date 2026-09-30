@@ -52,9 +52,7 @@ export function AiUsagePanel({
             className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
             data-testid="ai-usage-empty"
           >
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-              <ScrollText className="h-5 w-5 text-muted-foreground" aria-hidden />
-            </span>
+            <ScrollText className="h-8 w-8 text-muted-foreground" aria-hidden />
             <p className="text-sm font-medium text-foreground">{t("usageEmpty")}</p>
             <Button
               type="button"
