@@ -66,5 +66,11 @@
   "updates": "Updates",
   "stateUp": "up",
   "stateDown": "down",
-  "stateUnknown": "unknown"
+  "stateUnknown": "unknown",
+  "overallLabel": "Public health",
+  "overallOperational": "All systems operational",
+  "overallDegraded": "Degraded performance",
+  "overallPartial": "Partial outage",
+  "overallMajor": "Major outage",
+  "overallUnknown": "Unknown"
 }
