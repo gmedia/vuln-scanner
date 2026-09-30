@@ -15,27 +15,3 @@ export function ProtocolGlyph({
   if (type === "dns") return <Radio className={cls} aria-hidden />;
   return <Activity className={cls} aria-hidden />;
 }
-
-export function LiveDot({
-  className,
-  tone = "primary",
-}: {
-  readonly className?: string;
-  readonly tone?: "primary" | "destructive";
-}) {
-  const color = tone === "destructive" ? "bg-destructive" : "bg-primary";
-  return (
-    <span
-      className={cn("relative flex h-2 w-2 shrink-0", className)}
-      aria-hidden
-    >
-      <span
-        className={cn(
-          "absolute inline-flex h-full w-full animate-ping rounded-full opacity-40",
-          color,
-        )}
-      />
-      <span className={cn("relative inline-flex h-2 w-2 rounded-full", color)} />
-    </span>
-  );
-}
