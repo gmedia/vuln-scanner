@@ -13,7 +13,6 @@ import {
   TableRow,
 } from "@/components/ui/Table";
 import { explainUptimeError } from "@/components/uptime/uptimeErrors";
-import { stateRailClass } from "@/components/uptime/uptimeChrome";
 import i18n from "@/i18n";
 import { htmlLang, isAppLocale } from "@/i18n/locales";
 import { cn } from "@/lib/utils";
@@ -67,17 +66,10 @@ export function UptimeHistoryPanel({
                   key={s.id}
                   data-testid="uptime-history-row"
                   className={cn(
-                    "relative rounded-md border border-border p-3 pl-4",
+                    "rounded-md border border-border p-3",
                     !s.ok && "bg-destructive/[0.04]",
                   )}
                 >
-                  <span
-                    className={cn(
-                      "absolute inset-y-2 left-0 w-0.5 rounded-full",
-                      s.ok ? stateRailClass("up") : stateRailClass("down"),
-                    )}
-                    aria-hidden
-                  />
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-mono text-xs">
                       {formatSampleTime(s.checked_at)}
@@ -136,9 +128,7 @@ export function UptimeHistoryPanel({
                     data-testid="uptime-history-row"
                     className={cn(
                       "h-12 hover:bg-muted/50",
-                      s.ok
-                        ? "border-l-2 border-l-primary/40"
-                        : "border-l-2 border-l-destructive bg-destructive/[0.04]",
+                      !s.ok && "bg-destructive/[0.04]",
                     )}
                   >
                     <TableCell className="whitespace-nowrap font-mono text-xs">
