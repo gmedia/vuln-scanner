@@ -1,3 +1,4 @@
+import { Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { UptimeCheckType } from "@/api/uptime";
 import { Input } from "@/components/ui/Input";
@@ -88,13 +89,19 @@ export function UptimeFilterBar({
       </div>
       <div className="flex min-w-0 flex-col gap-1.5">
         <Label htmlFor={`${idPrefix}-search`}>{t("filterSearch")}</Label>
-        <Input
-          id={`${idPrefix}-search`}
-          className="h-10 min-h-10"
-          placeholder={t("filterSearchPlaceholder")}
-          value={search}
-          onChange={(e) => onSearch(e.target.value)}
-        />
+        <div className="relative">
+          <Search
+            aria-hidden
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            id={`${idPrefix}-search`}
+            className="h-10 min-h-10 pl-9"
+            placeholder={t("filterSearchPlaceholder")}
+            value={search}
+            onChange={(e) => onSearch(e.target.value)}
+          />
+        </div>
       </div>
       <p className={hintClassName ?? "text-xs text-muted-foreground"}>
         {filtersActive
