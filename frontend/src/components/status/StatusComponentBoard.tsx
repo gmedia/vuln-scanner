@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
-import { LiveDot } from "@/components/uptime/UptimeChrome";
 import { componentStateBadge } from "@/components/status/statusChrome";
 import { cn } from "@/lib/utils";
 
@@ -58,19 +57,10 @@ export function StatusComponentBoard({
               key={c.id}
               className={cn(
                 "h-12 hover:bg-muted/50",
-                c.state === "down"
-                  ? "border-l-2 border-l-destructive bg-destructive/[0.04]"
-                  : c.state === "up"
-                    ? "border-l-2 border-l-primary/50"
-                    : "border-l-2 border-l-muted-foreground/30",
+                c.state === "down" && "bg-destructive/[0.04]",
               )}
             >
-              <TableCell className="font-medium">
-                <span className="inline-flex items-center gap-2">
-                  {c.state === "up" ? <LiveDot /> : null}
-                  {c.display_name}
-                </span>
-              </TableCell>
+              <TableCell className="font-medium">{c.display_name}</TableCell>
               <TableCell>
                 <Badge variant={componentStateBadge(c.state)}>
                   {c.state ?? unknown}
