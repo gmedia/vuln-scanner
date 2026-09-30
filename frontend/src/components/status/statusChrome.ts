@@ -1,15 +1,3 @@
-export function overallRailClass(
-  overall: string | null,
-  published: boolean,
-): string {
-  if (!published) return "bg-muted-foreground/40";
-  if (overall === "major") return "bg-destructive";
-  if (overall === "partial") return "bg-orange-500";
-  if (overall === "degraded") return "bg-amber-500";
-  if (overall === "operational") return "bg-primary";
-  return "bg-muted-foreground/40";
-}
-
 export function overallValueClass(
   overall: string | null,
   published: boolean,

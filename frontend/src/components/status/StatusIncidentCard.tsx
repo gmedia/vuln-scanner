@@ -33,19 +33,12 @@ export function StatusIncidentCard({
   return (
     <div
       className={cn(
-        "relative rounded-lg border border-border bg-card p-3",
+        "rounded-lg border border-border bg-card p-3",
         open && "bg-amber-500/[0.04]",
       )}
       data-testid={`status-incident-card-${incident.id}`}
     >
-      <span
-        className={cn(
-          "absolute inset-y-2 left-0 w-0.5 rounded-full",
-          open ? "bg-amber-500" : "bg-primary/50",
-        )}
-        aria-hidden
-      />
-      <div className="flex items-start justify-between gap-2 pl-3">
+      <div className="flex items-start justify-between gap-2">
         <p className="min-w-0 break-words text-sm font-medium text-foreground">
           {incident.title}
         </p>
@@ -58,11 +51,11 @@ export function StatusIncidentCard({
           onDone={onDone}
         />
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-1.5 pl-3">
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
         <Badge variant={impactBadge(incident.impact)}>{incident.impact}</Badge>
         <Badge variant={statusBadge(incident.status)}>{incident.status}</Badge>
       </div>
-      <div className="mt-2 flex items-center justify-between gap-2 pl-3 text-xs text-muted-foreground">
+      <div className="mt-2 flex items-center justify-between gap-2 text-xs text-muted-foreground">
         <span className="font-mono tabular-nums">
           {formatStartedAt(incident.started_at)}
         </span>

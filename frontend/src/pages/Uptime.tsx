@@ -210,11 +210,8 @@ export default function Uptime() {
         </Card>
       ) : items.length === 0 ? (
         <Card data-testid="uptime-empty" className="overflow-hidden">
-          <div className="h-0.5 bg-primary" aria-hidden />
           <CardContent className="flex min-h-[12rem] flex-col items-center justify-center gap-3 px-6 py-16 text-center md:min-h-[16rem] md:py-20">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/15">
-              <Activity className="h-6 w-6 text-primary" aria-hidden />
-            </span>
+            <Activity className="h-8 w-8 text-muted-foreground" aria-hidden />
             <p className="text-balance text-sm font-medium text-foreground">
               {t("empty")}
             </p>

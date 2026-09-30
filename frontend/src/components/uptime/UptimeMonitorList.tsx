@@ -15,19 +15,9 @@ import {
 import { Sparkline } from "@/components/uptime/Sparkline";
 import { MonitorActionsMenu } from "@/components/uptime/MonitorActionsMenu";
 import { explainUptimeError } from "@/components/uptime/uptimeErrors";
-import { LiveDot, ProtocolGlyph } from "@/components/uptime/UptimeChrome";
-import {
-  stateBadgeVariant,
-  stateRailClass,
-} from "@/components/uptime/uptimeChrome";
+import { ProtocolGlyph } from "@/components/uptime/UptimeChrome";
+import { stateBadgeVariant } from "@/components/uptime/uptimeChrome";
 import { cn } from "@/lib/utils";
-
-function rowAccentClass(state: string): string {
-  if (state === "down") return "border-l-2 border-l-destructive";
-  if (state === "degraded") return "border-l-2 border-l-amber-500";
-  if (state === "up") return "border-l-2 border-l-primary/50";
-  return "border-l-2 border-l-muted-foreground/30";
-}
 
 export function UptimeMonitorList({
   monitors,
@@ -60,37 +50,27 @@ export function UptimeMonitorList({
           <div
             key={m.id}
             className={cn(
-              "relative rounded-lg border border-border bg-card p-3 text-left",
+              "rounded-lg border border-border bg-card p-3 text-left",
               m.state === "down" && "bg-destructive/[0.04]",
             )}
           >
-            <span
-              className={cn(
-                "absolute inset-y-2 left-0 w-0.5 rounded-full",
-                stateRailClass(m.state),
-              )}
-              aria-hidden
-            />
-            <div className="flex items-start justify-between gap-2 pl-3">
+            <div className="flex items-start justify-between gap-2">
               <Link
                 to={`/uptime/${m.id}`}
                 className="min-w-0 break-all font-medium text-foreground hover:underline"
                 data-testid="uptime-open"
               >
-                <span className="inline-flex items-center gap-2">
-                  {m.state === "up" && m.enabled ? <LiveDot /> : null}
-                  {m.name}
-                </span>
+                {m.name}
               </Link>
               <Badge variant={stateBadgeVariant(m.state)}>
                 {stateLabel(m.state)}
               </Badge>
             </div>
-            <p className="mt-1 flex items-center gap-1.5 break-all pl-3 font-mono text-xs text-muted-foreground">
+            <p className="mt-1 flex items-center gap-1.5 break-all font-mono text-xs text-muted-foreground">
               <ProtocolGlyph type={m.check_type} />
               {m.check_type} · {m.target}
             </p>
-            <p className="mt-1 pl-3 font-mono text-xs tabular-nums text-muted-foreground">
+            <p className="mt-1 font-mono text-xs tabular-nums text-muted-foreground">
               {m.uptime_24h != null ? `${m.uptime_24h}%` : "—"}
               {m.last_latency_ms != null ? ` · ${m.last_latency_ms}ms` : ""}
             </p>
@@ -141,17 +121,15 @@ export function UptimeMonitorList({
                 data-testid="uptime-row"
                 className={cn(
                   "h-12 hover:bg-muted/50",
-                  rowAccentClass(m.state),
                   m.state === "down" && "bg-destructive/[0.04]",
                 )}
               >
                 <TableCell className="font-medium">
                   <Link
                     to={`/uptime/${m.id}`}
-                    className="inline-flex items-center gap-2 hover:underline"
+                    className="hover:underline"
                     data-testid="uptime-open"
                   >
-                    {m.state === "up" && m.enabled ? <LiveDot /> : null}
                     <span className="truncate">{m.name}</span>
                   </Link>
                 </TableCell>

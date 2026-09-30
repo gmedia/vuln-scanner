@@ -31,11 +31,8 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { UptimeHistoryPanel } from "@/components/uptime/UptimeHistoryPanel";
 import { explainUptimeError } from "@/components/uptime/uptimeErrors";
-import { LiveDot, ProtocolGlyph } from "@/components/uptime/UptimeChrome";
-import {
-  stateBadgeVariant,
-  stateRailClass,
-} from "@/components/uptime/uptimeChrome";
+import { ProtocolGlyph } from "@/components/uptime/UptimeChrome";
+import { stateBadgeVariant } from "@/components/uptime/uptimeChrome";
 import { useIsMobile } from "@/hooks/use-mobile";
 import i18n from "@/i18n";
 import { htmlLang, isAppLocale } from "@/i18n/locales";
@@ -248,29 +245,17 @@ function DetailKpiTile({
   readonly emphasize?: boolean;
 }) {
   return (
-    <div
-      className={cn(
-        "relative flex flex-col items-center justify-center overflow-hidden rounded-lg border border-border bg-card p-3",
-        emphasize && "ring-1 ring-primary/20",
-      )}
-    >
-      <span
-        className={cn(
-          "absolute inset-y-2 left-0 w-0.5 rounded-full",
-          emphasize ? "bg-primary" : "bg-muted-foreground/30",
-        )}
-        aria-hidden
-      />
+    <div className="rounded-md border border-border bg-card px-4 py-3">
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+        {label}
+      </p>
       <p
         className={cn(
-          "font-mono text-lg font-bold tabular-nums sm:text-2xl",
+          "mt-1 font-mono text-lg font-bold tabular-nums sm:text-2xl",
           emphasize ? "text-primary" : "text-foreground",
         )}
       >
         {value}
-      </p>
-      <p className="mt-1 text-center text-[10px] uppercase tracking-wider text-muted-foreground">
-        {label}
       </p>
     </div>
   );
@@ -501,14 +486,12 @@ export default function UptimeDetail() {
   const stats = beyondSamples && customWindow.custom ? undefined : statsQ.data;
   const pct = stats?.uptime_pct;
   const lastHint = explainUptimeError(monitor.last_error);
-  const live = monitor.state === "up" && monitor.enabled;
 
   return (
     <div className="space-y-6" data-testid="uptime-detail">
       <PageHeader
         title={
           <span className="inline-flex flex-wrap items-center gap-2">
-            {live ? <LiveDot /> : null}
             {monitor.name}
             <Badge variant={stateBadgeVariant(monitor.state)}>
               {stateLabel(monitor.state)}
@@ -536,21 +519,14 @@ export default function UptimeDetail() {
         }
       />
 
-      <article className="relative overflow-hidden rounded-lg border border-border bg-card">
-        <div
-          className={cn("h-0.5", live ? "bg-primary" : "bg-muted-foreground/40")}
-          aria-hidden
-        />
-        <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+      <article className="rounded-lg border border-border bg-card">
+        <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-start gap-3">
             <span
               aria-hidden
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted"
             >
-              <ProtocolGlyph
-                type={monitor.check_type}
-                className="h-5 w-5 text-primary"
-              />
+              <ProtocolGlyph type={monitor.check_type} className="h-5 w-5" />
             </span>
             <div className="min-w-0 space-y-1">
               <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -738,16 +714,9 @@ export default function UptimeDetail() {
               {pagedOutages.map((row) => (
                 <li
                   key={row.id}
-                  className="relative rounded-md border border-border p-3 pl-4"
+                  className="rounded-md border border-border p-3"
                   data-testid="uptime-outage-row"
                 >
-                  <span
-                    className={cn(
-                      "absolute inset-y-2 left-0 w-0.5 rounded-full",
-                      row.ongoing ? "bg-destructive" : stateRailClass("down"),
-                    )}
-                    aria-hidden
-                  />
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <p className="font-mono text-xs text-foreground">
                       {formatTime(row.at)}
