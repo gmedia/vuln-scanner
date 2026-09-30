@@ -11,11 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
-import {
-  hitClassVariant,
-  hitRailClass,
-  hitStatusVariant,
-} from "@/components/host/hostChrome";
+import { hitClassVariant, hitStatusVariant } from "@/components/host/hostChrome";
 import { cn } from "@/lib/utils";
 
 export type HostHitsListProps = {
@@ -112,22 +108,15 @@ export default function HostHitsList({
           <div
             key={h.id}
             className={cn(
-              "relative rounded-lg border border-border bg-card p-3",
+              "rounded-lg border border-border bg-card p-3",
               (h.class === "webshell" || h.class === "backdoor") &&
                 "bg-destructive/[0.04]",
             )}
           >
-            <span
-              className={cn(
-                "absolute inset-y-2 left-0 w-0.5 rounded-full",
-                hitRailClass(h.status, h.class),
-              )}
-              aria-hidden
-            />
-            <p className="min-w-0 break-all pl-3 font-mono text-xs font-medium text-foreground">
+            <p className="min-w-0 break-all font-mono text-xs font-medium text-foreground">
               {h.rel_path}
             </p>
-            <div className="mt-2 flex flex-wrap items-center gap-1.5 pl-3">
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <Badge variant={hitClassVariant(h.class)}>{h.class}</Badge>
               <Badge variant="default" className="font-mono">
                 {h.engine}
@@ -136,7 +125,7 @@ export default function HostHitsList({
                 {hitStatusLabel(h.status, t)}
               </Badge>
             </div>
-            <div className="pl-3">
+            <div>
               <HitActions
                 hit={h}
                 desktop={false}
@@ -176,13 +165,7 @@ export default function HostHitsList({
                   className={cn(
                     "h-12 hover:bg-muted/50",
                     (h.class === "webshell" || h.class === "backdoor") &&
-                      "border-l-2 border-l-destructive bg-destructive/[0.04]",
-                    h.status === "open" &&
-                      h.class !== "webshell" &&
-                      h.class !== "backdoor" &&
-                      "border-l-2 border-l-destructive",
-                    h.status === "quarantined" &&
-                      "border-l-2 border-l-primary/50",
+                      "bg-destructive/[0.04]",
                   )}
                 >
                   <TableCell className="break-all font-mono text-xs">
