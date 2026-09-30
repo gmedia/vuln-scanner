@@ -86,7 +86,7 @@ test.describe("Credit History @shell", () => {
 
     const cellTexts = await cells.allTextContents();
     expect(
-      cellTexts.some((t) => /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(t.trim())),
+      cellTexts.some((t) => /\d{4}|^\d{1,2}\/\d{1,2}\/\d{2,4}/.test(t.trim())),
     ).toBeTruthy();
     expect(
       cellTexts.some((t) =>

@@ -42,6 +42,7 @@ const mockItems = [
 
 vi.mock("@tanstack/react-query", () => ({
   useQuery: vi.fn(),
+  keepPreviousData: (prev: unknown) => prev,
 }));
 
 vi.mock("@/api/credits", () => ({
@@ -549,8 +550,31 @@ describe("CreditHistory", () => {
     } as ReturnType<typeof useQuery>);
 
     renderHistory();
-    const link = screen.getByRole("link", { name: "IP scan job" });
-    expect(link).toBeInTheDocument();
-    expect(link).toHaveAttribute("href", "/scan/scan-abc");
+    const links = screen.getAllByRole("link", { name: "IP scan job" });
+    expect(links.length).toBeGreaterThanOrEqual(1);
+    expect(links.every((el) => el.getAttribute("href") === "/scan/scan-abc")).toBe(
+      true,
+    );
+  });
+
+  it("renders wallet identity band with balance and account links", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: { items: mockItems, total: 3 },
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    renderHistory();
+    const identity = screen.getByTestId("credit-history-identity");
+    expect(identity).toBeInTheDocument();
+    expect(identity).toHaveTextContent("Wallet");
+    expect(identity).toHaveTextContent("150");
+    expect(screen.getByRole("link", { name: "Profile" })).toHaveAttribute(
+      "href",
+      "/profile",
+    );
+    expect(screen.getByRole("link", { name: "Workspace" })).toHaveAttribute(
+      "href",
+      "/settings/workspace",
+    );
   });
 });
