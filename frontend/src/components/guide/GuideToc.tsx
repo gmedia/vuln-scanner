@@ -43,11 +43,8 @@ function GuideTocLinks({
                       variant="ghost"
                       size="sm"
                       className={cn(
-                        "h-auto min-h-11 w-full justify-start whitespace-normal px-2.5 py-2 text-left font-normal",
-                        "border-l-2",
-                        isActive
-                          ? "border-primary bg-muted font-medium text-foreground"
-                          : "border-transparent",
+                        "h-auto min-h-11 w-full justify-start whitespace-normal rounded-md px-2.5 py-2 text-left font-normal",
+                        isActive && "bg-muted font-medium text-foreground",
                       )}
                     >
                       <a
@@ -96,7 +93,7 @@ export function GuideMobileToc({
             onClick={onToggle}
           >
             <span className="flex min-w-0 items-center gap-2">
-              <ListOrdered className="h-4 w-4 shrink-0 text-primary" />
+              <ListOrdered className="h-4 w-4 shrink-0 text-muted-foreground" />
               <span className="min-w-0 whitespace-normal text-left leading-snug">
                 {t("tocTitle")}
                 <span className="ml-2 font-normal text-muted-foreground">
@@ -145,7 +142,7 @@ export function GuideDesktopToc({
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupLabel className="gap-2 text-xs font-medium uppercase tracking-wider">
-              <ListOrdered className="h-3.5 w-3.5 text-primary" />
+              <ListOrdered className="h-3.5 w-3.5 text-muted-foreground" />
               {t("tocTitle")}
             </SidebarGroupLabel>
           </SidebarGroup>

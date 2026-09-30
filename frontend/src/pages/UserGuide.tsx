@@ -40,35 +40,25 @@ function UserGuide() {
   const [mobileTocOpen, setMobileTocOpen] = useState(false);
 
   return (
-    <div className="pb-8">
-      <article className="relative mb-6 overflow-hidden rounded-lg border border-border bg-card">
-        <div className="h-0.5 bg-primary" aria-hidden />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.18]"
-          style={{
-            backgroundImage:
-              "linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)",
-            backgroundSize: "1.5rem 1.5rem",
-          }}
-        />
-        <div className="relative p-4 sm:p-5 md:p-6">
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <span className="font-mono text-[10px] uppercase tracking-wider text-primary">
-              {t("kicker")}
-            </span>
-            <span className="font-mono text-[10px] text-muted-foreground">
-              {t("moduleCount", { count: 15 })}
-            </span>
+    <div className="space-y-6 pb-8">
+      <PageHeader
+        title={t("title")}
+        description={
+          <div className="space-y-1">
+            <p>
+              <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                {t("kicker")}
+              </span>
+              <span className="mx-2 text-border">·</span>
+              <span className="font-mono text-[10px] text-muted-foreground">
+                {t("moduleCount", { count: 15 })}
+              </span>
+            </p>
+            <p>{t("intro", { product: BRAND.product })}</p>
           </div>
-          <PageHeader
-            className="max-w-3xl"
-            title={t("title")}
-            description={t("intro", { product: BRAND.product })}
-          />
-          <GuideJumpMap activeId={activeId} t={t} />
-        </div>
-      </article>
+        }
+      />
+      <GuideJumpMap activeId={activeId} t={t} />
 
       <GuideMobileToc
         activeId={activeId}
@@ -80,7 +70,7 @@ function UserGuide() {
 
       <div className="lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-8 2xl:grid-cols-[18rem_minmax(0,1fr)]">
         <aside data-testid="guide-desktop-toc" className="hidden lg:block">
-          <div className="sticky top-16 max-h-[calc(100svh-5rem)] overflow-y-auto overscroll-contain pr-1">
+          <div className="sticky top-6 max-h-[calc(100svh-5rem)] overflow-y-auto overscroll-contain pr-1">
             <GuideDesktopToc activeId={activeId} t={t} />
           </div>
         </aside>

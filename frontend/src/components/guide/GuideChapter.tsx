@@ -42,17 +42,17 @@ export function GuideChapter({
       <div className="flex items-stretch border-b border-border">
         <div
           aria-hidden
-          className="flex w-12 shrink-0 items-center justify-center border-r border-border bg-muted/40 font-mono text-base font-semibold tabular-nums text-primary sm:w-14 sm:text-lg"
+          className="flex w-12 shrink-0 items-center justify-center border-r border-border bg-muted/40 font-mono text-base font-semibold tabular-nums text-muted-foreground sm:w-14 sm:text-lg"
         >
           {tocIndex(id)}
         </div>
         <div className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted/40">
-            <Icon className="h-4 w-4 text-primary" />
+            <Icon className="h-4 w-4 text-muted-foreground" />
           </span>
           <h2
             id={id}
-            className="scroll-mt-28 text-xl font-semibold tracking-tight text-foreground"
+            className="scroll-mt-24 text-xl font-semibold tracking-tight text-foreground"
           >
             {title}
           </h2>
