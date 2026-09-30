@@ -114,12 +114,7 @@ function StatTile({
   emphasize?: boolean;
 }) {
   return (
-    <div
-      className={cn(
-        "rounded-md border border-border bg-card px-4 py-3",
-        emphasize && "ring-1 ring-primary/20",
-      )}
-    >
+    <div className="rounded-md border border-border bg-card px-4 py-3">
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
@@ -237,14 +232,13 @@ function Profile() {
 
       <article
         data-testid="profile-identity"
-        className="relative overflow-hidden rounded-lg border border-border bg-card"
+        className="rounded-lg border border-border bg-card"
       >
-        <div className="h-0.5 bg-primary" aria-hidden />
-        <div className="flex flex-col gap-4 p-4 sm:p-5 md:flex-row md:items-start md:justify-between md:p-6">
+        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 items-start gap-4">
             <span
               aria-hidden
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/15 font-mono text-sm font-semibold tracking-wide text-primary"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted font-mono text-sm font-semibold tracking-wide text-foreground"
             >
               {emailInitials(user?.email)}
             </span>
@@ -394,8 +388,7 @@ function Profile() {
               />
               <Button
                 type="submit"
-                className="min-h-11 w-full sm:w-auto"
-                size="lg"
+                className="w-full sm:w-auto"
                 disabled={isChangingPassword || passwordCooldown.cooldown > 0}
               >
                 {passwordCooldown.cooldown > 0 ? (
@@ -472,8 +465,7 @@ function Profile() {
               </p>
               <Button
                 type="submit"
-                className="min-h-11 w-full sm:w-auto"
-                size="lg"
+                className="w-full sm:w-auto"
                 disabled={isUpdatingProfile || profileCooldown.cooldown > 0}
               >
                 {profileCooldown.cooldown > 0 ? (
