@@ -1,9 +1,17 @@
 import { KeyRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AiKey } from "@/api/ai";
+import { formatAiTime } from "@/components/admin/aiFormat";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import {
@@ -36,40 +44,49 @@ export function AiKeysPanel({
   readonly onCreate: () => void;
   readonly onRevoke: (id: string) => void;
 }) {
-  const { t } = useTranslation("ai");
+  const { t, i18n } = useTranslation("ai");
   return (
     <Card data-testid="ai-keys-card">
-      <CardHeader>
-        <CardTitle>{t("tabKeys")}</CardTitle>
+      <CardHeader className="gap-1">
+        <CardTitle className="text-base tracking-tight">{t("tabKeys")}</CardTitle>
+        <CardDescription>{t("keysHint")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <Label htmlFor="ai-key-name">{t("keyName")}</Label>
-          <Input
-            id="ai-key-name"
-            value={keyName}
-            onChange={(e) => onKeyName(e.target.value)}
-          />
+        <div className="grid grid-cols-1 gap-3 rounded-md border border-border bg-muted/20 p-4 sm:grid-cols-[1fr_auto] sm:items-end">
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Label htmlFor="ai-key-name">{t("keyName")}</Label>
+            <Input
+              id="ai-key-name"
+              className="h-10 min-h-10"
+              value={keyName}
+              onChange={(e) => onKeyName(e.target.value)}
+            />
+          </div>
+          <Button
+            type="button"
+            className="w-full sm:w-auto"
+            onClick={onCreate}
+            disabled={createPending}
+          >
+            {t("createKey")}
+          </Button>
         </div>
-        <Button
-          type="button"
-          className="w-full sm:w-auto"
-          onClick={onCreate}
-          disabled={createPending}
-        >
-          {t("createKey")}
-        </Button>
         {onceKey ? (
-          <Alert>
+          <Alert className="border-primary/40 bg-primary/5">
+            <KeyRound className="text-primary" aria-hidden />
             <AlertDescription>
-              {t("keyOnce")}: <code className="break-all">{onceKey}</code>
+              <span className="text-foreground">{t("keyOnce")}:</span>{" "}
+              <code className="break-all font-mono text-xs">{onceKey}</code>
             </AlertDescription>
           </Alert>
         ) : null}
         {keys.length === 0 ? (
-          <div className="flex min-h-[8rem] flex-col items-center justify-center gap-2 px-6 py-8 text-center">
-            <KeyRound className="h-8 w-8 text-muted-foreground" aria-hidden />
-            <p className="text-sm text-muted-foreground">{t("keysEmpty")}</p>
+          <div className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+              <KeyRound className="h-5 w-5 text-muted-foreground" aria-hidden />
+            </span>
+            <p className="text-sm font-medium text-foreground">{t("keysEmpty")}</p>
+            <p className="text-xs text-muted-foreground">{t("keysEmptyHint")}</p>
           </div>
         ) : (
           <>
@@ -80,12 +97,20 @@ export function AiKeysPanel({
                   className="rounded-lg border border-border bg-card p-3"
                   data-testid={`ai-keys-card-${k.id}`}
                 >
-                  <p className="min-w-0 break-all font-mono text-xs text-foreground">
-                    {k.prefix}
-                  </p>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="min-w-0 break-all font-mono text-xs text-foreground">
+                      {k.prefix}
+                    </p>
+                    <Badge variant={k.is_active ? "success" : "failed"}>
+                      {statusLabel(t, k.is_active)}
+                    </Badge>
+                  </div>
                   <p className="mt-1 text-sm font-medium text-foreground">{k.name}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {statusLabel(t, k.is_active)}
+                  <p className="mt-1 font-mono text-[11px] tabular-nums text-muted-foreground">
+                    {k.rate_limit_rpm} {t("colRpm")} ·{" "}
+                    {k.last_used_at
+                      ? formatAiTime(k.last_used_at, i18n.language)
+                      : t("neverUsed")}
                   </p>
                   {k.is_active ? (
                     <Button
@@ -108,10 +133,24 @@ export function AiKeysPanel({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{t("colPrefix")}</TableHead>
-                    <TableHead>{t("colName")}</TableHead>
-                    <TableHead>{t("colActive")}</TableHead>
-                    <TableHead className="text-right">{t("revoke")}</TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-wider">
+                      {t("colPrefix")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-wider">
+                      {t("colName")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-wider">
+                      {t("colActive")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-wider">
+                      {t("colRpm")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-wider">
+                      {t("colLastUsed")}
+                    </TableHead>
+                    <TableHead className="text-right text-[10px] uppercase tracking-wider">
+                      {t("revoke")}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -121,8 +160,18 @@ export function AiKeysPanel({
                         {k.prefix}
                       </TableCell>
                       <TableCell className="font-medium">{k.name}</TableCell>
+                      <TableCell>
+                        <Badge variant={k.is_active ? "success" : "failed"}>
+                          {statusLabel(t, k.is_active)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs tabular-nums text-muted-foreground">
+                        {k.rate_limit_rpm}
+                      </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {statusLabel(t, k.is_active)}
+                        {k.last_used_at
+                          ? formatAiTime(k.last_used_at, i18n.language)
+                          : t("neverUsed")}
                       </TableCell>
                       <TableCell className="text-right">
                         {k.is_active ? (
