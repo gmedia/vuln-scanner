@@ -57,7 +57,22 @@ export function Sparkline({ monitorId, state }: SparklineProps) {
       aria-hidden
     >
       <path d={area} fill="currentColor" fillOpacity="0.18" stroke="none" />
-      <path d={line} fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d={line}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      {last ? (
+        <circle
+          cx={last.x}
+          cy={last.y}
+          r="2.25"
+          fill="currentColor"
+        />
+      ) : null}
     </svg>
   );
 }
