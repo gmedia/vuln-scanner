@@ -14,9 +14,6 @@ import {
   SelectValue,
 } from "@/components/ui/Select";
 import HostHitsList from "@/components/host/HostHitsList";
-import { HostLiveDot } from "@/components/host/HostChrome";
-import { siteRailClass } from "@/components/host/hostChrome";
-import { cn } from "@/lib/utils";
 import {
   formatHelperPollAt,
   isHelperPollStale,
@@ -104,13 +101,6 @@ export default function HostSiteCard({
   const isWaiting = lastScan?.status === "queued";
   const isFailed = lastScan?.status === "failed";
   const completed = lastScan?.status === "completed";
-  const railOpts = {
-    needsDecision,
-    waiting: isWaiting,
-    failed: isFailed,
-    helperStale,
-    completed,
-  };
   const siteBadgeVariant = needsDecision
     ? ("critical" as const)
     : isWaiting
@@ -125,19 +115,9 @@ export default function HostSiteCard({
   return (
     <Card
       data-testid={`host-site-card-${site.id}`}
-      className={cn(
-        "relative overflow-hidden",
-        needsDecision && "bg-destructive/[0.03]",
-      )}
+      className={needsDecision ? "bg-destructive/[0.03]" : undefined}
     >
-      <span
-        className={cn(
-          "absolute inset-y-2 left-0 w-0.5 rounded-full",
-          siteRailClass(railOpts),
-        )}
-        aria-hidden
-      />
-      <CardHeader className="space-y-3 pl-5">
+      <CardHeader className="space-y-3">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -150,8 +130,6 @@ export default function HostSiteCard({
               <CardTitle className="text-base leading-tight">
                 {site.name}
               </CardTitle>
-              {isWaiting ? <HostLiveDot tone="info" /> : null}
-              {needsDecision ? <HostLiveDot tone="destructive" /> : null}
               <Badge
                 variant={siteBadgeVariant}
                 data-testid={`host-site-badge-${site.id}`}
@@ -235,7 +213,7 @@ export default function HostSiteCard({
           </p>
         ) : null}
       </CardHeader>
-      <CardContent className="space-y-4 pl-5">
+      <CardContent className="space-y-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="flex min-w-0 flex-col gap-1.5">
             <Label htmlFor={`host-enabled-${site.id}`}>{t("siteEnabled")}</Label>
@@ -327,7 +305,7 @@ export default function HostSiteCard({
           </div>
         </div>
       </CardContent>
-      <CardContent className="pl-5 pt-0">
+      <CardContent className="pt-0">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-medium tracking-wide">{t("hitsTitle")}</p>
           {ignoredHits.length > 0 ? (
