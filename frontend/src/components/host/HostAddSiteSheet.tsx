@@ -86,7 +86,7 @@ export default function HostAddSiteSheet({
               </p>
             </SheetHeader>
             <div className="space-y-4 px-4">
-              <div className="space-y-1.5">
+              <div className="flex min-w-0 flex-col gap-1.5">
                 <Label htmlFor="host-name">{t("name")}</Label>
                 <Input
                   id="host-name"
@@ -96,7 +96,7 @@ export default function HostAddSiteSheet({
                   className="h-10 min-h-10"
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="flex min-w-0 flex-col gap-1.5">
                 <Label htmlFor="host-root">{t("rootPath")}</Label>
                 <Input
                   id="host-root"
@@ -108,12 +108,12 @@ export default function HostAddSiteSheet({
                 />
               </div>
               <p
-                className="text-sm text-muted-foreground"
+                className="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground"
                 data-testid="host-helper-required"
               >
                 {t("helperRequired")}
               </p>
-              <div className="space-y-1.5">
+              <div className="flex min-w-0 flex-col gap-1.5">
                 <Label htmlFor="host-agent">{t("guardAgent")}</Label>
                 <Select value={selectedAgentId} onValueChange={onAgentChange}>
                   <SelectTrigger
@@ -150,7 +150,7 @@ export default function HostAddSiteSheet({
                   </p>
                 ) : null}
               </div>
-              <div className="space-y-1.5">
+              <div className="flex min-w-0 flex-col gap-1.5">
                 <Label htmlFor="host-cms">{t("cmsHint")}</Label>
                 <Select
                   value={cmsHint}
@@ -173,7 +173,7 @@ export default function HostAddSiteSheet({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
+              <div className="flex min-w-0 flex-col gap-1.5">
                 <Label htmlFor="host-interval">{t("scanInterval")}</Label>
                 <Select
                   value={scanInterval}
@@ -200,7 +200,7 @@ export default function HostAddSiteSheet({
                   {t("intervalHint")}
                 </p>
               </div>
-              <div className="space-y-1.5">
+              <div className="flex min-w-0 flex-col gap-1.5">
                 <Label htmlFor="host-auto-quarantine">
                   {t("autoQuarantine")}
                 </Label>
@@ -227,7 +227,7 @@ export default function HostAddSiteSheet({
                   {t("autoQuarantineHint")}
                 </p>
               </div>
-              <div className="space-y-1.5">
+              <div className="flex min-w-0 flex-col gap-1.5">
                 <Label htmlFor="host-watch">{t("watchTitle")}</Label>
                 <Select
                   value={watchOnWrite ? "on" : "off"}
@@ -254,12 +254,17 @@ export default function HostAddSiteSheet({
             <SheetFooter>
               <Button
                 data-testid="host-save"
+                className="min-h-11 sm:min-h-10"
                 disabled={saveDisabled}
                 onClick={onSave}
               >
                 {t("save")}
               </Button>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
+              <Button
+                variant="outline"
+                className="min-h-11 sm:min-h-10"
+                onClick={() => onOpenChange(false)}
+              >
                 {t("cancel")}
               </Button>
             </SheetFooter>
