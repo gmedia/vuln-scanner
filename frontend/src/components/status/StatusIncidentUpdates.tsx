@@ -30,7 +30,7 @@ export function StatusIncidentUpdates({
       {updates.map((update) => (
         <div
           key={update.id}
-          className="border-l-2 border-primary/40 pl-3"
+          className="rounded-md border border-border p-3"
           data-testid={`${testIdPrefix}-update-${update.id}`}
         >
           <div className="flex flex-wrap items-center justify-between gap-1.5 text-xs text-muted-foreground">
