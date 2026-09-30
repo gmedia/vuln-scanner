@@ -7,6 +7,8 @@ test.describe("Profile @shell", () => {
     await expect(page.locator("input#profile-email")).toBeVisible();
     await expect(page.locator("input#profile-password")).toBeVisible();
     await expect(page.locator("text=Current email")).toBeVisible();
+    await expect(page.getByTestId("profile-identity")).toBeVisible();
+    await expect(page.getByTestId("profile-kpis")).toBeVisible();
   });
 
   test("profile page shows change password form", async ({ page }) => {
