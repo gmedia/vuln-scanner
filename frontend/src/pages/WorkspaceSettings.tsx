@@ -152,12 +152,7 @@ function StatTile({
   readonly emphasize?: boolean;
 }) {
   return (
-    <div
-      className={cn(
-        "rounded-md border border-border bg-card px-4 py-3",
-        emphasize && "ring-1 ring-primary/20",
-      )}
-    >
+    <div className="rounded-md border border-border bg-card px-4 py-3">
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
@@ -372,7 +367,6 @@ function WorkspaceSettings() {
   return (
     <div className="w-full space-y-6">
       <PageHeader
-        leading={<Building2 className="h-6 w-6 shrink-0 text-primary" />}
         title={t("title")}
         description={
           activeOrg
@@ -382,17 +376,10 @@ function WorkspaceSettings() {
       />
 
       {inviteToken && (
-        <Card
-          data-testid="accept-invite-card"
-          className="overflow-hidden ring-1 ring-primary/25"
-        >
-          <div
-            aria-hidden
-            className="h-1 w-full bg-linear-to-r from-primary/80 via-primary to-primary/40"
-          />
+        <Card data-testid="accept-invite-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
-              <Mail className="h-4 w-4 text-primary" />
+              <Mail className="h-4 w-4 text-muted-foreground" />
               {t("acceptTitle")}
             </CardTitle>
             <CardDescription className="text-xs">
@@ -434,11 +421,7 @@ function WorkspaceSettings() {
       )}
 
       {orgId && activeOrg && (
-        <Card className="overflow-hidden border-border">
-          <div
-            aria-hidden
-            className="h-1 w-full bg-linear-to-r from-primary/80 via-primary to-primary/40"
-          />
+        <Card>
           <CardHeader className="gap-1">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 space-y-1">
@@ -506,7 +489,7 @@ function WorkspaceSettings() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0 space-y-1">
                 <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
-                  <Users className="h-4 w-4 text-primary" />
+                  <Users className="h-4 w-4 text-muted-foreground" />
                   {t("membersTitle")}
                 </CardTitle>
                 <CardDescription className="text-xs">
@@ -550,7 +533,7 @@ function WorkspaceSettings() {
           <Card data-testid="invite-form-card" className="xl:sticky xl:top-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
-                <UserPlus className="h-4 w-4 text-primary" />
+                <UserPlus className="h-4 w-4 text-muted-foreground" />
                 {t("inviteTitle")}
               </CardTitle>
               <CardDescription className="text-xs">
@@ -634,7 +617,6 @@ function WorkspaceSettings() {
                 )}
                 <Button
                   type="submit"
-                  size="lg"
                   className="w-full"
                   data-testid="invite-submit"
                   disabled={inviteMut.isPending}
@@ -656,7 +638,7 @@ function WorkspaceSettings() {
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
-                <Mail className="h-4 w-4 text-primary" />
+                <Mail className="h-4 w-4 text-muted-foreground" />
                 {t("pendingInvites")}
               </CardTitle>
               {typeof pendingCount === "number" && pendingCount > 0 ? (
@@ -697,7 +679,7 @@ function WorkspaceSettings() {
         <Card data-testid="workspace-billing">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
-              <Receipt className="h-4 w-4 text-primary" />
+              <Receipt className="h-4 w-4 text-muted-foreground" />
               {t("billingTitle")}
             </CardTitle>
             <CardDescription className="text-xs">
@@ -757,7 +739,7 @@ function WorkspaceSettings() {
             <AccordionItem value="pilot" className="border-0">
               <AccordionTrigger className="px-4 py-4 hover:no-underline">
                 <span className="flex items-center gap-2 text-sm font-medium tracking-wide text-foreground">
-                  <ClipboardList className="h-4 w-4 text-primary" />
+                  <ClipboardList className="h-4 w-4 text-muted-foreground" />
                   {t("pilotTitle")}
                 </span>
               </AccordionTrigger>
@@ -832,7 +814,7 @@ function CreateOrgCard({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
-          <Building2 className="h-4 w-4 text-primary" />
+          <Building2 className="h-4 w-4 text-muted-foreground" />
           {t("createOrgTitle")}
         </CardTitle>
         <CardDescription className="text-xs">
