@@ -77,7 +77,7 @@ Nav groups match Sidebar: **Scan** · **Attach** · **Account** · **Admin** (ad
 |------|-----------|-----|-------|-------|
 | `/credit-history` | `pages/credit/CreditHistory.tsx` | Account | **Filter-bar reference** (equal `gap-3`, `h-10`) | `e2e/credit-history.spec.ts` |
 | `/inbox` | `pages/Inbox.tsx` | Account | User SMTP Sent/Failed log (`nav-inbox`). Spec [`inbox-delivered-v1.md`](specs/inbox-delivered-v1.md) S1b. **Not** Guard Discover. | `Inbox.test.tsx`, `Sidebar.test.tsx` |
-| `/profile` | `pages/Profile.tsx` | Account | | `Profile.test.tsx`, `e2e/profile.spec.ts` |
+| `/profile` | `pages/Profile.tsx` | Account | Identity band (initials + verified/admin badges + org) + KPI tiles + password/email cards. Frozen form ids: `current-password`, `new-password`, `confirm-password`, `profile-email`, `profile-password`. | `Profile.test.tsx`, `e2e/profile.spec.ts` |
 | `/settings/workspace` | `pages/WorkspaceSettings.tsx` | Account | Org members, invites, P6 pilot checklist, Billing card (`workspace-billing`). Invoice HTML print = S1b [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md). | `WorkspaceSettings.test.tsx` |
 | `/org/members` | **same** `WorkspaceSettings.tsx` | — | Alias route; keep in sync | same |
 
