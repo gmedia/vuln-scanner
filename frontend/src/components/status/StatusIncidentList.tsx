@@ -80,9 +80,7 @@ export function StatusIncidentList({
                 <TableRow
                   data-testid={`status-incident-row-${i.id}`}
                   className={
-                    i.status !== "resolved"
-                      ? "border-l-2 border-l-amber-500"
-                      : "border-l-2 border-l-primary/40"
+                    i.status !== "resolved" ? "bg-amber-500/[0.04]" : undefined
                   }
                 >
                   <TableCell className="font-medium">{i.title}</TableCell>
