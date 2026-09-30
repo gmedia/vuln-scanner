@@ -31,9 +31,15 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { UptimeHistoryPanel } from "@/components/uptime/UptimeHistoryPanel";
 import { explainUptimeError } from "@/components/uptime/uptimeErrors";
+import { LiveDot, ProtocolGlyph } from "@/components/uptime/UptimeChrome";
+import {
+  stateBadgeVariant,
+  stateRailClass,
+} from "@/components/uptime/uptimeChrome";
 import { useIsMobile } from "@/hooks/use-mobile";
 import i18n from "@/i18n";
 import { htmlLang, isAppLocale } from "@/i18n/locales";
+import { cn } from "@/lib/utils";
 
 const SAMPLE_PAGE_SIZE = 20;
 const OUTAGE_PAGE_SIZE = 5;
@@ -97,12 +103,6 @@ function formatDuration(ms: number, ongoing: string): string {
   const days = Math.floor(hours / 24);
   const remH = hours % 24;
   return remH ? `${days}d ${remH}h` : `${days}d`;
-}
-
-function stateBadgeVariant(state: string) {
-  if (state === "up") return "completed" as const;
-  if (state === "down") return "critical" as const;
-  return "info" as const;
 }
 
 function segmentClass(state: string): string {
@@ -195,9 +195,9 @@ function buildOutages(
     if (endMs < fromMs) continue;
     const ongoing = !recover;
     rows.push({
-        id: ev.id,
-        at: startMs < fromMs ? fromIso : ev.at,
-        until: recover?.at ?? null,
+      id: ev.id,
+      at: startMs < fromMs ? fromIso : ev.at,
+      until: recover?.at ?? null,
       detail: ev.detail,
       ongoing,
       durationMs: Math.max(0, endMs - Math.max(startMs, fromMs)),
@@ -234,6 +234,44 @@ function AvailabilityBar({
           />
         ))
       )}
+    </div>
+  );
+}
+
+function DetailKpiTile({
+  label,
+  value,
+  emphasize = false,
+}: {
+  readonly label: string;
+  readonly value: string | number;
+  readonly emphasize?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "relative flex flex-col items-center justify-center overflow-hidden rounded-lg border border-border bg-card p-3",
+        emphasize && "ring-1 ring-primary/20",
+      )}
+    >
+      <span
+        className={cn(
+          "absolute inset-y-2 left-0 w-0.5 rounded-full",
+          emphasize ? "bg-primary" : "bg-muted-foreground/30",
+        )}
+        aria-hidden
+      />
+      <p
+        className={cn(
+          "font-mono text-lg font-bold tabular-nums sm:text-2xl",
+          emphasize ? "text-primary" : "text-foreground",
+        )}
+      >
+        {value}
+      </p>
+      <p className="mt-1 text-center text-[10px] uppercase tracking-wider text-muted-foreground">
+        {label}
+      </p>
     </div>
   );
 }
@@ -429,13 +467,13 @@ export default function UptimeDetail() {
     return (
       <div data-testid="uptime-detail-not-found">
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="mb-4 rounded-full bg-red-600/10 p-4">
-            <Activity className="h-8 w-8 text-red-400" />
-          </div>
+          <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+            <Activity className="h-6 w-6 text-destructive" aria-hidden />
+          </span>
           <h2 className="mb-2 text-lg font-bold text-foreground">
             {t("detailNotFound")}
           </h2>
-          <p className="mb-6 text-sm text-muted-foreground">
+          <p className="mb-6 max-w-md text-sm text-muted-foreground">
             {t("detailNotFoundHint")}
           </p>
           <Button variant="outline" asChild>
@@ -463,12 +501,14 @@ export default function UptimeDetail() {
   const stats = beyondSamples && customWindow.custom ? undefined : statsQ.data;
   const pct = stats?.uptime_pct;
   const lastHint = explainUptimeError(monitor.last_error);
+  const live = monitor.state === "up" && monitor.enabled;
 
   return (
     <div className="space-y-6" data-testid="uptime-detail">
       <PageHeader
         title={
           <span className="inline-flex flex-wrap items-center gap-2">
+            {live ? <LiveDot /> : null}
             {monitor.name}
             <Badge variant={stateBadgeVariant(monitor.state)}>
               {stateLabel(monitor.state)}
@@ -476,22 +516,12 @@ export default function UptimeDetail() {
           </span>
         }
         description={
-          <>
-            <span className="block truncate font-mono text-xs">
-              {monitor.check_type} · {monitor.target}
+          monitor.last_error ? (
+            <span className="block text-[11px] text-destructive">
+              {monitor.last_error}
+              {lastHint ? ` — ${t(lastHint)}` : ""}
             </span>
-            {monitor.last_latency_ms != null ? (
-              <span className="mt-0.5 block text-[11px]">
-                {t("latency")}: {monitor.last_latency_ms}ms
-              </span>
-            ) : null}
-            {monitor.last_error ? (
-              <span className="mt-0.5 block text-[11px] text-destructive">
-                {monitor.last_error}
-                {lastHint ? ` — ${t(lastHint)}` : ""}
-              </span>
-            ) : null}
-          </>
+          ) : undefined
         }
         leading={<PageHeaderBack to="/uptime" label={t("backToList")} />}
         actions={
@@ -506,25 +536,66 @@ export default function UptimeDetail() {
         }
       />
 
-      <Tabs
-        value={activeTabsValue}
-        onValueChange={onTabsChange}
-      >
-        <TabsList data-testid="uptime-range-tabs">
-          {RANGES.map((r) => (
-            <TabsTrigger
-              key={r}
-              value={r}
-              data-testid={`uptime-range-${r}`}
-              disabled={!tabsEnabled}
+      <article className="relative overflow-hidden rounded-lg border border-border bg-card">
+        <div
+          className={cn("h-0.5", live ? "bg-primary" : "bg-muted-foreground/40")}
+          aria-hidden
+        />
+        <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+          <div className="flex min-w-0 items-start gap-3">
+            <span
+              aria-hidden
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15"
             >
-              {t(RANGE_LABEL[r])}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+              <ProtocolGlyph
+                type={monitor.check_type}
+                className="h-5 w-5 text-primary"
+              />
+            </span>
+            <div className="min-w-0 space-y-1">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                {monitor.check_type}
+              </p>
+              <p className="truncate font-mono text-sm text-foreground">
+                {monitor.target}
+              </p>
+              <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                {monitor.last_latency_ms != null ? (
+                  <span className="font-mono tabular-nums">
+                    {t("latency")} {monitor.last_latency_ms}ms
+                  </span>
+                ) : null}
+                {monitor.uptime_24h != null ? (
+                  <span className="font-mono tabular-nums">
+                    {monitor.uptime_24h}% / 24h
+                  </span>
+                ) : null}
+                <span className="font-mono tabular-nums">
+                  {monitor.interval_seconds}s
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
 
-      <Card data-testid="uptime-range-filters">
+      <Card className="overflow-hidden" data-testid="uptime-range-filters">
+        <CardHeader className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <Tabs value={activeTabsValue} onValueChange={onTabsChange}>
+            <TabsList data-testid="uptime-range-tabs">
+              {RANGES.map((r) => (
+                <TabsTrigger
+                  key={r}
+                  value={r}
+                  data-testid={`uptime-range-${r}`}
+                  disabled={!tabsEnabled}
+                >
+                  {t(RANGE_LABEL[r])}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        </CardHeader>
         <CardContent className="pt-6">
           <div
             data-testid="uptime-outage-filters"
@@ -611,30 +682,16 @@ export default function UptimeDetail() {
             {t("samplesRetentionNote")}
           </p>
         ) : null}
-        <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card p-3">
-          <p className="font-mono text-lg font-bold tabular-nums text-primary sm:text-2xl">
-            {pct == null ? "—" : `${pct}%`}
-          </p>
-          <p className="mt-1 text-center text-[10px] uppercase tracking-wider text-muted-foreground">
-            {t("rangeUptime")}
-          </p>
-        </div>
-        <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card p-3">
-          <p className="font-mono text-lg font-bold tabular-nums text-foreground sm:text-2xl">
-            {stats?.ok_count ?? "—"}
-          </p>
-          <p className="mt-1 text-center text-[10px] uppercase tracking-wider text-muted-foreground">
-            {t("rangeOk")}
-          </p>
-        </div>
-        <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card p-3">
-          <p className="font-mono text-lg font-bold tabular-nums text-foreground sm:text-2xl">
-            {stats?.total_count ?? "—"}
-          </p>
-          <p className="mt-1 text-center text-[10px] uppercase tracking-wider text-muted-foreground">
-            {t("rangeTotal")}
-          </p>
-        </div>
+        <DetailKpiTile
+          label={t("rangeUptime")}
+          value={pct == null ? "—" : `${pct}%`}
+          emphasize
+        />
+        <DetailKpiTile label={t("rangeOk")} value={stats?.ok_count ?? "—"} />
+        <DetailKpiTile
+          label={t("rangeTotal")}
+          value={stats?.total_count ?? "—"}
+        />
       </div>
 
       <Card>
@@ -657,25 +714,40 @@ export default function UptimeDetail() {
         </CardContent>
       </Card>
 
-      <Card data-testid="uptime-outages">
-        <CardHeader>
+      <Card data-testid="uptime-outages" className="overflow-hidden">
+        <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-border pb-4">
           <CardTitle className="text-sm tracking-wide">
             {t("outagesTitle")}
           </CardTitle>
+          {outages.length > 0 ? (
+            <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
+              {outages.length}
+            </span>
+          ) : null}
         </CardHeader>
-        <CardContent>
+        <CardContent className={outages.length === 0 ? "p-0" : undefined}>
           {eventsQ.isLoading ? (
             <Skeleton className="h-16 w-full" />
           ) : outages.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("outagesEmpty")}</p>
+            <div className="m-4 flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
+              <Activity className="h-8 w-8 text-muted-foreground" aria-hidden />
+              <p className="text-sm text-muted-foreground">{t("outagesEmpty")}</p>
+            </div>
           ) : (
             <ul className="space-y-2">
               {pagedOutages.map((row) => (
                 <li
                   key={row.id}
-                  className="rounded-md border border-border p-3"
+                  className="relative rounded-md border border-border p-3 pl-4"
                   data-testid="uptime-outage-row"
                 >
+                  <span
+                    className={cn(
+                      "absolute inset-y-2 left-0 w-0.5 rounded-full",
+                      row.ongoing ? "bg-destructive" : stateRailClass("down"),
+                    )}
+                    aria-hidden
+                  />
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <p className="font-mono text-xs text-foreground">
                       {formatTime(row.at)}

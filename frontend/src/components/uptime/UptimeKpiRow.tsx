@@ -1,5 +1,37 @@
 import { useTranslation } from "react-i18next";
 import { Progress } from "@/components/ui/Progress";
+import { LiveDot } from "@/components/uptime/UptimeChrome";
+import { cn } from "@/lib/utils";
+
+function KpiTile({
+  label,
+  value,
+  railClass,
+  valueClass,
+  live,
+}: {
+  readonly label: string;
+  readonly value: string | number;
+  readonly railClass: string;
+  readonly valueClass: string;
+  readonly live?: boolean;
+}) {
+  return (
+    <div className="relative flex min-w-0 flex-col justify-center overflow-hidden rounded-lg border border-border bg-card px-3 py-3 sm:px-4">
+      <span
+        className={cn("absolute inset-y-2 left-0 w-0.5 rounded-full", railClass)}
+        aria-hidden
+      />
+      <p className="pl-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+        {label}
+      </p>
+      <div className="mt-1 flex items-center gap-2 pl-2">
+        {live ? <LiveDot /> : null}
+        <p className={valueClass}>{value}</p>
+      </div>
+    </div>
+  );
+}
 
 export function UptimeKpiRow({
   upCount,
@@ -37,30 +69,37 @@ export function UptimeKpiRow({
       data-testid="uptime-kpi"
       className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-[1fr_1fr_2fr]"
     >
-      <div className="flex min-w-0 flex-col items-center justify-center rounded-lg border border-border bg-card p-3">
-        <p className="font-mono text-lg font-bold tabular-nums text-primary sm:text-2xl">
-          {upCount}
-        </p>
-        <p className="mt-1 text-center text-[10px] uppercase tracking-wider text-muted-foreground">
-          {t("statUp")}
-        </p>
-      </div>
-      <div className="flex min-w-0 flex-col items-center justify-center rounded-lg border border-border bg-card p-3">
-        <p
-          className={
-            downCount > 0
-              ? "font-mono text-lg font-bold tabular-nums text-destructive sm:text-2xl"
-              : "font-mono text-lg font-bold tabular-nums text-muted-foreground sm:text-2xl"
-          }
-        >
-          {downCount}
-        </p>
-        <p className="mt-1 text-center text-[10px] uppercase tracking-wider text-muted-foreground">
-          {t("statDown")}
-        </p>
-      </div>
-      <div className="col-span-2 flex min-w-0 flex-col justify-center gap-2 rounded-lg border border-border bg-card p-3 sm:p-4 lg:col-span-1">
-        <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+      <KpiTile
+        label={t("statUp")}
+        value={upCount}
+        railClass="bg-primary"
+        live={upCount > 0}
+        valueClass="font-mono text-lg font-bold tabular-nums text-primary sm:text-2xl"
+      />
+      <KpiTile
+        label={t("statDown")}
+        value={downCount}
+        railClass={downCount > 0 ? "bg-destructive" : "bg-muted-foreground/30"}
+        live={false}
+        valueClass={
+          downCount > 0
+            ? "font-mono text-lg font-bold tabular-nums text-destructive sm:text-2xl"
+            : "font-mono text-lg font-bold tabular-nums text-muted-foreground sm:text-2xl"
+        }
+      />
+      <div className="relative col-span-2 flex min-w-0 flex-col justify-center gap-2 overflow-hidden rounded-lg border border-border bg-card p-3 sm:p-4 lg:col-span-1">
+        <span
+          className={cn(
+            "absolute inset-y-2 left-0 w-0.5 rounded-full",
+            isFull
+              ? "bg-destructive"
+              : isNearCap
+                ? "bg-amber-500"
+                : "bg-primary/50",
+          )}
+          aria-hidden
+        />
+        <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-2 gap-y-1 pl-2">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
             {t("statSku")}
           </p>
@@ -75,7 +114,7 @@ export function UptimeKpiRow({
           aria-valuemin={0}
           aria-valuemax={100}
           aria-label={quotaLabel}
-          className="h-1.5"
+          className="ml-2 h-1.5"
           indicatorClassName={quotaIndicatorClassName}
         />
       </div>

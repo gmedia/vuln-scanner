@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Activity } from "lucide-react";
 import {
   createMonitor,
   deleteMonitor,
@@ -131,6 +132,12 @@ export default function Uptime() {
     return t("stateUnknown");
   };
 
+  const openCreate = () => {
+    setEditing(null);
+    setHeartbeatUrl(null);
+    setOpen(true);
+  };
+
   return (
     <div className="space-y-6" data-testid="uptime-page">
       <PageHeader
@@ -139,14 +146,11 @@ export default function Uptime() {
         actions={
           <Button
             data-testid="uptime-add"
+            className="min-h-11 sm:min-h-10"
             disabled={atCap}
             onClick={() => {
               if (open) closeSheet();
-              else {
-                setEditing(null);
-                setHeartbeatUrl(null);
-                setOpen(true);
-              }
+              else openCreate();
             }}
           >
             {t("add")}
@@ -194,32 +198,34 @@ export default function Uptime() {
       />
 
       {list.isLoading && items.length === 0 ? (
-        <Card>
-          <CardHeader>
+        <Card className="overflow-hidden">
+          <CardHeader className="border-b border-border pb-4">
             <CardTitle className="text-sm tracking-wide">
               {t("tableTitle")}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 py-4">
             <TableRowSkeleton rows={5} />
           </CardContent>
         </Card>
       ) : items.length === 0 ? (
-        <Card data-testid="uptime-empty">
-          <CardContent className="flex min-h-[8rem] flex-col items-center justify-center gap-2 px-6 py-8 text-center">
-            <p className="text-sm font-medium text-foreground">{t("empty")}</p>
-            <p className="max-w-md text-sm text-muted-foreground">
+        <Card data-testid="uptime-empty" className="overflow-hidden">
+          <div className="h-0.5 bg-primary" aria-hidden />
+          <CardContent className="flex min-h-[12rem] flex-col items-center justify-center gap-3 px-6 py-16 text-center md:min-h-[16rem] md:py-20">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/15">
+              <Activity className="h-6 w-6 text-primary" aria-hidden />
+            </span>
+            <p className="text-balance text-sm font-medium text-foreground">
+              {t("empty")}
+            </p>
+            <p className="max-w-md text-balance text-sm text-muted-foreground">
               {t("emptyHint")}
             </p>
             <Button
-              className="mt-2"
+              className="mt-2 min-h-11"
               data-testid="uptime-empty-cta"
               disabled={atCap}
-              onClick={() => {
-                setEditing(null);
-                setHeartbeatUrl(null);
-                setOpen(true);
-              }}
+              onClick={openCreate}
             >
               {t("emptyCta")}
             </Button>
@@ -228,6 +234,7 @@ export default function Uptime() {
       ) : (
         <UptimeMonitorListCard
           monitors={filtered}
+          totalCount={items.length}
           onHistory={(id) => navigate(`/uptime/${id}`)}
           onEdit={fillFromMonitor}
           onPause={(id) => pauseMut.mutate(id)}
@@ -237,7 +244,6 @@ export default function Uptime() {
           stateLabel={stateLabel}
         />
       )}
-
     </div>
   );
 }

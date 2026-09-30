@@ -65,7 +65,7 @@ export function UptimeFiltersSection({
       </div>
       <div
         data-testid="uptime-filters"
-        className="hidden grid-cols-1 gap-3 rounded-md border border-border bg-card p-4 sm:grid sm:grid-cols-2 lg:grid-cols-3"
+        className="hidden grid-cols-1 gap-3 overflow-hidden rounded-md border border-border bg-card p-4 sm:grid sm:grid-cols-2 lg:grid-cols-3"
       >
         <UptimeFilterBar
           idPrefix="uptime-filter"

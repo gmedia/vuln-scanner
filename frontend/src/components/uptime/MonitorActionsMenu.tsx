@@ -35,7 +35,7 @@ export function MonitorActionsMenu({
           type="button"
           variant="ghost"
           size="sm"
-          className="h-9 w-9 p-0"
+          className="h-11 w-11 min-h-11 min-w-11 p-0 md:h-9 md:w-9 md:min-h-9 md:min-w-9"
           data-testid="uptime-actions"
           aria-label={t("actionsMenu")}
         >

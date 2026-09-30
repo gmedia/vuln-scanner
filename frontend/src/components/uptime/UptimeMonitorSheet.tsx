@@ -113,8 +113,11 @@ function UptimeMonitorForm({
 
   return (
     <>
+        <div className="h-0.5 bg-primary" aria-hidden />
         <SheetHeader>
-          <SheetTitle>{editing ? t("editTitle") : t("add")}</SheetTitle>
+          <SheetTitle className="text-sm tracking-wide">
+            {editing ? t("editTitle") : t("add")}
+          </SheetTitle>
         </SheetHeader>
         <div className="space-y-3 px-4">
           <Field id="up-name" label={t("name")}>
