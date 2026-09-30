@@ -1,14 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Bot,
-  Copy,
-  KeyRound,
-  Library,
-  ScrollText,
-  WalletCards,
-} from "lucide-react";
+import { Bot, Copy, WalletCards } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import {
   Card,
@@ -36,7 +29,6 @@ import { AiKeysPanel } from "@/components/ai/AiKeysPanel";
 import { AiUsagePanel } from "@/components/ai/AiUsagePanel";
 import { useAuthStore } from "@/store/authStore";
 import { useTranslation } from "react-i18next";
-import { cn } from "@/lib/utils";
 
 export default function Ai() {
   const { t } = useTranslation("ai");
@@ -141,42 +133,22 @@ export default function Ai() {
       <Tabs value={tab} onValueChange={setTab}>
         <div className="max-w-full overflow-x-auto">
           <TabsList className="inline-flex h-auto min-w-max flex-nowrap justify-start">
-            <TabsTrigger
-              value="wallet"
-              data-testid="ai-tab-wallet"
-              className="gap-1.5"
-            >
-              <WalletCards className="hidden h-3.5 w-3.5 sm:block" aria-hidden />
+            <TabsTrigger value="wallet" data-testid="ai-tab-wallet">
               {t("tabWallet")}
             </TabsTrigger>
-            <TabsTrigger value="keys" data-testid="ai-tab-keys" className="gap-1.5">
-              <KeyRound className="hidden h-3.5 w-3.5 sm:block" aria-hidden />
+            <TabsTrigger value="keys" data-testid="ai-tab-keys">
               {t("tabKeys")}
             </TabsTrigger>
-            <TabsTrigger
-              value="usage"
-              data-testid="ai-tab-usage"
-              className="gap-1.5"
-            >
-              <ScrollText className="hidden h-3.5 w-3.5 sm:block" aria-hidden />
+            <TabsTrigger value="usage" data-testid="ai-tab-usage">
               {t("tabUsage")}
             </TabsTrigger>
-            <TabsTrigger
-              value="catalog"
-              data-testid="ai-tab-catalog"
-              className="gap-1.5"
-            >
-              <Library className="hidden h-3.5 w-3.5 sm:block" aria-hidden />
+            <TabsTrigger value="catalog" data-testid="ai-tab-catalog">
               {t("tabCatalog")}
             </TabsTrigger>
           </TabsList>
         </div>
         <TabsContent value="wallet" className="mt-4">
-          <Card className="border-border overflow-hidden">
-            <div
-              aria-hidden
-              className="h-1 w-full bg-linear-to-r from-primary/80 via-primary to-primary/40"
-            />
+          <Card>
             <CardHeader className="gap-1">
               <CardTitle className="text-base tracking-tight">
                 {t("tabWallet")}
@@ -194,7 +166,6 @@ export default function Ai() {
                       formatIdr(walletQ.data?.balance_idr)
                     )
                   }
-                  emphasize
                 />
                 <StatTile
                   label={t("statKeys")}
@@ -223,9 +194,10 @@ export default function Ai() {
               {walletEmpty && !walletQ.isLoading ? (
                 <div className="flex flex-col gap-3 rounded-xl border border-border bg-muted/40 px-4 py-5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex min-w-0 items-start gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
-                      <WalletCards className="h-4 w-4" aria-hidden />
-                    </span>
+                    <WalletCards
+                      className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
+                      aria-hidden
+                    />
                     <p className="text-sm text-muted-foreground">{t("walletEmpty")}</p>
                   </div>
                   <Button type="button" size="sm" asChild className="shrink-0">
@@ -241,7 +213,7 @@ export default function Ai() {
                   {t("endpoint")}
                 </p>
                 <div className="flex max-sm:flex-col flex-wrap items-start sm:items-center gap-2">
-                  <code className="max-w-full min-w-0 flex-1 break-all rounded-md border border-border bg-muted/40 px-3 py-2 font-mono text-xs text-foreground ring-1 ring-primary/15">
+                  <code className="max-w-full min-w-0 flex-1 break-all rounded-md border border-border bg-muted/40 px-3 py-2 font-mono text-xs text-foreground">
                     {baseUrl}
                   </code>
                   <Button
@@ -297,28 +269,16 @@ export default function Ai() {
 function StatTile({
   label,
   value,
-  emphasize = false,
 }: {
   readonly label: string;
   readonly value: ReactNode;
-  readonly emphasize?: boolean;
 }) {
   return (
-    <div
-      className={cn(
-        "rounded-md border border-border bg-card px-4 py-3",
-        emphasize && "ring-1 ring-primary/20",
-      )}
-    >
+    <div className="rounded-md border border-border bg-card px-4 py-3">
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
-      <div
-        className={cn(
-          "mt-1 font-mono text-lg font-bold tabular-nums text-foreground",
-          emphasize && "text-2xl font-semibold tracking-tight sm:text-lg",
-        )}
-      >
+      <div className="mt-1 font-mono text-lg font-bold tabular-nums text-foreground">
         {value}
       </div>
     </div>
@@ -327,11 +287,5 @@ function StatTile({
 
 function Header() {
   const { t } = useTranslation("ai");
-  return (
-    <PageHeader
-      leading={<Bot className="h-6 w-6 shrink-0 text-primary" />}
-      title={t("title")}
-      description={t("subtitle")}
-    />
-  );
+  return <PageHeader title={t("title")} description={t("subtitle")} />;
 }

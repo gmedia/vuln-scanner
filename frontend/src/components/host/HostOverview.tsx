@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/Badge";
 import { Progress } from "@/components/ui/Progress";
-import { HostLiveDot } from "@/components/host/HostChrome";
 import { cn } from "@/lib/utils";
 
 export type HostOverviewProps = {
@@ -20,39 +19,26 @@ function KpiTile({
   label,
   value,
   hint,
-  railClass,
   valueClass,
-  live,
-  liveTone,
   testid,
 }: {
   readonly label: string;
   readonly value: ReactNode;
   readonly hint?: string;
-  readonly railClass: string;
   readonly valueClass: string;
-  readonly live?: boolean;
-  readonly liveTone?: "primary" | "destructive" | "info";
   readonly testid: string;
 }) {
   return (
     <div
       data-testid={testid}
-      className="relative flex min-w-0 flex-col justify-center overflow-hidden rounded-lg border border-border bg-card px-3 py-3 sm:px-4"
+      className="flex min-w-0 flex-col justify-center rounded-md border border-border bg-card px-4 py-3"
     >
-      <span
-        className={cn("absolute inset-y-2 left-0 w-0.5 rounded-full", railClass)}
-        aria-hidden
-      />
-      <p className="pl-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
-      <div className="mt-1 flex min-w-0 items-center gap-2 pl-2">
-        {live ? <HostLiveDot tone={liveTone} /> : null}
-        <div className={cn("min-w-0", valueClass)}>{value}</div>
-      </div>
+      <div className={cn("mt-1 min-w-0", valueClass)}>{value}</div>
       {hint ? (
-        <p className="mt-0.5 truncate pl-2 text-[11px] text-muted-foreground">
+        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
           {hint}
         </p>
       ) : null}
@@ -95,20 +81,9 @@ export default function HostOverview({
     >
       <div
         data-testid="host-overview-sites"
-        className="relative col-span-2 flex min-w-0 flex-col justify-center gap-2 overflow-hidden rounded-lg border border-border bg-card p-3 sm:p-4 lg:col-span-1"
+        className="col-span-2 flex min-w-0 flex-col justify-center gap-2 rounded-md border border-border bg-card px-4 py-3 lg:col-span-1"
       >
-        <span
-          className={cn(
-            "absolute inset-y-2 left-0 w-0.5 rounded-full",
-            isFull
-              ? "bg-destructive"
-              : isNearCap
-                ? "bg-amber-500"
-                : "bg-primary/50",
-          )}
-          aria-hidden
-        />
-        <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-2 gap-y-1 pl-2">
+        <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
             {t("overviewSites")}
           </p>
@@ -116,7 +91,7 @@ export default function HostOverview({
             {t("overviewSitesHint", { sku })}
           </p>
         </div>
-        <p className={`${skuCountClassName} pl-2 min-w-0 break-words`}>
+        <p className={`${skuCountClassName} min-w-0 break-words`}>
           {t("overviewOf", { count, limit })}
         </p>
         <Progress
@@ -125,16 +100,13 @@ export default function HostOverview({
           aria-valuemin={0}
           aria-valuemax={100}
           aria-label={t("overviewOf", { count, limit })}
-          className="ml-2 h-1.5"
+          className="h-1.5"
           indicatorClassName={quotaIndicatorClassName}
         />
       </div>
       <KpiTile
         label={t("overviewAgents")}
         value={agentsCount > 0 ? String(agentsCount) : t("overviewNoAgents")}
-        railClass={
-          agentsCount > 0 ? "bg-primary/50" : "bg-muted-foreground/30"
-        }
         valueClass={
           agentsCount > 0
             ? "font-mono text-lg font-bold tabular-nums text-foreground sm:text-2xl"
@@ -154,33 +126,21 @@ export default function HostOverview({
             ) : null}
           </span>
         }
-        railClass={
-          needsDecision > 0
-            ? "bg-destructive"
-            : waiting
-              ? "bg-blue-500"
-              : "bg-muted-foreground/30"
-        }
         valueClass={
           needsDecision > 0
             ? "font-mono text-lg font-bold tabular-nums text-destructive sm:text-2xl"
             : "font-mono text-lg font-bold tabular-nums text-muted-foreground sm:text-2xl"
         }
-        live={waiting || needsDecision > 0}
-        liveTone={needsDecision > 0 ? "destructive" : "info"}
         testid="host-overview-decision"
       />
       <KpiTile
         label="Helper"
         value={fleetStale ? t("overviewHelperStale") : t("overviewHelperOk")}
-        railClass={fleetStale ? "bg-destructive" : "bg-primary"}
         valueClass={
           fleetStale
             ? "text-sm font-semibold leading-tight text-destructive"
             : "text-sm font-semibold leading-tight text-foreground"
         }
-        live={!fleetStale}
-        liveTone={fleetStale ? "destructive" : "primary"}
         testid="host-overview-helper"
       />
     </section>

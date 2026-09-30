@@ -226,11 +226,8 @@ export default function HostProtect() {
       <div className="space-y-6" data-testid="host-page">
         <PageHeader title={t("title")} description={t("subtitle")} />
         <Card className="overflow-hidden">
-          <div className="h-0.5 bg-muted-foreground/40" aria-hidden />
           <CardContent className="flex min-h-[12rem] flex-col items-center justify-center gap-3 px-6 py-16 text-center md:min-h-[16rem] md:py-20">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-              <Shield className="h-6 w-6 text-muted-foreground" aria-hidden />
-            </span>
+            <Shield className="h-8 w-8 text-muted-foreground" aria-hidden />
             <p className="text-balance text-sm font-medium text-foreground">
               {t("title")}
             </p>
@@ -290,11 +287,8 @@ export default function HostProtect() {
 
       {agents.length === 0 && !agentsQ.isLoading ? (
         <Card data-testid="host-no-agents" className="overflow-hidden">
-          <div className="h-0.5 bg-muted-foreground/40" aria-hidden />
           <CardContent className="flex min-h-[8rem] flex-col items-center justify-center gap-3 px-6 py-12 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-              <Shield className="h-6 w-6 text-muted-foreground" aria-hidden />
-            </span>
+            <Shield className="h-8 w-8 text-muted-foreground" aria-hidden />
             <p className="text-balance text-sm font-medium text-foreground">
               {t("noAgents")}
             </p>
@@ -382,11 +376,8 @@ export default function HostProtect() {
             </Card>
           ) : items.length === 0 && !sitesQ.isLoading && agents.length > 0 ? (
             <Card data-testid="host-empty" className="overflow-hidden">
-              <div className="h-0.5 bg-primary" aria-hidden />
               <CardContent className="flex min-h-[12rem] flex-col items-center justify-center gap-3 px-6 py-16 text-center md:min-h-[16rem] md:py-20">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/15">
-                  <Shield className="h-6 w-6 text-primary" aria-hidden />
-                </span>
+                <Shield className="h-8 w-8 text-muted-foreground" aria-hidden />
                 <p className="text-balance text-sm font-medium text-foreground">
                   {t("empty")}
                 </p>

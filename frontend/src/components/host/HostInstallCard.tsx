@@ -10,8 +10,7 @@ import {
 export default function HostInstallCard() {
   const { t } = useTranslation("host");
   return (
-    <Card data-testid="host-install-card" className="overflow-hidden">
-      <div className="h-0.5 bg-primary/60" aria-hidden />
+    <Card data-testid="host-install-card">
       <CardContent className="space-y-3 p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 items-start gap-3">

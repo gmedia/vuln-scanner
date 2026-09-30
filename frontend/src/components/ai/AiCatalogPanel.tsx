@@ -37,9 +37,7 @@ export function AiCatalogPanel({
       <CardContent>
         {models.length === 0 ? (
           <div className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-              <Library className="h-5 w-5 text-muted-foreground" aria-hidden />
-            </span>
+            <Library className="h-8 w-8 text-muted-foreground" aria-hidden />
             <p className="text-sm font-medium text-foreground">{t("catalogEmpty")}</p>
             <p className="text-xs text-muted-foreground">{t("catalogEmptyHint")}</p>
           </div>
@@ -73,7 +71,7 @@ export function AiCatalogPanel({
                         {formatIdr(m.price_idr_per_1k_in)}
                       </p>
                     </div>
-                    <div className="rounded-md border border-primary/25 bg-primary/5 px-2 py-1.5">
+                    <div className="rounded-md border border-border bg-muted/30 px-2 py-1.5">
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                         {t("colOut")}
                       </p>

@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import type { HostWafEvent } from "@/api/hostWaf";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent } from "@/components/ui/Card";
-import { cn } from "@/lib/utils";
 import {
   Pagination,
   PaginationContent,
@@ -33,10 +32,6 @@ function actionVariant(action: HostWafEvent["action"]) {
   return action === "block" ? ("failed" as const) : ("default" as const);
 }
 
-function actionRailClass(action: HostWafEvent["action"]): string {
-  return action === "block" ? "bg-destructive" : "bg-muted-foreground/40";
-}
-
 export function HostWafEventsList({
   events,
   page,
@@ -57,11 +52,8 @@ export function HostWafEventsList({
       </div>
       {events.length === 0 ? (
         <Card data-testid="host-waf-events-empty" className="overflow-hidden">
-          <div className="h-0.5 bg-muted-foreground/30" aria-hidden />
           <CardContent className="flex min-h-[8rem] flex-col items-center justify-center gap-2 px-6 py-10 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-              <Shield className="h-6 w-6 text-muted-foreground" aria-hidden />
-            </span>
+            <Shield className="h-8 w-8 text-muted-foreground" aria-hidden />
             <p className="text-sm font-medium text-foreground">{t("wafEvents")}</p>
             <p className="max-w-md text-xs text-muted-foreground">
               {t("wafEventsEmpty")}
@@ -77,20 +69,14 @@ export function HostWafEventsList({
             {events.map((e) => (
               <div
                 key={e.id}
-                className={cn(
-                  "relative rounded-lg border border-border bg-card p-3",
-                  e.action === "block" && "bg-destructive/[0.04]",
-                )}
+                className={
+                  e.action === "block"
+                    ? "rounded-lg border border-border bg-destructive/[0.04] p-3"
+                    : "rounded-lg border border-border bg-card p-3"
+                }
                 data-testid={`host-waf-event-card-${e.id}`}
               >
-                <span
-                  className={cn(
-                    "absolute inset-y-2 left-0 w-0.5 rounded-full",
-                    actionRailClass(e.action),
-                  )}
-                  aria-hidden
-                />
-                <div className="flex items-start justify-between gap-2 pl-3">
+                <div className="flex items-start justify-between gap-2">
                   <p className="min-w-0 flex-1 break-all font-mono text-xs font-medium text-foreground">
                     {e.path}
                   </p>
@@ -98,7 +84,7 @@ export function HostWafEventsList({
                     {e.method}
                   </Badge>
                 </div>
-                <div className="mt-2 flex flex-wrap items-center gap-1.5 pl-3">
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   <Badge variant={actionVariant(e.action)}>{e.action}</Badge>
                   <Badge variant="default" className="font-mono">
                     {e.rule_id}
@@ -133,11 +119,11 @@ export function HostWafEventsList({
                   {events.map((e) => (
                     <TableRow
                       key={e.id}
-                      className={cn(
-                        "h-12 hover:bg-muted/50",
-                        e.action === "block" &&
-                          "border-l-2 border-l-destructive bg-destructive/[0.04]",
-                      )}
+                      className={
+                        e.action === "block"
+                          ? "h-12 bg-destructive/[0.04] hover:bg-muted/50"
+                          : "h-12 hover:bg-muted/50"
+                      }
                     >
                       <TableCell>
                         <Badge variant={actionVariant(e.action)}>

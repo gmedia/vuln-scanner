@@ -72,8 +72,8 @@ export function AiKeysPanel({
           </Button>
         </div>
         {onceKey ? (
-          <Alert className="border-primary/40 bg-primary/5">
-            <KeyRound className="text-primary" aria-hidden />
+          <Alert>
+            <KeyRound className="text-muted-foreground" aria-hidden />
             <AlertDescription>
               <span className="text-foreground">{t("keyOnce")}:</span>{" "}
               <code className="break-all font-mono text-xs">{onceKey}</code>
@@ -82,9 +82,7 @@ export function AiKeysPanel({
         ) : null}
         {keys.length === 0 ? (
           <div className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-              <KeyRound className="h-5 w-5 text-muted-foreground" aria-hidden />
-            </span>
+            <KeyRound className="h-8 w-8 text-muted-foreground" aria-hidden />
             <p className="text-sm font-medium text-foreground">{t("keysEmpty")}</p>
             <p className="text-xs text-muted-foreground">{t("keysEmptyHint")}</p>
           </div>
