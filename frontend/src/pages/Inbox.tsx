@@ -307,7 +307,6 @@ function Inbox() {
   return (
     <div className="w-full space-y-6" data-testid="inbox-page">
       <PageHeader
-        leading={<InboxIcon className="h-6 w-6 shrink-0 text-primary" />}
         title={t("title")}
         description={t("subtitle")}
         actions={
