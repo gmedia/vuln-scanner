@@ -10,7 +10,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -48,7 +47,6 @@ export function AiKeysPanel({
   return (
     <Card data-testid="ai-keys-card">
       <CardHeader className="gap-1">
-        <CardTitle className="text-base tracking-tight">{t("tabKeys")}</CardTitle>
         <CardDescription>{t("keysHint")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

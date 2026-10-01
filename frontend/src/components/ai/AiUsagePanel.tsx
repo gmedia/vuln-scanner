@@ -9,7 +9,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/Card";
 import {
   Table,
@@ -35,16 +34,8 @@ export function AiUsagePanel({
   const { t, i18n } = useTranslation("ai");
   return (
     <Card data-testid="ai-usage-card">
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
-        <div className="min-w-0 space-y-1">
-          <CardTitle className="text-base tracking-tight">{t("tabUsage")}</CardTitle>
-          <CardDescription>{t("usageHint")}</CardDescription>
-        </div>
-        {items.length > 0 ? (
-          <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
-            {items.length}
-          </span>
-        ) : null}
+      <CardHeader className="gap-1">
+        <CardDescription>{t("usageHint")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {items.length === 0 ? (
