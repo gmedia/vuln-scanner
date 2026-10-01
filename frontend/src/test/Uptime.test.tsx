@@ -155,6 +155,16 @@ describe("Uptime page", () => {
     expect(filtersCard?.className ?? "").toMatch(/border-border/);
     expect(filtersCard?.className ?? "").toMatch(/last:border-b(?:\s|$)/);
     expect(filtersCard?.className ?? "").not.toMatch(/last:border-b-0/);
+    const table = row.closest("table");
+    expect(table?.className ?? "").toMatch(/table-fixed/);
+    expect(table?.className ?? "").toMatch(/min-w-/);
+    expect(screen.getByRole("columnheader", { name: "Spark" }).className).toMatch(
+      /min-w-/,
+    );
+    expect(screen.getByText("Spark")).toBeInTheDocument();
+    expect(screen.queryByText(/^24h$/)).not.toBeInTheDocument();
+    expect(screen.getByText("24h %")).toBeInTheDocument();
+    expect(screen.getByTestId("uptime-sparkline")).toHaveTextContent("—");
     await user.click(within(row).getByTestId("uptime-actions"));
     expect(screen.getByTestId("uptime-edit")).toBeInTheDocument();
     await user.click(screen.getByTestId("uptime-edit"));
@@ -165,12 +175,6 @@ describe("Uptime page", () => {
       "https://example.com",
     );
     expect(screen.getByTestId("uptime-kpi")).toBeInTheDocument();
-    expect(screen.getByTestId("uptime-sparkline")).toHaveTextContent("—");
-    const table = row.closest("table");
-    expect(table?.className ?? "").toMatch(/table-fixed/);
-    expect(screen.getByText("Spark")).toBeInTheDocument();
-    expect(screen.queryByText(/^24h$/)).not.toBeInTheDocument();
-    expect(screen.getByText("24h %")).toBeInTheDocument();
   });
 
   it("renders a filled 24h sparkline when samples exist", async () => {
