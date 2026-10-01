@@ -15,7 +15,7 @@ import {
 import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { TableRowSkeleton } from "@/components/ui/Skeleton";
+import { Skeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import { UptimeFiltersSection } from "@/components/uptime/UptimeFiltersSection";
 import { UptimeKpiRow } from "@/components/uptime/UptimeKpiRow";
 import { UptimeMonitorListCard } from "@/components/uptime/UptimeMonitorList";
@@ -198,16 +198,23 @@ export default function Uptime() {
       />
 
       {list.isLoading && items.length === 0 ? (
-        <Card className="overflow-hidden">
-          <CardHeader className="border-b border-border pb-4">
-            <CardTitle className="text-sm tracking-wide">
-              {t("tableTitle")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 py-4">
-            <TableRowSkeleton rows={5} />
-          </CardContent>
-        </Card>
+        <>
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-[1fr_1fr_2fr]">
+            <Skeleton className="h-[4.5rem] rounded-lg" />
+            <Skeleton className="h-[4.5rem] rounded-lg" />
+            <Skeleton className="col-span-2 h-[4.5rem] rounded-lg lg:col-span-1" />
+          </div>
+          <Card className="overflow-hidden">
+            <CardHeader className="border-b border-border pb-4">
+              <CardTitle className="text-sm tracking-wide">
+                {t("tableTitle")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 py-4">
+              <TableRowSkeleton rows={5} />
+            </CardContent>
+          </Card>
+        </>
       ) : items.length === 0 ? (
         <Card data-testid="uptime-empty" className="overflow-hidden">
           <CardContent className="flex min-h-[12rem] flex-col items-center justify-center gap-3 px-6 py-16 text-center md:min-h-[16rem] md:py-20">
