@@ -1,6 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { Activity } from "lucide-react";
 import type { UptimeMonitor, UptimeSample } from "@/api/uptime";
+import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
+import { SiemRail } from "@/components/siem/siemChrome";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -28,6 +30,10 @@ function formatSampleTime(iso: string): string {
   });
 }
 
+function sampleRailClass(ok: boolean): string {
+  return ok ? "bg-border" : "bg-destructive";
+}
+
 export function UptimeHistoryPanel({
   monitor,
   rows,
@@ -52,12 +58,10 @@ export function UptimeHistoryPanel({
         {loading ? (
           <Skeleton className="h-24 w-full" />
         ) : rows.length === 0 ? (
-          <div className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
-            <Activity className="h-8 w-8 text-muted-foreground" aria-hidden />
-            <p className="text-sm text-muted-foreground">
-              {emptyHint ?? t("historyEmpty")}
-            </p>
-          </div>
+          <SiemEmptyIsland
+            icon={Activity}
+            title={emptyHint ?? t("historyEmpty")}
+          />
         ) : (
           <>
             <div className="space-y-2 md:hidden" data-testid="uptime-history-mobile">
@@ -66,10 +70,11 @@ export function UptimeHistoryPanel({
                   key={s.id}
                   data-testid="uptime-history-row"
                   className={cn(
-                    "rounded-md border border-border p-3",
+                    "relative rounded-md border border-border p-3 pl-4",
                     !s.ok && "bg-destructive/[0.04]",
                   )}
                 >
+                  <SiemRail className={sampleRailClass(s.ok)} />
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-mono text-xs">
                       {formatSampleTime(s.checked_at)}
@@ -127,11 +132,12 @@ export function UptimeHistoryPanel({
                     key={s.id}
                     data-testid="uptime-history-row"
                     className={cn(
-                      "h-12 hover:bg-muted/50",
+                      "relative h-12 hover:bg-muted/50",
                       !s.ok && "bg-destructive/[0.04]",
                     )}
                   >
-                    <TableCell className="whitespace-nowrap font-mono text-xs">
+                    <TableCell className="relative whitespace-nowrap pl-4 font-mono text-xs">
+                      <SiemRail className={sampleRailClass(s.ok)} />
                       {formatSampleTime(s.checked_at)}
                     </TableCell>
                     <TableCell>
