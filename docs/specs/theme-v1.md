@@ -109,10 +109,11 @@ Boot: if stored/default is dark → `document.documentElement.classList.add("dar
 | `--foreground` | `hsl(0 0% 7%)` | `hsl(0 0% 96%)` |
 | `--card` | `hsl(0 0% 100%)` | `hsl(0 0% 8%)` (~`#141414`) |
 | `--muted` | `hsl(0 0% 96%)` | `hsl(0 0% 12%)` |
-| `--muted-foreground` | `hsl(0 0% 45%)` | `hsl(0 0% 45%)` |
-| `--border` | `hsl(0 0% 90%)` (~`#E5E7EB`) | `hsl(0 0% 16%)` (~`#262626`) |
-| `--input` | `hsl(0 0% 94%)` (inset wash) | `hsl(0 0% 11%)` |
-| `--sidebar` | `hsl(0 0% 100%)` | `hsl(0 0% 4%)` (same family as canvas) |
+| `--muted-foreground` | `hsl(0 0% 45%)` | `hsl(0 0% 55%)` |
+| `--border` | `hsl(0 0% 90%)` (~`#E5E7EB`) | `hsl(0 0% 100% / 0.08)` (whisper hairline; **not** `28%` from #741) |
+| `--input` | `hsl(0 0% 94%)` (inset wash) | `hsl(0 0% 12%)` (fill wash, not a louder line) |
+| `--sidebar` | `hsl(0 0% 98%)` | `hsl(0 0% 4%)` (same family as canvas) |
+| `--sidebar-border` | `hsl(0 0% 90%)` | `hsl(0 0% 100% / 0.06)` (fainter than card hairline) |
 | `--primary` | **same green** `hsl(142 71% 45%)` | same |
 | `--destructive` | keep readable on light | keep |
 | `--radius` | `0.75rem` (12px) both themes | same |
