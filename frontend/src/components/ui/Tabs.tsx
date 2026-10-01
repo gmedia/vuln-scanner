@@ -75,4 +75,13 @@ const TabsContent = forwardRef<
 ));
 TabsContent.displayName = "TabsContent";
 
-export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants };
+function TabCount({ value }: { readonly value: number }) {
+  if (value <= 0) return null;
+  return (
+    <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+      {value}
+    </span>
+  );
+}
+
+export { Tabs, TabsList, TabsTrigger, TabsContent, TabCount, tabsListVariants };
