@@ -4,11 +4,13 @@ import type { StatusIncident } from "@/api/statusPage";
 import { StatusIncidentActions } from "@/components/status/StatusIncidentActions";
 import { StatusIncidentQuickUpdate } from "@/components/status/StatusIncidentQuickUpdate";
 import { StatusIncidentUpdates } from "@/components/status/StatusIncidentUpdates";
+import { incidentRailClass } from "@/components/status/statusChrome";
 import {
   formatStartedAt,
   impactBadge,
   statusBadge,
 } from "@/components/status/statusIncidentDisplay";
+import { SiemRail } from "@/components/siem/siemChrome";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -33,11 +35,12 @@ export function StatusIncidentCard({
   return (
     <div
       className={cn(
-        "rounded-lg border border-border bg-card p-3",
+        "relative overflow-hidden rounded-lg border border-border bg-card p-3 pl-4",
         open && "bg-amber-500/[0.04]",
       )}
       data-testid={`status-incident-card-${incident.id}`}
     >
+      <SiemRail className={incidentRailClass(incident.status)} />
       <div className="flex items-start justify-between gap-2">
         <p className="min-w-0 break-words text-sm font-medium text-foreground">
           {incident.title}
