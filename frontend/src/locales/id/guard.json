@@ -95,5 +95,6 @@
   "disableSubmit": "Hapus dari Guard",
   "disabledToast": "Agen dihapus dari Guard",
   "disableFail": "Gagal menghapus agen dari Guard",
-  "statusDisabled": "Nonaktif"
+  "statusDisabled": "Nonaktif",
+  "kpiLastSync": "Sinkron terakhir"
 }
