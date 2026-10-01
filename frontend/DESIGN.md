@@ -695,9 +695,9 @@ P15 flatten: KPI strip is **not** inside PageHeader and **not** inside the list 
 
 ---
 
-# AI Gateway page-nav (`/ai`)
+# Page-nav line tabs (`/ai`, Host, SIEM, ScanDetail, Admin AI)
 
-Print invoice, SIEM, Guard, and Assets (above) are **separate surfaces**. This section is the SPA `/ai` tab contract. Do not restyle kit default (pill) Tabs. Admin `/admin/ai` is out of scope. Reuse existing Radix `Tabs.tsx` — do not invent a second tab primitive.
+Print invoice, Guard, and Assets (above) are **separate surfaces**. This section is the SPA **page-nav** tab contract. Do not restyle kit default (pill) Tabs. Reuse existing Radix `Tabs.tsx` — do not invent a second tab primitive. Uptime range tabs stay pill.
 
 ## 0. Research Log (AI tabs)
 
@@ -706,13 +706,13 @@ Print invoice, SIEM, Guard, and Assets (above) are **separate surfaces**. This s
 - Sibling harvest: `Tabs.tsx` default pill (`h-10 rounded-md bg-muted p-1`); Host Protect tab counts (not `Badge variant="critical"`); Credit History filter chrome is **out** — `/ai` has no filter row.
 - Skipped lanes: react-grab / react-scan / react-doctor install — AGENTS.md forbids extra deps for a visual slice; `main.tsx` has none.
 
-**Direction (locked):** Full-width underline **page-nav** on `/ai` only. Signature: a 2px `--foreground` underline (`after:h-0.5 after:bg-foreground`) under the active trigger, not `--primary`. Inter labels + lucide icons (`Wallet` / `KeyRound` / `ScrollText` / `Library`) + mono counts. Pill tabs on Host Protect / Uptime / SIEM / ScanDetail stay pill. Admin AI stays pill.
+**Direction (locked):** Full-width underline **page-nav** on `/ai`, Host Protect, SIEM, ScanDetail, and Admin AI. Signature: a 2px `--foreground` underline (`after:h-0.5 after:bg-foreground`) under the active trigger, not `--primary`. Inter labels + lucide icons + mono counts via kit `TabCount`. **Keep pill:** UptimeDetail range (`data-testid="uptime-range-tabs"`) and other in-card segmented controls. Do not convert filter pills.
 
 ## 1. Atmosphere & Identity
 
-`/ai` is the org prepaid gateway (wallet, keys, usage, catalog). The tab row is **page navigation**, not a segmented control inside a Card. It must feel like Linear/Supabase settings nav sitting under PageHeader — quieter than SIEM search, denser than a marketing feature tab.
+Page-nav tabs sit under PageHeader (or after ScanDetail KPI tiles) as **page navigation**, not a segmented control inside a Card. They must feel like Linear/Supabase settings nav — quieter than SIEM search filters, denser than a marketing feature tab.
 
-The one memorable moment: scanning Wallet → Keys → Usage → Catalog, the eye hits a hairline `--border` list and a 2px ink underline on the active tab **before** the panel copy. Counts on Keys (active keys) and Usage (`items.length`) sit as muted mono, never a critical Badge.
+The one memorable moment: scanning the tab row, the eye hits a hairline `--border` list and a 2px ink underline on the active tab **before** the panel copy. Counts sit as muted mono via `TabCount`, never a critical Badge.
 
 Do **not** restyle default `TabsList` to line. Callers that omit `variant` keep `bg-muted` pills.
 
@@ -728,7 +728,7 @@ Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. 
 | Meta | `--muted-foreground` | Inactive tab, counts, CardDescription |
 | Line | `--border` | `TabsList variant="line"` bottom hairline |
 | Accent | `--primary` `hsl(142 71% 45%)` | Create key, top-up CTA — **not** the tab underline |
-| Pill wash | `--muted` | Default `TabsList` only (Host / Uptime / SIEM / ScanDetail / Admin AI) |
+| Pill wash | `--muted` | Default `TabsList` only (Uptime range + in-card pills) |
 
 Underline is `after:bg-foreground`, **never** `after:bg-primary`. Counts are `text-muted-foreground`, not `Badge variant="critical"` / `bg-red-600`.
 
@@ -769,22 +769,33 @@ Tabular numerals on every count, time, and IDR. Body copy stays i18n `ai` catalo
 
 `TabsList variant="line"`: `h-auto justify-start gap-1 rounded-none border-b border-border bg-transparent p-0`. Page passes `className="w-full justify-start"`.
 
-URL: `?tab=wallet|keys|usage|catalog`. Wallet **deletes** the param (`replace: true`). Unknown `?tab` → wallet.
+URL `?tab=` (`replace: true`). Default tab **deletes** the param. Unknown `?tab` → default. ScanDetail patches `tab` through existing `patchFindingsParams` so `page`/`severity`/`sort`/`dir`/`q` are not clobbered.
+
+| Page | Tabs | Default (deletes `?tab`) |
+|------|------|--------------------------|
+| `/ai` | wallet / keys / usage / catalog | wallet |
+| `/host` | malware / waf | malware |
+| `/siem` | search / cases | search |
+| `/scan/:id` | findings / diff / export | findings |
+| `/admin/ai` | providers / models / usage / topup / trial | providers |
 
 ## 5. Components
 
 ### Tabs (kit)
 
-- **Default** (`variant` omitted): pill list `h-10 rounded-md bg-muted p-1`; active trigger `data-[state=active]:bg-background` + shadow. Host Protect, Uptime, SIEM, ScanDetail, Admin AI stay here.
+- **Default** (`variant` omitted): pill list `h-10 rounded-md bg-muted p-1`; active trigger `data-[state=active]:bg-background` + shadow. Uptime range (`uptime-range-tabs`) and in-card pills stay here.
 - **Line** (`variant="line"`): hairline list + `data-variant="line"`. Active trigger underline via `group-data-[variant=line]/tabs-list:data-[state=active]:after:opacity-100` (`after:h-0.5 after:bg-foreground`). Line mode kills pill wash (`bg-transparent`, `shadow-none`).
 - Do **not** restyle kit files to match one screenshot. Frozen default tests: `bg-muted`, `data-variant="default"`. Frozen line tests: `bg-transparent`, `border-b`, `after:bg-foreground`, not `after:bg-primary`.
 
-### Ai page-nav
+### Page-nav callers
 
-- **Structure**: PageHeader → `Tabs` → line `TabsList` (4 triggers) → `TabsContent`. Icons `aria-hidden`. Counts via `TabCount` (null when `value <= 0`).
-- **Frozen testids**: `ai-tab-wallet`, `ai-tab-keys`, `ai-tab-usage`, `ai-tab-catalog`. EN role names Wallet / Keys / Usage / Catalog frozen.
-- **Counts**: Keys = `items.filter(k => k.is_active).length`; Usage = `items.length`. Omit at 0. Not `Badge variant="critical"`.
-- **Panels**: `ai-keys-card`, `ai-usage-card`, `ai-catalog-card`, `ai-usage-empty` stay. CardTitle dropped (tab is the title). CardDescription stays.
+Shared chrome: `TabsList variant="line" className="w-full justify-start"`. Icons `aria-hidden`. Counts via kit `TabCount` (null when `value <= 0`). Duplicate in-panel `CardTitle` matching the tab label is dropped.
+
+- **`/ai`**: Wallet / Keys / Usage / Catalog. Frozen testids `ai-tab-wallet` … `ai-tab-catalog`. EN role names frozen. Counts: Keys = active keys; Usage = `items.length`.
+- **Host Protect**: Malware / WAF. Frozen `host-tab-waf`. Icons `Bug` / `Shield`. Count: `overviewNeedsDecision` on Malware.
+- **SIEM**: Search events / Cases (EN roles frozen). Icons `Search` / `FolderOpen`. Count: open cases on Cases. Search `CardTitle` and cases CardHeader title dropped.
+- **ScanDetail**: Findings / Diff / Export (EN roles frozen). Icons `Crosshair` / `GitCompare` / `Download`. Count: `findingsCount` on Findings.
+- **Admin AI**: Providers / Models / Usage / Top-up / Trial. Icons `Server` / `Boxes` / `ScrollText` / `Wallet` / `MessageSquare`. No `min-w-max` overflow strip. Usage CardTitle dropped.
 
 ### AiWalletPanel
 
@@ -834,7 +845,7 @@ URL: `?tab=wallet|keys|usage|catalog`. Wallet **deletes** the param (`replace: t
 | Item | Location | Why accepted | Owner / Exit |
 |------|----------|--------------|--------------|
 | Line `after:` classes on default triggers | `TabsTrigger` | Hidden unless `group-data-[variant=line]` + active; extracting a second Trigger would fork the kit | Keep group-data until a named kit split |
-| Admin AI still pill | `/admin/ai` | Out of this slice; org `/ai` is the page-nav | Named admin slice |
+| Uptime range stays pill | `/uptime/:id` | In-card filter, not page-nav | Keep default variant |
 | `AiWalletPanel` 8 readonly props | wallet panel | Extracted from page; grouping into a stats object is a follow-up | Named refactor |
 | react-scan / react-grab not wired | SPA entry | AGENTS.md forbids extra deps for a visual slice | Separate tooling PR |
 | Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Five surfaces; merging would pollute print | Keep split |
