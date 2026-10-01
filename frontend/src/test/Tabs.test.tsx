@@ -75,4 +75,40 @@ describe("Tabs", () => {
     const content = screen.getByText("Content 1");
     expect(content).toHaveClass("custom-content");
   });
+
+  it("defaults to the pill list (bg-muted) when variant is omitted", () => {
+    const { container } = render(
+      <Tabs defaultValue="tab1">
+        <TabsList>
+          <TabsTrigger value="tab1">Tab 1</TabsTrigger>
+        </TabsList>
+      </Tabs>,
+    );
+    const list = container.querySelector('[role="tablist"]');
+    expect(list).toHaveClass("bg-muted");
+    expect(list).toHaveClass("rounded-md");
+    expect(list).toHaveAttribute("data-variant", "default");
+    const trigger = screen.getByRole("tab", { name: "Tab 1" });
+    expect(trigger.className).toMatch(/data-\[state=active\]:bg-background/);
+  });
+
+  it("variant=line uses a hairline list and foreground underline, not the pill wash", () => {
+    const { container } = render(
+      <Tabs defaultValue="tab1">
+        <TabsList variant="line">
+          <TabsTrigger value="tab1">Tab 1</TabsTrigger>
+          <TabsTrigger value="tab2">Tab 2</TabsTrigger>
+        </TabsList>
+      </Tabs>,
+    );
+    const list = container.querySelector('[role="tablist"]');
+    expect(list).toHaveAttribute("data-variant", "line");
+    expect(list).toHaveClass("bg-transparent");
+    expect(list).toHaveClass("border-b");
+    expect(list).not.toHaveClass("bg-muted");
+    const active = screen.getByRole("tab", { name: "Tab 1" });
+    expect(active.className).toMatch(/after:bg-foreground/);
+    expect(active.className).toMatch(/after:h-0\.5/);
+    expect(active.className).not.toMatch(/after:bg-primary/);
+  });
 });
