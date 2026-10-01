@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bot, KeyRound, Library, ScrollText, Wallet } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
+import { Tabs, TabsContent, TabsList, TabCount, TabsTrigger } from "@/components/ui/Tabs";
 import {
   createAiKey,
   getAiWallet,
@@ -29,15 +29,6 @@ function parseAiTab(raw: string | null): AiTab {
     if (tab === raw) return tab;
   }
   return "wallet";
-}
-
-function TabCount({ value }: { readonly value: number }) {
-  if (value <= 0) return null;
-  return (
-    <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
-      {value}
-    </span>
-  );
 }
 
 export default function Ai() {

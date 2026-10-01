@@ -7,6 +7,7 @@ import {
   Clock,
   Crosshair,
   Download,
+  GitCompare,
   Printer,
   RefreshCw,
   Shield,
@@ -42,7 +43,13 @@ import { SCAN_TYPE_LABELS } from "@/lib/constants";
 import SeverityChart from "@/components/results/SeverityChart";
 import FindingsTable from "@/components/results/FindingsTable";
 import { ScanError } from "@/components/scan/ScanError";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabCount,
+  TabsTrigger,
+} from "@/components/ui/Tabs";
 import PageHeader from "@/components/layout/PageHeader";
 import PageHeaderBack from "@/components/layout/PageHeaderBack";
 import { useTranslation } from "react-i18next";
@@ -91,6 +98,16 @@ function parseSortDir(raw: string | null): FindingsSortDir {
   return raw === "desc" ? "desc" : "asc";
 }
 
+const SCAN_TABS = ["findings", "diff", "export"] as const;
+type ScanTab = (typeof SCAN_TABS)[number];
+
+function parseScanTab(raw: string | null): ScanTab {
+  for (const tab of SCAN_TABS) {
+    if (tab === raw) return tab;
+  }
+  return "findings";
+}
+
 function ScanDetail() {
   const { t } = useTranslation("scan");
   const { id } = useParams<{ id: string }>();
@@ -99,6 +116,7 @@ function ScanDetail() {
   const severity = parseSeverity(searchParams.get("severity"));
   const sortKey = parseSortKey(searchParams.get("sort"));
   const sortDir = parseSortDir(searchParams.get("dir"));
+  const scanTab = parseScanTab(searchParams.get("tab"));
   const urlQ = searchParams.get("q") ?? "";
   const [searchDraft, setSearchDraft] = useState(urlQ);
   const lastPushedQ = useRef(urlQ);
@@ -344,14 +362,32 @@ function ScanDetail() {
         />
       </div>
 
-      <Tabs defaultValue="findings" className="w-full">
-        <TabsList>
-          <TabsTrigger value="findings">{t("tabFindings")}</TabsTrigger>
-          <TabsTrigger value="diff">{t("tabDiff")}</TabsTrigger>
-          <TabsTrigger value="export">{t("tabExport")}</TabsTrigger>
+      <Tabs
+        value={scanTab}
+        onValueChange={(next) => {
+          patchFindingsParams({
+            tab: next === "findings" ? undefined : next,
+          });
+        }}
+        className="w-full"
+      >
+        <TabsList variant="line" className="w-full justify-start">
+          <TabsTrigger value="findings" className="gap-1.5">
+            <Crosshair aria-hidden />
+            {t("tabFindings")}
+            <TabCount value={findingsCount} />
+          </TabsTrigger>
+          <TabsTrigger value="diff" className="gap-1.5">
+            <GitCompare aria-hidden />
+            {t("tabDiff")}
+          </TabsTrigger>
+          <TabsTrigger value="export" className="gap-1.5">
+            <Download aria-hidden />
+            {t("tabExport")}
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="findings" className="space-y-5">
+        <TabsContent value="findings" className="mt-4 space-y-5">
           <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.6fr)_minmax(22rem,0.9fr)] 2xl:items-start">
             <Card>
               <CardHeader className="py-3">
@@ -515,7 +551,7 @@ function ScanDetail() {
           )}
         </TabsContent>
 
-        <TabsContent value="diff">
+        <TabsContent value="diff" className="mt-4">
           {scan.status === "completed" && diff ? (
             <DiffBadgeStrip diff={diff} />
           ) : (
@@ -525,7 +561,7 @@ function ScanDetail() {
           )}
         </TabsContent>
 
-        <TabsContent value="export">
+        <TabsContent value="export" className="mt-4">
           {id ? (
             <div className="space-y-3">
               <p className="text-xs text-muted-foreground">

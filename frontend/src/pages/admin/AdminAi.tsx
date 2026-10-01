@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { Bot } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { useSearchParams } from "react-router-dom";
+import { Bot, Boxes, MessageSquare, ScrollText, Server, Wallet } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/Card";
 import {
   Pagination,
   PaginationContent,
@@ -23,8 +24,31 @@ import { AdminAiUsageList } from "@/components/admin/AdminAiUsageList";
 
 const USAGE_PAGE_SIZE = 20;
 
+const ADMIN_AI_TABS = ["providers", "models", "usage", "topup", "trial"] as const;
+type AdminAiTab = (typeof ADMIN_AI_TABS)[number];
+
+function parseAdminAiTab(raw: string | null): AdminAiTab {
+  for (const tab of ADMIN_AI_TABS) {
+    if (tab === raw) return tab;
+  }
+  return "providers";
+}
+
 export default function AdminAi() {
   const { t } = useTranslation("admin");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = parseAdminAiTab(searchParams.get("tab"));
+  const setTab = (next: string) => {
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (next === "providers") params.delete("tab");
+        else params.set("tab", next);
+        return params;
+      },
+      { replace: true },
+    );
+  };
   const [openUsageId, setOpenUsageId] = useState<string | null>(null);
   const [usagePage, setUsagePage] = useState(1);
   const providersQ = useQuery({
@@ -65,28 +89,38 @@ export default function AdminAi() {
   return (
     <div className="w-full space-y-6">
       <Head />
-      <Tabs defaultValue="providers">
-        <div className="max-w-full overflow-x-auto">
-          <TabsList className="inline-flex h-auto min-w-max flex-nowrap justify-start">
-            <TabsTrigger value="providers">{t("aiTabProviders")}</TabsTrigger>
-            <TabsTrigger value="models">{t("aiTabModels")}</TabsTrigger>
-            <TabsTrigger value="usage">{t("aiTabUsage")}</TabsTrigger>
-            <TabsTrigger value="topup">{t("aiTabTopup")}</TabsTrigger>
-            <TabsTrigger value="trial">{t("aiTabTrial")}</TabsTrigger>
-          </TabsList>
-        </div>
-        <TabsContent value="providers">
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList variant="line" className="w-full justify-start">
+          <TabsTrigger value="providers" className="gap-1.5">
+            <Server aria-hidden />
+            {t("aiTabProviders")}
+          </TabsTrigger>
+          <TabsTrigger value="models" className="gap-1.5">
+            <Boxes aria-hidden />
+            {t("aiTabModels")}
+          </TabsTrigger>
+          <TabsTrigger value="usage" className="gap-1.5">
+            <ScrollText aria-hidden />
+            {t("aiTabUsage")}
+          </TabsTrigger>
+          <TabsTrigger value="topup" className="gap-1.5">
+            <Wallet aria-hidden />
+            {t("aiTabTopup")}
+          </TabsTrigger>
+          <TabsTrigger value="trial" className="gap-1.5">
+            <MessageSquare aria-hidden />
+            {t("aiTabTrial")}
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="providers" className="mt-4">
           <AdminAiProvidersTab providers={providers} />
         </TabsContent>
-        <TabsContent value="models">
+        <TabsContent value="models" className="mt-4">
           <AdminAiModelsTab providers={providers} models={models} />
         </TabsContent>
-        <TabsContent value="usage">
+        <TabsContent value="usage" className="mt-4">
           <Card>
-            <CardHeader>
-              <CardTitle>{t("aiTabUsage")}</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               <AdminAiUsageList
                 items={usageQ.data?.items ?? []}
                 openUsageId={openUsageId}
@@ -124,10 +158,10 @@ export default function AdminAi() {
             </CardContent>
           </Card>
         </TabsContent>
-        <TabsContent value="topup">
+        <TabsContent value="topup" className="mt-4">
           <AdminAiTopupTab />
         </TabsContent>
-        <TabsContent value="trial">
+        <TabsContent value="trial" className="mt-4">
           <AdminAiTrialTab providers={providers} models={models} />
         </TabsContent>
       </Tabs>

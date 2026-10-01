@@ -357,7 +357,8 @@ describe("ScanDetail", () => {
     it("renders findings count in QuickStat", () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
-      expect(screen.getByText("3")).toBeInTheDocument();
+      expect(screen.getAllByText("3").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByRole("tab", { name: /Findings/ })).toHaveTextContent("3");
     });
 
     it("renders duration when completed", () => {
@@ -506,6 +507,12 @@ describe("ScanDetail", () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
       expect(screen.getAllByText("Findings").length).toBeGreaterThanOrEqual(1);
+      const list = screen.getByRole("tablist");
+      expect(list).toHaveAttribute("data-variant", "line");
+      expect(list.className).toMatch(/\bw-full\b/);
+      expect(screen.getByRole("tab", { name: /Findings/ })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "Diff" })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "Export" })).toBeInTheDocument();
     });
 
     it("renders findings table before severity chart in DOM order", () => {
