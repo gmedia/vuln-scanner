@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
   Select,
   SelectContent,
@@ -26,11 +25,13 @@ import { StatusCopyRecord } from "@/components/status/StatusCopyRecord";
 import { StatusHealthHero } from "@/components/status/StatusHealthHero";
 import { StatusIncidentList } from "@/components/status/StatusIncidentList";
 import { StatusIncidentSheet } from "@/components/status/StatusIncidentSheet";
-import { StatusKpiRow } from "@/components/status/StatusKpiRow";
+import { StatusKpiRow, StatusKpiSkeleton } from "@/components/status/StatusKpiRow";
 import {
   HOSTNAME_STATUS_KEYS,
   hostnameStatusVariant,
 } from "@/components/status/statusChrome";
+import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
+import { SiemRail } from "@/components/siem/siemChrome";
 import {
   addComponent,
   attachHostname,
@@ -233,70 +234,59 @@ export default function StatusPage() {
         }
       />
 
-      {pageQ.isLoading && !page ? (
-        <Card className="overflow-hidden">
-          <CardHeader className="border-b border-border pb-4">
-            <CardTitle className="text-sm tracking-wide">{t("title")}</CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 py-4">
-            <TableRowSkeleton rows={4} />
-          </CardContent>
-        </Card>
-      ) : null}
+      {pageQ.isLoading && !page ? <StatusKpiSkeleton /> : null}
 
       {!page && !pageQ.isLoading ? (
-        <Card className="overflow-hidden">
-          <CardContent className="flex min-h-[12rem] flex-col items-center justify-center gap-3 px-6 py-12 text-center md:min-h-[16rem] md:py-16">
-            <Radio className="h-8 w-8 text-muted-foreground" aria-hidden />
-            <form
-              className="flex w-full max-w-lg flex-col items-center gap-4"
-              onSubmit={(e) => {
-                e.preventDefault();
-                createMut.mutate();
-              }}
+        <div className="flex min-h-[12rem] flex-col items-center justify-center gap-3 rounded-xl border border-border bg-muted/40 px-6 py-12 text-center md:min-h-[16rem] md:py-16">
+          <Radio className="h-8 w-8 text-muted-foreground" aria-hidden />
+          <form
+            className="flex w-full max-w-lg flex-col items-center gap-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              createMut.mutate();
+            }}
+          >
+            <div className="space-y-2" data-testid="status-page-empty">
+              <p className="text-balance text-sm font-medium text-foreground">
+                {t("empty")}
+              </p>
+              <p className="text-balance text-sm text-muted-foreground">
+                {t("emptyHint")}
+              </p>
+            </div>
+            <div className="grid w-full grid-cols-1 gap-3 text-left sm:grid-cols-2">
+              <div className="flex min-w-0 flex-col gap-1.5">
+                <Label htmlFor="sp-slug">{t("slug")}</Label>
+                <Input
+                  id="sp-slug"
+                  className="h-10 min-h-10"
+                  placeholder={t("slug")}
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="flex min-w-0 flex-col gap-1.5">
+                <Label htmlFor="sp-title">{t("pageTitle")}</Label>
+                <Input
+                  id="sp-title"
+                  className="h-10 min-h-10"
+                  placeholder={t("pageTitle")}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <Button
+              type="submit"
+              data-testid="status-page-create"
+              className="min-h-11 w-full sm:w-auto"
             >
-              <div className="space-y-2" data-testid="status-page-empty">
-                <p className="text-balance text-sm font-medium text-foreground">
-                  {t("empty")}
-                </p>
-                <p className="text-balance text-sm text-muted-foreground">
-                  {t("emptyHint")}
-                </p>
-              </div>
-              <div className="grid w-full grid-cols-1 gap-3 text-left sm:grid-cols-2">
-                <div className="flex min-w-0 flex-col gap-1.5">
-                  <Label htmlFor="sp-slug">{t("slug")}</Label>
-                  <Input
-                    id="sp-slug"
-                    className="h-10 min-h-10"
-                    placeholder={t("slug")}
-                    value={slug}
-                    onChange={(e) => setSlug(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="flex min-w-0 flex-col gap-1.5">
-                  <Label htmlFor="sp-title">{t("pageTitle")}</Label>
-                  <Input
-                    id="sp-title"
-                    className="h-10 min-h-10"
-                    placeholder={t("pageTitle")}
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-              <Button
-                type="submit"
-                data-testid="status-page-create"
-                className="min-h-11 w-full sm:w-auto"
-              >
-                {t("emptyCta")}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+              {t("emptyCta")}
+            </Button>
+          </form>
+        </div>
       ) : null}
 
       {page ? (
@@ -314,6 +304,10 @@ export default function StatusPage() {
             upCount={upCount}
             downCount={downCount}
             publicPath={page.public_path}
+            hostnameStatus={page.hostname_status}
+            hostnameLabel={
+              hostStatusKey ? t(hostStatusKey) : page.hostname_status
+            }
           />
 
           <Card className="overflow-hidden">
@@ -393,7 +387,8 @@ export default function StatusPage() {
                 {t("cnameHelp", { target: page.cname_target })}
               </p>
               {page.hostname_status === "pending_txt" ? (
-                <div className="space-y-3 rounded-lg border border-border bg-muted/40 p-3 text-sm">
+                <div className="relative space-y-3 overflow-hidden rounded-lg border border-primary/40 bg-primary/5 p-3 pl-4 text-sm">
+                  <SiemRail className="bg-primary" />
                   <p className="font-medium">{t("txtCard")}</p>
                   {page.custom_hostname ? (
                     <StatusCopyRecord
@@ -580,9 +575,8 @@ export default function StatusPage() {
                 }}
               />
               {page.incidents.length === 0 ? (
-                <div className="m-4 flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
-                  <Radio className="h-8 w-8 text-muted-foreground" aria-hidden />
-                  <p className="text-sm text-muted-foreground">{t("noIncidents")}</p>
+                <div className="m-4">
+                  <SiemEmptyIsland icon={Radio} title={t("noIncidents")} />
                 </div>
               ) : (
                 <StatusIncidentList
