@@ -61,5 +61,16 @@
   "events": "Event",
   "notes": "Catatan",
   "newNote": "Catatan baru",
-  "addNote": "Tambah catatan"
+  "addNote": "Tambah catatan",
+  "kpiIndexer": "Indexer",
+  "kpiIndexerLive": "Live",
+  "kpiIndexerDegraded": "Terdegradasi",
+  "kpiIndexerDown": "Down",
+  "kpiMinLevel": "Min level",
+  "kpiLookback": "Lookback",
+  "kpiAgents": "Agen",
+  "lookbackHours": "{{hours}} jam",
+  "inspectorId": "Id event",
+  "emptyInspectorHint": "Pilih event di stream untuk memeriksanya.",
+  "casesOpenCount": "{{count}} terbuka"
 }

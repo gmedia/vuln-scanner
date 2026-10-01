@@ -19,7 +19,7 @@ export function EventPager({
 }: EventPagerProps) {
   return (
     <div
-      className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"
+      className="flex flex-wrap items-center justify-between gap-2 font-mono text-[11px] tabular-nums text-muted-foreground"
       data-testid="siem-event-pager"
     >
       <span>
