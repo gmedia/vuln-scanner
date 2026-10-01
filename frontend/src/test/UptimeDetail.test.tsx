@@ -886,7 +886,14 @@ describe("UptimeDetail", () => {
         from: string;
         until: string;
       };
-      expect(new Date(last.from).toISOString().slice(0, 10)).toBe(today);
+      const fromLocal = new Date(last.from);
+      expect(
+        fromLocal.getFullYear() +
+          "-" +
+          pad(fromLocal.getMonth() + 1) +
+          "-" +
+          pad(fromLocal.getDate()),
+      ).toBe(today);
     });
     await waitFor(() =>
       expect(screen.getAllByTestId("uptime-outage-row")).toHaveLength(1),
