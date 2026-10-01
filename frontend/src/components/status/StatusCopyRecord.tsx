@@ -1,4 +1,5 @@
 import { Check, Copy } from "lucide-react";
+import { SiemRail } from "@/components/siem/siemChrome";
 import { Button } from "@/components/ui/Button";
 
 export function StatusCopyRecord({
@@ -19,7 +20,8 @@ export function StatusCopyRecord({
   readonly copiedLabel: string;
 }) {
   return (
-    <div className="flex min-w-0 items-start gap-2 rounded-md border border-border bg-card px-3 py-2.5">
+    <div className="relative flex min-w-0 items-start gap-2 overflow-hidden rounded-lg border border-border bg-card px-3 py-2.5 pl-4">
+      <SiemRail className="bg-primary" />
       <div className="min-w-0 flex-1">
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
           {label}

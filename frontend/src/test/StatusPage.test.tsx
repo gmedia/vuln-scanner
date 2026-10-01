@@ -544,7 +544,7 @@ it("shows empty state with create form", async () => {
     await waitFor(() =>
       expect(screen.getByText("TXT validation")).toBeInTheDocument(),
     );
-    expect(screen.getByText("Waiting for TXT")).toBeInTheDocument();
+    expect(screen.getAllByText("Waiting for TXT").length).toBeGreaterThan(0);
     expect(screen.queryByText("pending_txt")).not.toBeInTheDocument();
     expect(screen.getByTestId("status-page-host")).toBeInTheDocument();
     expect(screen.getByTestId("status-copy-cname")).toBeInTheDocument();

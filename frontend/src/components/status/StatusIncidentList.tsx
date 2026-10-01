@@ -5,11 +5,13 @@ import { StatusIncidentActions } from "@/components/status/StatusIncidentActions
 import { StatusIncidentCard } from "@/components/status/StatusIncidentCard";
 import { StatusIncidentQuickUpdate } from "@/components/status/StatusIncidentQuickUpdate";
 import { StatusIncidentUpdates } from "@/components/status/StatusIncidentUpdates";
+import { incidentRailClass } from "@/components/status/statusChrome";
 import {
   formatStartedAt,
   impactBadge,
   statusBadge,
 } from "@/components/status/statusIncidentDisplay";
+import { SiemRail } from "@/components/siem/siemChrome";
 import { Badge } from "@/components/ui/Badge";
 import {
   Table,
@@ -19,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import { cn } from "@/lib/utils";
 
 export function StatusIncidentList({
   incidents,
@@ -79,11 +82,15 @@ export function StatusIncidentList({
               <Fragment key={i.id}>
                 <TableRow
                   data-testid={`status-incident-row-${i.id}`}
-                  className={
-                    i.status !== "resolved" ? "bg-amber-500/[0.04]" : undefined
-                  }
+                  className={cn(
+                    "relative",
+                    i.status !== "resolved" && "bg-amber-500/[0.04]",
+                  )}
                 >
-                  <TableCell className="font-medium">{i.title}</TableCell>
+                  <TableCell className="relative pl-4 font-medium">
+                    <SiemRail className={incidentRailClass(i.status)} />
+                    {i.title}
+                  </TableCell>
                   <TableCell>
                     <Badge variant={impactBadge(i.impact)}>{i.impact}</Badge>
                   </TableCell>
