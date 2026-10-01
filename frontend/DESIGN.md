@@ -849,3 +849,198 @@ Shared chrome: `TabsList variant="line" className="w-full justify-start"`. Icons
 | `AiWalletPanel` 8 readonly props | wallet panel | Extracted from page; grouping into a stats object is a follow-up | Named refactor |
 | react-scan / react-grab not wired | SPA entry | AGENTS.md forbids extra deps for a visual slice | Separate tooling PR |
 | Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Five surfaces; merging would pollute print | Keep split |
+
+# Status page ops console (`/uptime/status-page`)
+
+Print §§0–8 and SIEM / Guard / Assets / page-nav above stay locked. This section is the **dark SPA** contract for the authenticated editor at `/uptime/status-page` — not public HTML `/status/{slug}`, not print, not the Uptime monitor list.
+
+## 0. Research Log (Status page)
+
+- Embedded refs: shortlisted `linear.app` / `stripe` / `supabase` → picked Layer A `redesign-skill` + `layout-skill` (stack + page-grid) and Layer B `linear.app` (ops density, luminance steps, one accent). Same routing as `/guard` / `/siem` / `/assets`. Not Stripe marketing; not Linear indigo; not a public status-page clone of Better Stack's marketing skin.
+- Sibling harvest: `GuardKpiStrip` / `SiemIndexerStrip` (`KpiTile` + `SiemRail`, `grid-cols-2 gap-3 lg:grid-cols-4`, live `GuardPulse` when healthy), `SiemEmptyIsland`, `GuardAgentCard` (mobile cards `md:hidden` + desktop table `hidden md:block`, 2px rail before copy), `PageHeader` `h2`. Identity / hostname / components / incidents stay **sibling shells**, not a dashboard of nested Card-in-Card icons.
+- Current `/uptime/status-page` diagnosis (post-#868): `StatusHealthHero` is a flat `rounded-lg` card with no rail and no pulse; `StatusKpiRow` is three border tiles without `SiemRail`; stacked kit `Card`s for identity / DNS / components / incidents; empty components/incidents are ad-hoc muted boxes, not `SiemEmptyIsland`; incident mobile cards and desktop rows have wash but no leading rail. Correct-but-flat.
+- Lazyweb screens viewed (6): Better Stack (overall banner + component rows), Google Apps Status (traffic-light overall), Splunk status (incident ops table), UptimeRobot (KPI counts + public URL), GetFernand (copyable DNS), mobile-alerts (stacked cards, 44px taps). Grammar taken: **overall health is the first read**; copyable DNS as secret-rail records; incidents table desktop / cards mobile; empty islands. Not pixel copies; not a second public-page skin.
+- Imagen drafts: skipped — existing SPA + Guard/SIEM grammar is the reference; no extra imagegen deps.
+- Skipped lanes: react-grab / react-scan / react-doctor — AGENTS.md forbids extra deps for a visual slice. Lazyweb `update.sh` failed (`set: Illegal option -o pipefail`); screens already on disk under `/tmp/lazyweb-refs/status-page/`.
+
+**Direction (locked):** A night-shift **public-health command center** on existing Sinexis SPA tokens. Signature: a health hero whose **2px overall rail** (and pulse when operational + published) is the first thing the eye hits, then a 4-tile KPI strip, then DNS copy records with a primary rail (this page's "once-secret"), then a component board and incident ops list. One document scroll. Green `--primary`, not Linear indigo. Inter + mono paths. Not a public status marketing page, not nested Card-in-Card.
+
+## 1. Atmosphere & Identity
+
+`/uptime/status-page` is the workspace editor for the public status page (spec `docs/specs/status-page-v1.md`): slug/title, publish, custom hostname + TXT, Uptime components, hand-posted incidents. It must feel like the Guard/SIEM/Assets ops family inside AppShell: denser than settings, quieter than SIEM search. **No** page-nav tabs (single scroll). **No** Credit History filter bar.
+
+The one memorable moment: when the page is published and overall is operational, the hero rail goes primary and a live pulse sits next to "All systems operational". When overall is major, the rail goes destructive **before** the operator opens Incidents. DNS pending is a primary-rail copy strip, not a nested muted soup.
+
+Do **not** use Lucide `Shield` (Guard cliché) or a filled green masthead. Empty create uses `Radio` (broadcast). Empty components uses `Activity`. Empty incidents uses `Radio`. Loading is skeleton KPI tiles, not a spinner in a Card.
+
+Public `/status/{slug}` is **out of scope** — do not restyle the FastAPI HTML island here.
+
+## 2. Color
+
+Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. No Linear indigo `#5e6ad2`. No Better Stack purple wash.
+
+| Role | Token / class | Usage |
+|------|----------------|-------|
+| Canvas | `--background` | Page |
+| Surface | `--card` + `border-border` | Hero, KPI tiles, identity / host / board / incidents shells, mobile cards |
+| Ink | `--foreground` | Titles, KPI values, incident titles |
+| Meta | `--muted-foreground` | KPI labels, timestamps, public path, hints |
+| Accent | `--primary` `hsl(142 71% 45%)` | Operational rail/pulse, published KPI, empty CTA, TXT secret rail, resolved incident rail |
+| Degraded | `bg-amber-500` rail + `text-amber-500` | Overall degraded, pending TXT, investigating incident, component degraded |
+| Partial | `bg-orange-500` rail + `text-orange-500` | Overall partial, identified incident |
+| Major / down | `bg-destructive` rail + `text-destructive` | Overall major, hostname failed, component down, critical impact |
+| Monitoring | `bg-sky-500` rail | Incident status `monitoring` |
+| Idle | `bg-border` rail | Unpublished, hostname none, unknown |
+| Open wash | `bg-amber-500/[0.04]` | Unresolved incident card/row (redundant with rail) |
+| Down wash | `bg-destructive/[0.04]` | Component row when `down` |
+| TXT secret | `bg-primary/5` + primary rail | Pending TXT copy strip (Guard once-secret grammar) |
+
+Rails are **redundant** with Badge / strong text. Never color-only status.
+
+## 3. Typography
+
+SPA scale (not print 13px). Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+
+| Level | Size | Weight | Usage |
+|-------|------|--------|-------|
+| Page title | `text-2xl` / `md:text-3xl` | 600 | PageHeader `h2` i18n `title` ("Status page" / "Halaman status") |
+| Subtitle | `text-sm` | 400 | PageHeader description |
+| Hero kicker | `text-[10px] font-medium uppercase tracking-wider` | 500 | `overallLabel` |
+| Hero value | `text-lg sm:text-xl font-semibold tracking-tight` | 600 | i18n overall sentence (`overallOperational` …) |
+| Hero title | `text-sm truncate` | 400 | Page title under overall |
+| KPI label | `text-[10px] font-medium uppercase tracking-wider` | 500 | Visibility / Components / DNS / Public URL |
+| KPI value | `font-mono text-lg font-bold tabular-nums` (path: `text-sm`) | 700 | Counts, visibility word, hostname label, public path |
+| Section title | `text-sm tracking-wide` CardTitle | 400 | Identity / hostname / components / incidents |
+| Mono record | `font-mono text-xs break-all` | 400 | CNAME / TXT name / TXT value |
+| Table head | `text-[10px] uppercase tracking-wider` | 500 | Component + incident columns |
+| Incident title | `text-sm font-medium` | 500 | Card + table |
+| Timestamp | `font-mono text-xs tabular-nums` | 400 | `formatStartedAt` |
+| Disclaimer | `text-xs text-muted-foreground` | 400 | `disclaimer` |
+
+Tabular numerals on every count and time. Body copy stays i18n `statusPage` catalog. Frozen EN roles: `Published` / `Unpublished`, `Waiting for TXT` / `Active` / `Failed` / `Not attached`, `TXT validation`, `Do not point A/AAAA at the origin.`, `Remove` (aria-label only on the icon button). Do not change those strings.
+
+## 4. Spacing & Layout
+
+4px base. **No** Credit History filter bar. **No** line tabs.
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| --space-1 | 4px | Rail inset, chip gap |
+| --space-2 | 8px | Row inner, copy-record pad |
+| --space-3 | 12px | Tile gap, tile pad, form gap-3 |
+| --space-4 | 16px | Section / card pad |
+| --space-6 | 24px | Page stack (`space-y-6`) |
+
+**Primitives** (`layout-skill`):
+
+- **stack** — page sections (`space-y-6`).
+- **page-grid** — KPI tiles `grid-cols-2 gap-3 lg:grid-cols-4` (same as `GuardKpiStrip`).
+- **scroll-body-shell** — AppShell owns document scroll. One page scroll. Incident sheet (`Sheet` `side="right"`) is the only nested scroller (`overflow-y-auto`).
+- **list-detail** — **not** used. Incidents are not a split inspector; edit is the existing right sheet.
+- **cluster** — PageHeader actions (Publish / Open public), hostname buttons, component add row.
+
+Responsive:
+
+- `<md`: incident **cards** (`status-incidents-list-mobile` **must** keep `space-y-2 md:hidden`). KPI 2×2. Identity / hostname / add-component fields stack (`grid-cols-1`, `sm:grid-cols-2`). Controls `h-10 min-h-10`; icon remove `h-11 w-11` on mobile.
+- `≥md`: incident **table** (`status-incidents-list-desktop` **must** keep `hidden overflow-x-auto md:block`) with a real `<table>`. Component board is a table at all breakpoints (horizontal scroll wrapper). Sheet `sm:max-w-lg lg:max-w-xl`.
+
+PageHeader actions: Publish/Unpublish (`status-page-publish`) + Open public (`target="_blank"`). Keep `h2`.
+
+Content stress: long slug / hostname / TXT token uses `break-all` / `truncate` + `min-w-0`. 375px: no horizontal scrollbar on primary content (table wrappers may scroll internally).
+
+## 5. Components
+
+### StatusHealthHero
+
+- **Structure**: `relative overflow-hidden rounded-lg border border-border bg-card pl-4`. `SiemRail` from `overallRailClass`. Kicker `overallLabel` + overall sentence (`overallValueClass`) + truncated page title. Visibility `Badge` (`completed` / `info`).
+- **Pulse**: `GuardPulse` when `published && overall === "operational"`.
+- **Wash**: `bg-primary/5` overlay when operational + published; `bg-destructive/5` when published + major. Pointer-events none, `aria-hidden`.
+- **States**: unpublished → muted value + `bg-border` rail, no pulse. Unknown overall → `overallUnknown`, border rail.
+
+### StatusKpiRow
+
+- **Structure**: 4 tiles — visibility / components (up · down) / DNS status / public path. Each tile: `SiemRail` + uppercase label + value. Wrapper `data-testid="status-kpi-strip"`. Grid `grid-cols-2 gap-3 lg:grid-cols-4`.
+- **Rails**: published `bg-primary` else `bg-border`; components `bg-destructive` when `downCount > 0` else `bg-primary` when any up else `bg-border`; DNS via `hostnameRailClass`; public path `bg-border`.
+- **Pulse**: visibility tile when published (same job as Guard state pulse).
+- **Values**: visibility uses i18n `visibilityOn` / `visibilityOff` (not raw `true`). Public path `font-mono text-sm truncate`.
+
+### StatusCopyRecord / TXT strip
+
+- Copy row: `relative overflow-hidden … pl-4` + primary `SiemRail`. Frozen testids `status-copy-cname` / `status-copy-txt-name` / `status-copy-txt-value`. 44px copy hit target (`h-11 w-11`). Check icon `text-primary` when copied.
+- Pending TXT wrapper: `bg-primary/5` + primary rail (Guard once-secret). Visible "TXT validation", "Waiting for TXT" (via hostname badge, not raw `pending_txt`), CNAME line `{{host}} → {{target}}`, `noAaaa`. Frozen `status-page-host`.
+
+### StatusComponentBoard
+
+- Empty: `SiemEmptyIsland` icon `Activity`, title `noComponents`.
+- Rows: `relative`, first cell `pl-4` + `componentRailClass` (`up` primary / `down` destructive / `degraded` amber / else border). Down wash `bg-destructive/[0.04]`. Remove icon-only, `aria-label` i18n `remove`, frozen `status-component-remove-{id}`, visible text must **not** match `/Remove/`.
+
+### StatusIncidentList / Card
+
+- Mobile list frozen classes + `status-incident-card-{id}`. Card: `relative overflow-hidden … pl-4` + `incidentRailClass`. Unresolved wash kept. `status-incident-post-update-{id}` on open incidents. Title input is **not** on the card (sheet only).
+- Desktop: frozen classes + `<table>` + `status-incident-row-{id}`. First cell `relative pl-4` + rail (Guard agent row grammar). Unresolved row wash kept.
+- Empty: `SiemEmptyIsland` icon `Radio`, title `noIncidents`.
+- Sheet: frozen `status-incident-sheet` with `right-0`; create testids unchanged.
+
+### Empty create / loading
+
+- No page: island (`rounded-xl border border-border bg-muted/40`) + `Radio` + copy in `status-page-empty` + slug/title `Label`+`Input` `h-10` + `status-page-create`. Not a blank Card.
+- Loading: 4 skeleton tiles `h-[4.5rem] rounded-lg`, not a spinner.
+
+## 6. Motion & Interaction
+
+| Type | Duration | Easing | Usage |
+|------|----------|--------|-------|
+| Micro | 150ms | ease-out | Row hover `bg-muted/50`, copy button |
+| Pulse | CSS `animate-ping` | — | Hero + visibility KPI only when published + (hero: operational) |
+| Copy | 1500ms | — | Swap Copy → Check, then revert |
+| Emphasis | — | — | none |
+
+- GPU only: `opacity` on ping. No layout animation.
+- `motion-reduce:animate-none` on `GuardPulse` (already in the primitive).
+- Hover that changes nothing is slop — rows, buttons, copy only.
+- Press: kit Button `scale` only. Do not restyle kit.
+- Incident create/edit: existing right `Sheet`. Do not invent a modal.
+
+## 7. Depth & Surface
+
+**borders-only** + 2px rails. No glass, no drop shadows on tiles, no nested Card-in-Card, no `rounded-3xl`, no filled green masthead.
+
+| Type | Treatment | Use |
+|------|-----------|-----|
+| Hero / KPI / shells / cards | `border border-border bg-card rounded-lg` | Surfaces |
+| Rail | `absolute inset-y-2 left-0 w-0.5 rounded-full` (`SiemRail`) | Overall, KPI, DNS copy, component, incident |
+| TXT secret | `bg-primary/5` + primary rail | Pending hostname |
+| Empty island | `rounded-xl border border-border bg-muted/40` (`SiemEmptyIsland`) | No page / no components / no incidents |
+| Open incident | `bg-amber-500/[0.04]` + amber/orange/sky rail | Unresolved |
+
+P15 flatten: KPI strip is **not** inside a status Card. Hero is a sibling of the KPI strip, not a CardHeader icon row.
+
+## 8. Accessibility Constraints & Accepted Debt
+
+### Constraints
+
+- WCAG 2.2 AA contrast on SPA tokens. Rails are redundant with Badge / overall sentence / hostname label.
+- Every form field has `Label` + `htmlFor` (slug, title, host, display name, incident fields).
+- Copy / remove / incident menu keep i18n `aria-label`s. Remove is icon-only.
+- Heading remains PageHeader `h2` i18n `title` (Playwright / unit).
+- `prefers-reduced-motion` kills ping.
+- Kit only: no native `<select>`; primary actions are `Button`.
+- Frozen testids in `frontend/src/test/StatusPage.test.tsx` must survive (including mobile `space-y-2 md:hidden` and desktop `hidden overflow-x-auto md:block`).
+
+### Personas
+
+- **Owner / member who can manage** (primary): create page → set slug/title → publish → attach hostname / copy TXT → map monitors → post incidents.
+- **Member without manage**: view + post updates; no incident delete (`canManageMembers` gate).
+- **Empty workspace**: create island, no fake components.
+
+### Accepted Debt
+
+| Item | Location | Why accepted | Owner / Exit |
+|------|----------|--------------|--------------|
+| react-scan / react-grab not wired | SPA entry | AGENTS.md forbids extra deps for a visual slice | Separate tooling PR |
+| Duplicate mobile + desktop incident markup | StatusIncidentList | Frozen testids on both card and row | Named a11y slice |
+| `SiemRail` / `SiemEmptyIsland` / `GuardPulse` imported into status | chrome | One rail/pulse primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
+| Public `/status/{slug}` HTML not restyled | FastAPI island | Authenticated SPA only; public must rhyme Landing | Named public-status slice |
+| `StatusPage.tsx` already >250 LOC | page | Extracting identity/host would mix a visual slice with a module split | Named extract |
+| Lazyweb pack `generate_report` not filed | research log | `update.sh` pipefail; screens on disk are the harvest | Ignore |
+| Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |
