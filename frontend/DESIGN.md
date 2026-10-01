@@ -692,3 +692,149 @@ P15 flatten: KPI strip is **not** inside PageHeader and **not** inside the list 
 | `AssetFilters.tsx` over 250 LOC | filters | Pre-existing; this slice does not restyle filters | Named filter split |
 | Lazyweb pack `generate_report` not filed | research log | Deprecated MCP path; sibling Guard/SIEM harvest is the contract | Ignore |
 | Print `DESIGN.md` remains invoice-only in first §§0–8 | this file | Three surfaces; merging would pollute print | Keep split |
+
+---
+
+# AI Gateway page-nav (`/ai`)
+
+Print invoice, SIEM, Guard, and Assets (above) are **separate surfaces**. This section is the SPA `/ai` tab contract. Do not restyle kit default (pill) Tabs. Admin `/admin/ai` is out of scope. Reuse existing Radix `Tabs.tsx` — do not invent a second tab primitive.
+
+## 0. Research Log (AI tabs)
+
+- Embedded refs: shortlisted shadcn New York v4 `tabs.json` (`variant: default | line`) + sibling Host Protect / Uptime / SIEM pill tabs → picked kit `variant="line"` as a **second official variant**, not a page-local underline. Layer A `redesign-skill` + Layer B `linear.app` (ops density, one accent) stacked with `layout-skill` (stack). Not Stripe marketing; not print invoice.
+- Lazyweb: skipped this slice — in-repo shadcn kit + Host Protect in-app count (`font-mono text-[11px] tabular-nums`) are the contract. No extra imagegen deps.
+- Sibling harvest: `Tabs.tsx` default pill (`h-10 rounded-md bg-muted p-1`); Host Protect tab counts (not `Badge variant="critical"`); Credit History filter chrome is **out** — `/ai` has no filter row.
+- Skipped lanes: react-grab / react-scan / react-doctor install — AGENTS.md forbids extra deps for a visual slice; `main.tsx` has none.
+
+**Direction (locked):** Full-width underline **page-nav** on `/ai` only. Signature: a 2px `--foreground` underline (`after:h-0.5 after:bg-foreground`) under the active trigger, not `--primary`. Inter labels + lucide icons (`Wallet` / `KeyRound` / `ScrollText` / `Library`) + mono counts. Pill tabs on Host Protect / Uptime / SIEM / ScanDetail stay pill. Admin AI stays pill.
+
+## 1. Atmosphere & Identity
+
+`/ai` is the org prepaid gateway (wallet, keys, usage, catalog). The tab row is **page navigation**, not a segmented control inside a Card. It must feel like Linear/Supabase settings nav sitting under PageHeader — quieter than SIEM search, denser than a marketing feature tab.
+
+The one memorable moment: scanning Wallet → Keys → Usage → Catalog, the eye hits a hairline `--border` list and a 2px ink underline on the active tab **before** the panel copy. Counts on Keys (active keys) and Usage (`items.length`) sit as muted mono, never a critical Badge.
+
+Do **not** restyle default `TabsList` to line. Callers that omit `variant` keep `bg-muted` pills.
+
+## 2. Color
+
+Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. No Linear indigo.
+
+| Role | Token / class | Usage |
+|------|----------------|-------|
+| Canvas | `--background` | Page |
+| Surface | `--card` + `border-border` | Wallet / keys / usage / catalog panels |
+| Ink | `--foreground` | Active tab label + **line underline** |
+| Meta | `--muted-foreground` | Inactive tab, counts, CardDescription |
+| Line | `--border` | `TabsList variant="line"` bottom hairline |
+| Accent | `--primary` `hsl(142 71% 45%)` | Create key, top-up CTA — **not** the tab underline |
+| Pill wash | `--muted` | Default `TabsList` only (Host / Uptime / SIEM / ScanDetail / Admin AI) |
+
+Underline is `after:bg-foreground`, **never** `after:bg-primary`. Counts are `text-muted-foreground`, not `Badge variant="critical"` / `bg-red-600`.
+
+## 3. Typography
+
+SPA scale. Fonts already loaded: Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+
+| Level | Size | Weight | Usage |
+|-------|------|--------|-------|
+| Page title | `text-2xl` / `md:text-3xl` | 600 | PageHeader `h2` **"AI Gateway"** |
+| Subtitle | `text-sm` | 400 | PageHeader description |
+| Tab label | `text-sm font-medium` | 500 | Wallet / Keys / Usage / Catalog (EN role names frozen) |
+| Tab count | `font-mono text-[11px] tabular-nums` | 400 | Active-key count, usage `items.length` when > 0 |
+| Panel hint | `text-sm` CardDescription | 400 | `keysHint` / `usageHint` / `catalogHint` / `baseUrlHint` |
+| KPI label | `text-[10px] uppercase tracking-wider` | 500 | Wallet stat tiles |
+| KPI value | `font-mono text-lg font-bold tabular-nums` | 700 | Balance / keys / period billed |
+| Secret / URL | `font-mono text-xs` / `text-[11px]` | 400 | Base URL, once-key |
+
+Tabular numerals on every count, time, and IDR. Body copy stays i18n `ai` catalog — do not change frozen EN role names (`Wallet`, `Keys`, `Usage`, `Catalog`).
+
+## 4. Spacing & Layout
+
+4px base. **No** Credit History filter bar.
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| --space-1 | 4px | Icon/count gap (`gap-1.5` on triggers) |
+| --space-2 | 8px | Row inner |
+| --space-3 | 12px | Tile gap |
+| --space-4 | 16px | `TabsContent` `mt-4`, panel pad |
+| --space-6 | 24px | Page stack (`space-y-6`) |
+
+**Primitives** (`layout-skill`):
+
+- **stack** — page sections (`space-y-6`).
+- **scroll-body-shell** — AppShell owns document scroll. Tab list is `w-full justify-start`, **not** `min-w-max` (no overflow strip).
+- **list-detail** — **not** used. Each tab is a single panel.
+
+`TabsList variant="line"`: `h-auto justify-start gap-1 rounded-none border-b border-border bg-transparent p-0`. Page passes `className="w-full justify-start"`.
+
+URL: `?tab=wallet|keys|usage|catalog`. Wallet **deletes** the param (`replace: true`). Unknown `?tab` → wallet.
+
+## 5. Components
+
+### Tabs (kit)
+
+- **Default** (`variant` omitted): pill list `h-10 rounded-md bg-muted p-1`; active trigger `data-[state=active]:bg-background` + shadow. Host Protect, Uptime, SIEM, ScanDetail, Admin AI stay here.
+- **Line** (`variant="line"`): hairline list + `data-variant="line"`. Active trigger underline via `group-data-[variant=line]/tabs-list:data-[state=active]:after:opacity-100` (`after:h-0.5 after:bg-foreground`). Line mode kills pill wash (`bg-transparent`, `shadow-none`).
+- Do **not** restyle kit files to match one screenshot. Frozen default tests: `bg-muted`, `data-variant="default"`. Frozen line tests: `bg-transparent`, `border-b`, `after:bg-foreground`, not `after:bg-primary`.
+
+### Ai page-nav
+
+- **Structure**: PageHeader → `Tabs` → line `TabsList` (4 triggers) → `TabsContent`. Icons `aria-hidden`. Counts via `TabCount` (null when `value <= 0`).
+- **Frozen testids**: `ai-tab-wallet`, `ai-tab-keys`, `ai-tab-usage`, `ai-tab-catalog`. EN role names Wallet / Keys / Usage / Catalog frozen.
+- **Counts**: Keys = `items.filter(k => k.is_active).length`; Usage = `items.length`. Omit at 0. Not `Badge variant="critical"`.
+- **Panels**: `ai-keys-card`, `ai-usage-card`, `ai-catalog-card`, `ai-usage-empty` stay. CardTitle dropped (tab is the title). CardDescription stays.
+
+### AiWalletPanel
+
+- Extracted wallet card. Stat tiles (balance / active keys / period billed) + empty-wallet CTA + copyable `/v1` base URL. Not a second tab primitive.
+
+## 6. Motion & Interaction
+
+| Type | Duration | Easing | Usage |
+|------|----------|--------|-------|
+| Micro | 200ms | `transition-all` / `after:transition-opacity` | Trigger + underline opacity |
+| Reduced | — | — | `motion-reduce:after:transition-none` |
+| Emphasis | — | — | none |
+
+- GPU only: `opacity` on the underline. No layout animation.
+- Hover that changes nothing is slop — triggers only.
+- Press: kit Button `scale` only. Do not restyle kit.
+
+## 7. Depth & Surface
+
+**borders-only**. No glass, no drop shadows on the line list (pill `shadow-sm` stays on **default** variant only).
+
+| Type | Treatment | Use |
+|------|-----------|-----|
+| Line list | `border-b border-border bg-transparent` | Page-nav |
+| Underline | `after:h-0.5 after:bg-foreground` | Active line trigger |
+| Panels | kit `Card` | Wallet / keys / usage / catalog |
+| Pill list | `bg-muted rounded-md` | Default variant only |
+
+## 8. Accessibility Constraints & Accepted Debt
+
+### Constraints
+
+- WCAG 2.2 AA contrast on SPA tokens. Underline is redundant with `data-state="active"` + `text-foreground`.
+- Radix Tabs: keyboard arrows, `role="tablist"` / `tab` / `tabpanel`.
+- Icons `aria-hidden`. Visible labels from i18n (`tabWallet` …).
+- Heading remains PageHeader `h2` "AI Gateway".
+- `prefers-reduced-motion` kills underline opacity transition.
+
+### Personas
+
+- **Owner / member** (primary): wallet → mint key → copy `/v1` → scan usage / catalog.
+- **Admin**: same + top-up CTA may point at `/admin/ai`.
+- **Ops with flag off**: `ai-feature-off` island; no tabs.
+
+### Accepted Debt
+
+| Item | Location | Why accepted | Owner / Exit |
+|------|----------|--------------|--------------|
+| Line `after:` classes on default triggers | `TabsTrigger` | Hidden unless `group-data-[variant=line]` + active; extracting a second Trigger would fork the kit | Keep group-data until a named kit split |
+| Admin AI still pill | `/admin/ai` | Out of this slice; org `/ai` is the page-nav | Named admin slice |
+| `AiWalletPanel` 8 readonly props | wallet panel | Extracted from page; grouping into a stats object is a follow-up | Named refactor |
+| react-scan / react-grab not wired | SPA entry | AGENTS.md forbids extra deps for a visual slice | Separate tooling PR |
+| Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Five surfaces; merging would pollute print | Keep split |

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -20,17 +20,28 @@ vi.mock("@/api/ai", async () => {
   };
 });
 
-function renderAi() {
+function renderAi(path = "/ai") {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[path]}>
         <Ai />
       </MemoryRouter>
     </QueryClientProvider>,
   );
+}
+
+function mockEmptyGateway() {
+  vi.mocked(aiApi.getAiWallet).mockResolvedValue({
+    organization_id: "org1",
+    balance_idr: 0,
+    currency: "IDR",
+  });
+  vi.mocked(aiApi.listAiKeys).mockResolvedValue({ items: [], total: 0 });
+  vi.mocked(aiApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+  vi.mocked(aiApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
 }
 
 describe("AI Gateway page", () => {
@@ -92,26 +103,92 @@ describe("AI Gateway page", () => {
   });
 
   it("keeps key and catalog tabs on the tablist when rendered", async () => {
-    vi.mocked(aiApi.getAiWallet).mockResolvedValue({
-      organization_id: "org1",
-      balance_idr: 0,
-      currency: "IDR",
-    });
-    vi.mocked(aiApi.listAiKeys).mockResolvedValue({ items: [], total: 0 });
-    vi.mocked(aiApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
-    vi.mocked(aiApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
+    mockEmptyGateway();
     renderAi();
     expect(await screen.findByRole("tab", { name: "Wallet" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Keys" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Usage" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Catalog" })).toBeInTheDocument();
     const list = screen.getByRole("tablist");
-    expect(list.className).toMatch(/min-w-max/);
-    expect(list.className).not.toMatch(/\bw-full\b/);
+    expect(list).toHaveAttribute("data-variant", "line");
+    expect(list.className).toMatch(/\bw-full\b/);
+    expect(list.className).not.toMatch(/min-w-max/);
     expect(screen.getByTestId("ai-tab-wallet")).toBeInTheDocument();
     expect(screen.getByTestId("ai-tab-keys")).toBeInTheDocument();
     expect(screen.getByTestId("ai-tab-usage")).toBeInTheDocument();
     expect(screen.getByTestId("ai-tab-catalog")).toBeInTheDocument();
+  });
+
+  it("opens the keys panel from ?tab=keys without duplicating the tab title", async () => {
+    mockEmptyGateway();
+    renderAi("/ai?tab=keys");
+    expect(await screen.findByTestId("ai-keys-card")).toBeInTheDocument();
+    expect(screen.getByTestId("ai-tab-keys")).toHaveAttribute("data-state", "active");
+    expect(screen.queryByRole("heading", { name: "Keys" })).not.toBeInTheDocument();
+  });
+
+  it("falls back to wallet when ?tab is unknown", async () => {
+    mockEmptyGateway();
+    renderAi("/ai?tab=not-a-tab");
+    expect(await screen.findByText("Balance (IDR)")).toBeInTheDocument();
+    expect(screen.getByTestId("ai-tab-wallet")).toHaveAttribute("data-state", "active");
+  });
+
+  it("shows active-key and usage counts on the tab triggers, not a critical Badge", async () => {
+    vi.mocked(aiApi.getAiWallet).mockResolvedValue({
+      organization_id: "org1",
+      balance_idr: 12000,
+      currency: "IDR",
+    });
+    vi.mocked(aiApi.listAiKeys).mockResolvedValue({
+      items: [
+        {
+          id: "k1",
+          name: "sinexis",
+          prefix: "sx-mQ0HsrDRmy4XV",
+          is_active: true,
+          rate_limit_rpm: 60,
+          created_at: "2026-09-13T10:00:00Z",
+          last_used_at: null,
+        },
+        {
+          id: "k2",
+          name: "old",
+          prefix: "sx-old",
+          is_active: false,
+          rate_limit_rpm: 60,
+          created_at: "2026-09-01T10:00:00Z",
+          last_used_at: null,
+        },
+      ],
+      total: 2,
+    });
+    vi.mocked(aiApi.listAiUsage).mockResolvedValue({
+      items: [
+        {
+          id: "u1",
+          source: "sdk",
+          model_public_id: "gpt-4.1-mini",
+          prompt_tokens: 120,
+          completion_tokens: 40,
+          billed_idr: 1500,
+          created_at: "2026-09-13T10:00:00Z",
+        },
+      ],
+      total: 1,
+    });
+    vi.mocked(aiApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
+    renderAi();
+    const keysTab = await screen.findByTestId("ai-tab-keys");
+    await waitFor(() => {
+      expect(keysTab).toHaveTextContent("1");
+    });
+    expect(keysTab.querySelector("svg")).toBeTruthy();
+    const usageTab = screen.getByTestId("ai-tab-usage");
+    expect(usageTab).toHaveTextContent("1");
+    expect(keysTab.querySelector("[class*='bg-red-600']")).toBeNull();
+    expect(screen.getByTestId("ai-tab-wallet").querySelector("svg")).toBeTruthy();
+    expect(screen.getByTestId("ai-tab-catalog").querySelector("svg")).toBeTruthy();
   });
 
   it("shows a usage empty well with catalog CTA", async () => {
@@ -258,7 +335,7 @@ describe("AI Gateway page", () => {
     });
     const user = userEvent.setup();
     renderAi();
-    await user.click(await screen.findByRole("tab", { name: "Usage" }));
+    await user.click(await screen.findByTestId("ai-tab-usage"));
     expect(screen.getByTestId("ai-usage-card")).not.toHaveClass("max-w-xl");
     expect(await screen.findByTestId("ai-usage-list-mobile")).toHaveClass(
       "space-y-2",

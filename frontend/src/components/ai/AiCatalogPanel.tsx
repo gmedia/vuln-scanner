@@ -7,7 +7,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/Card";
 import {
   Table,
@@ -31,7 +30,6 @@ export function AiCatalogPanel({
   return (
     <Card data-testid="ai-catalog-card">
       <CardHeader className="gap-1">
-        <CardTitle className="text-base tracking-tight">{t("tabCatalog")}</CardTitle>
         <CardDescription>{t("catalogHint")}</CardDescription>
       </CardHeader>
       <CardContent>
