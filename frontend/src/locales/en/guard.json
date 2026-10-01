@@ -95,5 +95,6 @@
   "disableSubmit": "Remove from Guard",
   "disabledToast": "Agent removed from Guard",
   "disableFail": "Could not remove agent from Guard",
-  "statusDisabled": "Disabled"
+  "statusDisabled": "Disabled",
+  "kpiLastSync": "Last sync"
 }
