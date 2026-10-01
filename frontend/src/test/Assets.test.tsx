@@ -3,7 +3,8 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import Assets, { mapAssetError } from "@/pages/Assets";
+import Assets from "@/pages/Assets";
+import { mapAssetError, quotaTone } from "@/components/assets/assetChrome";
 
 const mockList = vi.fn();
 const mockCreate = vi.fn();
@@ -55,10 +56,21 @@ describe("Assets page", () => {
     expect(mapAssetError("Asset limit for basic tier is 1")).toBe("limit");
   });
 
+  it("maps quota tone from percent and cap", () => {
+    expect(quotaTone(0, false)).toBe("ok");
+    expect(quotaTone(69, false)).toBe("ok");
+    expect(quotaTone(70, false)).toBe("warn");
+    expect(quotaTone(89, false)).toBe("warn");
+    expect(quotaTone(90, false)).toBe("cap");
+    expect(quotaTone(10, true)).toBe("cap");
+  });
+
   it("shows an empty state with a CTA", async () => {
     renderPage();
     await waitFor(() => expect(screen.getByTestId("assets-empty")).toBeInTheDocument());
-    expect(screen.getByText(/Plan multi — 0 \/ 10 assets/)).toBeInTheDocument();
+    const kpi = screen.getByTestId("assets-kpi-strip");
+    expect(kpi).toHaveTextContent(/Plan multi — 0 \/ 10 assets/);
+    expect(kpi).toHaveClass("grid", "grid-cols-2", "gap-3", "lg:grid-cols-4");
     const emptyCta = screen.getByTestId("assets-empty-cta");
     expect(emptyCta).toBeInTheDocument();
     expect(emptyCta.className).toMatch(/bg-primary/);
@@ -76,7 +88,9 @@ describe("Assets page", () => {
     expect(loading.querySelector('[data-slot="card-title"]')).toHaveTextContent(
       "Assets",
     );
+    expect(screen.getByTestId("assets-kpi-skeleton")).toBeInTheDocument();
     expect(screen.queryByTestId("assets-empty")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("assets-kpi-strip")).not.toBeInTheDocument();
   });
 
   it("creates an asset", async () => {
@@ -169,6 +183,12 @@ describe("Assets page", () => {
     expect(card.textContent).toMatch(/example\.com/);
     expect(card.className).toMatch(/rounded-lg/);
     expect(card.className).toMatch(/border-border/);
+    expect(card.className).toMatch(/overflow-hidden/);
+    expect(card.className).toMatch(/pl-4/);
+    const kpi = screen.getByTestId("assets-kpi-strip");
+    expect(kpi).toHaveTextContent(/Plan multi — 1 \/ 10 assets/);
+    expect(kpi).toHaveTextContent("Domains");
+    expect(kpi).toHaveTextContent("IPs");
     const desktop = screen.getByTestId("assets-list-desktop");
     expect(desktop).toHaveClass("hidden", "md:block", "overflow-x-auto");
     expect(desktop.querySelector("table")).toBeTruthy();

@@ -54,5 +54,9 @@
   "guardLinked": "Guard: {{name}}",
   "openGuard": "Buka Guard",
   "filterHint": "Filter berlaku pada aset yang dimuat",
-  "filterShowing": "Menampilkan {{shown}} dari {{total}}"
+  "filterShowing": "Menampilkan {{shown}} dari {{total}}",
+  "kpiQuota": "Kuota",
+  "kpiScheduled": "Terjadwal",
+  "kpiDomains": "Domain",
+  "kpiIps": "IP"
 }
