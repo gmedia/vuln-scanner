@@ -1,22 +1,43 @@
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { GuardPulse } from "@/components/guard/guardChrome";
+import { SiemRail } from "@/components/siem/siemChrome";
 import { Progress } from "@/components/ui/Progress";
 import { cn } from "@/lib/utils";
 
 function KpiTile({
   label,
   value,
-  valueClass,
+  railClass,
+  pulse = false,
+  extra,
+  valueClass = "font-mono text-lg font-bold tabular-nums text-foreground",
+  className,
 }: {
   readonly label: string;
-  readonly value: string | number;
-  readonly valueClass: string;
+  readonly value: ReactNode;
+  readonly railClass: string;
+  readonly pulse?: boolean;
+  readonly extra?: ReactNode;
+  readonly valueClass?: string;
+  readonly className?: string;
 }) {
   return (
-    <div className="rounded-md border border-border bg-card px-4 py-3">
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-lg border border-border bg-card px-4 py-3 pl-4",
+        className,
+      )}
+    >
+      <SiemRail className={railClass} />
+      <p className="pl-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
-      <p className={cn("mt-1", valueClass)}>{value}</p>
+      <div className={cn("mt-1 flex flex-wrap items-center gap-2 pl-2", valueClass)}>
+        {value}
+        {pulse ? <GuardPulse /> : null}
+      </div>
+      {extra ? <div className="mt-2 pl-2">{extra}</div> : null}
     </div>
   );
 }
@@ -36,9 +57,7 @@ export function UptimeKpiRow({
 }) {
   const { t } = useTranslation("uptime");
   const quotaPct =
-    limit > 0
-      ? Math.min(100, Math.round((enabledCount / limit) * 100))
-      : 0;
+    limit > 0 ? Math.min(100, Math.round((enabledCount / limit) * 100)) : 0;
   const isFull = quotaPct >= 100 && limit > 0;
   const isNearCap = quotaPct >= 80 && !isFull;
   const skuCountClassName = isFull
@@ -51,6 +70,11 @@ export function UptimeKpiRow({
     : isNearCap
       ? "bg-amber-500"
       : undefined;
+  const skuRailClass = isFull
+    ? "bg-destructive"
+    : isNearCap
+      ? "bg-amber-500"
+      : "bg-primary";
   const quotaLabel = t("skuShort", { count: enabledCount, limit, sku });
   return (
     <div
@@ -60,37 +84,39 @@ export function UptimeKpiRow({
       <KpiTile
         label={t("statUp")}
         value={upCount}
+        railClass={upCount > 0 ? "bg-primary" : "bg-border"}
+        pulse={upCount > 0}
         valueClass="font-mono text-lg font-bold tabular-nums text-primary sm:text-2xl"
       />
       <KpiTile
         label={t("statDown")}
         value={downCount}
+        railClass={downCount > 0 ? "bg-destructive" : "bg-border"}
         valueClass={
           downCount > 0
             ? "font-mono text-lg font-bold tabular-nums text-destructive sm:text-2xl"
             : "font-mono text-lg font-bold tabular-nums text-muted-foreground sm:text-2xl"
         }
       />
-      <div className="col-span-2 flex min-w-0 flex-col justify-center gap-2 rounded-md border border-border bg-card px-4 py-3 lg:col-span-1">
-        <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            {t("statSku")}
-          </p>
-          <p className={`${skuCountClassName} min-w-0 break-words`}>
-            {quotaLabel}
-          </p>
-        </div>
-        <Progress
-          data-testid="uptime-sku-quota"
-          value={quotaPct}
-          aria-valuenow={quotaPct}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={quotaLabel}
-          className="h-1.5"
-          indicatorClassName={quotaIndicatorClassName}
-        />
-      </div>
+      <KpiTile
+        label={t("statSku")}
+        value={<span className="min-w-0 break-words">{quotaLabel}</span>}
+        railClass={skuRailClass}
+        valueClass={skuCountClassName}
+        className="col-span-2 lg:col-span-1"
+        extra={
+          <Progress
+            data-testid="uptime-sku-quota"
+            value={quotaPct}
+            aria-valuenow={quotaPct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={quotaLabel}
+            className="h-1.5"
+            indicatorClassName={quotaIndicatorClassName}
+          />
+        }
+      />
     </div>
   );
 }
