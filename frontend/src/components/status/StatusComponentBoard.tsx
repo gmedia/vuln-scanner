@@ -1,6 +1,8 @@
 import { Activity, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { StatusComponent } from "@/api/statusPage";
+import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
+import { SiemRail } from "@/components/siem/siemChrome";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import {
@@ -11,7 +13,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
-import { componentStateBadge } from "@/components/status/statusChrome";
+import {
+  componentRailClass,
+  componentStateBadge,
+} from "@/components/status/statusChrome";
 import { cn } from "@/lib/utils";
 
 export function StatusComponentBoard({
@@ -28,10 +33,7 @@ export function StatusComponentBoard({
 
   if (components.length === 0) {
     return (
-      <div className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
-        <Activity className="h-8 w-8 text-muted-foreground" aria-hidden />
-        <p className="text-sm text-muted-foreground">{t("noComponents")}</p>
-      </div>
+      <SiemEmptyIsland icon={Activity} title={t("noComponents")} />
     );
   }
 
@@ -56,11 +58,14 @@ export function StatusComponentBoard({
             <TableRow
               key={c.id}
               className={cn(
-                "h-12 hover:bg-muted/50",
+                "relative h-12 hover:bg-muted/50",
                 c.state === "down" && "bg-destructive/[0.04]",
               )}
             >
-              <TableCell className="font-medium">{c.display_name}</TableCell>
+              <TableCell className="relative pl-4 font-medium">
+                <SiemRail className={componentRailClass(c.state)} />
+                {c.display_name}
+              </TableCell>
               <TableCell>
                 <Badge variant={componentStateBadge(c.state)}>
                   {c.state ?? unknown}
