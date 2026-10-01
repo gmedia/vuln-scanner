@@ -1,13 +1,18 @@
-import { PowerOff, Siren, AlertTriangle } from "lucide-react";
+import { PowerOff, Siren, AlertTriangle, FolderOpen, Search } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import {
   Card,
-  CardHeader,
-  CardTitle,
   CardContent,
 } from "@/components/ui/Card";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabCount,
+  TabsTrigger,
+} from "@/components/ui/Tabs";
 import { useTranslation } from "react-i18next";
 import PageHeader from "@/components/layout/PageHeader";
 import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
@@ -19,9 +24,33 @@ import { SiemSearchFilters } from "@/components/siem/SiemSearchFilters";
 import { apiDetail, isAuthSessionError } from "@/components/siem/siemErrors";
 import { useSiemConsole } from "@/components/siem/useSiemConsole";
 
+const SIEM_TABS = ["search", "cases"] as const;
+type SiemTab = (typeof SIEM_TABS)[number];
+
+function parseSiemTab(raw: string | null): SiemTab {
+  for (const tab of SIEM_TABS) {
+    if (tab === raw) return tab;
+  }
+  return "search";
+}
+
 export default function Siem() {
   const { t } = useTranslation("siem");
   const c = useSiemConsole(t);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = parseSiemTab(searchParams.get("tab"));
+  const setTab = (next: string) => {
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (next === "search") params.delete("tab");
+        else params.set("tab", next);
+        return params;
+      },
+      { replace: true },
+    );
+  };
+  const openCases = c.cases.filter((row) => row.status === "open").length;
 
   return (
     <div className="space-y-6">
@@ -91,19 +120,21 @@ export default function Siem() {
             />
           ) : null}
 
-          <Tabs defaultValue="search" className="w-full">
-            <TabsList>
-              <TabsTrigger value="search">{t("tabSearch")}</TabsTrigger>
-              <TabsTrigger value="cases">{t("tabCases")}</TabsTrigger>
+          <Tabs value={tab} onValueChange={setTab} className="w-full">
+            <TabsList variant="line" className="w-full justify-start">
+              <TabsTrigger value="search" className="gap-1.5">
+                <Search aria-hidden />
+                {t("tabSearch")}
+              </TabsTrigger>
+              <TabsTrigger value="cases" className="gap-1.5">
+                <FolderOpen aria-hidden />
+                {t("tabCases")}
+                <TabCount value={openCases} />
+              </TabsTrigger>
             </TabsList>
-            <TabsContent value="search" className="space-y-4">
+            <TabsContent value="search" className="mt-4 space-y-4">
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.85fr)] xl:items-start">
                 <Card data-testid="siem-search">
-                  <CardHeader className="border-b border-border pb-4">
-                    <CardTitle className="text-sm tracking-wide">
-                      {t("tabSearch")}
-                    </CardTitle>
-                  </CardHeader>
                   <CardContent className="space-y-4 pt-4">
                     <SiemSearchFilters
                       draft={c.draft}
@@ -170,7 +201,7 @@ export default function Siem() {
                 ) : null}
               </div>
             </TabsContent>
-            <TabsContent value="cases">
+            <TabsContent value="cases" className="mt-4">
               <SiemCasesPanel
                 cases={c.cases}
                 loading={c.casesQ.isLoading}

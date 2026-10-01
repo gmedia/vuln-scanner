@@ -176,6 +176,9 @@ describe("SIEM page", () => {
 
     expect(screen.getByRole("tab", { name: "Search events" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Cases" })).toBeInTheDocument();
+    const list = screen.getByRole("tablist");
+    expect(list).toHaveAttribute("data-variant", "line");
+    expect(list.className).toMatch(/\bw-full\b/);
     expect(screen.queryByTestId("siem-event-detail")).not.toBeInTheDocument();
     expect(screen.queryByText("evt-1")).not.toBeInTheDocument();
 

@@ -4,7 +4,7 @@ import { formatSiemWhen } from "@/components/siem/formatSiemWhen";
 import { CaseStatusBadge, SiemRail } from "@/components/siem/siemChrome";
 import { caseStatusRailClass } from "@/components/siem/siemCaseStatus";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Card, CardContent } from "@/components/ui/Card";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
   Table,
@@ -123,8 +123,6 @@ export function SiemCasesPanel({
   onAddNote,
   t,
 }: SiemCasesPanelProps) {
-  const openCount = cases.filter((c) => c.status === "open").length;
-
   let listBody;
   if (loading) {
     listBody = <TableRowSkeleton rows={4} />;
@@ -145,14 +143,6 @@ export function SiemCasesPanel({
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-border pb-4">
-        <CardTitle className="text-sm tracking-wide">{t("tabCases")}</CardTitle>
-        {cases.length > 0 ? (
-          <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
-            {t("casesOpenCount", { count: openCount })}
-          </span>
-        ) : null}
-      </CardHeader>
       <CardContent className="space-y-4 pt-4">
         <p className="text-xs text-muted-foreground">{t("casesHint")}</p>
         {listBody}
