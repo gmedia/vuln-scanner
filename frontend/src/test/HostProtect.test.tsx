@@ -158,6 +158,10 @@ describe("Host Protect page", () => {
     expect(
       screen.getByRole("heading", { name: "Host Protect" }),
     ).toBeInTheDocument();
+    const list = screen.getByRole("tablist");
+    expect(list).toHaveAttribute("data-variant", "line");
+    expect(list.className).toMatch(/\bw-full\b/);
+    expect(screen.getByTestId("host-tab-waf")).toBeInTheDocument();
     expect(screen.queryByText(/Open Wazuh/i)).not.toBeInTheDocument();
     expect(screen.getByTestId("host-empty").textContent).not.toMatch(/YARA|fail closed/i);
     expect(screen.getByTestId("host-empty").textContent).toMatch(

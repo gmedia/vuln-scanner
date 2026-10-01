@@ -23,15 +23,20 @@ import {
   restoreHostHit,
   type HostSite,
 } from "@/api/hostProtect";
-import { Link } from "react-router-dom";
-import { AlertTriangle, Shield } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { AlertTriangle, Bug, Shield } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent } from "@/components/ui/Card";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabCount,
+  TabsTrigger,
+} from "@/components/ui/Tabs";
 import HostWafPanel from "@/components/host/HostWafPanel";
 import HostOverview from "@/components/host/HostOverview";
 import HostAddSiteSheet from "@/components/host/HostAddSiteSheet";
@@ -39,6 +44,16 @@ import HostInstallCard from "@/components/host/HostInstallCard";
 import HostSiteCard from "@/components/host/HostSiteCard";
 import { formatHelperPollAt, isHelperPollStale } from "@/lib/sinexisInstall";
 import { useAuthStore } from "@/store/authStore";
+
+const HOST_TABS = ["malware", "waf"] as const;
+type HostTab = (typeof HOST_TABS)[number];
+
+function parseHostTab(raw: string | null): HostTab {
+  for (const tab of HOST_TABS) {
+    if (tab === raw) return tab;
+  }
+  return "malware";
+}
 
 export function mapHostError(message: string): string {
   if (/limit/i.test(message)) return "limit";
@@ -49,6 +64,19 @@ export default function HostProtect() {
   const { t } = useTranslation("host");
   const qc = useQueryClient();
   const activeOrgId = useAuthStore((s) => s.activeOrgId);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const hostTab = parseHostTab(searchParams.get("tab"));
+  const setHostTab = (next: string) => {
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (next === "malware") params.delete("tab");
+        else params.set("tab", next);
+        return params;
+      },
+      { replace: true },
+    );
+  };
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [rootPath, setRootPath] = useState("");
@@ -62,7 +90,6 @@ export default function HostProtect() {
   const [showIgnoredBySite, setShowIgnoredBySite] = useState<
     Record<string, boolean>
   >({});
-  const [hostTab, setHostTab] = useState("malware");
 
   const sitesQ = useQuery({
     queryKey: ["host", activeOrgId, "sites"],
@@ -346,24 +373,22 @@ export default function HostProtect() {
       />
 
       <Tabs value={hostTab} onValueChange={setHostTab}>
-        <TabsList className="grid h-auto w-full grid-cols-2 p-1 sm:w-auto sm:min-w-[22rem]">
+        <TabsList variant="line" className="w-full justify-start">
           <TabsTrigger
             value="malware"
             data-testid="host-tab-malware"
-            className="min-h-9"
+            className="gap-1.5"
           >
+            <Bug aria-hidden />
             {t("tabMalware")}
-            {overviewNeedsDecision > 0 ? (
-              <Badge variant="critical" className="ml-2">
-                {overviewNeedsDecision}
-              </Badge>
-            ) : null}
+            <TabCount value={overviewNeedsDecision} />
           </TabsTrigger>
           <TabsTrigger
             value="waf"
             data-testid="host-tab-waf"
-            className="min-h-9"
+            className="gap-1.5"
           >
+            <Shield aria-hidden />
             {t("tabWaf")}
           </TabsTrigger>
         </TabsList>
