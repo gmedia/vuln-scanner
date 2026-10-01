@@ -58,4 +58,18 @@ describe("P15 S1 theme tokens", () => {
   it("uses theme-v1 radius 0.75rem", () => {
     expect(token(block("@theme inline"), "--radius")).toBe("0.75rem");
   });
+
+  it("keeps dark hairlines whisper-quiet vs canvas (Grok2API, not #741 loud grey)", () => {
+    const dark = blocks(".dark").find((b) => b.includes("--border:"));
+    expect(dark).toBeDefined();
+    const source = dark ?? "";
+    expect(token(source, "--card")).toBe("hsl(0 0% 8%)");
+    expect(token(source, "--popover")).toBe("hsl(0 0% 8%)");
+    expect(token(source, "--border")).toBe("hsl(0 0% 100% / 0.08)");
+    expect(token(source, "--sidebar-border")).toBe("hsl(0 0% 100% / 0.06)");
+    expect(token(source, "--input")).toBe("hsl(0 0% 12%)");
+    expect(token(source, "--muted")).toBe("hsl(0 0% 12%)");
+    expect(token(source, "--muted-foreground")).toBe("hsl(0 0% 55%)");
+    expect(source).not.toMatch(/--border:\s*hsl\(0 0% 2[28]%\)/);
+  });
 });

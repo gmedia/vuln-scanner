@@ -25,9 +25,9 @@ Print reuses SPA `:root` tokens from `frontend/src/index.css`. No second palette
 |------|-------|---------------|-----------------|-------|
 | Paper | `--background` / forced `#fff` | `hsl(0 0% 98%)` → print `#fff` | `hsl(0 0% 4%)` | Print sheet always white |
 | Ink | `--foreground` | `hsl(0 0% 7%)` | `hsl(0 0% 96%)` | Headings, totals, party name |
-| Body | `--muted-foreground` | `hsl(0 0% 26%)` | `hsl(0 0% 72%)` | Address, period, payment copy |
-| Wash | `--muted` | `hsl(0 0% 96%)` | `hsl(0 0% 14%)` | Payment box, sent chip |
-| Line | `--border` | `hsl(0 0% 90%)` | `hsl(0 0% 28%)` | Hairlines, table rules |
+| Body | `--muted-foreground` | `hsl(0 0% 26%)` | `hsl(0 0% 55%)` | Address, period, payment copy |
+| Wash | `--muted` | `hsl(0 0% 96%)` | `hsl(0 0% 12%)` | Payment box, sent chip |
+| Line | `--border` | `hsl(0 0% 90%)` | `hsl(0 0% 100% / 0.08)` | Hairlines, table rules |
 | Accent | `--primary` | `hsl(142 71% 45%)` | same | **XIS**, paid chip only |
 | Paid wash | derived | `#dcfce7` / `#166534` | n/a | Paid status chip |
 | Danger | `--destructive` | `hsl(0 84% 50%)` | `hsl(0 84% 60%)` | Not used on v1 invoice (no overdue) |
