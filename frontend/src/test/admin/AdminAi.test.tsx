@@ -51,8 +51,9 @@ describe("AdminAi", () => {
     expect(await screen.findByText("No providers.")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Trial chat" })).toBeInTheDocument();
     const list = screen.getByRole("tablist");
-    expect(list.className).toMatch(/min-w-max/);
-    expect(list.className).not.toMatch(/\bw-full\b/);
+    expect(list).toHaveAttribute("data-variant", "line");
+    expect(list.className).toMatch(/\bw-full\b/);
+    expect(list.className).not.toMatch(/min-w-max/);
   });
 
   it("lists provider and model with edit and delete", async () => {
