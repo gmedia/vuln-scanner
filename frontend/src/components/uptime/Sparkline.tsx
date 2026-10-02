@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { listSamples, type UptimeSample } from "@/api/uptime";
+import { cn } from "@/lib/utils";
 
 type SparklineProps = {
   readonly monitorId: string;
@@ -52,7 +53,7 @@ export function Sparkline({ monitorId, state }: SparklineProps) {
     <svg
       width={w}
       height={h}
-      className={strokeClass}
+      className={cn("shrink-0", strokeClass)}
       data-testid="uptime-sparkline"
       aria-hidden
     >

@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Activity } from "lucide-react";
 import type { UptimeMonitor } from "@/api/uptime";
+import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
+import { SiemRail } from "@/components/siem/siemChrome";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
@@ -16,7 +18,10 @@ import { Sparkline } from "@/components/uptime/Sparkline";
 import { MonitorActionsMenu } from "@/components/uptime/MonitorActionsMenu";
 import { explainUptimeError } from "@/components/uptime/uptimeErrors";
 import { ProtocolGlyph } from "@/components/uptime/UptimeChrome";
-import { stateBadgeVariant } from "@/components/uptime/uptimeChrome";
+import {
+  stateBadgeVariant,
+  stateRailClass,
+} from "@/components/uptime/uptimeChrome";
 import { cn } from "@/lib/utils";
 
 export function UptimeMonitorList({
@@ -37,9 +42,8 @@ export function UptimeMonitorList({
   const { t } = useTranslation("uptime");
   if (monitors.length === 0) {
     return (
-      <div className="m-4 flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
-        <Activity className="h-8 w-8 text-muted-foreground" aria-hidden />
-        <p className="text-sm text-foreground">{t("filterEmpty")}</p>
+      <div className="m-4">
+        <SiemEmptyIsland icon={Activity} title={t("filterEmpty")} />
       </div>
     );
   }
@@ -50,10 +54,11 @@ export function UptimeMonitorList({
           <div
             key={m.id}
             className={cn(
-              "rounded-lg border border-border bg-card p-3 text-left",
+              "relative overflow-hidden rounded-lg border border-border bg-card p-3 pl-4 text-left",
               m.state === "down" && "bg-destructive/[0.04]",
             )}
           >
+            <SiemRail className={stateRailClass(m.state, m.enabled)} />
             <div className="flex items-start justify-between gap-2">
               <Link
                 to={`/uptime/${m.id}`}
@@ -88,7 +93,7 @@ export function UptimeMonitorList({
         ))}
       </div>
       <div className="hidden overflow-x-auto md:block">
-        <Table className="table-fixed">
+        <Table className="table-fixed min-w-[64rem]">
           <TableHeader>
             <TableRow>
               <TableHead className="w-[18%] text-[10px] uppercase tracking-wider">
@@ -103,10 +108,10 @@ export function UptimeMonitorList({
               <TableHead className="w-[10%] text-right text-[10px] uppercase tracking-wider">
                 {t("colUptime")}
               </TableHead>
-              <TableHead className="w-[10%] text-right text-[10px] uppercase tracking-wider">
+              <TableHead className="w-[10%] min-w-[5.5rem] text-right text-[10px] uppercase tracking-wider">
                 {t("latency")}
               </TableHead>
-              <TableHead className="w-[12%] text-[10px] uppercase tracking-wider">
+              <TableHead className="w-[12%] min-w-[8rem] text-[10px] uppercase tracking-wider">
                 {t("colSpark")}
               </TableHead>
               <TableHead className="w-[10%] text-right text-[10px] uppercase tracking-wider">
@@ -120,11 +125,12 @@ export function UptimeMonitorList({
                 key={m.id}
                 data-testid="uptime-row"
                 className={cn(
-                  "h-12 hover:bg-muted/50",
+                  "relative h-12 hover:bg-muted/50",
                   m.state === "down" && "bg-destructive/[0.04]",
                 )}
               >
-                <TableCell className="font-medium">
+                <TableCell className="relative pl-4 font-medium">
+                  <SiemRail className={stateRailClass(m.state, m.enabled)} />
                   <Link
                     to={`/uptime/${m.id}`}
                     className="hover:underline"
@@ -167,7 +173,7 @@ export function UptimeMonitorList({
                 <TableCell className="text-right font-mono tabular-nums">
                   {m.last_latency_ms != null ? `${m.last_latency_ms}ms` : "—"}
                 </TableCell>
-                <TableCell>
+                <TableCell className="min-w-[8rem]">
                   <Sparkline monitorId={m.id} state={m.state} />
                 </TableCell>
                 <TableCell className="text-right">

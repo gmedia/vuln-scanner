@@ -29,14 +29,16 @@ import {
 } from "@/components/ui/Pagination";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/Tabs";
+import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
+import { SiemRail } from "@/components/siem/siemChrome";
+import { UptimeDetailKpiStrip } from "@/components/uptime/UptimeDetailKpiStrip";
+import { UptimeHealthHero } from "@/components/uptime/UptimeHealthHero";
 import { UptimeHistoryPanel } from "@/components/uptime/UptimeHistoryPanel";
 import { explainUptimeError } from "@/components/uptime/uptimeErrors";
-import { ProtocolGlyph } from "@/components/uptime/UptimeChrome";
 import { stateBadgeVariant } from "@/components/uptime/uptimeChrome";
 import { useIsMobile } from "@/hooks/use-mobile";
 import i18n from "@/i18n";
 import { htmlLang, isAppLocale } from "@/i18n/locales";
-import { cn } from "@/lib/utils";
 
 const SAMPLE_PAGE_SIZE = 20;
 const OUTAGE_PAGE_SIZE = 5;
@@ -235,32 +237,6 @@ function AvailabilityBar({
   );
 }
 
-function DetailKpiTile({
-  label,
-  value,
-  emphasize = false,
-}: {
-  readonly label: string;
-  readonly value: string | number;
-  readonly emphasize?: boolean;
-}) {
-  return (
-    <div className="rounded-md border border-border bg-card px-4 py-3">
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-      <p
-        className={cn(
-          "mt-1 font-mono text-lg font-bold tabular-nums sm:text-2xl",
-          emphasize ? "text-primary" : "text-foreground",
-        )}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
-
 export default function UptimeDetail() {
   const { t } = useTranslation("uptime");
   const { id } = useParams<{ id: string }>();
@@ -450,24 +426,23 @@ export default function UptimeDetail() {
 
   if (!id || notFound) {
     return (
-      <div data-testid="uptime-detail-not-found">
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
-            <Activity className="h-6 w-6 text-destructive" aria-hidden />
-          </span>
-          <h2 className="mb-2 text-lg font-bold text-foreground">
-            {t("detailNotFound")}
-          </h2>
-          <p className="mb-6 max-w-md text-sm text-muted-foreground">
-            {t("detailNotFoundHint")}
-          </p>
-          <Button variant="outline" asChild>
-            <Link to="/uptime">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              {t("backToList")}
-            </Link>
-          </Button>
-        </div>
+      <div
+        data-testid="uptime-detail-not-found"
+        className="flex min-h-[16rem] flex-col items-center justify-center gap-3 px-6 py-16 text-center"
+      >
+        <Activity className="h-8 w-8 text-muted-foreground" aria-hidden />
+        <h2 className="text-sm font-medium text-foreground">
+          {t("detailNotFound")}
+        </h2>
+        <p className="max-w-md text-sm text-muted-foreground">
+          {t("detailNotFoundHint")}
+        </p>
+        <Button variant="outline" asChild>
+          <Link to="/uptime">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            {t("backToList")}
+          </Link>
+        </Button>
       </div>
     );
   }
@@ -476,8 +451,13 @@ export default function UptimeDetail() {
     return (
       <div className="space-y-6" data-testid="uptime-detail">
         <Skeleton className="h-12 w-64" />
-        <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-28 w-full rounded-lg" />
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <Skeleton className="h-[4.5rem] rounded-lg" />
+          <Skeleton className="h-[4.5rem] rounded-lg" />
+          <Skeleton className="h-[4.5rem] rounded-lg" />
+        </div>
+        <Skeleton className="h-8 w-full rounded-md" />
       </div>
     );
   }
@@ -519,41 +499,11 @@ export default function UptimeDetail() {
         }
       />
 
-      <article className="rounded-lg border border-border bg-card">
-        <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-start gap-3">
-            <span
-              aria-hidden
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted"
-            >
-              <ProtocolGlyph type={monitor.check_type} className="h-5 w-5" />
-            </span>
-            <div className="min-w-0 space-y-1">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                {monitor.check_type}
-              </p>
-              <p className="truncate font-mono text-sm text-foreground">
-                {monitor.target}
-              </p>
-              <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                {monitor.last_latency_ms != null ? (
-                  <span className="font-mono tabular-nums">
-                    {t("latency")} {monitor.last_latency_ms}ms
-                  </span>
-                ) : null}
-                {monitor.uptime_24h != null ? (
-                  <span className="font-mono tabular-nums">
-                    {monitor.uptime_24h}% / 24h
-                  </span>
-                ) : null}
-                <span className="font-mono tabular-nums">
-                  {monitor.interval_seconds}s
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </article>
+      <UptimeHealthHero
+        monitor={monitor}
+        stateLabel={stateLabel(monitor.state)}
+        latencyLabel={t("latency")}
+      />
 
       <Card className="overflow-hidden" data-testid="uptime-range-filters">
         <CardHeader className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
@@ -646,29 +596,16 @@ export default function UptimeDetail() {
         </CardContent>
       </Card>
 
-      <div
-        data-testid="uptime-detail-kpi"
-        className="grid grid-cols-3 gap-2 sm:gap-3"
-      >
-        {beyondSamples && customWindow.custom ? (
-          <p
-            data-testid="uptime-samples-retention-note"
-            className="col-span-3 text-xs text-muted-foreground"
-          >
-            {t("samplesRetentionNote")}
-          </p>
-        ) : null}
-        <DetailKpiTile
-          label={t("rangeUptime")}
-          value={pct == null ? "—" : `${pct}%`}
-          emphasize
-        />
-        <DetailKpiTile label={t("rangeOk")} value={stats?.ok_count ?? "—"} />
-        <DetailKpiTile
-          label={t("rangeTotal")}
-          value={stats?.total_count ?? "—"}
-        />
-      </div>
+      <UptimeDetailKpiStrip
+        pct={pct}
+        okCount={stats?.ok_count}
+        totalCount={stats?.total_count}
+        retentionNote={
+          beyondSamples && customWindow.custom
+            ? t("samplesRetentionNote")
+            : undefined
+        }
+      />
 
       <Card>
         <CardHeader>
@@ -705,18 +642,18 @@ export default function UptimeDetail() {
           {eventsQ.isLoading ? (
             <Skeleton className="h-16 w-full" />
           ) : outages.length === 0 ? (
-            <div className="m-4 flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
-              <Activity className="h-8 w-8 text-muted-foreground" aria-hidden />
-              <p className="text-sm text-muted-foreground">{t("outagesEmpty")}</p>
+            <div className="m-4">
+              <SiemEmptyIsland icon={Activity} title={t("outagesEmpty")} />
             </div>
           ) : (
             <ul className="space-y-2">
               {pagedOutages.map((row) => (
                 <li
                   key={row.id}
-                  className="rounded-md border border-border p-3"
+                  className="relative rounded-md border border-border p-3 pl-4"
                   data-testid="uptime-outage-row"
                 >
+                  <SiemRail className="bg-destructive" />
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <p className="font-mono text-xs text-foreground">
                       {formatTime(row.at)}
