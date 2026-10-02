@@ -33,9 +33,9 @@ export function UptimeDetailKpiStrip({
   totalCount,
   retentionNote,
 }: {
-  readonly pct: number | undefined;
-  readonly okCount: number | undefined;
-  readonly totalCount: number | undefined;
+  readonly pct: number | null | undefined;
+  readonly okCount: number | null | undefined;
+  readonly totalCount: number | null | undefined;
   readonly retentionNote?: string;
 }) {
   const { t } = useTranslation("uptime");
