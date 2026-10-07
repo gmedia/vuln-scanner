@@ -126,6 +126,24 @@ describe("Login", () => {
     expect(screen.queryByText("Invalid credentials")).not.toBeInTheDocument();
   });
 
+  it("turns the auth card rail destructive when login errors", () => {
+    mockUseAuthStore.mockReturnValue({
+      ...defaultAuthState,
+      error: "Invalid credentials",
+    });
+    const { container } = render(<Login />);
+    const card = container.querySelector('[data-slot="card"]');
+    expect(card).not.toBeNull();
+    expect(card?.querySelector(".bg-destructive")).toBeTruthy();
+  });
+
+  it("keeps the auth card rail primary without an error", () => {
+    const { container } = render(<Login />);
+    const card = container.querySelector('[data-slot="card"]');
+    expect(card?.querySelector(".bg-primary")).toBeTruthy();
+    expect(card?.querySelector(".bg-destructive")).toBeNull();
+  });
+
   it("calls login on form submit with email and password values", async () => {
     render(<Login />);
     fireEvent.change(screen.getByLabelText("Email"), {

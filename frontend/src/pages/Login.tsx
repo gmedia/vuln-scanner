@@ -5,11 +5,12 @@ import { useAuthStore } from "@/store/authStore";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent } from "@/components/ui/Card";
-import AuthLayout, {
-  AUTH_CARD_CLASS,
-  AUTH_SECONDARY_LINK,
-} from "@/components/layout/AuthLayout";
+import AuthLayout, { AUTH_SECONDARY_LINK } from "@/components/layout/AuthLayout";
+import {
+  AuthCard,
+  AuthCardBody,
+  AuthNotice,
+} from "@/components/auth/AuthCard";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { useTranslation } from "react-i18next";
 import { captureInviteFromSearch, postAuthPath } from "@/lib/inviteToken";
@@ -87,23 +88,21 @@ function Login() {
 
   return (
     <AuthLayout title={t("signInTitle")} maxWidth="lg">
-      <Card className={AUTH_CARD_CLASS}>
-        <CardContent className="pt-6">
+      <AuthCard tone={error ? "danger" : "primary"}>
+        <AuthCardBody>
           <GoogleSignInButton />
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="min-h-[1.25rem]">
+            <div className="min-h-[1.25rem] space-y-2">
               {error && (
-                <p className="text-center text-xs text-destructive" role="alert">
+                <AuthNotice tone="danger" role="alert">
                   {error}
-                </p>
+                </AuthNotice>
               )}
               {resendFeedback && (
-                <p className="text-xs text-primary text-center mt-1">
-                  {resendFeedback}
-                </p>
+                <AuthNotice tone="success">{resendFeedback}</AuthNotice>
               )}
             </div>
-            <div className="space-y-2">
+            <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="email">{tc("email")}</Label>
               <Input
                 id="email"
@@ -115,7 +114,7 @@ function Login() {
                 disabled={isSubmitting}
               />
             </div>
-            <div className="space-y-2">
+            <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="password">{tc("password")}</Label>
               <div className="relative">
                 <Input
@@ -161,7 +160,7 @@ function Login() {
           </form>
           {showResend && (
             <div className="mt-4 space-y-2">
-              <p className="text-xs text-muted-foreground text-center">
+              <p className="text-center text-xs text-muted-foreground">
                 {t("needVerification")}
               </p>
               <Button
@@ -200,8 +199,8 @@ function Login() {
               {t("register")}
             </Link>
           </p>
-        </CardContent>
-      </Card>
+        </AuthCardBody>
+      </AuthCard>
     </AuthLayout>
   );
 }

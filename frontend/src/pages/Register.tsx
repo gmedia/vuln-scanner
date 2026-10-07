@@ -3,12 +3,15 @@ import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, Loader2, CheckCircle, AlertTriangle } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent } from "@/components/ui/Card";
-import AuthLayout, {
-  AUTH_CARD_CLASS,
-  AUTH_SECONDARY_LINK,
-} from "@/components/layout/AuthLayout";
+import AuthLayout, { AUTH_SECONDARY_LINK } from "@/components/layout/AuthLayout";
+import {
+  AuthCard,
+  AuthCardBody,
+  AuthNotice,
+  AuthStatusIcon,
+} from "@/components/auth/AuthCard";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { useTranslation } from "react-i18next";
 import { captureInviteFromSearch, postAuthPath } from "@/lib/inviteToken";
@@ -105,13 +108,12 @@ function Register() {
     const sendFailed = emailSent === false;
     return (
       <AuthLayout title={t("registerSuccess")}>
-        <Card className={AUTH_CARD_CLASS}>
-          <CardContent className="pt-6 text-center space-y-4">
-            {sendFailed ? (
-              <AlertTriangle className="h-12 w-12 text-amber-400 mx-auto" />
-            ) : (
-              <CheckCircle className="h-12 w-12 text-primary mx-auto" />
-            )}
+        <AuthCard tone={sendFailed ? "warn" : "success"}>
+          <AuthCardBody center>
+            <AuthStatusIcon
+              icon={sendFailed ? AlertTriangle : CheckCircle}
+              tone={sendFailed ? "warn" : "success"}
+            />
             <p className="text-xs text-muted-foreground">
               {statusMessage ||
                 (sendFailed
@@ -144,34 +146,31 @@ function Register() {
               )}
             </Button>
             <Link to="/login">
-              <Button className="mt-2 min-h-11 w-full text-sm">{t("goToSignIn")}</Button>
+              <Button className="mt-2 min-h-11 w-full text-sm">
+                {t("goToSignIn")}
+              </Button>
             </Link>
-          </CardContent>
-        </Card>
+          </AuthCardBody>
+        </AuthCard>
       </AuthLayout>
     );
   }
 
   return (
     <AuthLayout title={t("createAccount")}>
-      <Card className={AUTH_CARD_CLASS}>
-        <CardContent className="pt-6">
+      <AuthCard tone={error || validationError ? "danger" : "primary"}>
+        <AuthCardBody>
           <GoogleSignInButton />
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="min-h-[1.25rem]">
               {(error || validationError) && (
-                <p className="text-xs text-red-400 text-center">
+                <AuthNotice tone="danger">
                   {validationError || error}
-                </p>
+                </AuthNotice>
               )}
             </div>
-            <div className="space-y-2">
-              <label
-                htmlFor="email"
-                className="block text-xs text-muted-foreground"
-              >
-                {tc("email")}
-              </label>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="email">{tc("email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -182,13 +181,8 @@ function Register() {
                 disabled={isSubmitting}
               />
             </div>
-            <div className="space-y-2">
-              <label
-                htmlFor="password"
-                className="block text-xs text-muted-foreground"
-              >
-                {tc("password")}
-              </label>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="password">{tc("password")}</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -217,13 +211,8 @@ function Register() {
                 </button>
               </div>
             </div>
-            <div className="space-y-2">
-              <label
-                htmlFor="confirmPassword"
-                className="block text-xs text-muted-foreground"
-              >
-                {tc("confirmPassword")}
-              </label>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="confirmPassword">{tc("confirmPassword")}</Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
@@ -282,8 +271,8 @@ function Register() {
               {t("signInCta")}
             </Link>
           </p>
-        </CardContent>
-      </Card>
+        </AuthCardBody>
+      </AuthCard>
     </AuthLayout>
   );
 }
