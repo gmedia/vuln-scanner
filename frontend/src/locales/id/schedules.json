@@ -27,6 +27,7 @@
   "colNext": "Berikutnya",
   "colActions": "Aksi",
   "disabled": "nonaktif",
+  "statusActive": "aktif",
   "nextPrefix": "Berikutnya: {{when}}",
   "lastScan": "scan terakhir",
   "notify": "Notifikasi: {{email}}",
