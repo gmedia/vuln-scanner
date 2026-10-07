@@ -1985,3 +1985,165 @@ The card keeps the frozen `border-border/80 shadow-none` hairline — the rail i
 | Danger notice copy uses `text-red-400`, not `text-destructive` | AuthNotice | Frozen by `auth-flow` / `reset-password` e2e; unifying on the token is a test change | Named token migration |
 | Duplicate status-card markup across 5 pages | pages | Each has distinct copy + actions; a shared `AuthStatusView` is a follow-up | Named extract |
 | Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |
+
+# Profile console (`/profile`)
+
+Print §§0–8 and SIEM / Guard / Assets / page-nav / Status / Uptime / Host / Dashboard / Scan detail / Schedules / Auth above stay locked. This section is the **dark SPA** contract for the signed-in account page at `/profile` — identity, account KPIs, change password, update email. It is the personal counterpart to the auth family (public) and workspace settings (org).
+
+## 0. Research Log (Profile)
+
+- Embedded refs: shortlisted `linear.app` / `stripe` / `supabase` → picked Layer A `redesign-skill` + `layout-skill` (stack + page-grid; AppShell owns document scroll) and Layer B `linear.app` (ops density, luminance steps, one accent, tabular mono). Same routing as `/guard` / `/siem` / `/assets` / `/uptime` / `/host` / `/dashboard` / `/scan/:id` / `/schedules`, and the same rail vocabulary as the auth family. Not Stripe marketing; not Linear indigo `#5e6ad2`.
+- Sibling harvest: `AuthCard` state rail (primary → destructive → amber → primary/success), `HostKpiStrip` / `ScanKpiStrip` / `DashboardKpiStrip` (`StatTile` / `KpiTile` + `SiemRail`), the `Shell` / `ShellHead` hairline pattern from `/host` / `/dashboard` / `/scan/:id` / `/schedules`, `SiemEmptyIsland` island grammar.
+- Current `/profile` diagnosis: `profile-identity` was a flat `article` (`rounded-lg border border-border bg-card`) with a plain muted avatar; the three `StatTile`s were flat `rounded-md` border tiles with no rail; the change-password / update-email cards were kit `Card` + `CardHeader` + `CardContent` with no rail and no state signal; error / cooldown copy used kit `Alert` (default + destructive) rather than a railed notice; submit buttons were `w-full sm:w-auto` with no 44pt mobile target.
+- Imagen drafts: skipped — existing SPA + sibling P15 grammar is the reference; no extra imagegen deps.
+- Lazyweb pack: skipped this session — sibling P15 is the harvest.
+- Skipped lanes: react-grab / react-scan / react-doctor — AGENTS.md forbids extra deps for a visual slice.
+
+**Direction (locked):** An **account console** on existing Sinexis SPA tokens. Signature: an identity band whose **primary rail carries the avatar + email + badges**, then a three-tile KPI strip whose **rails encode account state** (verified primary / unverified amber, admin primary / operator muted, credits primary / zero muted), then two form shells whose **rail encodes the last submit outcome** (primary idle → destructive error → amber cooldown → primary success). Green `--primary`, not Linear indigo. Inter + JetBrains Mono. Not nested Card-in-Card, not a filled masthead.
+
+## 1. Atmosphere & Identity
+
+`/profile` is where a signed-in user reads and edits their own account: current email, verification, access level, credits, password. It must feel like the Guard/SIEM/Assets/Uptime/Host/Dashboard/ScanDetail/Schedules ops family inside AppShell — same rail grammar, same hairline shells — while reusing the auth family's state-rail vocabulary for the two forms.
+
+The one memorable moment: the **identity band**. The avatar chip, the mono email, the copy action, and the verification / access / org badges all sit behind one primary rail, so the account's identity reads as a single object before any form.
+
+Do **not** use a filled green masthead, a marketing hero, or a generic icon-in-circle. No loading skeleton is needed — the page renders from the auth store synchronously.
+
+## 2. Color
+
+Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. No Linear indigo.
+
+| Role | Token / class | Usage |
+|------|----------------|-------|
+| Canvas | `--background` | Page |
+| Surface | `--card` + `border-border` | Identity band, KPI tiles, form shells, notices |
+| Ink | `--foreground` | Email, KPI values, shell titles |
+| Meta | `--muted-foreground` | Labels, hints, org slug, `Password required to confirm` |
+| Accent | `--primary` `hsl(142 71% 45%)` | Identity rail, avatar chip, verified / admin / credits rail, copy-confirm tick, submit CTA |
+| Warn | `bg-amber-500` rail + `bg-amber-500/[0.04]` wash | Unverified tile, rate-limit cooldown |
+| Error | `bg-destructive` rail + `bg-destructive/[0.04]` wash | Password / email error notice |
+| Idle | `bg-border` rail | Operator access, zero credits |
+| Success wash | `bg-primary/5` | Form shell after a successful submit |
+
+Rails are **redundant** with the Badge / KPI value / notice copy. Never color-only status.
+
+## 3. Typography
+
+SPA scale. Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+
+| Level | Size | Weight | Usage |
+|-------|------|--------|-------|
+| Page title | `text-2xl` / `md:text-3xl` | 600 | PageHeader `h2` "Profile" (frozen) |
+| Subtitle | `text-sm` | 400 | `Manage your account email and password` (frozen) |
+| Avatar initials | `font-mono text-sm` | 600 | `US` chip |
+| Identity email | `font-mono text-sm sm:text-base` | 400 | Current email |
+| KPI label | `text-[10px] uppercase tracking-wider` | 500 | Verification / Access / Credits |
+| KPI value | `font-mono text-lg font-bold tabular-nums` (`text-xl` when emphasized) | 700 | Verified / Operator / credits |
+| Shell title | `text-sm font-medium tracking-wide` | 500 | Change password / Update email |
+| Shell hint | `text-xs` | 400 | One-line description under the title |
+| Notice copy | `text-xs` | 400 | Cooldown / error |
+| Helper | `text-[10px]` | 400 | `Password required to confirm` (frozen) |
+
+Tabular numerals on KPI values. Body copy is English on this page (frozen by unit test).
+
+## 4. Spacing & Layout
+
+4px base. **No** filter bar on `/profile`.
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| --space-1.5 | 6px | Field label→control gap (`gap-1.5`) |
+| --space-2 | 8px | Notice inner, badge gap |
+| --space-3 | 12px | KPI tile gap, shell head pad |
+| --space-4 | 16px | Shell body pad, identity pad, form field gap |
+| --space-6 | 24px | Page stack (`space-y-6`), form grid gap |
+
+**Primitives** (`layout-skill`):
+
+- **stack** — page sections (`space-y-6`): header → identity → KPI → forms.
+- **page-grid** — KPI `grid-cols-1 gap-3 sm:grid-cols-3`; forms `grid gap-6 lg:grid-cols-2 lg:items-start`.
+- **scroll-body-shell** — AppShell owns document scroll.
+- **list-detail** — **not** used.
+
+Responsive:
+
+- `<sm`: identity band stacks (`flex-col`), actions wrap under it; form buttons are `min-h-11 w-full`.
+- `≥sm`: identity band is a row (`sm:flex-row sm:items-start sm:justify-between`); form buttons are `sm:min-h-10 sm:w-auto`.
+
+**Frozen contracts** (`Profile.test.tsx` + `e2e/profile.spec.ts`): heading `Profile`; `queryByTestId("account-nav")` absent; current email text; `new@example.com` placeholder starts empty; `Password required to confirm`; subtitle copy; `profile-identity` + `profile-kpis` testids; initials `US`; `Verified` / `Operator` / `/Acme/`; links `Credit history` → `/credit-history` and `Workspace` → `/settings/workspace`; credits value `10`; `Copy email` button; **exactly 3** inputs with placeholder `••••••••` (2 password + 1 email-confirm); ids `profile-email` / `profile-password` / `current-password` / `new-password` / `confirm-password`; button names `Update email` / `Change password`; headings `Profile` / `Change password`; toast copy `Profile updated` / `Password changed` (must stay **unique** — do not duplicate inline); `Wrong password` / `Invalid current password`; `/Too many attempts. Wait 20s/` / `/Too many attempts. Wait 60s/`; `Updating...` / `Changing...`; e2e `aside` + `Dasbor`.
+
+## 5. Signature Components & States
+
+| Primitive | Anatomy | States |
+|-----------|---------|--------|
+| Identity band (`profile-identity`) | `relative overflow-hidden rounded-lg border bg-card pl-4` + primary `SiemRail` + bordered avatar chip + mono email + copy + badges | static (primary) |
+| `StatTile` | `relative min-w-0 overflow-hidden rounded-lg border bg-card px-4 py-3 pl-4` + `SiemRail(tone)` | verified success / unverified warn / admin primary / operator idle / credits primary / zero idle |
+| `ProfileShell` | kit `Card` + `relative overflow-hidden pl-4` + `SiemRail(tone)` + `profileWashClass(tone)` | primary / danger / warn / success / idle |
+| `ProfileShellHead` | `border-b border-border px-4 py-3` + icon chip + `h3` + hint | static |
+| `ProfileShellBody` | `px-4 py-4` | static |
+| `ProfileNotice` | `relative overflow-hidden rounded-md border bg-card px-3 py-2 pl-4` + rail + `text-xs` (`NOTICE_TEXT[tone]`) | danger (`role="alert"`) / warn (`role="status"`) |
+| `PasswordField` | kit `Label` + `flex min-w-0 flex-col gap-1.5` + `Input pr-10` + icon toggle (native `<button>`, allowed icon toggle) | visible / hidden |
+
+Per shell:
+
+| Shell | Tone source |
+|-------|-------------|
+| Change password | `formTone({ cooldown, error: Boolean(passwordError), success: passwordSuccess })` |
+| Update email | `formTone({ cooldown, error: Boolean(error), success: profileSuccess })` |
+
+Success is communicated by the **shell wash + toast**; no inline success copy (the toast text is unique by contract).
+
+## 6. Motion
+
+| Type | Duration | Easing | Usage |
+|------|----------|--------|-------|
+| Micro | 150–200ms | ease-out | Button / input hover, copy tick |
+| Spin | CSS `animate-spin` | linear | Submit spinner (kit Button) |
+| Press | kit Button `scale` | — | Do not restyle kit |
+
+- GPU only. No layout animation, no ping.
+- `prefers-reduced-motion`: only the kit spinner animates.
+
+## 7. Depth & Surface
+
+**borders-only** + 2px rails. No glass, no drop shadows, no nested Card-in-Card, no `rounded-3xl`, no filled masthead.
+
+| Type | Treatment | Use |
+|------|-----------|-----|
+| Identity band | `rounded-lg border bg-card` + primary rail | Identity |
+| KPI tiles | `rounded-lg border bg-card` + rail | Verification / Access / Credits |
+| Form shells | kit `Card` + `pl-4` + rail + tone wash | Change password / Update email |
+| Notices | `rounded-md border bg-card` + rail + tone wash | Cooldown / error |
+| Rail | `absolute inset-y-2 left-0 w-0.5 rounded-full` (`SiemRail`) | Identity, tiles, shells, notices |
+
+P15 flatten: the KPI strip is **not** inside PageHeader and **not** inside a form shell. Header is title + subtitle only (no actions on this page).
+
+## 8. Accessibility Constraints & Accepted Debt
+
+### Constraints
+
+- WCAG 2.2 AA contrast on SPA tokens. Rails are redundant with Badge / KPI value / notice copy.
+- Heading remains PageHeader `h2` "Profile"; shell titles are `h3`.
+- Every field has a kit `Label` + `htmlFor`; password visibility uses native icon-toggle `<button>` (allowed per AGENTS.md).
+- Primary actions are kit `Button`; no native `<select>`.
+- `role="alert"` on error notices, `role="status"` on cooldown notices.
+- `prefers-reduced-motion`: only the kit spinner animates.
+
+### Personas
+
+- **Signed-in user** (primary): read identity + KPIs → change password / update email.
+- **Unverified user**: amber verification tile; the auth family owns the resend path.
+- **Rate-limited**: amber shell + amber notice + disabled submit with countdown.
+- **Zero credits**: muted credits tile (no alarm colour).
+- **Operator vs admin**: muted vs primary access tile.
+
+### Accepted Debt
+
+| Item | Location | Why accepted | Owner / Exit |
+|------|----------|--------------|--------------|
+| English-only copy on `/profile` | page | Frozen by `Profile.test.tsx`; i18n-ising needs matching test updates | Named i18n slice |
+| `profileSuccess` / `passwordSuccess` only gate the error notice + wash | page | Success copy is the toast; adding inline copy would break the unique-text contract | Keep; revisit with a test update |
+| `Profile.tsx` keeps local form state + handlers | page | This slice restyles chrome only; extracting a form hook mixes visual with module work | Named extract |
+| `PasswordField` duplicated from the auth pages' pattern | profile | Auth uses inline fields; a shared field is a follow-up | Named extract |
+| `profileChrome` wash helpers mirror `authChrome` | chrome | Two small tone maps beat a premature shared ops-chrome module | Keep until a named ops-chrome PR |
+| Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |

@@ -155,6 +155,34 @@ describe("Profile", () => {
         expect(writeText).toHaveBeenCalledWith("user@example.com");
       });
     });
+
+    it("rails the identity shell primary and the KPI tiles by state", () => {
+      renderProfile();
+      const identity = screen.getByTestId("profile-identity");
+      expect(identity.querySelector(".bg-primary")).toBeTruthy();
+      const kpis = screen.getByTestId("profile-kpis");
+      expect(kpis.querySelectorAll(".bg-primary").length).toBe(2);
+      expect(kpis.querySelectorAll(".bg-border").length).toBe(1);
+      expect(kpis.querySelector(".bg-amber-500")).toBeNull();
+    });
+
+    it("rails the access tile primary for an admin", () => {
+      mockUser = { ...mockUser, is_admin: true };
+      renderProfile();
+      const kpis = screen.getByTestId("profile-kpis");
+      expect(kpis.querySelectorAll(".bg-primary").length).toBe(3);
+      expect(kpis.querySelector(".bg-border")).toBeNull();
+    });
+
+    it("rails the verification tile amber when unverified", () => {
+      mockUser = { ...mockUser, is_verified: false, credits: 0 };
+      renderProfile();
+      const kpis = screen.getByTestId("profile-kpis");
+      expect(kpis.querySelector(".bg-amber-500")).toBeTruthy();
+      expect(kpis.querySelectorAll(".bg-border").length).toBeGreaterThanOrEqual(
+        2,
+      );
+    });
   });
 
   describe("Update Email form", () => {
@@ -337,6 +365,37 @@ describe("Profile", () => {
       passwordCooldownValue = 60;
       renderProfile();
       expect(screen.getByText(/Too many attempts. Wait 60s/)).toBeInTheDocument();
+    });
+
+    it("rails the password shell amber on cooldown and destructive on error", async () => {
+      passwordCooldownValue = 60;
+      const { unmount } = renderProfile();
+      const cooldownShell = screen
+        .getByRole("heading", { name: "Change password" })
+        .closest("[data-slot='card']");
+      expect(cooldownShell?.querySelector(".bg-amber-500")).toBeTruthy();
+      unmount();
+
+      passwordCooldownValue = 0;
+      mockChangePassword = vi.fn().mockResolvedValue(false);
+      mockError = "Invalid current password";
+      renderProfile();
+      fireEvent.change(document.getElementById("current-password")!, {
+        target: { value: "wrong" },
+      });
+      fireEvent.change(document.getElementById("new-password")!, {
+        target: { value: "newpass123" },
+      });
+      fireEvent.change(document.getElementById("confirm-password")!, {
+        target: { value: "newpass123" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Change password" }));
+      await waitFor(() => {
+        const shell = screen
+          .getByRole("heading", { name: "Change password" })
+          .closest("[data-slot='card']");
+        expect(shell?.querySelector(".bg-destructive")).toBeTruthy();
+      });
     });
 
     it("shows loading state when changing password", async () => {
