@@ -1,17 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import {
   ArrowLeft,
   Braces,
   Briefcase,
-  Clock,
   Crosshair,
   Download,
   GitCompare,
   Printer,
   RefreshCw,
   Shield,
-  Target,
   Wrench,
 } from "lucide-react";
 import { useScanDetail, useScanDiff, useScanFindings } from "@/hooks/useScan";
@@ -28,13 +27,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/Pagination";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/Card";
 import { Progress } from "@/components/ui/Progress";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -43,6 +35,16 @@ import { SCAN_TYPE_LABELS } from "@/lib/constants";
 import SeverityChart from "@/components/results/SeverityChart";
 import FindingsTable from "@/components/results/FindingsTable";
 import { ScanError } from "@/components/scan/ScanError";
+import { ScanKpiStrip } from "@/components/scan/ScanKpiStrip";
+import { SiemRail } from "@/components/siem/siemChrome";
+import {
+  diffRailClass,
+  findingsRailClass,
+  findingsWashClass,
+  severityRailClass,
+  severityWashClass,
+  worstSeverity,
+} from "@/components/scan/scanChrome";
 import {
   Tabs,
   TabsContent,
@@ -53,6 +55,7 @@ import {
 import PageHeader from "@/components/layout/PageHeader";
 import PageHeaderBack from "@/components/layout/PageHeaderBack";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 function rescanPath(scanType: string): string {
@@ -106,6 +109,56 @@ function parseScanTab(raw: string | null): ScanTab {
     if (tab === raw) return tab;
   }
   return "findings";
+}
+
+function Shell({
+  railClass,
+  wash,
+  children,
+  className,
+}: {
+  readonly railClass: string;
+  readonly wash?: string | null;
+  readonly children: ReactNode;
+  readonly className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-lg border border-border bg-card pl-4",
+        wash,
+        className,
+      )}
+    >
+      <SiemRail className={railClass} />
+      {children}
+    </div>
+  );
+}
+
+function ShellHead({
+  children,
+  className,
+}: {
+  readonly children: ReactNode;
+  readonly className?: string;
+}) {
+  return (
+    <div className={cn("border-b border-border px-4 py-3", className)}>
+      {children}
+    </div>
+  );
+}
+
+function IconChip({ icon: Icon }: { readonly icon: typeof Briefcase }) {
+  return (
+    <span
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted/40"
+      aria-hidden
+    >
+      <Icon className="h-4 w-4 text-muted-foreground" />
+    </span>
+  );
 }
 
 function ScanDetail() {
@@ -202,27 +255,27 @@ function ScanDetail() {
             <Skeleton className="h-11 w-24" />
           </div>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i} className="border-border">
-              <CardContent className="flex flex-col items-center justify-center p-4">
-                <Skeleton className="mb-2 h-8 w-8 rounded-full" />
-                <Skeleton className="h-7 w-16" />
-                <Skeleton className="mt-1 h-3 w-12" />
-              </CardContent>
-            </Card>
+            <div
+              key={i}
+              className="relative overflow-hidden rounded-lg border border-border bg-card px-4 py-3 pl-4"
+            >
+              <SiemRail className="bg-border" />
+              <Skeleton className="mb-2 ml-2 h-3 w-16" />
+              <Skeleton className="ml-2 h-7 w-20" />
+            </div>
           ))}
         </div>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm tracking-wide">
-              {t("tabFindings")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="relative overflow-hidden rounded-lg border border-border bg-card pl-4">
+          <SiemRail className="bg-border" />
+          <div className="border-b border-border px-4 py-3">
+            <Skeleton className="h-4 w-40" />
+          </div>
+          <div className="px-4 py-3">
             <TableRowSkeleton rows={6} />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     );
   }
@@ -231,8 +284,8 @@ function ScanDetail() {
     return (
       <div>
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="mb-4 rounded-full bg-red-600/10 p-4">
-            <Crosshair className="h-8 w-8 text-red-400" />
+          <div className="mb-4 rounded-full bg-destructive/10 p-4">
+            <Crosshair className="h-8 w-8 text-destructive" aria-hidden />
           </div>
           <h2 className="mb-2 text-lg font-bold text-foreground">
             {t("scanNotFound")}
@@ -278,6 +331,7 @@ function ScanDetail() {
     scan.result_summary.error.trim()
       ? scan.result_summary.error
       : t("failFallback");
+  const worst = worstSeverity(scan.result_summary);
 
   return (
     <div className="w-full space-y-5">
@@ -336,31 +390,20 @@ function ScanDetail() {
 
       {scan.status === "failed" && <ScanError showIcon message={failMessage} />}
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <QuickStat
-          icon={Crosshair}
-          label={t("findings")}
-          value={`${findingsCount}`}
-          emphasize
-        />
-        <QuickStat icon={Target} label={t("target")} value={scan.target} />
-        <QuickStat
-          icon={Shield}
-          label={t("type")}
-          value={SCAN_TYPE_LABELS[scan.scan_type] ?? scan.scan_type}
-        />
-        <QuickStat
-          icon={Clock}
-          label={t("duration")}
-          value={
-            duration != null
-              ? formatDuration(duration)
-              : scan.status === "running" || scan.status === "pending"
-                ? t("inProgress")
-                : t("na")
-          }
-        />
-      </div>
+      <ScanKpiStrip
+        findingsCount={findingsCount}
+        target={scan.target}
+        typeLabel={SCAN_TYPE_LABELS[scan.scan_type] ?? scan.scan_type}
+        durationLabel={
+          duration != null
+            ? formatDuration(duration)
+            : scan.status === "running" || scan.status === "pending"
+              ? t("inProgress")
+              : t("na")
+        }
+        status={scan.status}
+        summary={scan.result_summary}
+      />
 
       <Tabs
         value={scanTab}
@@ -389,31 +432,30 @@ function ScanDetail() {
 
         <TabsContent value="findings" className="mt-4 space-y-5">
           <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.6fr)_minmax(22rem,0.9fr)] 2xl:items-start">
-            <Card>
-              <CardHeader className="py-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <CardTitle className="text-sm tracking-wide">
-                      {t("findingsDetected", {
-                        count: findingsTotal,
-                      })}
-                    </CardTitle>
-                    {findingsTotal > 0 ? (
-                      <p
-                        className="mt-1 font-mono text-[11px] tabular-nums text-muted-foreground"
-                        data-testid="findings-range"
-                      >
-                        {t("findingsRange", {
-                          from: rangeFrom,
-                          to: rangeTo,
-                          total: findingsTotal,
-                        })}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
+            <Shell
+              railClass={findingsRailClass(scan.status, scan.result_summary)}
+              wash={findingsWashClass(scan.status, scan.result_summary)}
+            >
+              <ShellHead>
+                <h3 className="text-sm font-medium tracking-wide">
+                  {t("findingsDetected", {
+                    count: findingsTotal,
+                  })}
+                </h3>
+                {findingsTotal > 0 ? (
+                  <p
+                    className="mt-1 font-mono text-[11px] tabular-nums text-muted-foreground"
+                    data-testid="findings-range"
+                  >
+                    {t("findingsRange", {
+                      from: rangeFrom,
+                      to: rangeTo,
+                      total: findingsTotal,
+                    })}
+                  </p>
+                ) : null}
+              </ShellHead>
+              <div className="px-4 py-3">
                 <FindingsTable
                   findings={findings}
                   isLoading={findingsLoading}
@@ -487,33 +529,39 @@ function ScanDetail() {
                     </PaginationContent>
                   </Pagination>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </Shell>
 
             <div className="grid gap-5 lg:grid-cols-3 2xl:grid-cols-1">
               {findingsCount > 0 ? (
-                <Card className="lg:col-span-1">
-                  <CardHeader className="py-3">
-                    <CardTitle className="text-sm tracking-wide">
+                <Shell
+                  railClass={
+                    worst ? severityRailClass(worst) : "bg-border"
+                  }
+                  wash={severityWashClass(worst)}
+                  className="lg:col-span-1"
+                >
+                  <ShellHead>
+                    <h3 className="text-sm font-medium tracking-wide">
                       {t("severity")}
-                    </CardTitle>
-                    <CardDescription className="text-xs">
+                    </h3>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       {t("severityDist", { count: findingsCount })}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-0">
+                    </p>
+                  </ShellHead>
+                  <div className="px-4 py-3">
                     <SeverityChart summary={scan.result_summary} />
-                  </CardContent>
-                </Card>
+                  </div>
+                </Shell>
               ) : null}
 
-              <Card className="lg:col-span-2">
-                <CardHeader className="py-3">
-                  <CardTitle className="text-sm tracking-wide">
+              <Shell railClass="bg-border" className="lg:col-span-2">
+                <ShellHead>
+                  <h3 className="text-sm font-medium tracking-wide">
                     {t("scanInfo")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 pt-0">
+                  </h3>
+                </ShellHead>
+                <div className="space-y-2 px-4 py-3">
                   <InfoRow label={t("scanId")} value={scan.id} mono />
                   <InfoRow
                     label={t("created")}
@@ -538,8 +586,8 @@ function ScanDetail() {
                       mono
                     />
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </Shell>
             </div>
           </div>
 
@@ -555,9 +603,12 @@ function ScanDetail() {
           {scan.status === "completed" && diff ? (
             <DiffBadgeStrip diff={diff} />
           ) : (
-            <p className="text-sm text-muted-foreground">
+            <div
+              className="rounded-xl border border-border bg-muted/40 px-6 py-8 text-center text-sm text-muted-foreground"
+              data-testid="scan-diff-pending"
+            >
               {t("diffAfterComplete")}
-            </p>
+            </div>
           )}
         </TabsContent>
 
@@ -568,17 +619,21 @@ function ScanDetail() {
                 {t("exportHelper")}
               </p>
               <div className="grid gap-3 md:grid-cols-3">
-                <Card>
-                  <CardHeader className="py-3">
-                    <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
-                      <Briefcase className="h-4 w-4 text-muted-foreground" />
-                      {t("exportMgmtTitle")}
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      {t("execTitle")}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex flex-col gap-2 pt-0">
+                <Shell railClass="bg-primary">
+                  <ShellHead>
+                    <div className="flex items-start gap-3">
+                      <IconChip icon={Briefcase} />
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-medium tracking-wide">
+                          {t("exportMgmtTitle")}
+                        </h3>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {t("execTitle")}
+                        </p>
+                      </div>
+                    </div>
+                  </ShellHead>
+                  <div className="flex flex-col gap-2 px-4 py-3">
                     <Button
                       title={t("execTitle")}
                       aria-label={t("execAria")}
@@ -611,20 +666,24 @@ function ScanDetail() {
                       <Printer className="mr-1 h-3.5 w-3.5" />
                       {t("printExec")}
                     </Button>
-                  </CardContent>
-                </Card>
+                  </div>
+                </Shell>
 
-                <Card>
-                  <CardHeader className="py-3">
-                    <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
-                      <Wrench className="h-4 w-4 text-muted-foreground" />
-                      {t("exportTechTitle")}
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      {t("htmlTechTitle")}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex flex-col gap-2 pt-0">
+                <Shell railClass="bg-border">
+                  <ShellHead>
+                    <div className="flex items-start gap-3">
+                      <IconChip icon={Wrench} />
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-medium tracking-wide">
+                          {t("exportTechTitle")}
+                        </h3>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {t("htmlTechTitle")}
+                        </p>
+                      </div>
+                    </div>
+                  </ShellHead>
+                  <div className="flex flex-col gap-2 px-4 py-3">
                     <Button
                       variant="outline"
                       title={t("htmlTechTitle")}
@@ -647,20 +706,24 @@ function ScanDetail() {
                       <Printer className="mr-1 h-3.5 w-3.5" />
                       {t("printHtml")}
                     </Button>
-                  </CardContent>
-                </Card>
+                  </div>
+                </Shell>
 
-                <Card>
-                  <CardHeader className="py-3">
-                    <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
-                      <Braces className="h-4 w-4 text-muted-foreground" />
-                      {t("exportRawTitle")}
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      {t("jsonTitle")}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex flex-col gap-2 pt-0">
+                <Shell railClass="bg-border">
+                  <ShellHead>
+                    <div className="flex items-start gap-3">
+                      <IconChip icon={Braces} />
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-medium tracking-wide">
+                          {t("exportRawTitle")}
+                        </h3>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {t("jsonTitle")}
+                        </p>
+                      </div>
+                    </div>
+                  </ShellHead>
+                  <div className="flex flex-col gap-2 px-4 py-3">
                     <Button
                       variant="outline"
                       title={t("jsonTitle")}
@@ -671,12 +734,17 @@ function ScanDetail() {
                       <Download className="mr-1 h-3.5 w-3.5" />
                       {t("jsonDownload")}
                     </Button>
-                  </CardContent>
-                </Card>
+                  </div>
+                </Shell>
               </div>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">{t("noExport")}</p>
+            <div
+              className="rounded-xl border border-border bg-muted/40 px-6 py-8 text-center text-sm text-muted-foreground"
+              data-testid="scan-export-empty"
+            >
+              {t("noExport")}
+            </div>
           )}
         </TabsContent>
       </Tabs>
@@ -696,92 +764,58 @@ function DiffBadgeStrip({ diff }: { diff: ScanDiff }) {
   if (!hasBaseline && !hasDelta) {
     return (
       <div
-        className="rounded-md border border-dashed border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground"
+        className="relative overflow-hidden rounded-lg border border-dashed border-border bg-muted/20 px-4 py-3 pl-4"
         data-testid="scan-diff-no-baseline"
         role="status"
       >
-        {t("noBaseline")}
+        <SiemRail className="bg-border" />
+        <p className="pl-2 text-xs text-muted-foreground">{t("noBaseline")}</p>
       </div>
     );
   }
 
   return (
     <div
-      className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2"
+      className="relative overflow-hidden rounded-lg border border-border bg-card px-4 py-3 pl-4"
       data-testid="scan-diff-badge"
     >
-      <span className="text-xs font-medium text-muted-foreground">
-        {hasBaseline ? t("vsBaseline") : t("findingChanges")}
-      </span>
-      {!hasDelta && hasBaseline && (
-        <span className="text-xs text-muted-foreground" role="status">
-          {t("noNewCritHigh")}
+      <SiemRail className={diffRailClass(diff)} />
+      <div className="flex flex-wrap items-center gap-2 pl-2">
+        <span className="text-xs font-medium text-muted-foreground">
+          {hasBaseline ? t("vsBaseline") : t("findingChanges")}
         </span>
-      )}
-      {diff.new_critical > 0 && (
-        <Badge variant="critical" className="text-[10px]">
-          {t("newCritical", { count: diff.new_critical })}
-        </Badge>
-      )}
-      {diff.new_high > 0 && (
-        <Badge variant="high" className="text-[10px]">
-          {t("newHigh", { count: diff.new_high })}
-        </Badge>
-      )}
-      {diff.resolved > 0 && (
-        <Badge variant="success" className="text-[10px]">
-          {t("resolved", { count: diff.resolved })}
-        </Badge>
-      )}
-      {diff.worsened > 0 && (
-        <Badge variant="medium" className="text-[10px]">
-          {t("worsened", { count: diff.worsened })}
-        </Badge>
-      )}
-      {diff.unchanged > 0 && (
-        <Badge variant="default" className="text-[10px]">
-          {t("unchanged", { count: diff.unchanged })}
-        </Badge>
-      )}
+        {!hasDelta && hasBaseline && (
+          <span className="text-xs text-muted-foreground" role="status">
+            {t("noNewCritHigh")}
+          </span>
+        )}
+        {diff.new_critical > 0 && (
+          <Badge variant="critical" className="text-[10px]">
+            {t("newCritical", { count: diff.new_critical })}
+          </Badge>
+        )}
+        {diff.new_high > 0 && (
+          <Badge variant="high" className="text-[10px]">
+            {t("newHigh", { count: diff.new_high })}
+          </Badge>
+        )}
+        {diff.resolved > 0 && (
+          <Badge variant="success" className="text-[10px]">
+            {t("resolved", { count: diff.resolved })}
+          </Badge>
+        )}
+        {diff.worsened > 0 && (
+          <Badge variant="medium" className="text-[10px]">
+            {t("worsened", { count: diff.worsened })}
+          </Badge>
+        )}
+        {diff.unchanged > 0 && (
+          <Badge variant="default" className="text-[10px]">
+            {t("unchanged", { count: diff.unchanged })}
+          </Badge>
+        )}
+      </div>
     </div>
-  );
-}
-
-function QuickStat({
-  icon: Icon,
-  label,
-  value,
-  emphasize,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: string;
-  emphasize?: boolean;
-}) {
-  return (
-    <Card className={emphasize ? "border-primary/40 bg-primary/5" : undefined}>
-      <CardContent className="flex items-center gap-3 p-3 sm:p-4">
-        <div
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${
-            emphasize ? "bg-primary/15" : "bg-muted"
-          }`}
-        >
-          <Icon
-            className={`h-4 w-4 ${emphasize ? "text-primary" : "text-muted-foreground"}`}
-          />
-        </div>
-        <div className="min-w-0">
-          <p className="text-xs text-muted-foreground">{label}</p>
-          <p
-            className={`truncate font-medium text-foreground ${
-              emphasize ? "text-base sm:text-lg" : "text-sm"
-            }`}
-          >
-            {value}
-          </p>
-        </div>
-      </CardContent>
-    </Card>
   );
 }
 
@@ -817,11 +851,11 @@ function RemediationCard({
   const pct = total > 0 ? Math.round((remediated / total) * 100) : 0;
 
   return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-emerald-500/10">
-            <Shield className="h-4 w-4 text-emerald-400" />
+    <Shell railClass="bg-primary">
+      <div className="px-4 py-4">
+        <div className="flex items-center gap-3 pl-2">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10">
+            <Shield className="h-4 w-4 text-primary" aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-2">
@@ -843,8 +877,8 @@ function RemediationCard({
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </Shell>
   );
 }
 

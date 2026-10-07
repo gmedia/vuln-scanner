@@ -1520,3 +1520,161 @@ P15 flatten: the KPI strip is **not** inside PageHeader and **not** inside the r
 | `SiemRail` / `GuardPulse` imported into dashboard | chrome | One rail/pulse primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
 | Dashboard keeps local `severityCount` / `latestPerTarget` helpers | page | Pre-existing; this slice restyles chrome only | Named extract |
 | Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |
+
+# Scan detail console (`/scan/:id`)
+
+Print §§0–8, SIEM / Guard / Assets / page-nav / Status / Uptime / Host / Dashboard above stay locked. This section is the **dark SPA** contract for the scan result at `/scan/:id` — the product's core output. Page-nav line tabs for this page stay governed by the page-nav section above; this section adds the KPI strip, result shells, and row rails around them.
+
+## 0. Research Log (Scan detail)
+
+- Embedded refs: shortlisted `linear.app` / `stripe` / `supabase` → picked Layer A `redesign-skill` + `layout-skill` (stack + page-grid; AppShell owns document scroll) and Layer B `linear.app` (ops density, luminance steps, one accent, tabular mono). Same routing as `/guard` / `/siem` / `/assets` / `/uptime` / `/host` / `/dashboard`. Not Stripe marketing; not Linear indigo `#5e6ad2`.
+- Sibling harvest: `GuardKpiStrip` / `UptimeDetailKpiStrip` / `HostKpiStrip` (`KpiTile` + `SiemRail` + `GuardPulse`), `SiemEmptyIsland` island grammar, `HostHitsList` (rail inside the first cell, mobile card + desktop row), `lib/siemSeverity.ts` canonical severity rail palette (critical destructive / high orange-500 / medium yellow-500 / low blue-500), page-nav `TabsList variant="line"`.
+- Current `/scan/:id` diagnosis (post-#877): page-nav line tabs already shipped, but the four `QuickStat` tiles were flat Cards tinted by a border colour with no rail; the findings / severity / scan-info / export panels were plain `Card`s with no rail; findings rows and mobile cards were flat; the diff hint was a bare `p` and the export-empty / diff-pending states were unstyled paragraphs.
+- Imagen drafts: skipped — existing SPA + sibling P15 grammar is the reference; no extra imagegen deps.
+- Lazyweb pack: skipped this session — sibling P15 is the harvest.
+- Skipped lanes: react-grab / react-scan / react-doctor — AGENTS.md forbids extra deps for a visual slice.
+
+**Direction (locked):** A **result readout** on existing Sinexis SPA tokens. Signature: a 4-tile KPI strip whose **findings rail encodes worst severity** and whose **duration rail encodes status with a live pulse while running**, then result shells whose rail repeats that severity/status signal, then finding rows whose first cell carries the same severity rail. Green `--primary`, not Linear indigo. Inter + JetBrains Mono. Not nested Card-in-Card, not a filled masthead.
+
+## 1. Atmosphere & Identity
+
+`/scan/:id` is where every scan lands: severity, target, type, duration, findings, diff, export. It must feel like the Guard/SIEM/Assets/Uptime/Host/Dashboard ops family inside AppShell — the densest read in the product.
+
+The one memorable moment: the **findings KPI rail**. It encodes the worst severity present (`critical` → destructive, `high` → orange, `medium` → yellow, `low` → blue), and the **duration** tile carries a live pulse while the scan runs. The same rail grammar repeats on the findings shell, the severity shell, the diff strip, and every finding row — so the eye reads severity before copy.
+
+Do **not** use a filled green masthead, a generic icon-in-circle hero, or a marketing hero. Loading is skeleton tiles + skeleton rows, not a spinner in a Card.
+
+## 2. Color
+
+Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. No Linear indigo.
+
+| Role | Token / class | Usage |
+|------|----------------|-------|
+| Canvas | `--background` | Page |
+| Surface | `--card` + `border-border` | KPI tiles, findings / severity / scan-info / export / diff shells |
+| Ink | `--foreground` | Target, KPI values, shell titles |
+| Meta | `--muted-foreground` | Type, duration, KPI labels, hints |
+| Accent | `--primary` `hsl(142 71% 45%)` | Re-scan CTA, completed status rail, remediation rail, management export rail |
+| Critical | `bg-destructive` rail + destructive wash `bg-destructive/[0.04]` | Critical findings, failed scan, new-critical diff, not-found chip |
+| High | `bg-orange-500` rail | High findings, new-high / worsened diff |
+| Medium | `bg-yellow-500` rail | Medium findings, pending scan |
+| Low | `bg-blue-500` rail | Low findings |
+| Running | `bg-sky-500` rail | Running scan |
+| Idle | `bg-border` rail | Info severity, target / type tiles, scan info, technical / raw export, no baseline |
+
+Rails are **redundant** with the Badge / KPI value / shell title. Never color-only status. Severity rail colours match `lib/siemSeverity.ts`.
+
+## 3. Typography
+
+SPA scale. Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+
+| Level | Size | Weight | Usage |
+|-------|------|--------|-------|
+| Page title | `text-2xl` / `md:text-3xl` | 600 | PageHeader `h2` "Scan details" + status Badge |
+| Subtitle | `text-sm` | 400 | Target (mono) + finished-at |
+| KPI label | `text-[10px] uppercase tracking-wider` | 500 | Findings / Target / Type / Duration |
+| KPI value | `font-mono text-lg font-bold tabular-nums sm:text-2xl` | 700 | Count, target, type, duration |
+| Shell title | `text-sm font-medium tracking-wide` | 500 | Findings / Severity / Scan info / export group titles |
+| Row title | `text-xs` | 400–500 | Finding display title |
+| Mono record | `font-mono text-[11px]` / `text-xs` | 400 | Findings range, scan ID, task ID, CVSS |
+| Tab label | `text-sm font-medium` | 500 | Findings / Diff / Export (EN roles frozen) |
+
+Tabular numerals on every count and ID. Body copy stays the i18n `scan` catalog (EN+ID).
+
+## 4. Spacing & Layout
+
+4px base. **No** filter bar at page level (findings search lives inside the findings shell).
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| --space-1 | 4px | Rail inset, chip gap |
+| --space-2 | 8px | KPI tile gap (`gap-2 sm:gap-3`) |
+| --space-3 | 12px | Shell pad |
+| --space-4 | 16px | `TabsContent` `mt-4`, shell head pad |
+| --space-5 | 20px | `space-y-5` page stack, findings grid gap |
+
+**Primitives** (`layout-skill`):
+
+- **stack** — page sections (`space-y-5`): header → error → KPI → tabs → panel.
+- **page-grid** — KPI tiles `grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4`; findings panel `2xl:grid-cols-[minmax(0,1.6fr)_minmax(22rem,0.9fr)]`.
+- **scroll-body-shell** — AppShell owns document scroll. Tab list `w-full justify-start`.
+- **list-detail** — **not** used. Findings rows expand inline under the clicked row (frozen).
+
+Responsive:
+
+- `<md`: KPI 2-col; findings render as mobile cards (`md:hidden`) with a severity rail; desktop table is `hidden md:block`.
+- `≥md`: findings table with a severity rail inside the first cell.
+- Export shells: `grid gap-3 md:grid-cols-3`.
+
+**Frozen DOM contract** (`ScanDetail.test.tsx` / `FindingsTable.test.tsx`): the target appears **exactly twice** (PageHeader description + one KPI tile) — do not add a third. The tablist keeps `data-variant="line"` + `w-full`. The findings table renders **before** the severity chart. Finding rows keep **7 cells** with the title in `td:nth-child(2)` and the detail row `colspan="7"` — the rail goes **inside** the first cell, never as a new cell. The mobile findings container stays the first `.md:hidden`.
+
+## 5. Signature Components & States
+
+| Primitive | Anatomy | States |
+|-----------|---------|--------|
+| `ScanKpiStrip` (`scan-kpi-strip`) | 4 `KpiTile` + `SiemRail` + icon + `GuardPulse` on duration | findings rail = worst severity (or failed/running); duration rail = status, pulse while running; target / type neutral |
+| `KpiTile` | `relative min-w-0 overflow-hidden rounded-lg border bg-card px-4 py-3 pl-4` + `SiemRail` | `truncate` value with `title` |
+| Findings shell | `Shell` (`relative overflow-hidden rounded-lg border bg-card pl-4`) + `SiemRail(findingsRailClass)` + wash + `ShellHead` hairline + `FindingsTable` + pagination | rail by worst severity / failed / running; wash only when critical |
+| Severity shell | `Shell` + `SiemRail(severityRailClass(worst))` + `ShellHead` + `SeverityChart` | worst severity, border when none |
+| Scan info shell | `Shell` + `SiemRail("bg-border")` + `ShellHead` + `InfoRow`s | static |
+| Finding row | mobile card `relative … pl-4` + rail; desktop first cell `relative py-2.5 pl-4 pr-3` + rail | critical / high / medium / low / info |
+| Diff strip (`scan-diff-badge`) | `Shell` + `SiemRail(diffRailClass)` + badges | new critical destructive / new high+worsened orange / resolved primary / else border |
+| Diff no-baseline (`scan-diff-no-baseline`) | dashed shell + muted rail | static |
+| Export shells | `Shell` + `ShellHead` (icon chip + title + hint) + buttons | management `bg-primary`; technical / raw `bg-border` |
+| Remediation shell | `Shell` + primary rail + progress | primary |
+| Not-found | centered chip + heading + back CTA | destructive chip |
+
+`ScanError` (kit `Alert`) is unchanged. Empty / no-export / diff-pending use the `rounded-xl border border-border bg-muted/40` island grammar.
+
+## 6. Motion
+
+| Type | Duration | Easing | Usage |
+|------|----------|--------|-------|
+| Micro | 150–200ms | ease-out | Row hover `bg-muted/30`, sort header hover |
+| Pulse | CSS `animate-ping` | — | Duration tile while running |
+| Progress | 500ms | ease-out | Remediation bar (kit `Progress`) |
+| Press | kit Button `scale` | — | Do not restyle kit |
+
+- GPU only: `opacity` on ping. No layout animation.
+- `motion-reduce:animate-none` on `GuardPulse` (already in the primitive).
+
+## 7. Depth & Surface
+
+**borders-only** + 2px rails. No glass, no drop shadows on tiles, no nested Card-in-Card, no `rounded-3xl`, no filled green masthead.
+
+| Type | Treatment | Use |
+|------|-----------|-----|
+| KPI tiles / shells | `border border-border bg-card rounded-lg` + `SiemRail` | All surfaces |
+| Rail | `absolute inset-y-2 left-0 w-0.5 rounded-full` (`SiemRail`) | KPI, findings, severity, scan info, export, diff, rows, remediation |
+| Empty islands | `rounded-xl border border-border bg-muted/40` | No export / diff pending |
+| Critical wash | `bg-destructive/[0.04]` + destructive rail | Critical findings shell / row |
+
+P15 flatten: the KPI strip is **not** inside PageHeader and **not** inside the findings shell. Header is title + subtitle + actions only.
+
+## 8. Accessibility Constraints & Accepted Debt
+
+### Constraints
+
+- WCAG 2.2 AA contrast on SPA tokens. Rails are redundant with Badge / KPI value / shell title.
+- Heading remains PageHeader `h2` "Scan details"; shell titles are `h3`.
+- `prefers-reduced-motion` kills the duration ping.
+- Kit only: no native `<select>`; primary actions are `Button`.
+- Frozen testids: `attach-schedule-button`, `rescan-button`, `findings-range`, `findings-pagination`, `export-executive` / `export-pdf` / `export-html` / `export-print-executive` / `export-print-html`, `scan-diff-no-baseline` / `scan-diff-badge`, `severity-chart`, `findings-table`, plus the DOM contract in §4 and `FindingsTable`'s `td:nth-child(2)` / `colspan="7"` / `.md:hidden` / `.h-1.5.w-12` contracts.
+
+### Personas
+
+- **Owner / member** (primary): read severity → filter / search findings → expand a finding → diff → export.
+- **On-call**: worst-severity rail + failed status must be readable without opening a finding.
+- **Manager**: export shell leads with the executive download (primary rail).
+- **Running scan**: duration tile pulses; findings table shows the honest incomplete empty state.
+
+### Accepted Debt
+
+| Item | Location | Why accepted | Owner / Exit |
+|------|----------|--------------|--------------|
+| `ScanDetail.tsx` still holds findings / diff / export tab bodies + local `Shell` / `InfoRow` | page | This slice restyles chrome only; splitting tabs into panels mixes visual with module work | Named extract |
+| `FindingsTable` owns filter + sort + expand + rails | results | Rail is one span inside the existing first cell; extracting a row component would fork the frozen table contract | Named refactor |
+| Duplicate mobile + desktop finding markup | FindingsTable | Frozen testids on both card and row; `useIsMobile` would drop one tree | Named a11y slice |
+| `SiemRail` / `GuardPulse` imported into scan + results | chrome | One rail/pulse primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
+| Severity rail palette duplicated from `lib/siemSeverity.ts` | scanChrome | That helper is keyed by numeric level, not severity name; a name-keyed export is a follow-up | Named lib extract |
+| Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |
