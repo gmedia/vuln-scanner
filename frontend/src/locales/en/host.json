@@ -125,5 +125,6 @@
   "overviewHelperStale": "Helper stale",
   "overviewFilesSuffix": "file(s)",
   "overviewSitesHint": "SKU {{sku}}",
+  "kpiHelper": "Helper",
   "addSheetHint": "Only the site folder is checked — never the whole disk."
 }
