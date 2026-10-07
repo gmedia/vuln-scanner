@@ -1678,3 +1678,153 @@ P15 flatten: the KPI strip is **not** inside PageHeader and **not** inside the f
 | `SiemRail` / `GuardPulse` imported into scan + results | chrome | One rail/pulse primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
 | Severity rail palette duplicated from `lib/siemSeverity.ts` | scanChrome | That helper is keyed by numeric level, not severity name; a name-keyed export is a follow-up | Named lib extract |
 | Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |
+
+# Scan schedule console (`/schedules`)
+
+Print §§0–8 and SIEM / Guard / Assets / page-nav / Status / Uptime / Host / Dashboard / Scan detail above stay locked. This section is the **dark SPA** contract for the attach surface at `/schedules` — the recurring-scan quota, the create form, and the schedule list. It completes the scan→attach flow (`/dashboard` → `/scan/:id` → `/schedules`).
+
+## 0. Research Log (Schedules)
+
+- Embedded refs: shortlisted `linear.app` / `stripe` / `supabase` → picked Layer A `redesign-skill` + `layout-skill` (stack + page-grid; AppShell owns document scroll) and Layer B `linear.app` (ops density, luminance steps, one accent, tabular mono). Same routing as `/guard` / `/siem` / `/assets` / `/uptime` / `/host` / `/dashboard` / `/scan/:id`. Not Stripe marketing; not Linear indigo `#5e6ad2`.
+- Sibling harvest: `HostKpiStrip` quota rail (primary → amber → destructive before the cap blocks), `GuardKpiStrip` / `ScanKpiStrip` (`KpiTile` + `SiemRail`), `HostSiteCard` / `HostHitsList` (rail inside the first cell, mobile card + desktop row), `SiemEmptyIsland` island grammar, `ScheduleRowActions` (pre-existing mobile-first action grid).
+- Current `/schedules` diagnosis: the quota was a plain `Card` with a muted `h-1.5` `Progress` and no rail (the cap only surfaced as a separate amber `Alert`); the create form was a flat `Card` with `space-y-2` fields and unlabeled `Select`s; the list was a flat `Card` whose rows had no rail and only a muted `disabled` badge.
+- Imagen drafts: skipped — existing SPA + sibling P15 grammar is the reference; no extra imagegen deps.
+- Lazyweb pack: skipped this session — sibling P15 is the harvest.
+- Skipped lanes: react-grab / react-scan / react-doctor — AGENTS.md forbids extra deps for a visual slice.
+
+**Direction (locked):** An **attach console** on existing Sinexis SPA tokens. Signature: a quota shell whose **rail steps primary → amber → destructive** as enabled schedules approach and hit the cap (the `Progress` indicator matches), then a primary-railed create shell with labeled fields, then a list shell whose **rail is the worst row tone** and whose every row carries the same rail (errored destructive / active primary / disabled muted). Green `--primary`, not Linear indigo. Inter + JetBrains Mono. Not nested Card-in-Card, not a filled masthead.
+
+## 1. Atmosphere & Identity
+
+`/schedules` is the attach surface: recurring domain/IP scans are included in the SKU, and the cap is the pressure point. It must feel like the Guard/SIEM/Assets/Uptime/Host/Dashboard/ScanDetail ops family inside AppShell — the same rail grammar, the same hairline shells.
+
+The one memorable moment: the **quota shell**. The rail and progress bar turn amber near the cap and destructive at it, *before* the create button disables — so the operator sees the constraint before the blocked action.
+
+Do **not** use a filled green masthead, a marketing hero, or a generic icon-in-circle. Loading is skeleton rows, not a spinner in a Card.
+
+## 2. Color
+
+Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. No Linear indigo.
+
+| Role | Token / class | Usage |
+|------|----------------|-------|
+| Canvas | `--background` | Page |
+| Surface | `--card` + `border-border` | Quota / create / list shells, mobile schedule rows |
+| Ink | `--foreground` | Target, quota count, shell titles |
+| Meta | `--muted-foreground` | Cadence, next-run, notify, hints |
+| Accent | `--primary` `hsl(142 71% 45%)` | Create CTA, quota rail under cap, active row rail, active badge |
+| Quota warn | `bg-amber-500` rail + amber `Progress` | ≥ 80% and < 100% of the cap |
+| Critical / error | `bg-destructive` rail + destructive wash `bg-destructive/[0.04]` | Cap reached, row with `last_error`, form error |
+| Disabled | `bg-border` rail + `default` badge | Disabled schedule, empty list, no rows |
+
+Rails are **redundant** with the count text / badge / `Alert`. Never color-only status.
+
+## 3. Typography
+
+SPA scale. Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+
+| Level | Size | Weight | Usage |
+|-------|------|--------|-------|
+| Page title | `text-2xl` / `md:text-3xl` | 600 | PageHeader `h2` "Scan schedule" (frozen) |
+| Quota count | `font-mono text-lg font-bold tabular-nums sm:text-2xl` | 700 | `{enabled}/{max}` |
+| Shell title | `text-sm font-medium tracking-wide` | 500 | Quota / New schedule / Your schedules |
+| Shell hint | `text-xs` | 400 | `newHint` |
+| Row title | `text-sm font-medium` | 500 | Label or target |
+| Row meta | `text-xs` / `text-[11px]` | 400 | Type · cadence, next-run, notify |
+| Field label | `text-sm` (kit `Label`) | 500 | All form fields |
+| Table head | `text-[10px] uppercase tracking-wider` | 500 | Schedule / Next / Actions |
+
+Tabular numerals on the quota count and run times. Body copy stays the i18n `schedules` catalog (EN+ID).
+
+## 4. Spacing & Layout
+
+4px base. **No** filter bar.
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| --space-1 | 4px | Rail inset, badge gap |
+| --space-2 | 8px | Row inner, mobile action grid gap |
+| --space-3 | 12px | Shell pad, quota inner |
+| --space-4 | 16px | Shell head pad, form field gap |
+| --space-6 | 24px | Page stack (`space-y-6`) |
+
+**Primitives** (`layout-skill`):
+
+- **stack** — page sections (`space-y-6`): header → quota → create → list.
+- **page-grid** — form fields `grid gap-4 sm:grid-cols-2`; notify email `sm:col-span-2`. Each field `flex min-w-0 flex-col gap-1.5`.
+- **scroll-body-shell** — AppShell owns document scroll.
+- **list-detail** — **not** used. Run history expands inline under the row.
+
+Responsive:
+
+- `<sm`: schedules render as stacked cards (`sm:hidden`, `schedules-mobile-list`) with a rail; actions use the pre-existing 2-col mobile grid.
+- `≥sm`: schedules render as a table (`hidden sm:block`) with the rail inside the first cell; actions are a right-aligned icon row.
+
+**Frozen contracts** (`Schedules.test.tsx`): exact texts `"Scan schedule"`, `"New schedule"`, `/Active schedule quota/`, `"0/10"` / `"10/10"`, `/Scheduled attach is included\. Credits are for on-demand, overage, and mobile only\./`, `/Limit 10 active schedules per organization/`, `/Delete schedule for example.com/`; `getByLabelText("Target")`; button names `/Create schedule/i`, `/Scan history/i`, `/Download executive report/i`, `"Delete schedule"`, `"Delete"`, `"Cancel"`, `/Enable/i`; link `/open scan/i`; testids `schedule-create-card`, `schedule-print-executive`, `schedules-mobile-list`, `viewer-schedule-readonly`; `.min-w-[40rem]` absent; and exactly **one** `role="alert"` in the toggle-error scenario.
+
+## 5. Signature Components & States
+
+| Primitive | Anatomy | States |
+|-----------|---------|--------|
+| Quota shell (`schedule-quota`) | `ScheduleShell` + `SiemRail(quotaRailClass)` + hairline head (Gauge + title + big mono count) + `Progress` + cap `Alert` | primary (< 80%) / amber (≥ 80%) / destructive (at cap); indicator matches rail |
+| Create shell (`schedule-create-card`) | `ScheduleShell` primary rail + hairline head (Plus chip + title + hint) + form | primary; submit disabled at cap / pending |
+| Schedule list shell (`schedule-list`) | `ScheduleShell` + `SiemRail(listTone)` + wash + hairline head + list | destructive when any row errored / primary when any active / muted when empty |
+| Schedule row (mobile card) | `relative overflow-hidden rounded-lg border bg-card p-3 pl-4` + rail + active/disabled badge | errored destructive / active primary / disabled muted |
+| Schedule row (desktop) | first cell `relative align-top pl-4` + rail + active/disabled badge | same tones |
+| Run history | `border-l` list of runs + status Badge + open-scan link | loading skeleton / error Alert / empty copy |
+| Viewer readonly | `rounded-md border border-border bg-muted/40` note | `viewer-schedule-readonly` |
+| Empty list | island `rounded-xl border border-border bg-muted/40` + `CalendarClock` | `empty` copy |
+
+`ScheduleRowActions` is unchanged (mobile-first grid → icon row) so the frozen aria-labels and `schedule-print-executive` survive.
+
+## 6. Motion
+
+| Type | Duration | Easing | Usage |
+|------|----------|--------|-------|
+| Micro | 150–200ms | ease-out | Row hover, badge transition |
+| Progress | 500ms | ease-out | Quota bar fill (kit `Progress`) |
+| Press | kit Button `scale` | — | Do not restyle kit |
+
+- GPU only. No layout animation, no pulse on this page.
+- Hover that changes nothing is slop — rows and buttons only.
+
+## 7. Depth & Surface
+
+**borders-only** + 2px rails. No glass, no drop shadows on tiles, no nested Card-in-Card, no `rounded-3xl`, no filled green masthead.
+
+| Type | Treatment | Use |
+|------|-----------|-----|
+| Quota / create / list shells | `border border-border bg-card rounded-lg` + `SiemRail` | All surfaces |
+| Rail | `absolute inset-y-2 left-0 w-0.5 rounded-full` (`SiemRail`) | Quota, create, list, rows |
+| Empty / viewer note | `rounded-xl` / `rounded-md` + `bg-muted/40` | Empty list, viewer note |
+| Error wash | `bg-destructive/[0.04]` + destructive rail | Errored row, list shell when any row errored |
+
+P15 flatten: the quota shell is **not** inside the create shell and **not** inside the list shell. Header is title only.
+
+## 8. Accessibility Constraints & Accepted Debt
+
+### Constraints
+
+- WCAG 2.2 AA contrast on SPA tokens. Rails are redundant with the count / badge / `Alert`.
+- Heading remains PageHeader `h2` "Scan schedule"; shell titles are `h3`.
+- Every field has a `Label` + `htmlFor` (inputs and Selects alike); controls are `h-10 min-h-10`.
+- Kit only: no native `<select>`; primary actions are `Button`.
+- Exactly one `role="alert"` in the toggle-error scenario (row error `Alert` and cap `Alert` are mutually exclusive there).
+
+### Personas
+
+- **Owner / member who can scan** (primary): read quota → create a weekly/monthly schedule → toggle / delete → expand run history.
+- **At cap**: rail + progress destructive, cap `Alert` visible, submit disabled with a title.
+- **Viewer**: readonly note replaces the create shell; rows keep read-only actions.
+- **Errored schedule**: destructive rail + wash + mapped `last_error` `Alert`.
+
+### Accepted Debt
+
+| Item | Location | Why accepted | Owner / Exit |
+|------|----------|--------------|--------------|
+| `Schedules.tsx` still holds form + mutations + list + runs panel | page | This slice restyles chrome only; splitting into panels mixes visual with module work | Named extract |
+| `ScheduleRowActions` keeps the mobile-first grid → icon-row switch | page | Frozen aria-labels + `schedule-print-executive`; restructuring would risk them | Named refactor |
+| Duplicate mobile card + desktop table row markup | page | Frozen `schedules-mobile-list` and table both render; `useIsMobile` would drop one tree | Named a11y slice |
+| `SiemRail` imported into schedules | chrome | One rail primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
+| `export { mapScheduleError }` on the page | page | Pre-existing re-export kept for tests; `react-refresh` warning is known | Named move to `api/schedules` |
+| Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |

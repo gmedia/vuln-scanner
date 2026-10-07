@@ -297,4 +297,52 @@ describe("Schedules page", () => {
       expect(screen.getByRole("alert")).toHaveTextContent(/Batas 10/),
     );
   });
+
+  it("rails the quota shell primary when under the cap", async () => {
+    mockList.mockResolvedValue([sampleSchedule]);
+    renderAt();
+    await screen.findAllByText("Weekly external");
+    const quota = screen.getByTestId("schedule-quota");
+    expect(quota.querySelector(".bg-primary")).toBeTruthy();
+    expect(quota.querySelector(".bg-destructive")).toBeNull();
+  });
+
+  it("rails the quota shell destructive at the cap", async () => {
+    mockList.mockResolvedValue(
+      Array.from({ length: 10 }, (_, i) => ({
+        ...sampleSchedule,
+        id: `s-${i}`,
+        target: `t${i}.example.com`,
+        last_job_id: null,
+        last_error: null,
+        enabled: true,
+      })),
+    );
+    renderAt();
+    await screen.findByText("10/10");
+    const quota = screen.getByTestId("schedule-quota");
+    expect(quota.querySelector(".bg-destructive")).toBeTruthy();
+  });
+
+  it("rails an errored schedule row destructive with a wash", async () => {
+    mockList.mockResolvedValue([
+      { ...sampleSchedule, enabled: false, last_error: "Insufficient credits" },
+    ]);
+    renderAt();
+    await screen.findAllByText("Weekly external");
+    const list = screen.getByTestId("schedule-list");
+    expect(list.querySelector(".bg-destructive")).toBeTruthy();
+    const row = screen.getByTestId("schedules-mobile-list").querySelector("li");
+    expect(row?.className).toMatch(/pl-4/);
+    expect(row?.className).toMatch(/bg-destructive/);
+  });
+
+  it("rails an active schedule row primary and lists the active badge", async () => {
+    mockList.mockResolvedValue([sampleSchedule]);
+    renderAt();
+    await screen.findAllByText("Weekly external");
+    const list = screen.getByTestId("schedule-list");
+    expect(list.querySelector(".bg-primary")).toBeTruthy();
+    expect(screen.getAllByText("active").length).toBeGreaterThan(0);
+  });
 });

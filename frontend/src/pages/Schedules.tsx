@@ -8,18 +8,12 @@ import {
   ChevronDown,
   ChevronRight,
   Download,
+  Gauge,
   Pause,
   Play,
   Printer,
   AlertTriangle,
 } from "lucide-react";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardDescription,
-} from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { buttonVariants } from "@/components/ui/buttonVariants";
 import {
@@ -55,6 +49,21 @@ import {
   SelectValue,
 } from "@/components/ui/Select";
 import { downloadFile, printFile } from "@/api/scans";
+import {
+  ScheduleShell,
+  ScheduleShellHead,
+  ScheduleIconChip,
+} from "@/components/schedules/ScheduleShell";
+import {
+  listTone,
+  quotaIndicatorClass,
+  quotaRailClass,
+  scheduleRailClass,
+  scheduleTone,
+  scheduleWashClass,
+} from "@/components/schedules/scheduleChrome";
+import { SiemRail } from "@/components/siem/siemChrome";
+import { cn } from "@/lib/utils";
 import {
   createSchedule,
   deleteSchedule,
@@ -429,17 +438,35 @@ function Schedules() {
     <div className="w-full space-y-6">
       <PageHeader title={t("title")} />
 
-      <Card>
-        <CardHeader className="space-y-3">
+      <ScheduleShell
+        railClass={quotaRailClass(enabledCount, MAX_ENABLED_SCHEDULES)}
+        testid="schedule-quota"
+      >
+        <ScheduleShellHead>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <CardTitle className="text-sm tracking-wide">
-              {t("quota")}
-            </CardTitle>
-            <span className="font-mono text-xs tabular-nums text-muted-foreground">
+            <div className="flex min-w-0 items-center gap-2">
+              <Gauge
+                className="h-4 w-4 shrink-0 text-muted-foreground"
+                aria-hidden
+              />
+              <h3 className="text-sm font-medium tracking-wide">
+                {t("quota")}
+              </h3>
+            </div>
+            <span className="font-mono text-lg font-bold tabular-nums text-foreground sm:text-2xl">
               {enabledCount}/{MAX_ENABLED_SCHEDULES}
             </span>
           </div>
-          <Progress value={capPercent} className="h-1.5" />
+        </ScheduleShellHead>
+        <div className="space-y-3 px-4 py-3">
+          <Progress
+            value={capPercent}
+            className="h-1.5"
+            indicatorClassName={quotaIndicatorClass(
+              enabledCount,
+              MAX_ENABLED_SCHEDULES,
+            )}
+          />
           {atCap && (
             <Alert className="border-amber-500/40 text-amber-400" role="status">
               <AlertTriangle />
@@ -448,21 +475,28 @@ function Schedules() {
               </AlertDescription>
             </Alert>
           )}
-        </CardHeader>
-      </Card>
+        </div>
+      </ScheduleShell>
 
       {canCreate ? (
-        <Card data-testid="schedule-create-card">
-          <CardHeader>
-            <CardTitle className="text-sm tracking-wide">{t("newTitle")}</CardTitle>
-            <CardDescription className="text-xs">
-              {t("newHint")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <ScheduleShell railClass="bg-primary" testid="schedule-create-card">
+          <ScheduleShellHead>
+            <div className="flex items-start gap-3">
+              <ScheduleIconChip icon={Plus} />
+              <div className="min-w-0">
+                <h3 className="text-sm font-medium tracking-wide">
+                  {t("newTitle")}
+                </h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {t("newHint")}
+                </p>
+              </div>
+            </div>
+          </ScheduleShellHead>
+          <div className="px-4 py-4">
             <form onSubmit={onSubmit} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
+                <div className="flex min-w-0 flex-col gap-1.5">
                   <Label htmlFor="sched-name">{t("labelOptional")}</Label>
                   <Input
                     id="sched-name"
@@ -471,13 +505,17 @@ function Schedules() {
                     placeholder={t("labelPlaceholder")}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>{t("type")}</Label>
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label htmlFor="sched-type">{t("type")}</Label>
                   <Select
                     value={scanType}
                     onValueChange={(v) => setScanType(v as "domain" | "ip")}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger
+                      id="sched-type"
+                      aria-label={t("type")}
+                      className="h-10 min-h-10"
+                    >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -486,7 +524,7 @@ function Schedules() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
+                <div className="flex min-w-0 flex-col gap-1.5">
                   <Label htmlFor="sched-target">{t("target")}</Label>
                   <Input
                     id="sched-target"
@@ -498,13 +536,17 @@ function Schedules() {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>{t("frequency")}</Label>
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label htmlFor="sched-cadence">{t("frequency")}</Label>
                   <Select
                     value={cadence}
                     onValueChange={(v) => setCadence(v as "weekly" | "monthly")}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger
+                      id="sched-cadence"
+                      aria-label={t("frequency")}
+                      className="h-10 min-h-10"
+                    >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -513,7 +555,7 @@ function Schedules() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2 sm:col-span-2">
+                <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2">
                   <Label htmlFor="sched-notify">
                     {t("notifyOptional")}
                   </Label>
@@ -545,8 +587,8 @@ function Schedules() {
                 {createMut.isPending ? t("creating") : t("create")}
               </Button>
             </form>
-          </CardContent>
-        </Card>
+          </div>
+        </ScheduleShell>
       ) : (
         <p
           className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
@@ -556,11 +598,15 @@ function Schedules() {
         </p>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm tracking-wide">{t("yours")}</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <ScheduleShell
+        railClass={scheduleRailClass(listTone(data ?? []))}
+        wash={scheduleWashClass(listTone(data ?? []))}
+        testid="schedule-list"
+      >
+        <ScheduleShellHead>
+          <h3 className="text-sm font-medium tracking-wide">{t("yours")}</h3>
+        </ScheduleShellHead>
+        <div className="px-4 py-3">
           {actionError && (
             <Alert
               variant="destructive"
@@ -589,8 +635,14 @@ function Schedules() {
                   return (
                     <li
                       key={s.id}
-                      className="rounded-lg border border-border p-3"
+                      className={cn(
+                        "relative overflow-hidden rounded-lg border border-border bg-card p-3 pl-4",
+                        scheduleWashClass(scheduleTone(s)),
+                      )}
                     >
+                      <SiemRail
+                        className={scheduleRailClass(scheduleTone(s))}
+                      />
                       <p className="break-words text-sm font-medium text-foreground">
                         {s.name || s.target}
                         <span className="ml-2 text-xs font-normal text-muted-foreground">
@@ -599,11 +651,12 @@ function Schedules() {
                             ? t("weekly").toLowerCase()
                             : t("monthly").toLowerCase()}
                         </span>
-                        {!s.enabled && (
-                          <Badge variant="default" className="ml-2 text-[10px]">
-                            {t("disabled")}
-                          </Badge>
-                        )}
+                        <Badge
+                          variant={s.enabled ? "success" : "default"}
+                          className="ml-2 text-[10px]"
+                        >
+                          {s.enabled ? t("statusActive") : t("disabled")}
+                        </Badge>
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {t("nextPrefix", {
@@ -686,8 +739,11 @@ function Schedules() {
                       const mappedErr = mapScheduleError(s.last_error);
                       return (
                         <Fragment key={s.id}>
-                          <TableRow>
-                            <TableCell className="align-top">
+                          <TableRow className={scheduleWashClass(scheduleTone(s))}>
+                            <TableCell className="relative align-top pl-4">
+                              <SiemRail
+                                className={scheduleRailClass(scheduleTone(s))}
+                              />
                               <div className="min-w-0 space-y-0.5">
                                 <p className="break-words text-sm font-medium text-foreground">
                                   {s.name || s.target}
@@ -697,14 +753,12 @@ function Schedules() {
                                       ? t("weekly").toLowerCase()
                                       : t("monthly").toLowerCase()}
                                   </span>
-                                  {!s.enabled && (
-                                    <Badge
-                                      variant="default"
-                                      className="ml-2 text-[10px]"
-                                    >
-                                      {t("disabled")}
-                                    </Badge>
-                                  )}
+                                  <Badge
+                                    variant={s.enabled ? "success" : "default"}
+                                    className="ml-2 text-[10px]"
+                                  >
+                                    {s.enabled ? t("statusActive") : t("disabled")}
+                                  </Badge>
                                 </p>
                                 {s.notify_email && (
                                   <p className="break-all text-xs text-muted-foreground">
@@ -780,8 +834,8 @@ function Schedules() {
               </div>
             </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </ScheduleShell>
     </div>
   );
 }

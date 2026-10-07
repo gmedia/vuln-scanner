@@ -27,6 +27,7 @@
   "colNext": "Next",
   "colActions": "Actions",
   "disabled": "disabled",
+  "statusActive": "active",
   "nextPrefix": "Next: {{when}}",
   "lastScan": "last scan",
   "notify": "Notify: {{email}}",
