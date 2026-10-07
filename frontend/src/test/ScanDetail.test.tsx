@@ -792,5 +792,41 @@ describe("ScanDetail", () => {
         "failed",
       );
     });
+
+    it("renders the ops KPI strip with a severity-driven findings rail", () => {
+      mockUseScanDetailReturn({ data: baseScan as any });
+      renderPage();
+      const strip = screen.getByTestId("scan-kpi-strip");
+      expect(
+        screen.getByTestId("scan-kpi-findings").querySelector(".bg-destructive"),
+      ).toBeTruthy();
+      expect(
+        screen.getByTestId("scan-kpi-duration").querySelector(".bg-primary"),
+      ).toBeTruthy();
+      expect(strip.querySelectorAll("[class*='rounded-lg']").length).toBe(4);
+    });
+
+    it("pulses the duration rail while a scan is running", () => {
+      mockUseScanDetailReturn({
+        data: {
+          ...baseScan,
+          status: "running",
+          completed_at: null,
+          started_at: "2025-06-01T10:00:00Z",
+        } as any,
+      });
+      renderPage();
+      const duration = screen.getByTestId("scan-kpi-duration");
+      expect(duration.querySelector(".bg-sky-500")).toBeTruthy();
+      expect(duration.querySelector(".animate-ping")).toBeTruthy();
+    });
+
+    it("rails the findings shell by worst severity", () => {
+      mockUseScanDetailReturn({ data: baseScan as any });
+      renderPage();
+      const range = screen.getByTestId("findings-range");
+      const shell = range.closest("[class*='pl-4']");
+      expect(shell?.querySelector(".bg-destructive")).toBeTruthy();
+    });
   });
 });

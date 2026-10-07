@@ -24,6 +24,11 @@ import {
 } from "@/components/ui/Table";
 import { cn } from "@/lib/utils";
 import FindingDetail from "@/components/results/FindingDetail";
+import { SiemRail } from "@/components/siem/siemChrome";
+import {
+  severityRailClass,
+  severityWashClass,
+} from "@/components/scan/scanChrome";
 
 export type FindingsEmptyReason = "clean" | "failed" | "incomplete";
 export type FindingsSortKey = "severity" | "title" | "category" | "cvss_score";
@@ -317,8 +322,12 @@ function FindingsTable({
             return (
               <div
                 key={finding.id}
-                className="rounded-lg border border-border bg-card p-3"
+                className={cn(
+                  "relative overflow-hidden rounded-lg border border-border bg-card p-3 pl-4",
+                  severityWashClass(finding.severity),
+                )}
               >
+                <SiemRail className={severityRailClass(finding.severity)} />
                 <button
                   type="button"
                   className="flex w-full min-h-11 items-start gap-2 text-left"
@@ -435,10 +444,12 @@ function FindingsTable({
                       aria-expanded={isExpanded}
                       className={cn(
                         "group cursor-pointer hover:bg-muted/30",
+                        severityWashClass(finding.severity),
                         isExpanded && "bg-muted/20",
                       )}
                     >
-                      <TableCell className="px-3 py-2.5">
+                      <TableCell className="relative py-2.5 pl-4 pr-3">
+                        <SiemRail className={severityRailClass(finding.severity)} />
                         <Badge
                           variant={
                             finding.severity as

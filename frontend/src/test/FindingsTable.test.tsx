@@ -362,4 +362,27 @@ describe("FindingsTable", () => {
     );
     expect(subtitleSpan).toBeNull();
   });
+
+  it("rails the first cell by severity without shifting the title column", () => {
+    renderTable(
+      <FindingsTable findings={[mockFinding({ severity: "critical" })]} isLoading={false} />,
+    );
+    const firstCell = document.querySelector("table tbody tr td:nth-child(1)");
+    const titleCell = document.querySelector("table tbody tr td:nth-child(2)");
+    expect(firstCell?.querySelector(".bg-destructive")).toBeTruthy();
+    expect(titleCell?.textContent?.trim()).toBe("SQL Injection");
+  });
+
+  it("rails the mobile card by severity", () => {
+    renderTable(
+      <FindingsTable
+        findings={[mockFinding({ severity: "high" })]}
+        isLoading={false}
+      />,
+    );
+    const mobileCard = document.querySelector(".md\\:hidden");
+    const card = mobileCard?.querySelector("div");
+    expect(card?.className).toMatch(/pl-4/);
+    expect(card?.querySelector(".bg-orange-500")).toBeTruthy();
+  });
 });
