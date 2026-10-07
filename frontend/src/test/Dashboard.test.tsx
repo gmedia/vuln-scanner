@@ -394,4 +394,50 @@ describe("Dashboard", () => {
     const content = recent?.querySelector("[class*='pb-\\[max']");
     expect(content?.className ?? "").toMatch(/2rem/);
   });
+
+  it("renders the ops KPI rails, pulse, and scan row rails", () => {
+    mockHistoryData.items = [
+      {
+        id: "scan-crit",
+        target: "prod.example.net",
+        scan_type: "domain",
+        status: "completed",
+        started_at: "2026-01-02T00:00:00Z",
+        result_summary: {
+          total_findings: 3,
+          critical: 1,
+          high: 1,
+          medium: 1,
+          low: 0,
+          info: 0,
+        },
+      },
+    ];
+    mockHistoryData.total = 1;
+    mockUseScanHistory.mockReturnValue({
+      data: mockHistoryData,
+      isLoading: false,
+      isFetching: false,
+    });
+    render(<Dashboard />);
+
+    const strip = screen.getByTestId("dashboard-kpi-strip");
+    expect(strip.querySelectorAll(".bg-destructive").length).toBeGreaterThan(0);
+    expect(strip.querySelector(".animate-ping")).toBeTruthy();
+    expect(
+      screen.getByTestId("attention-strip").querySelector(".bg-destructive"),
+    ).toBeTruthy();
+
+    const target = screen.getAllByText("prod.example.net")[0];
+    const row = target.closest("a");
+    expect(row?.className).toMatch(/pl-4/);
+    expect(row?.querySelector(".bg-destructive")).toBeTruthy();
+  });
+
+  it("keeps the Open risk rail primary when there is no risk", () => {
+    render(<Dashboard />);
+    const strip = screen.getByTestId("dashboard-kpi-strip");
+    expect(strip.querySelectorAll(".bg-primary").length).toBeGreaterThan(0);
+    expect(strip.querySelector(".animate-ping")).toBeNull();
+  });
 });
