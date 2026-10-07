@@ -2,7 +2,6 @@ import { Shield } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { HostWafEvent } from "@/api/hostWaf";
 import { Badge } from "@/components/ui/Badge";
-import { Card, CardContent } from "@/components/ui/Card";
 import {
   Pagination,
   PaginationContent,
@@ -18,6 +17,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import { SiemRail } from "@/components/siem/siemChrome";
+import { wafActionRailClass } from "@/components/host/hostChrome";
+import { cn } from "@/lib/utils";
 
 export const HOST_WAF_EVENTS_PAGE_SIZE = 20;
 
@@ -51,15 +53,16 @@ export function HostWafEventsList({
         </p>
       </div>
       {events.length === 0 ? (
-        <Card data-testid="host-waf-events-empty" className="overflow-hidden">
-          <CardContent className="flex min-h-[8rem] flex-col items-center justify-center gap-2 px-6 py-10 text-center">
-            <Shield className="h-8 w-8 text-muted-foreground" aria-hidden />
-            <p className="text-sm font-medium text-foreground">{t("wafEvents")}</p>
-            <p className="max-w-md text-xs text-muted-foreground">
-              {t("wafEventsEmpty")}
-            </p>
-          </CardContent>
-        </Card>
+        <div
+          data-testid="host-waf-events-empty"
+          className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
+        >
+          <Shield className="h-8 w-8 text-muted-foreground" aria-hidden />
+          <p className="text-sm font-medium text-foreground">{t("wafEvents")}</p>
+          <p className="max-w-md text-xs text-muted-foreground">
+            {t("wafEventsEmpty")}
+          </p>
+        </div>
       ) : (
         <div data-testid="host-waf-events">
           <div
@@ -69,13 +72,13 @@ export function HostWafEventsList({
             {events.map((e) => (
               <div
                 key={e.id}
-                className={
-                  e.action === "block"
-                    ? "rounded-lg border border-border bg-destructive/[0.04] p-3"
-                    : "rounded-lg border border-border bg-card p-3"
-                }
+                className={cn(
+                  "relative overflow-hidden rounded-lg border border-border bg-card p-3 pl-4",
+                  e.action === "block" && "bg-destructive/[0.04]",
+                )}
                 data-testid={`host-waf-event-card-${e.id}`}
               >
+                <SiemRail className={wafActionRailClass(e.action)} />
                 <div className="flex items-start justify-between gap-2">
                   <p className="min-w-0 flex-1 break-all font-mono text-xs font-medium text-foreground">
                     {e.path}
@@ -119,13 +122,13 @@ export function HostWafEventsList({
                   {events.map((e) => (
                     <TableRow
                       key={e.id}
-                      className={
-                        e.action === "block"
-                          ? "h-12 bg-destructive/[0.04] hover:bg-muted/50"
-                          : "h-12 hover:bg-muted/50"
-                      }
+                      className={cn(
+                        "h-12 hover:bg-muted/50",
+                        e.action === "block" && "bg-destructive/[0.04]",
+                      )}
                     >
-                      <TableCell>
+                      <TableCell className="relative pl-4">
+                        <SiemRail className={wafActionRailClass(e.action)} />
                         <Badge variant={actionVariant(e.action)}>
                           {e.action}
                         </Badge>

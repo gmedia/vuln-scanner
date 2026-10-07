@@ -11,7 +11,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
-import { hitClassVariant, hitStatusVariant } from "@/components/host/hostChrome";
+import { SiemRail } from "@/components/siem/siemChrome";
+import {
+  hitClassVariant,
+  hitRailClass,
+  hitStatusVariant,
+} from "@/components/host/hostChrome";
 import { cn } from "@/lib/utils";
 
 export type HostHitsListProps = {
@@ -108,11 +113,12 @@ export default function HostHitsList({
           <div
             key={h.id}
             className={cn(
-              "rounded-lg border border-border bg-card p-3",
+              "relative overflow-hidden rounded-lg border border-border bg-card p-3 pl-4",
               (h.class === "webshell" || h.class === "backdoor") &&
                 "bg-destructive/[0.04]",
             )}
           >
+            <SiemRail className={hitRailClass(h.class)} />
             <p className="min-w-0 break-all font-mono text-xs font-medium text-foreground">
               {h.rel_path}
             </p>
@@ -168,7 +174,8 @@ export default function HostHitsList({
                       "bg-destructive/[0.04]",
                   )}
                 >
-                  <TableCell className="break-all font-mono text-xs">
+                  <TableCell className="relative break-all pl-4 font-mono text-xs">
+                    <SiemRail className={hitRailClass(h.class)} />
                     {h.rel_path}
                   </TableCell>
                   <TableCell>

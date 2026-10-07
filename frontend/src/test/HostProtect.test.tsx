@@ -1172,4 +1172,91 @@ describe("Host Protect page", () => {
       expect(screen.getByTestId("host-waf-off")).toBeInTheDocument(),
     );
   });
+
+  it("renders the ops KPI strip and site state rail", async () => {
+    vi.mocked(hostApi.listHostSites).mockResolvedValue([
+      {
+        id: "s1",
+        organization_id: "org1",
+        guard_agent_id: "a1",
+        asset_id: null,
+        name: "Web",
+        root_path: "/var/www/html",
+        cms_hint: "wordpress",
+        enabled: true,
+        auto_quarantine: false,
+        scan_interval: "daily",
+        created_by: "u1",
+        created_at: "2026-08-30T00:00:00Z",
+        updated_at: "2026-08-30T00:00:00Z",
+        sku: "basic",
+        sku_limit: 1,
+      },
+    ]);
+    vi.mocked(guardApi.listGuardAgents).mockResolvedValue([
+      {
+        id: "a1",
+        organization_id: "org1",
+        wazuh_agent_id: "001",
+        name: "web-1",
+        status: "active",
+        ip: null,
+        version: null,
+        last_keep_alive: null,
+        last_helper_poll_at: new Date().toISOString(),
+        synced_at: "2026-08-14T10:00:00Z",
+        created_at: "2026-08-14T10:00:00Z",
+      },
+    ]);
+    vi.mocked(hostApi.listHostScans).mockResolvedValue([
+      {
+        id: "sc1",
+        organization_id: "org1",
+        site_id: "s1",
+        status: "completed",
+        trigger: "manual",
+        started_at: "2026-08-30T00:00:00Z",
+        finished_at: "2026-08-30T00:01:00Z",
+        error: null,
+        hit_count: 1,
+        created_at: "2026-08-30T00:00:00Z",
+      },
+    ]);
+    vi.mocked(hostApi.listHostHits).mockResolvedValue([
+      {
+        id: "h1",
+        organization_id: "org1",
+        site_id: "s1",
+        scan_id: "sc1",
+        rel_path: "evil.php",
+        class: "webshell",
+        engine: "yara",
+        rule_id: "yara.webshell.php",
+        status: "open",
+        sha256: null,
+        first_seen_at: "2026-08-30T00:00:00Z",
+        last_seen_at: "2026-08-30T00:00:00Z",
+      },
+    ]);
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByTestId("host-overview")).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByTestId("host-overview-sites").querySelector(".bg-destructive"),
+    ).toBeTruthy();
+    expect(
+      screen.getByTestId("host-overview-helper").querySelector(".animate-ping"),
+    ).toBeTruthy();
+    expect(
+      screen
+        .getByTestId("host-overview-decision")
+        .querySelector(".bg-destructive"),
+    ).toBeTruthy();
+    expect(
+      screen.getByTestId("host-page-subtitle").textContent,
+    ).not.toMatch(/SKU/);
+    const card = await screen.findByTestId("host-site-card-s1");
+    expect(card.querySelector(".bg-destructive")).toBeTruthy();
+  });
 });

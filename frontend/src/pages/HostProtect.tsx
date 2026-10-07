@@ -38,7 +38,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/Tabs";
 import HostWafPanel from "@/components/host/HostWafPanel";
-import HostOverview from "@/components/host/HostOverview";
+import HostKpiStrip from "@/components/host/HostKpiStrip";
 import HostAddSiteSheet from "@/components/host/HostAddSiteSheet";
 import HostInstallCard from "@/components/host/HostInstallCard";
 import HostSiteCard from "@/components/host/HostSiteCard";
@@ -252,23 +252,21 @@ export default function HostProtect() {
     return (
       <div className="space-y-6" data-testid="host-page">
         <PageHeader title={t("title")} description={t("subtitle")} />
-        <Card className="overflow-hidden">
-          <CardContent className="flex min-h-[12rem] flex-col items-center justify-center gap-3 px-6 py-16 text-center md:min-h-[16rem] md:py-20">
-            <Shield className="h-8 w-8 text-muted-foreground" aria-hidden />
-            <p className="text-balance text-sm font-medium text-foreground">
-              {t("title")}
-            </p>
-            <p
-              className="max-w-md text-balance text-sm text-muted-foreground"
-              data-testid="host-feature-off"
-            >
-              {t("featureOff")}
-            </p>
-            <Button variant="outline" className="mt-2 min-h-11" asChild>
-              <Link to="/guide">Guide</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="flex min-h-[12rem] flex-col items-center justify-center gap-3 rounded-xl border border-border bg-muted/40 px-6 py-16 text-center md:min-h-[16rem] md:py-20">
+          <Shield className="h-8 w-8 text-muted-foreground" aria-hidden />
+          <p className="text-balance text-sm font-medium text-foreground">
+            {t("title")}
+          </p>
+          <p
+            className="max-w-md text-balance text-sm text-muted-foreground"
+            data-testid="host-feature-off"
+          >
+            {t("featureOff")}
+          </p>
+          <Button variant="outline" className="mt-2 min-h-11" asChild>
+            <Link to="/guide">Guide</Link>
+          </Button>
+        </div>
       </div>
     );
   }
@@ -281,9 +279,6 @@ export default function HostProtect() {
           <div className="space-y-1">
             <p data-testid="host-page-subtitle">
               {t(hostTab === "waf" ? "subtitleWaf" : "subtitle")}
-            </p>
-            <p className="text-xs">
-              {t("skuLabel", { sku, count: items.length, limit })}
             </p>
             <p className="text-xs">{t("honestyHint")}</p>
           </div>
@@ -299,7 +294,7 @@ export default function HostProtect() {
           </Button>
         }
       />
-      <HostOverview
+      <HostKpiStrip
         sku={sku}
         count={items.length}
         limit={limit}
@@ -313,20 +308,21 @@ export default function HostProtect() {
       <HostInstallCard />
 
       {agents.length === 0 && !agentsQ.isLoading ? (
-        <Card data-testid="host-no-agents" className="overflow-hidden">
-          <CardContent className="flex min-h-[8rem] flex-col items-center justify-center gap-3 px-6 py-12 text-center">
-            <Shield className="h-8 w-8 text-muted-foreground" aria-hidden />
-            <p className="text-balance text-sm font-medium text-foreground">
-              {t("noAgents")}
-            </p>
-            <p className="max-w-md text-balance text-sm text-muted-foreground">
-              {t("emptyHint")}
-            </p>
-            <Button variant="outline" className="mt-1 min-h-11" asChild>
-              <Link to="/guard">{t("openGuard")}</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <div
+          data-testid="host-no-agents"
+          className="flex min-h-[8rem] flex-col items-center justify-center gap-3 rounded-xl border border-border bg-muted/40 px-6 py-12 text-center"
+        >
+          <Shield className="h-8 w-8 text-muted-foreground" aria-hidden />
+          <p className="text-balance text-sm font-medium text-foreground">
+            {t("noAgents")}
+          </p>
+          <p className="max-w-md text-balance text-sm text-muted-foreground">
+            {t("emptyHint")}
+          </p>
+          <Button variant="outline" className="mt-1 min-h-11" asChild>
+            <Link to="/guard">{t("openGuard")}</Link>
+          </Button>
+        </div>
       ) : null}
 
       {featureOn && agents.length > 0 && fleetStale ? (
@@ -400,25 +396,26 @@ export default function HostProtect() {
               </CardContent>
             </Card>
           ) : items.length === 0 && !sitesQ.isLoading && agents.length > 0 ? (
-            <Card data-testid="host-empty" className="overflow-hidden">
-              <CardContent className="flex min-h-[12rem] flex-col items-center justify-center gap-3 px-6 py-16 text-center md:min-h-[16rem] md:py-20">
-                <Shield className="h-8 w-8 text-muted-foreground" aria-hidden />
-                <p className="text-balance text-sm font-medium text-foreground">
-                  {t("empty")}
-                </p>
-                <p className="max-w-md text-balance text-sm text-muted-foreground">
-                  {t("emptyHint")}
-                </p>
-                <Button
-                  className="mt-2 min-h-11"
-                  data-testid="host-empty-cta"
-                  disabled={atCap || agents.length === 0}
-                  onClick={openCreate}
-                >
-                  {t("emptyCta")}
-                </Button>
-              </CardContent>
-            </Card>
+            <div
+              data-testid="host-empty"
+              className="flex min-h-[12rem] flex-col items-center justify-center gap-3 rounded-xl border border-border bg-muted/40 px-6 py-16 text-center md:min-h-[16rem] md:py-20"
+            >
+              <Shield className="h-8 w-8 text-muted-foreground" aria-hidden />
+              <p className="text-balance text-sm font-medium text-foreground">
+                {t("empty")}
+              </p>
+              <p className="max-w-md text-balance text-sm text-muted-foreground">
+                {t("emptyHint")}
+              </p>
+              <Button
+                className="mt-2 min-h-11"
+                data-testid="host-empty-cta"
+                disabled={atCap || agents.length === 0}
+                onClick={openCreate}
+              >
+                {t("emptyCta")}
+              </Button>
+            </div>
           ) : (
             <ul className="space-y-3">
               {items.map((s: HostSite, idx: number) => {

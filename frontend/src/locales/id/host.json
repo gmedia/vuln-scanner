@@ -125,5 +125,6 @@
   "overviewHelperStale": "Helper basi",
   "overviewFilesSuffix": "file",
   "overviewSitesHint": "SKU {{sku}}",
+  "kpiHelper": "Helper",
   "addSheetHint": "Hanya folder situs yang dicek — bukan seluruh disk."
 }
