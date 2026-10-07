@@ -4,12 +4,15 @@ import { Loader2, ArrowLeft, CheckCircle, Timer } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useRateLimitCooldown } from "@/hooks/useRateLimitCooldown";
 import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent } from "@/components/ui/Card";
-import AuthLayout, {
-  AUTH_CARD_CLASS,
-  AUTH_SECONDARY_LINK,
-} from "@/components/layout/AuthLayout";
+import AuthLayout, { AUTH_SECONDARY_LINK } from "@/components/layout/AuthLayout";
+import {
+  AuthCard,
+  AuthCardBody,
+  AuthNotice,
+  AuthStatusIcon,
+} from "@/components/auth/AuthCard";
 import { useTranslation } from "react-i18next";
 
 function ForgotPassword() {
@@ -48,9 +51,9 @@ function ForgotPassword() {
   if (success) {
     return (
       <AuthLayout title={t("checkEmailTitle")}>
-        <Card className={AUTH_CARD_CLASS}>
-          <CardContent className="pt-6 text-center space-y-4">
-            <CheckCircle className="h-12 w-12 text-primary mx-auto" />
+        <AuthCard tone="success">
+          <AuthCardBody center>
+            <AuthStatusIcon icon={CheckCircle} tone="success" />
             <p className="text-xs text-muted-foreground">{t("resetLinkSent")}</p>
             <p className="text-xs text-muted-foreground">{t("checkSpam")}</p>
             <Link to="/login">
@@ -58,35 +61,32 @@ function ForgotPassword() {
                 {t("backToSignIn")}
               </Button>
             </Link>
-          </CardContent>
-        </Card>
+          </AuthCardBody>
+        </AuthCard>
       </AuthLayout>
     );
   }
 
   return (
     <AuthLayout title={t("forgotTitle")} subtitle={t("forgotSubtitle")}>
-      <Card className={AUTH_CARD_CLASS}>
-        <CardContent className="pt-6">
+      <AuthCard tone={error && cooldown === 0 ? "danger" : "primary"}>
+        <AuthCardBody>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="min-h-[1.25rem]">
               {cooldown > 0 && (
-                <p className="text-xs text-amber-400 text-center flex items-center justify-center gap-1">
-                  <Timer className="h-3 w-3" />
-                  {tc("waitSeconds", { seconds: cooldown })}
-                </p>
+                <AuthNotice tone="warn">
+                  <span className="flex items-center justify-center gap-1">
+                    <Timer className="h-3 w-3" />
+                    {tc("waitSeconds", { seconds: cooldown })}
+                  </span>
+                </AuthNotice>
               )}
               {error && cooldown === 0 && (
-                <p className="text-xs text-red-400 text-center">{error}</p>
+                <AuthNotice tone="danger">{error}</AuthNotice>
               )}
             </div>
-            <div className="space-y-2">
-              <label
-                htmlFor="email"
-                className="block text-xs text-muted-foreground"
-              >
-                {tc("email")}
-              </label>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="email">{tc("email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -125,8 +125,8 @@ function ForgotPassword() {
               {t("backToSignInLower")}
             </Link>
           </p>
-        </CardContent>
-      </Card>
+        </AuthCardBody>
+      </AuthCard>
     </AuthLayout>
   );
 }

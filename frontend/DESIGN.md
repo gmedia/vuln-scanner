@@ -1828,3 +1828,160 @@ P15 flatten: the quota shell is **not** inside the create shell and **not** insi
 | `SiemRail` imported into schedules | chrome | One rail primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
 | `export { mapScheduleError }` on the page | page | Pre-existing re-export kept for tests; `react-refresh` warning is known | Named move to `api/schedules` |
 | Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |
+
+# Auth family (`/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email`)
+
+Print §§0–8 and SIEM / Guard / Assets / page-nav / Status / Uptime / Host / Dashboard / Scan detail above stay locked. This section is the **dark SPA** contract for the five public auth screens. They are **not** inside AppShell — `AuthLayout` owns the full-viewport canvas — so the shell grammar is applied to the auth card, not to a page.
+
+## 0. Research Log (Auth)
+
+- Embedded refs: shortlisted `linear.app` / `stripe` / `supabase` → picked Layer A `redesign-skill` + `layout-skill` (stack + page-grid; the layout owns the viewport) and Layer B `linear.app` (ops density, luminance steps, one accent). Same routing as the ops consoles, but **scaled down**: auth is a single centered island, not a console. Not Stripe marketing; not Linear indigo `#5e6ad2`.
+- Sibling harvest: `SiemRail` + the `Shell` / `ShellHead` chrome from `/host` / `/dashboard` / `/scan/:id` / `/schedules`, `SiemEmptyIsland` island grammar, `GuardPulse` (unused here — no live signal on auth).
+- Current auth diagnosis: all five pages wrapped content in kit `Card className={AUTH_CARD_CLASS}` + `CardContent className="pt-6"` — a flat hairline card with no state signal. Status icons floated (`h-12 w-12 text-primary mx-auto`) with no chip; error / cooldown copy was bare colored `<p>`; Register / Forgot / Reset / Verify used raw `<label className="block text-xs text-muted-foreground">` while Login used kit `Label`; field wrappers were `space-y-2`.
+- Imagen drafts: skipped — existing SPA + sibling shell grammar is the reference; no extra imagegen deps.
+- Lazyweb pack: skipped this session — sibling shells are the harvest.
+- Skipped lanes: react-grab / react-scan / react-doctor — AGENTS.md forbids extra deps for a visual slice.
+
+**Direction (locked):** A **quiet front door** on existing Sinexis SPA tokens. Signature: one centered auth card whose **2px rail encodes auth state** — primary (neutral form) → destructive (error) → amber (cooldown) → sky (verifying) → primary (success) — with the same rail repeating on every inline notice, and status icons moved into bordered chips. Green `--primary`, not Linear indigo. Inter + JetBrains Mono. Not a marketing hero, not a filled masthead.
+
+## 1. Atmosphere & Identity
+
+The auth screens are the gate to the product: sign in, open an account, recover a password, verify an email. They must feel like the same product as the ops consoles but **calmer** — one card, one decision, no sidebar.
+
+The one memorable moment: the **card rail**. It changes colour with the auth state before the copy is read, so an error (destructive), a cooldown (amber), a verification in flight (sky), and a success (primary) are distinguishable at a glance. Inline notices carry the same rail, so the state reads consistently at both scales.
+
+Do **not** use a filled green masthead, a generic icon-in-circle hero, or a second palette. Loading is the kit spinner inside a status chip.
+
+## 2. Color
+
+Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. No Linear indigo.
+
+| Role | Token / class | Usage |
+|------|----------------|-------|
+| Canvas | `--background` | Full viewport (`AuthLayout`) |
+| Surface | `--card` + `border-border` / `border-border/80` | Auth card, notices |
+| Ink | `--foreground` | Card title (`h1`), hints |
+| Meta | `--muted-foreground` | Subtitle, labels, helper copy |
+| Accent | `--primary` `hsl(142 71% 45%)` | Submit CTA, neutral rail, success rail + wash, success icon |
+| Error | `bg-destructive` rail + `bg-destructive/[0.04]` wash | Login error, register/reset validation, verify failure; icon `text-destructive` |
+| Warn | `bg-amber-500` rail + `bg-amber-500/[0.04]` wash | Rate-limit cooldown, verify email send failure; icon `text-amber-400` |
+| Verifying | `bg-sky-500` rail | `/verify-email` idle / no-token (check in progress) |
+| Error text | `text-red-400` | Danger notice copy (frozen by e2e — see §8) |
+
+Rails are **redundant** with the notice copy / status icon. Never color-only status.
+
+## 3. Typography
+
+SPA scale. Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+
+| Level | Size | Weight | Usage |
+|-------|------|--------|-------|
+| Card title | `text-xl` / `2xl:text-2xl` | 600 | `AuthLayout` `h1` (frozen) |
+| Card subtitle | `text-sm` | 400 | `AuthLayout` subtitle + brand tagline |
+| Field label | `text-xs font-medium` | 500 | Kit `Label` (all fields) |
+| Body / hint | `text-xs` / `text-sm` | 400 | Notices, helper copy, `checkSpam` |
+| Link | `text-sm` | 400 | `AUTH_SECONDARY_LINK` |
+
+No tabular numerals needed — auth shows no counts or IDs.
+
+## 4. Spacing & Layout
+
+4px base. `AuthLayout` owns the viewport; there is **no** AppShell and **no** page-nav.
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| --space-1.5 | 6px | Field label→control gap (`gap-1.5`) |
+| --space-2 | 8px | Notice inner, form row gap |
+| --space-3 | 12px | Card inner horizontal (plus the `pl-4` rail gutter) |
+| --space-4 | 16px | Card padding, form field gap |
+| --space-6 | 24px | Card vertical padding |
+
+**Primitives** (`layout-skill`):
+
+- **stack** — `AuthLayout` column: brand mark → tagline → switchers → title/subtitle → card.
+- **page-grid** — not used; the card is a single column.
+- **scroll-body-shell** — the layout owns the scroll (`min-h-dvh`).
+- **list-detail** — not used.
+
+Responsive:
+
+- `<sm`: layout is top-aligned (`items-start`, safe-area top padding); the card is full width inside `max-w-*`.
+- `≥sm`: layout centers vertically (`sm:items-center`).
+
+`AuthLayout` internals are **frozen by unit test** (see §8): brand row, tagline classes, switcher row classes, `maxWidth` map, and `AUTH_CARD_CLASS` / `AUTH_SECONDARY_LINK` string contracts. Do not restructure that DOM.
+
+## 5. Signature Components & States
+
+| Primitive | Anatomy | States |
+|-----------|---------|--------|
+| `AuthCard` (`components/auth/AuthCard.tsx`) | kit `Card` + `AUTH_CARD_CLASS` + `relative overflow-hidden pl-4` + `SiemRail(authRailClass(tone))` + optional `authWashClass(tone)` | primary / success / danger / warn / info |
+| `AuthCardBody` | `px-4 py-6`, optional `space-y-4 text-center` | form (`center=false`) / status (`center=true`) |
+| `AuthStatusIcon` | `mx-auto h-12 w-12` bordered chip (`CHIP_CLASS[tone]`) + icon (`ICON_CLASS[tone]`), optional `animate-spin` | success (primary) / danger (destructive) / warn (amber) / info (primary) |
+| `AuthNotice` | `relative overflow-hidden rounded-md border bg-card px-3 py-2 pl-4` + rail + `p.text-xs` (`NOTICE_TEXT[tone]`), optional `role` | danger (`text-red-400`) / warn (`text-amber-400`) / success (`text-primary`) / info (muted) |
+
+Per page:
+
+| Page | Card tone | Notes |
+|------|-----------|-------|
+| `/login` | danger when `error`, else primary | Error notice carries `role="alert"` (frozen); resend feedback is a success notice |
+| `/register` | danger on validation/server error, else primary; success view success (warn when `emailSent === false`) | Success uses `AuthStatusIcon` (CheckCircle / AlertTriangle) |
+| `/forgot-password` | danger on error, else primary; success view success | Cooldown is a warn notice |
+| `/reset-password` | danger (invalid token) / warn (cooldown) / danger (validation) / primary; success view success | `AlertCircle` on the invalid-token view |
+| `/verify-email` | info (no token / verifying) → success → danger | `Mail` chip on the resend view; `Loader2` spins while verifying |
+
+`GoogleSignInButton` is unchanged (frozen `google-sign-in` / `google-sign-in-btn`).
+
+## 6. Motion
+
+| Type | Duration | Easing | Usage |
+|------|----------|--------|-------|
+| Micro | 150–200ms | ease-out | Link / input hover, `transition-colors` |
+| Spin | CSS `animate-spin` | linear | Verify chip while checking; submit spinner (kit Button) |
+| Press | kit Button `scale` | — | Do not restyle kit |
+
+- GPU only. No layout animation, no ping.
+- `prefers-reduced-motion`: the kit spinner is the only continuous animation; keep it.
+
+## 7. Depth & Surface
+
+**borders-only** + 2px rails. No glass, no drop shadows, no nested Card-in-Card, no `rounded-3xl`, no filled masthead.
+
+| Type | Treatment | Use |
+|------|-----------|-----|
+| Auth card | kit `Card` + `AUTH_CARD_CLASS` + `pl-4` + `SiemRail` | All five screens |
+| Notice | `rounded-md border` + `bg-card` + `SiemRail` + tone wash | Error / cooldown / success inline |
+| Status chip | `h-12 w-12 rounded-md border` + tone bg | Success / warn / danger / verifying |
+| Rail | `absolute inset-y-2 left-0 w-0.5 rounded-full` (`SiemRail`) | Card + notices |
+
+The card keeps the frozen `border-border/80 shadow-none` hairline — the rail is the added signal, not a restyle of the kit.
+
+## 8. Accessibility Constraints & Accepted Debt
+
+### Constraints
+
+- WCAG 2.2 AA contrast on SPA tokens. Rails are redundant with the notice copy / status icon.
+- Heading stays `AuthLayout` `h1` (e2e asserts `page.locator("h1")` text on every auth route).
+- Every field has a kit `Label` + `htmlFor` (Register / Forgot / Reset / Verify moved off raw labels).
+- Kit only: no native `<select>`; primary actions are `Button`.
+- **Frozen by e2e** (`frontend/e2e/auth-flow.spec.ts`, `forgot-password.spec.ts`, `reset-password.spec.ts`, `verify-email.spec.ts`): `h1` copy; `input#email` / `input#password` / `input#confirmPassword` / `input[type='email']`; `button[type='submit']`; `a[href='/login']` / `a[href='/register']`; **`.text-red-400`** on register + reset validation errors; `getByRole("alert")` (exactly one) on login error; `span.font-mono` "SINE" / `span.text-primary` "XIS" (BrandMark); `.text-destructive` on the verify error icon; the verify email placeholder and resend button copy.
+- **Frozen by unit test** (`AuthLayout.test.tsx`): `AUTH_SECONDARY_LINK` matches `/min-h-11/` + `/min-w-11/`; `AUTH_CARD_CLASS` matches `/border-border\/80/` + `/shadow-none/`; tagline classes `px-2 text-pretty text-sm`; switcher row classes incl. `[&_button[aria-pressed=true]]:!bg-secondary`; `.max-w-3xl` + `2xl:max-w-4xl`; `theme-switcher` / `language-switcher` testids.
+- `prefers-reduced-motion`: no continuous animation beyond the spinner.
+
+### Personas
+
+- **New visitor** (primary): land on `/register`, open an account, hit the verify screen.
+- **Returning user**: `/login` → dashboard; Google sign-in where enabled.
+- **Locked-out user**: `/forgot-password` → `/reset-password` (invalid-token vs form vs success).
+- **Rate-limited**: cooldown renders as an amber notice and disables the submit.
+- **Unverified**: login error offers the resend path (verify notice).
+
+### Accepted Debt
+
+| Item | Location | Why accepted | Owner / Exit |
+|------|----------|--------------|--------------|
+| `AuthCard` composes the frozen `AUTH_CARD_CLASS` string | authChrome / AuthLayout | Unit test pins the string; composing keeps the contract without a kit restyle | Named kit split if the card is redesigned again |
+| `AuthLayout` inner DOM left intact | layout | Eight unit assertions pin brand row, tagline, switcher classes, and maxWidth | Named layout refactor |
+| Auth pages keep local form state + handlers | 5 pages | This slice restyles chrome only; extracting a form hook mixes visual with module work | Named extract |
+| Danger notice copy uses `text-red-400`, not `text-destructive` | AuthNotice | Frozen by `auth-flow` / `reset-password` e2e; unifying on the token is a test change | Named token migration |
+| Duplicate status-card markup across 5 pages | pages | Each has distinct copy + actions; a shared `AuthStatusView` is a follow-up | Named extract |
+| Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |

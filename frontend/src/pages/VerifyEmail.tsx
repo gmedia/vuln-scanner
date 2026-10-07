@@ -4,9 +4,15 @@ import { Loader2, CheckCircle, XCircle, Timer, Mail } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useRateLimitCooldown } from "@/hooks/useRateLimitCooldown";
 import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent } from "@/components/ui/Card";
-import AuthLayout, { AUTH_CARD_CLASS } from "@/components/layout/AuthLayout";
+import AuthLayout from "@/components/layout/AuthLayout";
+import {
+  AuthCard,
+  AuthCardBody,
+  AuthNotice,
+  AuthStatusIcon,
+} from "@/components/auth/AuthCard";
 import { useTranslation } from "react-i18next";
 
 function maskSignupEmail(email: string): string {
@@ -78,9 +84,9 @@ function VerifyEmail() {
         subtitle={t("verifySubtitle")}
         maxWidth="lg"
       >
-        <Card className={AUTH_CARD_CLASS}>
-          <CardContent className="pt-6 text-center space-y-4">
-            <Mail className="h-10 w-10 text-primary mx-auto" />
+        <AuthCard tone="info">
+          <AuthCardBody center>
+            <AuthStatusIcon icon={Mail} tone="info" />
             {signupHint && (
               <p className="text-sm text-foreground/90">
                 {t("sentTo")} <span className="font-medium">{signupHint}</span>
@@ -91,41 +97,36 @@ function VerifyEmail() {
             {!showResend ? (
               <button
                 type="button"
-                className="text-sm text-foreground/90 underline-offset-4 hover:text-primary hover:underline py-2"
+                className="py-2 text-sm text-foreground/90 underline-offset-4 hover:text-primary hover:underline"
                 onClick={() => setShowResend(true)}
               >
                 {t("didntGetIt")}
               </button>
             ) : (
               <form onSubmit={handleResend} className="space-y-3 text-left">
-                <p className="text-xs text-foreground/70 text-center">
+                <p className="text-center text-xs text-foreground/70">
                   {t("enterSignupEmail")}
                 </p>
 
                 <div className="min-h-[1.25rem]">
                   {cooldown > 0 && (
-                    <p className="text-xs text-amber-400 text-center flex items-center justify-center gap-1">
-                      <Timer className="h-3 w-3" />
-                      {tc("waitSeconds", { seconds: cooldown })}
-                    </p>
+                    <AuthNotice tone="warn">
+                      <span className="flex items-center justify-center gap-1">
+                        <Timer className="h-3 w-3" />
+                        {tc("waitSeconds", { seconds: cooldown })}
+                      </span>
+                    </AuthNotice>
                   )}
                   {resendSuccess && cooldown === 0 && (
-                    <p className="text-xs text-green-400 text-center">
-                      {t("verifyResent")}
-                    </p>
+                    <AuthNotice tone="success">{t("verifyResent")}</AuthNotice>
                   )}
                   {error && !resendSuccess && cooldown === 0 && (
-                    <p className="text-xs text-red-400 text-center">{error}</p>
+                    <AuthNotice tone="danger">{error}</AuthNotice>
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <label
-                    htmlFor="email"
-                    className="block text-xs text-foreground/80"
-                  >
-                    {tc("email")}
-                  </label>
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label htmlFor="email">{tc("email")}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -163,8 +164,8 @@ function VerifyEmail() {
                 {t("backToSignInLower")}
               </Button>
             </Link>
-          </CardContent>
-        </Card>
+          </AuthCardBody>
+        </AuthCard>
       </AuthLayout>
     );
   }
@@ -180,17 +181,25 @@ function VerifyEmail() {
       }
       maxWidth="lg"
     >
-      <Card className={AUTH_CARD_CLASS}>
-        <CardContent className="pt-6 text-center">
+      <AuthCard
+        tone={
+          status === "success"
+            ? "success"
+            : status === "error"
+              ? "danger"
+              : "info"
+        }
+      >
+        <AuthCardBody center>
           {status === "idle" && (
             <div className="flex flex-col items-center gap-3">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <AuthStatusIcon icon={Loader2} tone="info" spin />
               <p className="text-sm text-muted-foreground">{t("verifying")}</p>
             </div>
           )}
           {status === "success" && (
             <div className="flex flex-col items-center gap-3">
-              <CheckCircle className="h-8 w-8 text-green-500" />
+              <AuthStatusIcon icon={CheckCircle} tone="success" />
               <p className="text-sm text-muted-foreground">
                 {t("emailVerifiedOk")}
               </p>
@@ -204,7 +213,7 @@ function VerifyEmail() {
           )}
           {status === "error" && (
             <div className="flex flex-col items-center gap-3">
-              <XCircle className="h-8 w-8 text-destructive" />
+              <AuthStatusIcon icon={XCircle} tone="danger" />
               <p className="text-sm text-muted-foreground">
                 {error || t("verifyFailedRetry")}
               </p>
@@ -215,8 +224,8 @@ function VerifyEmail() {
               </Link>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </AuthCardBody>
+      </AuthCard>
     </AuthLayout>
   );
 }

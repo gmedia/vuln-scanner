@@ -12,9 +12,15 @@ import {
 import { useAuthStore } from "@/store/authStore";
 import { useRateLimitCooldown } from "@/hooks/useRateLimitCooldown";
 import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent } from "@/components/ui/Card";
-import AuthLayout, { AUTH_CARD_CLASS } from "@/components/layout/AuthLayout";
+import AuthLayout from "@/components/layout/AuthLayout";
+import {
+  AuthCard,
+  AuthCardBody,
+  AuthNotice,
+  AuthStatusIcon,
+} from "@/components/auth/AuthCard";
 import { useTranslation } from "react-i18next";
 
 function ResetPassword() {
@@ -41,9 +47,9 @@ function ResetPassword() {
   if (!token) {
     return (
       <AuthLayout title={t("invalidReset")}>
-        <Card className={AUTH_CARD_CLASS}>
-          <CardContent className="pt-6 text-center space-y-4">
-            <AlertCircle className="h-12 w-12 text-red-400 mx-auto" />
+        <AuthCard tone="danger">
+          <AuthCardBody center>
+            <AuthStatusIcon icon={AlertCircle} tone="danger" />
             <p className="text-xs text-muted-foreground">
               {t("invalidResetBody")}
             </p>
@@ -59,8 +65,8 @@ function ResetPassword() {
                 </Button>
               </Link>
             </div>
-          </CardContent>
-        </Card>
+          </AuthCardBody>
+        </AuthCard>
       </AuthLayout>
     );
   }
@@ -97,46 +103,47 @@ function ResetPassword() {
   if (success) {
     return (
       <AuthLayout title={t("resetSuccess")}>
-        <Card className={AUTH_CARD_CLASS}>
-          <CardContent className="pt-6 text-center space-y-4">
-            <CheckCircle className="h-12 w-12 text-primary mx-auto" />
+        <AuthCard tone="success">
+          <AuthCardBody center>
+            <AuthStatusIcon icon={CheckCircle} tone="success" />
             <p className="text-xs text-muted-foreground">
               {t("resetSuccessBody")}
             </p>
             <Link to="/login">
-              <Button className="mt-4 min-h-11 w-full text-sm">{tc("signIn")}</Button>
+              <Button className="mt-4 min-h-11 w-full text-sm">
+                {tc("signIn")}
+              </Button>
             </Link>
-          </CardContent>
-        </Card>
+          </AuthCardBody>
+        </AuthCard>
       </AuthLayout>
     );
   }
 
   return (
     <AuthLayout title={t("setNewPassword")}>
-      <Card className={AUTH_CARD_CLASS}>
-        <CardContent className="pt-6">
+      <AuthCard
+        tone={cooldown > 0 ? "warn" : validationError || error ? "danger" : "primary"}
+      >
+        <AuthCardBody>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="min-h-[1.25rem]">
               {cooldown > 0 && (
-                <p className="text-xs text-amber-400 text-center flex items-center justify-center gap-1">
-                  <Timer className="h-3 w-3" />
-                  {tc("waitSeconds", { seconds: cooldown })}
-                </p>
+                <AuthNotice tone="warn">
+                  <span className="flex items-center justify-center gap-1">
+                    <Timer className="h-3 w-3" />
+                    {tc("waitSeconds", { seconds: cooldown })}
+                  </span>
+                </AuthNotice>
               )}
               {(validationError || error) && cooldown === 0 && (
-                <p className="text-xs text-red-400 text-center">
+                <AuthNotice tone="danger">
                   {validationError || error}
-                </p>
+                </AuthNotice>
               )}
             </div>
-            <div className="space-y-2">
-              <label
-                htmlFor="password"
-                className="block text-xs text-muted-foreground"
-              >
-                {t("newPassword")}
-              </label>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="password">{t("newPassword")}</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -165,13 +172,8 @@ function ResetPassword() {
                 </button>
               </div>
             </div>
-            <div className="space-y-2">
-              <label
-                htmlFor="confirmPassword"
-                className="block text-xs text-muted-foreground"
-              >
-                {tc("confirmPassword")}
-              </label>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="confirmPassword">{tc("confirmPassword")}</Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
@@ -231,8 +233,8 @@ function ResetPassword() {
               Back to sign in
             </Link>
           </p>
-        </CardContent>
-      </Card>
+        </AuthCardBody>
+      </AuthCard>
     </AuthLayout>
   );
 }
