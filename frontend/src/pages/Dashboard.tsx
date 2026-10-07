@@ -12,17 +12,9 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { useScanHistory } from "@/hooks/useScan";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardAction,
-} from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { Skeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +29,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import { SiemRail } from "@/components/siem/siemChrome";
+import { DashboardKpiStrip } from "@/components/dashboard/DashboardKpiStrip";
+import {
+  dashboardRailClass,
+  dashboardWashClass,
+  scanTone,
+  worstScanTone,
+} from "@/components/dashboard/dashboardChrome";
 import { SCAN_TYPE_LABELS } from "@/lib/constants";
 import type { ScanJob } from "@/api/scans";
 import { canMutateWorkspace } from "@/api/orgs";
@@ -100,7 +100,7 @@ function Dashboard() {
   const { t, i18n } = useTranslation("scan");
   const [hideInternal, setHideInternal] = useState(true);
 
-  const { data: pageData, isLoading, isFetching } = useScanHistory(
+  const { data: pageData, isLoading } = useScanHistory(
     1,
     PAGE_LIMIT,
     undefined,
@@ -224,6 +224,26 @@ function Dashboard() {
   const noJadwal = enabledSchedules.length === 0;
   const primaryIsJadwal = canCreateScans && noJadwal;
 
+  const recentTone = worstScanTone(
+    displayed.map((s) => ({
+      status: s.status,
+      critical: severityCount(s.result_summary, "critical"),
+      high: severityCount(s.result_summary, "high"),
+    })),
+  );
+  const attachRail =
+    enabledSchedules.length === 0
+      ? "bg-border"
+      : enabledSchedules.length >= MAX_ENABLED_SCHEDULES
+        ? "bg-destructive"
+        : "bg-primary";
+  const guardRail =
+    agents.length === 0
+      ? "bg-border"
+      : staleAgents.length > 0
+        ? "bg-destructive"
+        : "bg-primary";
+
   return (
     <div className="w-full space-y-6">
       <PageHeader
@@ -293,192 +313,122 @@ function Dashboard() {
       />
 
       {attention.length > 0 && (
-        <Alert
-          variant="destructive"
-          className="border-destructive/40"
+        <div
           data-testid="attention-strip"
+          className="relative overflow-hidden rounded-lg border border-destructive/40 bg-destructive/[0.04] px-4 py-3 pl-4"
         >
-          <TriangleAlert />
-          <AlertTitle>{t("attention")}</AlertTitle>
-          <AlertDescription>
-            {attention.map((a) => (
-              <Link
-                key={a.key}
-                to={a.to}
-                className="block text-xs hover:underline"
-              >
-                {a.text}
-              </Link>
-            ))}
-          </AlertDescription>
-        </Alert>
+          <SiemRail className="bg-destructive" />
+          <div className="pl-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <TriangleAlert
+                className="h-4 w-4 shrink-0 text-destructive"
+                aria-hidden
+              />
+              {t("attention")}
+            </div>
+            <div className="mt-1.5 space-y-1">
+              {attention.map((a) => (
+                <Link
+                  key={a.key}
+                  to={a.to}
+                  className="block text-xs text-muted-foreground hover:text-foreground hover:underline"
+                >
+                  {a.text}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard
-          label={t("openRisk")}
-          value={riskCount}
-          isLoading={isFirstLoad}
-          className={riskCount > 0 ? "border-red-600/30" : "border-primary/30"}
-          valueClassName={riskCount > 0 ? "text-red-400" : "text-foreground"}
-        />
-        <StatCard
-          label={t("weekChm")}
-          value={`${weekCounts.critical}/${weekCounts.high}/${weekCounts.medium}`}
-          isLoading={isFirstLoad}
-          className="border-orange-500/30"
-          valueClassName="text-orange-400"
-        />
-        <StatCard
-          label={t("schedules")}
-          value={`${enabledSchedules.length} / ${MAX_ENABLED_SCHEDULES}`}
-          isLoading={false}
-          className="border-primary/30"
-          valueClassName="text-foreground"
-        />
-      </div>
+      <DashboardKpiStrip
+        openRisk={riskCount}
+        weekCritical={weekCounts.critical}
+        weekHigh={weekCounts.high}
+        weekMedium={weekCounts.medium}
+        enabledSchedules={enabledSchedules.length}
+        scheduleLimit={MAX_ENABLED_SCHEDULES}
+        loading={isFirstLoad}
+        labels={{
+          openRisk: t("openRisk"),
+          weekChm: t("weekChm"),
+          schedules: t("schedules"),
+        }}
+      />
 
       <div className="grid items-start gap-4 lg:grid-cols-12">
-        <Card className="flex min-h-0 flex-col lg:col-span-8">
-          <CardHeader className="pb-3">
-            <CardTitle
+        <div
+          className={cn(
+            "relative flex min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-card pl-4 lg:col-span-8",
+            dashboardWashClass(recentTone),
+          )}
+        >
+          <SiemRail className={dashboardRailClass(recentTone)} />
+          <div className="flex flex-row items-center justify-between gap-3 border-b border-border px-4 py-3">
+            <h3
               id="pekerjaan-terakhir"
-              className="shrink-0 text-sm tracking-wide"
+              className="shrink-0 text-sm font-medium tracking-wide"
             >
               {t("recentWork")}
-            </CardTitle>
+            </h3>
             {hiddenInternalCount > 0 && (
-              <CardAction>
-                <Button
-                  type="button"
-                  variant="link"
-                  size="sm"
-                  className="h-auto px-0 text-[10px] text-muted-foreground"
-                  onClick={() => setHideInternal((v) => !v)}
-                >
-                  {hideInternal
-                    ? t("labTargetsHidden", { count: hiddenInternalCount })
-                    : t("hideLabTargets")}
-                </Button>
-              </CardAction>
+              <Button
+                type="button"
+                variant="link"
+                size="sm"
+                className="h-auto px-0 text-[10px] text-muted-foreground"
+                onClick={() => setHideInternal((v) => !v)}
+              >
+                {hideInternal
+                  ? t("labTargetsHidden", { count: hiddenInternalCount })
+                  : t("hideLabTargets")}
+              </Button>
             )}
-          </CardHeader>
-          <CardContent className="pb-[max(2rem,env(safe-area-inset-bottom))]">
+          </div>
+          <div className="px-4 py-3 pb-[max(2rem,env(safe-area-inset-bottom))]">
             {isFirstLoad ? (
               <TableRowSkeleton rows={6} />
-              ) : scans.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-12 text-center">
-                  <Radar className="h-8 w-8 text-muted-foreground" />
-                  <p className="text-sm text-foreground">{t("noScansYet")}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {canCreateScans
-                      ? t("emptyCanCreate")
-                      : t("emptyCannotCreate")}
-                  </p>
-                  {canCreateScans && (
-                    <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-                      <Button asChild size="sm" className="text-xs">
-                        <Link to="/scan/ip">
-                          <Plus className="mr-1.5 h-3.5 w-3.5" />
-                          {t("scanIp")}
-                        </Link>
-                      </Button>
-                      <Button
-                        asChild
-                        variant="outline"
-                        size="sm"
-                        className="text-xs"
-                      >
-                        <Link to="/schedules" data-testid="empty-schedules-link">
-                          <CalendarClock className="mr-1.5 h-3.5 w-3.5" />
-                          {t("setSchedule")}
-                        </Link>
-                      </Button>
-                    </div>
-                  )}
-                </div>
+            ) : scans.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-border bg-muted/40 px-4 py-12 text-center">
+                <Radar className="h-8 w-8 text-muted-foreground" aria-hidden />
+                <p className="text-sm font-medium text-foreground">
+                  {t("noScansYet")}
+                </p>
+                <p className="max-w-md text-xs text-muted-foreground">
+                  {canCreateScans ? t("emptyCanCreate") : t("emptyCannotCreate")}
+                </p>
+                {canCreateScans && (
+                  <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+                    <Button asChild size="sm" className="text-xs">
+                      <Link to="/scan/ip">
+                        <Plus className="mr-1.5 h-3.5 w-3.5" />
+                        {t("scanIp")}
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                    >
+                      <Link to="/schedules" data-testid="empty-schedules-link">
+                        <CalendarClock className="mr-1.5 h-3.5 w-3.5" />
+                        {t("setSchedule")}
+                      </Link>
+                    </Button>
+                  </div>
+                )}
+              </div>
             ) : displayed.length === 0 ? (
-              <p className="py-8 text-center text-xs text-muted-foreground">
-                {t("allLabRows")}
-              </p>
+              <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-8 text-center">
+                <Radar className="h-6 w-6 text-muted-foreground" aria-hidden />
+                <p className="text-xs text-muted-foreground">
+                  {t("allLabRows")}
+                </p>
+              </div>
             ) : (
               <>
-              <div className="space-y-2 md:hidden">
-                {displayed.map((scan) => {
-                  const crit = severityCount(scan.result_summary, "critical");
-                  const high = severityCount(scan.result_summary, "high");
-                  const med = severityCount(scan.result_summary, "medium");
-                  const showStatus =
-                    scan.status === "failed" ||
-                    scan.status === "running" ||
-                    scan.status === "pending";
-                  return (
-                    <Link
-                      key={scan.id}
-                      to={`/scan/${scan.id}`}
-                      className="block rounded-lg border border-border bg-card p-3 min-h-11"
-                    >
-                      <p className="break-all font-mono text-xs text-foreground">
-                        {scan.target}
-                      </p>
-                      <p className="mt-1 text-[11px] text-muted-foreground">
-                        {SCAN_TYPE_LABELS[scan.scan_type] ?? scan.scan_type}
-                        {" · "}
-                        {formatIdDate(scan.started_at, i18n.language)}
-                      </p>
-                      <div className="mt-2 flex flex-wrap items-center gap-1">
-                        {showStatus ? (
-                          <Badge
-                            variant={
-                              scan.status as
-                                | "running"
-                                | "completed"
-                                | "failed"
-                                | "pending"
-                            }
-                            className="capitalize"
-                          >
-                            {scan.status === "failed"
-                              ? t("statusFailed")
-                              : scan.status === "running"
-                                ? t("statusRunning")
-                                : t("statusQueued")}
-                          </Badge>
-                        ) : (
-                          <Badge variant="completed" className="capitalize">
-                            {t("statusOk")}
-                          </Badge>
-                        )}
-                        {crit > 0 && <Badge variant="critical">{crit}C</Badge>}
-                        {high > 0 && <Badge variant="high">{high}H</Badge>}
-                        {med > 0 && <Badge variant="medium">{med}M</Badge>}
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-              <div className="hidden md:block">
-              <Table className="table-fixed text-xs">
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-[36%] text-[10px] uppercase tracking-wider">
-                      {t("colTarget")}
-                    </TableHead>
-                    <TableHead className="w-[12%] text-[10px] uppercase tracking-wider">
-                      {t("colType")}
-                    </TableHead>
-                    <TableHead className="w-[16%] text-[10px] uppercase tracking-wider">
-                      {t("colFinished")}
-                    </TableHead>
-                    <TableHead className="w-[24%] text-[10px] uppercase tracking-wider">
-                      {t("colFindings")}
-                    </TableHead>
-                    <TableHead className="w-[12%] text-[10px] uppercase tracking-wider">
-                      {t("colStatus")}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+                <div className="space-y-2 md:hidden">
                   {displayed.map((scan) => {
                     const crit = severityCount(scan.result_summary, "critical");
                     const high = severityCount(scan.result_summary, "high");
@@ -487,40 +437,30 @@ function Dashboard() {
                       scan.status === "failed" ||
                       scan.status === "running" ||
                       scan.status === "pending";
+                    const tone = scanTone({
+                      status: scan.status,
+                      critical: crit,
+                      high,
+                    });
                     return (
-                      <TableRow key={scan.id}>
-                        <TableCell className="pr-2">
-                          <Link
-                            to={`/scan/${scan.id}`}
-                            className="block truncate font-mono text-xs text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                          >
-                            {scan.target}
-                          </Link>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
+                      <Link
+                        key={scan.id}
+                        to={`/scan/${scan.id}`}
+                        className={cn(
+                          "relative block min-h-11 overflow-hidden rounded-lg border border-border bg-card p-3 pl-4",
+                          dashboardWashClass(tone),
+                        )}
+                      >
+                        <SiemRail className={dashboardRailClass(tone)} />
+                        <p className="break-all font-mono text-xs text-foreground">
+                          {scan.target}
+                        </p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">
                           {SCAN_TYPE_LABELS[scan.scan_type] ?? scan.scan_type}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
+                          {" · "}
                           {formatIdDate(scan.started_at, i18n.language)}
-                        </TableCell>
-                        <TableCell>
-                          {crit + high + med > 0 ? (
-                            <span className="flex flex-wrap gap-1">
-                              {crit > 0 && (
-                                <Badge variant="critical">{crit}C</Badge>
-                              )}
-                              {high > 0 && (
-                                <Badge variant="high">{high}H</Badge>
-                              )}
-                              {med > 0 && (
-                                <Badge variant="medium">{med}M</Badge>
-                              )}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
+                        </p>
+                        <div className="mt-2 flex flex-wrap items-center gap-1">
                           {showStatus ? (
                             <Badge
                               variant={
@@ -543,13 +483,122 @@ function Dashboard() {
                               {t("statusOk")}
                             </Badge>
                           )}
-                        </TableCell>
-                      </TableRow>
+                          {crit > 0 && <Badge variant="critical">{crit}C</Badge>}
+                          {high > 0 && <Badge variant="high">{high}H</Badge>}
+                          {med > 0 && <Badge variant="medium">{med}M</Badge>}
+                        </div>
+                      </Link>
                     );
                   })}
-                </TableBody>
-              </Table>
-              </div>
+                </div>
+                <div className="hidden md:block">
+                  <Table className="table-fixed text-xs">
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="w-[36%] text-[10px] uppercase tracking-wider">
+                          {t("colTarget")}
+                        </TableHead>
+                        <TableHead className="w-[12%] text-[10px] uppercase tracking-wider">
+                          {t("colType")}
+                        </TableHead>
+                        <TableHead className="w-[16%] text-[10px] uppercase tracking-wider">
+                          {t("colFinished")}
+                        </TableHead>
+                        <TableHead className="w-[24%] text-[10px] uppercase tracking-wider">
+                          {t("colFindings")}
+                        </TableHead>
+                        <TableHead className="w-[12%] text-[10px] uppercase tracking-wider">
+                          {t("colStatus")}
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {displayed.map((scan) => {
+                        const crit = severityCount(
+                          scan.result_summary,
+                          "critical",
+                        );
+                        const high = severityCount(scan.result_summary, "high");
+                        const med = severityCount(scan.result_summary, "medium");
+                        const showStatus =
+                          scan.status === "failed" ||
+                          scan.status === "running" ||
+                          scan.status === "pending";
+                        const tone = scanTone({
+                          status: scan.status,
+                          critical: crit,
+                          high,
+                        });
+                        return (
+                          <TableRow key={scan.id}>
+                            <TableCell className="relative pl-4 pr-2">
+                              <SiemRail
+                                className={dashboardRailClass(tone)}
+                              />
+                              <Link
+                                to={`/scan/${scan.id}`}
+                                className="block truncate font-mono text-xs text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                              >
+                                {scan.target}
+                              </Link>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {SCAN_TYPE_LABELS[scan.scan_type] ??
+                                scan.scan_type}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {formatIdDate(scan.started_at, i18n.language)}
+                            </TableCell>
+                            <TableCell>
+                              {crit + high + med > 0 ? (
+                                <span className="flex flex-wrap gap-1">
+                                  {crit > 0 && (
+                                    <Badge variant="critical">{crit}C</Badge>
+                                  )}
+                                  {high > 0 && (
+                                    <Badge variant="high">{high}H</Badge>
+                                  )}
+                                  {med > 0 && (
+                                    <Badge variant="medium">{med}M</Badge>
+                                  )}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {showStatus ? (
+                                <Badge
+                                  variant={
+                                    scan.status as
+                                      | "running"
+                                      | "completed"
+                                      | "failed"
+                                      | "pending"
+                                  }
+                                  className="capitalize"
+                                >
+                                  {scan.status === "failed"
+                                    ? t("statusFailed")
+                                    : scan.status === "running"
+                                      ? t("statusRunning")
+                                      : t("statusQueued")}
+                                </Badge>
+                              ) : (
+                                <Badge
+                                  variant="completed"
+                                  className="capitalize"
+                                >
+                                  {t("statusOk")}
+                                </Badge>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               </>
             )}
 
@@ -558,25 +607,32 @@ function Dashboard() {
                 {t("workspaceScanCount", { count: totalScans })}
               </p>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         <div className="flex min-h-0 flex-col gap-4 lg:col-span-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm tracking-wide">{t("attachCoverage")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-xs">
+          <div className="relative overflow-hidden rounded-lg border border-border bg-card pl-4">
+            <SiemRail className={attachRail} />
+            <div className="border-b border-border px-4 py-3">
+              <h3 className="text-sm font-medium tracking-wide">
+                {t("attachCoverage")}
+              </h3>
+            </div>
+            <div className="space-y-2 px-4 py-3 text-xs">
               {enabledSchedules.length === 0 ? (
-                <p className="text-muted-foreground">
-                  {t("noSchedulesHint")}
-                </p>
+                <p className="text-muted-foreground">{t("noSchedulesHint")}</p>
               ) : (
                 enabledSchedules.slice(0, 3).map((sch) => (
-                  <div key={sch.id} className="border-b border-border pb-2 last:border-0">
+                  <div
+                    key={sch.id}
+                    className="border-b border-border pb-2 last:border-0"
+                  >
                     <p className="font-mono text-foreground">{sch.target}</p>
                     <p className="text-[10px] text-muted-foreground">
-                      {sch.cadence} · {t("nextRun", { date: formatIdDate(sch.next_run_at, i18n.language) })}
+                      {sch.cadence} ·{" "}
+                      {t("nextRun", {
+                        date: formatIdDate(sch.next_run_at, i18n.language),
+                      })}
                     </p>
                   </div>
                 ))
@@ -587,14 +643,17 @@ function Dashboard() {
                   {t("manageSchedules")}
                 </Link>
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm tracking-wide">{t("guard")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-xs">
+          <div className="relative overflow-hidden rounded-lg border border-border bg-card pl-4">
+            <SiemRail className={guardRail} />
+            <div className="border-b border-border px-4 py-3">
+              <h3 className="text-sm font-medium tracking-wide">
+                {t("guard")}
+              </h3>
+            </div>
+            <div className="space-y-2 px-4 py-3 text-xs">
               <p className="text-muted-foreground">
                 {t("agentsCount", { count: agents.length })}
                 {staleAgents.length > 0
@@ -607,52 +666,11 @@ function Dashboard() {
                   {t("openGuard")}
                 </Link>
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  isLoading,
-  className,
-  valueClassName,
-}: {
-  label: string;
-  value: number | string;
-  isLoading: boolean;
-  className?: string;
-  valueClassName?: string;
-}) {
-  return (
-    <Card className={cn("border-border", className)}>
-      <CardContent className="flex flex-col items-center justify-center p-3">
-        {isLoading ? (
-          <>
-            <Skeleton className="mb-1 h-7 w-14" />
-            <Skeleton className="h-3 w-12" />
-          </>
-        ) : (
-          <>
-            <span
-              className={cn(
-                "font-mono text-xl font-bold tracking-tight tabular-nums sm:text-2xl",
-                valueClassName ?? "text-foreground",
-              )}
-            >
-              {value}
-            </span>
-            <span className="mt-1 text-center text-[10px] uppercase tracking-wider text-muted-foreground">
-              {label}
-            </span>
-          </>
-        )}
-      </CardContent>
-    </Card>
   );
 }
 
