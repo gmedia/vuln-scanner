@@ -105,3 +105,25 @@ export function diffRailClass(diff: {
   if (diff.resolved > 0) return "bg-primary";
   return "bg-border";
 }
+
+export function scannerResultRailClass(summary: {
+  readonly critical?: number;
+  readonly high?: number;
+  readonly medium?: number;
+  readonly low?: number;
+}): string {
+  if ((summary.critical ?? 0) > 0) return "bg-destructive";
+  if ((summary.high ?? 0) > 0) return "bg-orange-500";
+  if ((summary.medium ?? 0) > 0) return "bg-yellow-500";
+  if ((summary.low ?? 0) > 0) return "bg-blue-500";
+  return "bg-primary";
+}
+
+export function scannerResultWashClass(summary: {
+  readonly critical?: number;
+  readonly high?: number;
+}): string | undefined {
+  return (summary.critical ?? 0) > 0 || (summary.high ?? 0) > 0
+    ? "bg-destructive/[0.04]"
+    : undefined;
+}

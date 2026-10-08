@@ -1,138 +1,78 @@
-import { CheckCircle2, AlertTriangle } from "lucide-react";
+import { ListChecks, Loader, Smartphone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/layout/PageHeader";
 import MobileUpload from "@/components/scan/MobileUpload";
 import ScanProgress from "@/components/scan/ScanProgress";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import {
+  ScanShell,
+  ScanShellBody,
+  ScanShellHead,
+} from "@/components/scan/ScanShell";
+import { ScanResultsPanel } from "@/components/scan/ScanResultsPanel";
 import { useScanStore } from "@/store/scanStore";
 import { useScanDetail } from "@/hooks/useScan";
+
+const COVERAGE = [
+  "Manifest and permission analysis",
+  "Exported component detection",
+  "Hardcoded secret scanning",
+  "Platform-specific binary checks (.apk / .aab / .ipa)",
+];
 
 function MobileScanner() {
   const navigate = useNavigate();
   const activeJobId = useScanStore((s) => s.activeJobId);
   const { data: scanData } = useScanDetail(activeJobId);
 
-  const isScanning = !!activeJobId && (!scanData || scanData.status === "running" || scanData.status === "pending");
+  const isScanning =
+    !!activeJobId &&
+    (!scanData ||
+      scanData.status === "running" ||
+      scanData.status === "pending");
   const hasResults = scanData?.status === "completed" && scanData.result_summary;
 
   return (
     <div className="grid w-full items-start gap-6 lg:grid-cols-2">
       <div className="space-y-6">
-      <PageHeader title="Mobile scanner" />
+        <PageHeader title="Mobile scanner" />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm tracking-wide">
-            Upload binary
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <MobileUpload />
-        </CardContent>
-      </Card>
+        <ScanShell railClass="bg-primary" testid="scan-target">
+          <ScanShellHead icon={Smartphone} title="Upload binary" />
+          <ScanShellBody>
+            <MobileUpload />
+          </ScanShellBody>
+        </ScanShell>
 
-      {isScanning && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm tracking-wide">
-              Scan progress
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScanProgress />
-          </CardContent>
-        </Card>
-      )}
+        {isScanning && (
+          <ScanShell railClass="bg-sky-500">
+            <ScanShellHead icon={Loader} title="Scan progress" />
+            <ScanShellBody>
+              <ScanProgress />
+            </ScanShellBody>
+          </ScanShell>
+        )}
 
-      {hasResults && (() => {
-        const summary = scanData.result_summary!;
-        const critical = typeof summary.critical === "number" ? summary.critical : 0;
-        const high = typeof summary.high === "number" ? summary.high : 0;
-        const medium = typeof summary.medium === "number" ? summary.medium : 0;
-        const low = typeof summary.low === "number" ? summary.low : 0;
-        const info = typeof summary.info === "number" ? summary.info : 0;
-        const totalFindings = typeof summary.total_findings === "number" ? summary.total_findings : 0;
-        return (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm tracking-wide">
-                Results
-              </CardTitle>
-              <Badge variant="completed" className="text-[10px]">
-                COMPLETED
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-5 gap-3">
-              {[
-                { label: "Critical", count: critical, color: "text-red-400", bg: "bg-red-600/10" },
-                { label: "High", count: high, color: "text-orange-400", bg: "bg-orange-500/10" },
-                { label: "Medium", count: medium, color: "text-yellow-400", bg: "bg-yellow-500/10" },
-                { label: "Low", count: low, color: "text-blue-400", bg: "bg-blue-500/10" },
-                { label: "Info", count: info, color: "text-gray-400", bg: "bg-gray-500/10" },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className={`flex flex-col items-center rounded-md ${item.bg} p-3`}
-                >
-                  <span className={`font-mono text-lg font-bold tabular-nums ${item.color}`}>
-                    {item.count}
-                  </span>
-                  <span className="mt-1 text-[9px] text-muted-foreground">
-                    {item.label}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex items-center justify-between rounded-md bg-muted p-3">
-              <div className="flex items-center gap-2">
-                {critical > 0 || high > 0 ? (
-                  <AlertTriangle className="h-4 w-4 text-red-400" />
-                ) : (
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
-                )}
-                <span className="text-xs text-foreground">
-                  {totalFindings} finding
-                  {totalFindings !== 1 ? "s" : ""} found
-                </span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(`/scan/${activeJobId}`)}
-                className="text-xs"
-              >
-                View Details
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        );
-      })()}
+        {hasResults && (
+          <ScanResultsPanel
+            summary={scanData.result_summary!}
+            onViewDetails={() => navigate(`/scan/${activeJobId}`)}
+          />
+        )}
       </div>
+
       {!isScanning && !hasResults && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm tracking-wide">
-              What this scan covers
-            </CardTitle>
-          </CardHeader>
-          <CardContent data-testid="scan-coverage">
+        <ScanShell railClass="bg-border">
+          <ScanShellHead icon={ListChecks} title="What this scan covers" />
+          <ScanShellBody testid="scan-coverage">
             <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-              <li className="break-words">Manifest and permission analysis</li>
-              <li className="break-words">Exported component detection</li>
-              <li className="break-words">Hardcoded secret scanning</li>
-              <li className="break-words">
-                Platform-specific binary checks (.apk / .aab / .ipa)
-              </li>
+              {COVERAGE.map((item) => (
+                <li key={item} className="break-words">
+                  {item}
+                </li>
+              ))}
             </ul>
-          </CardContent>
-        </Card>
+          </ScanShellBody>
+        </ScanShell>
       )}
     </div>
   );
