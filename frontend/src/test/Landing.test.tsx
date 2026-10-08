@@ -233,4 +233,30 @@ describe("Landing Page", () => {
     expect(footer).toBeTruthy();
     expect(footer).toHaveClass("mt-auto");
   });
+
+  it("renders the hero attach loop with the four steps", () => {
+    const loop = screen.getByTestId("landing-loop");
+    expect(loop).toBeTruthy();
+    expect(loop.textContent).toMatch(/Scan/);
+    expect(loop.textContent).toMatch(/Attach/);
+    expect(loop.textContent).toMatch(/Workspace/);
+    expect(loop.textContent).toMatch(/Guard/);
+    expect(loop.querySelectorAll(".lucide-arrow-right")).toHaveLength(3);
+  });
+
+  it("keeps the landing surfaces shadow-free", () => {
+    expect(document.querySelectorAll(".shadow-sm")).toHaveLength(0);
+    expect(document.querySelectorAll("[class*='shadow-']")).toHaveLength(0);
+  });
+
+  it("wraps each feature icon in a bordered chip", () => {
+    const cards = screen.getAllByTestId("card");
+    expect(cards).toHaveLength(9);
+    cards.forEach((card) => {
+      const chip = card.querySelector("span.border");
+      expect(chip).toBeTruthy();
+      expect(chip!.className).toMatch(/bg-muted\/40/);
+      expect(chip!.querySelector("svg")).toBeTruthy();
+    });
+  });
 });

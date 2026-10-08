@@ -2926,3 +2926,88 @@ Borders-only + 2px rails. No nested Card-in-Card.
 | `src/test/credit/CreditHistory.test.tsx` still mocks `@/components/ui/Card` | test | Harmless: `OpsShell` composes the real `Card` through the mock | Named test cleanup |
 | `ops-shell-residue` migration note still open | earlier section | The six per-surface shells remain; this slice only adds two more consumers | Named migration PR |
 | Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |
+
+# Landing (`/`)
+
+Print §§0–8 and every SPA section above stay locked. This section is the **public marketing** contract for `/`. Landing is the **source of truth for public chrome** (guide §10): the FastAPI islands (`/blog`, `/blog/{slug}`, `/terms`, `/privacy`) must rhyme it, not the reverse. It is **not** an ops console — no rails, no `OpsShell`, no `SiemRail`.
+
+## 0. Research Log (Landing)
+
+- Reused the existing tokens + `BrandMark` + `Footer`. No new reference pull, no new palette.
+- Sibling harvest: `components/ops/OpsShell.tsx` icon-chip geometry (`h-8 w-8 rounded-md border border-border bg-muted/40`) — borrowed for the **feature icon chip only** as a shared visual atom; the shell/rail itself is deliberately **not** used.
+- Current diagnosis (pre-refresh): the pipeline `li` carried **`shadow-sm`**, violating the borders-only rule that every other surface follows; the 9 feature cards had a bare `h-8 w-8` icon with `mb-2` and no chip; the pipeline step number was plain text while the feature icon was not; the FAQ `h2` used `mb-8` with no header wrapper while the other two sections used `mb-10 space-y-2`. The hero was text-only with no product-loop anchor.
+- Imagen / Lazyweb: skipped — tokens + existing chrome are the reference; AGENTS.md forbids extra deps for a visual slice.
+
+**Direction (locked):** Keep the public chrome geometry exactly (`h-12` header, `BrandMark`, `max-w-6xl` / `2xl:max-w-[90rem]`, footer). Refresh inside it: **remove the shadow drift**, give the hero a bordered **attach-loop strip**, put every feature icon in a bordered chip, and unify the three section headers.
+
+## 1. Atmosphere & Identity
+
+Landing is the public front door and the reference the HTML islands copy. It must stay calmer and more editorial than the ops consoles: no rails, no status chrome, no dense tables.
+
+The one memorable moment: the **hero attach-loop strip** — `Scan → Attach → Workspace → Guard` as mono chips in a bordered card, previewing the loop that the next section expands.
+
+## 2. Color
+
+Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. No Palatino (blog-island drift).
+
+| Role | Token / class | Usage |
+|------|----------------|-------|
+| Canvas | `--background` | Page |
+| Surface | `--card` + `border-border` | Hero loop strip, pipeline steps, feature cards, FAQ accordion |
+| Ink | `--foreground` | h1/h2, step titles, card titles |
+| Meta | `--muted-foreground` | Eyebrow, hero sub, descriptions, footer |
+| Accent | `--primary` `hsl(142 71% 45%)` | Feature icons, links, primary CTA |
+| Hover | `hover:border-primary/40` | Pipeline steps + feature cards |
+
+## 3. Typography
+
+Unchanged from the existing public scale. `h1` is `text-3xl sm:text-4xl lg:text-5xl`; section `h2` is `text-2xl`; eyebrows are `text-xs uppercase tracking-wide`; card/step titles are `text-sm`; the loop strip is `font-mono text-xs`.
+
+## 4. Spacing & Layout
+
+Sections use `px-4 py-12` inside `mx-auto max-w-6xl 2xl:max-w-[90rem]`. All three section headers now share `mb-10 text-center space-y-2`. The hero uses `pt-16 pb-12 sm:pt-20` with `max-w-3xl 2xl:max-w-4xl`.
+
+**Frozen contracts** (`src/test/Landing.test.tsx` + `e2e/landing.spec.ts`): the `h1` copy; the hero eyebrow / sub; `/Scan → Attach → Workspace → Guard/` still present (via `stepGuardDesc`); `header` contains `SINE` + `XIS` and there are ≥ 2 of each (header + footer); Get Started → `/register`; Sign In → `/login`; header Sign In keeps `hidden sm:inline`; the mobile menu trigger keeps an `aria-label` and `sm:hidden`; `main a[href='/login']` first is not `hidden`; h2 `How you run it` / `What is open in the account` / `Straight answers`; **exactly 9 `Card` elements**; the nine module titles; no `SIEM` heading; ≥ 2 `Blog` links → `/blog`; Terms → `/terms`; Privacy → `/privacy`; footer `Sinexis · Scan · Guard`, no `SIEM` / `VulnScanner` / version; `.lg\:grid-cols-4` absent; nav `Site` present, `Product` / `Legal` / `Account` absent; root `.min-h-dvh.flex.flex-col`, `main.flex-1`, `footer.mt-auto`.
+
+## 5. Signature Components & States
+
+| Primitive | Anatomy | States |
+|-----------|---------|--------|
+| Header | `h-12` + `border-b` + `BrandMark` + blog/theme/i18n + Sign in / Get started + mobile `Sheet` | unchanged |
+| Hero | eyebrow + `h1` + sub + CTA row + loop strip | static |
+| Loop strip (`landing-loop`) | `mx-auto max-w-2xl rounded-lg border bg-card px-4 py-3` + 4 mono chips separated by `ArrowRight` icons | static; 3 arrows |
+| Pipeline step | `li` `rounded-lg border bg-card p-4` + numbered `h-7 w-7` chip + title + desc | `hover:border-primary/40`; **no shadow** |
+| Feature card | kit `Card` (`h-full`) + `CardHeader` (bordered `h-9 w-9` icon chip + `CardTitle`) + `CardContent` | `hover:border-primary/40`; **9 total** |
+| FAQ | `Accordion` in `rounded-lg border bg-card px-4` | unchanged |
+
+## 6. Motion
+
+Micro only: `transition-colors` on step/card hover and links. No ping, no layout animation. Respect `prefers-reduced-motion` (kit defaults).
+
+## 7. Depth & Surface
+
+**borders-only.** No drop shadows anywhere on Landing (the `shadow-sm` drift is removed and locked by a test). No glass, no gradients on content surfaces (the Footer keeps its existing `from-muted/40 to-background`). No nested Card-in-Card, no `rounded-3xl`.
+
+## 8. Accessibility Constraints & Accepted Debt
+
+### Constraints
+
+- WCAG 2.2 AA contrast on SPA tokens.
+- One `h1`; section `h2`s; card titles are `h3` (kit `CardTitle`).
+- Icon chips are `aria-hidden`; decorative loop arrows are `aria-hidden`.
+- Interactive targets keep `min-h-11` on mobile.
+
+### Personas
+
+- **Prospective customer** (primary): understand the attach loop, then start a scan.
+- **Island maintainer**: Landing is the chrome reference for `/blog`, `/terms`, `/privacy`.
+
+### Accepted Debt
+
+| Item | Location | Why accepted | Owner / Exit |
+|------|----------|--------------|--------------|
+| Landing keeps `Card` (not `OpsShell`) | page | It is marketing, not an ops console; the icon-chip atom is borrowed, the rail is not | Keep |
+| Copy is i18n (`landing` + `common`) with no new keys added | page | Refresh reuses existing keys; no copy change | Keep |
+| Feature grid is 9 `Card`s, frozen by count | test | The count assertion is the contract that the nine modules stay visible | Update only with a deliberate module change |
+| HTML islands (`/blog`, `/terms`, `/privacy`) are string templates, not React | `backend/app/api/*_html.py` | SEO + no JS hydrate; they must rhyme this section manually | Named island slice if chrome changes |
+| Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |

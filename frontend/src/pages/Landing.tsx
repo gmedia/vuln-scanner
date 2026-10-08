@@ -166,6 +166,24 @@ function Landing() {
                 </Button>
               </Link>
             </div>
+            <div
+              data-testid="landing-loop"
+              className="mx-auto flex w-full max-w-2xl flex-wrap items-center justify-center gap-x-2 gap-y-1.5 rounded-lg border border-border bg-card px-4 py-3"
+            >
+              {pipelineSteps.map((step, i) => (
+                <span key={step.titleKey} className="inline-flex items-center gap-2">
+                  {i > 0 ? (
+                    <ArrowRight
+                      className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+                      aria-hidden
+                    />
+                  ) : null}
+                  <span className="font-mono text-xs font-medium tracking-wide text-foreground">
+                    {t(step.titleKey)}
+                  </span>
+                </span>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -183,12 +201,12 @@ function Landing() {
               {pipelineSteps.map((step, i) => (
                 <li
                   key={step.titleKey}
-                  className="flex h-full min-h-[8.5rem] flex-col rounded-lg border border-border bg-card p-4 text-left shadow-sm"
+                  className="flex h-full min-h-[8.5rem] flex-col rounded-lg border border-border bg-card p-4 text-left transition-colors hover:border-primary/40"
                 >
-                  <p className="text-xs font-medium text-muted-foreground">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-muted/40 font-mono text-xs font-medium text-muted-foreground">
                     {String(i + 1).padStart(2, "0")}
-                  </p>
-                  <p className="mt-1 text-sm font-semibold tracking-wide text-foreground">
+                  </span>
+                  <p className="mt-2 text-sm font-semibold tracking-wide text-foreground">
                     {t(step.titleKey)}
                   </p>
                   <p className="mt-2 flex-1 text-pretty hyphens-none text-sm leading-relaxed text-muted-foreground">
@@ -214,10 +232,15 @@ function Landing() {
               {featureKeys.map((feature) => (
                 <Card
                   key={feature.titleKey}
-                  className="h-full hover:border-primary/40 transition-colors"
+                  className="h-full transition-colors hover:border-primary/40"
                 >
                   <CardHeader>
-                    <feature.icon className="h-8 w-8 text-primary mb-2" />
+                    <span
+                      className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-muted/40"
+                      aria-hidden
+                    >
+                      <feature.icon className="h-4 w-4 text-primary" />
+                    </span>
                     <CardTitle className="text-sm tracking-wide">
                       {t(feature.titleKey)}
                     </CardTitle>
@@ -235,9 +258,11 @@ function Landing() {
 
         <section className="px-4 py-12">
           <div className="mx-auto max-w-6xl 2xl:max-w-[90rem]">
-            <h2 className="mb-8 text-center text-2xl font-bold tracking-wide text-foreground">
-              {t("faqTitle")}
-            </h2>
+            <div className="mb-10 text-center space-y-2">
+              <h2 className="text-2xl font-bold tracking-wide text-foreground">
+                {t("faqTitle")}
+              </h2>
+            </div>
             <Accordion type="single" collapsible className="w-full rounded-lg border border-border bg-card px-4">
               {faqKeys.map((item) => (
                 <AccordionItem key={item.q} value={item.q}>
