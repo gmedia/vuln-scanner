@@ -299,4 +299,83 @@ describe("AdminUserDetail", () => {
     );
     expect(mutate).toHaveBeenCalled();
   });
+
+  it("rails the profile shell amber for an unverified user", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: mockUser,
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    const { container } = renderPage();
+    expect(container.querySelector(".bg-amber-500")).toBeTruthy();
+  });
+
+  it("rails the profile shell primary for a verified user", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: { ...mockUser, is_verified: true },
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    const { container } = renderPage();
+    expect(container.querySelector(".bg-amber-500")).toBeNull();
+    expect(container.querySelectorAll(".bg-primary").length).toBeGreaterThan(0);
+  });
+
+  it("rails the credit shell destructive on mutation error", () => {
+    vi.mocked(useMutation).mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      isError: true,
+      isSuccess: false,
+    } as unknown as ReturnType<typeof useMutation>);
+    vi.mocked(useQuery).mockReturnValue({
+      data: mockUser,
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    const { container } = renderPage();
+    expect(container.querySelector(".bg-destructive")).toBeTruthy();
+  });
+
+  it("rails the credit shell primary when idle", () => {
+    vi.mocked(useMutation).mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      isError: false,
+      isSuccess: false,
+    } as unknown as ReturnType<typeof useMutation>);
+    vi.mocked(useQuery).mockReturnValue({
+      data: { ...mockUser, is_verified: true },
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    const { container } = renderPage();
+    expect(container.querySelector(".bg-destructive")).toBeNull();
+    expect(container.querySelectorAll(".bg-primary").length).toBeGreaterThan(0);
+  });
+
+  it("keeps the credit-adjustment title as a heading", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: mockUser,
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    renderPage();
+    expect(
+      screen.getByRole("heading", { name: "Credit adjustment" }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps each label the immediate previous sibling of its input", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: mockUser,
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    renderPage();
+    const amountLabel = screen.getByText("Amount (+ or −)");
+    expect(amountLabel.nextElementSibling?.tagName).toBe("INPUT");
+    const descriptionLabel = screen.getByText("Description");
+    expect(descriptionLabel.nextElementSibling?.tagName).toBe("INPUT");
+  });
 });

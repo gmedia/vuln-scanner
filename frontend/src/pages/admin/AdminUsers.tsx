@@ -2,7 +2,6 @@ import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Users, Search, Eye } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -23,6 +22,13 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/Pagination";
+import {
+  AdminShell,
+  AdminShellBody,
+  AdminShellHead,
+} from "@/components/admin/AdminShell";
+import { SiemRail } from "@/components/siem/siemChrome";
+import { adminRailClass, userTone } from "@/components/admin/adminChrome";
 import PageHeader from "@/components/layout/PageHeader";
 import { adminApi } from "@/api/admin";
 import type { AdminUserItem } from "@/api/admin";
@@ -75,17 +81,20 @@ function AdminUsers() {
         description={t("usersSubtitle")}
       />
 
-      <Card>
-        <CardHeader className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <CardTitle className="text-sm tracking-wide">{t("usersCard")}</CardTitle>
-            {data && data.total > 0 && (
-              <span className="shrink-0 text-[10px] text-muted-foreground">
+      <AdminShell tone="primary">
+        <AdminShellHead
+          icon={Users}
+          title={t("usersCard")}
+          aside={
+            data && data.total > 0 ? (
+              <span className="text-[10px] text-muted-foreground">
                 {t("totalCount", { count: data.total })}
               </span>
-            )}
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            ) : null
+          }
+        />
+        <AdminShellBody>
+          <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="admin-users-search">{t("colEmail")}</Label>
               <div className="relative">
@@ -104,97 +113,105 @@ function AdminUsers() {
               </div>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
+
           {isLoading && !data ? (
             <TableRowSkeleton rows={5} />
           ) : !data || data.users.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="mb-3 rounded-full bg-muted p-3">
-                <Users className="h-6 w-6 text-muted-foreground opacity-40" />
-              </div>
-              <p className="text-sm text-foreground">{t("usersEmpty")}</p>
-              <p className="text-xs text-muted-foreground">
+            <div
+              className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
+              data-testid="admin-users-empty"
+            >
+              <Users className="h-8 w-8 text-muted-foreground" aria-hidden />
+              <p className="text-sm font-medium text-foreground">
+                {t("usersEmpty")}
+              </p>
+              <p className="max-w-md text-xs text-muted-foreground">
                 {search ? t("usersEmptySearch") : t("usersEmptyNone")}
               </p>
             </div>
           ) : (
             <>
-            <div className="space-y-2 md:hidden">
-              {data?.users.map((user) => (
-                <button
-                  key={user.id}
-                  type="button"
-                  onClick={() => navigate(`/admin/users/${user.id}`)}
-                  className="w-full rounded-lg border border-border bg-card p-3 text-left min-h-11"
-                >
-                  <p className="break-all font-mono text-xs text-foreground">
-                    {user.email}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    <Badge
-                      variant={user.is_admin ? "completed" : "default"}
-                      className="text-[11px]"
-                    >
-                      {user.is_admin ? t("roleAdmin") : t("roleUser")}
-                    </Badge>
-                    <Badge
-                      variant={user.is_verified ? "completed" : "pending"}
-                      className="text-[11px]"
-                    >
-                      {user.is_verified ? t("verified") : t("unverified")}
-                    </Badge>
-                  </div>
-                  <p className="mt-1 text-[11px] text-muted-foreground">
-                    {user.credits} · {user.scan_count} · {formatDate(user.created_at)} ·{" "}
-                    {user.last_login_at
-                      ? formatDateTime(user.last_login_at)
-                      : t("lastLoginNever")}
-                  </p>
-                </button>
-              ))}
-            </div>
-            <div className="hidden md:block">
-            <Table className="table-fixed">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[22%] text-[10px] uppercase tracking-wider">
-                    {t("colEmail")}
-                  </TableHead>
-                  <TableHead className="w-[10%] text-[10px] uppercase tracking-wider">
-                    {t("colRole")}
-                  </TableHead>
-                  <TableHead className="w-[10%] text-[10px] uppercase tracking-wider">
-                    {t("colVerified")}
-                  </TableHead>
-                  <TableHead className="w-[10%] text-right text-[10px] uppercase tracking-wider">
-                    {t("colCredits")}
-                  </TableHead>
-                  <TableHead className="w-[8%] text-right text-[10px] uppercase tracking-wider">
-                    {t("colScans")}
-                  </TableHead>
-                  <TableHead className="w-[12%] text-[10px] uppercase tracking-wider">
-                    {t("colCreated")}
-                  </TableHead>
-                  <TableHead className="w-[16%] text-[10px] uppercase tracking-wider">
-                    {t("colLastLogin")}
-                  </TableHead>
-                  <TableHead className="w-[12%] whitespace-nowrap text-right text-[10px] uppercase tracking-wider">
-                    {t("colActions")}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+              <div className="space-y-2 md:hidden">
                 {data?.users.map((user) => (
-                  <UserRow
+                  <button
                     key={user.id}
-                    user={user}
-                    onView={() => navigate(`/admin/users/${user.id}`)}
-                  />
+                    type="button"
+                    onClick={() => navigate(`/admin/users/${user.id}`)}
+                    className="relative min-h-11 w-full overflow-hidden rounded-lg border border-border bg-card p-3 pl-4 text-left"
+                  >
+                    <SiemRail
+                      className={adminRailClass(userTone(user))}
+                    />
+                    <p className="break-all font-mono text-xs text-foreground">
+                      {user.email}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      <Badge
+                        variant={user.is_admin ? "completed" : "default"}
+                        className="text-[11px]"
+                      >
+                        {user.is_admin ? t("roleAdmin") : t("roleUser")}
+                      </Badge>
+                      <Badge
+                        variant={user.is_verified ? "completed" : "pending"}
+                        className="text-[11px]"
+                      >
+                        {user.is_verified ? t("verified") : t("unverified")}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {user.credits} · {user.scan_count} ·{" "}
+                      {formatDate(user.created_at)} ·{" "}
+                      {user.last_login_at
+                        ? formatDateTime(user.last_login_at)
+                        : t("lastLoginNever")}
+                    </p>
+                  </button>
                 ))}
-              </TableBody>
-            </Table>
-            </div>
+              </div>
+              <div className="hidden md:block">
+                <div className="overflow-hidden rounded-md border border-border">
+                  <Table className="table-fixed">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[22%] text-[10px] uppercase tracking-wider">
+                          {t("colEmail")}
+                        </TableHead>
+                        <TableHead className="w-[10%] text-[10px] uppercase tracking-wider">
+                          {t("colRole")}
+                        </TableHead>
+                        <TableHead className="w-[10%] text-[10px] uppercase tracking-wider">
+                          {t("colVerified")}
+                        </TableHead>
+                        <TableHead className="w-[10%] text-right text-[10px] uppercase tracking-wider">
+                          {t("colCredits")}
+                        </TableHead>
+                        <TableHead className="w-[8%] text-right text-[10px] uppercase tracking-wider">
+                          {t("colScans")}
+                        </TableHead>
+                        <TableHead className="w-[12%] text-[10px] uppercase tracking-wider">
+                          {t("colCreated")}
+                        </TableHead>
+                        <TableHead className="w-[16%] text-[10px] uppercase tracking-wider">
+                          {t("colLastLogin")}
+                        </TableHead>
+                        <TableHead className="w-[12%] whitespace-nowrap text-right text-[10px] uppercase tracking-wider">
+                          {t("colActions")}
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {data?.users.map((user) => (
+                        <UserRow
+                          key={user.id}
+                          user={user}
+                          onView={() => navigate(`/admin/users/${user.id}`)}
+                        />
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
             </>
           )}
 
@@ -208,7 +225,7 @@ function AdminUsers() {
                   />
                 </PaginationItem>
                 <PaginationItem>
-                  <span className="px-2 text-xs text-muted-foreground">
+                  <span className="px-2 font-mono text-xs tabular-nums text-muted-foreground">
                     {t("pageOf", { page, total: totalPages })}
                   </span>
                 </PaginationItem>
@@ -221,8 +238,8 @@ function AdminUsers() {
               </PaginationContent>
             </Pagination>
           )}
-        </CardContent>
-      </Card>
+        </AdminShellBody>
+      </AdminShell>
     </div>
   );
 }
@@ -230,8 +247,9 @@ function AdminUsers() {
 function UserRow({ user, onView }: { user: AdminUserItem; onView: () => void }) {
   const { t } = useTranslation("admin");
   return (
-    <TableRow>
-      <TableCell>
+    <TableRow className="h-12 hover:bg-muted/50">
+      <TableCell className="relative pl-4">
+        <SiemRail className={adminRailClass(userTone(user))} />
         <span
           className="block max-w-[min(36rem,50vw)] truncate font-mono text-xs text-foreground 2xl:max-w-none 2xl:overflow-visible 2xl:whitespace-normal"
           title={user.email}
