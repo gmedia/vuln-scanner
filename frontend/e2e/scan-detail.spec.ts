@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures";
-import { scanHistoryLinks } from "./scanLinks";
+import { completedScanLinks } from "./scanLinks";
 import type { Page } from "@playwright/test";
 
 test.describe("Scan Detail Page @scan", () => {
@@ -24,7 +24,7 @@ test.describe("Scan Detail Page @scan", () => {
 
   async function getFirstCompletedScanHref(page: Page): Promise<string | null> {
     await page.goto("/dashboard");
-    const firstScan = scanHistoryLinks(page).first();
+    const firstScan = completedScanLinks(page).first();
     const isVisible = await firstScan
       .waitFor({ state: "visible", timeout: 15_000 })
       .then(() => true)

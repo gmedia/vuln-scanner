@@ -10,7 +10,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import select, text
+from sqlalchemy import func, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.config import settings
@@ -19,6 +19,7 @@ from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.user import User
 from app.services.auth import hash_password
+from app.services.organization import ensure_personal_org
 
 SEED_DATA: list[dict[str, Any]] = [
     {
@@ -143,8 +144,30 @@ async def seed() -> None:
             await session.flush()
             print(f"Topped up E2E user credits to 100 (was {e2e_user.credits})")
 
+        # The dashboard lists scans by active organization, so a job without
+        # organization_id is invisible and the scan-history E2E specs skip.
+        org = await ensure_personal_org(session, e2e_user)
+
         # Commit any user-level changes before early-return on existing scan jobs
         await session.commit()
+
+        orphaned = await session.execute(
+            select(func.count())
+            .select_from(ScanJob)
+            .where(ScanJob.user_id == e2e_user.id, ScanJob.organization_id.is_(None))
+        )
+        orphan_count = int(orphaned.scalar() or 0)
+        if orphan_count:
+            await session.execute(
+                update(ScanJob)
+                .where(
+                    ScanJob.user_id == e2e_user.id,
+                    ScanJob.organization_id.is_(None),
+                )
+                .values(organization_id=org.id)
+            )
+            await session.commit()
+            print(f"Attached {orphan_count} existing scan jobs to {org.slug}")
 
         result = await session.execute(text("SELECT COUNT(*) FROM scan_jobs"))
         count: int = result.scalar_one()  # type: ignore[assignment]
@@ -164,6 +187,7 @@ async def seed() -> None:
             job = ScanJob(
                 id=job_id,
                 user_id=e2e_user.id,
+                organization_id=org.id,
                 scan_type=item["scan_type"],
                 target=item["target"],
                 status=item["status"],

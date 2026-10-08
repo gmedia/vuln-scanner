@@ -446,6 +446,7 @@ function Dashboard() {
                       <Link
                         key={scan.id}
                         to={`/scan/${scan.id}`}
+                        data-status={scan.status}
                         className={cn(
                           "relative block min-h-11 overflow-hidden rounded-lg border border-border bg-card p-3 pl-4",
                           dashboardWashClass(tone),
@@ -537,6 +538,7 @@ function Dashboard() {
                               />
                               <Link
                                 to={`/scan/${scan.id}`}
+                                data-status={scan.status}
                                 className="block truncate font-mono text-xs text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                               >
                                 {scan.target}
