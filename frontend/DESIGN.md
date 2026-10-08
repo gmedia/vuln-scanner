@@ -2755,3 +2755,85 @@ Unchanged from wave 1: borders-only + 2px rails, no nested Card-in-Card.
 | `AdminAi` list components (`ProviderList` / `ModelList` / `UsageList`) keep their own container classes | components | Frozen by the wave-1 AI test contracts (`space-y-2 md:hidden`) | Keep |
 | `AdminInvoices` / `AdminBlog` / `AdminEmailLogs` / `AdminAi` keep queries + mutations in the page | pages | This slice restyles chrome only | Named extract |
 | Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |
+
+# Ops shell residue (`/uptime/:id`, `/uptime/status-page`)
+
+Print §§0–8 and every SPA section above stay locked. This section closes the last five rail-less shells in the ops family by introducing the first **shared** ops shell. It is a residue pass, not a redesign: the head/body content of each shell is unchanged apart from being wrapped.
+
+## 0. Research Log (Ops residue)
+
+- Reused the family grammar. No new reference pull.
+- Sibling harvest: every existing shell (`AdminShell`, `ScanShell`, `ScheduleShell`, `ProfileShell`, `WorkspaceShell`, `AuthCard`) is the same shape — kit `Card` + `relative overflow-hidden pl-4` + `SiemRail` + optional wash, a hairline head, and a body. That is **six copies** of one primitive.
+- Current diagnosis: `/uptime/:id` had 3 `Card`s and `/uptime/status-page` had 4, with only 2 rails between them (the outage row and the TXT card). The range-filter, timeline, outages, identity, custom-host, components, and incidents shells were all flat. The prior sections' accepted-debt tables had each deferred this with "extracting `components/ops/` is a third-family risk" — at the seventh duplicate that trade-off inverted.
+- Imagen / Lazyweb: skipped — family grammar is the reference; AGENTS.md forbids extra deps for a visual slice.
+
+**Direction (locked):** Extract **one** `components/ops/OpsShell.tsx` (`OpsShell` / `OpsShellHead` / `OpsShellBody`) and use it for the five remaining shells. No new palette, no new rail vocabulary — the rails come from the tone helpers already in `statusChrome` / `uptimeChrome`.
+
+## 1. Atmosphere & Identity
+
+Both pages are already documented ops surfaces (see the Uptime and Status page sections above); this section only records the residue deltas. The pages keep their existing heroes, KPI strips, and lists.
+
+## 2. Color
+
+No new tokens. Rails:
+
+| Surface | Rail | Source |
+|---------|------|--------|
+| Uptime range filters | `bg-sky-500` | range/period is informational |
+| Uptime timeline | `bg-primary` | neutral content |
+| Uptime outages | `bg-destructive` when any outage, else `bg-border` | `outagesRailClass(count)` |
+| Status page identity | `bg-primary` | neutral content |
+| Status page custom host | per `hostnameRailClass(status)` (primary / destructive / amber / muted) | `statusChrome` |
+| Status page components | `bg-primary` | neutral content |
+| Status page incidents | per `incidentsListRailClass(statuses)` (amber investigating / orange identified / sky monitoring / primary resolved-only / muted empty) | `statusChrome` |
+
+## 3. Typography
+
+Unchanged. Shell titles are the shared `h3` at `text-sm font-medium tracking-wide`.
+
+## 4. Spacing & Layout
+
+The shared head uses `border-b border-border px-4 py-3`; the shared body uses `px-4 py-4` (or `p-0` via `flush`). This is the same geometry as every other shell in the family, so the five converted shells now align with `/host`, `/dashboard`, `/scan/:id`, `/schedules`, `/profile`, `/settings/workspace`, and `/admin/*`.
+
+`OpsShellBody` takes `flush` instead of a padding override so `p-0` cannot lose a Tailwind specificity race against the base `px-4 py-4`.
+
+**Frozen contracts**: all existing testids on both pages (`uptime-range-filters`, `uptime-range-tabs`, `uptime-range-{6h,24h,7d}`, `uptime-outage-filters` / `-from` / `-to` / `-clear` / `-range-error`, `uptime-outages`, `uptime-outage-row`, `uptime-outage-pagination`, `status-page`, `status-page-publish`, `status-page-empty`, `status-page-create`, `status-page-title`, `status-page-slug`, `status-page-save-slug`, `status-page-host`, `status-incident-add`, `status-copy-*`), the `status-page-slug` / `status-page-title` / `attach` flows, and the mobile/desktop container classes on the incident and history lists.
+
+## 5. Signature Components & States
+
+| Primitive | Anatomy |
+|-----------|---------|
+| `OpsShell` (`components/ops/OpsShell.tsx`) | kit `Card` + `relative overflow-hidden pl-4` + `SiemRail(railClass)` + optional `wash` |
+| `OpsShellHead` | `border-b border-border px-4 py-3`; default layout = icon chip + `h3` + hint + aside; `children` override for custom heads (e.g. the range Tabs) |
+| `OpsShellBody` | `px-4 py-4`, or `p-0` when `flush` |
+
+New tone helpers: `incidentsListRailClass(statuses)` (`statusChrome.ts`) and `outagesRailClass(count)` (`uptimeChrome.ts`).
+
+## 6. Motion
+
+Unchanged from the family.
+
+## 7. Depth & Surface
+
+Borders-only + 2px rails. No nested Card-in-Card.
+
+## 8. Accessibility Constraints & Accepted Debt
+
+### Constraints
+
+- Unchanged. Headings stay PageHeader `h2`; shell titles are `h3`.
+- The range-filter head keeps its `Tabs` as `children` so the tablist contract is untouched.
+
+### Personas
+
+- **Uptime operator**: range/timeline/outages rails distinguish a clean window from one with outages before reading rows.
+- **Status page owner**: the host rail mirrors DNS state and the incidents rail mirrors the worst open incident.
+
+### Accepted Debt
+
+| Item | Location | Why accepted | Owner / Exit |
+|------|----------|--------------|--------------|
+| `OpsShell` is a **second** shared shell alongside the six per-surface shells | `components/ops/` | This slice only needs the two uptime/status pages; migrating the six existing shells is a separate, test-heavy refactor | Named migration PR |
+| `StatusPage` / `UptimeDetail` keep queries + mutations in the page | pages | This slice restyles chrome only | Named extract |
+| Prior sections' accepted-debt rows still say "extracting `components/ops/` is a third-family risk" | earlier sections | Those notes were accurate for their scope; this section is the first to invert that trade-off. Left as-is so the decision history stays readable | Update when the migration lands |
+| Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |

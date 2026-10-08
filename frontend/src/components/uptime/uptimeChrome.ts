@@ -27,3 +27,7 @@ export function stateValueClass(state: string, enabled = true): string {
   if (state === "degraded") return "text-amber-500";
   return "text-foreground";
 }
+
+export function outagesRailClass(count: number): string {
+  return count > 0 ? "bg-destructive" : "bg-border";
+}

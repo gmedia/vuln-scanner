@@ -902,4 +902,33 @@ describe("UptimeDetail", () => {
       screen.queryByTestId("uptime-outage-pagination"),
     ).not.toBeInTheDocument();
   });
+
+  it("rails the range, timeline, and outages shells", async () => {
+    renderDetail();
+    await waitFor(() =>
+      expect(
+        screen.getAllByTestId("uptime-outage-row").length,
+      ).toBeGreaterThanOrEqual(1),
+    );
+    expect(
+      screen.getByTestId("uptime-range-filters").firstElementChild?.className,
+    ).toMatch(/bg-sky-500/);
+    expect(
+      screen.getByTestId("uptime-timeline-shell").firstElementChild?.className,
+    ).toMatch(/bg-primary/);
+    expect(
+      screen.getByTestId("uptime-outages").firstElementChild?.className,
+    ).toMatch(/bg-destructive/);
+  });
+
+  it("rails the outages shell muted when there are no outages", async () => {
+    mockEvents.mockResolvedValue([]);
+    renderDetail();
+    await waitFor(() =>
+      expect(screen.getByTestId("uptime-outages")).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByTestId("uptime-outages").firstElementChild?.className,
+    ).toMatch(/bg-border/);
+  });
 });

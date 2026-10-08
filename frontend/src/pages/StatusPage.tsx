@@ -2,13 +2,17 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Radio } from "lucide-react";
+import { Radio, FileText, Globe, Layers, Siren } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import {
+  OpsShell,
+  OpsShellBody,
+  OpsShellHead,
+} from "@/components/ops/OpsShell";
 import {
   Select,
   SelectContent,
@@ -28,7 +32,9 @@ import { StatusIncidentSheet } from "@/components/status/StatusIncidentSheet";
 import { StatusKpiRow, StatusKpiSkeleton } from "@/components/status/StatusKpiRow";
 import {
   HOSTNAME_STATUS_KEYS,
+  hostnameRailClass,
   hostnameStatusVariant,
+  incidentsListRailClass,
 } from "@/components/status/statusChrome";
 import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
 import { SiemRail } from "@/components/siem/siemChrome";
@@ -310,13 +316,9 @@ export default function StatusPage() {
             }
           />
 
-          <Card className="overflow-hidden">
-            <CardHeader className="border-b border-border pb-4">
-              <CardTitle className="text-sm tracking-wide">
-                {t("pageIdentity")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 pt-4">
+          <OpsShell railClass="bg-primary" testid="status-identity-shell">
+            <OpsShellHead icon={FileText} title={t("pageIdentity")} />
+            <OpsShellBody className="space-y-3">
               <p className="text-sm text-muted-foreground">{t("publicUrlHelp")}</p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="flex min-w-0 flex-col gap-1.5">
@@ -353,16 +355,12 @@ export default function StatusPage() {
                   </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </OpsShellBody>
+          </OpsShell>
 
-          <Card className="overflow-hidden">
-            <CardHeader className="border-b border-border pb-4">
-              <CardTitle className="text-sm tracking-wide">
-                {t("customHost")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 pt-4">
+          <OpsShell railClass={hostnameRailClass(page.hostname_status)} testid="status-host-shell">
+            <OpsShellHead icon={Globe} title={t("customHost")} />
+            <OpsShellBody className="space-y-3">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <Label htmlFor="sp-host">{t("customHost")}</Label>
@@ -474,16 +472,12 @@ export default function StatusPage() {
                   </Button>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </OpsShellBody>
+          </OpsShell>
 
-          <Card className="overflow-hidden">
-            <CardHeader className="border-b border-border pb-4">
-              <CardTitle className="text-sm tracking-wide">
-                {t("components")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-4">
+          <OpsShell railClass="bg-primary" testid="status-components-shell">
+            <OpsShellHead icon={Layers} title={t("components")} />
+            <OpsShellBody className="space-y-4">
               <div className="grid grid-cols-1 gap-3 rounded-md border border-border bg-muted/30 p-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <Label>{t("monitor")}</Label>
@@ -526,35 +520,40 @@ export default function StatusPage() {
                 removing={delCompMut.isPending}
                 onRemove={(id) => delCompMut.mutate(id)}
               />
-            </CardContent>
-          </Card>
+            </OpsShellBody>
+          </OpsShell>
 
-          <Card className="overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b border-border pb-4">
-              <CardTitle className="text-sm tracking-wide">
-                {t("incidents")}
-              </CardTitle>
-              <Button
-                type="button"
-                size="sm"
-                data-testid="status-incident-add"
-                onClick={() => {
-                  if (incOpen) {
-                    setEditingIncident(null);
-                    setIncOpen(false);
-                  } else {
-                    setEditingIncident(null);
-                    setIncOpen(true);
-                  }
-                }}
-              >
-                {t("newIncident")}
-              </Button>
-            </CardHeader>
-            <CardContent
-              className={
-                page.incidents.length === 0 ? "p-0 pt-0" : "space-y-4 pt-4"
+          <OpsShell
+            testid="status-incidents-shell"
+            railClass={incidentsListRailClass(
+              page.incidents.map((i) => i.status),
+            )}
+          >
+            <OpsShellHead
+              icon={Siren}
+              title={t("incidents")}
+              aside={
+                <Button
+                  type="button"
+                  size="sm"
+                  data-testid="status-incident-add"
+                  onClick={() => {
+                    if (incOpen) {
+                      setEditingIncident(null);
+                      setIncOpen(false);
+                    } else {
+                      setEditingIncident(null);
+                      setIncOpen(true);
+                    }
+                  }}
+                >
+                  {t("newIncident")}
+                </Button>
               }
+            />
+            <OpsShellBody
+              flush={page.incidents.length === 0}
+              className={page.incidents.length === 0 ? undefined : "space-y-4"}
             >
               <StatusIncidentSheet
                 open={incOpen}
@@ -589,8 +588,8 @@ export default function StatusPage() {
                   }}
                 />
               )}
-            </CardContent>
-          </Card>
+            </OpsShellBody>
+          </OpsShell>
           <p className="text-xs text-muted-foreground">{t("disclaimer")}</p>
         </>
       ) : null}
