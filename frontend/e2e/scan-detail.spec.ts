@@ -1,4 +1,6 @@
 import { test, expect } from "./fixtures";
+import { scanHistoryLinks } from "./scanLinks";
+import type { Page } from "@playwright/test";
 
 test.describe("Scan Detail Page @scan", () => {
   test("shows 404 for non-existent scan", async ({ page }) => {
@@ -20,20 +22,14 @@ test.describe("Scan Detail Page @scan", () => {
     await expect(page).toHaveURL("/dashboard");
   });
 
-  async function getFirstCompletedScanHref(page: any): Promise<string | null> {
+  async function getFirstCompletedScanHref(page: Page): Promise<string | null> {
     await page.goto("/dashboard");
-    try {
-      await page.waitForSelector("a[href^='/scan/']", { timeout: 15_000 });
-    } catch {
-      return null;
-    }
-    const links = await page.locator("a[href^='/scan/']").all();
-    for (const link of links) {
-      const href = await link.getAttribute("href");
-      if (href && !["/scan/ip", "/scan/domain", "/scan/mobile"].includes(href))
-        return href;
-    }
-    return null;
+    const firstScan = scanHistoryLinks(page).first();
+    const isVisible = await firstScan
+      .waitFor({ state: "visible", timeout: 15_000 })
+      .then(() => true)
+      .catch(() => false);
+    return isVisible ? firstScan.getAttribute("href") : null;
   }
 
   test("completed scan shows all sections", async ({ page }) => {

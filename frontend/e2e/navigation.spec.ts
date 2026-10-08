@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures";
+import { scanHistoryLinks } from "./scanLinks";
 
 test.describe("Navigation @smoke", () => {
   test("all routes render without crashing", async ({ page }) => {
@@ -21,11 +22,14 @@ test.describe("Navigation @smoke", () => {
 
   test("deep linking to a scan detail loads correctly", async ({ page }) => {
     await page.goto("/dashboard");
-    await page.waitForSelector("a[href^='/scan/']", { timeout: 15_000 });
-    const scanLink = page.locator("a[href^='/scan/']").first();
-    const href = await scanLink.getAttribute("href");
-
-    test.skip(!href, "No scans found — run seed_e2e first");
+    const scanRows = scanHistoryLinks(page);
+    const hasRows = await scanRows
+      .first()
+      .waitFor({ state: "visible", timeout: 15_000 })
+      .then(() => true)
+      .catch(() => false);
+    test.skip(!hasRows, "No scans found — run seed_e2e first");
+    const href = await scanRows.first().getAttribute("href");
     await page.goto(href!);
     await page.waitForURL(href!);
     expect(page.url()).toContain("/scan/");
