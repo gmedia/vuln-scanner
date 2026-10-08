@@ -2,9 +2,14 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { topupAiWallet } from "@/api/admin";
+import { Wallet } from "lucide-react";
 import { AdminAiField } from "@/components/admin/AdminAiField";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import {
+  AdminShell,
+  AdminShellBody,
+  AdminShellHead,
+} from "@/components/admin/AdminShell";
 
 export function AdminAiTopupTab() {
   const { t } = useTranslation("admin");
@@ -14,11 +19,9 @@ export function AdminAiTopupTab() {
     mutationFn: () => topupAiWallet(orgId.trim(), Number(amount)),
   });
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t("aiTabTopup")}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <AdminShell tone="primary">
+      <AdminShellHead icon={Wallet} title={t("aiTabTopup")} />
+      <AdminShellBody className="space-y-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <AdminAiField
             id="ai-org"
@@ -37,7 +40,7 @@ export function AdminAiTopupTab() {
         >
           {t("aiTopup")}
         </Button>
-      </CardContent>
-    </Card>
+      </AdminShellBody>
+    </AdminShell>
   );
 }

@@ -2,6 +2,12 @@ import { describe, it, expect } from "vitest";
 import {
   adminRailClass,
   adminWashClass,
+  blogListTone,
+  blogStatusTone,
+  emailListTone,
+  emailStatusTone,
+  invoiceListTone,
+  invoiceStatusTone,
   kpiTone,
   kpiValueClass,
   marginTone,
@@ -70,5 +76,33 @@ describe("adminChrome helpers", () => {
     expect(reportTone(0)).toBe("primary");
     expect(reportTone(undefined)).toBe("primary");
     expect(reportTone(5000)).toBe("warn");
+  });
+
+  it("derives invoice status and list tones", () => {
+    expect(invoiceStatusTone("paid")).toBe("success");
+    expect(invoiceStatusTone("sent")).toBe("warn");
+    expect(invoiceStatusTone("void")).toBe("danger");
+    expect(invoiceStatusTone("draft")).toBe("idle");
+    expect(invoiceListTone([])).toBe("idle");
+    expect(invoiceListTone(["paid"])).toBe("success");
+    expect(invoiceListTone(["paid", "sent"])).toBe("warn");
+    expect(invoiceListTone(["sent", "void"])).toBe("danger");
+    expect(invoiceListTone(["draft"])).toBe("idle");
+  });
+
+  it("derives blog status and list tones", () => {
+    expect(blogStatusTone("published")).toBe("primary");
+    expect(blogStatusTone("draft")).toBe("idle");
+    expect(blogListTone([])).toBe("idle");
+    expect(blogListTone(["draft"])).toBe("idle");
+    expect(blogListTone(["draft", "published"])).toBe("primary");
+  });
+
+  it("derives email status and list tones", () => {
+    expect(emailStatusTone("failed")).toBe("danger");
+    expect(emailStatusTone("sent")).toBe("primary");
+    expect(emailListTone([])).toBe("idle");
+    expect(emailListTone(["sent"])).toBe("primary");
+    expect(emailListTone(["sent", "failed"])).toBe("danger");
   });
 });

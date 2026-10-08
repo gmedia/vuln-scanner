@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText, Loader2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { FileText, Loader2, PenLine, List } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -23,6 +22,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import {
+  AdminShell,
+  AdminShellBody,
+  AdminShellHead,
+} from "@/components/admin/AdminShell";
+import { adminRailClass, blogListTone, blogStatusTone } from "@/components/admin/adminChrome";
+import { SiemRail } from "@/components/siem/siemChrome";
 import {
   adminApi,
   type BlogPostAdmin,
@@ -113,15 +119,14 @@ function AdminBlog() {
         title={t("blogTitle")}
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm tracking-wide">
-            {editingId ? t("blogEdit") : t("blogNew")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form className="space-y-3" onSubmit={onSubmit}>
-            <div className="space-y-2">
+      <AdminShell tone={editingId ? "warn" : "primary"} testid="blog-form-card">
+        <AdminShellHead
+          icon={PenLine}
+          title={editingId ? t("blogEdit") : t("blogNew")}
+        />
+        <AdminShellBody>
+          <form className="space-y-4" onSubmit={onSubmit}>
+            <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="blog-slug">{t("blogSlug")}</Label>
               <Input
                 id="blog-slug"
@@ -132,7 +137,7 @@ function AdminBlog() {
                 required
               />
             </div>
-            <div className="space-y-2">
+            <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="blog-title">{t("blogTitleField")}</Label>
               <Input
                 id="blog-title"
@@ -143,7 +148,7 @@ function AdminBlog() {
                 required
               />
             </div>
-            <div className="space-y-2">
+            <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="blog-excerpt">{t("blogExcerpt")}</Label>
               <Input
                 id="blog-excerpt"
@@ -175,7 +180,7 @@ function AdminBlog() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="blog-body">{t("blogBody")}</Label>
               <Textarea
                 id="blog-body"
@@ -187,7 +192,7 @@ function AdminBlog() {
                 required
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button type="submit" disabled={busy} data-testid="blog-save" className="min-h-11 w-full sm:w-auto">
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : t("save")}
               </Button>
@@ -195,6 +200,7 @@ function AdminBlog() {
                 <Button
                   type="button"
                   variant="outline"
+                  className="min-h-11 w-full sm:w-auto"
                   onClick={() => {
                     setEditingId(null);
                     setForm(emptyForm);
@@ -205,76 +211,92 @@ function AdminBlog() {
               ) : null}
             </div>
           </form>
-        </CardContent>
-      </Card>
+        </AdminShellBody>
+      </AdminShell>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm tracking-wide">{t("blogList")}</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <AdminShell
+        tone={blogListTone((data?.items ?? []).map((p) => p.status))}
+        testid="blog-list-shell"
+      >
+        <AdminShellHead icon={List} title={t("blogList")} />
+        <AdminShellBody>
           {isLoading ? (
             <TableRowSkeleton rows={5} />
           ) : !data?.items.length ? (
-            <p className="text-sm text-muted-foreground">{t("blogEmpty")}</p>
+            <div
+              className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
+              data-testid="blog-empty"
+            >
+              <FileText className="h-8 w-8 text-muted-foreground" aria-hidden />
+              <p className="text-sm font-medium text-foreground">
+                {t("blogEmpty")}
+              </p>
+            </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("blogSlug")}</TableHead>
-                  <TableHead>{t("blogTitleField")}</TableHead>
-                  <TableHead>{t("blogStatus")}</TableHead>
-                  <TableHead>{t("colActions")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.items.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell className="font-mono text-xs">{p.slug}</TableCell>
-                    <TableCell>{p.title}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          p.status === "published" ? "success" : "pending"
-                        }
-                      >
-                        {p.status === "published"
-                          ? t("blogPublished")
-                          : t("blogDraft")}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => startEdit(p)}
-                      >
-                        {t("blogEdit")}
-                      </Button>
-                      {p.status === "published" ? (
+            <div className="overflow-hidden rounded-md border border-border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("blogSlug")}</TableHead>
+                    <TableHead>{t("blogTitleField")}</TableHead>
+                    <TableHead>{t("blogStatus")}</TableHead>
+                    <TableHead>{t("colActions")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.items.map((p) => (
+                    <TableRow key={p.id} className="hover:bg-muted/50">
+                      <TableCell className="relative pl-4 font-mono text-xs">
+                        <SiemRail
+                          className={adminRailClass(blogStatusTone(p.status))}
+                        />
+                        {p.slug}
+                      </TableCell>
+                      <TableCell>{p.title}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            p.status === "published" ? "success" : "pending"
+                          }
+                        >
+                          {p.status === "published"
+                            ? t("blogPublished")
+                            : t("blogDraft")}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="space-x-2">
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => unpublishMut.mutate(p.id)}
+                          onClick={() => startEdit(p)}
                         >
-                          {t("blogUnpublish")}
+                          {t("blogEdit")}
                         </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          onClick={() => publishMut.mutate(p.id)}
-                        >
-                          {t("blogPublish")}
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                        {p.status === "published" ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => unpublishMut.mutate(p.id)}
+                          >
+                            {t("blogUnpublish")}
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => publishMut.mutate(p.id)}
+                          >
+                            {t("blogPublish")}
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </AdminShellBody>
+      </AdminShell>
     </div>
   );
 }

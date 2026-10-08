@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
-import { Bot, Boxes, MessageSquare, ScrollText, Server, Wallet } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/Card";
+import { Bot, Boxes, MessageSquare, ScrollText, Server, Wallet, TriangleAlert } from "lucide-react";
 import {
   Pagination,
   PaginationContent,
@@ -10,8 +9,12 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/Pagination";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
+import {
+  AdminShell,
+  AdminShellBody,
+  AdminShellHead,
+} from "@/components/admin/AdminShell";
 import { listAiModels, listAiProviders, listAiUsage } from "@/api/admin";
 import { isAiDisabledError } from "@/api/ai";
 import PageHeader from "@/components/layout/PageHeader";
@@ -79,9 +82,14 @@ export default function AdminAi() {
     return (
       <div className="w-full space-y-6">
         <Head />
-        <Alert>
-          <AlertDescription>{t("aiFeatureOff")}</AlertDescription>
-        </Alert>
+        <AdminShell tone="warn" testid="admin-ai-feature-off">
+          <AdminShellHead icon={TriangleAlert} title={t("aiTitle")} />
+          <AdminShellBody>
+            <p className="max-w-prose text-xs text-muted-foreground">
+              {t("aiFeatureOff")}
+            </p>
+          </AdminShellBody>
+        </AdminShell>
       </div>
     );
   }
@@ -119,8 +127,9 @@ export default function AdminAi() {
           <AdminAiModelsTab providers={providers} models={models} />
         </TabsContent>
         <TabsContent value="usage" className="mt-4">
-          <Card>
-            <CardContent className="pt-4">
+          <AdminShell tone="primary" testid="admin-ai-usage-shell">
+            <AdminShellHead icon={ScrollText} title={t("aiTabUsage")} />
+            <AdminShellBody>
               <AdminAiUsageList
                 items={usageQ.data?.items ?? []}
                 openUsageId={openUsageId}
@@ -155,8 +164,8 @@ export default function AdminAi() {
                   </PaginationContent>
                 </Pagination>
               ) : null}
-            </CardContent>
-          </Card>
+            </AdminShellBody>
+          </AdminShell>
         </TabsContent>
         <TabsContent value="topup" className="mt-4">
           <AdminAiTopupTab />

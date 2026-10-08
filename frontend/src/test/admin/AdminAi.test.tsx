@@ -220,5 +220,21 @@ describe("AdminAi", () => {
     expect(
       await screen.findByText("The AI Gateway module is not enabled in this environment."),
     ).toBeInTheDocument();
+    expect(
+      screen.getByTestId("admin-ai-feature-off").querySelector(".bg-amber-500"),
+    ).toBeTruthy();
+  });
+
+  it("rails the usage shell primary", async () => {
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    renderPage();
+    await userEvent.click(await screen.findByRole("tab", { name: "Usage" }));
+    expect(
+      (await screen.findByTestId("admin-ai-usage-shell")).querySelector(
+        ".bg-primary",
+      ),
+    ).toBeTruthy();
   });
 });
