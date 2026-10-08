@@ -5,7 +5,12 @@ import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
 import WorkspaceSettings from "@/pages/WorkspaceSettings";
-import { downloadOrgInvoicePdf, listOrgInvoices } from "@/api/orgs";
+import {
+  downloadOrgInvoicePdf,
+  listInvites,
+  listMembers,
+  listOrgInvoices,
+} from "@/api/orgs";
 
 vi.mock("@/api/orgs", async () => {
   const actual =
@@ -327,5 +332,111 @@ describe("WorkspaceSettings pilot checklist", () => {
     expect(screen.queryByTestId("invoice-print-bank")).not.toBeInTheDocument();
     expect(screen.queryByText("SHOULD-NOT-PRINT")).not.toBeInTheDocument();
     await waitFor(() => expect(print).toHaveBeenCalled());
+  });
+
+  it("rails the billing shell amber for a sent invoice", async () => {
+    vi.mocked(listOrgInvoices).mockResolvedValueOnce({
+      items: [
+        {
+          id: "inv-1",
+          organization_id: "org-a",
+          number: "SX-202609-0001",
+          product: "scan",
+          sku: "basic",
+          amount_idr: 300000,
+          period_start: "2026-09-01T00:00:00Z",
+          period_end: "2026-09-30T23:59:59Z",
+          status: "sent",
+          bank_ref: null,
+          notes: "",
+          paid_at: null,
+          created_at: "2026-09-14T00:00:00Z",
+          bank: null,
+        },
+      ],
+      total: 1,
+    });
+    renderPage();
+    const billing = await screen.findByTestId("workspace-billing");
+    await waitFor(() =>
+      expect(billing.querySelector(".bg-amber-500")).toBeTruthy(),
+    );
+    expect(
+      screen
+        .getByTestId("workspace-invoice-inv-1")
+        .querySelector(".bg-amber-500"),
+    ).toBeTruthy();
+  });
+
+  it("rails the billing shell primary for a paid invoice", async () => {
+    vi.mocked(listOrgInvoices).mockResolvedValueOnce({
+      items: [
+        {
+          id: "inv-paid",
+          organization_id: "org-a",
+          number: "SX-202609-0009",
+          product: "scan",
+          sku: "basic",
+          amount_idr: 300000,
+          period_start: "2026-09-01T00:00:00Z",
+          period_end: "2026-09-30T23:59:59Z",
+          status: "paid",
+          bank_ref: "TRX-9",
+          notes: "",
+          paid_at: "2026-09-15T00:00:00Z",
+          created_at: "2026-09-14T00:00:00Z",
+          bank: null,
+        },
+      ],
+      total: 1,
+    });
+    renderPage();
+    const billing = await screen.findByTestId("workspace-billing");
+    await waitFor(() =>
+      expect(billing.querySelector(".bg-primary")).toBeTruthy(),
+    );
+    expect(billing.querySelector(".bg-amber-500")).toBeNull();
+  });
+
+  it("rails member rows by role on mobile and desktop", async () => {
+    vi.mocked(listMembers).mockResolvedValueOnce([
+      {
+        user_id: "u-1",
+        email: "owner@example.com",
+        role: "owner",
+        joined_at: "2026-08-01T00:00:00Z",
+      },
+      {
+        user_id: "u-2",
+        email: "viewer@example.com",
+        role: "viewer",
+        joined_at: "2026-08-02T00:00:00Z",
+      },
+    ]);
+    renderPage();
+    const list = await screen.findByTestId("members-list");
+    expect(list.querySelectorAll(".bg-primary").length).toBeGreaterThanOrEqual(
+      1,
+    );
+    expect(list.querySelectorAll(".bg-border").length).toBeGreaterThanOrEqual(1);
+    const firstMobileRow = list.querySelector(".md\\:hidden > div");
+    expect(firstMobileRow?.className).toMatch(/pl-4/);
+    expect(firstMobileRow?.querySelector(".bg-primary")).toBeTruthy();
+  });
+
+  it("rails pending invite rows amber", async () => {
+    vi.mocked(listInvites).mockResolvedValueOnce([
+      {
+        id: "inv-1",
+        email: "pending@example.com",
+        role: "member",
+        expires_at: "2026-09-30T00:00:00Z",
+      },
+    ]);
+    renderPage();
+    const list = await screen.findByTestId("invites-list");
+    expect(list.querySelectorAll(".bg-amber-500").length).toBeGreaterThanOrEqual(
+      2,
+    );
   });
 });

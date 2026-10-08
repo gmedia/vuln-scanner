@@ -13,20 +13,12 @@ import {
   Users,
 } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { buttonVariants } from "@/components/ui/buttonVariants";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -59,6 +51,22 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  WorkspaceIconChip,
+  WorkspaceNotice,
+  WorkspaceShell,
+  WorkspaceShellBody,
+  WorkspaceShellHead,
+} from "@/components/workspace/WorkspaceShell";
+import {
+  countTone,
+  formTone,
+  invoiceListTone,
+  roleTone,
+  workspaceRailClass,
+  type WorkspaceTone,
+} from "@/components/workspace/workspaceChrome";
+import { SiemRail } from "@/components/siem/siemChrome";
 import { useAuthStore } from "@/store/authStore";
 import {
   acceptInvite,
@@ -145,20 +153,23 @@ function RoleBadge({ role }: { role: string }) {
 function StatTile({
   label,
   value,
+  tone = "primary",
   emphasize = false,
 }: {
   readonly label: string;
   readonly value: ReactNode;
+  readonly tone?: WorkspaceTone;
   readonly emphasize?: boolean;
 }) {
   return (
-    <div className="rounded-md border border-border bg-card px-4 py-3">
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+    <div className="relative min-w-0 overflow-hidden rounded-lg border border-border bg-card px-4 py-3 pl-4">
+      <SiemRail className={workspaceRailClass(tone)} />
+      <p className="pl-2 text-[10px] uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
       <div
         className={cn(
-          "mt-1 font-mono text-lg font-bold tabular-nums text-foreground",
+          "mt-1 pl-2 font-mono text-lg font-bold tabular-nums text-foreground",
           emphasize && "text-xl font-semibold tracking-tight sm:text-lg",
         )}
       >
@@ -363,6 +374,7 @@ function WorkspaceSettings() {
   const invoiceCount =
     invoicesQuery.data?.total ?? invoicesQuery.data?.items.length;
   const orgKind = activeOrg?.kind === "personal" ? t("kindPersonal") : t("kindTeam");
+  const invoiceStatuses = (invoicesQuery.data?.items ?? []).map((i) => i.status);
 
   return (
     <div className="w-full space-y-6">
@@ -376,22 +388,21 @@ function WorkspaceSettings() {
       />
 
       {inviteToken && (
-        <Card data-testid="accept-invite-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              {t("acceptTitle")}
-            </CardTitle>
-            <CardDescription className="text-xs">
-              {t("acceptDescription")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <WorkspaceShell
+          tone={acceptError ? "danger" : "primary"}
+          testid="accept-invite-card"
+        >
+          <WorkspaceShellHead
+            icon={Mail}
+            title={t("acceptTitle")}
+            hint={t("acceptDescription")}
+          />
+          <WorkspaceShellBody className="space-y-3">
             {acceptError && (
-              <Alert variant="destructive" className="border-destructive/40">
-                <AlertTriangle />
-                <AlertDescription>{acceptError}</AlertDescription>
-              </Alert>
+              <WorkspaceNotice tone="danger" role="alert">
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>{acceptError}</span>
+              </WorkspaceNotice>
             )}
             <Button
               type="button"
@@ -404,8 +415,8 @@ function WorkspaceSettings() {
               )}
               {t("acceptButton")}
             </Button>
-          </CardContent>
-        </Card>
+          </WorkspaceShellBody>
+        </WorkspaceShell>
       )}
 
       {!orgId && (
@@ -421,19 +432,22 @@ function WorkspaceSettings() {
       )}
 
       {orgId && activeOrg && (
-        <Card>
-          <CardHeader className="gap-1">
+        <WorkspaceShell>
+          <WorkspaceShellHead>
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0 space-y-1">
-                <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  {t("currentOrg")}
-                </p>
-                <CardTitle className="text-base tracking-tight">
-                  {activeOrg.name}
-                </CardTitle>
-                <p className="font-mono text-xs text-muted-foreground">
-                  {activeOrg.slug}
-                </p>
+              <div className="flex min-w-0 items-start gap-3">
+                <WorkspaceIconChip icon={Building2} />
+                <div className="min-w-0 space-y-1">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                    {t("currentOrg")}
+                  </p>
+                  <h3 className="text-base font-semibold tracking-tight text-foreground">
+                    {activeOrg.name}
+                  </h3>
+                  <p className="font-mono text-xs text-muted-foreground">
+                    {activeOrg.slug}
+                  </p>
+                </div>
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
                 <RoleBadge role={activeOrg.role} />
@@ -442,14 +456,15 @@ function WorkspaceSettings() {
                 </Badge>
               </div>
             </div>
-          </CardHeader>
-          <CardContent>
+          </WorkspaceShellHead>
+          <WorkspaceShellBody>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <StatTile
                 label={t("statMembers")}
                 value={
                   membersQuery.isLoading ? "…" : String(memberCount ?? "—")
                 }
+                tone={countTone(memberCount)}
                 emphasize
               />
               <StatTile
@@ -461,6 +476,7 @@ function WorkspaceSettings() {
                       : String(pendingCount ?? "—")
                     : "—"
                 }
+                tone={canManage ? countTone(pendingCount) : "idle"}
               />
               <StatTile
                 label={t("statInvoices")}
@@ -471,10 +487,11 @@ function WorkspaceSettings() {
                       : String(invoiceCount ?? "—")
                     : "—"
                 }
+                tone={canManage ? invoiceListTone(invoiceStatuses) : "idle"}
               />
             </div>
-          </CardContent>
-        </Card>
+          </WorkspaceShellBody>
+        </WorkspaceShell>
       )}
 
       <div
@@ -484,26 +501,22 @@ function WorkspaceSettings() {
             : undefined
         }
       >
-        <Card>
-          <CardHeader>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="min-w-0 space-y-1">
-                <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  {t("membersTitle")}
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  {t("membersDescription")}
-                </CardDescription>
-              </div>
-              {typeof memberCount === "number" && memberCount > 0 ? (
-                <span className="shrink-0 text-[10px] text-muted-foreground">
+        <WorkspaceShell
+          tone={membersQuery.data?.length ? "primary" : "idle"}
+        >
+          <WorkspaceShellHead
+            icon={Users}
+            title={t("membersTitle")}
+            hint={t("membersDescription")}
+            aside={
+              typeof memberCount === "number" && memberCount > 0 ? (
+                <span className="text-[10px] text-muted-foreground">
                   {t("membersCount", { count: memberCount })}
                 </span>
-              ) : null}
-            </div>
-          </CardHeader>
-          <CardContent>
+              ) : null
+            }
+          />
+          <WorkspaceShellBody>
             {!orgId && (
               <EmptyIsland
                 icon={Building2}
@@ -526,21 +539,24 @@ function WorkspaceSettings() {
                 dateLocale={dateLocale}
               />
             )}
-          </CardContent>
-        </Card>
+          </WorkspaceShellBody>
+        </WorkspaceShell>
 
         {canManage && orgId ? (
-          <Card data-testid="invite-form-card" className="xl:sticky xl:top-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
-                <UserPlus className="h-4 w-4 text-muted-foreground" />
-                {t("inviteTitle")}
-              </CardTitle>
-              <CardDescription className="text-xs">
-                {t("inviteDescription")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
+          <WorkspaceShell
+            tone={formTone({
+              error: Boolean(formError),
+              pending: inviteMut.isPending,
+            })}
+            testid="invite-form-card"
+            className="xl:sticky xl:top-6"
+          >
+            <WorkspaceShellHead
+              icon={UserPlus}
+              title={t("inviteTitle")}
+              hint={t("inviteDescription")}
+            />
+            <WorkspaceShellBody className="space-y-3">
               {copiedInviteUrl && (
                 <div
                   className="space-y-2 rounded-md border border-border bg-muted/40 p-3"
@@ -591,7 +607,11 @@ function WorkspaceSettings() {
                       value={inviteRole}
                       onValueChange={(v) => setInviteRole(v as InviteRole)}
                     >
-                      <SelectTrigger id="invite-role" data-testid="invite-role">
+                      <SelectTrigger
+                        id="invite-role"
+                        data-testid="invite-role"
+                        className="h-10 min-h-10"
+                      >
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -607,17 +627,14 @@ function WorkspaceSettings() {
                   </div>
                 </div>
                 {formError && (
-                  <Alert
-                    variant="destructive"
-                    className="border-destructive/40"
-                  >
-                    <AlertTriangle />
-                    <AlertDescription>{formError}</AlertDescription>
-                  </Alert>
+                  <WorkspaceNotice tone="danger" role="alert">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>{formError}</span>
+                  </WorkspaceNotice>
                 )}
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="min-h-11 w-full"
                   data-testid="invite-submit"
                   disabled={inviteMut.isPending}
                 >
@@ -628,27 +645,28 @@ function WorkspaceSettings() {
                   {t("sendInvite")}
                 </Button>
               </form>
-            </CardContent>
-          </Card>
+            </WorkspaceShellBody>
+          </WorkspaceShell>
         ) : null}
       </div>
 
       {canManage && orgId && (
-        <Card>
-          <CardHeader>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                {t("pendingInvites")}
-              </CardTitle>
-              {typeof pendingCount === "number" && pendingCount > 0 ? (
-                <span className="shrink-0 text-[10px] text-muted-foreground">
+        <WorkspaceShell
+          tone={pendingCount ? "warn" : "idle"}
+          wash={Boolean(pendingCount)}
+        >
+          <WorkspaceShellHead
+            icon={Mail}
+            title={t("pendingInvites")}
+            aside={
+              typeof pendingCount === "number" && pendingCount > 0 ? (
+                <span className="text-[10px] text-muted-foreground">
                   {t("invitesCount", { count: pendingCount })}
                 </span>
-              ) : null}
-            </div>
-          </CardHeader>
-          <CardContent>
+              ) : null
+            }
+          />
+          <WorkspaceShellBody>
             {invitesQuery.isLoading && <TableRowSkeleton rows={2} />}
             {invitesQuery.isError && (
               <p className="text-sm text-muted-foreground">
@@ -671,31 +689,30 @@ function WorkspaceSettings() {
                 onRevoke={(id) => revokeMut.mutate(id)}
               />
             )}
-          </CardContent>
-        </Card>
+          </WorkspaceShellBody>
+        </WorkspaceShell>
       )}
 
       {orgId && canManage && (
-        <Card data-testid="workspace-billing">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
-              <Receipt className="h-4 w-4 text-muted-foreground" />
-              {t("billingTitle")}
-            </CardTitle>
-            <CardDescription className="text-xs">
-              {t("billingDescription")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <WorkspaceShell
+          tone={invoiceListTone(invoiceStatuses)}
+          wash={invoiceListTone(invoiceStatuses) !== "idle"}
+          testid="workspace-billing"
+        >
+          <WorkspaceShellHead
+            icon={Receipt}
+            title={t("billingTitle")}
+            hint={t("billingDescription")}
+          />
+          <WorkspaceShellBody className="space-y-3">
             {invoicesQuery.isLoading ? (
               <TableRowSkeleton rows={2} />
             ) : invoicesQuery.isError ? (
-              <p
-                className="text-sm text-muted-foreground"
-                data-testid="workspace-billing-error"
-              >
-                {t("billingLoadError")}
-              </p>
+              <WorkspaceNotice tone="idle" role="status">
+                <span data-testid="workspace-billing-error">
+                  {t("billingLoadError")}
+                </span>
+              </WorkspaceNotice>
             ) : (invoicesQuery.data?.items.length ?? 0) === 0 ? (
               <EmptyIsland
                 icon={Receipt}
@@ -729,12 +746,12 @@ function WorkspaceSettings() {
                 ))}
               </ul>
             )}
-          </CardContent>
-        </Card>
+          </WorkspaceShellBody>
+        </WorkspaceShell>
       )}
 
       {orgId && (
-        <Card data-testid="pilot-checklist">
+        <WorkspaceShell tone="primary" testid="pilot-checklist">
           <Accordion type="single" collapsible>
             <AccordionItem value="pilot" className="border-0">
               <AccordionTrigger className="px-4 py-4 hover:no-underline">
@@ -769,7 +786,7 @@ function WorkspaceSettings() {
               </Link>
             </Button>
           </div>
-        </Card>
+        </WorkspaceShell>
       )}
 
       {orgId ? (
@@ -811,17 +828,16 @@ function CreateOrgCard({
 }) {
   const { t } = useTranslation("workspace");
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-sm tracking-wide">
-          <Building2 className="h-4 w-4 text-muted-foreground" />
-          {t("createOrgTitle")}
-        </CardTitle>
-        <CardDescription className="text-xs">
-          {t("createOrgDescription")}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <WorkspaceShell
+      tone={formTone({ error: Boolean(error), pending })}
+      testid="create-org-card"
+    >
+      <WorkspaceShellHead
+        icon={Building2}
+        title={t("createOrgTitle")}
+        hint={t("createOrgDescription")}
+      />
+      <WorkspaceShellBody>
         <form onSubmit={onSubmit} className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="flex min-w-0 flex-col gap-1.5">
@@ -846,10 +862,10 @@ function CreateOrgCard({
             </div>
           </div>
           {error && (
-            <Alert variant="destructive" className="border-destructive/40">
-              <AlertTriangle />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
+            <WorkspaceNotice tone="danger" role="alert">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>{error}</span>
+            </WorkspaceNotice>
           )}
           <Button
             type="submit"
@@ -861,8 +877,8 @@ function CreateOrgCard({
             {t("createWorkspace")}
           </Button>
         </form>
-      </CardContent>
-    </Card>
+      </WorkspaceShellBody>
+    </WorkspaceShell>
   );
 }
 
@@ -880,8 +896,9 @@ function MembersList({
         {members.map((m) => (
           <div
             key={m.user_id}
-            className="rounded-lg border border-border bg-card p-3"
+            className="relative overflow-hidden rounded-lg border border-border bg-card p-3 pl-4"
           >
+            <SiemRail className={workspaceRailClass(roleTone(m.role))} />
             <p className="break-all font-mono text-xs text-foreground">
               {m.email}
             </p>
@@ -895,43 +912,46 @@ function MembersList({
         ))}
       </div>
       <div className="hidden md:block">
-        <Table className="table-fixed">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[55%] text-[10px] uppercase tracking-wider">
-                {t("colEmail")}
-              </TableHead>
-              <TableHead className="w-[20%] text-[10px] uppercase tracking-wider">
-                {t("colRole")}
-              </TableHead>
-              <TableHead className="w-[25%] text-[10px] uppercase tracking-wider">
-                {t("colJoined")}
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {members.map((m) => (
-              <TableRow key={m.user_id}>
-                <TableCell>
-                  <span
-                    className="block max-w-[min(36rem,50vw)] truncate font-mono text-xs text-foreground 2xl:max-w-none 2xl:overflow-visible 2xl:whitespace-normal"
-                    title={m.email}
-                  >
-                    {m.email}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <RoleBadge role={m.role} />
-                </TableCell>
-                <TableCell>
-                  <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                    {formatShortDate(m.joined_at, dateLocale)}
-                  </span>
-                </TableCell>
+        <div className="overflow-hidden rounded-md border border-border">
+          <Table className="table-fixed">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[55%] text-[10px] uppercase tracking-wider">
+                  {t("colEmail")}
+                </TableHead>
+                <TableHead className="w-[20%] text-[10px] uppercase tracking-wider">
+                  {t("colRole")}
+                </TableHead>
+                <TableHead className="w-[25%] text-[10px] uppercase tracking-wider">
+                  {t("colJoined")}
+                </TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {members.map((m) => (
+                <TableRow key={m.user_id} className="h-12 hover:bg-muted/50">
+                  <TableCell className="relative pl-4">
+                    <SiemRail className={workspaceRailClass(roleTone(m.role))} />
+                    <span
+                      className="block max-w-[min(36rem,50vw)] truncate font-mono text-xs text-foreground 2xl:max-w-none 2xl:overflow-visible 2xl:whitespace-normal"
+                      title={m.email}
+                    >
+                      {m.email}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <RoleBadge role={m.role} />
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                      {formatShortDate(m.joined_at, dateLocale)}
+                    </span>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );
@@ -955,8 +975,9 @@ function InvitesList({
         {invites.map((inv) => (
           <div
             key={inv.id}
-            className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3"
+            className="relative flex flex-col gap-3 overflow-hidden rounded-lg border border-border bg-card p-3 pl-4"
           >
+            <SiemRail className="bg-amber-500" />
             <div className="min-w-0 space-y-1">
               <p className="break-all font-mono text-xs text-foreground">
                 {inv.email}
@@ -981,55 +1002,58 @@ function InvitesList({
         ))}
       </div>
       <div className="hidden md:block">
-        <Table className="table-fixed">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[45%] text-[10px] uppercase tracking-wider">
-                {t("colEmail")}
-              </TableHead>
-              <TableHead className="w-[18%] text-[10px] uppercase tracking-wider">
-                {t("colRole")}
-              </TableHead>
-              <TableHead className="w-[22%] text-[10px] uppercase tracking-wider">
-                {t("colExpires")}
-              </TableHead>
-              <TableHead className="w-[15%] text-right text-[10px] uppercase tracking-wider">
-                {t("colAction")}
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {invites.map((inv) => (
-              <TableRow key={inv.id}>
-                <TableCell>
-                  <span
-                    className="block max-w-[min(36rem,50vw)] truncate font-mono text-xs text-foreground 2xl:max-w-none 2xl:overflow-visible 2xl:whitespace-normal"
-                    title={inv.email}
-                  >
-                    {inv.email}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <RoleBadge role={inv.role} />
-                </TableCell>
-                <TableCell>
-                  <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                    {inv.expires_at
-                      ? formatShortDate(inv.expires_at, dateLocale)
-                      : "—"}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right">
-                  <RevokeInviteButton
-                    inviteId={inv.id}
-                    pending={pending}
-                    onRevoke={onRevoke}
-                  />
-                </TableCell>
+        <div className="overflow-hidden rounded-md border border-border">
+          <Table className="table-fixed">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[45%] text-[10px] uppercase tracking-wider">
+                  {t("colEmail")}
+                </TableHead>
+                <TableHead className="w-[18%] text-[10px] uppercase tracking-wider">
+                  {t("colRole")}
+                </TableHead>
+                <TableHead className="w-[22%] text-[10px] uppercase tracking-wider">
+                  {t("colExpires")}
+                </TableHead>
+                <TableHead className="w-[15%] text-right text-[10px] uppercase tracking-wider">
+                  {t("colAction")}
+                </TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {invites.map((inv) => (
+                <TableRow key={inv.id} className="h-12 hover:bg-muted/50">
+                  <TableCell className="relative pl-4">
+                    <SiemRail className="bg-amber-500" />
+                    <span
+                      className="block max-w-[min(36rem,50vw)] truncate font-mono text-xs text-foreground 2xl:max-w-none 2xl:overflow-visible 2xl:whitespace-normal"
+                      title={inv.email}
+                    >
+                      {inv.email}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <RoleBadge role={inv.role} />
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                      {inv.expires_at
+                        ? formatShortDate(inv.expires_at, dateLocale)
+                        : "—"}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <RevokeInviteButton
+                      inviteId={inv.id}
+                      pending={pending}
+                      onRevoke={onRevoke}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );

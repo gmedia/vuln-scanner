@@ -2,6 +2,8 @@ import { CalendarDays, Download, Landmark, Printer } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { SiemRail } from "@/components/siem/siemChrome";
+import { invoiceTone, workspaceRailClass } from "@/components/workspace/workspaceChrome";
 import { seatsForSku } from "@/components/invoice/invoicePrintFormat";
 import type { OrgInvoiceItem } from "@/api/orgs";
 
@@ -53,8 +55,9 @@ export function WorkspaceInvoiceCard({
   return (
     <li
       data-testid={`workspace-invoice-${invoice.id}`}
-      className="overflow-hidden rounded-lg border border-border bg-card"
+      className="relative overflow-hidden rounded-lg border border-border bg-card pl-4"
     >
+      <SiemRail className={workspaceRailClass(invoiceTone(invoice.status))} />
       <div className="flex items-start justify-between gap-3 p-4 pb-3">
         <div className="min-w-0 space-y-1">
           <p className="truncate text-sm font-medium text-foreground">
