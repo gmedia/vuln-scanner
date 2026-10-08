@@ -2557,3 +2557,102 @@ Unchanged from wave 1: borders-only + 2px rails, no nested Card-in-Card.
 | HPP cost lines only carry a rail on the first cell | page | Consistent with the wave-1 user table; a full row wash is unnecessary for a short journal | Keep |
 | Wave 2B pages still use plain `Card` | `/admin/invoices`, `/admin/email-logs`, `/admin/blog`, `/admin/ai` | Explicitly out of scope for wave 2A | Wave 2B |
 | Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |
+
+# Scanner forms (`/scan/ip`, `/scan/domain`, `/scan/mobile`)
+
+Print §§0–8 and every SPA section above stay locked. This section is the **dark SPA** contract for the three scan-launch pages. They share one layout, one shell, and one results panel, so this is a single contract with three small deltas.
+
+## 0. Research Log (Scanner)
+
+- Embedded refs: shortlisted `linear.app` / `stripe` / `supabase` → picked Layer A `redesign-skill` + `layout-skill` (stack + page-grid; AppShell owns document scroll) and Layer B `linear.app` (ops density, luminance steps, one accent, tabular mono). Same routing as the ops consoles. Not Stripe marketing; not Linear indigo `#5e6ad2`.
+- Sibling harvest: `ScanKpiStrip` + `scanChrome` severity palette (critical destructive / high orange / medium yellow / low blue / info muted) already built for `/scan/:id`; `HostKpiStrip` rail tiles; `SiemEmptyIsland` island grammar; `PageHeader` `h2`.
+- Current diagnosis: all three pages were four flat `Card` + `CardHeader` sections (Scan target / Scan progress / Results / coverage) with no rail; the **Results severity grid was five tinted `bg-*-600/10` pills with no rail** — exactly the pre-P15 `StatCard` pattern; the results summary bar was a flat `bg-muted` row; the three results blocks were byte-identical copies.
+- Imagen / Lazyweb: skipped — sibling P15 grammar is the reference; AGENTS.md forbids extra deps for a visual slice.
+
+**Direction (locked):** Same ops console as the family, reusing the **severity rail vocabulary** already shipped on `/scan/:id`. Signature: a primary-railed **Scan target** shell, a sky-railed **Scan progress** shell while running, and a **Results** shell whose rail is the worst severity (destructive / orange / yellow / blue / primary when clean) and whose five severity tiles each carry their own rail. The three identical results blocks collapse into one `ScanResultsPanel`.
+
+## 1. Atmosphere & Identity
+
+These are the launch points: pick a target, watch progress, read the result. They must feel like the same product as `/scan/:id` — which they now do, because they reuse its severity rails.
+
+The one memorable moment: the **Results rail**. A scan with criticals reads destructive, highs orange, mediums yellow, lows blue, and a clean scan primary — before any number is read.
+
+Do **not** use a filled green masthead, a marketing hero, or tinted `bg-*-600/10` pills without a rail. No loading skeleton is needed on this page (the form and progress components own their own states).
+
+## 2. Color
+
+Reuse `frontend/src/index.css` `:root` / `.dark` and the `scanChrome` severity palette. No second palette. No `#0a7`. No Linear indigo.
+
+| Role | Token / class | Usage |
+|------|----------------|-------|
+| Canvas | `--background` | Page |
+| Surface | `--card` + `border-border` | Scan target / progress / results / coverage shells, severity tiles |
+| Ink | `--foreground` | Shell titles, counts, finding totals |
+| Meta | `--muted-foreground` | Coverage list, severity labels |
+| Accent | `--primary` `hsl(142 71% 45%)` | Scan-target rail, clean results rail, clean summary rail, coverage rail |
+| Running | `bg-sky-500` rail | Scan progress shell |
+| Critical / high | `bg-destructive` rail + `bg-destructive/[0.04]` wash | Critical tile, summary rail when crit/high, results shell |
+| High | `bg-orange-500` rail | High tile, results shell when worst is high |
+| Medium | `bg-yellow-500` rail | Medium tile, results shell when worst is medium |
+| Low | `bg-blue-500` rail | Low tile, results shell when worst is low |
+| Idle | `bg-border` rail | Info tile, coverage shell |
+
+Rails are **redundant** with the count and the `AlertTriangle` / `CheckCircle2` icon. Never color-only status.
+
+## 3. Typography
+
+Unchanged from the family. Page title is the PageHeader `h2` (`IP scanner` / `Domain scanner` / `Mobile scanner`); shell titles are `h3` at `text-sm font-medium tracking-wide`; severity counts are `font-mono text-lg font-bold tabular-nums`; severity labels are `text-[10px] uppercase tracking-wider`.
+
+## 4. Spacing & Layout
+
+4px base. **No** filter bar.
+
+- Page grid: `grid w-full items-start gap-6 lg:grid-cols-2`; left column `space-y-6`; coverage shell sits in the right column only when `!isScanning && !hasResults`.
+- Severity grid: `grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3` (was a hard `grid-cols-5` that crushed on mobile).
+- Shell pad: `px-4 py-3` head, `px-4 py-4` body.
+
+**Frozen contracts** (`src/test/{Ip,Domain,Mobile}Scanner.test.tsx` + `e2e/{ip,domain,mobile}-scanner*.spec.ts`): `h2` copy `IP scanner` / `Domain scanner` / `Mobile scanner`; shell titles `Scan target` / `Upload binary` / `Scan progress` / `What this scan covers` / `Results`; form testids `ip-scan-form` / `domain-scan-form` / `mobile-upload`; `scan-progress`; `scan-coverage`; `COMPLETED` badge; **each severity count renders exactly once** (`getByText("1")`…`getByText("5")` are exact matches); `15 findings found` / `1 finding found`; `.lucide-triangle-alert` and `.lucide-circle-check`; `View Details`; e2e form placeholders + submit button names + `a[href='/dashboard']` (AppShell sidebar) are untouched.
+
+## 5. Signature Components & States
+
+| Primitive | Anatomy | States |
+|-----------|---------|--------|
+| `ScanShell` (`components/scan/ScanShell.tsx`) | kit `Card` + `relative overflow-hidden pl-4` + `SiemRail(railClass)` | caller-supplied rail |
+| `ScanShellHead` | `border-b border-border px-4 py-3` + optional icon chip + `h3` + optional aside | static |
+| `ScanShellBody` | `px-4 py-4`, optional `testid` | static |
+| `ScanResultsPanel` (`scan-results`) | `ScanShell` + severity rail + wash + head (`Results` + `COMPLETED` badge) + 5 railed severity tiles + railed summary row | rail by worst severity; summary rail destructive when crit/high else primary |
+
+Tone sources: Scan target → primary; Scan progress → sky; coverage → border; Results → `scannerResultRailClass(summary)`.
+
+## 6. Motion
+
+Unchanged from the family (micro hover only). `ScanProgress` owns its own animation.
+
+## 7. Depth & Surface
+
+Borders-only + 2px rails. No nested Card-in-Card, no tinted pill backgrounds without a rail, no filled masthead.
+
+## 8. Accessibility Constraints & Accepted Debt
+
+### Constraints
+
+- WCAG 2.2 AA contrast on SPA tokens. Rails are redundant with counts and status icons.
+- PageHeader `h2` is the only level-2 heading; shell titles are `h3`.
+- Coverage is a real `<ul>`; severity tiles are text, not color-only.
+- The "View Details" button gets a 44pt mobile target (`min-h-11 sm:min-h-9`).
+- These three pages are **English-only** (frozen by unit test) — do not i18n them without updating the tests.
+
+### Personas
+
+- **Any user who can scan** (primary): pick target → run → read severity → open details.
+- **Mobile user**: severity grid wraps 2-up instead of crushing 5-up.
+- **On-call**: the Results rail reads destructive/orange before the numbers.
+
+### Accepted Debt
+
+| Item | Location | Why accepted | Owner / Exit |
+|------|----------|--------------|--------------|
+| Three scanner pages remain near-identical | pages | Extracting a `ScannerPage` layout is a module refactor, not a visual slice | Named refactor |
+| Scanner copy stays English (hardcoded) | 3 pages | Frozen by unit tests; i18n-ising needs matching test updates | Named i18n slice |
+| Scanner tests still mock `@/components/ui/Card` | test | Harmless: `ScanShell` composes the real `Card` through the mock | Named test cleanup |
+| Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |

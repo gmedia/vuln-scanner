@@ -208,4 +208,104 @@ describe("IpScanner", () => {
     renderPage();
     expect(screen.getByText("View Details")).toBeInTheDocument();
   });
+
+  it("rails the scan-target shell primary", () => {
+    vi.mocked(useScanStore).mockReturnValue(null);
+    vi.mocked(useScanDetail).mockReturnValue({ data: undefined } as ReturnType<typeof useScanDetail>);
+
+    renderPage();
+    expect(
+      screen.getByTestId("scan-target").querySelector(".bg-primary"),
+    ).toBeTruthy();
+  });
+
+  it("rails the results shell destructive when critical findings exist", () => {
+    vi.mocked(useScanStore).mockReturnValue("job-123");
+    vi.mocked(useScanDetail).mockReturnValue({
+      data: {
+        status: "completed",
+        result_summary: {
+          critical: 2,
+          high: 1,
+          medium: 0,
+          low: 0,
+          info: 0,
+          total_findings: 3,
+        },
+      } as any,
+    } as ReturnType<typeof useScanDetail>);
+
+    renderPage();
+    const results = screen.getByTestId("scan-results");
+    expect(results.firstElementChild?.className).toMatch(/bg-destructive/);
+    expect(results.className).toMatch(/bg-destructive\/\[0\.04\]/);
+  });
+
+  it("rails the results shell yellow when only medium findings exist", () => {
+    vi.mocked(useScanStore).mockReturnValue("job-123");
+    vi.mocked(useScanDetail).mockReturnValue({
+      data: {
+        status: "completed",
+        result_summary: {
+          critical: 0,
+          high: 0,
+          medium: 2,
+          low: 1,
+          info: 3,
+          total_findings: 6,
+        },
+      } as any,
+    } as ReturnType<typeof useScanDetail>);
+
+    renderPage();
+    const results = screen.getByTestId("scan-results");
+    expect(results.firstElementChild?.className).toMatch(/bg-yellow-500/);
+    expect(results.className).not.toMatch(/bg-destructive/);
+  });
+
+  it("rails the results shell primary when the scan is fully clean", () => {
+    vi.mocked(useScanStore).mockReturnValue("job-123");
+    vi.mocked(useScanDetail).mockReturnValue({
+      data: {
+        status: "completed",
+        result_summary: {
+          critical: 0,
+          high: 0,
+          medium: 0,
+          low: 0,
+          info: 0,
+          total_findings: 0,
+        },
+      } as any,
+    } as ReturnType<typeof useScanDetail>);
+
+    renderPage();
+    const results = screen.getByTestId("scan-results");
+    expect(results.firstElementChild?.className).toMatch(/bg-primary/);
+    expect(results.className).not.toMatch(/bg-destructive/);
+  });
+
+  it("rails each severity tile", () => {
+    vi.mocked(useScanStore).mockReturnValue("job-123");
+    vi.mocked(useScanDetail).mockReturnValue({
+      data: {
+        status: "completed",
+        result_summary: {
+          critical: 1,
+          high: 2,
+          medium: 3,
+          low: 4,
+          info: 5,
+          total_findings: 15,
+        },
+      } as any,
+    } as ReturnType<typeof useScanDetail>);
+
+    renderPage();
+    const results = screen.getByTestId("scan-results");
+    expect(results.querySelector(".bg-destructive")).toBeTruthy();
+    expect(results.querySelector(".bg-orange-500")).toBeTruthy();
+    expect(results.querySelector(".bg-yellow-500")).toBeTruthy();
+    expect(results.querySelector(".bg-blue-500")).toBeTruthy();
+  });
 });
