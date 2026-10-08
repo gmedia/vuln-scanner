@@ -181,4 +181,41 @@ describe("AdminDashboard", () => {
       .find((a) => a.getAttribute("href") === "/admin/email-logs");
     expect(emailLink).toBeTruthy();
   });
+
+  it("rails each KPI tile by its kind", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: mockStats,
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    renderPage();
+    expect(
+      screen.getByTestId("admin-kpi-users").querySelector(".bg-sky-500"),
+    ).toBeTruthy();
+    expect(
+      screen.getByTestId("admin-kpi-scans").querySelector(".bg-primary"),
+    ).toBeTruthy();
+    expect(
+      screen.getByTestId("admin-kpi-findings").querySelector(".bg-orange-500"),
+    ).toBeTruthy();
+    expect(
+      screen.getByTestId("admin-kpi-creditsIn").querySelector(".bg-primary"),
+    ).toBeTruthy();
+    expect(
+      screen.getByTestId("admin-kpi-creditsUsed").querySelector(".bg-amber-500"),
+    ).toBeTruthy();
+  });
+
+  it("rails the chart and quick-links shells", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: mockStats,
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    const { container } = renderPage();
+    expect(
+      container.querySelectorAll(".bg-primary").length,
+    ).toBeGreaterThanOrEqual(2);
+    expect(container.querySelector(".bg-border")).toBeTruthy();
+  });
 });

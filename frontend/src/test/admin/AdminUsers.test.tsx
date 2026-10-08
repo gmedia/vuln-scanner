@@ -261,6 +261,23 @@ describe("AdminUsers", () => {
       await userEvent.click(viewButtons[0]);
       expect(mockNavigate).toHaveBeenCalledWith("/admin/users/1");
     });
+
+    it("rails each row by user state", () => {
+      mockUseQueryReturn({ data: { users: mockUsers, total: 2 } });
+      const { container } = renderPage();
+      expect(container.querySelector(".bg-primary")).toBeTruthy();
+      expect(container.querySelector(".bg-amber-500")).toBeTruthy();
+    });
+
+    it("keeps the role badge as a span inside a table cell", () => {
+      mockUseQueryReturn({ data: { users: mockUsers, total: 2 } });
+      renderPage();
+      const inCell = screen
+        .getAllByText("Admin")
+        .find((el) => el.closest("td"));
+      expect(inCell).toBeTruthy();
+      expect(inCell?.tagName).toBe("SPAN");
+    });
   });
 
   describe("pagination", () => {

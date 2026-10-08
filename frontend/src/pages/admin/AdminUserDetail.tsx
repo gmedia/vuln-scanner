@@ -11,13 +11,21 @@ import {
   Check,
   Radar,
   Send,
+  UserX,
+  KeyRound,
 } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
+import {
+  AdminNotice,
+  AdminShell,
+  AdminShellBody,
+  AdminShellHead,
+} from "@/components/admin/AdminShell";
+import { mutationTone } from "@/components/admin/adminChrome";
 import PageHeader from "@/components/layout/PageHeader";
 import PageHeaderBack from "@/components/layout/PageHeaderBack";
 import { adminApi } from "@/api/admin";
@@ -101,6 +109,12 @@ function AdminUserDetail() {
     }
   };
 
+  const creditsTone = mutationTone({
+    error: updateCredits.isError,
+    success: updateCredits.isSuccess,
+    pending: updateCredits.isPending,
+  });
+
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6">
       <PageHeader
@@ -111,37 +125,24 @@ function AdminUserDetail() {
 
       {isLoading ? (
         <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm tracking-wide">
-                {t("profile")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <AdminShell tone="primary">
+            <AdminShellHead title={t("profile")} />
+            <AdminShellBody>
               <TableRowSkeleton rows={4} />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm tracking-wide">
-                {t("creditAdjust")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+            </AdminShellBody>
+          </AdminShell>
+          <AdminShell tone="primary">
+            <AdminShellHead title={t("creditAdjust")} />
+            <AdminShellBody>
               <TableRowSkeleton rows={3} />
-            </CardContent>
-          </Card>
+            </AdminShellBody>
+          </AdminShell>
         </div>
       ) : user ? (
-        <>
-          <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm tracking-wide">
-                {t("profile")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+          <AdminShell tone={user.is_verified ? "primary" : "warn"}>
+            <AdminShellHead icon={Shield} title={t("profile")} />
+            <AdminShellBody className="space-y-4">
               <div className="flex w-full min-w-0 items-start gap-2">
                 <Mail className="mt-2.5 h-4 w-4 shrink-0 text-muted-foreground" />
                 <span
@@ -194,7 +195,7 @@ function AdminUserDetail() {
                     size="sm"
                     onClick={() => resendVerification.mutate()}
                     disabled={resendVerification.isPending}
-                    className="text-xs"
+                    className="min-h-11 text-xs sm:min-h-9"
                   >
                     {resendVerification.isPending ? (
                       <>
@@ -209,27 +210,21 @@ function AdminUserDetail() {
                     )}
                   </Button>
                   {resendVerification.isError && (
-                    <div className="rounded-md border border-red-600/30 bg-red-600/10 px-3 py-2">
-                      <p className="text-xs text-red-400">
-                        {t("resendFail")}
-                      </p>
-                    </div>
+                    <AdminNotice tone="danger" role="alert">
+                      {t("resendFail")}
+                    </AdminNotice>
                   )}
                   {resendVerification.isSuccess &&
                     resendVerification.data?.email_sent === false && (
-                      <div className="rounded-md border border-red-600/30 bg-red-600/10 px-3 py-2">
-                        <p className="text-xs text-red-400">
-                          {t("resendFailRetry")}
-                        </p>
-                      </div>
+                      <AdminNotice tone="danger" role="alert">
+                        {t("resendFailRetry")}
+                      </AdminNotice>
                     )}
                   {resendVerification.isSuccess &&
                     resendVerification.data?.email_sent !== false && (
-                      <div className="rounded-md border border-green-600/30 bg-green-600/10 px-3 py-2">
-                        <p className="text-xs text-green-400">
-                          {t("resendOk")}
-                        </p>
-                      </div>
+                      <AdminNotice tone="success" role="status">
+                        {t("resendOk")}
+                      </AdminNotice>
                     )}
                 </div>
               )}
@@ -266,21 +261,15 @@ function AdminUserDetail() {
                     : t("lastLoginNever")}
                 </span>
               </div>
-            </CardContent>
-          </Card>
+            </AdminShellBody>
+          </AdminShell>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm tracking-wide">
-                {t("creditAdjust")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <AdminShell tone={creditsTone}>
+            <AdminShellHead icon={KeyRound} title={t("creditAdjust")} />
+            <AdminShellBody className="space-y-4">
               <div className="grid max-w-xl gap-4">
-                <div>
-                  <Label htmlFor="admin-credit-amount" className="mb-1.5 block">
-                    {t("amount")}
-                  </Label>
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label htmlFor="admin-credit-amount">{t("amount")}</Label>
                   <Input
                     id="admin-credit-amount"
                     type="number"
@@ -293,8 +282,8 @@ function AdminUserDetail() {
                     className="max-w-[12rem] font-mono"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="admin-credit-description" className="mb-1.5 block">
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label htmlFor="admin-credit-description">
                     {t("description")}
                   </Label>
                   <Input
@@ -339,31 +328,28 @@ function AdminUserDetail() {
                 )}
               </div>
               {updateCredits.isError && (
-                <div className="rounded-md border border-red-600/30 bg-red-600/10 px-3 py-2">
-                  <p className="text-xs text-red-400">
-                    {t("creditsUpdateFail")}
-                  </p>
-                </div>
+                <AdminNotice tone="danger" role="alert">
+                  {t("creditsUpdateFail")}
+                </AdminNotice>
               )}
               {updateCredits.isSuccess && (
-                <div className="rounded-md border border-green-600/30 bg-green-600/10 px-3 py-2">
-                  <p className="text-xs text-green-400">
-                    {t("creditsUpdateOk")}
-                  </p>
-                </div>
+                <AdminNotice tone="success" role="status">
+                  {t("creditsUpdateOk")}
+                </AdminNotice>
               )}
-            </CardContent>
-          </Card>
-          </div>
-        </>
+            </AdminShellBody>
+          </AdminShell>
+        </div>
       ) : (
-        <Card>
-          <CardContent className="p-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              {t("userNotFound")}
-            </p>
-          </CardContent>
-        </Card>
+        <div
+          className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
+          data-testid="admin-user-not-found"
+        >
+          <UserX className="h-8 w-8 text-muted-foreground" aria-hidden />
+          <p className="text-sm font-medium text-foreground">
+            {t("userNotFound")}
+          </p>
+        </div>
       )}
     </div>
   );
