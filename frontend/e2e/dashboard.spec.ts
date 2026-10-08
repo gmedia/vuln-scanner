@@ -58,8 +58,10 @@ test.describe("Dashboard @smoke", () => {
     page,
   }) => {
     await page.goto("/dashboard");
-    await page.waitForSelector("a[href^='/scan/']", { timeout: 15_000 });
-    const firstScan = page.locator("main a[href^='/scan/']").first();
+    // List renders twice (mobile `md:hidden` + desktop `hidden md:block`); the
+    // plain `.first()` picks the hidden mobile card, so require visibility.
+    const firstScan = page.locator("main a[href^='/scan/']:visible").first();
+    await firstScan.waitFor({ state: "visible", timeout: 15_000 });
     const href = await firstScan.getAttribute("href");
     await firstScan.click();
     await expect(page).toHaveURL(href!);
