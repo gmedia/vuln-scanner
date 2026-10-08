@@ -2656,3 +2656,102 @@ Borders-only + 2px rails. No nested Card-in-Card, no tinted pill backgrounds wit
 | Scanner copy stays English (hardcoded) | 3 pages | Frozen by unit tests; i18n-ising needs matching test updates | Named i18n slice |
 | Scanner tests still mock `@/components/ui/Card` | test | Harmless: `ScanShell` composes the real `Card` through the mock | Named test cleanup |
 | Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |
+
+# Admin console — wave 2B (`/admin/invoices`, `/admin/blog`, `/admin/email-logs`, `/admin/ai`)
+
+Print §§0–8 and every SPA section above stay locked. This section is the **dark SPA** contract for the last four admin surfaces. It reuses the wave-1/2A `AdminShell` / `adminChrome` grammar — no new primitives beyond four status-tone helpers — so only the deltas and per-page tone rules are recorded here.
+
+## 0. Research Log (Admin wave 2B)
+
+- Reused wave-1/2A routing and grammar. No new reference pull.
+- Sibling harvest: `AdminShell` / `AdminShellHead` / `AdminShellBody`; the billing surface's `WorkspaceInvoiceCard` status-rail precedent; `HostHitsList` (rail inside the first cell, mobile card + desktop row); `SiemEmptyIsland` island grammar.
+- Current diagnosis: `AdminInvoices` (3 `Card` + 7 `CardHeader`) had a kit `Alert` banner, a flat SKU catalog, a flat create form, and a rail-less invoice table with a bare empty `<p>`; `AdminBlog` (2 `Card` + 5 `CardHeader`) had rail-less form + list and a bare empty `<p>`; `AdminEmailLogs` (1 `Card` + 3 `CardHeader`) had a rail-less table and an ad-hoc muted-circle empty state; `AdminAi` (1 `Card`) had a kit `Alert` feature-off and the four tab shells were plain `Card`s. None had a rail.
+- Imagen / Lazyweb: skipped — wave-1 grammar is the reference; AGENTS.md forbids extra deps for a visual slice.
+
+**Direction (locked):** Same operator console. Deltas: **invoice status drives the rail** (draft muted / sent amber / paid primary / void destructive) on both the row and the list shell; **blog** rails published primary vs draft muted; **email logs** rails failed destructive vs sent primary; **AI** feature-off is a warn shell and every tab shell is a primary `AdminShell`.
+
+## 1. Atmosphere & Identity
+
+These are the last internal surfaces: billing, content, deliverability, AI gateway. They must read as the same console as waves 1/2A — same hairline heads, same rail geometry — while each list's rail says its own status story.
+
+The one memorable moment: the **invoice list rail**. A list containing a void invoice reads destructive, one with a sent invoice reads amber, one with only paid invoices reads primary — the money state is visible before any row is read.
+
+Do **not** use a filled green masthead or a marketing hero. Loading is `TableRowSkeleton`, empty is an island.
+
+## 2. Color
+
+Reuse the wave-1 `AdminTone` map. Deltas:
+
+| Role | Token / class | Usage |
+|------|----------------|-------|
+| Banner / neutral shells | `bg-sky-500` (info) or `--primary` | `invoices-banner`, catalog/create shells, blog form, AI shells |
+| Sent / warn | `bg-amber-500` rail | Sent invoice row + list shell; blog edit form; AI feature-off |
+| Paid / published / sent-email | `--primary` rail + `bg-primary/5` wash | Paid invoice, published post, delivered email |
+| Void / failed | `bg-destructive` rail + `bg-destructive/[0.04]` wash | Void invoice, failed email |
+| Draft / idle | `bg-border` rail | Draft invoice, draft post |
+
+## 3. Typography
+
+Unchanged from wave 1/2A. Shell titles are `h3` at `text-sm font-medium tracking-wide`; every IDR figure stays `font-mono tabular-nums`; table heads stay `text-[10px] uppercase tracking-wider`.
+
+## 4. Spacing & Layout
+
+Unchanged from wave 1/2A. Deltas:
+
+- Every table is wrapped in `overflow-hidden rounded-md border border-border` (matching waves 1/2A).
+- `AdminBlog` form fields move to the repo standard `flex min-w-0 flex-col gap-1.5` (was `space-y-2`).
+- Mobile card surfaces (`md:hidden`) keep their existing classes so the wave-1 AI test contracts hold.
+
+**Frozen contracts** (`src/test/admin/*`): `admin-invoices-page`; banner copy `Sinexis bills Scan and Host SKUs`; `SX-202609-0001`; `invoice-create` disabled until org+sku; `invoice-paid-inv-1` / `invoice-send-inv-1` / `invoice-void-*`; `invoice-product` / `invoice-sku` and their `select-root` / `data-value` mock structure; `document.getElementById("inv-org")`; toast copy `Invoice marked sent (no email)` / `Marked paid — Host invoice; Scan org SKU unchanged`; `admin-invoice-print` / `admin-invoice-pdf` absent on draft, present on sent/paid; `invoice-print-sheet` / `invoice-print-bank`; `downloadAdminInvoicePdf("inv-1","SX-202609-0001")`; `blog-slug` / `blog-title` / `blog-excerpt` / `blog-locale` / `blog-body` / `blog-save`; `Blog` heading; `Email send logs`; `No send attempts recorded`; masked recipient + `Failed` + `SMTP timeout`; `Host WAF` label and filter option; `email-logs-pagination` + `Page 1/2/3` + `aria-current="page"`; `emailLogPageItems`; `admin-ai-*` mobile/desktop container classes (`space-y-2 md:hidden` / `hidden md:block`), `admin-ai-provider-card-p1`, `admin-ai-model-card-m1`, `admin-ai-usage-card-u1/u21`, tablist `data-variant="line"` + `w-full` (not `min-w-max`), `admin-ai-usage-pagination`, usage `listAiUsage({page:2,limit:20})`.
+
+## 5. Signature Components & States
+
+No new primitives. Tone sources:
+
+| Surface | Tone |
+|---------|------|
+| Invoices banner | info (sky) |
+| Invoices catalog / create | primary |
+| Invoices list shell | `invoiceListTone(statuses)` (void → danger, sent → warn, paid → success, else idle) |
+| Invoice row | `invoiceStatusTone(status)` |
+| Blog form | warn when editing, primary otherwise |
+| Blog list shell | `blogListTone` (published present → primary, else idle) |
+| Blog row | `blogStatusTone` (published → primary, draft → idle) |
+| Email logs shell | `emailListTone` (any failed → danger, else primary) |
+| Email log row | `emailStatusTone` (failed → danger, else primary) |
+| AI feature-off | warn |
+| AI tab shells | primary |
+
+Empty states are `rounded-xl border border-border bg-muted/40` islands: `admin-invoices-empty`, `blog-empty`, `email-logs-empty`.
+
+## 6. Motion
+
+Unchanged from wave 1 (micro hover only; no ping).
+
+## 7. Depth & Surface
+
+Unchanged from wave 1: borders-only + 2px rails, no nested Card-in-Card.
+
+## 8. Accessibility Constraints & Accepted Debt
+
+### Constraints
+
+- Unchanged from wave 1. Every field keeps `Label` + `htmlFor`; the invoice/blog form labels stay the immediate previous sibling of their control where tests use the adjacent-sibling selector.
+- Kit only: no native `<select>` in `src/` (tests mock `Select`, which is why the mocks still assert `select-root`).
+- `prefers-reduced-motion`: only the kit spinner animates.
+
+### Personas
+
+- **Platform admin** (primary): create/send/pay/void an invoice, write and publish a post, audit deliverability, manage the AI gateway.
+- **Finance admin**: the invoice list rail reads void/sent/paid before the table is scanned.
+- **Deliverability admin**: the email shell turns destructive the moment any send failed.
+
+### Accepted Debt
+
+| Item | Location | Why accepted | Owner / Exit |
+|------|----------|--------------|--------------|
+| Wave-2B tests still mock `@/components/ui/Card` | tests | Harmless: `AdminShell` composes the real `Card` through the mock | Named test cleanup |
+| `adminChrome` now carries invoice/blog/email tone maps | chrome | Consistent with the per-surface tone-map pattern already accepted in waves 1/2A | Named shared ops-chrome extract |
+| `AdminAi` list components (`ProviderList` / `ModelList` / `UsageList`) keep their own container classes | components | Frozen by the wave-1 AI test contracts (`space-y-2 md:hidden`) | Keep |
+| `AdminInvoices` / `AdminBlog` / `AdminEmailLogs` / `AdminAi` keep queries + mutations in the page | pages | This slice restyles chrome only | Named extract |
+| Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |

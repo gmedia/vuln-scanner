@@ -7,10 +7,15 @@ import {
   updateAiProvider,
   type AiProviderAdmin,
 } from "@/api/admin";
+import { Server } from "lucide-react";
 import { AdminAiField } from "@/components/admin/AdminAiField";
 import { AdminAiProviderList } from "@/components/admin/AdminAiProviderList";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import {
+  AdminShell,
+  AdminShellBody,
+  AdminShellHead,
+} from "@/components/admin/AdminShell";
 
 export function AdminAiProvidersTab({
   providers,
@@ -56,11 +61,9 @@ export function AdminAiProvidersTab({
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t("aiTabProviders")}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <AdminShell tone="primary">
+      <AdminShellHead icon={Server} title={t("aiTabProviders")} />
+      <AdminShellBody className="space-y-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <AdminAiField id="ai-p-name" label={t("aiName")} value={provName} onChange={setProvName} />
           <AdminAiField id="ai-p-url" label={t("aiBaseUrl")} value={provUrl} onChange={setProvUrl} />
@@ -100,7 +103,7 @@ export function AdminAiProvidersTab({
           onSave={() => saveProv.mutate()}
           onDelete={(id) => delProv.mutate(id)}
         />
-      </CardContent>
-    </Card>
+      </AdminShellBody>
+    </AdminShell>
   );
 }

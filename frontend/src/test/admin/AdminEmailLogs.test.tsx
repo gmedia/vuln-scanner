@@ -172,6 +172,74 @@ describe("AdminEmailLogs", () => {
     await user.click(screen.getByRole("button", { name: "Page 2" }));
     expect(useQuery).toHaveBeenCalled();
   });
+
+  it("rails the shell destructive when any send failed", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: {
+        total: 2,
+        items: [
+          {
+            id: "1",
+            kind: "verification",
+            status: "sent",
+            recipient_masked: "a***@example.com",
+            attempts: 1,
+            error_message: null,
+            created_at: "2026-09-01T12:00:00Z",
+          },
+          {
+            id: "2",
+            kind: "verification",
+            status: "failed",
+            recipient_masked: "b***@example.com",
+            attempts: 3,
+            error_message: "SMTP timeout",
+            created_at: "2026-09-01T12:00:00Z",
+          },
+        ],
+      },
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+    renderPage();
+    expect(
+      screen.getByTestId("email-logs-shell").querySelector(".bg-destructive"),
+    ).toBeTruthy();
+  });
+
+  it("rails the shell primary when every send succeeded", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: {
+        total: 1,
+        items: [
+          {
+            id: "1",
+            kind: "verification",
+            status: "sent",
+            recipient_masked: "a***@example.com",
+            attempts: 1,
+            error_message: null,
+            created_at: "2026-09-01T12:00:00Z",
+          },
+        ],
+      },
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+    renderPage();
+    const shell = screen.getByTestId("email-logs-shell");
+    expect(shell.querySelector(".bg-primary")).toBeTruthy();
+    expect(shell.querySelector(".bg-destructive")).toBeNull();
+  });
+
+  it("renders a muted island when there are no logs", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: { items: [], total: 0 },
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+    renderPage();
+    const island = screen.getByTestId("email-logs-empty");
+    expect(island.className).toMatch(/bg-muted\/40/);
+    expect(island.className).toMatch(/rounded-xl/);
+  });
 });
 
 describe("emailLogPageItems", () => {

@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, Loader2, Printer, Receipt } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { Download, Loader2, Printer, Receipt, Info, Tag, Plus, FileText } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -23,6 +21,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import {
+  AdminShell,
+  AdminShellBody,
+  AdminShellHead,
+} from "@/components/admin/AdminShell";
+import {
+  invoiceListTone,
+  invoiceStatusTone,
+} from "@/components/admin/adminChrome";
+import { SiemRail } from "@/components/siem/siemChrome";
+import { adminRailClass } from "@/components/admin/adminChrome";
 import PageHeader from "@/components/layout/PageHeader";
 import {
   adminApi,
@@ -156,56 +165,54 @@ function AdminInvoices() {
         title={t("invoicesTitle")}
       />
 
-      <Alert>
-        <AlertTitle>{t("invoicesBannerTitle")}</AlertTitle>
-        <AlertDescription>{t("invoicesBannerBody")}</AlertDescription>
-      </Alert>
+      <AdminShell tone="info" testid="invoices-banner">
+        <AdminShellHead icon={Info} title={t("invoicesBannerTitle")} />
+        <AdminShellBody>
+          <p className="max-w-prose text-xs text-muted-foreground">
+            {t("invoicesBannerBody")}
+          </p>
+        </AdminShellBody>
+      </AdminShell>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm tracking-wide">
-            {t("skuCatalogCard")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <AdminShell tone="primary">
+        <AdminShellHead icon={Tag} title={t("skuCatalogCard")} />
+        <AdminShellBody>
           {catalogQ.isLoading ? (
             <TableRowSkeleton rows={3} />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("colProduct")}</TableHead>
-                  <TableHead>{t("colSku")}</TableHead>
-                  <TableHead>{t("colListIdr")}</TableHead>
-                  <TableHead>{t("colSeats")}</TableHead>
-                  <TableHead>{t("colInvoicable")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {catalog.map((row) => (
-                  <TableRow key={`${row.product}-${row.sku}`}>
-                    <TableCell>{row.product}</TableCell>
-                    <TableCell className="uppercase">{row.sku}</TableCell>
-                    <TableCell className="font-mono tabular-nums">
-                      {formatIdr(row.list_idr)}
-                    </TableCell>
-                    <TableCell>{row.seats}</TableCell>
-                    <TableCell>{row.invoicable ? t("yes") : t("no")}</TableCell>
+            <div className="overflow-hidden rounded-md border border-border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("colProduct")}</TableHead>
+                    <TableHead>{t("colSku")}</TableHead>
+                    <TableHead>{t("colListIdr")}</TableHead>
+                    <TableHead>{t("colSeats")}</TableHead>
+                    <TableHead>{t("colInvoicable")}</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {catalog.map((row) => (
+                    <TableRow key={`${row.product}-${row.sku}`} className="hover:bg-muted/50">
+                      <TableCell>{row.product}</TableCell>
+                      <TableCell className="uppercase">{row.sku}</TableCell>
+                      <TableCell className="font-mono tabular-nums">
+                        {formatIdr(row.list_idr)}
+                      </TableCell>
+                      <TableCell>{row.seats}</TableCell>
+                      <TableCell>{row.invoicable ? t("yes") : t("no")}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </AdminShellBody>
+      </AdminShell>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm tracking-wide">
-            {t("invoiceCreateCard")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <AdminShell tone="primary">
+        <AdminShellHead icon={Plus} title={t("invoiceCreateCard")} />
+        <AdminShellBody className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-4">
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="inv-org">{t("colOrg")}</Label>
@@ -268,6 +275,7 @@ function AdminInvoices() {
               <Button
                 type="button"
                 data-testid="invoice-create"
+                className="min-h-11 w-full sm:min-h-10 sm:w-auto"
                 disabled={!orgId || !skuValue || createMut.isPending}
                 onClick={() => createMut.mutate()}
               >
@@ -278,16 +286,15 @@ function AdminInvoices() {
               </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </AdminShellBody>
+      </AdminShell>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm tracking-wide">
-            {t("invoiceListCard")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <AdminShell
+        tone={invoiceListTone(invoices.map((i) => i.status))}
+        testid="invoices-list-shell"
+      >
+        <AdminShellHead icon={FileText} title={t("invoiceListCard")} />
+        <AdminShellBody className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="inv-status">{t("colStatus")}</Label>
@@ -318,108 +325,119 @@ function AdminInvoices() {
           {invoicesQ.isLoading ? (
             <TableRowSkeleton rows={4} />
           ) : invoices.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {t("invoicesEmpty")}
-            </p>
+            <div
+              className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
+              data-testid="admin-invoices-empty"
+            >
+              <Receipt className="h-8 w-8 text-muted-foreground" aria-hidden />
+              <p className="text-sm font-medium text-foreground">
+                {t("invoicesEmpty")}
+              </p>
+            </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("colNumber")}</TableHead>
-                  <TableHead>{t("colOrg")}</TableHead>
-                  <TableHead>{t("colProduct")}</TableHead>
-                  <TableHead>{t("colSku")}</TableHead>
-                  <TableHead>{t("colListIdr")}</TableHead>
-                  <TableHead>{t("colStatus")}</TableHead>
-                  <TableHead className="text-right">
-                    {t("colActions")}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {invoices.map((inv: InvoiceItem) => (
-                  <TableRow key={inv.id}>
-                    <TableCell className="font-mono text-xs">
-                      {inv.number}
-                    </TableCell>
-                    <TableCell>{inv.organization_name ?? "—"}</TableCell>
-                    <TableCell>{inv.product}</TableCell>
-                    <TableCell className="uppercase">{inv.sku}</TableCell>
-                    <TableCell className="font-mono tabular-nums">
-                      {formatIdr(inv.amount_idr)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="default">{inv.status}</Badge>
-                    </TableCell>
-                    <TableCell className="space-x-1 text-right">
-                      {inv.status === "sent" || inv.status === "paid" ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="no-print"
-                          data-testid="admin-invoice-print"
-                          aria-label={inv.number}
-                          onClick={() => startPrint(inv)}
-                        >
-                          <Printer className="mr-1 h-3.5 w-3.5" />
-                          {t("invoicePrint")}
-                        </Button>
-                      ) : null}
-                      {inv.status === "sent" || inv.status === "paid" ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="no-print"
-                          data-testid="admin-invoice-pdf"
-                          aria-label={`${inv.number} pdf`}
-                          onClick={() => void downloadPdf(inv)}
-                        >
-                          <Download className="mr-1 h-3.5 w-3.5" />
-                          {t("invoicePdf")}
-                        </Button>
-                      ) : null}
-                      {inv.status === "draft" ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          data-testid={`invoice-send-${inv.id}`}
-                          onClick={() => sendMut.mutate(inv.id)}
-                        >
-                          {t("invoiceSend")}
-                        </Button>
-                      ) : null}
-                      {inv.status === "draft" || inv.status === "sent" ? (
-                        <>
-                          <Button
-                            type="button"
-                            size="sm"
-                            data-testid={`invoice-paid-${inv.id}`}
-                            onClick={() => payMut.mutate(inv.id)}
-                          >
-                            {t("invoiceMarkPaid")}
-                          </Button>
+            <div className="overflow-hidden rounded-md border border-border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("colNumber")}</TableHead>
+                    <TableHead>{t("colOrg")}</TableHead>
+                    <TableHead>{t("colProduct")}</TableHead>
+                    <TableHead>{t("colSku")}</TableHead>
+                    <TableHead>{t("colListIdr")}</TableHead>
+                    <TableHead>{t("colStatus")}</TableHead>
+                    <TableHead className="text-right">
+                      {t("colActions")}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {invoices.map((inv: InvoiceItem) => (
+                    <TableRow key={inv.id} className="hover:bg-muted/50">
+                      <TableCell className="relative pl-4 font-mono text-xs">
+                        <SiemRail
+                          className={adminRailClass(invoiceStatusTone(inv.status))}
+                        />
+                        {inv.number}
+                      </TableCell>
+                      <TableCell>{inv.organization_name ?? "—"}</TableCell>
+                      <TableCell>{inv.product}</TableCell>
+                      <TableCell className="uppercase">{inv.sku}</TableCell>
+                      <TableCell className="font-mono tabular-nums">
+                        {formatIdr(inv.amount_idr)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="default">{inv.status}</Badge>
+                      </TableCell>
+                      <TableCell className="space-x-1 text-right">
+                        {inv.status === "sent" || inv.status === "paid" ? (
                           <Button
                             type="button"
                             size="sm"
                             variant="outline"
-                            data-testid={`invoice-void-${inv.id}`}
-                            onClick={() => voidMut.mutate(inv.id)}
+                            className="no-print"
+                            data-testid="admin-invoice-print"
+                            aria-label={inv.number}
+                            onClick={() => startPrint(inv)}
                           >
-                            {t("invoiceVoid")}
+                            <Printer className="mr-1 h-3.5 w-3.5" />
+                            {t("invoicePrint")}
                           </Button>
-                        </>
-                      ) : null}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                        ) : null}
+                        {inv.status === "sent" || inv.status === "paid" ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="no-print"
+                            data-testid="admin-invoice-pdf"
+                            aria-label={`${inv.number} pdf`}
+                            onClick={() => void downloadPdf(inv)}
+                          >
+                            <Download className="mr-1 h-3.5 w-3.5" />
+                            {t("invoicePdf")}
+                          </Button>
+                        ) : null}
+                        {inv.status === "draft" ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            data-testid={`invoice-send-${inv.id}`}
+                            onClick={() => sendMut.mutate(inv.id)}
+                          >
+                            {t("invoiceSend")}
+                          </Button>
+                        ) : null}
+                        {inv.status === "draft" || inv.status === "sent" ? (
+                          <>
+                            <Button
+                              type="button"
+                              size="sm"
+                              data-testid={`invoice-paid-${inv.id}`}
+                              onClick={() => payMut.mutate(inv.id)}
+                            >
+                              {t("invoiceMarkPaid")}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              data-testid={`invoice-void-${inv.id}`}
+                              onClick={() => voidMut.mutate(inv.id)}
+                            >
+                              {t("invoiceVoid")}
+                            </Button>
+                          </>
+                        ) : null}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </AdminShellBody>
+      </AdminShell>
       <InvoicePrintSheet invoice={printing} />
     </div>
   );

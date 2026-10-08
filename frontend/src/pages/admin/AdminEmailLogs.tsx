@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Mail } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
@@ -29,6 +28,17 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/Pagination";
+import {
+  AdminShell,
+  AdminShellBody,
+  AdminShellHead,
+} from "@/components/admin/AdminShell";
+import {
+  adminRailClass,
+  emailListTone,
+  emailStatusTone,
+} from "@/components/admin/adminChrome";
+import { SiemRail } from "@/components/siem/siemChrome";
 import PageHeader from "@/components/layout/PageHeader";
 import { adminApi, type EmailSendLogItem } from "@/api/admin";
 import { useTranslation } from "react-i18next";
@@ -122,18 +132,22 @@ function AdminEmailLogs() {
         description={t("emailLogsSubtitle")}
       />
 
-      <Card>
-        <CardHeader className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <CardTitle className="text-sm tracking-wide">
-              {t("emailLogsCard")}
-            </CardTitle>
-            {data && data.total > 0 && (
-              <span className="shrink-0 text-[10px] text-muted-foreground">
+      <AdminShell
+        tone={emailListTone((data?.items ?? []).map((r) => r.status))}
+        testid="email-logs-shell"
+      >
+        <AdminShellHead
+          icon={Mail}
+          title={t("emailLogsCard")}
+          aside={
+            data && data.total > 0 ? (
+              <span className="text-[10px] text-muted-foreground">
                 {t("totalCount", { count: data.total })}
               </span>
-            )}
-          </div>
+            ) : null
+          }
+        />
+        <AdminShellBody className="space-y-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="email-log-kind">{t("emailLogsKind")}</Label>
@@ -179,16 +193,17 @@ function AdminEmailLogs() {
               </Select>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
           {isLoading && !data ? (
             <TableRowSkeleton rows={5} />
           ) : !data || data.items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="mb-3 rounded-full bg-muted p-3">
-                <Mail className="h-6 w-6 text-muted-foreground opacity-40" />
-              </div>
-              <p className="text-sm text-foreground">{t("emailLogsEmpty")}</p>
+            <div
+              className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
+              data-testid="email-logs-empty"
+            >
+              <Mail className="h-8 w-8 text-muted-foreground" aria-hidden />
+              <p className="text-sm font-medium text-foreground">
+                {t("emailLogsEmpty")}
+              </p>
             </div>
           ) : (
             <>
@@ -196,8 +211,11 @@ function AdminEmailLogs() {
                 {data.items.map((row) => (
                   <div
                     key={row.id}
-                    className="w-full rounded-lg border border-border bg-card p-3 text-left"
+                    className="relative w-full overflow-hidden rounded-lg border border-border bg-card p-3 pl-4 text-left"
                   >
+                    <SiemRail
+                      className={adminRailClass(emailStatusTone(row.status))}
+                    />
                     <p className="font-mono text-xs text-foreground">
                       {row.recipient_masked}
                     </p>
@@ -225,7 +243,7 @@ function AdminEmailLogs() {
                   </div>
                 ))}
               </div>
-              <div className="hidden md:block">
+              <div className="hidden overflow-hidden rounded-md border border-border md:block">
                 <Table className="table-fixed">
                   <TableHeader>
                     <TableRow>
@@ -251,8 +269,11 @@ function AdminEmailLogs() {
                   </TableHeader>
                   <TableBody>
                     {data.items.map((row: EmailSendLogItem) => (
-                      <TableRow key={row.id}>
-                        <TableCell className="text-xs text-muted-foreground">
+                      <TableRow key={row.id} className="hover:bg-muted/50">
+                        <TableCell className="relative pl-4 text-xs text-muted-foreground">
+                          <SiemRail
+                            className={adminRailClass(emailStatusTone(row.status))}
+                          />
                           {formatTime(row.created_at)}
                         </TableCell>
                         <TableCell className="text-xs">
@@ -325,8 +346,8 @@ function AdminEmailLogs() {
               ) : null}
             </>
           )}
-        </CardContent>
-      </Card>
+        </AdminShellBody>
+      </AdminShell>
     </div>
   );
 }

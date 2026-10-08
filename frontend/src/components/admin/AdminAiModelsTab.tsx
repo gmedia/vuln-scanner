@@ -8,10 +8,15 @@ import {
   type AiModelAdmin,
   type AiProviderAdmin,
 } from "@/api/admin";
+import { Boxes } from "lucide-react";
 import { AdminAiField } from "@/components/admin/AdminAiField";
 import { AdminAiModelList } from "@/components/admin/AdminAiModelList";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import {
+  AdminShell,
+  AdminShellBody,
+  AdminShellHead,
+} from "@/components/admin/AdminShell";
 import { Label } from "@/components/ui/Label";
 import {
   Select,
@@ -73,11 +78,9 @@ export function AdminAiModelsTab({
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t("aiTabModels")}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <AdminShell tone="primary">
+      <AdminShellHead icon={Boxes} title={t("aiTabModels")} />
+      <AdminShellBody className="space-y-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <div className="flex min-w-0 flex-col gap-1.5">
             <Label htmlFor="ai-m-provider">{t("aiProviderId")}</Label>
@@ -130,7 +133,7 @@ export function AdminAiModelsTab({
           onSave={() => saveModel.mutate()}
           onDelete={(id) => delModel.mutate(id)}
         />
-      </CardContent>
-    </Card>
+      </AdminShellBody>
+    </AdminShell>
   );
 }

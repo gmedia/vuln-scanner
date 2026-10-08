@@ -420,4 +420,66 @@ describe("AdminInvoices", () => {
       "Marked paid — Host invoice; Scan org SKU unchanged",
     );
   });
+
+  it("rails the banner info and a draft row muted", () => {
+    render(<AdminInvoices />);
+    expect(
+      screen
+        .getByTestId("invoices-banner")
+        .querySelector(".bg-sky-500"),
+    ).toBeTruthy();
+    const list = screen.getByTestId("invoices-list-shell");
+    const draftRow = screen.getByText("SX-202609-0001").closest("tr");
+    expect(draftRow?.querySelector(".bg-border")).toBeTruthy();
+    expect(list.querySelector(".bg-border")).toBeTruthy();
+  });
+
+  it("rails a sent invoice amber and a void one destructive", () => {
+    vi.mocked(useQuery).mockImplementation(((opts: { queryKey: unknown[] }) => {
+      const key = String(opts.queryKey[0]);
+      if (key === "admin-sku-catalog") {
+        return { data: catalog, isLoading: false };
+      }
+      if (key === "admin-orgs") {
+        return { data: { items: [], total: 0 }, isLoading: false };
+      }
+      return {
+        data: {
+          items: [
+            { ...invoices[0], id: "inv-sent", number: "SX-SENT", status: "sent" },
+            { ...invoices[0], id: "inv-void", number: "SX-VOID", status: "void" },
+          ],
+          total: 2,
+        },
+        isLoading: false,
+      };
+    }) as typeof useQuery);
+    render(<AdminInvoices />);
+    const sentRow = screen.getByText("SX-SENT").closest("tr");
+    expect(sentRow?.querySelector(".bg-amber-500")).toBeTruthy();
+    const voidRow = screen.getByText("SX-VOID").closest("tr");
+    expect(voidRow?.querySelector(".bg-destructive")).toBeTruthy();
+    expect(
+      screen
+        .getByTestId("invoices-list-shell")
+        .querySelector(".bg-destructive"),
+    ).toBeTruthy();
+  });
+
+  it("renders an empty island when there are no invoices", () => {
+    vi.mocked(useQuery).mockImplementation(((opts: { queryKey: unknown[] }) => {
+      const key = String(opts.queryKey[0]);
+      if (key === "admin-sku-catalog") {
+        return { data: catalog, isLoading: false };
+      }
+      if (key === "admin-orgs") {
+        return { data: { items: [], total: 0 }, isLoading: false };
+      }
+      return { data: { items: [], total: 0 }, isLoading: false };
+    }) as typeof useQuery);
+    render(<AdminInvoices />);
+    const island = screen.getByTestId("admin-invoices-empty");
+    expect(island.className).toMatch(/bg-muted\/40/);
+    expect(island.className).toMatch(/rounded-xl/);
+  });
 });

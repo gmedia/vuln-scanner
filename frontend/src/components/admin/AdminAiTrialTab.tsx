@@ -2,8 +2,13 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { adminAiChat, type AiModelAdmin, type AiProviderAdmin } from "@/api/admin";
+import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import {
+  AdminShell,
+  AdminShellBody,
+  AdminShellHead,
+} from "@/components/admin/AdminShell";
 import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
 import {
@@ -39,11 +44,9 @@ export function AdminAiTrialTab({
     },
   });
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t("aiTabTrial")}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <AdminShell tone="primary">
+      <AdminShellHead icon={MessageSquare} title={t("aiTabTrial")} />
+      <AdminShellBody className="space-y-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="flex min-w-0 flex-col gap-1.5">
             <Label htmlFor="ai-trial-provider">{t("aiProviderId")}</Label>
@@ -109,7 +112,7 @@ export function AdminAiTrialTab({
             {t("aiTrialReply")}: {trialReply}
           </p>
         ) : null}
-      </CardContent>
-    </Card>
+      </AdminShellBody>
+    </AdminShell>
   );
 }
