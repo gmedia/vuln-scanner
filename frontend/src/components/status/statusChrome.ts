@@ -76,6 +76,14 @@ export function incidentRailClass(status: string): string {
   return "bg-border";
 }
 
+export function incidentsListRailClass(statuses: readonly string[]): string {
+  if (statuses.length === 0) return "bg-border";
+  if (statuses.some((s) => s === "investigating")) return "bg-amber-500";
+  if (statuses.some((s) => s === "identified")) return "bg-orange-500";
+  if (statuses.some((s) => s === "monitoring")) return "bg-sky-500";
+  return "bg-primary";
+}
+
 export const HOSTNAME_STATUS_KEYS: Record<string, string> = {
   pending_txt: "statusPendingTxt",
   active: "statusActive",

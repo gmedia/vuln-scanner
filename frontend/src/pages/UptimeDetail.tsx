@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { isAxiosError } from "axios";
-import { Activity, ArrowLeft } from "lucide-react";
+import { Activity, ArrowLeft, TrendingUp, Siren } from "lucide-react";
 import {
   getMonitor,
   getMonitorStats,
@@ -17,8 +17,12 @@ import PageHeader from "@/components/layout/PageHeader";
 import PageHeaderBack from "@/components/layout/PageHeaderBack";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { DatePicker } from "@/components/ui/DatePicker";
+import {
+  OpsShell,
+  OpsShellBody,
+  OpsShellHead,
+} from "@/components/ops/OpsShell";
 import { Label } from "@/components/ui/Label";
 import {
   Pagination,
@@ -35,7 +39,7 @@ import { UptimeDetailKpiStrip } from "@/components/uptime/UptimeDetailKpiStrip";
 import { UptimeHealthHero } from "@/components/uptime/UptimeHealthHero";
 import { UptimeHistoryPanel } from "@/components/uptime/UptimeHistoryPanel";
 import { explainUptimeError } from "@/components/uptime/uptimeErrors";
-import { stateBadgeVariant } from "@/components/uptime/uptimeChrome";
+import { stateBadgeVariant, outagesRailClass } from "@/components/uptime/uptimeChrome";
 import { useIsMobile } from "@/hooks/use-mobile";
 import i18n from "@/i18n";
 import { htmlLang, isAppLocale } from "@/i18n/locales";
@@ -505,8 +509,8 @@ export default function UptimeDetail() {
         latencyLabel={t("latency")}
       />
 
-      <Card className="overflow-hidden" data-testid="uptime-range-filters">
-        <CardHeader className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <OpsShell railClass="bg-sky-500" testid="uptime-range-filters">
+        <OpsShellHead className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Tabs value={activeTabsValue} onValueChange={onTabsChange}>
             <TabsList data-testid="uptime-range-tabs">
               {RANGES.map((r) => (
@@ -521,8 +525,8 @@ export default function UptimeDetail() {
               ))}
             </TabsList>
           </Tabs>
-        </CardHeader>
-        <CardContent className="pt-6">
+        </OpsShellHead>
+        <OpsShellBody>
           <div
             data-testid="uptime-outage-filters"
             className="grid grid-cols-1 gap-3 sm:grid-cols-3"
@@ -593,8 +597,8 @@ export default function UptimeDetail() {
               </p>
             ) : null}
           </div>
-        </CardContent>
-      </Card>
+        </OpsShellBody>
+      </OpsShell>
 
       <UptimeDetailKpiStrip
         pct={pct}
@@ -607,13 +611,9 @@ export default function UptimeDetail() {
         }
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm tracking-wide">
-            {t("timelineTitle")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <OpsShell railClass="bg-primary" testid="uptime-timeline-shell">
+        <OpsShellHead icon={TrendingUp} title={t("timelineTitle")} />
+        <OpsShellBody className="space-y-3">
           {eventsQ.isLoading ? (
             <Skeleton className="h-8 w-full" />
           ) : (
@@ -624,21 +624,25 @@ export default function UptimeDetail() {
             />
           )}
           <p className="text-xs text-muted-foreground">{t("timelineHint")}</p>
-        </CardContent>
-      </Card>
+        </OpsShellBody>
+      </OpsShell>
 
-      <Card data-testid="uptime-outages" className="overflow-hidden">
-        <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-border pb-4">
-          <CardTitle className="text-sm tracking-wide">
-            {t("outagesTitle")}
-          </CardTitle>
-          {outages.length > 0 ? (
-            <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
-              {outages.length}
-            </span>
-          ) : null}
-        </CardHeader>
-        <CardContent className={outages.length === 0 ? "p-0" : undefined}>
+      <OpsShell
+        railClass={outagesRailClass(outages.length)}
+        testid="uptime-outages"
+      >
+        <OpsShellHead
+          icon={Siren}
+          title={t("outagesTitle")}
+          aside={
+            outages.length > 0 ? (
+              <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
+                {outages.length}
+              </span>
+            ) : null
+          }
+        />
+        <OpsShellBody flush={outages.length === 0}>
           {eventsQ.isLoading ? (
             <Skeleton className="h-16 w-full" />
           ) : outages.length === 0 ? (
@@ -706,8 +710,8 @@ export default function UptimeDetail() {
               </PaginationContent>
             </Pagination>
           ) : null}
-        </CardContent>
-      </Card>
+        </OpsShellBody>
+      </OpsShell>
 
       <UptimeHistoryPanel
         monitor={monitor}

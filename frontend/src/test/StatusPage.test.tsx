@@ -561,4 +561,99 @@ it("shows empty state with create form", async () => {
       screen.getByText("Do not point A/AAAA at the origin."),
     ).toBeInTheDocument();
   });
+
+  it("rails the identity and components shells primary", async () => {
+    mockGet.mockResolvedValue({
+      id: "p1",
+      organization_id: "o1",
+      slug: "erp-stg",
+      title: "ERP",
+      published: true,
+      custom_hostname: null,
+      hostname_status: "none",
+      cname_target: "status-edge.sinexis.app",
+      ...pageFields,
+      public_path: "/status/erp-stg",
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+      components: [],
+      incidents: [],
+      overall: "operational",
+    });
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("status-identity-shell")).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByTestId("status-identity-shell").firstElementChild?.className,
+    ).toMatch(/bg-primary/);
+    expect(
+      screen.getByTestId("status-components-shell").firstElementChild?.className,
+    ).toMatch(/bg-primary/);
+  });
+
+  it("rails the host shell by hostname status", async () => {
+    mockGet.mockResolvedValue({
+      id: "p1",
+      organization_id: "o1",
+      slug: "erp-stg",
+      title: "ERP",
+      published: true,
+      custom_hostname: "status.example.com",
+      hostname_status: "failed",
+      cname_target: "status-edge.sinexis.app",
+      ...pageFields,
+      public_path: "/status/erp-stg",
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+      components: [],
+      incidents: [],
+      overall: "operational",
+    });
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("status-host-shell")).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByTestId("status-host-shell").firstElementChild?.className,
+    ).toMatch(/bg-destructive/);
+  });
+
+  it("rails the incidents shell by the worst open incident", async () => {
+    mockGet.mockResolvedValue({
+      id: "p1",
+      organization_id: "o1",
+      slug: "erp-stg",
+      title: "ERP",
+      published: true,
+      custom_hostname: null,
+      hostname_status: "none",
+      cname_target: "status-edge.sinexis.app",
+      ...pageFields,
+      public_path: "/status/erp-stg",
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+      components: [],
+      incidents: [
+        {
+          id: "i1",
+          title: "API blip",
+          impact: "minor",
+          status: "investigating",
+          started_at: "2026-01-01T00:00:00Z",
+          resolved_at: null,
+          created_at: "2026-01-01T00:00:00Z",
+          updates: [],
+        },
+      ],
+      overall: "degraded",
+    });
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("status-incidents-shell")).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByTestId("status-incidents-shell").firstElementChild?.className,
+    ).toMatch(/bg-amber-500/);
+  });
 });
