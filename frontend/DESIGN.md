@@ -2837,3 +2837,92 @@ Borders-only + 2px rails. No nested Card-in-Card.
 | `StatusPage` / `UptimeDetail` keep queries + mutations in the page | pages | This slice restyles chrome only | Named extract |
 | Prior sections' accepted-debt rows still say "extracting `components/ops/` is a third-family risk" | earlier sections | Those notes were accurate for their scope; this section is the first to invert that trade-off. Left as-is so the decision history stays readable | Update when the migration lands |
 | Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |
+
+# Inbox & credit history (`/inbox`, `/credit-history`)
+
+Print §§0–8 and every SPA section above stay locked. These are the last two SPA surfaces without a documented contract. Both already had **per-row** rails; this section closes their **shells** on the shared `OpsShell`, which completes the ops family.
+
+## 0. Research Log (Inbox & credit history)
+
+- Reused the family grammar and the `OpsShell` extracted in the previous slice. No new reference pull.
+- Sibling harvest: `OpsShell` (`components/ops/OpsShell.tsx`), the per-row rail precedent inside both pages (`InboxRow`, `LedgerMobileCard` / `TransactionRow`), `SiemEmptyIsland` island grammar.
+- Current diagnosis: `/inbox` had one `Card` + `CardHeader` list shell and a bare bordered `<div>` filter bar; `/credit-history` had an `article` identity band, three flat `StatTile`s, a bare bordered `<div>` filter bar, and one `Card` + `CardHeader` list shell. Every rail already existed at row level; the shells had none. `/credit-history` also carried a `TYPE_COLORS` badge palette.
+- Imagen / Lazyweb: skipped — family grammar is the reference; AGENTS.md forbids extra deps for a visual slice.
+
+**Direction (locked):** Same ops console. Inbox's list shell rails by the **worst row status** (failed → destructive, bounced → orange, complained → yellow, all sent → primary, empty → muted); credit history's list shell rails by the **page net** (positive → primary, negative → destructive, empty → muted).
+
+## 1. Atmosphere & Identity
+
+`/inbox` answers "did the product's email actually leave?" — SMTP acceptance, not mailbox delivery. `/credit-history` answers "where did my scan credits go?". Both must read as the same console as the rest of the family.
+
+The one memorable moment: the **list rail**. Inbox shows a failed send in destructive at the shell level before any row is read; credit history flips destructive the moment the page nets negative.
+
+## 2. Color
+
+Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`.
+
+| Role | Token / class | Usage |
+|------|----------------|-------|
+| Shells | `--card` + `border-border` + `SiemRail` | Inbox filter/list, credit identity/filters/list |
+| Accent | `--primary` `hsl(142 71% 45%)` | sent rail, credit rail, identity rail, credits tile, positive net |
+| Warn / bounced | `bg-orange-500` rail | bounced row + list shell |
+| Warn / complained | `bg-yellow-500` rail | complained row + list shell |
+| Danger | `bg-destructive` rail + `bg-destructive/[0.04]` row wash | failed row, failed list shell, debit row, debits tile, negative net |
+| Refund | `bg-blue-500` rail | refund row |
+| Idle | `bg-border` rail | filter shells, empty list shells |
+
+**Ledger badge palette is intentionally kept.** `TYPE_COLORS` (`bg-green-600/15`, `bg-red-600/15`, `bg-blue-600/15`) and the signed-amount `text-green-*` / `text-red-*` classes stay verbatim: they are a semantic ledger palette, and `e2e/credit-history.spec.ts` selects on `span.bg-green-600` / `bg-red-600` / `bg-blue-600` / `text-green-400` / `text-red-400`. Do **not** fold them into the tone map.
+
+## 3. Typography
+
+Unchanged from the family. Shell titles are the shared `h3` at `text-sm font-medium tracking-wide`; counts stay `font-mono text-[10px] tabular-nums`.
+
+## 4. Spacing & Layout
+
+Filter bars keep the AGENTS.md contract: `grid gap-3`, each field `flex min-w-0 flex-col gap-1.5`, controls `h-10 min-h-10`. They are now `OpsShell` bodies rather than bare bordered divs, so they match the rest of the family.
+
+**Frozen contracts**: `inbox-page`, `inbox-filters`, `inbox-empty`, `inbox-pagination`, `inbox-row`, `inbox-job-link`; `credit-history-identity`, `credit-history-summary`, `credit-history-filters`; the four `th` labels `Date` / `Type` / `Amount` / `Description`; `Page N of M`; `N total`; `Transactions`; `No transactions yet` / `Credit adjustments will appear here.`; the e2e badge + amount classes above; the `@/components/ui/Card` mock in `src/test/credit/CreditHistory.test.tsx` (harmless — `OpsShell` composes the real `Card` through it).
+
+## 5. Signature Components & States
+
+| Primitive | Anatomy | States |
+|-----------|---------|--------|
+| Inbox filter shell (`inbox-filters`) | `OpsShell` muted rail + body grid (no head) | idle |
+| Inbox list shell (`inbox-list-shell`) | `OpsShell` + `SiemRail(inboxListRailClass)` + head (`Send attempts` + row count) + `flush` body | primary / orange / yellow / destructive / muted |
+| Credit identity shell (`credit-history-identity`) | `OpsShell` primary rail + body (wallet figure + account links) + summary grid | primary |
+| Credit summary tiles | `StatTile` + `SiemRail` | balance primary / credits primary / debits destructive |
+| Credit filter shell (`credit-history-filters`) | `OpsShell` muted rail + body grid + footer note + Clear | idle |
+| Credit ledger shell (`credit-history-list-shell`) | `OpsShell` + `SiemRail(creditListRailClass)` + head (`Transactions` + total) + `flush` body | primary / destructive / muted |
+
+New chrome: `components/inbox/inboxChrome.ts` (`inboxStatusRailClass`, `inboxListRailClass`), `components/credit/creditChrome.ts` (`creditTypeRailClass`, `creditListRailClass`). Both move logic that previously lived inline in the page.
+
+## 6. Motion
+
+Unchanged from the family (micro hover only; the row problem wash already existed).
+
+## 7. Depth & Surface
+
+Borders-only + 2px rails. No nested Card-in-Card.
+
+## 8. Accessibility Constraints & Accepted Debt
+
+### Constraints
+
+- Unchanged. Headings stay PageHeader `h2`; shell titles are `h3`.
+- Every field keeps `Label` + `htmlFor`; Selects are kit only.
+- The Inbox list head uses the existing `t("card")` copy ("Send attempts") — no new i18n key.
+
+### Personas
+
+- **Operator** (primary): scan the inbox for failed/bounced sends; audit the credit ledger.
+- **Finance/self-serve user**: the ledger rail flips destructive on a net-negative page.
+
+### Accepted Debt
+
+| Item | Location | Why accepted | Owner / Exit |
+|------|----------|--------------|--------------|
+| Ledger badge + amount palette stays hardcoded (green/red/blue) | `CreditHistory.tsx` | Semantic ledger palette, and frozen by `e2e/credit-history.spec.ts` selectors | Named e2e + token migration |
+| `Inbox` / `CreditHistory` keep queries + filters in the page | pages | This slice restyles chrome only | Named extract |
+| `src/test/credit/CreditHistory.test.tsx` still mocks `@/components/ui/Card` | test | Harmless: `OpsShell` composes the real `Card` through the mock | Named test cleanup |
+| `ops-shell-residue` migration note still open | earlier section | The six per-surface shells remain; this slice only adds two more consumers | Named migration PR |
+| Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |

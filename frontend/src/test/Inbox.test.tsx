@@ -226,4 +226,72 @@ describe("Inbox", () => {
     expect(screen.getAllByText("Complained").length).toBeGreaterThan(0);
     expect(screen.queryByTestId("inbox-job-link")).not.toBeInTheDocument();
   });
+
+  it("rails the list shell primary when every row was sent", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: {
+        total: 1,
+        items: [
+          {
+            id: "1",
+            kind: "scan_diff",
+            status: "sent",
+            recipient_masked: "t***@example.com",
+            attempts: 1,
+            created_at: "2026-09-16T12:00:00Z",
+            job_id: null,
+          },
+        ],
+      },
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+    renderPage();
+    expect(
+      screen.getByTestId("inbox-list-shell").firstElementChild?.className,
+    ).toMatch(/bg-primary/);
+  });
+
+  it("rails the list shell by the worst row status", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: {
+        total: 2,
+        items: [
+          {
+            id: "1",
+            kind: "scan_diff",
+            status: "bounced",
+            recipient_masked: "t***@example.com",
+            attempts: 1,
+            created_at: "2026-09-16T12:00:00Z",
+            job_id: null,
+          },
+          {
+            id: "2",
+            kind: "uptime",
+            status: "failed",
+            recipient_masked: "f***@example.com",
+            attempts: 3,
+            created_at: "2026-09-16T12:00:00Z",
+            job_id: null,
+          },
+        ],
+      },
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+    renderPage();
+    expect(
+      screen.getByTestId("inbox-list-shell").firstElementChild?.className,
+    ).toMatch(/bg-destructive/);
+  });
+
+  it("rails the empty list shell muted", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: { items: [], total: 0 },
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+    renderPage();
+    expect(
+      screen.getByTestId("inbox-list-shell").firstElementChild?.className,
+    ).toMatch(/bg-border/);
+  });
 });

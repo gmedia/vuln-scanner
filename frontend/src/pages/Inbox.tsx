@@ -1,19 +1,20 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import {
-  Activity,
-  Inbox as InboxIcon,
-  Mail,
-  ScanSearch,
-  Shield,
-  ShieldAlert,
-} from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { Activity, Inbox as InboxIcon, Mail, ScanSearch, Shield, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
+import {
+  OpsShell,
+  OpsShellBody,
+  OpsShellHead,
+} from "@/components/ops/OpsShell";
+import {
+  inboxListRailClass,
+  inboxStatusRailClass,
+} from "@/components/inbox/inboxChrome";
 import {
   Select,
   SelectContent,
@@ -115,19 +116,6 @@ function statusVariant(
   }
 }
 
-function statusRailClass(status: string): string {
-  switch (status) {
-    case "sent":
-      return "bg-primary";
-    case "bounced":
-      return "bg-orange-500";
-    case "complained":
-      return "bg-yellow-500";
-    default:
-      return "bg-destructive";
-  }
-}
-
 function statusBadgeClass(status: string): string {
   switch (status) {
     case "failed":
@@ -179,7 +167,7 @@ function InboxRow({
       <span
         className={cn(
           "absolute inset-y-2 left-0 w-0.5 rounded-full",
-          statusRailClass(row.status),
+          inboxStatusRailClass(row.status),
         )}
         aria-hidden
       />
@@ -318,10 +306,8 @@ function Inbox() {
         }
       />
 
-      <div
-        data-testid="inbox-filters"
-        className="grid grid-cols-1 gap-3 rounded-md border border-border bg-card p-4 sm:grid-cols-2"
-      >
+      <OpsShell railClass="bg-border" testid="inbox-filters">
+        <OpsShellBody className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="flex min-w-0 flex-col gap-1.5">
           <Label htmlFor="inbox-kind">{t("kind")}</Label>
           <Select
@@ -377,19 +363,26 @@ function Inbox() {
             </SelectContent>
           </Select>
         </div>
-      </div>
+        </OpsShellBody>
+      </OpsShell>
 
-      <Card className="overflow-hidden">
-        <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-border pb-4">
-          <CardTitle className="text-sm tracking-wide">{t("card")}</CardTitle>
-          {data && data.total > 0 ? (
-            <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
-              {t("totalCount", { count: data.total })}
-            </span>
-          ) : null}
-        </CardHeader>
-        <CardContent className="p-0">{listBody}</CardContent>
-      </Card>
+      <OpsShell
+        railClass={inboxListRailClass((data?.items ?? []).map((r) => r.status))}
+        testid="inbox-list-shell"
+      >
+        <OpsShellHead
+          icon={InboxIcon}
+          title={t("card")}
+          aside={
+            data && data.total > 0 ? (
+              <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
+                {t("totalCount", { count: data.total })}
+              </span>
+            ) : null
+          }
+        />
+        <OpsShellBody flush>{listBody}</OpsShellBody>
+      </OpsShell>
     </div>
   );
 }
