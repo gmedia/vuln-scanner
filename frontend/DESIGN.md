@@ -2458,3 +2458,102 @@ P15 flatten: the KPI strip is **not** inside PageHeader and **not** inside a she
 | Wave 2 admin pages still use plain `Card` | `/admin/hpp`, `/admin/invoices`, `/admin/pricing`, `/admin/email-logs`, `/admin/blog`, `/admin/ai` | Explicitly out of scope for wave 1 | Wave 2 |
 | `AdminUsers.test.tsx` still mocks `@/components/ui/Card` | test | Harmless: `AdminShell` composes the real `Card` through the mock | Named test cleanup |
 | Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |
+
+# Admin console — wave 2A (`/admin/hpp`, `/admin/pricing`)
+
+Print §§0–8 and every SPA section above stay locked. This section is the **dark SPA** contract for the two cost/pricing surfaces. It reuses the wave-1 `AdminShell` / `adminChrome` grammar verbatim — no new primitives — so only the deltas and the HPP-specific tone rules are recorded here.
+
+## 0. Research Log (Admin wave 2A)
+
+- Reused wave-1 routing (`linear.app` density + existing Sinexis tokens). No new reference pull.
+- Sibling harvest: wave-1 `AdminShell` / `AdminShellHead` / `AdminShellBody` / `adminChrome`; `HostKpiStrip` rail language; `SiemEmptyIsland` island grammar.
+- Current diagnosis: `AdminHpp` was **20 `Card` uses** — the biggest remaining `Card` debt in the repo — with rail-less rates/overhead/costs/report sections and line-margin cards; `AdminPricing` was a kit `Alert` banner + one `Card` with a muted-circle empty state; neither had a rail, and neither had any e2e (so the only safety net is the unit suite).
+- Imagen / Lazyweb: skipped — wave-1 grammar is the reference; AGENTS.md forbids extra deps for a visual slice.
+
+**Direction (locked):** Same operator console as wave 1. Deltas: **cost surfaces read amber**, the report range reads **sky**, a **negative line margin reads destructive**, and unallocated overhead escalates the report rail to **amber**.
+
+## 1. Atmosphere & Identity
+
+Both pages are internal finance surfaces. They must read as the same console as wave 1 — same hairline heads, same rail geometry — while the tone vocabulary says "this is cost, not revenue".
+
+The one memorable moment: the **line-margin rail**. A profitable line reads primary, a loss-making line flips destructive, so a bad SKU is visible before the numbers are read.
+
+Do **not** use a filled green masthead or a marketing hero. Loading is `TableRowSkeleton`, empty is an island.
+
+## 2. Color
+
+Reuse the wave-1 `AdminTone` map. Deltas:
+
+| Role | Token / class | Usage |
+|------|----------------|-------|
+| Rates / archive | `--primary` rail | `hpp-rates-card`, `admin-pricing-card` |
+| Cost pools | `bg-amber-500` rail | `hpp-overhead-card`, `hpp-costs-card`, cost-line rows, unallocated report |
+| Report range | `bg-sky-500` rail | `hpp-report-filters` |
+| Line margin | `--primary` rail | positive margin (`marginTone`) |
+| Line margin loss | `bg-destructive` rail + `text-destructive` value | negative margin |
+| Leftover banner | `bg-amber-500` rail + amber wash | `pricing-leftover-banner` |
+| Idle | `bg-border` rail | empty states |
+
+## 3. Typography
+
+Unchanged from wave 1. HPP keeps `text-[10px] uppercase` table heads, `font-mono tabular-nums` for every IDR figure, and `text-[11px]` hints.
+
+## 4. Spacing & Layout
+
+Unchanged from wave 1. Deltas:
+
+- HPP rates/costs/report tables are wrapped in `overflow-hidden rounded-md border border-border` (matching the wave-1 user table).
+- Cost form grid stays `grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4`.
+- Line margins stay `grid gap-3 sm:grid-cols-2`.
+- Pricing rows: mobile cards `space-y-2 md:hidden`, desktop table `hidden md:block`.
+
+**Frozen contracts** (`src/test/admin/AdminHpp.test.tsx`, `AdminPricing.test.tsx`): `hpp-overhead-card` / `hpp-costs-card` / `hpp-report-filters` / `hpp-line-scan` / `hpp-line-host`; the costs-card **label order** `["Date", "Category", "Amount (IDR)", "Note"]`; `getAllByDisplayValue(1000)`; the three hint strings; `Report range`; `estimasi` badge; `Margin (estimasi)` ×2; `(97%)`; the host-cogs-capped sentence; `pricing-leftover-banner` + `Not a customer meter` + `pricing-link-hpp` → `/admin/hpp`; `Pricing configuration`; `Scan credit seed (archive)`; headers `Scan type` / `Credit cost (seed)` / `Updated`; **no `Actions` header**; **`queryAllByRole("spinbutton")` is 0** on pricing; `6/1/2025` ×3; no `Save` / `Saved`; `TableRowSkeleton rows={4}` on pricing load and `rows={5}` on HPP rates load.
+
+## 5. Signature Components & States
+
+No new primitives. Tone sources:
+
+| Surface | Tone |
+|---------|------|
+| HPP rates | primary |
+| HPP overhead | warn |
+| HPP costs (+ each cost-line row) | warn |
+| HPP report filters | info |
+| HPP line margin | `marginTone(row.margin_idr)` |
+| HPP report | `reportTone(report.unallocated_overhead_idr)` |
+| Pricing leftover banner | warn |
+| Pricing archive | primary |
+
+Empty states are `rounded-xl border border-border bg-muted/40` islands: `hpp-rates-empty`, `hpp-costs-empty`, `admin-pricing-empty`.
+
+## 6. Motion
+
+Unchanged from wave 1 (micro hover only; no ping).
+
+## 7. Depth & Surface
+
+Unchanged from wave 1: borders-only + 2px rails, no nested Card-in-Card.
+
+## 8. Accessibility Constraints & Accepted Debt
+
+### Constraints
+
+- Unchanged from wave 1. Every field keeps `Label` + `htmlFor`; the HPP cost labels stay the immediate previous sibling of their control.
+- HPP rate inputs keep `aria-label={item.key}` (frozen by `getAllByDisplayValue` usage and the table's `aria-label` contract).
+- Pricing stays read-only text — **no inputs** on that page.
+
+### Personas
+
+- **Platform admin** (primary): adjust a unit rate → set overhead → journal a cost → read the report and line margins.
+- **Admin reading margin**: a loss-making line flips destructive without reading the numbers.
+- **Admin with unallocated overhead**: the report rail turns amber and the unallocated line shows.
+
+### Accepted Debt
+
+| Item | Location | Why accepted | Owner / Exit |
+|------|----------|--------------|--------------|
+| `AdminHpp` still keeps 4 queries + 4 mutations in one file | page | This slice restyles chrome only; extracting hooks mixes visual with module work | Named extract |
+| `AdminHpp` / `AdminPricing` tests still mock `@/components/ui/Card` | test | Harmless: `AdminShell` composes the real `Card` through the mock | Named test cleanup |
+| HPP cost lines only carry a rail on the first cell | page | Consistent with the wave-1 user table; a full row wash is unnecessary for a short journal | Keep |
+| Wave 2B pages still use plain `Card` | `/admin/invoices`, `/admin/email-logs`, `/admin/blog`, `/admin/ai` | Explicitly out of scope for wave 2A | Wave 2B |
+| Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |

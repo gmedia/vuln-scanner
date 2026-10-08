@@ -301,4 +301,144 @@ describe("AdminHpp", () => {
       screen.getByText("Host COGS capped at included cadence (1 scans vs 3 recorded)."),
     ).toBeInTheDocument();
   });
+
+  it("rails each HPP shell by its role", () => {
+    vi.mocked(useQuery).mockImplementation((opts) => {
+      const key = (opts.queryKey as readonly unknown[])[0];
+      if (key === "admin-hpp") {
+        return { data: rates, isLoading: false } as never;
+      }
+      if (key === "admin-hpp-overhead") {
+        return {
+          data: {
+            amount_idr: 100,
+            updated_at: "2026-08-01T00:00:00Z",
+            updated_by: null,
+          },
+          isLoading: false,
+        } as never;
+      }
+      if (key === "admin-hpp-costs") {
+        return { data: [], isLoading: false } as never;
+      }
+      return { data: report, isLoading: false } as never;
+    });
+    render(<AdminHpp />);
+    expect(
+      screen.getByTestId("hpp-rates-card").querySelector(".bg-primary"),
+    ).toBeTruthy();
+    expect(
+      screen.getByTestId("hpp-overhead-card").querySelector(".bg-amber-500"),
+    ).toBeTruthy();
+    expect(
+      screen.getByTestId("hpp-costs-card").querySelector(".bg-amber-500"),
+    ).toBeTruthy();
+    expect(
+      screen.getByTestId("hpp-report-filters").querySelector(".bg-sky-500"),
+    ).toBeTruthy();
+    expect(
+      screen.getByTestId("hpp-report-card").querySelector(".bg-primary"),
+    ).toBeTruthy();
+  });
+
+  it("rails line-margin shells primary when margin is positive", () => {
+    vi.mocked(useQuery).mockImplementation((opts) => {
+      const key = (opts.queryKey as readonly unknown[])[0];
+      if (key === "admin-hpp") {
+        return { data: rates, isLoading: false } as never;
+      }
+      if (key === "admin-hpp-overhead") {
+        return {
+          data: {
+            amount_idr: 100,
+            updated_at: "2026-08-01T00:00:00Z",
+            updated_by: null,
+          },
+          isLoading: false,
+        } as never;
+      }
+      if (key === "admin-hpp-costs") {
+        return { data: [], isLoading: false } as never;
+      }
+      return { data: report, isLoading: false } as never;
+    });
+    render(<AdminHpp />);
+    expect(
+      screen.getByTestId("hpp-line-scan").querySelector(".bg-primary"),
+    ).toBeTruthy();
+    expect(
+      screen.getByTestId("hpp-line-host").querySelector(".bg-primary"),
+    ).toBeTruthy();
+  });
+
+  it("rails a negative-margin line destructive", () => {
+    const lossReport = {
+      ...report,
+      line_margins: [
+        {
+          line: "scan",
+          label: "estimasi",
+          org_count: 1,
+          revenue_idr: 100,
+          cogs_idr: 900,
+          margin_idr: -800,
+          margin_pct: -800,
+        },
+      ],
+    };
+    vi.mocked(useQuery).mockImplementation((opts) => {
+      const key = (opts.queryKey as readonly unknown[])[0];
+      if (key === "admin-hpp") {
+        return { data: rates, isLoading: false } as never;
+      }
+      if (key === "admin-hpp-overhead") {
+        return {
+          data: {
+            amount_idr: 100,
+            updated_at: "2026-08-01T00:00:00Z",
+            updated_by: null,
+          },
+          isLoading: false,
+        } as never;
+      }
+      if (key === "admin-hpp-costs") {
+        return { data: [], isLoading: false } as never;
+      }
+      return { data: lossReport, isLoading: false } as never;
+    });
+    render(<AdminHpp />);
+    expect(
+      screen.getByTestId("hpp-line-scan").querySelector(".bg-destructive"),
+    ).toBeTruthy();
+  });
+
+  it("rails the report shell amber when overhead is unallocated", () => {
+    vi.mocked(useQuery).mockImplementation((opts) => {
+      const key = (opts.queryKey as readonly unknown[])[0];
+      if (key === "admin-hpp") {
+        return { data: rates, isLoading: false } as never;
+      }
+      if (key === "admin-hpp-overhead") {
+        return {
+          data: {
+            amount_idr: 100,
+            updated_at: "2026-08-01T00:00:00Z",
+            updated_by: null,
+          },
+          isLoading: false,
+        } as never;
+      }
+      if (key === "admin-hpp-costs") {
+        return { data: [], isLoading: false } as never;
+      }
+      return {
+        data: { ...report, unallocated_overhead_idr: 5000 },
+        isLoading: false,
+      } as never;
+    });
+    render(<AdminHpp />);
+    expect(
+      screen.getByTestId("hpp-report-card").querySelector(".bg-amber-500"),
+    ).toBeTruthy();
+  });
 });

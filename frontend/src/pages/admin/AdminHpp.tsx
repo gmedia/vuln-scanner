@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Calculator, Loader2, Check, Trash2 } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { Calculator, Loader2, Check, Trash2, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -15,6 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/Select";
+import {
+  AdminShell,
+  AdminShellBody,
+  AdminShellHead,
+} from "@/components/admin/AdminShell";
+import { marginTone, reportTone } from "@/components/admin/adminChrome";
+import { SiemRail } from "@/components/siem/siemChrome";
 import {
   Table,
   TableBody,
@@ -154,104 +160,111 @@ function AdminHpp() {
         description={t("hppSubtitle")}
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm tracking-wide">
-            {t("hppRatesCard")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="mb-3 text-[11px] text-muted-foreground">
-            {t("hppRatesHint")}
-          </p>
+      <AdminShell tone="primary" testid="hpp-rates-card">
+        <AdminShellHead
+          icon={Calculator}
+          title={t("hppRatesCard")}
+          hint={t("hppRatesHint")}
+        />
+        <AdminShellBody>
           {ratesLoading ? (
             <TableRowSkeleton rows={5} />
           ) : !rates?.length ? (
-            <p className="text-sm text-muted-foreground">
-              {t("hppRatesEmpty")}
-            </p>
+            <div
+              className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
+              data-testid="hpp-rates-empty"
+            >
+              <Calculator className="h-8 w-8 text-muted-foreground" aria-hidden />
+              <p className="text-sm font-medium text-foreground">
+                {t("hppRatesEmpty")}
+              </p>
+            </div>
           ) : (
             <div className="hidden md:block">
-            <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[28%] py-2 text-[10px] uppercase tracking-wider">
-                      {t("hppColKey")}
-                    </TableHead>
-                    <TableHead className="w-[32%] py-2 text-[10px] uppercase tracking-wider">
-                      {t("hppColAmount")}
-                    </TableHead>
-                    <TableHead className="w-[20%] py-2 text-[10px] uppercase tracking-wider">
-                      {t("colUpdated")}
-                    </TableHead>
-                    <TableHead className="w-[20%] py-2 text-right text-[10px] uppercase tracking-wider">
-                      {t("colActions")}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rates.map((item) => (
-                    <TableRow key={item.key}>
-                      <TableCell className="py-1.5">
-                        <Badge
-                          variant="default"
-                          className="text-[10px] uppercase"
-                        >
-                          {item.key}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-1.5">
-                        <Input
-                          type="number"
-                          min={0}
-                          aria-label={item.key}
-                          value={edited[item.key] ?? item.amount_idr}
-                          onChange={(e) =>
-                            handleChange(item.key, e.target.value)
-                          }
-                          className="h-8 w-full max-w-[10rem] font-mono text-xs tabular-nums"
-                        />
-                      </TableCell>
-                      <TableCell className="py-1.5">
-                        <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                          {new Date(item.updated_at).toLocaleDateString(locale)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="py-1.5 text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleSave(item)}
-                          disabled={!hasChanges(item) || saving === item.key}
-                          className="text-xs"
-                        >
-                          {saving === item.key ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : hasChanges(item) ? (
-                            <>
-                              <Check className="mr-1 h-3 w-3" />
-                              {t("save")}
-                            </>
-                          ) : (
-                            <span className="text-muted-foreground">
-                              {t("saved")}
-                            </span>
-                          )}
-                        </Button>
-                      </TableCell>
+              <div className="overflow-hidden rounded-md border border-border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[28%] py-2 text-[10px] uppercase tracking-wider">
+                        {t("hppColKey")}
+                      </TableHead>
+                      <TableHead className="w-[32%] py-2 text-[10px] uppercase tracking-wider">
+                        {t("hppColAmount")}
+                      </TableHead>
+                      <TableHead className="w-[20%] py-2 text-[10px] uppercase tracking-wider">
+                        {t("colUpdated")}
+                      </TableHead>
+                      <TableHead className="w-[20%] py-2 text-right text-[10px] uppercase tracking-wider">
+                        {t("colActions")}
+                      </TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {rates.map((item) => (
+                      <TableRow key={item.key} className="hover:bg-muted/50">
+                        <TableCell className="relative py-1.5 pl-4">
+                          <SiemRail className="bg-primary" />
+                          <Badge
+                            variant="default"
+                            className="text-[10px] uppercase"
+                          >
+                            {item.key}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-1.5">
+                          <Input
+                            type="number"
+                            min={0}
+                            aria-label={item.key}
+                            value={edited[item.key] ?? item.amount_idr}
+                            onChange={(e) =>
+                              handleChange(item.key, e.target.value)
+                            }
+                            className="h-8 w-full max-w-[10rem] font-mono text-xs tabular-nums"
+                          />
+                        </TableCell>
+                        <TableCell className="py-1.5">
+                          <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                            {new Date(item.updated_at).toLocaleDateString(locale)}
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-1.5 text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSave(item)}
+                            disabled={!hasChanges(item) || saving === item.key}
+                            className="text-xs"
+                          >
+                            {saving === item.key ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : hasChanges(item) ? (
+                              <>
+                                <Check className="mr-1 h-3 w-3" />
+                                {t("save")}
+                              </>
+                            ) : (
+                              <span className="text-muted-foreground">
+                                {t("saved")}
+                              </span>
+                            )}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           )}
           {rates && rates.length > 0 ? (
-            <div className="space-y-3 md:hidden">
+            <div className="space-y-2 md:hidden">
               {rates.map((item) => (
                 <div
                   key={item.key}
-                  className="space-y-2 rounded-lg border border-border bg-card p-3"
+                  className="relative space-y-2 overflow-hidden rounded-lg border border-border bg-card p-3 pl-4"
                 >
+                  <SiemRail className="bg-primary" />
                   <Badge variant="default" className="text-[10px] uppercase">
                     {item.key}
                   </Badge>
@@ -276,19 +289,16 @@ function AdminHpp() {
               ))}
             </div>
           ) : null}
-        </CardContent>
-      </Card>
+        </AdminShellBody>
+      </AdminShell>
 
-      <Card data-testid="hpp-overhead-card">
-        <CardHeader>
-          <CardTitle className="text-sm tracking-wide">
-            {t("hppOverheadCard")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-[11px] text-muted-foreground">
-            {t("hppOverheadHint")}
-          </p>
+      <AdminShell tone="warn" testid="hpp-overhead-card">
+        <AdminShellHead
+          icon={Receipt}
+          title={t("hppOverheadCard")}
+          hint={t("hppOverheadHint")}
+        />
+        <AdminShellBody className="space-y-3">
           {overheadLoading ? (
             <TableRowSkeleton rows={1} />
           ) : (
@@ -333,19 +343,16 @@ function AdminHpp() {
               </Button>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </AdminShellBody>
+      </AdminShell>
 
-      <Card data-testid="hpp-costs-card">
-        <CardHeader>
-          <CardTitle className="text-sm tracking-wide">
-            {t("hppCostsCard")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-[11px] text-muted-foreground">
-            {t("hppCostsHint")}
-          </p>
+      <AdminShell tone="warn" testid="hpp-costs-card">
+        <AdminShellHead
+          icon={Receipt}
+          title={t("hppCostsCard")}
+          hint={t("hppCostsHint")}
+        />
+        <AdminShellBody className="space-y-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="hpp-cost-date">{t("hppCostDate")}</Label>
@@ -412,94 +419,102 @@ function AdminHpp() {
           {costsLoading ? (
             <TableRowSkeleton rows={2} />
           ) : !costLines?.length ? (
-            <p className="text-sm text-muted-foreground">
-              {t("hppCostsEmpty")}
-            </p>
+            <div
+              className="flex min-h-[6rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-6 text-center"
+              data-testid="hpp-costs-empty"
+            >
+              <Receipt className="h-6 w-6 text-muted-foreground" aria-hidden />
+              <p className="text-sm text-muted-foreground">
+                {t("hppCostsEmpty")}
+              </p>
+            </div>
           ) : (
-            <Table className="table-fixed">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-[10px] uppercase tracking-wider">
-                    {t("hppCostDate")}
-                  </TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-wider">
-                    {t("hppCostCategory")}
-                  </TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-wider">
-                    {t("hppColAmount")}
-                  </TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-wider">
-                    {t("hppCostNote")}
-                  </TableHead>
-                  <TableHead className="w-[4rem]" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {costLines.map((line) => (
-                  <TableRow key={line.id}>
-                    <TableCell className="font-mono text-xs tabular-nums">
-                      {new Date(line.incurred_on).toLocaleDateString(locale)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="default"
-                        className="text-[10px] uppercase"
-                      >
-                        {line.category}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs tabular-nums">
-                      {formatIdr(line.amount_idr)}
-                    </TableCell>
-                    <TableCell className="max-w-[20rem] whitespace-normal break-words text-xs text-muted-foreground">
-                      {line.note || "—"}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        aria-label={t("hppCostDelete")}
-                        onClick={() => deleteCost.mutate(line.id)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </TableCell>
+            <div className="overflow-hidden rounded-md border border-border">
+              <Table className="table-fixed">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-[10px] uppercase tracking-wider">
+                      {t("hppCostDate")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-wider">
+                      {t("hppCostCategory")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-wider">
+                      {t("hppColAmount")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-wider">
+                      {t("hppCostNote")}
+                    </TableHead>
+                    <TableHead className="w-[4rem]" />
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {costLines.map((line) => (
+                    <TableRow key={line.id} className="h-12 hover:bg-muted/50">
+                      <TableCell className="relative pl-4 font-mono text-xs tabular-nums">
+                        <SiemRail className="bg-amber-500" />
+                        {new Date(line.incurred_on).toLocaleDateString(locale)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="default"
+                          className="text-[10px] uppercase"
+                        >
+                          {line.category}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs tabular-nums">
+                        {formatIdr(line.amount_idr)}
+                      </TableCell>
+                      <TableCell className="max-w-[20rem] whitespace-normal break-words text-xs text-muted-foreground">
+                        {line.note || "—"}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          aria-label={t("hppCostDelete")}
+                          onClick={() => deleteCost.mutate(line.id)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </AdminShellBody>
+      </AdminShell>
 
-      <div
-        data-testid="hpp-report-filters"
-        className="grid grid-cols-1 gap-3 rounded-md border border-border bg-card p-4 sm:grid-cols-2"
-      >
-        <p className="text-sm font-medium tracking-wide text-foreground sm:col-span-2">
-          {t("hppReportRange")}
-        </p>
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <Label htmlFor="hpp-date-from">{t("hppFrom")}</Label>
-          <DatePicker
-            id="hpp-date-from"
-            value={dateFrom}
-            onChange={setDateFrom}
-            placeholder={t("hppFrom")}
-            aria-label={t("hppFrom")}
-          />
-        </div>
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <Label htmlFor="hpp-date-to">{t("hppTo")}</Label>
-          <DatePicker
-            id="hpp-date-to"
-            value={dateTo}
-            onChange={setDateTo}
-            placeholder={t("hppTo")}
-            aria-label={t("hppTo")}
-          />
-        </div>
-      </div>
+      <AdminShell tone="info" testid="hpp-report-filters">
+        <AdminShellHead title={t("hppReportRange")} />
+        <AdminShellBody>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="hpp-date-from">{t("hppFrom")}</Label>
+              <DatePicker
+                id="hpp-date-from"
+                value={dateFrom}
+                onChange={setDateFrom}
+                placeholder={t("hppFrom")}
+                aria-label={t("hppFrom")}
+              />
+            </div>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="hpp-date-to">{t("hppTo")}</Label>
+              <DatePicker
+                id="hpp-date-to"
+                value={dateTo}
+                onChange={setDateTo}
+                placeholder={t("hppTo")}
+                aria-label={t("hppTo")}
+              />
+            </div>
+          </div>
+        </AdminShellBody>
+      </AdminShell>
 
       <div>
         <h3 className="mb-2 text-sm font-semibold tracking-wide">
@@ -510,13 +525,15 @@ function AdminHpp() {
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
           {(report?.line_margins ?? []).map((row) => (
-            <Card key={row.line} data-testid={`hpp-line-${row.line}`}>
-              <CardHeader>
-                <CardTitle className="text-sm uppercase">
-                  {row.line === "host" ? t("hppLineHost") : t("hppLineScan")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-1 text-xs">
+            <AdminShell
+              key={row.line}
+              tone={marginTone(row.margin_idr)}
+              testid={`hpp-line-${row.line}`}
+            >
+              <AdminShellHead
+                title={row.line === "host" ? t("hppLineHost") : t("hppLineScan")}
+              />
+              <AdminShellBody className="space-y-1 text-xs">
                 <p>
                   {t("hppOrgCount")}:{" "}
                   <span className="font-mono tabular-nums">{row.org_count}</span>
@@ -557,22 +574,22 @@ function AdminHpp() {
                 <Badge variant="info" className="text-[10px]">
                   {row.label}
                 </Badge>
-              </CardContent>
-            </Card>
+              </AdminShellBody>
+            </AdminShell>
           ))}
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm tracking-wide">
-            {t("hppReportCard")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="mb-3 text-[11px] text-muted-foreground">
-            {t("hppReportHint")}
-          </p>
+      <AdminShell
+        tone={reportTone(report?.unallocated_overhead_idr)}
+        testid="hpp-report-card"
+      >
+        <AdminShellHead
+          icon={Calculator}
+          title={t("hppReportCard")}
+          hint={t("hppReportHint")}
+        />
+        <AdminShellBody>
           {reportLoading ? (
             <TableRowSkeleton rows={5} />
           ) : (
@@ -596,69 +613,72 @@ function AdminHpp() {
                   </span>
                 </p>
               ) : null}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-[10px] uppercase">
-                      {t("hppColKey")}
-                    </TableHead>
-                    <TableHead className="text-[10px] uppercase">
-                      {t("hppColCount")}
-                    </TableHead>
-                    <TableHead className="text-[10px] uppercase">
-                      {t("hppColAmount")}
-                    </TableHead>
-                    <TableHead className="text-[10px] uppercase">
-                      {t("hppColHpp")}
-                    </TableHead>
-                    <TableHead className="text-[10px] uppercase">
-                      {t("hppColOverheadShare")}
-                    </TableHead>
-                    <TableHead className="text-[10px] uppercase">
-                      {t("hppColFullyLoaded")}
-                    </TableHead>
-                    <TableHead className="text-[10px] uppercase">
-                      {t("hppColFullyUnit")}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {report?.lines.map((line) => (
-                    <TableRow key={line.key}>
-                      <TableCell>
-                        <Badge
-                          variant="default"
-                          className="text-[10px] uppercase"
-                        >
-                          {line.key}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs tabular-nums">
-                        {line.count}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs tabular-nums">
-                        {formatIdr(line.rate_idr)}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs tabular-nums">
-                        {formatIdr(line.hpp_idr)}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs tabular-nums">
-                        {formatIdr(line.overhead_share_idr)}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs tabular-nums">
-                        {formatIdr(line.fully_loaded_hpp_idr)}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs tabular-nums">
-                        {formatIdr(line.fully_loaded_unit_idr)}
-                      </TableCell>
+              <div className="overflow-hidden rounded-md border border-border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-[10px] uppercase">
+                        {t("hppColKey")}
+                      </TableHead>
+                      <TableHead className="text-[10px] uppercase">
+                        {t("hppColCount")}
+                      </TableHead>
+                      <TableHead className="text-[10px] uppercase">
+                        {t("hppColAmount")}
+                      </TableHead>
+                      <TableHead className="text-[10px] uppercase">
+                        {t("hppColHpp")}
+                      </TableHead>
+                      <TableHead className="text-[10px] uppercase">
+                        {t("hppColOverheadShare")}
+                      </TableHead>
+                      <TableHead className="text-[10px] uppercase">
+                        {t("hppColFullyLoaded")}
+                      </TableHead>
+                      <TableHead className="text-[10px] uppercase">
+                        {t("hppColFullyUnit")}
+                      </TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {report?.lines.map((line) => (
+                      <TableRow key={line.key} className="h-12 hover:bg-muted/50">
+                        <TableCell className="relative pl-4">
+                          <SiemRail className="bg-primary" />
+                          <Badge
+                            variant="default"
+                            className="text-[10px] uppercase"
+                          >
+                            {line.key}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-mono text-xs tabular-nums">
+                          {line.count}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs tabular-nums">
+                          {formatIdr(line.rate_idr)}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs tabular-nums">
+                          {formatIdr(line.hpp_idr)}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs tabular-nums">
+                          {formatIdr(line.overhead_share_idr)}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs tabular-nums">
+                          {formatIdr(line.fully_loaded_hpp_idr)}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs tabular-nums">
+                          {formatIdr(line.fully_loaded_unit_idr)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </>
           )}
-        </CardContent>
-      </Card>
+        </AdminShellBody>
+      </AdminShell>
     </div>
   );
 }

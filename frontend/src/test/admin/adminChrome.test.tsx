@@ -4,7 +4,9 @@ import {
   adminWashClass,
   kpiTone,
   kpiValueClass,
+  marginTone,
   mutationTone,
+  reportTone,
   userTone,
 } from "@/components/admin/adminChrome";
 
@@ -59,5 +61,14 @@ describe("adminChrome helpers", () => {
     expect(mutationTone({ error: true, success: true, pending: true })).toBe(
       "danger",
     );
+  });
+
+  it("derives the HPP margin and report tones", () => {
+    expect(marginTone(-1)).toBe("danger");
+    expect(marginTone(0)).toBe("primary");
+    expect(marginTone(250)).toBe("primary");
+    expect(reportTone(0)).toBe("primary");
+    expect(reportTone(undefined)).toBe("primary");
+    expect(reportTone(5000)).toBe("warn");
   });
 });
