@@ -2147,3 +2147,159 @@ P15 flatten: the KPI strip is **not** inside PageHeader and **not** inside a for
 | `PasswordField` duplicated from the auth pages' pattern | profile | Auth uses inline fields; a shared field is a follow-up | Named extract |
 | `profileChrome` wash helpers mirror `authChrome` | chrome | Two small tone maps beat a premature shared ops-chrome module | Keep until a named ops-chrome PR |
 | Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |
+
+# Workspace settings console (`/settings/workspace`)
+
+Print §§0–8 and SIEM / Guard / Assets / page-nav / Status / Uptime / Host / Dashboard / Scan detail / Schedules / Auth / Profile above stay locked. This section is the **dark SPA** contract for the organization surface at `/settings/workspace` — active workspace identity, members, invites, billing, pilot checklist. It closes the account/org area (auth → profile → workspace).
+
+## 0. Research Log (Workspace)
+
+- Embedded refs: shortlisted `linear.app` / `stripe` / `supabase` → picked Layer A `redesign-skill` + `layout-skill` (stack + page-grid; AppShell owns document scroll) and Layer B `linear.app` (ops density, luminance steps, one accent, tabular mono). Same routing as `/guard` / `/siem` / `/assets` / `/uptime` / `/host` / `/dashboard` / `/scan/:id` / `/schedules`, plus the state-rail vocabulary from auth / profile. Not Stripe marketing; not Linear indigo `#5e6ad2`.
+- Sibling harvest: `AuthCard` / `ProfileShell` state rails (primary → destructive → amber → primary/success), `HostKpiStrip` / `DashboardKpiStrip` (`StatTile` + `SiemRail`), the `Shell` / `ShellHead` hairline pattern, `SiemEmptyIsland` island grammar (already present here as `EmptyIsland`), `HostHitsList` (rail inside the first cell, mobile card + desktop row).
+- Current `/settings/workspace` diagnosis: every section was a flat kit `Card` + `CardHeader` + `CardContent` with no rail (15 `CardHeader` uses); the org identity card, members, invite form, pending invites, billing, and pilot checklist were visually identical shells; the three `StatTile`s were flat `rounded-md` tiles; error / cooldown copy used kit `Alert`; member / invite rows were flat cards and table rows with no rail; invoice cards had no rail.
+- Imagen drafts: skipped — existing SPA + sibling P15 grammar is the reference; no extra imagegen deps.
+- Lazyweb pack: skipped this session — sibling P15 is the harvest.
+- Skipped lanes: react-grab / react-scan / react-doctor — AGENTS.md forbids extra deps for a visual slice.
+
+**Direction (locked):** An **org console** on existing Sinexis SPA tokens. Signature: an identity shell whose rail is primary, then three KPI tiles whose **rails encode org state** (members primary / none muted, invites primary / none muted, invoices by worst status), then railed member / invite rows (role tone, pending amber), a billing shell whose rail tracks the worst invoice status, and a primary pilot-checklist shell. Green `--primary`, not Linear indigo. Inter + JetBrains Mono. Not nested Card-in-Card, not a filled masthead.
+
+## 1. Atmosphere & Identity
+
+`/settings/workspace` is the organization surface: who is in the workspace, who is invited, what is billed, and how a pilot rolls out. It must feel like the Guard/SIEM/Assets/Uptime/Host/Dashboard/ScanDetail/Schedules/Profile ops family inside AppShell — same rail grammar, same hairline shells.
+
+The one memorable moment: the **invoice rail**. A paid workspace reads primary, a sent one amber, a void one destructive — and the same tone repeats on the billing shell, so an operator sees the money state before opening a card.
+
+Do **not** use a filled green masthead, a marketing hero, or a generic icon-in-circle. Loading is skeleton rows, not a spinner in a Card.
+
+## 2. Color
+
+Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. No Linear indigo.
+
+| Role | Token / class | Usage |
+|------|----------------|-------|
+| Canvas | `--background` | Page |
+| Surface | `--card` + `border-border` | Identity / members / invite / invites / billing / checklist shells, mobile rows, invoice cards |
+| Ink | `--foreground` | Org name, KPI values, shell titles |
+| Meta | `--muted-foreground` | Slug, hints, dates, counts |
+| Accent | `--primary` `hsl(142 71% 45%)` | Identity rail, member/invite rails, owner badge, paid invoice rail, submit CTAs |
+| Pending / sent | `bg-amber-500` rail + `bg-amber-500/[0.04]` wash | Pending invites, sent invoices |
+| Danger | `bg-destructive` rail + `bg-destructive/[0.04]` wash | Void invoices, form / accept errors |
+| Member role | `bg-sky-500` rail | `member` role rows |
+| Idle | `bg-border` rail | Viewer role, empty lists, no invoices |
+
+Rails are **redundant** with the Badge / KPI value / notice copy. Never color-only status.
+
+## 3. Typography
+
+SPA scale. Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+
+| Level | Size | Weight | Usage |
+|-------|------|--------|-------|
+| Page title | `text-2xl` / `md:text-3xl` | 600 | PageHeader `h2` `Workspace` (frozen, level 2) |
+| Subtitle | `text-sm` | 400 | `roleLine` / `subtitleMembers` |
+| Org name | `text-base` | 600 | Active workspace name |
+| Shell title | `text-sm font-medium tracking-wide` | 500 | `h3` — Members / Invite member / Pending invites / Billing / Create organization |
+| Shell hint | `text-xs` | 400 | One-line description under the title |
+| KPI label | `text-[10px] uppercase tracking-wider` | 500 | Members / Pending invites / Invoices |
+| KPI value | `font-mono text-lg font-bold tabular-nums` (`text-xl` when emphasized) | 700 | Counts |
+| Mono record | `font-mono text-xs` / `text-[11px]` | 400 | Slug, email, dates, invite URL |
+| Table head | `text-[10px] uppercase tracking-wider` | 500 | Email / Role / Joined / Expires / Action |
+
+Tabular numerals on counts and dates. Body copy stays the i18n `workspace` catalog (EN+ID).
+
+## 4. Spacing & Layout
+
+4px base. **No** filter bar.
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| --space-1.5 | 6px | Field label→control gap |
+| --space-2 | 8px | Row inner, notice inner |
+| --space-3 | 12px | KPI gap, form row gap |
+| --space-4 | 16px | Shell head/body pad, identity pad |
+| --space-6 | 24px | Page stack (`space-y-6`), grid gap |
+
+**Primitives** (`layout-skill`):
+
+- **stack** — page sections (`space-y-6`): header → accept → create → identity → members/invite grid → invites → billing → checklist.
+- **page-grid** — KPI `grid-cols-1 gap-3 sm:grid-cols-3`; members/invite `grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem] xl:items-start`; invoice cards `grid gap-3 lg:grid-cols-2`.
+- **scroll-body-shell** — AppShell owns document scroll; the invite shell is `xl:sticky xl:top-6`.
+- **list-detail** — **not** used.
+
+Responsive:
+
+- `<md`: member / invite rows are cards (`md:hidden`) with a leading rail; form buttons full width.
+- `≥md`: member / invite rows are `table-fixed` tables (`hidden md:block`) with the rail inside the first cell; the table is wrapped in a bordered rounded container.
+
+**Frozen contracts** (`WorkspaceSettings.test.tsx`): PageHeader `h2` matching `/workspace/i`; `account-nav` absent; `pilot-checklist` present with `Pilot checklist` copy, `pilot-link-assets` → `/assets`, `pilot-link-schedules` → `/schedules`, `pilot-link-credits` absent; checklist hidden with no org; `Active workspace` + slug text; **members heading is an `h3`** matching `/members/i` and precedes `workspace-billing`, which precedes `pilot-checklist`; `invite-form-card` + `workspace-billing` present; `invite-submit` text exactly `Send invite` (not `Create invite`); `invite-link-box` / `copy-invite-link` absent initially; `workspace-billing-empty` copy with **no** self-serve upgrade and no admin link for non-admins; `workspace-billing-admin-link` → `/admin/invoices` for platform admins; `workspace-billing-error` present (and not `-empty`) on load failure; invoice bank copy `Transfer to …`; `invoice-print` / `invoice-pdf` / `invoice-print-sheet` / `invoice-print-bank`; `members-list`; `invites-list`; `workspace-invites-empty`.
+
+## 5. Signature Components & States
+
+| Primitive | Anatomy | States |
+|-----------|---------|--------|
+| `WorkspaceShell` | kit `Card` + `relative overflow-hidden pl-4` + `SiemRail(workspaceRailClass(tone))` + optional wash | primary / danger / warn / info / success / idle |
+| `WorkspaceShellHead` | `border-b border-border px-4 py-3` + icon chip + `h3` + hint + optional aside | static |
+| `WorkspaceShellBody` | `px-4 py-4` | static |
+| `WorkspaceIconChip` | `h-8 w-8 rounded-md border bg-muted/40` + muted icon | static |
+| `WorkspaceNotice` | `relative overflow-hidden rounded-md border bg-card px-3 py-2 pl-4` + rail + `text-xs` | danger (`role="alert"`) / idle (`role="status"`) |
+| `StatTile` | `relative min-w-0 overflow-hidden rounded-lg border bg-card px-4 py-3 pl-4` + `SiemRail(tone)` | members / invites / invoices by `countTone` / `invoiceListTone` |
+| Member row | mobile card `relative … pl-4` + rail; desktop first cell `relative pl-4` + rail | owner primary / admin success / member sky / viewer muted |
+| Invite row | mobile card + rail; desktop first cell + rail | pending amber |
+| Invoice card (`workspace-invoice-{id}`) | `relative overflow-hidden rounded-lg border bg-card pl-4` + `SiemRail(invoiceTone)` | paid primary / sent amber / void destructive / draft muted |
+| `EmptyIsland` | `rounded-xl border border-border bg-muted/40` | no org / no members / no invites / no invoices |
+| Billing shell (`workspace-billing`) | `WorkspaceShell` + `SiemRail(invoiceListTone)` + wash | idle / success / warn / danger |
+
+Shell tone sources: accept invite → `acceptError ? danger : primary`; create org → `formTone({error, pending})`; invite form → `formTone({error, pending})`; members → `membersQuery.data?.length ? primary : idle`; pending invites → `pendingCount ? warn : idle`; billing → `invoiceListTone(statuses)`; checklist → primary.
+
+## 6. Motion
+
+| Type | Duration | Easing | Usage |
+|------|----------|--------|-------|
+| Micro | 150–200ms | ease-out | Row hover `bg-muted/50`, accordion |
+| Spin | CSS `animate-spin` | linear | Submit spinner (kit Button) |
+| Press | kit Button `scale` | — | Do not restyle kit |
+
+- GPU only. No layout animation, no ping.
+- `prefers-reduced-motion`: only the kit spinner animates.
+
+## 7. Depth & Surface
+
+**borders-only** + 2px rails. No glass, no drop shadows, no nested Card-in-Card, no `rounded-3xl`, no filled masthead.
+
+| Type | Treatment | Use |
+|------|-----------|-----|
+| Shells | kit `Card` + `pl-4` + rail + tone wash | All sections |
+| KPI tiles / rows / invoice cards | `rounded-lg border bg-card` + rail | Identity KPIs, members, invites, invoices |
+| Empty islands | `rounded-xl border border-border bg-muted/40` | Empty states |
+| Tables | `rounded-md border` wrapper + rail inside the first cell | Desktop members / invites |
+
+P15 flatten: the KPI strip lives **inside** the identity shell (it is that shell's body), not in PageHeader. Header is title + subtitle only.
+
+## 8. Accessibility Constraints & Accepted Debt
+
+### Constraints
+
+- WCAG 2.2 AA contrast on SPA tokens. Rails are redundant with Badge / KPI value / notice copy.
+- PageHeader `h2` is the only level-2 heading; shell titles are `h3` (frozen for Members).
+- Every field has a kit `Label` + `htmlFor`; Selects are kit only.
+- Primary actions are kit `Button`; `role="alert"` on error notices, `role="status"` on informational.
+- `prefers-reduced-motion`: only the kit spinner animates.
+
+### Personas
+
+- **Owner / admin** (primary): read identity + KPIs → invite → revoke → billing → pilot checklist.
+- **Viewer / member**: invite form and billing hidden; `onlyAdminsInvite` note.
+- **Platform admin**: empty billing links to `/admin/invoices`.
+- **Invitee**: accept-invite shell (danger on failure).
+- **Billing state**: paid / sent / void rail on the shell and each card.
+
+### Accepted Debt
+
+| Item | Location | Why accepted | Owner / Exit |
+|------|----------|--------------|--------------|
+| `WorkspaceSettings.tsx` keeps queries + mutations + lists in one file (1084 LOC) | page | This slice restyles chrome only; splitting into panels mixes visual with module work | Named extract |
+| Duplicate mobile card + desktop table markup for members / invites | page | Frozen `members-list` / `invites-list` render both; `useIsMobile` would drop one tree | Named a11y slice |
+| `WorkspaceInvoiceCard` gains a rail but keeps its internal layout | invoice | Billing surface needs the same rail; restructuring the card is a separate slice | Named refactor |
+| `workspaceChrome` tone maps mirror `authChrome` / `profileChrome` | chrome | Small per-surface tone maps beat a premature shared ops-chrome module | Keep until a named ops-chrome PR |
+| `invoiceTone` lives in `workspaceChrome` but is consumed by `WorkspaceInvoiceCard` | chrome | One tone vocabulary for the billing surface; a shared `invoiceChrome` is a follow-up | Named extract |
+| Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |
