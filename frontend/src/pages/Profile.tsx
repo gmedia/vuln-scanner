@@ -6,7 +6,9 @@ import {
   Copy,
   Eye,
   EyeOff,
+  KeyRound,
   Loader2,
+  Mail,
   Timer,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -15,15 +17,23 @@ import { useRateLimitCooldown } from "@/hooks/useRateLimitCooldown";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  ProfileIconChip,
+  ProfileNotice,
+  ProfileShell,
+  ProfileShellBody,
+  ProfileShellHead,
+} from "@/components/profile/ProfileShell";
+import {
+  accessTone,
+  creditsTone,
+  formTone,
+  profileRailClass,
+  verificationTone,
+  type ProfileTone,
+} from "@/components/profile/profileChrome";
+import { SiemRail } from "@/components/siem/siemChrome";
 import PageHeader from "@/components/layout/PageHeader";
 import { cn } from "@/lib/utils";
 
@@ -73,9 +83,7 @@ function PasswordField({
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <Label htmlFor={id} className="block">
-        {label}
-      </Label>
+      <Label htmlFor={id}>{label}</Label>
       <div className="relative">
         <Input
           id={id}
@@ -107,20 +115,23 @@ function PasswordField({
 function StatTile({
   label,
   value,
+  tone = "primary",
   emphasize = false,
 }: {
   label: string;
   value: ReactNode;
+  tone?: ProfileTone;
   emphasize?: boolean;
 }) {
   return (
-    <div className="rounded-md border border-border bg-card px-4 py-3">
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+    <div className="relative min-w-0 overflow-hidden rounded-lg border border-border bg-card px-4 py-3 pl-4">
+      <SiemRail className={profileRailClass(tone)} />
+      <p className="pl-2 text-[10px] uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
       <div
         className={cn(
-          "mt-1 font-mono text-lg font-bold tabular-nums text-foreground",
+          "mt-1 pl-2 font-mono text-lg font-bold tabular-nums text-foreground",
           emphasize && "text-xl tracking-tight",
         )}
       >
@@ -223,6 +234,20 @@ function Profile() {
     setIsChangingPassword(false);
   };
 
+  const verifyTone = verificationTone(Boolean(user?.is_verified));
+  const access = accessTone(Boolean(user?.is_admin));
+  const credits = creditsTone(user?.credits ?? 0);
+  const passwordTone = formTone({
+    cooldown: passwordCooldown.cooldown,
+    error: Boolean(passwordError),
+    success: passwordSuccess,
+  });
+  const emailTone = formTone({
+    cooldown: profileCooldown.cooldown,
+    error: Boolean(error),
+    success: profileSuccess,
+  });
+
   return (
     <div className="w-full space-y-6">
       <PageHeader
@@ -230,15 +255,16 @@ function Profile() {
         description="Manage your account email and password"
       />
 
-      <article
+      <div
         data-testid="profile-identity"
-        className="rounded-lg border border-border bg-card"
+        className="relative overflow-hidden rounded-lg border border-border bg-card pl-4"
       >
-        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between">
+        <SiemRail className="bg-primary" />
+        <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 items-start gap-4">
             <span
               aria-hidden
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted font-mono text-sm font-semibold tracking-wide text-foreground"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/5 font-mono text-sm font-semibold tracking-wide text-primary"
             >
               {emailInitials(user?.email)}
             </span>
@@ -304,7 +330,7 @@ function Profile() {
             </Button>
           </div>
         </div>
-      </article>
+      </div>
 
       <div
         data-testid="profile-kpis"
@@ -313,42 +339,49 @@ function Profile() {
         <StatTile
           label="Verification"
           value={user?.is_verified ? "Verified" : "Unverified"}
+          tone={verifyTone}
         />
-        <StatTile label="Access" value={user?.is_admin ? "Admin" : "Operator"} />
+        <StatTile
+          label="Access"
+          value={user?.is_admin ? "Admin" : "Operator"}
+          tone={access}
+        />
         <StatTile
           label="Credits"
           value={(user?.credits ?? 0).toLocaleString()}
+          tone={credits}
           emphasize
         />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-        <Card>
-          <CardHeader className="gap-1">
-            <CardTitle className="text-sm tracking-wide">
-              Change password
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Confirm the current secret, then set a stronger one.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <ProfileShell tone={passwordTone}>
+          <ProfileShellHead
+            icon={
+              <ProfileIconChip>
+                <KeyRound className="h-4 w-4" />
+              </ProfileIconChip>
+            }
+            title="Change password"
+            hint="Confirm the current secret, then set a stronger one."
+          />
+          <ProfileShellBody>
             <form onSubmit={handleChangePassword} className="space-y-4">
               {passwordCooldown.cooldown > 0 && (
-                <Alert>
-                  <Timer />
-                  <AlertDescription>
+                <ProfileNotice tone="warn">
+                  <Timer className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>
                     Too many attempts. Wait {passwordCooldown.cooldown}s
-                  </AlertDescription>
-                </Alert>
+                  </span>
+                </ProfileNotice>
               )}
               {passwordError &&
                 passwordCooldown.cooldown === 0 &&
                 !passwordSuccess && (
-                  <Alert variant="destructive">
-                    <AlertCircle />
-                    <AlertDescription>{passwordError}</AlertDescription>
-                  </Alert>
+                  <ProfileNotice tone="danger" role="alert">
+                    <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>{passwordError}</span>
+                  </ProfileNotice>
                 )}
               <PasswordField
                 id="current-password"
@@ -388,7 +421,7 @@ function Profile() {
               />
               <Button
                 type="submit"
-                className="w-full sm:w-auto"
+                className="min-h-11 w-full sm:min-h-10 sm:w-auto"
                 disabled={isChangingPassword || passwordCooldown.cooldown > 0}
               >
                 {passwordCooldown.cooldown > 0 ? (
@@ -406,38 +439,37 @@ function Profile() {
                 )}
               </Button>
             </form>
-          </CardContent>
-        </Card>
+          </ProfileShellBody>
+        </ProfileShell>
 
-        <Card>
-          <CardHeader className="gap-1">
-            <CardTitle className="text-sm tracking-wide">
-              Update email
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Sign-in address. Requires the current password.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <ProfileShell tone={emailTone}>
+          <ProfileShellHead
+            icon={
+              <ProfileIconChip>
+                <Mail className="h-4 w-4" />
+              </ProfileIconChip>
+            }
+            title="Update email"
+            hint="Sign-in address. Requires the current password."
+          />
+          <ProfileShellBody>
             <form onSubmit={handleUpdateProfile} className="space-y-4">
               {profileCooldown.cooldown > 0 && (
-                <Alert>
-                  <Timer />
-                  <AlertDescription>
+                <ProfileNotice tone="warn">
+                  <Timer className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>
                     Too many attempts. Wait {profileCooldown.cooldown}s
-                  </AlertDescription>
-                </Alert>
+                  </span>
+                </ProfileNotice>
               )}
               {error && profileCooldown.cooldown === 0 && !profileSuccess && (
-                <Alert variant="destructive">
-                  <AlertCircle />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
+                <ProfileNotice tone="danger" role="alert">
+                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>{error}</span>
+                </ProfileNotice>
               )}
               <div className="flex min-w-0 flex-col gap-1.5">
-                <Label htmlFor="profile-email" className="block">
-                  New email
-                </Label>
+                <Label htmlFor="profile-email">New email</Label>
                 <Input
                   id="profile-email"
                   type="email"
@@ -465,7 +497,7 @@ function Profile() {
               </p>
               <Button
                 type="submit"
-                className="w-full sm:w-auto"
+                className="min-h-11 w-full sm:min-h-10 sm:w-auto"
                 disabled={isUpdatingProfile || profileCooldown.cooldown > 0}
               >
                 {profileCooldown.cooldown > 0 ? (
@@ -483,8 +515,8 @@ function Profile() {
                 )}
               </Button>
             </form>
-          </CardContent>
-        </Card>
+          </ProfileShellBody>
+        </ProfileShell>
       </div>
     </div>
   );
