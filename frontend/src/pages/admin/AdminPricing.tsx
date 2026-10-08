@@ -1,11 +1,15 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { DollarSign } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { DollarSign, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  AdminShell,
+  AdminShellBody,
+  AdminShellHead,
+} from "@/components/admin/AdminShell";
+import { SiemRail } from "@/components/siem/siemChrome";
 import {
   Table,
   TableBody,
@@ -45,42 +49,47 @@ function AdminPricing() {
         title={t("pricingTitle")}
       />
 
-      <Alert data-testid="pricing-leftover-banner">
-        <AlertTitle>{t("pricingLeftoverTitle")}</AlertTitle>
-        <AlertDescription className="space-y-2">
-          <p>{t("pricingLeftoverBody")}</p>
-          <Button asChild variant="outline" size="sm">
+      <AdminShell tone="warn" testid="pricing-leftover-banner">
+        <AdminShellHead
+          icon={TriangleAlert}
+          title={t("pricingLeftoverTitle")}
+        />
+        <AdminShellBody className="space-y-3">
+          <p className="max-w-prose text-xs text-muted-foreground">
+            {t("pricingLeftoverBody")}
+          </p>
+          <Button asChild variant="outline" size="sm" className="min-h-11 sm:min-h-9">
             <Link to="/admin/hpp" data-testid="pricing-link-hpp">
               {t("linkHpp")}
             </Link>
           </Button>
-        </AlertDescription>
-      </Alert>
+        </AdminShellBody>
+      </AdminShell>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm tracking-wide">
-            {t("pricingCard")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <AdminShell tone="primary" testid="admin-pricing-card">
+        <AdminShellHead icon={DollarSign} title={t("pricingCard")} />
+        <AdminShellBody>
           {isLoading ? (
             <TableRowSkeleton rows={4} />
           ) : pricing?.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="mb-3 rounded-full bg-muted p-3">
-                <DollarSign className="h-6 w-6 text-muted-foreground opacity-40" />
-              </div>
-              <p className="text-sm text-foreground">{t("pricingEmpty")}</p>
+            <div
+              className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
+              data-testid="admin-pricing-empty"
+            >
+              <DollarSign className="h-8 w-8 text-muted-foreground" aria-hidden />
+              <p className="text-sm font-medium text-foreground">
+                {t("pricingEmpty")}
+              </p>
             </div>
           ) : (
             <>
-              <div className="space-y-3 md:hidden">
+              <div className="space-y-2 md:hidden">
                 {pricing?.map((item) => (
                   <div
                     key={item.id}
-                    className="space-y-2 rounded-lg border border-border bg-card p-3"
+                    className="relative space-y-2 overflow-hidden rounded-lg border border-border bg-card p-3 pl-4"
                   >
+                    <SiemRail className="bg-primary" />
                     <Badge variant="default" className="text-[10px] uppercase">
                       {item.scan_type}
                     </Badge>
@@ -94,50 +103,53 @@ function AdminPricing() {
                 ))}
               </div>
               <div className="hidden md:block">
-                <Table className="table-fixed">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[36%] text-[10px] uppercase tracking-wider">
-                        {t("colScanType")}
-                      </TableHead>
-                      <TableHead className="w-[32%] text-[10px] uppercase tracking-wider">
-                        {t("colCreditCost")}
-                      </TableHead>
-                      <TableHead className="w-[32%] text-[10px] uppercase tracking-wider">
-                        {t("colUpdated")}
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {pricing?.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell>
-                          <Badge
-                            variant="default"
-                            className="text-[10px] uppercase"
-                          >
-                            {item.scan_type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-mono text-xs tabular-nums">
-                            {item.credit_cost}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                            {formatUpdatedAt(item.updated_at, i18n.language)}
-                          </span>
-                        </TableCell>
+                <div className="overflow-hidden rounded-md border border-border">
+                  <Table className="table-fixed">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[36%] text-[10px] uppercase tracking-wider">
+                          {t("colScanType")}
+                        </TableHead>
+                        <TableHead className="w-[32%] text-[10px] uppercase tracking-wider">
+                          {t("colCreditCost")}
+                        </TableHead>
+                        <TableHead className="w-[32%] text-[10px] uppercase tracking-wider">
+                          {t("colUpdated")}
+                        </TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {pricing?.map((item) => (
+                        <TableRow key={item.id} className="h-12 hover:bg-muted/50">
+                          <TableCell className="relative pl-4">
+                            <SiemRail className="bg-primary" />
+                            <Badge
+                              variant="default"
+                              className="text-[10px] uppercase"
+                            >
+                              {item.scan_type}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-mono text-xs tabular-nums">
+                              {item.credit_cost}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                              {formatUpdatedAt(item.updated_at, i18n.language)}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             </>
           )}
-        </CardContent>
-      </Card>
+        </AdminShellBody>
+      </AdminShell>
     </div>
   );
 }

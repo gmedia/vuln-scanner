@@ -173,5 +173,30 @@ describe("AdminPricing", () => {
       expect(screen.queryByText("Save")).not.toBeInTheDocument();
       expect(screen.queryByText("Saved")).not.toBeInTheDocument();
     });
+
+    it("rails the leftover banner amber and the archive shell primary", () => {
+      mockUseQueryReturn({ data: basePricing });
+      renderPage();
+      expect(
+        screen
+          .getByTestId("pricing-leftover-banner")
+          .querySelector(".bg-amber-500"),
+      ).toBeTruthy();
+      expect(
+        screen
+          .getByTestId("admin-pricing-card")
+          .querySelector(".bg-primary"),
+      ).toBeTruthy();
+    });
+  });
+
+  describe("empty island", () => {
+    it("renders a muted island when there is no pricing", () => {
+      mockUseQueryReturn({ data: [] });
+      renderPage();
+      const island = screen.getByTestId("admin-pricing-empty");
+      expect(island.className).toMatch(/bg-muted\/40/);
+      expect(island.className).toMatch(/rounded-xl/);
+    });
   });
 });

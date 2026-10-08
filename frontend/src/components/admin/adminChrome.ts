@@ -53,3 +53,13 @@ export function mutationTone(input: {
   if (input.success) return "success";
   return "primary";
 }
+
+export function marginTone(marginIdr: number): AdminTone {
+  return marginIdr < 0 ? "danger" : "primary";
+}
+
+export function reportTone(
+  unallocatedOverheadIdr: number | undefined,
+): AdminTone {
+  return (unallocatedOverheadIdr ?? 0) > 0 ? "warn" : "primary";
+}
