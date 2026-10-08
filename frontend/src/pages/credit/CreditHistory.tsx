@@ -1,14 +1,23 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Coins, History } from "lucide-react";
+import { Coins, History, Receipt } from "lucide-react";
 import { Link } from "react-router-dom";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import { DatePicker } from "@/components/ui/DatePicker";
+import {
+  OpsShell,
+  OpsShellBody,
+  OpsShellHead,
+} from "@/components/ops/OpsShell";
+import { SiemRail } from "@/components/siem/siemChrome";
+import {
+  creditListRailClass,
+  creditTypeRailClass,
+} from "@/components/credit/creditChrome";
 import {
   Table,
   TableBody,
@@ -59,12 +68,6 @@ function signedLedgerAmount(item: CreditLogItem): number {
   return item.type === "deduct" ? -mag : mag;
 }
 
-function typeRailClass(type: string): string {
-  if (type === "deduct") return "bg-destructive";
-  if (type === "refund") return "bg-blue-500";
-  return "bg-primary";
-}
-
 function formatLedgerStamp(iso: string): { date: string; time: string } {
   const d = new Date(iso);
   return {
@@ -85,20 +88,23 @@ function StatTile({
   value,
   emphasize = false,
   valueClassName,
+  railClass = "bg-primary",
 }: {
   label: string;
   value: ReactNode;
   emphasize?: boolean;
   valueClassName?: string;
+  railClass?: string;
 }) {
   return (
-    <div className="rounded-md border border-border bg-card px-4 py-3">
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+    <div className="relative overflow-hidden rounded-md border border-border bg-card px-4 py-3 pl-4">
+      <SiemRail className={railClass} />
+      <p className="pl-1 text-[10px] uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
       <div
         className={cn(
-          "mt-1 font-mono text-lg font-bold tabular-nums text-foreground",
+          "mt-1 pl-1 font-mono text-lg font-bold tabular-nums text-foreground",
           emphasize && "text-xl tracking-tight",
           valueClassName,
         )}
@@ -183,7 +189,7 @@ function LedgerMobileCard({ item }: { item: CreditLogItem }) {
       <span
         className={cn(
           "absolute inset-y-2 left-0 w-0.5 rounded-full",
-          typeRailClass(item.type),
+          creditTypeRailClass(item.type),
         )}
         aria-hidden
       />
@@ -223,7 +229,7 @@ function TransactionRow({ item }: { item: CreditLogItem }) {
         <span
           className={cn(
             "absolute inset-y-1.5 left-0 w-0.5 rounded-full",
-            typeRailClass(item.type),
+            creditTypeRailClass(item.type),
           )}
           aria-hidden
         />
@@ -402,11 +408,8 @@ function CreditHistory() {
         description="Personal scan credits — top-ups, charges, and refunds."
       />
 
-      <article
-        data-testid="credit-history-identity"
-        className="rounded-lg border border-border bg-card"
-      >
-        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between">
+      <OpsShell railClass="bg-primary" testid="credit-history-identity">
+        <div className="flex flex-col gap-4 px-4 py-4 pl-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 items-start gap-4">
             <span
               aria-hidden
@@ -453,7 +456,7 @@ function CreditHistory() {
         </div>
         <div
           data-testid="credit-history-summary"
-          className="grid grid-cols-1 gap-3 border-t border-border p-4 sm:grid-cols-3"
+          className="grid grid-cols-1 gap-3 border-t border-border px-4 py-4 sm:grid-cols-3"
         >
           <StatTile
             label="Current balance"
@@ -464,19 +467,19 @@ function CreditHistory() {
             label="Period credits"
             value={`+${periodCredits.toLocaleString()}`}
             valueClassName="text-green-700 dark:text-green-400"
+            railClass="bg-primary"
           />
           <StatTile
             label="Period debits"
             value={`-${periodDebits.toLocaleString()}`}
             valueClassName="text-red-700 dark:text-red-400"
+            railClass="bg-destructive"
           />
         </div>
-      </article>
+      </OpsShell>
 
-      <div
-        data-testid="credit-history-filters"
-        className="grid grid-cols-1 gap-3 rounded-md border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4"
-      >
+      <OpsShell railClass="bg-border" testid="credit-history-filters">
+        <OpsShellBody className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex min-w-0 flex-col gap-1.5">
           <Label htmlFor="credit-type-filter">Type</Label>
           <Select
@@ -560,18 +563,28 @@ function CreditHistory() {
             </Button>
           ) : null}
         </div>
-      </div>
+        </OpsShellBody>
+      </OpsShell>
 
-      <Card className="overflow-hidden">
-        <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-border pb-4">
-          <CardTitle className="text-sm tracking-wide">Transactions</CardTitle>
-          {data && data.total > 0 && (
-            <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
-              {data.total} total
-            </span>
-          )}
-        </CardHeader>
-        <CardContent className="p-0">
+      <OpsShell
+        railClass={creditListRailClass(
+          filteredItems.map((i) => i.type),
+          periodNet,
+        )}
+        testid="credit-history-list-shell"
+      >
+        <OpsShellHead
+          icon={Receipt}
+          title="Transactions"
+          aside={
+            data && data.total > 0 ? (
+              <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
+                {data.total} total
+              </span>
+            ) : null
+          }
+        />
+        <OpsShellBody flush>
           {listBody}
 
           {!isLoading && totalPages > 1 && (
@@ -597,8 +610,8 @@ function CreditHistory() {
               </PaginationContent>
             </Pagination>
           )}
-        </CardContent>
-      </Card>
+        </OpsShellBody>
+      </OpsShell>
     </div>
   );
 }

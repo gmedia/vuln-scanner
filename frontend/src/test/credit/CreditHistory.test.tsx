@@ -457,17 +457,86 @@ describe("CreditHistory", () => {
     expect(next).not.toBeDisabled();
   });
 
-  it("renders transactions inside the Card component", () => {
+  it("renders transactions inside the ops shell", () => {
     vi.mocked(useQuery).mockReturnValue({
       data: { items: mockItems, total: 3 },
       isLoading: false,
     } as ReturnType<typeof useQuery>);
 
     renderHistory();
-    expect(screen.getByTestId("card")).toBeInTheDocument();
-    expect(screen.getByTestId("card-header")).toBeInTheDocument();
-    expect(screen.getByTestId("card-title")).toBeInTheDocument();
-    expect(screen.getByTestId("card-content")).toBeInTheDocument();
+    expect(screen.getByTestId("credit-history-list-shell")).toBeInTheDocument();
+    expect(
+      screen
+        .getByTestId("credit-history-list-shell")
+        .querySelector(".bg-primary"),
+    ).toBeTruthy();
+  });
+
+  it("rails the identity shell primary and the summary tiles", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: { items: mockItems, total: 3 },
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    renderHistory();
+    const identity = screen.getByTestId("credit-history-identity");
+    expect(identity.querySelector(".bg-primary")).toBeTruthy();
+    const summary = screen.getByTestId("credit-history-summary");
+    expect(summary.querySelectorAll(".bg-primary").length).toBe(2);
+    expect(summary.querySelectorAll(".bg-destructive").length).toBe(1);
+  });
+
+  it("rails the ledger shell destructive when the page nets negative", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: {
+        items: [
+          {
+            id: "d1",
+            amount: -50,
+            type: "deduct" as const,
+            description: "IP scan",
+            reference_id: null,
+            created_at: "2024-01-14T10:00:00Z",
+          },
+        ],
+        total: 1,
+      },
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    renderHistory();
+    expect(
+      screen
+        .getByTestId("credit-history-list-shell")
+        .querySelector(".bg-destructive"),
+    ).toBeTruthy();
+  });
+
+  it("rails the ledger shell muted when there are no rows", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: { items: [], total: 0 },
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    renderHistory();
+    expect(
+      screen
+        .getByTestId("credit-history-list-shell")
+        .querySelector(".bg-border"),
+    ).toBeTruthy();
+  });
+
+  it("rails refund rows blue and keeps the type badge palette", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: { items: mockItems, total: 3 },
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    renderHistory();
+    const refundBadges = screen.getAllByText("refund");
+    const inRow = refundBadges.find((el) => el.closest("tr"));
+    expect(inRow?.className).toMatch(/bg-blue-600/);
+    expect(inRow?.closest("tr")?.querySelector(".bg-blue-500")).toBeTruthy();
   });
 
   it("renders Transactions heading in card", () => {
