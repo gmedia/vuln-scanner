@@ -443,13 +443,13 @@ PageHeader actions: Enable (when off + admin) or Sync (when on + admin). Sync ke
 - **Structure**: one shell (`border border-border bg-card rounded-lg`) — header + labeled create row + token list. Not a Card nested in a Card.
 - **Create row**: `Label` + `Input#enroll-label` + `Button` "Buat token" / "Create token". Equal `gap-2`, control `h-10`.
 - **Once-secret** (`data-testid="guard-host-enroll-steps"`): 2px primary rail, `bg-primary/5`, mono secret in `<code>`, host steps `<ol>`, curl `<pre>` + copy, distro `Accordion` (`guard-agent-install-steps`, `guard-distro-install-commands`). Commands stay collapsed until trigger (frozen unit test).
-- **Token list**: ready-first sort; expired `opacity-60`; revoke confirm dialog unchanged. Frozen `guard-enroll-token-row` / `guard-enroll-token-card`.
+- **Token list**: ready-first sort; expired `opacity-60`; revoke confirm dialog unchanged. Frozen `guard-enroll-token-row` / `guard-enroll-token-card`. Loading = `TableRowSkeleton rows={3} columns={4}`.
 - **Host Protect once-token**: sibling alert `data-testid="guard-host-token-once"` — same primary-rail secret treatment, not a second green soup.
 
 ### GuardAgentsPanel
 
 - **Structure**: one shell `data-testid="guard-agents"`. Empty: `SiemEmptyIsland` + `data-testid="guard-agents-empty"` (icon `Monitor`, copy `noAgents`). Loading = `TableRowSkeleton rows={4} columns={5}`.
-- **Row**: 2px rail — online `bg-primary`, disconnected `bg-amber-500`, pending `bg-sky-500`, disabled `bg-border`. Name mono; UUID `CopyableId`; last seen + helper poll; version; asset chip `guard-asset-chip-{id}`; admin Select `guard-link-asset-{id}`; host-token `guard-host-token-issue`; disable `guard-disable-{id}`. Token list loading = `TableRowSkeleton rows={3} columns={4}`.
+- **Row**: 2px rail — online `bg-primary`, disconnected `bg-amber-500`, pending `bg-sky-500`, disabled `bg-border`. Name mono; UUID `CopyableId`; last seen + helper poll; version; asset chip `guard-asset-chip-{id}`; admin Select `guard-link-asset-{id}`; host-token `guard-host-token-issue`; disable `guard-disable-{id}`.
 - **Do not** dump IP in the default row (keep current columns). Do not `table-fixed`.
 
 ### GuardAlertsPanel
@@ -804,7 +804,7 @@ Shared chrome: `TabsList variant="line" className="w-full justify-start"`. Icons
 
 ### Ai panels (keys / usage / catalog)
 
-- `AiKeysPanel` / `AiUsagePanel` / `AiCatalogPanel` take a `loading` prop. While their query is pending they render `TableRowSkeleton` (`keys` 5×6, `usage` 5×4, `catalog` 5×4 — matching each loaded table) **instead of** the empty well, so the empty copy never flashes. The create-key form row stays visible on Keys. Empty well (`ai-usage-empty`, etc.) renders only when `!loading`.
+- `AiKeysPanel` / `AiUsagePanel` / `AiCatalogPanel` take a `loading` prop. While their query is pending they render `TableRowSkeleton` (`keys` `rows={5} columns={6}`, `usage` `rows={5} columns={4}`, `catalog` `rows={5} columns={4}`) **instead of** the empty well, so the empty copy never flashes. The create-key form row stays visible on Keys. Empty well (`ai-usage-empty`, etc.) renders only when `!loading`.
 
 ## 6. Motion & Interaction
 
@@ -2814,7 +2814,7 @@ The shared head uses `border-b border-border px-4 py-3`; the shared body uses `p
 
 New tone helpers: `incidentsListRailClass(statuses)` (`statusChrome.ts`) and `outagesRailClass(count)` (`uptimeChrome.ts`).
 
-`OpsShell` is also the shell for **page-level loading states**: `/siem` (`siem-loading`), `/host` (`host-sites-loading`), the StatusPage editor (`status-page-loading`), `/uptime/:id`, and `/scan/:id` wrap their skeleton placeholders in `OpsShell railClass="bg-border"` instead of a bare `Card`, so the loading surface matches the loaded shell grammar. The shared `TableRowSkeleton({rows, columns})` renders exactly `columns` bars per row (default 4) so a table skeleton's width profile matches the loaded table; every table-backed loading surface passes the loaded column count.
+`OpsShell` also frames loading placeholders on `/siem` (`siem-loading`), `/host` (`host-sites-loading`), the StatusPage editor (`status-page-loading`), and `/uptime/:id` with `railClass="bg-border"`. Their page-level loading layouts and `/scan/:id` mirror the loaded sections rather than collapsing into a bare `Card`: StatusPage keeps hero → KPI → identity/host/components/incidents; UptimeDetail keeps header → hero → range → KPI → timeline/outages/history; ScanDetail keeps tabs → findings + severity/scan-info. The shared `TableRowSkeleton({rows, columns})` defaults `columns` to 4 and renders `Math.max(1, columns)` bars per row (first `flex-1`, then `w-16`, `hidden sm:block w-24`, `hidden md:block w-12`, and `hidden lg:block w-16` for further bars). Table-backed loading surfaces pass the loaded column count.
 
 `SiemEmptyIsland` (`components/siem/SiemEmptyIsland.tsx`) is the **shared empty/flag-off island** across the family (uptime, host, guard, status, siem, and now `/ai`). `/ai` uses it for `ai-feature-off` (Bot), no-org (Building2), and load-fail (TriangleAlert) — replacing the kit `Alert` those states used before. `Alert` stays for inline notices (e.g. `AiKeysPanel`), not for page-level empty states.
 
