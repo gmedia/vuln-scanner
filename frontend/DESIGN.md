@@ -3015,3 +3015,131 @@ Micro only: `transition-colors` on step/card hover and links. No ping, no layout
 | Feature grid is 9 `Card`s, frozen by count | test | The count assertion is the contract that the nine modules stay visible | Update only with a deliberate module change |
 | HTML islands (`/blog`, `/terms`, `/privacy`) are string templates, not React | `backend/app/api/*_html.py` | SEO + no JS hydrate; they must rhyme this section manually | Named island slice if chrome changes |
 | Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |
+
+# User guide (`/guide`)
+
+Print §§0–8 and every SPA section above stay locked. This section documents the **editorial docs** surface at `/guide`. It is the one SPA page that was already designed on its own grammar (numbered gutter + tone chapters) and the last without a contract — this section records it, it does **not** redesign it.
+
+## 0. Research Log (User guide)
+
+- Reused the existing `components/guide/*` design. No new reference pull, no new palette.
+- Sibling harvest: `SiemRail` rails, `OpsShell` icon-chip geometry (`h-8 w-8 rounded-md border border-border bg-muted/40`), `GuideNote`'s 2px `border-l-2` as the docs-local analogue of a rail.
+- Current diagnosis: `/guide` renders 15 `GuideChapter` articles in a two-column TOC layout, with `GuideJumpMap`, `GuideMobileToc`, `GuideDesktopToc`, and `useActiveGuideSection` scroll-spy. It carries **0 `Card`** and **0 rails** — deliberately, because it is editorial docs, not an ops console. The only debt was the missing DESIGN.md contract.
+- Imagen / Lazyweb: skipped — the design exists; AGENTS.md forbids extra deps for a docs slice.
+
+**Direction (locked):** Keep the docs grammar exactly. The chapter's **numbered gutter** (`01`–`15`) is the surface's signature; a `runtime` chapter carries a **primary hairline** under the header, a `limits` chapter carries a **destructive border**. This is intentionally **not** the ops rail grammar — do not add `SiemRail`/`OpsShell` here.
+
+## 1. Atmosphere & Identity
+
+`/guide` is the operator handbook: 15 chapters from "open the account" to "limits that stay true". It reads like a reference manual (numbered, scannable, anchored), not like a console. It must stay calmer than every ops surface.
+
+The one memorable moment: the **numbered gutter**. The left `01`–`15` column plus the group ranges in `GuideJumpMap` let a reader orient by number, and `runtime` / `limits` chapters are colour-coded by a single hairline / border.
+
+Do **not** add rails, KPI strips, or a filled masthead. Do **not** merge guide chrome into the ops family.
+
+## 2. Color
+
+Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. No Palatino.
+
+| Role | Token / class | Usage |
+|------|----------------|-------|
+| Canvas | `--background` | Page |
+| Surface | `--card` + `border-border` | Chapters, jump map, mobile TOC |
+| Muted surface | `bg-muted/40` / `bg-muted/30` | Gutter, icon chips, intro, step number chips, pre |
+| Ink | `--foreground` | Chapter `h2`, body |
+| Meta | `--muted-foreground` | Kicker, gutter numbers, step text, notes |
+| Accent | `--primary` `hsl(142 71% 45%)` | `runtime` hairline (`h-px bg-primary/40`), `GuideNote` left border, inline links |
+| Limits | `border-destructive/30` | `limits`-tone chapter border |
+
+Colour is **redundant** with the group label and the chapter title. Never colour-only meaning.
+
+## 3. Typography
+
+SPA scale. Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+
+| Level | Size | Weight | Usage |
+|-------|------|--------|-------|
+| Page title | `text-2xl` / `md:text-3xl` | 600 | PageHeader `h2` `title` |
+| Kicker / module count | `font-mono text-[10px] uppercase tracking-wider` | 500 | Header description |
+| Chapter title | `text-xl font-semibold tracking-tight` | 600 | `GuideChapter` `h2` (anchor target) |
+| Gutter number | `font-mono text-base sm:text-lg font-semibold tabular-nums` | 600 | `01`–`15` |
+| Step chip number | `font-mono text-[11px] font-medium tabular-nums` | 500 | `::before` counters |
+| Step / body | `text-sm leading-relaxed` | 400 | `Steps` items |
+| Note / pre | `text-xs` / `text-[11px]` | 400 | `GuideNote`, `GuidePre` |
+| TOC group label | `text-[10px] uppercase tracking-wider` | 500 | `GuideTocLinks` / desktop TOC |
+
+Tabular numerals on gutter numbers, step counters, and jump-map ranges.
+
+## 4. Spacing & Layout
+
+4px base. `space-y-6` page stack, `pb-8`.
+
+- **Page grid**: `lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-8 2xl:grid-cols-[18rem_minmax(0,1fr)]`. Below `lg` the desktop TOC is `hidden`; the sticky mobile TOC takes over.
+- **Chapter**: `rounded-lg border bg-card`; header row `flex items-stretch border-b`; gutter `w-12 sm:w-14`; body `space-y-4 p-4 md:px-5 md:py-5`.
+- **Jump map**: `grid grid-cols-2 gap-2 lg:grid-cols-4`.
+- **Desktop TOC**: `aside data-testid="guide-desktop-toc" className="hidden lg:block"` wrapping `sticky top-6 max-h-[calc(100svh-5rem)] overflow-y-auto`.
+- **Mobile TOC**: `sticky top-0 z-30 -mx-4 mb-6 bg-background px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 md:-mx-6 md:px-6 lg:hidden`.
+
+**Frozen contracts** (`src/test/UserGuide.test.tsx`): the 15 chapter `h2` names; `guide-desktop-toc` is `lg:block` and contains `.sticky` + `[data-slot='sidebar']`; **exactly 4** jump-map links (`#mulai`, `#jadwal`, `#guard`, `#tips`); ≥2 navs `aria-label="Guide sections"`; the mobile TOC bar is `sticky top-0 bg-background` and **not** `top-14`, and matches `safe-area-inset-top`; TOC toggle `aria-expanded` toggles; TOC links `min-h-11`; `sinexis-install-wget` + `guard-distro-install-commands` testids; the distro accordions (`Debian / Ubuntu` etc.) open/close and the install command is absent while closed; every cross-link href (`/host`, `/scan/ip`, `/assets`, `/uptime`, `/uptime/status-page`, `/schedules`, `#guard`) and the external `sinexis-install.sh` / `GitHub Release` links.
+
+## 5. Signature Components & States
+
+| Primitive | Anatomy | States |
+|-----------|---------|--------|
+| `GuideChapter` | `article` `relative overflow-hidden rounded-lg border bg-card`; optional tone strip; header row with numbered gutter + icon chip + `h2`; body | default / `runtime` (primary hairline) / `limits` (destructive border) |
+| `Steps` | `<ol>` with `[counter-reset:guide-step]`; each `<li>` gets a `::before` `h-7 w-7` bordered mono chip | static |
+| `GuideIntro` | `rounded-md border bg-muted/30 px-3 py-2.5 text-sm` | static |
+| `GuideNote` | `border-l-2 border-primary bg-muted/30 px-3 py-2 text-xs` | static |
+| `GuidePre` | `rounded-md border bg-muted/40 p-3 font-mono text-[11px] break-all` | optional `testId` |
+| `GuideJumpMap` | `nav aria-label=jumpAria` + 4 group cards (`min-h-11 rounded-md border bg-card`), icon chip + label + mono range | active group → `bg-muted` |
+| `GuideMobileToc` | sticky `lg:hidden` bar + `Card` trigger (`min-h-11`, `aria-expanded`) + collapsible `GuideTocLinks` | open / closed |
+| `GuideDesktopToc` | `Sidebar collapsible="none"` in a `sticky` aside; `SidebarMenuButton` per section | `isActive` → `aria-current="true"` |
+
+Scroll-spy: `useActiveGuideSection` drives `activeId`, which sets the jump-map highlight, the TOC `aria-current`, and the mobile trigger label.
+
+## 6. Motion
+
+| Type | Duration | Easing | Usage |
+|------|----------|--------|-------|
+| Micro | 150–200ms | ease-out | Jump-map `hover:bg-muted/40`, TOC hover |
+| Chevron | 150ms | ease-out | Mobile TOC `rotate-180` |
+
+- GPU only. No ping, no layout animation.
+- `prefers-reduced-motion`: no continuous animation on this page.
+
+## 7. Depth & Surface
+
+**borders-only.** No drop shadows anywhere on `/guide`. No glass, no gradients, no nested Card-in-Card. Depth comes from `border-border` + `bg-muted/*` steps.
+
+| Type | Treatment | Use |
+|------|-----------|-----|
+| Chapter | `rounded-lg border border-border bg-card` | All 15 chapters |
+| Gutter / chips / pre | `bg-muted/40` + `border-border` | Numbers, icons, code |
+| Intro / note | `bg-muted/30` | Callouts |
+| TOC card | kit `Card` | Mobile TOC only |
+
+## 8. Accessibility Constraints & Accepted Debt
+
+### Constraints
+
+- WCAG 2.2 AA contrast on SPA tokens. Tone is redundant with the group label / chapter title.
+- One PageHeader `h2`; each chapter title is its own `h2` with `id` = `TocId` and `scroll-mt-24`.
+- Anchor links and TOC links keep `min-h-11` mobile targets.
+- The mobile TOC trigger is a real `<button>` with `aria-expanded`.
+- `prefers-reduced-motion`: no continuous animation.
+
+### Personas
+
+- **New operator** (primary): jump map → a chapter → follow `Steps`.
+- **Mobile reader**: sticky "On this page" trigger expands the section list.
+- **Returning reader**: desktop TOC with scroll-spy highlights the current section.
+
+### Accepted Debt
+
+| Item | Location | Why accepted | Owner / Exit |
+|------|----------|--------------|--------------|
+| `/guide` uses its own chapter grammar, not `OpsShell`/`SiemRail` | `components/guide/` | Editorial docs, not an ops console; forcing rails would break the numbered-gutter design | Keep |
+| Guide copy is a large i18n catalog (`guide` ns, EN+ID) with frozen strings | page + locale | Asserted by `UserGuide.test.tsx`; changing copy needs matching test updates | Named i18n slice |
+| Guide body copy still says `1001–1140` for WAF rule IDs | `guide` locale | Frozen by test; product events are now `1001–1164`. A copy refresh is a separate, test-touching change | Named copy slice |
+| `GuideDesktopToc` reuses the app `Sidebar` primitive as a page TOC | `GuideToc.tsx` | Frozen by test (`[data-slot='sidebar']`); swapping to a bespoke list is a refactor | Keep |
+| Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |
