@@ -28,7 +28,10 @@ import { AlertTriangle, Bug, Shield } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent } from "@/components/ui/Card";
+import {
+  OpsShell,
+  OpsShellBody,
+} from "@/components/ops/OpsShell";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
   Tabs,
@@ -390,11 +393,11 @@ export default function HostProtect() {
         </TabsList>
         <TabsContent value="malware" className="mt-4 space-y-6">
           {sitesQ.isLoading && items.length === 0 ? (
-            <Card className="overflow-hidden">
-              <CardContent className="px-4 py-4">
+            <OpsShell railClass="bg-border" testid="host-sites-loading">
+              <OpsShellBody className="px-4 py-4">
                 <TableRowSkeleton rows={4} />
-              </CardContent>
-            </Card>
+              </OpsShellBody>
+            </OpsShell>
           ) : items.length === 0 && !sitesQ.isLoading && agents.length > 0 ? (
             <div
               data-testid="host-empty"

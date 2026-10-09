@@ -1259,4 +1259,28 @@ describe("Host Protect page", () => {
     const card = await screen.findByTestId("host-site-card-s1");
     expect(card.querySelector(".bg-destructive")).toBeTruthy();
   });
+
+  it("rails the loading shell while sites are pending", () => {
+    vi.mocked(hostApi.listHostSites).mockReturnValue(
+      new Promise(() => {}) as never,
+    );
+    vi.mocked(guardApi.listGuardAgents).mockResolvedValue([
+      {
+        id: "a1",
+        organization_id: "org1",
+        wazuh_agent_id: "001",
+        name: "web-1",
+        status: "active",
+        ip: null,
+        version: null,
+        last_keep_alive: null,
+        last_helper_poll_at: null,
+        synced_at: "2026-08-14T10:00:00Z",
+        created_at: "2026-08-14T10:00:00Z",
+      },
+    ]);
+    renderHost();
+    const shell = screen.getByTestId("host-sites-loading");
+    expect(shell.firstElementChild?.className).toMatch(/bg-border/);
+  });
 });

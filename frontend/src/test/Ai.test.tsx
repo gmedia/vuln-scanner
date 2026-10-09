@@ -302,13 +302,38 @@ describe("AI Gateway page", () => {
     expect(
       await screen.findByText("The AI Gateway module is not enabled in this environment."),
     ).toBeInTheDocument();
-    expect(screen.getByTestId("ai-feature-off")).toBeInTheDocument();
+    const island = screen.getByTestId("ai-feature-off");
+    expect(island.className).toMatch(/rounded-xl/);
+    expect(island.className).toMatch(/bg-muted\/40/);
   });
 
   it("asks to pick org when none active", () => {
     useAuthStore.setState({ activeOrgId: null });
-    renderAi();
+    const { container } = renderAi();
     expect(screen.getByText("Select an organization first.")).toBeInTheDocument();
+    const island = screen
+      .getByText("Select an organization first.")
+      .closest("div[class*='rounded-xl']");
+    expect(island?.className).toMatch(/bg-muted\/40/);
+    expect(container.querySelector("[data-slot='alert']")).toBeNull();
+  });
+
+  it("shows a load-fail island when the wallet errors", async () => {
+    vi.mocked(aiApi.getAiWallet).mockRejectedValue({ response: { status: 500 } });
+    const { container } = renderAi();
+    expect(
+      await screen.findByText(
+        "Failed to load AI Gateway. Retry, or sign in again if the session expired.",
+      ),
+    ).toBeInTheDocument();
+    expect(container.querySelector("[data-slot='alert']")).toBeNull();
+    expect(
+      screen
+        .getByText(
+          "Failed to load AI Gateway. Retry, or sign in again if the session expired.",
+        )
+        .closest("div[class*='rounded-xl']")?.className,
+    ).toMatch(/bg-muted\/40/);
   });
 
   it("renders stacked usage cards on small screens and a table from md", async () => {
