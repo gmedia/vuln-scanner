@@ -257,7 +257,7 @@ Page size: 10 rows on mobile (`useIsMobile`), 25 otherwise. Pager only when `len
 ### SiemIndexerStrip
 
 - **Structure**: 4 tiles (indexer / min level / lookback / agents). Each tile: 2px left rail + uppercase label + mono value. Reachable indexer may mount `LiveDot` (Uptime chrome).
-- **States**: reachable (primary rail + pulse), degraded (amber rail, no pulse), unreachable (destructive rail). Feature-off / loading: strip unmounted.
+- **States**: reachable (primary rail + pulse), degraded (amber rail, no pulse), unreachable (destructive rail). Feature-off: strip unmounted. **Loading**: while the indexer/agents query is pending (status resolved + feature on) the page holds a 4-tile placeholder `data-testid="siem-indexer-loading"` (`grid grid-cols-2 gap-3 lg:grid-cols-4`, 4× `Skeleton h-[4.5rem] rounded-lg`) so the strip does not pop in.
 - **A11y**: text status, not color alone. `aria-hidden` on rails and pulse.
 
 ### SiemSearchFilters
@@ -270,6 +270,7 @@ Page size: 10 rows on mobile (`useIsMobile`), 25 otherwise. Pager only when `len
 
 - **Mobile/tablet**: stacked rows, 2px severity rail, expand in place (`aria-expanded`, `data-testid="siem-event-row"`).
 - **xl**: `table-fixed` — Time / Level / Rule / Agent. Rule `break-words` (no truncate). Agent `break-all font-mono` (no `w-[10rem]`, no truncate). Selected row `bg-muted/50`. Auto-select first event.
+- **Loading**: `TableRowSkeleton rows={6} columns={4}` (desktop 4-col table).
 - **Empty**: `data-testid="siem-events-empty"` copy, no skeletons / no `animate-pulse` after load.
 - **Pager**: `data-testid="siem-event-pager"` above and below when needed.
 
@@ -281,7 +282,7 @@ Page size: 10 rows on mobile (`useIsMobile`), 25 otherwise. Pager only when `len
 
 ### SiemCasesPanel
 
-- Incident list with status rail + table ≥md. Detail is a **section**, not a Card nested in a Card. Frozen `data-testid="siem-case-detail"`.
+- Incident list with status rail + table ≥md. Detail is a **section**, not a Card nested in a Card. Frozen `data-testid="siem-case-detail"`. Loading = `TableRowSkeleton rows={4} columns={5}`.
 
 ### Feature-off / no-agents
 
@@ -434,7 +435,7 @@ PageHeader actions: Enable (when off + admin) or Sync (when on + admin). Sync ke
 
 - **Structure**: 4 tiles — state / agents / critical alerts / last sync. Each tile: `SiemRail` + uppercase label + value. State tile mounts a live pulse when enabled and not degraded.
 - **Frozen**: `data-testid="guard-state"` + `data-enabled="true"|"false"` on the **state value** (must still contain i18n `nyala` / `nonaktif` / `on` / `off`). Wrapper `data-testid="guard-kpi-strip"`.
-- **States**: loading = skeleton tiles (no pulse). Status error = `data-testid="guard-status-error"` **instead of** the strip (session vs load copy unchanged). Feature off (Guard disabled) = strip still mounts (off rail) **above** the disabled island.
+- **States**: loading = skeleton tiles (no pulse), `data-testid="guard-kpi-skeleton"`. Status error = `data-testid="guard-status-error"` **instead of** the strip (session vs load copy unchanged). Feature off (Guard disabled) = strip still mounts (off rail) **above** the disabled island.
 - **A11y**: text status, not color alone. `aria-hidden` on rails and pulse.
 
 ### GuardEnrollPanel
@@ -447,14 +448,14 @@ PageHeader actions: Enable (when off + admin) or Sync (when on + admin). Sync ke
 
 ### GuardAgentsPanel
 
-- **Structure**: one shell `data-testid="guard-agents"`. Empty: `SiemEmptyIsland` + `data-testid="guard-agents-empty"` (icon `Monitor`, copy `noAgents`).
-- **Row**: 2px rail — online `bg-primary`, disconnected `bg-amber-500`, pending `bg-sky-500`, disabled `bg-border`. Name mono; UUID `CopyableId`; last seen + helper poll; version; asset chip `guard-asset-chip-{id}`; admin Select `guard-link-asset-{id}`; host-token `guard-host-token-issue`; disable `guard-disable-{id}`.
+- **Structure**: one shell `data-testid="guard-agents"`. Empty: `SiemEmptyIsland` + `data-testid="guard-agents-empty"` (icon `Monitor`, copy `noAgents`). Loading = `TableRowSkeleton rows={4} columns={5}`.
+- **Row**: 2px rail — online `bg-primary`, disconnected `bg-amber-500`, pending `bg-sky-500`, disabled `bg-border`. Name mono; UUID `CopyableId`; last seen + helper poll; version; asset chip `guard-asset-chip-{id}`; admin Select `guard-link-asset-{id}`; host-token `guard-host-token-issue`; disable `guard-disable-{id}`. Token list loading = `TableRowSkeleton rows={3} columns={4}`.
 - **Do not** dump IP in the default row (keep current columns). Do not `table-fixed`.
 
 ### GuardAlertsPanel
 
 - **Structure**: one shell `data-testid="guard-alerts"`. Empty: island + `guard-open-siem` link to `/siem`.
-- **Rows**: 2px destructive rail + `Badge variant="critical"` `L{n}` + description + mono meta (time · agent · rule). Not a nested Card list.
+- **Rows**: 2px destructive rail + `Badge variant="critical"` `L{n}` + description + mono meta (time · agent · rule). Not a nested Card list. Loading = a **list-shaped** skeleton (3× `rounded-md border border-border p-3`, 2 `Skeleton` lines each), matching the alert `<li>` rows — not table rows.
 
 ### Disabled / error
 
@@ -620,7 +621,7 @@ PageHeader actions: Export pack dropdown + Add (`min-h-11 sm:min-h-10`) when `it
 ### Asset list shell
 
 - **Structure**: one `Card` (or equivalent) `data-testid="assets-list"` with `[data-slot="card-title"]` text = i18n `tableTitle` (`Assets`) — frozen. Filters live in the header strip (`border-b`). Not a Card nested in a Card.
-- **Loading**: `data-testid="assets-loading"` + `[data-slot="card-title"]` `Assets` + `TableRowSkeleton` (frozen).
+- **Loading**: `data-testid="assets-loading"` + `[data-slot="card-title"]` `Assets` (frozen) + a filter-row placeholder (`data-testid="assets-filters-loading"`, input-shaped `h-10`) matching `AssetFilters` + body `TableRowSkeleton rows={5} columns={7}` (loaded desktop table is 7 cols).
 - **Empty**: island `data-testid="assets-empty"` — `Globe` + `empty` + `emptyHint` + primary `Button` `assets-empty-cta` (`bg-primary`, `min-h-11`). Grammar: `rounded-xl border border-border bg-muted/40`, generous `min-h-[12rem] md:min-h-[16rem]`. Not a Shield hero, not `rounded-3xl`.
 - **No match**: `data-testid="assets-no-match"` + `assets-clear-filters` unchanged.
 
@@ -800,6 +801,10 @@ Shared chrome: `TabsList variant="line" className="w-full justify-start"`. Icons
 ### AiWalletPanel
 
 - Extracted wallet card. Stat tiles (balance / active keys / period billed) + empty-wallet CTA + copyable `/v1` base URL. Not a second tab primitive.
+
+### Ai panels (keys / usage / catalog)
+
+- `AiKeysPanel` / `AiUsagePanel` / `AiCatalogPanel` take a `loading` prop. While their query is pending they render `TableRowSkeleton` (`keys` 5×6, `usage` 5×4, `catalog` 5×4 — matching each loaded table) **instead of** the empty well, so the empty copy never flashes. The create-key form row stays visible on Keys. Empty well (`ai-usage-empty`, etc.) renders only when `!loading`.
 
 ## 6. Motion & Interaction
 
@@ -984,7 +989,7 @@ Content stress: long slug / hostname / TXT token uses `break-all` / `truncate` +
 ### Empty create / loading
 
 - No page: island (`rounded-xl border border-border bg-muted/40`) + `Radio` + copy in `status-page-empty` + slug/title `Label`+`Input` `h-10` + `status-page-create`. Not a blank Card.
-- Loading: 4 skeleton tiles `h-[4.5rem] rounded-lg`, not a spinner.
+- Loading: full-page `data-testid="status-page-loading"` mirroring the loaded order — hero placeholder (`h-28` bordered) → `StatusKpiSkeleton` (`data-testid="status-kpi-skeleton"`, 4 tiles `h-[4.5rem] rounded-lg`) → four `OpsShell railClass="bg-border"` placeholders: identity (3-col input skeletons `h-10`), host (2-col + help line), components (`TableRowSkeleton rows={3} columns={3}`), incidents (`rows={4} columns={5}`). Loaded shell testids are **not** reused in loading; `status-page-empty` is not rendered while loading. Not a spinner.
 
 ## 6. Motion & Interaction
 
@@ -1068,7 +1073,7 @@ Print §§0–8 and SIEM / Guard / Assets / Status / page-nav above stay locked.
 
 The one memorable moment: when any monitor is `up`, the Up KPI rail goes primary and a live pulse sits next to the count. On detail, when the probe is enabled and `up`, the hero rail goes primary and the pulse sits next to the state word. When a probe is `down`, the rail goes destructive **before** the operator opens History. Sparkline stays a 96×28 latency spark in the desktop Spark column — not the hero.
 
-Do **not** use Lucide `Shield` (Guard cliché) or a filled green masthead. Protocol uses existing `ProtocolGlyph` (Globe / Network / HeartPulse / Radio / Activity). Empty fleet uses `Activity`. Filter-empty uses `Activity`. Outages-empty / history-empty use `SiemEmptyIsland`. Loading is skeleton KPI tiles + table rows, not a spinner in a Card.
+Do **not** use Lucide `Shield` (Guard cliché) or a filled green masthead. Protocol uses existing `ProtocolGlyph` (Globe / Network / HeartPulse / Radio / Activity). Empty fleet uses `Activity`. Filter-empty uses `Activity`. Outages-empty / history-empty use `SiemEmptyIsland`. Loading is skeleton KPI tiles + a filter-bar placeholder (`data-testid="uptime-filters-loading"`, 3 input-shaped `h-10` in `grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3`, same order as loaded) + `TableRowSkeleton rows={5} columns={7}` for the list, not a spinner in a Card. `/uptime/:id` loading mirrors the whole page: header + hero + range-filter `OpsShell` + 3 KPI + timeline `OpsShell` + outages `OpsShell` + history card (`rows={5} columns={4}`).
 
 Public `/status/{slug}` and `/uptime/status-page` are **out of scope**.
 
@@ -1154,7 +1159,7 @@ Content stress: long name / URL uses `truncate` / `break-all` + `min-w-0`. 375px
 | `Sparkline` (`uptime-sparkline`) | 96×28 SVG area+stroke; empty `"—"` | stroke primary / destructive / muted; height ≥ 28 (frozen) |
 | Availability bar (`uptime-availability-bar`) | `h-8` flex segments, `segmentClass` | up primary, down destructive, else muted |
 | Outage row (`uptime-outage-row`) | `relative rounded-md border p-3 pl-4` + destructive rail | ongoing vs duration; pager `uptime-outage-pagination` |
-| History (`uptime-history-panel`) | Card + mobile cards / desktop table; fail wash + rail | empty → `SiemEmptyIsland` |
+| History (`uptime-history-panel`) | Card + mobile cards / desktop table; fail wash + rail | loading `TableRowSkeleton rows={5} columns={4}`; empty → `SiemEmptyIsland` |
 | Empty fleet (`uptime-empty`) | Card island + `Activity` + `uptime-empty-cta` | keep testids; CTA `Button` |
 | Filter empty | `SiemEmptyIsland` | `filterEmpty` copy |
 | Add/edit | existing right `Sheet` (`uptime-sheet` `right-0`) | do not invent a modal |
@@ -1241,7 +1246,7 @@ Print §§0–8 and SIEM / Guard / Assets / page-nav / Status / Uptime above sta
 
 The one memorable moment: the malware KPI strip. When a site is at the SKU cap the quota rail and bar read destructive **before** the Add button disables; when the helper fleet checked in, the helper tile carries a live pulse. On the list, the site's state rail reads before the name, so an on-call operator sees `critical` or `failed` before opening the card.
 
-Do **not** use a filled green masthead, a generic icon-in-circle hero, or a Wazuh/Imunify clone skin. Loading is skeleton rows, not a spinner in a Card.
+Do **not** use a filled green masthead, a generic icon-in-circle hero, or a Wazuh/Imunify clone skin. Loading is **card-shaped** skeleton rows (each `relative overflow-hidden rounded-lg border border-border bg-card pl-4` + `SiemRail bg-border` + header icon/title/badge + 2 lines + a button-shaped bar), matching `HostSiteCard` — not a table, not a spinner in a Card. Kept inside the `host-sites-loading` `OpsShell railClass="bg-border"`.
 
 ## 2. Color
 
@@ -1392,7 +1397,7 @@ Print §§0–8 and SIEM / Guard / Assets / page-nav / Status / Uptime above sta
 
 The one memorable moment: the **Open risk** tile. When risk is zero the rail is primary and the value is quiet; when risk exists the rail and value go destructive and a live pulse sits next to the label. The same rail grammar repeats on the attention shell and every recent row, so the eye scans status before copy.
 
-Do **not** use a filled green masthead, a marketing hero, or a generic icon-in-circle. Loading is skeleton tiles + skeleton rows, not a spinner in a Card.
+Do **not** use a filled green masthead, a marketing hero, or a generic icon-in-circle. Loading is skeleton tiles + skeleton rows (recent-work `TableRowSkeleton rows={6} columns={5}`), not a spinner in a Card.
 
 ## 2. Color
 
@@ -1542,7 +1547,7 @@ Print §§0–8, SIEM / Guard / Assets / page-nav / Status / Uptime / Host / Das
 
 The one memorable moment: the **findings KPI rail**. It encodes the worst severity present (`critical` → destructive, `high` → orange, `medium` → yellow, `low` → blue), and the **duration** tile carries a live pulse while the scan runs. The same rail grammar repeats on the findings shell, the severity shell, the diff strip, and every finding row — so the eye reads severity before copy.
 
-Do **not** use a filled green masthead, a generic icon-in-circle hero, or a marketing hero. Loading is skeleton tiles + skeleton rows, not a spinner in a Card.
+Do **not** use a filled green masthead, a generic icon-in-circle hero, or a marketing hero. Loading is skeleton tiles + skeleton rows (findings `TableRowSkeleton rows={6} columns={7}`) **and** mirrors the page-nav tabs bar (`h-9 w-72`) and the right-hand column (severity-chart card + scan-info card) on the same `2xl:grid-cols-[minmax(0,1.6fr)_minmax(22rem,0.9fr)]` grid, not a spinner in a Card.
 
 ## 2. Color
 
@@ -1700,7 +1705,7 @@ Print §§0–8 and SIEM / Guard / Assets / page-nav / Status / Uptime / Host / 
 
 The one memorable moment: the **quota shell**. The rail and progress bar turn amber near the cap and destructive at it, *before* the create button disables — so the operator sees the constraint before the blocked action.
 
-Do **not** use a filled green masthead, a marketing hero, or a generic icon-in-circle. Loading is skeleton rows, not a spinner in a Card.
+Do **not** use a filled green masthead, a marketing hero, or a generic icon-in-circle. Loading is skeleton rows (`TableRowSkeleton rows={4} columns={3}` for the list; run-history stays `rows={2}`), not a spinner in a Card.
 
 ## 2. Color
 
@@ -2169,7 +2174,7 @@ Print §§0–8 and SIEM / Guard / Assets / page-nav / Status / Uptime / Host / 
 
 The one memorable moment: the **invoice rail**. A paid workspace reads primary, a sent one amber, a void one destructive — and the same tone repeats on the billing shell, so an operator sees the money state before opening a card.
 
-Do **not** use a filled green masthead, a marketing hero, or a generic icon-in-circle. Loading is skeleton rows, not a spinner in a Card.
+Do **not** use a filled green masthead, a marketing hero, or a generic icon-in-circle. Loading is skeleton rows, not a spinner in a Card. Members loading = `TableRowSkeleton rows={3} columns={3}`; invites = `rows={2} columns={4}`; billing = `data-testid="workspace-billing-loading"` — a `grid gap-3 lg:grid-cols-2` of 2 invoice-card-shaped skeletons (`rounded-lg border p-4`, 3 lines), matching the loaded invoice grid.
 
 ## 2. Color
 
@@ -2325,7 +2330,7 @@ Admin is internal: platform stats, user accounts, credit adjustments. It must fe
 
 The one memorable moment: the **KPI rail row**. Five metrics read left to right with distinct rail colours, so an operator sees "who / how much / how risky / supply / consumption" before reading a single number.
 
-Do **not** use a filled green masthead, a marketing hero, or a generic icon-in-circle. Loading is skeleton rows / skeleton tiles, not a spinner in a Card.
+Do **not** use a filled green masthead, a marketing hero, or a generic icon-in-circle. Loading is skeleton rows / skeleton tiles (users list `TableRowSkeleton rows={5} columns={8}`; user-detail profile `rows={4} columns={4}`, credit-adjust `rows={3} columns={3}`), not a spinner in a Card.
 
 ## 2. Color
 
@@ -2386,7 +2391,7 @@ Responsive:
 - `<md`: user rows are full-width cards (`md:hidden`) with a leading rail; the table is `hidden md:block`.
 - `≥md`: user rows are a `table-fixed` table inside a bordered rounded wrapper, rail inside the first cell.
 
-**Frozen contracts** (`src/test/admin/*` + `e2e/admin*.spec.ts`): `h2` on all three routes; `Manajemen pengguna` / `Detail pengguna`; card title `Pengguna`; the seven `th` labels; `table tbody tr`; `td span:has-text('Admin')`; `\d+ total`; `input[placeholder='Cari email...']`; `Pengguna tidak ditemukan`; `button:has-text('Lihat')` → `/admin/users/:id`; `getByText("Profil", { exact: true })`; `getByRole("heading", { name: "Penyesuaian kredit" })`; **`label:has-text('Jumlah') + input`** and **`label:has-text('Deskripsi') + input`** (Label must stay the immediate previous sibling of its Input); `button:has-text('Sesuaikan kredit')` / `'Konfirmasi perubahan kredit'`; `25 credits`; `7 scans performed` (Trans span structure); `Joined …` / `Bergabung …`; `Unverified` badge keeps the yellow variant; `admin-kpi-chart` keeps `data-bars="scans,findings"`; `admin-credits-chart`; **`.animate-pulse` count ≥ 5 while loading and exactly 0 when loaded**; five KPI tiles each render `0` when stats are undefined; quick links `/admin/users` + `/admin/pricing` + `/admin/blog` + `/admin/email-logs`.
+**Frozen contracts** (`src/test/admin/*` + `e2e/admin*.spec.ts`): `h2` on all three routes; `Manajemen pengguna` / `Detail pengguna`; card title `Pengguna`; the seven `th` labels; `table tbody tr`; `td span:has-text('Admin')`; `\d+ total`; `input[placeholder='Cari email...']`; `Pengguna tidak ditemukan`; `button:has-text('Lihat')` → `/admin/users/:id`; `getByText("Profil", { exact: true })`; `getByRole("heading", { name: "Penyesuaian kredit" })`; **`label:has-text('Jumlah') + input`** and **`label:has-text('Deskripsi') + input`** (Label must stay the immediate previous sibling of its Input); `button:has-text('Sesuaikan kredit')` / `'Konfirmasi perubahan kredit'`; `25 credits`; `7 scans performed` (Trans span structure); `Joined …` / `Bergabung …`; `Unverified` badge keeps the yellow variant; `admin-kpi-chart` keeps `data-bars="scans,findings"`; `admin-credits-chart`; **`.animate-pulse` count ≥ 5 while loading and exactly 0 when loaded**; five KPI tiles each render `0` when stats are undefined; quick links `/admin/users` + `/admin/pricing` + `/admin/blog` + `/admin/email-logs`. Loading columns: users list `TableRowSkeleton rows={5} columns={8}` (8 `th`); user-detail profile `rows={4} columns={4}`, credit-adjust `rows={3} columns={3}`.
 
 ## 5. Signature Components & States
 
@@ -2478,7 +2483,7 @@ Both pages are internal finance surfaces. They must read as the same console as 
 
 The one memorable moment: the **line-margin rail**. A profitable line reads primary, a loss-making line flips destructive, so a bad SKU is visible before the numbers are read.
 
-Do **not** use a filled green masthead or a marketing hero. Loading is `TableRowSkeleton`, empty is an island.
+Do **not** use a filled green masthead or a marketing hero. Loading is `TableRowSkeleton` (pricing `rows={4} columns={3}`, HPP rates `rows={5} columns={4}`, costs `rows={2} columns={5}`, report `rows={5} columns={7}`), empty is an island.
 
 ## 2. Color
 
@@ -2507,7 +2512,7 @@ Unchanged from wave 1. Deltas:
 - Line margins stay `grid gap-3 sm:grid-cols-2`.
 - Pricing rows: mobile cards `space-y-2 md:hidden`, desktop table `hidden md:block`.
 
-**Frozen contracts** (`src/test/admin/AdminHpp.test.tsx`, `AdminPricing.test.tsx`): `hpp-overhead-card` / `hpp-costs-card` / `hpp-report-filters` / `hpp-line-scan` / `hpp-line-host`; the costs-card **label order** `["Date", "Category", "Amount (IDR)", "Note"]`; `getAllByDisplayValue(1000)`; the three hint strings; `Report range`; `estimasi` badge; `Margin (estimasi)` ×2; `(97%)`; the host-cogs-capped sentence; `pricing-leftover-banner` + `Not a customer meter` + `pricing-link-hpp` → `/admin/hpp`; `Pricing configuration`; `Scan credit seed (archive)`; headers `Scan type` / `Credit cost (seed)` / `Updated`; **no `Actions` header**; **`queryAllByRole("spinbutton")` is 0** on pricing; `6/1/2025` ×3; no `Save` / `Saved`; `TableRowSkeleton rows={4}` on pricing load and `rows={5}` on HPP rates load.
+**Frozen contracts** (`src/test/admin/AdminHpp.test.tsx`, `AdminPricing.test.tsx`): `hpp-overhead-card` / `hpp-costs-card` / `hpp-report-filters` / `hpp-line-scan` / `hpp-line-host`; the costs-card **label order** `["Date", "Category", "Amount (IDR)", "Note"]`; `getAllByDisplayValue(1000)`; the three hint strings; `Report range`; `estimasi` badge; `Margin (estimasi)` ×2; `(97%)`; the host-cogs-capped sentence; `pricing-leftover-banner` + `Not a customer meter` + `pricing-link-hpp` → `/admin/hpp`; `Pricing configuration`; `Scan credit seed (archive)`; headers `Scan type` / `Credit cost (seed)` / `Updated`; **no `Actions` header**; **`queryAllByRole("spinbutton")` is 0** on pricing; `6/1/2025` ×3; no `Save` / `Saved`; `TableRowSkeleton rows={4} columns={3}` on pricing load, `rows={5} columns={4}` on HPP rates load, `rows={2} columns={5}` on HPP costs, `rows={5} columns={7}` on HPP report.
 
 ## 5. Signature Components & States
 
@@ -2676,7 +2681,7 @@ These are the last internal surfaces: billing, content, deliverability, AI gatew
 
 The one memorable moment: the **invoice list rail**. A list containing a void invoice reads destructive, one with a sent invoice reads amber, one with only paid invoices reads primary — the money state is visible before any row is read.
 
-Do **not** use a filled green masthead or a marketing hero. Loading is `TableRowSkeleton`, empty is an island.
+Do **not** use a filled green masthead or a marketing hero. Loading is `TableRowSkeleton` (invoices catalog `rows={3} columns={5}`, invoices list `rows={4} columns={7}`, blog `rows={5} columns={4}`, email logs `rows={5} columns={6}`), empty is an island.
 
 ## 2. Color
 
@@ -2809,7 +2814,7 @@ The shared head uses `border-b border-border px-4 py-3`; the shared body uses `p
 
 New tone helpers: `incidentsListRailClass(statuses)` (`statusChrome.ts`) and `outagesRailClass(count)` (`uptimeChrome.ts`).
 
-`OpsShell` is also the shell for **page-level loading states**: `/siem` (`siem-loading`) and `/host` (`host-sites-loading`) wrap their `TableRowSkeleton` in `OpsShell railClass="bg-border"` instead of a bare `Card`, so the loading surface matches the loaded shell grammar.
+`OpsShell` is also the shell for **page-level loading states**: `/siem` (`siem-loading`), `/host` (`host-sites-loading`), the StatusPage editor (`status-page-loading`), `/uptime/:id`, and `/scan/:id` wrap their skeleton placeholders in `OpsShell railClass="bg-border"` instead of a bare `Card`, so the loading surface matches the loaded shell grammar. The shared `TableRowSkeleton({rows, columns})` renders exactly `columns` bars per row (default 4) so a table skeleton's width profile matches the loaded table; every table-backed loading surface passes the loaded column count.
 
 `SiemEmptyIsland` (`components/siem/SiemEmptyIsland.tsx`) is the **shared empty/flag-off island** across the family (uptime, host, guard, status, siem, and now `/ai`). `/ai` uses it for `ai-feature-off` (Bot), no-org (Building2), and load-fail (TriangleAlert) — replacing the kit `Alert` those states used before. `Alert` stays for inline notices (e.g. `AiKeysPanel`), not for page-level empty states.
 
@@ -2885,7 +2890,9 @@ Unchanged from the family. Shell titles are the shared `h3` at `text-sm font-med
 
 Filter bars keep the AGENTS.md contract: `grid gap-3`, each field `flex min-w-0 flex-col gap-1.5`, controls `h-10 min-h-10`. They are now `OpsShell` bodies rather than bare bordered divs, so they match the rest of the family.
 
-**Frozen contracts**: `inbox-page`, `inbox-filters`, `inbox-empty`, `inbox-pagination`, `inbox-row`, `inbox-job-link`; `credit-history-identity`, `credit-history-summary`, `credit-history-filters`; the four `th` labels `Date` / `Type` / `Amount` / `Description`; `Page N of M`; `N total`; `Transactions`; `No transactions yet` / `Credit adjustments will appear here.`; the e2e badge + amount classes above; the `@/components/ui/Card` mock in `src/test/credit/CreditHistory.test.tsx` (harmless — `OpsShell` composes the real `Card` through it).
+**Frozen contracts**: `inbox-page`, `inbox-filters`, `inbox-empty`, `inbox-loading`, `inbox-pagination`, `inbox-row`, `inbox-job-link`; `credit-history-identity`, `credit-history-summary`, `credit-history-filters`; the four `th` labels `Date` / `Type` / `Amount` / `Description`; `Page N of M`; `N total`; `Transactions`; `No transactions yet` / `Credit adjustments will appear here.`; the e2e badge + amount classes above; the `@/components/ui/Card` mock in `src/test/credit/CreditHistory.test.tsx` (harmless — `OpsShell` composes the real `Card` through it).
+
+Loading shapes: Inbox is an **article-shaped** list (`role="list"`, `data-testid="inbox-loading"`, 5× `rounded-lg border border-border p-3` with 3 `Skeleton` lines), matching `inbox-row` — not table rows. Credit ledger list = `TableRowSkeleton rows={5} columns={4}`.
 
 ## 5. Signature Components & States
 

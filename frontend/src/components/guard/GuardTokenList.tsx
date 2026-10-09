@@ -99,7 +99,7 @@ export function GuardTokenList({
   readonly onRevoke: (id: string) => void;
   readonly t: GuardTranslate;
 }) {
-  if (loading) return <TableRowSkeleton rows={3} />;
+  if (loading) return <TableRowSkeleton rows={3} columns={4} />;
   return (
     <>
       <div className="space-y-2 md:hidden">

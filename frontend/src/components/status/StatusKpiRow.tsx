@@ -34,7 +34,10 @@ function KpiTile({
 
 export function StatusKpiSkeleton() {
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div
+      data-testid="status-kpi-skeleton"
+      className="grid grid-cols-2 gap-3 lg:grid-cols-4"
+    >
       <Skeleton className="h-[4.5rem] rounded-lg" />
       <Skeleton className="h-[4.5rem] rounded-lg" />
       <Skeleton className="h-[4.5rem] rounded-lg" />

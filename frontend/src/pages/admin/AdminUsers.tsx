@@ -115,7 +115,7 @@ function AdminUsers() {
           </div>
 
           {isLoading && !data ? (
-            <TableRowSkeleton rows={5} />
+            <TableRowSkeleton rows={5} columns={8} />
           ) : !data || data.users.length === 0 ? (
             <div
               className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"

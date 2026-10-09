@@ -89,6 +89,7 @@ describe("Assets page", () => {
       "Assets",
     );
     expect(screen.getByTestId("assets-kpi-skeleton")).toBeInTheDocument();
+    expect(loading.querySelectorAll(".h-10").length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByTestId("assets-empty")).not.toBeInTheDocument();
     expect(screen.queryByTestId("assets-kpi-strip")).not.toBeInTheDocument();
   });

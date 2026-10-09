@@ -70,7 +70,7 @@ function AdminPricing() {
         <AdminShellHead icon={DollarSign} title={t("pricingCard")} />
         <AdminShellBody>
           {isLoading ? (
-            <TableRowSkeleton rows={4} />
+            <TableRowSkeleton rows={4} columns={3} />
           ) : pricing?.length === 0 ? (
             <div
               className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"

@@ -178,7 +178,7 @@ function AdminInvoices() {
         <AdminShellHead icon={Tag} title={t("skuCatalogCard")} />
         <AdminShellBody>
           {catalogQ.isLoading ? (
-            <TableRowSkeleton rows={3} />
+            <TableRowSkeleton rows={3} columns={5} />
           ) : (
             <div className="overflow-hidden rounded-md border border-border">
               <Table>
@@ -323,7 +323,7 @@ function AdminInvoices() {
             </div>
           </div>
           {invoicesQ.isLoading ? (
-            <TableRowSkeleton rows={4} />
+            <TableRowSkeleton rows={4} columns={7} />
           ) : invoices.length === 0 ? (
             <div
               className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"

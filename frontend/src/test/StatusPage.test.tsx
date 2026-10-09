@@ -67,7 +67,16 @@ describe("StatusPage admin", () => {
     });
   });
 
-it("shows empty state with create form", async () => {
+  it("mirrors the loaded layout while the page query is loading", () => {
+    mockGet.mockReturnValue(new Promise(() => {}));
+    renderPage();
+    expect(screen.getByTestId("status-page-loading")).toBeInTheDocument();
+    expect(screen.getByTestId("status-kpi-skeleton")).toBeInTheDocument();
+    expect(screen.queryByTestId("status-page-empty")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("status-identity-shell")).not.toBeInTheDocument();
+  });
+
+  it("shows empty state with create form", async () => {
     renderPage();
     await waitFor(() =>
       expect(screen.getByTestId("status-page-empty")).toBeInTheDocument(),

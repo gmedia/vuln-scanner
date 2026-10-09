@@ -424,6 +424,17 @@ describe("WorkspaceSettings pilot checklist", () => {
     expect(firstMobileRow?.querySelector(".bg-primary")).toBeTruthy();
   });
 
+  it("shows invoice-card skeletons while billing is loading", () => {
+    vi.mocked(listOrgInvoices).mockReturnValue(new Promise(() => {}) as never);
+    renderPage();
+    const loading = screen.getByTestId("workspace-billing-loading");
+    expect(loading).toBeInTheDocument();
+    expect(loading.className).toMatch(/lg:grid-cols-2/);
+    expect(loading.querySelectorAll(".rounded-lg.border")).toHaveLength(2);
+    expect(screen.queryByTestId("workspace-billing-empty")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("workspace-billing-error")).not.toBeInTheDocument();
+  });
+
   it("rails pending invite rows amber", async () => {
     vi.mocked(listInvites).mockResolvedValueOnce([
       {

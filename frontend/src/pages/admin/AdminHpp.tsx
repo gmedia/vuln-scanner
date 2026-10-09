@@ -168,7 +168,7 @@ function AdminHpp() {
         />
         <AdminShellBody>
           {ratesLoading ? (
-            <TableRowSkeleton rows={5} />
+            <TableRowSkeleton rows={5} columns={4} />
           ) : !rates?.length ? (
             <div
               className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
@@ -417,7 +417,7 @@ function AdminHpp() {
             )}
           </Button>
           {costsLoading ? (
-            <TableRowSkeleton rows={2} />
+            <TableRowSkeleton rows={2} columns={5} />
           ) : !costLines?.length ? (
             <div
               className="flex min-h-[6rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-6 text-center"
@@ -591,7 +591,7 @@ function AdminHpp() {
         />
         <AdminShellBody>
           {reportLoading ? (
-            <TableRowSkeleton rows={5} />
+            <TableRowSkeleton rows={5} columns={7} />
           ) : (
             <>
               <p className="mb-3 text-xs text-muted-foreground">

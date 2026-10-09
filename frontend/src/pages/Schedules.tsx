@@ -616,7 +616,7 @@ function Schedules() {
               <AlertDescription>{actionError}</AlertDescription>
             </Alert>
           )}
-          {isLoading && <TableRowSkeleton rows={4} />}
+          {isLoading && <TableRowSkeleton rows={4} columns={3} />}
           {error && (
             <p className="text-sm text-destructive">{t("loadFailed")}</p>
           )}

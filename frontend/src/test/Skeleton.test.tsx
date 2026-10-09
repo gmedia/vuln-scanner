@@ -38,4 +38,19 @@ describe("Skeleton", () => {
       5,
     );
   });
+
+  it("TableRowSkeleton columns={6} rows={2} renders 12 pulse bars", () => {
+    const { container } = render(<TableRowSkeleton columns={6} rows={2} />);
+    expect(container.querySelectorAll(".animate-pulse")).toHaveLength(12);
+  });
+
+  it("TableRowSkeleton default props render 20 pulse bars", () => {
+    const { container } = render(<TableRowSkeleton />);
+    expect(container.querySelectorAll(".animate-pulse")).toHaveLength(20);
+  });
+
+  it("TableRowSkeleton columns={1} renders one bar per row", () => {
+    const { container } = render(<TableRowSkeleton columns={1} rows={3} />);
+    expect(container.querySelectorAll(".animate-pulse")).toHaveLength(3);
+  });
 });

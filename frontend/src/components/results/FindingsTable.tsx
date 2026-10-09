@@ -237,7 +237,7 @@ function FindingsTable({
   };
 
   if (isLoading) {
-    return <TableRowSkeleton rows={6} />;
+    return <TableRowSkeleton rows={6} columns={7} />;
   }
 
   if ((!findings || findings.length === 0) && !activeSeverity && !search.trim()) {

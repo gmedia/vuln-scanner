@@ -288,6 +288,9 @@ describe("ScanDetail", () => {
       renderPage();
       const skeletons = screen.getAllByTestId("skeleton");
       expect(skeletons.length).toBeGreaterThan(3);
+      expect(screen.getByTestId("scan-tabs-loading")).toBeInTheDocument();
+      expect(screen.getByTestId("scan-severity-loading")).toBeInTheDocument();
+      expect(screen.getByTestId("scan-info-loading")).toBeInTheDocument();
     });
   });
 

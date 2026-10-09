@@ -296,6 +296,16 @@ describe("SIEM page", () => {
     expect(siemApi.listSiemEvents).not.toHaveBeenCalled();
   });
 
+  it("holds a 4-tile indexer placeholder while agents are still loading", async () => {
+    vi.mocked(guardApi.listGuardAgents).mockReturnValue(
+      new Promise(() => {}) as never,
+    );
+    renderSiem();
+    expect(await screen.findByTestId("siem-indexer-loading")).toBeInTheDocument();
+    expect(screen.getByTestId("siem-indexer-loading").children).toHaveLength(4);
+    expect(screen.queryByTestId("siem-indexer-strip")).not.toBeInTheDocument();
+  });
+
   it("rails the loading shell while status is pending", () => {
     vi.mocked(siemApi.getSiemStatus).mockReturnValue(
       new Promise(() => {}) as never,

@@ -1282,5 +1282,8 @@ describe("Host Protect page", () => {
     renderHost();
     const shell = screen.getByTestId("host-sites-loading");
     expect(shell.firstElementChild?.className).toMatch(/bg-border/);
+    expect(shell.querySelectorAll(".rounded-lg.border").length).toBeGreaterThanOrEqual(
+      3,
+    );
   });
 });

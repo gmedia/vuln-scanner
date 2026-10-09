@@ -32,7 +32,8 @@ import {
   OpsShell,
   OpsShellBody,
 } from "@/components/ops/OpsShell";
-import { TableRowSkeleton } from "@/components/ui/Skeleton";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { SiemRail } from "@/components/siem/siemChrome";
 import {
   Tabs,
   TabsContent,
@@ -394,8 +395,32 @@ export default function HostProtect() {
         <TabsContent value="malware" className="mt-4 space-y-6">
           {sitesQ.isLoading && items.length === 0 ? (
             <OpsShell railClass="bg-border" testid="host-sites-loading">
-              <OpsShellBody className="px-4 py-4">
-                <TableRowSkeleton rows={4} />
+              <OpsShellBody className="space-y-3 px-4 py-4">
+                <div
+                  role="status"
+                  aria-busy="true"
+                  aria-label="Loading"
+                  className="space-y-3"
+                >
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="relative overflow-hidden rounded-lg border border-border bg-card pl-4"
+                    >
+                      <SiemRail className="bg-border" />
+                      <div className="space-y-3 px-4 py-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Skeleton className="h-8 w-8 rounded-md" />
+                          <Skeleton className="h-5 w-40" />
+                          <Skeleton className="h-5 w-16 rounded-full" />
+                        </div>
+                        <Skeleton className="h-3 w-56" />
+                        <Skeleton className="h-3 w-32" />
+                        <Skeleton className="h-9 w-28" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </OpsShellBody>
             </OpsShell>
           ) : items.length === 0 && !sitesQ.isLoading && agents.length > 0 ? (

@@ -68,6 +68,14 @@ describe("Uptime page", () => {
     expect(explainUptimeError(null)).toBeNull();
   });
 
+  it("reserves filter geometry while the list is loading", () => {
+    mockList.mockReturnValue(new Promise(() => undefined));
+    renderPage();
+    expect(screen.getByTestId("uptime-filters-loading")).toBeInTheDocument();
+    expect(screen.queryByTestId("uptime-empty")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("uptime-empty-cta")).not.toBeInTheDocument();
+  });
+
   it("shows empty state", async () => {
     renderPage();
     await waitFor(() => expect(screen.getByTestId("uptime-empty")).toBeInTheDocument());

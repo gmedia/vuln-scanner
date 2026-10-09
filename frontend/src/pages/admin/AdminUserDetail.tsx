@@ -128,13 +128,13 @@ function AdminUserDetail() {
           <AdminShell tone="primary">
             <AdminShellHead title={t("profile")} />
             <AdminShellBody>
-              <TableRowSkeleton rows={4} />
+              <TableRowSkeleton rows={4} columns={4} />
             </AdminShellBody>
           </AdminShell>
           <AdminShell tone="primary">
             <AdminShellHead title={t("creditAdjust")} />
             <AdminShellBody>
-              <TableRowSkeleton rows={3} />
+              <TableRowSkeleton rows={3} columns={3} />
             </AdminShellBody>
           </AdminShell>
         </div>

@@ -267,13 +267,40 @@ function ScanDetail() {
             </div>
           ))}
         </div>
-        <div className="relative overflow-hidden rounded-lg border border-border bg-card pl-4">
-          <SiemRail className="bg-border" />
-          <div className="border-b border-border px-4 py-3">
-            <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-9 w-72" data-testid="scan-tabs-loading" />
+        <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.6fr)_minmax(22rem,0.9fr)] 2xl:items-start">
+          <div className="relative overflow-hidden rounded-lg border border-border bg-card pl-4">
+            <SiemRail className="bg-border" />
+            <div className="border-b border-border px-4 py-3">
+              <Skeleton className="h-4 w-40" />
+            </div>
+            <div className="px-4 py-3">
+              <TableRowSkeleton rows={6} columns={7} />
+            </div>
           </div>
-          <div className="px-4 py-3">
-            <TableRowSkeleton rows={6} />
+          <div className="grid gap-5 lg:grid-cols-3 2xl:grid-cols-1">
+            <div
+              className="relative overflow-hidden rounded-lg border border-border bg-card pl-4 lg:col-span-1"
+              data-testid="scan-severity-loading"
+            >
+              <SiemRail className="bg-border" />
+              <div className="space-y-3 px-4 py-3">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-40 w-full" />
+              </div>
+            </div>
+            <div
+              className="relative overflow-hidden rounded-lg border border-border bg-card pl-4 lg:col-span-2"
+              data-testid="scan-info-loading"
+            >
+              <SiemRail className="bg-border" />
+              <div className="space-y-2 px-4 py-3">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            </div>
           </div>
         </div>
       </div>

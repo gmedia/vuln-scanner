@@ -5,7 +5,7 @@ import { Activity, Inbox as InboxIcon, Mail, ScanSearch, Shield, ShieldAlert } f
 import { Button } from "@/components/ui/Button";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
-import { TableRowSkeleton } from "@/components/ui/Skeleton";
+import { Skeleton } from "@/components/ui/Skeleton";
 import {
   OpsShell,
   OpsShellBody,
@@ -235,8 +235,23 @@ function Inbox() {
   let listBody: ReactNode;
   if (isLoading && !data) {
     listBody = (
-      <div className="px-4 py-4">
-        <TableRowSkeleton rows={5} />
+      <div
+        role="list"
+        data-testid="inbox-loading"
+        aria-busy="true"
+        className="space-y-3 p-4"
+      >
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div
+            key={i}
+            role="listitem"
+            className="rounded-lg border border-border p-3"
+          >
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="mt-2 h-3 w-64" />
+            <Skeleton className="mt-2 h-3 w-24" />
+          </div>
+        ))}
       </div>
     );
   } else if (!data || data.items.length === 0) {

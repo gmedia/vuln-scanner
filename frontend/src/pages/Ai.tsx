@@ -181,16 +181,21 @@ export default function Ai() {
             createPending={createMut.isPending}
             onCreate={() => createMut.mutate()}
             onRevoke={(id) => revokeMut.mutate(id)}
+            loading={keysQ.isLoading}
           />
         </TabsContent>
         <TabsContent value="usage" className="mt-4">
           <AiUsagePanel
             items={usageQ.data?.items ?? []}
             onSeeCatalog={() => setTab("catalog")}
+            loading={usageQ.isLoading}
           />
         </TabsContent>
         <TabsContent value="catalog" className="mt-4">
-          <AiCatalogPanel models={modelsQ.data?.items ?? []} />
+          <AiCatalogPanel
+            models={modelsQ.data?.items ?? []}
+            loading={modelsQ.isLoading}
+          />
         </TabsContent>
       </Tabs>
     </div>

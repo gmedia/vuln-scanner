@@ -6,7 +6,7 @@ import { AssetCard, AssetTableRow } from "@/components/assets/AssetListItems";
 import { type AssetTranslate } from "@/components/assets/assetChrome";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { TableRowSkeleton } from "@/components/ui/Skeleton";
+import { Skeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
   Table,
   TableBody,
@@ -65,11 +65,20 @@ export function AssetListPanel({
   if (loading) {
     return (
       <Card data-testid="assets-loading">
-        <CardHeader>
+        <CardHeader className="flex flex-col gap-3 space-y-0 border-b border-border p-3">
           <CardTitle className="text-sm tracking-wide">{t("tableTitle")}</CardTitle>
+          <div
+            className="flex flex-col gap-3 sm:flex-row"
+            data-testid="assets-filters-loading"
+            aria-hidden
+          >
+            <Skeleton className="h-10 min-w-0 flex-1" />
+            <Skeleton className="h-10 sm:w-40" />
+            <Skeleton className="h-10 sm:w-36" />
+          </div>
         </CardHeader>
         <CardContent>
-          <TableRowSkeleton rows={5} />
+          <TableRowSkeleton rows={5} columns={7} />
         </CardContent>
       </Card>
     );

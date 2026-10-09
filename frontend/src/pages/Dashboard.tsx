@@ -387,7 +387,7 @@ function Dashboard() {
           </div>
           <div className="px-4 py-3 pb-[max(2rem,env(safe-area-inset-bottom))]">
             {isFirstLoad ? (
-              <TableRowSkeleton rows={6} />
+              <TableRowSkeleton rows={6} columns={5} />
             ) : scans.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-border bg-muted/40 px-4 py-12 text-center">
                 <Radar className="h-8 w-8 text-muted-foreground" aria-hidden />

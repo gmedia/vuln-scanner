@@ -347,7 +347,7 @@ function CreditHistory() {
   if (isLoading && !data) {
     listBody = (
       <div className="px-4 py-4">
-        <TableRowSkeleton rows={5} />
+        <TableRowSkeleton rows={5} columns={4} />
       </div>
     );
   } else if (!data || data.items.length === 0) {

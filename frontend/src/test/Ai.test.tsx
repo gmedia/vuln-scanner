@@ -191,6 +191,31 @@ describe("AI Gateway page", () => {
     expect(screen.getByTestId("ai-tab-catalog").querySelector("svg")).toBeTruthy();
   });
 
+  it("shows table skeletons on keys, usage, and catalog while those queries are pending", async () => {
+    vi.mocked(aiApi.getAiWallet).mockResolvedValue({
+      organization_id: "org1",
+      balance_idr: 0,
+      currency: "IDR",
+    });
+    vi.mocked(aiApi.listAiKeys).mockReturnValue(new Promise(() => {}) as never);
+    vi.mocked(aiApi.listAiUsage).mockReturnValue(new Promise(() => {}) as never);
+    vi.mocked(aiApi.listAiModels).mockReturnValue(new Promise(() => {}) as never);
+    const user = userEvent.setup();
+    renderAi("/ai?tab=keys");
+    expect(await screen.findByTestId("ai-keys-card")).toBeInTheDocument();
+    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
+    expect(screen.queryByText("No keys yet.")).not.toBeInTheDocument();
+
+    await user.click(screen.getByTestId("ai-tab-usage"));
+    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
+    expect(screen.queryByTestId("ai-usage-empty")).not.toBeInTheDocument();
+
+    await user.click(screen.getByTestId("ai-tab-catalog"));
+    expect(screen.getByTestId("ai-catalog-card")).toBeInTheDocument();
+    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
+    expect(screen.queryByText("No models in catalog.")).not.toBeInTheDocument();
+  });
+
   it("shows a usage empty well with catalog CTA", async () => {
     vi.mocked(aiApi.getAiWallet).mockResolvedValue({
       organization_id: "org1",
