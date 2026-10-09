@@ -161,7 +161,7 @@ export function SiemEventStream({
   t,
 }: SiemEventStreamProps) {
   if (loading) {
-    return <TableRowSkeleton rows={6} />;
+    return <TableRowSkeleton rows={6} columns={4} />;
   }
 
   const pagers = (

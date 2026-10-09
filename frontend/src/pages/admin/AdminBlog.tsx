@@ -221,7 +221,7 @@ function AdminBlog() {
         <AdminShellHead icon={List} title={t("blogList")} />
         <AdminShellBody>
           {isLoading ? (
-            <TableRowSkeleton rows={5} />
+            <TableRowSkeleton rows={5} columns={4} />
           ) : !data?.items.length ? (
             <div
               className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"

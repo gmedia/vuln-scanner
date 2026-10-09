@@ -5,7 +5,7 @@ import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
   Table,
   TableBody,
@@ -56,7 +56,7 @@ export function UptimeHistoryPanel({
       <CardContent className="space-y-3 pt-4">
         <p className="text-xs text-muted-foreground">{t("probeRule")}</p>
         {loading ? (
-          <Skeleton className="h-24 w-full" />
+          <TableRowSkeleton rows={5} columns={4} />
         ) : rows.length === 0 ? (
           <SiemEmptyIsland
             icon={Activity}

@@ -204,6 +204,15 @@ export default function Uptime() {
             <Skeleton className="h-[4.5rem] rounded-lg" />
             <Skeleton className="col-span-2 h-[4.5rem] rounded-lg lg:col-span-1" />
           </div>
+          <div
+            data-testid="uptime-filters-loading"
+            className="grid grid-cols-1 gap-3 overflow-hidden rounded-md border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-3"
+            aria-hidden
+          >
+            <Skeleton className="h-10" />
+            <Skeleton className="h-10" />
+            <Skeleton className="h-10" />
+          </div>
           <Card className="overflow-hidden">
             <CardHeader className="border-b border-border pb-4">
               <CardTitle className="text-sm tracking-wide">
@@ -211,7 +220,7 @@ export default function Uptime() {
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 py-4">
-              <TableRowSkeleton rows={5} />
+              <TableRowSkeleton rows={5} columns={7} />
             </CardContent>
           </Card>
         </>

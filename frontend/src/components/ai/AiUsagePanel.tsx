@@ -10,6 +10,7 @@ import {
   CardDescription,
   CardHeader,
 } from "@/components/ui/Card";
+import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
   Table,
   TableBody,
@@ -27,9 +28,11 @@ function sourceLabel(source: string, t: (key: string) => string): string {
 export function AiUsagePanel({
   items,
   onSeeCatalog,
+  loading = false,
 }: {
   readonly items: readonly AiUsage[];
   readonly onSeeCatalog: () => void;
+  readonly loading?: boolean;
 }) {
   const { t, i18n } = useTranslation("ai");
   return (
@@ -38,7 +41,9 @@ export function AiUsagePanel({
         <CardDescription>{t("usageHint")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {items.length === 0 ? (
+        {loading ? (
+          <TableRowSkeleton rows={5} columns={4} />
+        ) : items.length === 0 ? (
           <div
             className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
             data-testid="ai-usage-empty"

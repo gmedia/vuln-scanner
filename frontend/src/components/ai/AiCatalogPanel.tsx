@@ -8,6 +8,7 @@ import {
   CardDescription,
   CardHeader,
 } from "@/components/ui/Card";
+import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
   Table,
   TableBody,
@@ -23,8 +24,10 @@ function formatCount(n: number): string {
 
 export function AiCatalogPanel({
   models,
+  loading = false,
 }: {
   readonly models: readonly AiPublicModel[];
+  readonly loading?: boolean;
 }) {
   const { t } = useTranslation("ai");
   return (
@@ -33,7 +36,9 @@ export function AiCatalogPanel({
         <CardDescription>{t("catalogHint")}</CardDescription>
       </CardHeader>
       <CardContent>
-        {models.length === 0 ? (
+        {loading ? (
+          <TableRowSkeleton rows={5} columns={4} />
+        ) : models.length === 0 ? (
           <div className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
             <Library className="h-8 w-8 text-muted-foreground" aria-hidden />
             <p className="text-sm font-medium text-foreground">{t("catalogEmpty")}</p>

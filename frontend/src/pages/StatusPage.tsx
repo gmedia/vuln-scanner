@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
+import { Skeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
   OpsShell,
   OpsShellBody,
@@ -240,7 +241,49 @@ export default function StatusPage() {
         }
       />
 
-      {pageQ.isLoading && !page ? <StatusKpiSkeleton /> : null}
+      {pageQ.isLoading && !page ? (
+        <div className="space-y-6" data-testid="status-page-loading">
+          <div className="flex h-28 flex-col justify-center gap-3 rounded-lg border border-border px-4">
+            <Skeleton className="h-5 w-48" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-5 w-16 rounded-full" />
+          </div>
+          <StatusKpiSkeleton />
+          <OpsShell railClass="bg-border">
+            <OpsShellHead title={<Skeleton className="h-4 w-40" />} />
+            <OpsShellBody className="space-y-3">
+              <Skeleton className="h-4 w-3/4" />
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <Skeleton className="h-10 rounded-md" />
+                <Skeleton className="h-10 rounded-md" />
+                <Skeleton className="h-10 rounded-md" />
+              </div>
+            </OpsShellBody>
+          </OpsShell>
+          <OpsShell railClass="bg-border">
+            <OpsShellHead title={<Skeleton className="h-4 w-40" />} />
+            <OpsShellBody className="space-y-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Skeleton className="h-10 rounded-md" />
+                <Skeleton className="h-10 rounded-md" />
+              </div>
+              <Skeleton className="h-4 w-3/4" />
+            </OpsShellBody>
+          </OpsShell>
+          <OpsShell railClass="bg-border">
+            <OpsShellHead title={<Skeleton className="h-4 w-40" />} />
+            <OpsShellBody>
+              <TableRowSkeleton rows={3} columns={3} />
+            </OpsShellBody>
+          </OpsShell>
+          <OpsShell railClass="bg-border">
+            <OpsShellHead title={<Skeleton className="h-4 w-40" />} />
+            <OpsShellBody>
+              <TableRowSkeleton rows={4} columns={5} />
+            </OpsShellBody>
+          </OpsShell>
+        </div>
+      ) : null}
 
       {!page && !pageQ.isLoading ? (
         <div className="flex min-h-[12rem] flex-col items-center justify-center gap-3 rounded-xl border border-border bg-muted/40 px-6 py-12 text-center md:min-h-[16rem] md:py-16">

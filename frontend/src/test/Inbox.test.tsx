@@ -80,6 +80,19 @@ describe("Inbox", () => {
     expect(screen.queryByText(/Delivered/i)).not.toBeInTheDocument();
   });
 
+  it("renders article-shaped loading rows instead of the empty state", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    } as ReturnType<typeof useQuery>);
+    renderPage();
+    const loading = screen.getByTestId("inbox-loading");
+    expect(loading).toBeInTheDocument();
+    expect(loading).toHaveAttribute("role", "list");
+    expect(loading.querySelectorAll(".rounded-lg.border")).toHaveLength(5);
+    expect(screen.queryByTestId("inbox-empty")).not.toBeInTheDocument();
+  });
+
   it("renders empty state without upgrade or Guard CTA", () => {
     vi.mocked(useQuery).mockReturnValue({
       data: { items: [], total: 0 },

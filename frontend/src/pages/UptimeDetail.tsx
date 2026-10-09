@@ -31,7 +31,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/Pagination";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { Skeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
 import { SiemRail } from "@/components/siem/siemChrome";
@@ -454,14 +454,51 @@ export default function UptimeDetail() {
   if (monitorQ.isLoading || !monitorQ.data) {
     return (
       <div className="space-y-6" data-testid="uptime-detail">
-        <Skeleton className="h-12 w-64" />
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 space-y-2">
+            <Skeleton className="h-11 w-40" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-11 w-24 shrink-0" />
+        </div>
         <Skeleton className="h-28 w-full rounded-lg" />
+        <OpsShell railClass="bg-border">
+          <OpsShellHead>
+            <Skeleton className="h-8 w-64" />
+          </OpsShellHead>
+          <OpsShellBody>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <Skeleton className="h-10 rounded-md" />
+              <Skeleton className="h-10 rounded-md" />
+              <Skeleton className="h-10 rounded-md" />
+            </div>
+          </OpsShellBody>
+        </OpsShell>
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
           <Skeleton className="h-[4.5rem] rounded-lg" />
           <Skeleton className="h-[4.5rem] rounded-lg" />
           <Skeleton className="h-[4.5rem] rounded-lg" />
         </div>
-        <Skeleton className="h-8 w-full rounded-md" />
+        <OpsShell railClass="bg-border">
+          <OpsShellHead title={<Skeleton className="h-4 w-40" />} />
+          <OpsShellBody>
+            <Skeleton className="h-8 w-full" />
+          </OpsShellBody>
+        </OpsShell>
+        <OpsShell railClass="bg-border">
+          <OpsShellHead title={<Skeleton className="h-4 w-40" />} />
+          <OpsShellBody>
+            <TableRowSkeleton rows={3} columns={2} />
+          </OpsShellBody>
+        </OpsShell>
+        <div className="overflow-hidden rounded-lg border border-border">
+          <div className="border-b border-border px-4 py-3">
+            <Skeleton className="h-4 w-40" />
+          </div>
+          <div className="p-4">
+            <TableRowSkeleton rows={5} columns={4} />
+          </div>
+        </div>
       </div>
     );
   }

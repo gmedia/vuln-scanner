@@ -18,7 +18,7 @@ import { buttonVariants } from "@/components/ui/buttonVariants";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
-import { TableRowSkeleton } from "@/components/ui/Skeleton";
+import { Skeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
   Select,
   SelectContent,
@@ -524,7 +524,9 @@ function WorkspaceSettings() {
                 hint={t("noOrgYetHint")}
               />
             )}
-            {orgId && membersQuery.isLoading && <TableRowSkeleton rows={3} />}
+            {orgId && membersQuery.isLoading && (
+              <TableRowSkeleton rows={3} columns={3} />
+            )}
             {orgId && membersQuery.isError && (
               <p className="text-sm text-muted-foreground" role="status">
                 {t("membersUnavailable")}
@@ -667,7 +669,9 @@ function WorkspaceSettings() {
             }
           />
           <WorkspaceShellBody>
-            {invitesQuery.isLoading && <TableRowSkeleton rows={2} />}
+            {invitesQuery.isLoading && (
+              <TableRowSkeleton rows={2} columns={4} />
+            )}
             {invitesQuery.isError && (
               <p className="text-sm text-muted-foreground">
                 {t("invitesUnavailable")}
@@ -706,7 +710,24 @@ function WorkspaceSettings() {
           />
           <WorkspaceShellBody className="space-y-3">
             {invoicesQuery.isLoading ? (
-              <TableRowSkeleton rows={2} />
+              <div
+                className="grid gap-3 lg:grid-cols-2"
+                data-testid="workspace-billing-loading"
+                role="status"
+                aria-busy="true"
+                aria-label="Loading"
+              >
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="rounded-lg border border-border p-4"
+                  >
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="mt-2 h-3 w-48" />
+                    <Skeleton className="mt-2 h-3 w-24" />
+                  </div>
+                ))}
+              </div>
             ) : invoicesQuery.isError ? (
               <WorkspaceNotice tone="idle" role="status">
                 <span data-testid="workspace-billing-error">

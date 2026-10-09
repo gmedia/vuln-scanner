@@ -125,7 +125,7 @@ export function SiemCasesPanel({
 }: SiemCasesPanelProps) {
   let listBody;
   if (loading) {
-    listBody = <TableRowSkeleton rows={4} />;
+    listBody = <TableRowSkeleton rows={4} columns={5} />;
   } else if (cases.length === 0) {
     listBody = (
       <p className="text-sm text-muted-foreground">{t("casesEmpty")}</p>

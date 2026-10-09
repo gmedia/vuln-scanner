@@ -4,7 +4,7 @@ import {
   Card,
   CardContent,
 } from "@/components/ui/Card";
-import { TableRowSkeleton } from "@/components/ui/Skeleton";
+import { Skeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Tabs,
@@ -97,11 +97,22 @@ export default function Siem() {
 
       {c.featureOn && c.statusQ.data ? (
         <>
-          <SiemIndexerStrip
-            status={c.statusQ.data}
-            agentCount={c.agents.length}
-            t={t}
-          />
+          {c.agentsQ.isLoading ? (
+            <div
+              data-testid="siem-indexer-loading"
+              className="grid grid-cols-2 gap-3 lg:grid-cols-4"
+            >
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-[4.5rem] rounded-lg" />
+              ))}
+            </div>
+          ) : (
+            <SiemIndexerStrip
+              status={c.statusQ.data}
+              agentCount={c.agents.length}
+              t={t}
+            />
+          )}
 
           {c.statusQ.data.degraded ? (
             <Alert className="border-amber-500/40 text-amber-800 dark:text-amber-300">

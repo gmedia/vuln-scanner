@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
   Table,
   TableBody,
@@ -34,6 +35,7 @@ export function AiKeysPanel({
   createPending,
   onCreate,
   onRevoke,
+  loading = false,
 }: {
   readonly keys: readonly AiKey[];
   readonly keyName: string;
@@ -42,6 +44,7 @@ export function AiKeysPanel({
   readonly createPending: boolean;
   readonly onCreate: () => void;
   readonly onRevoke: (id: string) => void;
+  readonly loading?: boolean;
 }) {
   const { t, i18n } = useTranslation("ai");
   return (
@@ -78,7 +81,9 @@ export function AiKeysPanel({
             </AlertDescription>
           </Alert>
         ) : null}
-        {keys.length === 0 ? (
+        {loading ? (
+          <TableRowSkeleton rows={5} columns={6} />
+        ) : keys.length === 0 ? (
           <div className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
             <KeyRound className="h-8 w-8 text-muted-foreground" aria-hidden />
             <p className="text-sm font-medium text-foreground">{t("keysEmpty")}</p>

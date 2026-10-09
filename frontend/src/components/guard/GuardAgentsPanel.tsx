@@ -155,7 +155,7 @@ export function GuardAgentsPanel({
       </div>
       <div className="p-4">
         {loading ? (
-          <TableRowSkeleton rows={4} />
+          <TableRowSkeleton rows={4} columns={5} />
         ) : agents.length === 0 ? (
           <SiemEmptyIsland
             icon={Monitor}

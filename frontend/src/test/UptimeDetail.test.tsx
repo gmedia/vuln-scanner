@@ -217,6 +217,15 @@ describe("UptimeDetail", () => {
     });
   });
 
+  it("mirrors the loaded layout while the monitor query is loading", () => {
+    mockGet.mockReturnValue(new Promise(() => {}));
+    renderDetail();
+    const root = screen.getByTestId("uptime-detail");
+    expect(root.querySelector(".animate-pulse")).toBeTruthy();
+    expect(screen.queryByTestId("uptime-range-tabs")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("uptime-timeline-shell")).not.toBeInTheDocument();
+  });
+
   it("shows not-found when the monitor is missing", async () => {
     mockGet.mockRejectedValue({
       isAxiosError: true,

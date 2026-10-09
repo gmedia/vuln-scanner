@@ -6,7 +6,7 @@ import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { TableRowSkeleton } from "@/components/ui/Skeleton";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 export function GuardAlertsPanel({
   loading,
@@ -32,7 +32,14 @@ export function GuardAlertsPanel({
       </div>
       <div className="p-4">
         {loading ? (
-          <TableRowSkeleton rows={3} />
+          <div className="space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="rounded-md border border-border p-3">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="mt-2 h-3 w-32" />
+              </div>
+            ))}
+          </div>
         ) : alerts.length === 0 ? (
           <div className="space-y-3">
             <SiemEmptyIsland icon={Siren} title={t("noAlerts")} />
