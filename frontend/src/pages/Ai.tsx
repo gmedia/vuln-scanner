@@ -1,9 +1,17 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bot, KeyRound, Library, ScrollText, Wallet } from "lucide-react";
+import {
+  Bot,
+  Building2,
+  KeyRound,
+  Library,
+  ScrollText,
+  TriangleAlert,
+  Wallet,
+} from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
 import { Tabs, TabsContent, TabsList, TabCount, TabsTrigger } from "@/components/ui/Tabs";
 import {
   createAiKey,
@@ -101,9 +109,7 @@ export default function Ai() {
     return (
       <div className="w-full space-y-6">
         <Header />
-        <Alert>
-          <AlertDescription>{t("pickOrg")}</AlertDescription>
-        </Alert>
+        <SiemEmptyIsland icon={Building2} title={t("pickOrg")} />
       </div>
     );
   }
@@ -112,10 +118,11 @@ export default function Ai() {
     return (
       <div className="w-full space-y-6">
         <Header />
-        <Alert data-testid="ai-feature-off">
-          <Bot className="text-muted-foreground" aria-hidden />
-          <AlertDescription>{t("featureOff")}</AlertDescription>
-        </Alert>
+        <SiemEmptyIsland
+          icon={Bot}
+          title={t("featureOff")}
+          testId="ai-feature-off"
+        />
       </div>
     );
   }
@@ -124,9 +131,7 @@ export default function Ai() {
     return (
       <div className="w-full space-y-6">
         <Header />
-        <Alert>
-          <AlertDescription>{t("loadFail")}</AlertDescription>
-        </Alert>
+        <SiemEmptyIsland icon={TriangleAlert} title={t("loadFail")} />
       </div>
     );
   }

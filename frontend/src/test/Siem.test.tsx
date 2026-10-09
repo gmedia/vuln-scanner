@@ -296,6 +296,15 @@ describe("SIEM page", () => {
     expect(siemApi.listSiemEvents).not.toHaveBeenCalled();
   });
 
+  it("rails the loading shell while status is pending", () => {
+    vi.mocked(siemApi.getSiemStatus).mockReturnValue(
+      new Promise(() => {}) as never,
+    );
+    renderSiem();
+    const shell = screen.getByTestId("siem-loading");
+    expect(shell.firstElementChild?.className).toMatch(/bg-border/);
+  });
+
   it("shows the event pager when more than 25 events are returned", async () => {
     vi.mocked(siemApi.listSiemEvents).mockResolvedValue({
       items: Array.from({ length: 26 }, (_, i) => ({

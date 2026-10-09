@@ -16,6 +16,10 @@ import {
 import { useTranslation } from "react-i18next";
 import PageHeader from "@/components/layout/PageHeader";
 import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
+import {
+  OpsShell,
+  OpsShellBody,
+} from "@/components/ops/OpsShell";
 import { SiemCasesPanel } from "@/components/siem/SiemCasesPanel";
 import { SiemEventInspector } from "@/components/siem/SiemEventInspector";
 import { SiemEventStream } from "@/components/siem/SiemEventStream";
@@ -68,11 +72,11 @@ export default function Siem() {
       ) : null}
 
       {c.statusQ.isLoading ? (
-        <Card>
-          <CardContent className="flex min-h-[8rem] items-center px-6 py-8">
+        <OpsShell railClass="bg-border" testid="siem-loading">
+          <OpsShellBody className="flex min-h-[8rem] items-center px-6 py-8">
             <TableRowSkeleton rows={2} className="w-full" />
-          </CardContent>
-        </Card>
+          </OpsShellBody>
+        </OpsShell>
       ) : null}
 
       {c.featureOff ? (

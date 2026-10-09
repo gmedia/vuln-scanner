@@ -2809,6 +2809,10 @@ The shared head uses `border-b border-border px-4 py-3`; the shared body uses `p
 
 New tone helpers: `incidentsListRailClass(statuses)` (`statusChrome.ts`) and `outagesRailClass(count)` (`uptimeChrome.ts`).
 
+`OpsShell` is also the shell for **page-level loading states**: `/siem` (`siem-loading`) and `/host` (`host-sites-loading`) wrap their `TableRowSkeleton` in `OpsShell railClass="bg-border"` instead of a bare `Card`, so the loading surface matches the loaded shell grammar.
+
+`SiemEmptyIsland` (`components/siem/SiemEmptyIsland.tsx`) is the **shared empty/flag-off island** across the family (uptime, host, guard, status, siem, and now `/ai`). `/ai` uses it for `ai-feature-off` (Bot), no-org (Building2), and load-fail (TriangleAlert) — replacing the kit `Alert` those states used before. `Alert` stays for inline notices (e.g. `AiKeysPanel`), not for page-level empty states.
+
 ## 6. Motion
 
 Unchanged from the family.
