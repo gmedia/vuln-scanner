@@ -32,7 +32,7 @@ function FindingDetail({ finding }: FindingDetailProps) {
   const rawPayload = fullFinding?.raw_data ?? finding.raw_data;
 
   return (
-    <Card className="bg-card/50 shadow-xs animate-in fade-in-0 slide-in-from-top-2">
+    <Card className="bg-card/50 animate-in fade-in-0 slide-in-from-top-2">
       <CardHeader className="pb-0">
         <div className="flex flex-wrap items-center gap-2">
           <Badge

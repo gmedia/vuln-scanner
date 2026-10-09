@@ -126,4 +126,13 @@ describe("FindingDetail", () => {
       screen.getByText(/AV:N\/AC:L/)
     ).toBeInTheDocument();
   });
+
+  it("stays borders-only (no drop shadow on the expanded panel)", () => {
+    const { container } = renderDetail(
+      <FindingDetail finding={mockFinding()} />,
+    );
+    const card = container.querySelector("[data-slot='card']");
+    expect(card).toBeTruthy();
+    expect(card?.className).not.toMatch(/shadow-(?!none)/);
+  });
 });
