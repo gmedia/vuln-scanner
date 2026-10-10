@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as statusApi from "@/api/statusPage";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -517,7 +517,9 @@ describe("StatusPage admin", () => {
     vi.mocked(statusApi.deleteComponent).mockResolvedValue();
     renderPage();
     await waitFor(() =>
-      expect(screen.getByText("API")).toBeInTheDocument(),
+      expect(
+        within(screen.getByTestId("status-components-desktop")).getByText("API"),
+      ).toBeInTheDocument(),
     );
     const remove = screen.getByTestId("status-component-remove-c1");
     expect(remove).toHaveAttribute("aria-label", "Remove");

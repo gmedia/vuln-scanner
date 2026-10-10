@@ -38,57 +38,93 @@ export function StatusComponentBoard({
   }
 
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="text-[10px] uppercase tracking-wider">
-              {t("displayName")}
-            </TableHead>
-            <TableHead className="text-[10px] uppercase tracking-wider">
-              {t("status")}
-            </TableHead>
-            <TableHead className="text-right text-[10px] uppercase tracking-wider">
-              {t("colActions")}
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {components.map((c) => (
-            <TableRow
-              key={c.id}
-              className={cn(
-                "relative h-12 hover:bg-muted/50",
-                c.state === "down" && "bg-destructive/[0.04]",
-              )}
-            >
-              <TableCell className="relative pl-4 font-medium">
-                <SiemRail className={componentRailClass(c.state)} />
-                {c.display_name}
-              </TableCell>
-              <TableCell>
-                <Badge variant={componentStateBadge(c.state)}>
-                  {c.state ?? unknown}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-11 w-11 min-h-11 min-w-11 p-0 md:h-9 md:w-9 md:min-h-9 md:min-w-9"
-                  data-testid={`status-component-remove-${c.id}`}
-                  aria-label={t("remove")}
-                  disabled={removing}
-                  onClick={() => onRemove(c.id)}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </TableCell>
+    <>
+      <div className="space-y-2 md:hidden" data-testid="status-components-mobile">
+        {components.map((c) => (
+          <div
+            key={c.id}
+            className={cn(
+              "relative w-full overflow-hidden rounded-lg border border-border bg-card p-3 pl-4 text-left",
+              c.state === "down" && "bg-destructive/[0.04]",
+            )}
+          >
+            <SiemRail className={componentRailClass(c.state)} />
+            <p className="font-medium text-foreground">{c.display_name}</p>
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <Badge variant={componentStateBadge(c.state)}>
+                {c.state ?? unknown}
+              </Badge>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-11 w-11 min-h-11 min-w-11 p-0 md:h-9 md:w-9 md:min-h-9 md:min-w-9"
+                data-testid={`status-component-remove-m-${c.id}`}
+                aria-label={t("remove")}
+                disabled={removing}
+                onClick={() => onRemove(c.id)}
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div
+        className="hidden overflow-x-auto md:block"
+        data-testid="status-components-desktop"
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-[10px] uppercase tracking-wider">
+                {t("displayName")}
+              </TableHead>
+              <TableHead className="text-[10px] uppercase tracking-wider">
+                {t("status")}
+              </TableHead>
+              <TableHead className="text-right text-[10px] uppercase tracking-wider">
+                {t("colActions")}
+              </TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+          </TableHeader>
+          <TableBody>
+            {components.map((c) => (
+              <TableRow
+                key={c.id}
+                className={cn(
+                  "relative h-12 hover:bg-muted/50",
+                  c.state === "down" && "bg-destructive/[0.04]",
+                )}
+              >
+                <TableCell className="relative pl-4 font-medium">
+                  <SiemRail className={componentRailClass(c.state)} />
+                  {c.display_name}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={componentStateBadge(c.state)}>
+                    {c.state ?? unknown}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-11 w-11 min-h-11 min-w-11 p-0 md:h-9 md:w-9 md:min-h-9 md:min-w-9"
+                    data-testid={`status-component-remove-${c.id}`}
+                    aria-label={t("remove")}
+                    disabled={removing}
+                    onClick={() => onRemove(c.id)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </>
   );
 }
