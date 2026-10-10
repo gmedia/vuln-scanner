@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AdminBlog from "@/pages/admin/AdminBlog";
 import { adminApi } from "@/api/admin";
@@ -82,9 +82,10 @@ describe("AdminBlog", () => {
       total: 2,
     } as never);
     renderPage();
-    const publishedRow = (await screen.findByText("live")).closest("tr");
+    const desktop = await screen.findByTestId("blog-list-desktop");
+    const publishedRow = within(desktop).getByText("live").closest("tr");
     expect(publishedRow?.querySelector(".bg-primary")).toBeTruthy();
-    const draftRow = screen.getByText("wip").closest("tr");
+    const draftRow = within(desktop).getByText("wip").closest("tr");
     expect(draftRow?.querySelector(".bg-border")).toBeTruthy();
     await waitFor(() =>
       expect(

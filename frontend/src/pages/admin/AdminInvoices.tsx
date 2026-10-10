@@ -180,32 +180,58 @@ function AdminInvoices() {
           {catalogQ.isLoading ? (
             <TableRowSkeleton rows={3} columns={5} />
           ) : (
-            <div className="overflow-hidden rounded-md border border-border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("colProduct")}</TableHead>
-                    <TableHead>{t("colSku")}</TableHead>
-                    <TableHead>{t("colListIdr")}</TableHead>
-                    <TableHead>{t("colSeats")}</TableHead>
-                    <TableHead>{t("colInvoicable")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {catalog.map((row) => (
-                    <TableRow key={`${row.product}-${row.sku}`} className="hover:bg-muted/50">
-                      <TableCell>{row.product}</TableCell>
-                      <TableCell className="uppercase">{row.sku}</TableCell>
-                      <TableCell className="font-mono tabular-nums">
-                        {formatIdr(row.list_idr)}
-                      </TableCell>
-                      <TableCell>{row.seats}</TableCell>
-                      <TableCell>{row.invoicable ? t("yes") : t("no")}</TableCell>
+            <>
+              <div
+                className="space-y-2 md:hidden"
+                data-testid="invoice-catalog-mobile"
+              >
+                {catalog.map((row) => (
+                  <div
+                    key={`${row.product}-${row.sku}`}
+                    className="relative w-full overflow-hidden rounded-lg border border-border bg-card p-3 pl-4 text-left"
+                  >
+                    <SiemRail className={adminRailClass("primary")} />
+                    <p className="text-sm text-foreground">{row.product}</p>
+                    <p className="font-mono text-xs uppercase text-foreground">
+                      {row.sku}
+                    </p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {formatIdr(row.list_idr)} · {row.seats} {t("colSeats")} ·{" "}
+                      {t("colInvoicable")} {row.invoicable ? t("yes") : t("no")}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div
+                className="hidden overflow-hidden rounded-md border border-border md:block"
+                data-testid="invoice-catalog-desktop"
+              >
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("colProduct")}</TableHead>
+                      <TableHead>{t("colSku")}</TableHead>
+                      <TableHead>{t("colListIdr")}</TableHead>
+                      <TableHead>{t("colSeats")}</TableHead>
+                      <TableHead>{t("colInvoicable")}</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {catalog.map((row) => (
+                      <TableRow key={`${row.product}-${row.sku}`} className="hover:bg-muted/50">
+                        <TableCell>{row.product}</TableCell>
+                        <TableCell className="uppercase">{row.sku}</TableCell>
+                        <TableCell className="font-mono tabular-nums">
+                          {formatIdr(row.list_idr)}
+                        </TableCell>
+                        <TableCell>{row.seats}</TableCell>
+                        <TableCell>{row.invoicable ? t("yes") : t("no")}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </AdminShellBody>
       </AdminShell>
@@ -335,21 +361,117 @@ function AdminInvoices() {
               </p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-md border border-border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("colNumber")}</TableHead>
-                    <TableHead>{t("colOrg")}</TableHead>
-                    <TableHead>{t("colProduct")}</TableHead>
-                    <TableHead>{t("colSku")}</TableHead>
-                    <TableHead>{t("colListIdr")}</TableHead>
-                    <TableHead>{t("colStatus")}</TableHead>
-                    <TableHead className="text-right">
-                      {t("colActions")}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
+            <>
+              <div
+                className="space-y-2 md:hidden"
+                data-testid="invoices-list-mobile"
+              >
+                {invoices.map((inv: InvoiceItem) => (
+                  <div
+                    key={inv.id}
+                    className="relative w-full overflow-hidden rounded-lg border border-border bg-card p-3 pl-4 text-left"
+                  >
+                    <SiemRail
+                      className={adminRailClass(invoiceStatusTone(inv.status))}
+                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-mono text-xs text-foreground">
+                        {inv.number}
+                      </p>
+                      <Badge variant="default">{inv.status}</Badge>
+                    </div>
+                    <p className="mt-1 text-sm text-foreground">
+                      {inv.organization_name ?? "—"}
+                    </p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {inv.product} · {inv.sku} · {formatIdr(inv.amount_idr)}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {inv.status === "sent" || inv.status === "paid" ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="no-print min-h-11"
+                          data-testid="admin-invoice-print-m"
+                          aria-label={inv.number}
+                          onClick={() => startPrint(inv)}
+                        >
+                          <Printer className="mr-1 h-3.5 w-3.5" />
+                          {t("invoicePrint")}
+                        </Button>
+                      ) : null}
+                      {inv.status === "sent" || inv.status === "paid" ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="no-print min-h-11"
+                          data-testid="admin-invoice-pdf-m"
+                          aria-label={`${inv.number} pdf`}
+                          onClick={() => void downloadPdf(inv)}
+                        >
+                          <Download className="mr-1 h-3.5 w-3.5" />
+                          {t("invoicePdf")}
+                        </Button>
+                      ) : null}
+                      {inv.status === "draft" ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="min-h-11"
+                          data-testid={`invoice-send-m-${inv.id}`}
+                          onClick={() => sendMut.mutate(inv.id)}
+                        >
+                          {t("invoiceSend")}
+                        </Button>
+                      ) : null}
+                      {inv.status === "draft" || inv.status === "sent" ? (
+                        <>
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="min-h-11"
+                            data-testid={`invoice-paid-m-${inv.id}`}
+                            onClick={() => payMut.mutate(inv.id)}
+                          >
+                            {t("invoiceMarkPaid")}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="min-h-11"
+                            data-testid={`invoice-void-m-${inv.id}`}
+                            onClick={() => voidMut.mutate(inv.id)}
+                          >
+                            {t("invoiceVoid")}
+                          </Button>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div
+                className="hidden overflow-hidden rounded-md border border-border md:block"
+                data-testid="invoices-list-desktop"
+              >
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("colNumber")}</TableHead>
+                      <TableHead>{t("colOrg")}</TableHead>
+                      <TableHead>{t("colProduct")}</TableHead>
+                      <TableHead>{t("colSku")}</TableHead>
+                      <TableHead>{t("colListIdr")}</TableHead>
+                      <TableHead>{t("colStatus")}</TableHead>
+                      <TableHead className="text-right">
+                        {t("colActions")}
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
                 <TableBody>
                   {invoices.map((inv: InvoiceItem) => (
                     <TableRow key={inv.id} className="hover:bg-muted/50">
@@ -432,9 +554,10 @@ function AdminInvoices() {
                       </TableCell>
                     </TableRow>
                   ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </AdminShellBody>
       </AdminShell>
