@@ -68,13 +68,16 @@ describe("useRowSwipe pure helpers", () => {
     expect(shouldReveal({ offset: -49, revealWidth: REVEAL, velocity: 0 })).toBe(false);
   });
 
-  it("reveals on a left flick and closes on a right flick", () => {
+  it("only treats a release as a flick past a minimum travel", () => {
     expect(
       shouldReveal({ offset: -10, revealWidth: REVEAL, velocity: -FLICK_VELOCITY_PX_PER_MS - 0.1 }),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       shouldReveal({ offset: -90, revealWidth: REVEAL, velocity: FLICK_VELOCITY_PX_PER_MS + 0.1 }),
     ).toBe(false);
+    expect(
+      shouldReveal({ offset: -40, revealWidth: REVEAL, velocity: -FLICK_VELOCITY_PX_PER_MS - 0.1 }),
+    ).toBe(true);
   });
 });
 

@@ -29,6 +29,8 @@ export const CLOSE_DURATION_MS = 180;
 export const VERTICAL_DOMINANCE = 1.25;
 /** Velocity is measured over the trailing window of samples. */
 export const VELOCITY_WINDOW_MS = 120;
+/** Below this sample span the velocity is meaningless (e.g. sub-ms synthetic events). */
+export const MIN_VELOCITY_DT_MS = 10;
 
 export interface SwipeToCloseOptions {
   /** Only listen while the drawer is open. */
@@ -218,7 +220,7 @@ export function useSwipeToClose({
         const first = current.samples[0];
         const last = current.samples[current.samples.length - 1];
         const dt = last.t - first.t;
-        const velocity = dt > 0 ? (last.x - first.x) / dt : 0;
+        const velocity = dt >= MIN_VELOCITY_DT_MS ? (last.x - first.x) / dt : 0;
 
         if (
           shouldCloseOnRelease({

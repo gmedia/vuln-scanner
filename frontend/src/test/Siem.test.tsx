@@ -401,4 +401,25 @@ describe("SIEM page", () => {
     await user.click(screen.getAllByText("Host WAF block")[0]);
     expect(screen.getByTestId("siem-case-detail")).toBeInTheDocument();
   });
+
+  it("opens search filters in a bottom sheet on a phone viewport", async () => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 390,
+    });
+    const user = userEvent.setup();
+    renderSiem();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("siem-filters-toggle")).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("siem-search-filters")).not.toBeInTheDocument();
+
+    await user.click(screen.getByTestId("siem-filters-toggle"));
+    expect(
+      await screen.findByTestId("siem-search-filters-sheet"),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Search box")).toBeInTheDocument();
+  });
 });

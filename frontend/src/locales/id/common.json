@@ -20,5 +20,7 @@
   "signedInAs": "Masuk sebagai",
   "waitSeconds": "Terlalu banyak percobaan. Tunggu {{seconds}} dtk",
   "waitButton": "Tunggu {{seconds}} dtk",
-  "pipeline": "Scan → Attach → Workspace → Guard"
+  "pipeline": "Scan → Attach → Workspace → Guard",
+  "filters": "Filter",
+  "done": "Selesai"
 }

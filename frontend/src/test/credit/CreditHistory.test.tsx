@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import CreditHistory from "@/pages/credit/CreditHistory";
 
@@ -645,5 +646,40 @@ describe("CreditHistory", () => {
       "href",
       "/settings/workspace",
     );
+  });
+
+  it("hides filter fields behind a mobile sheet trigger", async () => {
+    const originalWidth = window.innerWidth;
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 390,
+    });
+    vi.mocked(useQuery).mockReturnValue({
+      data: { items: mockItems, total: 3 },
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    try {
+      const user = userEvent.setup();
+      renderHistory();
+      expect(screen.getByTestId("credit-filters-toggle")).toBeInTheDocument();
+      expect(screen.queryByLabelText("Type")).not.toBeInTheDocument();
+
+      await user.click(screen.getByTestId("credit-filters-toggle"));
+      expect(
+        await screen.findByTestId("credit-history-filters-sheet"),
+      ).toBeInTheDocument();
+      expect(screen.getByLabelText("Type")).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText("Search description"),
+      ).toBeInTheDocument();
+    } finally {
+      Object.defineProperty(window, "innerWidth", {
+        configurable: true,
+        writable: true,
+        value: originalWidth,
+      });
+    }
   });
 });
