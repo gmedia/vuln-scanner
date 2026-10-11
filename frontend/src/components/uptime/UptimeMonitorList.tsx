@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Activity } from "lucide-react";
+import { Activity, Trash2 } from "lucide-react";
 import type { UptimeMonitor } from "@/api/uptime";
+import { SwipeableRow } from "@/components/gesture/SwipeableRow";
 import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
   Table,
@@ -51,45 +53,62 @@ export function UptimeMonitorList({
     <>
       <div className="space-y-2 p-3 md:hidden">
         {monitors.map((m) => (
-          <div
+          <SwipeableRow
             key={m.id}
-            className={cn(
-              "relative overflow-hidden rounded-lg border border-border bg-card p-3 pl-4 text-left",
-              m.state === "down" && "bg-destructive/[0.04]",
-            )}
-          >
-            <SiemRail className={stateRailClass(m.state, m.enabled)} />
-            <div className="flex items-start justify-between gap-2">
-              <Link
-                to={`/uptime/${m.id}`}
-                className="min-w-0 break-all font-medium text-foreground hover:underline"
-                data-testid="uptime-open"
+            actions={
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                className="h-full w-full flex-col gap-1 rounded-none"
+                data-testid={`uptime-swipe-delete-${m.id}`}
+                onClick={() => onDelete(m.id)}
               >
-                {m.name}
-              </Link>
-              <Badge variant={stateBadgeVariant(m.state)}>
-                {stateLabel(m.state)}
-              </Badge>
+                <Trash2 className="h-4 w-4" />
+                <span className="text-[10px]">{t("delete")}</span>
+              </Button>
+            }
+          >
+            <div
+              className={cn(
+                "relative overflow-hidden rounded-lg border border-border bg-card p-3 pl-4 text-left",
+                m.state === "down" && "bg-destructive/[0.04]",
+              )}
+              data-testid={`uptime-card-${m.id}`}
+            >
+              <SiemRail className={stateRailClass(m.state, m.enabled)} />
+              <div className="flex items-start justify-between gap-2">
+                <Link
+                  to={`/uptime/${m.id}`}
+                  className="min-w-0 break-all font-medium text-foreground hover:underline"
+                  data-testid="uptime-open"
+                >
+                  {m.name}
+                </Link>
+                <Badge variant={stateBadgeVariant(m.state)}>
+                  {stateLabel(m.state)}
+                </Badge>
+              </div>
+              <p className="mt-1 flex items-center gap-1.5 break-all font-mono text-xs text-muted-foreground">
+                <ProtocolGlyph type={m.check_type} />
+                {m.check_type} · {m.target}
+              </p>
+              <p className="mt-1 font-mono text-xs tabular-nums text-muted-foreground">
+                {m.uptime_24h != null ? `${m.uptime_24h}%` : "—"}
+                {m.last_latency_ms != null ? ` · ${m.last_latency_ms}ms` : ""}
+              </p>
+              <div className="mt-2 flex justify-end">
+                <MonitorActionsMenu
+                  monitor={m}
+                  historyTestId="uptime-history-mobile"
+                  onHistory={() => onHistory(m.id)}
+                  onEdit={() => onEdit(m)}
+                  onPause={() => onPause(m.id)}
+                  onDelete={() => onDelete(m.id)}
+                />
+              </div>
             </div>
-            <p className="mt-1 flex items-center gap-1.5 break-all font-mono text-xs text-muted-foreground">
-              <ProtocolGlyph type={m.check_type} />
-              {m.check_type} · {m.target}
-            </p>
-            <p className="mt-1 font-mono text-xs tabular-nums text-muted-foreground">
-              {m.uptime_24h != null ? `${m.uptime_24h}%` : "—"}
-              {m.last_latency_ms != null ? ` · ${m.last_latency_ms}ms` : ""}
-            </p>
-            <div className="mt-2 flex justify-end">
-              <MonitorActionsMenu
-                monitor={m}
-                historyTestId="uptime-history-mobile"
-                onHistory={() => onHistory(m.id)}
-                onEdit={() => onEdit(m)}
-                onPause={() => onPause(m.id)}
-                onDelete={() => onDelete(m.id)}
-              />
-            </div>
-          </div>
+          </SwipeableRow>
         ))}
       </div>
       <div className="hidden overflow-x-auto md:block">

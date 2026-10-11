@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -13,6 +13,7 @@ import {
   parseUptimeFormPayload,
   toUptimeUpdatePayload,
 } from "@/components/uptime/uptimeForm";
+import { deleteMonitor } from "@/api/uptime";
 
 const mockList = vi.fn();
 const mockSamples = vi.fn();
@@ -337,6 +338,59 @@ describe("Uptime page", () => {
     expect(parsed.payload.expect_status).toBeNull();
     expect(parsed.payload.timeout_seconds).toBe(10);
     expect(toUptimeUpdatePayload(parsed.payload).expect_status).toBeNull();
+  });
+
+  it("reveals a swipe delete action on the mobile card", async () => {
+    mockList.mockResolvedValue([
+      {
+        id: "m1",
+        organization_id: "o1",
+        name: "web",
+        check_type: "http",
+        target: "https://example.com",
+        interval_seconds: 60,
+        timeout_seconds: 10,
+        expect_status: 200,
+        keyword: null,
+        keyword_invert: false,
+        enabled: true,
+        state: "up",
+        consecutive_fails: 0,
+        last_checked_at: null,
+        last_status_code: 200,
+        last_latency_ms: 12,
+        last_error: null,
+        next_check_at: "2026-08-25T00:00:00Z",
+        notify_email: null,
+        asset_id: null,
+        created_at: "2026-08-25T00:00:00Z",
+        updated_at: "2026-08-25T00:00:00Z",
+        sku: "multi",
+        sku_limit: 10,
+        uptime_24h: 99.9,
+      },
+    ]);
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("uptime-card-m1")).toBeInTheDocument(),
+    );
+    const wrap = screen.getByTestId("uptime-card-m1").parentElement as HTMLElement;
+    Object.assign(wrap, {
+      setPointerCapture: vi.fn(),
+      releasePointerCapture: vi.fn(),
+    });
+    fireEvent.pointerDown(wrap, { pointerId: 1, clientX: 300, clientY: 300 });
+    fireEvent.pointerMove(wrap, { pointerId: 1, clientX: 180, clientY: 300 });
+    fireEvent.pointerUp(wrap, { pointerId: 1, clientX: 180, clientY: 300 });
+    expect(wrap.style.transform).toBe("translateX(-96px)");
+
+    fireEvent.click(screen.getByTestId("uptime-swipe-delete-m1"));
+    expect(confirmSpy).toHaveBeenCalledWith("Delete this monitor?");
+    await waitFor(() =>
+      expect(vi.mocked(deleteMonitor).mock.calls[0]?.[0]).toBe("m1"),
+    );
+    confirmSpy.mockRestore();
   });
 
   it("keeps an exact HTTP expect_status on create", () => {
