@@ -23,6 +23,8 @@
   "inbox": "Kotak masuk",
   "profile": "Profil",
   "workspace": "Workspace",
+  "scan": "Pindai",
+  "bottomNavLabel": "Navigasi utama",
   "groupScan": "Scan",
   "groupAttach": "Attach",
   "groupAccount": "Akun",

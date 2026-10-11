@@ -1,8 +1,16 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AppShell from "@/components/layout/AppShell";
+
+vi.mock("@/hooks/use-feature-status", () => ({
+  useFeatureStatus: () => ({
+    guard: false,
+    uptime: false,
+    isGuardAdmin: false,
+  }),
+}));
 
 function renderShell() {
   const client = new QueryClient({
@@ -44,10 +52,10 @@ describe("AppShell", () => {
     expect(wrap).toBeInstanceOf(HTMLElement);
   });
 
-  it("pads the main column for the home indicator", () => {
+  it("pads the main column for the bottom nav and home indicator", () => {
     renderShell();
     const wrap = Array.from(document.querySelectorAll("div")).find((el) =>
-      el.className.includes("pb-[max(2.5rem,env(safe-area-inset-bottom))]"),
+      el.className.includes("pb-[calc(4.5rem_+_env(safe-area-inset-bottom))]"),
     );
     expect(wrap).toBeInstanceOf(HTMLElement);
   });

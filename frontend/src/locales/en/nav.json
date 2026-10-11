@@ -23,6 +23,8 @@
   "inbox": "Inbox",
   "profile": "Profile",
   "workspace": "Workspace",
+  "scan": "Scan",
+  "bottomNavLabel": "Primary navigation",
   "groupScan": "Scan",
   "groupAttach": "Attach",
   "groupAccount": "Account",
