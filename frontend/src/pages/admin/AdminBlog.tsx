@@ -233,7 +233,64 @@ function AdminBlog() {
               </p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-md border border-border">
+            <>
+              <div className="space-y-2 md:hidden" data-testid="blog-list-mobile">
+                {data.items.map((p) => (
+                  <div
+                    key={p.id}
+                    className="relative w-full overflow-hidden rounded-lg border border-border bg-card p-3 pl-4 text-left"
+                  >
+                    <SiemRail
+                      className={adminRailClass(blogStatusTone(p.status))}
+                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-mono text-xs text-foreground">{p.slug}</p>
+                      <Badge
+                        variant={
+                          p.status === "published" ? "success" : "pending"
+                        }
+                      >
+                        {p.status === "published"
+                          ? t("blogPublished")
+                          : t("blogDraft")}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-sm text-foreground">{p.title}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="min-h-11"
+                        onClick={() => startEdit(p)}
+                      >
+                        {t("blogEdit")}
+                      </Button>
+                      {p.status === "published" ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="min-h-11"
+                          onClick={() => unpublishMut.mutate(p.id)}
+                        >
+                          {t("blogUnpublish")}
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="min-h-11"
+                          onClick={() => publishMut.mutate(p.id)}
+                        >
+                          {t("blogPublish")}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div
+                className="hidden overflow-hidden rounded-md border border-border md:block"
+                data-testid="blog-list-desktop"
+              >
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -293,7 +350,8 @@ function AdminBlog() {
                   ))}
                 </TableBody>
               </Table>
-            </div>
+              </div>
+            </>
           )}
         </AdminShellBody>
       </AdminShell>

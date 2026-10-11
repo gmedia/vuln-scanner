@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AdminInvoices from "@/pages/admin/AdminInvoices";
 import i18n from "@/i18n";
@@ -216,7 +216,11 @@ describe("AdminInvoices", () => {
     expect(
       screen.getByText("Sinexis bills Scan and Host SKUs"),
     ).toBeInTheDocument();
-    expect(screen.getByText("SX-202609-0001")).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("invoices-list-desktop")).getByText(
+        "SX-202609-0001",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("invoice-create")).toBeDisabled();
     expect(screen.getByTestId("invoice-paid-inv-1")).toBeInTheDocument();
   });
@@ -429,7 +433,9 @@ describe("AdminInvoices", () => {
         .querySelector(".bg-sky-500"),
     ).toBeTruthy();
     const list = screen.getByTestId("invoices-list-shell");
-    const draftRow = screen.getByText("SX-202609-0001").closest("tr");
+    const draftRow = within(screen.getByTestId("invoices-list-desktop"))
+      .getByText("SX-202609-0001")
+      .closest("tr");
     expect(draftRow?.querySelector(".bg-border")).toBeTruthy();
     expect(list.querySelector(".bg-border")).toBeTruthy();
   });
@@ -455,9 +461,13 @@ describe("AdminInvoices", () => {
       };
     }) as typeof useQuery);
     render(<AdminInvoices />);
-    const sentRow = screen.getByText("SX-SENT").closest("tr");
+    const sentRow = within(screen.getByTestId("invoices-list-desktop"))
+      .getByText("SX-SENT")
+      .closest("tr");
     expect(sentRow?.querySelector(".bg-amber-500")).toBeTruthy();
-    const voidRow = screen.getByText("SX-VOID").closest("tr");
+    const voidRow = within(screen.getByTestId("invoices-list-desktop"))
+      .getByText("SX-VOID")
+      .closest("tr");
     expect(voidRow?.querySelector(".bg-destructive")).toBeTruthy();
     expect(
       screen
