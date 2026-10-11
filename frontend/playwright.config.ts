@@ -19,10 +19,21 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
+      // Keeps desktop specs from also running at phone width (md:block tables hide there).
+      testIgnore: "**/*.mobile.spec.ts",
       use: {
         ...devices["Desktop Chrome"],
         headless: !process.env.DISPLAY,
         viewport: { width: 1440, height: 900 },
+      },
+    },
+    {
+      name: "mobile",
+      // Pixel 5 = hasTouch + isMobile + 393x851, i.e. the sub-md branches.
+      testMatch: "**/*.mobile.spec.ts",
+      use: {
+        ...devices["Pixel 5"],
+        headless: !process.env.DISPLAY,
       },
     },
   ],
