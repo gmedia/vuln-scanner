@@ -6,6 +6,7 @@ import { PanelLeftIcon } from "lucide-react"
 import { Slot } from "@radix-ui/react-slot"
 
 import { useIsMobile } from "@/hooks/use-mobile"
+import { useSwipeToClose } from "@/hooks/use-swipe-to-close"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
@@ -164,6 +165,18 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  const {
+    ref: swipeRef,
+    onPointerDown: onSwipePointerDown,
+    onPointerMove: onSwipePointerMove,
+    onPointerUp: onSwipePointerUp,
+    onPointerCancel: onSwipePointerCancel,
+    onLostPointerCapture: onSwipeLostPointerCapture,
+    onClickCapture: onSwipeClickCapture,
+  } = useSwipeToClose({
+    enabled: isMobile && openMobile,
+    onClose: () => setOpenMobile(false),
+  })
 
   if (collapsible === "none") {
     return (
@@ -187,7 +200,7 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+          className="w-(--sidebar-width) border-0 bg-transparent p-0 text-sidebar-foreground shadow-none [&>button]:hidden"
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -199,7 +212,18 @@ function Sidebar({
             <SheetTitle>Sidebar</SheetTitle>
             <SheetDescription>Displays the mobile sidebar.</SheetDescription>
           </SheetHeader>
-          <div className="flex h-full w-full flex-col">{children}</div>
+          <div
+            ref={swipeRef}
+            onPointerDown={onSwipePointerDown}
+            onPointerMove={onSwipePointerMove}
+            onPointerUp={onSwipePointerUp}
+            onPointerCancel={onSwipePointerCancel}
+            onLostPointerCapture={onSwipeLostPointerCapture}
+            onClickCapture={onSwipeClickCapture}
+            className="flex h-full w-full touch-pan-y flex-col border-r border-sidebar-border bg-sidebar"
+          >
+            {children}
+          </div>
         </SheetContent>
       </Sheet>
     )
