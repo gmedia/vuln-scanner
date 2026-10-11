@@ -16,7 +16,7 @@ Vite + React + TS + shadcn. Node >=24. Dev :5173; prod compose publishes :5174.
 | Tokens | `src/index.css` `:root` |
 | Filter-bar ref | `src/pages/credit/CreditHistory.tsx` |
 | Vitest | `src/test/` |
-| Playwright | `e2e/` — serial, `storageState` |
+| Playwright | `e2e/` — serial, `storageState`. Two projects: `chromium` (desktop 1440×900) and `mobile` (Pixel 5, `hasTouch`). Mobile-only specs **must** be named `*.mobile.spec.ts` so each spec runs in exactly one project. |
 | i18n | `src/locales/{en,id}/` |
 
 ## CONVENTIONS
