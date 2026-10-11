@@ -5,9 +5,13 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
+import BottomNav from "@/components/layout/BottomNav";
 import Sidebar from "@/components/layout/Sidebar";
 
 function AppShell() {
+  const isMobile = useIsMobile();
+
   return (
     <SidebarProvider>
       <Sidebar />
@@ -17,10 +21,11 @@ function AppShell() {
             <Menu />
           </SidebarTrigger>
         </div>
-        <div className="mx-auto w-full max-w-6xl flex-1 p-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] md:p-6 lg:p-8 2xl:max-w-[90rem]">
+        <div className="mx-auto w-full max-w-6xl flex-1 p-4 pb-[calc(4.5rem_+_env(safe-area-inset-bottom))] md:p-6 lg:p-8 2xl:max-w-[90rem]">
           <Outlet />
         </div>
       </SidebarInset>
+      {isMobile ? <BottomNav /> : null}
     </SidebarProvider>
   );
 }
