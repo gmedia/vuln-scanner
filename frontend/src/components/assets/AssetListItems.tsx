@@ -7,11 +7,14 @@ import {
   type AssetItemActions,
 } from "@/components/assets/AssetItemChrome";
 import { assetRailClass } from "@/components/assets/assetChrome";
+import { SwipeableRow } from "@/components/gesture/SwipeableRow";
 import { SiemRail } from "@/components/siem/siemChrome";
+import { Button } from "@/components/ui/Button";
 import {
   TableCell,
   TableRow,
 } from "@/components/ui/Table";
+import { Trash2 } from "lucide-react";
 
 export function AssetCard({
   asset,
@@ -22,49 +25,67 @@ export function AssetCard({
 }) {
   const { t } = actions;
   return (
-    <div
-      className="relative overflow-hidden rounded-lg border border-border bg-card p-3 pl-4"
-      data-testid={`asset-card-${asset.id}`}
+    <SwipeableRow
+      actions={
+        <Button
+          type="button"
+          variant="destructive"
+          size="sm"
+          className="h-full w-full flex-col gap-1 rounded-none"
+          data-testid={`asset-swipe-delete-${asset.id}`}
+          onClick={() => {
+            if (window.confirm(t("confirmDelete"))) actions.onDelete(asset.id);
+          }}
+        >
+          <Trash2 className="h-4 w-4" />
+          <span className="text-[10px]">{t("delete")}</span>
+        </Button>
+      }
     >
-      <SiemRail className={assetRailClass(asset.scan_type)} />
-      <div className="flex items-start justify-between gap-2">
-        <p className="min-w-0 break-words text-sm font-medium text-foreground">
-          {asset.name}
-        </p>
-        <AssetTypeChip scanType={asset.scan_type} t={t} />
-      </div>
-      <p className="mt-1 break-all font-mono text-xs tabular-nums text-muted-foreground">
-        {asset.target}
-      </p>
-      {(asset.tags ?? []).length > 0 || asset.guard_agent_id ? (
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          <AssetTagBadges
-            asset={asset}
-            testIdPrefix="asset-tag-card"
-            colorMap={actions.colorMap}
-            onToggleTag={actions.onToggleTag}
-          />
-          {asset.guard_agent_id ? (
-            <AssetGuardCell
-              asset={asset}
-              testId={`asset-guard-chip-${asset.id}-card`}
-              t={t}
-            />
-          ) : null}
+      <div
+        className="relative overflow-hidden rounded-lg border border-border bg-card p-3 pl-4"
+        data-testid={`asset-card-${asset.id}`}
+      >
+        <SiemRail className={assetRailClass(asset.scan_type)} />
+        <div className="flex items-start justify-between gap-2">
+          <p className="min-w-0 break-words text-sm font-medium text-foreground">
+            {asset.name}
+          </p>
+          <AssetTypeChip scanType={asset.scan_type} t={t} />
         </div>
-      ) : null}
-      <div className="mt-2 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-        <span>{asset.schedule_id ? t("hasSchedule") : "—"}</span>
-        <AssetRowMenu
-          asset={asset}
-          surface="card"
-          onEdit={actions.onEdit}
-          onSchedule={actions.onSchedule}
-          onDelete={actions.onDelete}
-          t={t}
-        />
+        <p className="mt-1 break-all font-mono text-xs tabular-nums text-muted-foreground">
+          {asset.target}
+        </p>
+        {(asset.tags ?? []).length > 0 || asset.guard_agent_id ? (
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <AssetTagBadges
+              asset={asset}
+              testIdPrefix="asset-tag-card"
+              colorMap={actions.colorMap}
+              onToggleTag={actions.onToggleTag}
+            />
+            {asset.guard_agent_id ? (
+              <AssetGuardCell
+                asset={asset}
+                testId={`asset-guard-chip-${asset.id}-card`}
+                t={t}
+              />
+            ) : null}
+          </div>
+        ) : null}
+        <div className="mt-2 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+          <span>{asset.schedule_id ? t("hasSchedule") : "—"}</span>
+          <AssetRowMenu
+            asset={asset}
+            surface="card"
+            onEdit={actions.onEdit}
+            onSchedule={actions.onSchedule}
+            onDelete={actions.onDelete}
+            t={t}
+          />
+        </div>
       </div>
-    </div>
+    </SwipeableRow>
   );
 }
 

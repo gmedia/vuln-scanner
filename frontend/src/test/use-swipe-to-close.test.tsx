@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import {
   useSwipeToClose,
@@ -9,35 +9,6 @@ import {
   FLICK_MIN_PX,
   MIN_CLOSE_PX,
 } from "@/hooks/use-swipe-to-close";
-
-// jsdom does not implement PointerEvent; testing-library falls back to a bare
-// Event (dropping clientX/pointerId) unless we provide a constructor.
-class PointerEventPolyfill extends MouseEvent {
-  readonly pointerId: number;
-  readonly pointerType: string;
-  readonly isPrimary: boolean;
-  constructor(
-    type: string,
-    init: MouseEventInit & {
-      pointerId?: number;
-      pointerType?: string;
-      isPrimary?: boolean;
-    } = {},
-  ) {
-    super(type, init);
-    this.pointerId = init.pointerId ?? 1;
-    this.pointerType = init.pointerType ?? "touch";
-    this.isPrimary = init.isPrimary ?? true;
-  }
-}
-
-beforeAll(() => {
-  vi.stubGlobal("PointerEvent", PointerEventPolyfill);
-});
-
-afterAll(() => {
-  vi.unstubAllGlobals();
-});
 
 function Harness({
   enabled,

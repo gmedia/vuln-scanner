@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Assets from "@/pages/Assets";
 import { mapAssetError, quotaTone } from "@/components/assets/assetChrome";
+import { deleteAsset } from "@/api/assets";
 
 const mockList = vi.fn();
 const mockCreate = vi.fn();
@@ -476,6 +477,43 @@ describe("Assets page", () => {
     await user.clear(screen.getByTestId("asset-search"));
     expect(screen.getAllByText("Web").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Lab").length).toBeGreaterThan(0);
+  });
+
+  it("reveals a swipe delete action on the mobile card and confirms", async () => {
+    mockList.mockResolvedValue([
+      {
+        id: "a1",
+        name: "Web",
+        scan_type: "domain",
+        target: "example.com",
+        notes: null,
+        schedule_id: null,
+        sku: "multi",
+        sku_limit: 10,
+        tags: [],
+      },
+    ]);
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByTestId("asset-card-a1")).toBeInTheDocument(),
+    );
+    const wrap = screen.getByTestId("asset-card-a1").parentElement as HTMLElement;
+    Object.assign(wrap, {
+      setPointerCapture: vi.fn(),
+      releasePointerCapture: vi.fn(),
+    });
+    fireEvent.pointerDown(wrap, { pointerId: 1, clientX: 300, clientY: 300 });
+    fireEvent.pointerMove(wrap, { pointerId: 1, clientX: 180, clientY: 300 });
+    fireEvent.pointerUp(wrap, { pointerId: 1, clientX: 180, clientY: 300 });
+    expect(wrap.style.transform).toBe("translateX(-96px)");
+
+    fireEvent.click(screen.getByTestId("asset-swipe-delete-a1"));
+    expect(confirmSpy).toHaveBeenCalledWith("Delete this asset?");
+    await waitFor(() =>
+      expect(vi.mocked(deleteAsset).mock.calls[0]?.[0]).toBe("a1"),
+    );
+    confirmSpy.mockRestore();
   });
 
   it("filters by type with the segmented control and clears all filters", async () => {

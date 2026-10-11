@@ -30,6 +30,31 @@ if (typeof window.matchMedia !== "function") {
   });
 }
 
+// jsdom has no usable PointerEvent; gesture tests need a constructor that carries pointerId/clientX.
+class PointerEventPolyfill extends MouseEvent {
+  readonly pointerId: number;
+  readonly pointerType: string;
+  readonly isPrimary: boolean;
+  constructor(
+    type: string,
+    init: MouseEventInit & {
+      pointerId?: number;
+      pointerType?: string;
+      isPrimary?: boolean;
+    } = {},
+  ) {
+    super(type, init);
+    this.pointerId = init.pointerId ?? 1;
+    this.pointerType = init.pointerType ?? "touch";
+    this.isPrimary = init.isPrimary ?? true;
+  }
+}
+Object.defineProperty(window, "PointerEvent", {
+  configurable: true,
+  writable: true,
+  value: PointerEventPolyfill,
+});
+
 // jsdom elements have 0 dimensions by default; give charts a usable size
 const originalGetBoundingClientRect = Element.prototype.getBoundingClientRect;
 Element.prototype.getBoundingClientRect = function () {
