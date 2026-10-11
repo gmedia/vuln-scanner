@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { FilterSheet } from "@/components/ops/FilterSheet";
 import {
   OpsShell,
   OpsShellBody,
@@ -332,6 +333,11 @@ function CreditHistory() {
     Boolean(dateFrom) ||
     Boolean(dateTo) ||
     Boolean(search.trim());
+  const activeFilterCount =
+    (typeFilter !== "all" ? 1 : 0) +
+    (dateFrom ? 1 : 0) +
+    (dateTo ? 1 : 0) +
+    (search.trim() ? 1 : 0);
 
   const resetPage = () => setPage(1);
 
@@ -479,90 +485,100 @@ function CreditHistory() {
       </OpsShell>
 
       <OpsShell railClass="bg-border" testid="credit-history-filters">
-        <OpsShellBody className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <Label htmlFor="credit-type-filter">Type</Label>
-          <Select
-            value={typeFilter}
-            onValueChange={(value) => {
-              setTypeFilter(value as FilterType);
-              resetPage();
-            }}
+        <OpsShellBody>
+          <FilterSheet
+            activeCount={activeFilterCount}
+            triggerTestId="credit-filters-toggle"
+            sheetTestId="credit-history-filters-sheet"
           >
-            <SelectTrigger
-              id="credit-type-filter"
-              aria-label="Type"
-              className="h-10 min-h-10"
-            >
-              <SelectValue placeholder="All" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All types</SelectItem>
-              <SelectItem value="credit">Credit</SelectItem>
-              <SelectItem value="deduct">Deduct</SelectItem>
-              <SelectItem value="refund">Refund</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <Label htmlFor="credit-date-from">From</Label>
-          <DatePicker
-            id="credit-date-from"
-            value={dateFrom}
-            onChange={(value) => {
-              setDateFrom(value);
-              resetPage();
-            }}
-            placeholder="From date"
-            aria-label="From"
-          />
-        </div>
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <Label htmlFor="credit-date-to">To</Label>
-          <DatePicker
-            id="credit-date-to"
-            value={dateTo}
-            onChange={(value) => {
-              setDateTo(value);
-              resetPage();
-            }}
-            placeholder="To date"
-            aria-label="To"
-          />
-        </div>
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <Label htmlFor="credit-search">Search</Label>
-          <Input
-            id="credit-search"
-            type="text"
-            placeholder="Search description"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              resetPage();
-            }}
-            className="h-10 min-h-10"
-          />
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-2 sm:col-span-2 lg:col-span-4">
-          <p className="text-xs text-muted-foreground">
-            Filters apply to loaded rows on this page
-            {hasServerData && filtersActive
-              ? ` · Showing ${filteredItems.length} of ${data?.items.length ?? 0}`
-              : null}
-          </p>
-          {filtersActive ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 shrink-0 text-xs"
-              onClick={clearFilters}
-            >
-              Clear filters
-            </Button>
-          ) : null}
-        </div>
+            {() => (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label htmlFor="credit-type-filter">Type</Label>
+                  <Select
+                    value={typeFilter}
+                    onValueChange={(value) => {
+                      setTypeFilter(value as FilterType);
+                      resetPage();
+                    }}
+                  >
+                    <SelectTrigger
+                      id="credit-type-filter"
+                      aria-label="Type"
+                      className="h-10 min-h-10"
+                    >
+                      <SelectValue placeholder="All" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All types</SelectItem>
+                      <SelectItem value="credit">Credit</SelectItem>
+                      <SelectItem value="deduct">Deduct</SelectItem>
+                      <SelectItem value="refund">Refund</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label htmlFor="credit-date-from">From</Label>
+                  <DatePicker
+                    id="credit-date-from"
+                    value={dateFrom}
+                    onChange={(value) => {
+                      setDateFrom(value);
+                      resetPage();
+                    }}
+                    placeholder="From date"
+                    aria-label="From"
+                  />
+                </div>
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label htmlFor="credit-date-to">To</Label>
+                  <DatePicker
+                    id="credit-date-to"
+                    value={dateTo}
+                    onChange={(value) => {
+                      setDateTo(value);
+                      resetPage();
+                    }}
+                    placeholder="To date"
+                    aria-label="To"
+                  />
+                </div>
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label htmlFor="credit-search">Search</Label>
+                  <Input
+                    id="credit-search"
+                    type="text"
+                    placeholder="Search description"
+                    value={search}
+                    onChange={(e) => {
+                      setSearch(e.target.value);
+                      resetPage();
+                    }}
+                    className="h-10 min-h-10"
+                  />
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2 sm:col-span-2 lg:col-span-4">
+                  <p className="text-xs text-muted-foreground">
+                    Filters apply to loaded rows on this page
+                    {hasServerData && filtersActive
+                      ? ` · Showing ${filteredItems.length} of ${data?.items.length ?? 0}`
+                      : null}
+                  </p>
+                  {filtersActive ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 shrink-0 text-xs"
+                      onClick={clearFilters}
+                    >
+                      Clear filters
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            )}
+          </FilterSheet>
         </OpsShellBody>
       </OpsShell>
 

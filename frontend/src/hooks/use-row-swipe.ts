@@ -15,12 +15,16 @@ export const START_THRESHOLD_PX = 8;
 export const DEFAULT_REVEAL_WIDTH_PX = 96;
 /** Horizontal flick faster than this (px/ms) decides open/close on release. */
 export const FLICK_VELOCITY_PX_PER_MS = 0.45;
+/** Minimum travel before a release can count as a flick (not just a nudge). */
+export const FLICK_MIN_PX = 24;
 /** Duration of the reveal / reset transition. */
 export const REVEAL_DURATION_MS = 180;
 /** Vertical travel must exceed horizontal by this factor to count as scroll. */
 export const VERTICAL_DOMINANCE = 1.25;
 /** Velocity is measured over the trailing window of samples. */
 export const VELOCITY_WINDOW_MS = 120;
+/** Below this sample span the velocity is meaningless (e.g. sub-ms synthetic events). */
+export const MIN_VELOCITY_DT_MS = 10;
 
 /** Clamp a reveal drag to [-revealWidth, 0]; rightward drags never move the row. */
 export function clampRevealOffset(offset: number, revealWidth: number): number {
@@ -36,9 +40,23 @@ export function shouldReveal(input: {
   readonly revealWidth: number;
   readonly velocity: number;
 }): boolean {
-  if (input.velocity <= -FLICK_VELOCITY_PX_PER_MS) return true;
-  if (input.velocity >= FLICK_VELOCITY_PX_PER_MS) return false;
+  if (Math.abs(input.offset) >= FLICK_MIN_PX) {
+    if (input.velocity <= -FLICK_VELOCITY_PX_PER_MS) return true;
+    if (input.velocity >= FLICK_VELOCITY_PX_PER_MS) return false;
+  }
   return Math.abs(input.offset) >= input.revealWidth / 2;
+}
+
+/** Mean velocity over a sample window, or 0 when the span is too short to trust. */
+export function velocityFromSamples(
+  samples: readonly { readonly x: number; readonly t: number }[],
+): number {
+  if (samples.length < 2) return 0;
+  const first = samples[0];
+  const last = samples[samples.length - 1];
+  const dt = last.t - first.t;
+  if (dt < MIN_VELOCITY_DT_MS) return 0;
+  return (last.x - first.x) / dt;
 }
 
 export interface UseRowSwipeOptions {
@@ -204,14 +222,10 @@ export function useRowSwipe({
       if (!current || current.pointerId !== event.pointerId) return;
 
       if (current.active) {
-        const first = current.samples[0];
-        const last = current.samples[current.samples.length - 1];
-        const dt = last.t - first.t;
-        const velocity = dt > 0 ? (last.x - first.x) / dt : 0;
         const next = shouldReveal({
           offset: current.offset,
           revealWidth,
-          velocity,
+          velocity: velocityFromSamples(current.samples),
         });
         setOpen(next);
         applyOffset(next ? -revealWidth : 0, true);

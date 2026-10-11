@@ -48,7 +48,7 @@ accordion, alert, alert-dialog, Badge, Button, Calendar, Card, chart, DatePicker
 | **Tabs** | ScanDetail + SIEM shipped (Wave B); Guard optional skip |
 | **breadcrumb** | No page imports — AppShell optional |
 | **Tooltip** | Sidebar only |
-| **Sheet** | Mobile sidebar only |
+| **Sheet** | Mobile sidebar drawer **and mobile bottom-sheet filters/forms** (e.g. `components/ops/FilterSheet.tsx`). Bottom sheets must keep a drag handle affordance or a non-drag close (the `FilterSheet` Done button) and never replace the always-visible desktop control. |
 | **Popover** | Via DatePicker / DateTimePicker only |
 
 ### Not installed (official catalog ~46)

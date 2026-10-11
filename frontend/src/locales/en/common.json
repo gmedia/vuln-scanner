@@ -20,5 +20,7 @@
   "signedInAs": "Signed in as",
   "waitSeconds": "Too many attempts. Wait {{seconds}}s",
   "waitButton": "Wait {{seconds}}s",
-  "pipeline": "Scan → Attach → Workspace → Guard"
+  "pipeline": "Scan → Attach → Workspace → Guard",
+  "filters": "Filters",
+  "done": "Done"
 }
