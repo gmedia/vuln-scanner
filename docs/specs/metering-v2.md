@@ -2,7 +2,7 @@
 
 **Status:** **shipped** on `main` (#736). Follow-on: Host line-margin COGS **capped at included cadence** (sites × days in range) so lab/manual volume does not look like P&L.
 **Epic:** commercial metering follow-on to P0/P1. Does **not** reopen Host Protect S1–S12, WAF packs, or Guard.
-**Legal / GTM:** Scan list IDR (A1) and Host working list (H4) unchanged. Finance `service_id` still human. Do not silent-bundle Host into Scan or VPS.
+**Legal / GTM:** Scan list IDR (A1) and Host H4 (**locked 2026-10-12**) unchanged. Finance `service_id` still human. Do not silent-bundle Host into Scan or VPS.
 
 ---
 
@@ -57,9 +57,9 @@ Keep: unit rates, overhead pool, journal, per-key volume × rate + share.
 | `line` | Revenue (estimasi) | COGS |
 |--------|--------------------|------|
 | `scan` | Σ list[org.sku] for orgs with **≥1 enabled** `scan_schedules` (`organization_id` not null) | sum `fully_loaded_hpp_idr` of `ip`+`domain`+`apk`+`ipa`+`statushost` |
-| `host` | Σ list[org.sku] using **Host** working list for orgs with **≥1** `host_sites` | `hostscan` fully loaded, **capped** at included cadence (`sites × days`; hourly sites × 24) when recorded scans exceed that. Flag `host_cogs_capped`. Table rows stay uncapped (ops volume). |
+| `host` | Σ list[org.sku] using **Host** H4 list for orgs with **≥1** `host_sites` | `hostscan` fully loaded, **capped** at included cadence (`sites × days`; hourly sites × 24) when recorded scans exceed that. Flag `host_cogs_capped`. Table rows stay uncapped (ops volume). |
 
-Scan list = A1 (300k / 650k / 2M). Host list = H4 working (150k / 350k / 900k).
+Scan list = A1 (300k / 650k / 2M). Host list = H4 **locked 2026-10-12** (150k / 350k / 900k).
 **Do not** count personal orgs with default `sku=multi` unless they actually have a schedule or host site. Null-org schedules do not contribute revenue.
 
 Drop hero UI for `sku_estimates` what-if IP/domain. API may omit that array (empty) or remove it in this PR — SPA must not show “margin if all IP” as the P&L.

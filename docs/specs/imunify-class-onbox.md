@@ -24,7 +24,7 @@ Imunify360’s **job** (not its product):
 
 ---
 
-## 1) Regional GTM (working, not finance lock)
+## 1) Regional GTM (Host H4 IDR **locked 2026-10-12**)
 
 **Hypothesis (owner):** take **Imunify-shaped budget** in a **named region / channel** (e.g. GMD VPS/colo ID, properties without cPanel, AM book that already pays infra). Exact geo/list = **owner + AM**; **no** customer PII or invoice SIDs in this file.
 
@@ -126,7 +126,7 @@ Slices **A–H** remain the **PR stream** names. Waves are **when sales can demo
 | Heartbeat / last helper POST on `/host` (if not already obvious) | New YARA pack |
 | One-file `sinexis-install.sh` from **product origin `sinexis.app`** (**#642** on `main`), not “clone the repo” | `curl \| bash` as the blessed path |
 | AM runbook already exists — keep it the source of truth | Wipe `sx-erpstg` |
-| SKU: quote **Host Basic 1 site** from working list H4; bill in **Sinexis** | Invoice IDR lock in git without finance; GMD SID as a gate |
+| SKU: quote **Host Basic 1 site** from H4 **locked 2026-10-12**; bill in **Sinexis** | Invoice IDR lock in git without finance; GMD SID as a gate |
 
 **DoD:** AM on a **tc5** fixture: Guard enroll → download wrapper from **sinexis.app** → helper timer → `/host` shows **pending_agent** then a **real** ingest (or honest fail). No mock hits. Residual after **#642**: wget on **already-installed** VMs (not wipe `sx-erpstg`); heartbeat copy on `/host` if still unclear.
 

@@ -59,10 +59,10 @@ Until Demo-ok: do not demo Host as “on-box proof.”
 | Surface | Today | Role |
 |---------|--------|------|
 | **Invoice-ok (this gate)** Sinexis in-app Scan invoices | I1–I9 **shipped**; bank transfer, mark paid | AM **can** bill Scan attach without GMD SID |
-| **H9** In-app `sku_catalog` `product=host` `invoicable=true` | **Shipped.** Host catalog `invoicable=true`; paid Host does not set `org.sku` | Residual queue starts at Inbox S2. Print S2 **shipped**. H4 list IDR still working |
+| **H9** In-app `sku_catalog` `product=host` `invoicable=true` | **Shipped.** Host catalog `invoicable=true`; paid Host does not set `org.sku` | Residual queue starts at Inbox S2. Print S2 **shipped**. H4 list IDR **locked 2026-10-12** |
 | **Struck C1** GMD ERP Host `service_id` | Off-repo optional | **Not** Invoice-ok. **Do not** tell the user the next step is three SIDs |
 
-- Working IDR: Scan P0 lock; Host H4 working list ([`sku-host-protect.md`](../commercial/sku-host-protect.md)). Host IDR **not** finance-locked.
+- Working IDR: Scan P0 lock; Host **H4 locked 2026-10-12** ([`sku-host-protect.md`](../commercial/sku-host-protect.md); 150k / 350k / 900k; finance may ± band).
 - File-only demo = quote **Host Basic**. WAF/protect sentence = org is **Host Multi before** the meeting. Never quote Basic and demo Protect.
 - **H9 shipped.** Do **not** re-implement Host invoice APIs. Do **not** silent-bundle Host into VPS or Scan.
 - Do **not** invent GMD API / SID rows in git.
@@ -154,10 +154,10 @@ Malware-detected email skips `engine=mock`. WAF-block email fires only on helper
 
 ---
 
-## 4) SKU / commercial (working, not finance lock)
+## 4) SKU / commercial (Host H4 locked 2026-10-12)
 
 - **Do not quote Basic and demo Protect.** File-only demo = **Host Basic**. If the meeting uses a WAF/protect sentence, org is **Host Multi before** the meeting.
-- Working list: [`sku-host-protect.md`](../commercial/sku-host-protect.md) H4. **Do not** invent invoice IDR here.
+- Host list: [`sku-host-protect.md`](../commercial/sku-host-protect.md) H4 **locked 2026-10-12**. **Do not** invent invoice IDR here.
 - H5 stays: beside on cPanel; **displace-lite** only on GMD VPS/colo **without** panel suite (**Sentence-ok GREEN** 2026-09-21).
 - Scan attach remains **P0** sold SKU. Do not silent-bundle Host into VPS or Scan.
 
@@ -209,7 +209,7 @@ Sentence-ok  =  Demo-ok  AND  Invoice-ok (Sinexis in-app Scan path shipped)
 | DL3 live notify | #659 — not Simulate |
 | Installer | `https://sinexis.app/install/sinexis-install.sh` #642 |
 | Invoice v1 Scan | pay loop closed (**I1**: Sinexis bills, not GMD SID). **H9 shipped:** Host catalog `invoicable=true` |
-| Working list IDR | Host Basic 150k / Pro 350k / Multi 900k — **not** finance lock |
+| List IDR | Host Basic 150k / Pro 350k / Multi 900k — **H4 locked 2026-10-12** |
 
 **MUST NOT:** PRs titled “Imunify parity”; CRS / IM360 commercial DB in git; rebuild P12 / P13 / DL0–DL3; unpark P14 **G/H**; Caddy; PHP PD; WebShield; KernelCare; cPanel plugin; wipe `sx-erpstg`; paste WAF onto `sinexis.app` edge; SSH Alembic after a green `main` deploy. **inotify** / WAF **1147+** = Guide §1.3.1 **#2/#3** — only if named + `buat` after Inbox S2. Print S2 **shipped**.
 
@@ -239,7 +239,7 @@ AM bills **in Sinexis**, not via a GMD Host `service_id`.
 
 ### 7.4 D — Docs hygiene (this PR)
 
-Update **this file** + pointers in legal / SKU / P14 / DL1 / Host Protect / Host WAF / invoice v1 / guide / `handoff.md`. **Do not** add `docs/specs/sentence-ok-closure.md`. **Do not** mark H4 **locked** without finance. H9 invoicable is **shipped** (not an IDR lock).
+Update **this file** + pointers in legal / SKU / P14 / DL1 / Host Protect / Host WAF / invoice v1 / guide / `handoff.md`. **Do not** add `docs/specs/sentence-ok-closure.md`. **Do not** mark H4 **locked** without owner/finance sign-off (done **2026-10-12**). H9 invoicable is **shipped** (not an IDR lock).
 
 ### 7.5 E — Who signs (dated private checklist)
 
@@ -259,8 +259,8 @@ Demo-ok
 Invoice-ok
 [x] Sinexis in-app Scan invoices (I1–I9 shipped; not GMD SID)
 [x] Host not bundled into VPS or Scan
-[x] IDR Host = working list H4 unless finance dated another band
-[x] H9 in-app Host invoicable — shipped (catalog true; not GMD SID; H4 still working)
+[x] IDR Host = H4 **locked 2026-10-12**
+[x] H9 in-app Host invoicable — shipped (catalog true; not GMD SID; H4 **locked 2026-10-12**)
 [x] Struck: do NOT wait on GMD Host service_id
 
 Product (already git)
