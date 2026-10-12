@@ -13,7 +13,6 @@ if TYPE_CHECKING:
     from app.models.scan_schedule import ScanSchedule
     from app.models.user import User
 
-ORG_SKUS = ("basic", "pro", "multi")
 ASSET_SKU_LIMITS: dict[str, int] = {"basic": 1, "pro": 3, "multi": 10}
 
 

@@ -459,6 +459,16 @@ async def test_protect_requires_pro_or_multi_sku(db_session: AsyncSession, ctx):
             assert multi_ok.status_code == 200
             assert multi_ok.json()["mode"] == "protect"
             assert multi_ok.json()["engine"] == "nginx_modsec"
+            org.sku = "enterprise"
+            await db_session.commit()
+            enterprise_ok = await client.put(
+                f"/api/host/waf/sites/{site.id}/policy",
+                headers=_auth(owner, org.id),
+                json={"mode": "protect", "engine": "nginx_modsec", "paranoia": 1},
+            )
+            assert enterprise_ok.status_code == 200
+            assert enterprise_ok.json()["mode"] == "protect"
+            assert enterprise_ok.json()["engine"] == "nginx_modsec"
     finally:
         app.dependency_overrides.clear()
 

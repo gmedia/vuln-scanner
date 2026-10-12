@@ -93,7 +93,7 @@ export default function HostWafPanel({
   const canProtect =
     sites.length === 0 ||
     (selectedSite
-      ? ["pro", "multi"].includes(selectedSite.sku ?? "multi")
+      ? ["pro", "multi", "enterprise"].includes(selectedSite.sku ?? "multi")
       : true);
   const labRoot = selectedSite?.root_path ?? "";
   const labName = (selectedSite?.name ?? "").toLowerCase();
