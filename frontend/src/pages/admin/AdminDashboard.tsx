@@ -7,7 +7,6 @@ import {
   Coins,
   TrendingUp,
   ArrowRight,
-  Tag,
   FileText,
   Calculator,
   Mail,
@@ -60,12 +59,6 @@ function AdminDashboard() {
       label: t("linkUsers"),
       desc: t("linkUsersDesc"),
       icon: Users,
-    },
-    {
-      to: "/admin/pricing",
-      label: t("linkPricing"),
-      desc: t("linkPricingDesc"),
-      icon: Tag,
     },
     {
       to: "/admin/hpp",

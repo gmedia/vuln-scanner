@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Wave E — full-site visual QA screenshots (18 routes).
+ * Wave E — full-site visual QA screenshots (17 routes).
  *
  * Captures full-page PNGs at 1440×900 against BASE_URL (default prod).
  * Auth: POST /api/auth/login with e2e credentials, inject tokens into localStorage.
@@ -62,7 +62,6 @@ const ROUTES = [
   { id: "15-admin-dashboard", path: "/admin", auth: true },
   { id: "16-admin-users", path: "/admin/users", auth: true },
   // 17 filled at runtime with first admin user id
-  { id: "18-admin-pricing", path: "/admin/pricing", auth: true },
 ];
 
 const ERROR_MARKERS = [
@@ -249,16 +248,15 @@ async function main() {
     console.log("warn: no scan history — capturing empty/not-found scan detail");
   }
   if (userId) {
-    routes.splice(
-      routes.findIndex((r) => r.id === "18-admin-pricing"),
-      0,
-      {
+    const usersIdx = routes.findIndex((r) => r.id === "16-admin-users");
+    if (usersIdx >= 0) {
+      routes.splice(usersIdx + 1, 0, {
         id: "17-admin-user-detail",
         path: `/admin/users/${userId}`,
         auth: true,
         settleMs: 1000,
-      },
-    );
+      });
+    }
   } else {
     console.log("warn: no admin users — skipping 17-admin-user-detail");
   }

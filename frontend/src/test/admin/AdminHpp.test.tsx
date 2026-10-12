@@ -263,12 +263,12 @@ describe("AdminHpp", () => {
     expect(screen.getByText("HPP")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Production cost (IDR). Pricing = credits/scan. Not mixed.",
+        "Production cost (IDR). Scan is metered by SKU seats, not credits.",
       ),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Variable cost per scan type (not list price). Pricing sets credits.",
+        "Variable cost per scan type (not per-seat SKU list price).",
       ),
     ).toBeInTheDocument();
     expect(

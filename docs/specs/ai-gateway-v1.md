@@ -23,7 +23,7 @@
 
 Wholesale OpenAI-compatible providers (OpenRouter, Groq, DeepSeek, Azure OpenAI, official OpenAI, …) can be invoiced. Customers want **one Sinexis key**, usage they can read, and admins need catalog + a safe playground.
 
-Scan credits (`users.credits` / `credit_logs` / `PricingConfig`) are **job integers**, personal, deduct-on-enqueue. Platform `api_keys` are **admin M2M**, no tenant FK, header `X-API-Key`. Neither is an LLM product.
+Scan credits (`users.credits` / `credit_logs`) are **legacy job integers**, personal (metering v3 dropped the Scan credit meter — SKU seats now). Platform `api_keys` are **admin M2M**, no tenant FK, header `X-API-Key`. Neither is an LLM product.
 
 Prod nginx (`nginx/sinexis.app.conf`) proxies `/api/` and `/ws/` to FastAPI; **`/` is the SPA**. A public `/v1` does not exist today.
 

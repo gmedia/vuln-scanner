@@ -13,7 +13,6 @@ from app.database import get_db
 from app.main import app
 from app.models.credit_log import CreditLog
 from app.models.organization import Organization, OrganizationMembership
-from app.models.pricing import PricingConfig
 from app.models.uptime import UptimeMonitor
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
@@ -438,8 +437,6 @@ async def test_hostname_check_debits_pricing_once(ctx, db_session: AsyncSession,
     from app.config import settings
 
     monkeypatch.setattr(settings, "status_page_cf_stub_active", True)
-    db_session.add(PricingConfig(scan_type="statushost", credit_cost=4))
-    await db_session.commit()
     _bind_db(db_session)
     org: Organization = ctx["org"]
     org.sku = "multi"

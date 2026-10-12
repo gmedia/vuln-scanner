@@ -1,6 +1,6 @@
 # Spec: Metering v2 — SKU included attach, credits = overage
 
-**Status:** **shipped** on `main` (#736). Follow-on: Host line-margin COGS **capped at included cadence** (sites × days in range) so lab/manual volume does not look like P&L.
+**Status:** **shipped** on `main` (#736). Follow-on: Host line-margin COGS **capped at included cadence** (sites × days in range) so lab/manual volume does not look like P&L. **Superseded by metering v3:** the Scan credit-overage model below is historical; Scan now uses SKU seats without credit debit. **Retired 2026-10-12:** the admin pricing page, GET/PUT API, and `pricing` table are removed.
 **Epic:** commercial metering follow-on to P0/P1. Does **not** reopen Host Protect S1–S12, WAF packs, or Guard.
 **Legal / GTM:** Scan list IDR (A1) and Host H4 (**locked 2026-10-12**) unchanged. Finance `service_id` still human. Do not silent-bundle Host into Scan or VPS.
 

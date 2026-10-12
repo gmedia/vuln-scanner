@@ -24,25 +24,6 @@ export interface AdminUserList {
   total: number;
 }
 
-export interface PricingItem {
-  id: string;
-  scan_type: string;
-  credit_cost: number;
-  updated_at: string;
-}
-
-export interface PricingListResponse {
-  items: PricingItem[];
-}
-
-export function normalizePricingList(
-  data: PricingListResponse | PricingItem[] | null | undefined,
-): PricingItem[] {
-  if (Array.isArray(data)) return data;
-  if (data && Array.isArray(data.items)) return data.items;
-  return [];
-}
-
 export async function getAdminStats(): Promise<AdminStats> {
   const { data } = await api.get<AdminStats>("/api/admin/stats");
   return data;
@@ -87,24 +68,6 @@ export async function resendVerification(
     `/api/admin/users/${userId}/resend-verification`,
   );
   return data;
-}
-
-export async function getPricing(): Promise<PricingItem[]> {
-  const { data } = await api.get<PricingListResponse | PricingItem[]>(
-    "/api/admin/pricing",
-  );
-  return normalizePricingList(data);
-}
-
-export async function updatePricing(
-  scanType: string,
-  data: { credit_cost: number },
-): Promise<PricingItem> {
-  const { data: res } = await api.put<PricingItem>(
-    `/api/admin/pricing/${scanType}`,
-    data,
-  );
-  return res;
 }
 
 export interface BlogPostAdmin {
@@ -628,8 +591,6 @@ export const adminApi = {
   getUserDetail: getAdminUserDetail,
   updateUserCredits,
   resendVerification,
-  getPricing,
-  updatePricing,
   getHppRates,
   updateHppRate,
   getHppReport,

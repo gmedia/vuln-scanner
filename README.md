@@ -197,7 +197,6 @@ curl http://localhost/api/scan/{id}/export?format=pdf \
 | `/api/credits/eligibility/{type}` | JWT | `GET` | Check scan cost |
 | `/api/admin/stats` | JWT+Admin | `GET` | Admin dashboard stats |
 | `/api/admin/users` | JWT+Admin | `GET` | List/manage users |
-| `/api/admin/pricing` | JWT+Admin | `GET/PUT` | Manage pricing |
 | `/ws/scan/{job_id}` | JWT | WebSocket | Real-time scan progress |
 | `/health` | None | `GET` | DB + Redis health (`200` ok / `503` degraded) |
 | `/health/queues` | None | `GET` | Celery queue depths + `auto_failed` counters |
@@ -318,7 +317,7 @@ curl -sS -X POST "$PUBLIC_BASE_URL/api/auth/login" \
 
 Do **not** `POST /api/auth/register` for the shared e2e mailbox on prod — it can create an unverified user and break Playwright.
 
-Wave E full-site screenshots (18 routes, 1440×900):
+Wave E full-site screenshots (17 routes, 1440×900):
 
 ```bash
 cd frontend && npm ci   # needs @playwright/test
