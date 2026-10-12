@@ -17,7 +17,7 @@
 | **H4** | List IDR / mo | Host Basic **150.000** · Host Pro **350.000** · Host Multi **900.000** | **Locked 2026-10-12** |
 | **H5** | vs Imunify | **Beside** on cPanel farms. **Displace-lite** on GMD VPS/colo **without** panel suite after [`vps-displace-imunify-dev-plan.md`](../specs/vps-displace-imunify-dev-plan.md) **Sentence-ok GREEN** 2026-09-21 (closure §7; nginx dedicated / no panel). Pack **1005/1006** + Simulate lab-gate **shipped**; Demo-ok `tc5` **proven**; Invoice-ok = **Sinexis in-app** (I1/D5), **not** GMD `service_id`. Short “ganti” **allowed** nginx-only; **forbidden** shared cPanel. **No** PD/WebShield/KernelCare. Not a CloudLinux replacement pitch | Working |
 | **H6** | Cleanup | Quarantine/restore in-app; reconstruct = **hybrid ticket**. No silent PHP rewrite | Working |
-| **H7** | WAF | **Not** in Host Protect **file** v1. **P13 Host WAF** = separate control plane; working: **detect** on Pro/Multi, **protect** Multi+; IDR unset. **Pricing v1.2 R4 (accepted, not implemented):** move **protect** down to Pro — needs a named slice + `buat`. | Working |
+| **H7** | WAF | **Not** in Host Protect **file** v1. **P13 Host WAF** = separate control plane; working: **detect** on Pro/Multi, **protect** Pro/Multi. **Pricing v1.2 R4 shipped 2026-10-12** (`feat/host-waf-protect-pro`): protect moved down to Pro; Basic stays detect-only. IDR unset. | Working |
 | **H8** | Guard prerequisite | Host Protect v1 **requires** Guard agent on the VM. **Pricing (v1.2 R1):** Guard is **included at no extra charge when Host Protect is active** — do not quote Host + Guard as two lines. | Working |
 | **H9** | In-app Host `invoicable` | Host catalog `invoicable=true`. Admin creates Host invoices in-app; paid Host does **not** set Scan `org.sku`; unique period per product. **Struck:** Invoice-ok is **not** GMD Host `service_id` (same leftover pattern as Scan **D5** — optional, **not** agent next-step). Do **not** silent-bundle into VPS or Scan. H4 list IDR **locked 2026-10-12**. | **Shipped** |
 | **H10** | Public repo | No customer paths/SIDs/PII | Locked (hygiene) |
@@ -29,7 +29,7 @@
 | Tier | Who | Sites | List IDR / mo (H4 locked) | Scan | Quarantine | WAF |
 |------|-----|-------|----------------------|------|------------|-----|
 | **Host Basic** | One VPS, one site | **1** | **150.000** | Scheduled + manual | Manual admin | No |
-| **Host Pro** | Small corporate VPS | **≤3** | **350.000** | Daily default | Manual + optional auto for webshell/backdoor | No |
+| **Host Pro** | Small corporate VPS | **≤3** | **350.000** | Daily default | Manual + optional auto for webshell/backdoor | **P13 detect** + **R4 protect** (customer nginx snippet) |
 | **Host Multi** | Multi-site VPS / small farm | **≤10** | **900.000** | Daily | Same as Pro | **P13 detect** + **P14 F protect** (customer nginx snippet; not Sinexis edge) |
 
 **Out of SKU v1:** **Full** Imunify360 / CloudLinux replacement (cPanel shared, PD, KernelCare, email, thousands of UIDs). **Displace-lite** on a **single nginx VPS** is **not** this line — see H5 + [`vps-displace-imunify-dev-plan.md`](../specs/vps-displace-imunify-dev-plan.md).

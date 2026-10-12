@@ -418,7 +418,7 @@ async def test_detect_simulate_skips_siem(db_session: AsyncSession, ctx, monkeyp
 
 
 @pytest.mark.asyncio
-async def test_protect_requires_multi_sku(db_session: AsyncSession, ctx):
+async def test_protect_requires_pro_or_multi_sku(db_session: AsyncSession, ctx):
     _bind_db(db_session)
     org = ctx["org"]
     owner: User = ctx["owner"]
@@ -427,6 +427,16 @@ async def test_protect_requires_multi_sku(db_session: AsyncSession, ctx):
     await db_session.commit()
     try:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            pro_ok = await client.put(
+                f"/api/host/waf/sites/{site.id}/policy",
+                headers=_auth(owner, org.id),
+                json={"mode": "protect", "engine": "nginx_modsec", "paranoia": 1},
+            )
+            assert pro_ok.status_code == 200
+            assert pro_ok.json()["mode"] == "protect"
+            assert pro_ok.json()["engine"] == "nginx_modsec"
+            org.sku = "basic"
+            await db_session.commit()
             denied = await client.put(
                 f"/api/host/waf/sites/{site.id}/policy",
                 headers=_auth(owner, org.id),
@@ -441,14 +451,14 @@ async def test_protect_requires_multi_sku(db_session: AsyncSession, ctx):
             assert detect.status_code == 200
             org.sku = "multi"
             await db_session.commit()
-            ok = await client.put(
+            multi_ok = await client.put(
                 f"/api/host/waf/sites/{site.id}/policy",
                 headers=_auth(owner, org.id),
                 json={"mode": "protect", "engine": "nginx_modsec", "paranoia": 1},
             )
-            assert ok.status_code == 200
-            assert ok.json()["mode"] == "protect"
-            assert ok.json()["engine"] == "nginx_modsec"
+            assert multi_ok.status_code == 200
+            assert multi_ok.json()["mode"] == "protect"
+            assert multi_ok.json()["engine"] == "nginx_modsec"
     finally:
         app.dependency_overrides.clear()
 

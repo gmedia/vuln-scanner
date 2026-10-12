@@ -145,7 +145,7 @@ describe("UserGuide", () => {
     expect(document.body.textContent ?? "").toMatch(/fills the clipboard only/);
     expect(document.body.textContent ?? "").toMatch(/not a Guard host/);
     expect(document.body.textContent ?? "").toMatch(/not Coraza on sinexis\.app/);
-    expect(document.body.textContent ?? "").toMatch(/Host Multi/);
+    expect(document.body.textContent ?? "").toMatch(/Host Pro or Multi/);
     expect(document.body.textContent ?? "").toMatch(/SecRuleEngine On/);
     expect(document.body.textContent ?? "").toMatch(/Hourly/);
     expect(

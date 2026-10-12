@@ -96,7 +96,7 @@ One line covering all four attach products at the matching tier.
 **Why lowered:** Uptime is a commodity (Pingdom ≈ $15/10 monitors; UptimeRobot ≈ $9/50) — at 100k/5 monitors it was **20k/monitor**, not defensible. At 75k/10 monitors it is **7,5k/monitor**, mid-market. Guard is thin Wazuh and is also a **prerequisite** for Host Protect (H8) — see §8 R1.
 
 **Guard** = thin Wazuh (inventory + critical alerts), **not** full SIEM. **SIEM** is a flagged module, not a priced line in v1.
-**Host WAF** stays **inside Host Multi** (detect on Pro/Multi, protect on Multi) per H7 — not a separate IDR line. **R4** (accepted, not implemented) would move *protect* down to Pro.
+**Host WAF** stays **inside the Host Protect tiers** (detect on Pro/Multi; protect on Pro/Multi since **R4 shipped**) per H7 — not a separate IDR line.
 
 ---
 
@@ -132,7 +132,7 @@ One line covering all four attach products at the matching tier.
 - [x] **Enterprise** floor → **≥ 5jt + annual commit** (no public card until HPP has COGS)
 - [x] **Annual** discount → **~16,7%, prepay only**
 - [x] Uptime / Guard **seat caps** → **10/50/200** and **1/3/10**
-- [x] **R1–R6** accepted as direction (R4/R5/R6 need a named slice + `buat`)
+- [x] **R1–R6** accepted as direction (**R4 shipped**; R5/R6 need a named slice + `buat`)
 
 Remaining (ops, not a price decision): fill `/admin/hpp` rates so Enterprise/margin numbers are evidence-based.
 
@@ -140,14 +140,14 @@ Remaining (ops, not a price decision): fill `/admin/hpp` rates so Enterprise/mar
 
 ## 8. Accepted directions (owner-approved 2026-10-12)
 
-R1–R3 are **pricing/packaging policy** and are effective now. R4–R6 are **product decisions accepted** but **not yet implemented** — they need a named slice + `buat` before any spec or code change.
+R1–R3 are **pricing/packaging policy** and are effective now. **R4 is implemented** (WAF protect on Pro, shipped 2026-10-12). R5–R6 are **product decisions accepted** but **not yet implemented** — they need a named slice + `buat` before any spec or code change.
 
 | ID | Direction | Why | Status |
 |----|-----------|-----|--------|
 | **R1** | **Guard = on-ramp.** Guard stays a separate attach line (does not alter Scan SKU rule D4), but is **included at no extra charge whenever Host Protect is active** — it is a hard prerequisite (H8). | You were **taxing your own prerequisite**: Host Basic 150k effectively cost 250k with Guard. This suppressed the highest-margin line (Host Protect). | **Effective now** (packaging) |
 | **R2** | **Uptime = cheap wedge**, generous caps, not a monetization line. | Commodity; margin thin and churn-prone. Its job is to start the relationship. | **Effective now** (pricing) |
 | **R3** | **Always show the à la carte ladder** next to the bundle. | The bundle only looks attractive against the 625k/1,45jt/4jt anchor. Hiding à la carte destroys the decoy. | **Effective now** (packaging) |
-| **R4** | **Move WAF *protect* down to Pro** (or make WAF a separate add-on). | Protect is Multi-only (900k) — a 2-site customer who wants protection hits a hard cliff. | Accepted; needs named slice + `buat` |
+| **R4** | **Move WAF *protect* down to Pro** (or make WAF a separate add-on). | Protect is Multi-only (900k) — a 2-site customer who wants protection hits a hard cliff. | **Shipped** (protect on Pro; `feat/host-waf-protect-pro`; Basic stays detect-only) |
 | **R5** | **Basic = 1 editor + 1 viewer** (viewer seats near-zero COGS). | A 2-person IT team cannot share access on Basic → friction that drives churn. | Accepted; needs named slice + `buat` |
 | **R6** | **SIEM Enterprise-only**, and out of the bundle until `SIEM_ENABLED` defaults on. | Never sell a flagged-off module as included. | Accepted; needs named slice + `buat` |
 
@@ -164,7 +164,7 @@ R1–R3 are **pricing/packaging policy** and are effective now. R4–R6 are **pr
 - **Do not** paste Host WAF onto the `sinexis.app` edge (customer nginx only).
 - **Do not** silent-bundle any line into a VPS/colo SKU.
 - **Do not** treat the **locked** numbers as re-openable without an owner decision — §7 is resolved 2026-10-12.
-- **Do not** implement R4/R5/R6 (WAF tier, viewer seat, SIEM gating) without a named slice + `buat`.
+- **Do not** implement R5/R6 (viewer seat, SIEM gating) without a named slice + `buat`. **R4** (WAF protect on Pro) is **shipped**.
 
 **Benchmark used (context only, FX ≈ Rp16.000/USD):** Imunify360 ~$12–45/server (~192k–720k IDR); Intruder $99–204; Pentest-Tools $95–190 (5 assets); UptimeRobot $9–45; Pingdom $15 (10 monitors). Confirms the bundle band sits inside the “already paying for the box” wallet.
 
