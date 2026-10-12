@@ -116,5 +116,6 @@ Detail: [`sku-scan-secure-addon.md`](sku-scan-secure-addon.md).
 | Doc | Role |
 |-----|------|
 | [`sku-scan-secure-addon.md`](sku-scan-secure-addon.md) | Full decision log + tiers |
+| [`pricing-architecture-v1.md`](pricing-architecture-v1.md) | Per-seat model + **“Sinexis Secure” bundle** (locked) + proposed Uptime/Guard lines |
 | [`../specs/scan-attach-v1.md`](../specs/scan-attach-v1.md) | P1 engineering |
 | [`../AGENT_EXECUTION_GUIDE.md`](../AGENT_EXECUTION_GUIDE.md) | Roadmap P0–P6 |
