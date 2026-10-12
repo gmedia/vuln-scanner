@@ -65,7 +65,7 @@ class HostWafSnippetResponse(BaseModel):
     content: str
 
 
-MAX_AGENT_WAF_EVENTS = 128
+MAX_AGENT_WAF_EVENTS = 256
 _HTTP_METHODS = frozenset({"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"})
 
 

@@ -19,6 +19,7 @@ from app.models.host_waf import HostWafEvent
 from app.models.organization import Organization, OrganizationMembership
 from app.models.siem import SiemCase, SiemCaseNote
 from app.models.user import User
+from app.schemas.host_waf import MAX_AGENT_WAF_EVENTS
 from app.services.auth import create_access_token, hash_password
 from app.services.host_agent_ingest import generate_results_token
 from app.services.organization import ensure_personal_org
@@ -1512,11 +1513,60 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
                             "path": "/.bash_history",
                             "http_status": 403,
                         },
+                        {
+                            "action": "block",
+                            "rule_id": "1171",
+                            "method": "GET",
+                            "path": "/.git-credentials",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1172",
+                            "method": "GET",
+                            "path": "/server.key",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1173",
+                            "method": "GET",
+                            "path": "/.dockercfg",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1174",
+                            "method": "GET",
+                            "path": "/.idea/workspace.xml",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1175",
+                            "method": "GET",
+                            "path": "/.vscode/sftp.json",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1176",
+                            "method": "GET",
+                            "path": "/.terraform/terraform.tfstate",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1177",
+                            "method": "GET",
+                            "path": "/.ftpconfig",
+                            "http_status": 403,
+                        },
                     ],
                 },
             )
             assert r.status_code == 200, r.text
-            assert r.json()["accepted"] == 124
+            assert r.json()["accepted"] == 131
     finally:
         app.dependency_overrides.clear()
     rows = (await db_session.execute(select(HostWafEvent).where(HostWafEvent.site_id == site.id))).scalars().all()
@@ -1645,6 +1695,13 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
         "1168",
         "1169",
         "1170",
+        "1171",
+        "1172",
+        "1173",
+        "1174",
+        "1175",
+        "1176",
+        "1177",
     }
 
 
@@ -1709,7 +1766,8 @@ async def test_agent_waf_ingest_413_too_many_events(db_session: AsyncSession, ct
                     "agent_id": str(agent.id),
                     "site_id": str(site.id),
                     "events": [
-                        {"action": "log", "rule_id": "1", "method": "GET", "path": f"/p{i}"} for i in range(129)
+                        {"action": "log", "rule_id": "1", "method": "GET", "path": f"/p{i}"}
+                        for i in range(MAX_AGENT_WAF_EVENTS + 1)
                     ],
                 },
             )

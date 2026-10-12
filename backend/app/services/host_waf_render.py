@@ -750,6 +750,33 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         'SecRule REQUEST_URI "@rx (?i)/\\.bash_history" '
         "\"id:1170,phase:1,t:none,deny,status:403,msg:\\'sinexis.bash.history\\'\""
     )
+    rule_1171 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.git-credentials" '
+        "\"id:1171,phase:1,t:none,deny,status:403,msg:\\'sinexis.git.credentials\\'\""
+    )
+    rule_1172 = (
+        'SecRule REQUEST_URI "@rx (?i)/server\\.key" '
+        "\"id:1172,phase:1,t:none,deny,status:403,msg:\\'sinexis.server.key\\'\""
+    )
+    rule_1173 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.dockercfg" '
+        "\"id:1173,phase:1,t:none,deny,status:403,msg:\\'sinexis.dockercfg\\'\""
+    )
+    rule_1174 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.idea/" '
+        "\"id:1174,phase:1,t:none,deny,status:403,msg:\\'sinexis.jetbrains.idea\\'\""
+    )
+    rule_1175 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.vscode/" "id:1175,phase:1,t:none,deny,status:403,msg:\\\'sinexis.vscode\\\'"'
+    )
+    rule_1176 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.terraform" '
+        "\"id:1176,phase:1,t:none,deny,status:403,msg:\\'sinexis.terraform\\'\""
+    )
+    rule_1177 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.ftpconfig" '
+        "\"id:1177,phase:1,t:none,deny,status:403,msg:\\'sinexis.ftpconfig\\'\""
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -944,6 +971,13 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         rule_1168,
         rule_1169,
         rule_1170,
+        rule_1171,
+        rule_1172,
+        rule_1173,
+        rule_1174,
+        rule_1175,
+        rule_1176,
+        rule_1177,
         extra.strip(),
     ]
     rules_body = pack_modsecurity_rules(units)
