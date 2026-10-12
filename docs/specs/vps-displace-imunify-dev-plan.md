@@ -156,7 +156,7 @@ Malware-detected email skips `engine=mock`. WAF-block email fires only on helper
 
 ## 4) SKU / commercial (Host H4 locked 2026-10-12)
 
-- **Do not quote Basic and demo Protect.** File-only demo = **Host Basic**. If the meeting uses a WAF/protect sentence, org is **Host Multi before** the meeting.
+- **Do not quote Basic and demo Protect.** File-only demo = **Host Basic**. If the meeting uses a WAF/protect sentence, org is **Host Pro or Multi before** the meeting.
 - Host list: [`sku-host-protect.md`](../commercial/sku-host-protect.md) H4 **locked 2026-10-12**. **Do not** invent invoice IDR here.
 - H5 stays: beside on cPanel; **displace-lite** only on GMD VPS/colo **without** panel suite (**Sentence-ok GREEN** 2026-09-21).
 - Scan attach remains **P0** sold SKU. Do not silent-bundle Host into VPS or Scan.
