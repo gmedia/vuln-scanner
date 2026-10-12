@@ -167,6 +167,9 @@ function AdminHpp() {
           hint={t("hppRatesHint")}
         />
         <AdminShellBody>
+          <p className="mb-3 text-[11px] text-muted-foreground">
+            {t("hppRatesCogsVsPrice")}
+          </p>
           {ratesLoading ? (
             <TableRowSkeleton rows={5} columns={4} />
           ) : !rates?.length ? (
@@ -189,7 +192,7 @@ function AdminHpp() {
                         {t("hppColKey")}
                       </TableHead>
                       <TableHead className="w-[32%] py-2 text-[10px] uppercase tracking-wider">
-                        {t("hppColAmount")}
+                        {t("hppColUnitCost")}
                       </TableHead>
                       <TableHead className="w-[20%] py-2 text-[10px] uppercase tracking-wider">
                         {t("colUpdated")}
@@ -523,6 +526,13 @@ function AdminHpp() {
         <p className="mb-3 text-[11px] text-muted-foreground">
           {t("hppSkuHint")}
         </p>
+        {(report?.catalog_seed_skus?.length ?? 0) > 0 ? (
+          <p className="mb-3 text-[11px] text-amber-600">
+            {t("hppSeedPriceWarning", {
+              skus: (report?.catalog_seed_skus ?? []).join(", "),
+            })}
+          </p>
+        ) : null}
         <div className="grid gap-3 sm:grid-cols-2">
           {(report?.line_margins ?? []).map((row) => (
             <AdminShell
@@ -561,8 +571,19 @@ function AdminHpp() {
                   >
                     {formatIdr(row.margin_idr)}
                   </span>
-                  {row.margin_pct != null ? ` (${row.margin_pct}%)` : ""}
+                  {row.cogs_idr === 0 && row.revenue_idr > 0
+                    ? ` (${t("hppCostNotFilled")})`
+                    : row.margin_pct != null
+                      ? ` (${row.margin_pct}%)`
+                      : ""}
                 </p>
+                {(row.unpriced_org_count ?? 0) > 0 ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    {t("hppEnterpriseUnpriced", {
+                      count: row.unpriced_org_count ?? 0,
+                    })}
+                  </p>
+                ) : null}
                 {row.line === "host" && row.host_cogs_capped ? (
                   <p className="text-[11px] text-muted-foreground">
                     {t("hppHostCogsCapped", {

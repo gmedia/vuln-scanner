@@ -329,6 +329,7 @@ export interface HppLineMargin {
   host_cogs_capped?: boolean;
   host_scans_raw?: number;
   host_scans_cap?: number;
+  unpriced_org_count?: number;
 }
 
 export interface HppReportResponse {
@@ -343,6 +344,7 @@ export interface HppReportResponse {
   total_fully_loaded_hpp_idr: number;
   unallocated_overhead_idr: number;
   line_margins: HppLineMargin[];
+  catalog_seed_skus?: string[];
 }
 
 export interface HppCostLineItem {
