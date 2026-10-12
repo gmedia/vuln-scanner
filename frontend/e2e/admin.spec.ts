@@ -39,7 +39,7 @@ test.describe("Admin — Access @admin", () => {
       page.locator("aside").locator("a:has-text('Pengguna')"),
     ).toBeVisible({ timeout: 10_000 });
     await expect(
-      page.locator("aside").locator("a:has-text('Harga')"),
+      page.locator("aside").locator("a:has-text('HPP')"),
     ).toBeVisible({ timeout: 10_000 });
   });
 });
