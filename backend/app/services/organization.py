@@ -320,8 +320,8 @@ class OrganizationService:
                 raise HTTPException(status_code=409, detail="Slug already taken")
             org.slug = cleaned[:64]
         if sku is not None:
-            if sku not in ("basic", "pro", "multi"):
-                raise HTTPException(status_code=400, detail="sku must be basic, pro, or multi")
+            if sku not in ("basic", "pro", "multi", "enterprise"):
+                raise HTTPException(status_code=400, detail="sku must be basic, pro, multi, or enterprise")
             if not user.is_admin:
                 raise HTTPException(
                     status_code=403,

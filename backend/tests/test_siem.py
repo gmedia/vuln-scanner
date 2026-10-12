@@ -72,6 +72,7 @@ async def siem_ws(db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch):
         name="SIEM Hotel",
         slug=f"siem-hotel-{uuid.uuid4().hex[:6]}",
         kind="hotel",
+        sku="enterprise",
         created_by_user_id=owner.id,
     )
     db_session.add(company)
@@ -105,6 +106,7 @@ async def siem_ws(db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch):
         name="Other Org",
         slug=f"siem-other-{uuid.uuid4().hex[:6]}",
         kind="company",
+        sku="enterprise",
         created_by_user_id=outsider.id,
     )
     db_session.add(other)
@@ -439,4 +441,67 @@ async def test_siem_case_idor(db_session: AsyncSession, siem_ws):
         r = await client.get("/api/siem/cases", headers=_auth(outsider, other.id))
         assert r.status_code == 200
         assert r.json()["items"] == []
+    app.dependency_overrides.clear()
+
+
+async def _make_sku_org(db: AsyncSession, owner: User, sku: str) -> Organization:
+    org = Organization(
+        id=uuid.uuid4(),
+        name=f"{sku} org",
+        slug=f"siem-{sku}-{uuid.uuid4().hex[:6]}",
+        kind="company",
+        sku=sku,
+        created_by_user_id=owner.id,
+    )
+    db.add(org)
+    await db.flush()
+    await _add_member(db, org.id, owner, "owner")
+    await db.commit()
+    return org
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("sku", ["basic", "pro", "multi"])
+async def test_siem_non_enterprise_org_forbidden(db_session: AsyncSession, siem_ws, sku: str):
+    owner = siem_ws["owner"]
+    org = await _make_sku_org(db_session, owner, sku)
+    transport = await _client(db_session)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        for path in ("/api/siem/status", "/api/siem/events", "/api/siem/cases"):
+            r = await client.get(path, headers=_auth(owner, org.id))
+            assert r.status_code == 403
+            assert r.json()["detail"] == "SIEM is available on the Enterprise plan only."
+        r = await client.post("/api/siem/cases", headers=_auth(owner, org.id), json={"title": "nope"})
+        assert r.status_code == 403
+        assert r.json()["detail"] == "SIEM is available on the Enterprise plan only."
+    app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_siem_enterprise_org_allowed(db_session: AsyncSession, siem_ws):
+    owner = siem_ws["owner"]
+    org = siem_ws["org"]
+    assert org.sku == "enterprise"
+    transport = await _client(db_session)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        r = await client.get("/api/siem/status", headers=_auth(owner, org.id))
+        assert r.status_code == 200
+        r = await client.get("/api/siem/cases", headers=_auth(owner, org.id))
+        assert r.status_code == 200
+    app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_siem_disabled_404_for_non_enterprise_org(
+    db_session: AsyncSession, siem_ws, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(settings, "siem_enabled", False)
+    owner = siem_ws["owner"]
+    org = await _make_sku_org(db_session, owner, "basic")
+    transport = await _client(db_session)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        r = await client.get("/api/siem/status", headers=_auth(owner, org.id))
+        assert r.status_code == 404
+        r = await client.get("/api/siem/events", headers=_auth(owner, org.id))
+        assert r.status_code == 404
     app.dependency_overrides.clear()

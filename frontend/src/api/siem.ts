@@ -81,6 +81,11 @@ export function isSiemDisabledError(err: unknown): boolean {
   return status === 404;
 }
 
+export function isSiemEnterpriseOnlyError(err: unknown): boolean {
+  const status = (err as AxiosError | undefined)?.response?.status;
+  return status === 403;
+}
+
 export async function getSiemStatus(): Promise<SiemStatus> {
   const { data } = await api.get<SiemStatus>("/api/siem/status");
   return data;

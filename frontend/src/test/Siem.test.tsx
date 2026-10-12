@@ -296,6 +296,22 @@ describe("SIEM page", () => {
     expect(siemApi.listSiemEvents).not.toHaveBeenCalled();
   });
 
+  it("surfaces the Enterprise-only 403 detail", async () => {
+    vi.mocked(siemApi.getSiemStatus).mockRejectedValue({
+      response: {
+        status: 403,
+        data: { detail: "SIEM is available on the Enterprise plan only." },
+      },
+    });
+    renderSiem();
+    await waitFor(() => {
+      expect(screen.getByTestId("siem-enterprise-only")).toHaveTextContent(
+        /Enterprise plan only/i,
+      );
+    });
+    expect(siemApi.listSiemEvents).not.toHaveBeenCalled();
+  });
+
   it("holds a 4-tile indexer placeholder while agents are still loading", async () => {
     vi.mocked(guardApi.listGuardAgents).mockReturnValue(
       new Promise(() => {}) as never,

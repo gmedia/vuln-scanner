@@ -1,4 +1,11 @@
-import { PowerOff, Siren, AlertTriangle, FolderOpen, Search } from "lucide-react";
+import {
+  PowerOff,
+  Siren,
+  AlertTriangle,
+  FolderOpen,
+  Search,
+  ShieldAlert,
+} from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import {
   Card,
@@ -87,7 +94,15 @@ export default function Siem() {
         />
       ) : null}
 
-      {c.statusQ.isError && !c.featureOff ? (
+      {c.enterpriseOnly ? (
+        <SiemEmptyIsland
+          icon={ShieldAlert}
+          title={c.enterpriseDetail ?? t("enterpriseOnly")}
+          testId="siem-enterprise-only"
+        />
+      ) : null}
+
+      {c.statusQ.isError && !c.featureOff && !c.enterpriseOnly ? (
         <p className="text-sm text-destructive" data-testid="siem-status-error">
           {isAuthSessionError(c.statusQ.error)
             ? t("sessionExpired")

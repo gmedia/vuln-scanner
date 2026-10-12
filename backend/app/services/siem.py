@@ -10,11 +10,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models.guard import GuardAgent, GuardOrgBinding, wazuh_group_for_org
+from app.models.organization import Organization
 from app.models.siem import CASE_STATUSES, SiemCase, SiemCaseEvent, SiemCaseNote
 from app.models.user import User
 from app.services.organization import get_membership, require_membership
 from app.services.siem_query import SiemQueryError, search_org_events
 from app.services.wazuh_client import WazuhClient, WazuhClientError, get_wazuh_client
+
+ENTERPRISE_ONLY_DETAIL = "SIEM is available on the Enterprise plan only."
 
 
 def _sanitize_error(exc: BaseException) -> str:
@@ -39,6 +42,11 @@ class SiemService:
         if not settings.siem_enabled:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
+    async def _require_enterprise(self, org_id: UUID) -> None:
+        result = await self.db.execute(select(Organization.sku).where(Organization.id == org_id))
+        if result.scalar_one_or_none() != "enterprise":
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ENTERPRISE_ONLY_DETAIL)
+
     async def _require_org(
         self,
         user: User,
@@ -49,6 +57,7 @@ class SiemService:
         if organization_id is None:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Active organization required")
         await require_membership(self.db, organization_id, user.id, min_role=min_role)
+        await self._require_enterprise(organization_id)
         return organization_id
 
     async def _agent_ids(self, org_id: UUID) -> list[str]:

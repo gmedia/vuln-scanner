@@ -1,6 +1,7 @@
 # Spec: SIEM v1 (P7 — control-plane search + cases)
 
 **Status:** **S0–S5 on branch `feat/siem-s5-spa`** — API `/api/siem` + SPA `/siem` + Sidebar. CI default `SIEM_ENABLED=false` (404 / feature-off copy).
+**Commercial gate (R6, shipped 2026-10-12):** SIEM is **Enterprise-only**. An org must have `sku = "enterprise"` (ops/admin sets it via the admin-only org SKU update path, `OrganizationService.update_org`). Non-enterprise orgs get **403** `"SIEM is available on the Enterprise plan only."` This is enforced **above** the global `SIEM_ENABLED` flag: flag off → **404** for everyone (unchanged); flag on + non-enterprise org → **403**. Enterprise is custom / **no public price card** and is **not** in the invoice catalog.
 **Goal:** first **product SIEM surface** for orgs that already run **Guard thin** — org-scoped event search + incident cases — **without** giving tenants the Wazuh/OpenSearch dashboard or a full SOC platform.
 **Epic:** **P7** (new). Does **not** replace P5 Guard. Does **not** jump P3 Assets or GTM.
 **Depends:** P5 Guard thin on `main` ([`guard-v1.md`](guard-v1.md) D1–D10) · P2 Workspace (JWT `org_id`, membership) · live Manager+Indexer (lab `tc3`) for later smoke only.

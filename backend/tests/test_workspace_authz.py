@@ -634,3 +634,28 @@ async def test_basic_invite_http_403_detail(db_session):
             assert "1 editor and 1 viewer" in r.json()["detail"]
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_admin_can_set_enterprise_sku(db_session):
+    admin = await _make_user(db_session, "r6-admin@example.com")
+    admin.is_admin = True
+    await db_session.commit()
+    org = await _make_org(db_session, admin)
+    svc = OrganizationService(db_session)
+
+    updated = await svc.update_org(org.id, admin, sku="enterprise")
+
+    assert updated.sku == "enterprise"
+
+
+@pytest.mark.asyncio
+async def test_non_admin_cannot_set_enterprise_sku(db_session):
+    owner = await _make_user(db_session, "r6-owner@example.com")
+    org = await _make_org(db_session, owner)
+    svc = OrganizationService(db_session)
+
+    with pytest.raises(HTTPException) as exc:
+        await svc.update_org(org.id, owner, sku="enterprise")
+
+    assert exc.value.status_code == 403

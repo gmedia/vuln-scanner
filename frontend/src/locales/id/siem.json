@@ -2,6 +2,7 @@
   "title": "SIEM",
   "subtitle": "Pencarian event terkontrol + kasus. Bukan dashboard Wazuh.",
   "featureOff": "Modul SIEM belum diaktifkan di lingkungan ini.",
+  "enterpriseOnly": "SIEM hanya tersedia pada paket Enterprise.",
   "pickOrg": "Pilih organisasi dulu.",
   "loadStatusFail": "Gagal memuat status SIEM. Coba lagi, atau masuk ulang jika sesi kadaluarsa. Ini bukan gangguan indexer Wazuh.",
   "sessionExpired": "Sesi masuk sudah kadaluarsa atau tidak valid. Masuk lagi untuk memuat SIEM. Ini bukan kegagalan Wazuh atau pencarian event.",
