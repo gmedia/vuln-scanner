@@ -17,7 +17,7 @@
 | Full SIEM day-one | **Scheduled external scan** + what changed + manager-readable report |
 | One-shot hobby dashboard | **Monthly/weekly reason to pay** |
 
-**Sinexis Guard / Host Protect / Host WAF** = **separate attach SKUs** (code on `main`). **Do not** bundle into Scan invoice. Host IDR = working list, **not** finance lock. Guard was “parked” as *sales sequence* (sell Scan first), not “unshipped.”
+**Sinexis Guard / Host Protect / Host WAF** = **separate attach SKUs** (code on `main`). **Do not** bundle into Scan invoice. Host IDR = **H4 locked 2026-10-12** (150k / 350k / 900k; finance may ± band). Guard was “parked” as *sales sequence* (sell Scan first), not “unshipped.”
 
 ---
 
@@ -50,7 +50,7 @@
 | **Workspace** | Several people, one company | **P2 — only if multi-user blocks** |
 | **Assets** | Named targets / packs | **P3** |
 | **Guard** | Host critical alerts (Wazuh thin) | **P5 — shipped**; **do not** silent-bundle into Scan |
-| **Host Protect** | On-box web malware + quarantine | **P12 — shipped**; working IDR; invoice `service_id` open |
+| **Host Protect** | On-box web malware + quarantine | **P12 — shipped**; H4 IDR **locked 2026-10-12**; invoice in-app (I1/D5) |
 | **Host WAF** | HTTP filter on **customer** nginx (starter 1001–1006) | **P13 — shipped**; protect = Host Multi; never Sinexis edge |
 
 Mobile APK/IPA = engine feature, **not** hero SKU for GMD servers/domains.

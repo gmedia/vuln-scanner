@@ -1,10 +1,10 @@
 # Spec: Host Protect v1 (P12 — on-box web malware control plane)
 
-**Status:** **S0–S12 on `main`**. Control plane **#501–#511**. Honesty **#533/#556**. Ingest/helper **#534–#537**. Quarantine **queue** **#558**. Clam optional + systemd `ReadWritePaths` **#559**. Prod compose `HOST_PROTECT_ENABLED` **true**; local/CI **false**. Missing on-box root → **`pending_agent`** (or `failed`/`unreachable_root` if abandoned) — **never** persist mock hits on public origin. WAF/Coraza/cPanel remain **out** of this epic (P13/P14). SKU = **working list IDR** (not invoice lock).
+**Status:** **S0–S12 on `main`**. Control plane **#501–#511**. Honesty **#533/#556**. Ingest/helper **#534–#537**. Quarantine **queue** **#558**. Clam optional + systemd `ReadWritePaths` **#559**. Prod compose `HOST_PROTECT_ENABLED` **true**; local/CI **false**. Missing on-box root → **`pending_agent`** (or `failed`/`unreachable_root` if abandoned) — **never** persist mock hits on public origin. WAF/Coraza/cPanel remain **out** of this epic (P13/P14). SKU = **H4 locked 2026-10-12** (150k / 350k / 900k; finance may ± band).
 **Goal:** first **on-host web malware** surface for orgs that already run **Guard thin** — named web paths, scheduled file/YARA (or Clam) scan, incidents in product, **opt-in quarantine** — **without** cloning Imunify360 (no PHP Proactive Defense, no KernelCare, no cPanel plugin in v1).
 **Epic:** **P12**. Does **not** replace P5 Guard, P7 SIEM, or P1 Scan attach. Does **not** jump GTM / Scan SKU lock.
 **Depends:** P2 Workspace (JWT `org_id`) · P3 Assets (optional link) · P5 Guard enroll (agent on VPS) · P7 SIEM cases (incident hand-off).
-**Commercial (working, not P0 lock):** [`docs/commercial/sku-host-protect.md`](../commercial/sku-host-protect.md) — working list IDR for quotes; **not** finance/`service_id` lock.
+**Commercial (H4 locked 2026-10-12):** [`docs/commercial/sku-host-protect.md`](../commercial/sku-host-protect.md) — Host list IDR 150k / 350k / 900k locked; **not** a GMD `service_id` lock.
 **Inspiration (not a clone):** CloudLinux Imunify360 job-to-be-done for GMD relations who already buy “Imunify on the panel”: *know which web roots are dirty, isolate without SSH guesswork*. Positioning: **sit beside** Imunify on shared cPanel farms; **attach** on GMD VPS/colo that have no panel suite.
 
 **Not this epic:** Imunify rulesets/UI copy, ModSec/Coraza WAF (S6+), PHP runtime hooks, live kernel patch, auto password-reset, WebShield CAPTCHA, Imunify Email, CageFS-class shared-host isolation.
@@ -261,7 +261,7 @@ No raw file download of malware samples in v1 (exfil risk). Optional later: plat
 
 **Lab:** fixture on **Guard agent (`tc5`)**, not worker FS, never `sx-erpstg`. Wipe-first only for full Guard e2e. No IPs/tokens in git.
 
-**AM (until S10 lab + H4/H9):** do **not** say “kami scan malware di VPS Anda” after S7-only. After S10 lab: pilot on named folder. Invoice only after IDR lock.
+**AM (after S10 lab + H4 lock 2026-10-12 + H9):** do **not** say “kami scan malware di VPS Anda” after S7-only. After S10 lab: pilot on named folder. Invoice IDR = H4 locked.
 
 ---
 
@@ -269,7 +269,7 @@ No raw file download of malware samples in v1 (exfil risk). Optional later: plat
 
 | Q | Topic | Default if unanswered |
 |---|--------|------------------------|
-| **Q1** | List IDR (H4) / in-app Host `invoicable` (H9) | SKU file stays **working** (H4). **H9 shipped:** catalog `invoicable=true`; AM bills in **Sinexis** (`/admin/invoices`). Invoice-ok = **I1/D5**, **not** GMD Host `service_id`. |
+| **Q1** | List IDR (H4) / in-app Host `invoicable` (H9) | **H4 locked 2026-10-12** (150k / 350k / 900k). **H9 shipped:** catalog `invoicable=true`; AM bills in **Sinexis** (`/admin/invoices`). Invoice-ok = **I1/D5**, **not** GMD Host `service_id`. |
 | **Q2** | Meter `hostscan` credits vs bundled 0 | **Bundled 0** |
 | **Q3** | Require Guard agent always | **Yes** v1 |
 | **Q4** | YARA pack source | In-repo **minimal** rules + ops-private extra later; no Imunify DB |
