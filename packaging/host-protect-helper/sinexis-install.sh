@@ -913,6 +913,9 @@ SecRule REQUEST_URI "@rx (?i)/geoserver/wms" "id:1164,phase:1,t:none,deny,status
 SecRule REQUEST_URI "@rx (?i)/nacos/v1/auth/users" "id:1165,phase:1,t:none,deny,status:403,msg:\'sinexis.nacos.auth\'"
 SecRule REQUEST_URI "@rx (?i)/druid/index\.html" "id:1166,phase:1,t:none,deny,status:403,msg:\'sinexis.druid.console\'"
 SecRule REQUEST_URI "@rx (?i)/v2/_catalog" "id:1167,phase:1,t:none,deny,status:403,msg:\'sinexis.docker.registry\'"
+SecRule REQUEST_URI "@rx (?i)/\.htpasswd" "id:1168,phase:1,t:none,deny,status:403,msg:\'sinexis.htpasswd\'"
+SecRule REQUEST_URI "@rx (?i)/\.aws/config" "id:1169,phase:1,t:none,deny,status:403,msg:\'sinexis.aws.config\'"
+SecRule REQUEST_URI "@rx (?i)/\.bash_history" "id:1170,phase:1,t:none,deny,status:403,msg:\'sinexis.bash.history\'"
 ';
 
 EOF

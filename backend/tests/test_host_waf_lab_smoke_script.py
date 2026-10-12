@@ -94,6 +94,9 @@ def test_lab_script_safety_markers():
     assert "id:1165" in text
     assert "id:1166" in text
     assert "id:1167" in text
+    assert "id:1168" in text
+    assert "id:1169" in text
+    assert "id:1170" in text
     assert "must not match /wp-admin/" in text
     assert "POST /wp-login.php" in text
     assert "expected at least one WAF event" not in text
