@@ -1,6 +1,6 @@
 # Spec: Status custom hostname lifecycle (P11.x)
 
-**Status:** First slice (UX + stub), **P11.x-B** (CF create/delete + poll), and **P11.x-C** (debit on Active from admin pricing `statushost`) in repo.
+**Status:** First slice (UX + stub), **P11.x-B** (CF create/delete + poll), and **P11.x-C** (debit on Active from admin pricing `statushost`) shipped historically. **Superseded by metering v3:** no Scan-credit debit on Active. **Retired 2026-10-12:** the admin pricing page, its GET/PUT API, and the `pricing` table are removed.
 **Goal:** Make custom hostname onboarding **understandable** (buttons + states) and **operable** (TXT + CNAME, poll Cloudflare — not CNAME-only `dig`). Product `active` only when CF **SSL** is active.
 **Epic:** **P11.x** follow-on to [`status-page-v1.md`](status-page-v1.md). Does **not** replace Uptime probes, Scan, Guard, or SIEM.
 **Depends:** P11 S1–S5 tables (`custom_hostname`, `hostname_status`); Cloudflare for SaaS on zone `sinexis.app`; origin nginx custom-host apex (PR #464).

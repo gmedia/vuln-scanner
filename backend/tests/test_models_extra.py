@@ -11,7 +11,6 @@ from app.models.api_key import ApiKey
 from app.models.credit_log import CreditLog
 from app.models.email_verification import EmailVerificationToken
 from app.models.password_reset import PasswordResetToken
-from app.models.pricing import PricingConfig
 
 
 # SQLite-compatible UUID and JSONB type decorators
@@ -56,7 +55,7 @@ class _JSONBType(TypeDecorator):
 
 
 # Patch the metadata columns for these models (conftest handles User/ScanJob/ScanFinding)
-for table_name in ("api_keys", "credit_logs", "email_verification_tokens", "password_reset_tokens", "pricing"):
+for table_name in ("api_keys", "credit_logs", "email_verification_tokens", "password_reset_tokens"):
     table = Base.metadata.tables.get(table_name)
     if table is not None:
         for column in table.columns:
@@ -360,64 +359,3 @@ class TestPasswordResetToken:
         # The UUID TypeDecorator strips tzinfo — reattach UTC for comparison
         assert token.expires_at.replace(tzinfo=UTC) > datetime.now(UTC)
 
-
-class TestPricingConfig:
-    @pytest.mark.asyncio
-    @pytest.mark.parametrize("scan_type", ["ip", "domain", "apk", "ipa"])
-    async def test_create_with_scan_types(self, db_session, scan_type):
-        pricing = PricingConfig(
-            id=uuid.uuid4(),
-            scan_type=scan_type,
-            credit_cost=10,
-        )
-        db_session.add(pricing)
-        await db_session.commit()
-        await db_session.refresh(pricing)
-
-        assert pricing.scan_type == scan_type
-        assert pricing.credit_cost == 10
-
-    @pytest.mark.asyncio
-    async def test_create_all_fields(self, db_session):
-        pricing = PricingConfig(
-            id=uuid.uuid4(),
-            scan_type="ip",
-            credit_cost=15,
-        )
-        db_session.add(pricing)
-        await db_session.commit()
-        await db_session.refresh(pricing)
-
-        assert pricing.scan_type == "ip"
-        assert pricing.credit_cost == 15
-        assert pricing.updated_at is not None
-
-    @pytest.mark.asyncio
-    async def test_scan_type_unique(self, db_session):
-        pricing1 = PricingConfig(
-            id=uuid.uuid4(),
-            scan_type="domain",
-            credit_cost=5,
-        )
-        pricing2 = PricingConfig(
-            id=uuid.uuid4(),
-            scan_type="ip",
-            credit_cost=10,
-        )
-        db_session.add_all([pricing1, pricing2])
-        await db_session.commit()
-
-        assert pricing1.scan_type != pricing2.scan_type
-
-    @pytest.mark.asyncio
-    async def test_credit_cost_zero(self, db_session):
-        pricing = PricingConfig(
-            id=uuid.uuid4(),
-            scan_type="apk",
-            credit_cost=0,
-        )
-        db_session.add(pricing)
-        await db_session.commit()
-        await db_session.refresh(pricing)
-
-        assert pricing.credit_cost == 0

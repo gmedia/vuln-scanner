@@ -3,9 +3,6 @@ from app.schemas.admin import (
     AdminUserItem,
     AdminUserList,
     CreditUpdateRequest,
-    PricingItem,
-    PricingListResponse,
-    PricingUpdateRequest,
 )
 from app.schemas.auth import (
     LoginRequest,
@@ -58,9 +55,6 @@ __all__ = [
     "AdminUserItem",
     "AdminUserList",
     "CreditUpdateRequest",
-    "PricingItem",
-    "PricingUpdateRequest",
-    "PricingListResponse",
     # credit
     "CreditInfo",
     "CreditLogItem",

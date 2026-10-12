@@ -125,7 +125,7 @@ Do **not** restyle kit. Tokens from `:root`. `Button` / `Select` only.
 - HTML print UI — **S1b shipped** [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md) (browser `window.print`). **I10 PDF** is `format=pdf` via `render_scan_pdf`, not a second library.
 - Invoice **Send** is a **status flip**, not SMTP. User-side mail log is [`inbox-delivered-v1.md`](inbox-delivered-v1.md) — **do not** email invoices in that epic.
 - Writing `users.credits` or `ai_wallets`.
-- Mixing this page into `/admin/hpp` or leftover `/admin/pricing`.
+- Mixing this page into `/admin/hpp`. **Retired 2026-10-12:** the former `/admin/pricing` page is removed, not an invoice destination.
 
 ---
 

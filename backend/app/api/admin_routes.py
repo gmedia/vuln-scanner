@@ -24,7 +24,6 @@ from app.models.hpp import (
 )
 from app.models.invoice import HOST_SKU_LIST_IDR, SCAN_SKU_LIST_IDR, SkuCatalog
 from app.models.organization import Organization
-from app.models.pricing import PricingConfig
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.scan_schedule import ScanSchedule
@@ -47,9 +46,6 @@ from app.schemas.admin import (
     HppRateUpdateRequest,
     HppReportLine,
     HppReportResponse,
-    PricingItem,
-    PricingListResponse,
-    PricingUpdateRequest,
 )
 from app.schemas.auth import MessageResponse
 from app.services.auth import get_current_admin
@@ -334,53 +330,6 @@ async def admin_force_verify_user(
         scan_count=scan_count,
         created_at=user.created_at,
     )
-
-
-@router.get("/pricing", response_model=PricingListResponse)
-async def get_pricing(
-    request: Request,
-    current_admin: User = Depends(get_current_admin),
-    db: AsyncSession = Depends(get_db),
-) -> PricingListResponse | Response:
-    limit_response = await admin_limiter(request)
-    if limit_response:
-        return limit_response
-    result = await db.execute(select(PricingConfig).order_by(PricingConfig.scan_type))
-    items = result.scalars().all()
-    return PricingListResponse(items=[PricingItem.model_validate(item) for item in items])
-
-
-@router.put("/pricing/{scan_type}", response_model=PricingItem)
-async def update_pricing(
-    request: Request,
-    scan_type: str,
-    body: PricingUpdateRequest,
-    current_admin: User = Depends(get_current_admin),
-    db: AsyncSession = Depends(get_db),
-) -> PricingItem | Response:
-    limit_response = await admin_limiter(request)
-    if limit_response:
-        return limit_response
-    if scan_type not in ("ip", "domain", "apk", "ipa", "statushost"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid scan type")
-
-    result = await db.execute(select(PricingConfig).where(PricingConfig.scan_type == scan_type))
-    pricing = result.scalar_one_or_none()
-
-    if pricing:
-        pricing.credit_cost = body.credit_cost
-        pricing.updated_at = datetime.now(UTC)
-    else:
-        pricing = PricingConfig(
-            scan_type=scan_type,
-            credit_cost=body.credit_cost,
-        )
-        db.add(pricing)
-
-    await db.commit()
-    await db.refresh(pricing)
-
-    return PricingItem.model_validate(pricing)
 
 
 async def _list_idr_from_catalog(db: AsyncSession, product: str, fallback: dict[str, int]) -> dict[str, int]:

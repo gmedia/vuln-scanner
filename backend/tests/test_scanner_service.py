@@ -6,7 +6,6 @@ from fastapi import HTTPException
 from sqlalchemy import select
 
 from app.models.credit_log import CreditLog
-from app.models.pricing import PricingConfig
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.user import User
@@ -161,28 +160,6 @@ async def test_get_history_filtered_by_type(db_session, sample_job):
     result_domain = await svc.get_history(scan_type="domain")
     assert len(result_domain.items) == 0
     assert result_domain.total == 0
-
-
-# --- New tests: DB pricing override ---
-
-
-@pytest.mark.asyncio
-async def test_start_scan_with_db_pricing(db_session, sample_user, mock_celery):
-    """When a PricingConfig row exists for the scan type, use its credit_cost instead of settings."""
-    pricing = PricingConfig(
-        id=uuid.uuid4(),
-        scan_type="ip",
-        credit_cost=99,
-    )
-    db_session.add(pricing)
-    await db_session.commit()
-
-    svc = ScannerService(db_session)
-    job = await svc.start_scan(user=sample_user, scan_type="ip", target="10.0.0.1", ports="22-80")
-
-    assert job.credit_cost == 0
-    await db_session.refresh(sample_user)
-    assert sample_user.credits == 100
 
 
 # --- New tests: insufficient credits ---
@@ -707,14 +684,12 @@ async def test_start_scan_just_enough_credits(db_session, sample_user, mock_cele
     assert sample_user.credits == 2
 
 
-# --- New tests: fallback pricing (no DB PricingConfig row) ---
+# --- New tests: scan start does not debit credits ---
 
 
 @pytest.mark.asyncio
 async def test_start_scan_fallback_pricing_uses_settings_default(db_session, sample_user, mock_celery):
-    """When no PricingConfig row exists, use settings default from SCAN_TYPE_PRICING_MAP."""
-    # Domain scan has no PricingConfig row (we didn't create one), so it falls back
-    # to settings.domain_scan_credit_cost which is 2.
+    """A scan starts without deducting credits (credit_cost is always 0)."""
     svc = ScannerService(db_session)
     job = await svc.start_scan(user=sample_user, scan_type="domain", target="example.com")
 
@@ -728,16 +703,7 @@ async def test_start_scan_fallback_pricing_uses_settings_default(db_session, sam
 
 @pytest.mark.asyncio
 async def test_start_scan_zero_cost_skips_deduction(db_session, sample_user, mock_celery):
-    """When credit_cost is 0, no credit deduction should occur."""
-    # Use a PricingConfig with cost=0
-    pricing = PricingConfig(
-        id=uuid.uuid4(),
-        scan_type="ip",
-        credit_cost=0,
-    )
-    db_session.add(pricing)
-    await db_session.commit()
-
+    """A scan must not deduct credits (credit_cost is 0)."""
     original_credits = sample_user.credits
     svc = ScannerService(db_session)
     job = await svc.start_scan(user=sample_user, scan_type="ip", target="10.0.0.1")
@@ -745,29 +711,6 @@ async def test_start_scan_zero_cost_skips_deduction(db_session, sample_user, moc
     assert job.credit_cost == 0
     await db_session.refresh(sample_user)
     assert sample_user.credits == original_credits  # unchanged
-
-
-@pytest.mark.asyncio
-async def test_start_scan_zero_cost_user_has_zero_credits(db_session, sample_user, mock_celery):
-    """When credit_cost is 0, scan succeeds even if user has 0 credits."""
-    sample_user.credits = 0
-    await db_session.commit()
-
-    pricing = PricingConfig(
-        id=uuid.uuid4(),
-        scan_type="ip",
-        credit_cost=0,
-    )
-    db_session.add(pricing)
-    await db_session.commit()
-
-    svc = ScannerService(db_session)
-    job = await svc.start_scan(user=sample_user, scan_type="ip", target="10.0.0.1")
-
-    assert job.status == "pending"
-    assert job.credit_cost == 0
-    await db_session.refresh(sample_user)
-    assert sample_user.credits == 0  # still 0
 
 
 @pytest.mark.asyncio

@@ -9,9 +9,6 @@ from app.schemas.admin import (
     AdminUserItem,
     AdminUserList,
     CreditUpdateRequest,
-    PricingItem,
-    PricingListResponse,
-    PricingUpdateRequest,
 )
 from app.schemas.api_key import (
     KeyCreateRequest,
@@ -326,69 +323,3 @@ class TestCreditUpdateRequest:
         with pytest.raises(ValidationError):
             CreditUpdateRequest()
 
-
-class TestPricingItem:
-    def test_valid(self):
-        item_id = uuid.uuid4()
-        now = datetime.now(UTC)
-        item = PricingItem(
-            id=item_id,
-            scan_type="ip",
-            credit_cost=10,
-            updated_at=now,
-        )
-        assert item.id == item_id
-        assert item.scan_type == "ip"
-        assert item.credit_cost == 10
-
-    def test_scan_type_max_length(self):
-        item = PricingItem(
-            id=uuid.uuid4(),
-            scan_type="a" * 20,
-            credit_cost=5,
-            updated_at=datetime.now(UTC),
-        )
-        assert len(item.scan_type) == 20
-
-    def test_scan_type_too_long(self):
-        with pytest.raises(ValidationError):
-            PricingItem(
-                id=uuid.uuid4(),
-                scan_type="a" * 21,
-                credit_cost=5,
-                updated_at=datetime.now(UTC),
-            )
-
-    def test_from_attributes_config(self):
-        assert hasattr(PricingItem, "model_config")
-        assert PricingItem.model_config.get("from_attributes") is True
-
-
-class TestPricingUpdateRequest:
-    def test_valid(self):
-        req = PricingUpdateRequest(credit_cost=15)
-        assert req.credit_cost == 15
-
-    def test_zero_cost(self):
-        req = PricingUpdateRequest(credit_cost=0)
-        assert req.credit_cost == 0
-
-    def test_negative_cost_rejected(self):
-        with pytest.raises(ValidationError):
-            PricingUpdateRequest(credit_cost=-1)
-
-
-class TestPricingListResponse:
-    def test_valid(self):
-        item = PricingItem(
-            id=uuid.uuid4(),
-            scan_type="domain",
-            credit_cost=20,
-            updated_at=datetime.now(UTC),
-        )
-        resp = PricingListResponse(items=[item])
-        assert len(resp.items) == 1
-
-    def test_empty_items(self):
-        resp = PricingListResponse(items=[])
-        assert resp.items == []

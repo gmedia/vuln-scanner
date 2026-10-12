@@ -7,7 +7,6 @@ from app.config import settings
 from app.database import get_db
 from app.main import app
 from app.models.credit_log import CreditLog
-from app.models.pricing import PricingConfig
 from app.models.user import User
 from app.services.auth import get_current_user as _get_current_user
 
@@ -322,38 +321,3 @@ class TestScanEligibility:
         resp = credit_auth_client.get("/api/credits/eligibility/ip")
         assert resp.status_code == 401
 
-    @pytest.mark.asyncio
-    async def test_eligibility_with_db_pricing_override(self, client, db_session):
-        """When PricingConfig exists in DB, it overrides the config default."""
-        pricing = PricingConfig(
-            id=uuid.uuid4(),
-            scan_type="ip",
-            credit_cost=10,
-        )
-        db_session.add(pricing)
-        await db_session.commit()
-
-        resp = client.get("/api/credits/eligibility/ip", headers=HEADERS)
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["required_credits"] == 0
-        assert data["eligible"] is True
-        assert data["current_credits"] == 100
-
-    @pytest.mark.asyncio
-    async def test_eligibility_db_override_insufficient(self, client, db_session, sample_user):
-        """DB pricing override makes user ineligible when cost > credits."""
-        pricing = PricingConfig(
-            id=uuid.uuid4(),
-            scan_type="domain",
-            credit_cost=200,
-        )
-        db_session.add(pricing)
-        await db_session.commit()
-
-        resp = client.get("/api/credits/eligibility/domain", headers=HEADERS)
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["required_credits"] == 0
-        assert data["eligible"] is True
-        assert data["current_credits"] == 100

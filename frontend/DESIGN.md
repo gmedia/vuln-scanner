@@ -2311,7 +2311,9 @@ P15 flatten: the KPI strip lives **inside** the identity shell (it is that shell
 
 # Admin console — wave 1 (`/admin`, `/admin/users`, `/admin/users/:id`)
 
-Print §§0–8 and every SPA section above stay locked. This section is the **dark SPA** contract for the first three admin surfaces: the dashboard, the user list, and the user detail. Wave 2 (`/admin/hpp`, `/admin/invoices`, `/admin/pricing`, `/admin/email-logs`, `/admin/blog`, `/admin/ai`) reuses this grammar.
+**Retired 2026-10-12:** `/admin/pricing` is removed. Wave-1 references to its quick link and wave-2 inclusion below record the original design, not current navigation. `/admin/hpp` stays.
+
+Print §§0–8 and every SPA section above stay locked. This section is the **dark SPA** contract for the first three admin surfaces: the dashboard, the user list, and the user detail. Wave 2 (`/admin/hpp`, `/admin/invoices`, `/admin/email-logs`, `/admin/blog`, `/admin/ai`) reuses this grammar. `/admin/pricing` is retired.
 
 ## 0. Research Log (Admin wave 1)
 
@@ -2391,7 +2393,7 @@ Responsive:
 - `<md`: user rows are full-width cards (`md:hidden`) with a leading rail; the table is `hidden md:block`.
 - `≥md`: user rows are a `table-fixed` table inside a bordered rounded wrapper, rail inside the first cell.
 
-**Frozen contracts** (`src/test/admin/*` + `e2e/admin*.spec.ts`): `h2` on all three routes; `Manajemen pengguna` / `Detail pengguna`; card title `Pengguna`; the seven `th` labels; `table tbody tr`; `td span:has-text('Admin')`; `\d+ total`; `input[placeholder='Cari email...']`; `Pengguna tidak ditemukan`; `button:has-text('Lihat')` → `/admin/users/:id`; `getByText("Profil", { exact: true })`; `getByRole("heading", { name: "Penyesuaian kredit" })`; **`label:has-text('Jumlah') + input`** and **`label:has-text('Deskripsi') + input`** (Label must stay the immediate previous sibling of its Input); `button:has-text('Sesuaikan kredit')` / `'Konfirmasi perubahan kredit'`; `25 credits`; `7 scans performed` (Trans span structure); `Joined …` / `Bergabung …`; `Unverified` badge keeps the yellow variant; `admin-kpi-chart` keeps `data-bars="scans,findings"`; `admin-credits-chart`; **`.animate-pulse` count ≥ 5 while loading and exactly 0 when loaded**; five KPI tiles each render `0` when stats are undefined; quick links `/admin/users` + `/admin/pricing` + `/admin/blog` + `/admin/email-logs`. Loading columns: users list `TableRowSkeleton rows={5} columns={8}` (8 `th`); user-detail profile `rows={4} columns={4}`, credit-adjust `rows={3} columns={3}`.
+**Frozen contracts** (`src/test/admin/*` + `e2e/admin*.spec.ts`): `h2` on all three routes; `Manajemen pengguna` / `Detail pengguna`; card title `Pengguna`; the seven `th` labels; `table tbody tr`; `td span:has-text('Admin')`; `\d+ total`; `input[placeholder='Cari email...']`; `Pengguna tidak ditemukan`; `button:has-text('Lihat')` → `/admin/users/:id`; `getByText("Profil", { exact: true })`; `getByRole("heading", { name: "Penyesuaian kredit" })`; **`label:has-text('Jumlah') + input`** and **`label:has-text('Deskripsi') + input`** (Label must stay the immediate previous sibling of its Input); `button:has-text('Sesuaikan kredit')` / `'Konfirmasi perubahan kredit'`; `25 credits`; `7 scans performed` (Trans span structure); `Joined …` / `Bergabung …`; `Unverified` badge keeps the yellow variant; `admin-kpi-chart` keeps `data-bars="scans,findings"`; `admin-credits-chart`; **`.animate-pulse` count ≥ 5 while loading and exactly 0 when loaded**; five KPI tiles each render `0` when stats are undefined; quick links `/admin/users` + `/admin/blog` + `/admin/email-logs` (no `/admin/pricing`). Loading columns: users list `TableRowSkeleton rows={5} columns={8}` (8 `th`); user-detail profile `rows={4} columns={4}`, credit-adjust `rows={3} columns={3}`.
 
 ## 5. Signature Components & States
 
@@ -2460,13 +2462,15 @@ P15 flatten: the KPI strip is **not** inside PageHeader and **not** inside a she
 | Admin pages keep local query/mutation state | 3 pages | This slice restyles chrome only; extracting hooks mixes visual with module work | Named extract |
 | Duplicate mobile card + desktop table row markup | AdminUsers | Frozen both-surface rendering; `useIsMobile` would drop one tree | Named a11y slice |
 | `adminChrome` tone maps mirror `authChrome` / `profileChrome` / `workspaceChrome` | chrome | Small per-surface tone maps beat a premature shared ops-chrome module | Keep until a named ops-chrome PR |
-| Wave 2 admin pages still use plain `Card` | `/admin/hpp`, `/admin/invoices`, `/admin/pricing`, `/admin/email-logs`, `/admin/blog`, `/admin/ai` | Explicitly out of scope for wave 1 | Wave 2 |
+| Wave 2 admin pages still use plain `Card` | `/admin/hpp`, `/admin/invoices`, `/admin/email-logs`, `/admin/blog`, `/admin/ai` | Explicitly out of scope for wave 1. `/admin/pricing` retired 2026-10-12 | Wave 2 |
 | `AdminUsers.test.tsx` still mocks `@/components/ui/Card` | test | Harmless: `AdminShell` composes the real `Card` through the mock | Named test cleanup |
 | Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |
 
-# Admin console — wave 2A (`/admin/hpp`, `/admin/pricing`)
+# Admin console — wave 2A (`/admin/hpp`; `/admin/pricing` retired)
 
-Print §§0–8 and every SPA section above stay locked. This section is the **dark SPA** contract for the two cost/pricing surfaces. It reuses the wave-1 `AdminShell` / `adminChrome` grammar verbatim — no new primitives — so only the deltas and the HPP-specific tone rules are recorded here.
+**Retired 2026-10-12:** `/admin/pricing`, its GET/PUT API, and the `pricing` table are removed. The AdminPricing diagnosis, frozen contracts, and accepted debt below are historical; AdminHpp contracts still apply.
+
+Print §§0–8 and every SPA section above stay locked. This section is the **dark SPA** contract for the HPP cost surface. `/admin/pricing` is retired. It reuses the wave-1 `AdminShell` / `adminChrome` grammar verbatim — no new primitives — so only the deltas and the HPP-specific tone rules are recorded here.
 
 ## 0. Research Log (Admin wave 2A)
 
@@ -2479,11 +2483,11 @@ Print §§0–8 and every SPA section above stay locked. This section is the **d
 
 ## 1. Atmosphere & Identity
 
-Both pages are internal finance surfaces. They must read as the same console as wave 1 — same hairline heads, same rail geometry — while the tone vocabulary says "this is cost, not revenue".
+HPP is an internal finance surface. It must read as the same console as wave 1 — same hairline heads, same rail geometry — while the tone vocabulary says "this is cost, not revenue".
 
 The one memorable moment: the **line-margin rail**. A profitable line reads primary, a loss-making line flips destructive, so a bad SKU is visible before the numbers are read.
 
-Do **not** use a filled green masthead or a marketing hero. Loading is `TableRowSkeleton` (pricing `rows={4} columns={3}`, HPP rates `rows={5} columns={4}`, costs `rows={2} columns={5}`, report `rows={5} columns={7}`), empty is an island.
+Do **not** use a filled green masthead or a marketing hero. Loading is `TableRowSkeleton` (HPP rates `rows={5} columns={4}`, costs `rows={2} columns={5}`, report `rows={5} columns={7}`), empty is an island. The retired pricing skeleton (`rows={4} columns={3}`) no longer applies.
 
 ## 2. Color
 
@@ -2491,12 +2495,12 @@ Reuse the wave-1 `AdminTone` map. Deltas:
 
 | Role | Token / class | Usage |
 |------|----------------|-------|
-| Rates / archive | `--primary` rail | `hpp-rates-card`, `admin-pricing-card` |
+| Rates | `--primary` rail | `hpp-rates-card` (`admin-pricing-card` retired) |
 | Cost pools | `bg-amber-500` rail | `hpp-overhead-card`, `hpp-costs-card`, cost-line rows, unallocated report |
 | Report range | `bg-sky-500` rail | `hpp-report-filters` |
 | Line margin | `--primary` rail | positive margin (`marginTone`) |
 | Line margin loss | `bg-destructive` rail + `text-destructive` value | negative margin |
-| Leftover banner | `bg-amber-500` rail + amber wash | `pricing-leftover-banner` |
+| Leftover banner | retired with `/admin/pricing` | `pricing-leftover-banner` no longer rendered |
 | Idle | `bg-border` rail | empty states |
 
 ## 3. Typography
@@ -2512,7 +2516,7 @@ Unchanged from wave 1. Deltas:
 - Line margins stay `grid gap-3 sm:grid-cols-2`.
 - Pricing rows: mobile cards `space-y-2 md:hidden`, desktop table `hidden md:block`.
 
-**Frozen contracts** (`src/test/admin/AdminHpp.test.tsx`, `AdminPricing.test.tsx`): `hpp-overhead-card` / `hpp-costs-card` / `hpp-report-filters` / `hpp-line-scan` / `hpp-line-host`; the costs-card **label order** `["Date", "Category", "Amount (IDR)", "Note"]`; `getAllByDisplayValue(1000)`; the three hint strings; `Report range`; `estimasi` badge; `Margin (estimasi)` ×2; `(97%)`; the host-cogs-capped sentence; `pricing-leftover-banner` + `Not a customer meter` + `pricing-link-hpp` → `/admin/hpp`; `Pricing configuration`; `Scan credit seed (archive)`; headers `Scan type` / `Credit cost (seed)` / `Updated`; **no `Actions` header**; **`queryAllByRole("spinbutton")` is 0** on pricing; `6/1/2025` ×3; no `Save` / `Saved`; `TableRowSkeleton rows={4} columns={3}` on pricing load, `rows={5} columns={4}` on HPP rates load, `rows={2} columns={5}` on HPP costs, `rows={5} columns={7}` on HPP report.
+**Frozen contracts** (`src/test/admin/AdminHpp.test.tsx`; `AdminPricing.test.tsx` deleted 2026-10-12): `hpp-overhead-card` / `hpp-costs-card` / `hpp-report-filters` / `hpp-line-scan` / `hpp-line-host`; the costs-card **label order** `["Date", "Category", "Amount (IDR)", "Note"]`; `getAllByDisplayValue(1000)`; the three HPP hint strings (per-seat SKU, not credits); `Report range`; `estimasi` badge; `Margin (estimasi)` ×2; `(97%)`; the host-cogs-capped sentence; `TableRowSkeleton rows={5} columns={4}` on HPP rates load, `rows={2} columns={5}` on HPP costs, `rows={5} columns={7}` on HPP report. Historical pricing contracts (`pricing-leftover-banner`, `Pricing configuration`, `Scan credit seed (archive)`) no longer apply.
 
 ## 5. Signature Components & States
 
@@ -2526,10 +2530,10 @@ No new primitives. Tone sources:
 | HPP report filters | info |
 | HPP line margin | `marginTone(row.margin_idr)` |
 | HPP report | `reportTone(report.unallocated_overhead_idr)` |
-| Pricing leftover banner | warn |
-| Pricing archive | primary |
+| Pricing leftover banner | retired |
+| Pricing archive | retired |
 
-Empty states are `rounded-xl border border-border bg-muted/40` islands: `hpp-rates-empty`, `hpp-costs-empty`, `admin-pricing-empty`.
+Empty states are `rounded-xl border border-border bg-muted/40` islands: `hpp-rates-empty`, `hpp-costs-empty`. `admin-pricing-empty` is retired.
 
 ## 6. Motion
 
@@ -2545,7 +2549,7 @@ Unchanged from wave 1: borders-only + 2px rails, no nested Card-in-Card.
 
 - Unchanged from wave 1. Every field keeps `Label` + `htmlFor`; the HPP cost labels stay the immediate previous sibling of their control.
 - HPP rate inputs keep `aria-label={item.key}` (frozen by `getAllByDisplayValue` usage and the table's `aria-label` contract).
-- Pricing stays read-only text — **no inputs** on that page.
+- `/admin/pricing` is retired — do not restore a read-only credit-seed page.
 
 ### Personas
 
@@ -2558,7 +2562,7 @@ Unchanged from wave 1: borders-only + 2px rails, no nested Card-in-Card.
 | Item | Location | Why accepted | Owner / Exit |
 |------|----------|--------------|--------------|
 | `AdminHpp` still keeps 4 queries + 4 mutations in one file | page | This slice restyles chrome only; extracting hooks mixes visual with module work | Named extract |
-| `AdminHpp` / `AdminPricing` tests still mock `@/components/ui/Card` | test | Harmless: `AdminShell` composes the real `Card` through the mock | Named test cleanup |
+| `AdminHpp` tests still mock `@/components/ui/Card` | test | Harmless: `AdminShell` composes the real `Card` through the mock. `AdminPricing` tests deleted 2026-10-12 | Named test cleanup |
 | HPP cost lines only carry a rail on the first cell | page | Consistent with the wave-1 user table; a full row wash is unnecessary for a short journal | Keep |
 | Wave 2B pages still use plain `Card` | `/admin/invoices`, `/admin/email-logs`, `/admin/blog`, `/admin/ai` | Explicitly out of scope for wave 2A | Wave 2B |
 | Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |

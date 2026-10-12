@@ -2,7 +2,7 @@
 
 **Status:** S0–S3 (this PR). Internal ops only — not customer-facing billing.
 **Goal:** Admin can store **IDR unit cost** per completed job type and see a date-range **HPP report** plus a **SKU margin overlay (estimasi)**.
-**Not this epic:** Uptime/Guard/SIEM HPP, live finance numbers in git, CRM, mixing with `pricing.credit_cost`.
+**Not this epic:** Uptime/Guard/SIEM HPP, live finance numbers in git, CRM, mixing HPP with the former `pricing.credit_cost` seed (table retired 2026-10-12).
 
 ---
 
@@ -15,7 +15,7 @@
 | Out of v1 | Uptime probes, Guard agents, SIEM |
 | S1–S2 | HPP rates + job × rate report only |
 | S3 | SKU list-price overlay labeled **estimasi** (not invoice truth) |
-| Page | `/admin/hpp` — **not** mixed into `/admin/pricing` |
+| Page | `/admin/hpp` stays the COGS/margin tool. **Retired 2026-10-12:** `/admin/pricing` is removed, not merged into HPP. |
 | Seed | All rates **0** — no real COGS in git |
 | Overhead | Monthly opex (rent/CF) in `hpp_overhead` singleton; **not** mixed into `amount_idr`. Report allocates by unit count in range. |
 | Cost journal | `hpp_cost_lines`: dated IDR rows (`opex` \| `variable`). Report pool = singleton + journal sums in range. Not AP invoices. |

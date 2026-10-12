@@ -35,23 +35,6 @@ class CreditUpdateRequest(BaseModel):
     description: str = Field(default="Admin adjustment", max_length=2000)
 
 
-class PricingItem(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: uuid.UUID
-    scan_type: str = Field(..., max_length=20)
-    credit_cost: int
-    updated_at: datetime
-
-
-class PricingUpdateRequest(BaseModel):
-    credit_cost: int = Field(..., ge=0)
-
-
-class PricingListResponse(BaseModel):
-    items: list[PricingItem]
-
-
 class HppRateItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

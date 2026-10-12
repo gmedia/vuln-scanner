@@ -6,7 +6,6 @@ import {
   Smartphone,
   Shield,
   Users,
-  DollarSign,
   Calculator,
   User,
   CalendarClock,
@@ -221,11 +220,6 @@ function Sidebar() {
                   end
                 />
                 <NavItem to="/admin/users" labelKey="users" icon={Users} />
-                <NavItem
-                  to="/admin/pricing"
-                  labelKey="pricing"
-                  icon={DollarSign}
-                />
                 <NavItem
                   to="/admin/hpp"
                   labelKey="hpp"

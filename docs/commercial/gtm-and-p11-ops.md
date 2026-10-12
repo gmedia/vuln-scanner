@@ -30,7 +30,9 @@ Do in order. Success = CRM + billing, **not** a GitHub PR.
 
 Product: `hostname_status=active` **only** if Cloudflare Custom Hostname **SSL = active**. Credits: debit **N** from admin pricing key **`statushost`** (≤10 chars) on **first** transition to Active (and after hostname change). Seed **0**. No debit on Save / Pasang / `pending_txt`. No refund on Lepas. HTTP 402 → keep previous status.
 
-### B.1 Admin pricing
+### B.1 Admin pricing (historical)
+
+**Superseded 2026-10-12:** The steps below describe the former admin pricing page and `statushost` debit. Metering v3 removed the Scan-credit debit on Active; the admin pricing page, GET/PUT API, and `pricing` table are retired. Don't follow these steps; custom host remains Multi.
 
 1. Platform admin → Pricing.
 2. Set **`statushost`** to agreed **N** (integer credits). **0** = free attach (current seed).

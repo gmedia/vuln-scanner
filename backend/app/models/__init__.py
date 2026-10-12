@@ -11,7 +11,6 @@ from app.models.hpp import HppCostLine, HppOverhead, HppRate
 from app.models.invoice import OrgInvoice, SkuCatalog
 from app.models.organization import Organization, OrganizationInvite, OrganizationMembership
 from app.models.password_reset import PasswordResetToken
-from app.models.pricing import PricingConfig
 from app.models.scan_job import ScanJob
 from app.models.scan_schedule import ScanSchedule
 from app.models.siem import SiemCase, SiemCaseEvent, SiemCaseNote
@@ -35,7 +34,6 @@ __all__ = [
     "ScanAsset",
     "BlogPost",
     "CreditLog",
-    "PricingConfig",
     "HppRate",
     "HppOverhead",
     "HppCostLine",

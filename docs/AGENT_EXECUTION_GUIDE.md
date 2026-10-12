@@ -178,13 +178,13 @@ P0–P14 control planes are **on `main`**. Agent work is **development only** �
 | `Organization` / membership / invite | multi-user workspace | roles `owner` \| `admin` \| `member` \| `viewer`; personal org backfill on existing users + register |
 | `ScanJob` | `user_id` + **`organization_id`** | Types: `ip` \| `domain` \| `apk` \| `ipa`; list/detail AuthZ via org membership |
 | `ScanFinding` | via job | Vuln taxonomy; baseline **diff** across runs for attach |
-| `CreditLog` / **`pricing`** table | user / global | `credit_cost` per `scan_type` (edge smoke: domain **2**, IP **1** — re-confirm live) |
-| **`scan_schedules`** (P1 + org FK) | `user_id` + **`organization_id`** | Cap **max 10 enabled / org** (**S5**); null-org legacy still per-user; debit **schedule owner** credits on due |
+| `CreditLog` | user | Credit history / admin adjustments remain for ops; Scan eligibility is `eligible=true`, `required_credits=0` (metering v3). **Retired 2026-10-12:** the `/admin/pricing` page, its GET/PUT API, and the `pricing` table are removed; former seed `credit_cost` per `scan_type` was not a customer meter. |
+| **`scan_schedules`** (P1 + org FK) | `user_id` + **`organization_id`** | Cap **max 10 enabled / org** (**S5**); null-org legacy still per-user. Metering v3: due jobs do **not** debit credits. |
 | `ApiKey` | **Global** M2M | **No** user/org FK — unfit for per-tenant agents as-is |
 
 **AuthZ:** JWT (claim **`org_id`**, must match membership) + optional `X-API-Key`. Scan/schedule visibility = org membership + role (not only `user_id == me`). WebSocket job progress requires membership on job’s org. Admin = **platform** superuser, not org/hotel admin.
 
-**Shipped for attach (P1) — reuse, don’t rewrite:** schedule API + beat `schedules.run_due`, baseline diff, new critical/high notify, executive HTML, credit gate, ops notes `docs/scan-schedules-ops.md`. **Wave B** SPA: Dashboard schedule CTAs; ScanDetail HTML teknis / Laporan eksekutif labels.
+**Shipped for attach (P1) — reuse, don’t rewrite:** schedule API + beat `schedules.run_due`, baseline diff, new critical/high notify, executive HTML, ops notes `docs/scan-schedules-ops.md`. The original credit gate is historical; metering v3 uses SKU seats and no Scan credit debit. **Wave B** SPA: Dashboard schedule CTAs; ScanDetail HTML teknis / Laporan eksekutif labels.
 
 **Shipped for workspace (P2 S1–S5):** org tables + backfill migration `add_workspace_orgs`; org API; JWT switch; SPA OrgSwitcher + Workspace Settings; worker schedule rows include `organization_id`; **S5** `MAX_SCHEDULES_PER_ORG` on create/re-enable.
 
@@ -221,15 +221,15 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | SKU + decision log | [`docs/commercial/sku-scan-secure-addon.md`](commercial/sku-scan-secure-addon.md) |
 | AM wave-1 email (Bahasa) | [`docs/commercial/am-wave1-email-id.md`](commercial/am-wave1-email-id.md) |
 
-**Working list (see SKU §0):** Basic **300k** / Pro **650k** / Multi **2M** IDR/mo; headline = **assets + cadence** (metering v2 — scheduled attach included, credits = overage); AM owns renew; hybrid email; attach ARPU primary; pilot #1 multi-service, 1 mo sponsored; Guard parked; report Bahasa.
+**Working list (see SKU §0):** Basic **300k** / Pro **650k** / Multi **2M** IDR/mo; headline = **assets + cadence** (metering v2 — scheduled attach included, credits = overage); AM owns renew; hybrid email; attach ARPU primary; pilot #1 multi-service, 1 mo sponsored; Guard parked; report Bahasa. **Superseded by metering v3:** Scan uses SKU seats with no credit debit; the v2 credits-as-overage wording is historical.
 
 **Still human/GTM (not “re-litigate policy” in git; not the agent default after 2026-09-15):**
 
 - [ ] Finance (Scan GTM leftover, **not** Invoice-ok, **not** agent next): three Scan **service_id** rows if still using GMD (no silent VPS bundle). Preferred: Sinexis `/admin/invoices` (I1/D5)
 - [ ] AM: **10 wave-1 SIDs** in private CRM only
-- [ ] Named **pilot #1** privately; ops fulfill credits + schedules
+- [ ] Named **pilot #1** privately; ops fulfill credits + schedules. **Metering v3 supersession:** assign SKU seats + schedules instead; credits remain for history/ops, not Scan eligibility.
 - [ ] AM **sends** wave-1 using email template; log CRM
-- [ ] Confirm live `pricing` domain/IP before each quote wave
+- [ ] Confirm live `pricing` domain/IP before each quote wave. **Retired 2026-10-12:** the `pricing` table and admin pricing page are removed; confirm locked Scan SKU terms instead.
 
 **Agent:** **do not** lead a session with this checklist. Maintain commercial docs **on request**; **do not** invent new list prices without user. Guard/Wazuh **feature** branches only after S0 spek on `main` (or same series) **and** explicit implement; keep thin scope. Development default: **§1.3.1** named queue.
 
@@ -405,7 +405,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 - [x] Jobs enqueue via worker/beat; failures / credit issues visible (`last_error`)
 - [x] Diff / notify path for **new** high/critical vs prior run
 - [x] Management-oriented **executive HTML**
-- [x] Credits charged on schedule; insufficient → disable schedule
+- [x] P1 originally charged credits on schedule and disabled on insufficient balance. **Superseded by metering v3:** schedules stay enabled and do not debit Scan credits.
 - [x] Cap **10** enabled schedules (now **per org** via Workspace S5)
 - [x] No Wazuh in this epic
 - [ ] Optional later: PDF, in-app subscription

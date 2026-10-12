@@ -23,7 +23,6 @@ class TestBase:
             "credit_logs",
             "email_verification_tokens",
             "password_reset_tokens",
-            "pricing",
         }
 
         actual_tables = set(Base.metadata.tables.keys())

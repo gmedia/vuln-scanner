@@ -13,7 +13,6 @@ from app.models.api_key import ApiKey
 from app.models.credit_log import CreditLog
 from app.models.email_send_log import EmailSendLog
 from app.models.hpp import HppRate
-from app.models.pricing import PricingConfig
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.user import User
@@ -762,132 +761,6 @@ class TestAdminForceVerify:
 
 
 # ---------------------------------------------------------------------------
-# GET /api/admin/pricing
-# ---------------------------------------------------------------------------
-
-
-class TestAdminPricing:
-    def test_returns_pricing_list_empty(self, client):
-        resp = client.get("/api/admin/pricing", headers=API_HEADERS)
-        assert resp.status_code == 200
-        data = resp.json()
-        assert "items" in data
-        assert isinstance(data["items"], list)
-
-    @pytest.mark.asyncio
-    async def test_returns_existing_pricing(self, client, db_session):
-        pricing = PricingConfig(
-            id=uuid.uuid4(),
-            scan_type="ip",
-            credit_cost=10,
-        )
-        db_session.add(pricing)
-        await db_session.commit()
-
-        resp = client.get("/api/admin/pricing", headers=API_HEADERS)
-        assert resp.status_code == 200
-        data = resp.json()
-        assert len(data["items"]) == 1
-        assert data["items"][0]["scan_type"] == "ip"
-        assert data["items"][0]["credit_cost"] == 10
-
-    @pytest.mark.asyncio
-    async def test_pricing_ordered_by_scan_type(self, client, db_session):
-        pricing_domain = PricingConfig(
-            id=uuid.uuid4(),
-            scan_type="domain",
-            credit_cost=2,
-        )
-        pricing_ip = PricingConfig(
-            id=uuid.uuid4(),
-            scan_type="ip",
-            credit_cost=1,
-        )
-        db_session.add_all([pricing_domain, pricing_ip])
-        await db_session.commit()
-
-        resp = client.get("/api/admin/pricing", headers=API_HEADERS)
-        assert resp.status_code == 200
-        data = resp.json()
-        assert len(data["items"]) == 2
-        assert data["items"][0]["scan_type"] == "domain"
-        assert data["items"][1]["scan_type"] == "ip"
-
-    def test_unauthorized_non_admin_returns_403(self, admin_auth_client, db_session):
-        import asyncio
-
-        user, token = asyncio.get_event_loop().run_until_complete(
-            _create_user_with_token(db_session, "regular5@example.com", is_admin=False)
-        )
-        resp = admin_auth_client.get(
-            "/api/admin/pricing",
-            headers={"Authorization": f"Bearer {token}"},
-        )
-        assert resp.status_code == 403
-
-
-# ---------------------------------------------------------------------------
-# PUT /api/admin/pricing/{scan_type}
-# ---------------------------------------------------------------------------
-
-
-class TestAdminUpdatePricing:
-    def test_update_existing_pricing(self, client, db_session):
-        import asyncio
-
-        async def setup():
-            pricing = PricingConfig(
-                id=uuid.uuid4(),
-                scan_type="ip",
-                credit_cost=5,
-            )
-            db_session.add(pricing)
-            await db_session.commit()
-            return pricing
-
-        asyncio.get_event_loop().run_until_complete(setup())
-
-        resp = client.put("/api/admin/pricing/ip", json={"credit_cost": 15}, headers=API_HEADERS)
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["scan_type"] == "ip"
-        assert data["credit_cost"] == 15
-
-    def test_create_new_pricing(self, client):
-        resp = client.put("/api/admin/pricing/apk", json={"credit_cost": 8}, headers=API_HEADERS)
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["scan_type"] == "apk"
-        assert data["credit_cost"] == 8
-
-    def test_invalid_scan_type_returns_400(self, client):
-        resp = client.put("/api/admin/pricing/invalid_type", json={"credit_cost": 5}, headers=API_HEADERS)
-        assert resp.status_code == 400
-        assert "invalid scan type" in resp.json()["detail"].lower()
-
-    def test_negative_cost_returns_422(self, client):
-        resp = client.put("/api/admin/pricing/ip", json={"credit_cost": -1}, headers=API_HEADERS)
-        assert resp.status_code == 422
-
-    def test_missing_cost_returns_422(self, client):
-        resp = client.put("/api/admin/pricing/ip", json={}, headers=API_HEADERS)
-        assert resp.status_code == 422
-
-    def test_unauthorized_non_admin_returns_403(self, admin_auth_client, db_session):
-        import asyncio
-
-        user, token = asyncio.get_event_loop().run_until_complete(
-            _create_user_with_token(db_session, "regular6@example.com", is_admin=False)
-        )
-        resp = admin_auth_client.put(
-            "/api/admin/pricing/ip",
-            json={"credit_cost": 10},
-            headers={"Authorization": f"Bearer {token}"},
-        )
-        assert resp.status_code == 403
-
-
-# ---------------------------------------------------------------------------
 # GET /api/keys  (admin-only endpoint from key_routes.py)
 # ---------------------------------------------------------------------------
 
@@ -1046,23 +919,6 @@ class TestAdminRateLimits:
         resp = client.post(url, json={"amount": 10, "description": "test"}, headers=API_HEADERS)
         assert resp.status_code == 429
 
-    def test_pricing_list_rate_limit_returns_429(self, client):
-        """GET /api/admin/pricing — 4th request hits rate limit (line 207)."""
-        for _ in range(3):
-            resp = client.get("/api/admin/pricing", headers=API_HEADERS)
-            assert resp.status_code == 200
-        resp = client.get("/api/admin/pricing", headers=API_HEADERS)
-        assert resp.status_code == 429
-
-    def test_pricing_update_rate_limit_returns_429(self, client):
-        """PUT /api/admin/pricing/ip — 4th request hits rate limit (line 223)."""
-        for _ in range(3):
-            resp = client.put("/api/admin/pricing/ip", json={"credit_cost": 10}, headers=API_HEADERS)
-            assert resp.status_code == 200
-        resp = client.put("/api/admin/pricing/ip", json={"credit_cost": 10}, headers=API_HEADERS)
-        assert resp.status_code == 429
-
-
 class TestAdminHpp:
     def test_get_hpp_empty(self, client):
         resp = client.get("/api/admin/hpp", headers=API_HEADERS)
@@ -1110,12 +966,6 @@ class TestAdminHpp:
             completed_at=datetime.now(UTC),
         )
         db_session.add(job)
-        db_session.add(
-            PricingConfig(id=uuid.uuid4(), scan_type="ip", credit_cost=1),
-        )
-        db_session.add(
-            PricingConfig(id=uuid.uuid4(), scan_type="domain", credit_cost=2),
-        )
         await db_session.commit()
         resp = client.get("/api/admin/hpp/report", headers=API_HEADERS)
         assert resp.status_code == 200

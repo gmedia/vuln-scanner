@@ -157,7 +157,7 @@ describe("AdminDashboard", () => {
     );
   });
 
-  it("renders quick links to user management and pricing", () => {
+  it("renders quick links to user management, blog, and email logs", () => {
     vi.mocked(useQuery).mockReturnValue({
       data: mockStats,
       isLoading: false,
@@ -165,15 +165,14 @@ describe("AdminDashboard", () => {
 
     renderPage();
     expect(screen.getByText("User management")).toBeInTheDocument();
-    expect(screen.getByText("Pricing")).toBeInTheDocument();
+    expect(screen.queryByText("Pricing")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /User management/i })).toHaveAttribute(
       "href",
       "/admin/users",
     );
-    expect(screen.getByRole("link", { name: /Pricing/i })).toHaveAttribute(
-      "href",
-      "/admin/pricing",
-    );
+    expect(
+      screen.queryByRole("link", { name: /Pricing/i }),
+    ).not.toBeInTheDocument();
     const blogLink = screen.getAllByRole("link").find((a) => a.getAttribute("href") === "/admin/blog");
     expect(blogLink).toBeTruthy();
     const emailLink = screen
