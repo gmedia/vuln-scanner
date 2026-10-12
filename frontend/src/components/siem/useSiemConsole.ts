@@ -8,6 +8,7 @@ import {
   createSiemCase,
   getSiemStatus,
   isSiemDisabledError,
+  isSiemEnterpriseOnlyError,
   listSiemCases,
   listSiemEvents,
   patchSiemCase,
@@ -58,7 +59,12 @@ export function useSiemConsole(t: (key: string) => string) {
   });
 
   const featureOff = statusQ.isError && isSiemDisabledError(statusQ.error);
-  const featureOn = !!statusQ.data?.enabled && !featureOff;
+  const enterpriseOnly =
+    statusQ.isError && isSiemEnterpriseOnlyError(statusQ.error);
+  const enterpriseDetail = enterpriseOnly
+    ? apiDetail(statusQ.error, t("enterpriseOnly"))
+    : null;
+  const featureOn = !!statusQ.data?.enabled && !featureOff && !enterpriseOnly;
 
   const agentsQ = useQuery({
     queryKey: ["guard", activeOrgId, "agents"],
@@ -168,6 +174,8 @@ export function useSiemConsole(t: (key: string) => string) {
     actionError,
     statusQ,
     featureOff,
+    enterpriseOnly,
+    enterpriseDetail,
     featureOn,
     agentsQ,
     eventsQ,

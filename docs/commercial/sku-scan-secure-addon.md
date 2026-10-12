@@ -87,7 +87,7 @@ Bundle with colo/VPS as **add-on line item**; do not reprice rack.
 
 ### Fulfillment checklist (ops after sold)
 
-1. Set org **`sku`** (`basic` / `pro` / `multi`) so `/assets` hard cap matches the sold tier. Manual and scheduled scans run **without** a credit top-up.
+1. Set org **`sku`** (`basic` / `pro` / `multi`; `enterprise` is custom/ops-set, no public card) so `/assets` hard cap matches the sold tier. Manual and scheduled scans run **without** a credit top-up.
 2. Create **named assets** on SPA `/assets`, then **Create schedule** (1:1) — enabled schedules still cap **10 / org**. Extra targets = upgrade SKU.
 3. Confirm **notify email** + beat/workers healthy (`docs/scan-schedules-ops.md`, `docs/scan-assets-ops.md`).
 4. After first completed run: buyer gets **executive HTML** + diff story (Bahasa). Optional `GET /api/assets/pack` JSON for Multi-asset.

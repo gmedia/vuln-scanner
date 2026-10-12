@@ -114,7 +114,7 @@ Align with existing SQLAlchemy style (`UUID`, timestamptz, Alembic). Names illus
 - `UNIQUE (organization_id, user_id)`
 - Check role enum
 - **At least one `owner`** per org enforced in service layer (DB trigger optional later)
-- **Seat cap (R5):** `basic` orgs allow at most **1 write-role membership** (`owner`/`admin`/`member`; owner counts as the editor) **and 1 `viewer`**; `pro`/`multi` are unlimited. Existing over-cap Basic orgs are grandfathered (never auto-removed); only new additions/promotions are rejected with **403**.
+- **Seat cap (R5):** `basic` orgs allow at most **1 write-role membership** (`owner`/`admin`/`member`; owner counts as the editor) **and 1 `viewer`**; `pro`/`multi`/`enterprise` are unlimited (Enterprise seat caps are negotiated per contract, not a public card). Existing over-cap Basic orgs are grandfathered (never auto-removed); only new additions/promotions are rejected with **403**.
 
 ### 6.3 `organization_invites`
 

@@ -15,7 +15,7 @@ class OrgCreateRequest(BaseModel):
 class OrgUpdateRequest(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=255)
     slug: str | None = Field(default=None, min_length=1, max_length=64)
-    sku: str | None = Field(default=None, pattern=r"^(basic|pro|multi)$")
+    sku: str | None = Field(default=None, pattern=r"^(basic|pro|multi|enterprise)$")
 
 
 class OrgSwitchRequest(BaseModel):

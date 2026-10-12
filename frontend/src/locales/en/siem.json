@@ -2,6 +2,7 @@
   "title": "SIEM",
   "subtitle": "Controlled event search plus cases. Not the Wazuh dashboard.",
   "featureOff": "The SIEM module is not enabled in this environment.",
+  "enterpriseOnly": "SIEM is available on the Enterprise plan only.",
   "pickOrg": "Select an organization first.",
   "loadStatusFail": "Failed to load SIEM status. Retry, or sign in again if the session expired. This is not a Wazuh indexer outage.",
   "sessionExpired": "Your sign-in session expired or is invalid. Sign in again to load SIEM. This is not a Wazuh or event-search failure.",

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from app.models.user import User
 
 ORG_KINDS = ("personal", "company", "hotel")
-ORG_SKUS = ("basic", "pro", "multi")
+ORG_SKUS = ("basic", "pro", "multi", "enterprise")
 ORG_ROLES = ("owner", "admin", "member", "viewer")
 INVITE_STATUSES = ("pending", "accepted", "revoked", "expired")
 INVITE_ROLES = ("admin", "member", "viewer")
