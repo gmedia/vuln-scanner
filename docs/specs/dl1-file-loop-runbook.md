@@ -12,7 +12,7 @@
 
 | Check | Honest bar |
 |-------|------------|
-| Org | Guard on; Host Protect flag on. Demo **file loop = Host Basic**. Do **not** quote Protect/WAF in the same meeting unless org is Host Multi. |
+| Org | Guard on; Host Protect flag on. Demo **file loop = Host Basic**. Do **not** quote Protect/WAF in the same meeting unless org is Host Pro or Multi. |
 | VM | Helper already installed **or** you have time for wget (see [`host-protect-helper-am.md`](../host-protect-helper-am.md)). |
 | Fixture | Web root exists **on that VM** (lab: `/var/www/host-protect-fixture` or `/var/www/host-waf-fixture`). Adding a SPA site whose folder is missing → fail closed, not mock hits. |
 | Speech | Long pitch in displace plan §0. Short “ganti Imunify…” is **Sentence-ok GREEN** 2026-09-21 — **allowed** on **nginx dedicated / no panel**; still **forbidden** on shared cPanel. **Always forbidden:** PD, KernelCare, WebShield, auto-clean DB, Caddy, shared cPanel “ganti”. This runbook is **B1–B2** of Demo-ok only — finishing **this** install does **not** by itself unlock the short line (need the full §7 AND). **Do not** wait on GMD Host `service_id`. |

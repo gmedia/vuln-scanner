@@ -63,7 +63,7 @@ Until Demo-ok: do not demo Host as “on-box proof.”
 | **Struck C1** GMD ERP Host `service_id` | Off-repo optional | **Not** Invoice-ok. **Do not** tell the user the next step is three SIDs |
 
 - Working IDR: Scan P0 lock; Host **H4 locked 2026-10-12** ([`sku-host-protect.md`](../commercial/sku-host-protect.md); 150k / 350k / 900k; finance may ± band).
-- File-only demo = quote **Host Basic**. WAF/protect sentence = org is **Host Multi before** the meeting. Never quote Basic and demo Protect.
+- File-only demo = quote **Host Basic**. WAF/protect sentence = org is **Host Pro or Multi before** the meeting. Never quote Basic and demo Protect.
 - **H9 shipped.** Do **not** re-implement Host invoice APIs. Do **not** silent-bundle Host into VPS or Scan.
 - Do **not** invent GMD API / SID rows in git.
 
@@ -93,7 +93,7 @@ Sources: Imunify360 marketing (6 layers, PD, CloudAV, RapidScan, auto-cleanup, W
 | Show hits + isolate | SPA `/host`; quarantine **mv** (auto **off**) | **DL1** runbook; **no** new queue (P14 **D** shipped) |
 | Auto cleanup / reconstruct / MDS | Hybrid ticket (H6) | **Out** |
 | HTTP WAF | Starter 1001-1177 | Further original IDs only; never IM360/CRS |
-| Protect on by default | **F shipped**; per-site default **off**; protect **Multi** | Keep off; do not re-do F |
+| Protect on by default | **F shipped**; per-site default **off**; protect **Pro/Multi** | Keep off; do not re-do F |
 | ModSec module on typical nginx | Snippet copy only; Ubuntu often has **no** module | **Ops/hybrid** — Demo-ok checkbox, not SaaS |
 | Proactive Defense | None | **Out** (slice **H**) |
 | WebShield / JS / UAM / L7 | None | **Out**; Cloudflare is customer’s |
@@ -156,7 +156,7 @@ Malware-detected email skips `engine=mock`. WAF-block email fires only on helper
 
 ## 4) SKU / commercial (Host H4 locked 2026-10-12)
 
-- **Do not quote Basic and demo Protect.** File-only demo = **Host Basic**. If the meeting uses a WAF/protect sentence, org is **Host Multi before** the meeting.
+- **Do not quote Basic and demo Protect.** File-only demo = **Host Basic**. If the meeting uses a WAF/protect sentence, org is **Host Pro or Multi before** the meeting.
 - Host list: [`sku-host-protect.md`](../commercial/sku-host-protect.md) H4 **locked 2026-10-12**. **Do not** invent invoice IDR here.
 - H5 stays: beside on cPanel; **displace-lite** only on GMD VPS/colo **without** panel suite (**Sentence-ok GREEN** 2026-09-21).
 - Scan attach remains **P0** sold SKU. Do not silent-bundle Host into VPS or Scan.
@@ -165,7 +165,7 @@ Malware-detected email skips `engine=mock`. WAF-block email fires only on helper
 
 ## 5) Success
 
-Regional AM demos **one** nginx VPS: Guard + helper + real file isolate + (Multi) WAF protect with **our** rules + Scan schedule. Short “ganti” line **allowed** on that nginx dedicated / no-panel meeting (**Sentence-ok GREEN** 2026-09-21). File-only demo = quote **Host Basic**. WAF/protect sentence = org is **Host Multi before** the meeting. Buyer who **requires** PD, KernelCare, or WebShield is **not** a displace deal.
+Regional AM demos **one** nginx VPS: Guard + helper + real file isolate + (Pro/Multi) WAF protect with **our** rules + Scan schedule. Short “ganti” line **allowed** on that nginx dedicated / no-panel meeting (**Sentence-ok GREEN** 2026-09-21). File-only demo = quote **Host Basic**. WAF/protect sentence = org is **Host Pro or Multi before** the meeting. Buyer who **requires** PD, KernelCare, or WebShield is **not** a displace deal.
 
 ---
 
@@ -235,7 +235,7 @@ AM bills **in Sinexis**, not via a GMD Host `service_id`.
 - **Gate (shipped):** Scan invoices at `/admin/invoices` (I1–I9). GMD `service_id` **optional**, **not required**, **not** agent next-step.
 - **H9 shipped.** Host catalog `invoicable=true`. Paid Host does not set Scan `org.sku`. Do **not** re-implement Host invoice APIs.
 - **Struck C1:** creating three GMD Host SIDs is **not** this gate. Do **not** put SIDs in git.
-- File-only demo = quote **Host Basic**. WAF/protect sentence = org is **Host Multi before** the meeting. Never quote Basic and demo Protect.
+- File-only demo = quote **Host Basic**. WAF/protect sentence = org is **Host Pro or Multi before** the meeting. Never quote Basic and demo Protect.
 
 ### 7.4 D — Docs hygiene (this PR)
 

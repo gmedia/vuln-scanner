@@ -51,7 +51,7 @@
 | **Assets** | Named targets / packs | **P3** |
 | **Guard** | Host critical alerts (Wazuh thin) | **P5 — shipped**; **do not** silent-bundle into Scan |
 | **Host Protect** | On-box web malware + quarantine | **P12 — shipped**; H4 IDR **locked 2026-10-12**; invoice in-app (I1/D5) |
-| **Host WAF** | HTTP filter on **customer** nginx (starter 1001–1006) | **P13 — shipped**; protect = Host Multi; never Sinexis edge |
+| **Host WAF** | HTTP filter on **customer** nginx (starter 1001–1006) | **P13 — shipped**; protect = Host Pro or Multi; never Sinexis edge |
 
 Mobile APK/IPA = engine feature, **not** hero SKU for GMD servers/domains.
 
