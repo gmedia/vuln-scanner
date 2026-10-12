@@ -49,6 +49,7 @@
   "sendInvite": "Send invite",
   "inviteSent": "Invite emailed to {{email}} — copy the link as backup",
   "inviteFail": "Could not create invite",
+  "basicSeatCapHint": "Basic workspace allows 1 editor and 1 viewer. Upgrade to Pro for more seats.",
   "emailRequired": "Email is required",
   "noActiveWorkspace": "No active workspace",
   "pendingInvites": "Pending invites",

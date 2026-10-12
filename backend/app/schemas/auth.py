@@ -63,6 +63,7 @@ class OrgSummary(BaseModel):
     slug: str
     kind: str
     role: str
+    sku: str = "basic"
 
 
 class UserResponse(BaseModel):

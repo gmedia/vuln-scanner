@@ -375,6 +375,15 @@ function WorkspaceSettings() {
     invoicesQuery.data?.total ?? invoicesQuery.data?.items.length;
   const orgKind = activeOrg?.kind === "personal" ? t("kindPersonal") : t("kindTeam");
   const invoiceStatuses = (invoicesQuery.data?.items ?? []).map((i) => i.status);
+  const writeSeatCount = (membersQuery.data ?? []).filter(
+    (m) => m.role !== "viewer",
+  ).length;
+  const viewerSeatCount = (membersQuery.data ?? []).filter(
+    (m) => m.role === "viewer",
+  ).length;
+  const basicSeatBlocked =
+    activeOrg?.sku === "basic" &&
+    (inviteRole === "viewer" ? viewerSeatCount >= 1 : writeSeatCount >= 1);
 
   return (
     <div className="w-full space-y-6">
@@ -634,11 +643,19 @@ function WorkspaceSettings() {
                     <span>{formError}</span>
                   </WorkspaceNotice>
                 )}
+                {basicSeatBlocked && (
+                  <div data-testid="basic-seat-hint">
+                    <WorkspaceNotice tone="warn" role="status">
+                      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      <span>{t("basicSeatCapHint")}</span>
+                    </WorkspaceNotice>
+                  </div>
+                )}
                 <Button
                   type="submit"
                   className="min-h-11 w-full"
                   data-testid="invite-submit"
-                  disabled={inviteMut.isPending}
+                  disabled={inviteMut.isPending || basicSeatBlocked}
                 >
                   {inviteMut.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

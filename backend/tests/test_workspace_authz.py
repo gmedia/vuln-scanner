@@ -6,16 +6,17 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 import pytest_asyncio
+from fastapi import HTTPException
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.main import app
-from app.models.organization import Organization, OrganizationMembership
+from app.models.organization import Organization, OrganizationInvite, OrganizationMembership
 from app.models.scan_job import ScanJob
 from app.models.scan_schedule import ScanSchedule
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
-from app.services.organization import ensure_personal_org
+from app.services.organization import OrganizationService, ensure_personal_org, hash_invite_token
 
 
 async def _make_user(db: AsyncSession, email: str, *, credits: int = 100) -> User:
@@ -51,6 +52,27 @@ async def _add_member(
     return m
 
 
+async def _make_org(
+    db: AsyncSession,
+    owner: User,
+    *,
+    sku: str = "basic",
+    name: str = "Seat Cap Co",
+) -> Organization:
+    org = Organization(
+        id=uuid.uuid4(),
+        name=name,
+        slug=f"seat-cap-{uuid.uuid4().hex[:6]}",
+        kind="company",
+        sku=sku,
+        created_by_user_id=owner.id,
+    )
+    db.add(org)
+    await db.flush()
+    await _add_member(db, org.id, owner, "owner")
+    return org
+
+
 def _auth_header(user: User, org_id: uuid.UUID | None = None) -> dict[str, str]:
     token = create_access_token(
         user_id=str(user.id),
@@ -76,6 +98,7 @@ async def workspace(db_session: AsyncSession):
         name="Hotel Alpha",
         slug=f"hotel-alpha-{uuid.uuid4().hex[:6]}",
         kind="hotel",
+        sku="pro",
         created_by_user_id=owner.id,
     )
     db_session.add(company)
@@ -380,5 +403,234 @@ async def test_invite_create_persists_when_smtp_fails(db_session, workspace):
             assert stored is not None
             assert stored.status == "pending"
             assert stored.email == "new.invitee@example.com"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_basic_owner_plus_viewer_invite_ok(db_session):
+    owner = await _make_user(db_session, "r5-a-owner@example.com")
+    org = await _make_org(db_session, owner)
+    svc = OrganizationService(db_session)
+
+    invite, raw = await svc.create_invite(org.id, owner, email="r5-a-viewer@example.com", role="viewer")
+
+    assert invite.role == "viewer"
+    assert invite.status == "pending"
+    assert raw
+
+
+@pytest.mark.asyncio
+async def test_basic_second_viewer_invite_forbidden(db_session):
+    owner = await _make_user(db_session, "r5-b-owner@example.com")
+    viewer = await _make_user(db_session, "r5-b-viewer@example.com")
+    org = await _make_org(db_session, owner)
+    await _add_member(db_session, org.id, viewer, "viewer")
+    svc = OrganizationService(db_session)
+
+    with pytest.raises(HTTPException) as exc:
+        await svc.create_invite(org.id, owner, email="r5-b-viewer2@example.com", role="viewer")
+
+    assert exc.value.status_code == 403
+    assert "1 editor and 1 viewer" in exc.value.detail
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("role", ["admin", "member"])
+async def test_basic_write_role_invite_forbidden(db_session, role):
+    owner = await _make_user(db_session, f"r5-c-{role}-owner@example.com")
+    org = await _make_org(db_session, owner)
+    svc = OrganizationService(db_session)
+
+    with pytest.raises(HTTPException) as exc:
+        await svc.create_invite(org.id, owner, email=f"r5-c-{role}@example.com", role=role)
+
+    assert exc.value.status_code == 403
+    assert "1 editor and 1 viewer" in exc.value.detail
+
+
+@pytest.mark.asyncio
+async def test_basic_grandfathered_owner_member_can_add_viewer(db_session):
+    owner = await _make_user(db_session, "r5-d-owner@example.com")
+    member = await _make_user(db_session, "r5-d-member@example.com")
+    org = await _make_org(db_session, owner)
+    await _add_member(db_session, org.id, member, "member")
+    svc = OrganizationService(db_session)
+
+    invite, _ = await svc.create_invite(org.id, owner, email="r5-d-viewer@example.com", role="viewer")
+
+    assert invite.role == "viewer"
+
+
+@pytest.mark.asyncio
+async def test_basic_full_org_blocks_further_membership(db_session):
+    owner = await _make_user(db_session, "r5-e-owner@example.com")
+    viewer = await _make_user(db_session, "r5-e-viewer@example.com")
+    org = await _make_org(db_session, owner)
+    await _add_member(db_session, org.id, viewer, "viewer")
+    svc = OrganizationService(db_session)
+
+    for role in ("admin", "member", "viewer"):
+        with pytest.raises(HTTPException) as exc:
+            await svc.create_invite(org.id, owner, email=f"r5-e-new-{role}@example.com", role=role)
+        assert exc.value.status_code == 403
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("sku", ["pro", "multi"])
+async def test_non_basic_skus_have_no_seat_cap(db_session, sku):
+    owner = await _make_user(db_session, f"r5-f-{sku}-owner@example.com")
+    org = await _make_org(db_session, owner, sku=sku)
+    svc = OrganizationService(db_session)
+
+    for index, role in enumerate(("admin", "member", "viewer", "viewer", "admin")):
+        invite, _ = await svc.create_invite(
+            org.id,
+            owner,
+            email=f"r5-f-{sku}-{index}@example.com",
+            role=role,
+        )
+        assert invite.role == role
+
+
+@pytest.mark.asyncio
+async def test_basic_grandfathered_over_cap_blocks_new_additions_only(db_session):
+    owner = await _make_user(db_session, "r5-g-owner@example.com")
+    member = await _make_user(db_session, "r5-g-member@example.com")
+    viewer = await _make_user(db_session, "r5-g-viewer@example.com")
+    org = await _make_org(db_session, owner)
+    await _add_member(db_session, org.id, member, "member")
+    await _add_member(db_session, org.id, viewer, "viewer")
+    svc = OrganizationService(db_session)
+
+    with pytest.raises(HTTPException) as exc:
+        await svc.create_invite(org.id, owner, email="r5-g-extra@example.com", role="viewer")
+    assert exc.value.status_code == 403
+
+    members = await svc.list_members(org.id, owner)
+    assert {m.role for m in members} == {"owner", "member", "viewer"}
+
+
+@pytest.mark.asyncio
+async def test_basic_accept_viewer_invite_ok(db_session):
+    owner = await _make_user(db_session, "r5-h-owner@example.com")
+    invitee = await _make_user(db_session, "r5-h-viewer@example.com")
+    org = await _make_org(db_session, owner)
+    svc = OrganizationService(db_session)
+    invite, raw = await svc.create_invite(org.id, owner, email=invitee.email, role="viewer")
+
+    membership = await svc.accept_invite(invitee, raw)
+
+    assert membership.role == "viewer"
+    assert membership.organization_id == org.id
+
+
+@pytest.mark.asyncio
+async def test_basic_accept_rechecks_viewer_cap(db_session):
+    owner = await _make_user(db_session, "r5-i-owner@example.com")
+    invitee = await _make_user(db_session, "r5-i-viewer@example.com")
+    other = await _make_user(db_session, "r5-i-other@example.com")
+    org = await _make_org(db_session, owner)
+    svc = OrganizationService(db_session)
+    invite, raw = await svc.create_invite(org.id, owner, email=invitee.email, role="viewer")
+    await _add_member(db_session, org.id, other, "viewer")
+
+    with pytest.raises(HTTPException) as exc:
+        await svc.accept_invite(invitee, raw)
+
+    assert exc.value.status_code == 403
+    assert "1 editor and 1 viewer" in exc.value.detail
+
+
+@pytest.mark.asyncio
+async def test_basic_accept_rechecks_write_cap(db_session):
+    owner = await _make_user(db_session, "r5-j-owner@example.com")
+    invitee = await _make_user(db_session, "r5-j-admin@example.com")
+    org = await _make_org(db_session, owner)
+    raw = "r5-j-raw-token-value"
+    db_session.add(
+        OrganizationInvite(
+            id=uuid.uuid4(),
+            organization_id=org.id,
+            email=invitee.email,
+            role="admin",
+            token_hash=hash_invite_token(raw),
+            invited_by_user_id=owner.id,
+            status="pending",
+            expires_at=datetime.now(UTC) + timedelta(days=1),
+        )
+    )
+    await db_session.commit()
+    svc = OrganizationService(db_session)
+
+    with pytest.raises(HTTPException) as exc:
+        await svc.accept_invite(invitee, raw)
+
+    assert exc.value.status_code == 403
+    assert "1 editor and 1 viewer" in exc.value.detail
+
+
+@pytest.mark.asyncio
+async def test_basic_change_role_promote_viewer_to_member_forbidden(db_session):
+    owner = await _make_user(db_session, "r5-k-owner@example.com")
+    viewer = await _make_user(db_session, "r5-k-viewer@example.com")
+    org = await _make_org(db_session, owner)
+    await _add_member(db_session, org.id, viewer, "viewer")
+    svc = OrganizationService(db_session)
+
+    with pytest.raises(HTTPException) as exc:
+        await svc.change_role(org.id, owner, viewer.id, "member")
+
+    assert exc.value.status_code == 403
+    assert "1 editor and 1 viewer" in exc.value.detail
+
+
+@pytest.mark.asyncio
+async def test_basic_change_role_demote_member_to_viewer_ok(db_session):
+    owner = await _make_user(db_session, "r5-l-owner@example.com")
+    member = await _make_user(db_session, "r5-l-member@example.com")
+    org = await _make_org(db_session, owner)
+    await _add_member(db_session, org.id, member, "member")
+    svc = OrganizationService(db_session)
+
+    changed = await svc.change_role(org.id, owner, member.id, "viewer")
+
+    assert changed.role == "viewer"
+
+
+@pytest.mark.asyncio
+async def test_non_basic_change_role_unlimited(db_session):
+    owner = await _make_user(db_session, "r5-m-owner@example.com")
+    viewer = await _make_user(db_session, "r5-m-viewer@example.com")
+    org = await _make_org(db_session, owner, sku="pro")
+    await _add_member(db_session, org.id, viewer, "viewer")
+    svc = OrganizationService(db_session)
+
+    changed = await svc.change_role(org.id, owner, viewer.id, "member")
+
+    assert changed.role == "member"
+
+
+@pytest.mark.asyncio
+async def test_basic_invite_http_403_detail(db_session):
+    from app.database import get_db
+
+    owner = await _make_user(db_session, "r5-n-owner@example.com")
+    org = await _make_org(db_session, owner)
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            r = await client.post(
+                f"/api/orgs/{org.id}/invites",
+                headers=_auth_header(owner, org.id),
+                json={"email": "r5-n-admin@example.com", "role": "admin"},
+            )
+            assert r.status_code == 403
+            assert "1 editor and 1 viewer" in r.json()["detail"]
     finally:
         app.dependency_overrides.clear()

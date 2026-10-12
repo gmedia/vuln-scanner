@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
 import WorkspaceSettings from "@/pages/WorkspaceSettings";
 import {
+  createInvite,
   downloadOrgInvoicePdf,
   listInvites,
   listMembers,
@@ -21,6 +22,7 @@ vi.mock("@/api/orgs", async () => {
     listInvites: vi.fn(async () => []),
     listOrgInvoices: vi.fn(async () => ({ items: [], total: 0 })),
     downloadOrgInvoicePdf: vi.fn(async () => {}),
+    createInvite: vi.fn(),
   };
 });
 
@@ -449,5 +451,63 @@ describe("WorkspaceSettings pilot checklist", () => {
     expect(list.querySelectorAll(".bg-amber-500").length).toBeGreaterThanOrEqual(
       2,
     );
+  });
+
+  it("shows the Basic seat cap hint and locks invite when capped", async () => {
+    useAuthStore.setState({
+      activeOrgId: "org-basic",
+      organizations: [
+        {
+          id: "org-basic",
+          name: "Basic Org",
+          slug: "basic-org",
+          role: "owner",
+          kind: "team",
+          sku: "basic",
+        },
+      ],
+    });
+    vi.mocked(listMembers).mockResolvedValueOnce([
+      {
+        user_id: "u-1",
+        email: "owner@example.com",
+        role: "owner",
+        joined_at: "2026-08-01T00:00:00Z",
+      },
+      {
+        user_id: "u-2",
+        email: "viewer@example.com",
+        role: "viewer",
+        joined_at: "2026-08-02T00:00:00Z",
+      },
+    ]);
+    renderPage();
+    const hint = await screen.findByTestId("basic-seat-hint");
+    expect(hint).toHaveTextContent(
+      "Basic workspace allows 1 editor and 1 viewer",
+    );
+    expect(screen.getByTestId("invite-submit")).toBeDisabled();
+  });
+
+  it("surfaces the backend 403 detail when the invite is rejected", async () => {
+    vi.mocked(createInvite).mockRejectedValueOnce({
+      response: {
+        data: {
+          detail:
+            "Basic workspace allows 1 editor and 1 viewer. Upgrade to Pro for more seats.",
+        },
+      },
+    });
+    renderPage();
+    await userEvent.type(
+      screen.getByTestId("invite-email"),
+      "new@example.com",
+    );
+    await userEvent.click(screen.getByTestId("invite-submit"));
+    expect(
+      await screen.findByText(
+        /Basic workspace allows 1 editor and 1 viewer\. Upgrade to Pro/,
+      ),
+    ).toBeInTheDocument();
   });
 });

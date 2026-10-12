@@ -32,6 +32,10 @@ MAX_NON_PERSONAL_ORGS_CREATED = 5
 INVITE_TTL_DAYS = 14
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
 
+# R5: Basic caps at 1 write-role member ("editor", owner included) + 1 viewer; Pro/Multi unlimited.
+WRITE_ROLES: frozenset[str] = frozenset({"owner", "admin", "member"})
+BASIC_SEAT_CAP_DETAIL = "Basic workspace allows 1 editor and 1 viewer. Upgrade to Pro for more seats."
+
 
 def role_rank(role: str | None) -> int:
     if not role:
@@ -168,6 +172,30 @@ async def count_owners(db: AsyncSession, organization_id: UUID) -> int:
         )
     )
     return int(result.scalar() or 0)
+
+
+async def _enforce_basic_seat_cap(
+    db: AsyncSession,
+    org_id: UUID,
+    role: str,
+    *,
+    exclude_user_id: UUID | None = None,
+) -> None:
+    sku_result = await db.execute(select(Organization.sku).where(Organization.id == org_id))
+    if sku_result.scalar_one_or_none() != "basic":
+        return
+
+    query = select(OrganizationMembership.role).where(OrganizationMembership.organization_id == org_id)
+    if exclude_user_id is not None:
+        query = query.where(OrganizationMembership.user_id != exclude_user_id)
+    roles = (await db.execute(query)).scalars().all()
+
+    write_count = sum(1 for r in roles if r in WRITE_ROLES)
+    viewer_count = sum(1 for r in roles if r == "viewer")
+    if role in WRITE_ROLES and write_count >= 1:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=BASIC_SEAT_CAP_DETAIL)
+    if role == "viewer" and viewer_count >= 1:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=BASIC_SEAT_CAP_DETAIL)
 
 
 class OrganizationService:
@@ -338,6 +366,8 @@ class OrganizationService:
             if owners <= 1:
                 raise HTTPException(status_code=400, detail="Cannot demote the last owner")
 
+        await _enforce_basic_seat_cap(self.db, org_id, new_role, exclude_user_id=target_user_id)
+
         target.role = new_role
         target.updated_at = datetime.now(UTC)
         await self.db.commit()
@@ -400,6 +430,8 @@ class OrganizationService:
             already = await get_membership(self.db, org_id, member_user.id)
             if already is not None:
                 raise HTTPException(status_code=409, detail="User is already a member")
+
+        await _enforce_basic_seat_cap(self.db, org_id, role)
 
         raw, token_hash = generate_invite_token()
         invite = OrganizationInvite(
@@ -471,6 +503,8 @@ class OrganizationService:
             invite.updated_at = datetime.now(UTC)
             await self.db.commit()
             return existing
+
+        await _enforce_basic_seat_cap(self.db, invite.organization_id, invite.role)
 
         membership = OrganizationMembership(
             id=uuid.uuid4(),
