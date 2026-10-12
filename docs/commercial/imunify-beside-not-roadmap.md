@@ -11,7 +11,7 @@ Sinexis **sits beside** Imunify on cPanel/CloudLinux farms. It is **not** a clon
 | Outside-in vuln scan | IP/domain/mobile + schedules | Imunify malware |
 | Runtime agent | Guard (Wazuh thin) | Full SIEM / Wazuh UI |
 | On-box web malware | Host Protect: scan, hits, quarantine/restore | PHP Proactive Defense, auto-clean rewrite |
-| HTTP filter | Host WAF detect + **protect** (Host Multi; customer nginx). Tab/list = starter 1001-1177; live ingest email **#659** | Coraza on `sinexis.app`, full CRS / Imunify rule IDs as product events |
+| HTTP filter | Host WAF detect + **protect** (Host Pro or Multi; customer nginx). Tab/list = starter 1001-1177; live ingest email **#659** | Coraza on `sinexis.app`, full CRS / Imunify rule IDs as product events |
 
 ## Explicitly not chasing (leave the idea)
 
@@ -19,7 +19,7 @@ Sinexis **sits beside** Imunify on cPanel/CloudLinux farms. It is **not** a clon
 - cPanel/WHM plugin, shared-UID thousands of sites
 - Email anti-spam / RBL product
 - Imunify trademarks, commercial rulesets in git
-- Host WAF **protect** on Basic/Pro (Multi only); never Sinexis edge
+- Host WAF **protect** on Basic (Pro/Multi only); never Sinexis edge
 - Putting WAF on Sinexis public nginx
 
 Cleanup: **quarantine ≠ reconstruct**. Reconstruct = hybrid ticket (backup/CMS), not in-app PHP rewrite.
@@ -30,7 +30,7 @@ Cleanup: **quarantine ≠ reconstruct**. Reconstruct = hybrid ticket (backup/CMS
 - “Kalimat pendek ‘ganti Imunify360 dengan Sinexis’ **boleh** di **nginx dedicated / no panel** (Sentence-ok **GREEN** 2026-09-21). **Tetap dilarang** di cPanel shared. Pitch panjang §0 di [`vps-displace-imunify-dev-plan.md`](../specs/vps-displace-imunify-dev-plan.md) tetap dipakai jika buyer butuh kedalaman. **Bukan** `service_id` GMD / WAF 1165+ / G/H. H9 invoicable **sudah**.”
 - “Di **VPS nginx/dedicated tanpa panel**: *displace-lite* **Sentence-ok GREEN**. Helper hidup, isolate SPA, ModSec live, Invoice-ok Sinexis in-app, owner bertanggal — **bukan** setelah pack di git saja, **bukan** setelah tiga SID GMD.”
 - “Untuk VPS/colo GMD: Guard + folder web + scan malware **on-box** (helper) + isolate file. Konsol SaaS **bukan** bukti disk sampai helper POST.”
-- “WAF protect = Host Multi, snippet di nginx **pelanggan**; bukan edge Sinexis.”
+- “WAF protect = Host Pro atau Multi, snippet di nginx **pelanggan**; bukan edge Sinexis.”
 - “Harga Host **belum** list resmi.”
 
 See also: [`sku-host-protect.md`](sku-host-protect.md) H5/H6/H7, [`host-protect-v1.md`](../specs/host-protect-v1.md), [`host-waf-v1.md`](../specs/host-waf-v1.md), [`vps-displace-imunify-dev-plan.md`](../specs/vps-displace-imunify-dev-plan.md).
