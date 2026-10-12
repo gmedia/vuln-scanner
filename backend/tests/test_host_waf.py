@@ -1470,11 +1470,32 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
                             "path": "/geoserver/wms",
                             "http_status": 403,
                         },
+                        {
+                            "action": "block",
+                            "rule_id": "1165",
+                            "method": "GET",
+                            "path": "/nacos/v1/auth/users",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1166",
+                            "method": "GET",
+                            "path": "/druid/index.html",
+                            "http_status": 403,
+                        },
+                        {
+                            "action": "block",
+                            "rule_id": "1167",
+                            "method": "GET",
+                            "path": "/v2/_catalog",
+                            "http_status": 403,
+                        },
                     ],
                 },
             )
             assert r.status_code == 200, r.text
-            assert r.json()["accepted"] == 118
+            assert r.json()["accepted"] == 121
     finally:
         app.dependency_overrides.clear()
     rows = (await db_session.execute(select(HostWafEvent).where(HostWafEvent.site_id == site.id))).scalars().all()
@@ -1597,6 +1618,9 @@ async def test_agent_waf_ingest_drops_vendor_rule_ids(db_session: AsyncSession, 
         "1162",
         "1163",
         "1164",
+        "1165",
+        "1166",
+        "1167",
     }
 
 

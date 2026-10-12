@@ -910,6 +910,9 @@ modsecurity_rules '
 SecRule REQUEST_URI "@rx (?i)/global-protect/login" "id:1162,phase:1,t:none,deny,status:403,msg:\'sinexis.palo.globalprotect\'"
 SecRule REQUEST_URI "@rx (?i)/\+CSCOE\+/logon" "id:1163,phase:1,t:none,deny,status:403,msg:\'sinexis.cisco.asa\'"
 SecRule REQUEST_URI "@rx (?i)/geoserver/wms" "id:1164,phase:1,t:none,deny,status:403,msg:\'sinexis.geoserver.wms\'"
+SecRule REQUEST_URI "@rx (?i)/nacos/v1/auth/users" "id:1165,phase:1,t:none,deny,status:403,msg:\'sinexis.nacos.auth\'"
+SecRule REQUEST_URI "@rx (?i)/druid/index\.html" "id:1166,phase:1,t:none,deny,status:403,msg:\'sinexis.druid.console\'"
+SecRule REQUEST_URI "@rx (?i)/v2/_catalog" "id:1167,phase:1,t:none,deny,status:403,msg:\'sinexis.docker.registry\'"
 ';
 
 EOF
