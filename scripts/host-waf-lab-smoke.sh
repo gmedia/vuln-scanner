@@ -411,6 +411,13 @@ printf '%s' "$SNIPPET" | grep -q 'id:1167' || die "snippet missing original rule
 printf '%s' "$SNIPPET" | grep -q 'id:1168' || die "snippet missing original rule 1168"
 printf '%s' "$SNIPPET" | grep -q 'id:1169' || die "snippet missing original rule 1169"
 printf '%s' "$SNIPPET" | grep -q 'id:1170' || die "snippet missing original rule 1170"
+printf '%s' "$SNIPPET" | grep -q 'id:1171' || die "snippet missing original rule 1171"
+printf '%s' "$SNIPPET" | grep -q 'id:1172' || die "snippet missing original rule 1172"
+printf '%s' "$SNIPPET" | grep -q 'id:1173' || die "snippet missing original rule 1173"
+printf '%s' "$SNIPPET" | grep -q 'id:1174' || die "snippet missing original rule 1174"
+printf '%s' "$SNIPPET" | grep -q 'id:1175' || die "snippet missing original rule 1175"
+printf '%s' "$SNIPPET" | grep -q 'id:1176' || die "snippet missing original rule 1176"
+printf '%s' "$SNIPPET" | grep -q 'id:1177' || die "snippet missing original rule 1177"
   printf '%s' "$SNIPPET" | grep -qi 'wp-admin' && die "snippet must not match /wp-admin/"
   log "snippet ok (not printed)"
 }

@@ -916,6 +916,13 @@ SecRule REQUEST_URI "@rx (?i)/v2/_catalog" "id:1167,phase:1,t:none,deny,status:4
 SecRule REQUEST_URI "@rx (?i)/\.htpasswd" "id:1168,phase:1,t:none,deny,status:403,msg:\'sinexis.htpasswd\'"
 SecRule REQUEST_URI "@rx (?i)/\.aws/config" "id:1169,phase:1,t:none,deny,status:403,msg:\'sinexis.aws.config\'"
 SecRule REQUEST_URI "@rx (?i)/\.bash_history" "id:1170,phase:1,t:none,deny,status:403,msg:\'sinexis.bash.history\'"
+SecRule REQUEST_URI "@rx (?i)/\.git-credentials" "id:1171,phase:1,t:none,deny,status:403,msg:\'sinexis.git.credentials\'"
+SecRule REQUEST_URI "@rx (?i)/server\.key" "id:1172,phase:1,t:none,deny,status:403,msg:\'sinexis.server.key\'"
+SecRule REQUEST_URI "@rx (?i)/\.dockercfg" "id:1173,phase:1,t:none,deny,status:403,msg:\'sinexis.dockercfg\'"
+SecRule REQUEST_URI "@rx (?i)/\.idea/" "id:1174,phase:1,t:none,deny,status:403,msg:\'sinexis.jetbrains.idea\'"
+SecRule REQUEST_URI "@rx (?i)/\.vscode/" "id:1175,phase:1,t:none,deny,status:403,msg:\'sinexis.vscode\'"
+SecRule REQUEST_URI "@rx (?i)/\.terraform" "id:1176,phase:1,t:none,deny,status:403,msg:\'sinexis.terraform\'"
+SecRule REQUEST_URI "@rx (?i)/\.ftpconfig" "id:1177,phase:1,t:none,deny,status:403,msg:\'sinexis.ftpconfig\'"
 ';
 
 EOF
