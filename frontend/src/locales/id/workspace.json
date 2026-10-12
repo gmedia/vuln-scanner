@@ -49,6 +49,7 @@
   "sendInvite": "Kirim undangan",
   "inviteSent": "Undangan dikirim ke {{email}} — salin tautan sebagai cadangan",
   "inviteFail": "Gagal membuat undangan",
+  "basicSeatCapHint": "Workspace Basic hanya untuk 1 editor dan 1 viewer. Upgrade ke Pro untuk kursi tambahan.",
   "emailRequired": "Email wajib diisi",
   "noActiveWorkspace": "Tidak ada workspace aktif",
   "pendingInvites": "Undangan tertunda",

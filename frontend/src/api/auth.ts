@@ -72,6 +72,7 @@ export interface OrgSummary {
   slug: string;
   role: "owner" | "admin" | "member" | "viewer";
   kind?: string;
+  sku?: string;
 }
 
 export interface UserResponse {

@@ -12,6 +12,7 @@ export interface OrgMembershipSummary {
   slug: string;
   role: OrgRole;
   kind?: OrgKind;
+  sku?: string;
 }
 
 export interface OrganizationDetail {

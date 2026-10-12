@@ -32,6 +32,7 @@ function mapOrgs(
     slug: o.slug,
     role: o.role as OrgRole,
     kind: o.kind,
+    sku: o.sku,
   }));
 }
 
