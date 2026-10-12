@@ -92,7 +92,9 @@ export default function HostWafPanel({
   const pollStale = isHelperPollStale(pollIso);
   const canProtect =
     sites.length === 0 ||
-    (selectedSite ? (selectedSite.sku ?? "multi") === "multi" : true);
+    (selectedSite
+      ? ["pro", "multi"].includes(selectedSite.sku ?? "multi")
+      : true);
   const labRoot = selectedSite?.root_path ?? "";
   const labName = (selectedSite?.name ?? "").toLowerCase();
   const isLabSite =

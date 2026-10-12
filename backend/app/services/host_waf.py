@@ -271,10 +271,10 @@ class HostWafService:
         org_id = await self._require_org(user, organization_id, min_role="admin")
         if body.mode == "protect":
             org = (await self.db.execute(select(Organization).where(Organization.id == org_id))).scalar_one()
-            if org.sku != "multi":
+            if org.sku not in ("pro", "multi"):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="WAF protect requires Host Multi SKU",
+                    detail="WAF protect requires Host Pro or Multi SKU",
                 )
         site = await self._site(org_id, site_id)
         existing = (
