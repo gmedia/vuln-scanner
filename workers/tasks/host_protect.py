@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 import sys
+from datetime import datetime
 from typing import Any, cast
 from uuid import UUID
 
@@ -86,7 +87,7 @@ def run_due_host_scans(limit: int = 20) -> dict[str, Any]:
             interval = row["scan_interval"] or "daily"
             seconds = 3600 if interval == "hourly" else 86400
 
-            inflight = session.execute(
+            inflight: int = session.execute(
                 text(
                     """
                     SELECT COUNT(*) FROM host_scans
@@ -100,7 +101,7 @@ def run_due_host_scans(limit: int = 20) -> dict[str, Any]:
                 skipped_cap += 1
                 continue
 
-            last_at = session.execute(
+            last_at: datetime | None = session.execute(
                 text(
                     """
                     SELECT MAX(created_at) FROM host_scans
@@ -110,7 +111,7 @@ def run_due_host_scans(limit: int = 20) -> dict[str, Any]:
                 {"site": site_id},
             ).scalar_one()
             if last_at is not None:
-                due = session.execute(
+                due: bool = session.execute(
                     text("SELECT (:last + make_interval(secs => :secs)) <= NOW()"),
                     {"last": last_at, "secs": seconds},
                 ).scalar_one()
@@ -118,7 +119,7 @@ def run_due_host_scans(limit: int = 20) -> dict[str, Any]:
                     skipped_not_due += 1
                     continue
 
-            scan_id = session.execute(
+            scan_id: UUID = session.execute(
                 text(
                     """
                     INSERT INTO host_scans (id, organization_id, site_id, status, trigger, hit_count, created_at)
