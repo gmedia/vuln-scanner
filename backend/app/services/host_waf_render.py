@@ -738,6 +738,18 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         'SecRule REQUEST_URI "@rx (?i)/v2/_catalog" '
         "\"id:1167,phase:1,t:none,deny,status:403,msg:\\'sinexis.docker.registry\\'\""
     )
+    rule_1168 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.htpasswd" '
+        "\"id:1168,phase:1,t:none,deny,status:403,msg:\\'sinexis.htpasswd\\'\""
+    )
+    rule_1169 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.aws/config" '
+        "\"id:1169,phase:1,t:none,deny,status:403,msg:\\'sinexis.aws.config\\'\""
+    )
+    rule_1170 = (
+        'SecRule REQUEST_URI "@rx (?i)/\\.bash_history" '
+        "\"id:1170,phase:1,t:none,deny,status:403,msg:\\'sinexis.bash.history\\'\""
+    )
     args_chain = (
         'SecRule ARGS "@rx (?i)(union\\\\s+select|or\\\\s+1=1|eval\\\\s*\\\\(|base64_decode\\\\s*\\\\()" "t:none"'
     )
@@ -929,6 +941,9 @@ def render_nginx_modsec(policy: HostWafPolicy, site: HostSite) -> str:
         rule_1165,
         rule_1166,
         rule_1167,
+        rule_1168,
+        rule_1169,
+        rule_1170,
         extra.strip(),
     ]
     rules_body = pack_modsecurity_rules(units)
