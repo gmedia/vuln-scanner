@@ -108,6 +108,7 @@ class HppLineMargin(BaseModel):
     host_cogs_capped: bool = False
     host_scans_raw: int = 0
     host_scans_cap: int = 0
+    unpriced_org_count: int = 0
 
 
 class HppReportResponse(BaseModel):
@@ -122,6 +123,7 @@ class HppReportResponse(BaseModel):
     total_fully_loaded_hpp_idr: int
     unallocated_overhead_idr: int
     line_margins: list[HppLineMargin]
+    catalog_seed_skus: list[str] = []
 
 
 class EmailSendLogItem(BaseModel):

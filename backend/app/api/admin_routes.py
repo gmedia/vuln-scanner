@@ -332,12 +332,17 @@ async def admin_force_verify_user(
     )
 
 
-async def _list_idr_from_catalog(db: AsyncSession, product: str, fallback: dict[str, int]) -> dict[str, int]:
+async def _list_idr_from_catalog(
+    db: AsyncSession, product: str, fallback: dict[str, int]
+) -> tuple[dict[str, int], list[str]]:
     prices = dict(fallback)
+    seeded = set(fallback)
     result = await db.execute(select(SkuCatalog).where(SkuCatalog.product == product))
     for row in result.scalars().all():
-        prices[str(row.sku)] = int(row.list_idr)
-    return prices
+        sku = str(row.sku)
+        prices[sku] = int(row.list_idr)
+        seeded.discard(sku)
+    return prices, sorted(seeded)
 
 
 _SCAN_COGS_KEYS: tuple[str, ...] = ("ip", "domain", "apk", "ipa", "statushost")
@@ -523,8 +528,12 @@ async def get_hpp_report(
     def _margin(line: str, sku_rows: list[tuple[str, int]], price: dict[str, int], cogs: int) -> HppLineMargin:
         org_count = 0
         revenue = 0
+        unpriced = 0
         for sku, n in sku_rows:
             count = int(n)
+            if sku == "enterprise":
+                unpriced += count
+                continue
             org_count += count
             revenue += count * int(price.get(sku, 0))
         margin = revenue - cogs
@@ -537,13 +546,18 @@ async def get_hpp_report(
             cogs_idr=cogs,
             margin_idr=margin,
             margin_pct=pct,
+            unpriced_org_count=unpriced,
         )
 
     def _margin_host(sku_rows: list[tuple[str, int]], price: dict[str, int]) -> HppLineMargin:
         org_count = 0
         revenue = 0
+        unpriced = 0
         for sku, n in sku_rows:
             count = int(n)
+            if sku == "enterprise":
+                unpriced += count
+                continue
             org_count += count
             revenue += count * int(price.get(sku, 0))
         capped = org_count > 0 and host_scan_cap > 0 and host_scan_count > host_scan_cap
@@ -561,14 +575,16 @@ async def get_hpp_report(
             host_cogs_capped=capped,
             host_scans_raw=host_scan_count,
             host_scans_cap=host_scan_cap,
+            unpriced_org_count=unpriced,
         )
 
-    scan_list = await _list_idr_from_catalog(db, "scan", SCAN_SKU_LIST_IDR)
-    host_list = await _list_idr_from_catalog(db, "host", HOST_SKU_LIST_IDR)
+    scan_list, scan_seeded = await _list_idr_from_catalog(db, "scan", SCAN_SKU_LIST_IDR)
+    host_list, host_seeded = await _list_idr_from_catalog(db, "host", HOST_SKU_LIST_IDR)
     line_margins = [
         _margin("scan", [(str(s), int(n)) for s, n in scan_sku_rows], scan_list, scan_cogs),
         _margin_host([(str(s), int(n)) for s, n in host_sku_rows], host_list),
     ]
+    catalog_seed_skus = [f"scan:{s}" for s in scan_seeded] + [f"host:{s}" for s in host_seeded]
 
     return HppReportResponse(
         from_date=start,
@@ -582,6 +598,7 @@ async def get_hpp_report(
         total_fully_loaded_hpp_idr=total_fully,
         unallocated_overhead_idr=unallocated,
         line_margins=line_margins,
+        catalog_seed_skus=catalog_seed_skus,
     )
 
 

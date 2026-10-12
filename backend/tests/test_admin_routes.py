@@ -4,7 +4,7 @@ import uuid
 from datetime import UTC, datetime
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from app.config import settings
 from app.database import get_db
@@ -986,6 +986,8 @@ class TestAdminHpp:
         assert margins["scan"]["cogs_idr"] == 1000
         assert margins["scan"]["margin_idr"] == -1000
         assert margins["scan"]["margin_pct"] is None
+        assert margins["scan"]["unpriced_org_count"] == 0
+        assert margins["host"]["unpriced_org_count"] == 0
         assert margins["host"]["org_count"] == 0
         assert margins["host"]["cogs_idr"] == 0
 
@@ -1065,6 +1067,12 @@ class TestAdminHpp:
                 )
             )
         await db_session.commit()
+        # conftest seeds every sku_catalog row; clear it so the built-in seed
+        # constants are surfaced via catalog_seed_skus.
+        from app.models.invoice import SkuCatalog
+
+        await db_session.execute(delete(SkuCatalog))
+        await db_session.commit()
         day = datetime.now(UTC).date().isoformat()
         resp = client.get(f"/api/admin/hpp/report?from={day}&to={day}", headers=API_HEADERS)
         assert resp.status_code == 200
@@ -1080,6 +1088,65 @@ class TestAdminHpp:
         assert host_margin["host_cogs_capped"] is True
         assert host_margin["cogs_idr"] == 250
         assert host_margin["margin_idr"] == 899_750
+        assert host_margin["unpriced_org_count"] == 0
+        assert body["catalog_seed_skus"]
+
+    @pytest.mark.asyncio
+    async def test_report_excludes_enterprise_org_from_margin(self, client, db_session, sample_user):
+        from datetime import UTC, datetime
+
+        from app.models.organization import Organization, OrganizationMembership
+        from app.models.scan_schedule import ScanSchedule
+
+        org = Organization(
+            id=uuid.uuid4(),
+            name="hpp-enterprise-org",
+            slug=f"hpp-enterprise-{uuid.uuid4().hex[:8]}",
+            kind="company",
+            sku="enterprise",
+            created_by_user_id=sample_user.id,
+        )
+        db_session.add(org)
+        db_session.add(
+            OrganizationMembership(organization_id=org.id, user_id=sample_user.id, role="owner")
+        )
+        db_session.add(
+            ScanSchedule(
+                id=uuid.uuid4(),
+                user_id=sample_user.id,
+                organization_id=org.id,
+                scan_type="ip",
+                target="203.0.113.55",
+                cadence="weekly",
+                next_run_at=datetime.now(UTC),
+                enabled=True,
+            )
+        )
+        await db_session.commit()
+        resp = client.get("/api/admin/hpp/report", headers=API_HEADERS)
+        assert resp.status_code == 200
+        margins = {x["line"]: x for x in resp.json()["line_margins"]}
+        assert margins["scan"]["org_count"] == 0
+        assert margins["scan"]["revenue_idr"] == 0
+        assert margins["scan"]["unpriced_org_count"] == 1
+
+    @pytest.mark.asyncio
+    async def test_report_catalog_seed_skus_drops_seeded_row(self, client, db_session):
+        from app.models.invoice import SkuCatalog
+
+        # conftest seeds every sku_catalog row; clear it so adding a DB row
+        # demonstrates a sku dropping out of the seed-constant fallback list.
+        await db_session.execute(delete(SkuCatalog))
+        db_session.add(
+            SkuCatalog(product="scan", sku="basic", list_idr=300_000, seats=1, invoicable=True)
+        )
+        await db_session.commit()
+        resp = client.get("/api/admin/hpp/report", headers=API_HEADERS)
+        assert resp.status_code == 200
+        seed = resp.json()["catalog_seed_skus"]
+        assert "scan:basic" not in seed
+        assert "scan:pro" in seed
+        assert "host:basic" in seed
 
     def test_report_bad_range(self, client):
         resp = client.get("/api/admin/hpp/report?from=2026-08-10&to=2026-08-01", headers=API_HEADERS)

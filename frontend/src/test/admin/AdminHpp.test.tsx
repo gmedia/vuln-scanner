@@ -180,6 +180,7 @@ const report = {
   journal_variable_idr: 0,
   total_fully_loaded_hpp_idr: 2100,
   unallocated_overhead_idr: 0,
+  catalog_seed_skus: [],
   line_margins: [
     {
       line: "scan",
@@ -189,6 +190,7 @@ const report = {
       cogs_idr: 10000,
       margin_idr: 290000,
       margin_pct: 97,
+      unpriced_org_count: 0,
     },
     {
       line: "host",
@@ -201,6 +203,7 @@ const report = {
       host_cogs_capped: true,
       host_scans_raw: 3,
       host_scans_cap: 1,
+      unpriced_org_count: 0,
     },
   ],
 };
@@ -299,6 +302,119 @@ describe("AdminHpp", () => {
     expect(screen.getByText(/\(97%\)/)).toBeInTheDocument();
     expect(
       screen.getByText("Host COGS capped at included cadence (1 scans vs 3 recorded)."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Cost / unit (IDR)")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "These are production costs (COGS) per completed job — not selling prices. The line-margin cards compute revenue from the SKU list price in the catalog.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("shows cost-not-filled instead of 100% when cogs is zero", () => {
+    const zeroCogsReport = {
+      ...report,
+      line_margins: [
+        {
+          ...report.line_margins[0],
+          cogs_idr: 0,
+          revenue_idr: 300000,
+          margin_idr: 300000,
+          margin_pct: 100,
+        },
+        { ...report.line_margins[1], margin_pct: 99 },
+      ],
+    };
+    vi.mocked(useQuery).mockImplementation((opts) => {
+      const key = (opts.queryKey as readonly unknown[])[0];
+      if (key === "admin-hpp") {
+        return { data: rates, isLoading: false } as never;
+      }
+      if (key === "admin-hpp-overhead") {
+        return {
+          data: {
+            amount_idr: 100,
+            updated_at: "2026-08-01T00:00:00Z",
+            updated_by: null,
+          },
+          isLoading: false,
+        } as never;
+      }
+      if (key === "admin-hpp-costs") {
+        return { data: [], isLoading: false } as never;
+      }
+      return { data: zeroCogsReport, isLoading: false } as never;
+    });
+    render(<AdminHpp />);
+    expect(screen.queryByText(/\(100%\)/)).toBeNull();
+    expect(screen.getByText(/cost not filled in/)).toBeInTheDocument();
+  });
+
+  it("shows enterprise unpriced note", () => {
+    const unpricedReport = {
+      ...report,
+      line_margins: [
+        { ...report.line_margins[0], unpriced_org_count: 2 },
+        report.line_margins[1],
+      ],
+    };
+    vi.mocked(useQuery).mockImplementation((opts) => {
+      const key = (opts.queryKey as readonly unknown[])[0];
+      if (key === "admin-hpp") {
+        return { data: rates, isLoading: false } as never;
+      }
+      if (key === "admin-hpp-overhead") {
+        return {
+          data: {
+            amount_idr: 100,
+            updated_at: "2026-08-01T00:00:00Z",
+            updated_by: null,
+          },
+          isLoading: false,
+        } as never;
+      }
+      if (key === "admin-hpp-costs") {
+        return { data: [], isLoading: false } as never;
+      }
+      return { data: unpricedReport, isLoading: false } as never;
+    });
+    render(<AdminHpp />);
+    expect(
+      screen.getByText(
+        "Enterprise orgs are quote-only (no public list price) and excluded from this estimasi: 2 org.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("warns when list prices are seeded", () => {
+    vi.mocked(useQuery).mockImplementation((opts) => {
+      const key = (opts.queryKey as readonly unknown[])[0];
+      if (key === "admin-hpp") {
+        return { data: rates, isLoading: false } as never;
+      }
+      if (key === "admin-hpp-overhead") {
+        return {
+          data: {
+            amount_idr: 100,
+            updated_at: "2026-08-01T00:00:00Z",
+            updated_by: null,
+          },
+          isLoading: false,
+        } as never;
+      }
+      if (key === "admin-hpp-costs") {
+        return { data: [], isLoading: false } as never;
+      }
+      return {
+        data: { ...report, catalog_seed_skus: ["scan:basic"] },
+        isLoading: false,
+      } as never;
+    });
+    render(<AdminHpp />);
+    expect(
+      screen.getByText(
+        "Some SKU list prices fall back to built-in seed constants (no catalog row): scan:basic.",
+      ),
     ).toBeInTheDocument();
   });
 
