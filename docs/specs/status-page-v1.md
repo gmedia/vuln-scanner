@@ -4,7 +4,7 @@
 **Goal:** org-scoped **public** availability page driven by existing Uptime monitors, plus **custom hostname** (CNAME). TLS for customer hosts is **Cloudflare for SaaS / orange-cloud** — not ACME inside the app container.
 **Epic:** **P11**. Does **not** replace P8 Uptime probes, P10 blog, Guard, or SIEM.
 **Depends:** P2 Workspace · P8 `uptime_monitors` · blog HTML-island pattern · host nginx.
-**Commercial:** not a new list-price SKU. **Publish:** org `sku` in `{pro, multi}`. **Custom hostname:** `multi` only.
+**Commercial:** not a new list-price SKU. **Publish:** org `sku` in `{pro, multi, enterprise}`. **Custom hostname:** `multi` or `enterprise` only.
 **Not this epic:** subscriber mailing list, Slack/webhooks, auto-open incidents from down, ACME in-app, nested pages, custom CSS/logo upload.
 **Hostname lifecycle (buttons, TXT, later CF API / credits):** [`status-hostname-lifecycle.md`](status-hostname-lifecycle.md). First slice (API + SPA, stub CF) is in-repo; CF write API and credits remain later.
 

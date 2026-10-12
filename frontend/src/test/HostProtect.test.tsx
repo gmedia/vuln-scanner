@@ -829,6 +829,44 @@ describe("Host Protect page", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows WAF protect for Host Enterprise SKU", async () => {
+    vi.mocked(hostApi.listHostSites).mockResolvedValue([
+      {
+        id: "s1",
+        organization_id: "org1",
+        guard_agent_id: "a1",
+        asset_id: null,
+        name: "Web",
+        root_path: "/var/www/html",
+        cms_hint: "wordpress",
+        enabled: true,
+        auto_quarantine: false,
+        scan_interval: "daily",
+        created_by: "u1",
+        created_at: "2026-08-30T00:00:00Z",
+        updated_at: "2026-08-30T00:00:00Z",
+        sku: "enterprise",
+        sku_limit: 10,
+      },
+    ]);
+    const user = userEvent.setup();
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByTestId("host-tab-waf")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("host-tab-waf"));
+    await waitFor(() =>
+      expect(screen.getByTestId("host-waf-mode")).toBeInTheDocument(),
+    );
+    expect(
+      screen.queryByTestId("host-waf-protect-locked"),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("host-waf-mode"));
+    expect(
+      await screen.findByRole("option", { name: /^protect$/i }),
+    ).toBeInTheDocument();
+  });
+
   it("shows clean-scan copy only when last scan completed with zero hits", async () => {
     vi.mocked(hostApi.listHostSites).mockResolvedValue([
       {

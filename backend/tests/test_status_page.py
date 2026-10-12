@@ -267,7 +267,7 @@ async def test_public_html_lists_incident_updates(ctx, db_session: AsyncSession)
         second = pub.text.index("Traffic is recovering.")
         assert first < second
         first_when = pub.text.find("class='when'")
-        investigating_meta = pub.text[first_when : first]
+        investigating_meta = pub.text[first_when:first]
         assert "investigating" in investigating_meta
         assert "UTC" in investigating_meta
         recovering = "Traffic is recovering."
@@ -291,6 +291,37 @@ async def test_basic_sku_cannot_publish(ctx, db_session: AsyncSession):
             headers=headers,
         )
         assert r.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_enterprise_sku_can_publish_and_custom_host(ctx, db_session: AsyncSession):
+    _bind_db(db_session)
+    org: Organization = ctx["org"]
+    org.sku = "enterprise"
+    await db_session.commit()
+    headers = _auth(ctx["owner"], org.id)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        created = await client.put(
+            "/api/status-page",
+            json={"slug": "ent-page", "title": "Enterprise"},
+            headers=headers,
+        )
+        assert created.status_code == 200, created.text
+        published = await client.patch(
+            "/api/status-page",
+            json={"published": True},
+            headers=headers,
+        )
+        assert published.status_code == 200, published.text
+        host = await client.patch(
+            "/api/status-page",
+            json={"custom_hostname": "status-ent.appmedia.id"},
+            headers=headers,
+        )
+        assert host.status_code == 200, host.text
+        assert host.json()["custom_hostname"] == "status-ent.appmedia.id"
+        assert host.json()["hostname_status"] == "pending_txt"
 
 
 @pytest.mark.asyncio

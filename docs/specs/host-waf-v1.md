@@ -1,6 +1,6 @@
 # Spec: Host WAF v1 (P13 — on-box web request filter control plane)
 
-**Status:** **S0–S5 shipped**; live helper ingest of nginx ModSec audit; **#640** GET/ingest **starter product rules**; **DL2** started **1001–1006**; live allowlist on `main` is **1001–1177** (**#708** + **#825** + **#833** + **#837** + **#838** + **#839** + **#846** + **#913**). GET `/wp-admin/` is **not** matched. Imunify/CRS/static IDs are **not** product events. SPA **Simulate** still inserts `mock.sqli.1` (lab-only, **DL0 shipped**). **P14 F** adds **protect** on **Host Pro or Multi** (customer nginx `SecRuleEngine On`); **R4** (2026-10-12) lowered the gate from Multi-only to Pro+Multi. Product **P12 Host Protect** is on `main` (malware files). This epic is **HTTP request filtering** for the **same Guard-enrolled VPS**, not a rewrite of `/host` scans. **Coraza on Sinexis edge / full CRS = not this product.**
+**Status:** **S0–S5 shipped**; live helper ingest of nginx ModSec audit; **#640** GET/ingest **starter product rules**; **DL2** started **1001–1006**; live allowlist on `main` is **1001–1177** (**#708** + **#825** + **#833** + **#837** + **#838** + **#839** + **#846** + **#913**). GET `/wp-admin/` is **not** matched. Imunify/CRS/static IDs are **not** product events. SPA **Simulate** still inserts `mock.sqli.1` (lab-only, **DL0 shipped**). **P14 F** adds **protect** on **Host Pro, Multi, or Enterprise** (customer nginx `SecRuleEngine On`); **R4** (2026-10-12) lowered the gate from Multi-only to Pro+Multi. Product **P12 Host Protect** is on `main` (malware files). This epic is **HTTP request filtering** for the **same Guard-enrolled VPS**, not a rewrite of `/host` scans. **Coraza on Sinexis edge / full CRS = not this product.**
 **Goal:** first **WAF attach** that GMD relations can describe as “Imunify-like request block” **without** cloning Imunify360, ModSecurity commercial rules, or putting Coraza on the **Sinexis public edge**.
 **Epic:** **P13**. Does **not** replace P12 file malware, P5 Guard, P7 SIEM, or P1 Scan. Does **not** jump GTM / Host Protect IDR lock.
 **Depends:** P2 Workspace · P5 Guard enroll · P12 `host_sites` (policy is **per site**, same `root_path` / agent).
@@ -10,7 +10,7 @@
 
 **Not this epic:** Imunify trademarks/rulesets, PHP Proactive Defense, KernelCare, CAPTCHA/WebShield, email anti-spam, putting Coraza in `nginx/sinexis.app.conf`, CrowdSec as the product, CRS paid packs in git.
 
-**Follow-on:** protect-on-customer-nginx is **P14 slice F** / **wave 2** — [`imunify-class-onbox.md`](imunify-class-onbox.md) §7. Original pack widen = **DL2** in [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) (**shipped**). Short “ganti Imunify360” is **Sentence-ok GREEN** 2026-09-21 (displace **§7**; nginx dedicated / no panel only) — live 403 on lab vhost is **ops**, not more rule IDs. Protect mode is **Host Pro or Multi** (R4 **shipped** 2026-10-12); snippet still never for `sinexis.app` edge. Shared cPanel “ganti” still **forbidden**.
+**Follow-on:** protect-on-customer-nginx is **P14 slice F** / **wave 2** — [`imunify-class-onbox.md`](imunify-class-onbox.md) §7. Original pack widen = **DL2** in [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) (**shipped**). Short “ganti Imunify360” is **Sentence-ok GREEN** 2026-09-21 (displace **§7**; nginx dedicated / no panel only) — live 403 on lab vhost is **ops**, not more rule IDs. Protect mode is **Host Pro, Multi, or Enterprise** (R4 **shipped** 2026-10-12); snippet still never for `sinexis.app` edge. Shared cPanel “ganti” still **forbidden**.
 
 **Lab probe (tc5, after ModSec on vhost; never `sinexis.app` edge):** `host-waf-lab-smoke.sh` asserts snippet `id:1005`/`id:1006` and no `wp-admin`. Live curl (ops): POST `/wp-login.php` + payload ARGS → **403**; URI `eval(` / `base64_decode(` → **403**; GET `/wp-admin/` → **200**.
 
@@ -86,7 +86,7 @@ If sales wants “one security page,” that is **tabs on `/host`**, not a new s
 | Engine S4 | Coraza **or** nginx snippet **generated**; install = **hybrid/ops** on VPS |
 | Listen | Do **not** store customer public IPs in git; policy has **no** listen IP field in S1 (site + agent only) |
 | Body | Never persist request body |
-| SKU | WAF **not** on Host Basic in working SKU; Pro/Multi **detect** OK; **protect** = Pro/Multi (**R4 shipped**) or owner lock |
+| SKU | WAF **not** on Host Basic in working SKU; Pro/Multi/Enterprise **detect** OK; **protect** = Pro/Multi/Enterprise (**R4 shipped**) or owner lock |
 | Require Guard | **Yes** (same as P12) |
 
 ---

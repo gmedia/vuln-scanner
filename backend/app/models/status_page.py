@@ -13,8 +13,8 @@ if TYPE_CHECKING:
     from app.models.uptime import UptimeMonitor
     from app.models.user import User
 
-STATUS_PAGE_PUBLISH_SKUS = frozenset({"pro", "multi"})
-STATUS_PAGE_CUSTOM_HOST_SKUS = frozenset({"multi"})
+STATUS_PAGE_PUBLISH_SKUS = frozenset({"pro", "multi", "enterprise"})
+STATUS_PAGE_CUSTOM_HOST_SKUS = frozenset({"multi", "enterprise"})
 RESERVED_HOST_SUFFIXES = (".sinexis.app",)
 PLATFORM_HOSTS = frozenset(
     {
