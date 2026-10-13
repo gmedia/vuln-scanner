@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, renderHook, waitFor, act } from "@testing-library/react";
+import { renderHook, waitFor, act } from "@testing-library/react";
 import { useScanCredit } from "@/hooks/useScanCredit";
 
 const { fetchBalance, checkEligibility } = vi.hoisted(() => ({

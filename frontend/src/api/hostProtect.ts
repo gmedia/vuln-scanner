@@ -127,3 +127,8 @@ export async function ignoreHostHit(id: string): Promise<HostHit> {
   const { data } = await api.post<HostHit>(`/api/host/hits/${id}/ignore`);
   return data;
 }
+
+export function mapHostError(message: string): string {
+  if (/limit/i.test(message)) return "limit";
+  return message;
+}

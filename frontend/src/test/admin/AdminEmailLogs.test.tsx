@@ -3,7 +3,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import AdminEmailLogs, { emailLogPageItems } from "@/pages/admin/AdminEmailLogs";
+import AdminEmailLogs from "@/pages/admin/AdminEmailLogs";
+import { emailLogPageItems } from "@/lib/pagination";
 
 vi.mock("@tanstack/react-query", () => ({
   useQuery: vi.fn(),

@@ -84,4 +84,4 @@ function TabCount({ value }: { readonly value: number }) {
   );
 }
 
-export { Tabs, TabsList, TabsTrigger, TabsContent, TabCount, tabsListVariants };
+export { Tabs, TabsList, TabsTrigger, TabsContent, TabCount };
