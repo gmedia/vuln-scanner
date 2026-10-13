@@ -4,7 +4,7 @@
 **Goal:** Extend P8 Uptime beyond GET+TCP so colo/VPS and hospitality attach can cover **200-but-wrong**, **authenticated health**, **NAT/cron jobs**, and (later) **DNS integrity** — without becoming Pingdom/Checkly.
 **Epic:** **P8.x** (follow-on to [`uptime-v1.md`](uptime-v1.md) S1–S5 + [`status-page-v1.md`](status-page-v1.md)). Does **not** replace Scan, Guard, SIEM, or public status HTML.
 **Depends:** v1 monitors (`http` \| `tcp`), SKU seats, SSRF `assert_public_host`, queue `uptime_check`, SPA `/uptime`.
-**Commercial:** Still **no per-ping credits**. Seats stay **Basic 1 / Pro 3 / Multi 10** enabled monitors. Do **not** sell check-type as a SKU. Heartbeat **shares the same seat** in v2 (simpler than Better Stack’s split heartbeat SKU).
+**Commercial:** Still **no per-ping credits**. Seats stay **Basic 10 / Pro 50 / Multi 200** enabled monitors (locked 2026-10-12 — [`pricing-architecture-v1.md`](../commercial/pricing-architecture-v1.md) §2/§7). Do **not** sell check-type as a SKU. Heartbeat **shares the same seat** in v2 (simpler than Better Stack’s split heartbeat SKU).
 **Not this epic:** Slack/webhooks, subscriber mailing, auto-open incidents, Playwright/browser, gRPC, multi-region, customer probe VMs, UDP as a product type, ICMP as default, ACME in-app, nested status pages. **Timeout / expect_status SPA + edit:** [`uptime-advanced-settings.md`](uptime-advanced-settings.md) (S0 draft).
 
 ---

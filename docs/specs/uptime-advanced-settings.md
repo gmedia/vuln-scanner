@@ -4,7 +4,7 @@
 **Agent queue:** **Shipped.** Next product-depth default is **Scan PDF / invoice HTML print** — S0 [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md) (guide **§1.3.1**). Residual: human UI/SMTP smoke.
 **Goal:** Let operators set **probe reliability knobs** (timeout, expected HTTP status) on `/uptime` without false-downs on slow colo origins — **without** becoming Pingdom, Checkly, or a SKU entitlement matrix.
 **Epic:** **P8.x** follow-on to [`uptime-v1.md`](uptime-v1.md) (S1–S5) and [`uptime-v2-check-types.md`](uptime-v2-check-types.md) (check types on `main` #451). Does **not** replace Scan, Guard, SIEM, or public status HTML.
-**Depends:** Existing `UptimeMonitor` columns `timeout_seconds` / `expect_status`; SPA `/uptime`; queue `uptime_check`; SKU seats Basic 1 / Pro 3 / Multi 10.
+**Depends:** Existing `UptimeMonitor` columns `timeout_seconds` / `expect_status`; SPA `/uptime`; queue `uptime_check`; SKU seats Basic 10 / Pro 50 / Multi 200 (locked 2026-10-12 — [`pricing-architecture-v1.md`](../commercial/pricing-architecture-v1.md) §2/§7).
 **Commercial:** Still **no per-ping credits**. Seats unchanged. Do **not** sell “advanced settings” as a SKU or Pro-only 403.
 **Not this epic:** UDP, multi-region, webhooks, JSONPath, mTLS, maintenance windows (P6), skip-TLS (deferred), user-editable confirm count (deferred), ICMP default on.
 
@@ -164,7 +164,7 @@ cd backend && python -m pytest tests/test_uptime.py -q -k timeout
 # expect: timeout_seconds 31 → 422; omit → stored 10; expect_status 200 round-trip
 
 # Seat (unchanged)
-# second enabled monitor on basic → HTTP 400 body contains "seat limit"
+# eleventh enabled monitor on basic (cap 10) → HTTP 400 body contains "seat limit"
 
 # Public status leak
 curl -sS "$PUBLIC_BASE/status/$SLUG" | tee /tmp/uptime-adv-status.html
