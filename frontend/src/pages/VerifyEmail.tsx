@@ -29,7 +29,7 @@ function VerifyEmail() {
   const navigate = useNavigate();
   const { t } = useTranslation("auth");
   const { t: tc } = useTranslation("common");
-  const { verifyEmail, resendVerification, isLoading, error } = useAuthStore();
+  const { verifyEmail, resendVerification, error } = useAuthStore();
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [resendEmail, setResendEmail] = useState(
     () => searchParams.get("email") ?? "",

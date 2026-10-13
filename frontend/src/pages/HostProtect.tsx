@@ -17,6 +17,7 @@ import {
   listHostHits,
   listHostScans,
   listHostSites,
+  mapHostError,
   type HostScan,
   updateHostSite,
   quarantineHostHit,
@@ -57,11 +58,6 @@ function parseHostTab(raw: string | null): HostTab {
     if (tab === raw) return tab;
   }
   return "malware";
-}
-
-export function mapHostError(message: string): string {
-  if (/limit/i.test(message)) return "limit";
-  return message;
 }
 
 export default function HostProtect() {
