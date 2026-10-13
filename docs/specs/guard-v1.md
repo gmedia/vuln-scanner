@@ -69,6 +69,7 @@ Commercial: Guard is **second line** after Scan attach on colo/VPS; hospitality 
 | **UI raw logs** | **D8** No `full_log` / full payload in SPA |
 | **AuthZ** | **D9** List inventory/alerts: **viewer+**; create/rotate enroll, enable Guard: **admin+**; platform `is_admin` ≠ org owner |
 | **Disable path** | **D10** Soft-disable agent in SaaS; hard delete in Wazuh = ops runbook only |
+| **Seat cap** | **D11** Enforced on enroll: `GUARD_SKU_LIMITS` **basic 1 / pro 3 / multi 10** (owner-locked 2026-10-12, [`pricing-architecture-v1.md`](../commercial/pricing-architecture-v1.md) §2/§7). Counts **active** agents (`disabled_at IS NULL`); rejects the enroll with **HTTP 400** `Guard seat limit for {sku} tier is {limit}` **before** calling the manager. Mirrors the Scan/Host/Uptime caps. |
 | **Language** | Spec English; user chat Bahasa; UI dual-brand soft (Sinexis Guard / engine whisper) |
 | **When Wazuh down** | API returns last synced snapshot + `sync_error` / degraded flag; do not 500 entire app |
 
@@ -324,6 +325,7 @@ User may override before S1 code; changes must update this table.
 - [ ] SPA `/guard` shows inventory + alerts + enroll for admin
 - [ ] No Wazuh passwords or lab IPs in git
 - [ ] Tests with `GUARD_MOCK_WAZUH` (or equivalent) pass without live manager
+- [ ] Guard seat cap **1/3/10** enforced on enroll (400 + `seat limit`); disabled agents do not count
 - [ ] Explicit **non-goals** still true (no SIEM UI)
 
 ### Residual / out of DoD
