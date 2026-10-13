@@ -5,6 +5,7 @@ import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { buttonVariants } from "@/components/ui/buttonVariants";
 import {
   Table,
   TableBody,
@@ -13,6 +14,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   componentRailClass,
   componentStateBadge,
@@ -54,18 +66,37 @@ export function StatusComponentBoard({
               <Badge variant={componentStateBadge(c.state)}>
                 {c.state ?? unknown}
               </Badge>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-11 w-11 min-h-11 min-w-11 p-0 md:h-9 md:w-9 md:min-h-9 md:min-w-9"
-                data-testid={`status-component-remove-m-${c.id}`}
-                aria-label={t("remove")}
-                disabled={removing}
-                onClick={() => onRemove(c.id)}
-              >
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-11 w-11 min-h-11 min-w-11 p-0 md:h-9 md:w-9 md:min-h-9 md:min-w-9"
+                    data-testid={`status-component-remove-m-${c.id}`}
+                    aria-label={t("remove")}
+                    disabled={removing}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t("removeConfirmTitle")}</AlertDialogTitle>
+                    <AlertDialogDescription>{t("removeConfirmBody")}</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                    <AlertDialogAction
+                      className={buttonVariants({ variant: "destructive" })}
+                      data-testid={`status-component-remove-confirm-m-${c.id}`}
+                      onClick={() => onRemove(c.id)}
+                    >
+                      {t("remove")}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         ))}
@@ -107,18 +138,37 @@ export function StatusComponentBoard({
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-11 w-11 min-h-11 min-w-11 p-0 md:h-9 md:w-9 md:min-h-9 md:min-w-9"
-                    data-testid={`status-component-remove-${c.id}`}
-                    aria-label={t("remove")}
-                    disabled={removing}
-                    onClick={() => onRemove(c.id)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-11 w-11 min-h-11 min-w-11 p-0 md:h-9 md:w-9 md:min-h-9 md:min-w-9"
+                        data-testid={`status-component-remove-${c.id}`}
+                        aria-label={t("remove")}
+                        disabled={removing}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t("removeConfirmTitle")}</AlertDialogTitle>
+                        <AlertDialogDescription>{t("removeConfirmBody")}</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                        <AlertDialogAction
+                          className={buttonVariants({ variant: "destructive" })}
+                          data-testid={`status-component-remove-confirm-${c.id}`}
+                          onClick={() => onRemove(c.id)}
+                        >
+                          {t("remove")}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </TableCell>
               </TableRow>
             ))}

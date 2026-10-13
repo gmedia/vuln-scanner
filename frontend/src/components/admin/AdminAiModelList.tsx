@@ -3,6 +3,18 @@ import type { AiModelAdmin } from "@/api/admin";
 import { formatIdr } from "@/components/admin/aiFormat";
 import { AdminAiField } from "@/components/admin/AdminAiField";
 import { Button } from "@/components/ui/Button";
+import { buttonVariants } from "@/components/ui/buttonVariants";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/Input";
 import {
   Table,
@@ -115,14 +127,35 @@ export function AdminAiModelList({
                   >
                     {t("aiEdit")}
                   </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => onDelete(m.id)}
-                  >
-                    {t("aiDelete")}
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                      >
+                        {t("aiDelete")}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t("aiModelDeleteConfirmTitle")}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t("aiModelDeleteConfirmBody")}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                        <AlertDialogAction
+                          className={buttonVariants({ variant: "destructive" })}
+                          data-testid={`admin-ai-model-delete-confirm-m-${m.id}`}
+                          onClick={() => onDelete(m.id)}
+                        >
+                          {t("aiDelete")}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </>
             )}
@@ -205,14 +238,35 @@ export function AdminAiModelList({
                       >
                         {t("aiEdit")}
                       </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => onDelete(m.id)}
-                      >
-                        {t("aiDelete")}
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                          >
+                            {t("aiDelete")}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>{t("aiModelDeleteConfirmTitle")}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {t("aiModelDeleteConfirmBody")}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                            <AlertDialogAction
+                              className={buttonVariants({ variant: "destructive" })}
+                              data-testid={`admin-ai-model-delete-confirm-${m.id}`}
+                              onClick={() => onDelete(m.id)}
+                            >
+                              {t("aiDelete")}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </>
                   )}
                 </TableCell>

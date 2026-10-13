@@ -78,6 +78,8 @@
   "statusPendingRestore": "Restore queued — still quarantined on disk",
   "restore": "Restore",
   "ignore": "Ignore",
+  "ignoreConfirmTitle": "Ignore this file?",
+  "ignoreConfirmBody": "Ignored files leave the active queue and cannot be re-opened. Quarantine instead if you are unsure.",
   "openGuard": "Open Guard",
   "tabMalware": "Malware",
   "tabWaf": "WAF",

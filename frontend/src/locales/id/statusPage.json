@@ -55,6 +55,8 @@
   "components": "Komponen",
   "noComponents": "Belum ada komponen. Petakan monitor Uptime.",
   "remove": "Hapus",
+  "removeConfirmTitle": "Hapus komponen?",
+  "removeConfirmBody": "Komponen dihapus dari halaman status publik. Tidak bisa dikembalikan.",
   "colActions": "Aksi",
   "colStarted": "Mulai",
   "incidentTitle": "Judul insiden",

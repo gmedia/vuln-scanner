@@ -5,6 +5,7 @@ import { formatAiTime } from "@/components/admin/aiFormat";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { buttonVariants } from "@/components/ui/buttonVariants";
 import {
   Card,
   CardContent,
@@ -22,6 +23,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 function statusLabel(t: (key: string) => string, isActive: boolean): string {
   return isActive ? t("colActive") : t("colInactive");
@@ -114,15 +126,34 @@ export function AiKeysPanel({
                       : t("neverUsed")}
                   </p>
                   {k.is_active ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="mt-3 w-full"
-                      onClick={() => onRevoke(k.id)}
-                    >
-                      {t("revoke")}
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="mt-3 w-full"
+                        >
+                          {t("revoke")}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>{t("revokeConfirmTitle")}</AlertDialogTitle>
+                          <AlertDialogDescription>{t("revokeConfirmBody")}</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                          <AlertDialogAction
+                            className={buttonVariants({ variant: "destructive" })}
+                            data-testid={`ai-key-revoke-confirm-m-${k.id}`}
+                            onClick={() => onRevoke(k.id)}
+                          >
+                            {t("revoke")}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   ) : null}
                 </div>
               ))}
@@ -176,14 +207,33 @@ export function AiKeysPanel({
                       </TableCell>
                       <TableCell className="text-right">
                         {k.is_active ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onRevoke(k.id)}
-                          >
-                            {t("revoke")}
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                              >
+                                {t("revoke")}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>{t("revokeConfirmTitle")}</AlertDialogTitle>
+                                <AlertDialogDescription>{t("revokeConfirmBody")}</AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className={buttonVariants({ variant: "destructive" })}
+                                  data-testid={`ai-key-revoke-confirm-${k.id}`}
+                                  onClick={() => onRevoke(k.id)}
+                                >
+                                  {t("revoke")}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         ) : null}
                       </TableCell>
                     </TableRow>
