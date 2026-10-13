@@ -209,7 +209,7 @@ describe("ResetPassword", () => {
       });
     });
 
-    it("shows loading state when submitting", async () => {
+    it("shows loading state then success when submitting", async () => {
       mockResetPassword = vi.fn().mockImplementation(
         () => new Promise((resolve) => setTimeout(() => resolve(true), 100)),
       );
@@ -222,6 +222,12 @@ describe("ResetPassword", () => {
 
       await waitFor(() => {
         expect(screen.getByText("Saving the new password...")).toBeInTheDocument();
+      });
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole("heading", { name: "Password updated" }),
+        ).toBeInTheDocument();
       });
     });
 
