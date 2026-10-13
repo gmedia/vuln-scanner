@@ -284,6 +284,7 @@
   "skuColSeats": "Kursi",
   "skuColInvoicable": "Dapat diinvoice",
   "skuColUpdated": "Diperbarui",
+  "skuUpdatedBy": "oleh {{email}}",
   "skuColAction": "Aksi",
   "skuSave": "Simpan",
   "skuSaved": "Harga SKU disimpan",

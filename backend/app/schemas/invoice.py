@@ -28,6 +28,8 @@ class SkuCatalogItem(BaseModel):
     seats: int
     invoicable: bool
     updated_at: datetime
+    updated_by: uuid.UUID | None = None
+    updated_by_email: str | None = None
 
 
 class SkuCatalogListResponse(BaseModel):

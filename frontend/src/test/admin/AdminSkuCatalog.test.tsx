@@ -37,6 +37,8 @@ const catalog: SkuCatalogItem[] = [
     seats: 3,
     invoicable: true,
     updated_at: "2026-09-13T00:00:00Z",
+    updated_by: "11111111-1111-1111-1111-111111111111",
+    updated_by_email: "ops@sinexis.app",
   },
   {
     product: "scan",
@@ -108,6 +110,12 @@ describe("AdminSkuCatalog", () => {
     expect(
       screen.getByText(/does not change past invoices/i),
     ).toBeInTheDocument();
+  });
+
+  it("shows who last updated a catalog row", () => {
+    render(<AdminSkuCatalog />);
+    expect(screen.getByTestId("sku-catalog-actor-scan-pro")).toHaveTextContent("by ops@sinexis.app");
+    expect(screen.queryByTestId("sku-catalog-actor-scan-basic")).toBeNull();
   });
 
   it("keeps seats read-only", () => {

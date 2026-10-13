@@ -89,8 +89,21 @@ class InvoiceService:
         result = await self.db.execute(select(SkuCatalog).order_by(SkuCatalog.product, SkuCatalog.sku))
         return list(result.scalars().all())
 
+    async def list_catalog_with_actors(self) -> list[tuple[SkuCatalog, str | None]]:
+        result = await self.db.execute(
+            select(SkuCatalog, User.email)
+            .outerjoin(User, SkuCatalog.updated_by == User.id)
+            .order_by(SkuCatalog.product, SkuCatalog.sku)
+        )
+        return [(row[0], row[1]) for row in result.all()]
+
     async def update_catalog(
-        self, product: str, sku: str, list_idr: int, invoicable: bool | None = None
+        self,
+        product: str,
+        sku: str,
+        list_idr: int,
+        invoicable: bool | None = None,
+        updated_by: uuid.UUID | None = None,
     ) -> SkuCatalog:
         result = await self.db.execute(select(SkuCatalog).where(SkuCatalog.product == product, SkuCatalog.sku == sku))
         row = result.scalar_one_or_none()
@@ -100,6 +113,7 @@ class InvoiceService:
         if invoicable is not None:
             row.invoicable = invoicable
         row.updated_at = datetime.now(UTC)
+        row.updated_by = updated_by
         await self.db.commit()
         await self.db.refresh(row)
         return row

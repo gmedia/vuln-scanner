@@ -45,8 +45,11 @@ PK `(product, sku)`. Products = `scan` + `host` (both `invoicable=true` after H9
 | seats | int ≥ 1 |
 | invoicable | bool |
 | updated_at | timestamptz |
+| updated_by | uuid → `users.id` (nullable, `ON DELETE SET NULL`) — audit actor, added 2026-10-13 |
 
 Seed Scan from I2. Seed Host 150_000 / 350_000 / 900_000. Alembic `host_sku_invoicable` sets Host `invoicable=true`.
+
+**Audit trail (2026-10-13):** every `PUT` records the acting admin in `updated_by` (migration `sku_catalog_updated_by`); `GET /api/admin/sku-catalog` returns `updated_by` + `updated_by_email` and `/admin/skus` shows "by &lt;email&gt;" under the updated date. Mirrors the existing `HppRate.updated_by` pattern. No history table — last-writer only.
 
 HPP overlay `_SCAN_LIST_IDR` / `_HOST_LIST_IDR` **read from catalog** (fallback to the same constants if a row is missing).
 
@@ -91,7 +94,7 @@ Admin (`get_current_admin` + existing limiter):
 | Method | Path | Notes |
 |--------|------|--------|
 | GET | `/api/admin/sku-catalog` | all rows |
-| PUT | `/api/admin/sku-catalog/{product}/{sku}` | `{ list_idr, invoicable? }`; seats immutable in v1 |
+| PUT | `/api/admin/sku-catalog/{product}/{sku}` | `{ list_idr, invoicable? }`; seats immutable in v1; records `updated_by` |
 | GET | `/api/admin/invoices` | filter `status`, `organization_id`; page |
 | POST | `/api/admin/invoices` | `{ organization_id, sku, product?, period_start? }` `product` = `scan` (default) \| `host`; amount from catalog |
 | POST | `/api/admin/invoices/{id}/send` | draft→sent |

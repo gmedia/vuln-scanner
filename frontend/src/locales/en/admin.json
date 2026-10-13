@@ -284,6 +284,7 @@
   "skuColSeats": "Seats",
   "skuColInvoicable": "Invoicable",
   "skuColUpdated": "Updated",
+  "skuUpdatedBy": "by {{email}}",
   "skuColAction": "Action",
   "skuSave": "Save",
   "skuSaved": "SKU price saved",

@@ -70,8 +70,22 @@ async def get_sku_catalog(
     limit_response = await admin_limiter(request)
     if limit_response:
         return limit_response
-    items = await InvoiceService(db).list_catalog()
-    return SkuCatalogListResponse(items=[SkuCatalogItem.model_validate(i) for i in items])
+    rows = await InvoiceService(db).list_catalog_with_actors()
+    return SkuCatalogListResponse(
+        items=[
+            SkuCatalogItem(
+                product=row.product,
+                sku=row.sku,
+                list_idr=row.list_idr,
+                seats=row.seats,
+                invoicable=row.invoicable,
+                updated_at=row.updated_at,
+                updated_by=row.updated_by,
+                updated_by_email=email,
+            )
+            for row, email in rows
+        ]
+    )
 
 
 @router.put("/sku-catalog/{product}/{sku}", response_model=SkuCatalogItem)
@@ -86,8 +100,17 @@ async def update_sku_catalog(
     limit_response = await admin_limiter(request)
     if limit_response:
         return limit_response
-    row = await InvoiceService(db).update_catalog(product, sku, body.list_idr, body.invoicable)
-    return SkuCatalogItem.model_validate(row)
+    row = await InvoiceService(db).update_catalog(product, sku, body.list_idr, body.invoicable, current_admin.id)
+    return SkuCatalogItem(
+        product=row.product,
+        sku=row.sku,
+        list_idr=row.list_idr,
+        seats=row.seats,
+        invoicable=row.invoicable,
+        updated_at=row.updated_at,
+        updated_by=row.updated_by,
+        updated_by_email=current_admin.email,
+    )
 
 
 @router.get("/invoices", response_model=InvoiceListResponse)
