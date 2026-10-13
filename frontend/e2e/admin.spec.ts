@@ -36,10 +36,13 @@ test.describe("Admin — Access @admin", () => {
     await page.goto("/dashboard");
     await expect(page.locator("aside")).toBeVisible();
     await expect(
-      page.locator("aside").locator("a:has-text('Pengguna')"),
+      page.locator("aside").locator("a[href='/admin/users']"),
     ).toBeVisible({ timeout: 10_000 });
     await expect(
-      page.locator("aside").locator("a:has-text('HPP')"),
+      page.locator("aside").locator("a[href='/admin/hpp']"),
+    ).toBeVisible({ timeout: 10_000 });
+    await expect(
+      page.locator("aside").locator("a[href='/admin/simulator']"),
     ).toBeVisible({ timeout: 10_000 });
   });
 });

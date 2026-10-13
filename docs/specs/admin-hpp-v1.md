@@ -64,3 +64,5 @@ S3 overlay **replaced (metering v2):** `line_margins` for **scan** vs **host**. 
 ## 4. SPA
 
 `/admin/hpp`: rates form (pattern Admin Pricing) + date filter (Credit History `gap-3` / `h-10`) + report table + **Scan / Host line-margin** cards. i18n `admin` + nav `hpp`. No cloud-compare / quote UI.
+
+`/admin/simulator` (added 2026-10-13): internal, admin-only **what-if calculator** for HPP + margin per layanan. Operator inputs a monthly fixed-cost pool, an optional target margin, and per-service `volume` / `unit_cost` / `price` (price may be picked per seat SKU for Scan/Host). Pure client-side arithmetic over `frontend/src/lib/hppScenario.ts` — **no endpoint, no persistence, no writes** to `hpp_rates` / `hpp_overhead` / `hpp_cost_lines` / `sku_catalog` / invoices. Label **SKENARIO**; Scan/Host are computed, Uptime/Guard are manual-assumption only (no COGS key / no catalog price). Not a customer-facing quote UI.
