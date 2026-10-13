@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Download,
   Gauge,
+  MoreHorizontal,
   Pause,
   Play,
   Printer,
@@ -25,8 +26,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
@@ -125,52 +132,13 @@ function ScheduleRowActions({
   onDelete: (id: string) => void;
 }) {
   const { t } = useTranslation("schedules");
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const rowActionClass =
     "min-h-11 w-full min-w-0 px-3 sm:h-8 sm:min-h-8 sm:w-8 sm:min-w-8 sm:shrink-0 sm:px-0";
+  const menuTriggerClass =
+    "h-11 w-11 min-h-11 min-w-11 p-0 sm:h-8 sm:w-8 sm:min-h-8 sm:min-w-8";
   return (
-    <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-nowrap sm:items-center sm:justify-end sm:gap-1">
-      {s.last_job_id && (
-        <>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className={rowActionClass}
-            title={t("executive")}
-            onClick={() => {
-              if (s.last_job_id) {
-                void downloadFile(s.last_job_id, "executive");
-              }
-            }}
-            aria-label={t("execAria")}
-          >
-            <Download className="mr-1 h-4 w-4 shrink-0 sm:mr-0" />
-            <span className="min-w-0 truncate sm:sr-only">{t("executive")}</span>
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className={rowActionClass}
-            title={t("printExec")}
-            onClick={() => {
-              if (!s.last_job_id) return;
-              void Promise.resolve(printFile(s.last_job_id, "executive")).catch(
-                (err: unknown) => {
-                  if (err instanceof Error && err.message === "popup_blocked") {
-                    toast.error(t("printPopupBlocked"));
-                  }
-                },
-              );
-            }}
-            aria-label={t("printExecAria")}
-            data-testid="schedule-print-executive"
-          >
-            <Printer className="mr-1 h-4 w-4 shrink-0 sm:mr-0" />
-            <span className="min-w-0 truncate sm:sr-only">{t("printExec")}</span>
-          </Button>
-        </>
-      )}
+    <div className="flex w-full items-center justify-end gap-2 sm:w-auto sm:gap-1">
       {canCreate && (
         <Button
           type="button"
@@ -198,24 +166,69 @@ function ScheduleRowActions({
           </span>
         </Button>
       )}
-      {canCreate && (
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className={rowActionClass}
-              disabled={deletePending}
-              title={t("delete")}
-              aria-label={t("deleteAria")}
-            >
-              <Trash2 className="h-4 w-4 shrink-0 text-destructive" />
-              <span className="ml-1 truncate text-destructive sm:sr-only">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={menuTriggerClass}
+            data-testid={`schedule-actions-${s.id}`}
+            aria-label={t("actionsMenu")}
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          {s.last_job_id && (
+            <>
+              <DropdownMenuItem
+                data-testid={`schedule-executive-${s.id}`}
+                onSelect={() => {
+                  if (s.last_job_id) {
+                    void downloadFile(s.last_job_id, "executive");
+                  }
+                }}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                {t("executive")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                data-testid="schedule-print-executive"
+                onSelect={() => {
+                  if (!s.last_job_id) return;
+                  void Promise.resolve(
+                    printFile(s.last_job_id, "executive"),
+                  ).catch((err: unknown) => {
+                    if (err instanceof Error && err.message === "popup_blocked") {
+                      toast.error(t("printPopupBlocked"));
+                    }
+                  });
+                }}
+              >
+                <Printer className="mr-2 h-4 w-4" />
+                {t("printExec")}
+              </DropdownMenuItem>
+            </>
+          )}
+          {canCreate && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                disabled={deletePending}
+                data-testid={`schedule-delete-${s.id}`}
+                onSelect={() => setDeleteOpen(true)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
                 {t("delete")}
-              </span>
-            </Button>
-          </AlertDialogTrigger>
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {canCreate && (
+        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>
