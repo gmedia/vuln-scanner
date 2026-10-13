@@ -36,6 +36,7 @@ class SkuCatalogListResponse(BaseModel):
 
 class SkuCatalogUpdateRequest(BaseModel):
     list_idr: int = Field(..., ge=0)
+    invoicable: bool | None = None
 
 
 class InvoiceCreateRequest(BaseModel):
