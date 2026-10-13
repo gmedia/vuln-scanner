@@ -287,6 +287,24 @@ describe("AdminInvoices", () => {
     expect(mutate).toHaveBeenCalledWith("inv-1");
   });
 
+  it("asks before voiding an invoice", async () => {
+    const user = userEvent.setup();
+    type MutOpts = { mutationFn: (id: string) => unknown };
+    vi.mocked(useMutation).mockImplementation(((opts: MutOpts) => ({
+      mutate: (id: string) => opts.mutationFn(id),
+      isPending: false,
+    })) as unknown as typeof useMutation);
+
+    render(<AdminInvoices />);
+    await user.click(screen.getAllByTestId("invoice-actions-inv-1")[1]);
+    await user.click(await screen.findByTestId("invoice-void-inv-1"));
+    expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
+    expect(adminApi.voidAdminInvoice).not.toHaveBeenCalled();
+
+    await user.click(screen.getByTestId("invoice-void-confirm"));
+    expect(adminApi.voidAdminInvoice).toHaveBeenCalledWith("inv-1");
+  });
+
   it("does not show print on a draft invoice", async () => {
     render(<AdminInvoices />);
     await userEvent.click(screen.getAllByTestId("invoice-actions-inv-1")[1]);

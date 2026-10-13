@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { adminApi } from "@/api/admin";
 import AdminHpp from "@/pages/admin/AdminHpp";
 
 vi.mock("@tanstack/react-query", () => ({
@@ -212,6 +214,49 @@ describe("AdminHpp", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useMutation).mockReturnValue({ mutate: vi.fn() } as never);
+  });
+
+  it("asks before deleting a cost line", async () => {
+    const user = userEvent.setup();
+    const costLine = {
+      id: "cost-1",
+      incurred_on: "2026-08-01",
+      category: "opex",
+      amount_idr: 1000,
+      note: "Hosting",
+    };
+    vi.mocked(useQuery).mockImplementation((opts) => {
+      const key = (opts.queryKey as readonly unknown[])[0];
+      if (key === "admin-hpp") {
+        return { data: rates, isLoading: false } as never;
+      }
+      if (key === "admin-hpp-overhead") {
+        return {
+          data: {
+            amount_idr: 100,
+            updated_at: "2026-08-01T00:00:00Z",
+            updated_by: null,
+          },
+          isLoading: false,
+        } as never;
+      }
+      if (key === "admin-hpp-costs") {
+        return { data: [costLine], isLoading: false } as never;
+      }
+      return { data: report, isLoading: false } as never;
+    });
+    vi.mocked(useMutation).mockImplementation((opts) => ({
+      mutate: (id: string) =>
+        void (opts.mutationFn as (id: string) => Promise<unknown>)(id),
+    }) as never);
+
+    render(<AdminHpp />);
+    await user.click(screen.getByLabelText("Delete line"));
+    expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
+    expect(adminApi.deleteHppCost).not.toHaveBeenCalled();
+
+    await user.click(screen.getByTestId(`hpp-cost-delete-confirm-${costLine.id}`));
+    expect(adminApi.deleteHppCost).toHaveBeenCalledWith(costLine.id);
   });
 
   it("shows empty rates copy", () => {

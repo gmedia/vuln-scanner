@@ -148,6 +148,73 @@ describe("AdminAi", () => {
     expect(screen.getAllByText("Rp 2").length).toBeGreaterThan(0);
   });
 
+  it("asks before deleting an AI model", async () => {
+    const user = userEvent.setup();
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({
+      items: [
+        {
+          id: "m1",
+          provider_id: "p1",
+          public_id: "sinexis/demo",
+          upstream_id: "gpt",
+          hpp_usd_per_1k_in: 0,
+          hpp_usd_per_1k_out: 0,
+          price_idr_per_1k_in: 1,
+          price_idr_per_1k_out: 2,
+          max_ctx: 1,
+          max_tokens_cap: 1,
+          enabled: true,
+          created_at: "",
+          updated_at: "",
+        },
+      ],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.deleteAiModel).mockResolvedValue(undefined);
+    renderPage();
+    await user.click(screen.getByRole("tab", { name: "Models" }));
+    await screen.findByTestId("admin-ai-model-card-m1");
+    await user.click(screen.getAllByTestId("admin-ai-model-actions-m1")[0]);
+    await user.click(await screen.findByTestId("admin-ai-model-delete-m1"));
+    expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
+    expect(adminApi.deleteAiModel).not.toHaveBeenCalled();
+    await user.click(screen.getByTestId("admin-ai-model-delete-confirm"));
+    expect(adminApi.deleteAiModel).toHaveBeenCalledWith("m1");
+  });
+
+  it("asks before deleting an AI provider", async () => {
+    const user = userEvent.setup();
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [
+        {
+          id: "p1",
+          name: "OpenRouter",
+          base_url: "https://openrouter.ai/api/v1",
+          auth_header: "Authorization",
+          credential_set: true,
+          enabled: true,
+          status: "ok",
+          created_at: "",
+          updated_at: "",
+        },
+      ],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.deleteAiProvider).mockResolvedValue(undefined);
+    renderPage();
+    await screen.findByTestId("admin-ai-provider-card-p1");
+    await user.click(screen.getAllByTestId("admin-ai-provider-actions-p1")[0]);
+    await user.click(await screen.findByTestId("admin-ai-provider-delete-p1"));
+    expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
+    expect(adminApi.deleteAiProvider).not.toHaveBeenCalled();
+    await user.click(screen.getByTestId("admin-ai-provider-delete-confirm"));
+    expect(adminApi.deleteAiProvider).toHaveBeenCalledWith("p1");
+  });
+
   it("uses i18n labels for usage source and billed columns", async () => {
     vi.mocked(adminApi.listAiProviders).mockResolvedValue({ items: [], total: 0 });
     vi.mocked(adminApi.listAiModels).mockResolvedValue({ items: [], total: 0 });

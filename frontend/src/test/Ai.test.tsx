@@ -279,6 +279,31 @@ describe("AI Gateway page", () => {
     ).toBeGreaterThanOrEqual(1);
   });
 
+  it("asks before revoking an API key", async () => {
+    mockEmptyGateway();
+    const key = {
+      id: "k1",
+      name: "sinexis",
+      prefix: "sx-mQ0HsrDRmy4XV",
+      is_active: true,
+      rate_limit_rpm: 60,
+      created_at: "2026-09-13T10:00:00Z",
+      last_used_at: null,
+    };
+    vi.mocked(aiApi.listAiKeys).mockResolvedValue({ items: [key], total: 1 });
+    vi.mocked(aiApi.revokeAiKey).mockResolvedValue({ ...key, is_active: false });
+    const user = userEvent.setup();
+    renderAi("/ai?tab=keys");
+    await screen.findByTestId("ai-keys-card-k1");
+
+    await user.click(screen.getAllByRole("button", { name: "Revoke" })[0]);
+    expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
+    expect(aiApi.revokeAiKey).not.toHaveBeenCalled();
+
+    await user.click(screen.getByTestId("ai-key-revoke-confirm-m-k1"));
+    await waitFor(() => expect(aiApi.revokeAiKey).toHaveBeenCalledWith("k1"));
+  });
+
   it("keeps catalog card full-width when fewer than 3 models", async () => {
     vi.mocked(aiApi.getAiWallet).mockResolvedValue({
       organization_id: "org1",
