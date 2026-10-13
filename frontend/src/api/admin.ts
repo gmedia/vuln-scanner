@@ -462,6 +462,8 @@ export interface SkuCatalogItem {
   seats: number;
   invoicable: boolean;
   updated_at: string;
+  updated_by?: string | null;
+  updated_by_email?: string | null;
 }
 
 export interface AdminOrgItem {

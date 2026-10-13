@@ -25,6 +25,9 @@ class SkuCatalog(Base):
     seats: Mapped[int] = mapped_column(Integer, nullable=False)
     invoicable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
 
     __table_args__ = (
         CheckConstraint("product IN ('scan', 'host')", name="ck_sku_catalog_product"),

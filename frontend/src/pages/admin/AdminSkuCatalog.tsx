@@ -215,8 +215,17 @@ function AdminSkuCatalog() {
                           aria-label={t("skuColInvoicable")}
                         />
                       </TableCell>
-                      <TableCell className="py-1.5 font-mono text-xs tabular-nums text-muted-foreground">
-                        {formatUpdated(row.updated_at)}
+                      <TableCell className="py-1.5 text-xs text-muted-foreground">
+                        <span className="block font-mono tabular-nums">{formatUpdated(row.updated_at)}</span>
+                        {row.updated_by_email ? (
+                          <span
+                            className="block text-[11px]"
+                            data-testid={`sku-catalog-actor-${row.product}-${row.sku}`}
+                            title={row.updated_by_email}
+                          >
+                            {t("skuUpdatedBy", { email: row.updated_by_email })}
+                          </span>
+                        ) : null}
                       </TableCell>
                       <TableCell className="py-1.5 text-right">
                         <Button

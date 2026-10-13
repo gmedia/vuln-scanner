@@ -279,11 +279,14 @@ async def test_update_catalog_invoicable_toggle_persists(db_session, ctx):
             body = r.json()
             assert body["list_idr"] == 500_000
             assert body["invoicable"] is False
+            assert body["updated_by"] == str(ctx["admin"].id)
+            assert body["updated_by_email"] == "inv-admin@example.com"
             cat = await client.get("/api/admin/sku-catalog", headers=_auth(ctx["admin"]))
             assert cat.status_code == 200
             row = next(i for i in cat.json()["items"] if i["product"] == "scan" and i["sku"] == "pro")
             assert row["list_idr"] == 500_000
             assert row["invoicable"] is False
+            assert row["updated_by"] == str(ctx["admin"].id)
     finally:
         app.dependency_overrides.clear()
 
@@ -306,6 +309,34 @@ async def test_update_catalog_omitting_invoicable_leaves_it_unchanged(db_session
             body = r.json()
             assert body["list_idr"] == 700_000
             assert body["invoicable"] is True
+            assert body["updated_by"] == str(ctx["admin"].id)
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_catalog_updated_by_starts_null_and_records_actor(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            before = await client.get("/api/admin/sku-catalog", headers=_auth(ctx["admin"]))
+            assert before.status_code == 200
+            pre = next(i for i in before.json()["items"] if i["product"] == "scan" and i["sku"] == "pro")
+            assert pre["updated_by"] is None
+
+            put = await client.put(
+                "/api/admin/sku-catalog/scan/pro",
+                headers=_auth(ctx["admin"]),
+                json={"list_idr": 600_000},
+            )
+            assert put.status_code == 200
+
+            after = await client.get("/api/admin/sku-catalog", headers=_auth(ctx["admin"]))
+            assert after.status_code == 200
+            post = next(i for i in after.json()["items"] if i["product"] == "scan" and i["sku"] == "pro")
+            assert post["updated_by"] == str(ctx["admin"].id)
+            assert post["updated_by_email"] == "inv-admin@example.com"
     finally:
         app.dependency_overrides.clear()
 
