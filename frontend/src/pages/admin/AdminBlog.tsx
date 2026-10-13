@@ -256,7 +256,7 @@ function AdminBlog() {
                       </Badge>
                     </div>
                     <p className="mt-1 text-sm text-foreground">{p.title}</p>
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="mt-3 flex flex-wrap justify-end gap-2">
                       <Button
                         size="sm"
                         variant="outline"
@@ -297,7 +297,7 @@ function AdminBlog() {
                     <TableHead>{t("blogSlug")}</TableHead>
                     <TableHead>{t("blogTitleField")}</TableHead>
                     <TableHead>{t("blogStatus")}</TableHead>
-                    <TableHead>{t("colActions")}</TableHead>
+                    <TableHead className="text-right">{t("colActions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -321,7 +321,7 @@ function AdminBlog() {
                             : t("blogDraft")}
                         </Badge>
                       </TableCell>
-                      <TableCell className="space-x-2">
+                      <TableCell className="space-x-2 text-right">
                         <Button
                           size="sm"
                           variant="outline"
