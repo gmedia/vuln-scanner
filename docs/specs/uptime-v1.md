@@ -53,7 +53,7 @@ Scan attach answers “what vulns appeared this week.” Colo/VPS customers stil
 4. **Confirm-before-alert:** N consecutive failures (default **2**) then **down**; **1** success then **up** (avoid flapping).
 5. **Email** on state change (down / up) via existing SMTP; Bahasa default (`locale`).
 6. **SPA `/uptime`:** list + sparkline/last 24h uptime % + last error (sanitized); Sidebar distinct from Guard/SIEM.
-7. **SKU seat cap** (not per-ping credits): Basic **1** · Pro **3** · Multi **10** enabled monitors (align asset seats unless §11 overrides).
+7. **SKU seat cap** (not per-ping credits): Basic **10** · Pro **50** · Multi **200** enabled monitors. *(Originally proposed as 1/3/10 aligned to asset seats; the owner locked the generous numbers 10/50/200 on 2026-10-12 — see [`pricing-architecture-v1.md`](../commercial/pricing-architecture-v1.md) §2/§7. Uptime is the exception to the 1/3/10 mental model because a monitor is a much cheaper unit.)*
 8. Tests: IDOR, interval floor, confirm logic, no SSRF to RFC1918/metadata by default.
 9. Docs: this spek; **no** customer URLs/IPs in git.
 10. Degraded: probe/worker down → last error on monitor; API must not 500.
@@ -174,14 +174,14 @@ Do **not** store response bodies.
 
 ## 8. Commercial / SKU fit
 
-| Scan tier | Asset cap (P3) | **Uptime seats (proposal)** |
-|-----------|----------------|------------------------------|
-| Basic | 1 | **1** HTTP or TCP |
-| Pro | 3 | **3** |
-| Multi | 10 | **10** |
+| Scan tier | Asset cap (P3) | **Uptime seats (proposal, superseded)** | **Uptime seats (locked 2026-10-12)** |
+|-----------|----------------|------------------------------|------------------------------|
+| Basic | 1 | ~~1~~ | **10** HTTP or TCP |
+| Pro | 3 | ~~3~~ | **50** |
+| Multi | 10 | ~~10~~ | **200** |
 
-- **Included** in Scan add-on (no third invoice line in v1) — fastest GTM.
-- Alternate (open §11): paid **Uptime add-on** IDR TBD — **do not invent list price** in git until user locks P0.
+- **Superseded (2026-10-12):** the original 1/3/10 proposal above was replaced by the owner-locked caps **10/50/200** in [`pricing-architecture-v1.md`](../commercial/pricing-architecture-v1.md) §2/§7. The alternate path this section flagged ("paid Uptime add-on") was chosen: Uptime is a **priced line** (75k / 200k / 500k, locked) — no longer bundled free into the Scan add-on.
+- The 1/3/10 columns are kept here as provenance of the original proposal; do not use them.
 - Overage: hard block create/enable (same as assets), not silent fair-use.
 
 ---
@@ -250,7 +250,7 @@ Default order: **S0 → S1 → S2 → S3 → S4 → S5** (S4 can parallel S3 aft
 - [ ] Org CRUD monitors; IDOR green
 - [ ] HTTP GET + TCP; confirm-2 fails before down email
 - [ ] Up email on recovery; no mail storm (one event per transition)
-- [ ] SKU hard cap 1/3/10 enabled
+- [ ] SKU hard cap 10/50/200 enabled (locked 2026-10-12; supersedes the 1/3/10 proposal)
 - [ ] SPA `/uptime`; not under Guard/SIEM
 - [ ] No bodies/secrets/customer URLs in git; UA `SinexisUptime/1.0`
 - [ ] Private IP blocked unless lab flag

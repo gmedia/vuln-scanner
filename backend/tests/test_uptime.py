@@ -171,10 +171,10 @@ async def test_crud_idor_and_sku(db_session: AsyncSession, ctx: dict, _stub_enqu
             headers=_auth(owner, org.id),
             json={"name": "web2", "check_type": "http", "target": "https://example.org/"},
         )
-        assert second.status_code == 400
+        assert second.status_code == 201, second.text
         listed = await client.get("/api/uptime/monitors", headers=_auth(viewer, org.id))
         assert listed.status_code == 200
-        assert len(listed.json()) == 1
+        assert len(listed.json()) == 2
         hidden = await client.get(f"/api/uptime/monitors/{mid}", headers=_auth(outsider, None))
         assert hidden.status_code in (400, 404)
         too_fast = await client.post(
@@ -209,6 +209,48 @@ async def test_crud_idor_and_sku(db_session: AsyncSession, ctx: dict, _stub_enqu
             headers=_auth(outsider, None),
         )
         assert hidden_samples.status_code in (400, 404)
+
+
+@pytest.mark.asyncio
+async def test_sku_seat_cap_locked_to_commercial(
+    db_session: AsyncSession, ctx: dict, _stub_enqueue: list[str]
+) -> None:
+    """Seat caps are the owner-locked commercial numbers (2026-10-12), not asset seats."""
+    from app.services.uptime import sku_uptime_limit
+
+    assert sku_uptime_limit("basic") == 10
+    assert sku_uptime_limit("pro") == 50
+    assert sku_uptime_limit("multi") == 200
+    # unknown / None falls back to the most generous tier
+    assert sku_uptime_limit(None) == 200
+    assert sku_uptime_limit("enterprise") == 200
+
+    _bind_db(db_session)
+    owner, org = ctx["owner"], ctx["org"]
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        for i in range(10):
+            ok = await client.post(
+                "/api/uptime/monitors",
+                headers=_auth(owner, org.id),
+                json={
+                    "name": f"cap-{i}",
+                    "check_type": "http",
+                    "target": f"https://cap{i}.example.com/",
+                },
+            )
+            assert ok.status_code == 201, ok.text
+        overflow = await client.post(
+            "/api/uptime/monitors",
+            headers=_auth(owner, org.id),
+            json={
+                "name": "cap-overflow",
+                "check_type": "http",
+                "target": "https://cap-over.example.com/",
+            },
+        )
+        assert overflow.status_code == 400
+        assert "seat limit" in overflow.text.lower()
 
 
 @pytest.mark.asyncio
