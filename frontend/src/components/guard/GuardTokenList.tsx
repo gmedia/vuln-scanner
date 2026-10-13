@@ -137,7 +137,9 @@ export function GuardTokenList({
               <TableHead className="min-w-[10rem]">{t("colLabel")}</TableHead>
               <TableHead className="min-w-[9.5rem]">{t("colExpires")}</TableHead>
               <TableHead className="min-w-[7rem]">{t("colStatus")}</TableHead>
-              <TableHead className="min-w-[4.5rem]">{t("colAction")}</TableHead>
+              <TableHead className="min-w-[4.5rem] text-right">
+                {t("colAction")}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -162,7 +164,7 @@ export function GuardTokenList({
                 <TableCell>
                   <TokenStatusBadge tok={tok} t={t} nowMs={nowMs} />
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-right">
                   {!tok.revoked_at ? (
                     <TokenRevokeButton
                       tok={tok}
