@@ -227,6 +227,12 @@ function Sidebar() {
                   testId="nav-admin-hpp"
                 />
                 <NavItem
+                  to="/admin/simulator"
+                  labelKey="adminSimulator"
+                  icon={Calculator}
+                  testId="nav-admin-simulator"
+                />
+                <NavItem
                   to="/admin/invoices"
                   labelKey="invoices"
                   icon={Receipt}
