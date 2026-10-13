@@ -89,8 +89,6 @@ import { useAuthStore } from "@/store/authStore";
 import PageHeader from "@/components/layout/PageHeader";
 import { useTranslation } from "react-i18next";
 
-export { mapScheduleError };
-
 function formatWhen(iso: string | null, locale: string): string {
   if (!iso) return "—";
   try {
