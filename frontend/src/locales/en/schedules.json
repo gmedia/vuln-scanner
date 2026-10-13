@@ -26,6 +26,7 @@
   "colSchedule": "Schedule",
   "colNext": "Next",
   "colActions": "Actions",
+  "actionsMenu": "Schedule actions",
   "disabled": "disabled",
   "statusActive": "active",
   "nextPrefix": "Next: {{when}}",

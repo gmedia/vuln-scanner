@@ -200,11 +200,8 @@ describe("Schedules page", () => {
     const user = userEvent.setup();
     renderAt();
     await screen.findAllByText("Weekly external");
-    await user.click(
-      screen.getAllByRole("button", {
-        name: /Download executive report/i,
-      })[0],
-    );
+    await user.click(screen.getAllByTestId("schedule-actions-sched-1")[0]);
+    await user.click(await screen.findByTestId("schedule-executive-sched-1"));
     expect(mockDownload).toHaveBeenCalledWith("job-1", "executive");
   });
 
@@ -213,7 +210,8 @@ describe("Schedules page", () => {
     const user = userEvent.setup();
     renderAt();
     await screen.findAllByText("Weekly external");
-    await user.click(screen.getAllByTestId("schedule-print-executive")[0]);
+    await user.click(screen.getAllByTestId("schedule-actions-sched-1")[0]);
+    await user.click(await screen.findByTestId("schedule-print-executive"));
     expect(mockPrint).toHaveBeenCalledWith("job-1", "executive");
     expect(mockDownload).not.toHaveBeenCalled();
   });
@@ -224,7 +222,8 @@ describe("Schedules page", () => {
     const user = userEvent.setup();
     renderAt();
     await screen.findAllByText("Weekly external");
-    await user.click(screen.getAllByTestId("schedule-print-executive")[0]);
+    await user.click(screen.getAllByTestId("schedule-actions-sched-1")[0]);
+    await user.click(await screen.findByTestId("schedule-print-executive"));
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith(
         "Pop-up blocked. Allow pop-ups for this site to print.",
@@ -240,9 +239,8 @@ describe("Schedules page", () => {
     const user = userEvent.setup();
     renderAt();
     await screen.findAllByText("Weekly external");
-    await user.click(
-      screen.getAllByRole("button", { name: "Delete schedule" })[0],
-    );
+    await user.click(screen.getAllByTestId("schedule-actions-sched-1")[0]);
+    await user.click(await screen.findByTestId("schedule-delete-sched-1"));
     expect(
       await screen.findByRole("alertdialog"),
     ).toBeInTheDocument();
@@ -262,9 +260,8 @@ describe("Schedules page", () => {
     const user = userEvent.setup();
     renderAt();
     await screen.findAllByText("Weekly external");
-    await user.click(
-      screen.getAllByRole("button", { name: "Delete schedule" })[0],
-    );
+    await user.click(screen.getAllByTestId("schedule-actions-sched-1")[0]);
+    await user.click(await screen.findByTestId("schedule-delete-sched-1"));
     await screen.findByRole("alertdialog");
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     await waitFor(() =>

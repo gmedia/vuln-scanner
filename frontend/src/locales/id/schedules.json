@@ -26,6 +26,7 @@
   "colSchedule": "Jadwal",
   "colNext": "Berikutnya",
   "colActions": "Aksi",
+  "actionsMenu": "Aksi jadwal",
   "disabled": "nonaktif",
   "statusActive": "aktif",
   "nextPrefix": "Berikutnya: {{when}}",
