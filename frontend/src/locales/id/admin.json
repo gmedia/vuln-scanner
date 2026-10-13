@@ -39,6 +39,7 @@
   "lastLoginNever": "Belum pernah",
   "lastLoginAt": "Login terakhir {{date}}",
   "colActions": "Aksi",
+  "actionsMenu": "Aksi baris",
   "roleAdmin": "Admin",
   "roleUser": "User",
   "verified": "Terverifikasi",

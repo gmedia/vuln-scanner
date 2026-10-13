@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText, Loader2, PenLine, List } from "lucide-react";
+import { FileText, Loader2, List, MoreHorizontal, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -13,6 +13,12 @@ import {
   SelectValue,
 } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
   Table,
@@ -256,33 +262,44 @@ function AdminBlog() {
                       </Badge>
                     </div>
                     <p className="mt-1 text-sm text-foreground">{p.title}</p>
-                    <div className="mt-3 flex flex-wrap justify-end gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="min-h-11"
-                        onClick={() => startEdit(p)}
-                      >
-                        {t("blogEdit")}
-                      </Button>
-                      {p.status === "published" ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="min-h-11"
-                          onClick={() => unpublishMut.mutate(p.id)}
-                        >
-                          {t("blogUnpublish")}
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          className="min-h-11"
-                          onClick={() => publishMut.mutate(p.id)}
-                        >
-                          {t("blogPublish")}
-                        </Button>
-                      )}
+                    <div className="mt-3 flex justify-end">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-11 w-11 min-h-11 min-w-11 p-0 md:h-9 md:w-9 md:min-h-9 md:min-w-9"
+                            data-testid={`blog-actions-${p.id}`}
+                            aria-label={t("actionsMenu")}
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem
+                            data-testid={`blog-edit-${p.id}`}
+                            onSelect={() => startEdit(p)}
+                          >
+                            {t("blogEdit")}
+                          </DropdownMenuItem>
+                          {p.status === "published" ? (
+                            <DropdownMenuItem
+                              data-testid={`blog-unpublish-${p.id}`}
+                              onSelect={() => unpublishMut.mutate(p.id)}
+                            >
+                              {t("blogUnpublish")}
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem
+                              data-testid={`blog-publish-${p.id}`}
+                              onSelect={() => publishMut.mutate(p.id)}
+                            >
+                              {t("blogPublish")}
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 ))}
@@ -321,30 +338,46 @@ function AdminBlog() {
                             : t("blogDraft")}
                         </Badge>
                       </TableCell>
-                      <TableCell className="space-x-2 text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => startEdit(p)}
-                        >
-                          {t("blogEdit")}
-                        </Button>
-                        {p.status === "published" ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => unpublishMut.mutate(p.id)}
-                          >
-                            {t("blogUnpublish")}
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            onClick={() => publishMut.mutate(p.id)}
-                          >
-                            {t("blogPublish")}
-                          </Button>
-                        )}
+                      <TableCell className="text-right">
+                        <div className="flex justify-end">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-9 w-9 p-0"
+                                data-testid={`blog-actions-${p.id}`}
+                                aria-label={t("actionsMenu")}
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem
+                                data-testid={`blog-edit-${p.id}`}
+                                onSelect={() => startEdit(p)}
+                              >
+                                {t("blogEdit")}
+                              </DropdownMenuItem>
+                              {p.status === "published" ? (
+                                <DropdownMenuItem
+                                  data-testid={`blog-unpublish-${p.id}`}
+                                  onSelect={() => unpublishMut.mutate(p.id)}
+                                >
+                                  {t("blogUnpublish")}
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem
+                                  data-testid={`blog-publish-${p.id}`}
+                                  onSelect={() => publishMut.mutate(p.id)}
+                                >
+                                  {t("blogPublish")}
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

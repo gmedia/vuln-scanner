@@ -124,8 +124,14 @@ describe("AdminAi", () => {
       "hidden",
       "md:block",
     );
-    expect(screen.getAllByRole("button", { name: "Edit" }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("button", { name: "Delete" }).length).toBeGreaterThan(0);
+    await userEvent.click(
+      screen.getAllByTestId("admin-ai-provider-actions-p1")[0],
+    );
+    expect(
+      await screen.findByTestId("admin-ai-provider-edit-p1"),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("admin-ai-provider-delete-p1")).toBeInTheDocument();
+    await userEvent.keyboard("{Escape}");
     await userEvent.click(screen.getByRole("tab", { name: "Models" }));
     expect(await screen.findByTestId("admin-ai-models-mobile")).toHaveClass(
       "space-y-2",
