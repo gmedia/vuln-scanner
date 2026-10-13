@@ -121,11 +121,11 @@ Then read, in order:
 5. Other code: **§1.3.1 named queue**, then **bugfix**, docs/ops hygiene, Dependabot **only if CI green + user names the PR** (do not mass-merge). **Do not** re-implement P2/P3 S1–S5, Wave B, Guard S1–S5/Http, Host Protect S1–S12, P15 chrome. WAF own pack **1165–1177** shipped — **comprehensive**, no slice queued. P14 **G/H** stay research unless named.
 6. **Do not** ship SIEM-scope PRs under “Guard.” Invoice v1 pay loop is **closed** — no upgrade CTA / gateway / auto-create on signup unless named.
 
-### 1.3.1 Development queue (agent “what next” — 2026-10-09)
+### 1.3.1 Development queue (agent “what next” — 2026-10-12)
 
 P0–P14 control planes are **on `main`**. Agent work is **development only** — never sales / AM / marketing / GTM. Next engineering is **depth**, not a new epic letter, unless the user names one. **Do not implement** until the slice is **named** + `buat` / `kerjakan` / `implement`. **Sentence-ok is GREEN** 2026-09-21 (displace §7; nginx dedicated / no panel only; still **forbidden** on shared cPanel) — **not** a default code slice and **not** GMD Host SIDs. **H9 Host invoicable shipped** (named `buat`; GREEN did not auto-flip). Do **not** pitch `service_id` / 10 SIDs / first AM meeting as next **code** or as the Invoice-ok gate.
 
-**Named order (value; still wait for named + `buat`):** *(queue drained — no feature slice queued).* **WAF own pack 1165–1177 shipped (#913 / #918 / this PR) — comprehensive.** **Print S2 shipped.** **H9 Host invoicable shipped.** **Inbox S2 shipped (#820).** **inotify shipped (#823).** Residual = **bugfix / docs-ops hygiene** (named only). Do **not** reopen WAF widening.
+**Named order (value; still wait for named + `buat`):** *(queue drained — no feature slice queued).* **WAF own pack 1165–1177 shipped (#913 / #918 / #919) — comprehensive.** **Print S2 shipped.** **H9 Host invoicable shipped.** **Inbox S2 shipped (#820).** **inotify shipped (#823).** Residual = **bugfix / docs-ops hygiene** (named only). Do **not** reopen WAF widening.
 
 | Order | Slice | Why | Spec | Out |
 |-------|--------|-----|------|-----|
@@ -133,7 +133,7 @@ P0–P14 control planes are **on `main`**. Agent work is **development only** �
 | **— shipped** | **P8.x Uptime advanced** | SPA Advanced + edit + timeout/`expect_status`; PATCH can clear status | [`uptime-advanced-settings.md`](specs/uptime-advanced-settings.md) | Do **not** re-implement; Pingdom / webhooks still out |
 | **— shipped** | **P15 S1** tokens/density | Flush `--sidebar` = canvas; density already on Card/Table | [`spa-grok-chrome-redesign.md`](specs/spa-grok-chrome-redesign.md) S1 | Do **not** re-implement; keep `--primary` green |
 | **— shipped** | **P15 S2** AppShell | No sticky `h-12`; chrome cluster in `SidebarFooter` (`user-menu`, `sign-out`). Credits chip stays hidden (metering v3). | same spec S2 **#704**. S3–S9 also on `main` | Do **not** re-implement chrome; Landing / blog island keep `h-12` |
-| **— shipped** | **Scan PDF / invoice HTML print** | Browser print + invoice SPA print + **S2** `format=pdf` WeasyPrint | [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md) S0 + **S1a #785** + **S1b #786** + **S2 this PR** | Do **not** re-implement; invoice PDF I10 shipped 834 |
+| **— shipped** | **Scan PDF / invoice HTML print** | Browser print + invoice SPA print + **S2** `format=pdf` WeasyPrint | [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md) S0 + **S1a #785** + **S1b #786** + **S2 #817** | Do **not** re-implement; invoice PDF I10 shipped 834 |
 | **— shipped** | **Inbox “Delivered” (user-side)** | SMTP Sent/Failed log + SPA `/inbox` + **S1c scan_diff job link** | [`inbox-delivered-v1.md`](specs/inbox-delivered-v1.md) S0 **#787** + S1 **#788** + S1b **#789** + **S1c #793** | Do **not** re-implement; bounce/SES shipped **#820**; no Guard Discover |
 | **— shipped** | **P14 E** denser Host cadence | `host_sites.scan_interval` daily\|hourly; Beat org cap 2 | [`imunify-class-onbox.md`](specs/imunify-class-onbox.md) slice **E** (Alembic `add_host_site_scan_interval`) | Do **not** re-implement hourly; inotify shipped **#823**; WAF own pack **1165–1177** shipped — comprehensive; **not** 24×7 YARA on `/`; **G/H** research |
 | **— shipped** | **H9 Host `invoicable`** | Host catalog `invoicable=true`; admin creates Host invoices in-app; paid Host does not set `org.sku`; unique period per product | [`sinexis-invoice-v1.md`](specs/sinexis-invoice-v1.md) I2 · [`sku-host-protect.md`](commercial/sku-host-protect.md) H9 | Do **not** silent-bundle into VPS/Scan; GMD `service_id` is **not** the Invoice-ok gate |
@@ -147,7 +147,7 @@ P0–P14 control planes are **on `main`**. Agent work is **development only** �
 | **— shipped** | **Print S2** (`format=pdf` / WeasyPrint) | Server-side `.pdf` of **executive** HTML. SPA `export-pdf`. Missing Pango → 503. | [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md) S2 | Invoice PDF library; Celery PDF; Playwright-as-prod-PDF |
 | **— shipped** | **Inbox S2** (bounce / SES) | Mailbox DSN vs SMTP Sent/Failed. S0–S1c + S2 all shipped. | [`inbox-delivered-v1.md`](specs/inbox-delivered-v1.md) S2 **#820** | Do **not** re-implement; Guard Discover; invoice SMTP; unmask recipients |
 | **— shipped** | **inotify** (on-write Host scan) | P14 E “on-write later”. Shipped as opt-in `watch_on_write`. | [`imunify-class-onbox.md`](specs/imunify-class-onbox.md) slice **E** residual **#823** | Do **not** re-implement; 24×7 root YARA on `/`; PHP PD; KernelCare |
-| **— shipped** | **WAF own pack 1165–1177** | 1165–1167 middleware/registry consoles (#913); 1168–1170 dotfile creds (#918); 1171–1177 dev-config / credential leaks (`/.git-credentials`, `/server.key`, `/.dockercfg`, `/.idea/`, `/.vscode/`, `/.terraform`, `/.ftpconfig`) — original IDs only. | **#913 · #918 · this PR** | Pack **comprehensive** for generic URL probes; do **not** re-implement |
+| **— shipped** | **WAF own pack 1165–1177** | 1165–1167 middleware/registry consoles (#913); 1168–1170 dotfile creds (#918); 1171–1177 dev-config / credential leaks (`/.git-credentials`, `/server.key`, `/.dockercfg`, `/.idea/`, `/.vscode/`, `/.terraform`, `/.ftpconfig`) — original IDs only. | **#913 · #918 · #919** | Pack **comprehensive** for generic URL probes; do **not** re-implement |
 | **— none queued** | **WAF own pack complete** | Generic-URL-probe space exhausted (**1001–1177**). Residual = **bugfix / docs-ops hygiene** (named only). Out: CRS / IM360 commercial DB; P14 **G/H** (research). | — | Do **not** reopen WAF widening without a new named slice; no CRS/IM360 in git; no `sinexis.app` edge paste |
 
 **“lanjut” without a named slice** → WAF own pack is **complete** (1165–1177 shipped); recommend **bugfix / docs-ops hygiene** (or the user names a slice); still **wait for `buat`**. Do **not** silent-code. Do **not** re-implement shipped rows. Do **not** pitch AM/sales/GTM.
@@ -247,12 +247,12 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 | [`docs/specs/host-waf-v1.md`](specs/host-waf-v1.md) | **S0–S5 + P14 F protect** | P13; prod compose `HOST_WAF_ENABLED` **true**, local/CI **false**; lab [`scripts/host-waf-lab-smoke.sh`](../scripts/host-waf-lab-smoke.sh) API smoke; `--apply-vhost` **tc5 OK** (Sinexis lab VM); **refuses ERP** / `sx-erpstg`; never edge nginx |
 | [`docs/specs/imunify-class-onbox.md`](specs/imunify-class-onbox.md) | **P14 docs** (#555); slices A–H | Implement **only** named slice + `buat`. Jobs not clone. |
 | [`docs/specs/vps-displace-imunify-dev-plan.md`](specs/vps-displace-imunify-dev-plan.md) | **P14 follow-on plan** (2026-09-07; closure **§7** **GREEN 2026-09-21**) | Speech gate: Demo-ok proven / Invoice-ok = **Sinexis in-app** (not GMD SID) / **Sentence-ok GREEN** (nginx dedicated / no panel). **DL0–DL3 shipped**. Caddy out. No PD/WebShield/clone. Short “ganti” **allowed** nginx-only; **forbidden** shared cPanel. H9 **shipped**. WAF own pack **complete** (1001–1177). Print S2 **shipped**. **Do not** recommend Host `service_id` as next. |
-| [`docs/specs/ai-gateway-v1.md`](specs/ai-gateway-v1.md) | **S1–S5 on `main` (this PR)** | OpenAI-compat resale; flag **off**. Ops: [`ai-gateway-ops.md`](ai-gateway-ops.md). Residual: human catalog/FX/enable. |
+| [`docs/specs/ai-gateway-v1.md`](specs/ai-gateway-v1.md) | **S1–S5 on `main`** (#612–#622) | OpenAI-compat resale; flag **off**. Ops: [`ai-gateway-ops.md`](ai-gateway-ops.md). Residual: human catalog/FX/enable. |
 | [`docs/specs/metering-v2.md`](specs/metering-v2.md) | **Shipped** (#736) | Scheduled attach included. Superseded for on-demand credits by v3. |
 | [`docs/specs/metering-v3-sku-seats.md`](specs/metering-v3-sku-seats.md) | **Shipped** (#742–#744) | Scan/Host/Uptime = SKU seats only. No Scan credit debit (ip/domain/apk/ipa/statushost). AI IDR wallet stays. |
 | [`docs/specs/scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md) | **S0 + S1a #785 + S1b #786 + S2 shipped** | Browser print + WeasyPrint `format=pdf`. Invoice PDF I10 shipped 834. |
 | [`docs/specs/inbox-delivered-v1.md`](specs/inbox-delivered-v1.md) | **S0–S1c shipped** #787–#789 + **#793** job link; first-scan **#801**; **S2 #820** | User-side SMTP Sent/Failed + SPA `/inbox` + bounce/SES. **Not** Guard Discover / invoice SMTP. |
-| [`docs/specs/uptime-monitor-overview.md`](specs/uptime-monitor-overview.md) | **S0–S2 this PR** | `/uptime/:id` range 6h/24h/7d + event bar + samples pager. **Not** Pingdom / 30d from 7d samples. |
+| [`docs/specs/uptime-monitor-overview.md`](specs/uptime-monitor-overview.md) | **S0–S2** (#807/#808) | `/uptime/:id` range 6h/24h/7d + event bar + samples pager. **Not** Pingdom / 30d from 7d samples. |
 
 **Agent:** wait for **explicit implement** even when spec exists. Prefer **draft spec** over silent coding for new epics; P3 assets already shipped.
 
@@ -465,7 +465,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 
 | User says | Agent does |
 |-----------|------------|
-| “lanjut” / “next” without spec | Re-read **§1.3.1** + `handoff.md`; **WAF own pack complete** (1165–1177 #913 / #918 / this PR) → no feature slice queued; recommend **bugfix / docs-ops hygiene**; still **wait for `buat`**; **never** pitch GTM/AM/sales/marketing/10 SIDs/`service_id`/first meeting; **no** silent feature coding |
+| “lanjut” / “next” without spec | Re-read **§1.3.1** + `handoff.md`; **WAF own pack complete** (1165–1177 #913 / #918 / #919) → no feature slice queued; recommend **bugfix / docs-ops hygiene**; still **wait for `buat`**; **never** pitch GTM/AM/sales/marketing/10 SIDs/`service_id`/first meeting; **no** silent feature coding |
 | “tulis spek workspace” | Update `docs/specs/workspace-v1.md` only (S1–S5 already shipped) |
 | “implement workspace” / “kerjakan fase workspace” | S1–S5 done — clarify **bug / residual** before coding |
 | “rebrand” / “sinexis.app” | Soft brand shipped; hard cut / DNS only on explicit ask; don’t invent Guard; don’t block attach GTM |
@@ -487,10 +487,10 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 | “buat” inbox / Delivered / S1 inbox | **Shipped** #787–#789 + S1c **#793** — [`inbox-delivered-v1.md`](specs/inbox-delivered-v1.md). Clarify bug / residual only. **Inbox S2** (bounce/SES) shipped **#820**. **Not** Guard Discover / invoice SMTP |
 | “buat P14 E” / denser Host cadence | **Hourly shipped** — `host_sites.scan_interval` daily\|hourly. Clarify bug / residual only. **inotify** shipped **#823**. **WAF own pack 1165–1177** shipped — comprehensive. **Not** 24×7 YARA on `/` / **G/H** |
 | “buat H9” / Host invoicable | **Shipped.** Host catalog `invoicable=true`. Spec [`sinexis-invoice-v1.md`](specs/sinexis-invoice-v1.md) I2. **Not** GMD SID; H4 IDR **locked 2026-10-12**. Do **not** re-implement |
-| “buat Print S2” / `format=pdf` / WeasyPrint | **Shipped** this PR. Invoice PDF I10 shipped 834. Do **not** re-implement |
+| “buat Print S2” / `format=pdf` / WeasyPrint | **Shipped #817**. Invoice PDF I10 shipped 834. Do **not** re-implement |
 | “buat Inbox S2” / bounce / SES | **Shipped #820** — [`inbox-delivered-v1.md`](specs/inbox-delivered-v1.md) S2. Clarify bug / residual only |
 | “buat inotify” / on-write Host | **Shipped #823** — [`imunify-class-onbox.md`](specs/imunify-class-onbox.md) slice E residual. Clarify bug / residual only. **Not** 24×7 YARA on `/` |
-| “buat WAF 1165” / pack-widen | **Shipped #913 / #918 / this PR** (1165–1177). Pack **comprehensive** — do not widen further without a new named slice. Own original IDs only. **Not** CRS/IM360 / G/H / `sinexis.app` edge |
+| “buat WAF 1165” / pack-widen | **Shipped #913 / #918 / #919** (1165–1177). Pack **comprehensive** — do not widen further without a new named slice. Own original IDs only. **Not** CRS/IM360 / G/H / `sinexis.app` edge |
 | “buat initial_report” / first-scan notify | **Shipped #801**. Clarify bug only. Mobile still no notify |
 | “buat Guard D10” / unenroll SPA | **Shipped #802**. Soft-disable in SaaS; Wazuh DELETE still ops. **Not** Discover |
 | “buat invite SMTP” | **Shipped #800**. Copy-link stays. Invite **not** an Inbox row. **Not** invoice SMTP |

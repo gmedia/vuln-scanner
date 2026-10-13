@@ -13,6 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Auth brand mark links to landing (`/`)
 - Landing footer and `package.json` version display `1.2.0` (aligned with last release tag)
 - Clarify `redis==6.4.0` pin (kombu[redis] `<6.5`) vs Compose `redis:8-alpine` in requirements comments
+- Backend + workers: SQLAlchemy `2.0.51` → `2.1.4`, and migrate the PostgreSQL driver from `psycopg2-binary` to `psycopg[binary]` (psycopg3) — SQLAlchemy 2.1 makes `psycopg` the default DBAPI for `postgresql://` URLs. `backend/prestart.sh` / `workers/entrypoint.sh` readiness probes now use `psycopg.connect`; `DATABASE_URL_SYNC` stays a bare `postgresql://` URL
+- Frontend deps: `@radix-ui/react-slot` `1.4.0`, `@radix-ui/react-progress` `1.1.17`, `lucide-react` `1.54.0`, `axios` `1.20.0`; dev: `typescript-eslint` `8.71.1`
 
 ### Fixed
 
