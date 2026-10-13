@@ -71,13 +71,14 @@ Every PR description must include:
 
 ## Design system (MANDATORY)
 
-Public marketing and in-app SPA share **one visual family**. Detail: `docs/AGENT_EXECUTION_GUIDE.md` §11 and `docs/specs/shadcn-ui-migration.md`.
+Public marketing and in-app SPA share **one visual family**. Detail: `docs/AGENT_EXECUTION_GUIDE.md` §11, `docs/specs/shadcn-ui-migration.md` and `docs/specs/row-actions.md`.
 
 1. **Tokens** — copy `frontend/src/index.css` `:root` (`--background`, `--foreground`, `--primary` `hsl(142 71% 45%)`, `--border`, `--muted-foreground`). Do not invent a second palette (no `#0a7`, no Palatino-as-brand).
 2. **Public HTML islands** (`/blog`, future `/legal`, …) — **Landing chrome**, not a separate “editorial” skin: `h-12` header, BrandMark (`SINE` + `XIS` accent + crosshair), `max-w-6xl` / `2xl:max-w-[90rem]`, footer line + Sign in / Get started. Island stays FastAPI HTML (SEO); CSS must **rhyme** Landing, not Palatino briefing.
 3. **SPA pages** (dashboard, admin, auth) — primitives in `frontend/src/components/ui/` only. **No** native `<select>` (eslint `no-restricted-syntax`; use `Select`). **No** native `<button>` for primary actions (use `Button`). Allowed native `<button>`: icon toggles (show password) and full-width list/card rows. Unlabeled inputs forbidden. New forms: `Label` + `Input`/`Textarea`/`Select`.
    **Filter bars** (search/date/select rows): copy Credit History — equal `gap-3` grid, each field `flex min-w-0 flex-col gap-1.5`, controls `h-10 min-h-10`. `DatePicker`/`DateTimePicker` trigger chrome = `border-border bg-input` (same as `Input`). Do **not** use uneven `grid-cols-12` spans or a far-right Apply with empty gutter. Reference: `frontend/src/pages/credit/CreditHistory.tsx`.
 4. **Do not** restyle kit files to match one screenshot. Frozen e2e testids stay.
+5. **Row actions** (table last column + mobile card action area) — **right-align**: `text-right` on head **and** cell. The kit's `TableHead` is `text-left` and `TableCell` sets none, so alignment is always an opt-in; and if the cell wraps controls in a **block-level flex**, `text-right` is a **no-op** → use `justify-end` (plus `items-end` when the mobile wrapper is `flex-col`). **Control choice:** 1 action → visible `Button`; 2+ secondary / admin CRUD → `…` `DropdownMenu`; **never** wrap a lone action; `Select`/inputs/disclosure toggles stay **outside** menus. **Menus:** items use `onSelect` (not `onClick`), destructive item last with `variant="destructive"` + separator, and **never** nest `AlertDialogTrigger` inside an item — use a **sibling controlled `AlertDialog`** (`open`/`onOpenChange`, state lifted above the `.map`). **Confirm irreversible actions only** (delete/void/revoke/ignore); reversible ones stay one-click; a toast is not a confirmation. Mobile trigger ≥ 44px; when one component renders both surfaces, branch on a `desktop` prop, **not** `sm:` classes. Detail: `docs/specs/row-actions.md`.
 
 ---
 
