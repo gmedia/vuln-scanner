@@ -46,11 +46,6 @@ const SERVICES: readonly ScenarioService[] = [
 
 const SKUS: readonly ScenarioSku[] = ["basic", "pro", "multi"];
 
-const LIST_FALLBACK: Record<"scan" | "host", Record<ScenarioSku, number>> = {
-  scan: { basic: 300000, pro: 650000, multi: 2000000 },
-  host: { basic: 150000, pro: 350000, multi: 900000 },
-};
-
 interface RowDraft {
   sku: ScenarioSku | "";
   volume: string;
@@ -83,9 +78,9 @@ function catalogPrice(
   catalog: readonly SkuCatalogItem[] | undefined,
   product: "scan" | "host",
   sku: ScenarioSku,
-): number {
+): number | null {
   const hit = catalog?.find((row) => row.product === product && row.sku === sku);
-  return hit?.list_idr ?? LIST_FALLBACK[product][sku];
+  return hit?.list_idr ?? null;
 }
 
 function AdminHppSimulator() {
@@ -99,6 +94,13 @@ function AdminHppSimulator() {
     queryFn: adminApi.getSkuCatalog,
   });
 
+  const displayPrice = (service: "scan" | "host"): string => {
+    const draft = rows[service];
+    if (draft.price.trim() !== "" || !draft.sku) return draft.price;
+    const listed = catalogPrice(catalog, service, draft.sku);
+    return listed == null ? "" : String(listed);
+  };
+
   const scenarioRows: ScenarioRowInput[] = SERVICES.map((service) => {
     const draft = rows[service];
     const sku =
@@ -110,7 +112,11 @@ function AdminHppSimulator() {
       sku,
       volume: toNumber(draft.volume),
       unit_cost_idr: toNumber(draft.unitCost),
-      price_idr: toNumber(draft.price),
+      price_idr: toNumber(
+        service === "scan" || service === "host"
+          ? displayPrice(service)
+          : draft.price,
+      ),
     };
   });
 
@@ -145,9 +151,10 @@ function AdminHppSimulator() {
   const onSku = (service: "scan" | "host", sku: ScenarioSku) => {
     setRows((prev) => {
       const current = prev[service];
+      const listed = catalogPrice(catalog, service, sku);
       const price =
-        current.price.trim() === ""
-          ? String(catalogPrice(catalog, service, sku))
+        current.price.trim() === "" && listed != null
+          ? String(listed)
           : current.price;
       return { ...prev, [service]: { ...current, sku, price } };
     });
@@ -313,7 +320,11 @@ function AdminHppSimulator() {
                           data-testid={`hpp-sim-price-${service}`}
                           aria-label={t("simColPrice")}
                           inputMode="numeric"
-                          value={draft.price}
+                          value={
+                            service === "scan" || service === "host"
+                              ? displayPrice(service)
+                              : draft.price
+                          }
                           onChange={(e) =>
                             patchRow(service, { price: e.target.value })
                           }
@@ -381,6 +392,18 @@ function AdminHppSimulator() {
               </TableBody>
             </Table>
           </div>
+
+          {(["scan", "host"] as const).some((service) => {
+            const sku = rows[service].sku;
+            return sku !== "" && catalogPrice(catalog, service, sku) == null;
+          }) ? (
+            <p
+              data-testid="hpp-sim-price-warning"
+              className="text-xs text-muted-foreground"
+            >
+              {t("simPriceMissing")}
+            </p>
+          ) : null}
 
           {showTarget ? (
             <p

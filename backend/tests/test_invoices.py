@@ -265,6 +265,85 @@ async def test_owner_lists_invoices_and_catalog(db_session, ctx):
 
 
 @pytest.mark.asyncio
+async def test_update_catalog_invoicable_toggle_persists(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            r = await client.put(
+                "/api/admin/sku-catalog/scan/pro",
+                headers=_auth(ctx["admin"]),
+                json={"list_idr": 500_000, "invoicable": False},
+            )
+            assert r.status_code == 200
+            body = r.json()
+            assert body["list_idr"] == 500_000
+            assert body["invoicable"] is False
+            cat = await client.get("/api/admin/sku-catalog", headers=_auth(ctx["admin"]))
+            assert cat.status_code == 200
+            row = next(i for i in cat.json()["items"] if i["product"] == "scan" and i["sku"] == "pro")
+            assert row["list_idr"] == 500_000
+            assert row["invoicable"] is False
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_update_catalog_omitting_invoicable_leaves_it_unchanged(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            before = await db_session.get(SkuCatalog, ("scan", "pro"))
+            assert before is not None
+            assert before.invoicable is True
+            r = await client.put(
+                "/api/admin/sku-catalog/scan/pro",
+                headers=_auth(ctx["admin"]),
+                json={"list_idr": 700_000},
+            )
+            assert r.status_code == 200
+            body = r.json()
+            assert body["list_idr"] == 700_000
+            assert body["invoicable"] is True
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_update_catalog_rejects_negative_list_idr(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            r = await client.put(
+                "/api/admin/sku-catalog/scan/pro",
+                headers=_auth(ctx["admin"]),
+                json={"list_idr": -1},
+            )
+            assert r.status_code == 422
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_update_catalog_unknown_row_404(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            r = await client.put(
+                "/api/admin/sku-catalog/scan/nope",
+                headers=_auth(ctx["admin"]),
+                json={"list_idr": 100_000},
+            )
+            assert r.status_code == 404
+            assert r.json()["detail"] == "Catalog row not found"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
 async def test_create_host_invoice_snapshots_list_idr(db_session, ctx):
     _bind(db_session)
     transport = ASGITransport(app=app)

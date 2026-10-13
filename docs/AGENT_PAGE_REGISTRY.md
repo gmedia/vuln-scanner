@@ -126,7 +126,7 @@ Minimum authenticated set (2k + mobile, light + dark) after a chrome/token chang
 5. `/schedules` `/assets` `/host`
 6. `/guard` `/siem` `/uptime` `/uptime/:id` `/uptime/status-page`
 7. `/credit-history` `/profile` `/settings/workspace` `/guide`
-8. Admin: `/admin` `/admin/users` `/admin/hpp` `/admin/invoices` `/admin/blog`
+8. Admin: `/admin` `/admin/users` `/admin/hpp` `/admin/skus` `/admin/simulator` `/admin/invoices` `/admin/blog`
 
 Auth for prod visual: `E2E_EMAIL` / `E2E_PASSWORD` from **tc1 env** — never commit. Do not `POST /register` for the shared mailbox.
 
@@ -144,7 +144,7 @@ Run **locally after deploy of S0–S8** (light + dark, 2k + mobile). Compare to 
 | S4 scan | `/scan/ip` `/scan/domain` `/scan/mobile` `/scan/:id` `/schedules` `/assets` `/host` | Density + PageHeader; frozen testids |
 | S5 account | `/profile` `/credit-history` `/settings/workspace` | Two-pane / filter-bar rhythm |
 | S6 attach | `/guard` `/siem` `/uptime` `/uptime/:id` `/uptime/status-page` `/ai` `/guide` | Same chrome family |
-| S7 admin | `/admin` `/admin/users` `/admin/hpp` `/admin/invoices` `/admin/blog` `/admin/email-logs` `/admin/ai` | PageHeader |
+| S7 admin | `/admin` `/admin/users` `/admin/hpp` `/admin/skus` `/admin/simulator` `/admin/invoices` `/admin/blog` `/admin/email-logs` `/admin/ai` | PageHeader |
 | S8 auth | `/login` `/register` `/forgot-password` `/reset-password` `/verify-email` 404 | Hairline `border-border/80 shadow-none`; **Landing `h-12` unchanged** |
 
 Also recapture `/` logged-out only to confirm Landing was **not** restyled in this epic.

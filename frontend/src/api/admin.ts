@@ -504,6 +504,18 @@ export async function getSkuCatalog(): Promise<SkuCatalogItem[]> {
   return data.items;
 }
 
+export async function updateSkuCatalog(
+  product: InvoiceProduct,
+  sku: string,
+  data: { list_idr: number; invoicable?: boolean },
+): Promise<SkuCatalogItem> {
+  const { data: res } = await api.put<SkuCatalogItem>(
+    `/api/admin/sku-catalog/${product}/${sku}`,
+    data,
+  );
+  return res;
+}
+
 export async function listAdminOrgs(params?: {
   q?: string;
 }): Promise<{ items: AdminOrgItem[]; total: number }> {
@@ -619,6 +631,7 @@ export const adminApi = {
   publishBlogPost,
   unpublishBlogPost,
   getSkuCatalog,
+  updateSkuCatalog,
   listAdminOrgs,
   listAdminInvoices,
   createAdminInvoice,

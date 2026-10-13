@@ -89,12 +89,16 @@ class InvoiceService:
         result = await self.db.execute(select(SkuCatalog).order_by(SkuCatalog.product, SkuCatalog.sku))
         return list(result.scalars().all())
 
-    async def update_catalog(self, product: str, sku: str, list_idr: int) -> SkuCatalog:
+    async def update_catalog(
+        self, product: str, sku: str, list_idr: int, invoicable: bool | None = None
+    ) -> SkuCatalog:
         result = await self.db.execute(select(SkuCatalog).where(SkuCatalog.product == product, SkuCatalog.sku == sku))
         row = result.scalar_one_or_none()
         if row is None:
             raise HTTPException(status_code=404, detail="Catalog row not found")
         row.list_idr = list_idr
+        if invoicable is not None:
+            row.invoicable = invoicable
         row.updated_at = datetime.now(UTC)
         await self.db.commit()
         await self.db.refresh(row)

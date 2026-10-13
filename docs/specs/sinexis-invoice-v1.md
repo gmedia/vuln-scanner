@@ -91,7 +91,7 @@ Admin (`get_current_admin` + existing limiter):
 | Method | Path | Notes |
 |--------|------|--------|
 | GET | `/api/admin/sku-catalog` | all rows |
-| PUT | `/api/admin/sku-catalog/{product}/{sku}` | `{ list_idr }` only; seats immutable in v1 |
+| PUT | `/api/admin/sku-catalog/{product}/{sku}` | `{ list_idr, invoicable? }`; seats immutable in v1 |
 | GET | `/api/admin/invoices` | filter `status`, `organization_id`; page |
 | POST | `/api/admin/invoices` | `{ organization_id, sku, product?, period_start? }` `product` = `scan` (default) \| `host`; amount from catalog |
 | POST | `/api/admin/invoices/{id}/send` | draft→sent |
@@ -112,6 +112,7 @@ Bank payload on customer GET when `sent`: `{ bank_name, bank_account, bank_holde
 ## 3) SPA
 
 - `/admin/invoices` — catalog table + invoice list + create/send/paid/void. Filter bar = Credit History (`gap-3`, `h-10`). `nav-admin-invoices`.
+- `/admin/skus` (added 2026-10-13) — edit catalog `list_idr` + `invoicable` per `scan|host` × `basic|pro|multi`; `seats` read-only (tier cap is code-owned). Confirm-before-write; existing invoices keep their `amount_idr` snapshot. `nav-admin-skus`. Enterprise stays quote-only (no catalog row).
 - Workspace: card **Billing** (owner/admin) — list invoices; if `sent`, show bank copy. No pay button. Empty: ops-issued, no self-serve upgrade. Load error is not painted as empty. Platform admin may link to `/admin/invoices`.
 
 Do **not** restyle kit. Tokens from `:root`. `Button` / `Select` only.

@@ -19,6 +19,7 @@ import {
   Inbox,
   Bot,
   Receipt,
+  Tags,
 } from "lucide-react";
 import { BRAND } from "@/lib/brand";
 import { useTranslation } from "react-i18next";
@@ -225,6 +226,12 @@ function Sidebar() {
                   labelKey="hpp"
                   icon={Calculator}
                   testId="nav-admin-hpp"
+                />
+                <NavItem
+                  to="/admin/skus"
+                  labelKey="adminSkus"
+                  icon={Tags}
+                  testId="nav-admin-skus"
                 />
                 <NavItem
                   to="/admin/simulator"

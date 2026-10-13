@@ -86,7 +86,7 @@ async def update_sku_catalog(
     limit_response = await admin_limiter(request)
     if limit_response:
         return limit_response
-    row = await InvoiceService(db).update_catalog(product, sku, body.list_idr)
+    row = await InvoiceService(db).update_catalog(product, sku, body.list_idr, body.invoicable)
     return SkuCatalogItem.model_validate(row)
 
 

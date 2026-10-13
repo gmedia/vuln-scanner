@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AdminHppSimulator from "@/pages/admin/AdminHppSimulator";
 
@@ -73,7 +73,9 @@ describe("AdminHppSimulator", () => {
     await user.type(screen.getByTestId("hpp-sim-fixed-cost"), "100000");
     await user.type(screen.getByTestId("hpp-sim-volume-scan"), "10");
     await user.type(screen.getByTestId("hpp-sim-unitcost-scan"), "50000");
-    await user.type(screen.getByTestId("hpp-sim-price-scan"), "100000");
+    fireEvent.change(screen.getByTestId("hpp-sim-price-scan"), {
+      target: { value: "100000" },
+    });
 
     const row = screen.getByTestId("hpp-sim-row-scan");
     expect(row).toHaveTextContent("500.000");
@@ -94,7 +96,9 @@ describe("AdminHppSimulator", () => {
     await user.type(screen.getByTestId("hpp-sim-fixed-cost"), "100000");
     await user.type(screen.getByTestId("hpp-sim-volume-scan"), "10");
     await user.type(screen.getByTestId("hpp-sim-unitcost-scan"), "50000");
-    await user.type(screen.getByTestId("hpp-sim-price-scan"), "100000");
+    fireEvent.change(screen.getByTestId("hpp-sim-price-scan"), {
+      target: { value: "100000" },
+    });
     await user.type(screen.getByTestId("hpp-sim-target-margin"), "30");
 
     const line = screen.getByTestId("hpp-sim-target-price");
@@ -106,8 +110,24 @@ describe("AdminHppSimulator", () => {
   it("prefills the scan price from the catalog when Pro is picked", async () => {
     const user = userEvent.setup();
     render(<AdminHppSimulator />);
+    fireEvent.change(screen.getByTestId("hpp-sim-price-scan"), {
+      target: { value: "" },
+    });
     await user.click(screen.getByTestId("hpp-sim-sku-scan"));
     await user.click(await screen.findByRole("option", { name: "Pro" }));
     expect(screen.getByTestId("hpp-sim-price-scan")).toHaveValue("650000");
+  });
+
+  it("does not invent a price when the selected SKU is missing from the catalog", () => {
+    const sparse: SkuCatalogItem[] = catalog.filter(
+      (row) => !(row.product === "host" && row.sku === "basic"),
+    );
+    vi.mocked(useQuery).mockReturnValue({ data: sparse } as never);
+    render(<AdminHppSimulator />);
+    expect(screen.getByTestId("hpp-sim-price-host")).toHaveValue("");
+    expect(screen.getByTestId("hpp-sim-price-warning")).toBeInTheDocument();
+    expect(screen.getByTestId("hpp-sim-price-warning").textContent ?? "").not.toMatch(
+      /\d+%/,
+    );
   });
 });
