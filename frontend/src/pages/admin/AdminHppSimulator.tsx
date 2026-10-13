@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, Calculator } from "lucide-react";
-import { adminApi, type SkuCatalogItem } from "@/api/admin";
+import { adminApi, type SkuPriceItem } from "@/api/admin";
 import {
   AdminNotice,
   AdminShell,
@@ -63,8 +63,8 @@ function emptyRows(): Record<ScenarioService, RowDraft> {
   return {
     scan: { sku: "basic", volume: "", unitCost: "", price: "" },
     host: { sku: "basic", volume: "", unitCost: "", price: "" },
-    uptime: { sku: "", volume: "", unitCost: "", price: "" },
-    guard: { sku: "", volume: "", unitCost: "", price: "" },
+    uptime: { sku: "basic", volume: "", unitCost: "", price: "" },
+    guard: { sku: "basic", volume: "", unitCost: "", price: "" },
   };
 }
 
@@ -80,13 +80,13 @@ function toNumber(s: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-function catalogPrice(
-  catalog: readonly SkuCatalogItem[] | undefined,
-  product: "scan" | "host",
+function lockedPrice(
+  prices: readonly SkuPriceItem[] | undefined,
+  service: ScenarioService,
   sku: ScenarioSku,
 ): number | null {
-  const hit = catalog?.find((row) => row.product === product && row.sku === sku);
-  return hit?.list_idr ?? null;
+  const hit = prices?.find((row) => row.service === service && row.sku === sku);
+  return hit ? hit.list_idr : null;
 }
 
 function AdminHppSimulator() {
@@ -95,34 +95,27 @@ function AdminHppSimulator() {
   const [targetMargin, setTargetMargin] = useState("");
   const [rows, setRows] = useState(emptyRows);
 
-  const { data: catalog } = useQuery({
-    queryKey: ["admin-sku-catalog"],
-    queryFn: adminApi.getSkuCatalog,
+  const { data: skuPrices } = useQuery({
+    queryKey: ["admin-sku-prices"],
+    queryFn: adminApi.getSkuPrices,
   });
 
-  const displayPrice = (service: "scan" | "host"): string => {
+  const displayPrice = (service: ScenarioService): string => {
     const draft = rows[service];
-    if (draft.price.trim() !== "" || !draft.sku) return draft.price;
-    const listed = catalogPrice(catalog, service, draft.sku);
+    if (draft.price.trim() !== "") return draft.price;
+    if (!draft.sku) return draft.price;
+    const listed = lockedPrice(skuPrices, service, draft.sku);
     return listed == null ? "" : String(listed);
   };
 
   const scenarioRows: ScenarioRowInput[] = SERVICES.map((service) => {
     const draft = rows[service];
-    const sku =
-      service === "scan" || service === "host"
-        ? draft.sku || undefined
-        : undefined;
     return {
       service,
-      sku,
+      sku: draft.sku || undefined,
       volume: toNumber(draft.volume),
       unit_cost_idr: toNumber(draft.unitCost),
-      price_idr: toNumber(
-        service === "scan" || service === "host"
-          ? displayPrice(service)
-          : draft.price,
-      ),
+      price_idr: toNumber(displayPrice(service)),
     };
   });
 
@@ -154,16 +147,11 @@ function AdminHppSimulator() {
     setRows((prev) => ({ ...prev, [service]: { ...prev[service], ...patch } }));
   };
 
-  const onSku = (service: "scan" | "host", sku: ScenarioSku) => {
-    setRows((prev) => {
-      const current = prev[service];
-      const listed = catalogPrice(catalog, service, sku);
-      const price =
-        current.price.trim() === "" && listed != null
-          ? String(listed)
-          : current.price;
-      return { ...prev, [service]: { ...current, sku, price } };
-    });
+  const onSku = (service: ScenarioService, sku: ScenarioSku) => {
+    setRows((prev) => ({
+      ...prev,
+      [service]: { ...prev[service], sku },
+    }));
   };
 
   const showTarget = targetMargin.trim() !== "" && Number.isFinite(Number(targetMargin));
@@ -328,31 +316,27 @@ function AdminHppSimulator() {
                         ) : null}
                       </TableCell>
                       <TableCell className="py-1.5">
-                        {manual ? (
-                          <span className="text-muted-foreground">—</span>
-                        ) : (
-                          <Select
-                            value={draft.sku || "basic"}
-                            onValueChange={(value) =>
-                              onSku(service, value as ScenarioSku)
-                            }
+                        <Select
+                          value={draft.sku || "basic"}
+                          onValueChange={(value) =>
+                            onSku(service, value as ScenarioSku)
+                          }
+                        >
+                          <SelectTrigger
+                            data-testid={`hpp-sim-sku-${service}`}
+                            aria-label={t("simColSku")}
+                            className="h-10 min-h-10 w-[7.5rem]"
                           >
-                            <SelectTrigger
-                              data-testid={`hpp-sim-sku-${service}`}
-                              aria-label={t("simColSku")}
-                              className="h-10 min-h-10 w-[7.5rem]"
-                            >
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {SKUS.map((sku) => (
-                                <SelectItem key={sku} value={sku}>
-                                  {skuLabel[sku]}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {SKUS.map((sku) => (
+                              <SelectItem key={sku} value={sku}>
+                                {skuLabel[sku]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </TableCell>
                       <TableCell className="py-1.5">
                         <Input
@@ -383,11 +367,7 @@ function AdminHppSimulator() {
                           data-testid={`hpp-sim-price-${service}`}
                           aria-label={t("simColPrice")}
                           inputMode="numeric"
-                          value={
-                            service === "scan" || service === "host"
-                              ? displayPrice(service)
-                              : draft.price
-                          }
+                          value={displayPrice(service)}
                           onChange={(e) =>
                             patchRow(service, { price: e.target.value })
                           }
@@ -456,9 +436,9 @@ function AdminHppSimulator() {
             </Table>
           </div>
 
-          {(["scan", "host"] as const).some((service) => {
+          {SERVICES.some((service) => {
             const sku = rows[service].sku;
-            return sku !== "" && catalogPrice(catalog, service, sku) == null;
+            return sku !== "" && lockedPrice(skuPrices, service, sku) === null;
           }) ? (
             <p
               data-testid="hpp-sim-price-warning"

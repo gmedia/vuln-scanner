@@ -28,3 +28,11 @@ def test_scan_list_prices_match_locked_doc() -> None:
 
 def test_host_list_prices_match_locked_doc() -> None:
     assert HOST_SKU_LIST_IDR == {"basic": 150_000, "pro": 350_000, "multi": 900_000}
+
+
+def test_uptime_and_guard_list_prices_match_locked_doc() -> None:
+    # Locked 2026-10-12 in docs/commercial/pricing-architecture-v1.md §4.
+    from app.models.invoice import GUARD_SKU_LIST_IDR, UPTIME_SKU_LIST_IDR
+
+    assert UPTIME_SKU_LIST_IDR == {"basic": 75_000, "pro": 200_000, "multi": 500_000}
+    assert GUARD_SKU_LIST_IDR == {"basic": 100_000, "pro": 250_000, "multi": 600_000}

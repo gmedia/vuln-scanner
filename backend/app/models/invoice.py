@@ -13,6 +13,12 @@ INVOICE_STATUSES = ("draft", "sent", "paid", "void")
 
 SCAN_SKU_LIST_IDR: dict[str, int] = {"basic": 300_000, "pro": 650_000, "multi": 2_000_000}
 HOST_SKU_LIST_IDR: dict[str, int] = {"basic": 150_000, "pro": 350_000, "multi": 900_000}
+# Owner-locked 2026-10-12 (docs/commercial/pricing-architecture-v1.md §4).
+# Uptime/Guard are priced à-la-carte lines but are NOT in the invoice catalog yet
+# (`sku_catalog`/`org_invoices` CHECK only allow product scan|host), so they are
+# read-only constants here, not DB rows.
+UPTIME_SKU_LIST_IDR: dict[str, int] = {"basic": 75_000, "pro": 200_000, "multi": 500_000}
+GUARD_SKU_LIST_IDR: dict[str, int] = {"basic": 100_000, "pro": 250_000, "multi": 600_000}
 SCAN_SKU_SEATS: dict[str, int] = {"basic": 1, "pro": 3, "multi": 10}
 
 

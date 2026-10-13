@@ -850,3 +850,29 @@ def test_compose_backend_passes_invoice_bank_env() -> None:
         window = text[idx : idx + 2500]
         for needle in required:
             assert needle in window, (rel, needle)
+
+
+@pytest.mark.asyncio
+async def test_sku_prices_lists_all_four_services(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            r = await client.get("/api/admin/sku-prices", headers=_auth(ctx["admin"]))
+            assert r.status_code == 200
+            items = r.json()["items"]
+            by = {(i["service"], i["sku"]): i for i in items}
+            # 4 services x 3 skus
+            assert len(items) == 12
+            # scan/host come from the catalog and are invoicable
+            assert by[("scan", "pro")]["list_idr"] == 650_000
+            assert by[("scan", "pro")]["invoicable"] is True
+            assert by[("host", "basic")]["list_idr"] == 150_000
+            # uptime/guard are the locked constants, not invoicable
+            assert by[("uptime", "basic")]["list_idr"] == 75_000
+            assert by[("uptime", "multi")]["list_idr"] == 500_000
+            assert by[("uptime", "basic")]["invoicable"] is False
+            assert by[("guard", "pro")]["list_idr"] == 250_000
+            assert by[("guard", "multi")]["list_idr"] == 600_000
+    finally:
+        app.dependency_overrides.clear()

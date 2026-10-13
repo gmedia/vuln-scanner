@@ -51,6 +51,8 @@ Seed Scan from I2. Seed Host 150_000 / 350_000 / 900_000. Alembic `host_sku_invo
 
 **Audit trail (2026-10-13):** every `PUT` records the acting admin in `updated_by` (migration `sku_catalog_updated_by`); `GET /api/admin/sku-catalog` returns `updated_by` + `updated_by_email` and `/admin/skus` shows "by &lt;email&gt;" under the updated date. Mirrors the existing `HppRate.updated_by` pattern. No history table — last-writer only.
 
+**Uptime / Guard list prices (2026-10-13):** the owner locked à-la-carte list prices for Uptime (75_000 / 200_000 / 500_000) and Guard (100_000 / 250_000 / 600_000) in [`pricing-architecture-v1.md`](../commercial/pricing-architecture-v1.md) §4. They live as **code constants** (`UPTIME_SKU_LIST_IDR`, `GUARD_SKU_LIST_IDR`) and are exposed read-only via `GET /api/admin/sku-prices` with `invoicable=false`. They are **not** `sku_catalog` rows — the CHECK still allows only `product IN ('scan','host')`, so Uptime/Guard are **not invoiceable in v1** (making them invoiceable is a separate scope change).
+
 HPP overlay `_SCAN_LIST_IDR` / `_HOST_LIST_IDR` **read from catalog** (fallback to the same constants if a row is missing).
 
 ### Invoices `org_invoices`
@@ -94,6 +96,7 @@ Admin (`get_current_admin` + existing limiter):
 | Method | Path | Notes |
 |--------|------|--------|
 | GET | `/api/admin/sku-catalog` | all rows |
+| GET | `/api/admin/sku-prices` | read-only list price for **all four** services × basic/pro/multi (added 2026-10-13). Scan/Host from `sku_catalog`; **Uptime** (`UPTIME_SKU_LIST_IDR`) and **Guard** (`GUARD_SKU_LIST_IDR`) from owner-locked constants with `invoicable=false`. Single source for the `/admin/simulator` prefill. |
 | PUT | `/api/admin/sku-catalog/{product}/{sku}` | `{ list_idr, invoicable? }`; seats immutable in v1; records `updated_by` |
 | GET | `/api/admin/invoices` | filter `status`, `organization_id`; page |
 | POST | `/api/admin/invoices` | `{ organization_id, sku, product?, period_start? }` `product` = `scan` (default) \| `host`; amount from catalog |
