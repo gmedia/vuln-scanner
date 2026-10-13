@@ -65,6 +65,19 @@ Helper script (host with repo + `.env`): [`scripts/smoke-broker.sh`](../scripts/
 
 Missing Pango on a laptop `pip` install → API **503** `PDF rendering unavailable`. Prod image and CI must have the apt list.
 
+## SQLAlchemy 2.1 + psycopg3 (PostgreSQL driver)
+
+| Layer | Pin | Notes |
+|-------|-----|--------|
+| **SQLAlchemy** (backend + workers) | `sqlalchemy[asyncio]==2.1.4` | `2.0.51` → `2.1.4` |
+| **psycopg** (sync driver) | `psycopg[binary]==3.3.6` | Replaces `psycopg2-binary`. SQLAlchemy 2.1 defaults `postgresql://` to the **psycopg (psycopg3)** dialect |
+| **asyncpg** (async driver) | `asyncpg==0.31.0` (backend) / `0.32.0` (workers) | `DATABASE_URL` = `postgresql+asyncpg://` — unchanged |
+
+SQLAlchemy 2.1 changed the default DBAPI for a bare `postgresql://` URL from `psycopg2` to `psycopg` (psycopg3). The repo standardizes on **one driver** (psycopg3):
+
+- `DATABASE_URL_SYNC` stays **bare** (`postgresql://…`). It feeds SQLAlchemy (`create_engine`, Alembic) **and** the raw readiness probes in `backend/prestart.sh` / `workers/entrypoint.sh` (`psycopg.connect`). Do **not** add `+psycopg2` — psycopg3 accepts the bare URI, and the shell probes are not SQLAlchemy.
+- PEP-646 typing in 2.1 requires **Mypy ≥ 1.7** and surfaced 4 `var-annotated` locals in `workers/tasks/host_protect.py`; fixed with annotations, not `type: ignore`.
+
 ## Do not
 
 - Blind `pip install -U redis` past 6.4 while Kombu still has `<6.5`.
