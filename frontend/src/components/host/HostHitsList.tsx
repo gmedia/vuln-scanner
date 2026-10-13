@@ -52,7 +52,7 @@ function HitActions({
   readonly t: (k: string) => string;
 }) {
   const wrap = desktop
-    ? "flex flex-wrap gap-2"
+    ? "flex flex-wrap justify-end gap-2"
     : "mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap";
   const full = desktop ? undefined : "w-full sm:w-auto";
   return (
@@ -191,7 +191,7 @@ export default function HostHitsList({
                       {hitStatusLabel(h.status, t)}
                     </Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-right">
                     <HitActions
                       hit={h}
                       desktop
