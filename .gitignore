@@ -30,6 +30,7 @@ frontend/.nyc_output/
 workers/coverage/
 opencode.json
 .opencode
+.omo
 
 # Agent skill vendor trees (npx skills add -a '*'). Canonical copy: .agents/skills/
 .adal/
