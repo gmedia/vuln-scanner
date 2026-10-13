@@ -319,6 +319,69 @@ describe("Host Protect page", () => {
     expect(vi.mocked(hostApi.quarantineHostHit).mock.calls[0][0]).toBe("h1");
   });
 
+  it("moves Ignore into the row actions menu and confirms it", async () => {
+    vi.mocked(hostApi.listHostSites).mockResolvedValue([
+      {
+        id: "s1",
+        organization_id: "org1",
+        guard_agent_id: "a1",
+        asset_id: null,
+        name: "Web",
+        root_path: "/var/www/html",
+        cms_hint: "wordpress",
+        enabled: true,
+        auto_quarantine: false,
+        scan_interval: "daily",
+        created_by: "u1",
+        created_at: "2026-08-30T00:00:00Z",
+        updated_at: "2026-08-30T00:00:00Z",
+        sku: "multi",
+        sku_limit: 10,
+      },
+    ]);
+    vi.mocked(hostApi.listHostHits).mockResolvedValue([
+      {
+        id: "h1",
+        organization_id: "org1",
+        site_id: "s1",
+        scan_id: null,
+        rel_path: "app/Http/evil.php",
+        class: "suspicious",
+        engine: "yara",
+        rule_id: "yara.suspicious.php",
+        status: "open",
+        sha256: null,
+        first_seen_at: "2026-08-30T00:00:00Z",
+        last_seen_at: "2026-08-30T00:00:00Z",
+      },
+    ]);
+    vi.mocked(hostApi.ignoreHostHit).mockResolvedValue({
+      id: "h1",
+      organization_id: "org1",
+      site_id: "s1",
+      scan_id: null,
+      rel_path: "app/Http/evil.php",
+      class: "suspicious",
+      engine: "yara",
+      rule_id: "yara.suspicious.php",
+      status: "ignored",
+      sha256: null,
+      first_seen_at: "2026-08-30T00:00:00Z",
+      last_seen_at: "2026-08-30T00:00:00Z",
+    });
+    const user = userEvent.setup();
+    renderHost();
+    await waitFor(() =>
+      expect(screen.getByTestId("host-actions")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("host-actions"));
+    await user.click(await screen.findByTestId("host-ignore"));
+    expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
+    await user.click(screen.getByTestId("host-ignore-confirm"));
+    await waitFor(() => expect(hostApi.ignoreHostHit).toHaveBeenCalled());
+    expect(vi.mocked(hostApi.ignoreHostHit).mock.calls[0][0]).toBe("h1");
+  });
+
   it("shows queued scan copy instead of silent empty hits", async () => {
     vi.mocked(hostApi.listHostSites).mockResolvedValue([
       {

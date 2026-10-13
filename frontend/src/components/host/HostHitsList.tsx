@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { MoreHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { HostHit } from "@/api/hostProtect";
 import { Badge } from "@/components/ui/Badge";
@@ -21,8 +23,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SiemRail } from "@/components/siem/siemChrome";
 import {
   hitClassVariant,
@@ -67,6 +69,11 @@ function HitActions({
     ? "flex flex-wrap justify-end gap-2"
     : "mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end";
   const full = desktop ? undefined : "w-full sm:w-auto";
+  const [ignoreOpen, setIgnoreOpen] = useState(false);
+  const showMenu =
+    hit.status === "open" ||
+    hit.class === "webshell" ||
+    hit.class === "backdoor";
   return (
     <div className={wrap}>
       {(hit.status === "open" || hit.status === "restored") && (
@@ -91,45 +98,63 @@ function HitActions({
           {t("restore")}
         </Button>
       )}
-      {hit.status === "open" && (
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
+      {showMenu ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <Button
               size="sm"
               variant="ghost"
-              className={full}
-              data-testid={desktop ? "host-ignore" : `host-ignore-m-${hit.id}`}
+              className={
+                desktop
+                  ? "h-9 w-9 p-0"
+                  : "h-11 w-11 min-h-11 min-w-11 p-0"
+              }
+              data-testid={desktop ? "host-actions" : `host-actions-m-${hit.id}`}
+              aria-label={t("actionsMenu")}
             >
-              {t("ignore")}
+              <MoreHorizontal className="h-4 w-4" />
             </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{t("ignoreConfirmTitle")}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {t("ignoreConfirmBody")}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-              <AlertDialogAction
-                className={buttonVariants({ variant: "destructive" })}
-                data-testid={
-                  desktop ? "host-ignore-confirm" : `host-ignore-confirm-m-${hit.id}`
-                }
-                onClick={() => onIgnore(hit.id)}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            {hit.status === "open" ? (
+              <DropdownMenuItem
+                variant="destructive"
+                data-testid={desktop ? "host-ignore" : `host-ignore-m-${hit.id}`}
+                onSelect={() => setIgnoreOpen(true)}
               >
                 {t("ignore")}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
-      {(hit.class === "webshell" || hit.class === "backdoor") && (
-        <Button size="sm" variant="ghost" className={full} asChild>
-          <Link to="/guard">{t("openGuard")}</Link>
-        </Button>
-      )}
+              </DropdownMenuItem>
+            ) : null}
+            {hit.class === "webshell" || hit.class === "backdoor" ? (
+              <DropdownMenuItem asChild>
+                <Link to="/guard">{t("openGuard")}</Link>
+              </DropdownMenuItem>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
+      <AlertDialog open={ignoreOpen} onOpenChange={setIgnoreOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("ignoreConfirmTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("ignoreConfirmBody")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: "destructive" })}
+              data-testid={
+                desktop ? "host-ignore-confirm" : `host-ignore-confirm-m-${hit.id}`
+              }
+              onClick={() => onIgnore(hit.id)}
+            >
+              {t("ignore")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

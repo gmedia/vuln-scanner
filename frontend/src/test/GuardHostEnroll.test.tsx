@@ -460,6 +460,50 @@ describe("Guard host enroll UI", () => {
     });
   });
 
+  it("opens the desktop agent actions menu and issues a host token", async () => {
+    const user = userEvent.setup();
+    vi.mocked(guardApi.listGuardAgents).mockResolvedValue([
+      {
+        id: "ag-menu",
+        organization_id: "org1",
+        wazuh_agent_id: "009",
+        name: "vps-menu-01",
+        status: "active",
+        ip: null,
+        version: "4.7.0",
+        last_keep_alive: "2026-08-17T14:05:00Z",
+        last_helper_poll_at: null,
+        has_host_agent_token: false,
+        disabled: false,
+        synced_at: "2026-08-17T14:05:00Z",
+        created_at: "2026-08-17T14:05:00Z",
+      },
+    ]);
+    vi.mocked(guardApi.issueHostAgentToken).mockResolvedValue({
+      agent_id: "ag-menu",
+      token: "once-plain-host-token",
+    });
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <Guard />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    await screen.findByTestId("guard-agent-actions-ag-menu");
+    await user.click(screen.getByTestId("guard-agent-actions-ag-menu"));
+    await user.click(await screen.findByTestId("guard-agent-token-ag-menu"));
+    expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
+    await user.click(screen.getByTestId("guard-agent-token-confirm-ag-menu"));
+    await waitFor(() =>
+      expect(guardApi.issueHostAgentToken).toHaveBeenCalledWith("ag-menu"),
+    );
+  });
+
   it("stacks mobile Rotate and Remove actions with a gap", async () => {
     vi.mocked(guardApi.listGuardAgents).mockResolvedValue([
       {
