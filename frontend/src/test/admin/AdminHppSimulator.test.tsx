@@ -118,6 +118,29 @@ describe("AdminHppSimulator", () => {
     expect(screen.getByTestId("hpp-sim-price-scan")).toHaveValue("650000");
   });
 
+  it("renders a collapsible usage guide", async () => {
+    const user = userEvent.setup();
+    render(<AdminHppSimulator />);
+    expect(screen.getByTestId("hpp-sim-guide")).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "Enter the monthly fixed cost (overhead + journal) — one lump sum for all services.",
+      ),
+    ).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Steps" }));
+    expect(
+      await screen.findByText(
+        "Enter the monthly fixed cost (overhead + journal) — one lump sum for all services.",
+      ),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Limits" }));
+    expect(
+      await screen.findByText(
+        "Nothing is saved — refreshing or leaving the page clears your inputs.",
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("does not invent a price when the selected SKU is missing from the catalog", () => {
     const sparse: SkuCatalogItem[] = catalog.filter(
       (row) => !(row.product === "host" && row.sku === "basic"),
