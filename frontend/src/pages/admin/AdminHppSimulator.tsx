@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Calculator } from "lucide-react";
+import { BookOpen, Calculator } from "lucide-react";
 import { adminApi, type SkuCatalogItem } from "@/api/admin";
 import {
   AdminNotice,
@@ -10,6 +10,12 @@ import {
 } from "@/components/admin/AdminShell";
 import { marginTone } from "@/components/admin/adminChrome";
 import PageHeader from "@/components/layout/PageHeader";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/Accordion";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -171,6 +177,63 @@ function AdminHppSimulator() {
           {t("simBanner")}
         </AdminNotice>
       </div>
+
+      <AdminShell testid="hpp-sim-guide" tone="info">
+        <AdminShellHead icon={BookOpen} title={t("simGuideTitle")} hint={t("simGuideHint")} />
+        <AdminShellBody>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="steps">
+              <AccordionTrigger>{t("simGuideStepsTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <ol className="ml-4 list-decimal space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>{t("simGuideStep1")}</li>
+                  <li>{t("simGuideStep2")}</li>
+                  <li>{t("simGuideStep3")}</li>
+                  <li>{t("simGuideStep4")}</li>
+                  <li>{t("simGuideStep5")}</li>
+                  <li>{t("simGuideStep6")}</li>
+                </ol>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="fixed-cost">
+              <AccordionTrigger>{t("simGuideFixedCostTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t("simGuideFixedCostBody")}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="formula">
+              <AccordionTrigger>{t("simGuideFormulaTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
+                  {t("simGuideFormulaBody")}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="not-computed">
+              <AccordionTrigger>{t("simGuideNotComputedTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t("simGuideNotComputedBody")}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="limits">
+              <AccordionTrigger>{t("simGuideLimitsTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <ul className="ml-4 list-disc space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>{t("simGuideLimit1")}</li>
+                  <li>{t("simGuideLimit2")}</li>
+                  <li>{t("simGuideLimit3")}</li>
+                  <li>{t("simGuideLimit4")}</li>
+                  <li>{t("simGuideLimit5")}</li>
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </AdminShellBody>
+      </AdminShell>
 
       <AdminShell testid="hpp-sim-inputs">
         <AdminShellHead
