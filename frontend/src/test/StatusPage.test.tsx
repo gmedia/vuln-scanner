@@ -525,6 +525,9 @@ describe("StatusPage admin", () => {
     expect(remove).toHaveAttribute("aria-label", "Remove");
     expect(remove.textContent).not.toMatch(/Remove/);
     await user.click(remove);
+    await user.click(
+      await screen.findByTestId("status-component-remove-confirm-c1"),
+    );
     expect(statusApi.deleteComponent).toHaveBeenCalledWith(
       "c1",
       expect.anything(),

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Calculator, Loader2, Check, Trash2, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { buttonVariants } from "@/components/ui/buttonVariants";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
@@ -29,6 +30,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import PageHeader from "@/components/layout/PageHeader";
 import { adminApi, type HppRateItem } from "@/api/admin";
 import { useTranslation } from "react-i18next";
@@ -473,14 +485,33 @@ function AdminHpp() {
                         {line.note || "—"}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          aria-label={t("hppCostDelete")}
-                          onClick={() => deleteCost.mutate(line.id)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              aria-label={t("hppCostDelete")}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>{t("hppCostDeleteConfirmTitle")}</AlertDialogTitle>
+                              <AlertDialogDescription>{t("hppCostDeleteConfirmBody")}</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                              <AlertDialogAction
+                                className={buttonVariants({ variant: "destructive" })}
+                                data-testid={`hpp-cost-delete-confirm-${line.id}`}
+                                onClick={() => deleteCost.mutate(line.id)}
+                              >
+                                {t("hppCostDelete")}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </TableCell>
                     </TableRow>
                   ))}

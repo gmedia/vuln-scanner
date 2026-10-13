@@ -55,6 +55,8 @@
   "components": "Components",
   "noComponents": "No components yet. Map an Uptime monitor.",
   "remove": "Remove",
+  "removeConfirmTitle": "Remove component?",
+  "removeConfirmBody": "This removes the component from the public status page. It cannot be undone.",
   "colActions": "Actions",
   "colStarted": "Started",
   "incidentTitle": "Incident title",

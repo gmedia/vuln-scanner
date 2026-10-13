@@ -78,6 +78,8 @@
   "statusPendingRestore": "Pulihkan mengantri — file masih di karantina",
   "restore": "Pulihkan",
   "ignore": "Abaikan",
+  "ignoreConfirmTitle": "Abaikan file ini?",
+  "ignoreConfirmBody": "File yang diabaikan keluar dari antrean aktif dan tidak bisa dibuka lagi. Pakai Karantina jika ragu.",
   "openGuard": "Buka Guard",
   "tabMalware": "Malware",
   "tabWaf": "WAF",

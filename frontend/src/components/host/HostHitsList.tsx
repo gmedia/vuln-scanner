@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { HostHit } from "@/api/hostProtect";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { buttonVariants } from "@/components/ui/buttonVariants";
 import {
   Table,
   TableBody,
@@ -11,6 +12,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { SiemRail } from "@/components/siem/siemChrome";
 import {
   hitClassVariant,
@@ -80,15 +92,38 @@ function HitActions({
         </Button>
       )}
       {hit.status === "open" && (
-        <Button
-          size="sm"
-          variant="ghost"
-          className={full}
-          data-testid={desktop ? "host-ignore" : `host-ignore-m-${hit.id}`}
-          onClick={() => onIgnore(hit.id)}
-        >
-          {t("ignore")}
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              size="sm"
+              variant="ghost"
+              className={full}
+              data-testid={desktop ? "host-ignore" : `host-ignore-m-${hit.id}`}
+            >
+              {t("ignore")}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("ignoreConfirmTitle")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("ignoreConfirmBody")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                className={buttonVariants({ variant: "destructive" })}
+                data-testid={
+                  desktop ? "host-ignore-confirm" : `host-ignore-confirm-m-${hit.id}`
+                }
+                onClick={() => onIgnore(hit.id)}
+              >
+                {t("ignore")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
       {(hit.class === "webshell" || hit.class === "backdoor") && (
         <Button size="sm" variant="ghost" className={full} asChild>

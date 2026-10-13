@@ -1,6 +1,18 @@
 import { useTranslation } from "react-i18next";
 import type { AiProviderAdmin } from "@/api/admin";
 import { Button } from "@/components/ui/Button";
+import { buttonVariants } from "@/components/ui/buttonVariants";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/Input";
 import {
   Table,
@@ -101,14 +113,35 @@ export function AdminAiProviderList({
                   >
                     {t("aiEdit")}
                   </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => onDelete(p.id)}
-                  >
-                    {t("aiDelete")}
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                      >
+                        {t("aiDelete")}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t("aiProviderDeleteConfirmTitle")}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t("aiProviderDeleteConfirmBody")}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                        <AlertDialogAction
+                          className={buttonVariants({ variant: "destructive" })}
+                          data-testid={`admin-ai-provider-delete-confirm-m-${p.id}`}
+                          onClick={() => onDelete(p.id)}
+                        >
+                          {t("aiDelete")}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </>
             )}
@@ -178,14 +211,35 @@ export function AdminAiProviderList({
                       >
                         {t("aiEdit")}
                       </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => onDelete(p.id)}
-                      >
-                        {t("aiDelete")}
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                          >
+                            {t("aiDelete")}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>{t("aiProviderDeleteConfirmTitle")}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {t("aiProviderDeleteConfirmBody")}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                            <AlertDialogAction
+                              className={buttonVariants({ variant: "destructive" })}
+                              data-testid={`admin-ai-provider-delete-confirm-${p.id}`}
+                              onClick={() => onDelete(p.id)}
+                            >
+                              {t("aiDelete")}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </>
                   )}
                 </TableCell>

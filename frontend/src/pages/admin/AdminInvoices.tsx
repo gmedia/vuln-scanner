@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, Loader2, Printer, Receipt, Info, Tag, Plus, FileText } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { buttonVariants } from "@/components/ui/buttonVariants";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
@@ -21,6 +22,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   AdminShell,
   AdminShellBody,
@@ -438,16 +450,35 @@ function AdminInvoices() {
                           >
                             {t("invoiceMarkPaid")}
                           </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="min-h-11"
-                            data-testid={`invoice-void-m-${inv.id}`}
-                            onClick={() => voidMut.mutate(inv.id)}
-                          >
-                            {t("invoiceVoid")}
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="min-h-11"
+                                data-testid={`invoice-void-m-${inv.id}`}
+                              >
+                                {t("invoiceVoid")}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>{t("invoiceVoidConfirmTitle")}</AlertDialogTitle>
+                                <AlertDialogDescription>{t("invoiceVoidConfirmBody")}</AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className={buttonVariants({ variant: "destructive" })}
+                                  data-testid={`invoice-void-confirm-m-${inv.id}`}
+                                  onClick={() => voidMut.mutate(inv.id)}
+                                >
+                                  {t("invoiceVoid")}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </>
                       ) : null}
                     </div>
@@ -540,15 +571,34 @@ function AdminInvoices() {
                             >
                               {t("invoiceMarkPaid")}
                             </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              data-testid={`invoice-void-${inv.id}`}
-                              onClick={() => voidMut.mutate(inv.id)}
-                            >
-                              {t("invoiceVoid")}
-                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  data-testid={`invoice-void-${inv.id}`}
+                                >
+                                  {t("invoiceVoid")}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>{t("invoiceVoidConfirmTitle")}</AlertDialogTitle>
+                                  <AlertDialogDescription>{t("invoiceVoidConfirmBody")}</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    className={buttonVariants({ variant: "destructive" })}
+                                    data-testid={`invoice-void-confirm-${inv.id}`}
+                                    onClick={() => voidMut.mutate(inv.id)}
+                                  >
+                                    {t("invoiceVoid")}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </>
                         ) : null}
                       </TableCell>
