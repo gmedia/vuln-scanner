@@ -386,7 +386,7 @@ function AdminInvoices() {
                     <p className="mt-1 text-[11px] text-muted-foreground">
                       {inv.product} · {inv.sku} · {formatIdr(inv.amount_idr)}
                     </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="mt-3 flex flex-wrap justify-end gap-2">
                       {inv.status === "sent" || inv.status === "paid" ? (
                         <Button
                           type="button"

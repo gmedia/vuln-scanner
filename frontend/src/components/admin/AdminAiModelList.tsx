@@ -85,7 +85,7 @@ export function AdminAiModelList({
                   value={editPriceOut}
                   onChange={onEditPriceOut}
                 />
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap justify-end gap-2">
                   <Button type="button" size="sm" onClick={onSave} disabled={savePending}>
                     {t("aiSave")}
                   </Button>
@@ -106,7 +106,7 @@ export function AdminAiModelList({
                   {t("aiPriceIn")}: {formatIdr(m.price_idr_per_1k_in)} · {t("aiPriceOut")}:{" "}
                   {formatIdr(m.price_idr_per_1k_out)}
                 </p>
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-2 flex flex-wrap justify-end gap-2">
                   <Button
                     type="button"
                     size="sm"
@@ -137,7 +137,7 @@ export function AdminAiModelList({
               <TableHead>{t("aiUpstreamId")}</TableHead>
               <TableHead>{t("aiPriceIn")}</TableHead>
               <TableHead>{t("aiPriceOut")}</TableHead>
-              <TableHead>{t("colActions")}</TableHead>
+              <TableHead className="text-right">{t("colActions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -185,7 +185,7 @@ export function AdminAiModelList({
                 <TableCell className="tabular-nums">
                   {formatIdr(m.price_idr_per_1k_out)}
                 </TableCell>
-                <TableCell className="space-x-2 whitespace-nowrap">
+                <TableCell className="space-x-2 whitespace-nowrap text-right">
                   {editingModel?.id === m.id ? (
                     <>
                       <Button type="button" size="sm" onClick={onSave} disabled={savePending}>

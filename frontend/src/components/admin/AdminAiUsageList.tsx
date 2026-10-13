@@ -62,15 +62,16 @@ export function AdminAiUsageList({
               <p className="mt-1 font-mono text-xs tabular-nums text-muted-foreground">
                 {t("aiBilled")}: {formatIdr(u.billed_idr)}
               </p>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="mt-2"
-                onClick={() => onToggle(u.id)}
-              >
-                {open ? t("aiCancel") : t("aiRequest")}
-              </Button>
+              <div className="mt-2 flex justify-end">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onToggle(u.id)}
+                >
+                  {open ? t("aiCancel") : t("aiRequest")}
+                </Button>
+              </div>
               {open ? (
                 <div className="mt-3 grid gap-3">
                   <PayloadBlock
@@ -96,7 +97,7 @@ export function AdminAiUsageList({
               <TableHead>{t("aiPublicId")}</TableHead>
               <TableHead>{t("aiSource")}</TableHead>
               <TableHead>{t("aiBilled")}</TableHead>
-              <TableHead>{t("colActions")}</TableHead>
+              <TableHead className="text-right">{t("colActions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -108,7 +109,7 @@ export function AdminAiUsageList({
                     <TableCell>{u.model_public_id}</TableCell>
                     <TableCell>{u.source}</TableCell>
                     <TableCell>{formatIdr(u.billed_idr)}</TableCell>
-                    <TableCell className="whitespace-nowrap">
+                    <TableCell className="whitespace-nowrap text-right">
                       <Button
                         type="button"
                         size="sm"

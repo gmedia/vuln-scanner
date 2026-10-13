@@ -472,7 +472,7 @@ function AdminHpp() {
                       <TableCell className="max-w-[20rem] whitespace-normal break-words text-xs text-muted-foreground">
                         {line.note || "—"}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-right">
                         <Button
                           variant="ghost"
                           size="sm"

@@ -75,7 +75,7 @@ export function AdminAiProviderList({
                   onChange={onEditCred}
                   type="password"
                 />
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap justify-end gap-2">
                   <Button type="button" size="sm" onClick={onSave} disabled={savePending}>
                     {t("aiSave")}
                   </Button>
@@ -92,7 +92,7 @@ export function AdminAiProviderList({
                 <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
                   {p.base_url}
                 </p>
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-2 flex flex-wrap justify-end gap-2">
                   <Button
                     type="button"
                     size="sm"
@@ -121,7 +121,7 @@ export function AdminAiProviderList({
             <TableRow>
               <TableHead>{t("aiName")}</TableHead>
               <TableHead>{t("aiBaseUrl")}</TableHead>
-              <TableHead>{t("colActions")}</TableHead>
+              <TableHead className="text-right">{t("colActions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -151,7 +151,7 @@ export function AdminAiProviderList({
                     </span>
                   )}
                 </TableCell>
-                <TableCell className="space-x-2 whitespace-nowrap">
+                <TableCell className="space-x-2 whitespace-nowrap text-right">
                   {editingProv?.id === p.id ? (
                     <>
                       <AdminAiField

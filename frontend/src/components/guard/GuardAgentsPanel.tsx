@@ -191,7 +191,7 @@ export function GuardAgentsPanel({
                       {t("colLastSeen")}
                     </TableHead>
                     <TableHead className="min-w-[6rem]">{t("colVersion")}</TableHead>
-                    <TableHead className="min-w-[12rem]">{t("colAction")}</TableHead>
+                    <TableHead className="min-w-[12rem] text-right">{t("colAction")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
