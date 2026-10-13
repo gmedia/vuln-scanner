@@ -67,7 +67,7 @@ function HitActions({
 }) {
   const wrap = desktop
     ? "flex flex-wrap justify-end gap-2"
-    : "mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end";
+    : "mt-2 flex flex-col items-end gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end";
   const full = desktop ? undefined : "w-full sm:w-auto";
   const [ignoreOpen, setIgnoreOpen] = useState(false);
   const showMenu =
