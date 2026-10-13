@@ -3,7 +3,8 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import Schedules, { mapScheduleError } from "@/pages/Schedules";
+import Schedules from "@/pages/Schedules";
+import { mapScheduleError } from "@/api/schedules";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 
