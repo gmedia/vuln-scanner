@@ -1,6 +1,6 @@
 # frontend/
 
-**Parent:** [`../AGENTS.md`](../AGENTS.md) for tokens, Select/Button, filter bars, e2e testids.
+**Parent:** [`../AGENTS.md`](../AGENTS.md) for tokens, Select/Button, filter bars, row actions, e2e testids.
 
 ## OVERVIEW
 
@@ -15,6 +15,7 @@ Vite + React + TS + shadcn. Node >=24. Dev :5173; prod compose publishes :5174.
 | Kit | `src/components/ui/` only |
 | Tokens | `src/index.css` `:root` |
 | Filter-bar ref | `src/pages/credit/CreditHistory.tsx` |
+| Row actions (rule) | [`../docs/specs/row-actions.md`](../docs/specs/row-actions.md) — menu vs visible button, alignment, confirm |
 | Vitest | `src/test/` |
 | Playwright | `e2e/` — serial, `storageState`. Two projects: `chromium` (desktop 1440×900) and `mobile` (Pixel 5, `hasTouch`). Mobile-only specs **must** be named `*.mobile.spec.ts` so each spec runs in exactly one project. |
 | i18n | `src/locales/{en,id}/` |
@@ -22,6 +23,7 @@ Vite + React + TS + shadcn. Node >=24. Dev :5173; prod compose publishes :5174.
 ## CONVENTIONS
 
 - ESLint: no native `<select>` in `src/` (e2e/tests exempt). Primary actions = `Button`.
+- Table/card **row actions**: follow [`../docs/specs/row-actions.md`](../docs/specs/row-actions.md) — action column is `text-right` (or `justify-end` when the cell wraps a block-level flex), menus use `onSelect` + a sibling controlled `AlertDialog` (never a nested trigger), and only irreversible actions get a confirmation.
 - Alias `@/*`. `npm test` = vitest run; coverage statements/lines 75, branches/functions 70.
 - Proxy `/api` `/ws` → `http://backend:8000` (needs Docker DNS or override).
 
