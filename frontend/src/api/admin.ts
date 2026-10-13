@@ -466,6 +466,17 @@ export interface SkuCatalogItem {
   updated_by_email?: string | null;
 }
 
+export interface SkuPriceItem {
+  service: "scan" | "host" | "uptime" | "guard";
+  sku: "basic" | "pro" | "multi";
+  list_idr: number;
+  invoicable: boolean;
+}
+
+export interface SkuPriceListResponse {
+  items: SkuPriceItem[];
+}
+
 export interface AdminOrgItem {
   id: string;
   name: string;
@@ -503,6 +514,11 @@ export async function getSkuCatalog(): Promise<SkuCatalogItem[]> {
   const { data } = await api.get<{ items: SkuCatalogItem[] }>(
     "/api/admin/sku-catalog",
   );
+  return data.items;
+}
+
+export async function getSkuPrices(): Promise<SkuPriceItem[]> {
+  const { data } = await api.get<SkuPriceListResponse>("/api/admin/sku-prices");
   return data.items;
 }
 
@@ -633,6 +649,7 @@ export const adminApi = {
   publishBlogPost,
   unpublishBlogPost,
   getSkuCatalog,
+  getSkuPrices,
   updateSkuCatalog,
   listAdminOrgs,
   listAdminInvoices,

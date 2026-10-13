@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.database import get_db
 from app.middleware.rate_limit import RateLimiter
+from app.models.invoice import GUARD_SKU_LIST_IDR, INVOICE_SKUS, UPTIME_SKU_LIST_IDR
 from app.models.organization import Organization
 from app.models.user import User
 from app.schemas.invoice import (
@@ -19,6 +20,8 @@ from app.schemas.invoice import (
     SkuCatalogItem,
     SkuCatalogListResponse,
     SkuCatalogUpdateRequest,
+    SkuPriceItem,
+    SkuPriceListResponse,
 )
 from app.services.auth import get_current_admin
 from app.services.invoice import InvoiceService, invoice_pdf_response, to_item
@@ -111,6 +114,35 @@ async def update_sku_catalog(
         updated_by=row.updated_by,
         updated_by_email=current_admin.email,
     )
+
+
+@router.get("/sku-prices", response_model=SkuPriceListResponse)
+async def get_sku_prices(
+    request: Request,
+    current_admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> SkuPriceListResponse | Response:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        return limit_response
+    rows = await InvoiceService(db).list_catalog()
+    catalog = {(r.product, r.sku): r for r in rows}
+    items: list[SkuPriceItem] = []
+    for service in ("scan", "host"):
+        for sku in INVOICE_SKUS:
+            row = catalog.get((service, sku))
+            items.append(
+                SkuPriceItem(
+                    service=service,
+                    sku=sku,
+                    list_idr=row.list_idr if row is not None else 0,
+                    invoicable=row.invoicable if row is not None else False,
+                )
+            )
+    for service, table in (("uptime", UPTIME_SKU_LIST_IDR), ("guard", GUARD_SKU_LIST_IDR)):
+        for sku, price in table.items():
+            items.append(SkuPriceItem(service=service, sku=sku, list_idr=price, invoicable=False))
+    return SkuPriceListResponse(items=items)
 
 
 @router.get("/invoices", response_model=InvoiceListResponse)

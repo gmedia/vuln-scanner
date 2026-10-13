@@ -36,6 +36,17 @@ class SkuCatalogListResponse(BaseModel):
     items: list[SkuCatalogItem]
 
 
+class SkuPriceItem(BaseModel):
+    service: str  # scan | host | uptime | guard
+    sku: str  # basic | pro | multi
+    list_idr: int
+    invoicable: bool
+
+
+class SkuPriceListResponse(BaseModel):
+    items: list[SkuPriceItem]
+
+
 class SkuCatalogUpdateRequest(BaseModel):
     list_idr: int = Field(..., ge=0)
     invoicable: bool | None = None

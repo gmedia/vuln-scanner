@@ -21,34 +21,30 @@ vi.mock("@tanstack/react-query", () => ({
 
 vi.mock("@/api/admin", () => ({
   adminApi: {
-    getSkuCatalog: vi.fn(),
+    getSkuPrices: vi.fn(),
   },
 }));
 
 import { useQuery } from "@tanstack/react-query";
-import { adminApi, type SkuCatalogItem } from "@/api/admin";
+import { adminApi, type SkuPriceItem } from "@/api/admin";
 
-const catalog: SkuCatalogItem[] = [
-  {
-    product: "scan",
-    sku: "basic",
-    list_idr: 300000,
-    seats: 1,
-    invoicable: true,
-    updated_at: "",
-  },
-  {
-    product: "scan",
-    sku: "pro",
-    list_idr: 650000,
-    seats: 3,
-    invoicable: true,
-    updated_at: "",
-  },
+const prices: SkuPriceItem[] = [
+  { service: "scan", sku: "basic", list_idr: 300000, invoicable: true },
+  { service: "scan", sku: "pro", list_idr: 650000, invoicable: true },
+  { service: "scan", sku: "multi", list_idr: 2000000, invoicable: true },
+  { service: "host", sku: "basic", list_idr: 150000, invoicable: true },
+  { service: "host", sku: "pro", list_idr: 350000, invoicable: true },
+  { service: "host", sku: "multi", list_idr: 900000, invoicable: true },
+  { service: "uptime", sku: "basic", list_idr: 75000, invoicable: false },
+  { service: "uptime", sku: "pro", list_idr: 200000, invoicable: false },
+  { service: "uptime", sku: "multi", list_idr: 500000, invoicable: false },
+  { service: "guard", sku: "basic", list_idr: 100000, invoicable: false },
+  { service: "guard", sku: "pro", list_idr: 250000, invoicable: false },
+  { service: "guard", sku: "multi", list_idr: 600000, invoicable: false },
 ];
 
-vi.mocked(adminApi.getSkuCatalog).mockResolvedValue(catalog);
-vi.mocked(useQuery).mockReturnValue({ data: catalog } as never);
+vi.mocked(adminApi.getSkuPrices).mockResolvedValue(prices);
+vi.mocked(useQuery).mockReturnValue({ data: prices } as never);
 
 describe("AdminHppSimulator", () => {
   it("renders the scenario banner and one row per service", () => {
@@ -107,12 +103,26 @@ describe("AdminHppSimulator", () => {
     expect(line.textContent ?? "").toMatch(/\d{1,3}(\.\d{3})+/);
   });
 
-  it("prefills the scan price from the catalog when Pro is picked", async () => {
+  it("prefills a locked price for uptime and guard", async () => {
     const user = userEvent.setup();
     render(<AdminHppSimulator />);
-    fireEvent.change(screen.getByTestId("hpp-sim-price-scan"), {
-      target: { value: "" },
-    });
+    const uptimePrice = screen.getByTestId("hpp-sim-price-uptime") as HTMLInputElement;
+    const guardPrice = screen.getByTestId("hpp-sim-price-guard") as HTMLInputElement;
+    expect(screen.getByTestId("hpp-sim-sku-uptime")).toBeInTheDocument();
+    expect(uptimePrice.value).toBe("75000");
+    expect(guardPrice.value).toBe("100000");
+
+    await user.click(screen.getByTestId("hpp-sim-sku-uptime"));
+    await user.click(await screen.findByRole("option", { name: "Multi" }));
+    expect(uptimePrice.value).toBe("500000");
+  });
+
+  it("still shows scan/host catalog prices", async () => {
+    const user = userEvent.setup();
+    render(<AdminHppSimulator />);
+    expect(screen.getByTestId("hpp-sim-price-scan")).toHaveValue("300000");
+    expect(screen.getByTestId("hpp-sim-price-host")).toHaveValue("150000");
+
     await user.click(screen.getByTestId("hpp-sim-sku-scan"));
     await user.click(await screen.findByRole("option", { name: "Pro" }));
     expect(screen.getByTestId("hpp-sim-price-scan")).toHaveValue("650000");
@@ -142,8 +152,8 @@ describe("AdminHppSimulator", () => {
   });
 
   it("does not invent a price when the selected SKU is missing from the catalog", () => {
-    const sparse: SkuCatalogItem[] = catalog.filter(
-      (row) => !(row.product === "host" && row.sku === "basic"),
+    const sparse: SkuPriceItem[] = prices.filter(
+      (row) => !(row.service === "host" && row.sku === "basic"),
     );
     vi.mocked(useQuery).mockReturnValue({ data: sparse } as never);
     render(<AdminHppSimulator />);
