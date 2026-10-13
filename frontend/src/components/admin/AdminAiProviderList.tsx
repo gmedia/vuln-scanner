@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { MoreHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AiProviderAdmin } from "@/api/admin";
 import { Button } from "@/components/ui/Button";
@@ -11,8 +13,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/Input";
 import {
   Table,
@@ -54,6 +62,7 @@ export function AdminAiProviderList({
   readonly onDelete: (id: string) => void;
 }) {
   const { t } = useTranslation("admin");
+  const [deleteTarget, setDeleteTarget] = useState<AiProviderAdmin | null>(null);
   if (providers.length === 0) {
     return <p className="text-sm text-muted-foreground">{t("aiProvidersEmpty")}</p>;
   }
@@ -105,43 +114,36 @@ export function AdminAiProviderList({
                   {p.base_url}
                 </p>
                 <div className="mt-2 flex flex-wrap justify-end gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onStartEdit(p)}
-                  >
-                    {t("aiEdit")}
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
                       <Button
                         type="button"
+                        variant="ghost"
                         size="sm"
+                        className="h-11 w-11 min-h-11 min-w-11 p-0 md:h-9 md:w-9 md:min-h-9 md:min-w-9"
+                        data-testid={`admin-ai-provider-actions-${p.id}`}
+                        aria-label={t("actionsMenu")}
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem
+                        data-testid={`admin-ai-provider-edit-${p.id}`}
+                        onSelect={() => onStartEdit(p)}
+                      >
+                        {t("aiEdit")}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
                         variant="destructive"
+                        data-testid={`admin-ai-provider-delete-${p.id}`}
+                        onSelect={() => setDeleteTarget(p)}
                       >
                         {t("aiDelete")}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>{t("aiProviderDeleteConfirmTitle")}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {t("aiProviderDeleteConfirmBody")}
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                        <AlertDialogAction
-                          className={buttonVariants({ variant: "destructive" })}
-                          data-testid={`admin-ai-provider-delete-confirm-m-${p.id}`}
-                          onClick={() => onDelete(p.id)}
-                        >
-                          {t("aiDelete")}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </>
             )}
@@ -184,7 +186,7 @@ export function AdminAiProviderList({
                     </span>
                   )}
                 </TableCell>
-                <TableCell className="space-x-2 whitespace-nowrap text-right">
+                <TableCell className="whitespace-nowrap text-right">
                   {editingProv?.id === p.id ? (
                     <>
                       <AdminAiField
@@ -202,45 +204,38 @@ export function AdminAiProviderList({
                       </Button>
                     </>
                   ) : (
-                    <>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onStartEdit(p)}
-                      >
-                        {t("aiEdit")}
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
+                    <div className="flex justify-end">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                           <Button
                             type="button"
+                            variant="ghost"
                             size="sm"
+                            className="h-9 w-9 p-0"
+                            data-testid={`admin-ai-provider-actions-${p.id}`}
+                            aria-label={t("actionsMenu")}
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem
+                            data-testid={`admin-ai-provider-edit-${p.id}`}
+                            onSelect={() => onStartEdit(p)}
+                          >
+                            {t("aiEdit")}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
                             variant="destructive"
+                            data-testid={`admin-ai-provider-delete-${p.id}`}
+                            onSelect={() => setDeleteTarget(p)}
                           >
                             {t("aiDelete")}
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>{t("aiProviderDeleteConfirmTitle")}</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              {t("aiProviderDeleteConfirmBody")}
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                            <AlertDialogAction
-                              className={buttonVariants({ variant: "destructive" })}
-                              data-testid={`admin-ai-provider-delete-confirm-${p.id}`}
-                              onClick={() => onDelete(p.id)}
-                            >
-                              {t("aiDelete")}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   )}
                 </TableCell>
               </TableRow>
@@ -248,6 +243,32 @@ export function AdminAiProviderList({
           </TableBody>
         </Table>
       </div>
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("aiProviderDeleteConfirmTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("aiProviderDeleteConfirmBody")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: "destructive" })}
+              data-testid="admin-ai-provider-delete-confirm"
+              onClick={() => {
+                if (deleteTarget) onDelete(deleteTarget.id);
+                setDeleteTarget(null);
+              }}
+            >
+              {t("aiDelete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

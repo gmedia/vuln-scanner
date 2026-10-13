@@ -210,7 +210,8 @@ describe("AdminInvoices", () => {
     }) as typeof useQuery);
   });
 
-  it("renders page, catalog, and create control", () => {
+  it("renders page, catalog, and create control", async () => {
+    const user = userEvent.setup();
     render(<AdminInvoices />);
     expect(screen.getByTestId("admin-invoices-page")).toBeInTheDocument();
     expect(
@@ -222,7 +223,10 @@ describe("AdminInvoices", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByTestId("invoice-create")).toBeDisabled();
-    expect(screen.getByTestId("invoice-paid-inv-1")).toBeInTheDocument();
+    await user.click(screen.getAllByTestId("invoice-actions-inv-1")[1]);
+    expect(
+      await screen.findByTestId("invoice-paid-inv-1"),
+    ).toBeInTheDocument();
   });
 
   it("shows Mark sent on a draft row and toasts status-flip copy, not emailed", async () => {
@@ -239,7 +243,8 @@ describe("AdminInvoices", () => {
     })) as unknown as typeof useMutation);
 
     render(<AdminInvoices />);
-    const sendBtn = screen.getByTestId("invoice-send-inv-1");
+    await userEvent.click(screen.getAllByTestId("invoice-actions-inv-1")[1]);
+    const sendBtn = await screen.findByTestId("invoice-send-inv-1");
     expect(sendBtn).toBeVisible();
     expect(sendBtn).toHaveTextContent("Mark sent");
     expect(sendBtn.textContent).not.toMatch(/emailed/i);
@@ -257,13 +262,15 @@ describe("AdminInvoices", () => {
   it("says Mark sent after switching locale back to en", async () => {
     await i18n.changeLanguage("id");
     const first = render(<AdminInvoices />);
-    expect(screen.getByTestId("invoice-send-inv-1")).toHaveTextContent(
+    await userEvent.click(screen.getAllByTestId("invoice-actions-inv-1")[1]);
+    expect(await screen.findByTestId("invoice-send-inv-1")).toHaveTextContent(
       "Tandai terkirim",
     );
     first.unmount();
     await i18n.changeLanguage("en");
     render(<AdminInvoices />);
-    expect(screen.getByTestId("invoice-send-inv-1")).toHaveTextContent(
+    await userEvent.click(screen.getAllByTestId("invoice-actions-inv-1")[1]);
+    expect(await screen.findByTestId("invoice-send-inv-1")).toHaveTextContent(
       "Mark sent",
     );
   });
@@ -275,12 +282,15 @@ describe("AdminInvoices", () => {
       isPending: false,
     } as unknown as ReturnType<typeof useMutation>);
     render(<AdminInvoices />);
-    await userEvent.click(screen.getByTestId("invoice-paid-inv-1"));
+    await userEvent.click(screen.getAllByTestId("invoice-actions-inv-1")[1]);
+    await userEvent.click(await screen.findByTestId("invoice-paid-inv-1"));
     expect(mutate).toHaveBeenCalledWith("inv-1");
   });
 
-  it("does not show print on a draft invoice", () => {
+  it("does not show print on a draft invoice", async () => {
     render(<AdminInvoices />);
+    await userEvent.click(screen.getAllByTestId("invoice-actions-inv-1")[1]);
+    await screen.findByTestId("invoice-send-inv-1");
     expect(screen.queryByTestId("admin-invoice-print")).not.toBeInTheDocument();
     expect(screen.queryByTestId("admin-invoice-pdf")).not.toBeInTheDocument();
   });
@@ -329,13 +339,15 @@ describe("AdminInvoices", () => {
       };
     }) as typeof useQuery);
     render(<AdminInvoices />);
-    await userEvent.click(screen.getByTestId("admin-invoice-print"));
+    await userEvent.click(screen.getAllByTestId("invoice-actions-inv-1")[1]);
+    await userEvent.click(await screen.findByTestId("admin-invoice-print"));
     expect(screen.getByTestId("invoice-print-sheet")).toBeInTheDocument();
     expect(screen.getByTestId("invoice-print-bank")).toHaveTextContent(
       "0000000000",
     );
     await waitFor(() => expect(print).toHaveBeenCalled());
-    await userEvent.click(screen.getByTestId("admin-invoice-pdf"));
+    await userEvent.click(screen.getAllByTestId("invoice-actions-inv-1")[1]);
+    await userEvent.click(await screen.findByTestId("admin-invoice-pdf"));
     expect(downloadAdminInvoicePdf).toHaveBeenCalledWith(
       "inv-1",
       "SX-202609-0001",
@@ -358,7 +370,8 @@ describe("AdminInvoices", () => {
       };
     }) as typeof useQuery);
     render(<AdminInvoices />);
-    await userEvent.click(screen.getByTestId("admin-invoice-pdf"));
+    await userEvent.click(screen.getAllByTestId("invoice-actions-inv-1")[1]);
+    await userEvent.click(await screen.findByTestId("admin-invoice-pdf"));
     expect(toast.error).toHaveBeenCalledWith("Could not download invoice PDF");
   });
 
@@ -419,7 +432,8 @@ describe("AdminInvoices", () => {
     })) as unknown as typeof useMutation);
 
     render(<AdminInvoices />);
-    await userEvent.click(screen.getByTestId("invoice-paid-inv-1"));
+    await userEvent.click(screen.getAllByTestId("invoice-actions-inv-1")[1]);
+    await userEvent.click(await screen.findByTestId("invoice-paid-inv-1"));
     expect(toast.success).toHaveBeenCalledWith(
       "Marked paid — Host invoice; Scan org SKU unchanged",
     );

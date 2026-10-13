@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, Loader2, Printer, Receipt, Info, Tag, Plus, FileText } from "lucide-react";
+import { Download, Loader2, MoreHorizontal, Printer, Receipt, Info, Tag, Plus, FileText } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { buttonVariants } from "@/components/ui/buttonVariants";
 import { Input } from "@/components/ui/Input";
@@ -31,8 +31,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AdminShell,
   AdminShellBody,
@@ -74,6 +80,7 @@ function AdminInvoices() {
   const { t } = useTranslation("admin");
   const qc = useQueryClient();
   const [status, setStatus] = useState("all");
+  const [voidTarget, setVoidTarget] = useState<InvoiceItem | null>(null);
   const [orgId, setOrgId] = useState("");
   const [product, setProduct] = useState<InvoiceProduct>("scan");
   const [sku, setSku] = useState("basic");
@@ -398,89 +405,70 @@ function AdminInvoices() {
                     <p className="mt-1 text-[11px] text-muted-foreground">
                       {inv.product} · {inv.sku} · {formatIdr(inv.amount_idr)}
                     </p>
-                    <div className="mt-3 flex flex-wrap justify-end gap-2">
-                      {inv.status === "sent" || inv.status === "paid" ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="no-print min-h-11"
-                          data-testid="admin-invoice-print-m"
-                          aria-label={inv.number}
-                          onClick={() => startPrint(inv)}
-                        >
-                          <Printer className="mr-1 h-3.5 w-3.5" />
-                          {t("invoicePrint")}
-                        </Button>
-                      ) : null}
-                      {inv.status === "sent" || inv.status === "paid" ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="no-print min-h-11"
-                          data-testid="admin-invoice-pdf-m"
-                          aria-label={`${inv.number} pdf`}
-                          onClick={() => void downloadPdf(inv)}
-                        >
-                          <Download className="mr-1 h-3.5 w-3.5" />
-                          {t("invoicePdf")}
-                        </Button>
-                      ) : null}
-                      {inv.status === "draft" ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="min-h-11"
-                          data-testid={`invoice-send-m-${inv.id}`}
-                          onClick={() => sendMut.mutate(inv.id)}
-                        >
-                          {t("invoiceSend")}
-                        </Button>
-                      ) : null}
-                      {inv.status === "draft" || inv.status === "sent" ? (
-                        <>
+                    <div className="mt-3 flex justify-end">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                           <Button
                             type="button"
+                            variant="ghost"
                             size="sm"
-                            className="min-h-11"
-                            data-testid={`invoice-paid-m-${inv.id}`}
-                            onClick={() => payMut.mutate(inv.id)}
+                            className="h-11 w-11 min-h-11 min-w-11 p-0 md:h-9 md:w-9 md:min-h-9 md:min-w-9"
+                            data-testid={`invoice-actions-${inv.id}`}
+                            aria-label={t("actionsMenu")}
                           >
-                            {t("invoiceMarkPaid")}
+                            <MoreHorizontal className="h-4 w-4" />
                           </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                className="min-h-11"
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          {inv.status === "sent" || inv.status === "paid" ? (
+                            <DropdownMenuItem
+                              className="no-print"
+                              data-testid="admin-invoice-print-m"
+                              onSelect={() => startPrint(inv)}
+                            >
+                              <Printer className="mr-2 h-4 w-4" />
+                              {t("invoicePrint")}
+                            </DropdownMenuItem>
+                          ) : null}
+                          {inv.status === "sent" || inv.status === "paid" ? (
+                            <DropdownMenuItem
+                              className="no-print"
+                              data-testid="admin-invoice-pdf-m"
+                              onSelect={() => void downloadPdf(inv)}
+                            >
+                              <Download className="mr-2 h-4 w-4" />
+                              {t("invoicePdf")}
+                            </DropdownMenuItem>
+                          ) : null}
+                          {inv.status === "draft" ? (
+                            <DropdownMenuItem
+                              data-testid={`invoice-send-m-${inv.id}`}
+                              onSelect={() => sendMut.mutate(inv.id)}
+                            >
+                              {t("invoiceSend")}
+                            </DropdownMenuItem>
+                          ) : null}
+                          {inv.status === "draft" || inv.status === "sent" ? (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                data-testid={`invoice-paid-m-${inv.id}`}
+                                onSelect={() => payMut.mutate(inv.id)}
+                              >
+                                {t("invoiceMarkPaid")}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                variant="destructive"
                                 data-testid={`invoice-void-m-${inv.id}`}
+                                onSelect={() => setVoidTarget(inv)}
                               >
                                 {t("invoiceVoid")}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>{t("invoiceVoidConfirmTitle")}</AlertDialogTitle>
-                                <AlertDialogDescription>{t("invoiceVoidConfirmBody")}</AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                                <AlertDialogAction
-                                  className={buttonVariants({ variant: "destructive" })}
-                                  data-testid={`invoice-void-confirm-m-${inv.id}`}
-                                  onClick={() => voidMut.mutate(inv.id)}
-                                >
-                                  {t("invoiceVoid")}
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </>
-                      ) : null}
+                              </DropdownMenuItem>
+                            </>
+                          ) : null}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 ))}
@@ -521,92 +509,106 @@ function AdminInvoices() {
                       <TableCell>
                         <Badge variant="default">{inv.status}</Badge>
                       </TableCell>
-                      <TableCell className="space-x-1 text-right">
-                        {inv.status === "sent" || inv.status === "paid" ? (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="no-print"
-                            data-testid="admin-invoice-print"
-                            aria-label={inv.number}
-                            onClick={() => startPrint(inv)}
-                          >
-                            <Printer className="mr-1 h-3.5 w-3.5" />
-                            {t("invoicePrint")}
-                          </Button>
-                        ) : null}
-                        {inv.status === "sent" || inv.status === "paid" ? (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="no-print"
-                            data-testid="admin-invoice-pdf"
-                            aria-label={`${inv.number} pdf`}
-                            onClick={() => void downloadPdf(inv)}
-                          >
-                            <Download className="mr-1 h-3.5 w-3.5" />
-                            {t("invoicePdf")}
-                          </Button>
-                        ) : null}
-                        {inv.status === "draft" ? (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            data-testid={`invoice-send-${inv.id}`}
-                            onClick={() => sendMut.mutate(inv.id)}
-                          >
-                            {t("invoiceSend")}
-                          </Button>
-                        ) : null}
-                        {inv.status === "draft" || inv.status === "sent" ? (
-                          <>
-                            <Button
-                              type="button"
-                              size="sm"
-                              data-testid={`invoice-paid-${inv.id}`}
-                              onClick={() => payMut.mutate(inv.id)}
-                            >
-                              {t("invoiceMarkPaid")}
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  data-testid={`invoice-void-${inv.id}`}
+                      <TableCell className="text-right">
+                        <div className="flex justify-end">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-9 w-9 p-0"
+                                data-testid={`invoice-actions-${inv.id}`}
+                                aria-label={t("actionsMenu")}
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              {inv.status === "sent" || inv.status === "paid" ? (
+                                <DropdownMenuItem
+                                  className="no-print"
+                                  data-testid="admin-invoice-print"
+                                  onSelect={() => startPrint(inv)}
                                 >
-                                  {t("invoiceVoid")}
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>{t("invoiceVoidConfirmTitle")}</AlertDialogTitle>
-                                  <AlertDialogDescription>{t("invoiceVoidConfirmBody")}</AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    className={buttonVariants({ variant: "destructive" })}
-                                    data-testid={`invoice-void-confirm-${inv.id}`}
-                                    onClick={() => voidMut.mutate(inv.id)}
+                                  <Printer className="mr-2 h-4 w-4" />
+                                  {t("invoicePrint")}
+                                </DropdownMenuItem>
+                              ) : null}
+                              {inv.status === "sent" || inv.status === "paid" ? (
+                                <DropdownMenuItem
+                                  className="no-print"
+                                  data-testid="admin-invoice-pdf"
+                                  onSelect={() => void downloadPdf(inv)}
+                                >
+                                  <Download className="mr-2 h-4 w-4" />
+                                  {t("invoicePdf")}
+                                </DropdownMenuItem>
+                              ) : null}
+                              {inv.status === "draft" ? (
+                                <DropdownMenuItem
+                                  data-testid={`invoice-send-${inv.id}`}
+                                  onSelect={() => sendMut.mutate(inv.id)}
+                                >
+                                  {t("invoiceSend")}
+                                </DropdownMenuItem>
+                              ) : null}
+                              {inv.status === "draft" || inv.status === "sent" ? (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    data-testid={`invoice-paid-${inv.id}`}
+                                    onSelect={() => payMut.mutate(inv.id)}
+                                  >
+                                    {t("invoiceMarkPaid")}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    variant="destructive"
+                                    data-testid={`invoice-void-${inv.id}`}
+                                    onSelect={() => setVoidTarget(inv)}
                                   >
                                     {t("invoiceVoid")}
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </>
-                        ) : null}
+                                  </DropdownMenuItem>
+                                </>
+                              ) : null}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
                   </TableBody>
                 </Table>
               </div>
+              <AlertDialog
+                open={!!voidTarget}
+                onOpenChange={(open) => {
+                  if (!open) setVoidTarget(null);
+                }}
+              >
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t("invoiceVoidConfirmTitle")}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {t("invoiceVoidConfirmBody")}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                    <AlertDialogAction
+                      className={buttonVariants({ variant: "destructive" })}
+                      data-testid="invoice-void-confirm"
+                      onClick={() => {
+                        if (voidTarget) voidMut.mutate(voidTarget.id);
+                        setVoidTarget(null);
+                      }}
+                    >
+                      {t("invoiceVoid")}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </>
           )}
         </AdminShellBody>

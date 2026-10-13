@@ -39,6 +39,7 @@
   "lastLoginNever": "Never",
   "lastLoginAt": "Last login {{date}}",
   "colActions": "Actions",
+  "actionsMenu": "Row actions",
   "roleAdmin": "Admin",
   "roleUser": "User",
   "verified": "Verified",
