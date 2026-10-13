@@ -17,6 +17,7 @@
   "cmsLaravel": "laravel",
   "save": "Save",
   "cancel": "Cancel",
+  "actionsMenu": "File actions",
   "delete": "Delete",
   "confirmDelete": "Delete this site?",
   "scanNow": "Scan now",

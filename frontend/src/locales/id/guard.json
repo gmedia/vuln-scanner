@@ -49,6 +49,7 @@
   "revokeConfirmTitle": "Cabut token enroll?",
   "revokeConfirmBody": "Host tidak bisa enroll lagi dengan token tersebut.",
   "cancel": "Batal",
+  "actionsMenu": "Aksi agen",
   "tokenSummary_one": "{{count}} token · {{unused}} berlaku",
   "tokenSummary_other": "{{count}} token · {{unused}} berlaku",
   "openSiem": "Buka SIEM",

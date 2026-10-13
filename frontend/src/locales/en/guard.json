@@ -49,6 +49,7 @@
   "revokeConfirmTitle": "Revoke enroll token?",
   "revokeConfirmBody": "The host will no longer be able to enroll with that token.",
   "cancel": "Cancel",
+  "actionsMenu": "Agent actions",
   "tokenSummary_one": "{{count}} token · {{unused}} valid",
   "tokenSummary_other": "{{count}} tokens · {{unused}} valid",
   "openSiem": "Open SIEM",

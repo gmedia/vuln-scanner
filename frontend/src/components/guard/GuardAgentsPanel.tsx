@@ -2,10 +2,7 @@ import { Monitor } from "lucide-react";
 import type { ScanAsset } from "@/api/assets";
 import type { GuardAgent } from "@/api/guard";
 import { GuardAgentCard } from "@/components/guard/GuardAgentCard";
-import {
-  DisableAgentButton,
-  HostTokenIssueButton,
-} from "@/components/guard/GuardAgentActions";
+import { GuardAgentCommandsMenu } from "@/components/guard/GuardAgentActions";
 import {
   GuardAssetChip,
   GuardAssetSelect,
@@ -111,20 +108,16 @@ function AgentTableRow({
             <span className="text-xs text-muted-foreground">—</span>
           )}
           {canAdmin ? (
-            <HostTokenIssueButton
-              agent={agent}
-              t={t}
-              pending={hostTokenPending}
-              onIssue={onIssueHostToken}
-            />
-          ) : null}
-          {canAdmin && !agent.disabled ? (
-            <DisableAgentButton
-              agent={agent}
-              t={t}
-              pending={disablePending}
-              onDisable={onDisable}
-            />
+            <div className="flex justify-end">
+              <GuardAgentCommandsMenu
+                agent={agent}
+                t={t}
+                hostTokenPending={hostTokenPending}
+                disablePending={disablePending}
+                onIssue={onIssueHostToken}
+                onDisable={onDisable}
+              />
+            </div>
           ) : null}
         </div>
       </TableCell>

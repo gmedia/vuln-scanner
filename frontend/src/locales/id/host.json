@@ -17,6 +17,7 @@
   "cmsLaravel": "laravel",
   "save": "Simpan",
   "cancel": "Batal",
+  "actionsMenu": "Aksi file",
   "delete": "Hapus",
   "confirmDelete": "Hapus situs ini?",
   "scanNow": "Scan sekarang",
