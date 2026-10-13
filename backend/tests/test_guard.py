@@ -353,6 +353,8 @@ async def test_link_agent_asset(db_session: AsyncSession, guard_ws):
     outsider = guard_ws["outsider"]
     org = guard_ws["org"]
     other = guard_ws["other"]
+    org.sku = "multi"
+    await db_session.commit()
     from app.database import get_db
     from app.models.asset import ScanAsset
 
@@ -556,5 +558,50 @@ async def test_disable_agent_authz_and_sync(db_session: AsyncSession, guard_ws):
         assert r.status_code == 204
         row = (await db_session.execute(select(GuardAgent).where(GuardAgent.id == uuid.UUID(aid)))).scalar_one()
         assert row.disabled_at == frozen_disabled_at
+
+    app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_guard_seat_cap_locked_and_enforced(db_session: AsyncSession, guard_ws):
+    """Guard agent caps are the owner-locked 1/3/10 (2026-10-12) and are enforced on enroll."""
+    from app.database import get_db
+    from app.services.guard import sku_guard_limit
+
+    assert sku_guard_limit("basic") == 1
+    assert sku_guard_limit("pro") == 3
+    assert sku_guard_limit("multi") == 10
+    assert sku_guard_limit(None) == 10  # unknown falls back to the most generous tier
+    assert sku_guard_limit("enterprise") == 10
+
+    owner, org = guard_ws["owner"], guard_ws["org"]  # fixture org sku defaults to "basic"
+
+    async def _db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = _db
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.post("/api/guard/enable", headers=_auth(owner, org.id))
+        tok = (
+            await client.post("/api/guard/enroll-tokens", headers=_auth(owner, org.id), json={"label": "cap-1"})
+        ).json()["token"]
+        ok = await client.post(
+            "/api/guard/enroll",
+            headers={"X-E2E-Test": "1"},
+            json={"token": tok, "agent_name": "cap-01"},
+        )
+        assert ok.status_code == 200, ok.text
+
+        tok2 = (
+            await client.post("/api/guard/enroll-tokens", headers=_auth(owner, org.id), json={"label": "cap-2"})
+        ).json()["token"]
+        overflow = await client.post(
+            "/api/guard/enroll",
+            headers={"X-E2E-Test": "1"},
+            json={"token": tok2, "agent_name": "cap-02"},
+        )
+        assert overflow.status_code == 400
+        assert "seat limit" in overflow.text.lower()
 
     app.dependency_overrides.clear()

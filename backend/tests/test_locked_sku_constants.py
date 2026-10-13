@@ -5,6 +5,7 @@ These are CODE constants (not a markdown parser): if someone changes a cap or pr
 """
 
 from app.models.asset import ASSET_SKU_LIMITS
+from app.models.guard import GUARD_SKU_LIMITS
 from app.models.host_protect import HOST_SITE_SKU_LIMITS
 from app.models.invoice import HOST_SKU_LIST_IDR, SCAN_SKU_LIST_IDR, SCAN_SKU_SEATS
 from app.models.uptime import UPTIME_SKU_LIMITS
@@ -15,6 +16,7 @@ def test_scan_host_guard_caps_are_1_3_10() -> None:
     assert expected == ASSET_SKU_LIMITS
     assert expected == HOST_SITE_SKU_LIMITS
     assert expected == SCAN_SKU_SEATS
+    assert expected == GUARD_SKU_LIMITS
 
 
 def test_uptime_caps_are_the_locked_exception_10_50_200() -> None:

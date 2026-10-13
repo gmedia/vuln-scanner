@@ -9,18 +9,20 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models.asset import ScanAsset
 from app.models.guard import (
+    GUARD_SKU_LIMITS,
     GuardAgent,
     GuardAlert,
     GuardEnrollToken,
     GuardOrgBinding,
     wazuh_group_for_org,
 )
+from app.models.organization import Organization
 from app.models.user import User
 from app.services.guard_apply import get_binding as apply_get_binding
 from app.services.guard_apply import sanitize_sync_error
@@ -40,6 +42,10 @@ def hash_enroll_token(token: str) -> str:
 def generate_enroll_token() -> tuple[str, str]:
     raw = secrets.token_urlsafe(32)
     return raw, hash_enroll_token(raw)
+
+
+def sku_guard_limit(sku: str | None) -> int:
+    return GUARD_SKU_LIMITS.get(sku or "multi", GUARD_SKU_LIMITS["multi"])
 
 
 class GuardService:
@@ -314,6 +320,24 @@ class GuardService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Guard is not enabled for this organization",
+            )
+
+        org = (
+            await self.db.execute(select(Organization).where(Organization.id == row.organization_id))
+        ).scalar_one_or_none()
+        org_sku = org.sku if org is not None else None
+        limit = sku_guard_limit(org_sku)
+        active = (
+            await self.db.execute(
+                select(func.count())
+                .select_from(GuardAgent)
+                .where(GuardAgent.organization_id == row.organization_id, GuardAgent.disabled_at.is_(None))
+            )
+        ).scalar_one()
+        if int(active) >= limit:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Guard seat limit for {org_sku or 'multi'} tier is {limit}",
             )
 
         try:

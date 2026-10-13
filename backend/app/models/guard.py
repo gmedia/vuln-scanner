@@ -32,6 +32,10 @@ AGENT_STATUSES = (
     "unknown",
 )
 
+# Owner-locked 2026-10-12 (docs/commercial/pricing-architecture-v1.md §2/§7).
+# Guard agents align to the 1/3/10 mental model (a Multi bundle covers 10 VMs).
+GUARD_SKU_LIMITS: dict[str, int] = {"basic": 1, "pro": 3, "multi": 10}
+
 
 def wazuh_group_for_org(organization_id: uuid.UUID) -> str:
     return f"org_{organization_id.hex}"
