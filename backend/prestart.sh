@@ -71,12 +71,12 @@ DB_PORT=$(echo "$DATABASE_URL_SYNC" | sed 's|.*:||' | sed 's|/.*||')
 echo "Waiting for PostgreSQL at $DB_HOST:$DB_PORT ..."
 for i in $(seq 1 30); do
   if python -c "
-import psycopg2, sys, os
+import psycopg, sys, os
 try:
-    psycopg2.connect(os.environ['DATABASE_URL_SYNC'])
+    psycopg.connect(os.environ['DATABASE_URL_SYNC'])
     sys.exit(0)
 except Exception as e:
-    print(f'[psycopg2] {e}', file=sys.stderr)
+    print(f'[psycopg] {e}', file=sys.stderr)
     sys.exit(1)
 " ; then
     echo "[OK] PostgreSQL is ready"
