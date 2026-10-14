@@ -7,16 +7,16 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
 
-INVOICE_PRODUCTS = ("scan", "host")
+INVOICE_PRODUCTS = ("scan", "host", "uptime", "guard")
 INVOICE_SKUS = ("basic", "pro", "multi")
 INVOICE_STATUSES = ("draft", "sent", "paid", "void")
 
 SCAN_SKU_LIST_IDR: dict[str, int] = {"basic": 300_000, "pro": 650_000, "multi": 2_000_000}
 HOST_SKU_LIST_IDR: dict[str, int] = {"basic": 150_000, "pro": 350_000, "multi": 900_000}
 # Owner-locked 2026-10-12 (docs/commercial/pricing-architecture-v1.md §4).
-# Uptime/Guard are priced à-la-carte lines but are NOT in the invoice catalog yet
-# (`sku_catalog`/`org_invoices` CHECK only allow product scan|host), so they are
-# read-only constants here, not DB rows.
+# Uptime/Guard are priced à-la-carte lines, seeded into `sku_catalog` (migration
+# add_uptime_guard_catalog) with invoicable=true; these constants remain as code
+# defaults / fallbacks when a catalog row is missing.
 UPTIME_SKU_LIST_IDR: dict[str, int] = {"basic": 75_000, "pro": 200_000, "multi": 500_000}
 GUARD_SKU_LIST_IDR: dict[str, int] = {"basic": 100_000, "pro": 250_000, "multi": 600_000}
 SCAN_SKU_SEATS: dict[str, int] = {"basic": 1, "pro": 3, "multi": 10}
@@ -36,7 +36,7 @@ class SkuCatalog(Base):
     )
 
     __table_args__ = (
-        CheckConstraint("product IN ('scan', 'host')", name="ck_sku_catalog_product"),
+        CheckConstraint("product IN ('scan', 'host', 'uptime', 'guard')", name="ck_sku_catalog_product"),
         CheckConstraint("sku IN ('basic', 'pro', 'multi')", name="ck_sku_catalog_sku"),
         CheckConstraint("list_idr >= 0", name="ck_sku_catalog_list_idr"),
         CheckConstraint("seats >= 1", name="ck_sku_catalog_seats"),
@@ -69,7 +69,7 @@ class OrgInvoice(Base):
     )
 
     __table_args__ = (
-        CheckConstraint("product IN ('scan', 'host')", name="ck_org_invoices_product"),
+        CheckConstraint("product IN ('scan', 'host', 'uptime', 'guard')", name="ck_org_invoices_product"),
         CheckConstraint("sku IN ('basic', 'pro', 'multi')", name="ck_org_invoices_sku"),
         CheckConstraint("status IN ('draft', 'sent', 'paid', 'void')", name="ck_org_invoices_status"),
         CheckConstraint("amount_idr >= 0", name="ck_org_invoices_amount"),

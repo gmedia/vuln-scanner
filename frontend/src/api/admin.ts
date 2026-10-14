@@ -453,7 +453,7 @@ export async function getEmailLogs(params: {
   return data;
 }
 
-export type InvoiceProduct = "scan" | "host";
+export type InvoiceProduct = "scan" | "host" | "uptime" | "guard";
 
 export interface SkuCatalogItem {
   product: InvoiceProduct;

@@ -247,7 +247,7 @@ async def test_owner_lists_invoices_and_catalog(db_session, ctx):
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             cat = await client.get("/api/admin/sku-catalog", headers=_auth(ctx["admin"]))
             assert cat.status_code == 200
-            assert len(cat.json()["items"]) == 6
+            assert len(cat.json()["items"]) == 12
             await client.post(
                 "/api/admin/invoices",
                 headers=_auth(ctx["admin"]),
@@ -868,11 +868,33 @@ async def test_sku_prices_lists_all_four_services(db_session, ctx):
             assert by[("scan", "pro")]["list_idr"] == 650_000
             assert by[("scan", "pro")]["invoicable"] is True
             assert by[("host", "basic")]["list_idr"] == 150_000
-            # uptime/guard are the locked constants, not invoicable
+            # uptime/guard are catalog rows now, prices stay the locked constants
             assert by[("uptime", "basic")]["list_idr"] == 75_000
             assert by[("uptime", "multi")]["list_idr"] == 500_000
-            assert by[("uptime", "basic")]["invoicable"] is False
+            assert by[("uptime", "basic")]["invoicable"] is True
             assert by[("guard", "pro")]["list_idr"] == 250_000
             assert by[("guard", "multi")]["list_idr"] == 600_000
+            assert by[("guard", "pro")]["invoicable"] is True
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_uptime_and_guard_are_invoiceable(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            for product, sku, amount in (("uptime", "basic", 75_000), ("guard", "multi", 600_000)):
+                r = await client.post(
+                    "/api/admin/invoices",
+                    headers=_auth(ctx["admin"]),
+                    json={"organization_id": str(ctx["org"].id), "sku": sku, "product": product},
+                )
+                assert r.status_code == 201
+                body = r.json()
+                assert body["product"] == product
+                assert body["sku"] == sku
+                assert body["amount_idr"] == amount
     finally:
         app.dependency_overrides.clear()

@@ -7,7 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.database import get_db
 from app.middleware.rate_limit import RateLimiter
-from app.models.invoice import GUARD_SKU_LIST_IDR, INVOICE_SKUS, UPTIME_SKU_LIST_IDR
+from app.models.invoice import (
+    GUARD_SKU_LIST_IDR,
+    HOST_SKU_LIST_IDR,
+    INVOICE_PRODUCTS,
+    INVOICE_SKUS,
+    SCAN_SKU_LIST_IDR,
+    UPTIME_SKU_LIST_IDR,
+)
 from app.models.organization import Organization
 from app.models.user import User
 from app.schemas.invoice import (
@@ -127,21 +134,24 @@ async def get_sku_prices(
         return limit_response
     rows = await InvoiceService(db).list_catalog()
     catalog = {(r.product, r.sku): r for r in rows}
+    fallbacks = {
+        "scan": SCAN_SKU_LIST_IDR,
+        "host": HOST_SKU_LIST_IDR,
+        "uptime": UPTIME_SKU_LIST_IDR,
+        "guard": GUARD_SKU_LIST_IDR,
+    }
     items: list[SkuPriceItem] = []
-    for service in ("scan", "host"):
+    for service in INVOICE_PRODUCTS:
         for sku in INVOICE_SKUS:
             row = catalog.get((service, sku))
-            items.append(
-                SkuPriceItem(
-                    service=service,
-                    sku=sku,
-                    list_idr=row.list_idr if row is not None else 0,
-                    invoicable=row.invoicable if row is not None else False,
+            if row is not None:
+                items.append(
+                    SkuPriceItem(service=service, sku=sku, list_idr=row.list_idr, invoicable=row.invoicable)
                 )
-            )
-    for service, table in (("uptime", UPTIME_SKU_LIST_IDR), ("guard", GUARD_SKU_LIST_IDR)):
-        for sku, price in table.items():
-            items.append(SkuPriceItem(service=service, sku=sku, list_idr=price, invoicable=False))
+            else:
+                items.append(
+                    SkuPriceItem(service=service, sku=sku, list_idr=fallbacks[service].get(sku, 0), invoicable=False)
+                )
     return SkuPriceListResponse(items=items)
 
 

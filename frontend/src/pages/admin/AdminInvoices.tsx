@@ -69,7 +69,7 @@ function formatIdr(n: number): string {
 }
 
 function isInvoiceProduct(value: string): value is InvoiceProduct {
-  return value === "scan" || value === "host";
+  return value === "scan" || value === "host" || value === "uptime" || value === "guard";
 }
 
 function skuLabel(sku: string): string {

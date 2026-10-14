@@ -42,13 +42,15 @@ from app.models.credit_log import CreditLog  # noqa: F401
 from app.models.cve_cache import CveCache  # noqa: F401
 from app.models.email_send_log import EmailSendLog  # noqa: F401
 from app.models.email_verification import EmailVerificationToken  # noqa: F401
-from app.models.guard import GuardAgent, GuardAlert, GuardEnrollToken, GuardOrgBinding  # noqa: F401
+from app.models.guard import GUARD_SKU_LIMITS, GuardAgent, GuardAlert, GuardEnrollToken, GuardOrgBinding  # noqa: F401
 from app.models.host_protect import HostHit, HostQuarantineEvent, HostScan, HostSite  # noqa: F401
 from app.models.hpp import HppCostLine, HppOverhead, HppRate  # noqa: F401
 from app.models.invoice import (  # noqa: F401
+    GUARD_SKU_LIST_IDR,
     HOST_SKU_LIST_IDR,
     SCAN_SKU_LIST_IDR,
     SCAN_SKU_SEATS,
+    UPTIME_SKU_LIST_IDR,
     OrgInvoice,
     SkuCatalog,
 )
@@ -62,7 +64,7 @@ from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.scan_schedule import ScanSchedule  # noqa: F401
 from app.models.siem import SiemCase, SiemCaseEvent, SiemCaseNote  # noqa: F401
-from app.models.uptime import UptimeEvent, UptimeMonitor, UptimeSample  # noqa: F401
+from app.models.uptime import UPTIME_SKU_LIMITS, UptimeEvent, UptimeMonitor, UptimeSample  # noqa: F401
 from app.models.user import User
 
 # Counter-based incr so rate limiting tests work correctly
@@ -175,14 +177,19 @@ async def db_session(engine):
     async_session_local = async_sessionmaker(engine, expire_on_commit=False)
     async with async_session_local() as session:
         now = datetime.now(UTC)
-        for product, prices in (("scan", SCAN_SKU_LIST_IDR), ("host", HOST_SKU_LIST_IDR)):
+        for product, prices, seats in (
+            ("scan", SCAN_SKU_LIST_IDR, SCAN_SKU_SEATS),
+            ("host", HOST_SKU_LIST_IDR, SCAN_SKU_SEATS),
+            ("uptime", UPTIME_SKU_LIST_IDR, UPTIME_SKU_LIMITS),
+            ("guard", GUARD_SKU_LIST_IDR, GUARD_SKU_LIMITS),
+        ):
             for sku, list_idr in prices.items():
                 session.add(
                     SkuCatalog(
                         product=product,
                         sku=sku,
                         list_idr=list_idr,
-                        seats=SCAN_SKU_SEATS[sku],
+                        seats=seats[sku],
                         invoicable=True,
                         updated_at=now,
                     )

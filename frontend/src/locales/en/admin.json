@@ -295,6 +295,8 @@
   "cancel": "Cancel",
   "skuProductScan": "Scan",
   "skuProductHost": "Host Protect",
+  "skuProductUptime": "Uptime",
+  "skuProductGuard": "Guard",
   "skuSeatsReadonly": "Seats are fixed by the tier cap (Basic 1 / Pro 3 / Multi 10) and cannot be edited here.",
   "simPriceMissing": "SKU price is missing from the catalog — enter it manually or set it in the SKU Catalog.",
   "simGuideTitle": "How to use this page",

@@ -295,6 +295,8 @@
   "cancel": "Batal",
   "skuProductScan": "Scan",
   "skuProductHost": "Host Protect",
+  "skuProductUptime": "Uptime",
+  "skuProductGuard": "Guard",
   "skuSeatsReadonly": "Kursi ditentukan oleh cap tier (Basic 1 / Pro 3 / Multi 10) dan tidak dapat diubah di sini.",
   "simPriceMissing": "Harga SKU belum ada di katalog — isi manual atau atur di Katalog SKU.",
   "simGuideTitle": "Cara menggunakan halaman ini",

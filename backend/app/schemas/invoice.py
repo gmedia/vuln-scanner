@@ -55,7 +55,7 @@ class SkuCatalogUpdateRequest(BaseModel):
 class InvoiceCreateRequest(BaseModel):
     organization_id: uuid.UUID
     sku: str = Field(..., pattern=r"^(basic|pro|multi)$")
-    product: str = Field(default="scan", pattern=r"^(scan|host)$")
+    product: str = Field(default="scan", pattern=r"^(scan|host|uptime|guard)$")
     period_start: datetime | None = None
     notes: str = Field(default="", max_length=500)
 

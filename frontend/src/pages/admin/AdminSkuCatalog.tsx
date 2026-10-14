@@ -106,8 +106,12 @@ function AdminSkuCatalog() {
     },
   });
 
-  const productLabel = (product: InvoiceProduct): string =>
-    product === "host" ? t("skuProductHost") : t("skuProductScan");
+  const productLabel = (product: InvoiceProduct): string => {
+    if (product === "scan") return t("skuProductScan");
+    if (product === "host") return t("skuProductHost");
+    if (product === "uptime") return t("skuProductUptime");
+    return t("skuProductGuard");
+  };
 
   const patchDraft = (row: SkuCatalogItem, patch: Partial<SkuDraft>) => {
     const key = rowKey(row.product, row.sku);
