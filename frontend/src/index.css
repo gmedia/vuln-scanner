@@ -92,10 +92,10 @@
   --color-ring: var(--ring);
   --radius: 0.75rem;
   --font-sans:
-    "IBM Plex Sans Variable", "IBM Plex Sans", ui-sans-serif, system-ui,
-    -apple-system, "Segoe UI", sans-serif;
+    "Geist Variable", "Geist", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
   --font-mono:
-    "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "SFMono-Regular",
+    "Geist Mono Variable", "Geist Mono", ui-monospace, "SFMono-Regular",
     "Menlo", monospace;
   --font-family-sans: var(--font-sans);
   --font-family-mono: var(--font-mono);

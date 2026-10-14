@@ -209,7 +209,7 @@ export default function HostHitsList({
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[40%] text-[10px] uppercase tracking-wider">
+                <TableHead className="w-[37%] text-[10px] uppercase tracking-wider">
                   {t("colPath")}
                 </TableHead>
                 <TableHead className="w-[15%] text-[10px] uppercase tracking-wider">
@@ -221,7 +221,7 @@ export default function HostHitsList({
                 <TableHead className="w-[15%] text-[10px] uppercase tracking-wider">
                   {t("colStatus")}
                 </TableHead>
-                <TableHead className="w-[15%]" />
+                <TableHead className="w-[18%]" />
               </TableRow>
             </TableHeader>
             <TableBody>
