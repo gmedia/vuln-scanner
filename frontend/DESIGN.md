@@ -7,7 +7,7 @@
 - Imagen drafts: skipped — print-media CSS on an existing SPA sheet; no product-screen mock needed; Stripe PDF grammar + viewed receipts are the reference-fidelity contract.
 - Skipped lanes: react-grab / react-scan / react-doctor install — print-only CSS/HTML inside an existing SPA; AGENTS.md forbids extra deps for a visual slice; no new interactive React surface.
 
-**Direction (locked):** A paper receipt, not a dashboard card. Ink on white A4, Inter, one green accent on the SINE**XIS** wordmark and the paid chip. Hairlines, tabular IDR, no Palatino, no `#0a7`, no purple wash, no emoji.
+**Direction (locked):** A paper receipt, not a dashboard card. Ink on white A4, IBM Plex Sans, one green accent on the SINE**XIS** wordmark and the paid chip. Hairlines, tabular IDR, no Palatino, no `#0a7`, no purple wash, no emoji.
 
 ## 1. Atmosphere & Identity
 
@@ -56,8 +56,8 @@ Print reuses SPA `:root` tokens from `frontend/src/index.css`. No second palette
 
 ### Font Stack
 
-- Primary: `"Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif` (`--font-sans`)
-- Mono: `"JetBrains Mono", ui-monospace, Menlo, monospace` (`--font-mono`) — wordmark + invoice number + IDR
+- Primary: `"IBM Plex Sans Variable", "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif` (`--font-sans`)
+- Mono: `"JetBrains Mono Variable", "JetBrains Mono", ui-monospace, Menlo, monospace` (`--font-mono`) — wordmark + invoice number + IDR
 - Serif: none. Palatino is forbidden (blog-island drift).
 
 ### Rules
@@ -185,7 +185,7 @@ Print invoice (sections 0–8 above) is a **separate surface**. This section is 
 - Imagen drafts: skipped — existing SPA + viewed SOC screens are the reference; no extra imagegen deps.
 - Skipped lanes: react-grab / react-scan / react-doctor install — AGENTS.md forbids extra deps for a visual slice; `main.tsx` has none.
 
-**Direction (locked):** A night-shift analyst console on existing Sinexis SPA tokens. Signature: a 2px severity rail on every event (critical red / high orange / medium yellow / low blue) plus a green live pulse on the indexer tile when the cluster is reachable. Inter + JetBrains Mono timestamps. Not a Wazuh dashboard, not nested Card CRUD.
+**Direction (locked):** A night-shift analyst console on existing Sinexis SPA tokens. Signature: a 2px severity rail on every event (critical red / high orange / medium yellow / low blue) plus a green live pulse on the indexer tile when the cluster is reachable. IBM Plex Sans + JetBrains Mono timestamps. Not a Wazuh dashboard, not nested Card CRUD.
 
 ## 1. Atmosphere & Identity
 
@@ -216,7 +216,7 @@ Severity **chips** use kit `Badge` variants `critical|high|medium|low` — never
 
 ## 3. Typography
 
-SPA scale (not print 13px). Fonts already loaded: Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+SPA scale (not print 13px). Fonts already loaded: IBM Plex Sans Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
 
 | Level | Size | Weight | Usage |
 |-------|------|--------|-------|
@@ -356,7 +356,7 @@ Print invoice (sections 0–8) and SIEM (above) are **separate surfaces**. This 
 - Imagen drafts: skipped — existing SPA + SIEM grammar + viewed EDR/secret screens are the reference; no extra imagegen deps.
 - Skipped lanes: react-grab / react-scan / react-doctor install — AGENTS.md forbids extra deps for a visual slice; `main.tsx` has none.
 
-**Direction (locked):** A night-shift **fleet** console on existing Sinexis SPA tokens. Signature: a 4-tile KPI strip with 2px status rails (on = primary + pulse, degraded = amber, off = muted) plus agent/alert rows that carry the same rail before the copy. Enroll secret is a once-only primary-rail panel with JetBrains Mono — the one memorable moment after “Buat token”. Inter + mono IDs/timestamps. Not a Shield-cliché empty Card stack, not nested Card-in-Card, not full SIEM.
+**Direction (locked):** A night-shift **fleet** console on existing Sinexis SPA tokens. Signature: a 4-tile KPI strip with 2px status rails (on = primary + pulse, degraded = amber, off = muted) plus agent/alert rows that carry the same rail before the copy. Enroll secret is a once-only primary-rail panel with JetBrains Mono — the one memorable moment after “Buat token”. IBM Plex Sans + mono IDs/timestamps. Not a Shield-cliché empty Card stack, not nested Card-in-Card, not full SIEM.
 
 ## 1. Atmosphere & Identity
 
@@ -388,7 +388,7 @@ Agent **chips** stay kit `Badge` washes (emerald / amber / sky / muted) — neve
 
 ## 3. Typography
 
-SPA scale (not print 13px). Fonts already loaded: Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+SPA scale (not print 13px). Fonts already loaded: IBM Plex Sans Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
 
 | Level | Size | Weight | Usage |
 |-------|------|--------|-------|
@@ -534,7 +534,7 @@ Print §§0–8 and Guard SPA above stay locked. This section is the **dark SPA*
 - Skipped lanes: react-grab / react-scan / react-doctor — AGENTS.md forbids extra deps for a visual slice.
 - Lazyweb pack `generate_report`: skipped (deprecated path; in-repo Guard/SIEM harvest is the contract).
 
-**Direction (locked):** A night-shift **registry** console on existing Sinexis SPA tokens. Signature: a 4-tile KPI strip that **owns** SKU quota (count/limit + urgency bar) plus domain/IP type counts, then a single list shell whose rows/cards carry a 2px **type rail** (sky domain / violet IP) before the name. Empty is a muted island with Globe, not a blank Card. Inter + mono targets. Not a CMDB graph, not nested Card-in-Card, not Guard hosts.
+**Direction (locked):** A night-shift **registry** console on existing Sinexis SPA tokens. Signature: a 4-tile KPI strip that **owns** SKU quota (count/limit + urgency bar) plus domain/IP type counts, then a single list shell whose rows/cards carry a 2px **type rail** (sky domain / violet IP) before the name. Empty is a muted island with Globe, not a blank Card. IBM Plex Sans + mono targets. Not a CMDB graph, not nested Card-in-Card, not Guard hosts.
 
 ## 1. Atmosphere & Identity
 
@@ -566,7 +566,7 @@ Type **chips** may use sky/violet washes (`bg-sky-500/15 text-sky-700 dark:text-
 
 ## 3. Typography
 
-SPA scale (not print 13px). Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+SPA scale (not print 13px). IBM Plex Sans Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
 
 | Level | Size | Weight | Usage |
 |-------|------|--------|-------|
@@ -707,7 +707,7 @@ Print invoice, Guard, and Assets (above) are **separate surfaces**. This section
 - Sibling harvest: `Tabs.tsx` default pill (`h-10 rounded-md bg-muted p-1`); Host Protect tab counts (not `Badge variant="critical"`); Credit History filter chrome is **out** — `/ai` has no filter row.
 - Skipped lanes: react-grab / react-scan / react-doctor install — AGENTS.md forbids extra deps for a visual slice; `main.tsx` has none.
 
-**Direction (locked):** Full-width underline **page-nav** on `/ai`, Host Protect, SIEM, ScanDetail, and Admin AI. Signature: a 2px `--foreground` underline (`after:h-0.5 after:bg-foreground`) under the active trigger, not `--primary`. Inter labels + lucide icons + mono counts via kit `TabCount`. **Keep pill:** UptimeDetail range (`data-testid="uptime-range-tabs"`) and other in-card segmented controls. Do not convert filter pills.
+**Direction (locked):** Full-width underline **page-nav** on `/ai`, Host Protect, SIEM, ScanDetail, and Admin AI. Signature: a 2px `--foreground` underline (`after:h-0.5 after:bg-foreground`) under the active trigger, not `--primary`. IBM Plex Sans labels + lucide icons + mono counts via kit `TabCount`. **Keep pill:** UptimeDetail range (`data-testid="uptime-range-tabs"`) and other in-card segmented controls. Do not convert filter pills.
 
 ## 1. Atmosphere & Identity
 
@@ -735,7 +735,7 @@ Underline is `after:bg-foreground`, **never** `after:bg-primary`. Counts are `te
 
 ## 3. Typography
 
-SPA scale. Fonts already loaded: Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+SPA scale. Fonts already loaded: IBM Plex Sans Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
 
 | Level | Size | Weight | Usage |
 |-------|------|--------|-------|
@@ -868,7 +868,7 @@ Print §§0–8 and SIEM / Guard / Assets / page-nav above stay locked. This sec
 - Imagen drafts: skipped — existing SPA + Guard/SIEM grammar is the reference; no extra imagegen deps.
 - Skipped lanes: react-grab / react-scan / react-doctor — AGENTS.md forbids extra deps for a visual slice. Lazyweb `update.sh` failed (`set: Illegal option -o pipefail`); screens already on disk under `/tmp/lazyweb-refs/status-page/`.
 
-**Direction (locked):** A night-shift **public-health command center** on existing Sinexis SPA tokens. Signature: a health hero whose **2px overall rail** (and pulse when operational + published) is the first thing the eye hits, then a 4-tile KPI strip, then DNS copy records with a primary rail (this page's "once-secret"), then a component board and incident ops list. One document scroll. Green `--primary`, not Linear indigo. Inter + mono paths. Not a public status marketing page, not nested Card-in-Card.
+**Direction (locked):** A night-shift **public-health command center** on existing Sinexis SPA tokens. Signature: a health hero whose **2px overall rail** (and pulse when operational + published) is the first thing the eye hits, then a 4-tile KPI strip, then DNS copy records with a primary rail (this page's "once-secret"), then a component board and incident ops list. One document scroll. Green `--primary`, not Linear indigo. IBM Plex Sans + mono paths. Not a public status marketing page, not nested Card-in-Card.
 
 ## 1. Atmosphere & Identity
 
@@ -904,7 +904,7 @@ Rails are **redundant** with Badge / strong text. Never color-only status.
 
 ## 3. Typography
 
-SPA scale (not print 13px). Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+SPA scale (not print 13px). IBM Plex Sans Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
 
 | Level | Size | Weight | Usage |
 |-------|------|--------|-------|
@@ -1065,7 +1065,7 @@ Print §§0–8 and SIEM / Guard / Assets / Status / page-nav above stay locked.
 - Lazyweb pack: `/tmp/lazyweb-refs` empty this session; sibling P15 + competitive grammar above is the harvest. `update.sh` / `generate_report` not filed.
 - Skipped lanes: react-grab / react-scan / react-doctor — AGENTS.md forbids extra deps for a visual slice.
 
-**Direction (locked):** A night-shift **probe command center** on existing Sinexis SPA tokens. Signature: fleet KPI whose **2px up-rail + live pulse** is the first thing the eye hits, then a monitor table/cards whose state rail reads before the name, then a detail hero whose rail/wash/pulse matches `StatusHealthHero`, then a 3-tile range KPI strip, then the existing availability timeline. One document scroll. Green `--primary`, not Linear indigo. Inter + mono paths. Not a marketing status page, not nested Card-in-Card.
+**Direction (locked):** A night-shift **probe command center** on existing Sinexis SPA tokens. Signature: fleet KPI whose **2px up-rail + live pulse** is the first thing the eye hits, then a monitor table/cards whose state rail reads before the name, then a detail hero whose rail/wash/pulse matches `StatusHealthHero`, then a 3-tile range KPI strip, then the existing availability timeline. One document scroll. Green `--primary`, not Linear indigo. IBM Plex Sans + mono paths. Not a marketing status page, not nested Card-in-Card.
 
 ## 1. Atmosphere & Identity
 
@@ -1100,7 +1100,7 @@ Rails are **redundant** with Badge / strong text / sparkline stroke. Never color
 
 ## 3. Typography
 
-SPA scale (not print 13px). Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+SPA scale (not print 13px). IBM Plex Sans Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
 
 | Level | Size | Weight | Usage |
 |-------|------|--------|-------|
@@ -1238,7 +1238,7 @@ Print §§0–8 and SIEM / Guard / Assets / page-nav / Status / Uptime above sta
 - Lazyweb pack: skipped this session — sibling P15 + competitive grammar is the harvest.
 - Skipped lanes: react-grab / react-scan / react-doctor — AGENTS.md forbids extra deps for a visual slice.
 
-**Direction (locked):** A night-shift **on-box defense** console on existing Sinexis SPA tokens. Signature: a 4-tile KPI strip whose **quota rail steps primary → amber → destructive** before the Add button disables and whose **helper tile carries a live pulse** when the fleet checked in, then a malware list whose site cards carry a 2px **state rail** (critical / running / failed / completed / idle) before the name, then WAF policy + event shells with the same rail grammar. Green `--primary`, not Linear indigo. Inter + JetBrains Mono paths. Not nested Card-in-Card, not a filled green masthead.
+**Direction (locked):** A night-shift **on-box defense** console on existing Sinexis SPA tokens. Signature: a 4-tile KPI strip whose **quota rail steps primary → amber → destructive** before the Add button disables and whose **helper tile carries a live pulse** when the fleet checked in, then a malware list whose site cards carry a 2px **state rail** (critical / running / failed / completed / idle) before the name, then WAF policy + event shells with the same rail grammar. Green `--primary`, not Linear indigo. IBM Plex Sans + JetBrains Mono paths. Not nested Card-in-Card, not a filled green masthead.
 
 ## 1. Atmosphere & Identity
 
@@ -1269,7 +1269,7 @@ Rails are **redundant** with the Badge / KPI value / helper text. Never color-on
 
 ## 3. Typography
 
-SPA scale (not print 13px). Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+SPA scale (not print 13px). IBM Plex Sans Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
 
 | Level | Size | Weight | Usage |
 |-------|------|--------|-------|
@@ -1389,7 +1389,7 @@ Print §§0–8 and SIEM / Guard / Assets / page-nav / Status / Uptime above sta
 - Lazyweb pack: skipped this session — sibling P15 is the harvest.
 - Skipped lanes: react-grab / react-scan / react-doctor — AGENTS.md forbids extra deps for a visual slice.
 
-**Direction (locked):** A post-login **ops overview** on existing Sinexis SPA tokens. Signature: a 3-tile KPI strip whose **Open risk rail goes destructive + pulse** the moment risk exists, then a destructive-railed attention shell, then a recent-work shell whose **card and each row carry a severity rail** (failed / critical / high / running / completed), then two railed sidebar shells. Green `--primary`, not Linear indigo. Inter + JetBrains Mono targets. Not nested Card-in-Card, not a marketing hero.
+**Direction (locked):** A post-login **ops overview** on existing Sinexis SPA tokens. Signature: a 3-tile KPI strip whose **Open risk rail goes destructive + pulse** the moment risk exists, then a destructive-railed attention shell, then a recent-work shell whose **card and each row carry a severity rail** (failed / critical / high / running / completed), then two railed sidebar shells. Green `--primary`, not Linear indigo. IBM Plex Sans + JetBrains Mono targets. Not nested Card-in-Card, not a marketing hero.
 
 ## 1. Atmosphere & Identity
 
@@ -1420,7 +1420,7 @@ Rails are **redundant** with the Badge / KPI value / attention copy. Never color
 
 ## 3. Typography
 
-SPA scale. Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+SPA scale. IBM Plex Sans Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
 
 | Level | Size | Weight | Usage |
 |-------|------|--------|-------|
@@ -1539,7 +1539,7 @@ Print §§0–8, SIEM / Guard / Assets / page-nav / Status / Uptime / Host / Das
 - Lazyweb pack: skipped this session — sibling P15 is the harvest.
 - Skipped lanes: react-grab / react-scan / react-doctor — AGENTS.md forbids extra deps for a visual slice.
 
-**Direction (locked):** A **result readout** on existing Sinexis SPA tokens. Signature: a 4-tile KPI strip whose **findings rail encodes worst severity** and whose **duration rail encodes status with a live pulse while running**, then result shells whose rail repeats that severity/status signal, then finding rows whose first cell carries the same severity rail. Green `--primary`, not Linear indigo. Inter + JetBrains Mono. Not nested Card-in-Card, not a filled masthead.
+**Direction (locked):** A **result readout** on existing Sinexis SPA tokens. Signature: a 4-tile KPI strip whose **findings rail encodes worst severity** and whose **duration rail encodes status with a live pulse while running**, then result shells whose rail repeats that severity/status signal, then finding rows whose first cell carries the same severity rail. Green `--primary`, not Linear indigo. IBM Plex Sans + JetBrains Mono. Not nested Card-in-Card, not a filled masthead.
 
 ## 1. Atmosphere & Identity
 
@@ -1571,7 +1571,7 @@ Rails are **redundant** with the Badge / KPI value / shell title. Never color-on
 
 ## 3. Typography
 
-SPA scale. Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+SPA scale. IBM Plex Sans Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
 
 | Level | Size | Weight | Usage |
 |-------|------|--------|-------|
@@ -1697,7 +1697,7 @@ Print §§0–8 and SIEM / Guard / Assets / page-nav / Status / Uptime / Host / 
 - Lazyweb pack: skipped this session — sibling P15 is the harvest.
 - Skipped lanes: react-grab / react-scan / react-doctor — AGENTS.md forbids extra deps for a visual slice.
 
-**Direction (locked):** An **attach console** on existing Sinexis SPA tokens. Signature: a quota shell whose **rail steps primary → amber → destructive** as enabled schedules approach and hit the cap (the `Progress` indicator matches), then a primary-railed create shell with labeled fields, then a list shell whose **rail is the worst row tone** and whose every row carries the same rail (errored destructive / active primary / disabled muted). Green `--primary`, not Linear indigo. Inter + JetBrains Mono. Not nested Card-in-Card, not a filled masthead.
+**Direction (locked):** An **attach console** on existing Sinexis SPA tokens. Signature: a quota shell whose **rail steps primary → amber → destructive** as enabled schedules approach and hit the cap (the `Progress` indicator matches), then a primary-railed create shell with labeled fields, then a list shell whose **rail is the worst row tone** and whose every row carries the same rail (errored destructive / active primary / disabled muted). Green `--primary`, not Linear indigo. IBM Plex Sans + JetBrains Mono. Not nested Card-in-Card, not a filled masthead.
 
 ## 1. Atmosphere & Identity
 
@@ -1726,7 +1726,7 @@ Rails are **redundant** with the count text / badge / `Alert`. Never color-only 
 
 ## 3. Typography
 
-SPA scale. Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+SPA scale. IBM Plex Sans Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
 
 | Level | Size | Weight | Usage |
 |-------|------|--------|-------|
@@ -1847,7 +1847,7 @@ Print §§0–8 and SIEM / Guard / Assets / page-nav / Status / Uptime / Host / 
 - Lazyweb pack: skipped this session — sibling shells are the harvest.
 - Skipped lanes: react-grab / react-scan / react-doctor — AGENTS.md forbids extra deps for a visual slice.
 
-**Direction (locked):** A **quiet front door** on existing Sinexis SPA tokens. Signature: one centered auth card whose **2px rail encodes auth state** — primary (neutral form) → destructive (error) → amber (cooldown) → sky (verifying) → primary (success) — with the same rail repeating on every inline notice, and status icons moved into bordered chips. Green `--primary`, not Linear indigo. Inter + JetBrains Mono. Not a marketing hero, not a filled masthead.
+**Direction (locked):** A **quiet front door** on existing Sinexis SPA tokens. Signature: one centered auth card whose **2px rail encodes auth state** — primary (neutral form) → destructive (error) → amber (cooldown) → sky (verifying) → primary (success) — with the same rail repeating on every inline notice, and status icons moved into bordered chips. Green `--primary`, not Linear indigo. IBM Plex Sans + JetBrains Mono. Not a marketing hero, not a filled masthead.
 
 ## 1. Atmosphere & Identity
 
@@ -1877,7 +1877,7 @@ Rails are **redundant** with the notice copy / status icon. Never color-only sta
 
 ## 3. Typography
 
-SPA scale. Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+SPA scale. IBM Plex Sans Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
 
 | Level | Size | Weight | Usage |
 |-------|------|--------|-------|
@@ -2004,7 +2004,7 @@ Print §§0–8 and SIEM / Guard / Assets / page-nav / Status / Uptime / Host / 
 - Lazyweb pack: skipped this session — sibling P15 is the harvest.
 - Skipped lanes: react-grab / react-scan / react-doctor — AGENTS.md forbids extra deps for a visual slice.
 
-**Direction (locked):** An **account console** on existing Sinexis SPA tokens. Signature: an identity band whose **primary rail carries the avatar + email + badges**, then a three-tile KPI strip whose **rails encode account state** (verified primary / unverified amber, admin primary / operator muted, credits primary / zero muted), then two form shells whose **rail encodes the last submit outcome** (primary idle → destructive error → amber cooldown → primary success). Green `--primary`, not Linear indigo. Inter + JetBrains Mono. Not nested Card-in-Card, not a filled masthead.
+**Direction (locked):** An **account console** on existing Sinexis SPA tokens. Signature: an identity band whose **primary rail carries the avatar + email + badges**, then a three-tile KPI strip whose **rails encode account state** (verified primary / unverified amber, admin primary / operator muted, credits primary / zero muted), then two form shells whose **rail encodes the last submit outcome** (primary idle → destructive error → amber cooldown → primary success). Green `--primary`, not Linear indigo. IBM Plex Sans + JetBrains Mono. Not nested Card-in-Card, not a filled masthead.
 
 ## 1. Atmosphere & Identity
 
@@ -2034,7 +2034,7 @@ Rails are **redundant** with the Badge / KPI value / notice copy. Never color-on
 
 ## 3. Typography
 
-SPA scale. Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+SPA scale. IBM Plex Sans Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
 
 | Level | Size | Weight | Usage |
 |-------|------|--------|-------|
@@ -2166,7 +2166,7 @@ Print §§0–8 and SIEM / Guard / Assets / page-nav / Status / Uptime / Host / 
 - Lazyweb pack: skipped this session — sibling P15 is the harvest.
 - Skipped lanes: react-grab / react-scan / react-doctor — AGENTS.md forbids extra deps for a visual slice.
 
-**Direction (locked):** An **org console** on existing Sinexis SPA tokens. Signature: an identity shell whose rail is primary, then three KPI tiles whose **rails encode org state** (members primary / none muted, invites primary / none muted, invoices by worst status), then railed member / invite rows (role tone, pending amber), a billing shell whose rail tracks the worst invoice status, and a primary pilot-checklist shell. Green `--primary`, not Linear indigo. Inter + JetBrains Mono. Not nested Card-in-Card, not a filled masthead.
+**Direction (locked):** An **org console** on existing Sinexis SPA tokens. Signature: an identity shell whose rail is primary, then three KPI tiles whose **rails encode org state** (members primary / none muted, invites primary / none muted, invoices by worst status), then railed member / invite rows (role tone, pending amber), a billing shell whose rail tracks the worst invoice status, and a primary pilot-checklist shell. Green `--primary`, not Linear indigo. IBM Plex Sans + JetBrains Mono. Not nested Card-in-Card, not a filled masthead.
 
 ## 1. Atmosphere & Identity
 
@@ -2196,7 +2196,7 @@ Rails are **redundant** with the Badge / KPI value / notice copy. Never color-on
 
 ## 3. Typography
 
-SPA scale. Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+SPA scale. IBM Plex Sans Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
 
 | Level | Size | Weight | Usage |
 |-------|------|--------|-------|
@@ -2324,7 +2324,7 @@ Print §§0–8 and every SPA section above stay locked. This section is the **d
 - Lazyweb pack: skipped this session — sibling P15 is the harvest.
 - Skipped lanes: react-grab / react-scan / react-doctor — AGENTS.md forbids extra deps for a visual slice.
 
-**Direction (locked):** An **operator console** on existing Sinexis SPA tokens. Signature: KPI tiles whose **rails encode the metric** (users sky / scans primary / findings orange / credits-in primary / credits-used amber), then chart + quick-link shells with a primary rail, then user rows whose **rail encodes account state** (unverified amber / admin primary / plain muted), then a detail pair whose rails encode verification and credit-mutation outcome. Green `--primary`, not Linear indigo. Inter + JetBrains Mono. Not nested Card-in-Card, not a filled masthead.
+**Direction (locked):** An **operator console** on existing Sinexis SPA tokens. Signature: KPI tiles whose **rails encode the metric** (users sky / scans primary / findings orange / credits-in primary / credits-used amber), then chart + quick-link shells with a primary rail, then user rows whose **rail encodes account state** (unverified amber / admin primary / plain muted), then a detail pair whose rails encode verification and credit-mutation outcome. Green `--primary`, not Linear indigo. IBM Plex Sans + JetBrains Mono. Not nested Card-in-Card, not a filled masthead.
 
 ## 1. Atmosphere & Identity
 
@@ -2355,7 +2355,7 @@ Rails are **redundant** with the KPI value colour / Badge / notice copy. Never c
 
 ## 3. Typography
 
-SPA scale. Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+SPA scale. IBM Plex Sans Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
 
 | Level | Size | Weight | Usage |
 |-------|------|--------|-------|
@@ -3066,7 +3066,7 @@ Colour is **redundant** with the group label and the chapter title. Never colour
 
 ## 3. Typography
 
-SPA scale. Inter Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
+SPA scale. IBM Plex Sans Variable (`--font-sans`), JetBrains Mono (`--font-mono`).
 
 | Level | Size | Weight | Usage |
 |-------|------|--------|-------|
