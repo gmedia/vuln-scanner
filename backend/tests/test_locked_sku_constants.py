@@ -38,3 +38,18 @@ def test_uptime_and_guard_list_prices_match_locked_doc() -> None:
 
     assert UPTIME_SKU_LIST_IDR == {"basic": 75_000, "pro": 200_000, "multi": 500_000}
     assert GUARD_SKU_LIST_IDR == {"basic": 100_000, "pro": 250_000, "multi": 600_000}
+
+
+def test_hpp_keys_cover_all_four_services() -> None:
+    from app.models.hpp import HPP_KEYS
+
+    assert HPP_KEYS == (
+        "ip",
+        "domain",
+        "apk",
+        "ipa",
+        "statushost",
+        "hostscan",
+        "uptimecheck",
+        "guardagent",
+    )
