@@ -1257,6 +1257,96 @@ class TestAdminHpp:
         )
         assert resp.status_code == 422
 
+    @pytest.mark.asyncio
+    async def test_report_uptime_and_guard_lines_do_not_pollute_scan_margin(
+        self, client, db_session, sample_user
+    ):
+        from datetime import UTC, datetime
+
+        from app.models.guard import GuardAgent
+        from app.models.organization import Organization, OrganizationMembership
+        from app.models.uptime import UptimeMonitor, UptimeSample
+
+        org = Organization(
+            id=uuid.uuid4(),
+            name="hpp-uptime-guard-org",
+            slug=f"hpp-uptime-guard-{uuid.uuid4().hex[:8]}",
+            kind="company",
+            sku="multi",
+            created_by_user_id=sample_user.id,
+        )
+        db_session.add(org)
+        db_session.add(
+            OrganizationMembership(organization_id=org.id, user_id=sample_user.id, role="owner")
+        )
+        monitor = UptimeMonitor(
+            id=uuid.uuid4(),
+            organization_id=org.id,
+            created_by=sample_user.id,
+            name="hpp-uptime",
+            check_type="http",
+            target="https://example.test",
+            interval_seconds=60,
+            timeout_seconds=10,
+            state="up",
+            next_check_at=datetime.now(UTC),
+        )
+        db_session.add(monitor)
+        await db_session.flush()
+        for _ in range(3):
+            db_session.add(
+                UptimeSample(
+                    id=uuid.uuid4(),
+                    monitor_id=monitor.id,
+                    checked_at=datetime.now(UTC),
+                    ok=True,
+                )
+            )
+        db_session.add(
+            GuardAgent(
+                id=uuid.uuid4(),
+                organization_id=org.id,
+                wazuh_agent_id="001",
+                name="hpp-guard-active-1",
+                status="active",
+            )
+        )
+        db_session.add(
+            GuardAgent(
+                id=uuid.uuid4(),
+                organization_id=org.id,
+                wazuh_agent_id="002",
+                name="hpp-guard-active-2",
+                status="active",
+            )
+        )
+        db_session.add(
+            GuardAgent(
+                id=uuid.uuid4(),
+                organization_id=org.id,
+                wazuh_agent_id="003",
+                name="hpp-guard-disabled",
+                status="active",
+                disabled_at=datetime.now(UTC),
+            )
+        )
+        db_session.add(HppRate(key="uptimecheck", amount_idr=5, updated_at=datetime.now(UTC)))
+        db_session.add(HppRate(key="guardagent", amount_idr=1000, updated_at=datetime.now(UTC)))
+        await db_session.commit()
+        resp = client.get("/api/admin/hpp/report", headers=API_HEADERS)
+        assert resp.status_code == 200
+        data = resp.json()
+        uptime_line = next(x for x in data["lines"] if x["key"] == "uptimecheck")
+        assert uptime_line["count"] == 3
+        assert uptime_line["rate_idr"] == 5
+        assert uptime_line["hpp_idr"] == 15
+        guard_line = next(x for x in data["lines"] if x["key"] == "guardagent")
+        assert guard_line["count"] == 2
+        assert guard_line["rate_idr"] == 1000
+        assert guard_line["hpp_idr"] == 2000
+        margins = {x["line"]: x for x in data["line_margins"]}
+        assert set(margins) == {"scan", "host"}
+
 
 class TestAdminEmailLogs:
     def test_list_empty(self, client):

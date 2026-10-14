@@ -13,6 +13,7 @@ from app.middleware.rate_limit import RateLimiter
 from app.models.credit_log import CreditLog
 from app.models.email_send_log import EMAIL_SEND_KINDS, EMAIL_SEND_STATUSES, EmailSendLog
 from app.models.email_verification import EmailVerificationToken
+from app.models.guard import GuardAgent
 from app.models.host_protect import HostScan, HostSite
 from app.models.hpp import (
     HPP_COST_CATEGORIES,
@@ -27,6 +28,7 @@ from app.models.organization import Organization
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.scan_schedule import ScanSchedule
+from app.models.uptime import UptimeSample
 from app.models.user import User
 from app.schemas.admin import (
     AdminStats,
@@ -441,6 +443,19 @@ async def get_hpp_report(
     )
     hostscan_count = int(hostscan_result.scalar() or 0)
 
+    uptimecheck_result = await db.execute(
+        select(func.count(UptimeSample.id)).where(
+            UptimeSample.checked_at >= start,
+            UptimeSample.checked_at <= end,
+        )
+    )
+    uptimecheck_count = int(uptimecheck_result.scalar() or 0)
+
+    guardagent_result = await db.execute(
+        select(func.count(GuardAgent.id)).where(GuardAgent.disabled_at.is_(None))
+    )
+    guardagent_count = int(guardagent_result.scalar() or 0)
+
     counts: dict[str, int] = {}
     total_count = 0
     total_hpp = 0
@@ -449,6 +464,10 @@ async def get_hpp_report(
             count = statushost_count
         elif key == "hostscan":
             count = hostscan_count
+        elif key == "uptimecheck":
+            count = uptimecheck_count
+        elif key == "guardagent":
+            count = guardagent_count
         else:
             count = job_counts.get(key, 0)
         counts[key] = count
