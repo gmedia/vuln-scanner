@@ -2313,7 +2313,7 @@ P15 flatten: the KPI strip lives **inside** the identity shell (it is that shell
 
 **Retired 2026-10-12:** `/admin/pricing` is removed. Wave-1 references to its quick link and wave-2 inclusion below record the original design, not current navigation. `/admin/hpp` stays.
 
-Print §§0–8 and every SPA section above stay locked. This section is the **dark SPA** contract for the first three admin surfaces: the dashboard, the user list, and the user detail. Wave 2 (`/admin/hpp`, `/admin/invoices`, `/admin/email-logs`, `/admin/blog`, `/admin/ai`) reuses this grammar. `/admin/pricing` is retired.
+Print §§0–8 and every SPA section above stay locked. This section is the **dark SPA** contract for the first three admin surfaces: the dashboard, the user list, and the user detail. Wave 2 (`/admin/hpp`, `/admin/invoices`, `/admin/email-logs`, `/admin/blog`, `/admin/ai`, plus `/admin/skus` and `/admin/simulator` added 2026-10-13/14) reuses this grammar. `/admin/pricing` is retired.
 
 ## 0. Research Log (Admin wave 1)
 
@@ -2472,6 +2472,8 @@ P15 flatten: the KPI strip is **not** inside PageHeader and **not** inside a she
 
 Print §§0–8 and every SPA section above stay locked. This section is the **dark SPA** contract for the HPP cost surface. `/admin/pricing` is retired. It reuses the wave-1 `AdminShell` / `adminChrome` grammar verbatim — no new primitives — so only the deltas and the HPP-specific tone rules are recorded here.
 
+**Added 2026-10-13/14:** `/admin/skus` (SKU catalog editor + read-only locked bundle/annual card) and `/admin/simulator` (ephemeral what-if calculator) are admin pages that reuse this same `AdminShell` / `adminChrome` grammar — no new primitives. They are not given separate sections here; their behaviour contracts live in [`docs/specs/sinexis-invoice-v1.md`](../docs/specs/sinexis-invoice-v1.md) and [`docs/specs/admin-hpp-v1.md`](../docs/specs/admin-hpp-v1.md).
+
 ## 0. Research Log (Admin wave 2A)
 
 - Reused wave-1 routing (`linear.app` density + existing Sinexis tokens). No new reference pull.
@@ -2516,7 +2518,9 @@ Unchanged from wave 1. Deltas:
 - Line margins stay `grid gap-3 sm:grid-cols-2`.
 - Pricing rows: mobile cards `space-y-2 md:hidden`, desktop table `hidden md:block`.
 
-**Frozen contracts** (`src/test/admin/AdminHpp.test.tsx`; `AdminPricing.test.tsx` deleted 2026-10-12): `hpp-overhead-card` / `hpp-costs-card` / `hpp-report-filters` / `hpp-line-scan` / `hpp-line-host`; the costs-card **label order** `["Date", "Category", "Amount (IDR)", "Note"]`; `getAllByDisplayValue(1000)`; the three HPP hint strings (per-seat SKU, not credits); `Report range`; `estimasi` badge; `Margin (estimasi)` ×2; `(97%)`; the host-cogs-capped sentence; `TableRowSkeleton rows={5} columns={4}` on HPP rates load, `rows={2} columns={5}` on HPP costs, `rows={5} columns={7}` on HPP report. Historical pricing contracts (`pricing-leftover-banner`, `Pricing configuration`, `Scan credit seed (archive)`) no longer apply.
+**Frozen contracts** (`src/test/admin/AdminHpp.test.tsx`; `AdminPricing.test.tsx` deleted 2026-10-12): `hpp-overhead-card` / `hpp-costs-card` / `hpp-report-filters` / `hpp-line-scan` / `hpp-line-host`; the costs-card **label order** `["Date", "Category", "Amount (IDR)", "Note"]`; `getAllByDisplayValue(1000)`; the three HPP hint strings (per-seat SKU, not credits); `Report range`; `estimasi` badge; `Margin (estimasi)` **×4** (scan/host/uptime/guard since 2026-10-14 — the card count moved 2→4, see below); `(97%)`; the host-cogs-capped sentence; `TableRowSkeleton rows={5} columns={4}` on HPP rates load, `rows={2} columns={5}` on HPP costs, `rows={5} columns={7}` on HPP report. Historical pricing contracts (`pricing-leftover-banner`, `Pricing configuration`, `Scan credit seed (archive)`) no longer apply.
+
+**Line margins 2→4 (2026-10-14):** `hpp-line-uptime` and `hpp-line-guard` were added (Uptime/Guard COGS keys `uptimecheck`/`guardagent` + their own `line_margins` entry). The testid template `hpp-line-${row.line}` was already generic, so only the count assertion (`length === 2` → `4`) and the fixture changed. `hpp-line-scan` / `hpp-line-host` keep their names. Card titles come from `marginLineLabel()` (`hppLineScan` / `hppLineHost` / `hppLineUptime` / `hppLineGuard`).
 
 ## 5. Signature Components & States
 
