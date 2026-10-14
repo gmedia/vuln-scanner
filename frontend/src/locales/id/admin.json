@@ -158,6 +158,8 @@
   "hppSeedPriceWarning": "Sebagian harga list SKU memakai konstanta seed bawaan (belum ada baris katalog): {{skus}}.",
   "hppLineScan": "Scan attach",
   "hppLineHost": "Host Protect",
+  "hppLineUptime": "Uptime",
+  "hppLineGuard": "Guard",
   "hppOrgCount": "Org (estimasi tertagih)",
   "hppRevenue": "Pendapatan (list)",
   "hppCogs": "HPP (fully loaded)",

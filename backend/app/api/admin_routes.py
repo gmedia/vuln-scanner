@@ -23,12 +23,12 @@ from app.models.hpp import (
     HppOverhead,
     HppRate,
 )
-from app.models.invoice import HOST_SKU_LIST_IDR, SCAN_SKU_LIST_IDR, SkuCatalog
+from app.models.invoice import GUARD_SKU_LIST_IDR, HOST_SKU_LIST_IDR, SCAN_SKU_LIST_IDR, UPTIME_SKU_LIST_IDR, SkuCatalog
 from app.models.organization import Organization
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.scan_schedule import ScanSchedule
-from app.models.uptime import UptimeSample
+from app.models.uptime import UptimeMonitor, UptimeSample
 from app.models.user import User
 from app.schemas.admin import (
     AdminStats,
@@ -514,6 +514,8 @@ async def get_hpp_report(
     fully_by_key = {line.key: line.fully_loaded_hpp_idr for line in lines}
     scan_cogs = sum(fully_by_key.get(k, 0) for k in _SCAN_COGS_KEYS)
     host_cogs = fully_by_key.get("hostscan", 0)
+    uptime_cogs = fully_by_key.get("uptimecheck", 0)
+    guard_cogs = fully_by_key.get("guardagent", 0)
 
     scan_sku_rows = (
         await db.execute(
@@ -527,6 +529,22 @@ async def get_hpp_report(
         await db.execute(
             select(Organization.sku, func.count(func.distinct(Organization.id)))
             .join(HostSite, HostSite.organization_id == Organization.id)
+            .group_by(Organization.sku)
+        )
+    ).all()
+    uptime_sku_rows = (
+        await db.execute(
+            select(Organization.sku, func.count(func.distinct(Organization.id)))
+            .join(UptimeMonitor, UptimeMonitor.organization_id == Organization.id)
+            .where(UptimeMonitor.enabled.is_(True))
+            .group_by(Organization.sku)
+        )
+    ).all()
+    guard_sku_rows = (
+        await db.execute(
+            select(Organization.sku, func.count(func.distinct(Organization.id)))
+            .join(GuardAgent, GuardAgent.organization_id == Organization.id)
+            .where(GuardAgent.disabled_at.is_(None))
             .group_by(Organization.sku)
         )
     ).all()
@@ -599,11 +617,20 @@ async def get_hpp_report(
 
     scan_list, scan_seeded = await _list_idr_from_catalog(db, "scan", SCAN_SKU_LIST_IDR)
     host_list, host_seeded = await _list_idr_from_catalog(db, "host", HOST_SKU_LIST_IDR)
+    uptime_list, uptime_seeded = await _list_idr_from_catalog(db, "uptime", UPTIME_SKU_LIST_IDR)
+    guard_list, guard_seeded = await _list_idr_from_catalog(db, "guard", GUARD_SKU_LIST_IDR)
     line_margins = [
         _margin("scan", [(str(s), int(n)) for s, n in scan_sku_rows], scan_list, scan_cogs),
         _margin_host([(str(s), int(n)) for s, n in host_sku_rows], host_list),
+        _margin("uptime", [(str(s), int(n)) for s, n in uptime_sku_rows], uptime_list, uptime_cogs),
+        _margin("guard", [(str(s), int(n)) for s, n in guard_sku_rows], guard_list, guard_cogs),
     ]
-    catalog_seed_skus = [f"scan:{s}" for s in scan_seeded] + [f"host:{s}" for s in host_seeded]
+    catalog_seed_skus = (
+        [f"scan:{s}" for s in scan_seeded]
+        + [f"host:{s}" for s in host_seeded]
+        + [f"uptime:{s}" for s in uptime_seeded]
+        + [f"guard:{s}" for s in guard_seeded]
+    )
 
     return HppReportResponse(
         from_date=start,

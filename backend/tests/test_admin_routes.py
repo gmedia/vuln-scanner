@@ -979,7 +979,7 @@ class TestAdminHpp:
         assert data["overhead_idr"] == 0
         assert data["total_fully_loaded_hpp_idr"] == 1000
         margins = {x["line"]: x for x in data["line_margins"]}
-        assert set(margins) == {"scan", "host"}
+        assert set(margins) == {"scan", "host", "uptime", "guard"}
         assert margins["scan"]["label"] == "estimasi"
         assert margins["scan"]["org_count"] == 0
         assert margins["scan"]["revenue_idr"] == 0
@@ -1358,7 +1358,105 @@ class TestAdminHpp:
         assert guard_line["rate_idr"] == 1000
         assert guard_line["hpp_idr"] == 2000
         margins = {x["line"]: x for x in data["line_margins"]}
-        assert set(margins) == {"scan", "host"}
+        assert set(margins) == {"scan", "host", "uptime", "guard"}
+
+    @pytest.mark.asyncio
+    async def test_report_uptime_and_guard_margin_lines(self, client, db_session, sample_user):
+        from datetime import UTC, datetime
+
+        from app.models.guard import GuardAgent
+        from app.models.organization import Organization, OrganizationMembership
+        from app.models.uptime import UptimeMonitor, UptimeSample
+
+        org = Organization(
+            id=uuid.uuid4(),
+            name="hpp-uptime-guard-margin-org",
+            slug=f"hpp-ug-margin-{uuid.uuid4().hex[:8]}",
+            kind="company",
+            created_by_user_id=sample_user.id,
+        )
+        db_session.add(org)
+        db_session.add(
+            OrganizationMembership(organization_id=org.id, user_id=sample_user.id, role="owner")
+        )
+        enabled_monitor = UptimeMonitor(
+            id=uuid.uuid4(),
+            organization_id=org.id,
+            created_by=sample_user.id,
+            name="hpp-uptime-enabled",
+            check_type="http",
+            target="https://example.test",
+            interval_seconds=60,
+            timeout_seconds=10,
+            state="up",
+            next_check_at=datetime.now(UTC),
+        )
+        db_session.add(enabled_monitor)
+        db_session.add(
+            UptimeMonitor(
+                id=uuid.uuid4(),
+                organization_id=org.id,
+                created_by=sample_user.id,
+                name="hpp-uptime-disabled",
+                check_type="http",
+                target="https://disabled.example.test",
+                interval_seconds=60,
+                timeout_seconds=10,
+                state="unknown",
+                enabled=False,
+                next_check_at=datetime.now(UTC),
+            )
+        )
+        await db_session.flush()
+        for _ in range(3):
+            db_session.add(
+                UptimeSample(
+                    id=uuid.uuid4(),
+                    monitor_id=enabled_monitor.id,
+                    checked_at=datetime.now(UTC),
+                    ok=True,
+                )
+            )
+        for i in (1, 2):
+            db_session.add(
+                GuardAgent(
+                    id=uuid.uuid4(),
+                    organization_id=org.id,
+                    wazuh_agent_id=f"margin-active-{i}",
+                    name=f"hpp-guard-margin-active-{i}",
+                    status="active",
+                )
+            )
+        db_session.add(
+            GuardAgent(
+                id=uuid.uuid4(),
+                organization_id=org.id,
+                wazuh_agent_id="margin-disabled",
+                name="hpp-guard-margin-disabled",
+                status="active",
+                disabled_at=datetime.now(UTC),
+            )
+        )
+        db_session.add(HppRate(key="uptimecheck", amount_idr=5, updated_at=datetime.now(UTC)))
+        db_session.add(HppRate(key="guardagent", amount_idr=1000, updated_at=datetime.now(UTC)))
+        await db_session.commit()
+
+        resp = client.get("/api/admin/hpp/report", headers=API_HEADERS)
+        assert resp.status_code == 200
+        margins = {x["line"]: x for x in resp.json()["line_margins"]}
+        assert set(margins) == {"scan", "host", "uptime", "guard"}
+
+        assert margins["uptime"]["org_count"] == 1
+        assert margins["uptime"]["revenue_idr"] == 75_000
+        assert margins["uptime"]["cogs_idr"] == 15
+        assert margins["uptime"]["margin_idr"] == 75_000 - 15
+        assert margins["uptime"]["unpriced_org_count"] == 0
+
+        assert margins["guard"]["org_count"] == 1
+        assert margins["guard"]["revenue_idr"] == 100_000
+        assert margins["guard"]["cogs_idr"] == 2_000
+        assert margins["guard"]["margin_idr"] == 100_000 - 2_000
+        assert margins["guard"]["unpriced_org_count"] == 0
 
 
 class TestAdminEmailLogs:

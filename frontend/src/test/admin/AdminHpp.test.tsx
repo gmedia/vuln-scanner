@@ -207,6 +207,26 @@ const report = {
       host_scans_cap: 1,
       unpriced_org_count: 0,
     },
+    {
+      line: "uptime",
+      label: "estimasi",
+      org_count: 2,
+      revenue_idr: 150000,
+      cogs_idr: 15,
+      margin_idr: 149985,
+      margin_pct: 100,
+      unpriced_org_count: 0,
+    },
+    {
+      line: "guard",
+      label: "estimasi",
+      org_count: 1,
+      revenue_idr: 100000,
+      cogs_idr: 2000,
+      margin_idr: 98000,
+      margin_pct: 98,
+      unpriced_org_count: 0,
+    },
   ],
 };
 
@@ -342,7 +362,7 @@ describe("AdminHpp", () => {
       "Note",
     ]);
     expect(screen.getAllByText("estimasi").length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Margin \(estimasi\)/).length).toBe(2);
+    expect(screen.getAllByText(/Margin \(estimasi\)/).length).toBe(4);
     expect(screen.getByText(/290.000/)).toBeInTheDocument();
     expect(screen.getByText(/\(97%\)/)).toBeInTheDocument();
     expect(
@@ -354,6 +374,40 @@ describe("AdminHpp", () => {
         "These are production costs (COGS) per completed job — not selling prices. The line-margin cards compute revenue from the SKU list price in the catalog.",
       ),
     ).toBeInTheDocument();
+  });
+
+  it("labels each of the four line-margin cards", () => {
+    vi.mocked(useQuery).mockImplementation((opts) => {
+      const key = (opts.queryKey as readonly unknown[])[0];
+      if (key === "admin-hpp") {
+        return { data: rates, isLoading: false } as never;
+      }
+      if (key === "admin-hpp-overhead") {
+        return {
+          data: {
+            amount_idr: 100,
+            updated_at: "2026-08-01T00:00:00Z",
+            updated_by: null,
+          },
+          isLoading: false,
+        } as never;
+      }
+      if (key === "admin-hpp-costs") {
+        return { data: [], isLoading: false } as never;
+      }
+      return { data: report, isLoading: false } as never;
+    });
+    render(<AdminHpp />);
+    const scanCard = screen.getByTestId("hpp-line-scan");
+    const hostCard = screen.getByTestId("hpp-line-host");
+    const uptimeCard = screen.getByTestId("hpp-line-uptime");
+    const guardCard = screen.getByTestId("hpp-line-guard");
+    expect(scanCard).toBeInTheDocument();
+    expect(hostCard).toBeInTheDocument();
+    expect(uptimeCard).toBeInTheDocument();
+    expect(guardCard).toBeInTheDocument();
+    expect(uptimeCard).toHaveTextContent("Uptime");
+    expect(guardCard).toHaveTextContent("Guard");
   });
 
   it("shows cost-not-filled instead of 100% when cogs is zero", () => {
