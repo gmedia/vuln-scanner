@@ -92,10 +92,10 @@
   --color-ring: var(--ring);
   --radius: 0.75rem;
   --font-sans:
-    "Geist Variable", "Geist", ui-sans-serif, system-ui, -apple-system,
+    "Sora Variable", "Sora", ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", sans-serif;
   --font-mono:
-    "Geist Mono Variable", "Geist Mono", ui-monospace, "SFMono-Regular",
+    "Red Hat Mono Variable", "Red Hat Mono", ui-monospace, "SFMono-Regular",
     "Menlo", monospace;
   --font-family-sans: var(--font-sans);
   --font-family-mono: var(--font-mono);
