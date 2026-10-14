@@ -297,7 +297,7 @@
   "skuProductHost": "Host Protect",
   "skuProductUptime": "Uptime",
   "skuProductGuard": "Guard",
-  "skuSeatsReadonly": "Kursi ditentukan oleh cap tier (Basic 1 / Pro 3 / Multi 10) dan tidak dapat diubah di sini.",
+  "skuSeatsReadonly": "Kursi mengikuti cap tier dan tidak dapat diubah di sini (Scan/Host/Guard Basic 1 / Pro 3 / Multi 10; Uptime 10 / 50 / 200).",
   "simPriceMissing": "Harga SKU belum ada di katalog — isi manual atau atur di Katalog SKU.",
   "simCostFromHpp": "Biaya per unit terisi otomatis dari laporan HPP (biaya nyata per job). Anda bisa mengubahnya.",
   "simGuideTitle": "Cara menggunakan halaman ini",
@@ -318,7 +318,7 @@
   "simGuideLimitsTitle": "Batasan",
   "simGuideLimit1": "Tidak ada yang disimpan — refresh atau keluar dari halaman akan menghapus isian Anda.",
   "simGuideLimit2": "Halaman ini tidak pernah mengubah data nyata: tidak menulis ke tarif HPP, overhead, jurnal, katalog, atau invoice.",
-  "simGuideLimit3": "Uptime dan Guard belum punya baris invoice di v1, jadi pendapatannya di sini adalah asumsi — bukan pendapatan tertagih.",
+  "simGuideLimit3": "Uptime dan Guard ditagih sebagai baris à-la-carte, tetapi pendapatannya di sini tetap asumsi — tidak terikat ke invoice yang benar-benar dibayar.",
   "simGuideLimit4": "Cap kursi tidak diterapkan di sini — cap ditegakkan saat aset dibuat, bukan di matematika what-if.",
   "simGuideLimit5": "Harga di sini adalah asumsi, bukan harga resmi. Untuk mengubah harga SKU yang sebenarnya, gunakan halaman Katalog SKU."
 }

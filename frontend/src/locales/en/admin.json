@@ -297,7 +297,7 @@
   "skuProductHost": "Host Protect",
   "skuProductUptime": "Uptime",
   "skuProductGuard": "Guard",
-  "skuSeatsReadonly": "Seats are fixed by the tier cap (Basic 1 / Pro 3 / Multi 10) and cannot be edited here.",
+  "skuSeatsReadonly": "Seats follow the tier cap and cannot be edited here (Scan/Host/Guard Basic 1 / Pro 3 / Multi 10; Uptime 10 / 50 / 200).",
   "simPriceMissing": "SKU price is missing from the catalog — enter it manually or set it in the SKU Catalog.",
   "simCostFromHpp": "Unit cost is prefilled from the HPP report (real cost per job). You can override it.",
   "simGuideTitle": "How to use this page",
@@ -318,7 +318,7 @@
   "simGuideLimitsTitle": "Limits",
   "simGuideLimit1": "Nothing is saved — refreshing or leaving the page clears your inputs.",
   "simGuideLimit2": "This page never changes real data: no writes to HPP rates, overhead, journal, catalog, or invoices.",
-  "simGuideLimit3": "Uptime and Guard have no invoice line in v1, so their revenue here is an assumption — not billed income.",
+  "simGuideLimit3": "Uptime and Guard are billed as à-la-carte lines, but their revenue here is still an assumption — it is not tied to a specific paid invoice.",
   "simGuideLimit4": "Seat caps are not applied here — caps are enforced when assets are created, not in what-if math.",
   "simGuideLimit5": "The price here is an assumption, not the official price. To change the real SKU price, use the SKU Catalog page."
 }
