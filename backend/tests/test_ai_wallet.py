@@ -252,3 +252,30 @@ async def test_wallet_idor_and_topup(db_session: AsyncSession, ctx) -> None:
     finally:
         app.dependency_overrides.pop(get_db, None)
         app.dependency_overrides.pop(get_current_admin, None)
+
+
+@pytest.mark.asyncio
+async def test_wallet_get_is_read_only(db_session: AsyncSession, ctx) -> None:
+    from sqlalchemy import select
+
+    from app.models.ai_gateway import AiWallet
+
+    owner = ctx["owner"]
+    org = ctx["org"]
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            got = await ac.get("/api/ai/wallet", headers=_auth(owner, org.id))
+            assert got.status_code == 200, got.text
+            assert got.json()["balance_idr"] == 0
+            rows = (
+                await db_session.execute(select(AiWallet).where(AiWallet.organization_id == org.id))
+            ).scalars().all()
+            assert rows == []
+    finally:
+        app.dependency_overrides.pop(get_db, None)

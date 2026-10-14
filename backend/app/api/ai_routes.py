@@ -21,7 +21,7 @@ from app.schemas.ai_gateway import (
     AiWalletOut,
 )
 from app.services.ai_keys import create_key, list_keys, revoke_key
-from app.services.ai_wallet import get_or_create_wallet
+from app.services.ai_wallet import get_wallet as get_wallet_row
 from app.services.auth import get_active_org_id, get_current_user
 from app.services.organization import require_membership
 
@@ -49,8 +49,9 @@ async def get_wallet(
 ) -> AiWalletOut:
     _disabled()
     org_id = await _org(request, current_user, db)
-    wallet = await get_or_create_wallet(db, org_id)
-    await db.commit()
+    wallet = await get_wallet_row(db, org_id)
+    if wallet is None:
+        return AiWalletOut(organization_id=org_id, balance_idr=0, currency="IDR")
     return AiWalletOut.model_validate(wallet)
 
 

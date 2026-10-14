@@ -61,10 +61,14 @@ def affordable_prompt_tokens(*, balance_idr: int, model: AiModel, prompt_tokens:
     return best
 
 
-async def get_or_create_wallet(db: AsyncSession, organization_id: UUID) -> AiWallet:
-    row = (
+async def get_wallet(db: AsyncSession, organization_id: UUID) -> AiWallet | None:
+    return (
         await db.execute(select(AiWallet).where(AiWallet.organization_id == organization_id))
     ).scalar_one_or_none()
+
+
+async def get_or_create_wallet(db: AsyncSession, organization_id: UUID) -> AiWallet:
+    row = await get_wallet(db, organization_id)
     if row is not None:
         return row
     org = await db.get(Organization, organization_id)
