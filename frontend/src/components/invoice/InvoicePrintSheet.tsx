@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { InvoiceProduct } from "@/api/admin";
 import { BRAND } from "@/lib/brand";
 import {
   formatIdr,
@@ -17,7 +18,7 @@ export type InvoicePrintBank = {
 export type InvoicePrintData = {
   number: string;
   sku: string;
-  product: "scan" | "host";
+  product: InvoiceProduct;
   amount_idr: number;
   period_start: string;
   period_end: string;

@@ -94,7 +94,7 @@ vi.mock("@/components/ui/Select", () => {
   }: {
     children: React.ReactNode;
     value: string;
-  }) => <div data-value={value}>{children}</div>,
+  }) => <div role="option" aria-selected={false} data-value={value}>{children}</div>,
   };
 });
 
@@ -140,6 +140,14 @@ const catalog = [
     seats: 3,
     invoicable: true,
     updated_at: "2026-09-13T00:00:00Z",
+  },
+  {
+    product: "uptime",
+    sku: "basic",
+    list_idr: 75_000,
+    seats: 10,
+    invoicable: true,
+    updated_at: "",
   },
 ];
 
@@ -391,6 +399,12 @@ describe("AdminInvoices", () => {
     await userEvent.click(screen.getAllByTestId("invoice-actions-inv-1")[1]);
     await userEvent.click(await screen.findByTestId("admin-invoice-pdf"));
     expect(toast.error).toHaveBeenCalledWith("Could not download invoice PDF");
+  });
+
+  it("offers Uptime in the product picker", async () => {
+    render(<AdminInvoices />);
+    await userEvent.click(screen.getByTestId("invoice-product"));
+    expect(await screen.findByRole("option", { name: /uptime/i })).toBeInTheDocument();
   });
 
   it("lists Host in the product picker and filters SKU to Host catalog rows", async () => {

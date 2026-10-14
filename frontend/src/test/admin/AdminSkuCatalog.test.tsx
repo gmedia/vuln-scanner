@@ -72,6 +72,8 @@ const catalog: SkuCatalogItem[] = [
     invoicable: true,
     updated_at: "2026-09-13T00:00:00Z",
   },
+  { product: "uptime", sku: "basic", list_idr: 75000, seats: 10, invoicable: true, updated_at: "" },
+  { product: "guard", sku: "basic", list_idr: 100000, seats: 1, invoicable: true, updated_at: "" },
 ];
 
 const mutate = vi.fn();
@@ -99,8 +101,9 @@ beforeEach(() => {
 });
 
 describe("AdminSkuCatalog", () => {
-  it("renders six catalog rows and the lock warning", () => {
+  it("renders eight catalog rows and the lock warning", () => {
     render(<AdminSkuCatalog />);
+    expect(screen.getAllByTestId(/^sku-catalog-row-/)).toHaveLength(8);
     expect(screen.getByTestId("sku-catalog-row-scan-basic")).toBeInTheDocument();
     expect(screen.getByTestId("sku-catalog-row-scan-pro")).toBeInTheDocument();
     expect(screen.getByTestId("sku-catalog-row-scan-multi")).toBeInTheDocument();
@@ -110,6 +113,12 @@ describe("AdminSkuCatalog", () => {
     expect(
       screen.getByText(/does not change past invoices/i),
     ).toBeInTheDocument();
+  });
+
+  it("labels uptime and guard products", () => {
+    render(<AdminSkuCatalog />);
+    expect(screen.getByTestId("sku-catalog-row-uptime-basic")).toHaveTextContent("Uptime");
+    expect(screen.getByTestId("sku-catalog-row-guard-basic")).toHaveTextContent("Guard");
   });
 
   it("shows who last updated a catalog row", () => {
