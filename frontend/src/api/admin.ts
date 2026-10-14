@@ -304,7 +304,7 @@ export interface HppRateItem {
 
 export interface HppOverheadItem {
   amount_idr: number;
-  updated_at: string;
+  updated_at: string | null;
   updated_by: string | null;
 }
 

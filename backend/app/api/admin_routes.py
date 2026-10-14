@@ -614,11 +614,8 @@ async def get_hpp_overhead(
     result = await db.execute(select(HppOverhead).where(HppOverhead.id == HPP_OVERHEAD_SINGLETON_ID))
     row = result.scalar_one_or_none()
     if row is None:
-        now = datetime.now(UTC)
-        row = HppOverhead(id=HPP_OVERHEAD_SINGLETON_ID, amount_idr=0, updated_at=now)
-        db.add(row)
-        await db.commit()
-        await db.refresh(row)
+        # Read-only GET: the singleton is seeded by migration `add_hpp_overhead`, so do not insert here.
+        return HppOverheadItem(amount_idr=0, updated_at=None, updated_by=None)
     return HppOverheadItem.model_validate(row)
 
 
