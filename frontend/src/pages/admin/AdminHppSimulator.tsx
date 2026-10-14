@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, Calculator } from "lucide-react";
-import { adminApi, type SkuPriceItem } from "@/api/admin";
+import { adminApi, type HppReportResponse, type SkuPriceItem } from "@/api/admin";
 import {
   AdminNotice,
   AdminShell,
@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/Table";
 import {
   computeScenario,
+  halfEvenRound,
   type ScenarioRowInput,
   type ScenarioRowOutput,
   type ScenarioService,
@@ -89,6 +90,30 @@ function lockedPrice(
   return hit ? hit.list_idr : null;
 }
 
+const SCAN_COST_KEYS = ["ip", "domain", "apk", "ipa"] as const;
+
+function reportUnitCost(
+  report: HppReportResponse | undefined,
+  service: ScenarioService,
+): number | null {
+  if (!report) return null;
+  const keys =
+    service === "scan"
+      ? SCAN_COST_KEYS
+      : [service === "host" ? "hostscan" : service === "uptime" ? "uptimecheck" : "guardagent"];
+  let cost = 0;
+  let count = 0;
+  for (const key of keys) {
+    const line = report.lines.find((l) => l.key === key);
+    if (!line) continue;
+    cost += line.hpp_idr;
+    count += line.count;
+  }
+  if (count <= 0) return null;
+  const unit = halfEvenRound(cost / count);
+  return unit > 0 ? unit : null;
+}
+
 function AdminHppSimulator() {
   const { t } = useTranslation("admin");
   const [fixedCost, setFixedCost] = useState("");
@@ -99,6 +124,17 @@ function AdminHppSimulator() {
     queryKey: ["admin-sku-prices"],
     queryFn: adminApi.getSkuPrices,
   });
+  const { data: hppReport } = useQuery({
+    queryKey: ["admin-hpp-report"],
+    queryFn: () => adminApi.getHppReport(),
+  });
+
+  const displayUnitCost = (service: ScenarioService): string => {
+    const draft = rows[service].unitCost;
+    if (draft.trim() !== "") return draft;
+    const reported = reportUnitCost(hppReport, service);
+    return reported == null ? "" : String(reported);
+  };
 
   const displayPrice = (service: ScenarioService): string => {
     const draft = rows[service];
@@ -114,7 +150,7 @@ function AdminHppSimulator() {
       service,
       sku: draft.sku || undefined,
       volume: toNumber(draft.volume),
-      unit_cost_idr: toNumber(draft.unitCost),
+      unit_cost_idr: toNumber(displayUnitCost(service)),
       price_idr: toNumber(displayPrice(service)),
     };
   });
@@ -355,7 +391,7 @@ function AdminHppSimulator() {
                           data-testid={`hpp-sim-unitcost-${service}`}
                           aria-label={t("simColUnitCost")}
                           inputMode="numeric"
-                          value={draft.unitCost}
+                          value={displayUnitCost(service)}
                           onChange={(e) =>
                             patchRow(service, { unitCost: e.target.value })
                           }
@@ -445,6 +481,15 @@ function AdminHppSimulator() {
               className="text-xs text-muted-foreground"
             >
               {t("simPriceMissing")}
+            </p>
+          ) : null}
+
+          {SERVICES.some((service) => reportUnitCost(hppReport, service) != null) ? (
+            <p
+              data-testid="hpp-sim-cost-source"
+              className="mb-3 text-[11px] text-muted-foreground"
+            >
+              {t("simCostFromHpp")}
             </p>
           ) : null}
 
