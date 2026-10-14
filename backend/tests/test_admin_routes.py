@@ -1204,6 +1204,19 @@ class TestAdminHpp:
         assert resp.status_code == 422
 
     @pytest.mark.asyncio
+    async def test_overhead_get_is_read_only_when_row_missing(self, client, db_session):
+        from app.models.hpp import HppOverhead
+
+        await db_session.execute(delete(HppOverhead))
+        await db_session.commit()
+        got = client.get("/api/admin/hpp/overhead", headers=API_HEADERS)
+        assert got.status_code == 200
+        assert got.json()["amount_idr"] == 0
+        assert got.json()["updated_at"] is None
+        remaining = (await db_session.execute(select(HppOverhead))).scalars().all()
+        assert remaining == []
+
+    @pytest.mark.asyncio
     async def test_cost_journal_adds_to_overhead_pool(self, client, db_session, sample_user):
         from datetime import UTC, datetime
 

@@ -56,7 +56,7 @@ class HppOverheadItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     amount_idr: int
-    updated_at: datetime
+    updated_at: datetime | None = None
     updated_by: uuid.UUID | None = None
 
 
