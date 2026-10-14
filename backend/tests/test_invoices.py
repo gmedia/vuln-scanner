@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -611,6 +612,33 @@ def test_render_invoice_html_draft_omits_bank() -> None:
     assert "SHOULD-NOT" not in html
     assert "Bill to —" in html
     assert "<td class=\"num\">3</td>" in html
+
+
+_PRODUCT_LABEL_CASES = [
+    ("scan", "Sinexis Scan", {"basic": 1, "pro": 3, "multi": 10}),
+    ("host", "Sinexis Host Protect", {"basic": 1, "pro": 3, "multi": 10}),
+    ("uptime", "Sinexis Uptime", {"basic": 10, "pro": 50, "multi": 200}),
+    ("guard", "Sinexis Guard", {"basic": 1, "pro": 3, "multi": 10}),
+]
+
+
+@pytest.mark.parametrize(
+    ("product", "label", "sku", "expected_seats"),
+    [(product, label, sku, seats) for product, label, skus in _PRODUCT_LABEL_CASES for sku, seats in skus.items()],
+)
+def test_render_invoice_html_friendly_label_and_seats_per_product(
+    product: str, label: str, sku: str, expected_seats: int
+) -> None:
+    html = render_invoice_html(
+        _sample_invoice(status="draft", product=product, sku=sku),
+        org_name="Acme",
+        bank=None,
+    )
+    assert f"{label} — {sku.upper()}" in html
+    assert f">{product} —" not in html
+    seats_match = re.search(r'<td class="num">(\d+)</td>', html)
+    assert seats_match is not None
+    assert int(seats_match.group(1)) == expected_seats
 
 
 async def _create_and_send(client: AsyncClient, ctx: dict[str, object]) -> tuple[str, str]:

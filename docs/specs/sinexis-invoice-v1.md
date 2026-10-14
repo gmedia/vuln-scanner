@@ -125,6 +125,8 @@ Bank payload on customer GET when `sent`: `{ bank_name, bank_account, bank_holde
 
 Do **not** restyle kit. Tokens from `:root`. `Button` / `Select` only.
 
+**Invoice document — product-aware (fixed 2026-10-14):** `services/invoice_html.py` printed `SCAN_SKU_SEATS` (1/3/10) for **every** product and had no friendly label for `uptime`/`guard`, so an **Uptime Multi** invoice told the customer "10 seats" when the locked cap is **200**. Both are now product-aware: `_PRODUCT_LABEL` covers all four (`Sinexis Scan` / `Sinexis Host Protect` / `Sinexis Uptime` / `Sinexis Guard`), and `_PRODUCT_SEATS` maps `product → {sku: capacity}` from the locked constants (`ASSET_SKU_LIMITS` / `HOST_SITE_SKU_LIMITS` / `UPTIME_SKU_LIMITS` / `GUARD_SKU_LIMITS`) — the same values the migration seeds into `sku_catalog.seats`, which is read-only, so the two cannot drift. No DB lookup and no schema change.
+
 ---
 
 ## 4) Out
