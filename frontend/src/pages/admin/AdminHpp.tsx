@@ -158,6 +158,13 @@ function AdminHpp() {
     return v !== undefined && v !== item.amount_idr;
   };
 
+  const marginLineLabel = (line: string): string => {
+    if (line === "host") return t("hppLineHost");
+    if (line === "uptime") return t("hppLineUptime");
+    if (line === "guard") return t("hppLineGuard");
+    return t("hppLineScan");
+  };
+
   const locale = isAppLocale(i18n.language)
     ? htmlLang(i18n.language) === "en"
       ? "en-US"
@@ -571,9 +578,7 @@ function AdminHpp() {
               tone={marginTone(row.margin_idr)}
               testid={`hpp-line-${row.line}`}
             >
-              <AdminShellHead
-                title={row.line === "host" ? t("hppLineHost") : t("hppLineScan")}
-              />
+              <AdminShellHead title={marginLineLabel(row.line)} />
               <AdminShellBody className="space-y-1 text-xs">
                 <p>
                   {t("hppOrgCount")}:{" "}

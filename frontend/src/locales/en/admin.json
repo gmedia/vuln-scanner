@@ -158,6 +158,8 @@
   "hppSeedPriceWarning": "Some SKU list prices fall back to built-in seed constants (no catalog row): {{skus}}.",
   "hppLineScan": "Scan attach",
   "hppLineHost": "Host Protect",
+  "hppLineUptime": "Uptime",
+  "hppLineGuard": "Guard",
   "hppOrgCount": "Orgs (billed, estimasi)",
   "hppRevenue": "Revenue (list)",
   "hppCogs": "COGS (fully loaded)",
