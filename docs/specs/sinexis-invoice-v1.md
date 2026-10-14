@@ -55,6 +55,8 @@ Seed Scan from I2. Seed Host 150_000 / 350_000 / 900_000. Alembic `host_sku_invo
 
 HPP overlay `_SCAN_LIST_IDR` / `_HOST_LIST_IDR` **read from catalog** (fallback to the same constants if a row is missing).
 
+**Bundle + annual (2026-10-14):** the owner-locked bundle **"Sinexis Secure"** (`BUNDLE_LIST_IDR` basic 450_000 / pro 1_000_000 / multi 2_900_000) and the annual policy (`ANNUAL_MONTHS_PAID` 10 / `ANNUAL_MONTHS_SERVED` 12, P2) are now **code constants**, exposed read-only via `GET /api/admin/sku-prices` (`bundles` + `annual`) and shown on `/admin/skus`. The bundle saving is **derived** from the four à-la-carte line prices, so editing a line price changes the comparison — a test pins the locked arithmetic. The bundle is **not** an `INVOICE_PRODUCTS` member and Enterprise is **not** in the catalog (custom/quote-only per P6), so neither can be invoiced from this surface.
+
 ### Invoices `org_invoices`
 
 | Column | Type |
@@ -96,7 +98,7 @@ Admin (`get_current_admin` + existing limiter):
 | Method | Path | Notes |
 |--------|------|--------|
 | GET | `/api/admin/sku-catalog` | all rows |
-| GET | `/api/admin/sku-prices` | read-only list price for **all four** services × basic/pro/multi (added 2026-10-13). All four read from `sku_catalog`; the locked constants are fallbacks when a row is missing. Single source for the `/admin/simulator` prefill. |
+| GET | `/api/admin/sku-prices` | read-only list price for **all four** services × basic/pro/multi (added 2026-10-13). All four read from `sku_catalog`; the locked constants are fallbacks when a row is missing. Also returns `bundles` (locked bundle vs derived à-la-carte sum + saving) and `annual` (P2 policy), added 2026-10-14. Single source for the `/admin/simulator` prefill. |
 | PUT | `/api/admin/sku-catalog/{product}/{sku}` | `{ list_idr, invoicable? }`; seats immutable in v1; records `updated_by` |
 | GET | `/api/admin/invoices` | filter `status`, `organization_id`; page |
 | POST | `/api/admin/invoices` | `{ organization_id, sku, product?, period_start? }` `product` = `scan` (default) \| `host` \| `uptime` \| `guard`; amount from catalog |
@@ -118,7 +120,7 @@ Bank payload on customer GET when `sent`: `{ bank_name, bank_account, bank_holde
 ## 3) SPA
 
 - `/admin/invoices` — catalog table + invoice list + create/send/paid/void. Filter bar = Credit History (`gap-3`, `h-10`). `nav-admin-invoices`.
-- `/admin/skus` (added 2026-10-13) — edit catalog `list_idr` + `invoicable` per `scan|host` × `basic|pro|multi`; `seats` read-only (tier cap is code-owned). Confirm-before-write; existing invoices keep their `amount_idr` snapshot. `nav-admin-skus`. Enterprise stays quote-only (no catalog row).
+- `/admin/skus` (added 2026-10-13) — edit catalog `list_idr` + `invoicable` per `scan|host|uptime|guard` × `basic|pro|multi`; `seats` read-only (tier cap is code-owned). Confirm-before-write; existing invoices keep their `amount_idr` snapshot. `nav-admin-skus`. Enterprise stays quote-only (no catalog row). Plus a **read-only** "Bundle & annual (locked)" card (`sku-bundle-card`, added 2026-10-14) showing the locked bundle price vs the derived à-la-carte sum.
 - Workspace: card **Billing** (owner/admin) — list invoices; if `sent`, show bank copy. No pay button. Empty: ops-issued, no self-serve upgrade. Load error is not painted as empty. Platform admin may link to `/admin/invoices`.
 
 Do **not** restyle kit. Tokens from `:root`. `Button` / `Select` only.

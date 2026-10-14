@@ -53,3 +53,26 @@ def test_hpp_keys_cover_all_four_services() -> None:
         "uptimecheck",
         "guardagent",
     )
+
+
+def test_bundle_and_annual_match_the_locked_doc() -> None:
+    from app.models.invoice import (
+        ANNUAL_MONTHS_PAID,
+        ANNUAL_MONTHS_SERVED,
+        BUNDLE_LIST_IDR,
+        GUARD_SKU_LIST_IDR,
+        HOST_SKU_LIST_IDR,
+        SCAN_SKU_LIST_IDR,
+        UPTIME_SKU_LIST_IDR,
+    )
+
+    assert BUNDLE_LIST_IDR == {"basic": 450_000, "pro": 1_000_000, "multi": 2_900_000}
+    assert (ANNUAL_MONTHS_PAID, ANNUAL_MONTHS_SERVED) == (10, 12)
+
+    lines = (SCAN_SKU_LIST_IDR, HOST_SKU_LIST_IDR, UPTIME_SKU_LIST_IDR, GUARD_SKU_LIST_IDR)
+    expected_alacarte = {"basic": 625_000, "pro": 1_450_000, "multi": 4_000_000}
+    expected_saving = {"basic": 175_000, "pro": 450_000, "multi": 1_100_000}
+    for tier, total in expected_alacarte.items():
+        alacarte = sum(table[tier] for table in lines)
+        assert alacarte == total
+        assert alacarte - BUNDLE_LIST_IDR[tier] == expected_saving[tier]

@@ -898,3 +898,30 @@ async def test_uptime_and_guard_are_invoiceable(db_session, ctx):
                 assert body["amount_idr"] == amount
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_sku_prices_includes_locked_bundle_and_annual(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            r = await client.get("/api/admin/sku-prices", headers=_auth(ctx["admin"]))
+            assert r.status_code == 200
+            body = r.json()
+            by = {b["tier"]: b for b in body["bundles"]}
+            assert by["basic"]["bundle_idr"] == 450_000
+            assert by["basic"]["alacarte_idr"] == 625_000
+            assert by["basic"]["saving_idr"] == 175_000
+            assert by["basic"]["saving_pct"] == 28.0
+            assert by["pro"]["bundle_idr"] == 1_000_000
+            assert by["pro"]["alacarte_idr"] == 1_450_000
+            assert by["pro"]["saving_idr"] == 450_000
+            assert by["pro"]["saving_pct"] == 31.0
+            assert by["multi"]["bundle_idr"] == 2_900_000
+            assert by["multi"]["alacarte_idr"] == 4_000_000
+            assert by["multi"]["saving_idr"] == 1_100_000
+            assert by["multi"]["saving_pct"] == 27.5
+            assert body["annual"] == {"months_paid": 10, "months_served": 12}
+    finally:
+        app.dependency_overrides.clear()

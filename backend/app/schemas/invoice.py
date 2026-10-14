@@ -43,8 +43,23 @@ class SkuPriceItem(BaseModel):
     invoicable: bool
 
 
+class BundlePriceItem(BaseModel):
+    tier: str  # basic | pro | multi
+    bundle_idr: int
+    alacarte_idr: int
+    saving_idr: int
+    saving_pct: float
+
+
+class AnnualPolicy(BaseModel):
+    months_paid: int
+    months_served: int
+
+
 class SkuPriceListResponse(BaseModel):
     items: list[SkuPriceItem]
+    bundles: list[BundlePriceItem] = []
+    annual: AnnualPolicy | None = None
 
 
 class SkuCatalogUpdateRequest(BaseModel):

@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AdminSkuCatalog from "@/pages/admin/AdminSkuCatalog";
-import { adminApi, type SkuCatalogItem } from "@/api/admin";
+import { adminApi, type SkuCatalogItem, type SkuPricingResponse } from "@/api/admin";
 
 vi.mock("@tanstack/react-query", () => ({
   useQuery: vi.fn(),
@@ -13,6 +13,7 @@ vi.mock("@tanstack/react-query", () => ({
 vi.mock("@/api/admin", () => ({
   adminApi: {
     getSkuCatalog: vi.fn(),
+    getSkuPricing: vi.fn(),
     updateSkuCatalog: vi.fn(),
   },
 }));
@@ -76,13 +77,35 @@ const catalog: SkuCatalogItem[] = [
   { product: "guard", sku: "basic", list_idr: 100000, seats: 1, invoicable: true, updated_at: "" },
 ];
 
+const pricing: SkuPricingResponse = {
+  items: [
+    { service: "scan", sku: "basic", list_idr: 300000, invoicable: true },
+    { service: "scan", sku: "pro", list_idr: 650000, invoicable: true },
+    { service: "scan", sku: "multi", list_idr: 2000000, invoicable: true },
+    { service: "host", sku: "basic", list_idr: 150000, invoicable: true },
+    { service: "host", sku: "pro", list_idr: 350000, invoicable: true },
+    { service: "host", sku: "multi", list_idr: 900000, invoicable: true },
+    { service: "uptime", sku: "basic", list_idr: 75000, invoicable: true },
+    { service: "guard", sku: "basic", list_idr: 100000, invoicable: true },
+  ],
+  bundles: [
+    { tier: "basic", bundle_idr: 450000, alacarte_idr: 625000, saving_idr: 175000, saving_pct: 28.0 },
+    { tier: "pro", bundle_idr: 1000000, alacarte_idr: 1450000, saving_idr: 450000, saving_pct: 31.0 },
+    { tier: "multi", bundle_idr: 2900000, alacarte_idr: 4000000, saving_idr: 1100000, saving_pct: 27.5 },
+  ],
+  annual: { months_paid: 10, months_served: 12 },
+};
+
 const mutate = vi.fn();
 
 beforeEach(() => {
   mutate.mockReset();
   vi.mocked(adminApi.getSkuCatalog).mockResolvedValue(catalog);
+  vi.mocked(adminApi.getSkuPricing).mockResolvedValue(pricing);
   vi.mocked(adminApi.updateSkuCatalog).mockResolvedValue(catalog[0]);
-  vi.mocked(useQuery).mockReturnValue({ data: catalog } as never);
+  vi.mocked(useQuery).mockImplementation((options) => {
+    return { data: options.queryKey[0] === "admin-sku-pricing" ? pricing : catalog } as never;
+  });
   vi.mocked(useQueryClient).mockReturnValue({
     invalidateQueries: vi.fn(),
   } as never);
@@ -101,6 +124,16 @@ beforeEach(() => {
 });
 
 describe("AdminSkuCatalog", () => {
+  it("shows the locked bundle and annual reference", () => {
+    render(<AdminSkuCatalog />);
+    expect(screen.getByTestId("sku-bundle-card")).toBeInTheDocument();
+    expect(screen.getByTestId("sku-bundle-row-basic")).toHaveTextContent("450.000");
+    expect(screen.getByTestId("sku-bundle-row-basic")).toHaveTextContent("625.000");
+    expect(screen.getByTestId("sku-bundle-row-multi")).toHaveTextContent("2.900.000");
+    expect(screen.getByTestId("sku-annual-note")).toHaveTextContent("pay 10 months, serve 12");
+    expect(within(screen.getByTestId("sku-bundle-card")).queryByRole("textbox")).toBeNull();
+  });
+
   it("renders eight catalog rows and the lock warning", () => {
     render(<AdminSkuCatalog />);
     expect(screen.getAllByTestId(/^sku-catalog-row-/)).toHaveLength(8);
