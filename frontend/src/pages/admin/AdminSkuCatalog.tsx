@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Tags } from "lucide-react";
+import { Package, Tags } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import {
@@ -73,6 +73,10 @@ function formatUpdated(iso: string): string {
   return date.toLocaleDateString("id-ID");
 }
 
+function formatIdr(n: number): string {
+  return n.toLocaleString("id-ID");
+}
+
 function AdminSkuCatalog() {
   const { t } = useTranslation("admin");
   const queryClient = useQueryClient();
@@ -82,6 +86,10 @@ function AdminSkuCatalog() {
   const { data: catalog } = useQuery({
     queryKey: ["admin-sku-catalog"],
     queryFn: adminApi.getSkuCatalog,
+  });
+  const { data: pricing } = useQuery({
+    queryKey: ["admin-sku-pricing"],
+    queryFn: adminApi.getSkuPricing,
   });
 
   const draftFor = (row: SkuCatalogItem): SkuDraft =>
@@ -111,6 +119,14 @@ function AdminSkuCatalog() {
     if (product === "host") return t("skuProductHost");
     if (product === "uptime") return t("skuProductUptime");
     return t("skuProductGuard");
+  };
+
+  const tierLabel = (tier: "basic" | "pro" | "multi"): string => {
+    switch (tier) {
+      case "basic": return t("bundleTierBasic");
+      case "pro": return t("bundleTierPro");
+      case "multi": return t("bundleTierMulti");
+    }
   };
 
   const patchDraft = (row: SkuCatalogItem, patch: Partial<SkuDraft>) => {
@@ -259,6 +275,59 @@ function AdminSkuCatalog() {
           <p className="mt-3 text-[11px] text-muted-foreground">
             {t("skuSeatsReadonly")}
           </p>
+        </AdminShellBody>
+      </AdminShell>
+
+      <AdminShell testid="sku-bundle-card">
+        <AdminShellHead icon={Package} title={t("bundleTitle")} hint={t("bundleHint")} />
+        <AdminShellBody className="space-y-3">
+          <AdminNotice tone="info" role="status">
+            {t("bundleLockedNotice")}
+          </AdminNotice>
+          <div className="overflow-hidden rounded-md border border-border">
+            <Table data-testid="sku-bundle-table">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="py-2 text-[10px] uppercase tracking-wider">
+                    {t("bundleColTier")}
+                  </TableHead>
+                  <TableHead className="py-2 text-[10px] uppercase tracking-wider">
+                    {t("bundleColBundle")}
+                  </TableHead>
+                  <TableHead className="py-2 text-[10px] uppercase tracking-wider">
+                    {t("bundleColAlacarte")}
+                  </TableHead>
+                  <TableHead className="py-2 text-[10px] uppercase tracking-wider">
+                    {t("bundleColSaving")}
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(pricing?.bundles ?? []).map((b) => (
+                  <TableRow key={b.tier} data-testid={`sku-bundle-row-${b.tier}`}>
+                    <TableCell className="py-1.5 text-xs">{tierLabel(b.tier)}</TableCell>
+                    <TableCell className="py-1.5 font-mono text-xs tabular-nums">
+                      {formatIdr(b.bundle_idr)}
+                    </TableCell>
+                    <TableCell className="py-1.5 font-mono text-xs tabular-nums">
+                      {formatIdr(b.alacarte_idr)}
+                    </TableCell>
+                    <TableCell className="py-1.5 font-mono text-xs tabular-nums">
+                      {formatIdr(b.saving_idr)} ({b.saving_pct.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%)
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          {pricing?.annual ? (
+            <p data-testid="sku-annual-note" className="text-[11px] text-muted-foreground">
+              {t("bundleAnnualNote", {
+                paid: pricing.annual.months_paid,
+                served: pricing.annual.months_served,
+              })}
+            </p>
+          ) : null}
         </AdminShellBody>
       </AdminShell>
 

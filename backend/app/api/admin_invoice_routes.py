@@ -8,6 +8,9 @@ from app.config import settings
 from app.database import get_db
 from app.middleware.rate_limit import RateLimiter
 from app.models.invoice import (
+    ANNUAL_MONTHS_PAID,
+    ANNUAL_MONTHS_SERVED,
+    BUNDLE_LIST_IDR,
     GUARD_SKU_LIST_IDR,
     HOST_SKU_LIST_IDR,
     INVOICE_PRODUCTS,
@@ -20,6 +23,8 @@ from app.models.user import User
 from app.schemas.invoice import (
     AdminOrgItem,
     AdminOrgListResponse,
+    AnnualPolicy,
+    BundlePriceItem,
     InvoiceCreateRequest,
     InvoiceItem,
     InvoiceListResponse,
@@ -152,7 +157,26 @@ async def get_sku_prices(
                 items.append(
                     SkuPriceItem(service=service, sku=sku, list_idr=fallbacks[service].get(sku, 0), invoicable=False)
                 )
-    return SkuPriceListResponse(items=items)
+    by_service_sku = {(i.service, i.sku): i.list_idr for i in items}
+    bundles: list[BundlePriceItem] = []
+    for tier in INVOICE_SKUS:
+        alacarte = sum(by_service_sku.get((service, tier), 0) for service in INVOICE_PRODUCTS)
+        bundle = BUNDLE_LIST_IDR.get(tier, 0)
+        saving = alacarte - bundle
+        bundles.append(
+            BundlePriceItem(
+                tier=tier,
+                bundle_idr=bundle,
+                alacarte_idr=alacarte,
+                saving_idr=saving,
+                saving_pct=round(saving * 100 / alacarte, 1) if alacarte else 0.0,
+            )
+        )
+    return SkuPriceListResponse(
+        items=items,
+        bundles=bundles,
+        annual=AnnualPolicy(months_paid=ANNUAL_MONTHS_PAID, months_served=ANNUAL_MONTHS_SERVED),
+    )
 
 
 @router.get("/invoices", response_model=InvoiceListResponse)

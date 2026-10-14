@@ -19,6 +19,12 @@ HOST_SKU_LIST_IDR: dict[str, int] = {"basic": 150_000, "pro": 350_000, "multi": 
 # defaults / fallbacks when a catalog row is missing.
 UPTIME_SKU_LIST_IDR: dict[str, int] = {"basic": 75_000, "pro": 200_000, "multi": 500_000}
 GUARD_SKU_LIST_IDR: dict[str, int] = {"basic": 100_000, "pro": 250_000, "multi": 600_000}
+# Owner-locked 2026-10-12 (docs/commercial/pricing-architecture-v1.md §3, §5 P2).
+# "Sinexis Secure" = one line covering all four attach products at the matching tier.
+BUNDLE_LIST_IDR: dict[str, int] = {"basic": 450_000, "pro": 1_000_000, "multi": 2_900_000}
+# Annual policy (P2, LOCKED): prepay 10 months, serve 12.
+ANNUAL_MONTHS_PAID = 10
+ANNUAL_MONTHS_SERVED = 12
 SCAN_SKU_SEATS: dict[str, int] = {"basic": 1, "pro": 3, "multi": 10}
 
 

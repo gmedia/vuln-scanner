@@ -477,6 +477,25 @@ export interface SkuPriceListResponse {
   items: SkuPriceItem[];
 }
 
+export interface BundlePriceItem {
+  tier: "basic" | "pro" | "multi";
+  bundle_idr: number;
+  alacarte_idr: number;
+  saving_idr: number;
+  saving_pct: number;
+}
+
+export interface AnnualPolicy {
+  months_paid: number;
+  months_served: number;
+}
+
+export interface SkuPricingResponse {
+  items: SkuPriceItem[];
+  bundles: BundlePriceItem[];
+  annual: AnnualPolicy | null;
+}
+
 export interface AdminOrgItem {
   id: string;
   name: string;
@@ -520,6 +539,11 @@ export async function getSkuCatalog(): Promise<SkuCatalogItem[]> {
 export async function getSkuPrices(): Promise<SkuPriceItem[]> {
   const { data } = await api.get<SkuPriceListResponse>("/api/admin/sku-prices");
   return data.items;
+}
+
+export async function getSkuPricing(): Promise<SkuPricingResponse> {
+  const { data } = await api.get<SkuPricingResponse>("/api/admin/sku-prices");
+  return data;
 }
 
 export async function updateSkuCatalog(
@@ -650,6 +674,7 @@ export const adminApi = {
   unpublishBlogPost,
   getSkuCatalog,
   getSkuPrices,
+  getSkuPricing,
   updateSkuCatalog,
   listAdminOrgs,
   listAdminInvoices,
