@@ -78,7 +78,9 @@ export function GuardKpiStrip({
             data-testid="guard-state"
             data-enabled={on ? "true" : "false"}
           >
-            <strong>{on ? t("enabledOn") : t("enabledOff")}</strong>
+            <strong className="font-bold">
+              {on ? t("enabledOn") : t("enabledOff")}
+            </strong>
           </span>
         }
         railClass={STATE_RAIL[health]}

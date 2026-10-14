@@ -82,7 +82,7 @@ function OrgSwitcher({ className, compact = false }: OrgSwitcherProps) {
             {active?.name ?? t("title")}
           </span>
           {active?.role && (
-            <span className="hidden shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[9px] uppercase tracking-wide text-muted-foreground sm:inline">
+            <span className="hidden shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground sm:inline">
               {active.role}
             </span>
           )}
