@@ -28,13 +28,16 @@ Print reuses SPA `:root` tokens from `frontend/src/index.css`. No second palette
 | Body | `--muted-foreground` | `hsl(0 0% 26%)` | `hsl(0 0% 55%)` | Address, period, payment copy |
 | Wash | `--muted` | `hsl(0 0% 96%)` | `hsl(0 0% 12%)` | Payment box, sent chip |
 | Line | `--border` | `hsl(0 0% 90%)` | `hsl(0 0% 100% / 0.08)` | Hairlines, table rules |
-| Accent | `--primary` | `hsl(142 71% 45%)` | same | **XIS**, paid chip only |
+| Accent | `--primary` | `hsl(142 71% 28%)` | `hsl(142 71% 45%)` | **XIS** wordmark, links, primary buttons |
 | Paid wash | derived | `#dcfce7` / `#166534` | n/a | Paid status chip |
-| Danger | `--destructive` | `hsl(0 84% 50%)` | `hsl(0 84% 60%)` | Not used on v1 invoice (no overdue) |
+| Danger | `--destructive` | `hsl(0 84% 47%)` | `hsl(0 84% 60%)` | Destructive text + buttons |
 
 ### Rules
 
 - Accent is the wordmark **XIS** and the paid chip. Never a filled table header, never a gradient masthead.
+- **`--primary` is two-tone by theme, and it has to be.** It is used as *text* (links) **and** as a *button background* paired with `--primary-foreground`. Contrast is symmetric, so a single value cannot serve both: at `hsl(142 71% 45%)` green text on white is **2.30:1**, and darkening it while keeping the near-black foreground breaks the button instead (**4.10:1**). Dark keeps `45%` (8.0:1 on the dark card); light uses `28%` **with `--primary-foreground: hsl(0 0% 100%)`** (5.42:1 on white, 4.97:1 on `--muted`). **Change both together or neither.**
+- `--ring`, `--sidebar-primary` and `--sidebar-ring` mirror `--primary`. A focus ring needs 3:1 against its background, so the light ring had to darken with it.
+- Print does **not** use these tokens: `.invoice-print-accent` hardcodes the green separately, so a theme change never alters the printed sheet.
 - Print CSS sets `-webkit-print-color-adjust: exact` **and** `print-color-adjust: exact`. Design must still read if Chrome drops washes: hairline borders carry the structure.
 - No `#0a7`, no Palatino, no Stripe purple `#533afd` on our paper.
 

@@ -41,7 +41,10 @@ function AdminDashboard() {
   });
 
   const kpiChartConfig = {
-    counts: { label: t("chartCount"), color: "hsl(142 71% 45%)" },
+    counts: {
+      label: t("chartCount"),
+      theme: { light: "hsl(142 71% 28%)", dark: "hsl(142 71% 45%)" },
+    },
     credits: { label: t("chartCredits"), color: "hsl(217 91% 60%)" },
   } satisfies ChartConfig;
 
@@ -111,7 +114,7 @@ function AdminDashboard() {
         { name: t("chartFindings"), counts: stats?.total_findings ?? 0 },
       ],
       dataKey: "counts",
-      fill: kpiChartConfig.counts.color,
+      fill: "var(--color-counts)",
     },
     {
       key: "credits",
@@ -122,7 +125,7 @@ function AdminDashboard() {
         { name: t("chartCreditsUsed"), credits: stats?.credits_used ?? 0 },
       ],
       dataKey: "credits",
-      fill: kpiChartConfig.credits.color,
+      fill: "var(--color-credits)",
     },
   ];
 

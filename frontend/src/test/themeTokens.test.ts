@@ -26,13 +26,81 @@ function token(source: string, key: string): string {
   return match[1].trim();
 }
 
+function hslLuminance(value: string): number {
+  const match = value.match(
+    /hsl\(\s*(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%\s*\)/,
+  );
+  if (!match) {
+    throw new Error(`unparsable hsl token: ${value}`);
+  }
+  const hue = Number(match[1]) / 360;
+  const sat = Number(match[2]) / 100;
+  const light = Number(match[3]) / 100;
+  const chroma = (1 - Math.abs(2 * light - 1)) * sat;
+  const second = chroma * (1 - Math.abs(((hue * 6) % 2) - 1));
+  const base = light - chroma / 2;
+  const [r, g, b] =
+    hue < 1 / 6
+      ? [chroma, second, 0]
+      : hue < 2 / 6
+        ? [second, chroma, 0]
+        : hue < 3 / 6
+          ? [0, chroma, second]
+          : hue < 4 / 6
+            ? [0, second, chroma]
+            : hue < 5 / 6
+              ? [second, 0, chroma]
+              : [chroma, 0, second];
+  const channel = (raw: number) => {
+    const value2 = raw + base;
+    return value2 <= 0.03928
+      ? value2 / 12.92
+      : ((value2 + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+}
+
+function contrastRatio(a: string, b: string): number {
+  const l1 = hslLuminance(a);
+  const l2 = hslLuminance(b);
+  const hi = Math.max(l1, l2);
+  const lo = Math.min(l1, l2);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
 describe("P15 S1 theme tokens", () => {
-  it("keeps Sinexis primary green", () => {
-    expect(token(block(":root"), "--primary")).toBe("hsl(142 71% 45%)");
+  it("keeps the Sinexis primary green hue, with a darker lightness only in light theme", () => {
+    const light = token(block(":root"), "--primary");
+    expect(light).toBe("hsl(142 71% 28%)");
     for (const dark of blocks(".dark")) {
       if (dark.includes("--primary:")) {
         expect(token(dark, "--primary")).toBe("hsl(142 71% 45%)");
       }
+    }
+  });
+
+  it("keeps primary legible as text and as a button background in both themes", () => {
+    const light = block(":root");
+    const dark = blocks(".dark").find((b) => b.includes("--primary:")) ?? "";
+    const surfaces = ["--background", "--card", "--muted", "--secondary"];
+
+    for (const [name, source] of [
+      ["light", light],
+      ["dark", dark],
+    ] as const) {
+      if (!source) continue;
+      const primary = token(source, "--primary");
+      const onPrimary = token(source, "--primary-foreground");
+      for (const surface of surfaces) {
+        expect(
+          contrastRatio(primary, token(source, surface)),
+          `${name}: ${primary} on ${surface}`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+      expect(
+        contrastRatio(primary, onPrimary),
+        `${name}: ${onPrimary} on ${primary}`,
+      ).toBeGreaterThanOrEqual(4.5);
     }
   });
 
