@@ -317,7 +317,7 @@ curl -sS -X POST "$PUBLIC_BASE_URL/api/auth/login" \
 
 Do **not** `POST /api/auth/register` for the shared e2e mailbox on prod — it can create an unverified user and break Playwright.
 
-Wave E full-site screenshots (17 routes, 1440×900):
+Wave E full-site screenshots (20 routes, 1440×900):
 
 ```bash
 cd frontend && npm ci   # needs @playwright/test

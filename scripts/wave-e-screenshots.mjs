@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Wave E — full-site visual QA screenshots (17 routes).
+ * Wave E — full-site visual QA screenshots (20 routes).
  *
  * Captures full-page PNGs at 1440×900 against BASE_URL (default prod).
  * Auth: POST /api/auth/login with e2e credentials, inject tokens into localStorage.
@@ -62,6 +62,9 @@ const ROUTES = [
   { id: "15-admin-dashboard", path: "/admin", auth: true },
   { id: "16-admin-users", path: "/admin/users", auth: true },
   // 17 filled at runtime with first admin user id
+  { id: "18-admin-hpp", path: "/admin/hpp", auth: true },
+  { id: "19-admin-skus", path: "/admin/skus", auth: true },
+  { id: "20-admin-simulator", path: "/admin/simulator", auth: true },
 ];
 
 const ERROR_MARKERS = [
