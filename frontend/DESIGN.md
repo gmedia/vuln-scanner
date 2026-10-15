@@ -1844,6 +1844,97 @@ P15 flatten: the quota shell is **not** inside the create shell and **not** insi
 | `export { mapScheduleError }` on the page | page | Pre-existing re-export kept for tests; `react-refresh` warning is known | Named move to `api/schedules` |
 | Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |
 
+---
+
+# App shell chrome (Sidebar / Header)
+
+This is the signed-in AppShell contract, not the public Landing or auth chrome. Sources: `frontend/src/components/layout/Sidebar.tsx`, `frontend/src/components/layout/Header.tsx`, and `frontend/src/components/ui/sidebar.tsx`.
+
+## 0. Research Log
+
+The collapsed footer switchers were fixed in #973 and the brand mark in #975. Their icon-rail contract was previously undocumented; this section records the shipped behaviour, not a new chrome wave.
+
+## 1. Atmosphere & Identity
+
+The collapsed rail is the same flush canvas as the expanded sidebar, not a contrast strip. One `--primary` green accent marks the brand crosshair and active states.
+
+## 2. Color
+
+Reuse `frontend/src/index.css` tokens in both themes. No second palette.
+
+| Role | Token | Usage |
+|------|-------|-------|
+| Canvas | `--sidebar` | Expanded sidebar and icon rail |
+| Accent | `--primary` | Crosshair and active states |
+| Ink | `--foreground` | Expanded labels |
+| Meta | `--muted-foreground` | Expanded secondary text |
+| Edge | `--border`, `--sidebar-border` | Hairline separation only |
+
+## 3. Typography
+
+The expanded `BrandMark` wordmark is Red Hat Mono `SINE` plus accent `XIS`. Collapsed hides the entire text span with `group-data-[collapsible=icon]:hidden`, leaving only the crosshair; no wordmark text is painted in the rail.
+
+## 4. Spacing & Layout
+
+| Mode | Width | Contract |
+|------|-------|----------|
+| Expanded | `SIDEBAR_WIDTH = "16rem"` (256px) | Footer cluster keeps labels |
+| Collapsed | `SIDEBAR_WIDTH_ICON = "3rem"` (48px) | Icon-only rail |
+| Mobile | `SIDEBAR_WIDTH_MOBILE = "min(22rem, calc(100vw - 3rem))"` | Sheet, not the desktop icon rail |
+
+`SidebarFooter` is `flex flex-col gap-2 p-2`. In the 48px rail, its 8px padding on each side leaves exactly **32px** for every collapsed control. The base `SidebarMenuButton` applies `group-data-[collapsible=icon]:size-8!` and `group-data-[collapsible=icon]:p-2!`; its direct SVG is `size-4`. Don't substitute `Button size="icon"`: `buttonVariants` gives it `min-w-11` (44px), wider than the footer content.
+
+`Header` uses `px-0` collapsed versus `px-1` expanded. Its collapsed switcher row is `flex flex-col items-center gap-1`, not a horizontal segmented control. `Sidebar.tsx` passes `<Header collapsed={state === "collapsed" && !isMobile} />` after reading `useSidebar()`; `Header` must not read that context itself because `frontend/src/test/Header.test.tsx` renders `<Header />` without `SidebarProvider`.
+
+## 5. Components
+
+### BrandMark
+
+Expanded: crosshair and `SINE` / `XIS` wordmark. Collapsed: `Sidebar.tsx` passes `group-data-[collapsible=icon]:justify-center` to the mark and `group-data-[collapsible=icon]:hidden` to the text; the crosshair remains. `BrandMark` has no `collapsed` prop. `AuthLayout.tsx` and `Footer.tsx` share the mark without sidebar-only classes.
+
+### ThemeSwitcher
+
+Expanded: labeled dark/light segmented controls. Collapsed: one `SidebarMenuButton` toggles to the other theme with an accessible label and right-side tooltip. Its optional `collapsed?: boolean` defaults to `false`; `AuthLayout.tsx`, `Landing.tsx`, and `NotFound.tsx` keep the expanded variant.
+
+### LanguageSwitcher
+
+Expanded: labeled `id` / `en` controls. Collapsed: one `SidebarMenuButton` opens the locale menu, with an accessible label and right-side tooltip. Its optional `collapsed?: boolean` defaults to `false`; non-sidebar consumers stay expanded.
+
+### OrgSwitcher
+
+Expanded: a button with org name, role, and chevron. Collapsed: one `SidebarMenuButton` with the active org name as `aria-label` opens the same menu and has a right-side tooltip. Its optional `collapsed?: boolean` defaults to `false`; an unauthenticated session or empty org list still renders nothing.
+
+### User menu
+
+Expanded: user icon, email, and chevron in the trigger. Collapsed: `Header` branches to one `SidebarMenuButton` trigger with `aria-label={user.email}` and tooltip; the email span and chevron are hidden in the rail. `Header` takes optional `collapsed?: boolean`, default `false`. The menu retains `user-menu` and `sign-out`. The active-scan block and version line in `Sidebar.tsx` are `group-data-[collapsible=icon]:hidden`.
+
+## 6. Motion & Interaction
+
+The sidebar transitions between 256px and 48px; kit menu buttons transition width, height, and padding. `SidebarMenuButton` places tooltip content on the right and shows it only while collapsed on desktop. Locale, org, and user menus open from their single collapsed triggers. Don't leave a second, hidden switcher in the DOM.
+
+## 7. Depth & Surface
+
+The rail remains flush with the sidebar canvas. Use the existing `--border` / `--sidebar-border` hairline only; don't add a contrasting chrome strip or a second header.
+
+## 8. Accessibility Constraints & Accepted Debt
+
+### Constraints
+
+- Collapsed icon triggers keep accessible names via `aria-label` even with visible labels hidden: theme/locale action, active org name, or user email. The brand link keeps its accessible name when the wordmark is hidden.
+- Exactly **one variant** of each switcher is in the DOM at a time: branch on `collapsed` in JS, never dual-render behind `hidden` or `group-data-*`. `frontend/e2e/global-setup.ts` uses strict `getByTestId("locale-id").locator("visible=true")`; `frontend/e2e/dashboard.spec.ts` uses strict `getByTestId("org-switcher").locator("visible=true")`. Duplicate nodes break these locators.
+- **Frozen testids:** `theme-switcher`, `theme-dark`, `theme-light`, `language-switcher`, `locale-id`, `locale-en`, `org-switcher`, `org-switcher-menu`, `user-menu`, `sign-out`. Don't rename or remove them; menu-item ids appear when their menus open.
+- `Header` receives collapse state from `Sidebar.tsx`; it must also render without `SidebarProvider` in the unit test.
+
+### Accepted Debt
+
+| Item | Location | Why accepted | Owner / Exit |
+|------|----------|--------------|--------------|
+| `size="lg"` has collapsed `p-0!`, overriding base `p-2!`; an unguarded large button fails to center its icon and clips its text glyph | `frontend/src/components/ui/sidebar.tsx` `sidebarMenuButtonVariants`; `Sidebar.tsx` brand uses explicit centering and hides text | Kit file is frozen; don't restyle it for one surface | Named kit slice only |
+| 1px clipped-glyph fragment at bottom of scrollable nav | `frontend/src/components/layout/Sidebar.tsx` nav / kit sidebar scroll list | Present in both collapsed and expanded; normal scroll clipping, not a rail bug | Keep unless a named scroll slice changes it |
+| No automated visual regression baseline for collapsed rail | `frontend/src/test/` | Unit tests assert classes only; jsdom doesn't apply Tailwind | Named visual-baseline slice |
+
+---
+
 # Auth family (`/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email`)
 
 Print §§0–8 and SIEM / Guard / Assets / page-nav / Status / Uptime / Host / Dashboard / Scan detail above stay locked. This section is the **dark SPA** contract for the five public auth screens. They are **not** inside AppShell — `AuthLayout` owns the full-viewport canvas — so the shell grammar is applied to the auth card, not to a page.
