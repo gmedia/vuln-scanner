@@ -70,6 +70,7 @@ Print reuses SPA `:root` tokens from `frontend/src/index.css`. No second palette
 - Body on paper may sit at 13px (print density). In the SPA, reading copy stays ≥14px; 10–12px is reserved for labels, metadata and monospaced identifiers (`text-[10px]`, `text-[11px]`, `text-xs`), never for body text. Weights are limited to 400/500/600/700 — never rely on the browser's `bolder` keyword (see `strong` below).
 - `<strong>`/`<b>` must carry an explicit weight class. Tailwind preflight sets `font-weight: bolder`, which resolves to **900** inside a `font-semibold` parent — outside the 400/500/600/700 scale, and outside Sora's 100–800 axis, so it silently clamps. Use `font-bold` (700) under a 600 parent, or `font-medium` (500) under a 400 parent.
 - Utility surfaces may exceed the console scale: the Landing `h1` tops out at `lg:text-5xl` (48px) and the 404 numeral at `sm:text-8xl` (96px). Both are deliberate, not scale violations.
+- `body` carries `letter-spacing: -0.011em`. That value was tuned for Inter and is **measured fine with Sora**: Sora renders ~5.9% wider than Inter on the probe string, yet the densest action cell still had 25.5px of slack and a 36-route audit found zero horizontal overflow. Do not re-tune it per font swap without a measured defect.
 - Status chip is sentence-case i18n, not raw `sent`/`paid` as the only label — raw value may stay in `data-status`.
 
 ## 4. Spacing & Layout
