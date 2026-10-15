@@ -107,7 +107,7 @@ body {{
 }}
 .brand svg {{ width: 1.25rem; height: 1.25rem; color: var(--primary); flex-shrink: 0; }}
 .brand-text {{
-  font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
   font-size: 0.875rem; font-weight: 700; letter-spacing: 0.08em;
 }}
 .brand-accent {{ color: var(--primary); }}

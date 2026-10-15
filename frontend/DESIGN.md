@@ -62,6 +62,7 @@ Print reuses SPA `:root` tokens from `frontend/src/index.css`. No second palette
 - Primary: `"Sora Variable", "Sora", ui-sans-serif, system-ui, sans-serif` (`--font-sans`)
 - Mono: `"Red Hat Mono Variable", "Red Hat Mono", ui-monospace, Menlo, monospace` (`--font-mono`) — wordmark + invoice number + IDR
 - Serif: none. Palatino is forbidden (blog-island drift).
+- **Server-rendered HTML** (FastAPI islands, scan results, executive report, asset pack, invoice) uses the **fallback chain only**: `ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif` / `ui-monospace, "SFMono-Regular", Menlo, monospace`. Do not name the SPA webfonts there — nothing serves the `.woff2` files, and the scan/invoice PDFs are produced by **WeasyPrint**, which resolves system fonts (the image ships `fonts-dejavu-core`) and has no base URL for relative `@font-face`. Webfont-loading these surfaces is a separate slice that needs a static-asset path first.
 
 ### Rules
 

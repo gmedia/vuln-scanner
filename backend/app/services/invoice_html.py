@@ -74,8 +74,9 @@ def render_invoice_html(
 <title>Invoice {number}</title>
 <style>
 :root {{ --foreground: hsl(0 0% 7%); --muted: hsl(0 0% 45%); --border: hsl(0 0% 90%); --primary: hsl(142 71% 45%); }}
-body {{ margin: 0; padding: 24px; font-family: ui-sans-serif, system-ui, sans-serif; color: var(--foreground); }}
-.brand {{ font-family: ui-monospace, monospace; font-weight: 700; letter-spacing: 0.08em; }}
+body {{ margin: 0; padding: 24px; color: var(--foreground);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }}
+.brand {{ font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-weight: 700; letter-spacing: 0.08em; }}
 .brand span {{ color: var(--primary); }}
 h1 {{ font-size: 1.25rem; border-bottom: 1px solid var(--border); padding-bottom: 8px; }}
 table {{ width: 100%; border-collapse: collapse; margin-top: 16px; }}
