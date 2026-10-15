@@ -173,7 +173,12 @@ function Sidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <BrandMark to="/" onClick={() => setOpenMobile(false)} />
+              <BrandMark
+                to="/"
+                onClick={() => setOpenMobile(false)}
+                className="group-data-[collapsible=icon]:justify-center"
+                textClassName="group-data-[collapsible=icon]:hidden"
+              />
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

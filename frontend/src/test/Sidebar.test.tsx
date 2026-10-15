@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Sidebar from "@/components/layout/Sidebar";
+import { BRAND } from "@/lib/brand";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useScanStore } from "@/store/scanStore";
 import { useAuthStore } from "@/store/authStore";
@@ -20,7 +21,7 @@ describe("Sidebar", () => {
     return render(
       <QueryClientProvider client={client}>
         <MemoryRouter initialEntries={[initialPath]}>
-          <SidebarProvider defaultOpen>
+          <SidebarProvider defaultOpen={_open}>
             <Sidebar />
           </SidebarProvider>
         </MemoryRouter>
@@ -190,5 +191,15 @@ describe("Sidebar", () => {
     expect(brandLinks.length).toBeGreaterThanOrEqual(1);
     const accentLinks = screen.getAllByText("XIS");
     expect(accentLinks.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("centers the brand icon and hides the wordmark in the collapsed rail", () => {
+    renderSidebar(false);
+    const brandLink = screen.getByRole("link", { name: BRAND.homeAriaLabel });
+    const wordmark = within(brandLink).getByText("SINE");
+
+    expect(brandLink).toHaveClass("group-data-[collapsible=icon]:justify-center");
+    expect(wordmark).toHaveClass("group-data-[collapsible=icon]:hidden");
+    expect(brandLink).toHaveAccessibleName(BRAND.homeAriaLabel);
   });
 });
