@@ -516,6 +516,7 @@ export interface InvoiceItem {
   number: string;
   product: InvoiceProduct;
   sku: string;
+  seats: number;
   amount_idr: number;
   period_start: string;
   period_end: string;

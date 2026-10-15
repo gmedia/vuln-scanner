@@ -3,26 +3,13 @@ from __future__ import annotations
 import html
 from datetime import datetime
 
-from app.models.asset import ASSET_SKU_LIMITS
-from app.models.guard import GUARD_SKU_LIMITS
-from app.models.host_protect import HOST_SITE_SKU_LIMITS
-from app.models.invoice import OrgInvoice
-from app.models.uptime import UPTIME_SKU_LIMITS
+from app.models.invoice import PRODUCT_SEATS, OrgInvoice
 
 _PRODUCT_LABEL = {
     "scan": "Sinexis Scan",
     "host": "Sinexis Host Protect",
     "uptime": "Sinexis Uptime",
     "guard": "Sinexis Guard",
-}
-
-# Included capacity per (product, sku). Mirrors sku_catalog.seats, which is seeded
-# from these same constants and is not editable, so the two cannot drift.
-_PRODUCT_SEATS: dict[str, dict[str, int]] = {
-    "scan": ASSET_SKU_LIMITS,
-    "host": HOST_SITE_SKU_LIMITS,
-    "uptime": UPTIME_SKU_LIMITS,
-    "guard": GUARD_SKU_LIMITS,
 }
 
 
@@ -47,7 +34,7 @@ def render_invoice_html(
     bank: dict[str, str | None] | None,
 ) -> str:
     product = _PRODUCT_LABEL.get(inv.product, inv.product)
-    seats = _PRODUCT_SEATS.get(inv.product, ASSET_SKU_LIMITS).get(inv.sku, 1)
+    seats = PRODUCT_SEATS.get(inv.product, PRODUCT_SEATS["scan"]).get(inv.sku, 1)
     number = _esc(inv.number)
     bill_to = _esc(org_name or "—")
     amount = _esc(_idr(inv.amount_idr))

@@ -2,12 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { InvoiceProduct } from "@/api/admin";
 import { BRAND } from "@/lib/brand";
-import {
-  formatIdr,
-  formatPeriod,
-  seatsForSku,
-  statusModifier,
-} from "@/components/invoice/invoicePrintFormat";
+import { formatIdr, formatPeriod, statusModifier } from "@/components/invoice/invoicePrintFormat";
 
 export type InvoicePrintBank = {
   bank_name: string | null;
@@ -19,6 +14,7 @@ export type InvoicePrintData = {
   number: string;
   sku: string;
   product: InvoiceProduct;
+  seats: number;
   amount_idr: number;
   period_start: string;
   period_end: string;
@@ -43,7 +39,7 @@ export function InvoicePrintSheet({
   const bank = showBank ? invoice.bank : null;
   const to = billTo ?? invoice.organization_name ?? "—";
   const skuLabel = invoice.sku.toUpperCase();
-  const seats = seatsForSku(invoice.sku);
+  const seats = invoice.seats;
   const amount = formatIdr(invoice.amount_idr);
   const issued = formatPeriod(invoice.created_at ?? invoice.period_start);
   const period = `${formatPeriod(invoice.period_start)} – ${formatPeriod(invoice.period_end)}`;

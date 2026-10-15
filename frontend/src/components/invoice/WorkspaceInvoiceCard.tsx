@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { invoiceTone, workspaceRailClass } from "@/components/workspace/workspaceChrome";
-import { seatsForSku } from "@/components/invoice/invoicePrintFormat";
 import type { OrgInvoiceItem } from "@/api/orgs";
 
 function invoiceStatusVariant(
@@ -82,7 +81,7 @@ export function WorkspaceInvoiceCard({
             {t("invoicePrintSku")}
           </dt>
           <dd className="font-mono uppercase text-foreground">
-            {invoice.sku} · {seatsForSku(invoice.sku)} {t("invoicePrintSeats")}
+            {invoice.sku} · {invoice.seats} {t("invoicePrintSeats")}
           </dd>
         </div>
         <div className="col-span-2 min-w-0 space-y-0.5 sm:col-span-2">

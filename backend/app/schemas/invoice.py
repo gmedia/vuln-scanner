@@ -93,6 +93,7 @@ class InvoiceItem(BaseModel):
     number: str
     product: str
     sku: str
+    seats: int
     amount_idr: int
     period_start: datetime
     period_end: datetime

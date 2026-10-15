@@ -104,6 +104,8 @@
   "invoicePrintItem": "Sinexis Scan — {{sku}}",
   "invoicePrintItem_scan": "Sinexis Scan — {{sku}}",
   "invoicePrintItem_host": "Sinexis Host Protect — {{sku}}",
+  "invoicePrintItem_uptime": "Sinexis Uptime — {{sku}}",
+  "invoicePrintItem_guard": "Sinexis Guard — {{sku}}",
   "invoicePrintSubtotal": "Subtotal",
   "invoicePrintTotal": "Total",
   "invoicePrintAmountDue": "Jumlah tagihan",
@@ -115,5 +117,7 @@
   "invoicePrintPayHint": "Cantumkan {{number}} sebagai berita transfer.",
   "invoicePrintFooter": "Terima kasih. Sinexis — transfer bank, tanpa upgrade mandiri.",
   "invoicePrintFooter_scan": "Terima kasih. Sinexis Scan — transfer bank, tanpa upgrade mandiri.",
-  "invoicePrintFooter_host": "Terima kasih. Sinexis Host Protect — transfer bank, tanpa upgrade mandiri."
+  "invoicePrintFooter_host": "Terima kasih. Sinexis Host Protect — transfer bank, tanpa upgrade mandiri.",
+  "invoicePrintFooter_uptime": "Terima kasih. Sinexis Uptime — transfer bank, tanpa upgrade mandiri.",
+  "invoicePrintFooter_guard": "Terima kasih. Sinexis Guard — transfer bank, tanpa upgrade mandiri."
 }
