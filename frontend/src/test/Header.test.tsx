@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Header from "@/components/layout/Header";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import OrgSwitcher from "@/components/workspace/OrgSwitcher";
 import { useScanStore } from "@/store/scanStore";
 import { useAuthStore } from "@/store/authStore";
 
@@ -143,6 +145,54 @@ describe("Header", () => {
   it("hides credits chip when not authenticated", () => {
     renderWithRouter(<Header />);
     expect(screen.queryByTestId("header-credits")).toBeNull();
+  });
+
+  it("shows the org name on the collapsed org trigger", () => {
+    useAuthStore.setState({
+      isAuthenticated: true,
+      organizations: [{ id: "org-1", name: "Personal", slug: "personal", role: "owner" }],
+      activeOrgId: "org-1",
+    });
+    renderWithRouter(
+      <SidebarProvider defaultOpen={false}>
+        <OrgSwitcher collapsed />
+      </SidebarProvider>,
+    );
+
+    const trigger = screen.getByTestId("org-switcher");
+    expect(trigger).toHaveAttribute("data-sidebar", "menu-button");
+    expect(trigger).toHaveAccessibleName("Personal");
+    expect(screen.queryByText("owner")).toBeNull();
+  });
+
+  it("stacks icon-only controls in the collapsed footer", () => {
+    useAuthStore.setState({
+      isAuthenticated: true,
+      user: {
+        id: "u1",
+        email: "user@example.com",
+        is_verified: true,
+        is_admin: false,
+        credits: 10,
+      },
+      organizations: [{ id: "org-1", name: "Personal", slug: "personal", role: "owner" }],
+      activeOrgId: "org-1",
+    });
+    renderWithRouter(
+      <SidebarProvider defaultOpen={false}>
+        <Header collapsed />
+      </SidebarProvider>,
+    );
+
+    const header = screen.getByRole("banner");
+    expect(header).toHaveClass("px-0");
+    expect(header.querySelector(".flex-col.items-center.gap-1")).toBeInTheDocument();
+    for (const id of ["org-switcher", "theme-switcher", "language-switcher"]) {
+      expect(screen.getByTestId(id)).toHaveAttribute("data-sidebar", "menu-button");
+    }
+    expect(screen.getByRole("button", { name: "user@example.com" })).toHaveAttribute("data-sidebar", "menu-button");
+    expect(header.querySelectorAll('[data-sidebar="menu-button"]')).toHaveLength(4);
+    expect(screen.queryByText("user@example.com")).toBeNull();
   });
 
   it("opens user menu with Sign Out", async () => {

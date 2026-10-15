@@ -165,7 +165,7 @@ function Sidebar() {
   const { t } = useTranslation("nav");
   const activeJobId = useScanStore((s) => s.activeJobId);
   const isAdmin = useAuthStore((s) => s.user?.is_admin ?? false);
-  const { setOpenMobile } = useSidebar();
+  const { setOpenMobile, state, isMobile } = useSidebar();
 
   return (
     <SidebarPrimitive collapsible="icon" role="complementary">
@@ -269,7 +269,7 @@ function Sidebar() {
         ) : null}
       </SidebarContent>
       <SidebarFooter className="shrink-0">
-        <Header />
+        <Header collapsed={state === "collapsed" && !isMobile} />
         {activeJobId ? (
           <div className="rounded-md bg-muted p-3 group-data-[collapsible=icon]:hidden">
             <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">

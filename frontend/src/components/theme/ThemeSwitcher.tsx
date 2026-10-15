@@ -1,5 +1,7 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
+import { Moon, Sun } from "lucide-react";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import {
   applyTheme,
@@ -9,7 +11,7 @@ import {
   type AppTheme,
 } from "@/theme/theme";
 
-function ThemeSwitcher({ className }: { className?: string }) {
+function ThemeSwitcher({ className, collapsed = false }: { className?: string; collapsed?: boolean }) {
   const { t } = useTranslation("common");
   const current = useSyncExternalStore(
     subscribeTheme,
@@ -21,6 +23,25 @@ function ThemeSwitcher({ className }: { className?: string }) {
     persistTheme(theme);
     applyTheme(theme);
   }, []);
+
+  if (collapsed) {
+    const target = current === "dark" ? "light" : "dark";
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            type="button"
+            data-testid="theme-switcher"
+            aria-label={t(target === "dark" ? "themeDark" : "themeLight")}
+            tooltip={t(target === "dark" ? "themeDark" : "themeLight")}
+            onClick={() => setTheme(target)}
+          >
+            {target === "light" ? <Sun aria-hidden /> : <Moon aria-hidden />}
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    );
+  }
 
   return (
     <div
