@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Calculator, Loader2, Check, Trash2, Receipt } from "lucide-react";
+import { BookOpen, Calculator, Loader2, Check, Trash2, Receipt } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/Accordion";
 import { Button } from "@/components/ui/Button";
 import { buttonVariants } from "@/components/ui/buttonVariants";
 import { Input } from "@/components/ui/Input";
@@ -178,6 +184,60 @@ function AdminHpp() {
         title={t("hppTitle")}
         description={t("hppSubtitle")}
       />
+
+      <AdminShell testid="hpp-guide" tone="info">
+        <AdminShellHead icon={BookOpen} title={t("hppGuideTitle")} hint={t("hppGuideHint")} />
+        <AdminShellBody>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="steps">
+              <AccordionTrigger>{t("hppGuideStepsTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <ol className="ml-4 list-decimal space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>{t("hppGuideStep1")}</li>
+                  <li>{t("hppGuideStep2")}</li>
+                  <li>{t("hppGuideStep3")}</li>
+                  <li>{t("hppGuideStep4")}</li>
+                </ol>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="sources">
+              <AccordionTrigger>{t("hppGuideSourcesTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t("hppGuideSourcesBody")}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="formula">
+              <AccordionTrigger>{t("hppGuideFormulaTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
+                  {t("hppGuideFormulaBody")}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="range">
+              <AccordionTrigger>{t("hppGuideRangeTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t("hppGuideRangeBody")}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="limits">
+              <AccordionTrigger>{t("hppGuideLimitsTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <ul className="ml-4 list-disc space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>{t("hppGuideLimit1")}</li>
+                  <li>{t("hppGuideLimit2")}</li>
+                  <li>{t("hppGuideLimit3")}</li>
+                  <li>{t("hppGuideLimit4")}</li>
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </AdminShellBody>
+      </AdminShell>
 
       <AdminShell tone="primary" testid="hpp-rates-card">
         <AdminShellHead
