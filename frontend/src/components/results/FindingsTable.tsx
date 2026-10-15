@@ -222,25 +222,29 @@ function FindingsTable({
 
   const cvssColor = (score: number | null) => {
     if (score === null) return "text-muted-foreground";
-    if (score >= 9) return "text-red-400";
-    if (score >= 7) return "text-orange-400";
-    if (score >= 4) return "text-yellow-400";
-    return "text-blue-400";
+    if (score >= 9) return "text-red-700 dark:text-red-400";
+    if (score >= 7) return "text-orange-800 dark:text-orange-400";
+    if (score >= 4) return "text-yellow-800 dark:text-yellow-400";
+    return "text-blue-700 dark:text-blue-400";
   };
 
   const cvssBarColor = (score: number | null) => {
     if (score === null) return "bg-muted-foreground";
-    if (score >= 9) return "bg-red-400";
-    if (score >= 7) return "bg-orange-400";
-    if (score >= 4) return "bg-yellow-400";
-    return "bg-blue-400";
+    if (score >= 9) return "bg-red-700 dark:bg-red-400";
+    if (score >= 7) return "bg-orange-700 dark:bg-orange-400";
+    if (score >= 4) return "bg-yellow-700 dark:bg-yellow-400";
+    return "bg-blue-700 dark:bg-blue-400";
   };
 
   if (isLoading) {
     return <TableRowSkeleton rows={6} columns={7} />;
   }
 
-  if ((!findings || findings.length === 0) && !activeSeverity && !search.trim()) {
+  if (
+    (!findings || findings.length === 0) &&
+    !activeSeverity &&
+    !search.trim()
+  ) {
     const titleKey =
       emptyReason === "failed"
         ? "failedNoFindings"
@@ -340,11 +344,7 @@ function FindingsTable({
                   <Badge
                     variant={
                       finding.severity as
-                        | "critical"
-                        | "high"
-                        | "medium"
-                        | "low"
-                        | "info"
+                        "critical" | "high" | "medium" | "low" | "info"
                     }
                     className="mt-0.5 shrink-0 text-[10px] capitalize"
                   >
@@ -449,15 +449,13 @@ function FindingsTable({
                       )}
                     >
                       <TableCell className="relative py-2.5 pl-4 pr-3">
-                        <SiemRail className={severityRailClass(finding.severity)} />
+                        <SiemRail
+                          className={severityRailClass(finding.severity)}
+                        />
                         <Badge
                           variant={
                             finding.severity as
-                              | "critical"
-                              | "high"
-                              | "medium"
-                              | "low"
-                              | "info"
+                              "critical" | "high" | "medium" | "low" | "info"
                           }
                           className="text-[10px] capitalize"
                         >

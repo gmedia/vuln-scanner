@@ -8,13 +8,36 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 
-const PIE_COLORS = {
-  critical: "#ef4444",
-  high: "#f97316",
-  medium: "#eab308",
-  low: "#3b82f6",
-  info: "#6b7280",
-};
+// Slices and dots both resolve to the same Tailwind palette entry. The legend
+// needs utilities because it renders outside <ChartContainer>, so the chart's
+// --color-* CSS vars are not in scope there.
+const SEVERITY_THEME = {
+  critical: {
+    light: "var(--color-red-700)",
+    dark: "var(--color-red-400)",
+    dot: "bg-red-700 dark:bg-red-400",
+  },
+  high: {
+    light: "var(--color-orange-700)",
+    dark: "var(--color-orange-400)",
+    dot: "bg-orange-700 dark:bg-orange-400",
+  },
+  medium: {
+    light: "var(--color-yellow-700)",
+    dark: "var(--color-yellow-400)",
+    dot: "bg-yellow-700 dark:bg-yellow-400",
+  },
+  low: {
+    light: "var(--color-blue-700)",
+    dark: "var(--color-blue-400)",
+    dot: "bg-blue-700 dark:bg-blue-400",
+  },
+  info: {
+    light: "var(--color-gray-700)",
+    dark: "var(--color-gray-400)",
+    dot: "bg-gray-700 dark:bg-gray-400",
+  },
+} as const;
 
 const SEVERITY_KEYS = ["critical", "high", "medium", "low", "info"] as const;
 
@@ -27,11 +50,32 @@ const SEVERITY_LABELS = {
 } as const;
 
 const chartConfig = {
-  critical: { label: "Critical", color: PIE_COLORS.critical },
-  high: { label: "High", color: PIE_COLORS.high },
-  medium: { label: "Medium", color: PIE_COLORS.medium },
-  low: { label: "Low", color: PIE_COLORS.low },
-  info: { label: "Info", color: PIE_COLORS.info },
+  critical: {
+    label: "Critical",
+    theme: {
+      light: SEVERITY_THEME.critical.light,
+      dark: SEVERITY_THEME.critical.dark,
+    },
+  },
+  high: {
+    label: "High",
+    theme: { light: SEVERITY_THEME.high.light, dark: SEVERITY_THEME.high.dark },
+  },
+  medium: {
+    label: "Medium",
+    theme: {
+      light: SEVERITY_THEME.medium.light,
+      dark: SEVERITY_THEME.medium.dark,
+    },
+  },
+  low: {
+    label: "Low",
+    theme: { light: SEVERITY_THEME.low.light, dark: SEVERITY_THEME.low.dark },
+  },
+  info: {
+    label: "Info",
+    theme: { light: SEVERITY_THEME.info.light, dark: SEVERITY_THEME.info.dark },
+  },
 } satisfies ChartConfig;
 
 interface SeverityChartProps {
@@ -59,7 +103,12 @@ function SeverityChart({ summary, className }: SeverityChartProps) {
 
   if (!summary || totalFindings === 0) {
     return (
-      <div className={cn("flex flex-col items-center justify-center py-12 text-center", className)}>
+      <div
+        className={cn(
+          "flex flex-col items-center justify-center py-12 text-center",
+          className,
+        )}
+      >
         <AlertTriangle className="mb-3 h-10 w-10 text-muted-foreground opacity-40" />
         <p className="text-sm text-muted-foreground">No findings to display</p>
       </div>
@@ -70,14 +119,20 @@ function SeverityChart({ summary, className }: SeverityChartProps) {
     key,
     name: SEVERITY_LABELS[key],
     value: severityValue(summary, key),
-    color: PIE_COLORS[key],
+    fill: `var(--color-${key})`,
+    dot: SEVERITY_THEME[key].dot,
   }));
 
   const pieData = allSeverities.filter((d) => d.value > 0);
 
   if (pieData.length === 0) {
     return (
-      <div className={cn("flex flex-col items-center justify-center py-12 text-center", className)}>
+      <div
+        className={cn(
+          "flex flex-col items-center justify-center py-12 text-center",
+          className,
+        )}
+      >
         <AlertTriangle className="mb-3 h-10 w-10 text-muted-foreground opacity-40" />
         <p className="text-sm text-muted-foreground">No findings to display</p>
       </div>
@@ -85,7 +140,10 @@ function SeverityChart({ summary, className }: SeverityChartProps) {
   }
 
   return (
-    <div className={cn("w-full", className)} data-testid="severity-chart-content">
+    <div
+      className={cn("w-full", className)}
+      data-testid="severity-chart-content"
+    >
       <ChartContainer
         config={chartConfig}
         className="mx-auto aspect-square h-[220px] w-full"
@@ -117,7 +175,7 @@ function SeverityChart({ summary, className }: SeverityChartProps) {
             stroke="hsl(var(--card))"
           >
             {pieData.map((entry) => (
-              <Cell key={entry.key} fill={entry.color} />
+              <Cell key={entry.key} fill={entry.fill} />
             ))}
             <Label
               value={totalFindings}
@@ -135,7 +193,9 @@ function SeverityChart({ summary, className }: SeverityChartProps) {
       >
         {allSeverities.map((item) => {
           const pct =
-            totalFindings > 0 ? Math.round((item.value / totalFindings) * 100) : 0;
+            totalFindings > 0
+              ? Math.round((item.value / totalFindings) * 100)
+              : 0;
           return (
             <li
               key={item.key}
@@ -143,8 +203,7 @@ function SeverityChart({ summary, className }: SeverityChartProps) {
             >
               <span className="flex min-w-0 items-center gap-2">
                 <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: item.color }}
+                  className={cn("h-2.5 w-2.5 shrink-0 rounded-full", item.dot)}
                   aria-hidden
                 />
                 <span className="truncate text-xs text-muted-foreground">
