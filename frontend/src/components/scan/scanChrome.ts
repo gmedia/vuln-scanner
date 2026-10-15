@@ -51,11 +51,11 @@ export function severityTextClass(severity: string | null): string {
     case "critical":
       return "text-destructive";
     case "high":
-      return "text-orange-400";
+      return "text-orange-800 dark:text-orange-400";
     case "medium":
-      return "text-yellow-400";
+      return "text-yellow-800 dark:text-yellow-400";
     case "low":
-      return "text-blue-400";
+      return "text-blue-700 dark:text-blue-400";
     default:
       return "text-foreground";
   }

@@ -6,11 +6,13 @@ export const badgeVariants = cva(
     variants: {
       variant: {
         default: "bg-secondary text-secondary-foreground border border-border",
-        critical: "bg-red-600/20 text-red-400 border border-red-600/40",
-        high: "bg-orange-500/20 text-orange-400 border border-orange-500/40",
-        medium: "bg-yellow-500/20 text-yellow-400 border border-yellow-500/40",
-        low: "bg-blue-500/20 text-blue-400 border border-blue-500/40",
-        info: "bg-gray-500/20 text-gray-400 border border-gray-500/40",
+        critical:
+          "bg-red-600/20 text-red-800 dark:text-red-400 border border-red-600/40",
+        high: "bg-orange-500/20 text-orange-800 dark:text-orange-400 border border-orange-500/40",
+        medium:
+          "bg-yellow-500/20 text-yellow-800 dark:text-yellow-400 border border-yellow-500/40",
+        low: "bg-blue-500/20 text-blue-700 dark:text-blue-400 border border-blue-500/40",
+        info: "bg-gray-500/20 text-gray-700 dark:text-gray-400 border border-gray-500/40",
         success:
           "bg-primary/15 text-foreground dark:bg-primary/20 dark:text-primary-text border border-primary/40",
         pending: "bg-yellow-500/20 text-yellow-400 border border-yellow-500/40",
