@@ -19,10 +19,7 @@ import {
 } from "@/api/hostWaf";
 import type { GuardAgent } from "@/api/guard";
 import type { HostSite } from "@/api/hostProtect";
-import {
-  formatHelperPollAt,
-  isHelperPollStale,
-} from "@/lib/sinexisInstall";
+import { formatHelperPollAt, isHelperPollStale } from "@/lib/sinexisInstall";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Label } from "@/components/ui/Label";
@@ -152,7 +149,9 @@ export default function HostWafPanel({
 
   return (
     <div className="space-y-4" data-testid="host-waf-panel">
-      <p className="max-w-prose text-sm text-muted-foreground">{t("wafHint")}</p>
+      <p className="max-w-prose text-sm text-muted-foreground">
+        {t("wafHint")}
+      </p>
       {sites.length === 0 ? (
         <SiemEmptyIsland icon={Shield} title={t("wafNeedSite")} />
       ) : (
@@ -207,9 +206,7 @@ export default function HostWafPanel({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="off">{t("wafOff")}</SelectItem>
-                        <SelectItem value="detect">
-                          {t("wafDetect")}
-                        </SelectItem>
+                        <SelectItem value="detect">{t("wafDetect")}</SelectItem>
                         {canProtect ? (
                           <SelectItem value="protect">
                             {t("wafProtect")}
@@ -264,7 +261,7 @@ export default function HostWafPanel({
           </div>
           {selected ? (
             <div className="relative overflow-hidden rounded-lg border border-border bg-card px-4 py-4 pl-4">
-              <SiemRail className="bg-sky-500" />
+              <SiemRail className="bg-sky-600" />
               <div className="space-y-2 pl-2">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <p

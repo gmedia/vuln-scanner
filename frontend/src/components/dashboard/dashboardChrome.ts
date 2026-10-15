@@ -21,9 +21,9 @@ export function scanTone(input: {
 
 export function dashboardRailClass(tone: DashboardTone): string {
   if (tone === "critical" || tone === "failed") return "bg-destructive";
-  if (tone === "high") return "bg-orange-500";
-  if (tone === "running") return "bg-sky-500";
-  if (tone === "pending") return "bg-amber-500";
+  if (tone === "high") return "bg-orange-600";
+  if (tone === "running") return "bg-sky-600";
+  if (tone === "pending") return "bg-amber-600";
   if (tone === "completed") return "bg-primary";
   return "bg-border";
 }

@@ -40,7 +40,7 @@ export function parseScanType(value: string): AssetScanType {
 export function assetRailClass(scanType: string): string {
   switch (scanType) {
     case "domain":
-      return "bg-sky-500";
+      return "bg-sky-600";
     case "ip":
       return "bg-violet-500";
     default:
@@ -74,7 +74,7 @@ export function quotaRailClass(tone: QuotaTone): string {
     case "cap":
       return "bg-destructive";
     case "warn":
-      return "bg-amber-500";
+      return "bg-amber-600";
     case "ok":
       return "bg-primary";
     default: {
@@ -89,7 +89,7 @@ export function quotaIndicatorClass(tone: QuotaTone): string | undefined {
     case "cap":
       return "bg-destructive";
     case "warn":
-      return "bg-amber-500";
+      return "bg-amber-600";
     case "ok":
       return undefined;
     default: {

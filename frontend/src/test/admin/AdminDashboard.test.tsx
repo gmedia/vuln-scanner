@@ -166,14 +166,15 @@ describe("AdminDashboard", () => {
     renderPage();
     expect(screen.getByText("User management")).toBeInTheDocument();
     expect(screen.queryByText("Pricing")).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /User management/i })).toHaveAttribute(
-      "href",
-      "/admin/users",
-    );
+    expect(
+      screen.getByRole("link", { name: /User management/i }),
+    ).toHaveAttribute("href", "/admin/users");
     expect(
       screen.queryByRole("link", { name: /Pricing/i }),
     ).not.toBeInTheDocument();
-    const blogLink = screen.getAllByRole("link").find((a) => a.getAttribute("href") === "/admin/blog");
+    const blogLink = screen
+      .getAllByRole("link")
+      .find((a) => a.getAttribute("href") === "/admin/blog");
     expect(blogLink).toBeTruthy();
     const emailLink = screen
       .getAllByRole("link")
@@ -189,19 +190,21 @@ describe("AdminDashboard", () => {
 
     renderPage();
     expect(
-      screen.getByTestId("admin-kpi-users").querySelector(".bg-sky-500"),
+      screen.getByTestId("admin-kpi-users").querySelector(".bg-sky-600"),
     ).toBeTruthy();
     expect(
       screen.getByTestId("admin-kpi-scans").querySelector(".bg-primary"),
     ).toBeTruthy();
     expect(
-      screen.getByTestId("admin-kpi-findings").querySelector(".bg-orange-500"),
+      screen.getByTestId("admin-kpi-findings").querySelector(".bg-orange-600"),
     ).toBeTruthy();
     expect(
       screen.getByTestId("admin-kpi-creditsIn").querySelector(".bg-primary"),
     ).toBeTruthy();
     expect(
-      screen.getByTestId("admin-kpi-creditsUsed").querySelector(".bg-amber-500"),
+      screen
+        .getByTestId("admin-kpi-creditsUsed")
+        .querySelector(".bg-amber-600"),
     ).toBeTruthy();
   });
 

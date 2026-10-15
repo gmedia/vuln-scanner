@@ -12,8 +12,8 @@ import { authRailClass, authWashClass } from "@/components/auth/authChrome";
 describe("authChrome helpers", () => {
   it("maps tones to rail classes", () => {
     expect(authRailClass("danger")).toBe("bg-destructive");
-    expect(authRailClass("warn")).toBe("bg-amber-500");
-    expect(authRailClass("info")).toBe("bg-sky-500");
+    expect(authRailClass("warn")).toBe("bg-amber-600");
+    expect(authRailClass("info")).toBe("bg-sky-600");
     expect(authRailClass("primary")).toBe("bg-primary");
     expect(authRailClass("success")).toBe("bg-primary");
   });

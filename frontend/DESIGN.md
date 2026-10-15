@@ -42,7 +42,7 @@ Print reuses SPA `:root` tokens from `frontend/src/index.css`. No second palette
 - Focus rings always use `ring-ring` (never `ring-primary`) so the light ring stays at the darker, 3:1-passing green. In the per-page tables below, "Accent `--primary`" means the *chrome* role (buttons, rails, icons); green **text** (links, inline labels) renders via `--primary-text`.
 - **Every palette text colour comes from `lib/toneColors.ts`** — `TONE_TEXT` for text on a surface, `TONE_CHIP_TEXT` for text on the hue's own 15–20% tint. Do **not** write `text-<hue>-<shade>` directly in a component; `toneColors.test.ts` scans `src` and fails if a fixed palette shade escapes the module. Each hue pairs a light and a dark value (light per-hue `700`/`800`, dark `*-400`), because **one fixed shade cannot pass 4.5:1 in both themes** — that was the pre-#978 bug class (12 of 14 sampled usages failed AA in light; four guard/siem badges failed, **two of them in *both* themes**).
 - **Pick shades by measuring in the browser, never from hex.** Tailwind **v4 ships oklch**, so v3 hex values are wrong: v4 `red-700` is `rgb(193,0,7)`, not `#b91c1c`. Hex math rated the `critical` chip 4.73:1 where the browser measured **4.29:1**. Resolve the built CSS through a canvas and compute the ratio from what actually paints.
-- **Solid rails are decorative and exempt from 3:1.** `bg-orange-500` / `bg-amber-500` / `bg-yellow-500` / `bg-sky-500` / `bg-emerald-500` sit at **1.83–2.77:1** on the light canvas. Every rail is redundant with a text label (Badge, KPI value, overall sentence), which is what WCAG 1.4.11 exempts — so this is a deliberate state, not a defect. Darkening them is a visual change that needs an explicit decision; do not "fix" it silently.
+- **Solid rails clear 3:1 against both canvases.** Rails are decorative — always redundant with a text label (Badge, KPI value, overall sentence), which WCAG 1.4.11 would exempt — but they are held to the graphic threshold anyway. The rail palette is `bg-orange-600` / `bg-amber-600` / `bg-yellow-700` / `bg-sky-600` / `bg-blue-500` / `bg-red-600` / `bg-violet-500`, measuring **3.07–4.72:1** on the light canvas and **4.01–6.19:1** on the dark one. Do **not** revert amber/orange/yellow/sky to their `-500` shades: those read **1.83–2.77:1** on light. `toneColors.test.ts` guards the four that changed.
 - Print does **not** use these tokens: `.invoice-print-accent` hardcodes the green separately, so a theme change never alters the printed sheet.
 - Print CSS sets `-webkit-print-color-adjust: exact` **and** `print-color-adjust: exact`. Design must still read if Chrome drops washes: hairline borders carry the structure.
 - No `#0a7`, no Palatino, no Stripe purple `#533afd` on our paper.
@@ -218,8 +218,8 @@ Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. 
 | Meta | `--muted-foreground` | Timestamps, agent ids, KPI labels |
 | Accent | `--primary` `hsl(142 71% 45%)` | Apply, create case, indexer reachable pulse, PageHeader leading |
 | Critical rail | `bg-destructive` | rule_level ≥ 12 |
-| High rail | `bg-orange-500` | ≥ 7 |
-| Medium rail | `bg-yellow-500` | ≥ 4 |
+| High rail | `bg-orange-600` | ≥ 7 |
+| Medium rail | `bg-yellow-700` | ≥ 4 |
 | Low rail | `bg-blue-500` | < 4 |
 | Open case | sky wash (existing) | status `open` |
 | Ack case | amber wash (existing) | status `ack` |
@@ -391,8 +391,8 @@ Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. 
 | Meta | `--muted-foreground` | Timestamps, UUIDs, KPI labels |
 | Accent | `--primary` `hsl(142 71% 45%)` | Enable, create token, on-rail, live pulse |
 | On / online | `bg-primary` rail + emerald badge wash | Guard enabled, agent `active` |
-| Degraded / disconnected | `bg-amber-500` rail + amber badge | Status degraded, agent disconnected |
-| Pending | `bg-sky-500` rail + sky badge | Agent pending |
+| Degraded / disconnected | `bg-amber-600` rail + amber badge | Status degraded, agent disconnected |
+| Pending | `bg-sky-600` rail + sky badge | Agent pending |
 | Off / disabled / expired | `bg-border` rail + muted badge | Guard off, agent disabled, token expired/used |
 | Critical alert | `bg-destructive` rail + `Badge variant="critical"` | Alert rows (level ≥ 12) |
 | Once-secret | `border-primary/40 bg-primary/5` + primary rail | Enroll plaintext + Host Protect token once |
@@ -462,7 +462,7 @@ PageHeader actions: Enable (when off + admin) or Sync (when on + admin). Sync ke
 ### GuardAgentsPanel
 
 - **Structure**: one shell `data-testid="guard-agents"`. Empty: `SiemEmptyIsland` + `data-testid="guard-agents-empty"` (icon `Monitor`, copy `noAgents`). Loading = `TableRowSkeleton rows={4} columns={5}`.
-- **Row**: 2px rail — online `bg-primary`, disconnected `bg-amber-500`, pending `bg-sky-500`, disabled `bg-border`. Name mono; UUID `CopyableId`; last seen + helper poll; version; asset chip `guard-asset-chip-{id}`; admin Select `guard-link-asset-{id}`; host-token `guard-host-token-issue`; disable `guard-disable-{id}`.
+- **Row**: 2px rail — online `bg-primary`, disconnected `bg-amber-600`, pending `bg-sky-600`, disabled `bg-border`. Name mono; UUID `CopyableId`; last seen + helper poll; version; asset chip `guard-asset-chip-{id}`; admin Select `guard-link-asset-{id}`; host-token `guard-host-token-issue`; disable `guard-disable-{id}`.
 - **Do not** dump IP in the default row (keep current columns). Do not `table-fixed`.
 
 ### GuardAlertsPanel
@@ -568,9 +568,9 @@ Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. 
 | Ink | `--foreground` | Asset name, KPI values |
 | Meta | `--muted-foreground` | Target, type label, KPI labels |
 | Accent | `--primary` `hsl(142 71% 45%)` | Add, empty CTA, quota OK rail/bar |
-| Domain | `bg-sky-500` rail + sky type chip | Domain assets, Domains KPI tile |
+| Domain | `bg-sky-600` rail + sky type chip | Domain assets, Domains KPI tile |
 | IP | `bg-violet-500` rail + violet type chip | IP assets, IPs KPI tile |
-| Quota warn | `bg-amber-500` rail + amber `Progress` indicator | ≥70% and <90% of SKU cap |
+| Quota warn | `bg-amber-600` rail + amber `Progress` indicator | ≥70% and <90% of SKU cap |
 | Quota cap | `bg-destructive` rail + destructive indicator | ≥90% or `count >= limit` |
 | Scheduled | `bg-primary` rail when count > 0, else `bg-border` | Scheduled KPI tile |
 | Guard linked | kit `Badge variant="info"` | Existing chip — do not recolor |
@@ -640,7 +640,7 @@ PageHeader actions: Export pack dropdown + Add (`min-h-11 sm:min-h-10`) when `it
 
 ### Asset card / row
 
-- **Rail**: `SiemRail` — domain `bg-sky-500`, IP `bg-violet-500`, unknown `bg-border`. Card: `relative overflow-hidden … pl-4`. Row: rail in the name cell (`relative pl-4`), same as `GuardAgentsPanel`.
+- **Rail**: `SiemRail` — domain `bg-sky-600`, IP `bg-violet-500`, unknown `bg-border`. Card: `relative overflow-hidden … pl-4`. Row: rail in the name cell (`relative pl-4`), same as `GuardAgentsPanel`.
 - **Type chip**: sky/violet wash next to the name (card) / in the type column (table) — redundant with the rail.
 - **Frozen testids**: `asset-menu-{id}`, `asset-edit-{id}`, `asset-schedule-{id}`, `asset-delete-{id}`, `assets-watch-http`, `asset-tag-{tag}` / `asset-tag-card-{tag}`, `asset-guard-chip-{id}` / `-card`. Kebab still owns edit / schedule / watch HTTP / delete.
 - **Target**: mono tabular, `break-all` on cards.
@@ -904,10 +904,10 @@ Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. 
 | Ink | `--foreground` | Titles, KPI values, incident titles |
 | Meta | `--muted-foreground` | KPI labels, timestamps, public path, hints |
 | Accent | `--primary` `hsl(142 71% 45%)` | Operational rail/pulse, published KPI, empty CTA, TXT secret rail, resolved incident rail |
-| Degraded | `bg-amber-500` rail + `text-amber-500` | Overall degraded, pending TXT, investigating incident, component degraded |
-| Partial | `bg-orange-500` rail + `text-orange-500` | Overall partial, identified incident |
+| Degraded | `bg-amber-600` rail + `TONE_TEXT.amber` | Overall degraded, pending TXT, investigating incident, component degraded |
+| Partial | `bg-orange-600` rail + `TONE_TEXT.orange` | Overall partial, identified incident |
 | Major / down | `bg-destructive` rail + `text-destructive` | Overall major, hostname failed, component down, critical impact |
-| Monitoring | `bg-sky-500` rail | Incident status `monitoring` |
+| Monitoring | `bg-sky-600` rail | Incident status `monitoring` |
 | Idle | `bg-border` rail | Unpublished, hostname none, unknown |
 | Open wash | `bg-amber-500/[0.04]` | Unresolved incident card/row (redundant with rail) |
 | Down wash | `bg-destructive/[0.04]` | Component row when `down` |
@@ -1101,13 +1101,13 @@ Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. 
 | Ink | `--foreground` | Titles, KPI values, monitor names |
 | Meta | `--muted-foreground` | KPI labels, timestamps, target, hints |
 | Accent / up | `--primary` `hsl(142 71% 45%)` | Up rail/pulse/spark, range-% emphasize, empty CTA, availability `up` segment |
-| Degraded | `bg-amber-500` rail + `text-amber-500` | Degraded state, SKU near-cap |
+| Degraded | `bg-amber-600` rail + `TONE_TEXT.amber` | Degraded state, SKU near-cap |
 | Down | `bg-destructive` rail + `text-destructive` | Down KPI, down row, availability `down` segment, last error |
 | Idle / unknown / paused | `bg-border` rail | Unknown, paused (`enabled=false`), empty spark |
 | Down wash | `bg-destructive/[0.04]` | Down card/row, failed history row (redundant with rail) |
 | Up wash | `bg-primary/5` | Detail hero when `up` (Status operational grammar) |
 | SKU cap | `text-destructive` + destructive progress | Seats at limit |
-| SKU warn | `text-amber-500` + amber progress | Seats ≥ 80% |
+| SKU warn | `TONE_TEXT.amber` + amber progress | Seats ≥ 80% |
 
 Rails are **redundant** with Badge / strong text / sparkline stroke. Never color-only status.
 
@@ -1272,8 +1272,8 @@ Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. 
 | Ink | `--foreground` | Site name, KPI values |
 | Meta | `--muted-foreground` | Paths, UUIDs, hints, KPI labels |
 | Accent | `--primary` `hsl(142 71% 45%)` | Add, empty CTA, quota-OK rail/bar, completed rail, helper pulse |
-| Waiting / running | `bg-sky-500` rail | Queued scan, WAF `detect` |
-| Quota warn | `bg-amber-500` rail + amber `Progress` | ≥ 80% and < 100% of SKU cap |
+| Waiting / running | `bg-sky-600` rail | Queued scan, WAF `detect` |
+| Quota warn | `bg-amber-600` rail + amber `Progress` | ≥ 80% and < 100% of SKU cap |
 | Critical / failed | `bg-destructive` rail + destructive wash `bg-destructive/[0.04]` | Open webshell/backdoor, failed or stale helper, quota cap, WAF `block` |
 | Completed | `bg-primary/5` wash | Completed site card (redundant with badge) |
 | Idle | `bg-border` rail | Scheduled scans off, no agents, neutral rows |
@@ -1424,9 +1424,9 @@ Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. 
 | Meta | `--muted-foreground` | Type, date, KPI labels, hints |
 | Accent | `--primary` `hsl(142 71% 45%)` | Add / New scan, completed rail, open-risk-clear rail, attach/guard OK rail |
 | Critical / failed | `bg-destructive` rail + destructive wash `bg-destructive/[0.04]` | Open risk, failed scan, critical findings, attention shell, stale Guard |
-| High | `bg-orange-500` rail | 7-day high count, completed scan with high findings |
-| Medium | `bg-amber-500` rail | 7-day medium count, queued scan |
-| Running | `bg-sky-500` rail | Running scan |
+| High | `bg-orange-600` rail | 7-day high count, completed scan with high findings |
+| Medium | `bg-amber-600` rail | 7-day medium count, queued scan |
+| Running | `bg-sky-600` rail | Running scan |
 | Idle | `bg-border` rail | No risk, no schedules, no agents, no rows |
 
 Rails are **redundant** with the Badge / KPI value / attention copy. Never color-only status.
@@ -1574,10 +1574,10 @@ Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. 
 | Meta | `--muted-foreground` | Type, duration, KPI labels, hints |
 | Accent | `--primary` `hsl(142 71% 45%)` | Re-scan CTA, completed status rail, remediation rail, management export rail |
 | Critical | `bg-destructive` rail + destructive wash `bg-destructive/[0.04]` | Critical findings, failed scan, new-critical diff, not-found chip |
-| High | `bg-orange-500` rail | High findings, new-high / worsened diff |
-| Medium | `bg-yellow-500` rail | Medium findings, pending scan |
+| High | `bg-orange-600` rail | High findings, new-high / worsened diff |
+| Medium | `bg-yellow-700` rail | Medium findings, pending scan |
 | Low | `bg-blue-500` rail | Low findings |
-| Running | `bg-sky-500` rail | Running scan |
+| Running | `bg-sky-600` rail | Running scan |
 | Idle | `bg-border` rail | Info severity, target / type tiles, scan info, technical / raw export, no baseline |
 
 Rails are **redundant** with the Badge / KPI value / shell title. Never color-only status. Severity rail colours match `lib/siemSeverity.ts`.
@@ -1731,7 +1731,7 @@ Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. 
 | Ink | `--foreground` | Target, quota count, shell titles |
 | Meta | `--muted-foreground` | Cadence, next-run, notify, hints |
 | Accent | `--primary` `hsl(142 71% 45%)` | Create CTA, quota rail under cap, active row rail, active badge |
-| Quota warn | `bg-amber-500` rail + amber `Progress` | ≥ 80% and < 100% of the cap |
+| Quota warn | `bg-amber-600` rail + amber `Progress` | ≥ 80% and < 100% of the cap |
 | Critical / error | `bg-destructive` rail + destructive wash `bg-destructive/[0.04]` | Cap reached, row with `last_error`, form error |
 | Disabled | `bg-border` rail + `default` badge | Disabled schedule, empty list, no rows |
 
@@ -1973,8 +1973,8 @@ Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. 
 | Meta | `--muted-foreground` | Subtitle, labels, helper copy |
 | Accent | `--primary` `hsl(142 71% 45%)` | Submit CTA, neutral rail, success rail + wash, success icon |
 | Error | `bg-destructive` rail + `bg-destructive/[0.04]` wash | Login error, register/reset validation, verify failure; icon `text-destructive` |
-| Warn | `bg-amber-500` rail + `bg-amber-500/[0.04]` wash | Rate-limit cooldown, verify email send failure; icon `text-amber-400` |
-| Verifying | `bg-sky-500` rail | `/verify-email` idle / no-token (check in progress) |
+| Warn | `bg-amber-600` rail + `bg-amber-500/[0.04]` wash | Rate-limit cooldown, verify email send failure; icon `TONE_TEXT.amber` |
+| Verifying | `bg-sky-600` rail | `/verify-email` idle / no-token (check in progress) |
 | Error text | `text-red-400` | Danger notice copy (frozen by e2e — see §8) |
 
 Rails are **redundant** with the notice copy / status icon. Never color-only status.
@@ -2129,7 +2129,7 @@ Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. 
 | Ink | `--foreground` | Email, KPI values, shell titles |
 | Meta | `--muted-foreground` | Labels, hints, org slug, `Password required to confirm` |
 | Accent | `--primary` `hsl(142 71% 45%)` | Identity rail, avatar chip, verified / admin / credits rail, copy-confirm tick, submit CTA |
-| Warn | `bg-amber-500` rail + `bg-amber-500/[0.04]` wash | Unverified tile, rate-limit cooldown |
+| Warn | `bg-amber-600` rail + `bg-amber-500/[0.04]` wash | Unverified tile, rate-limit cooldown |
 | Error | `bg-destructive` rail + `bg-destructive/[0.04]` wash | Password / email error notice |
 | Idle | `bg-border` rail | Operator access, zero credits |
 | Success wash | `bg-primary/5` | Form shell after a successful submit |
@@ -2291,9 +2291,9 @@ Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. 
 | Ink | `--foreground` | Org name, KPI values, shell titles |
 | Meta | `--muted-foreground` | Slug, hints, dates, counts |
 | Accent | `--primary` `hsl(142 71% 45%)` | Identity rail, member/invite rails, owner badge, paid invoice rail, submit CTAs |
-| Pending / sent | `bg-amber-500` rail + `bg-amber-500/[0.04]` wash | Pending invites, sent invoices |
+| Pending / sent | `bg-amber-600` rail + `bg-amber-500/[0.04]` wash | Pending invites, sent invoices |
 | Danger | `bg-destructive` rail + `bg-destructive/[0.04]` wash | Void invoices, form / accept errors |
-| Member role | `bg-sky-500` rail | `member` role rows |
+| Member role | `bg-sky-600` rail | `member` role rows |
 | Idle | `bg-border` rail | Viewer role, empty lists, no invoices |
 
 Rails are **redundant** with the Badge / KPI value / notice copy. Never color-only status.
@@ -2449,9 +2449,9 @@ Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. 
 | Ink | `--foreground` | Emails, KPI values, shell titles |
 | Meta | `--muted-foreground` | Labels, dates, hints, counts |
 | Accent | `--primary` `hsl(142 71% 45%)` | Scans / credits-in rail, admin row rail, verified profile rail, quick-link hover, CTAs |
-| Users | `bg-sky-500` rail | `Total users` tile, credits chart shell |
-| Findings | `bg-orange-500` rail | `Total findings` tile |
-| Credits used | `bg-amber-500` rail + `bg-amber-500/[0.04]` wash | `Credits used` tile, unverified user row, unverified profile shell |
+| Users | `bg-sky-600` rail | `Total users` tile, credits chart shell |
+| Findings | `bg-orange-600` rail | `Total findings` tile |
+| Credits used | `bg-amber-600` rail + `bg-amber-500/[0.04]` wash | `Credits used` tile, unverified user row, unverified profile shell |
 | Danger | `bg-destructive` rail + `bg-destructive/[0.04]` wash | Credit-mutation error, resend failure |
 | Idle | `bg-border` rail | Plain user rows, quick links |
 
@@ -2602,8 +2602,8 @@ Reuse the wave-1 `AdminTone` map. Deltas:
 | Role | Token / class | Usage |
 |------|----------------|-------|
 | Rates | `--primary` rail | `hpp-rates-card` (`admin-pricing-card` retired) |
-| Cost pools | `bg-amber-500` rail | `hpp-overhead-card`, `hpp-costs-card`, cost-line rows, unallocated report |
-| Report range | `bg-sky-500` rail | `hpp-report-filters` |
+| Cost pools | `bg-amber-600` rail | `hpp-overhead-card`, `hpp-costs-card`, cost-line rows, unallocated report |
+| Report range | `bg-sky-600` rail | `hpp-report-filters` |
 | Line margin | `--primary` rail | positive margin (`marginTone`) |
 | Line margin loss | `bg-destructive` rail + `text-destructive` value | negative margin |
 | Leftover banner | retired with `/admin/pricing` | `pricing-leftover-banner` no longer rendered |
@@ -2707,10 +2707,10 @@ Reuse `frontend/src/index.css` `:root` / `.dark` and the `scanChrome` severity p
 | Ink | `--foreground` | Shell titles, counts, finding totals |
 | Meta | `--muted-foreground` | Coverage list, severity labels |
 | Accent | `--primary` `hsl(142 71% 45%)` | Scan-target rail, clean results rail, clean summary rail, coverage rail |
-| Running | `bg-sky-500` rail | Scan progress shell |
+| Running | `bg-sky-600` rail | Scan progress shell |
 | Critical / high | `bg-destructive` rail + `bg-destructive/[0.04]` wash | Critical tile, summary rail when crit/high, results shell |
-| High | `bg-orange-500` rail | High tile, results shell when worst is high |
-| Medium | `bg-yellow-500` rail | Medium tile, results shell when worst is medium |
+| High | `bg-orange-600` rail | High tile, results shell when worst is high |
+| Medium | `bg-yellow-700` rail | Medium tile, results shell when worst is medium |
 | Low | `bg-blue-500` rail | Low tile, results shell when worst is low |
 | Idle | `bg-border` rail | Info tile, coverage shell |
 
@@ -2801,8 +2801,8 @@ Reuse the wave-1 `AdminTone` map. Deltas:
 
 | Role | Token / class | Usage |
 |------|----------------|-------|
-| Banner / neutral shells | `bg-sky-500` (info) or `--primary` | `invoices-banner`, catalog/create shells, blog form, AI shells |
-| Sent / warn | `bg-amber-500` rail | Sent invoice row + list shell; blog edit form; AI feature-off |
+| Banner / neutral shells | `bg-sky-600` (info) or `--primary` | `invoices-banner`, catalog/create shells, blog form, AI shells |
+| Sent / warn | `bg-amber-600` rail | Sent invoice row + list shell; blog edit form; AI feature-off |
 | Paid / published / sent-email | `--primary` rail + `bg-primary/5` wash | Paid invoice, published post, delivered email |
 | Void / failed | `bg-destructive` rail + `bg-destructive/[0.04]` wash | Void invoice, failed email |
 | Draft / idle | `bg-border` rail | Draft invoice, draft post |
@@ -2896,7 +2896,7 @@ No new tokens. Rails:
 
 | Surface | Rail | Source |
 |---------|------|--------|
-| Uptime range filters | `bg-sky-500` | range/period is informational |
+| Uptime range filters | `bg-sky-600` | range/period is informational |
 | Uptime timeline | `bg-primary` | neutral content |
 | Uptime outages | `bg-destructive` when any outage, else `bg-border` | `outagesRailClass(count)` |
 | Status page identity | `bg-primary` | neutral content |
@@ -2986,8 +2986,8 @@ Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`.
 |------|----------------|-------|
 | Shells | `--card` + `border-border` + `SiemRail` | Inbox filter/list, credit identity/filters/list |
 | Accent | `--primary` `hsl(142 71% 45%)` | sent rail, credit rail, identity rail, credits tile, positive net |
-| Warn / bounced | `bg-orange-500` rail | bounced row + list shell |
-| Warn / complained | `bg-yellow-500` rail | complained row + list shell |
+| Warn / bounced | `bg-orange-600` rail | bounced row + list shell |
+| Warn / complained | `bg-yellow-700` rail | complained row + list shell |
 | Danger | `bg-destructive` rail + `bg-destructive/[0.04]` row wash | failed row, failed list shell, debit row, debits tile, negative net |
 | Refund | `bg-blue-500` rail | refund row |
 | Idle | `bg-border` rail | filter shells, empty list shells |

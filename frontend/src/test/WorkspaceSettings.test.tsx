@@ -367,12 +367,12 @@ describe("WorkspaceSettings pilot checklist", () => {
     renderPage();
     const billing = await screen.findByTestId("workspace-billing");
     await waitFor(() =>
-      expect(billing.querySelector(".bg-amber-500")).toBeTruthy(),
+      expect(billing.querySelector(".bg-amber-600")).toBeTruthy(),
     );
     expect(
       screen
         .getByTestId("workspace-invoice-inv-1")
-        .querySelector(".bg-amber-500"),
+        .querySelector(".bg-amber-600"),
     ).toBeTruthy();
   });
 
@@ -404,7 +404,7 @@ describe("WorkspaceSettings pilot checklist", () => {
     await waitFor(() =>
       expect(billing.querySelector(".bg-primary")).toBeTruthy(),
     );
-    expect(billing.querySelector(".bg-amber-500")).toBeNull();
+    expect(billing.querySelector(".bg-amber-600")).toBeNull();
   });
 
   it("rails member rows by role on mobile and desktop", async () => {
@@ -427,7 +427,9 @@ describe("WorkspaceSettings pilot checklist", () => {
     expect(list.querySelectorAll(".bg-primary").length).toBeGreaterThanOrEqual(
       1,
     );
-    expect(list.querySelectorAll(".bg-border").length).toBeGreaterThanOrEqual(1);
+    expect(list.querySelectorAll(".bg-border").length).toBeGreaterThanOrEqual(
+      1,
+    );
     const firstMobileRow = list.querySelector(".md\\:hidden > div");
     expect(firstMobileRow?.className).toMatch(/pl-4/);
     expect(firstMobileRow?.querySelector(".bg-primary")).toBeTruthy();
@@ -440,8 +442,12 @@ describe("WorkspaceSettings pilot checklist", () => {
     expect(loading).toBeInTheDocument();
     expect(loading.className).toMatch(/lg:grid-cols-2/);
     expect(loading.querySelectorAll(".rounded-lg.border")).toHaveLength(2);
-    expect(screen.queryByTestId("workspace-billing-empty")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("workspace-billing-error")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("workspace-billing-empty"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("workspace-billing-error"),
+    ).not.toBeInTheDocument();
   });
 
   it("rails pending invite rows amber", async () => {
@@ -455,9 +461,9 @@ describe("WorkspaceSettings pilot checklist", () => {
     ]);
     renderPage();
     const list = await screen.findByTestId("invites-list");
-    expect(list.querySelectorAll(".bg-amber-500").length).toBeGreaterThanOrEqual(
-      2,
-    );
+    expect(
+      list.querySelectorAll(".bg-amber-600").length,
+    ).toBeGreaterThanOrEqual(2);
   });
 
   it("shows the Basic seat cap hint and locks invite when capped", async () => {
@@ -506,10 +512,7 @@ describe("WorkspaceSettings pilot checklist", () => {
       },
     });
     renderPage();
-    await userEvent.type(
-      screen.getByTestId("invite-email"),
-      "new@example.com",
-    );
+    await userEvent.type(screen.getByTestId("invite-email"), "new@example.com");
     await userEvent.click(screen.getByTestId("invite-submit"));
     expect(
       await screen.findByText(

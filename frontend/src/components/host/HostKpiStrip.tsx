@@ -78,12 +78,12 @@ export default function HostKpiStrip({
   const quotaRailClass = isFull
     ? "bg-destructive"
     : isNearCap
-      ? "bg-amber-500"
+      ? "bg-amber-600"
       : "bg-primary";
   const quotaIndicatorClass = isFull
     ? "bg-destructive"
     : isNearCap
-      ? "bg-amber-500"
+      ? "bg-amber-600"
       : undefined;
   const quotaValueClass = isFull
     ? "font-mono text-lg font-bold tabular-nums text-destructive sm:text-2xl"

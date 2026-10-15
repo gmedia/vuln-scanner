@@ -373,8 +373,11 @@ function WorkspaceSettings() {
   const pendingCount = invitesQuery.data?.length;
   const invoiceCount =
     invoicesQuery.data?.total ?? invoicesQuery.data?.items.length;
-  const orgKind = activeOrg?.kind === "personal" ? t("kindPersonal") : t("kindTeam");
-  const invoiceStatuses = (invoicesQuery.data?.items ?? []).map((i) => i.status);
+  const orgKind =
+    activeOrg?.kind === "personal" ? t("kindPersonal") : t("kindTeam");
+  const invoiceStatuses = (invoicesQuery.data?.items ?? []).map(
+    (i) => i.status,
+  );
   const writeSeatCount = (membersQuery.data ?? []).filter(
     (m) => m.role !== "viewer",
   ).length;
@@ -510,9 +513,7 @@ function WorkspaceSettings() {
             : undefined
         }
       >
-        <WorkspaceShell
-          tone={membersQuery.data?.length ? "primary" : "idle"}
-        >
+        <WorkspaceShell tone={membersQuery.data?.length ? "primary" : "idle"}>
           <WorkspaceShellHead
             icon={Users}
             title={t("membersTitle")}
@@ -735,10 +736,7 @@ function WorkspaceSettings() {
                 aria-label="Loading"
               >
                 {Array.from({ length: 2 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="rounded-lg border border-border p-4"
-                  >
+                  <div key={i} className="rounded-lg border border-border p-4">
                     <Skeleton className="h-4 w-32" />
                     <Skeleton className="mt-2 h-3 w-48" />
                     <Skeleton className="mt-2 h-3 w-24" />
@@ -969,7 +967,9 @@ function MembersList({
               {members.map((m) => (
                 <TableRow key={m.user_id} className="h-12 hover:bg-muted/50">
                   <TableCell className="relative pl-4">
-                    <SiemRail className={workspaceRailClass(roleTone(m.role))} />
+                    <SiemRail
+                      className={workspaceRailClass(roleTone(m.role))}
+                    />
                     <span
                       className="block max-w-[min(36rem,50vw)] truncate font-mono text-xs text-foreground 2xl:max-w-none 2xl:overflow-visible 2xl:whitespace-normal"
                       title={m.email}
@@ -1015,7 +1015,7 @@ function InvitesList({
             key={inv.id}
             className="relative flex flex-col gap-3 overflow-hidden rounded-lg border border-border bg-card p-3 pl-4"
           >
-            <SiemRail className="bg-amber-500" />
+            <SiemRail className="bg-amber-600" />
             <div className="min-w-0 space-y-1">
               <p className="break-all font-mono text-xs text-foreground">
                 {inv.email}
@@ -1062,7 +1062,7 @@ function InvitesList({
               {invites.map((inv) => (
                 <TableRow key={inv.id} className="h-12 hover:bg-muted/50">
                   <TableCell className="relative pl-4">
-                    <SiemRail className="bg-amber-500" />
+                    <SiemRail className="bg-amber-600" />
                     <span
                       className="block max-w-[min(36rem,50vw)] truncate font-mono text-xs text-foreground 2xl:max-w-none 2xl:overflow-visible 2xl:whitespace-normal"
                       title={inv.email}

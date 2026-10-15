@@ -44,7 +44,9 @@ describe("FindingsTable", () => {
   it("shows 'No findings detected' when findings is an empty array", () => {
     renderTable(<FindingsTable findings={[]} isLoading={false} />);
     expect(screen.getByText("No findings detected")).toBeInTheDocument();
-    expect(screen.getByText("This scan returned a clean result.")).toBeInTheDocument();
+    expect(
+      screen.getByText("This scan returned a clean result."),
+    ).toBeInTheDocument();
   });
 
   it("does not claim a clean result when the scan failed", () => {
@@ -54,24 +56,48 @@ describe("FindingsTable", () => {
     expect(
       screen.getByText("Scan did not finish — no findings were saved"),
     ).toBeInTheDocument();
-    expect(screen.queryByText("This scan returned a clean result.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("This scan returned a clean result."),
+    ).not.toBeInTheDocument();
   });
 
   it("renders filter search input", () => {
     const findings = [
       mockFinding(),
-      mockFinding({ id: "2", title: "XSS Attack", severity: "high", cvss_score: 7.5 }),
-      mockFinding({ id: "3", title: "Open Redirect", severity: "medium", cvss_score: 5.0 }),
+      mockFinding({
+        id: "2",
+        title: "XSS Attack",
+        severity: "high",
+        cvss_score: 7.5,
+      }),
+      mockFinding({
+        id: "3",
+        title: "Open Redirect",
+        severity: "medium",
+        cvss_score: 5.0,
+      }),
     ];
     renderTable(<FindingsTable findings={findings} isLoading={false} />);
-    expect(screen.getByPlaceholderText("Filter findings...")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("Filter findings..."),
+    ).toBeInTheDocument();
   });
 
   it("renders table with findings data", () => {
     const findings = [
       mockFinding(),
-      mockFinding({ id: "2", title: "XSS Attack", severity: "high", cvss_score: 7.5 }),
-      mockFinding({ id: "3", title: "Open Redirect", severity: "medium", cvss_score: 5.0 }),
+      mockFinding({
+        id: "2",
+        title: "XSS Attack",
+        severity: "high",
+        cvss_score: 7.5,
+      }),
+      mockFinding({
+        id: "3",
+        title: "Open Redirect",
+        severity: "medium",
+        cvss_score: 5.0,
+      }),
     ];
     renderTable(<FindingsTable findings={findings} isLoading={false} />);
     expect(screen.getAllByText("SQL Injection").length).toBeGreaterThan(0);
@@ -83,23 +109,42 @@ describe("FindingsTable", () => {
     const user = userEvent.setup();
     const findings = [
       mockFinding(),
-      mockFinding({ id: "2", title: "XSS Attack", severity: "high", cvss_score: 7.5 }),
+      mockFinding({
+        id: "2",
+        title: "XSS Attack",
+        severity: "high",
+        cvss_score: 7.5,
+      }),
     ];
     renderTable(<FindingsTable findings={findings} isLoading={false} />);
     const searchInput = screen.getByPlaceholderText("Filter findings...");
     await user.type(searchInput, "zzz_nonexistent_pattern_zzz");
-    expect(screen.getAllByText("No matching findings").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("No matching findings").length).toBeGreaterThan(
+      0,
+    );
   });
 
   it("filters rows by severity checkbox in the dropdown", async () => {
     const user = userEvent.setup();
     const findings = [
       mockFinding(),
-      mockFinding({ id: "2", title: "XSS Attack", severity: "high", cvss_score: 7.5 }),
-      mockFinding({ id: "3", title: "Open Redirect", severity: "medium", cvss_score: 5.0 }),
+      mockFinding({
+        id: "2",
+        title: "XSS Attack",
+        severity: "high",
+        cvss_score: 7.5,
+      }),
+      mockFinding({
+        id: "3",
+        title: "Open Redirect",
+        severity: "medium",
+        cvss_score: 5.0,
+      }),
     ];
     renderTable(<FindingsTable findings={findings} isLoading={false} />);
-    await user.click(screen.getByRole("button", { name: "Filter by severity" }));
+    await user.click(
+      screen.getByRole("button", { name: "Filter by severity" }),
+    );
     await user.click(screen.getByRole("menuitemcheckbox", { name: "high" }));
     expect(screen.queryByText("SQL Injection")).not.toBeInTheDocument();
     expect(screen.getAllByText("XSS Attack").length).toBeGreaterThan(0);
@@ -111,7 +156,12 @@ describe("FindingsTable", () => {
     const onSearchChange = vi.fn();
     const findings = [
       mockFinding(),
-      mockFinding({ id: "2", title: "XSS Attack", severity: "high", cvss_score: 7.5 }),
+      mockFinding({
+        id: "2",
+        title: "XSS Attack",
+        severity: "high",
+        cvss_score: 7.5,
+      }),
     ];
     renderTable(
       <FindingsTable
@@ -135,7 +185,12 @@ describe("FindingsTable", () => {
     const onSortChange = vi.fn();
     const findings = [
       mockFinding({ id: "1", title: "SQL Injection", severity: "critical" }),
-      mockFinding({ id: "2", title: "XSS Attack", severity: "high", cvss_score: 7.5 }),
+      mockFinding({
+        id: "2",
+        title: "XSS Attack",
+        severity: "high",
+        cvss_score: 7.5,
+      }),
     ];
     renderTable(
       <FindingsTable
@@ -155,8 +210,18 @@ describe("FindingsTable", () => {
     const onSeverityChange = vi.fn();
     const findings = [
       mockFinding(),
-      mockFinding({ id: "2", title: "XSS Attack", severity: "high", cvss_score: 7.5 }),
-      mockFinding({ id: "3", title: "Open Redirect", severity: "medium", cvss_score: 5.0 }),
+      mockFinding({
+        id: "2",
+        title: "XSS Attack",
+        severity: "high",
+        cvss_score: 7.5,
+      }),
+      mockFinding({
+        id: "3",
+        title: "Open Redirect",
+        severity: "medium",
+        cvss_score: 5.0,
+      }),
     ];
     renderTable(
       <FindingsTable
@@ -165,7 +230,9 @@ describe("FindingsTable", () => {
         onSeverityChange={onSeverityChange}
       />,
     );
-    await user.click(screen.getByRole("button", { name: "Filter by severity" }));
+    await user.click(
+      screen.getByRole("button", { name: "Filter by severity" }),
+    );
     await user.click(screen.getByRole("menuitemcheckbox", { name: "high" }));
     expect(onSeverityChange).toHaveBeenCalledWith("high");
     expect(screen.getAllByText("SQL Injection").length).toBeGreaterThan(0);
@@ -176,7 +243,12 @@ describe("FindingsTable", () => {
   it("renders severity badges for each finding", () => {
     const findings = [
       mockFinding(),
-      mockFinding({ id: "2", title: "Info Issue", severity: "info", cvss_score: 0 }),
+      mockFinding({
+        id: "2",
+        title: "Info Issue",
+        severity: "info",
+        cvss_score: 0,
+      }),
     ];
     renderTable(<FindingsTable findings={findings} isLoading={false} />);
     expect(screen.getAllByText("critical").length).toBeGreaterThan(0);
@@ -215,12 +287,16 @@ describe("FindingsTable", () => {
     const tbody = detailRow.closest("tbody");
     expect(tbody).not.toBeNull();
     const rows = Array.from(tbody!.querySelectorAll(":scope > tr"));
-    const summaryIdx = rows.findIndex((r) => r.textContent?.includes("XSS Attack"));
+    const summaryIdx = rows.findIndex((r) =>
+      r.textContent?.includes("XSS Attack"),
+    );
     expect(summaryIdx).toBeGreaterThanOrEqual(0);
     expect(rows[summaryIdx + 1]).toBe(detailRow);
 
     await user.click(screen.getAllByText("XSS Attack")[0]);
-    expect(screen.queryByTestId("finding-detail-row-2")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("finding-detail-row-2"),
+    ).not.toBeInTheDocument();
   });
 
   it("renders full Debian CVE ids without truncating last digits", () => {
@@ -233,8 +309,12 @@ describe("FindingsTable", () => {
       }),
     ];
     renderTable(<FindingsTable findings={findings} isLoading={false} />);
-    expect(screen.getAllByText("DEBIAN-CVE-2026-42946").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("DEBIAN-CVE-2026-42945").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("DEBIAN-CVE-2026-42946").length).toBeGreaterThan(
+      0,
+    );
+    expect(screen.getAllByText("DEBIAN-CVE-2026-42945").length).toBeGreaterThan(
+      0,
+    );
   });
 
   it("renders an em dash without a CVSS bar when cvss_score is null", () => {
@@ -245,7 +325,9 @@ describe("FindingsTable", () => {
   });
 
   it("shows a remediation snippet instead of a boolean pill", () => {
-    const findings = [mockFinding({ remediation: "Use parameterized queries" })];
+    const findings = [
+      mockFinding({ remediation: "Use parameterized queries" }),
+    ];
     renderTable(<FindingsTable findings={findings} isLoading={false} />);
     expect(screen.getAllByText(/Use parameterized/).length).toBeGreaterThan(0);
     expect(screen.queryByText("Has suggestion")).not.toBeInTheDocument();
@@ -365,7 +447,10 @@ describe("FindingsTable", () => {
 
   it("rails the first cell by severity without shifting the title column", () => {
     renderTable(
-      <FindingsTable findings={[mockFinding({ severity: "critical" })]} isLoading={false} />,
+      <FindingsTable
+        findings={[mockFinding({ severity: "critical" })]}
+        isLoading={false}
+      />,
     );
     const firstCell = document.querySelector("table tbody tr td:nth-child(1)");
     const titleCell = document.querySelector("table tbody tr td:nth-child(2)");
@@ -383,6 +468,6 @@ describe("FindingsTable", () => {
     const mobileCard = document.querySelector(".md\\:hidden");
     const card = mobileCard?.querySelector("div");
     expect(card?.className).toMatch(/pl-4/);
-    expect(card?.querySelector(".bg-orange-500")).toBeTruthy();
+    expect(card?.querySelector(".bg-orange-600")).toBeTruthy();
   });
 });

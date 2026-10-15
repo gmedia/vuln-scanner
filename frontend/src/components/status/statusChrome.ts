@@ -26,8 +26,8 @@ export function overallRailClass(
 ): string {
   if (!published) return "bg-border";
   if (overall === "major") return "bg-destructive";
-  if (overall === "partial") return "bg-orange-500";
-  if (overall === "degraded") return "bg-amber-500";
+  if (overall === "partial") return "bg-orange-600";
+  if (overall === "degraded") return "bg-amber-600";
   if (overall === "operational") return "bg-primary";
   return "bg-border";
 }
@@ -52,7 +52,7 @@ export function componentStateBadge(state: string | null) {
 export function componentRailClass(state: string | null): string {
   if (state === "up") return "bg-primary";
   if (state === "down") return "bg-destructive";
-  if (state === "degraded") return "bg-amber-500";
+  if (state === "degraded") return "bg-amber-600";
   return "bg-border";
 }
 
@@ -66,23 +66,23 @@ export function hostnameStatusVariant(status: string) {
 export function hostnameRailClass(status: string): string {
   if (status === "active") return "bg-primary";
   if (status === "failed") return "bg-destructive";
-  if (status === "pending_txt") return "bg-amber-500";
+  if (status === "pending_txt") return "bg-amber-600";
   return "bg-border";
 }
 
 export function incidentRailClass(status: string): string {
   if (status === "resolved") return "bg-primary";
-  if (status === "investigating") return "bg-amber-500";
-  if (status === "identified") return "bg-orange-500";
-  if (status === "monitoring") return "bg-sky-500";
+  if (status === "investigating") return "bg-amber-600";
+  if (status === "identified") return "bg-orange-600";
+  if (status === "monitoring") return "bg-sky-600";
   return "bg-border";
 }
 
 export function incidentsListRailClass(statuses: readonly string[]): string {
   if (statuses.length === 0) return "bg-border";
-  if (statuses.some((s) => s === "investigating")) return "bg-amber-500";
-  if (statuses.some((s) => s === "identified")) return "bg-orange-500";
-  if (statuses.some((s) => s === "monitoring")) return "bg-sky-500";
+  if (statuses.some((s) => s === "investigating")) return "bg-amber-600";
+  if (statuses.some((s) => s === "identified")) return "bg-orange-600";
+  if (statuses.some((s) => s === "monitoring")) return "bg-sky-600";
   return "bg-primary";
 }
 

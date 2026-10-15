@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { render, screen, waitFor, fireEvent, within } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AdminInvoices from "@/pages/admin/AdminInvoices";
 import i18n from "@/i18n";
@@ -36,7 +42,9 @@ vi.mock("@/components/ui/Select", () => {
         return;
       }
       if (!n || typeof n !== "object" || !("props" in n)) return;
-      const props = (n as React.ReactElement<{ value?: unknown; children?: React.ReactNode }>).props;
+      const props = (
+        n as React.ReactElement<{ value?: unknown; children?: React.ReactNode }>
+      ).props;
       if (typeof props.value === "string") values.push(props.value);
       if (props.children != null) walk(props.children);
     };
@@ -44,57 +52,61 @@ vi.mock("@/components/ui/Select", () => {
     return [...new Set(values)];
   }
   return {
-  Select: ({
-    children,
-    value,
-    onValueChange,
-  }: {
-    children: React.ReactNode;
-    value: string;
-    onValueChange: (v: string) => void;
-  }) => {
-    const options = collectSelectValues(children);
-    const all = options.includes(value) ? options : [value, ...options];
-    return (
-      <div data-testid="select-root" data-value={value}>
-        {typeof children === "function" ? null : children}
-        <select
-          aria-hidden
-          value={value}
-          onChange={(e) => onValueChange(e.target.value)}
-          style={{ display: "none" }}
-        >
-          {all.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
+    Select: ({
+      children,
+      value,
+      onValueChange,
+    }: {
+      children: React.ReactNode;
+      value: string;
+      onValueChange: (v: string) => void;
+    }) => {
+      const options = collectSelectValues(children);
+      const all = options.includes(value) ? options : [value, ...options];
+      return (
+        <div data-testid="select-root" data-value={value}>
+          {typeof children === "function" ? null : children}
+          <select
+            aria-hidden
+            value={value}
+            onChange={(e) => onValueChange(e.target.value)}
+            style={{ display: "none" }}
+          >
+            {all.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
+    },
+    SelectTrigger: ({
+      children,
+      id,
+      ...props
+    }: React.ButtonHTMLAttributes<HTMLButtonElement> & { id?: string }) => (
+      <button type="button" id={id} {...props}>
+        {children}
+      </button>
+    ),
+    SelectValue: ({ placeholder }: { placeholder?: string }) => (
+      <span>{placeholder}</span>
+    ),
+    SelectContent: ({ children }: { children: React.ReactNode }) => (
+      <div>{children}</div>
+    ),
+    SelectItem: ({
+      children,
+      value,
+    }: {
+      children: React.ReactNode;
+      value: string;
+    }) => (
+      <div role="option" aria-selected={false} data-value={value}>
+        {children}
       </div>
-    );
-  },
-  SelectTrigger: ({
-    children,
-    id,
-    ...props
-  }: React.ButtonHTMLAttributes<HTMLButtonElement> & { id?: string }) => (
-    <button type="button" id={id} {...props}>
-      {children}
-    </button>
-  ),
-  SelectValue: ({ placeholder }: { placeholder?: string }) => (
-    <span>{placeholder}</span>
-  ),
-  SelectContent: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-  SelectItem: ({
-    children,
-    value,
-  }: {
-    children: React.ReactNode;
-    value: string;
-  }) => <div role="option" aria-selected={false} data-value={value}>{children}</div>,
+    ),
   };
 });
 
@@ -232,9 +244,7 @@ describe("AdminInvoices", () => {
     ).toBeInTheDocument();
     expect(screen.getByTestId("invoice-create")).toBeDisabled();
     await user.click(screen.getAllByTestId("invoice-actions-inv-1")[1]);
-    expect(
-      await screen.findByTestId("invoice-paid-inv-1"),
-    ).toBeInTheDocument();
+    expect(await screen.findByTestId("invoice-paid-inv-1")).toBeInTheDocument();
   });
 
   it("shows Mark sent on a draft row and toasts status-flip copy, not emailed", async () => {
@@ -262,9 +272,9 @@ describe("AdminInvoices", () => {
     expect(toast.success).toHaveBeenCalledWith(
       "Invoice marked sent (no email)",
     );
-    expect(
-      vi.mocked(toast.success).mock.calls.flat().join(" "),
-    ).not.toMatch(/emailed/i);
+    expect(vi.mocked(toast.success).mock.calls.flat().join(" ")).not.toMatch(
+      /emailed/i,
+    );
   });
 
   it("says Mark sent after switching locale back to en", async () => {
@@ -404,7 +414,9 @@ describe("AdminInvoices", () => {
   it("offers Uptime in the product picker", async () => {
     render(<AdminInvoices />);
     await userEvent.click(screen.getByTestId("invoice-product"));
-    expect(await screen.findByRole("option", { name: /uptime/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("option", { name: /uptime/i }),
+    ).toBeInTheDocument();
   });
 
   it("lists Host in the product picker and filters SKU to Host catalog rows", async () => {
@@ -423,7 +435,9 @@ describe("AdminInvoices", () => {
     render(<AdminInvoices />);
     expect(screen.getByTestId("invoice-product")).toBeInTheDocument();
     expect(
-      screen.getByTestId("invoice-product").closest("[data-testid=select-root]")
+      screen
+        .getByTestId("invoice-product")
+        .closest("[data-testid=select-root]")
         ?.querySelector("[data-value=host]"),
     ).toBeTruthy();
     const skuRoot = () =>
@@ -474,9 +488,7 @@ describe("AdminInvoices", () => {
   it("rails the banner info and a draft row muted", () => {
     render(<AdminInvoices />);
     expect(
-      screen
-        .getByTestId("invoices-banner")
-        .querySelector(".bg-sky-500"),
+      screen.getByTestId("invoices-banner").querySelector(".bg-sky-600"),
     ).toBeTruthy();
     const list = screen.getByTestId("invoices-list-shell");
     const draftRow = within(screen.getByTestId("invoices-list-desktop"))
@@ -498,8 +510,18 @@ describe("AdminInvoices", () => {
       return {
         data: {
           items: [
-            { ...invoices[0], id: "inv-sent", number: "SX-SENT", status: "sent" },
-            { ...invoices[0], id: "inv-void", number: "SX-VOID", status: "void" },
+            {
+              ...invoices[0],
+              id: "inv-sent",
+              number: "SX-SENT",
+              status: "sent",
+            },
+            {
+              ...invoices[0],
+              id: "inv-void",
+              number: "SX-VOID",
+              status: "void",
+            },
           ],
           total: 2,
         },
@@ -510,7 +532,7 @@ describe("AdminInvoices", () => {
     const sentRow = within(screen.getByTestId("invoices-list-desktop"))
       .getByText("SX-SENT")
       .closest("tr");
-    expect(sentRow?.querySelector(".bg-amber-500")).toBeTruthy();
+    expect(sentRow?.querySelector(".bg-amber-600")).toBeTruthy();
     const voidRow = within(screen.getByTestId("invoices-list-desktop"))
       .getByText("SX-VOID")
       .closest("tr");

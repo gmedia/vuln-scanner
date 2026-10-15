@@ -2,11 +2,14 @@ import type { SiemStatus } from "@/api/siem";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { indexerHealth, type IndexerHealth } from "@/lib/siemSeverity";
 
-type Translate = (key: string, options?: Record<string, string | number>) => string;
+type Translate = (
+  key: string,
+  options?: Record<string, string | number>,
+) => string;
 
 const INDEXER_RAIL: Record<IndexerHealth, string> = {
   live: "bg-primary",
-  degraded: "bg-amber-500",
+  degraded: "bg-amber-600",
   down: "bg-destructive",
 };
 

@@ -31,8 +31,8 @@ export function agentRailClass(agent: GuardAgent): string {
   if (agent.disabled) return "bg-border";
   const status = agent.status.toLowerCase();
   if (status === "active") return "bg-primary";
-  if (status === "disconnected") return "bg-amber-500";
-  if (status === "pending") return "bg-sky-500";
+  if (status === "disconnected") return "bg-amber-600";
+  if (status === "pending") return "bg-sky-600";
   return "bg-border";
 }
 

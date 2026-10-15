@@ -32,9 +32,15 @@ vi.mock("@/hooks/useRateLimitCooldown", () => ({
   useRateLimitCooldown: vi.fn(() => {
     callCount++;
     if (callCount === 1) {
-      return { cooldown: profileCooldownValue, startCooldown: mockProfileStartCooldown };
+      return {
+        cooldown: profileCooldownValue,
+        startCooldown: mockProfileStartCooldown,
+      };
     }
-    return { cooldown: passwordCooldownValue, startCooldown: mockPasswordStartCooldown };
+    return {
+      cooldown: passwordCooldownValue,
+      startCooldown: mockPasswordStartCooldown,
+    };
   }),
 }));
 
@@ -58,7 +64,11 @@ vi.mock("@/store/authStore", () => {
     if (selector) return selector(state);
     return state;
   });
-  (mockFn as ReturnType<typeof vi.fn> & { getState: () => Record<string, unknown> }).getState = () => ({
+  (
+    mockFn as ReturnType<typeof vi.fn> & {
+      getState: () => Record<string, unknown>;
+    }
+  ).getState = () => ({
     user: mockUser,
     updateProfile: mockUpdateProfile,
     changePassword: mockChangePassword,
@@ -110,7 +120,9 @@ describe("Profile", () => {
 
     it("shows password confirmation helper", () => {
       renderProfile();
-      expect(screen.getByText("Password required to confirm")).toBeInTheDocument();
+      expect(
+        screen.getByText("Password required to confirm"),
+      ).toBeInTheDocument();
     });
 
     it("shows page subtitle", () => {
@@ -163,7 +175,7 @@ describe("Profile", () => {
       const kpis = screen.getByTestId("profile-kpis");
       expect(kpis.querySelectorAll(".bg-primary").length).toBe(2);
       expect(kpis.querySelectorAll(".bg-border").length).toBe(1);
-      expect(kpis.querySelector(".bg-amber-500")).toBeNull();
+      expect(kpis.querySelector(".bg-amber-600")).toBeNull();
     });
 
     it("rails the access tile primary for an admin", () => {
@@ -178,7 +190,7 @@ describe("Profile", () => {
       mockUser = { ...mockUser, is_verified: false, credits: 0 };
       renderProfile();
       const kpis = screen.getByTestId("profile-kpis");
-      expect(kpis.querySelector(".bg-amber-500")).toBeTruthy();
+      expect(kpis.querySelector(".bg-amber-600")).toBeTruthy();
       expect(kpis.querySelectorAll(".bg-border").length).toBeGreaterThanOrEqual(
         2,
       );
@@ -188,7 +200,9 @@ describe("Profile", () => {
   describe("Update Email form", () => {
     it("renders New Email and Current Password inputs", () => {
       renderProfile();
-      expect(screen.getByPlaceholderText("new@example.com")).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText("new@example.com"),
+      ).toBeInTheDocument();
       const passwordInputs = screen.getAllByPlaceholderText("••••••••");
       expect(passwordInputs.length).toBeGreaterThanOrEqual(1);
     });
@@ -250,13 +264,17 @@ describe("Profile", () => {
     it("shows cooldown timer when profileCooldown > 0", () => {
       profileCooldownValue = 20;
       renderProfile();
-      expect(screen.getByText(/Too many attempts. Wait 20s/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Too many attempts. Wait 20s/),
+      ).toBeInTheDocument();
     });
 
     it("shows loading state when updating", async () => {
-      mockUpdateProfile = vi.fn().mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve(true), 100)),
-      );
+      mockUpdateProfile = vi
+        .fn()
+        .mockImplementation(
+          () => new Promise((resolve) => setTimeout(() => resolve(true), 100)),
+        );
       renderProfile();
       fireEvent.change(screen.getByPlaceholderText("new@example.com"), {
         target: { value: "new@example.com" },
@@ -357,14 +375,18 @@ describe("Profile", () => {
       fireEvent.click(screen.getByRole("button", { name: "Change password" }));
 
       await waitFor(() => {
-        expect(screen.getByText("Invalid current password")).toBeInTheDocument();
+        expect(
+          screen.getByText("Invalid current password"),
+        ).toBeInTheDocument();
       });
     });
 
     it("shows cooldown timer when passwordCooldown > 0", () => {
       passwordCooldownValue = 60;
       renderProfile();
-      expect(screen.getByText(/Too many attempts. Wait 60s/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Too many attempts. Wait 60s/),
+      ).toBeInTheDocument();
     });
 
     it("rails the password shell amber on cooldown and destructive on error", async () => {
@@ -373,7 +395,7 @@ describe("Profile", () => {
       const cooldownShell = screen
         .getByRole("heading", { name: "Change password" })
         .closest("[data-slot='card']");
-      expect(cooldownShell?.querySelector(".bg-amber-500")).toBeTruthy();
+      expect(cooldownShell?.querySelector(".bg-amber-600")).toBeTruthy();
       unmount();
 
       passwordCooldownValue = 0;
@@ -399,9 +421,11 @@ describe("Profile", () => {
     });
 
     it("shows loading state when changing password", async () => {
-      mockChangePassword = vi.fn().mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve(true), 100)),
-      );
+      mockChangePassword = vi
+        .fn()
+        .mockImplementation(
+          () => new Promise((resolve) => setTimeout(() => resolve(true), 100)),
+        );
       renderProfile();
       fireEvent.change(document.getElementById("current-password")!, {
         target: { value: "current" },

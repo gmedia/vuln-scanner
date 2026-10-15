@@ -86,9 +86,9 @@ export function DashboardKpiStrip({
     weekCritical > 0
       ? "bg-destructive"
       : weekHigh > 0
-        ? "bg-orange-500"
+        ? "bg-orange-600"
         : weekMedium > 0
-          ? "bg-amber-500"
+          ? "bg-amber-600"
           : "bg-border";
   const schedulesFull = scheduleLimit > 0 && enabledSchedules >= scheduleLimit;
   const schedulesTone =

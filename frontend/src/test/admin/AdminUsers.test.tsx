@@ -25,17 +25,51 @@ vi.mock("@/api/admin", () => ({
 }));
 
 vi.mock("@/components/ui/Card", () => ({
-  Card: ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => (
-    <div data-testid="card" {...props}>{children}</div>
+  Card: ({
+    children,
+    ...props
+  }: {
+    children?: React.ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <div data-testid="card" {...props}>
+      {children}
+    </div>
   ),
-  CardHeader: ({ children, className, ...props }: { children?: React.ReactNode; className?: string; [key: string]: unknown }) => (
-    <div data-testid="card-header" className={className} {...props}>{children}</div>
+  CardHeader: ({
+    children,
+    className,
+    ...props
+  }: {
+    children?: React.ReactNode;
+    className?: string;
+    [key: string]: unknown;
+  }) => (
+    <div data-testid="card-header" className={className} {...props}>
+      {children}
+    </div>
   ),
-  CardTitle: ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => (
-    <h3 data-testid="card-title" {...props}>{children}</h3>
+  CardTitle: ({
+    children,
+    ...props
+  }: {
+    children?: React.ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <h3 data-testid="card-title" {...props}>
+      {children}
+    </h3>
   ),
-  CardContent: ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => (
-    <div data-testid="card-content" {...props}>{children}</div>
+  CardContent: ({
+    children,
+    ...props
+  }: {
+    children?: React.ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <div data-testid="card-content" {...props}>
+      {children}
+    </div>
   ),
 }));
 
@@ -51,7 +85,9 @@ vi.mock("@/components/ui/Button", () => ({
     onClick?: () => void;
     [key: string]: unknown;
   }) => (
-    <button disabled={disabled} onClick={onClick} {...props}>{children}</button>
+    <button disabled={disabled} onClick={onClick} {...props}>
+      {children}
+    </button>
   ),
 }));
 
@@ -67,7 +103,12 @@ vi.mock("@/components/ui/Input", () => ({
     placeholder?: string;
     [key: string]: unknown;
   }) => (
-    <input value={value} onChange={onChange} placeholder={placeholder} {...props} />
+    <input
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      {...props}
+    />
   ),
 }));
 
@@ -80,11 +121,17 @@ vi.mock("@/components/ui/Badge", () => ({
     children?: React.ReactNode;
     variant?: string;
     [key: string]: unknown;
-  }) => <span data-variant={variant} {...props}>{children}</span>,
+  }) => (
+    <span data-variant={variant} {...props}>
+      {children}
+    </span>
+  ),
 }));
 
 vi.mock("@/components/ui/Skeleton", () => ({
-  Skeleton: (props: { [key: string]: unknown }) => <div data-testid="skeleton" {...props} />,
+  Skeleton: (props: { [key: string]: unknown }) => (
+    <div data-testid="skeleton" {...props} />
+  ),
   TableRowSkeleton: ({ rows = 5 }: { rows?: number }) => (
     <div>
       {Array.from({ length: rows }).map((_, i) => (
@@ -96,7 +143,9 @@ vi.mock("@/components/ui/Skeleton", () => ({
 
 import { useQuery } from "@tanstack/react-query";
 
-function mockUseQueryReturn(overrides: Partial<ReturnType<typeof useQuery>> = {}) {
+function mockUseQueryReturn(
+  overrides: Partial<ReturnType<typeof useQuery>> = {},
+) {
   vi.mocked(useQuery).mockReturnValue({
     data: undefined,
     isLoading: false,
@@ -266,7 +315,7 @@ describe("AdminUsers", () => {
       mockUseQueryReturn({ data: { users: mockUsers, total: 2 } });
       const { container } = renderPage();
       expect(container.querySelector(".bg-primary")).toBeTruthy();
-      expect(container.querySelector(".bg-amber-500")).toBeTruthy();
+      expect(container.querySelector(".bg-amber-600")).toBeTruthy();
     });
 
     it("keeps the role badge as a span inside a table cell", () => {

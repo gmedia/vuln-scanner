@@ -10,8 +10,8 @@ export function caseStatusLabel(
 }
 
 export function caseStatusRailClass(status: string): string {
-  if (status === "open") return "bg-sky-500";
-  if (status === "ack") return "bg-amber-500";
+  if (status === "open") return "bg-sky-600";
+  if (status === "ack") return "bg-amber-600";
   if (status === "closed") return "bg-primary";
   return "bg-muted-foreground";
 }

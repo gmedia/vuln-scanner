@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, Calculator, Loader2, Check, Trash2, Receipt } from "lucide-react";
+import {
+  BookOpen,
+  Calculator,
+  Loader2,
+  Check,
+  Trash2,
+  Receipt,
+} from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -187,7 +194,11 @@ function AdminHpp() {
       />
 
       <AdminShell testid="hpp-guide" tone="info">
-        <AdminShellHead icon={BookOpen} title={t("hppGuideTitle")} hint={t("hppGuideHint")} />
+        <AdminShellHead
+          icon={BookOpen}
+          title={t("hppGuideTitle")}
+          hint={t("hppGuideHint")}
+        />
         <AdminShellBody>
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="steps">
@@ -540,7 +551,7 @@ function AdminHpp() {
                   {costLines.map((line) => (
                     <TableRow key={line.id} className="h-12 hover:bg-muted/50">
                       <TableCell className="relative pl-4 font-mono text-xs tabular-nums">
-                        <SiemRail className="bg-amber-500" />
+                        <SiemRail className="bg-amber-600" />
                         {new Date(line.incurred_on).toLocaleDateString(locale)}
                       </TableCell>
                       <TableCell>

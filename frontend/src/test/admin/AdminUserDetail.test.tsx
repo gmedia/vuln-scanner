@@ -292,7 +292,9 @@ describe("AdminUserDetail", () => {
 
     renderPage();
     await userEvent.type(screen.getByLabelText("Amount (+ or −)"), "10");
-    await userEvent.click(screen.getByRole("button", { name: "Adjust credits" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Adjust credits" }),
+    );
     expect(mutate).not.toHaveBeenCalled();
     await userEvent.click(
       screen.getByRole("button", { name: "Confirm credit change" }),
@@ -307,7 +309,7 @@ describe("AdminUserDetail", () => {
     } as ReturnType<typeof useQuery>);
 
     const { container } = renderPage();
-    expect(container.querySelector(".bg-amber-500")).toBeTruthy();
+    expect(container.querySelector(".bg-amber-600")).toBeTruthy();
   });
 
   it("rails the profile shell primary for a verified user", () => {
@@ -317,7 +319,7 @@ describe("AdminUserDetail", () => {
     } as ReturnType<typeof useQuery>);
 
     const { container } = renderPage();
-    expect(container.querySelector(".bg-amber-500")).toBeNull();
+    expect(container.querySelector(".bg-amber-600")).toBeNull();
     expect(container.querySelectorAll(".bg-primary").length).toBeGreaterThan(0);
   });
 

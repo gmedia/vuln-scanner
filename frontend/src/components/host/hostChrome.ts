@@ -38,7 +38,7 @@ export function siteTone(input: {
 
 export function hostToneRailClass(tone: HostTone): string {
   if (tone === "critical" || tone === "failed") return "bg-destructive";
-  if (tone === "running") return "bg-sky-500";
+  if (tone === "running") return "bg-sky-600";
   if (tone === "completed") return "bg-primary";
   return "bg-border";
 }
@@ -68,6 +68,6 @@ export function wafActionRailClass(action: string): string {
 
 export function wafModeRailClass(mode: string): string {
   if (mode === "protect") return "bg-primary";
-  if (mode === "detect") return "bg-sky-500";
+  if (mode === "detect") return "bg-sky-600";
   return "bg-border";
 }
