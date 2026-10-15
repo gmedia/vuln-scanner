@@ -2,7 +2,11 @@ import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { SiemRail } from "@/components/siem/siemChrome";
-import { ScanShell, ScanShellBody, ScanShellHead } from "@/components/scan/ScanShell";
+import {
+  ScanShell,
+  ScanShellBody,
+  ScanShellHead,
+} from "@/components/scan/ScanShell";
 import {
   scannerResultRailClass,
   scannerResultWashClass,
@@ -10,6 +14,7 @@ import {
   severityTextClass,
 } from "@/components/scan/scanChrome";
 import { cn } from "@/lib/utils";
+import { TONE_TEXT } from "@/lib/toneColors";
 
 type ScanSummary = {
   readonly critical?: unknown;
@@ -87,11 +92,13 @@ export function ScanResultsPanel({
         </div>
 
         <div className="relative overflow-hidden rounded-md border border-border bg-muted/40 p-3 pl-4">
-          <SiemRail className={needsAttention ? "bg-destructive" : "bg-primary"} />
+          <SiemRail
+            className={needsAttention ? "bg-destructive" : "bg-primary"}
+          />
           <div className="flex flex-wrap items-center justify-between gap-3 pl-2">
             <div className="flex items-center gap-2">
               {needsAttention ? (
-                <AlertTriangle className="h-4 w-4 text-red-400" />
+                <AlertTriangle className={cn("h-4 w-4", TONE_TEXT.red)} />
               ) : (
                 <CheckCircle2 className="h-4 w-4 text-primary-text" />
               )}

@@ -23,6 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/Table";
 import { cn } from "@/lib/utils";
+import { TONE_TEXT } from "@/lib/toneColors";
 import FindingDetail from "@/components/results/FindingDetail";
 import { SiemRail } from "@/components/siem/siemChrome";
 import {
@@ -222,10 +223,10 @@ function FindingsTable({
 
   const cvssColor = (score: number | null) => {
     if (score === null) return "text-muted-foreground";
-    if (score >= 9) return "text-red-700 dark:text-red-400";
-    if (score >= 7) return "text-orange-800 dark:text-orange-400";
-    if (score >= 4) return "text-yellow-800 dark:text-yellow-400";
-    return "text-blue-700 dark:text-blue-400";
+    if (score >= 9) return TONE_TEXT.red;
+    if (score >= 7) return TONE_TEXT.orange;
+    if (score >= 4) return TONE_TEXT.yellow;
+    return TONE_TEXT.blue;
   };
 
   const cvssBarColor = (score: number | null) => {

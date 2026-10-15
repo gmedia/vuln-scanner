@@ -1,9 +1,7 @@
 import { Badge } from "@/components/ui/Badge";
-import {
-  severityBadgeVariant,
-  severityLabelKey,
-} from "@/lib/siemSeverity";
+import { severityBadgeVariant, severityLabelKey } from "@/lib/siemSeverity";
 import { cn } from "@/lib/utils";
+import { TONE_CHIP_TEXT } from "@/lib/toneColors";
 
 type Translate = (key: string) => string;
 
@@ -30,21 +28,21 @@ export function CaseStatusBadge({
 }) {
   if (status === "open") {
     return (
-      <Badge className="bg-sky-500/15 text-sky-700 dark:text-sky-300">
+      <Badge className={`bg-sky-500/15 ${TONE_CHIP_TEXT.sky}`}>
         {t("statusOpen")}
       </Badge>
     );
   }
   if (status === "ack") {
     return (
-      <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">
+      <Badge className={`bg-amber-500/15 ${TONE_CHIP_TEXT.amber}`}>
         {t("statusAck")}
       </Badge>
     );
   }
   if (status === "closed") {
     return (
-      <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+      <Badge className={`bg-emerald-500/15 ${TONE_CHIP_TEXT.emerald}`}>
         {t("statusClosed")}
       </Badge>
     );
@@ -55,10 +53,7 @@ export function CaseStatusBadge({
 export function SiemRail({ className }: { readonly className: string }) {
   return (
     <span
-      className={cn(
-        "absolute inset-y-2 left-0 w-0.5 rounded-full",
-        className,
-      )}
+      className={cn("absolute inset-y-2 left-0 w-0.5 rounded-full", className)}
       aria-hidden
     />
   );

@@ -1,3 +1,5 @@
+import { TONE_TEXT } from "@/lib/toneColors";
+
 export type AdminTone =
   "primary" | "success" | "danger" | "warn" | "info" | "alert" | "idle";
 
@@ -28,9 +30,9 @@ export function kpiTone(kind: AdminKpiKind): AdminTone {
 }
 
 export function kpiValueClass(tone: AdminTone): string {
-  if (tone === "info") return "text-sky-400";
-  if (tone === "alert") return "text-orange-400";
-  if (tone === "warn") return "text-amber-400";
+  if (tone === "info") return TONE_TEXT.sky;
+  if (tone === "alert") return TONE_TEXT.orange;
+  if (tone === "warn") return TONE_TEXT.amber;
   return "text-primary-text";
 }
 

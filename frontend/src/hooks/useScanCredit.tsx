@@ -3,6 +3,7 @@ import { Coins } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useCreditStore } from "@/store/creditStore";
 import { formatCredits } from "@/lib/utils";
+import { TONE_TEXT } from "@/lib/toneColors";
 
 const ELIGIBILITY_TIMEOUT_MS = 8_000;
 
@@ -96,7 +97,7 @@ export function useScanCredit(scanType: string) {
             </span>
           </p>
           {!eligible && (
-            <p className="text-red-400">
+            <p className={TONE_TEXT.red}>
               {t("insufficientCredits", { required: cost, available: credits })}
             </p>
           )}

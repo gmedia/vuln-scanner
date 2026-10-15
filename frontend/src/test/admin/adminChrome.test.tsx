@@ -15,6 +15,7 @@ import {
   reportTone,
   userTone,
 } from "@/components/admin/adminChrome";
+import { TONE_TEXT } from "@/lib/toneColors";
 
 describe("adminChrome helpers", () => {
   it("maps tones to rail classes", () => {
@@ -41,9 +42,9 @@ describe("adminChrome helpers", () => {
     expect(kpiTone("findings")).toBe("alert");
     expect(kpiTone("creditsIn")).toBe("primary");
     expect(kpiTone("creditsUsed")).toBe("warn");
-    expect(kpiValueClass("info")).toBe("text-sky-400");
-    expect(kpiValueClass("alert")).toBe("text-orange-400");
-    expect(kpiValueClass("warn")).toBe("text-amber-400");
+    expect(kpiValueClass("info")).toBe(TONE_TEXT.sky);
+    expect(kpiValueClass("alert")).toBe(TONE_TEXT.orange);
+    expect(kpiValueClass("warn")).toBe(TONE_TEXT.amber);
     expect(kpiValueClass("primary")).toBe("text-primary-text");
   });
 

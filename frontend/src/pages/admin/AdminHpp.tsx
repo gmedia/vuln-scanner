@@ -22,6 +22,7 @@ import {
 } from "@/components/admin/AdminShell";
 import { marginTone, reportTone } from "@/components/admin/adminChrome";
 import { SiemRail } from "@/components/siem/siemChrome";
+import { TONE_TEXT } from "@/lib/toneColors";
 import {
   Table,
   TableBody,
@@ -196,7 +197,10 @@ function AdminHpp() {
               className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
               data-testid="hpp-rates-empty"
             >
-              <Calculator className="h-8 w-8 text-muted-foreground" aria-hidden />
+              <Calculator
+                className="h-8 w-8 text-muted-foreground"
+                aria-hidden
+              />
               <p className="text-sm font-medium text-foreground">
                 {t("hppRatesEmpty")}
               </p>
@@ -247,7 +251,9 @@ function AdminHpp() {
                         </TableCell>
                         <TableCell className="py-1.5">
                           <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                            {new Date(item.updated_at).toLocaleDateString(locale)}
+                            {new Date(item.updated_at).toLocaleDateString(
+                              locale,
+                            )}
                           </span>
                         </TableCell>
                         <TableCell className="py-1.5 text-right">
@@ -504,13 +510,21 @@ function AdminHpp() {
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>{t("hppCostDeleteConfirmTitle")}</AlertDialogTitle>
-                              <AlertDialogDescription>{t("hppCostDeleteConfirmBody")}</AlertDialogDescription>
+                              <AlertDialogTitle>
+                                {t("hppCostDeleteConfirmTitle")}
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {t("hppCostDeleteConfirmBody")}
+                              </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                              <AlertDialogCancel>
+                                {t("cancel")}
+                              </AlertDialogCancel>
                               <AlertDialogAction
-                                className={buttonVariants({ variant: "destructive" })}
+                                className={buttonVariants({
+                                  variant: "destructive",
+                                })}
                                 data-testid={`hpp-cost-delete-confirm-${line.id}`}
                                 onClick={() => deleteCost.mutate(line.id)}
                               >
@@ -565,7 +579,7 @@ function AdminHpp() {
           {t("hppSkuHint")}
         </p>
         {(report?.catalog_seed_skus?.length ?? 0) > 0 ? (
-          <p className="mb-3 text-[11px] text-amber-600">
+          <p className={`mb-3 text-[11px] ${TONE_TEXT.amber}`}>
             {t("hppSeedPriceWarning", {
               skus: (report?.catalog_seed_skus ?? []).join(", "),
             })}
@@ -582,7 +596,9 @@ function AdminHpp() {
               <AdminShellBody className="space-y-1 text-xs">
                 <p>
                   {t("hppOrgCount")}:{" "}
-                  <span className="font-mono tabular-nums">{row.org_count}</span>
+                  <span className="font-mono tabular-nums">
+                    {row.org_count}
+                  </span>
                 </p>
                 <p>
                   {t("hppRevenue")}:{" "}
@@ -699,7 +715,10 @@ function AdminHpp() {
                   </TableHeader>
                   <TableBody>
                     {report?.lines.map((line) => (
-                      <TableRow key={line.key} className="h-12 hover:bg-muted/50">
+                      <TableRow
+                        key={line.key}
+                        className="h-12 hover:bg-muted/50"
+                      >
                         <TableCell className="relative pl-4">
                           <SiemRail className="bg-primary" />
                           <Badge

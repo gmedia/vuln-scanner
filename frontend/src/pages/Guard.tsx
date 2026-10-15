@@ -13,6 +13,7 @@ import { isAuthSessionError } from "@/components/siem/siemErrors";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/Button";
 import PageHeader from "@/components/layout/PageHeader";
+import { TONE_CHIP_TEXT } from "@/lib/toneColors";
 
 export default function Guard() {
   const g = useGuardConsole();
@@ -55,7 +56,10 @@ export default function Guard() {
       {g.statusQ.isLoading ? <GuardKpiSkeleton /> : null}
 
       {g.statusQ.isError ? (
-        <p className="text-sm text-destructive" data-testid="guard-status-error">
+        <p
+          className="text-sm text-destructive"
+          data-testid="guard-status-error"
+        >
           {isAuthSessionError(g.statusQ.error)
             ? g.t("sessionExpired")
             : g.t("loadStatusFail")}
@@ -73,7 +77,7 @@ export default function Guard() {
       ) : null}
 
       {g.statusQ.data?.last_sync_error ? (
-        <Alert className="border-amber-500/40 text-amber-800 dark:text-amber-300">
+        <Alert className={`border-amber-500/40 ${TONE_CHIP_TEXT.amber}`}>
           <AlertTriangle />
           <AlertDescription>{g.statusQ.data.last_sync_error}</AlertDescription>
         </Alert>

@@ -1,11 +1,13 @@
+import { TONE_TEXT } from "@/lib/toneColors";
+
 export function overallValueClass(
   overall: string | null,
   published: boolean,
 ): string {
   if (!published) return "text-muted-foreground";
   if (overall === "major") return "text-destructive";
-  if (overall === "partial") return "text-orange-500";
-  if (overall === "degraded") return "text-amber-500";
+  if (overall === "partial") return TONE_TEXT.orange;
+  if (overall === "degraded") return TONE_TEXT.amber;
   if (overall === "operational") return "text-primary-text";
   return "text-foreground";
 }

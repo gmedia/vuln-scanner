@@ -8,6 +8,7 @@ import {
   type WorkspaceTone,
 } from "@/components/workspace/workspaceChrome";
 import { cn } from "@/lib/utils";
+import { TONE_TEXT } from "@/lib/toneColors";
 
 export function WorkspaceShell({
   tone = "primary",
@@ -37,7 +38,11 @@ export function WorkspaceShell({
   );
 }
 
-export function WorkspaceIconChip({ icon: Icon }: { readonly icon: LucideIcon }) {
+export function WorkspaceIconChip({
+  icon: Icon,
+}: {
+  readonly icon: LucideIcon;
+}) {
   return (
     <span
       className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted/40"
@@ -108,7 +113,7 @@ const NOTICE_TEXT: Record<WorkspaceTone, string> = {
   primary: "text-foreground",
   success: "text-primary-text",
   danger: "text-destructive",
-  warn: "text-amber-400",
+  warn: TONE_TEXT.amber,
   info: "text-foreground",
   idle: "text-muted-foreground",
 };

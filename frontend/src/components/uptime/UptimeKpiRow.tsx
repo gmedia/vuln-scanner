@@ -4,6 +4,7 @@ import { GuardPulse } from "@/components/guard/guardChrome";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { Progress } from "@/components/ui/Progress";
 import { cn } from "@/lib/utils";
+import { TONE_TEXT } from "@/lib/toneColors";
 
 function KpiTile({
   label,
@@ -33,7 +34,12 @@ function KpiTile({
       <p className="pl-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
-      <div className={cn("mt-1 flex flex-wrap items-center gap-2 pl-2", valueClass)}>
+      <div
+        className={cn(
+          "mt-1 flex flex-wrap items-center gap-2 pl-2",
+          valueClass,
+        )}
+      >
         {value}
         {pulse ? <GuardPulse /> : null}
       </div>
@@ -63,7 +69,7 @@ export function UptimeKpiRow({
   const skuCountClassName = isFull
     ? "font-mono text-sm font-bold tabular-nums text-destructive"
     : isNearCap
-      ? "font-mono text-sm font-bold tabular-nums text-amber-500"
+      ? `font-mono text-sm font-bold tabular-nums ${TONE_TEXT.amber}`
       : "font-mono text-sm font-bold tabular-nums text-foreground";
   const quotaIndicatorClassName = isFull
     ? "bg-destructive"

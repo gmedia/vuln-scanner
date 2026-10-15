@@ -34,7 +34,9 @@ test.describe("Auth — Reset Password @shell", () => {
     await page.locator("input#password").fill("NewPass123!");
     await page.locator("input#confirmPassword").fill("DifferentPass123!");
     await page.locator("button[type='submit']").click();
-    await expect(page.locator(".text-red-400")).toBeVisible({
+    await expect(
+      page.locator('[data-testid="auth-notice-danger"]'),
+    ).toBeVisible({
       timeout: 10_000,
     });
   });
@@ -46,7 +48,9 @@ test.describe("Auth — Reset Password @shell", () => {
     await page.locator("input#password").fill("short");
     await page.locator("input#confirmPassword").fill("short");
     await page.locator("button[type='submit']").click();
-    await expect(page.locator(".text-red-400")).toBeVisible({
+    await expect(
+      page.locator('[data-testid="auth-notice-danger"]'),
+    ).toBeVisible({
       timeout: 10_000,
     });
   });

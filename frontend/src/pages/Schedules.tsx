@@ -71,6 +71,7 @@ import {
 } from "@/components/schedules/scheduleChrome";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { cn } from "@/lib/utils";
+import { TONE_TEXT } from "@/lib/toneColors";
 import {
   createSchedule,
   deleteSchedule,
@@ -198,7 +199,10 @@ function ScheduleRowActions({
                   void Promise.resolve(
                     printFile(s.last_job_id, "executive"),
                   ).catch((err: unknown) => {
-                    if (err instanceof Error && err.message === "popup_blocked") {
+                    if (
+                      err instanceof Error &&
+                      err.message === "popup_blocked"
+                    ) {
                       toast.error(t("printPopupBlocked"));
                     }
                   });
@@ -297,18 +301,17 @@ function ScheduleRunsPanel({ scheduleId }: { scheduleId: string }) {
   }
   if (error) {
     return (
-      <Alert variant="destructive" className="mt-2 border-destructive/40 text-xs">
+      <Alert
+        variant="destructive"
+        className="mt-2 border-destructive/40 text-xs"
+      >
         <AlertTriangle />
         <AlertDescription>{t("runsLoadFailed")}</AlertDescription>
       </Alert>
     );
   }
   if (!data || data.length === 0) {
-    return (
-      <p className="mt-2 text-xs text-muted-foreground">
-        {t("noRuns")}
-      </p>
-    );
+    return <p className="mt-2 text-xs text-muted-foreground">{t("noRuns")}</p>;
   }
 
   return (
@@ -397,9 +400,7 @@ function Schedules() {
       void qc.invalidateQueries({ queryKey: ["schedules"] });
     },
     onError: (err: unknown) => {
-      setActionError(
-        mapScheduleError(apiDetail(err, t("errToggle"))),
-      );
+      setActionError(mapScheduleError(apiDetail(err, t("errToggle"))));
     },
   });
 
@@ -411,9 +412,7 @@ function Schedules() {
       void qc.invalidateQueries({ queryKey: ["schedules"] });
     },
     onError: (err: unknown) => {
-      setActionError(
-        mapScheduleError(apiDetail(err, t("errDelete"))),
-      );
+      setActionError(mapScheduleError(apiDetail(err, t("errDelete"))));
     },
   });
 
@@ -421,9 +420,7 @@ function Schedules() {
     e.preventDefault();
     setFormError(null);
     if (atCap) {
-      setFormError(
-        t("capCreateBlocked", { max: MAX_ENABLED_SCHEDULES }),
-      );
+      setFormError(t("capCreateBlocked", { max: MAX_ENABLED_SCHEDULES }));
       return;
     }
     if (!target.trim()) {
@@ -479,7 +476,10 @@ function Schedules() {
             )}
           />
           {atCap && (
-            <Alert className="border-amber-500/40 text-amber-400" role="status">
+            <Alert
+              className={`border-amber-500/40 ${TONE_TEXT.amber}`}
+              role="status"
+            >
               <AlertTriangle />
               <AlertDescription>
                 {t("capReached", { max: MAX_ENABLED_SCHEDULES })}
@@ -567,9 +567,7 @@ function Schedules() {
                   </Select>
                 </div>
                 <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2">
-                  <Label htmlFor="sched-notify">
-                    {t("notifyOptional")}
-                  </Label>
+                  <Label htmlFor="sched-notify">{t("notifyOptional")}</Label>
                   <Input
                     id="sched-notify"
                     type="email"
@@ -619,10 +617,7 @@ function Schedules() {
         </ScheduleShellHead>
         <div className="px-4 py-3">
           {actionError && (
-            <Alert
-              variant="destructive"
-              className="mb-3 border-destructive/40"
-            >
+            <Alert variant="destructive" className="mb-3 border-destructive/40">
               <AlertTriangle />
               <AlertDescription>{actionError}</AlertDescription>
             </Alert>
@@ -639,7 +634,10 @@ function Schedules() {
           )}
           {!isLoading && data && data.length > 0 && (
             <>
-              <ul className="space-y-3 sm:hidden" data-testid="schedules-mobile-list">
+              <ul
+                className="space-y-3 sm:hidden"
+                data-testid="schedules-mobile-list"
+              >
                 {data.map((s: ScanSchedule) => {
                   const runsOpen = !!expandedRuns[s.id];
                   const mappedErr = mapScheduleError(s.last_error);
@@ -750,7 +748,9 @@ function Schedules() {
                       const mappedErr = mapScheduleError(s.last_error);
                       return (
                         <Fragment key={s.id}>
-                          <TableRow className={scheduleWashClass(scheduleTone(s))}>
+                          <TableRow
+                            className={scheduleWashClass(scheduleTone(s))}
+                          >
                             <TableCell className="relative align-top pl-4">
                               <SiemRail
                                 className={scheduleRailClass(scheduleTone(s))}
@@ -768,7 +768,9 @@ function Schedules() {
                                     variant={s.enabled ? "success" : "default"}
                                     className="ml-2 text-[10px]"
                                   >
-                                    {s.enabled ? t("statusActive") : t("disabled")}
+                                    {s.enabled
+                                      ? t("statusActive")
+                                      : t("disabled")}
                                   </Badge>
                                 </p>
                                 {s.notify_email && (
@@ -814,7 +816,9 @@ function Schedules() {
                                   className="border-destructive/40 text-xs"
                                 >
                                   <AlertTriangle />
-                                  <AlertDescription>{mappedErr}</AlertDescription>
+                                  <AlertDescription>
+                                    {mappedErr}
+                                  </AlertDescription>
                                 </Alert>
                               )}
                               <Button

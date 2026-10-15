@@ -7,10 +7,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/Card";
+import { Card, CardContent } from "@/components/ui/Card";
 import { Skeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -23,10 +20,7 @@ import {
 import { useTranslation } from "react-i18next";
 import PageHeader from "@/components/layout/PageHeader";
 import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
-import {
-  OpsShell,
-  OpsShellBody,
-} from "@/components/ops/OpsShell";
+import { OpsShell, OpsShellBody } from "@/components/ops/OpsShell";
 import { SiemCasesPanel } from "@/components/siem/SiemCasesPanel";
 import { SiemEventInspector } from "@/components/siem/SiemEventInspector";
 import { SiemEventStream } from "@/components/siem/SiemEventStream";
@@ -34,6 +28,7 @@ import { SiemIndexerStrip } from "@/components/siem/SiemIndexerStrip";
 import { SiemSearchFilters } from "@/components/siem/SiemSearchFilters";
 import { apiDetail, isAuthSessionError } from "@/components/siem/siemErrors";
 import { useSiemConsole } from "@/components/siem/useSiemConsole";
+import { TONE_CHIP_TEXT, TONE_TEXT } from "@/lib/toneColors";
 
 const SIEM_TABS = ["search", "cases"] as const;
 type SiemTab = (typeof SIEM_TABS)[number];
@@ -130,7 +125,7 @@ export default function Siem() {
           )}
 
           {c.statusQ.data.degraded ? (
-            <Alert className="border-amber-500/40 text-amber-800 dark:text-amber-300">
+            <Alert className={`border-amber-500/40 ${TONE_CHIP_TEXT.amber}`}>
               <AlertTriangle />
               <AlertDescription>
                 {t("indexerDegraded")}
@@ -178,7 +173,7 @@ export default function Siem() {
                     />
 
                     {c.eventsQ.data?.degraded ? (
-                      <p className="text-sm text-amber-700 dark:text-amber-300">
+                      <p className={`text-sm ${TONE_TEXT.amber}`}>
                         {t("partialResults")}
                         {c.eventsQ.data.last_error
                           ? `: ${c.eventsQ.data.last_error}`
@@ -192,9 +187,7 @@ export default function Siem() {
                       pageSize={c.pageSize}
                       page={c.safeEventPage + 1}
                       pageCount={c.eventPageCount}
-                      onPrev={() =>
-                        c.setEventPage((p) => Math.max(0, p - 1))
-                      }
+                      onPrev={() => c.setEventPage((p) => Math.max(0, p - 1))}
                       onNext={() =>
                         c.setEventPage((p) =>
                           Math.min(c.eventPageCount - 1, p + 1),

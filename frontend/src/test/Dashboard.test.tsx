@@ -3,6 +3,7 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Dashboard from "@/pages/Dashboard";
 import { useAuthStore } from "@/store/authStore";
+import { TONE_TEXT } from "@/lib/toneColors";
 
 let mockUseScanHistory: ReturnType<typeof vi.fn>;
 
@@ -52,8 +53,17 @@ vi.mock("@tanstack/react-query", async () => {
 });
 
 vi.mock("react-router-dom", () => ({
-  Link: ({ to, children, ...props }: { to: string; children: React.ReactNode }) => (
-    <a href={to} {...props}>{children}</a>
+  Link: ({
+    to,
+    children,
+    ...props
+  }: {
+    to: string;
+    children: React.ReactNode;
+  }) => (
+    <a href={to} {...props}>
+      {children}
+    </a>
   ),
   useNavigate: vi.fn(() => vi.fn()),
 }));
@@ -102,7 +112,9 @@ describe("Dashboard", () => {
 
   it("renders the Overview heading", () => {
     render(<Dashboard />);
-    expect(screen.getByRole("heading", { level: 2, name: "Overview" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Overview" }),
+    ).toBeInTheDocument();
   });
 
   it("renders primary New scan CTA", () => {
@@ -113,9 +125,16 @@ describe("Dashboard", () => {
   it("opens Scan baru menu with scan type links", async () => {
     render(<Dashboard />);
     await userEvent.click(screen.getByTestId("new-scan-cta"));
-    expect(screen.getByRole("menuitem", { name: /Scan IP/i })).toHaveAttribute("href", "/scan/ip");
-    expect(screen.getByRole("menuitem", { name: /Scan domain/i })).toHaveAttribute("href", "/scan/domain");
-    expect(screen.getByRole("menuitem", { name: /Scan mobile/i })).toHaveAttribute("href", "/scan/mobile");
+    expect(screen.getByRole("menuitem", { name: /Scan IP/i })).toHaveAttribute(
+      "href",
+      "/scan/ip",
+    );
+    expect(
+      screen.getByRole("menuitem", { name: /Scan domain/i }),
+    ).toHaveAttribute("href", "/scan/domain");
+    expect(
+      screen.getByRole("menuitem", { name: /Scan mobile/i }),
+    ).toHaveAttribute("href", "/scan/mobile");
   });
 
   it("renders windowed KPI labels", () => {
@@ -130,7 +149,7 @@ describe("Dashboard", () => {
     render(<Dashboard />);
     const value = screen.getByText("Open risk").previousElementSibling;
     expect(value).toHaveTextContent("0");
-    expect(value).not.toHaveClass("text-red-400");
+    expect(value).not.toHaveClass(TONE_TEXT.red.split(" ")[0]);
     expect(value).toHaveClass("text-foreground");
   });
 
@@ -166,7 +185,9 @@ describe("Dashboard", () => {
       isFetching: false,
     });
     render(<Dashboard />);
-    expect(screen.getByRole("heading", { level: 2, name: "Overview" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Overview" }),
+    ).toBeInTheDocument();
   });
 
   it("renders scan items when history has data", () => {
@@ -382,7 +403,7 @@ describe("Dashboard", () => {
     expect(screen.queryByText("NaN")).not.toBeInTheDocument();
     const openRiskValue = screen.getByText("Open risk").previousElementSibling;
     expect(openRiskValue?.textContent).toBe("1");
-    expect(openRiskValue).toHaveClass("text-red-400");
+    expect(openRiskValue).toHaveClass(...TONE_TEXT.red.split(" "));
     expect(screen.getAllByText("Failed").length).toBeGreaterThan(0);
     expect(screen.getAllByText("1C").length).toBeGreaterThan(0);
     expect(screen.getAllByText("2M").length).toBeGreaterThan(0);
@@ -390,7 +411,9 @@ describe("Dashboard", () => {
       .getByText("Recent work")
       .closest('[class*="lg:grid-cols-12"]');
     expect(jobs?.className).toMatch(/items-start/);
-    const recent = screen.getByText("Recent work").closest("[class*='flex-col']");
+    const recent = screen
+      .getByText("Recent work")
+      .closest("[class*='flex-col']");
     const content = recent?.querySelector("[class*='pb-\\[max']");
     expect(content?.className ?? "").toMatch(/2rem/);
   });

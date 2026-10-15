@@ -5,6 +5,7 @@ import {
   truncateId,
   type GuardTranslate,
 } from "@/components/guard/guardFormat";
+import { TONE_CHIP_TEXT } from "@/lib/toneColors";
 
 export function GuardPulse() {
   return (
@@ -77,7 +78,7 @@ export function TokenStatusBadge({
     );
   }
   return (
-    <Badge className="bg-emerald-500/15 text-emerald-600">
+    <Badge className={`bg-emerald-500/15 ${TONE_CHIP_TEXT.emerald}`}>
       {t("statusReady")}
     </Badge>
   );
@@ -102,18 +103,24 @@ export function AgentStatusBadge({
   const normalized = status.toLowerCase();
   if (normalized === "active") {
     return (
-      <Badge className="bg-emerald-500/15 text-emerald-600">{t("online")}</Badge>
+      <Badge className={`bg-emerald-500/15 ${TONE_CHIP_TEXT.emerald}`}>
+        {t("online")}
+      </Badge>
     );
   }
   if (normalized === "disconnected") {
     return (
-      <Badge className="bg-amber-500/15 text-amber-700">
+      <Badge className={`bg-amber-500/15 ${TONE_CHIP_TEXT.amber}`}>
         {t("disconnected")}
       </Badge>
     );
   }
   if (normalized === "pending") {
-    return <Badge className="bg-sky-500/15 text-sky-700">{t("pending")}</Badge>;
+    return (
+      <Badge className={`bg-sky-500/15 ${TONE_CHIP_TEXT.sky}`}>
+        {t("pending")}
+      </Badge>
+    );
   }
   return <Badge variant="info">{status}</Badge>;
 }

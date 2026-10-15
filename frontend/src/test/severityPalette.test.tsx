@@ -153,21 +153,18 @@ describe("severity palette contrast", () => {
 });
 
 describe("severity palette is wired into the components", () => {
-  it("keeps paired light/dark text shades in scanChrome", () => {
-    expect(scanChrome).toContain("text-orange-800 dark:text-orange-400");
-    expect(scanChrome).toContain("text-yellow-800 dark:text-yellow-400");
-    expect(scanChrome).toContain("text-blue-700 dark:text-blue-400");
-    expect(scanChrome).not.toMatch(/(?<!dark:)text-(orange|yellow|blue)-400"/);
+  it("delegates severity text to the shared tone pairs", () => {
+    for (const hue of ["orange", "yellow", "blue"]) {
+      expect(scanChrome, hue).toContain(`TONE_TEXT.${hue}`);
+    }
   });
 
-  it("keeps paired light/dark text shades on every severity badge", () => {
-    expect(badgeVariants).toContain("text-red-800 dark:text-red-400");
-    expect(badgeVariants).toContain("text-orange-800 dark:text-orange-400");
-    expect(badgeVariants).toContain("text-yellow-800 dark:text-yellow-400");
-    expect(badgeVariants).toContain("text-blue-700 dark:text-blue-400");
-    expect(badgeVariants).toContain("text-gray-700 dark:text-gray-400");
+  it("delegates every severity badge to the shared tone pairs", () => {
+    for (const hue of ["red", "orange", "yellow", "blue", "gray"]) {
+      expect(badgeVariants, hue).toContain(`TONE_CHIP_TEXT.${hue}`);
+    }
     expect(badgeVariants).not.toMatch(
-      /(?<!dark:)text-(red|orange|yellow|blue|gray)-400"/,
+      /text-(red|orange|yellow|blue|gray)-\d00/,
     );
   });
 
@@ -189,11 +186,11 @@ describe("severity palette is wired into the components", () => {
     expect(severityChart).toContain("fill={entry.fill}");
   });
 
-  it("keeps paired light/dark shades on the CVSS score and bar", () => {
-    for (const shade of ["red", "orange", "yellow", "blue"]) {
-      expect(findingsTable).toContain(`text-${shade}-`);
-      expect(findingsTable).toContain(`dark:text-${shade}-400`);
-      expect(findingsTable).toContain(`dark:bg-${shade}-400`);
+  it("delegates the CVSS score to the shared tone pairs and keeps the bar paired", () => {
+    for (const hue of ["red", "orange", "yellow", "blue"]) {
+      expect(findingsTable, hue).toContain(`TONE_TEXT.${hue}`);
+      expect(findingsTable).toContain(`bg-${hue}-700`);
+      expect(findingsTable).toContain(`dark:bg-${hue}-400`);
     }
   });
 });

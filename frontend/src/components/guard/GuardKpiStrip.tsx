@@ -8,6 +8,7 @@ import {
 import { SiemRail } from "@/components/siem/siemChrome";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { TONE_CHIP_TEXT } from "@/lib/toneColors";
 
 type GuardHealth = "on" | "degraded" | "off";
 
@@ -38,7 +39,9 @@ function KpiTile({
       <p className="pl-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
-      <div className={`mt-1 flex flex-wrap items-center gap-2 pl-2 ${valueClass}`}>
+      <div
+        className={`mt-1 flex flex-wrap items-center gap-2 pl-2 ${valueClass}`}
+      >
         {value}
         {pulse ? <GuardPulse /> : null}
         {extra}
@@ -74,10 +77,7 @@ export function GuardKpiStrip({
       <KpiTile
         label={t("guardState")}
         value={
-          <span
-            data-testid="guard-state"
-            data-enabled={on ? "true" : "false"}
-          >
+          <span data-testid="guard-state" data-enabled={on ? "true" : "false"}>
             <strong className="font-bold">
               {on ? t("enabledOn") : t("enabledOff")}
             </strong>
@@ -88,7 +88,7 @@ export function GuardKpiStrip({
         valueClass="text-sm font-semibold text-foreground"
         extra={
           status.degraded ? (
-            <Badge className="bg-amber-500/15 text-amber-800">
+            <Badge className={`bg-amber-500/15 ${TONE_CHIP_TEXT.amber}`}>
               {t("degraded")}
             </Badge>
           ) : null

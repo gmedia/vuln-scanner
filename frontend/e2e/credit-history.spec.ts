@@ -95,7 +95,7 @@ test.describe("Credit History @shell", () => {
     ).toBeTruthy();
   });
 
-  test("type badges have correct color classes", async ({ page }) => {
+  test("type badges render for ledger rows", async ({ page }) => {
     await page.goto("/credit-history");
     await page
       .waitForSelector("[data-slot='skeleton']", {
@@ -104,22 +104,21 @@ test.describe("Credit History @shell", () => {
       })
       .catch(() => {});
 
-    const creditBadge = page.locator("table tbody tr td span.bg-green-600");
-    const deductBadge = page.locator("table tbody tr td span.bg-red-600");
-    const refundBadge = page.locator("table tbody tr td span.bg-blue-600");
-
-    const badgeCount =
-      (await creditBadge.count().catch(() => 0)) +
-      (await deductBadge.count().catch(() => 0)) +
-      (await refundBadge.count().catch(() => 0));
+    const typeBadges = page.locator('[data-testid="credit-type-badge"]');
+    const badgeCount = await typeBadges.count().catch(() => 0);
 
     if (badgeCount > 0) {
-      const anyBadge = page.locator("table tbody tr td span").first();
-      await expect(anyBadge).toBeVisible();
+      await expect(typeBadges.first()).toBeVisible();
+      const types = await typeBadges.evaluateAll((nodes) =>
+        nodes.map((node) => node.getAttribute("data-type")),
+      );
+      for (const type of types) {
+        expect(["credit", "deduct", "refund"]).toContain(type);
+      }
     }
   });
 
-  test("positive amounts have green-400 class", async ({ page }) => {
+  test("amounts render with the matching sign", async ({ page }) => {
     await page.goto("/credit-history");
     await page
       .waitForSelector("[data-slot='skeleton']", {
@@ -129,9 +128,11 @@ test.describe("Credit History @shell", () => {
       .catch(() => {});
 
     const positiveAmounts = page.locator(
-      "table tbody tr td span.text-green-400",
+      '[data-testid="credit-amount"][data-sign="positive"]',
     );
-    const negativeAmounts = page.locator("table tbody tr td span.text-red-400");
+    const negativeAmounts = page.locator(
+      '[data-testid="credit-amount"][data-sign="negative"]',
+    );
 
     const posCount = await positiveAmounts.count().catch(() => 0);
     const negCount = await negativeAmounts.count().catch(() => 0);

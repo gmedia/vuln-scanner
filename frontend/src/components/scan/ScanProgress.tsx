@@ -7,6 +7,7 @@ import { useScanDetail } from "@/hooks/useScan";
 import { Progress } from "@/components/ui/Progress";
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
+import { TONE_TEXT } from "@/lib/toneColors";
 
 interface ScanProgressProps {
   className?: string;
@@ -46,10 +47,7 @@ function ScanProgress({ className }: ScanProgressProps) {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (
-        activeJobId &&
-        Date.now() - lastMessageTimeRef.current > 20000
-      ) {
+      if (activeJobId && Date.now() - lastMessageTimeRef.current > 20000) {
         setIsDisconnected(true);
         setTick((t) => t + 1);
       }
@@ -89,9 +87,9 @@ function ScanProgress({ className }: ScanProgressProps) {
           ) : isFailed ? (
             <XCircle className="h-5 w-5 text-destructive" />
           ) : isDisconnected ? (
-            <WifiOff className="h-5 w-5 text-amber-400" />
+            <WifiOff className={cn("h-5 w-5", TONE_TEXT.amber)} />
           ) : (
-            <Clock className="h-5 w-5 animate-pulse text-blue-400" />
+            <Clock className={cn("h-5 w-5 animate-pulse", TONE_TEXT.blue)} />
           )}
           <span className="text-sm font-medium text-foreground">
             {isComplete

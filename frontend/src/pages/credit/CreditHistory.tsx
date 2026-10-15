@@ -45,13 +45,14 @@ import { creditApi, type CreditLogItem } from "@/api/credits";
 import { useCreditStore } from "@/store/creditStore";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
+import { TONE_CHIP_TEXT, TONE_TEXT } from "@/lib/toneColors";
 
 const PAGE_SIZE = 20;
 
 const TYPE_COLORS: Record<string, string> = {
-  credit: "bg-green-600/15 text-green-700 dark:text-green-300",
-  deduct: "bg-red-600/15 text-red-700 dark:text-red-300",
-  refund: "bg-blue-600/15 text-blue-700 dark:text-blue-300",
+  credit: `bg-green-600/15 ${TONE_CHIP_TEXT.green}`,
+  deduct: `bg-red-600/15 ${TONE_CHIP_TEXT.red}`,
+  refund: `bg-blue-600/15 ${TONE_CHIP_TEXT.blue}`,
 };
 
 type FilterType = "all" | "credit" | "deduct" | "refund";
@@ -116,13 +117,7 @@ function StatTile({
   );
 }
 
-function EmptyIsland({
-  title,
-  hint,
-}: {
-  title: string;
-  hint: string;
-}) {
+function EmptyIsland({ title, hint }: { title: string; hint: string }) {
   return (
     <div className="m-4 flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
       <History className="h-8 w-8 text-muted-foreground" aria-hidden />
@@ -135,6 +130,8 @@ function EmptyIsland({
 function TypeBadge({ type }: { type: string }) {
   return (
     <span
+      data-testid="credit-type-badge"
+      data-type={type}
       className={cn(
         "inline-flex items-center rounded px-2 py-0.5 font-mono text-[10px] uppercase",
         TYPE_COLORS[type] ?? TYPE_COLORS.credit,
@@ -145,7 +142,13 @@ function TypeBadge({ type }: { type: string }) {
   );
 }
 
-function AmountFigure({ item, size = "sm" }: { item: CreditLogItem; size?: "sm" | "md" }) {
+function AmountFigure({
+  item,
+  size = "sm",
+}: {
+  item: CreditLogItem;
+  size?: "sm" | "md";
+}) {
   const signed = signedLedgerAmount(item);
   const isPositive = signed > 0;
   return (
@@ -153,9 +156,7 @@ function AmountFigure({ item, size = "sm" }: { item: CreditLogItem; size?: "sm" 
       className={cn(
         "inline-flex min-w-[4.5rem] items-center justify-end font-mono font-bold tabular-nums",
         size === "md" ? "text-sm" : "text-xs",
-        isPositive
-          ? "text-green-700 dark:text-green-300"
-          : "text-red-700 dark:text-red-300",
+        isPositive ? TONE_TEXT.green : TONE_TEXT.red,
       )}
     >
       {isPositive ? "+" : ""}
@@ -207,7 +208,7 @@ function LedgerMobileCard({ item }: { item: CreditLogItem }) {
             {item.description || "View scan"}
           </Link>
         ) : (
-          (item.description || "—")
+          item.description || "—"
         )}
       </p>
       <p className="mt-1 font-mono text-[11px] tabular-nums text-muted-foreground">
@@ -248,11 +249,13 @@ function TransactionRow({ item }: { item: CreditLogItem }) {
       </TableCell>
       <TableCell className="py-2.5 text-right">
         <span
+          data-testid="credit-amount"
+          data-sign={isPositive ? "positive" : "negative"}
           className={cn(
             "inline-flex min-w-[4.5rem] items-center justify-end rounded-full px-2.5 py-0.5 font-mono text-xs font-bold tabular-nums",
             isPositive
-              ? "bg-green-600/15 text-green-700 dark:text-green-400"
-              : "bg-red-600/15 text-red-700 dark:text-red-400",
+              ? `bg-green-600/15 ${TONE_CHIP_TEXT.green}`
+              : `bg-red-600/15 ${TONE_CHIP_TEXT.red}`,
           )}
         >
           {isPositive ? "+" : ""}
@@ -438,9 +441,7 @@ function CreditHistory() {
                     <span
                       className={cn(
                         "font-mono tabular-nums",
-                        periodNet >= 0
-                          ? "text-green-700 dark:text-green-300"
-                          : "text-red-700 dark:text-red-300",
+                        periodNet >= 0 ? TONE_TEXT.green : TONE_TEXT.red,
                       )}
                     >
                       {periodNet >= 0 ? "+" : ""}
@@ -472,13 +473,13 @@ function CreditHistory() {
           <StatTile
             label="Period credits"
             value={`+${periodCredits.toLocaleString()}`}
-            valueClassName="text-green-700 dark:text-green-400"
+            valueClassName={TONE_TEXT.green}
             railClass="bg-primary"
           />
           <StatTile
             label="Period debits"
             value={`-${periodDebits.toLocaleString()}`}
-            valueClassName="text-red-700 dark:text-red-400"
+            valueClassName={TONE_TEXT.red}
             railClass="bg-destructive"
           />
         </div>
