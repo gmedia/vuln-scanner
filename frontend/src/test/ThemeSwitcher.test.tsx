@@ -2,6 +2,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ThemeSwitcher from "@/components/theme/ThemeSwitcher";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { THEME_STORAGE_KEY, applyTheme } from "@/theme/theme";
 
 describe("ThemeSwitcher", () => {
@@ -23,6 +24,26 @@ describe("ThemeSwitcher", () => {
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("light");
     await user.click(screen.getByTestId("theme-dark"));
     expect(document.documentElement.classList.contains("dark")).toBe(true);
+    expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
+  });
+
+  it("toggles the theme from one icon control when collapsed", async () => {
+    const user = userEvent.setup();
+    render(
+      <SidebarProvider defaultOpen={false}>
+        <ThemeSwitcher collapsed />
+      </SidebarProvider>,
+    );
+
+    expect(screen.getAllByTestId("theme-switcher")).toHaveLength(1);
+    expect(screen.queryByTestId("theme-dark")).toBeNull();
+    expect(screen.queryByTestId("theme-light")).toBeNull();
+    expect(screen.getByTestId("theme-switcher")).toHaveAttribute("data-sidebar", "menu-button");
+    await user.click(screen.getByTestId("theme-switcher"));
+    expect(document.documentElement).not.toHaveClass("dark");
+    expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("light");
+    await user.click(screen.getByTestId("theme-switcher"));
+    expect(document.documentElement).toHaveClass("dark");
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
   });
 });
