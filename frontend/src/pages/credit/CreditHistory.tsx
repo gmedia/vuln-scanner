@@ -130,6 +130,8 @@ function EmptyIsland({ title, hint }: { title: string; hint: string }) {
 function TypeBadge({ type }: { type: string }) {
   return (
     <span
+      data-testid="credit-type-badge"
+      data-type={type}
       className={cn(
         "inline-flex items-center rounded px-2 py-0.5 font-mono text-[10px] uppercase",
         TYPE_COLORS[type] ?? TYPE_COLORS.credit,
@@ -247,6 +249,8 @@ function TransactionRow({ item }: { item: CreditLogItem }) {
       </TableCell>
       <TableCell className="py-2.5 text-right">
         <span
+          data-testid="credit-amount"
+          data-sign={isPositive ? "positive" : "negative"}
           className={cn(
             "inline-flex min-w-[4.5rem] items-center justify-end rounded-full px-2.5 py-0.5 font-mono text-xs font-bold tabular-nums",
             isPositive

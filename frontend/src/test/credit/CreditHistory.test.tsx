@@ -60,8 +60,6 @@ vi.mock("@/store/creditStore", () => ({
   ),
 }));
 
-
-
 vi.mock("@/components/ui/Card", () => ({
   Card: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
     <div data-testid="card" {...props}>
@@ -357,6 +355,31 @@ describe("CreditHistory", () => {
     expect(screen.getAllByText("+25").length).toBeGreaterThan(0);
   });
 
+  it("exposes stable testids for the amount sign and the type badge", () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: { items: mockItems, total: 3 },
+      isLoading: false,
+    } as ReturnType<typeof useQuery>);
+
+    renderHistory();
+
+    const amounts = screen.getAllByTestId("credit-amount");
+    expect(amounts.length).toBeGreaterThanOrEqual(1);
+    for (const amount of amounts) {
+      expect(["positive", "negative"]).toContain(
+        amount.getAttribute("data-sign"),
+      );
+    }
+
+    const badges = screen.getAllByTestId("credit-type-badge");
+    expect(badges.length).toBeGreaterThanOrEqual(1);
+    for (const badge of badges) {
+      expect(["credit", "deduct", "refund"]).toContain(
+        badge.getAttribute("data-type"),
+      );
+    }
+  });
+
   it("renders type badges for each transaction", () => {
     vi.mocked(useQuery).mockReturnValue({
       data: { items: mockItems, total: 3 },
@@ -622,9 +645,9 @@ describe("CreditHistory", () => {
     renderHistory();
     const links = screen.getAllByRole("link", { name: "IP scan job" });
     expect(links.length).toBeGreaterThanOrEqual(1);
-    expect(links.every((el) => el.getAttribute("href") === "/scan/scan-abc")).toBe(
-      true,
-    );
+    expect(
+      links.every((el) => el.getAttribute("href") === "/scan/scan-abc"),
+    ).toBe(true);
   });
 
   it("renders wallet identity band with balance and account links", () => {

@@ -134,6 +134,7 @@ export function AuthNotice({
       <SiemRail className={authRailClass(tone)} />
       <p
         role={role}
+        data-testid={`auth-notice-${tone}`}
         className={cn("pl-2 text-xs leading-relaxed", NOTICE_TEXT[tone])}
       >
         {children}

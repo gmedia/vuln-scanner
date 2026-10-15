@@ -74,7 +74,9 @@ test.describe("Auth — Register @smoke", () => {
     await page.locator("input#password").fill("Password123!");
     await page.locator("input#confirmPassword").fill("DifferentPassword123!");
     await page.locator("button[type='submit']").click();
-    await expect(page.locator(".text-red-400")).toBeVisible({
+    await expect(
+      page.locator('[data-testid="auth-notice-danger"]'),
+    ).toBeVisible({
       timeout: 10_000,
     });
   });
@@ -85,7 +87,9 @@ test.describe("Auth — Register @smoke", () => {
     await page.locator("input#password").fill("short");
     await page.locator("input#confirmPassword").fill("short");
     await page.locator("button[type='submit']").click();
-    await expect(page.locator(".text-red-400")).toBeVisible({
+    await expect(
+      page.locator('[data-testid="auth-notice-danger"]'),
+    ).toBeVisible({
       timeout: 10_000,
     });
   });

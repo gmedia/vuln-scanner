@@ -64,6 +64,7 @@ describe("AuthNotice", () => {
     expect(alert).toHaveTextContent("Bad credentials");
     expect(alert.className).toMatch(/text-red-700 dark:text-red-400/);
     expect(alert.parentElement?.querySelector(".bg-destructive")).toBeTruthy();
+    expect(screen.getByTestId("auth-notice-danger")).toBe(alert);
   });
 
   it("renders a success notice on the primary rail", () => {
