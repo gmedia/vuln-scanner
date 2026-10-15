@@ -333,5 +333,20 @@
   "simGuideLimit2": "This page never changes real data: no writes to HPP rates, overhead, journal, catalog, or invoices.",
   "simGuideLimit3": "Uptime and Guard are billed as à-la-carte lines, but their revenue here is still an assumption — it is not tied to a specific paid invoice.",
   "simGuideLimit4": "Seat caps are not applied here — caps are enforced when assets are created, not in what-if math.",
-  "simGuideLimit5": "The price here is an assumption, not the official price. To change the real SKU price, use the SKU Catalog page."
+  "simGuideLimit5": "The price here is an assumption, not the official price. To change the real SKU price, use the SKU Catalog page.",
+  "skuGuideTitle": "How to use this page",
+  "skuGuideHint": "Prices here are selling prices, not costs. Saved changes affect future invoices only.",
+  "skuGuideStepsTitle": "Steps",
+  "skuGuideStep1": "Edit the list price for a row — this is the selling price, not the cost.",
+  "skuGuideStep2": "Tick Invoicable if the SKU should be billable on new manual invoices.",
+  "skuGuideStep3": "Click Save to review your edits; no change is written yet.",
+  "skuGuideStep4": "Confirm in the dialog after checking the old and new price and any Invoicable change.",
+  "skuGuidePricingTitle": "Price versus cost",
+  "skuGuidePricingBody": "The list price is revenue from selling the SKU; COGS is managed on /admin/hpp. Saving changes future invoices only. An issued invoice retains the amount recorded when it was created.",
+  "skuGuideInvoicableTitle": "Invoice eligibility",
+  "skuGuideInvoicableBody": "Invoicable controls whether this SKU can be added as a line on a manually created invoice. It does not set the price, create an invoice, reprice issued invoices, or change capacity or seat caps.",
+  "skuGuideLimitsTitle": "Limits",
+  "skuGuideLimit1": "Seats are read-only here; they follow the tier cap and are set elsewhere.",
+  "skuGuideLimit2": "Bundle and annual terms are owner-locked quote constants, not editable rows or an invoiced bundle.",
+  "skuGuideLimit3": "Saves require confirmation, are audited with updated_by and updated_at, and accept only non-negative integer prices."
 }

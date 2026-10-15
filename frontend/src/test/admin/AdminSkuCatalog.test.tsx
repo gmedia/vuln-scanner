@@ -124,6 +124,23 @@ beforeEach(() => {
 });
 
 describe("AdminSkuCatalog", () => {
+  it("renders a collapsible usage guide", async () => {
+    const user = userEvent.setup();
+    render(<AdminSkuCatalog />);
+    expect(screen.getByTestId("sku-catalog-guide")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Edit the list price for a row — this is the selling price, not the cost."),
+    ).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Steps" }));
+    expect(
+      await screen.findByText("Edit the list price for a row — this is the selling price, not the cost."),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Limits" }));
+    expect(
+      await screen.findByText("Seats are read-only here; they follow the tier cap and are set elsewhere."),
+    ).toBeInTheDocument();
+  });
+
   it("shows the locked bundle and annual reference", () => {
     render(<AdminSkuCatalog />);
     expect(screen.getByTestId("sku-bundle-card")).toBeInTheDocument();

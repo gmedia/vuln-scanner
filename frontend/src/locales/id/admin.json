@@ -333,5 +333,20 @@
   "simGuideLimit2": "Halaman ini tidak pernah mengubah data nyata: tidak menulis ke tarif HPP, overhead, jurnal, katalog, atau invoice.",
   "simGuideLimit3": "Uptime dan Guard ditagih sebagai baris à-la-carte, tetapi pendapatannya di sini tetap asumsi — tidak terikat ke invoice yang benar-benar dibayar.",
   "simGuideLimit4": "Cap kursi tidak diterapkan di sini — cap ditegakkan saat aset dibuat, bukan di matematika what-if.",
-  "simGuideLimit5": "Harga di sini adalah asumsi, bukan harga resmi. Untuk mengubah harga SKU yang sebenarnya, gunakan halaman Katalog SKU."
+  "simGuideLimit5": "Harga di sini adalah asumsi, bukan harga resmi. Untuk mengubah harga SKU yang sebenarnya, gunakan halaman Katalog SKU.",
+  "skuGuideTitle": "Cara menggunakan halaman ini",
+  "skuGuideHint": "Harga di halaman ini adalah harga jual, bukan biaya. Menyimpan harga memengaruhi invoice berikutnya, bukan yang sudah terbit.",
+  "skuGuideStepsTitle": "Langkah",
+  "skuGuideStep1": "Ubah harga list pada baris yang dipilih — ini harga jual, bukan biaya produksi.",
+  "skuGuideStep2": "Centang Invoicable agar SKU dapat ditagih pada invoice manual yang baru.",
+  "skuGuideStep3": "Klik Simpan untuk meninjau perubahan; data belum ditulis pada tahap ini.",
+  "skuGuideStep4": "Konfirmasi di dialog setelah memeriksa harga lama dan baru serta perubahan status Invoicable.",
+  "skuGuidePricingTitle": "Harga jual dan biaya",
+  "skuGuidePricingBody": "Harga list adalah pendapatan dari penjualan SKU; COGS dikelola di /admin/hpp. Perubahan yang disimpan hanya berlaku untuk invoice berikutnya. Invoice yang sudah terbit tetap memakai nominal saat dibuat.",
+  "skuGuideInvoicableTitle": "Kelayakan invoice",
+  "skuGuideInvoicableBody": "Invoicable menentukan apakah SKU dapat ditambahkan sebagai baris pada invoice yang dibuat manual. Opsi ini tidak menetapkan harga, membuat invoice, mengubah harga invoice yang sudah terbit, atau mengubah kapasitas maupun batas seat.",
+  "skuGuideLimitsTitle": "Batasan",
+  "skuGuideLimit1": "Seat di sini hanya dapat dilihat; jumlahnya mengikuti batas tier dan diatur di tempat lain.",
+  "skuGuideLimit2": "Ketentuan bundle dan tahunan adalah angka penawaran yang dikunci pemilik, bukan baris yang dapat diedit ataupun bundle yang ditagihkan.",
+  "skuGuideLimit3": "Penyimpanan memerlukan konfirmasi, dicatat melalui updated_by dan updated_at, serta hanya menerima harga berupa bilangan bulat yang tidak negatif."
 }
