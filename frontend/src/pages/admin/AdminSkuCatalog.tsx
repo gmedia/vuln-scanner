@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Tags } from "lucide-react";
+import { BookOpen, Package, Tags } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import {
@@ -15,6 +15,12 @@ import {
   AdminShellHead,
 } from "@/components/admin/AdminShell";
 import PageHeader from "@/components/layout/PageHeader";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/Accordion";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -147,6 +153,51 @@ function AdminSkuCatalog() {
         title={t("skuTitle")}
         description={t("skuHint")}
       />
+
+      <AdminShell testid="sku-catalog-guide" tone="info">
+        <AdminShellHead icon={BookOpen} title={t("skuGuideTitle")} hint={t("skuGuideHint")} />
+        <AdminShellBody>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="steps">
+              <AccordionTrigger>{t("skuGuideStepsTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <ol className="ml-4 list-decimal space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>{t("skuGuideStep1")}</li>
+                  <li>{t("skuGuideStep2")}</li>
+                  <li>{t("skuGuideStep3")}</li>
+                  <li>{t("skuGuideStep4")}</li>
+                </ol>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="pricing">
+              <AccordionTrigger>{t("skuGuidePricingTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t("skuGuidePricingBody")}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="invoicable">
+              <AccordionTrigger>{t("skuGuideInvoicableTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t("skuGuideInvoicableBody")}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="limits">
+              <AccordionTrigger>{t("skuGuideLimitsTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <ul className="ml-4 list-disc space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>{t("skuGuideLimit1")}</li>
+                  <li>{t("skuGuideLimit2")}</li>
+                  <li>{t("skuGuideLimit3")}</li>
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </AdminShellBody>
+      </AdminShell>
 
       <AdminShell testid="sku-catalog-card">
         <AdminShellHead icon={Tags} title={t("skuTitle")} hint={t("skuHint")} />

@@ -236,6 +236,43 @@ describe("AdminHpp", () => {
     vi.mocked(useMutation).mockReturnValue({ mutate: vi.fn() } as never);
   });
 
+  it("renders a collapsible usage guide", async () => {
+    vi.mocked(useQuery).mockImplementation((opts) => {
+      const key = (opts.queryKey as readonly unknown[])[0];
+      if (key === "admin-hpp") {
+        return { data: rates, isLoading: false } as never;
+      }
+      if (key === "admin-hpp-overhead") {
+        return {
+          data: {
+            amount_idr: 100,
+            updated_at: "2026-08-01T00:00:00Z",
+            updated_by: null,
+          },
+          isLoading: false,
+        } as never;
+      }
+      if (key === "admin-hpp-costs") {
+        return { data: [], isLoading: false } as never;
+      }
+      return { data: report, isLoading: false } as never;
+    });
+    const user = userEvent.setup();
+    render(<AdminHpp />);
+    expect(screen.getByTestId("hpp-guide")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Enter the real per-unit cost (COGS) in the Unit rates card, then Save each key."),
+    ).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Steps" }));
+    expect(
+      await screen.findByText("Enter the real per-unit cost (COGS) in the Unit rates card, then Save each key."),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Limits" }));
+    expect(
+      await screen.findByText("The report is a cost and margin estimate, not invoice profit."),
+    ).toBeInTheDocument();
+  });
+
   it("asks before deleting a cost line", async () => {
     const user = userEvent.setup();
     const costLine = {
