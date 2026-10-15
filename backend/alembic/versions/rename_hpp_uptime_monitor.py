@@ -21,12 +21,15 @@ _NEW_KEYS = "key IN ('ip', 'domain', 'apk', 'ipa', 'statushost', 'hostscan', 'up
 
 
 def upgrade() -> None:
-    op.execute(sa.text("UPDATE hpp_rates SET key = 'uptimemonitor' WHERE key = 'uptimecheck'"))
+    # Drop the CHECK first: UPDATEing the key to 'uptimemonitor' while the old
+    # CHECK (which allows 'uptimecheck') is still active would raise a
+    # CheckViolation. The UPDATE carries any existing amount_idr over.
     op.drop_constraint("ck_hpp_rates_key", "hpp_rates", type_="check")
+    op.execute(sa.text("UPDATE hpp_rates SET key = 'uptimemonitor' WHERE key = 'uptimecheck'"))
     op.create_check_constraint("ck_hpp_rates_key", "hpp_rates", _NEW_KEYS)
 
 
 def downgrade() -> None:
-    op.execute(sa.text("UPDATE hpp_rates SET key = 'uptimecheck' WHERE key = 'uptimemonitor'"))
     op.drop_constraint("ck_hpp_rates_key", "hpp_rates", type_="check")
+    op.execute(sa.text("UPDATE hpp_rates SET key = 'uptimecheck' WHERE key = 'uptimemonitor'"))
     op.create_check_constraint("ck_hpp_rates_key", "hpp_rates", _OLD_KEYS)
