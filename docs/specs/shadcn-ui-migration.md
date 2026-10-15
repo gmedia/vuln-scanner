@@ -40,6 +40,8 @@ Card padding stays `p-6` / `pt-0`. Do not restyle kit files to “match screensh
 
 accordion, alert, alert-dialog, Badge, Button, Calendar, Card, chart, DatePicker, DateTimePicker, Dialog, dropdown-menu, Input, Label, Pagination, Popover, Progress, ScrollArea, Select, Separator, sheet, sidebar, Skeleton, sonner, Table, Tabs, Textarea, Tooltip, breadcrumb.
 
+**Sidebar kit hazard:** `SidebarMenuButton size="lg"` in `frontend/src/components/ui/sidebar.tsx` has `group-data-[collapsible=icon]:p-0!`, which overrides base `group-data-[collapsible=icon]:p-2!`. It is unsafe for unguarded text/icon content inside the collapsed rail. See [`frontend/DESIGN.md`](../../frontend/DESIGN.md) § "App shell chrome (Sidebar / Header)" (#973, #975); don't restyle the kit for this surface.
+
 ### Installed but unused (or only tests / sidebar)
 
 | Primitive | Notes |
