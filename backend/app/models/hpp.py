@@ -7,7 +7,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
 
-HPP_KEYS = ("ip", "domain", "apk", "ipa", "statushost", "hostscan", "uptimecheck", "guardagent")
+# Per-key COGS unit:
+#   ip/domain/apk/ipa  -> one COMPLETED scan job (event)
+#   statushost         -> one activation debit (legacy; writer is a no-op)
+#   hostscan           -> one COMPLETED Host Protect scan (event)
+#   uptimemonitor      -> one ENABLED uptime monitor (active inventory, no date filter)
+#   guardagent         -> one ACTIVE Guard agent (active inventory, no date filter)
+HPP_KEYS = ("ip", "domain", "apk", "ipa", "statushost", "hostscan", "uptimemonitor", "guardagent")
 
 
 class HppRate(Base):
@@ -23,7 +29,7 @@ class HppRate(Base):
     __table_args__ = (
         CheckConstraint("amount_idr >= 0", name="ck_hpp_rates_amount_non_negative"),
         CheckConstraint(
-            "key IN ('ip', 'domain', 'apk', 'ipa', 'statushost', 'hostscan', 'uptimecheck', 'guardagent')",
+            "key IN ('ip', 'domain', 'apk', 'ipa', 'statushost', 'hostscan', 'uptimemonitor', 'guardagent')",
             name="ck_hpp_rates_key",
         ),
     )

@@ -1305,6 +1305,21 @@ class TestAdminHpp:
             next_check_at=datetime.now(UTC),
         )
         db_session.add(monitor)
+        db_session.add(
+            UptimeMonitor(
+                id=uuid.uuid4(),
+                organization_id=org.id,
+                created_by=sample_user.id,
+                name="hpp-uptime-disabled",
+                check_type="http",
+                target="https://disabled.example.test",
+                interval_seconds=60,
+                timeout_seconds=10,
+                state="unknown",
+                enabled=False,
+                next_check_at=datetime.now(UTC),
+            )
+        )
         await db_session.flush()
         for _ in range(3):
             db_session.add(
@@ -1343,16 +1358,16 @@ class TestAdminHpp:
                 disabled_at=datetime.now(UTC),
             )
         )
-        db_session.add(HppRate(key="uptimecheck", amount_idr=5, updated_at=datetime.now(UTC)))
+        db_session.add(HppRate(key="uptimemonitor", amount_idr=5, updated_at=datetime.now(UTC)))
         db_session.add(HppRate(key="guardagent", amount_idr=1000, updated_at=datetime.now(UTC)))
         await db_session.commit()
         resp = client.get("/api/admin/hpp/report", headers=API_HEADERS)
         assert resp.status_code == 200
         data = resp.json()
-        uptime_line = next(x for x in data["lines"] if x["key"] == "uptimecheck")
-        assert uptime_line["count"] == 3
+        uptime_line = next(x for x in data["lines"] if x["key"] == "uptimemonitor")
+        assert uptime_line["count"] == 1
         assert uptime_line["rate_idr"] == 5
-        assert uptime_line["hpp_idr"] == 15
+        assert uptime_line["hpp_idr"] == 5
         guard_line = next(x for x in data["lines"] if x["key"] == "guardagent")
         assert guard_line["count"] == 2
         assert guard_line["rate_idr"] == 1000
@@ -1437,7 +1452,7 @@ class TestAdminHpp:
                 disabled_at=datetime.now(UTC),
             )
         )
-        db_session.add(HppRate(key="uptimecheck", amount_idr=5, updated_at=datetime.now(UTC)))
+        db_session.add(HppRate(key="uptimemonitor", amount_idr=5, updated_at=datetime.now(UTC)))
         db_session.add(HppRate(key="guardagent", amount_idr=1000, updated_at=datetime.now(UTC)))
         await db_session.commit()
 
@@ -1448,8 +1463,8 @@ class TestAdminHpp:
 
         assert margins["uptime"]["org_count"] == 1
         assert margins["uptime"]["revenue_idr"] == 75_000
-        assert margins["uptime"]["cogs_idr"] == 15
-        assert margins["uptime"]["margin_idr"] == 75_000 - 15
+        assert margins["uptime"]["cogs_idr"] == 5
+        assert margins["uptime"]["margin_idr"] == 75_000 - 5
         assert margins["uptime"]["unpriced_org_count"] == 0
 
         assert margins["guard"]["org_count"] == 1

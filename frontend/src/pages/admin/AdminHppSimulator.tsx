@@ -100,7 +100,7 @@ function reportUnitCost(
   const keys =
     service === "scan"
       ? SCAN_COST_KEYS
-      : [service === "host" ? "hostscan" : service === "uptime" ? "uptimecheck" : "guardagent"];
+      : [service === "host" ? "hostscan" : service === "uptime" ? "uptimemonitor" : "guardagent"];
   let cost = 0;
   let count = 0;
   for (const key of keys) {

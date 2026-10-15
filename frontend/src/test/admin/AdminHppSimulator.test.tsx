@@ -54,7 +54,7 @@ const report: HppReportResponse = {
     { key: "ipa", count: 0, rate_idr: 0, hpp_idr: 0, overhead_share_idr: 0, fully_loaded_hpp_idr: 0, fully_loaded_unit_idr: 0 },
     { key: "statushost", count: 0, rate_idr: 0, hpp_idr: 0, overhead_share_idr: 0, fully_loaded_hpp_idr: 0, fully_loaded_unit_idr: 0 },
     { key: "hostscan", count: 4, rate_idr: 25_000, hpp_idr: 100_000, overhead_share_idr: 0, fully_loaded_hpp_idr: 100_000, fully_loaded_unit_idr: 25_000 },
-    { key: "uptimecheck", count: 200, rate_idr: 5, hpp_idr: 1_000, overhead_share_idr: 0, fully_loaded_hpp_idr: 1_000, fully_loaded_unit_idr: 5 },
+    { key: "uptimemonitor", count: 200, rate_idr: 5, hpp_idr: 1_000, overhead_share_idr: 0, fully_loaded_hpp_idr: 1_000, fully_loaded_unit_idr: 5 },
     { key: "guardagent", count: 2, rate_idr: 1_000, hpp_idr: 2_000, overhead_share_idr: 0, fully_loaded_hpp_idr: 2_000, fully_loaded_unit_idr: 1_000 },
   ],
   total_count: 216,
@@ -159,7 +159,7 @@ describe("AdminHppSimulator", () => {
   });
 
   it("keeps an uncosted uptime row honest", () => {
-    currentReport = { ...report, lines: report.lines.filter((line) => line.key !== "uptimecheck") };
+    currentReport = { ...report, lines: report.lines.filter((line) => line.key !== "uptimemonitor") };
     render(<AdminHppSimulator />);
     const row = screen.getByTestId("hpp-sim-row-uptime");
     expect(row).toHaveTextContent("cost not filled in");
