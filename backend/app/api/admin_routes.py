@@ -28,7 +28,7 @@ from app.models.organization import Organization
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.scan_schedule import ScanSchedule
-from app.models.uptime import UptimeMonitor, UptimeSample
+from app.models.uptime import UptimeMonitor
 from app.models.user import User
 from app.schemas.admin import (
     AdminStats,
@@ -443,13 +443,10 @@ async def get_hpp_report(
     )
     hostscan_count = int(hostscan_result.scalar() or 0)
 
-    uptimecheck_result = await db.execute(
-        select(func.count(UptimeSample.id)).where(
-            UptimeSample.checked_at >= start,
-            UptimeSample.checked_at <= end,
-        )
+    uptimemonitor_result = await db.execute(
+        select(func.count(UptimeMonitor.id)).where(UptimeMonitor.enabled.is_(True))
     )
-    uptimecheck_count = int(uptimecheck_result.scalar() or 0)
+    uptimemonitor_count = int(uptimemonitor_result.scalar() or 0)
 
     guardagent_result = await db.execute(
         select(func.count(GuardAgent.id)).where(GuardAgent.disabled_at.is_(None))
@@ -464,8 +461,8 @@ async def get_hpp_report(
             count = statushost_count
         elif key == "hostscan":
             count = hostscan_count
-        elif key == "uptimecheck":
-            count = uptimecheck_count
+        elif key == "uptimemonitor":
+            count = uptimemonitor_count
         elif key == "guardagent":
             count = guardagent_count
         else:
@@ -514,7 +511,7 @@ async def get_hpp_report(
     fully_by_key = {line.key: line.fully_loaded_hpp_idr for line in lines}
     scan_cogs = sum(fully_by_key.get(k, 0) for k in _SCAN_COGS_KEYS)
     host_cogs = fully_by_key.get("hostscan", 0)
-    uptime_cogs = fully_by_key.get("uptimecheck", 0)
+    uptime_cogs = fully_by_key.get("uptimemonitor", 0)
     guard_cogs = fully_by_key.get("guardagent", 0)
 
     scan_sku_rows = (

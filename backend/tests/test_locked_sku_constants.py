@@ -50,7 +50,7 @@ def test_hpp_keys_cover_all_four_services() -> None:
         "ipa",
         "statushost",
         "hostscan",
-        "uptimecheck",
+        "uptimemonitor",
         "guardagent",
     )
 
