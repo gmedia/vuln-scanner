@@ -199,7 +199,7 @@ export function GuardTokenList({
               type="button"
               variant="ghost"
               size="sm"
-              className="h-8 text-xs text-primary"
+              className="h-8 text-xs text-primary-text"
               onClick={onToggleMore}
             >
               {showAllTokens

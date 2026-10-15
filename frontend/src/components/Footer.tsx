@@ -7,7 +7,7 @@ const linkClass =
   "inline-flex min-h-11 items-center rounded-sm text-sm text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 const ctaClass =
-  "inline-flex min-h-11 items-center rounded-sm text-sm font-medium text-primary no-underline underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+  "inline-flex min-h-11 items-center rounded-sm text-sm font-medium text-primary-text no-underline underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 export function Footer() {
   const { t } = useTranslation("landing");

@@ -882,7 +882,7 @@ function RemediationCard({
       <div className="px-4 py-4">
         <div className="flex items-center gap-3 pl-2">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10">
-            <Shield className="h-4 w-4 text-primary" aria-hidden />
+            <Shield className="h-4 w-4 text-primary-text" aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-2">

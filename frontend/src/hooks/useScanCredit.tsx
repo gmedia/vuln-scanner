@@ -67,7 +67,7 @@ export function useScanCredit(scanType: string) {
       data-testid="scan-credits-chip"
       className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs text-foreground"
     >
-      <Coins className="h-3.5 w-3.5 text-primary" aria-hidden />
+      <Coins className="h-3.5 w-3.5 text-primary-text" aria-hidden />
       <span className="text-muted-foreground">Credits</span>
       <span className="font-mono font-semibold tabular-nums">{credits}</span>
     </div>

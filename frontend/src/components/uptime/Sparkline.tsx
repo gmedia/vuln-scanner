@@ -45,7 +45,7 @@ export function Sparkline({ monitorId, state }: SparklineProps) {
       : line;
   const strokeClass =
     state === "up"
-      ? "text-primary"
+      ? "text-primary-text"
       : state === "down"
         ? "text-destructive"
         : "text-muted-foreground";

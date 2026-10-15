@@ -129,7 +129,7 @@ export function AssetFilters({
                   "h-10 min-h-10 rounded-none px-3 text-xs shadow-none",
                   "border-0 border-r border-border last:border-r-0",
                   active
-                    ? "bg-primary/15 text-primary hover:bg-primary/20 hover:text-primary"
+                    ? "bg-primary/15 text-primary-text hover:bg-primary/20 hover:text-primary-text"
                     : "text-muted-foreground hover:text-foreground",
                 )}
                 onClick={() => onTypeFilter(opt.value)}
@@ -151,7 +151,7 @@ export function AssetFilters({
                 className={cn(
                   "h-10 min-h-10 shrink-0 gap-2 font-normal",
                   tagFilters.length > 0 &&
-                    "border-primary/40 bg-primary/10 text-primary",
+                    "border-primary/40 bg-primary/10 text-primary-text",
                 )}
                 aria-label={t("filterTag")}
               >

@@ -3,7 +3,7 @@ import { TAG_COLOR_KEYS } from "@/api/assets";
 
 export const TAG_COLOR_CLASS: Record<TagNamedColor, string> = {
   gray: "border-border bg-secondary text-secondary-foreground",
-  green: "border-primary/40 bg-primary/20 text-primary",
+  green: "border-primary/40 bg-primary/20 text-primary-text",
   blue: "border-blue-500/40 bg-blue-500/20 text-blue-700 dark:text-blue-400",
   amber:
     "border-yellow-500/40 bg-yellow-500/20 text-yellow-800 dark:text-yellow-400",

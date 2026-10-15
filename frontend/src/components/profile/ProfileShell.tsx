@@ -99,7 +99,7 @@ const NOTICE_BORDER: Record<ProfileTone, string> = {
 
 const NOTICE_TEXT: Record<ProfileTone, string> = {
   primary: "text-foreground",
-  success: "text-primary",
+  success: "text-primary-text",
   danger: "text-destructive",
   warn: "text-amber-400",
   idle: "text-muted-foreground",

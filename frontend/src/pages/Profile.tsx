@@ -264,7 +264,7 @@ function Profile() {
           <div className="flex min-w-0 items-start gap-4">
             <span
               aria-hidden
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/5 font-mono text-sm font-semibold tracking-wide text-primary"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/5 font-mono text-sm font-semibold tracking-wide text-primary-text"
             >
               {emailInitials(user?.email)}
             </span>
@@ -292,7 +292,7 @@ function Profile() {
                     title={copied ? "Copied" : "Copy email"}
                   >
                     {copied ? (
-                      <Check className="h-3.5 w-3.5 text-primary" />
+                      <Check className="h-3.5 w-3.5 text-primary-text" />
                     ) : (
                       <Copy className="h-3.5 w-3.5" />
                     )}

@@ -174,7 +174,7 @@ function AdminHpp() {
   return (
     <div className="w-full space-y-6">
       <PageHeader
-        leading={<Calculator className="h-6 w-6 shrink-0 text-primary" />}
+        leading={<Calculator className="h-6 w-6 shrink-0 text-primary-text" />}
         title={t("hppTitle")}
         description={t("hppSubtitle")}
       />

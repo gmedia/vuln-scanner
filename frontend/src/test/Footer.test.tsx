@@ -65,7 +65,7 @@ describe("Footer", () => {
     );
     const getStarted = screen.getByRole("link", { name: "Get Started" });
     expect(getStarted).toHaveAttribute("href", "/register");
-    expect(getStarted).toHaveClass("text-primary");
+    expect(getStarted).toHaveClass("text-primary-text");
 
     expect(screen.getByText("Sinexis · Scan · Guard")).toHaveClass("text-xs");
     expect(footer!.textContent).not.toMatch(/SIEM/);

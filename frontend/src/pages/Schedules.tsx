@@ -322,7 +322,7 @@ function ScheduleRunsPanel({ scheduleId }: { scheduleId: string }) {
           <RunTimeCell value={job.created_at} locale={i18n.language} />
           <Link
             to={`/scan/${job.id}`}
-            className="justify-self-end whitespace-nowrap text-primary hover:underline"
+            className="justify-self-end whitespace-nowrap text-primary-text hover:underline"
           >
             {t("openScan")}
           </Link>
@@ -677,7 +677,7 @@ function Schedules() {
                       {s.last_job_id && (
                         <Link
                           to={`/scan/${s.last_job_id}`}
-                          className="mt-1 inline-block text-xs text-primary hover:underline"
+                          className="mt-1 inline-block text-xs text-primary-text hover:underline"
                         >
                           {t("lastScan")}
                         </Link>
@@ -785,7 +785,7 @@ function Schedules() {
                                   {" · "}
                                   <Link
                                     to={`/scan/${s.last_job_id}`}
-                                    className="text-primary hover:underline"
+                                    className="text-primary-text hover:underline"
                                   >
                                     {t("lastScan")}
                                   </Link>

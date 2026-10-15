@@ -48,7 +48,7 @@ function FindingDetail({ finding }: FindingDetailProps) {
               href={`https://nvd.nist.gov/vuln/detail/${finding.cve_id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 font-mono text-[10px] text-primary hover:underline"
+              className="inline-flex items-center gap-1 font-mono text-[10px] text-primary-text hover:underline"
             >
               {finding.cve_id}
               <ExternalLink className="h-3 w-3" />
@@ -111,8 +111,8 @@ function FindingDetail({ finding }: FindingDetailProps) {
         <div>
           <Separator className="mb-3" />
           <div className="mb-1.5 flex items-center gap-1.5">
-            <Wrench className="h-3.5 w-3.5 text-primary" />
-            <span className="text-[10px] font-medium uppercase tracking-wider text-primary">
+            <Wrench className="h-3.5 w-3.5 text-primary-text" />
+            <span className="text-[10px] font-medium uppercase tracking-wider text-primary-text">
               {t("findingRemediation")}
             </span>
           </div>

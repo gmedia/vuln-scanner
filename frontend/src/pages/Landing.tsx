@@ -239,7 +239,7 @@ function Landing() {
                       className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-muted/40"
                       aria-hidden
                     >
-                      <feature.icon className="h-4 w-4 text-primary" />
+                      <feature.icon className="h-4 w-4 text-primary-text" />
                     </span>
                     <CardTitle className="text-sm tracking-wide">
                       {t(feature.titleKey)}

@@ -69,7 +69,7 @@ describe("AuthNotice", () => {
   it("renders a success notice on the primary rail", () => {
     render(<AuthNotice tone="success">Sent</AuthNotice>);
     const text = screen.getByText("Sent");
-    expect(text.className).toMatch(/text-primary/);
+    expect(text.className).toMatch(/text-primary-text/);
     expect(text.parentElement?.querySelector(".bg-primary")).toBeTruthy();
   });
 });
@@ -82,7 +82,7 @@ describe("AuthStatusIcon", () => {
     const chip = container.querySelector("span");
     expect(chip?.className).toMatch(/h-12 w-12/);
     expect(chip?.querySelector("svg")?.getAttribute("class")).toMatch(
-      /text-primary/,
+      /text-primary-text/,
     );
   });
 

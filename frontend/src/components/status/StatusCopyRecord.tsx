@@ -41,7 +41,7 @@ export function StatusCopyRecord({
         aria-label={copied ? copiedLabel : copyLabel}
       >
         {copied ? (
-          <Check className="h-3.5 w-3.5 text-primary" />
+          <Check className="h-3.5 w-3.5 text-primary-text" />
         ) : (
           <Copy className="h-3.5 w-3.5" />
         )}

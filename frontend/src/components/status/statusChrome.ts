@@ -6,7 +6,7 @@ export function overallValueClass(
   if (overall === "major") return "text-destructive";
   if (overall === "partial") return "text-orange-500";
   if (overall === "degraded") return "text-amber-500";
-  if (overall === "operational") return "text-primary";
+  if (overall === "operational") return "text-primary-text";
   return "text-foreground";
 }
 

@@ -170,7 +170,7 @@ function DescriptionCell({ item }: { item: CreditLogItem }) {
     return (
       <Link
         to={`/scan/${item.reference_id}`}
-        className="block max-w-[300px] truncate text-sm text-primary underline-offset-2 hover:underline 2xl:max-w-none 2xl:overflow-visible 2xl:whitespace-normal"
+        className="block max-w-[300px] truncate text-sm text-primary-text underline-offset-2 hover:underline 2xl:max-w-none 2xl:overflow-visible 2xl:whitespace-normal"
       >
         {text}
       </Link>
@@ -202,7 +202,7 @@ function LedgerMobileCard({ item }: { item: CreditLogItem }) {
         {item.reference_id ? (
           <Link
             to={`/scan/${item.reference_id}`}
-            className="text-primary underline-offset-2 hover:underline"
+            className="text-primary-text underline-offset-2 hover:underline"
           >
             {item.description || "View scan"}
           </Link>

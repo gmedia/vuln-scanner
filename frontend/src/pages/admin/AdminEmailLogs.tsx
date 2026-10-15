@@ -105,7 +105,7 @@ function AdminEmailLogs() {
   return (
     <div className="w-full space-y-6">
       <PageHeader
-        leading={<Mail className="h-6 w-6 shrink-0 text-primary" />}
+        leading={<Mail className="h-6 w-6 shrink-0 text-primary-text" />}
         title={t("emailLogsTitle")}
         description={t("emailLogsSubtitle")}
       />

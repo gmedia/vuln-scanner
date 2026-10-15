@@ -17,7 +17,7 @@ function PageHeaderBack({ to, label, className }: PageHeaderBackProps) {
     <Link
       to={to}
       className={cn(
-        "mt-0.5 inline-flex min-h-11 min-w-11 items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+        "mt-0.5 inline-flex min-h-11 min-w-11 items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         className,
       )}
     >

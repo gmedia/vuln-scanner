@@ -68,39 +68,74 @@ function contrastRatio(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
+const THEMES = (): ReadonlyArray<readonly [string, string]> => [
+  ["light", block(":root")],
+  ["dark", blocks(".dark").find((b) => b.includes("--primary:")) ?? ""],
+];
+
 describe("P15 S1 theme tokens", () => {
-  it("keeps the Sinexis primary green hue, with a darker lightness only in light theme", () => {
-    const light = token(block(":root"), "--primary");
-    expect(light).toBe("hsl(142 71% 28%)");
+  it("keeps the Sinexis brand green identical across themes (button + logotype)", () => {
+    expect(token(block(":root"), "--primary")).toBe("hsl(142 71% 45%)");
     for (const dark of blocks(".dark")) {
       if (dark.includes("--primary:")) {
         expect(token(dark, "--primary")).toBe("hsl(142 71% 45%)");
       }
     }
+    expect(token(block(":root"), "--primary-foreground")).toBe("hsl(0 0% 4%)");
   });
 
-  it("keeps primary legible as text and as a button background in both themes", () => {
-    const light = block(":root");
-    const dark = blocks(".dark").find((b) => b.includes("--primary:")) ?? "";
-    const surfaces = ["--background", "--card", "--muted", "--secondary"];
+  it("darkens only the readable-text green in light theme", () => {
+    expect(token(block(":root"), "--primary-text")).toBe("hsl(142 71% 28%)");
+    const dark =
+      blocks(".dark").find((b) => b.includes("--primary-text:")) ?? "";
+    expect(token(dark, "--primary-text")).toBe("hsl(142 71% 45%)");
+  });
 
-    for (const [name, source] of [
-      ["light", light],
-      ["dark", dark],
-    ] as const) {
+  it("keeps the primary button legible in both themes", () => {
+    for (const [name, source] of THEMES()) {
       if (!source) continue;
-      const primary = token(source, "--primary");
-      const onPrimary = token(source, "--primary-foreground");
+      expect(
+        contrastRatio(
+          token(source, "--primary"),
+          token(source, "--primary-foreground"),
+        ),
+        `${name}: primary-foreground on primary`,
+      ).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it("keeps primary-text legible as text on every surface in both themes", () => {
+    const surfaces = ["--background", "--card", "--muted", "--secondary"];
+    for (const [name, source] of THEMES()) {
+      if (!source) continue;
+      const text = token(source, "--primary-text");
       for (const surface of surfaces) {
         expect(
-          contrastRatio(primary, token(source, surface)),
-          `${name}: ${primary} on ${surface}`,
+          contrastRatio(text, token(source, surface)),
+          `${name}: ${text} on ${surface}`,
         ).toBeGreaterThanOrEqual(4.5);
       }
+    }
+  });
+
+  it("keeps the focus ring at least 3:1 against the canvas in both themes", () => {
+    for (const [name, source] of THEMES()) {
+      if (!source) continue;
       expect(
-        contrastRatio(primary, onPrimary),
-        `${name}: ${onPrimary} on ${primary}`,
-      ).toBeGreaterThanOrEqual(4.5);
+        contrastRatio(token(source, "--ring"), token(source, "--background")),
+        `${name}: ring on background`,
+      ).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("mirrors the brand green into the sidebar primary", () => {
+    expect(token(block(":root"), "--sidebar-primary")).toBe(
+      token(block(":root"), "--primary"),
+    );
+    for (const dark of blocks(".dark")) {
+      if (dark.includes("--sidebar-primary:")) {
+        expect(token(dark, "--sidebar-primary")).toBe(token(dark, "--primary"));
+      }
     }
   });
 

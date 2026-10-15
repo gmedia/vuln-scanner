@@ -22,7 +22,7 @@ export function stateWashClass(state: string, enabled = true): string | null {
 
 export function stateValueClass(state: string, enabled = true): string {
   if (!enabled) return "text-muted-foreground";
-  if (state === "up") return "text-primary";
+  if (state === "up") return "text-primary-text";
   if (state === "down") return "text-destructive";
   if (state === "degraded") return "text-amber-500";
   return "text-foreground";

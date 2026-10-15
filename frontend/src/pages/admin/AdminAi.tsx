@@ -182,7 +182,7 @@ function Head() {
   const { t } = useTranslation("admin");
   return (
     <PageHeader
-      leading={<Bot className="h-6 w-6 shrink-0 text-primary" />}
+      leading={<Bot className="h-6 w-6 shrink-0 text-primary-text" />}
       title={t("aiTitle")}
       description={t("aiSubtitle")}
     />

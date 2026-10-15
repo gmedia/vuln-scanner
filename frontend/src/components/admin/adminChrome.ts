@@ -31,7 +31,7 @@ export function kpiValueClass(tone: AdminTone): string {
   if (tone === "info") return "text-sky-400";
   if (tone === "alert") return "text-orange-400";
   if (tone === "warn") return "text-amber-400";
-  return "text-primary";
+  return "text-primary-text";
 }
 
 export function userTone(input: {

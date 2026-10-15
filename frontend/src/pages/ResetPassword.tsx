@@ -227,7 +227,7 @@ function ResetPassword() {
           <p className="mt-6 text-center text-xs">
             <Link
               to="/login"
-              className="inline-flex items-center gap-1 text-foreground/80 hover:text-primary hover:underline"
+              className="inline-flex items-center gap-1 text-foreground/80 hover:text-primary-text hover:underline"
             >
               <ArrowLeft className="h-3 w-3" />
               Back to sign in

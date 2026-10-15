@@ -478,7 +478,7 @@ function FindingsTable({
                             rel="noopener noreferrer"
                             title={finding.cve_id}
                             onClick={(e) => e.stopPropagation()}
-                            className="text-primary hover:underline"
+                            className="text-primary-text hover:underline"
                           >
                             {finding.cve_id}
                           </a>
