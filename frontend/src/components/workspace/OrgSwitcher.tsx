@@ -5,6 +5,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
@@ -17,10 +18,10 @@ import {
 
 interface OrgSwitcherProps {
   className?: string;
-  compact?: boolean;
+  collapsed?: boolean;
 }
 
-function OrgSwitcher({ className, compact = false }: OrgSwitcherProps) {
+function OrgSwitcher({ className, collapsed = false }: OrgSwitcherProps) {
   const { t } = useTranslation("workspace");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -56,39 +57,61 @@ function OrgSwitcher({ className, compact = false }: OrgSwitcherProps) {
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          data-testid="org-switcher"
-          aria-haspopup="listbox"
-          disabled={switching}
-          className={cn(
-            "h-9 max-w-[14rem] min-w-0 justify-start gap-1.5 bg-muted/40 px-2.5 text-xs text-foreground hover:text-primary",
-            compact && "max-w-[10rem]",
-            className,
-          )}
-        >
-          {switching ? (
-            <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-primary" />
-          ) : (
-            <Building2
-              className="h-3.5 w-3.5 shrink-0 text-primary"
-              aria-hidden
-            />
-          )}
-          <span className="min-w-0 flex-1 truncate text-left font-medium">
-            {active?.name ?? t("title")}
-          </span>
-          {active?.role && (
-            <span className="hidden shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground sm:inline">
-              {active.role}
+      {collapsed ? (
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenuTrigger asChild>
+              <SidebarMenuButton
+                type="button"
+                data-testid="org-switcher"
+                aria-label={active?.name ?? t("title")}
+                aria-haspopup="listbox"
+                tooltip={active?.name ?? t("title")}
+                disabled={switching}
+              >
+                {switching ? (
+                  <Loader2 className="animate-spin text-primary" aria-hidden />
+                ) : (
+                  <Building2 className="text-primary" aria-hidden />
+                )}
+              </SidebarMenuButton>
+            </DropdownMenuTrigger>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      ) : (
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            data-testid="org-switcher"
+            aria-haspopup="listbox"
+            disabled={switching}
+            className={cn(
+              "h-9 max-w-[14rem] min-w-0 justify-start gap-1.5 bg-muted/40 px-2.5 text-xs text-foreground hover:text-primary",
+              className,
+            )}
+          >
+            {switching ? (
+              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-primary" />
+            ) : (
+              <Building2
+                className="h-3.5 w-3.5 shrink-0 text-primary"
+                aria-hidden
+              />
+            )}
+            <span className="min-w-0 flex-1 truncate text-left font-medium">
+              {active?.name ?? t("title")}
             </span>
-          )}
-          <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
-        </Button>
-      </DropdownMenuTrigger>
+            {active?.role && (
+              <span className="hidden shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground sm:inline">
+                {active.role}
+              </span>
+            )}
+            <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
+          </Button>
+        </DropdownMenuTrigger>
+      )}
       <DropdownMenuContent
         align="start"
         className="w-64"
