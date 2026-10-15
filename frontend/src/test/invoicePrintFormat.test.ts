@@ -2,19 +2,10 @@ import { describe, it, expect } from "vitest";
 import {
   formatIdr,
   formatPeriod,
-  seatsForSku,
   statusModifier,
 } from "@/components/invoice/invoicePrintFormat";
 
 describe("invoicePrintFormat", () => {
-  it("maps Scan SKU seats from the catalog snapshot", () => {
-    expect(seatsForSku("basic")).toBe(1);
-    expect(seatsForSku("pro")).toBe(3);
-    expect(seatsForSku("multi")).toBe(10);
-    expect(seatsForSku("BASIC")).toBe(1);
-    expect(seatsForSku("unknown")).toBe(1);
-  });
-
   it("formats IDR with an id-ID grouping separator", () => {
     expect(formatIdr(300000)).toBe("Rp 300.000");
     expect(formatIdr(2000000)).toBe("Rp 2.000.000");

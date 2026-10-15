@@ -6,10 +6,23 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+from app.models.asset import ASSET_SKU_LIMITS
+from app.models.guard import GUARD_SKU_LIMITS
+from app.models.host_protect import HOST_SITE_SKU_LIMITS
+from app.models.uptime import UPTIME_SKU_LIMITS
 
 INVOICE_PRODUCTS = ("scan", "host", "uptime", "guard")
 INVOICE_SKUS = ("basic", "pro", "multi")
 INVOICE_STATUSES = ("draft", "sent", "paid", "void")
+
+# Included capacity per (product, sku). Mirrors sku_catalog.seats, which is seeded
+# from these same constants and is not editable, so the two cannot drift.
+PRODUCT_SEATS: dict[str, dict[str, int]] = {
+    "scan": ASSET_SKU_LIMITS,
+    "host": HOST_SITE_SKU_LIMITS,
+    "uptime": UPTIME_SKU_LIMITS,
+    "guard": GUARD_SKU_LIMITS,
+}
 
 SCAN_SKU_LIST_IDR: dict[str, int] = {"basic": 300_000, "pro": 650_000, "multi": 2_000_000}
 HOST_SKU_LIST_IDR: dict[str, int] = {"basic": 150_000, "pro": 350_000, "multi": 900_000}

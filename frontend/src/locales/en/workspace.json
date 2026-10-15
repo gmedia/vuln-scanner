@@ -104,6 +104,8 @@
   "invoicePrintItem": "Sinexis Scan — {{sku}}",
   "invoicePrintItem_scan": "Sinexis Scan — {{sku}}",
   "invoicePrintItem_host": "Sinexis Host Protect — {{sku}}",
+  "invoicePrintItem_uptime": "Sinexis Uptime — {{sku}}",
+  "invoicePrintItem_guard": "Sinexis Guard — {{sku}}",
   "invoicePrintSubtotal": "Subtotal",
   "invoicePrintTotal": "Total",
   "invoicePrintAmountDue": "Amount due",
@@ -115,5 +117,7 @@
   "invoicePrintPayHint": "Quote {{number}} as the transfer reference.",
   "invoicePrintFooter": "Thank you. Sinexis — bank transfer, no self-serve upgrade.",
   "invoicePrintFooter_scan": "Thank you. Sinexis Scan — bank transfer, no self-serve upgrade.",
-  "invoicePrintFooter_host": "Thank you. Sinexis Host Protect — bank transfer, no self-serve upgrade."
+  "invoicePrintFooter_host": "Thank you. Sinexis Host Protect — bank transfer, no self-serve upgrade.",
+  "invoicePrintFooter_uptime": "Thank you. Sinexis Uptime — bank transfer, no self-serve upgrade.",
+  "invoicePrintFooter_guard": "Thank you. Sinexis Guard — bank transfer, no self-serve upgrade."
 }

@@ -9,6 +9,7 @@ const sent: InvoicePrintData = {
   number: "SX-202609-0001",
   sku: "basic",
   product: "scan",
+  seats: 1,
   amount_idr: 300000,
   period_start: "2026-09-01T00:00:00Z",
   period_end: "2026-09-30T23:59:59Z",
@@ -84,6 +85,44 @@ describe("InvoicePrintSheet", () => {
     expect(screen.getByText("Sinexis Host Protect — PRO")).toBeInTheDocument();
     expect(screen.getByTestId("invoice-print-footer")).toHaveTextContent(
       "Thank you. Sinexis Host Protect — bank transfer, no self-serve upgrade.",
+    );
+    expect(screen.queryByText(/Sinexis Scan —/)).not.toBeInTheDocument();
+  });
+
+  it("renders Uptime with its own label and seat capacity", () => {
+    const uptime: InvoicePrintData = {
+      ...sent,
+      number: "SX-202609-0009",
+      product: "uptime",
+      sku: "multi",
+      seats: 200,
+      amount_idr: 500000,
+    };
+    render(<InvoicePrintSheet invoice={uptime} billTo="Hotel Example" />);
+
+    expect(screen.getByText("Sinexis Uptime — MULTI")).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "200" })).toBeInTheDocument();
+    expect(screen.getByTestId("invoice-print-footer")).toHaveTextContent(
+      "Thank you. Sinexis Uptime — bank transfer, no self-serve upgrade.",
+    );
+    expect(screen.queryByText(/Sinexis Scan —/)).not.toBeInTheDocument();
+  });
+
+  it("renders Guard with its own label and seat capacity", () => {
+    const guard: InvoicePrintData = {
+      ...sent,
+      number: "SX-202609-0010",
+      product: "guard",
+      sku: "basic",
+      seats: 1,
+      amount_idr: 100000,
+    };
+    render(<InvoicePrintSheet invoice={guard} billTo="Hotel Example" />);
+
+    expect(screen.getByText("Sinexis Guard — BASIC")).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "1" })).toBeInTheDocument();
+    expect(screen.getByTestId("invoice-print-footer")).toHaveTextContent(
+      "Thank you. Sinexis Guard — bank transfer, no self-serve upgrade.",
     );
     expect(screen.queryByText(/Sinexis Scan —/)).not.toBeInTheDocument();
   });

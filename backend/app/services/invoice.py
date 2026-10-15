@@ -9,7 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models.invoice import OrgInvoice, SkuCatalog
+from app.models.invoice import PRODUCT_SEATS, OrgInvoice, SkuCatalog
 from app.models.organization import Organization
 from app.models.user import User
 from app.services.invoice_html import render_invoice_html
@@ -49,6 +49,7 @@ def to_item(inv: OrgInvoice, *, org_name: str | None, include_bank: bool) -> dic
         "number": inv.number,
         "product": inv.product,
         "sku": inv.sku,
+        "seats": PRODUCT_SEATS.get(inv.product, PRODUCT_SEATS["scan"]).get(inv.sku, 1),
         "amount_idr": inv.amount_idr,
         "period_start": inv.period_start,
         "period_end": inv.period_end,

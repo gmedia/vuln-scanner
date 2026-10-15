@@ -148,8 +148,9 @@ export interface OrgInvoiceItem {
   id: string;
   organization_id: string;
   number: string;
-  product: "scan" | "host";
+  product: "scan" | "host" | "uptime" | "guard";
   sku: string;
+  seats: number;
   amount_idr: number;
   period_start: string;
   period_end: string;
