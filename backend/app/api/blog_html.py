@@ -69,7 +69,7 @@ a:hover{color:var(--foreground)}
 }
 .brand svg{width:1.25rem;height:1.25rem;color:var(--primary);flex-shrink:0}
 .brand-text{
-  font-family:ui-monospace,"JetBrains Mono",Menlo,monospace;
+  font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;
   font-size:0.875rem;font-weight:700;letter-spacing:0.08em;
 }
 .brand-accent{color:var(--primary)}
@@ -134,7 +134,7 @@ ol.index .read{
 .body ul,.body ol{margin:0 0 1.1rem;padding-left:1.25rem}
 .body li{margin:0.35rem 0}
 .body pre{
-  font-family:ui-monospace,Menlo,monospace;background:var(--muted);
+  font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;background:var(--muted);
   padding:1rem;overflow-x:auto;border-radius:0.375rem;border:1px solid var(--border);
 }
 .body a{color:var(--primary)}
