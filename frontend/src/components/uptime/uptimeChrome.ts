@@ -1,3 +1,5 @@
+import { TONE_TEXT } from "@/lib/toneColors";
+
 export function stateBadgeVariant(state: string) {
   if (state === "up") return "completed" as const;
   if (state === "down") return "critical" as const;
@@ -24,7 +26,7 @@ export function stateValueClass(state: string, enabled = true): string {
   if (!enabled) return "text-muted-foreground";
   if (state === "up") return "text-primary-text";
   if (state === "down") return "text-destructive";
-  if (state === "degraded") return "text-amber-500";
+  if (state === "degraded") return TONE_TEXT.amber;
   return "text-foreground";
 }
 

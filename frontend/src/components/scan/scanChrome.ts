@@ -1,3 +1,5 @@
+import { TONE_TEXT } from "@/lib/toneColors";
+
 export type FindingSeverity = "critical" | "high" | "medium" | "low" | "info";
 
 const SEVERITY_ORDER: readonly FindingSeverity[] = [
@@ -51,11 +53,11 @@ export function severityTextClass(severity: string | null): string {
     case "critical":
       return "text-destructive";
     case "high":
-      return "text-orange-800 dark:text-orange-400";
+      return TONE_TEXT.orange;
     case "medium":
-      return "text-yellow-800 dark:text-yellow-400";
+      return TONE_TEXT.yellow;
     case "low":
-      return "text-blue-700 dark:text-blue-400";
+      return TONE_TEXT.blue;
     default:
       return "text-foreground";
   }

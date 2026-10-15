@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, Calculator } from "lucide-react";
-import { adminApi, type HppReportResponse, type SkuPriceItem } from "@/api/admin";
+import {
+  adminApi,
+  type HppReportResponse,
+  type SkuPriceItem,
+} from "@/api/admin";
 import {
   AdminNotice,
   AdminShell,
@@ -42,6 +46,7 @@ import {
   type ScenarioService,
   type ScenarioSku,
 } from "@/lib/hppScenario";
+import { TONE_TEXT } from "@/lib/toneColors";
 import { useTranslation } from "react-i18next";
 
 const SERVICES: readonly ScenarioService[] = [
@@ -100,7 +105,13 @@ function reportUnitCost(
   const keys =
     service === "scan"
       ? SCAN_COST_KEYS
-      : [service === "host" ? "hostscan" : service === "uptime" ? "uptimemonitor" : "guardagent"];
+      : [
+          service === "host"
+            ? "hostscan"
+            : service === "uptime"
+              ? "uptimemonitor"
+              : "guardagent",
+        ];
   let cost = 0;
   let count = 0;
   for (const key of keys) {
@@ -190,7 +201,8 @@ function AdminHppSimulator() {
     }));
   };
 
-  const showTarget = targetMargin.trim() !== "" && Number.isFinite(Number(targetMargin));
+  const showTarget =
+    targetMargin.trim() !== "" && Number.isFinite(Number(targetMargin));
 
   return (
     <div className="w-full space-y-6">
@@ -203,7 +215,11 @@ function AdminHppSimulator() {
       </div>
 
       <AdminShell testid="hpp-sim-guide" tone="info">
-        <AdminShellHead icon={BookOpen} title={t("simGuideTitle")} hint={t("simGuideHint")} />
+        <AdminShellHead
+          icon={BookOpen}
+          title={t("simGuideTitle")}
+          hint={t("simGuideHint")}
+        />
         <AdminShellBody>
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="steps">
@@ -236,7 +252,9 @@ function AdminHppSimulator() {
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="not-computed">
-              <AccordionTrigger>{t("simGuideNotComputedTitle")}</AccordionTrigger>
+              <AccordionTrigger>
+                {t("simGuideNotComputedTitle")}
+              </AccordionTrigger>
               <AccordionContent>
                 <p className="text-xs leading-relaxed text-muted-foreground">
                   {t("simGuideNotComputedBody")}
@@ -279,7 +297,9 @@ function AdminHppSimulator() {
               />
             </div>
             <div className="flex min-w-0 flex-col gap-1.5">
-              <Label htmlFor="hpp-sim-target-margin">{t("simTargetMargin")}</Label>
+              <Label htmlFor="hpp-sim-target-margin">
+                {t("simTargetMargin")}
+              </Label>
               <Input
                 id="hpp-sim-target-margin"
                 data-testid="hpp-sim-target-margin"
@@ -332,7 +352,7 @@ function AdminHppSimulator() {
                   const marginClass =
                     out && out.computed
                       ? marginTone(out.margin_idr) === "danger"
-                        ? "text-red-400"
+                        ? TONE_TEXT.red
                         : "text-primary-text"
                       : undefined;
                   return (
@@ -439,7 +459,10 @@ function AdminHppSimulator() {
                     </TableRow>
                   );
                 })}
-                <TableRow data-testid="hpp-sim-totals" className="hover:bg-muted/50">
+                <TableRow
+                  data-testid="hpp-sim-totals"
+                  className="hover:bg-muted/50"
+                >
                   <TableCell className="py-1.5 text-sm font-medium">
                     {t("simTotals")}
                   </TableCell>
@@ -455,7 +478,7 @@ function AdminHppSimulator() {
                   <TableCell
                     className={
                       marginTone(scenario.totals.margin_idr) === "danger"
-                        ? "py-1.5 font-mono text-xs tabular-nums text-red-400"
+                        ? `py-1.5 font-mono text-xs tabular-nums ${TONE_TEXT.red}`
                         : "py-1.5 font-mono text-xs tabular-nums text-primary-text"
                     }
                   >
@@ -484,7 +507,9 @@ function AdminHppSimulator() {
             </p>
           ) : null}
 
-          {SERVICES.some((service) => reportUnitCost(hppReport, service) != null) ? (
+          {SERVICES.some(
+            (service) => reportUnitCost(hppReport, service) != null,
+          ) ? (
             <p
               data-testid="hpp-sim-cost-source"
               className="mb-3 text-[11px] text-muted-foreground"
@@ -503,7 +528,9 @@ function AdminHppSimulator() {
                 const out = byService.get(service);
                 return (
                   <span key={service} className="mr-3 inline-block">
-                    <span className="text-foreground">{serviceLabel[service]}</span>{" "}
+                    <span className="text-foreground">
+                      {serviceLabel[service]}
+                    </span>{" "}
                     <span className="font-mono tabular-nums text-foreground">
                       {formatIdr(out?.target_price_idr)}
                     </span>

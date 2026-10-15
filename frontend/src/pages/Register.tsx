@@ -5,7 +5,9 @@ import { useAuthStore } from "@/store/authStore";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
-import AuthLayout, { AUTH_SECONDARY_LINK } from "@/components/layout/AuthLayout";
+import AuthLayout, {
+  AUTH_SECONDARY_LINK,
+} from "@/components/layout/AuthLayout";
 import {
   AuthCard,
   AuthCardBody,
@@ -15,6 +17,7 @@ import {
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { useTranslation } from "react-i18next";
 import { captureInviteFromSearch, postAuthPath } from "@/lib/inviteToken";
+import { TONE_TEXT } from "@/lib/toneColors";
 
 function Register() {
   const navigate = useNavigate();
@@ -123,7 +126,7 @@ function Register() {
             {resendFeedback && (
               <p
                 className={`text-xs ${
-                  emailSent === false ? "text-amber-400" : "text-primary-text"
+                  emailSent === false ? TONE_TEXT.amber : "text-primary-text"
                 }`}
               >
                 {resendFeedback}

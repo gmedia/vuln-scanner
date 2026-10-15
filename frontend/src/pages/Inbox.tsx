@@ -1,7 +1,14 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { Activity, Inbox as InboxIcon, Mail, ScanSearch, Shield, ShieldAlert } from "lucide-react";
+import {
+  Activity,
+  Inbox as InboxIcon,
+  Mail,
+  ScanSearch,
+  Shield,
+  ShieldAlert,
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
@@ -35,6 +42,7 @@ import { useTranslation } from "react-i18next";
 import { htmlLang, isAppLocale } from "@/i18n/locales";
 import i18n from "@/i18n";
 import { cn } from "@/lib/utils";
+import { TONE_TEXT } from "@/lib/toneColors";
 
 const PAGE_SIZE = 20;
 const KIND_ALL = "all";
@@ -119,11 +127,11 @@ function statusVariant(
 function statusBadgeClass(status: string): string {
   switch (status) {
     case "failed":
-      return "text-[11px] text-red-700 dark:text-red-400";
+      return `text-[11px] ${TONE_TEXT.red}`;
     case "bounced":
-      return "text-[11px] text-orange-800 dark:text-orange-400";
+      return `text-[11px] ${TONE_TEXT.orange}`;
     case "complained":
-      return "text-[11px] text-yellow-800 dark:text-yellow-400";
+      return `text-[11px] ${TONE_TEXT.yellow}`;
     default:
       return "text-[11px]";
   }
@@ -293,9 +301,7 @@ function Inbox() {
               </PaginationItem>
               <PaginationItem>
                 <PaginationNext
-                  onClick={() =>
-                    setPage((p) => Math.min(totalPages, p + 1))
-                  }
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
                   aria-disabled={page >= totalPages}
                 />
@@ -323,61 +329,61 @@ function Inbox() {
 
       <OpsShell railClass="bg-border" testid="inbox-filters">
         <OpsShellBody className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <Label htmlFor="inbox-kind">{t("kind")}</Label>
-          <Select
-            value={kind}
-            onValueChange={(v) => {
-              setKind(v);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger
-              id="inbox-kind"
-              className="h-10 min-h-10"
-              aria-label={t("kind")}
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Label htmlFor="inbox-kind">{t("kind")}</Label>
+            <Select
+              value={kind}
+              onValueChange={(v) => {
+                setKind(v);
+                setPage(1);
+              }}
             >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={KIND_ALL}>{t("all")}</SelectItem>
-              {KINDS.map((k) => (
-                <SelectItem key={k} value={k}>
-                  {kindLabel(k, t)}
+              <SelectTrigger
+                id="inbox-kind"
+                className="h-10 min-h-10"
+                aria-label={t("kind")}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={KIND_ALL}>{t("all")}</SelectItem>
+                {KINDS.map((k) => (
+                  <SelectItem key={k} value={k}>
+                    {kindLabel(k, t)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Label htmlFor="inbox-status">{t("status")}</Label>
+            <Select
+              value={status}
+              onValueChange={(v) => {
+                setStatus(v);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger
+                id="inbox-status"
+                className="h-10 min-h-10"
+                aria-label={t("status")}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={STATUS_ALL}>{t("all")}</SelectItem>
+                <SelectItem value="sent">{t("statusSent")}</SelectItem>
+                <SelectItem value="failed">{t("statusFailed")}</SelectItem>
+                <SelectItem value="bounced">
+                  {statusLabel("bounced", t)}
                 </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <Label htmlFor="inbox-status">{t("status")}</Label>
-          <Select
-            value={status}
-            onValueChange={(v) => {
-              setStatus(v);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger
-              id="inbox-status"
-              className="h-10 min-h-10"
-              aria-label={t("status")}
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={STATUS_ALL}>{t("all")}</SelectItem>
-              <SelectItem value="sent">{t("statusSent")}</SelectItem>
-              <SelectItem value="failed">{t("statusFailed")}</SelectItem>
-              <SelectItem value="bounced">
-                {statusLabel("bounced", t)}
-              </SelectItem>
-              <SelectItem value="complained">
-                {statusLabel("complained", t)}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+                <SelectItem value="complained">
+                  {statusLabel("complained", t)}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </OpsShellBody>
       </OpsShell>
 

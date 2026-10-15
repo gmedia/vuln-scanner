@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { Separator } from "@/components/ui/Separator";
+import { TONE_TEXT } from "@/lib/toneColors";
 import { useScanFinding } from "@/hooks/useScan";
 
 interface FindingDetailProps {
@@ -37,7 +38,8 @@ function FindingDetail({ finding }: FindingDetailProps) {
         <div className="flex flex-wrap items-center gap-2">
           <Badge
             variant={
-              finding.severity as "critical" | "high" | "medium" | "low" | "info"
+              finding.severity as
+                "critical" | "high" | "medium" | "low" | "info"
             }
             className="text-[10px] capitalize"
           >
@@ -62,92 +64,93 @@ function FindingDetail({ finding }: FindingDetailProps) {
         </div>
       </CardHeader>
       <CardContent>
-
-      {finding.description && (
-        <div className="mb-4">
-          <div className="mb-1.5 flex items-center gap-1.5">
-            <Shield className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              {t("findingDescription")}
-            </span>
+        {finding.description && (
+          <div className="mb-4">
+            <div className="mb-1.5 flex items-center gap-1.5">
+              <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                {t("findingDescription")}
+              </span>
+            </div>
+            <p className="text-xs text-foreground leading-relaxed">
+              {finding.description}
+            </p>
           </div>
-          <p className="text-xs text-foreground leading-relaxed">
-            {finding.description}
-          </p>
-        </div>
-      )}
-
-      {finding.impact && (
-        <div className="mb-4">
-          <Separator className="mb-3" />
-          <div className="mb-1.5 flex items-center gap-1.5">
-            <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-            <span className="text-[10px] font-medium uppercase tracking-wider text-amber-500">
-              {t("findingImpact")}
-            </span>
-          </div>
-          <p className="text-xs text-foreground leading-relaxed">
-            {finding.impact}
-          </p>
-        </div>
-      )}
-
-      {finding.attacker_benefit && (
-        <div className="mb-4">
-          <Separator className="mb-3" />
-          <div className="mb-1.5 flex items-center gap-1.5">
-            <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              {t("findingAttackerBenefit")}
-            </span>
-          </div>
-          <p className="text-xs text-foreground leading-relaxed">
-            {finding.attacker_benefit}
-          </p>
-        </div>
-      )}
-
-      {finding.remediation && (
-        <div>
-          <Separator className="mb-3" />
-          <div className="mb-1.5 flex items-center gap-1.5">
-            <Wrench className="h-3.5 w-3.5 text-primary-text" />
-            <span className="text-[10px] font-medium uppercase tracking-wider text-primary-text">
-              {t("findingRemediation")}
-            </span>
-          </div>
-          <p className="text-xs text-foreground leading-relaxed">
-            {finding.remediation}
-          </p>
-        </div>
-      )}
-
-      <Separator className="my-3" />
-
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() => setShowRaw(!showRaw)}
-        className="h-auto px-0 text-[10px] text-muted-foreground hover:bg-transparent hover:text-foreground"
-      >
-        {showRaw ? (
-          <ChevronUp className="h-3 w-3" />
-        ) : (
-          <ChevronDown className="h-3 w-3" />
         )}
-        {t("rawData")}
-      </Button>
 
-      {showRaw && (
-        <pre className="mt-2 overflow-x-auto rounded-md bg-muted p-3 font-mono text-[10px] text-muted-foreground leading-relaxed">
-          {rawLoading
-            ? t("loading")
-            : rawPayload
-              ? JSON.stringify(rawPayload, null, 2)
-              : t("noRawData")}
-        </pre>
-      )}
+        {finding.impact && (
+          <div className="mb-4">
+            <Separator className="mb-3" />
+            <div className="mb-1.5 flex items-center gap-1.5">
+              <AlertTriangle className={`h-3.5 w-3.5 ${TONE_TEXT.amber}`} />
+              <span
+                className={`text-[10px] font-medium uppercase tracking-wider ${TONE_TEXT.amber}`}
+              >
+                {t("findingImpact")}
+              </span>
+            </div>
+            <p className="text-xs text-foreground leading-relaxed">
+              {finding.impact}
+            </p>
+          </div>
+        )}
+
+        {finding.attacker_benefit && (
+          <div className="mb-4">
+            <Separator className="mb-3" />
+            <div className="mb-1.5 flex items-center gap-1.5">
+              <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                {t("findingAttackerBenefit")}
+              </span>
+            </div>
+            <p className="text-xs text-foreground leading-relaxed">
+              {finding.attacker_benefit}
+            </p>
+          </div>
+        )}
+
+        {finding.remediation && (
+          <div>
+            <Separator className="mb-3" />
+            <div className="mb-1.5 flex items-center gap-1.5">
+              <Wrench className="h-3.5 w-3.5 text-primary-text" />
+              <span className="text-[10px] font-medium uppercase tracking-wider text-primary-text">
+                {t("findingRemediation")}
+              </span>
+            </div>
+            <p className="text-xs text-foreground leading-relaxed">
+              {finding.remediation}
+            </p>
+          </div>
+        )}
+
+        <Separator className="my-3" />
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowRaw(!showRaw)}
+          className="h-auto px-0 text-[10px] text-muted-foreground hover:bg-transparent hover:text-foreground"
+        >
+          {showRaw ? (
+            <ChevronUp className="h-3 w-3" />
+          ) : (
+            <ChevronDown className="h-3 w-3" />
+          )}
+          {t("rawData")}
+        </Button>
+
+        {showRaw && (
+          <pre className="mt-2 overflow-x-auto rounded-md bg-muted p-3 font-mono text-[10px] text-muted-foreground leading-relaxed">
+            {rawLoading
+              ? t("loading")
+              : rawPayload
+                ? JSON.stringify(rawPayload, null, 2)
+                : t("noRawData")}
+          </pre>
+        )}
       </CardContent>
     </Card>
   );

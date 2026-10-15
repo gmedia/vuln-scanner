@@ -12,6 +12,7 @@ import {
   type AdminTone,
 } from "@/components/admin/adminChrome";
 import { cn } from "@/lib/utils";
+import { TONE_TEXT } from "@/lib/toneColors";
 
 export function AdminShell({
   tone = "primary",
@@ -157,10 +158,10 @@ const NOTICE_BORDER: Record<AdminTone, string> = {
 const NOTICE_TEXT: Record<AdminTone, string> = {
   primary: "text-foreground",
   success: "text-primary-text",
-  danger: "text-red-400",
-  warn: "text-amber-400",
+  danger: TONE_TEXT.red,
+  warn: TONE_TEXT.amber,
   info: "text-foreground",
-  alert: "text-orange-400",
+  alert: TONE_TEXT.orange,
   idle: "text-muted-foreground",
 };
 

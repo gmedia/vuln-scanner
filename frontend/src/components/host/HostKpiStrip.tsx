@@ -5,6 +5,7 @@ import { SiemRail } from "@/components/siem/siemChrome";
 import { Badge } from "@/components/ui/Badge";
 import { Progress } from "@/components/ui/Progress";
 import { cn } from "@/lib/utils";
+import { TONE_TEXT } from "@/lib/toneColors";
 
 export type HostKpiStripProps = {
   readonly sku: string;
@@ -44,7 +45,10 @@ function KpiTile({
         {label}
       </p>
       <div
-        className={cn("mt-1 flex flex-wrap items-center gap-2 pl-2", valueClass)}
+        className={cn(
+          "mt-1 flex flex-wrap items-center gap-2 pl-2",
+          valueClass,
+        )}
       >
         {value}
         {pulse ? <GuardPulse /> : null}
@@ -84,11 +88,15 @@ export default function HostKpiStrip({
   const quotaValueClass = isFull
     ? "font-mono text-lg font-bold tabular-nums text-destructive sm:text-2xl"
     : isNearCap
-      ? "font-mono text-lg font-bold tabular-nums text-amber-500 sm:text-2xl"
+      ? `font-mono text-lg font-bold tabular-nums ${TONE_TEXT.amber} sm:text-2xl`
       : "font-mono text-lg font-bold tabular-nums text-foreground sm:text-2xl";
   const helperOk = agentsCount > 0 && !fleetStale;
   const helperRailClass =
-    agentsCount === 0 ? "bg-border" : helperOk ? "bg-primary" : "bg-destructive";
+    agentsCount === 0
+      ? "bg-border"
+      : helperOk
+        ? "bg-primary"
+        : "bg-destructive";
 
   return (
     <section

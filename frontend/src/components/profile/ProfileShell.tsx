@@ -7,6 +7,7 @@ import {
   type ProfileTone,
 } from "@/components/profile/profileChrome";
 import { cn } from "@/lib/utils";
+import { TONE_TEXT } from "@/lib/toneColors";
 
 export function ProfileShell({
   tone = "primary",
@@ -78,7 +79,11 @@ export function ProfileShellBody({
   return <div className={cn("px-4 py-4", className)}>{children}</div>;
 }
 
-export function ProfileIconChip({ children }: { readonly children: ReactNode }) {
+export function ProfileIconChip({
+  children,
+}: {
+  readonly children: ReactNode;
+}) {
   return (
     <span
       className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted/40 text-muted-foreground"
@@ -101,7 +106,7 @@ const NOTICE_TEXT: Record<ProfileTone, string> = {
   primary: "text-foreground",
   success: "text-primary-text",
   danger: "text-destructive",
-  warn: "text-amber-400",
+  warn: TONE_TEXT.amber,
   idle: "text-muted-foreground",
 };
 

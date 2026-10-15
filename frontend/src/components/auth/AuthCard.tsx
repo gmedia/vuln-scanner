@@ -3,8 +3,13 @@ import type { ReactNode } from "react";
 import { AUTH_CARD_CLASS } from "@/components/layout/AuthLayout";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { Card } from "@/components/ui/Card";
-import { authRailClass, authWashClass, type AuthTone } from "@/components/auth/authChrome";
+import {
+  authRailClass,
+  authWashClass,
+  type AuthTone,
+} from "@/components/auth/authChrome";
 import { cn } from "@/lib/utils";
+import { TONE_TEXT } from "@/lib/toneColors";
 
 export function AuthCard({
   tone = "primary",
@@ -62,7 +67,7 @@ const ICON_CLASS: Record<AuthTone, string> = {
   primary: "text-primary-text",
   success: "text-primary-text",
   danger: "text-destructive",
-  warn: "text-amber-400",
+  warn: TONE_TEXT.amber,
   info: "text-primary-text",
 };
 
@@ -101,8 +106,8 @@ const NOTICE_BORDER: Record<AuthTone, string> = {
 const NOTICE_TEXT: Record<AuthTone, string> = {
   primary: "text-primary-text",
   success: "text-primary-text",
-  danger: "text-red-400",
-  warn: "text-amber-400",
+  danger: TONE_TEXT.red,
+  warn: TONE_TEXT.amber,
   info: "text-muted-foreground",
 };
 

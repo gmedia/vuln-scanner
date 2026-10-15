@@ -1,7 +1,5 @@
-import {
-  fetchAssetPack,
-  fetchAssetPackHtml,
-} from "@/api/assets";
+import { fetchAssetPack, fetchAssetPackHtml } from "@/api/assets";
+import { TONE_CHIP_TEXT } from "@/lib/toneColors";
 
 export type AssetTranslate = (
   key: string,
@@ -53,9 +51,9 @@ export function assetRailClass(scanType: string): string {
 export function assetTypeChipClass(scanType: string): string {
   switch (scanType) {
     case "domain":
-      return "bg-sky-500/15 text-sky-700 dark:text-sky-300";
+      return `bg-sky-500/15 ${TONE_CHIP_TEXT.sky}`;
     case "ip":
-      return "bg-violet-500/15 text-violet-700 dark:text-violet-300";
+      return `bg-violet-500/15 ${TONE_CHIP_TEXT.violet}`;
     default:
       return "bg-secondary text-secondary-foreground";
   }

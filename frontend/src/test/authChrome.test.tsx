@@ -54,7 +54,7 @@ describe("AuthCard", () => {
 });
 
 describe("AuthNotice", () => {
-  it("keeps the destructive notice on text-red-400 with a role", () => {
+  it("keeps the destructive notice on the red tone pair with a role", () => {
     render(
       <AuthNotice tone="danger" role="alert">
         Bad credentials
@@ -62,7 +62,7 @@ describe("AuthNotice", () => {
     );
     const alert = screen.getByRole("alert");
     expect(alert).toHaveTextContent("Bad credentials");
-    expect(alert.className).toMatch(/text-red-400/);
+    expect(alert.className).toMatch(/text-red-700 dark:text-red-400/);
     expect(alert.parentElement?.querySelector(".bg-destructive")).toBeTruthy();
   });
 

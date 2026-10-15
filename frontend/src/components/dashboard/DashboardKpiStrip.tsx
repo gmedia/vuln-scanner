@@ -2,6 +2,7 @@ import { GuardPulse } from "@/components/guard/guardChrome";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/utils";
+import { TONE_TEXT } from "@/lib/toneColors";
 
 export type DashboardKpiStripProps = {
   readonly openRisk: number;
@@ -107,7 +108,7 @@ export function DashboardKpiStrip({
         value={openRisk}
         isLoading={loading}
         railClass={riskTone}
-        valueClassName={openRisk > 0 ? "text-red-400" : "text-foreground"}
+        valueClassName={openRisk > 0 ? TONE_TEXT.red : "text-foreground"}
         pulse={openRisk > 0}
         className="col-span-2 lg:col-span-1"
       />
@@ -116,16 +117,14 @@ export function DashboardKpiStrip({
         value={`${weekCritical}/${weekHigh}/${weekMedium}`}
         isLoading={loading}
         railClass={weekTone}
-        valueClassName="text-orange-400"
+        valueClassName={TONE_TEXT.orange}
       />
       <StatTile
         label={labels.schedules}
         value={`${enabledSchedules} / ${scheduleLimit}`}
         isLoading={false}
         railClass={schedulesTone}
-        valueClassName={
-          schedulesFull ? "text-destructive" : "text-foreground"
-        }
+        valueClassName={schedulesFull ? "text-destructive" : "text-foreground"}
       />
     </div>
   );
