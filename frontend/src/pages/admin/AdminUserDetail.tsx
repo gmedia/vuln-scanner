@@ -161,7 +161,7 @@ function AdminUserDetail() {
                   aria-label={copied ? t("copied") : t("copyEmail")}
                 >
                   {copied ? (
-                    <Check className="h-3.5 w-3.5 text-primary" />
+                    <Check className="h-3.5 w-3.5 text-primary-text" />
                   ) : (
                     <Copy className="h-3.5 w-3.5" />
                   )}
@@ -230,7 +230,7 @@ function AdminUserDetail() {
               )}
               <div className="flex items-center gap-3">
                 <Coins className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="font-mono text-sm tabular-nums text-primary">
+                <span className="font-mono text-sm tabular-nums text-primary-text">
                   {formatCredits(user.credits)}
                 </span>
               </div>

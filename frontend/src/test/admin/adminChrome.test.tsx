@@ -44,7 +44,7 @@ describe("adminChrome helpers", () => {
     expect(kpiValueClass("info")).toBe("text-sky-400");
     expect(kpiValueClass("alert")).toBe("text-orange-400");
     expect(kpiValueClass("warn")).toBe("text-amber-400");
-    expect(kpiValueClass("primary")).toBe("text-primary");
+    expect(kpiValueClass("primary")).toBe("text-primary-text");
   });
 
   it("derives the user row tone", () => {

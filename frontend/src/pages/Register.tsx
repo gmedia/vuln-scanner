@@ -123,7 +123,7 @@ function Register() {
             {resendFeedback && (
               <p
                 className={`text-xs ${
-                  emailSent === false ? "text-amber-400" : "text-primary"
+                  emailSent === false ? "text-amber-400" : "text-primary-text"
                 }`}
               >
                 {resendFeedback}

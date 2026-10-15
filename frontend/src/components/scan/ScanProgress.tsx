@@ -85,7 +85,7 @@ function ScanProgress({ className }: ScanProgressProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {isComplete ? (
-            <CheckCircle2 className="h-5 w-5 text-primary" />
+            <CheckCircle2 className="h-5 w-5 text-primary-text" />
           ) : isFailed ? (
             <XCircle className="h-5 w-5 text-destructive" />
           ) : isDisconnected ? (

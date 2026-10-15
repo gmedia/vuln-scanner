@@ -228,7 +228,7 @@ describe("Register", () => {
     await waitFor(() => {
       const feedback = screen.getAllByText("Email verifikasi telah dikirim.");
       expect(feedback.length).toBeGreaterThanOrEqual(1);
-      expect(feedback.some((el) => el.className.includes("text-primary"))).toBe(
+      expect(feedback.some((el) => el.className.includes("text-primary-text"))).toBe(
         true,
       );
     });

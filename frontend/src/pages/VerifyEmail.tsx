@@ -97,7 +97,7 @@ function VerifyEmail() {
             {!showResend ? (
               <button
                 type="button"
-                className="py-2 text-sm text-foreground/90 underline-offset-4 hover:text-primary hover:underline"
+                className="py-2 text-sm text-foreground/90 underline-offset-4 hover:text-primary-text hover:underline"
                 onClick={() => setShowResend(true)}
               >
                 {t("didntGetIt")}

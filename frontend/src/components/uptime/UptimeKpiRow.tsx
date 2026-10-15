@@ -86,7 +86,7 @@ export function UptimeKpiRow({
         value={upCount}
         railClass={upCount > 0 ? "bg-primary" : "bg-border"}
         pulse={upCount > 0}
-        valueClass="font-mono text-lg font-bold tabular-nums text-primary sm:text-2xl"
+        valueClass="font-mono text-lg font-bold tabular-nums text-primary-text sm:text-2xl"
       />
       <KpiTile
         label={t("statDown")}

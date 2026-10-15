@@ -38,7 +38,7 @@ function NotFound() {
           </div>
         </div>
         <div className="mb-4 rounded-full bg-muted p-4">
-          <Crosshair className="h-10 w-10 text-primary/70" />
+          <Crosshair className="h-10 w-10 text-primary-text/70" />
         </div>
         <h1 className="mb-2 font-mono text-7xl font-bold tracking-tighter text-foreground/85 sm:text-8xl 2xl:text-9xl">
           404

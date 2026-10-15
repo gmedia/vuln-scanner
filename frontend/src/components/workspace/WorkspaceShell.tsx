@@ -106,7 +106,7 @@ const NOTICE_BORDER: Record<WorkspaceTone, string> = {
 
 const NOTICE_TEXT: Record<WorkspaceTone, string> = {
   primary: "text-foreground",
-  success: "text-primary",
+  success: "text-primary-text",
   danger: "text-destructive",
   warn: "text-amber-400",
   info: "text-foreground",

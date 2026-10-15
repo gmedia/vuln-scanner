@@ -91,7 +91,7 @@ function BottomNav() {
               className={cn(
                 "flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium transition-colors",
                 item.isActive
-                  ? "text-primary"
+                  ? "text-primary-text"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >

@@ -146,7 +146,7 @@ describe("ScanProgress", () => {
       scanType: null,
     };
     render(<ScanProgress />);
-    const checkIcon = document.querySelector(".text-primary");
+    const checkIcon = document.querySelector(".text-primary-text");
     expect(checkIcon).toBeInTheDocument();
   });
 

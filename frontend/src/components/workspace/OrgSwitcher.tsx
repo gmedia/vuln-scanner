@@ -70,9 +70,9 @@ function OrgSwitcher({ className, collapsed = false }: OrgSwitcherProps) {
                 disabled={switching}
               >
                 {switching ? (
-                  <Loader2 className="animate-spin text-primary" aria-hidden />
+                  <Loader2 className="animate-spin text-primary-text" aria-hidden />
                 ) : (
-                  <Building2 className="text-primary" aria-hidden />
+                  <Building2 className="text-primary-text" aria-hidden />
                 )}
               </SidebarMenuButton>
             </DropdownMenuTrigger>
@@ -88,15 +88,15 @@ function OrgSwitcher({ className, collapsed = false }: OrgSwitcherProps) {
             aria-haspopup="listbox"
             disabled={switching}
             className={cn(
-              "h-9 max-w-[14rem] min-w-0 justify-start gap-1.5 bg-muted/40 px-2.5 text-xs text-foreground hover:text-primary",
+              "h-9 max-w-[14rem] min-w-0 justify-start gap-1.5 bg-muted/40 px-2.5 text-xs text-foreground hover:text-primary-text",
               className,
             )}
           >
             {switching ? (
-              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-primary" />
+              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-primary-text" />
             ) : (
               <Building2
-                className="h-3.5 w-3.5 shrink-0 text-primary"
+                className="h-3.5 w-3.5 shrink-0 text-primary-text"
                 aria-hidden
               />
             )}
@@ -129,7 +129,7 @@ function OrgSwitcher({ className, collapsed = false }: OrgSwitcherProps) {
               onSelect={() => {
                 void handleSwitch(org.id);
               }}
-              className={cn(selected && "bg-primary/10 text-primary")}
+              className={cn(selected && "bg-primary/10 text-primary-text")}
             >
               <Building2 className="h-3.5 w-3.5 shrink-0 opacity-70" />
               <span className="min-w-0 flex-1">

@@ -59,11 +59,11 @@ const CHIP_CLASS: Record<AuthTone, string> = {
 };
 
 const ICON_CLASS: Record<AuthTone, string> = {
-  primary: "text-primary",
-  success: "text-primary",
+  primary: "text-primary-text",
+  success: "text-primary-text",
   danger: "text-destructive",
   warn: "text-amber-400",
-  info: "text-primary",
+  info: "text-primary-text",
 };
 
 export function AuthStatusIcon({
@@ -99,8 +99,8 @@ const NOTICE_BORDER: Record<AuthTone, string> = {
 };
 
 const NOTICE_TEXT: Record<AuthTone, string> = {
-  primary: "text-primary",
-  success: "text-primary",
+  primary: "text-primary-text",
+  success: "text-primary-text",
   danger: "text-red-400",
   warn: "text-amber-400",
   info: "text-muted-foreground",

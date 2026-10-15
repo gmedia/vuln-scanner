@@ -56,7 +56,7 @@ export function UptimeDetailKpiStrip({
         label={t("rangeUptime")}
         value={pct == null ? "—" : `${pct}%`}
         railClass="bg-primary"
-        valueClass="text-primary"
+        valueClass="text-primary-text"
       />
       <KpiTile
         label={t("rangeOk")}

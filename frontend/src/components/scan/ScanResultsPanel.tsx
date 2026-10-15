@@ -93,7 +93,7 @@ export function ScanResultsPanel({
               {needsAttention ? (
                 <AlertTriangle className="h-4 w-4 text-red-400" />
               ) : (
-                <CheckCircle2 className="h-4 w-4 text-primary" />
+                <CheckCircle2 className="h-4 w-4 text-primary-text" />
               )}
               <span className="text-xs text-foreground">
                 {totalFindings} finding

@@ -333,7 +333,7 @@ function AdminHppSimulator() {
                     out && out.computed
                       ? marginTone(out.margin_idr) === "danger"
                         ? "text-red-400"
-                        : "text-primary"
+                        : "text-primary-text"
                       : undefined;
                   return (
                     <TableRow
@@ -456,7 +456,7 @@ function AdminHppSimulator() {
                     className={
                       marginTone(scenario.totals.margin_idr) === "danger"
                         ? "py-1.5 font-mono text-xs tabular-nums text-red-400"
-                        : "py-1.5 font-mono text-xs tabular-nums text-primary"
+                        : "py-1.5 font-mono text-xs tabular-nums text-primary-text"
                     }
                   >
                     {formatIdr(scenario.totals.margin_idr)}

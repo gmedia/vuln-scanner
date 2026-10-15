@@ -6,7 +6,7 @@ import ThemeSwitcher from "@/components/theme/ThemeSwitcher";
 import { useTranslation } from "react-i18next";
 
 export const AUTH_SECONDARY_LINK =
-  "inline-flex min-h-11 min-w-11 items-center justify-center px-2 py-2 text-sm text-foreground hover:text-primary hover:underline";
+  "inline-flex min-h-11 min-w-11 items-center justify-center px-2 py-2 text-sm text-foreground hover:text-primary-text hover:underline";
 
 export const AUTH_CARD_CLASS = "w-full border-border/80 shadow-none";
 

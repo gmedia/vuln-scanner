@@ -179,7 +179,7 @@ function MobileUpload() {
           <Upload
             className={cn(
               "mb-3 h-10 w-10 transition-colors",
-              isDragging ? "text-primary" : "text-muted-foreground",
+              isDragging ? "text-primary-text" : "text-muted-foreground",
             )}
           />
           <p className="mb-1 text-sm text-foreground">
@@ -209,7 +209,7 @@ function MobileUpload() {
         <Card className="bg-muted/50 shadow-none">
           <CardContent className="flex items-center justify-between pt-6">
           <div className="flex min-w-0 items-center gap-3">
-            <File className="h-8 w-8 shrink-0 text-primary" />
+            <File className="h-8 w-8 shrink-0 text-primary-text" />
             <div className="min-w-0">
               <p className="truncate font-mono text-sm text-foreground">{file.name}</p>
               <p className="font-mono text-xs text-muted-foreground">

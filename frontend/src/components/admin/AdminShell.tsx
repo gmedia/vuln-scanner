@@ -156,7 +156,7 @@ const NOTICE_BORDER: Record<AdminTone, string> = {
 
 const NOTICE_TEXT: Record<AdminTone, string> = {
   primary: "text-foreground",
-  success: "text-primary",
+  success: "text-primary-text",
   danger: "text-red-400",
   warn: "text-amber-400",
   info: "text-foreground",

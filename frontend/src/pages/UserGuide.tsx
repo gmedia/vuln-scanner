@@ -96,7 +96,7 @@ function UserGuide() {
                     dash: (
                       <Link
                         to="/dashboard"
-                        className="text-primary hover:underline"
+                        className="text-primary-text hover:underline"
                       />
                     ),
                   }}
@@ -120,7 +120,7 @@ function UserGuide() {
                     ip: (
                       <Link
                         to="/scan/ip"
-                        className="text-primary hover:underline"
+                        className="text-primary-text hover:underline"
                       />
                     ),
                   }}
@@ -145,7 +145,7 @@ function UserGuide() {
                     hasil: (
                       <a
                         href="#hasil"
-                        className="text-primary hover:underline"
+                        className="text-primary-text hover:underline"
                       />
                     ),
                   }}
@@ -169,7 +169,7 @@ function UserGuide() {
                     dom: (
                       <Link
                         to="/scan/domain"
-                        className="text-primary hover:underline"
+                        className="text-primary-text hover:underline"
                       />
                     ),
                   }}
@@ -203,7 +203,7 @@ function UserGuide() {
                     mob: (
                       <Link
                         to="/scan/mobile"
-                        className="text-primary hover:underline"
+                        className="text-primary-text hover:underline"
                       />
                     ),
                   }}
@@ -272,7 +272,7 @@ function UserGuide() {
                     sch: (
                       <Link
                         to="/schedules"
-                        className="text-primary hover:underline"
+                        className="text-primary-text hover:underline"
                       />
                     ),
                   }}
@@ -323,7 +323,7 @@ function UserGuide() {
                     as: (
                       <Link
                         to="/assets"
-                        className="text-primary hover:underline"
+                        className="text-primary-text hover:underline"
                       />
                     ),
                   }}
@@ -355,7 +355,7 @@ function UserGuide() {
                     ws: (
                       <Link
                         to="/settings/workspace"
-                        className="text-primary hover:underline"
+                        className="text-primary-text hover:underline"
                       />
                     ),
                   }}
@@ -407,7 +407,7 @@ function UserGuide() {
                     g: (
                       <Link
                         to="/guard"
-                        className="text-primary hover:underline"
+                        className="text-primary-text hover:underline"
                       />
                     ),
                   }}
@@ -517,7 +517,7 @@ function UserGuide() {
                     g: (
                       <Link
                         to="/guard"
-                        className="text-primary hover:underline"
+                        className="text-primary-text hover:underline"
                       />
                     ),
                   }}
@@ -532,7 +532,7 @@ function UserGuide() {
                     siem: (
                       <Link
                         to="/siem"
-                        className="text-primary hover:underline"
+                        className="text-primary-text hover:underline"
                       />
                     ),
                   }}
@@ -578,7 +578,7 @@ function UserGuide() {
                     up: (
                       <Link
                         to="/uptime"
-                        className="text-primary hover:underline"
+                        className="text-primary-text hover:underline"
                       />
                     ),
                   }}
@@ -614,7 +614,7 @@ function UserGuide() {
                     sp: (
                       <Link
                         to="/uptime/status-page"
-                        className="text-primary hover:underline"
+                        className="text-primary-text hover:underline"
                       />
                     ),
                   }}
@@ -651,13 +651,13 @@ function UserGuide() {
                     guard: (
                       <a
                         href="#guard"
-                        className="text-primary hover:underline"
+                        className="text-primary-text hover:underline"
                       />
                     ),
                     host: (
                       <Link
                         to="/host"
-                        className="text-primary hover:underline"
+                        className="text-primary-text hover:underline"
                       />
                     ),
                   }}
@@ -672,7 +672,7 @@ function UserGuide() {
                     gh: (
                       <a
                         href={SINEXIS_INSTALL_RAW_URL}
-                        className="text-primary hover:underline"
+                        className="text-primary-text hover:underline"
                         download="sinexis-install.sh"
                         rel="noreferrer"
                       />
@@ -680,7 +680,7 @@ function UserGuide() {
                     rel: (
                       <a
                         href="https://github.com/gmedia/vuln-scanner/releases"
-                        className="text-primary hover:underline"
+                        className="text-primary-text hover:underline"
                         target="_blank"
                         rel="noreferrer"
                       />
@@ -735,7 +735,7 @@ function UserGuide() {
                     guide: (
                       <Link
                         to="/guide"
-                        className="text-primary hover:underline"
+                        className="text-primary-text hover:underline"
                       />
                     ),
                   }}

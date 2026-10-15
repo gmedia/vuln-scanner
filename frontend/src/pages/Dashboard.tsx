@@ -539,7 +539,7 @@ function Dashboard() {
                               <Link
                                 to={`/scan/${scan.id}`}
                                 data-status={scan.status}
-                                className="block truncate font-mono text-xs text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                                className="block truncate font-mono text-xs text-foreground hover:text-primary-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                               >
                                 {scan.target}
                               </Link>
