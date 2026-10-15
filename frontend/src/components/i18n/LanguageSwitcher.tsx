@@ -1,12 +1,52 @@
 import { useTranslation } from "react-i18next";
+import { Languages } from "lucide-react";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { isAppLocale, type AppLocale } from "@/i18n/locales";
 import { patchMeLocale } from "@/api/auth";
 import { useAuthStore } from "@/store/authStore";
 
-function LanguageSwitcher({ className }: { className?: string }) {
+function LanguageSwitcher({ className, collapsed = false }: { className?: string; collapsed?: boolean }) {
   const { i18n, t } = useTranslation("common");
   const current: AppLocale = isAppLocale(i18n.language) ? i18n.language : "id";
+
+  if (collapsed) {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <SidebarMenuButton
+                type="button"
+                data-testid="language-switcher"
+                aria-label={t("language")}
+                tooltip={t("language")}
+              >
+                <Languages aria-hidden />
+              </SidebarMenuButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="right" align="end">
+              {(["id", "en"] as const).map((locale) => (
+                <DropdownMenuItem
+                  key={locale}
+                  data-testid={`locale-${locale}`}
+                  onSelect={() => {
+                    void i18n.changeLanguage(locale);
+                    if (useAuthStore.getState().isAuthenticated) {
+                      void patchMeLocale(locale);
+                    }
+                  }}
+                >
+                  {locale === "id" ? t("languageId") : t("languageEn")}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    );
+  }
 
   return (
     <div
