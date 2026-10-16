@@ -9,6 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.i18n import DEFAULT_LOCALE, AppLocale
 from app.models.invoice import PRODUCT_SEATS, OrgInvoice, SkuCatalog
 from app.models.organization import Organization
 from app.models.user import User
@@ -64,11 +65,14 @@ def to_item(inv: OrgInvoice, *, org_name: str | None, include_bank: bool) -> dic
     }
 
 
-def invoice_pdf_response(inv: OrgInvoice, *, org_name: str | None) -> Response:
+def invoice_pdf_response(
+    inv: OrgInvoice, *, org_name: str | None, locale: AppLocale = DEFAULT_LOCALE
+) -> Response:
     html = render_invoice_html(
         inv,
         org_name=org_name,
         bank=bank_copy(include=inv.status == "sent"),
+        locale=locale,
     )
     try:
         pdf = render_scan_pdf(html)

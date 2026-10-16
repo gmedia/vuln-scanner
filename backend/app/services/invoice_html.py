@@ -3,7 +3,11 @@ from __future__ import annotations
 import html
 from datetime import datetime
 
+from app.i18n import DEFAULT_LOCALE, AppLocale, t
 from app.models.invoice import PRODUCT_SEATS, OrgInvoice
+
+_SELLER = "Sinexis"
+_SELLER_PRODUCT = "Sinexis Scan"
 
 _PRODUCT_LABEL = {
     "scan": "Sinexis Scan",
@@ -32,7 +36,11 @@ def render_invoice_html(
     *,
     org_name: str | None,
     bank: dict[str, str | None] | None,
+    locale: AppLocale = DEFAULT_LOCALE,
 ) -> str:
+    def label(key: str) -> str:
+        return _esc(t(locale, "invoice", key))
+
     product = _PRODUCT_LABEL.get(inv.product, inv.product)
     seats = PRODUCT_SEATS.get(inv.product, PRODUCT_SEATS["scan"]).get(inv.sku, 1)
     number = _esc(inv.number)
@@ -40,29 +48,31 @@ def render_invoice_html(
     amount = _esc(_idr(inv.amount_idr))
     period = _esc(f"{_day(inv.period_start)} – {_day(inv.period_end)}")
     issued = _esc(_day(inv.created_at))
-    status = _esc(inv.status.capitalize())
+    status = _esc(t(locale, "invoice", f"status_{inv.status}"))
     item = _esc(f"{product} — {inv.sku.upper()}")
     bank_block = ""
     if inv.status == "sent":
+        pay_hint = _esc(t(locale, "invoice", "payHint", number=inv.number))
         bank_block = f"""
     <section class="inv-pay">
-      <h2 class="inv-label">Payment</h2>
+      <h2 class="inv-label">{label("pay")}</h2>
       <dl class="inv-pay-fields">
-        <div><dt>Bank</dt><dd>{_esc((bank or {}).get("bank_name") or "—")}</dd></div>
-        <div><dt>Account</dt><dd>{_esc((bank or {}).get("bank_account") or "—")}</dd></div>
-        <div><dt>Account holder</dt><dd>{_esc((bank or {}).get("bank_holder") or "—")}</dd></div>
+        <div><dt>{label("bankName")}</dt><dd>{_esc((bank or {}).get("bank_name") or "—")}</dd></div>
+        <div><dt>{label("bankAccount")}</dt><dd>{_esc((bank or {}).get("bank_account") or "—")}</dd></div>
+        <div><dt>{label("bankHolder")}</dt><dd>{_esc((bank or {}).get("bank_holder") or "—")}</dd></div>
       </dl>
-      <p class="inv-pay-hint">Quote {number} as the transfer reference.</p>
+      <p class="inv-pay-hint">{pay_hint}</p>
     </section>"""
     ref_line = ""
     if inv.status == "paid" and inv.bank_ref:
-        ref_line = f'<p class="inv-totals-row"><span>Bank ref</span><span class="num">{_esc(inv.bank_ref)}</span></p>'
-    due_label = "Amount paid" if inv.status == "paid" else "Amount due"
+        bank_ref = _esc(inv.bank_ref)
+        ref_line = f'<p class="inv-totals-row"><span>{label("ref")}</span><span class="num">{bank_ref}</span></p>'
+    due_label = label("amountPaid" if inv.status == "paid" else "amountDue")
     return f"""<!DOCTYPE html>
-<html lang="id">
+<html lang="{locale}">
 <head>
   <meta charset="utf-8">
-  <title>Invoice {number}</title>
+  <title>{label("title")} {number}</title>
   <style>
     @page {{ size: A4; margin: 16mm; }}
     html, body {{ background: #fff; color: hsl(0 0% 7%); }}
@@ -129,40 +139,42 @@ def render_invoice_html(
     <header class="inv-header">
       <p class="invoice-print-brand">SINE<span class="invoice-print-accent">XIS</span></p>
       <div class="inv-meta">
-        <h1 class="inv-kicker">INVOICE</h1>
+        <h1 class="inv-kicker">{label("title")}</h1>
         <p class="inv-number">{number}</p>
         <p class="inv-status{' inv-status--paid' if inv.status == 'paid' else ''}">{status}</p>
-        <p class="inv-issued"><span class="inv-label">Issued</span> {issued}</p>
+        <p class="inv-issued"><span class="inv-label">{label("issued")}</span> {issued}</p>
       </div>
     </header>
     <section class="inv-parties">
       <div class="inv-party">
-        <h2 class="inv-label">Bill from</h2>
-        <p class="inv-party-name">Sinexis</p>
-        <p class="inv-party-body">{_esc(product)}</p>
+        <h2 class="inv-label">{label("from")}</h2>
+        <p class="inv-party-name">{_esc(_SELLER)}</p>
+        <p class="inv-party-body">{_esc(_SELLER_PRODUCT)}</p>
       </div>
       <div class="inv-party">
-        <h2 class="inv-label">Bill to</h2>
+        <h2 class="inv-label">{label("billTo")}</h2>
         <p class="inv-party-name">{bill_to}</p>
       </div>
     </section>
     <table class="inv-items">
       <thead><tr>
-        <th scope="col">Description</th><th scope="col" class="num">Seats</th><th scope="col" class="num">Amount</th>
+        <th scope="col">{label("description")}</th>
+        <th scope="col" class="num">{label("seats")}</th>
+        <th scope="col" class="num">{label("amount")}</th>
       </tr></thead>
       <tbody><tr>
         <td><p class="item-title">{item}</p><p class="item-period">{period}</p></td>
         <td class="num">{seats}</td><td class="num">{amount}</td>
       </tr></tbody>
     </table>
-    <section class="inv-totals" aria-label="Total">
-      <p class="inv-totals-row"><span>Subtotal</span><span class="num">{amount}</span></p>
-      <p class="inv-totals-row inv-totals-grand"><span>Total</span><span class="num">{amount}</span></p>
+    <section class="inv-totals" aria-label="{label("total")}">
+      <p class="inv-totals-row"><span>{label("subtotal")}</span><span class="num">{amount}</span></p>
+      <p class="inv-totals-row inv-totals-grand"><span>{label("total")}</span><span class="num">{amount}</span></p>
       <p class="inv-totals-row"><span>{due_label}</span><span class="num">{amount}</span></p>
       {ref_line}
     </section>
     {bank_block}
-    <footer class="inv-footer">Thank you. {_esc(product)} — bank transfer, no self-serve upgrade.</footer>
+    <footer class="inv-footer">{_esc(t(locale, "invoice", "footer", product=product))}</footer>
   </article>
 </body>
 </html>"""

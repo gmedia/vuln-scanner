@@ -122,7 +122,7 @@ All spacing derives from **4px**.
 
 ### Server PDF renderer (`backend/app/services/invoice_html.py`)
 
-The WeasyPrint PDF implements the **same grammar** as `InvoicePrintSheet` above — header flex (wordmark left / meta right), two-column parties, hairline item table, right-aligned totals with the 2px ink rule on the grand row, payment box only when `sent`, footer. It differs only where the medium forces it: inline `<style>` (a standalone document, not the SPA), **system font fallback chains only** (see Font Stack), and no `.hidden` / `.invoice-printing` isolation. Changing the printed grammar means changing this renderer too — the two surfaces must not drift.
+The WeasyPrint PDF implements the **same grammar** as `InvoicePrintSheet` above — header flex (wordmark left / meta right), two-column parties, hairline item table, right-aligned totals with the 2px ink rule on the grand row, payment box only when `sent`, footer. It is **localized server-side** via `app.i18n` (the `invoice` namespace, default `id`, same wording as the `workspace` catalog), emitting `lang="{locale}"`. The medium-forced differences are inline `<style>` (a standalone document, not the SPA), **system font fallback chains only** (see Font Stack), and no `.hidden` / `.invoice-printing` isolation; a few fine-grained SPA styles (e.g. chip letter-spacing, 11 vs 12px meta) are not mirrored. Changing the printed grammar means changing this renderer too — the two surfaces must not drift.
 
 ### BrandMark (print)
 
