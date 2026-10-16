@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
+from app.i18n import load_catalog
 from app.main import app
 from app.models.invoice import OrgInvoice, SkuCatalog
 from app.models.organization import Organization, OrganizationMembership
@@ -588,7 +589,7 @@ def test_render_invoice_html_sent_includes_bank_and_host_seats() -> None:
     assert "<td class=\"num\">10</td>" in html
     assert "999" in html
     assert "Acme &lt;x&gt;" in html
-    assert "Payment" in html
+    assert 'class="inv-pay"' in html
 
 
 def test_render_invoice_html_paid_omits_bank_account() -> None:
@@ -598,7 +599,7 @@ def test_render_invoice_html_paid_omits_bank_account() -> None:
         bank={"bank_name": "Bank Contoh", "bank_account": "SHOULD-NOT", "bank_holder": "Holder"},
     )
     assert "SHOULD-NOT" not in html
-    assert "Payment" not in html
+    assert 'class="inv-pay"' not in html
     assert "TF-UNIT" in html
     assert "<td class=\"num\">1</td>" in html
 
@@ -610,9 +611,29 @@ def test_render_invoice_html_draft_omits_bank() -> None:
         bank={"bank_name": "Bank Contoh", "bank_account": "SHOULD-NOT", "bank_holder": "Holder"},
     )
     assert "SHOULD-NOT" not in html
-    # Bill-to falls back to an em dash when org_name is None (whitespace-tolerant).
-    assert re.search(r'Bill to</h2>\s*<p class="inv-party-name">—</p>', html) is not None
+    # Bill-to falls back to an em dash when org_name is None (locale-independent).
+    assert re.search(r'<p class="inv-party-name">—</p>', html) is not None
     assert "<td class=\"num\">3</td>" in html
+
+
+@pytest.mark.parametrize(
+    ("locale", "pay_label", "status_label"),
+    [("id", "Pembayaran", "Terkirim"), ("en", "Payment", "Sent")],
+)
+def test_render_invoice_html_localizes_labels(locale: str, pay_label: str, status_label: str) -> None:
+    html = render_invoice_html(
+        _sample_invoice(status="sent"),
+        org_name="Acme",
+        bank={"bank_name": "Bank Contoh", "bank_account": "999", "bank_holder": "Holder"},
+        locale=locale,
+    )
+    assert pay_label in html
+    assert status_label in html
+    assert f'lang="{locale}"' in html
+
+
+def test_invoice_catalog_key_parity() -> None:
+    assert set(load_catalog("id", "invoice")) == set(load_catalog("en", "invoice"))
 
 
 _PRODUCT_LABEL_CASES = [

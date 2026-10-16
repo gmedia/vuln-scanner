@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
+from app.i18n import normalize_lang
 from app.middleware.rate_limit import RateLimiter
 from app.models.invoice import (
     ANNUAL_MONTHS_PAID,
@@ -286,4 +287,8 @@ async def export_invoice_pdf(
     if format != "pdf":
         raise HTTPException(status_code=400, detail="format must be 'pdf'")
     org = await db.get(Organization, inv.organization_id)
-    return invoice_pdf_response(inv, org_name=org.name if org is not None else None)
+    return invoice_pdf_response(
+        inv,
+        org_name=org.name if org is not None else None,
+        locale=normalize_lang(getattr(current_admin, "locale", None)),
+    )
