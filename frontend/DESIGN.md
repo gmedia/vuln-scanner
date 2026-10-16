@@ -352,7 +352,6 @@ P15 flatten: one shell around search (filters + stream); inspector is a sibling 
 | react-scan / react-grab not wired | SPA entry | AGENTS.md forbids extra deps for a visual slice | Separate tooling PR |
 | No raw `full_log` body | inspector | Spec default `SIEM_INCLUDE_FULL_LOG` false | Flag + named slice |
 | Table row click (xl) not a `<button>` | stream table | Frozen `data-testid="siem-event-row"` on `TableRow`; keyboard via existing table semantics | Named a11y slice |
-| Badge dark-leaning colors on light | `badgeVariants` | Kit-wide; do not restyle kit for one page | Design-system PR |
 | Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Two surfaces; merging would pollute print | Keep split |
 
 ---
@@ -575,7 +574,7 @@ Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. 
 | Scheduled | `bg-primary` rail when count > 0, else `bg-border` | Scheduled KPI tile |
 | Guard linked | kit `Badge variant="info"` | Existing chip — do not recolor |
 
-Type **chips** may use sky/violet washes (`bg-sky-500/15 text-sky-700 dark:text-sky-300` / violet equivalent). Tag colors stay `tagColorClass` / `tagColorStyle` — appearance only.
+Type **chips** may use sky/violet washes (`bg-sky-500/15` + `TONE_CHIP_TEXT.sky`, violet equivalent). Tag colors stay `tagColorClass` / `tagColorStyle` — appearance only.
 
 ## 3. Typography
 
@@ -984,7 +983,7 @@ Content stress: long slug / hostname / TXT token uses `break-all` / `truncate` +
 
 ### StatusCopyRecord / TXT strip
 
-- Copy row: `relative overflow-hidden … pl-4` + primary `SiemRail`. Frozen testids `status-copy-cname` / `status-copy-txt-name` / `status-copy-txt-value`. 44px copy hit target (`h-11 w-11`). Check icon `text-primary` when copied.
+- Copy row: `relative overflow-hidden … pl-4` + primary `SiemRail`. Frozen testids `status-copy-cname` / `status-copy-txt-name` / `status-copy-txt-value`. 44px copy hit target (`h-11 w-11`). Check icon `text-primary-text` when copied.
 - Pending TXT wrapper: `bg-primary/5` + primary rail (Guard once-secret). Visible "TXT validation", "Waiting for TXT" (via hostname badge, not raw `pending_txt`), CNAME line `{{host}} → {{target}}`, `noAaaa`. Frozen `status-page-host`.
 
 ### StatusComponentBoard
@@ -1478,7 +1477,7 @@ Responsive:
 
 | Primitive | Anatomy | States |
 |-----------|---------|--------|
-| `DashboardKpiStrip` (`dashboard-kpi-strip`) | 3 `StatTile` + `SiemRail`; Open risk mounts `GuardPulse` | risk zero → primary rail, quiet value; risk > 0 → destructive rail + pulse + `text-red-400`; week rail destructive / orange / amber / muted; schedules rail primary / destructive at cap |
+| `DashboardKpiStrip` (`dashboard-kpi-strip`) | 3 `StatTile` + `SiemRail`; Open risk mounts `GuardPulse` | risk zero → primary rail, quiet value; risk > 0 → destructive rail + pulse + `TONE_TEXT.red`; week rail destructive / orange / amber / muted; schedules rail primary / destructive at cap |
 | `StatTile` | `relative overflow-hidden rounded-lg border bg-card pl-4` + `SiemRail` + value **before** label | loading → two `Skeleton`s |
 | Attention shell (`attention-strip`) | `relative overflow-hidden rounded-lg border border-destructive/40 bg-destructive/[0.04] pl-4` + destructive rail + `TriangleAlert` + links | hidden when nothing to attend |
 | Recent-work shell | `relative flex … flex-col overflow-hidden rounded-lg border bg-card pl-4` + `SiemRail(worstScanTone)` + hairline header + rows | worst-tone rail; empty → island `Radar` + `No scans yet` + CTA; all-lab → island copy |
@@ -1486,7 +1485,7 @@ Responsive:
 | Attach coverage shell | railed shell + hairline title + schedule rows + Manage CTA | rail primary when enabled > 0, destructive at `MAX_ENABLED_SCHEDULES`, muted when none |
 | Guard shell | railed shell + hairline title + agent count + Open Guard CTA | rail primary when agents > 0 and none stale, destructive when stale, muted when none |
 
-`StatTile` renders the **value before the label** (frozen: `getByText("Open risk").previousElementSibling` is the value element, which keeps `text-red-400` / `text-foreground`). Do **not** reorder to the label-first `KpiTile` used elsewhere without updating that frozen test.
+`StatTile` renders the **value before the label** (frozen: `getByText("Open risk").previousElementSibling` is the value element, which keeps `TONE_TEXT.red` / `text-foreground`). Do **not** reorder to the label-first `KpiTile` used elsewhere without updating that frozen test.
 
 ## 6. Motion
 
@@ -1533,7 +1532,7 @@ P15 flatten: the KPI strip is **not** inside PageHeader and **not** inside the r
 
 | Item | Location | Why accepted | Owner / Exit |
 |------|----------|--------------|--------------|
-| `StatTile` is value-before-label, unlike `KpiTile` | DashboardKpiStrip | Frozen `previousElementSibling` + `text-red-400` contract in `Dashboard.test.tsx` | Named test refactor if the contract changes |
+| `StatTile` is value-before-label, unlike `KpiTile` | DashboardKpiStrip | Frozen `previousElementSibling` + `TONE_TEXT.red` contract in `Dashboard.test.tsx` | Named test refactor if the contract changes |
 | Duplicate mobile + desktop recent-row markup | Dashboard | Frozen both-surface rendering; `useIsMobile` would drop one tree | Named a11y slice |
 | `SiemRail` / `GuardPulse` imported into dashboard | chrome | One rail/pulse primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
 | Dashboard keeps local `severityCount` / `latestPerTarget` helpers | page | Pre-existing; this slice restyles chrome only | Named extract |
@@ -1975,7 +1974,7 @@ Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. 
 | Error | `bg-destructive` rail + `bg-destructive/[0.04]` wash | Login error, register/reset validation, verify failure; icon `text-destructive` |
 | Warn | `bg-amber-600` rail + `bg-amber-500/[0.04]` wash | Rate-limit cooldown, verify email send failure; icon `TONE_TEXT.amber` |
 | Verifying | `bg-sky-600` rail | `/verify-email` idle / no-token (check in progress) |
-| Error text | `text-red-400` | Danger notice copy (frozen by e2e — see §8) |
+| Error text | `TONE_TEXT.red` | Danger notice copy; e2e selects it by `[data-testid="auth-notice-danger"]`, so the shade is free to move |
 
 Rails are **redundant** with the notice copy / status icon. Never color-only status.
 
@@ -2026,7 +2025,7 @@ Responsive:
 | `AuthCard` (`components/auth/AuthCard.tsx`) | kit `Card` + `AUTH_CARD_CLASS` + `relative overflow-hidden pl-4` + `SiemRail(authRailClass(tone))` + optional `authWashClass(tone)` | primary / success / danger / warn / info |
 | `AuthCardBody` | `px-4 py-6`, optional `space-y-4 text-center` | form (`center=false`) / status (`center=true`) |
 | `AuthStatusIcon` | `mx-auto h-12 w-12` bordered chip (`CHIP_CLASS[tone]`) + icon (`ICON_CLASS[tone]`), optional `animate-spin` | success (primary) / danger (destructive) / warn (amber) / info (primary) |
-| `AuthNotice` | `relative overflow-hidden rounded-md border bg-card px-3 py-2 pl-4` + rail + `p.text-xs` (`NOTICE_TEXT[tone]`), optional `role` | danger (`text-red-400`) / warn (`text-amber-400`) / success (`text-primary`) / info (muted) |
+| `AuthNotice` | `relative overflow-hidden rounded-md border bg-card px-3 py-2 pl-4` + rail + `p.text-xs` (`NOTICE_TEXT[tone]`), optional `role` | danger (`TONE_TEXT.red`) / warn (`TONE_TEXT.amber`) / success (`text-primary-text`) / info (`text-muted-foreground`) |
 
 Per page:
 
