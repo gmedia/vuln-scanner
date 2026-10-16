@@ -82,6 +82,8 @@ APP_HOST_CIDR=<app-public-ip>/32 ./scripts/bootstrap-data-host.sh
 
 Writes `$HOME/sinexis-data-credentials.env` (mode 600). **Never** commit that file.
 
+Postgres is the only non-reproducible asset — schedule encrypted dumps to object storage with the `vuln-pg-backup.timer` systemd unit (use `PG_MODE=network` + `POSTGRES_HOST` for a remote data host). Install, retention, and the restore drill are in [`backup-restore-ops.md`](backup-restore-ops.md).
+
 From a bastion (not into git):
 
 ```bash

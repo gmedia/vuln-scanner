@@ -1,0 +1,26 @@
+[Unit]
+Description=Sinexis/VulnScanner scheduled Postgres backup to object storage
+Documentation=man:systemd.service(5)
+After=docker.service network-online.target
+Wants=docker.service network-online.target
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=-/etc/vuln-pg-backup.env
+ExecStart=/bin/bash -c 'exec "${DEPLOY_PATH}/scripts/pg-backup.sh"'
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+# Stage + local retention dirs (defaults; adjust if you override them in the env file).
+# Docker CLI needs the daemon socket; leading '-' ignores a missing path.
+ReadWritePaths=/var/tmp/vuln-pg-backup /var/backups/vuln-scanner -/var/run/docker.sock
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallArchitectures=native

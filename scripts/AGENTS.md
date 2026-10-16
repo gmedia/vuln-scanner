@@ -15,6 +15,8 @@ Deploy and lab helpers. Human ops: `docs/deploy.md`. New server + new domain bri
 | `deploy.sh` | Full stack; **`down --volumes` — destructive** |
 | `ensure_e2e_user.sh` | Prod Playwright user; do not register the mailbox |
 | `smoke-broker.sh` | Redis/Celery smoke |
+| `pg-backup.sh` | Scheduled Postgres `pg_dump -Fc` → optional age/gpg encryption → object storage; prunes local retention |
+| `pg-restore.sh` | `--list` archive TOC (non-destructive) or `--yes` restore (`pg_restore --clean --if-exists --no-owner`) |
 | `check-env-inventory.sh` | Drift guard: compose keys + CI-written keys must exist in `.env.example`. Runs in CI (`env-inventory` job) |
 
 ## ANTI-PATTERNS
