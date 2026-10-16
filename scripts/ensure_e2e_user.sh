@@ -9,7 +9,6 @@
 #   E2E_PASSWORD       required — no default in public repo
 #   BACKEND_CONTAINER  default vuln-backend
 #   REDIS_CONTAINER    default vuln-redis
-#   DEPLOY_PATH        default /home/ubuntu/vuln-scanner (for .env / REDIS_PASSWORD)
 #
 # Notes:
 # - backend container is read-only; Python is fed via stdin (no docker cp).
@@ -28,7 +27,6 @@ if [[ -z "${E2E_PASSWORD:-}" ]]; then
 fi
 BACKEND_CONTAINER="${BACKEND_CONTAINER:-vuln-backend}"
 REDIS_CONTAINER="${REDIS_CONTAINER:-vuln-redis}"
-DEPLOY_PATH="${DEPLOY_PATH:-/home/ubuntu/vuln-scanner}"
 MIN_CREDITS="${MIN_CREDITS:-100}"
 
 if ! docker ps --format '{{.Names}}' | grep -qx "$BACKEND_CONTAINER"; then

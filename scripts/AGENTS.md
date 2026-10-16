@@ -15,6 +15,7 @@ Deploy and lab helpers. Human ops: `docs/deploy.md`. New server + new domain bri
 | `deploy.sh` | Full stack; **`down --volumes` — destructive** |
 | `ensure_e2e_user.sh` | Prod Playwright user; do not register the mailbox |
 | `smoke-broker.sh` | Redis/Celery smoke |
+| `check-env-inventory.sh` | Drift guard: compose keys + CI-written keys must exist in `.env.example`. Runs in CI (`env-inventory` job) |
 
 ## ANTI-PATTERNS
 
@@ -22,3 +23,4 @@ Deploy and lab helpers. Human ops: `docs/deploy.md`. New server + new domain bri
 - Telling humans to SSH Alembic after successful CI **deploy** job.
 - Committing real `E2E_*` / SSH / API keys.
 - Skipping wipe-`tc5` when running Guard enroll lab (guide §4.1).
+- Adding a compose/CI env var without documenting it in `.env.example` (fails the `env-inventory` CI job).
