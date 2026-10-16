@@ -5,7 +5,7 @@
 # Usage:
 #   export DEPLOY_SSH='user@host'          # required
 #   export DEPLOY_SSH_PORT=22              # optional, default 22
-#   export DEPLOY_PATH=/path/to/vuln-scanner
+#   export DEPLOY_PATH=/path/to/vuln-scanner   # required: repo path ON THE REMOTE HOST
 #   bash deploy-auth.sh <SMTP_HOST> <SMTP_PORT> <SMTP_USER> <SMTP_PASS> <SMTP_FROM> [FRONTEND_URL]
 #
 # FRONTEND_URL defaults to https://vs.appmedia.id
@@ -30,7 +30,7 @@ SMTP_FROM="$5"
 FRONTEND_URL="${6:-https://vs.appmedia.id}"
 
 SERVER="$DEPLOY_SSH"
-SERVER_PATH="${DEPLOY_PATH:-/home/ubuntu/vuln-scanner}"
+SERVER_PATH="${DEPLOY_PATH:?set DEPLOY_PATH to the repo path on the remote host}"
 SSH_PORT="${DEPLOY_SSH_PORT:-22}"
 
 JWT_SECRET=$(python3 -c "import secrets; print(secrets.token_hex(32))")
