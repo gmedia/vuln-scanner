@@ -92,10 +92,7 @@ test.describe("Mobile Scanner @scan", () => {
       buffer: Buffer.from("fake apk content here"),
     });
     await expect(page.locator("text=test_app.apk")).toBeVisible();
-    const clearBtn = page
-      .locator("button")
-      .filter({ has: page.locator("svg.lucide-x") })
-      .last();
+    const clearBtn = page.getByRole("button", { name: "Clear file" });
     await clearBtn.click();
     await expect(page.locator("text=Choose .apk or .aab file")).toBeVisible();
   });

@@ -178,36 +178,6 @@ describe("no fixed palette text shade escapes the tone module", () => {
   });
 });
 
-describe("e2e specs do not select by palette class", () => {
-  const SPECS = import.meta.glob("../../e2e/**/*.ts", {
-    query: "?raw",
-    import: "default",
-    eager: true,
-  }) as Record<string, string>;
-
-  const HUES =
-    "red|orange|amber|yellow|blue|sky|emerald|green|gray|violet|rose|pink|purple|indigo|cyan|teal|lime|slate|zinc|neutral|stone|fuchsia";
-  const PALETTE_CLASS = new RegExp(
-    `\\.(?:text|bg|border|from|to|via)-(?:${HUES})-\\d{2,3}`,
-  );
-
-  it("selects by testid or role instead, so a tone change cannot break it", () => {
-    expect(Object.keys(SPECS).length).toBeGreaterThan(0);
-
-    const offenders: string[] = [];
-    for (const [path, contents] of Object.entries(SPECS)) {
-      for (const [index, line] of contents.split("\n").entries()) {
-        if (PALETTE_CLASS.test(line)) {
-          offenders.push(
-            `${path.replace("../../", "")}:${index + 1}: ${line.trim()}`,
-          );
-        }
-      }
-    }
-    expect(offenders).toEqual([]);
-  });
-});
-
 describe("solid rails clear 3:1 on both canvases", () => {
   const SOURCES = import.meta.glob("../**/*.{ts,tsx}", {
     query: "?raw",

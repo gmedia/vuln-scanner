@@ -171,6 +171,7 @@ function DescriptionCell({ item }: { item: CreditLogItem }) {
     return (
       <Link
         to={`/scan/${item.reference_id}`}
+        data-testid="credit-description"
         className="block max-w-[300px] truncate text-sm text-primary-text underline-offset-2 hover:underline 2xl:max-w-none 2xl:overflow-visible 2xl:whitespace-normal"
       >
         {text}
@@ -178,7 +179,10 @@ function DescriptionCell({ item }: { item: CreditLogItem }) {
     );
   }
   return (
-    <span className="block max-w-[300px] truncate text-sm text-foreground 2xl:max-w-none 2xl:overflow-visible 2xl:whitespace-normal">
+    <span
+      data-testid="credit-description"
+      className="block max-w-[300px] truncate text-sm text-foreground 2xl:max-w-none 2xl:overflow-visible 2xl:whitespace-normal"
+    >
       {text}
     </span>
   );
