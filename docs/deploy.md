@@ -129,6 +129,7 @@ Do not invent extra enroll daemons. Do not wipe live ERP agent `sx-erpstg`. Guar
 | Topic | Doc |
 |-------|-----|
 | Hosts, UFW, Guard, COS | [`multi-host-ops.md`](multi-host-ops.md) |
+| Postgres backup / restore | [`backup-restore-ops.md`](backup-restore-ops.md) |
 | Schedules / beat | [`scan-schedules-ops.md`](scan-schedules-ops.md) |
 | Assets | [`scan-assets-ops.md`](scan-assets-ops.md) |
 | Uptime | [`uptime-ops.md`](uptime-ops.md) |
