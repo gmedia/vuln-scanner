@@ -1,10 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AdminAi from "@/pages/admin/AdminAi";
 import * as adminApi from "@/api/admin";
+import { toast } from "sonner";
+
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 vi.mock("@/api/admin", async () => {
   const actual =
@@ -230,6 +233,37 @@ describe("AdminAi", () => {
     expect(adminApi.deleteAiProvider).not.toHaveBeenCalled();
     await user.click(screen.getByTestId("admin-ai-provider-delete-confirm"));
     expect(adminApi.deleteAiProvider).toHaveBeenCalledWith("p1");
+  });
+
+  it("toasts when deleting an AI provider fails", async () => {
+    const user = userEvent.setup();
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [
+        {
+          id: "p1",
+          name: "OpenRouter",
+          base_url: "https://openrouter.ai/api/v1",
+          auth_header: "Authorization",
+          credential_set: true,
+          enabled: true,
+          status: "ok",
+          created_at: "",
+          updated_at: "",
+        },
+      ],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.deleteAiProvider).mockRejectedValue(new Error("boom"));
+    renderPage();
+    await screen.findByTestId("admin-ai-provider-card-p1");
+    await user.click(screen.getAllByTestId("admin-ai-provider-actions-p1")[0]);
+    await user.click(await screen.findByTestId("admin-ai-provider-delete-p1"));
+    await user.click(screen.getByTestId("admin-ai-provider-delete-confirm"));
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith("Could not delete provider."),
+    );
   });
 
   it("uses i18n labels for usage source and billed columns", async () => {

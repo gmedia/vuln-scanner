@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import {
   createAiProvider,
   deleteAiProvider,
@@ -58,6 +59,7 @@ export function AdminAiProvidersTab({
   const delProv = useMutation({
     mutationFn: (id: string) => deleteAiProvider(id),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["admin-ai-providers"] }),
+    onError: () => toast.error(t("aiProviderDeleteFail")),
   });
 
   return (

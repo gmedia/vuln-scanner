@@ -4,12 +4,31 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, patch
 
 import pytest
+import pytest_asyncio
+from sqlalchemy import event
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.config import settings
 from app.models.ai_gateway import AiUsageEvent
 from app.services.ai_crypto import decrypt_credential, encrypt_credential
 
 API_HEADERS = {"X-API-Key": settings.api_key, "X-E2E-Test": "1"}
+
+
+@pytest_asyncio.fixture
+async def engine():
+    """Shadow conftest's engine with SQLite FK enforcement so ON DELETE CASCADE
+    actually fires — the default SQLite behaviour would leave orphaned rows."""
+    test_engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
+
+    @event.listens_for(test_engine.sync_engine, "connect")
+    def _enable_sqlite_fks(dbapi_connection, _connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
+    yield test_engine
+    await test_engine.dispose()
 
 
 @pytest.fixture
@@ -198,6 +217,42 @@ def test_provider_model_crud(client, ai_on) -> None:
     assert client.delete(f"/api/admin/ai/models/{mid}", headers=API_HEADERS).status_code == 204
     assert client.delete(f"/api/admin/ai/models/{oid}", headers=API_HEADERS).status_code == 204
     assert client.delete(f"/api/admin/ai/providers/{pid}", headers=API_HEADERS).status_code == 204
+
+
+def test_delete_provider_cascades_models(client, ai_on) -> None:
+    # ai_models.provider_id has ON DELETE CASCADE but is nullable=False; without
+    # passive_deletes=True the ORM tried to NULL the child FK and raised IntegrityError (500).
+    created = client.post(
+        "/api/admin/ai/providers",
+        headers=API_HEADERS,
+        json={
+            "name": "Cascade",
+            "base_url": "https://api.example/v1",
+            "credential": "k",
+        },
+    )
+    assert created.status_code == 201, created.text
+    pid = created.json()["id"]
+
+    model = client.post(
+        "/api/admin/ai/models",
+        headers=API_HEADERS,
+        json={
+            "provider_id": pid,
+            "public_id": "sinexis/cascade",
+            "upstream_id": "cascade-up",
+            "price_idr_per_1k_in": 1,
+            "price_idr_per_1k_out": 1,
+        },
+    )
+    assert model.status_code == 201, model.text
+
+    deleted = client.delete(f"/api/admin/ai/providers/{pid}", headers=API_HEADERS)
+    assert deleted.status_code == 204, deleted.text
+
+    listed = client.get(f"/api/admin/ai/models?provider_id={pid}", headers=API_HEADERS)
+    assert listed.status_code == 200
+    assert listed.json()["total"] == 0
 
 
 def test_admin_trial_chat_stream_rejected_and_ok(client, ai_on) -> None:

@@ -34,7 +34,7 @@ class AiProvider(Base):
         onupdate=lambda: datetime.now(UTC),
     )
 
-    models: Mapped[list["AiModel"]] = relationship(back_populates="provider")
+    models: Mapped[list["AiModel"]] = relationship(back_populates="provider", passive_deletes=True)
 
     __table_args__ = (CheckConstraint(f"status IN {PROVIDER_STATUSES}", name="ck_ai_provider_status"),)
 

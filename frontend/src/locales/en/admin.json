@@ -243,6 +243,7 @@
   "aiModelDeleteConfirmBody": "This removes the catalog model. Usage history is kept.",
   "aiProviderDeleteConfirmTitle": "Delete provider?",
   "aiProviderDeleteConfirmBody": "This removes the provider and its stored credential.",
+  "aiProviderDeleteFail": "Could not delete provider.",
   "aiSelectProvider": "Select provider",
   "aiSelectModel": "Select model",
   "aiRequest": "Request",
