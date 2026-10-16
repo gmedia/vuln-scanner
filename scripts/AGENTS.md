@@ -4,7 +4,7 @@
 
 ## OVERVIEW
 
-Deploy and lab helpers. Human ops: `docs/deploy.md`.
+Deploy and lab helpers. Human ops: `docs/deploy.md`. New server + new domain bring-up: `docs/deploy-new-server.md`.
 
 ## WHERE TO LOOK
 

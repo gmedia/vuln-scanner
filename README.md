@@ -273,7 +273,7 @@ sudo nginx -t && sudo systemctl reload nginx
 
 ### Production deploys
 
-Canonical walkthrough (minimal local vs production, **CI vs Alembic**, which script): [`docs/deploy.md`](docs/deploy.md). Multi-host roles: [`docs/multi-host-ops.md`](docs/multi-host-ops.md). After a **green `main` deploy job**, do **not** SSH-run Alembic again.
+Canonical walkthrough (minimal local vs production, **CI vs Alembic**, which script): [`docs/deploy.md`](docs/deploy.md). Multi-host roles: [`docs/multi-host-ops.md`](docs/multi-host-ops.md). Bringing the stack up on a **new server and/or new domain**: [`docs/deploy-new-server.md`](docs/deploy-new-server.md). After a **green `main` deploy job**, do **not** SSH-run Alembic again.
 
 | Change type | Script | Notes |
 |-------------|--------|-------|

@@ -2,7 +2,7 @@
 
 Public-repo safe: **no production IPs, SSH ports, emails, or secrets** in this file. Keep inventory in a private ops note.
 
-Agent/session priority: [`AGENT_EXECUTION_GUIDE.md`](AGENT_EXECUTION_GUIDE.md). Multi-host roles: [`multi-host-ops.md`](multi-host-ops.md). Host vCPU/RAM/disk (Compose lock, no tc6): [`compose-host-sizing.md`](compose-host-sizing.md). Workflow rules: [`../AGENTS.md`](../AGENTS.md) (**CI deploy vs Alembic**).
+Agent/session priority: [`AGENT_EXECUTION_GUIDE.md`](AGENT_EXECUTION_GUIDE.md). Multi-host roles: [`multi-host-ops.md`](multi-host-ops.md). Host vCPU/RAM/disk (Compose lock, no tc6): [`compose-host-sizing.md`](compose-host-sizing.md). **New server + new domain bring-up: [`deploy-new-server.md`](deploy-new-server.md).** Workflow rules: [`../AGENTS.md`](../AGENTS.md) (**CI deploy vs Alembic**).
 
 ---
 
@@ -128,6 +128,7 @@ Do not invent extra enroll daemons. Do not wipe live ERP agent `sx-erpstg`. Guar
 
 | Topic | Doc |
 |-------|-----|
+| New server + new domain bring-up | [`deploy-new-server.md`](deploy-new-server.md) |
 | Hosts, UFW, Guard, COS | [`multi-host-ops.md`](multi-host-ops.md) |
 | Schedules / beat | [`scan-schedules-ops.md`](scan-schedules-ops.md) |
 | Assets | [`scan-assets-ops.md`](scan-assets-ops.md) |
