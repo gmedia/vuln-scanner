@@ -150,7 +150,9 @@ describe("Header", () => {
   it("shows the org name on the collapsed org trigger", () => {
     useAuthStore.setState({
       isAuthenticated: true,
-      organizations: [{ id: "org-1", name: "Personal", slug: "personal", role: "owner" }],
+      organizations: [
+        { id: "org-1", name: "Personal", slug: "personal", role: "owner" },
+      ],
       activeOrgId: "org-1",
     });
     renderWithRouter(
@@ -175,7 +177,9 @@ describe("Header", () => {
         is_admin: false,
         credits: 10,
       },
-      organizations: [{ id: "org-1", name: "Personal", slug: "personal", role: "owner" }],
+      organizations: [
+        { id: "org-1", name: "Personal", slug: "personal", role: "owner" },
+      ],
       activeOrgId: "org-1",
     });
     renderWithRouter(
@@ -186,12 +190,21 @@ describe("Header", () => {
 
     const header = screen.getByRole("banner");
     expect(header).toHaveClass("px-0");
-    expect(header.querySelector(".flex-col.items-center.gap-1")).toBeInTheDocument();
+    expect(
+      header.querySelector(".flex-col.items-center.gap-1"),
+    ).toBeInTheDocument();
     for (const id of ["org-switcher", "theme-switcher", "language-switcher"]) {
-      expect(screen.getByTestId(id)).toHaveAttribute("data-sidebar", "menu-button");
+      expect(screen.getByTestId(id)).toHaveAttribute(
+        "data-sidebar",
+        "menu-button",
+      );
     }
-    expect(screen.getByRole("button", { name: "user@example.com" })).toHaveAttribute("data-sidebar", "menu-button");
-    expect(header.querySelectorAll('[data-sidebar="menu-button"]')).toHaveLength(4);
+    expect(
+      screen.getByRole("button", { name: "user@example.com" }),
+    ).toHaveAttribute("data-sidebar", "menu-button");
+    expect(
+      header.querySelectorAll('[data-sidebar="menu-button"]'),
+    ).toHaveLength(4);
     expect(screen.queryByText("user@example.com")).toBeNull();
   });
 
@@ -211,7 +224,9 @@ describe("Header", () => {
       error: null,
     });
     renderWithRouter(<Header />);
-    await user.click(screen.getByRole("button", { name: /user@example.com/i }));
+    const trigger = screen.getByTestId("user-menu-trigger");
+    expect(trigger).toHaveAccessibleName(/user@example.com/i);
+    await user.click(trigger);
     expect(screen.getByTestId("user-menu")).toBeInTheDocument();
     expect(screen.getByTestId("sign-out")).toHaveTextContent("Sign Out");
     expect(screen.getByText(/Signed in as/)).toBeInTheDocument();

@@ -2072,7 +2072,7 @@ The card keeps the frozen `border-border/80 shadow-none` hairline — the rail i
 - Heading stays `AuthLayout` `h1` (e2e asserts `page.locator("h1")` text on every auth route).
 - Every field has a kit `Label` + `htmlFor` (Register / Forgot / Reset / Verify moved off raw labels).
 - Kit only: no native `<select>`; primary actions are `Button`.
-- **Frozen by e2e** (`frontend/e2e/auth-flow.spec.ts`, `forgot-password.spec.ts`, `reset-password.spec.ts`, `verify-email.spec.ts`): `h1` copy; `input#email` / `input#password` / `input#confirmPassword` / `input[type='email']`; `button[type='submit']`; `a[href='/login']` / `a[href='/register']`; **`.text-red-400`** on register + reset validation errors; `getByRole("alert")` (exactly one) on login error; `span.font-mono` "SINE" / `span.text-primary` "XIS" (BrandMark); `.text-destructive` on the verify error icon; the verify email placeholder and resend button copy.
+- **Frozen by e2e** (`frontend/e2e/auth-flow.spec.ts`, `forgot-password.spec.ts`, `reset-password.spec.ts`, `verify-email.spec.ts`): `h1` copy; `input#email` / `input#password` / `input#confirmPassword` / `input[type='email']`; `button[type='submit']`; `a[href='/login']` / `a[href='/register']`; **`[data-testid="auth-notice-danger"]`** on register + reset validation errors; `getByRole("alert")` (exactly one) on login error; `span.font-mono` "SINE" / `span.text-primary` "XIS" (BrandMark); `.text-destructive` on the verify error icon; the verify email placeholder and resend button copy.
 - **Frozen by unit test** (`AuthLayout.test.tsx`): `AUTH_SECONDARY_LINK` matches `/min-h-11/` + `/min-w-11/`; `AUTH_CARD_CLASS` matches `/border-border\/80/` + `/shadow-none/`; tagline classes `px-2 text-pretty text-sm`; switcher row classes incl. `[&_button[aria-pressed=true]]:!bg-secondary`; `.max-w-3xl` + `2xl:max-w-4xl`; `theme-switcher` / `language-switcher` testids.
 - `prefers-reduced-motion`: no continuous animation beyond the spinner.
 
@@ -2091,7 +2091,7 @@ The card keeps the frozen `border-border/80 shadow-none` hairline — the rail i
 | `AuthCard` composes the frozen `AUTH_CARD_CLASS` string | authChrome / AuthLayout | Unit test pins the string; composing keeps the contract without a kit restyle | Named kit split if the card is redesigned again |
 | `AuthLayout` inner DOM left intact | layout | Eight unit assertions pin brand row, tagline, switcher classes, and maxWidth | Named layout refactor |
 | Auth pages keep local form state + handlers | 5 pages | This slice restyles chrome only; extracting a form hook mixes visual with module work | Named extract |
-| Danger notice copy uses `text-red-400`, not `text-destructive` | AuthNotice | Frozen by `auth-flow` / `reset-password` e2e; unifying on the token is a test change | Named token migration |
+| Danger notice copy uses `TONE_TEXT.red`, not `text-destructive` | AuthNotice | Auth e2e selects the notice by testid, so the class is free to move; unifying on `--destructive` is a tone decision | Named token migration |
 | Duplicate status-card markup across 5 pages | pages | Each has distinct copy + actions; a shared `AuthStatusView` is a follow-up | Named extract |
 | Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |
 
@@ -2992,7 +2992,7 @@ Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`.
 | Refund | `bg-blue-500` rail | refund row |
 | Idle | `bg-border` rail | filter shells, empty list shells |
 
-**Ledger badge palette is intentionally kept.** `TYPE_COLORS` (`bg-green-600/15`, `bg-red-600/15`, `bg-blue-600/15`) and the signed-amount `text-green-*` / `text-red-*` classes stay verbatim: they are a semantic ledger palette, and `e2e/credit-history.spec.ts` selects on `span.bg-green-600` / `bg-red-600` / `bg-blue-600` / `text-green-400` / `text-red-400`. Do **not** fold them into the tone map.
+**Ledger palette routes through the tone module.** `TYPE_COLORS` pairs each wash with `TONE_CHIP_TEXT` (`bg-green-600/15` + `TONE_CHIP_TEXT.green`, and the red/blue equivalents), and the signed amounts use `TONE_TEXT.green` / `TONE_TEXT.red`. `e2e/credit-history.spec.ts` selects on `[data-testid="credit-type-badge"][data-type]` and `[data-testid="credit-amount"][data-sign]`, so the shades are free to move without breaking the suite.
 
 ## 3. Typography
 

@@ -162,10 +162,10 @@ test.describe("Credit History @shell", () => {
     if (await pagination.isVisible().catch(() => false)) {
       await expect(pagination).toBeVisible();
       await expect(
-        page.locator("button:has(svg.lucide-chevron-left)"),
+        page.getByRole("button", { name: "Previous page" }),
       ).toBeVisible();
       await expect(
-        page.locator("button:has(svg.lucide-chevron-right)"),
+        page.getByRole("button", { name: "Next page" }),
       ).toBeVisible();
     }
   });
@@ -183,7 +183,7 @@ test.describe("Credit History @shell", () => {
 
     const pagination = page.locator("text=/Page 1 of \\d+/");
     if (await pagination.isVisible().catch(() => false)) {
-      const prevBtn = page.locator("button:has(svg.lucide-chevron-left)");
+      const prevBtn = page.getByRole("button", { name: "Previous page" });
       await expect(prevBtn).toBeDisabled();
     }
   });
@@ -204,7 +204,7 @@ test.describe("Credit History @shell", () => {
       const pageText = await pagination.textContent();
       const match = pageText?.match(/Page (\d+) of (\d+)/);
       if (match && parseInt(match[1]) < parseInt(match[2])) {
-        const nextBtn = page.locator("button:has(svg.lucide-chevron-right)");
+        const nextBtn = page.getByRole("button", { name: "Next page" });
         await expect(nextBtn).not.toBeDisabled();
       }
     }
@@ -224,7 +224,7 @@ test.describe("Credit History @shell", () => {
       const pageText = await pagination.textContent();
       const match = pageText?.match(/Page (\d+) of (\d+)/);
       if (match && parseInt(match[1]) < parseInt(match[2])) {
-        await page.locator("button:has(svg.lucide-chevron-right)").click();
+        await page.getByRole("button", { name: "Next page" }).click();
         await page.waitForTimeout(1000);
         await expect(page.locator("text=/Page 2 of \\d+/")).toBeVisible();
       }
@@ -262,7 +262,7 @@ test.describe("Credit History @shell", () => {
 
     const table = page.locator("table");
     if (await table.isVisible().catch(() => false)) {
-      const lastCell = page.locator("table tbody tr td").nth(3);
+      const lastCell = page.getByTestId("credit-description").first();
       if (await lastCell.isVisible().catch(() => false)) {
         await expect(lastCell).toBeVisible();
       }

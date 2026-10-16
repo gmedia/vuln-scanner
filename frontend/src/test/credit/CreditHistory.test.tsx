@@ -378,6 +378,10 @@ describe("CreditHistory", () => {
         badge.getAttribute("data-type"),
       );
     }
+
+    expect(screen.getAllByTestId("credit-description").length).toBeGreaterThan(
+      0,
+    );
   });
 
   it("renders type badges for each transaction", () => {

@@ -113,7 +113,7 @@ test.describe("Auth — Logout @smoke", () => {
     await page.waitForSelector("header", {
       timeout: 10_000,
     });
-    const userBtn = page.locator("header button:has(svg.lucide-user)");
+    const userBtn = page.getByTestId("user-menu-trigger");
     await expect(userBtn).toBeVisible({ timeout: 10_000 });
     await userBtn.click();
     const userMenu = page.getByTestId("user-menu");

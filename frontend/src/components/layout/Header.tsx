@@ -5,7 +5,11 @@ import { useScanStore } from "@/store/scanStore";
 import { useAuthStore } from "@/store/authStore";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import {
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,7 +46,9 @@ function Header({ children, collapsed = false }: HeaderProps) {
   }
 
   return (
-    <header className={`flex min-w-0 flex-col gap-1.5 ${collapsed ? "px-0" : "px-1"}`}>
+    <header
+      className={`flex min-w-0 flex-col gap-1.5 ${collapsed ? "px-0" : "px-1"}`}
+    >
       {children}
       {activeJobId ? (
         <div className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
@@ -55,13 +61,21 @@ function Header({ children, collapsed = false }: HeaderProps) {
         </div>
       ) : null}
 
-      <div className={collapsed ? "flex flex-col items-center gap-1" : "flex min-h-9 flex-wrap items-center gap-1.5 [&_button[aria-pressed=true]]:!bg-secondary [&_button[aria-pressed=true]]:!text-secondary-foreground"}>
+      <div
+        className={
+          collapsed
+            ? "flex flex-col items-center gap-1"
+            : "flex min-h-9 flex-wrap items-center gap-1.5 [&_button[aria-pressed=true]]:!bg-secondary [&_button[aria-pressed=true]]:!text-secondary-foreground"
+        }
+      >
         {collapsed && isAuthenticated ? <OrgSwitcher collapsed /> : null}
         <ThemeSwitcher collapsed={collapsed} className="h-9 min-h-9" />
         <LanguageSwitcher collapsed={collapsed} className="h-9 min-h-9" />
       </div>
 
-      {!collapsed && isAuthenticated ? <OrgSwitcher className="w-full" /> : null}
+      {!collapsed && isAuthenticated ? (
+        <OrgSwitcher className="w-full" />
+      ) : null}
 
       <div className="flex min-w-0 flex-wrap items-center gap-2 group-data-[collapsible=icon]:flex-col">
         {isAuthenticated && user ? (
@@ -75,6 +89,7 @@ function Header({ children, collapsed = false }: HeaderProps) {
                       aria-label={user.email}
                       tooltip={user.email}
                       className="justify-center p-0"
+                      data-testid="user-menu-trigger"
                     >
                       <User aria-hidden />
                     </SidebarMenuButton>
@@ -87,6 +102,7 @@ function Header({ children, collapsed = false }: HeaderProps) {
                   type="button"
                   variant="ghost"
                   className="h-11 min-h-11 gap-2 px-2 text-sm text-muted-foreground"
+                  data-testid="user-menu-trigger"
                 >
                   <User className="h-4 w-4" />
                   <span className="hidden max-w-[10rem] truncate text-xs group-data-[collapsible=icon]:hidden sm:inline">
