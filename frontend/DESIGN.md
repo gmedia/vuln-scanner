@@ -120,6 +120,10 @@ All spacing derives from **4px**.
 - **Motion**: none on the document. Print trigger is `requestAnimationFrame` → `window.print()` (existing hook).
 - **Layout**: document stack. Isolation: keep current `visibility: hidden` on `body.invoice-printing *` then visible on `.invoice-print-sheet` — do not `display:none` the AppShell via `body > *` (would fight React roots). Buttons already `.no-print`.
 
+### Server PDF renderer (`backend/app/services/invoice_html.py`)
+
+The WeasyPrint PDF implements the **same grammar** as `InvoicePrintSheet` above — header flex (wordmark left / meta right), two-column parties, hairline item table, right-aligned totals with the 2px ink rule on the grand row, payment box only when `sent`, footer. It differs only where the medium forces it: inline `<style>` (a standalone document, not the SPA), **system font fallback chains only** (see Font Stack), and no `.hidden` / `.invoice-printing` isolation. Changing the printed grammar means changing this renderer too — the two surfaces must not drift.
+
 ### BrandMark (print)
 
 Do **not** mount the SPA `BrandMark` `<Link>` in print (nav chrome). Recreate the wordmark as `SINE` + accent `XIS` in Red Hat Mono, matching `BRAND.markPrimary` / `markAccent`. Crosshair icon is optional and must not become a second logo.

@@ -610,7 +610,8 @@ def test_render_invoice_html_draft_omits_bank() -> None:
         bank={"bank_name": "Bank Contoh", "bank_account": "SHOULD-NOT", "bank_holder": "Holder"},
     )
     assert "SHOULD-NOT" not in html
-    assert "Bill to —" in html
+    # Bill-to falls back to an em dash when org_name is None (whitespace-tolerant).
+    assert re.search(r'Bill to</h2>\s*<p class="inv-party-name">—</p>', html) is not None
     assert "<td class=\"num\">3</td>" in html
 
 
