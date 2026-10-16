@@ -3,12 +3,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ScanErrorProps {
   message: string;
+  errorKey?: string;
   showIcon?: boolean;
 }
 
-export function ScanError({ message, showIcon }: ScanErrorProps) {
+export function ScanError({ message, errorKey, showIcon }: ScanErrorProps) {
   return (
-    <Alert variant="destructive" className="border-destructive/40">
+    <Alert data-testid="scan-error" data-error-key={errorKey} variant="destructive" className="border-destructive/40">
       {showIcon ? <FileWarning /> : null}
       <AlertDescription className="text-xs">{message}</AlertDescription>
     </Alert>

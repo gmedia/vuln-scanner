@@ -4,44 +4,38 @@ import path from "path";
 test.describe("Mobile Scanner @scan", () => {
   test("loads mobile scanner page with upload area", async ({ page }) => {
     await page.goto("/scan/mobile");
-    await expect(page.locator("h2:has-text('Mobile scanner')")).toBeVisible();
-    await expect(page.locator("text=Upload binary")).toBeVisible();
-    await expect(page.locator("text=Choose .apk or .aab file")).toBeVisible();
-    await expect(page.locator("text=Click or drop")).toBeVisible();
-    await expect(page.locator("text=(max 500MB)")).toBeVisible();
-    await expect(page.locator("button:has-text('Browse files')")).toBeVisible();
-    await expect(
-      page.locator("button:has-text('Start mobile scan')"),
-    ).toBeVisible();
+    await expect(page.locator('[data-slot="page-header"] h2')).toBeVisible();
+    await expect(page.getByTestId("scan-target").locator("h3")).toBeVisible();
+    await expect(page.getByTestId("mobile-choose-file")).toBeVisible();
+    await expect(page.getByTestId("mobile-drop-hint")).toBeVisible();
+    await expect(page.getByTestId("mobile-drop-hint")).toContainText("500MB");
+    await expect(page.getByTestId("mobile-browse")).toBeVisible();
+    await expect(page.getByTestId("mobile-scan-submit")).toBeVisible();
   });
 
   test("shows platform toggle buttons", async ({ page }) => {
     await page.goto("/scan/mobile");
-    await expect(page.locator("text=Android (.apk / .aab)")).toBeVisible();
-    await expect(page.locator("text=iOS (.ipa)")).toBeVisible();
+    await expect(page.getByTestId("platform-android")).toBeVisible();
+    await expect(page.getByTestId("platform-ios")).toBeVisible();
   });
 
   test("switching platform resets file and changes upload text", async ({
     page,
   }) => {
     await page.goto("/scan/mobile");
-    // Initially Android
-    await expect(page.locator("text=Choose .apk or .aab file")).toBeVisible();
-
-    // Switch to iOS
-    await page.locator("button:has-text('iOS (.ipa)')").click();
-    await expect(page.locator("text=Choose .ipa file")).toBeVisible();
-
-    // Switch back
-    await page.locator("button:has-text('Android (.apk / .aab)')").click();
-    await expect(page.locator("text=Choose .apk or .aab file")).toBeVisible();
+    const choose = page.getByTestId("mobile-choose-file");
+    await expect(choose).toBeVisible();
+    const before = await choose.textContent();
+    await page.getByTestId("platform-ios").click();
+    await expect(choose).toBeVisible();
+    expect(await choose.textContent()).not.toBe(before);
+    await page.getByTestId("platform-android").click();
+    expect(await choose.textContent()).toBe(before);
   });
 
   test("submit button disabled when no file selected", async ({ page }) => {
     await page.goto("/scan/mobile");
-    await expect(
-      page.locator('button:has-text("Start mobile scan")'),
-    ).toBeDisabled();
+    await expect(page.getByTestId("mobile-scan-submit")).toBeDisabled();
   });
 
   test("shows error for wrong file type", async ({ page }) => {
@@ -54,21 +48,23 @@ test.describe("Mobile Scanner @scan", () => {
     });
     await expect(
       page.locator(
-        "text=Invalid file type. Expected .apk or .aab for Android.",
+        '[data-testid="scan-error"][data-error-key="errMobileAndroid"]',
       ),
     ).toBeVisible();
   });
 
   test("shows error for wrong iOS file type", async ({ page }) => {
     await page.goto("/scan/mobile");
-    await page.locator("button:has-text('iOS (.ipa)')").click();
+    await page.getByTestId("platform-ios").click();
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles({
       name: "test.apk",
       mimeType: "application/octet-stream",
       buffer: Buffer.from("fake apk"),
     });
-    await expect(page.locator("text=Expected .ipa for iOS.")).toBeVisible();
+    await expect(
+      page.locator('[data-testid="scan-error"][data-error-key="errMobileIos"]'),
+    ).toBeVisible();
   });
 
   test("displays selected file info", async ({ page }) => {
@@ -79,8 +75,10 @@ test.describe("Mobile Scanner @scan", () => {
       mimeType: "application/octet-stream",
       buffer: Buffer.from("fake apk content here"),
     });
-    await expect(page.locator("text=test_app.apk")).toBeVisible();
-    await expect(page.locator("text=.APK").first()).toBeVisible();
+    await expect(page.getByTestId("mobile-file-name")).toHaveText(
+      "test_app.apk",
+    );
+    await expect(page.getByTestId("mobile-file-meta")).toContainText(".APK");
   });
 
   test("clear file button works", async ({ page }) => {
@@ -91,10 +89,13 @@ test.describe("Mobile Scanner @scan", () => {
       mimeType: "application/octet-stream",
       buffer: Buffer.from("fake apk content here"),
     });
-    await expect(page.locator("text=test_app.apk")).toBeVisible();
-    const clearBtn = page.getByRole("button", { name: "Clear file" });
+    await expect(page.getByTestId("mobile-file-name")).toHaveText(
+      "test_app.apk",
+    );
+    const clearBtn = page.getByTestId("mobile-clear-file");
     await clearBtn.click();
-    await expect(page.locator("text=Choose .apk or .aab file")).toBeVisible();
+    await expect(page.getByTestId("mobile-choose-file")).toBeVisible();
+    await expect(page.getByTestId("mobile-file-name")).toHaveCount(0);
   });
 
   test("accepts .aab file selection on Android", async ({ page }) => {
@@ -106,8 +107,8 @@ test.describe("Mobile Scanner @scan", () => {
       mimeType: "application/octet-stream",
       buffer: Buffer.from("PK\x03\x04fake aab content"),
     });
-    await expect(page.locator("text=app.aab")).toBeVisible();
-    await expect(page.locator("text=.AAB").first()).toBeVisible();
+    await expect(page.getByTestId("mobile-file-name")).toHaveText("app.aab");
+    await expect(page.getByTestId("mobile-file-meta")).toContainText(".AAB");
   });
 
   test("successful mobile scan navigates to scan detail", async ({ page }) => {
@@ -118,7 +119,7 @@ test.describe("Mobile Scanner @scan", () => {
       mimeType: "application/octet-stream",
       buffer: Buffer.from("PK\x03\x04fake apk content here"),
     });
-    await page.locator('button:has-text("Start mobile scan")').click();
+    await page.getByTestId("mobile-scan-submit").click();
     await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, {
       timeout: 15_000,
     });
@@ -126,7 +127,7 @@ test.describe("Mobile Scanner @scan", () => {
 
   test("submit button disabled until file selected", async ({ page }) => {
     await page.goto("/scan/mobile");
-    const button = page.locator('button:has-text("Start mobile scan")');
+    const button = page.getByTestId("mobile-scan-submit");
     await expect(button).toBeDisabled();
 
     const fileInput = page.locator('input[type="file"]');

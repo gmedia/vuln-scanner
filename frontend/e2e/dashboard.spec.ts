@@ -29,7 +29,7 @@ test.describe("Dashboard @smoke", () => {
     await page.getByTestId("new-scan-cta").click();
     await page.getByRole("menuitem", { name: "Scan IP" }).click();
     await expect(page).toHaveURL("/scan/ip");
-    await expect(page.locator("h2:has-text('IP scanner')")).toBeVisible();
+    await expect(page.locator('[data-slot="page-header"] h2')).toBeVisible();
   });
 
   test("navigates to Domain scanner via Scan baru", async ({ page }) => {
@@ -37,7 +37,7 @@ test.describe("Dashboard @smoke", () => {
     await page.getByTestId("new-scan-cta").click();
     await page.getByRole("menuitem", { name: "Scan domain" }).click();
     await expect(page).toHaveURL("/scan/domain");
-    await expect(page.locator("h2:has-text('Domain scanner')")).toBeVisible();
+    await expect(page.locator('[data-slot="page-header"] h2')).toBeVisible();
   });
 
   test("navigates to Mobile scanner via Scan baru", async ({ page }) => {
@@ -45,7 +45,7 @@ test.describe("Dashboard @smoke", () => {
     await page.getByTestId("new-scan-cta").click();
     await page.getByRole("menuitem", { name: "Scan mobile" }).click();
     await expect(page).toHaveURL("/scan/mobile");
-    await expect(page.locator("h2:has-text('Mobile scanner')")).toBeVisible();
+    await expect(page.locator('[data-slot="page-header"] h2')).toBeVisible();
   });
 
   test("shows scan history list when scans exist", async ({ page }) => {

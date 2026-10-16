@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Upload, Smartphone, Loader2, X, File, Check } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -10,11 +11,14 @@ import { cn } from "@/lib/utils";
 import { ScanError } from "./ScanError";
 
 const MAX_FILE_SIZE = 500 * 1024 * 1024;
+type ScanErrorState = { key: string; message: string } | null;
+type FileErrorKey = "errMobileAndroid" | "errMobileIos" | "errMobileTooLarge";
 
 function MobileUpload() {
+  const { t } = useTranslation("scan");
   const [file, setFile] = useState<File | null>(null);
   const [platform, setPlatform] = useState<"android" | "ios">("android");
-  const [error, setError] = useState("");
+  const [error, setError] = useState<ScanErrorState>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -22,16 +26,16 @@ function MobileUpload() {
   const handleScanError = useScanError();
   const setActiveScan = useScanStore((s) => s.setActiveScan);
 
-  const validateFile = useCallback((f: File): string | null => {
+  const validateFile = useCallback((f: File): FileErrorKey | null => {
     const ext = f.name.split(".").pop()?.toLowerCase();
     if (platform === "android" && ext !== "apk" && ext !== "aab") {
-      return "Invalid file type. Expected .apk or .aab for Android.";
+      return "errMobileAndroid";
     }
     if (platform === "ios" && ext !== "ipa") {
-      return "Invalid file type. Expected .ipa for iOS.";
+      return "errMobileIos";
     }
     if (f.size > MAX_FILE_SIZE) {
-      return "File too large. Maximum size is 500MB.";
+      return "errMobileTooLarge";
     }
     return null;
   }, [platform]);
@@ -40,29 +44,29 @@ function MobileUpload() {
     (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragging(false);
-      setError("");
+      setError(null);
 
       const f = e.dataTransfer.files[0];
       if (!f) return;
 
       const validationError = validateFile(f);
       if (validationError) {
-        setError(validationError);
+        setError({ key: validationError, message: t(validationError) });
         return;
       }
       setFile(f);
     },
-    [validateFile],
+    [validateFile, t],
   );
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setError("");
+    setError(null);
     const f = e.target.files?.[0];
     if (!f) return;
 
     const validationError = validateFile(f);
     if (validationError) {
-      setError(validationError);
+      setError({ key: validationError, message: t(validationError) });
       return;
     }
     setFile(f);
@@ -70,7 +74,7 @@ function MobileUpload() {
 
   const handleSubmit = async () => {
     if (!file) {
-      setError("Please select a file to scan.");
+      setError({ key: "errMobileNoFile", message: t("errMobileNoFile") });
       return;
     }
 
@@ -83,7 +87,7 @@ function MobileUpload() {
           navigate(`/scan/${data.id}`);
         },
         onError: (err) => {
-          setError(handleScanError(err));
+          setError({ key: "server", message: handleScanError(err) });
         },
       },
     );
@@ -91,7 +95,7 @@ function MobileUpload() {
 
   const clearFile = () => {
     setFile(null);
-    setError("");
+    setError(null);
     if (fileRef.current) fileRef.current.value = "";
   };
 
@@ -104,7 +108,7 @@ function MobileUpload() {
   const selectPlatform = (next: "android" | "ios") => {
     setPlatform(next);
     setFile(null);
-    setError("");
+    setError(null);
     if (fileRef.current) fileRef.current.value = "";
   };
 
@@ -114,12 +118,13 @@ function MobileUpload() {
     <div className="space-y-4">
       <div>
         <label className="mb-1.5 block text-xs font-medium text-foreground/70">
-          Platform
+          {t("platformLabel")}
         </label>
         <div className="flex gap-2">
           <Button
             type="button"
             size="sm"
+            data-testid="platform-android"
             aria-pressed={platform === "android"}
             onClick={() => selectPlatform("android")}
             disabled={startMobileScan.isPending}
@@ -131,11 +136,12 @@ function MobileUpload() {
             ) : (
               <Smartphone className="mr-1.5 h-4 w-4" aria-hidden />
             )}
-            Android (.apk / .aab)
+            {t("platformAndroid")}
           </Button>
           <Button
             type="button"
             size="sm"
+            data-testid="platform-ios"
             aria-pressed={platform === "ios"}
             onClick={() => selectPlatform("ios")}
             disabled={startMobileScan.isPending}
@@ -147,7 +153,7 @@ function MobileUpload() {
             ) : (
               <Smartphone className="mr-1.5 h-4 w-4" aria-hidden />
             )}
-            iOS (.ipa)
+            {t("platformIos")}
           </Button>
         </div>
       </div>
@@ -182,26 +188,27 @@ function MobileUpload() {
               isDragging ? "text-primary-text" : "text-muted-foreground",
             )}
           />
-          <p className="mb-1 text-sm text-foreground">
-            Choose {platform === "android" ? ".apk or .aab" : ".ipa"} file
+          <p data-testid="mobile-choose-file" className="mb-1 text-sm text-foreground">
+            {t(platform === "android" ? "chooseFileAndroid" : "chooseFileIos")}
           </p>
-          <p className="mb-3 text-xs text-muted-foreground">
-            <span className="sm:hidden">Tap to browse</span>
-            <span className="hidden sm:inline">Click or drop</span>
+          <p data-testid="mobile-drop-hint" className="mb-3 text-xs text-muted-foreground">
+            <span className="sm:hidden">{t("dropHintMobile")}</span>
+            <span className="hidden sm:inline">{t("dropHintDesktop")}</span>
             {" "}
-            (max 500MB)
+            {t("maxSizeHint")}
           </p>
           <Button
             type="button"
             variant="outline"
             size="sm"
+            data-testid="mobile-browse"
             onClick={(e) => {
               e.stopPropagation();
               fileRef.current?.click();
             }}
             disabled={startMobileScan.isPending}
           >
-            Browse files
+            {t("browseFiles")}
           </Button>
           </CardContent>
         </Card>
@@ -211,8 +218,8 @@ function MobileUpload() {
           <div className="flex min-w-0 items-center gap-3">
             <File className="h-8 w-8 shrink-0 text-primary-text" />
             <div className="min-w-0">
-              <p className="truncate font-mono text-sm text-foreground">{file.name}</p>
-              <p className="font-mono text-xs text-muted-foreground">
+              <p data-testid="mobile-file-name" className="truncate font-mono text-sm text-foreground">{file.name}</p>
+              <p data-testid="mobile-file-meta" className="font-mono text-xs text-muted-foreground">
                 {formatSize(file.size)} &middot; .{file.name.split(".").pop()?.toUpperCase()}
               </p>
             </div>
@@ -222,7 +229,8 @@ function MobileUpload() {
             size="icon"
             onClick={clearFile}
             disabled={startMobileScan.isPending}
-            aria-label="Clear file"
+            aria-label={t("clearFile")}
+            data-testid="mobile-clear-file"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -230,9 +238,10 @@ function MobileUpload() {
         </Card>
       )}
 
-      {error && <ScanError message={error} showIcon />}
+      {error && <ScanError message={error.message} errorKey={error.key} showIcon />}
 
       <Button
+        data-testid="mobile-scan-submit"
         onClick={handleSubmit}
         disabled={submitDisabled}
         className="min-h-11 w-full"
@@ -240,12 +249,12 @@ function MobileUpload() {
         {startMobileScan.isPending ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Analyzing binary...
+            {t("analyzingBinary")}
           </>
         ) : (
           <>
             <Smartphone className="mr-2 h-4 w-4" />
-            Start mobile scan
+            {t("startMobileScan")}
           </>
         )}
       </Button>
