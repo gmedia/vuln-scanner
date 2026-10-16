@@ -40,53 +40,129 @@ def render_invoice_html(
     amount = _esc(_idr(inv.amount_idr))
     period = _esc(f"{_day(inv.period_start)} – {_day(inv.period_end)}")
     issued = _esc(_day(inv.created_at))
-    status = _esc(inv.status)
+    status = _esc(inv.status.capitalize())
     item = _esc(f"{product} — {inv.sku.upper()}")
     bank_block = ""
-    if inv.status == "sent" and bank is not None:
+    if inv.status == "sent":
         bank_block = f"""
-<section>
-<h2>Payment</h2>
-<p>Bank {_esc(bank.get("bank_name") or "—")}</p>
-<p>Account {_esc(bank.get("bank_account") or "—")}</p>
-<p>Account holder {_esc(bank.get("bank_holder") or "—")}</p>
-<p>Quote {number} as the transfer reference.</p>
-</section>"""
+    <section class="inv-pay">
+      <h2 class="inv-label">Payment</h2>
+      <dl class="inv-pay-fields">
+        <div><dt>Bank</dt><dd>{_esc((bank or {}).get("bank_name") or "—")}</dd></div>
+        <div><dt>Account</dt><dd>{_esc((bank or {}).get("bank_account") or "—")}</dd></div>
+        <div><dt>Account holder</dt><dd>{_esc((bank or {}).get("bank_holder") or "—")}</dd></div>
+      </dl>
+      <p class="inv-pay-hint">Quote {number} as the transfer reference.</p>
+    </section>"""
     ref_line = ""
     if inv.status == "paid" and inv.bank_ref:
-        ref_line = f"<p>Bank ref {_esc(inv.bank_ref)}</p>"
+        ref_line = f'<p class="inv-totals-row"><span>Bank ref</span><span class="num">{_esc(inv.bank_ref)}</span></p>'
     due_label = "Amount paid" if inv.status == "paid" else "Amount due"
     return f"""<!DOCTYPE html>
-<html lang="id"><head><meta charset="utf-8">
-<title>Invoice {number}</title>
-<style>
-:root {{ --foreground: hsl(0 0% 7%); --muted: hsl(0 0% 45%); --border: hsl(0 0% 90%); --primary: hsl(142 71% 45%); }}
-body {{ margin: 0; padding: 24px; color: var(--foreground);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }}
-.brand {{ font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-weight: 700; letter-spacing: 0.08em; }}
-.brand span {{ color: var(--primary); }}
-h1 {{ font-size: 1.25rem; border-bottom: 1px solid var(--border); padding-bottom: 8px; }}
-table {{ width: 100%; border-collapse: collapse; margin-top: 16px; }}
-th, td {{ border-bottom: 1px solid var(--border); padding: 8px; text-align: left; font-size: 0.875rem; }}
-.num {{ text-align: right; font-variant-numeric: tabular-nums; }}
-.muted {{ color: var(--muted); font-size: 12px; }}
-@page {{ size: A4; margin: 16mm; }}
-</style></head><body>
-<p class="brand">SINE<span>XIS</span></p>
-<h1>Invoice</h1>
-<p>{number}</p>
-<p>Status {status}</p>
-<p>Issued {issued}</p>
-<p>From Sinexis</p>
-<p>Bill to {bill_to}</p>
-<table>
-<tr><th>Description</th><th class="num">Seats</th><th class="num">Amount</th></tr>
-<tr><td>{item}<br><span class="muted">{period}</span></td><td class="num">{seats}</td><td class="num">{amount}</td></tr>
-</table>
-<p>Subtotal <span class="num">{amount}</span></p>
-<p>Total <span class="num">{amount}</span></p>
-<p>{due_label} <span class="num">{amount}</span></p>
-{ref_line}
-{bank_block}
-<p class="muted">Thank you. {_esc(product)} — bank transfer, no self-serve upgrade.</p>
-</body></html>"""
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <title>Invoice {number}</title>
+  <style>
+    @page {{ size: A4; margin: 16mm; }}
+    html, body {{ background: #fff; color: hsl(0 0% 7%); }}
+    body {{ margin: 0; font: 400 13px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
+    .invoice-print-sheet {{ background: #fff; color: hsl(0 0% 7%); }}
+    .invoice-print-brand {{ margin: 0; font: 700 22px/1 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      letter-spacing: 0.08em; }}
+    .invoice-print-accent {{ color: hsl(142 71% 45%); }}
+    .inv-header {{ display: flex; justify-content: space-between; align-items: flex-start; gap: 24px;
+      padding-bottom: 20px; margin-bottom: 32px; border-bottom: 1px solid hsl(0 0% 90%); }}
+    .inv-meta {{ text-align: right; }}
+    .inv-kicker {{ margin: 0; font-size: 11px; font-weight: 600; line-height: 1.3;
+      letter-spacing: 0.14em; text-transform: uppercase; color: hsl(0 0% 26%); }}
+    .inv-number {{ margin: 2px 0 0; font: 600 16px/1.2 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      font-variant-numeric: tabular-nums; }}
+    .inv-status {{ display: inline-block; margin: 8px 0 0; padding: 2px 8px;
+      border: 1px solid hsl(0 0% 90%); border-radius: 999px; background: hsl(0 0% 96%);
+      color: hsl(0 0% 26%); font-size: 10px; font-weight: 700; line-height: 1.3; }}
+    .inv-status--paid {{ background: #dcfce7; color: #166534; }}
+    .inv-issued {{ margin: 12px 0 0; font-size: 11px; color: hsl(0 0% 26%);
+      font-variant-numeric: tabular-nums; }}
+    .inv-label {{ margin: 0 0 8px; color: hsl(0 0% 26%); font-size: 10px;
+      font-weight: 600; line-height: 1.3; letter-spacing: 0.10em; text-transform: uppercase; }}
+    .inv-issued .inv-label {{ display: inline; margin: 0 8px 0 0; }}
+    .inv-parties {{ display: flex; gap: 32px; margin-bottom: 32px; }}
+    .inv-party {{ flex: 1; min-width: 0; }}
+    .inv-party-name {{ margin: 0 0 4px; font-size: 14px; font-weight: 600; line-height: 1.4;
+      overflow-wrap: break-word; }}
+    .inv-party-body {{ margin: 0; font-size: 11px; color: hsl(0 0% 26%); }}
+    .inv-items {{ width: 100%; border-collapse: collapse; margin-bottom: 24px; }}
+    .inv-items thead {{ display: table-header-group; }}
+    .inv-items th {{ padding: 8px 0 8px 12px; color: hsl(0 0% 26%); font-size: 10px;
+      font-weight: 600; line-height: 1.3; letter-spacing: 0.10em; text-transform: uppercase;
+      text-align: left; border-bottom: 1px solid hsl(0 0% 7%); }}
+    .inv-items td {{ padding: 12px 0 12px 12px; vertical-align: top;
+      border-bottom: 1px solid hsl(0 0% 90%); }}
+    .inv-items th:first-child, .inv-items td:first-child {{ padding-left: 0; }}
+    .inv-items .num, .inv-totals .num {{ text-align: right; white-space: nowrap;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-variant-numeric: tabular-nums; }}
+    tr {{ break-inside: avoid; page-break-inside: avoid; }}
+    .item-title {{ margin: 0; font-weight: 600; }}
+    .item-period {{ margin: 4px 0 0; color: hsl(0 0% 26%); font-size: 11px;
+      line-height: 1.4; font-variant-numeric: tabular-nums; }}
+    .inv-totals {{ width: 260px; margin: 0 0 32px auto; }}
+    .inv-totals-row {{ display: flex; justify-content: space-between; gap: 24px;
+      margin: 0; padding: 8px 0; color: hsl(0 0% 26%); border-bottom: 1px solid hsl(0 0% 90%); }}
+    .inv-totals-grand {{ margin-top: 4px; padding-top: 12px; border-top: 2px solid hsl(0 0% 7%);
+      border-bottom: 0; color: hsl(0 0% 7%); font-size: 16px; font-weight: 700; line-height: 1.2; }}
+    .inv-pay {{ break-inside: avoid; page-break-inside: avoid; padding: 16px; margin-bottom: 32px;
+      background: hsl(0 0% 96%); border: 1px solid hsl(0 0% 90%); }}
+    .inv-pay-fields {{ margin: 0; }}
+    .inv-pay-fields div {{ display: flex; gap: 12px; margin-top: 4px; }}
+    .inv-pay-fields dt {{ width: 120px; flex: none; color: hsl(0 0% 26%); }}
+    .inv-pay-fields dd {{ margin: 0; font-weight: 600; font-variant-numeric: tabular-nums;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; }}
+    .inv-pay-hint {{ margin: 12px 0 0; font-size: 11px; color: hsl(0 0% 26%); }}
+    .inv-footer {{ padding-top: 16px; border-top: 1px solid hsl(0 0% 90%);
+      color: hsl(0 0% 26%); font-size: 10px; font-weight: 400; line-height: 1.5; }}
+  </style>
+</head>
+<body>
+  <article class="invoice-print-sheet" aria-label="{number}">
+    <header class="inv-header">
+      <p class="invoice-print-brand">SINE<span class="invoice-print-accent">XIS</span></p>
+      <div class="inv-meta">
+        <h1 class="inv-kicker">INVOICE</h1>
+        <p class="inv-number">{number}</p>
+        <p class="inv-status{' inv-status--paid' if inv.status == 'paid' else ''}">{status}</p>
+        <p class="inv-issued"><span class="inv-label">Issued</span> {issued}</p>
+      </div>
+    </header>
+    <section class="inv-parties">
+      <div class="inv-party">
+        <h2 class="inv-label">Bill from</h2>
+        <p class="inv-party-name">Sinexis</p>
+        <p class="inv-party-body">{_esc(product)}</p>
+      </div>
+      <div class="inv-party">
+        <h2 class="inv-label">Bill to</h2>
+        <p class="inv-party-name">{bill_to}</p>
+      </div>
+    </section>
+    <table class="inv-items">
+      <thead><tr>
+        <th scope="col">Description</th><th scope="col" class="num">Seats</th><th scope="col" class="num">Amount</th>
+      </tr></thead>
+      <tbody><tr>
+        <td><p class="item-title">{item}</p><p class="item-period">{period}</p></td>
+        <td class="num">{seats}</td><td class="num">{amount}</td>
+      </tr></tbody>
+    </table>
+    <section class="inv-totals" aria-label="Total">
+      <p class="inv-totals-row"><span>Subtotal</span><span class="num">{amount}</span></p>
+      <p class="inv-totals-row inv-totals-grand"><span>Total</span><span class="num">{amount}</span></p>
+      <p class="inv-totals-row"><span>{due_label}</span><span class="num">{amount}</span></p>
+      {ref_line}
+    </section>
+    {bank_block}
+    <footer class="inv-footer">Thank you. {_esc(product)} — bank transfer, no self-serve upgrade.</footer>
+  </article>
+</body>
+</html>"""
