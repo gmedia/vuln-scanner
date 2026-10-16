@@ -14,7 +14,7 @@ type GuardHealth = "on" | "degraded" | "off";
 
 const STATE_RAIL: Record<GuardHealth, string> = {
   on: "bg-primary",
-  degraded: "bg-amber-500",
+  degraded: "bg-amber-600",
   off: "bg-border",
 };
 

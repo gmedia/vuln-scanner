@@ -23,8 +23,8 @@ describe("severityFromLevel", () => {
 describe("severityRailClass", () => {
   it("returns the 2px rail token for each band", () => {
     expect(severityRailClass(12)).toBe("bg-destructive");
-    expect(severityRailClass(7)).toBe("bg-orange-500");
-    expect(severityRailClass(4)).toBe("bg-yellow-500");
+    expect(severityRailClass(7)).toBe("bg-orange-600");
+    expect(severityRailClass(4)).toBe("bg-yellow-700");
     expect(severityRailClass(1)).toBe("bg-blue-500");
   });
 });
@@ -49,20 +49,20 @@ describe("severityLabelKey", () => {
 
 describe("indexerHealth", () => {
   it("prefers unreachable over degraded", () => {
-    expect(
-      indexerHealth({ indexer_reachable: false, degraded: true }),
-    ).toBe("down");
+    expect(indexerHealth({ indexer_reachable: false, degraded: true })).toBe(
+      "down",
+    );
   });
 
   it("marks reachable+degraded as degraded", () => {
-    expect(
-      indexerHealth({ indexer_reachable: true, degraded: true }),
-    ).toBe("degraded");
+    expect(indexerHealth({ indexer_reachable: true, degraded: true })).toBe(
+      "degraded",
+    );
   });
 
   it("marks reachable and healthy as live", () => {
-    expect(
-      indexerHealth({ indexer_reachable: true, degraded: false }),
-    ).toBe("live");
+    expect(indexerHealth({ indexer_reachable: true, degraded: false })).toBe(
+      "live",
+    );
   });
 });

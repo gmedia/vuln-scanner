@@ -6,13 +6,16 @@ import {
   incidentsListRailClass,
   overallRailClass,
 } from "@/components/status/statusChrome";
-import { outagesRailClass, stateRailClass } from "@/components/uptime/uptimeChrome";
+import {
+  outagesRailClass,
+  stateRailClass,
+} from "@/components/uptime/uptimeChrome";
 
 describe("statusChrome rail helpers", () => {
   it("rails overall state and visibility", () => {
     expect(overallRailClass("operational", true)).toBe("bg-primary");
-    expect(overallRailClass("degraded", true)).toBe("bg-amber-500");
-    expect(overallRailClass("partial", true)).toBe("bg-orange-500");
+    expect(overallRailClass("degraded", true)).toBe("bg-amber-600");
+    expect(overallRailClass("partial", true)).toBe("bg-orange-600");
     expect(overallRailClass("major", true)).toBe("bg-destructive");
     expect(overallRailClass("operational", false)).toBe("bg-border");
   });
@@ -20,19 +23,19 @@ describe("statusChrome rail helpers", () => {
   it("rails component and hostname state", () => {
     expect(componentRailClass("up")).toBe("bg-primary");
     expect(componentRailClass("down")).toBe("bg-destructive");
-    expect(componentRailClass("degraded")).toBe("bg-amber-500");
+    expect(componentRailClass("degraded")).toBe("bg-amber-600");
     expect(componentRailClass("unknown")).toBe("bg-border");
     expect(hostnameRailClass("active")).toBe("bg-primary");
     expect(hostnameRailClass("failed")).toBe("bg-destructive");
-    expect(hostnameRailClass("pending_txt")).toBe("bg-amber-500");
+    expect(hostnameRailClass("pending_txt")).toBe("bg-amber-600");
     expect(hostnameRailClass("none")).toBe("bg-border");
   });
 
   it("rails a single incident", () => {
     expect(incidentRailClass("resolved")).toBe("bg-primary");
-    expect(incidentRailClass("investigating")).toBe("bg-amber-500");
-    expect(incidentRailClass("identified")).toBe("bg-orange-500");
-    expect(incidentRailClass("monitoring")).toBe("bg-sky-500");
+    expect(incidentRailClass("investigating")).toBe("bg-amber-600");
+    expect(incidentRailClass("identified")).toBe("bg-orange-600");
+    expect(incidentRailClass("monitoring")).toBe("bg-sky-600");
     expect(incidentRailClass("unknown")).toBe("bg-border");
   });
 
@@ -40,13 +43,13 @@ describe("statusChrome rail helpers", () => {
     expect(incidentsListRailClass([])).toBe("bg-border");
     expect(incidentsListRailClass(["resolved"])).toBe("bg-primary");
     expect(incidentsListRailClass(["resolved", "monitoring"])).toBe(
-      "bg-sky-500",
+      "bg-sky-600",
     );
     expect(incidentsListRailClass(["monitoring", "identified"])).toBe(
-      "bg-orange-500",
+      "bg-orange-600",
     );
     expect(incidentsListRailClass(["identified", "investigating"])).toBe(
-      "bg-amber-500",
+      "bg-amber-600",
     );
   });
 });
@@ -55,7 +58,7 @@ describe("uptimeChrome rail helpers", () => {
   it("rails monitor state and enabled flag", () => {
     expect(stateRailClass("up")).toBe("bg-primary");
     expect(stateRailClass("down")).toBe("bg-destructive");
-    expect(stateRailClass("degraded")).toBe("bg-amber-500");
+    expect(stateRailClass("degraded")).toBe("bg-amber-600");
     expect(stateRailClass("down", false)).toBe("bg-border");
   });
 

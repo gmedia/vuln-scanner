@@ -28,18 +28,40 @@ vi.mock("@/components/scan/ScanProgress", () => ({
 }));
 
 vi.mock("@/components/ui/Card", () => ({
-  Card: ({ children, ...props }: any) => <div data-testid="card" {...props}>{children}</div>,
-  CardHeader: ({ children, ...props }: any) => <div data-testid="card-header" {...props}>{children}</div>,
-  CardTitle: ({ children, ...props }: any) => <h3 data-testid="card-title" {...props}>{children}</h3>,
-  CardContent: ({ children, ...props }: any) => <div data-testid="card-content" {...props}>{children}</div>,
+  Card: ({ children, ...props }: any) => (
+    <div data-testid="card" {...props}>
+      {children}
+    </div>
+  ),
+  CardHeader: ({ children, ...props }: any) => (
+    <div data-testid="card-header" {...props}>
+      {children}
+    </div>
+  ),
+  CardTitle: ({ children, ...props }: any) => (
+    <h3 data-testid="card-title" {...props}>
+      {children}
+    </h3>
+  ),
+  CardContent: ({ children, ...props }: any) => (
+    <div data-testid="card-content" {...props}>
+      {children}
+    </div>
+  ),
 }));
 
 vi.mock("@/components/ui/Badge", () => ({
-  Badge: ({ children, ...props }: any) => <span data-testid="badge" {...props}>{children}</span>,
+  Badge: ({ children, ...props }: any) => (
+    <span data-testid="badge" {...props}>
+      {children}
+    </span>
+  ),
 }));
 
 vi.mock("@/components/ui/Button", () => ({
-  Button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+  Button: ({ children, ...props }: any) => (
+    <button {...props}>{children}</button>
+  ),
 }));
 
 import { useScanStore } from "@/store/scanStore";
@@ -60,7 +82,9 @@ describe("IpScanner", () => {
 
   it("renders IP scanner heading", () => {
     vi.mocked(useScanStore).mockReturnValue(null);
-    vi.mocked(useScanDetail).mockReturnValue({ data: undefined } as ReturnType<typeof useScanDetail>);
+    vi.mocked(useScanDetail).mockReturnValue({ data: undefined } as ReturnType<
+      typeof useScanDetail
+    >);
 
     renderPage();
     expect(screen.getByText("IP scanner")).toBeInTheDocument();
@@ -68,7 +92,9 @@ describe("IpScanner", () => {
 
   it("renders Scan target card", () => {
     vi.mocked(useScanStore).mockReturnValue(null);
-    vi.mocked(useScanDetail).mockReturnValue({ data: undefined } as ReturnType<typeof useScanDetail>);
+    vi.mocked(useScanDetail).mockReturnValue({ data: undefined } as ReturnType<
+      typeof useScanDetail
+    >);
 
     renderPage();
     expect(screen.getByText("Scan target")).toBeInTheDocument();
@@ -76,7 +102,9 @@ describe("IpScanner", () => {
 
   it("renders the IpScanForm", () => {
     vi.mocked(useScanStore).mockReturnValue(null);
-    vi.mocked(useScanDetail).mockReturnValue({ data: undefined } as ReturnType<typeof useScanDetail>);
+    vi.mocked(useScanDetail).mockReturnValue({ data: undefined } as ReturnType<
+      typeof useScanDetail
+    >);
 
     renderPage();
     expect(screen.getByTestId("ip-scan-form")).toBeInTheDocument();
@@ -84,7 +112,9 @@ describe("IpScanner", () => {
 
   it("does not show progress when no active job", () => {
     vi.mocked(useScanStore).mockReturnValue(null);
-    vi.mocked(useScanDetail).mockReturnValue({ data: undefined } as ReturnType<typeof useScanDetail>);
+    vi.mocked(useScanDetail).mockReturnValue({ data: undefined } as ReturnType<
+      typeof useScanDetail
+    >);
 
     renderPage();
     expect(screen.queryByText("Scan progress")).not.toBeInTheDocument();
@@ -211,7 +241,9 @@ describe("IpScanner", () => {
 
   it("rails the scan-target shell primary", () => {
     vi.mocked(useScanStore).mockReturnValue(null);
-    vi.mocked(useScanDetail).mockReturnValue({ data: undefined } as ReturnType<typeof useScanDetail>);
+    vi.mocked(useScanDetail).mockReturnValue({ data: undefined } as ReturnType<
+      typeof useScanDetail
+    >);
 
     renderPage();
     expect(
@@ -259,7 +291,7 @@ describe("IpScanner", () => {
 
     renderPage();
     const results = screen.getByTestId("scan-results");
-    expect(results.firstElementChild?.className).toMatch(/bg-yellow-500/);
+    expect(results.firstElementChild?.className).toMatch(/bg-yellow-700/);
     expect(results.className).not.toMatch(/bg-destructive/);
   });
 
@@ -304,8 +336,8 @@ describe("IpScanner", () => {
     renderPage();
     const results = screen.getByTestId("scan-results");
     expect(results.querySelector(".bg-destructive")).toBeTruthy();
-    expect(results.querySelector(".bg-orange-500")).toBeTruthy();
-    expect(results.querySelector(".bg-yellow-500")).toBeTruthy();
+    expect(results.querySelector(".bg-orange-600")).toBeTruthy();
+    expect(results.querySelector(".bg-yellow-700")).toBeTruthy();
     expect(results.querySelector(".bg-blue-500")).toBeTruthy();
   });
 });

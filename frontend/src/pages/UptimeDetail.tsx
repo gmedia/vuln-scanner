@@ -39,7 +39,10 @@ import { UptimeDetailKpiStrip } from "@/components/uptime/UptimeDetailKpiStrip";
 import { UptimeHealthHero } from "@/components/uptime/UptimeHealthHero";
 import { UptimeHistoryPanel } from "@/components/uptime/UptimeHistoryPanel";
 import { explainUptimeError } from "@/components/uptime/uptimeErrors";
-import { stateBadgeVariant, outagesRailClass } from "@/components/uptime/uptimeChrome";
+import {
+  stateBadgeVariant,
+  outagesRailClass,
+} from "@/components/uptime/uptimeChrome";
 import { useIsMobile } from "@/hooks/use-mobile";
 import i18n from "@/i18n";
 import { htmlLang, isAppLocale } from "@/i18n/locales";
@@ -193,7 +196,10 @@ function buildOutages(
     if (startMs > untilMs) continue;
     const recover = ordered
       .slice(i + 1)
-      .find((next) => next.to_state === "up" && new Date(next.at).getTime() > startMs);
+      .find(
+        (next) =>
+          next.to_state === "up" && new Date(next.at).getTime() > startMs,
+      );
     const endMs = recover ? new Date(recover.at).getTime() : untilMs;
     if (endMs < fromMs) continue;
     const ongoing = !recover;
@@ -206,7 +212,9 @@ function buildOutages(
       durationMs: Math.max(0, endMs - Math.max(startMs, fromMs)),
     });
   }
-  return rows.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+  return rows.sort(
+    (a, b) => new Date(b.at).getTime() - new Date(a.at).getTime(),
+  );
 }
 
 function AvailabilityBar({
@@ -343,16 +351,10 @@ export default function UptimeDetail() {
         from: activeWindow.from,
         until: activeWindow.until,
       }),
-    enabled:
-      Boolean(id) && monitorQ.isSuccess && !customWindow.beyondSamples,
+    enabled: Boolean(id) && monitorQ.isSuccess && !customWindow.beyondSamples,
   });
   const eventsQ = useQuery({
-    queryKey: [
-      "uptime-events",
-      id,
-      activeWindow.from,
-      activeWindow.until,
-    ],
+    queryKey: ["uptime-events", id, activeWindow.from, activeWindow.until],
     queryFn: () =>
       listEvents(id as string, {
         from: activeWindow.from,
@@ -377,8 +379,7 @@ export default function UptimeDetail() {
         limit: sampleSize,
         offset: (page - 1) * sampleSize,
       }),
-    enabled:
-      Boolean(id) && monitorQ.isSuccess && !customWindow.beyondSamples,
+    enabled: Boolean(id) && monitorQ.isSuccess && !customWindow.beyondSamples,
   });
 
   const pauseMut = useMutation({
@@ -403,8 +404,7 @@ export default function UptimeDetail() {
 
   const events = eventsQ.data;
   const segments = useMemo(
-    () =>
-      buildBarSegments(events ?? [], activeWindow.from, activeWindow.until),
+    () => buildBarSegments(events ?? [], activeWindow.from, activeWindow.until),
     [events, activeWindow.from, activeWindow.until],
   );
   const outages = useMemo(
@@ -416,10 +416,7 @@ export default function UptimeDetail() {
   const sampleTotal = beyondSamples ? 0 : (samplesQ.data?.total ?? 0);
   const totalPages = Math.max(1, Math.ceil(sampleTotal / sampleSize));
   const safePage = Math.min(page, totalPages);
-  const outageTotalPages = Math.max(
-    1,
-    Math.ceil(outages.length / outageSize),
-  );
+  const outageTotalPages = Math.max(1, Math.ceil(outages.length / outageSize));
   const safeOutagePage = Math.min(outagePage, outageTotalPages);
   const pagedOutages = outages.slice(
     (safeOutagePage - 1) * outageSize,
@@ -546,7 +543,7 @@ export default function UptimeDetail() {
         latencyLabel={t("latency")}
       />
 
-      <OpsShell railClass="bg-sky-500" testid="uptime-range-filters">
+      <OpsShell railClass="bg-sky-600" testid="uptime-range-filters">
         <OpsShellHead className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Tabs value={activeTabsValue} onValueChange={onTabsChange}>
             <TabsList data-testid="uptime-range-tabs">
@@ -572,9 +569,7 @@ export default function UptimeDetail() {
               data-testid="uptime-outage-from"
               className="flex min-w-0 flex-col gap-1.5"
             >
-              <Label htmlFor="uptime-outage-from-input">
-                {t("rangeFrom")}
-              </Label>
+              <Label htmlFor="uptime-outage-from-input">{t("rangeFrom")}</Label>
               <DatePicker
                 id="uptime-outage-from-input"
                 value={customFrom}
@@ -716,16 +711,11 @@ export default function UptimeDetail() {
             </ul>
           )}
           {outages.length > outageSize ? (
-            <Pagination
-              className="mt-3"
-              data-testid="uptime-outage-pagination"
-            >
+            <Pagination className="mt-3" data-testid="uptime-outage-pagination">
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
-                    onClick={() =>
-                      setOutagePage((p) => Math.max(1, p - 1))
-                    }
+                    onClick={() => setOutagePage((p) => Math.max(1, p - 1))}
                     disabled={safeOutagePage <= 1}
                     aria-disabled={safeOutagePage <= 1}
                   />
@@ -754,7 +744,11 @@ export default function UptimeDetail() {
         monitor={monitor}
         rows={samples}
         loading={samplesQ.isLoading && !beyondSamples}
-        emptyHint={beyondSamples && customWindow.custom ? t("samplesRetentionNote") : undefined}
+        emptyHint={
+          beyondSamples && customWindow.custom
+            ? t("samplesRetentionNote")
+            : undefined
+        }
       />
       {!beyondSamples && sampleTotal > sampleSize ? (
         <Pagination className="mt-2" data-testid="uptime-sample-pagination">

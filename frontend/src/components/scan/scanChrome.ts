@@ -38,9 +38,9 @@ export function severityRailClass(severity: string): string {
     case "critical":
       return "bg-destructive";
     case "high":
-      return "bg-orange-500";
+      return "bg-orange-600";
     case "medium":
-      return "bg-yellow-500";
+      return "bg-yellow-700";
     case "low":
       return "bg-blue-500";
     default:
@@ -65,8 +65,8 @@ export function severityTextClass(severity: string | null): string {
 
 export function statusRailClass(status: string): string {
   if (status === "failed") return "bg-destructive";
-  if (status === "running") return "bg-sky-500";
-  if (status === "pending") return "bg-amber-500";
+  if (status === "running") return "bg-sky-600";
+  if (status === "pending") return "bg-amber-600";
   if (status === "completed") return "bg-primary";
   return "bg-border";
 }
@@ -103,7 +103,7 @@ export function diffRailClass(diff: {
   readonly worsened: number;
 }): string {
   if (diff.new_critical > 0) return "bg-destructive";
-  if (diff.new_high > 0 || diff.worsened > 0) return "bg-orange-500";
+  if (diff.new_high > 0 || diff.worsened > 0) return "bg-orange-600";
   if (diff.resolved > 0) return "bg-primary";
   return "bg-border";
 }
@@ -115,8 +115,8 @@ export function scannerResultRailClass(summary: {
   readonly low?: number;
 }): string {
   if ((summary.critical ?? 0) > 0) return "bg-destructive";
-  if ((summary.high ?? 0) > 0) return "bg-orange-500";
-  if ((summary.medium ?? 0) > 0) return "bg-yellow-500";
+  if ((summary.high ?? 0) > 0) return "bg-orange-600";
+  if ((summary.medium ?? 0) > 0) return "bg-yellow-700";
   if ((summary.low ?? 0) > 0) return "bg-blue-500";
   return "bg-primary";
 }

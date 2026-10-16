@@ -60,9 +60,7 @@ describe("StatusPage admin", () => {
     mockGet.mockReset();
     mockGet.mockResolvedValue(null);
     useAuthStore.setState({
-      organizations: [
-        { id: "o1", name: "Org", slug: "org", role: "owner" },
-      ],
+      organizations: [{ id: "o1", name: "Org", slug: "org", role: "owner" }],
       activeOrgId: "o1",
     });
   });
@@ -73,7 +71,9 @@ describe("StatusPage admin", () => {
     expect(screen.getByTestId("status-page-loading")).toBeInTheDocument();
     expect(screen.getByTestId("status-kpi-skeleton")).toBeInTheDocument();
     expect(screen.queryByTestId("status-page-empty")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("status-identity-shell")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("status-identity-shell"),
+    ).not.toBeInTheDocument();
   });
 
   it("shows empty state with create form", async () => {
@@ -220,8 +220,12 @@ describe("StatusPage admin", () => {
     await waitFor(() =>
       expect(screen.getByTestId("status-incident-card-i1")).toBeInTheDocument(),
     );
-    expect(screen.queryByTestId("status-incident-title-i1")).not.toBeInTheDocument();
-    expect(screen.getByTestId("status-incident-post-update-i1")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("status-incident-title-i1"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByTestId("status-incident-post-update-i1"),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("status-incidents-list-mobile")).toHaveClass(
       "space-y-2",
       "md:hidden",
@@ -344,12 +348,16 @@ describe("StatusPage admin", () => {
     );
     const cardList = screen.getByTestId("status-incident-updates-i1");
     expect(cardList).toBeInTheDocument();
-    expect(screen.getByTestId("status-incident-row-updates-i1")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("status-incident-row-updates-i1"),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("status-incident-update-u1")).toBeInTheDocument();
     expect(screen.getByTestId("status-incident-update-u2")).toBeInTheDocument();
     expect(screen.getAllByText("Looking into 5xx.")).not.toHaveLength(0);
     expect(screen.getAllByText("Traffic is recovering.")).not.toHaveLength(0);
-    const bodies = [...cardList.querySelectorAll("p")].map((el) => el.textContent);
+    const bodies = [...cardList.querySelectorAll("p")].map(
+      (el) => el.textContent,
+    );
     expect(bodies.indexOf("Looking into 5xx.")).toBeLessThan(
       bodies.indexOf("Traffic is recovering."),
     );
@@ -378,8 +386,12 @@ describe("StatusPage admin", () => {
     await waitFor(() =>
       expect(screen.getByTestId("status-incident-add")).toBeInTheDocument(),
     );
-    expect(screen.queryByTestId("status-incident-create")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("status-incident-sheet")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("status-incident-create"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("status-incident-sheet"),
+    ).not.toBeInTheDocument();
     await user.click(screen.getByTestId("status-incident-add"));
     const sheet = await screen.findByTestId("status-incident-sheet");
     expect(sheet).toHaveAttribute("data-slot", "sheet-content");
@@ -391,7 +403,9 @@ describe("StatusPage admin", () => {
     expect(screen.getByTestId("status-incident-add")).toBeInTheDocument();
     await user.click(screen.getByTestId("status-incident-create-cancel"));
     await waitFor(() =>
-      expect(screen.queryByTestId("status-incident-create")).not.toBeInTheDocument(),
+      expect(
+        screen.queryByTestId("status-incident-create"),
+      ).not.toBeInTheDocument(),
     );
   });
 
@@ -421,7 +435,10 @@ describe("StatusPage admin", () => {
     );
     await user.click(screen.getByTestId("status-incident-add"));
     await user.type(screen.getByTestId("status-incident-title"), "API blip");
-    await user.type(screen.getByTestId("status-incident-body"), "Looking into it");
+    await user.type(
+      screen.getByTestId("status-incident-body"),
+      "Looking into it",
+    );
     await user.click(screen.getByTestId("status-incident-create-save"));
     expect(statusApi.createIncident).toHaveBeenCalledWith({
       title: "API blip",
@@ -430,7 +447,9 @@ describe("StatusPage admin", () => {
       body: "Looking into it",
     });
     await waitFor(() =>
-      expect(screen.queryByTestId("status-incident-create")).not.toBeInTheDocument(),
+      expect(
+        screen.queryByTestId("status-incident-create"),
+      ).not.toBeInTheDocument(),
     );
   });
 
@@ -518,7 +537,9 @@ describe("StatusPage admin", () => {
     renderPage();
     await waitFor(() =>
       expect(
-        within(screen.getByTestId("status-components-desktop")).getByText("API"),
+        within(screen.getByTestId("status-components-desktop")).getByText(
+          "API",
+        ),
       ).toBeInTheDocument(),
     );
     const remove = screen.getByTestId("status-component-remove-c1");
@@ -602,7 +623,8 @@ describe("StatusPage admin", () => {
       screen.getByTestId("status-identity-shell").firstElementChild?.className,
     ).toMatch(/bg-primary/);
     expect(
-      screen.getByTestId("status-components-shell").firstElementChild?.className,
+      screen.getByTestId("status-components-shell").firstElementChild
+        ?.className,
     ).toMatch(/bg-primary/);
   });
 
@@ -668,6 +690,6 @@ describe("StatusPage admin", () => {
     );
     expect(
       screen.getByTestId("status-incidents-shell").firstElementChild?.className,
-    ).toMatch(/bg-amber-500/);
+    ).toMatch(/bg-amber-600/);
   });
 });

@@ -74,12 +74,12 @@ export function UptimeKpiRow({
   const quotaIndicatorClassName = isFull
     ? "bg-destructive"
     : isNearCap
-      ? "bg-amber-500"
+      ? "bg-amber-600"
       : undefined;
   const skuRailClass = isFull
     ? "bg-destructive"
     : isNearCap
-      ? "bg-amber-500"
+      ? "bg-amber-600"
       : "bg-primary";
   const quotaLabel = t("skuShort", { count: enabledCount, limit, sku });
   return (

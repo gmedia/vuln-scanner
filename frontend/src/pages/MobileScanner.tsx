@@ -29,7 +29,8 @@ function MobileScanner() {
     (!scanData ||
       scanData.status === "running" ||
       scanData.status === "pending");
-  const hasResults = scanData?.status === "completed" && scanData.result_summary;
+  const hasResults =
+    scanData?.status === "completed" && scanData.result_summary;
 
   return (
     <div className="grid w-full items-start gap-6 lg:grid-cols-2">
@@ -44,7 +45,7 @@ function MobileScanner() {
         </ScanShell>
 
         {isScanning && (
-          <ScanShell railClass="bg-sky-500">
+          <ScanShell railClass="bg-sky-600">
             <ScanShellHead icon={Loader} title="Scan progress" />
             <ScanShellBody>
               <ScanProgress />

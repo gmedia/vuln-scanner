@@ -20,9 +20,9 @@ import { TONE_TEXT } from "@/lib/toneColors";
 describe("adminChrome helpers", () => {
   it("maps tones to rail classes", () => {
     expect(adminRailClass("danger")).toBe("bg-destructive");
-    expect(adminRailClass("warn")).toBe("bg-amber-500");
-    expect(adminRailClass("alert")).toBe("bg-orange-500");
-    expect(adminRailClass("info")).toBe("bg-sky-500");
+    expect(adminRailClass("warn")).toBe("bg-amber-600");
+    expect(adminRailClass("alert")).toBe("bg-orange-600");
+    expect(adminRailClass("info")).toBe("bg-sky-600");
     expect(adminRailClass("idle")).toBe("bg-border");
     expect(adminRailClass("primary")).toBe("bg-primary");
     expect(adminRailClass("success")).toBe("bg-primary");

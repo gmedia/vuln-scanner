@@ -19,8 +19,8 @@ describe("scanChrome scanner helpers", () => {
 
   it("maps each severity to a rail class", () => {
     expect(severityRailClass("critical")).toBe("bg-destructive");
-    expect(severityRailClass("high")).toBe("bg-orange-500");
-    expect(severityRailClass("medium")).toBe("bg-yellow-500");
+    expect(severityRailClass("high")).toBe("bg-orange-600");
+    expect(severityRailClass("medium")).toBe("bg-yellow-700");
     expect(severityRailClass("low")).toBe("bg-blue-500");
     expect(severityRailClass("info")).toBe("bg-border");
   });
@@ -28,15 +28,17 @@ describe("scanChrome scanner helpers", () => {
   it("rails the results shell by worst severity", () => {
     expect(scannerResultRailClass({ critical: 1 })).toBe("bg-destructive");
     expect(scannerResultRailClass({ critical: 0, high: 1 })).toBe(
-      "bg-orange-500",
+      "bg-orange-600",
     );
-    expect(scannerResultRailClass({ medium: 1 })).toBe("bg-yellow-500");
+    expect(scannerResultRailClass({ medium: 1 })).toBe("bg-yellow-700");
     expect(scannerResultRailClass({ low: 1 })).toBe("bg-blue-500");
     expect(scannerResultRailClass({})).toBe("bg-primary");
   });
 
   it("washes the results shell only for critical or high", () => {
-    expect(scannerResultWashClass({ critical: 1 })).toBe("bg-destructive/[0.04]");
+    expect(scannerResultWashClass({ critical: 1 })).toBe(
+      "bg-destructive/[0.04]",
+    );
     expect(scannerResultWashClass({ high: 2 })).toBe("bg-destructive/[0.04]");
     expect(scannerResultWashClass({ critical: 0, high: 0 })).toBeUndefined();
     expect(scannerResultWashClass({})).toBeUndefined();

@@ -11,7 +11,7 @@ export function stateRailClass(state: string, enabled = true): string {
   if (!enabled) return "bg-border";
   if (state === "up") return "bg-primary";
   if (state === "down") return "bg-destructive";
-  if (state === "degraded") return "bg-amber-500";
+  if (state === "degraded") return "bg-amber-600";
   return "bg-border";
 }
 

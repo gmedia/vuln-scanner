@@ -2,8 +2,8 @@ export type AuthTone = "primary" | "success" | "danger" | "warn" | "info";
 
 export function authRailClass(tone: AuthTone): string {
   if (tone === "danger") return "bg-destructive";
-  if (tone === "warn") return "bg-amber-500";
-  if (tone === "info") return "bg-sky-500";
+  if (tone === "warn") return "bg-amber-600";
+  if (tone === "info") return "bg-sky-600";
   return "bg-primary";
 }
 

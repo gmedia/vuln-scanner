@@ -3,8 +3,8 @@ export type WorkspaceTone =
 
 export function workspaceRailClass(tone: WorkspaceTone): string {
   if (tone === "danger") return "bg-destructive";
-  if (tone === "warn") return "bg-amber-500";
-  if (tone === "info") return "bg-sky-500";
+  if (tone === "warn") return "bg-amber-600";
+  if (tone === "info") return "bg-sky-600";
   if (tone === "idle") return "bg-border";
   return "bg-primary";
 }

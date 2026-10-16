@@ -20,7 +20,7 @@ export function scheduleWashClass(tone: ScheduleTone): string | undefined {
 
 export function quotaRailClass(enabled: number, max: number): string {
   if (max > 0 && enabled >= max) return "bg-destructive";
-  if (max > 0 && enabled / max >= 0.8) return "bg-amber-500";
+  if (max > 0 && enabled / max >= 0.8) return "bg-amber-600";
   return "bg-primary";
 }
 
@@ -29,7 +29,7 @@ export function quotaIndicatorClass(
   max: number,
 ): string | undefined {
   if (max > 0 && enabled >= max) return "bg-destructive";
-  if (max > 0 && enabled / max >= 0.8) return "bg-amber-500";
+  if (max > 0 && enabled / max >= 0.8) return "bg-amber-600";
   return undefined;
 }
 

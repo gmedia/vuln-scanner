@@ -11,7 +11,7 @@ import {
 describe("profileChrome helpers", () => {
   it("maps tones to rail classes", () => {
     expect(profileRailClass("danger")).toBe("bg-destructive");
-    expect(profileRailClass("warn")).toBe("bg-amber-500");
+    expect(profileRailClass("warn")).toBe("bg-amber-600");
     expect(profileRailClass("idle")).toBe("bg-border");
     expect(profileRailClass("primary")).toBe("bg-primary");
     expect(profileRailClass("success")).toBe("bg-primary");
@@ -35,9 +35,9 @@ describe("profileChrome helpers", () => {
   });
 
   it("derives the form tone with success > cooldown > error precedence", () => {
-    expect(
-      formTone({ cooldown: 0, error: false, success: false }),
-    ).toBe("primary");
+    expect(formTone({ cooldown: 0, error: false, success: false })).toBe(
+      "primary",
+    );
     expect(formTone({ cooldown: 0, error: true, success: false })).toBe(
       "danger",
     );

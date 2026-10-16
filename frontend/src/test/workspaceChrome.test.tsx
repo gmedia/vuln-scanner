@@ -12,8 +12,8 @@ import {
 describe("workspaceChrome helpers", () => {
   it("maps tones to rail classes", () => {
     expect(workspaceRailClass("danger")).toBe("bg-destructive");
-    expect(workspaceRailClass("warn")).toBe("bg-amber-500");
-    expect(workspaceRailClass("info")).toBe("bg-sky-500");
+    expect(workspaceRailClass("warn")).toBe("bg-amber-600");
+    expect(workspaceRailClass("info")).toBe("bg-sky-600");
     expect(workspaceRailClass("idle")).toBe("bg-border");
     expect(workspaceRailClass("primary")).toBe("bg-primary");
     expect(workspaceRailClass("success")).toBe("bg-primary");

@@ -45,9 +45,8 @@ vi.mock("@/components/ui/DatePicker", () => ({
 }));
 
 vi.mock("@/api/uptime", async () => {
-  const actual = await vi.importActual<typeof import("@/api/uptime")>(
-    "@/api/uptime",
-  );
+  const actual =
+    await vi.importActual<typeof import("@/api/uptime")>("@/api/uptime");
   return {
     ...actual,
     getMonitor: (...args: unknown[]) => mockGet(...args),
@@ -93,7 +92,10 @@ function renderDetail(id = "m1") {
       <MemoryRouter initialEntries={[`/uptime/${id}`]}>
         <Routes>
           <Route path="/uptime/:id" element={<UptimeDetail />} />
-          <Route path="/uptime" element={<div data-testid="uptime-list">list</div>} />
+          <Route
+            path="/uptime"
+            element={<div data-testid="uptime-list">list</div>}
+          />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -120,7 +122,8 @@ function setViewport(width: number) {
     removeListener: () => {},
     addEventListener: (...args: unknown[]) => {
       const listener = args[1];
-      if (typeof listener === "function") mobileListeners.add(listener as () => void);
+      if (typeof listener === "function")
+        mobileListeners.add(listener as () => void);
     },
     removeEventListener: (...args: unknown[]) => {
       mobileListeners.delete(args[1] as () => void);
@@ -223,7 +226,9 @@ describe("UptimeDetail", () => {
     const root = screen.getByTestId("uptime-detail");
     expect(root.querySelector(".animate-pulse")).toBeTruthy();
     expect(screen.queryByTestId("uptime-range-tabs")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("uptime-timeline-shell")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("uptime-timeline-shell"),
+    ).not.toBeInTheDocument();
   });
 
   it("shows not-found when the monitor is missing", async () => {
@@ -249,7 +254,9 @@ describe("UptimeDetail", () => {
     await waitFor(() =>
       expect(qc.getQueryState(["uptime-monitor", "m1"])?.status).toBe("error"),
     );
-    expect(screen.queryByTestId("uptime-detail-not-found")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("uptime-detail-not-found"),
+    ).not.toBeInTheDocument();
     expect(screen.getByTestId("uptime-detail")).toBeInTheDocument();
   });
 
@@ -262,19 +269,25 @@ describe("UptimeDetail", () => {
     expect(screen.getByTestId("uptime-range-24h")).toBeInTheDocument();
     expect(screen.getByTestId("uptime-range-7d")).toBeInTheDocument();
     await waitFor(() =>
-      expect(screen.getByTestId("uptime-detail-kpi")).toHaveTextContent("99.12%"),
+      expect(screen.getByTestId("uptime-detail-kpi")).toHaveTextContent(
+        "99.12%",
+      ),
     );
     const bar = screen.getByTestId("uptime-availability-bar");
     expect(bar).toBeInTheDocument();
     expect(bar).toHaveAttribute("aria-hidden");
     expect(bar).not.toHaveAttribute("role");
     expect(bar.querySelector('[data-state="down"]')).toBeTruthy();
-    expect(screen.getAllByTestId("uptime-outage-row").length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByTestId("uptime-outage-row").length,
+    ).toBeGreaterThanOrEqual(1);
     expect(screen.getByTestId("uptime-history-panel")).toBeInTheDocument();
     expect(
       screen.getAllByTestId("uptime-history-row").length,
     ).toBeGreaterThanOrEqual(1);
-    expect(screen.queryByTestId("uptime-sample-pagination")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("uptime-sample-pagination"),
+    ).not.toBeInTheDocument();
   });
 
   it("resets sample page when the range chip changes", async () => {
@@ -292,7 +305,9 @@ describe("UptimeDetail", () => {
     });
     renderDetail();
     await waitFor(() =>
-      expect(screen.getByTestId("uptime-sample-pagination")).toBeInTheDocument(),
+      expect(
+        screen.getByTestId("uptime-sample-pagination"),
+      ).toBeInTheDocument(),
     );
     await user.click(screen.getByTestId("uptime-range-6h"));
     await waitFor(() => {
@@ -340,9 +355,9 @@ describe("UptimeDetail", () => {
   it("hides the outage pager when outages fit on one page", async () => {
     renderDetail();
     await waitFor(() =>
-      expect(screen.getAllByTestId("uptime-outage-row").length).toBeGreaterThanOrEqual(
-        1,
-      ),
+      expect(
+        screen.getAllByTestId("uptime-outage-row").length,
+      ).toBeGreaterThanOrEqual(1),
     );
     expect(
       screen.queryByTestId("uptime-outage-pagination"),
@@ -642,7 +657,9 @@ describe("UptimeDetail", () => {
     await waitFor(() =>
       expect(mockEvents.mock.calls.length).toBeGreaterThan(eventsBefore),
     );
-    const last = mockEvents.mock.calls[mockEvents.mock.calls.length - 1]?.[1] as {
+    const last = mockEvents.mock.calls[
+      mockEvents.mock.calls.length - 1
+    ]?.[1] as {
       from: string;
       until: string;
       limit: number;
@@ -718,7 +735,9 @@ describe("UptimeDetail", () => {
     );
     expect(mockStats.mock.calls.slice(statsBefore)).toHaveLength(0);
     expect(mockSamples.mock.calls.slice(samplesBefore)).toHaveLength(0);
-    expect(screen.queryByTestId("uptime-sample-pagination")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("uptime-sample-pagination"),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByTestId("uptime-outage-range-error"),
     ).not.toBeInTheDocument();
@@ -853,9 +872,9 @@ describe("UptimeDetail", () => {
         .querySelector('[aria-label="Next page"]') as HTMLElement,
     );
     await waitFor(() =>
-      expect(
-        screen.getByTestId("uptime-outage-pagination"),
-      ).toHaveTextContent("2/3"),
+      expect(screen.getByTestId("uptime-outage-pagination")).toHaveTextContent(
+        "2/3",
+      ),
     );
     const pairAt = new Date(Date.now() - 3 * 60 * 60 * 1000);
     const pad = (n: number) => String(n).padStart(2, "0");
@@ -921,7 +940,7 @@ describe("UptimeDetail", () => {
     );
     expect(
       screen.getByTestId("uptime-range-filters").firstElementChild?.className,
-    ).toMatch(/bg-sky-500/);
+    ).toMatch(/bg-sky-600/);
     expect(
       screen.getByTestId("uptime-timeline-shell").firstElementChild?.className,
     ).toMatch(/bg-primary/);

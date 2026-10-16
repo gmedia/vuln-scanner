@@ -207,3 +207,32 @@ describe("e2e specs do not select by palette class", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe("solid rails clear 3:1 on both canvases", () => {
+  const SOURCES = import.meta.glob("../**/*.{ts,tsx}", {
+    query: "?raw",
+    import: "default",
+    eager: true,
+  }) as Record<string, string>;
+
+  // Measured on the light canvas: these read 1.83-2.77:1, under the 3:1 a
+  // non-text rail needs. Washes (`/15`, `/[0.04]`) are excluded on purpose.
+  const UNDER_THRESHOLD =
+    /(?<!dark:)bg-(?:amber|orange|sky)-500(?![0-9/])|(?<!dark:)bg-yellow-500(?![0-9/])/;
+
+  it("never uses a rail shade that misses 3:1 in light", () => {
+    const offenders: string[] = [];
+    for (const [path, contents] of Object.entries(SOURCES)) {
+      if (path.includes(".test.") || path.endsWith("lib/toneColors.ts"))
+        continue;
+      for (const [index, line] of contents.split("\n").entries()) {
+        if (UNDER_THRESHOLD.test(line)) {
+          offenders.push(
+            `${path.replace("../", "")}:${index + 1}: ${line.trim()}`,
+          );
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+});

@@ -261,15 +261,21 @@ describe("AdminHpp", () => {
     render(<AdminHpp />);
     expect(screen.getByTestId("hpp-guide")).toBeInTheDocument();
     expect(
-      screen.queryByText("Enter the real per-unit cost (COGS) in the Unit rates card, then Save each key."),
+      screen.queryByText(
+        "Enter the real per-unit cost (COGS) in the Unit rates card, then Save each key.",
+      ),
     ).toBeNull();
     await user.click(screen.getByRole("button", { name: "Steps" }));
     expect(
-      await screen.findByText("Enter the real per-unit cost (COGS) in the Unit rates card, then Save each key."),
+      await screen.findByText(
+        "Enter the real per-unit cost (COGS) in the Unit rates card, then Save each key.",
+      ),
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Limits" }));
     expect(
-      await screen.findByText("The report is a cost and margin estimate, not invoice profit."),
+      await screen.findByText(
+        "The report is a cost and margin estimate, not invoice profit.",
+      ),
     ).toBeInTheDocument();
   });
 
@@ -302,17 +308,22 @@ describe("AdminHpp", () => {
       }
       return { data: report, isLoading: false } as never;
     });
-    vi.mocked(useMutation).mockImplementation((opts) => ({
-      mutate: (id: string) =>
-        void (opts.mutationFn as (id: string) => Promise<unknown>)(id),
-    }) as never);
+    vi.mocked(useMutation).mockImplementation(
+      (opts) =>
+        ({
+          mutate: (id: string) =>
+            void (opts.mutationFn as (id: string) => Promise<unknown>)(id),
+        }) as never,
+    );
 
     render(<AdminHpp />);
     await user.click(screen.getByLabelText("Delete line"));
     expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
     expect(adminApi.deleteHppCost).not.toHaveBeenCalled();
 
-    await user.click(screen.getByTestId(`hpp-cost-delete-confirm-${costLine.id}`));
+    await user.click(
+      screen.getByTestId(`hpp-cost-delete-confirm-${costLine.id}`),
+    );
     expect(adminApi.deleteHppCost).toHaveBeenCalledWith(costLine.id);
   });
 
@@ -403,7 +414,9 @@ describe("AdminHpp", () => {
     expect(screen.getByText(/290.000/)).toBeInTheDocument();
     expect(screen.getByText(/\(97%\)/)).toBeInTheDocument();
     expect(
-      screen.getByText("Host COGS capped at included cadence (1 scans vs 3 recorded)."),
+      screen.getByText(
+        "Host COGS capped at included cadence (1 scans vs 3 recorded).",
+      ),
     ).toBeInTheDocument();
     expect(screen.getByText("Cost / unit (IDR)")).toBeInTheDocument();
     expect(
@@ -580,13 +593,13 @@ describe("AdminHpp", () => {
       screen.getByTestId("hpp-rates-card").querySelector(".bg-primary"),
     ).toBeTruthy();
     expect(
-      screen.getByTestId("hpp-overhead-card").querySelector(".bg-amber-500"),
+      screen.getByTestId("hpp-overhead-card").querySelector(".bg-amber-600"),
     ).toBeTruthy();
     expect(
-      screen.getByTestId("hpp-costs-card").querySelector(".bg-amber-500"),
+      screen.getByTestId("hpp-costs-card").querySelector(".bg-amber-600"),
     ).toBeTruthy();
     expect(
-      screen.getByTestId("hpp-report-filters").querySelector(".bg-sky-500"),
+      screen.getByTestId("hpp-report-filters").querySelector(".bg-sky-600"),
     ).toBeTruthy();
     expect(
       screen.getByTestId("hpp-report-card").querySelector(".bg-primary"),
@@ -690,7 +703,7 @@ describe("AdminHpp", () => {
     });
     render(<AdminHpp />);
     expect(
-      screen.getByTestId("hpp-report-card").querySelector(".bg-amber-500"),
+      screen.getByTestId("hpp-report-card").querySelector(".bg-amber-600"),
     ).toBeTruthy();
   });
 });

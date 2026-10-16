@@ -15,7 +15,7 @@ export const TAG_COLOR_DOT: Record<TagNamedColor, string> = {
   gray: "bg-muted-foreground",
   green: "bg-primary",
   blue: "bg-blue-500",
-  amber: "bg-yellow-500",
+  amber: "bg-yellow-700",
   red: "bg-red-600",
   violet: "bg-violet-500",
 };

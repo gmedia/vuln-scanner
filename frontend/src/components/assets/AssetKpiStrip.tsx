@@ -28,7 +28,9 @@ function KpiTile({
       <p className="pl-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
-      <div className={`mt-1 flex flex-wrap items-center gap-2 pl-2 ${valueClass}`}>
+      <div
+        className={`mt-1 flex flex-wrap items-center gap-2 pl-2 ${valueClass}`}
+      >
         {value}
       </div>
       {extra ? <div className="mt-2 pl-2">{extra}</div> : null}
@@ -90,7 +92,7 @@ export function AssetKpiStrip({
       <KpiTile
         label={t("kpiDomains")}
         value={String(domains)}
-        railClass={domains > 0 ? "bg-sky-500" : "bg-border"}
+        railClass={domains > 0 ? "bg-sky-600" : "bg-border"}
       />
       <KpiTile
         label={t("kpiIps")}

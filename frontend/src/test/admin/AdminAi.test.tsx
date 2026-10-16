@@ -7,7 +7,8 @@ import AdminAi from "@/pages/admin/AdminAi";
 import * as adminApi from "@/api/admin";
 
 vi.mock("@/api/admin", async () => {
-  const actual = await vi.importActual<typeof import("@/api/admin")>("@/api/admin");
+  const actual =
+    await vi.importActual<typeof import("@/api/admin")>("@/api/admin");
   return {
     ...actual,
     listAiProviders: vi.fn(),
@@ -43,7 +44,10 @@ describe("AdminAi", () => {
   });
 
   it("renders heading and empty providers", async () => {
-    vi.mocked(adminApi.listAiProviders).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [],
+      total: 0,
+    });
     vi.mocked(adminApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
     vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
     renderPage();
@@ -113,7 +117,9 @@ describe("AdminAi", () => {
       total: 1,
     });
     renderPage();
-    expect(await screen.findByTestId("admin-ai-provider-card-p1")).toBeInTheDocument();
+    expect(
+      await screen.findByTestId("admin-ai-provider-card-p1"),
+    ).toBeInTheDocument();
     expect(screen.getAllByText("OpenRouter").length).toBeGreaterThan(0);
     expect(screen.getByTestId("admin-ai-providers-mobile")).toHaveClass(
       "space-y-2",
@@ -130,7 +136,9 @@ describe("AdminAi", () => {
     expect(
       await screen.findByTestId("admin-ai-provider-edit-p1"),
     ).toBeInTheDocument();
-    expect(screen.getByTestId("admin-ai-provider-delete-p1")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("admin-ai-provider-delete-p1"),
+    ).toBeInTheDocument();
     await userEvent.keyboard("{Escape}");
     await userEvent.click(screen.getByRole("tab", { name: "Models" }));
     expect(await screen.findByTestId("admin-ai-models-mobile")).toHaveClass(
@@ -139,10 +147,16 @@ describe("AdminAi", () => {
     );
     expect(screen.getByTestId("admin-ai-model-card-m1")).toBeInTheDocument();
     expect(
-      screen.getByRole("columnheader", { name: "Price IDR / 1K in", hidden: true }),
+      screen.getByRole("columnheader", {
+        name: "Price IDR / 1K in",
+        hidden: true,
+      }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("columnheader", { name: "Price IDR / 1K out", hidden: true }),
+      screen.getByRole("columnheader", {
+        name: "Price IDR / 1K out",
+        hidden: true,
+      }),
     ).toBeInTheDocument();
     expect(screen.getAllByText("Rp 1").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Rp 2").length).toBeGreaterThan(0);
@@ -150,7 +164,10 @@ describe("AdminAi", () => {
 
   it("asks before deleting an AI model", async () => {
     const user = userEvent.setup();
-    vi.mocked(adminApi.listAiProviders).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [],
+      total: 0,
+    });
     vi.mocked(adminApi.listAiModels).mockResolvedValue({
       items: [
         {
@@ -216,7 +233,10 @@ describe("AdminAi", () => {
   });
 
   it("uses i18n labels for usage source and billed columns", async () => {
-    vi.mocked(adminApi.listAiProviders).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [],
+      total: 0,
+    });
     vi.mocked(adminApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
     vi.mocked(adminApi.listAiUsage).mockResolvedValue({
       items: [
@@ -250,8 +270,12 @@ describe("AdminAi", () => {
     expect(
       screen.getByRole("columnheader", { name: "Billed (IDR)", hidden: true }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("columnheader", { name: "source" })).not.toBeInTheDocument();
-    expect(screen.queryByTestId("admin-ai-usage-pagination")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("columnheader", { name: "source" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("admin-ai-usage-pagination"),
+    ).not.toBeInTheDocument();
   });
 
   it("pages usage when the API reports more than one page", async () => {
@@ -269,7 +293,10 @@ describe("AdminAi", () => {
       request_payload: null,
       response_payload: null,
     });
-    vi.mocked(adminApi.listAiProviders).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [],
+      total: 0,
+    });
     vi.mocked(adminApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
     vi.mocked(adminApi.listAiUsage).mockImplementation(async (params) => {
       const page = params?.page ?? 1;
@@ -280,26 +307,37 @@ describe("AdminAi", () => {
     });
     renderPage();
     await userEvent.click(await screen.findByRole("tab", { name: "Usage" }));
-    expect(await screen.findByTestId("admin-ai-usage-pagination")).toBeInTheDocument();
+    expect(
+      await screen.findByTestId("admin-ai-usage-pagination"),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("admin-ai-usage-card-u1")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: /next page/i }));
-    expect(await screen.findByTestId("admin-ai-usage-card-u21")).toBeInTheDocument();
+    expect(
+      await screen.findByTestId("admin-ai-usage-card-u21"),
+    ).toBeInTheDocument();
     expect(adminApi.listAiUsage).toHaveBeenCalledWith({ page: 2, limit: 20 });
   });
 
   it("shows feature-off on 404", async () => {
-    vi.mocked(adminApi.listAiProviders).mockRejectedValue({ response: { status: 404 } });
+    vi.mocked(adminApi.listAiProviders).mockRejectedValue({
+      response: { status: 404 },
+    });
     renderPage();
     expect(
-      await screen.findByText("The AI Gateway module is not enabled in this environment."),
+      await screen.findByText(
+        "The AI Gateway module is not enabled in this environment.",
+      ),
     ).toBeInTheDocument();
     expect(
-      screen.getByTestId("admin-ai-feature-off").querySelector(".bg-amber-500"),
+      screen.getByTestId("admin-ai-feature-off").querySelector(".bg-amber-600"),
     ).toBeTruthy();
   });
 
   it("rails the usage shell primary", async () => {
-    vi.mocked(adminApi.listAiProviders).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [],
+      total: 0,
+    });
     vi.mocked(adminApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
     vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
     renderPage();

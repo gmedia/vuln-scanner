@@ -10,15 +10,12 @@ export type SiemSeverity = (typeof SEVERITY)[keyof typeof SEVERITY];
 export type IndexerHealth = "live" | "degraded" | "down";
 
 export type SeverityLabelKey =
-  | "sevCritical"
-  | "sevHigh"
-  | "sevMedium"
-  | "sevLow";
+  "sevCritical" | "sevHigh" | "sevMedium" | "sevLow";
 
 const RAIL = {
   critical: "bg-destructive",
-  high: "bg-orange-500",
-  medium: "bg-yellow-500",
+  high: "bg-orange-600",
+  medium: "bg-yellow-700",
   low: "bg-blue-500",
 } as const satisfies Record<SiemSeverity, string>;
 

@@ -361,7 +361,9 @@ describe("ScanDetail", () => {
       mockUseScanDetailReturn({ data: baseScan as any });
       renderPage();
       expect(screen.getAllByText("3").length).toBeGreaterThanOrEqual(1);
-      expect(screen.getByRole("tab", { name: /Findings/ })).toHaveTextContent("3");
+      expect(screen.getByRole("tab", { name: /Findings/ })).toHaveTextContent(
+        "3",
+      );
     });
 
     it("renders duration when completed", () => {
@@ -801,7 +803,9 @@ describe("ScanDetail", () => {
       renderPage();
       const strip = screen.getByTestId("scan-kpi-strip");
       expect(
-        screen.getByTestId("scan-kpi-findings").querySelector(".bg-destructive"),
+        screen
+          .getByTestId("scan-kpi-findings")
+          .querySelector(".bg-destructive"),
       ).toBeTruthy();
       expect(
         screen.getByTestId("scan-kpi-duration").querySelector(".bg-primary"),
@@ -820,7 +824,7 @@ describe("ScanDetail", () => {
       });
       renderPage();
       const duration = screen.getByTestId("scan-kpi-duration");
-      expect(duration.querySelector(".bg-sky-500")).toBeTruthy();
+      expect(duration.querySelector(".bg-sky-600")).toBeTruthy();
       expect(duration.querySelector(".animate-ping")).toBeTruthy();
     });
 
