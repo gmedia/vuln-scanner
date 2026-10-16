@@ -342,7 +342,7 @@
   "skuGuideStep3": "Klik Simpan untuk meninjau perubahan; data belum ditulis pada tahap ini.",
   "skuGuideStep4": "Konfirmasi di dialog setelah memeriksa harga lama dan baru serta perubahan status Invoicable.",
   "skuGuidePricingTitle": "Harga jual dan biaya",
-  "skuGuidePricingBody": "Harga list adalah pendapatan dari penjualan SKU; COGS dikelola di /admin/hpp. Perubahan yang disimpan hanya berlaku untuk invoice berikutnya. Invoice yang sudah terbit tetap memakai nominal saat dibuat.",
+  "skuGuidePricingBody": "Harga list adalah pendapatan dari penjualan SKU; COGS dikelola di halaman HPP. Perubahan yang disimpan hanya berlaku untuk invoice berikutnya. Invoice yang sudah terbit tetap memakai nominal saat dibuat.",
   "skuGuideInvoicableTitle": "Kelayakan invoice",
   "skuGuideInvoicableBody": "Invoicable menentukan apakah SKU dapat ditambahkan sebagai baris pada invoice yang dibuat manual. Opsi ini tidak menetapkan harga, membuat invoice, mengubah harga invoice yang sudah terbit, atau mengubah kapasitas maupun batas seat.",
   "skuGuideLimitsTitle": "Batasan",

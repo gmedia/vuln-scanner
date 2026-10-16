@@ -342,7 +342,7 @@
   "skuGuideStep3": "Click Save to review your edits; no change is written yet.",
   "skuGuideStep4": "Confirm in the dialog after checking the old and new price and any Invoicable change.",
   "skuGuidePricingTitle": "Price versus cost",
-  "skuGuidePricingBody": "The list price is revenue from selling the SKU; COGS is managed on /admin/hpp. Saving changes future invoices only. An issued invoice retains the amount recorded when it was created.",
+  "skuGuidePricingBody": "The list price is revenue from selling the SKU; COGS is managed on the HPP page. Saving changes future invoices only. An issued invoice retains the amount recorded when it was created.",
   "skuGuideInvoicableTitle": "Invoice eligibility",
   "skuGuideInvoicableBody": "Invoicable controls whether this SKU can be added as a line on a manually created invoice. It does not set the price, create an invoice, reprice issued invoices, or change capacity or seat caps.",
   "skuGuideLimitsTitle": "Limits",
