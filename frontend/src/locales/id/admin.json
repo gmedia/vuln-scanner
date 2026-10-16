@@ -243,6 +243,7 @@
   "aiModelDeleteConfirmBody": "Model katalog dihapus. Riwayat pemakaian tetap disimpan.",
   "aiProviderDeleteConfirmTitle": "Hapus provider?",
   "aiProviderDeleteConfirmBody": "Provider dan kredensial yang tersimpan dihapus.",
+  "aiProviderDeleteFail": "Gagal menghapus provider.",
   "aiSelectProvider": "Pilih provider",
   "aiSelectModel": "Pilih model",
   "aiRequest": "Request",
