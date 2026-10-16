@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Globe, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -9,9 +10,12 @@ import { useScanError } from "@/hooks/useScanError";
 import { useScanStore } from "@/store/scanStore";
 import { ScanError } from "./ScanError";
 
+type ScanErrorState = { key: string; message: string } | null;
+
 function DomainScanForm() {
+  const { t } = useTranslation("scan");
   const [domain, setDomain] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState<ScanErrorState>(null);
   const navigate = useNavigate();
   const startDomainScan = useStartDomainScan();
   const handleScanError = useScanError();
@@ -21,14 +25,14 @@ function DomainScanForm() {
     /^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/.test(d);
 
   const handleSubmit = async () => {
-    setError("");
+    setError(null);
     const trimmed = domain.trim();
     if (!trimmed) {
-      setError("Domain name is required");
+      setError({ key: "errDomainRequired", message: t("errDomainRequired") });
       return;
     }
     if (!isValidDomain(trimmed)) {
-      setError("Invalid domain format (e.g. example.com)");
+      setError({ key: "errDomainFormat", message: t("errDomainFormat") });
       return;
     }
 
@@ -40,7 +44,7 @@ function DomainScanForm() {
           navigate(`/scan/${data.id}`);
         },
         onError: (err) => {
-          setError(handleScanError(err));
+          setError({ key: "server", message: handleScanError(err) });
         },
       },
     );
@@ -52,7 +56,7 @@ function DomainScanForm() {
     <div className="space-y-4">
       <div>
         <Label htmlFor="domain-scan-target" className="mb-1.5 block text-foreground/70">
-          Target domain
+          {t("domainTargetLabel")}
         </Label>
         <Input
           id="domain-scan-target"
@@ -61,14 +65,14 @@ function DomainScanForm() {
           value={domain}
           onChange={(e) => {
             setDomain(e.target.value);
-            setError("");
+            setError(null);
           }}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
           disabled={startDomainScan.isPending}
           className="border-border bg-background font-mono placeholder:text-foreground/50"
         />
         <p className="mt-1 text-xs text-muted-foreground">
-          e.g. example.com, sub.example.com
+          {t("domainHint")}
         </p>
         <Button
           type="button"
@@ -78,17 +82,18 @@ function DomainScanForm() {
           className="mt-1 h-auto min-h-0 px-0"
           onClick={() => {
             setDomain("example.com");
-            setError("");
+            setError(null);
           }}
           disabled={startDomainScan.isPending}
         >
-          Try example.com
+          {t("tryExampleDomain")}
         </Button>
       </div>
 
-      {error && <ScanError message={error} />}
+      {error && <ScanError message={error.message} errorKey={error.key} />}
 
       <Button
+        data-testid="domain-scan-submit"
         onClick={handleSubmit}
         disabled={submitDisabled}
         className="w-full sm:w-auto"
@@ -96,12 +101,12 @@ function DomainScanForm() {
         {startDomainScan.isPending ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Initializing scan...
+            {t("initializingScan")}
           </>
         ) : (
           <>
             <Globe className="mr-2 h-4 w-4" />
-            Start domain scan
+            {t("startDomainScan")}
           </>
         )}
       </Button>

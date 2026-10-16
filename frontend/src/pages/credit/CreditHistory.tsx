@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Coins, History, Receipt } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
@@ -119,7 +120,7 @@ function StatTile({
 
 function EmptyIsland({ title, hint }: { title: string; hint: string }) {
   return (
-    <div className="m-4 flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
+    <div data-testid="credit-empty" className="m-4 flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
       <History className="h-8 w-8 text-muted-foreground" aria-hidden />
       <p className="text-sm font-medium text-foreground">{title}</p>
       <p className="max-w-md text-xs text-muted-foreground">{hint}</p>
@@ -166,7 +167,8 @@ function AmountFigure({
 }
 
 function DescriptionCell({ item }: { item: CreditLogItem }) {
-  const text = item.description || (item.reference_id ? "View scan" : "—");
+  const { t } = useTranslation("credit");
+  const text = item.description || (item.reference_id ? t("viewScan") : "—");
   if (item.reference_id) {
     return (
       <Link
@@ -189,6 +191,7 @@ function DescriptionCell({ item }: { item: CreditLogItem }) {
 }
 
 function LedgerMobileCard({ item }: { item: CreditLogItem }) {
+  const { t } = useTranslation("credit");
   const stamp = formatLedgerStamp(item.created_at);
   return (
     <article className="relative rounded-lg border border-border bg-card p-3 pl-4">
@@ -209,7 +212,7 @@ function LedgerMobileCard({ item }: { item: CreditLogItem }) {
             to={`/scan/${item.reference_id}`}
             className="text-primary-text underline-offset-2 hover:underline"
           >
-            {item.description || "View scan"}
+            {item.description || t("viewScan")}
           </Link>
         ) : (
           item.description || "—"
@@ -274,6 +277,7 @@ function TransactionRow({ item }: { item: CreditLogItem }) {
 }
 
 function CreditHistory() {
+  const { t } = useTranslation("credit");
   const [page, setPage] = useState(1);
   const [typeFilter, setTypeFilter] = useState<FilterType>("all");
   const [dateFrom, setDateFrom] = useState("");
@@ -365,17 +369,11 @@ function CreditHistory() {
     );
   } else if (!data || data.items.length === 0) {
     listBody = (
-      <EmptyIsland
-        title="No transactions yet"
-        hint="Credit adjustments will appear here."
-      />
+      <EmptyIsland title={t("emptyTitle")} hint={t("emptyHint")} />
     );
   } else if (filteredItems.length === 0) {
     listBody = (
-      <EmptyIsland
-        title="No matching transactions"
-        hint="Try adjusting filters on this page."
-      />
+      <EmptyIsland title={t("noMatchTitle")} hint={t("noMatchHint")} />
     );
   } else {
     listBody = (
@@ -389,17 +387,17 @@ function CreditHistory() {
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[22%] pl-4 text-[10px] uppercase tracking-wider">
-                  Date
+                <TableHead data-testid="credit-col-date" className="w-[22%] pl-4 text-[10px] uppercase tracking-wider">
+                  {t("colDate")}
                 </TableHead>
-                <TableHead className="w-[14%] text-[10px] uppercase tracking-wider">
-                  Type
+                <TableHead data-testid="credit-col-type" className="w-[14%] text-[10px] uppercase tracking-wider">
+                  {t("colType")}
                 </TableHead>
-                <TableHead className="w-[14%] text-right text-[10px] uppercase tracking-wider">
-                  Amount
+                <TableHead data-testid="credit-col-amount" className="w-[14%] text-right text-[10px] uppercase tracking-wider">
+                  {t("colAmount")}
                 </TableHead>
-                <TableHead className="w-[50%] text-[10px] uppercase tracking-wider">
-                  Description
+                <TableHead data-testid="credit-col-description" className="w-[50%] text-[10px] uppercase tracking-wider">
+                  {t("colDescription")}
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -417,8 +415,8 @@ function CreditHistory() {
   return (
     <div className="w-full space-y-6">
       <PageHeader
-        title="Credit history"
-        description="Personal scan credits — top-ups, charges, and refunds."
+        title={t("title")}
+        description={t("description")}
       />
 
       <OpsShell railClass="bg-primary" testid="credit-history-identity">
@@ -432,13 +430,14 @@ function CreditHistory() {
             </span>
             <div className="min-w-0 space-y-1">
               <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                Wallet
+                 {t("wallet")}
+
               </p>
               <p className="font-mono text-3xl font-semibold tracking-tight tabular-nums text-foreground sm:text-4xl">
                 {credits.toLocaleString()}
               </p>
               <p className="text-xs text-muted-foreground">
-                scan credits on this account
+                {t("onAccount")}
                 {hasServerData ? (
                   <>
                     <span className="text-border"> · </span>
@@ -448,8 +447,9 @@ function CreditHistory() {
                         periodNet >= 0 ? TONE_TEXT.green : TONE_TEXT.red,
                       )}
                     >
-                      {periodNet >= 0 ? "+" : ""}
-                      {periodNet.toLocaleString()} net on this page
+                      {t("netOnPage", {
+                        amount: `${periodNet >= 0 ? "+" : ""}${periodNet.toLocaleString()}`,
+                      })}
                     </span>
                   </>
                 ) : null}
@@ -458,10 +458,10 @@ function CreditHistory() {
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Button asChild variant="outline" size="sm">
-              <Link to="/profile">Profile</Link>
+              <Link to="/profile">{t("profile")}</Link>
             </Button>
             <Button asChild variant="outline" size="sm">
-              <Link to="/settings/workspace">Workspace</Link>
+              <Link to="/settings/workspace">{t("workspace")}</Link>
             </Button>
           </div>
         </div>
@@ -470,18 +470,18 @@ function CreditHistory() {
           className="grid grid-cols-1 gap-3 border-t border-border px-4 py-4 sm:grid-cols-3"
         >
           <StatTile
-            label="Current balance"
+            label={t("currentBalance")}
             value={credits.toLocaleString()}
             emphasize
           />
           <StatTile
-            label="Period credits"
+            label={t("periodCredits")}
             value={`+${periodCredits.toLocaleString()}`}
             valueClassName={TONE_TEXT.green}
             railClass="bg-primary"
           />
           <StatTile
-            label="Period debits"
+            label={t("periodDebits")}
             value={`-${periodDebits.toLocaleString()}`}
             valueClassName={TONE_TEXT.red}
             railClass="bg-destructive"
@@ -499,7 +499,7 @@ function CreditHistory() {
             {() => (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="flex min-w-0 flex-col gap-1.5">
-                  <Label htmlFor="credit-type-filter">Type</Label>
+                  <Label htmlFor="credit-type-filter">{t("typeLabel")}</Label>
                   <Select
                     value={typeFilter}
                     onValueChange={(value) => {
@@ -509,21 +509,22 @@ function CreditHistory() {
                   >
                     <SelectTrigger
                       id="credit-type-filter"
-                      aria-label="Type"
+                      data-testid="credit-type-select"
+                      aria-label={t("typeLabel")}
                       className="h-10 min-h-10"
                     >
-                      <SelectValue placeholder="All" />
+                      <SelectValue placeholder={t("typeAllPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All types</SelectItem>
-                      <SelectItem value="credit">Credit</SelectItem>
-                      <SelectItem value="deduct">Deduct</SelectItem>
-                      <SelectItem value="refund">Refund</SelectItem>
+                      <SelectItem value="all">{t("allTypes")}</SelectItem>
+                      <SelectItem value="credit">{t("typeCredit")}</SelectItem>
+                      <SelectItem value="deduct">{t("typeDeduct")}</SelectItem>
+                      <SelectItem value="refund">{t("typeRefund")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="flex min-w-0 flex-col gap-1.5">
-                  <Label htmlFor="credit-date-from">From</Label>
+                  <Label htmlFor="credit-date-from">{t("from")}</Label>
                   <DatePicker
                     id="credit-date-from"
                     value={dateFrom}
@@ -531,12 +532,12 @@ function CreditHistory() {
                       setDateFrom(value);
                       resetPage();
                     }}
-                    placeholder="From date"
-                    aria-label="From"
+                    placeholder={t("fromDatePlaceholder")}
+                    aria-label={t("from")}
                   />
                 </div>
                 <div className="flex min-w-0 flex-col gap-1.5">
-                  <Label htmlFor="credit-date-to">To</Label>
+                  <Label htmlFor="credit-date-to">{t("to")}</Label>
                   <DatePicker
                     id="credit-date-to"
                     value={dateTo}
@@ -544,16 +545,16 @@ function CreditHistory() {
                       setDateTo(value);
                       resetPage();
                     }}
-                    placeholder="To date"
-                    aria-label="To"
+                    placeholder={t("toDatePlaceholder")}
+                    aria-label={t("to")}
                   />
                 </div>
                 <div className="flex min-w-0 flex-col gap-1.5">
-                  <Label htmlFor="credit-search">Search</Label>
+                  <Label htmlFor="credit-search">{t("search")}</Label>
                   <Input
                     id="credit-search"
                     type="text"
-                    placeholder="Search description"
+                    placeholder={t("searchPlaceholder")}
                     value={search}
                     onChange={(e) => {
                       setSearch(e.target.value);
@@ -564,9 +565,12 @@ function CreditHistory() {
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-2 sm:col-span-2 lg:col-span-4">
                   <p className="text-xs text-muted-foreground">
-                    Filters apply to loaded rows on this page
+                    {t("filtersNote")}
                     {hasServerData && filtersActive
-                      ? ` · Showing ${filteredItems.length} of ${data?.items.length ?? 0}`
+                      ? t("showingCount", {
+                          shown: filteredItems.length,
+                          total: data?.items.length ?? 0,
+                        })
                       : null}
                   </p>
                   {filtersActive ? (
@@ -575,9 +579,10 @@ function CreditHistory() {
                       variant="ghost"
                       size="sm"
                       className="h-8 shrink-0 text-xs"
+                      data-testid="credit-clear-filters"
                       onClick={clearFilters}
                     >
-                      Clear filters
+                      {t("clearFilters")}
                     </Button>
                   ) : null}
                 </div>
@@ -596,11 +601,15 @@ function CreditHistory() {
       >
         <OpsShellHead
           icon={Receipt}
-          title="Transactions"
+          title={t("transactions")}
           aside={
             data && data.total > 0 ? (
-              <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
-                {data.total} total
+              <span
+                data-testid="credit-total-badge"
+                data-count={data.total}
+                className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground"
+              >
+                {t("totalCount", { count: data.total })}
               </span>
             ) : null
           }
@@ -618,8 +627,13 @@ function CreditHistory() {
                   />
                 </PaginationItem>
                 <PaginationItem>
-                  <span className="px-2 font-mono text-xs tabular-nums text-muted-foreground">
-                    Page {page} of {totalPages}
+                  <span
+                    data-testid="credit-pagination-status"
+                    data-page={page}
+                    data-total={totalPages}
+                    className="px-2 font-mono text-xs tabular-nums text-muted-foreground"
+                  >
+                    {t("pageOf", { page, total: totalPages })}
                   </span>
                 </PaginationItem>
                 <PaginationItem>

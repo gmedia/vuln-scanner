@@ -3,12 +3,14 @@ import { test, expect } from "./fixtures";
 test.describe("Credit History @shell", () => {
   test("page loads with Credit history heading", async ({ page }) => {
     await page.goto("/credit-history");
-    await expect(page.locator("h2:has-text('Credit history')")).toBeVisible();
+    await expect(page.locator('[data-slot="page-header"] h2')).toBeVisible();
   });
 
-  test("Transactions card title is visible", async ({ page }) => {
+  test("ledger card title is visible", async ({ page }) => {
     await page.goto("/credit-history");
-    await expect(page.locator("text=Transactions")).toBeVisible();
+    await expect(
+      page.getByTestId("credit-history-list-shell").locator("h3"),
+    ).toBeVisible();
   });
 
   test("shows loading skeletons initially then resolves", async ({ page }) => {
@@ -30,7 +32,7 @@ test.describe("Credit History @shell", () => {
       })
       .catch(() => {});
 
-    const emptyText = page.locator("text=No transactions yet");
+    const emptyText = page.getByTestId("credit-empty");
     const table = page.locator("table");
 
     const emptyVisible = await emptyText.isVisible().catch(() => false);
@@ -38,9 +40,7 @@ test.describe("Credit History @shell", () => {
 
     if (emptyVisible) {
       await expect(emptyText).toBeVisible();
-      await expect(
-        page.locator("text=Credit adjustments will appear here."),
-      ).toBeVisible();
+      await expect(emptyText).toContainText(/\S/);
     } else if (tableVisible) {
       await expect(table).toBeVisible();
     }
@@ -57,10 +57,10 @@ test.describe("Credit History @shell", () => {
 
     const table = page.locator("table");
     if (await table.isVisible().catch(() => false)) {
-      await expect(page.locator("th:has-text('Date')")).toBeVisible();
-      await expect(page.locator("th:has-text('Type')")).toBeVisible();
-      await expect(page.locator("th:has-text('Amount')")).toBeVisible();
-      await expect(page.locator("th:has-text('Description')")).toBeVisible();
+      await expect(page.getByTestId("credit-col-date")).toBeVisible();
+      await expect(page.getByTestId("credit-col-type")).toBeVisible();
+      await expect(page.getByTestId("credit-col-amount")).toBeVisible();
+      await expect(page.getByTestId("credit-col-description")).toBeVisible();
     }
   });
 
@@ -158,9 +158,10 @@ test.describe("Credit History @shell", () => {
       })
       .catch(() => {});
 
-    const pagination = page.locator("text=/Page \\d+ of \\d+/");
+    const pagination = page.getByTestId("credit-pagination-status");
     if (await pagination.isVisible().catch(() => false)) {
       await expect(pagination).toBeVisible();
+      await expect(pagination).toHaveAttribute("data-page", "1");
       await expect(
         page.getByRole("button", { name: "Previous page" }),
       ).toBeVisible();
@@ -181,8 +182,9 @@ test.describe("Credit History @shell", () => {
       })
       .catch(() => {});
 
-    const pagination = page.locator("text=/Page 1 of \\d+/");
+    const pagination = page.getByTestId("credit-pagination-status");
     if (await pagination.isVisible().catch(() => false)) {
+      await expect(pagination).toHaveAttribute("data-page", "1");
       const prevBtn = page.getByRole("button", { name: "Previous page" });
       await expect(prevBtn).toBeDisabled();
     }
@@ -199,18 +201,18 @@ test.describe("Credit History @shell", () => {
       })
       .catch(() => {});
 
-    const pagination = page.locator("text=/Page \\d+ of \\d+/");
+    const pagination = page.getByTestId("credit-pagination-status");
     if (await pagination.isVisible().catch(() => false)) {
-      const pageText = await pagination.textContent();
-      const match = pageText?.match(/Page (\d+) of (\d+)/);
-      if (match && parseInt(match[1]) < parseInt(match[2])) {
+      const currentPage = Number(await pagination.getAttribute("data-page"));
+      const totalPages = Number(await pagination.getAttribute("data-total"));
+      if (currentPage < totalPages) {
         const nextBtn = page.getByRole("button", { name: "Next page" });
-        await expect(nextBtn).not.toBeDisabled();
+        await expect(nextBtn).toBeEnabled();
       }
     }
   });
 
-  test("clicking next page updates pagination text", async ({ page }) => {
+  test("clicking next page updates pagination state", async ({ page }) => {
     await page.goto("/credit-history");
     await page
       .waitForSelector("[data-slot='skeleton']", {
@@ -219,14 +221,13 @@ test.describe("Credit History @shell", () => {
       })
       .catch(() => {});
 
-    const pagination = page.locator("text=/Page \\d+ of \\d+/");
+    const pagination = page.getByTestId("credit-pagination-status");
     if (await pagination.isVisible().catch(() => false)) {
-      const pageText = await pagination.textContent();
-      const match = pageText?.match(/Page (\d+) of (\d+)/);
-      if (match && parseInt(match[1]) < parseInt(match[2])) {
+      const currentPage = Number(await pagination.getAttribute("data-page"));
+      const totalPages = Number(await pagination.getAttribute("data-total"));
+      if (currentPage < totalPages) {
         await page.getByRole("button", { name: "Next page" }).click();
-        await page.waitForTimeout(1000);
-        await expect(page.locator("text=/Page 2 of \\d+/")).toBeVisible();
+        await expect(pagination).toHaveAttribute("data-page", "2");
       }
     }
   });
@@ -244,10 +245,9 @@ test.describe("Credit History @shell", () => {
 
     const table = page.locator("table");
     if (await table.isVisible().catch(() => false)) {
-      const totalBadge = page.locator("text=/\\d+ total/");
-      if (await totalBadge.isVisible().catch(() => false)) {
-        await expect(totalBadge).toBeVisible();
-      }
+      const totalBadge = page.getByTestId("credit-total-badge");
+      await expect(totalBadge).toBeVisible();
+      await expect(totalBadge).toHaveAttribute("data-count", /\d+/);
     }
   });
 

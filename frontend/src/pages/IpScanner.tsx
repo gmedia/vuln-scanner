@@ -1,5 +1,6 @@
 import { Crosshair, ListChecks, Loader } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import PageHeader from "@/components/layout/PageHeader";
 import IpScanForm from "@/components/scan/IpScanForm";
 import ScanProgress from "@/components/scan/ScanProgress";
@@ -13,13 +14,14 @@ import { useScanStore } from "@/store/scanStore";
 import { useScanDetail } from "@/hooks/useScan";
 
 const COVERAGE = [
-  "Open ports and service versions (nmap)",
-  "CVE lookup via OSV.dev",
-  "Severity classification of findings",
-  "Operating system fingerprinting when available",
+  "ipCoverage1",
+  "ipCoverage2",
+  "ipCoverage3",
+  "ipCoverage4",
 ];
 
 function IpScanner() {
+  const { t } = useTranslation("scan");
   const navigate = useNavigate();
   const activeJobId = useScanStore((s) => s.activeJobId);
   const { data: scanData } = useScanDetail(activeJobId);
@@ -35,10 +37,10 @@ function IpScanner() {
   return (
     <div className="grid w-full items-start gap-6 lg:grid-cols-2">
       <div className="space-y-6">
-        <PageHeader title="IP scanner" />
+        <PageHeader title={t("ipScannerTitle")} />
 
         <ScanShell railClass="bg-primary" testid="scan-target">
-          <ScanShellHead icon={Crosshair} title="Scan target" />
+          <ScanShellHead icon={Crosshair} title={t("scanTarget")} />
           <ScanShellBody>
             <IpScanForm />
           </ScanShellBody>
@@ -46,7 +48,7 @@ function IpScanner() {
 
         {isScanning && (
           <ScanShell railClass="bg-sky-600">
-            <ScanShellHead icon={Loader} title="Scan progress" />
+            <ScanShellHead icon={Loader} title={t("scanProgress")} />
             <ScanShellBody>
               <ScanProgress />
             </ScanShellBody>
@@ -63,11 +65,11 @@ function IpScanner() {
 
       {!isScanning && !hasResults && (
         <ScanShell railClass="bg-border">
-          <ScanShellHead icon={ListChecks} title="What this scan covers" />
+          <ScanShellHead icon={ListChecks} title={t("scanCoverage")} />
           <ScanShellBody testid="scan-coverage">
             <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
               {COVERAGE.map((item) => (
-                <li key={item}>{item}</li>
+                <li key={item}>{t(item)}</li>
               ))}
             </ul>
           </ScanShellBody>

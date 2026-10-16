@@ -9,26 +9,30 @@ test.describe("Mobile Scanner Error States @scan", () => {
       mimeType: "text/plain",
       buffer: Buffer.from("not an apk"),
     });
-    await expect(page.locator("text=/Invalid file type/i")).toBeVisible();
+    await expect(
+      page.locator(
+        '[data-testid="scan-error"][data-error-key="errMobileAndroid"]',
+      ),
+    ).toBeVisible();
   });
 
   test("shows error for wrong file extension on iOS", async ({ page }) => {
     await page.goto("/scan/mobile");
-    await page.locator("button:has-text('iOS (.ipa)')").click();
+    await page.getByTestId("platform-ios").click();
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles({
       name: "test.apk",
       mimeType: "application/octet-stream",
       buffer: Buffer.from("fake apk"),
     });
-    await expect(page.locator("text=/Expected .ipa for iOS/i")).toBeVisible();
+    await expect(
+      page.locator('[data-testid="scan-error"][data-error-key="errMobileIos"]'),
+    ).toBeVisible();
   });
 
   test("submit button disabled when no file selected", async ({ page }) => {
     await page.goto("/scan/mobile");
-    await expect(
-      page.locator('button:has-text("Start mobile scan")'),
-    ).toBeDisabled();
+    await expect(page.getByTestId("mobile-scan-submit")).toBeDisabled();
   });
 
   test("clears file when switching platforms", async ({ page }) => {
@@ -41,16 +45,17 @@ test.describe("Mobile Scanner Error States @scan", () => {
       mimeType: "application/octet-stream",
       buffer: Buffer.from("fake apk content"),
     });
-    await expect(page.locator("text=test_app.apk")).toBeVisible();
+    await expect(page.getByTestId("mobile-file-name")).toHaveText(
+      "test_app.apk",
+    );
 
     // Switch to iOS — file should be cleared
-    await page.locator("button:has-text('iOS (.ipa)')").click();
-    await expect(page.locator("text=Choose .ipa file")).toBeVisible();
+    await page.getByTestId("platform-ios").click();
+    await expect(page.getByTestId("mobile-choose-file")).toBeVisible();
+    await expect(page.getByTestId("mobile-file-name")).toHaveCount(0);
 
     // Submit button should be disabled again
-    await expect(
-      page.locator('button:has-text("Start mobile scan")'),
-    ).toBeDisabled();
+    await expect(page.getByTestId("mobile-scan-submit")).toBeDisabled();
   });
 
   test("shows error for APK without ZIP magic bytes", async ({ page }) => {
@@ -61,12 +66,10 @@ test.describe("Mobile Scanner Error States @scan", () => {
       mimeType: "application/octet-stream",
       buffer: Buffer.from("invalid apk without PK header"),
     });
-    await page.locator('button:has-text("Start mobile scan")').click();
+    await page.getByTestId("mobile-scan-submit").click();
 
-    // Backend rejects the invalid file (HTTP 400: "File must be a valid ZIP archive").
-    // Now exposed via onError callback using error.response?.data?.detail.
     await expect(
-      page.locator("text=/File must be a valid ZIP archive/i"),
+      page.locator('[data-testid="scan-error"][data-error-key="server"]'),
     ).toBeVisible({ timeout: 15_000 });
   });
 });
