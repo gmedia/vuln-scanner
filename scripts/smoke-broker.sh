@@ -4,7 +4,7 @@
 # Usage:
 #   ./scripts/smoke-broker.sh
 #   BASE_URL=https://vs.appmedia.id ./scripts/smoke-broker.sh
-#   ./scripts/smoke-broker.sh /home/ubuntu/vuln-scanner
+#   ./scripts/smoke-broker.sh /path/to/vuln-scanner
 #
 # On the deploy host, also PING redis via docker when COMPOSE project is up.
 

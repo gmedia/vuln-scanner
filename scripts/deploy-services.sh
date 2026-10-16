@@ -62,7 +62,10 @@ usage() {
   exit "${1:-0}"
 }
 
-DEPLOY_PATH="${DEPLOY_PATH:-/home/ubuntu/vuln-scanner}"
+# Repo root derived from this script's location (no host-specific default).
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+DEPLOY_PATH="${DEPLOY_PATH:-$REPO_ROOT}"
 SERVICES=()
 NO_CACHE=0
 SKIP_MIGRATE=0

@@ -8,7 +8,7 @@
 #
 # Usage (on the deploy host, from repo root):
 #   ./scripts/deploy-frontend.sh
-#   ./scripts/deploy-frontend.sh /home/ubuntu/vuln-scanner
+#   ./scripts/deploy-frontend.sh /path/to/vuln-scanner
 #
 # Prerequisites:
 #   - git on main (or desired SHA) already pulled
@@ -21,7 +21,10 @@
 
 set -euo pipefail
 
-DEPLOY_PATH="${1:-${DEPLOY_PATH:-/home/ubuntu/vuln-scanner}}"
+# Repo root derived from this script's location (no host-specific default).
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+DEPLOY_PATH="${1:-${DEPLOY_PATH:-$REPO_ROOT}}"
 cd "$DEPLOY_PATH"
 
 export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-vuln}"

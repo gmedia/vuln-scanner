@@ -91,5 +91,6 @@ Scale order later: **upsize tc4** → object storage → **second tc4** → spli
 |-----|------|
 | [`multi-host-ops.md`](multi-host-ops.md) | Networks, Guard lab, Host Protect/WAF lab |
 | [`deploy.md`](deploy.md) | Scripts, CI vs Alembic |
+| [`deploy-new-server.md`](deploy-new-server.md) | New server + new domain bring-up runbook |
 | [`docker-compose.prod.yml`](../docker-compose.prod.yml) | Service list |
 | [`AGENT_EXECUTION_GUIDE.md`](AGENT_EXECUTION_GUIDE.md) | Product priority (this file is **ops sizing**, not an epic) |

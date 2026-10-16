@@ -4,7 +4,7 @@
 
 ## OVERVIEW
 
-Deploy and lab helpers. Human ops: `docs/deploy.md`.
+Deploy and lab helpers. Human ops: `docs/deploy.md`. New server + new domain bring-up: `docs/deploy-new-server.md`.
 
 ## WHERE TO LOOK
 
@@ -17,6 +17,7 @@ Deploy and lab helpers. Human ops: `docs/deploy.md`.
 | `smoke-broker.sh` | Redis/Celery smoke |
 | `pg-backup.sh` | Scheduled Postgres `pg_dump -Fc` → optional age/gpg encryption → object storage; prunes local retention |
 | `pg-restore.sh` | `--list` archive TOC (non-destructive) or `--yes` restore (`pg_restore --clean --if-exists --no-owner`) |
+| `check-env-inventory.sh` | Drift guard: compose keys + CI-written keys must exist in `.env.example`. Runs in CI (`env-inventory` job) |
 
 ## ANTI-PATTERNS
 
@@ -24,3 +25,4 @@ Deploy and lab helpers. Human ops: `docs/deploy.md`.
 - Telling humans to SSH Alembic after successful CI **deploy** job.
 - Committing real `E2E_*` / SSH / API keys.
 - Skipping wipe-`tc5` when running Guard enroll lab (guide §4.1).
+- Adding a compose/CI env var without documenting it in `.env.example` (fails the `env-inventory` CI job).

@@ -2,7 +2,7 @@
 
 Public-repo safe: **no production IPs, SSH ports, emails, or secrets** in this file. Keep inventory in a private ops note.
 
-Agent/session priority: [`AGENT_EXECUTION_GUIDE.md`](AGENT_EXECUTION_GUIDE.md). Multi-host roles: [`multi-host-ops.md`](multi-host-ops.md). Host vCPU/RAM/disk (Compose lock, no tc6): [`compose-host-sizing.md`](compose-host-sizing.md). Workflow rules: [`../AGENTS.md`](../AGENTS.md) (**CI deploy vs Alembic**).
+Agent/session priority: [`AGENT_EXECUTION_GUIDE.md`](AGENT_EXECUTION_GUIDE.md). Multi-host roles: [`multi-host-ops.md`](multi-host-ops.md). Host vCPU/RAM/disk (Compose lock, no tc6): [`compose-host-sizing.md`](compose-host-sizing.md). **New server + new domain bring-up: [`deploy-new-server.md`](deploy-new-server.md).** Workflow rules: [`../AGENTS.md`](../AGENTS.md) (**CI deploy vs Alembic**).
 
 ---
 
@@ -30,6 +30,10 @@ Lab aliases (SSH config only — **never IPs in git**): **tc1** app, **tc2** dat
 | [`scripts/deploy-frontend.sh`](../scripts/deploy-frontend.sh) | SPA-only | No | No |
 
 **Prefer `deploy-services.sh` for day-to-day.** Prefer `deploy-frontend.sh` for UI-only. Use full `deploy.sh` when CI does, or when ops explicitly wants a full rebuild.
+
+Scripts derive the repo root from their own location, so they work from any checkout path (e.g. `git clone` into a non-default directory) with no host-specific default. `deploy-auth.sh` is the exception: it targets a **remote** host, so it requires `DEPLOY_PATH` explicitly.
+
+`.env.example` is the single key inventory for a fresh deploy: CI job **`env-inventory`** runs [`scripts/check-env-inventory.sh`](../scripts/check-env-inventory.sh) and fails if any compose-read or CI-written key is undocumented. Add new env vars to `.env.example` in the same PR.
 
 `workflow_dispatch` with **`skip_deploy`** skips the job. Manual dispatch also **does not** rewrite app-host `.env` (that overwrite is **`push` to `main` only**).
 
@@ -128,6 +132,7 @@ Do not invent extra enroll daemons. Do not wipe live ERP agent `sx-erpstg`. Guar
 
 | Topic | Doc |
 |-------|-----|
+| New server + new domain bring-up | [`deploy-new-server.md`](deploy-new-server.md) |
 | Hosts, UFW, Guard, COS | [`multi-host-ops.md`](multi-host-ops.md) |
 | Postgres backup / restore | [`backup-restore-ops.md`](backup-restore-ops.md) |
 | Schedules / beat | [`scan-schedules-ops.md`](scan-schedules-ops.md) |
