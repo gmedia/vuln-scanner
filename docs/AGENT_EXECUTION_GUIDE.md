@@ -538,6 +538,7 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 | `handoff.md` | Session snapshot — **epic order** still this guide (**§1.3.1** development queue, never GTM) |
 | `docs/archive/handoff-scan-pending-2026.md` | **ARCHIVED** stuck-pending (re-verify) |
 | `docs/multi-host-ops.md` | Lab roles + Guard enroll wipe-first |
+| `docs/deploy-new-server.md` | **New server + new domain bring-up** (bare VPS → verified URL; domain/brand change checklist; CI target wiring) |
 | `docs/specs/guard-v1.md` | P5 Guard thin spek + status (S0–S5 + Http + **D10 #802** on main) |
 | `docs/specs/blog-v1.md` | P10 public blog (CMS + SEO path) |
 | `docs/specs/shadcn-ui-migration.md` | SPA kit; Wave A–F shipped |
