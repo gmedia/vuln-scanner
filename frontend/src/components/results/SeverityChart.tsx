@@ -1,5 +1,6 @@
 import { PieChart, Pie, Cell, Label } from "recharts";
 import { AlertTriangle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import {
   ChartContainer,
@@ -99,6 +100,7 @@ function severityValue(
 }
 
 function SeverityChart({ summary, className }: SeverityChartProps) {
+  const { t } = useTranslation("scan");
   const totalFindings = summary ? severityValue(summary, "total_findings") : 0;
 
   if (!summary || totalFindings === 0) {
@@ -110,7 +112,7 @@ function SeverityChart({ summary, className }: SeverityChartProps) {
         )}
       >
         <AlertTriangle className="mb-3 h-10 w-10 text-muted-foreground opacity-40" />
-        <p className="text-sm text-muted-foreground">No findings to display</p>
+        <p className="text-sm text-muted-foreground">{t("noFindingsChart")}</p>
       </div>
     );
   }
@@ -134,7 +136,7 @@ function SeverityChart({ summary, className }: SeverityChartProps) {
         )}
       >
         <AlertTriangle className="mb-3 h-10 w-10 text-muted-foreground opacity-40" />
-        <p className="text-sm text-muted-foreground">No findings to display</p>
+        <p className="text-sm text-muted-foreground">{t("noFindingsChart")}</p>
       </div>
     );
   }

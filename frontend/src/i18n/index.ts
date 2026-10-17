@@ -25,6 +25,7 @@ import enStatusPage from "@/locales/en/statusPage.json";
 import enAdmin from "@/locales/en/admin.json";
 import enInbox from "@/locales/en/inbox.json";
 import enCredit from "@/locales/en/credit.json";
+import enProfile from "@/locales/en/profile.json";
 import idCommon from "@/locales/id/common.json";
 import idAuth from "@/locales/id/auth.json";
 import idLanding from "@/locales/id/landing.json";
@@ -43,6 +44,7 @@ import idStatusPage from "@/locales/id/statusPage.json";
 import idAdmin from "@/locales/id/admin.json";
 import idInbox from "@/locales/id/inbox.json";
 import idCredit from "@/locales/id/credit.json";
+import idProfile from "@/locales/id/profile.json";
 
 export const resources = {
   en: {
@@ -64,6 +66,7 @@ export const resources = {
     admin: enAdmin,
     inbox: enInbox,
     credit: enCredit,
+    profile: enProfile,
   },
   id: {
     common: idCommon,
@@ -84,6 +87,7 @@ export const resources = {
     admin: idAdmin,
     inbox: idInbox,
     credit: idCredit,
+    profile: idProfile,
   },
 } as const;
 
@@ -134,6 +138,7 @@ void i18n.use(initReactI18next).init({
     "admin",
     "inbox",
     "credit",
+    "profile",
   ],
   interpolation: { escapeValue: false },
   returnNull: false,

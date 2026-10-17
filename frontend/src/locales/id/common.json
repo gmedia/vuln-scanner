@@ -22,5 +22,11 @@
   "waitButton": "Tunggu {{seconds}} dtk",
   "pipeline": "Scan → Attach → Workspace → Guard",
   "filters": "Filter",
-  "done": "Selesai"
+  "done": "Selesai",
+  "errorTitle": "Terjadi kesalahan",
+  "errorBody": "Terjadi kesalahan tak terduga. Coba lagi atau hubungi dukungan jika masalah berlanjut.",
+  "showTechnicalDetails": "Tampilkan detail teknis",
+  "hideTechnicalDetails": "Sembunyikan detail teknis",
+  "tryAgain": "Coba lagi",
+  "backToDashboard": "Kembali ke Dasbor"
 }

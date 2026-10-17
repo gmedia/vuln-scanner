@@ -22,5 +22,11 @@
   "waitButton": "Wait {{seconds}}s",
   "pipeline": "Scan → Attach → Workspace → Guard",
   "filters": "Filters",
-  "done": "Done"
+  "done": "Done",
+  "errorTitle": "Something went wrong",
+  "errorBody": "An unexpected error occurred. Please try again or contact support if the problem persists.",
+  "showTechnicalDetails": "Show technical details",
+  "hideTechnicalDetails": "Hide technical details",
+  "tryAgain": "Try Again",
+  "backToDashboard": "Back to Dashboard"
 }

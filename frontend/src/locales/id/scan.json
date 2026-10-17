@@ -117,6 +117,7 @@
   "noRawData": "Tidak ada data mentah untuk temuan ini.",
   "loading": "Memuat…",
   "noFindings": "Tidak ada temuan",
+  "noFindingsChart": "Tidak ada temuan untuk ditampilkan",
   "cleanResult": "Scan ini tidak menemukan kerentanan.",
   "failedNoFindings": "Scan tidak selesai — temuan tidak tersimpan",
   "failedNoFindingsHint": "Ini bukan hasil bersih. Kredit dikembalikan jika sudah dipotong.",

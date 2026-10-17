@@ -61,7 +61,7 @@ test.describe("Scan Lifecycle @scan", () => {
       // Navigate into scan detail
       await domainScanLink.first().click();
       await expect(page).toHaveURL(`/scan/${scanId}`);
-      await expect(page.locator("h2:has-text('Detail scan')")).toBeVisible({
+      await expect(page.locator('[data-slot="page-header"] h2')).toBeVisible({
         timeout: 15_000,
       });
     });
@@ -90,7 +90,7 @@ test.describe("Scan Lifecycle @scan", () => {
 
       // Navigate directly to scan detail — should load
       await page.goto(`/scan/${scanId}`);
-      await expect(page.locator("h2:has-text('Detail scan')")).toBeVisible({
+      await expect(page.locator('[data-slot="page-header"] h2')).toBeVisible({
         timeout: 15_000,
       });
 

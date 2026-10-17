@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/Button";
 import {
   Card,
@@ -19,6 +20,7 @@ export function ErrorBoundaryFallback({
   error,
   resetErrorBoundary,
 }: FallbackProps) {
+  const { t } = useTranslation("common");
   const [showDetails, setShowDetails] = useState(false);
   const message = getErrorMessage(error);
   const isDev = import.meta.env.DEV;
@@ -44,13 +46,12 @@ export function ErrorBoundaryFallback({
                 />
               </svg>
             </div>
-            <CardTitle>Something went wrong</CardTitle>
+            <CardTitle>{t("errorTitle")}</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            An unexpected error occurred. Please try again or contact support if
-            the problem persists.
+            {t("errorBody")}
           </p>
           {(isDev || showDetails) && (
             <pre className="max-h-32 overflow-auto rounded-md bg-muted p-3 text-xs text-muted-foreground">
@@ -65,15 +66,15 @@ export function ErrorBoundaryFallback({
               onClick={() => setShowDetails((v) => !v)}
               className="h-auto px-0 text-xs text-muted-foreground"
             >
-              {showDetails ? "Hide technical details" : "Show technical details"}
+              {showDetails ? t("hideTechnicalDetails") : t("showTechnicalDetails")}
             </Button>
           )}
         </CardContent>
         <CardFooter className="flex flex-wrap gap-2">
-          <Button onClick={resetErrorBoundary}>Try Again</Button>
+          <Button onClick={resetErrorBoundary}>{t("tryAgain")}</Button>
           <Button variant="outline" asChild>
             <Link to="/dashboard" onClick={resetErrorBoundary}>
-              Back to Dashboard
+              {t("backToDashboard")}
             </Link>
           </Button>
         </CardFooter>

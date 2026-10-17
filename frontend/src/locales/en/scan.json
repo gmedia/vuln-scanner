@@ -117,6 +117,7 @@
   "noRawData": "No raw data available for this finding.",
   "loading": "Loading…",
   "noFindings": "No findings detected",
+  "noFindingsChart": "No findings to display",
   "cleanResult": "This scan returned a clean result.",
   "failedNoFindings": "Scan did not finish — no findings were saved",
   "failedNoFindingsHint": "This is not a clean result. Credits were refunded if charged.",
