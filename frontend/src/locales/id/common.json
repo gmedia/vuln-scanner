@@ -28,5 +28,9 @@
   "showTechnicalDetails": "Tampilkan detail teknis",
   "hideTechnicalDetails": "Sembunyikan detail teknis",
   "tryAgain": "Coba lagi",
-  "backToDashboard": "Kembali ke Dasbor"
+  "backToDashboard": "Kembali ke Dasbor",
+  "sidebarTitle": "Bilah samping",
+  "sidebarDescription": "Menampilkan bilah samping seluler.",
+  "toggleSidebar": "Buka atau tutup bilah samping",
+  "close": "Tutup"
 }

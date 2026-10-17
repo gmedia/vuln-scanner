@@ -259,7 +259,7 @@ export function AssetFilters({
             >
               <Palette className="h-4 w-4" />
             </Button>
-            <SheetContent className="flex flex-col">
+            <SheetContent className="flex flex-col" closeLabel={t("common:close")}>
               <SheetHeader>
                 <SheetTitle>{t("tagColors")}</SheetTitle>
                 <SheetDescription>{t("tagColorsHint")}</SheetDescription>

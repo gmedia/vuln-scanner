@@ -106,7 +106,11 @@ function Landing() {
                   <Menu className="h-4 w-4" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-72 sm:max-w-sm">
+              <SheetContent
+                side="right"
+                className="w-72 sm:max-w-sm"
+                closeLabel={t("common:close")}
+              >
                 <SheetHeader>
                   <SheetTitle>{tc("menu", { defaultValue: "Menu" })}</SheetTitle>
                 </SheetHeader>

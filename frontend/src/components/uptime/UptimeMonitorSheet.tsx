@@ -57,12 +57,14 @@ export function UptimeMonitorSheet({
   readonly onOpenChange: (next: boolean) => void;
   readonly onSave: (payload: UptimeCreatePayload) => boolean | void;
 }) {
+  const { t } = useTranslation("common");
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
         className="overflow-y-auto sm:max-w-lg lg:max-w-xl"
         data-testid="uptime-sheet"
+        closeLabel={t("common:close")}
       >
         {open ? (
           <UptimeMonitorForm

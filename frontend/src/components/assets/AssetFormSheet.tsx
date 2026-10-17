@@ -63,7 +63,11 @@ export function AssetFormSheet({
 }: AssetFormSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="overflow-y-auto">
+      <SheetContent
+        side="right"
+        className="overflow-y-auto"
+        closeLabel={t("common:close")}
+      >
         <SheetHeader>
           <SheetTitle>{editing ? t("editTitle") : t("add")}</SheetTitle>
         </SheetHeader>
