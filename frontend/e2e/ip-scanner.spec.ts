@@ -47,7 +47,7 @@ test.describe("IP Scanner @scan", () => {
     await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, {
       timeout: 15_000,
     });
-    await expect(page.locator("h2:has-text('Detail scan')")).toBeVisible({
+    await expect(page.locator('[data-slot="page-header"] h2')).toBeVisible({
       timeout: 15_000,
     });
   });
@@ -61,10 +61,10 @@ test.describe("IP Scanner @scan", () => {
     await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, {
       timeout: 15_000,
     });
-    await expect(page.locator("h2:has-text('Detail scan')")).toBeVisible({
+    await expect(page.locator('[data-slot="page-header"] h2')).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.locator("text=Target").first()).toBeVisible({
+    await expect(page.getByTestId("rescan-button")).toBeVisible({
       timeout: 15_000,
     });
   });
@@ -76,7 +76,7 @@ test.describe("IP Scanner @scan", () => {
     await expect(page).toHaveURL(/\/scan\/(?!ip$|domain$|mobile$)/, {
       timeout: 15_000,
     });
-    await expect(page.locator("h2:has-text('Detail scan')")).toBeVisible({
+    await expect(page.locator('[data-slot="page-header"] h2')).toBeVisible({
       timeout: 15_000,
     });
   });

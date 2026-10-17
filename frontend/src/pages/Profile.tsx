@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   AlertCircle,
   Check,
@@ -142,6 +143,7 @@ function StatTile({
 }
 
 function Profile() {
+  const { t } = useTranslation(["profile", "common"]);
   const {
     user,
     updateProfile,
@@ -193,7 +195,7 @@ function Profile() {
     const ok = await updateProfile(email, profilePassword);
     if (ok) {
       setProfileSuccess(true);
-      toast.success("Profile updated");
+      toast.success(t("profileUpdated"));
       setProfilePassword("");
       setEmail("");
     }
@@ -217,7 +219,7 @@ function Profile() {
     );
     if (ok) {
       setPasswordSuccess(true);
-      toast.success("Password changed");
+      toast.success(t("passwordChanged"));
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -250,10 +252,7 @@ function Profile() {
 
   return (
     <div className="w-full space-y-6">
-      <PageHeader
-        title="Profile"
-        description="Manage your account email and password"
-      />
+       <PageHeader title={t("title")} description={t("description")} />
 
       <div
         data-testid="profile-identity"
@@ -269,8 +268,11 @@ function Profile() {
               {emailInitials(user?.email)}
             </span>
             <div className="min-w-0 space-y-2">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                Current email
+               <p
+                 data-testid="profile-current-email"
+                 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
+               >
+                {t("currentEmail")}
               </p>
               <div className="flex min-w-0 items-center gap-1.5">
                 <p
@@ -281,15 +283,16 @@ function Profile() {
                 </p>
                 {user?.email ? (
                   <Button
+                    data-testid="profile-copy-email"
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => {
                       void handleCopyEmail();
                     }}
-                    className="h-9 w-9 shrink-0 p-0"
-                    aria-label={copied ? "Copied" : "Copy email"}
-                    title={copied ? "Copied" : "Copy email"}
+                     className="h-9 w-9 shrink-0 p-0"
+                     aria-label={copied ? t("copied") : t("copyEmail")}
+                     title={copied ? t("copied") : t("copyEmail")}
                   >
                     {copied ? (
                       <Check className="h-3.5 w-3.5 text-primary-text" />
@@ -304,13 +307,13 @@ function Profile() {
                   variant={user?.is_verified ? "completed" : "pending"}
                   className="text-[10px]"
                 >
-                  {user?.is_verified ? "Verified" : "Unverified"}
+                   {user?.is_verified ? t("verified") : t("unverified")}
                 </Badge>
                 <Badge
                   variant={user?.is_admin ? "completed" : "default"}
                   className="text-[10px]"
                 >
-                  {user?.is_admin ? "Admin" : "Operator"}
+                   {user?.is_admin ? t("admin") : t("operator")}
                 </Badge>
                 {activeOrg ? (
                   <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -323,10 +326,10 @@ function Profile() {
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Button asChild variant="outline" size="sm">
-              <Link to="/credit-history">Credit history</Link>
+              <Link to="/credit-history">{t("creditHistory")}</Link>
             </Button>
             <Button asChild variant="outline" size="sm">
-              <Link to="/settings/workspace">Workspace</Link>
+              <Link to="/settings/workspace">{t("workspace")}</Link>
             </Button>
           </div>
         </div>
@@ -337,17 +340,17 @@ function Profile() {
         className="grid grid-cols-1 gap-3 sm:grid-cols-3"
       >
         <StatTile
-          label="Verification"
-          value={user?.is_verified ? "Verified" : "Unverified"}
+                           label={t("kpiVerification")}
+          value={user?.is_verified ? t("verified") : t("unverified")}
           tone={verifyTone}
         />
         <StatTile
-          label="Access"
-          value={user?.is_admin ? "Admin" : "Operator"}
+                           label={t("kpiAccess")}
+          value={user?.is_admin ? t("admin") : t("operator")}
           tone={access}
         />
         <StatTile
-          label="Credits"
+                           label={t("kpiCredits")}
           value={(user?.credits ?? 0).toLocaleString()}
           tone={credits}
           emphasize
@@ -362,16 +365,22 @@ function Profile() {
                 <KeyRound className="h-4 w-4" />
               </ProfileIconChip>
             }
-            title="Change password"
-            hint="Confirm the current secret, then set a stronger one."
+            title={t("changePassword")}
+            hint={t("changePasswordHint")}
           />
           <ProfileShellBody>
-            <form onSubmit={handleChangePassword} className="space-y-4">
+            <form
+              data-testid="profile-password-form"
+              onSubmit={handleChangePassword}
+              className="space-y-4"
+            >
               {passwordCooldown.cooldown > 0 && (
                 <ProfileNotice tone="warn">
                   <Timer className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   <span>
-                    Too many attempts. Wait {passwordCooldown.cooldown}s
+                    {t("common:waitSeconds", {
+                      seconds: passwordCooldown.cooldown,
+                    })}
                   </span>
                 </ProfileNotice>
               )}
@@ -385,41 +394,42 @@ function Profile() {
                 )}
               <PasswordField
                 id="current-password"
-                label="Current password"
+                label={t("currentPassword")}
                 value={currentPassword}
                 onChange={setCurrentPassword}
                 placeholder="••••••••"
                 disabled={isChangingPassword}
                 visible={showCurrent}
                 onToggle={() => setShowCurrent((v) => !v)}
-                showLabel="Show current password"
-                hideLabel="Hide current password"
+                showLabel={t("showCurrentPassword")}
+                hideLabel={t("hideCurrentPassword")}
               />
               <PasswordField
                 id="new-password"
-                label="New password"
+                label={t("newPassword")}
                 value={newPassword}
                 onChange={setNewPassword}
-                placeholder="Min 8 chars, uppercase, lowercase, digit"
+                placeholder={t("newPasswordPlaceholder")}
                 disabled={isChangingPassword}
                 visible={showNew}
                 onToggle={() => setShowNew((v) => !v)}
-                showLabel="Show new password"
-                hideLabel="Hide new password"
+                showLabel={t("showNewPassword")}
+                hideLabel={t("hideNewPassword")}
               />
               <PasswordField
                 id="confirm-password"
-                label="Confirm new password"
+                label={t("confirmNewPassword")}
                 value={confirmPassword}
                 onChange={setConfirmPassword}
                 placeholder="••••••••"
                 disabled={isChangingPassword}
                 visible={showConfirm}
                 onToggle={() => setShowConfirm((v) => !v)}
-                showLabel="Show confirm password"
-                hideLabel="Hide confirm password"
+                showLabel={t("showConfirmPassword")}
+                hideLabel={t("hideConfirmPassword")}
               />
               <Button
+                data-testid="profile-password-submit"
                 type="submit"
                 className="min-h-11 w-full sm:min-h-10 sm:w-auto"
                 disabled={isChangingPassword || passwordCooldown.cooldown > 0}
@@ -427,15 +437,17 @@ function Profile() {
                 {passwordCooldown.cooldown > 0 ? (
                   <>
                     <Timer className="mr-2 h-4 w-4" />
-                    Wait {passwordCooldown.cooldown}s
+                    {t("common:waitButton", {
+                      seconds: passwordCooldown.cooldown,
+                    })}
                   </>
                 ) : isChangingPassword ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Changing...
+                    {t("changing")}
                   </>
                 ) : (
-                  "Change password"
+                  t("changePassword")
                 )}
               </Button>
             </form>
@@ -449,16 +461,22 @@ function Profile() {
                 <Mail className="h-4 w-4" />
               </ProfileIconChip>
             }
-            title="Update email"
-            hint="Sign-in address. Requires the current password."
+            title={t("updateEmail")}
+            hint={t("updateEmailHint")}
           />
           <ProfileShellBody>
-            <form onSubmit={handleUpdateProfile} className="space-y-4">
+            <form
+              data-testid="profile-email-form"
+              onSubmit={handleUpdateProfile}
+              className="space-y-4"
+            >
               {profileCooldown.cooldown > 0 && (
                 <ProfileNotice tone="warn">
                   <Timer className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   <span>
-                    Too many attempts. Wait {profileCooldown.cooldown}s
+                    {t("common:waitSeconds", {
+                      seconds: profileCooldown.cooldown,
+                    })}
                   </span>
                 </ProfileNotice>
               )}
@@ -469,7 +487,7 @@ function Profile() {
                 </ProfileNotice>
               )}
               <div className="flex min-w-0 flex-col gap-1.5">
-                <Label htmlFor="profile-email">New email</Label>
+                <Label htmlFor="profile-email">{t("newEmail")}</Label>
                 <Input
                   id="profile-email"
                   type="email"
@@ -482,20 +500,21 @@ function Profile() {
               </div>
               <PasswordField
                 id="profile-password"
-                label="Current password"
+                label={t("currentPassword")}
                 value={profilePassword}
                 onChange={setProfilePassword}
                 placeholder="••••••••"
                 disabled={isUpdatingProfile}
                 visible={showProfilePw}
                 onToggle={() => setShowProfilePw((v) => !v)}
-                showLabel="Show email confirmation password"
-                hideLabel="Hide email confirmation password"
+                showLabel={t("showEmailConfirmPassword")}
+                hideLabel={t("hideEmailConfirmPassword")}
               />
               <p className="text-[10px] text-muted-foreground">
-                Password required to confirm
+                {t("passwordRequiredToConfirm")}
               </p>
               <Button
+                data-testid="profile-email-submit"
                 type="submit"
                 className="min-h-11 w-full sm:min-h-10 sm:w-auto"
                 disabled={isUpdatingProfile || profileCooldown.cooldown > 0}
@@ -503,15 +522,17 @@ function Profile() {
                 {profileCooldown.cooldown > 0 ? (
                   <>
                     <Timer className="mr-2 h-4 w-4" />
-                    Wait {profileCooldown.cooldown}s
+                    {t("common:waitButton", {
+                      seconds: profileCooldown.cooldown,
+                    })}
                   </>
                 ) : isUpdatingProfile ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Updating...
+                    {t("updating")}
                   </>
                 ) : (
-                  "Update email"
+                  t("updateEmail")
                 )}
               </Button>
             </form>
