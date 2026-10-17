@@ -60,6 +60,7 @@ export function FilterSheet({
           side="bottom"
           className="max-h-[85svh]"
           data-testid={sheetTestId}
+          closeLabel={t("common:close")}
         >
           <SheetHeader>
             <SheetTitle>{t("filters")}</SheetTitle>

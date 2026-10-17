@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { Menu } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   SidebarInset,
   SidebarProvider,
@@ -11,13 +12,14 @@ import Sidebar from "@/components/layout/Sidebar";
 
 function AppShell() {
   const isMobile = useIsMobile();
+  const { t } = useTranslation("common");
 
   return (
     <SidebarProvider>
       <Sidebar />
       <SidebarInset className="max-h-svh overflow-y-auto">
         <div className="flex items-center gap-1 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] md:hidden">
-          <SidebarTrigger>
+          <SidebarTrigger label={t("toggleSidebar")}>
             <Menu />
           </SidebarTrigger>
         </div>

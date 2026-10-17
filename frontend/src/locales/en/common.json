@@ -28,5 +28,9 @@
   "showTechnicalDetails": "Show technical details",
   "hideTechnicalDetails": "Hide technical details",
   "tryAgain": "Try Again",
-  "backToDashboard": "Back to Dashboard"
+  "backToDashboard": "Back to Dashboard",
+  "sidebarTitle": "Sidebar",
+  "sidebarDescription": "Displays the mobile sidebar.",
+  "toggleSidebar": "Toggle Sidebar",
+  "close": "Close"
 }

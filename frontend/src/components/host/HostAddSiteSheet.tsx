@@ -76,6 +76,7 @@ export default function HostAddSiteSheet({
         side="right"
         className="overflow-y-auto sm:max-w-lg"
         data-testid="host-add-sheet"
+        closeLabel={t("common:close")}
       >
         {open ? (
           <>

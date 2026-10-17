@@ -65,12 +65,14 @@ export function StatusIncidentSheet({
   }) => void;
   readonly onSaveEdit: (payload: { title: string; impact: string }) => void;
 }) {
+  const { t } = useTranslation("common");
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
         className="overflow-y-auto sm:max-w-lg lg:max-w-xl"
         data-testid="status-incident-sheet"
+        closeLabel={t("common:close")}
       >
         {open ? (
           <StatusIncidentForm

@@ -168,7 +168,12 @@ function Sidebar() {
   const { setOpenMobile, state, isMobile } = useSidebar();
 
   return (
-    <SidebarPrimitive collapsible="icon" role="complementary">
+    <SidebarPrimitive
+      collapsible="icon"
+      role="complementary"
+      mobileTitle={t("common:sidebarTitle")}
+      mobileDescription={t("common:sidebarDescription")}
+    >
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -292,7 +297,7 @@ function Sidebar() {
           {BRAND.sidebarVersion}
         </p>
       </SidebarFooter>
-      <SidebarRail />
+      <SidebarRail label={t("common:toggleSidebar")} />
     </SidebarPrimitive>
   );
 }

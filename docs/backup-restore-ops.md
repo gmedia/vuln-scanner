@@ -91,18 +91,85 @@ Two independent layers:
 
 An untested backup is **not** a backup. Rehearse on a throwaway database periodically.
 
-```bash
-# 1. Inspect the archive without touching any database:
-./scripts/pg-restore.sh --list /var/backups/vuln-scanner/vuln-<db>-<ts>.dump
-./scripts/pg-restore.sh --list /var/backups/vuln-scanner/vuln-<db>-<ts>.dump.gpg   # decrypts to a temp file first
+### 7.1 Pick an artifact
 
-# 2. Restore — DESTRUCTIVE, requires --yes:
-./scripts/pg-restore.sh --yes /var/backups/vuln-scanner/vuln-<db>-<ts>.dump
+```bash
+# Local backend (default): the staged copies live here.
+ls -lt /var/backups/vuln-scanner/ | head
+
+# COS backend: pull the newest object down first (same one-off container pattern
+# the upload uses, but calling `get_object_storage().materialize(ref, dest_path)`),
+# or download it from the bucket console. Keep it outside the repo.
 ```
 
-`.age` archives need `BACKUP_AGE_IDENTITY` (or the default age keyring); `.gpg` uses the host gpg keyring. Restore runs `pg_restore --clean --if-exists --no-owner`; in `docker` mode it pipes into `docker exec -i <PG_CONTAINER>`, in `network` mode into a one-off `PG_IMAGE` container with `PGPASSWORD` pass-through.
+Prefer the **newest** artifact, and additionally rehearse the **oldest retained** one
+once per cycle — that is the file you would actually need if a corruption went
+unnoticed for two weeks.
 
-Recommended cadence: **quarterly** (or before any risky migration), restore into a scratch DB and spot-check row counts / a login. A restore that only prints warnings on pre-existing objects is usually benign; confirm the data, not just the exit code.
+### 7.2 Inspect without touching any database
+
+```bash
+./scripts/pg-restore.sh --list /var/backups/vuln-scanner/vuln-<db>-<ts>.dump
+./scripts/pg-restore.sh --list /var/backups/vuln-scanner/vuln-<db>-<ts>.dump.gpg   # decrypts to a temp file first
+```
+
+`.age` archives need `BACKUP_AGE_IDENTITY` (or the default age keyring); `.gpg` uses the
+host gpg keyring.
+
+**Pass criteria:** the TOC lists the expected schema and the tables you rely on
+(`users`, `organizations`, `scan_jobs`, `scan_findings`, `host_sites`, `uptime_monitors`,
+`org_invoices`, …). A truncated or empty TOC means the artifact is unusable — stop and
+investigate the backup job before trusting any of its siblings.
+
+### 7.3 Restore into a scratch database (never the live one)
+
+Restore is `pg_restore --clean --if-exists --no-owner`, so pointing it at the live
+database **drops and replaces objects**. Always target a scratch DB:
+
+```bash
+# 1. Create an empty target (docker mode example; use psql against the data host in network mode).
+docker exec vuln-postgres psql -U "$POSTGRES_USER" -d postgres -c 'CREATE DATABASE drill_check;'
+
+# 2. Restore into it. DESTRUCTIVE to `drill_check` only — requires --yes.
+POSTGRES_DB=drill_check ./scripts/pg-restore.sh --yes /var/backups/vuln-scanner/vuln-<db>-<ts>.dump
+
+# 3. Spot-check data (row counts + a real login row).
+docker exec vuln-postgres psql -U "$POSTGRES_USER" -d drill_check -tAc \
+  'SELECT count(*) FROM users;'
+docker exec vuln-postgres psql -U "$POSTGRES_USER" -d drill_check -tAc \
+  'SELECT count(*) FROM scan_findings;'
+
+# 4. Drop the scratch DB.
+docker exec vuln-postgres psql -U "$POSTGRES_USER" -d postgres -c 'DROP DATABASE drill_check;'
+```
+
+In `network` mode (Postgres on the data host) run the same `psql` statements through a
+one-off `PG_IMAGE` container with `PGPASSWORD` pass-through, exactly as `pg-backup.sh`
+does — never put the password in `argv`.
+
+### 7.4 Pass criteria
+
+| Check | Expected |
+|---|---|
+| `--list` exit code | `0`, TOC non-empty |
+| Restore exit code | `0` (benign "already exists" warnings on a clean scratch DB mean the archive was not restored cleanly — investigate) |
+| Row counts | Same order of magnitude as production; not `0` |
+| `users` row for a known account | Present, with the expected org membership |
+| Alembic revision | `SELECT version_num FROM alembic_version;` **inside the restored DB** is non-empty and matches the backup date's deploy (do **not** use `alembic current` — it reads the live `DATABASE_URL`, not the scratch DB) |
+
+A restore that only prints warnings on pre-existing objects is usually benign; **confirm
+the data, not just the exit code**.
+
+### 7.5 Record the drill
+
+Keep a one-line log outside the repo (public-repo hygiene — no hosts or emails):
+
+```
+2026-10-17  artifact=vuln-scanner-<ts>.dump  mode=gpg  toc=ok  rows(users)=<n>  restore=ok  alembic=<rev>
+```
+
+Cadence: **quarterly**, and **before any risky migration**. If a drill fails, treat the
+backup pipeline as broken — that is a production incident, not a documentation gap.
 
 ---
 
