@@ -1,13 +1,15 @@
+import { useTranslation } from "react-i18next";
 import { Skeleton } from "@/components/ui/Skeleton";
 
 export function LandingLoading() {
+  const { t } = useTranslation("common");
   return (
     <div
       className="flex min-h-dvh flex-col bg-background"
       data-testid="landing-loading"
       role="status"
       aria-busy="true"
-      aria-label="Loading"
+      aria-label={t("loading")}
     >
       <header className="border-b border-border pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex h-12 w-full max-w-6xl min-w-0 items-center justify-between gap-2 overflow-x-hidden px-4 2xl:max-w-[90rem]">

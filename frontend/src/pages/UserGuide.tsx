@@ -23,11 +23,12 @@ import { useActiveGuideSection } from "@/components/guide/useActiveGuideSection"
 import { BRAND } from "@/lib/brand";
 import {
   buildEnrollCurlExample,
-  GUARD_AGENT_INSTALL_INTRO,
-  GUARD_AGENT_INSTALL_STEPS,
-  GUARD_DISTRO_INSTALL_FOOTER,
+  GUARD_AGENT_INSTALL_INTRO_KEY,
+  GUARD_AGENT_INSTALL_STEP_KEYS,
+  GUARD_DISTRO_INSTALL_FOOTER_KEY,
   GUARD_DISTRO_INSTALL_GUIDES,
-  GUARD_HOST_SETUP_STEPS,
+  GUARD_ENROLL_PATH_VARS,
+  GUARD_HOST_SETUP_STEP_KEYS,
 } from "@/lib/guardEnrollHost";
 import {
   SINEXIS_INSTALL_RAW_URL,
@@ -422,8 +423,10 @@ function UserGuide() {
               <li>
                 {t("gHostLead")}
                 <ul className="mt-2 list-disc space-y-1.5 pl-5">
-                  {GUARD_HOST_SETUP_STEPS.map((step) => (
-                    <li key={step.slice(0, 40)}>{step}</li>
+                  {GUARD_HOST_SETUP_STEP_KEYS.map((key) => (
+                    <li key={key}>
+                      {t(`guardEnroll:${key}`, GUARD_ENROLL_PATH_VARS)}
+                    </li>
                   ))}
                 </ul>
               </li>
@@ -441,11 +444,16 @@ function UserGuide() {
               <li>
                 {t("gInstallLead")}
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {GUARD_AGENT_INSTALL_INTRO}
+                  {t(
+                    `guardEnroll:${GUARD_AGENT_INSTALL_INTRO_KEY}`,
+                    GUARD_ENROLL_PATH_VARS,
+                  )}
                 </p>
                 <ul className="mt-2 list-disc space-y-1.5 pl-5">
-                  {GUARD_AGENT_INSTALL_STEPS.map((step) => (
-                    <li key={step.slice(0, 40)}>{step}</li>
+                  {GUARD_AGENT_INSTALL_STEP_KEYS.map((key) => (
+                    <li key={key}>
+                      {t(`guardEnroll:${key}`, GUARD_ENROLL_PATH_VARS)}
+                    </li>
                   ))}
                 </ul>
                 <div
@@ -472,7 +480,10 @@ function UserGuide() {
                               {guide.title}
                             </span>
                             <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
-                              {guide.blurb}
+                              {t(
+                                `guardEnroll:${guide.blurbKey}`,
+                                GUARD_ENROLL_PATH_VARS,
+                              )}
                             </span>
                           </span>
                         </AccordionTrigger>
@@ -485,7 +496,10 @@ function UserGuide() {
                     ))}
                   </Accordion>
                   <p className="text-xs text-muted-foreground">
-                    {GUARD_DISTRO_INSTALL_FOOTER}
+                    {t(
+                      `guardEnroll:${GUARD_DISTRO_INSTALL_FOOTER_KEY}`,
+                      GUARD_ENROLL_PATH_VARS,
+                    )}
                   </p>
                 </div>
               </li>

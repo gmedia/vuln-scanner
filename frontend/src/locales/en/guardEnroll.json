@@ -1,0 +1,21 @@
+{
+  "hostStep1": "Make sure the Linux/VPS/colo host is one you control, with outbound HTTPS to the app API origin (not the Manager password).",
+  "hostStep2": "Store the enroll token in the host vault (env/file mode 600). Never commit it to git or paste it into a public chat.",
+  "hostStep3": "From the host, POST {{enrollPath}} with JSON { token, agent_name } — agent_name is unique per machine (1–63 characters).",
+  "hostStep4": "The response contains agent_id, agent_key, manager_host, install_hint. Keep agent_key on the host only.",
+  "hostStep5": "Continue with the agent install block below (per distro, using manager_host from the response). Do not guess the Manager IP.",
+  "hostStep6": "Start the agent, then click Sync in the Guard dashboard. Check the Agents table (active/pending/disconnected) and critical alerts.",
+  "installStep1": "Prerequisites: a 64-bit Linux host you control; root/sudo; outbound access to manager_host (the agent ↔ Manager port — follow the ops runbook if non-default). Never expose the Manager password on the host.",
+  "installStep2": "Read the fields from the enroll response: agent_id, agent_key, manager_host, and install_hint (if present, prefer the commands there).",
+  "installStep3": "Pick the distro command block below (Debian/Ubuntu vs RHEL-family vs SUSE). The package version must match the lab/prod Manager — ask ops if unsure. Do not hardcode lab URLs in a public ticket.",
+  "installStep4": "After the package is installed: set the Manager address to manager_host from the response (do not guess). Usual path: {{ossecConfPath}} — the <address> element in the client block.",
+  "installStep5": "Import the agent key: use agent_key (and agent_id when the tool asks) through the official utility (often: {{manageAgentsPath}} or import key), or follow install_hint. Key file mode 600; never log it to CI.",
+  "installStep6": "Enable the service: sudo systemctl daemon-reload && sudo systemctl enable --now wazuh-agent (the unit name may differ). Check: systemctl status wazuh-agent.",
+  "installStep7": "Verify on the host: the agent is running and local logs show no repeated auth errors. In the app: Guard → Sync → the agent shows active (not stuck pending). Critical alerts appear once the rule level meets the threshold (default ≥ 12).",
+  "installStep8": "Forbidden: the Wazuh Manager password/user, the global app API key, or internal lab addresses in git/public chat/screenshots. Enrollment always goes through the SaaS token + HTTPS to the app origin.",
+  "installIntro": "Agent runtime install on the target host — per-distro Linux commands (placeholders only). Prefer install_hint + manager_host from POST {{enrollPath}}. Not a full SIEM tutorial; no lab secrets.",
+  "distroDebianBlurb": "apt/dpkg family. Replace <WAZUH_VERSION> to match the Manager; prefer install_hint when present.",
+  "distroRhelBlurb": "rpm/dnf family (yum on older releases). The unit name stays wazuh-agent on official packages.",
+  "distroSuseBlurb": "zypper. Packages often come from an ops mirror or an equivalent RPM; match the channel to the Manager.",
+  "distroFooter": "Replace <MANAGER_HOST> with the value from the enroll response. Import agent_key via manage_agents (or install_hint). Local .deb/.rpm option: dpkg -i / rpm -ivh from an ops mirror. Never paste the Manager password or a lab IP into public chat/repo."
+}

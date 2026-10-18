@@ -4,6 +4,7 @@ import type { OrgSummary } from "../api/auth";
 import * as orgsApi from "../api/orgs";
 import type { OrgMembershipSummary, OrgRole } from "../api/orgs";
 import { isAxiosError } from "axios";
+import i18n from "@/i18n";
 
 function extractError(err: unknown, fallback: string): string {
   if (isAxiosError(err)) {
@@ -345,7 +346,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ isLoading: false, error: null });
       return true;
     } catch (err) {
-      const message = extractError(err, "Gagal mengubah kata sandi");
+      const message = extractError(err, i18n.t("auth:changePasswordFailed"));
       set({ error: message, isLoading: false });
       return false;
     }

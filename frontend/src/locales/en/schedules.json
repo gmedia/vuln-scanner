@@ -54,5 +54,7 @@
   "errCreate": "Failed to create schedule",
   "errToggle": "Failed to update schedule status",
   "errDelete": "Failed to delete schedule",
-  "targetRequired": "Target is required"
+  "targetRequired": "Target is required",
+  "errInsufficientCredits": "Insufficient credits. The schedule was disabled automatically.",
+  "errDispatchFailed": "Failed to queue the scan. Try again later or contact ops."
 }

@@ -74,5 +74,6 @@
   "overallDegraded": "Degraded performance",
   "overallPartial": "Partial outage",
   "overallMajor": "Major outage",
-  "overallUnknown": "Unknown"
+  "overallUnknown": "Unknown",
+  "errSaveFailed": "Could not save status page"
 }

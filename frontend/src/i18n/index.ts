@@ -26,6 +26,7 @@ import enAdmin from "@/locales/en/admin.json";
 import enInbox from "@/locales/en/inbox.json";
 import enCredit from "@/locales/en/credit.json";
 import enProfile from "@/locales/en/profile.json";
+import enGuardEnroll from "@/locales/en/guardEnroll.json";
 import idCommon from "@/locales/id/common.json";
 import idAuth from "@/locales/id/auth.json";
 import idLanding from "@/locales/id/landing.json";
@@ -45,6 +46,7 @@ import idAdmin from "@/locales/id/admin.json";
 import idInbox from "@/locales/id/inbox.json";
 import idCredit from "@/locales/id/credit.json";
 import idProfile from "@/locales/id/profile.json";
+import idGuardEnroll from "@/locales/id/guardEnroll.json";
 
 export const resources = {
   en: {
@@ -67,6 +69,7 @@ export const resources = {
     inbox: enInbox,
     credit: enCredit,
     profile: enProfile,
+    guardEnroll: enGuardEnroll,
   },
   id: {
     common: idCommon,
@@ -88,6 +91,7 @@ export const resources = {
     inbox: idInbox,
     credit: idCredit,
     profile: idProfile,
+    guardEnroll: idGuardEnroll,
   },
 } as const;
 
@@ -139,6 +143,7 @@ void i18n.use(initReactI18next).init({
     "inbox",
     "credit",
     "profile",
+    "guardEnroll",
   ],
   interpolation: { escapeValue: false },
   returnNull: false,

@@ -108,7 +108,7 @@ export default function StatusPage() {
   const createMut = useMutation({
     mutationFn: () => upsertStatusPage({ slug, title }),
     onSuccess: invalidate,
-    onError: () => toast.error("Could not save status page"),
+    onError: () => toast.error(t("errSaveFailed")),
   });
   const publishMut = useMutation({
     mutationFn: (published: boolean) => patchStatusPage({ published }),

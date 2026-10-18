@@ -20,6 +20,9 @@ export interface DateTimePickerProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  hourLabel?: string;
+  minuteLabel?: string;
+  clearLabel?: string;
   "aria-label"?: string;
 }
 
@@ -46,9 +49,12 @@ function DateTimePicker({
   value,
   onChange,
   id,
-  placeholder = "Pilih tanggal & jam",
+  placeholder = "Select date & time",
   disabled,
   className,
+  hourLabel = "Hour (24-hour)",
+  minuteLabel = "Minute",
+  clearLabel = "Clear",
   "aria-label": ariaLabel,
 }: DateTimePickerProps) {
   const [open, setOpen] = useState(false);
@@ -103,7 +109,7 @@ function DateTimePicker({
             >
               <SelectTrigger
                 className="h-8 w-[4.5rem]"
-                aria-label="Jam (24 jam)"
+                aria-label={hourLabel}
               >
                 <SelectValue />
               </SelectTrigger>
@@ -125,7 +131,7 @@ function DateTimePicker({
                 onChange(emitDateTime(base, hour, m));
               }}
             >
-              <SelectTrigger className="h-8 w-[4.5rem]" aria-label="Menit">
+              <SelectTrigger className="h-8 w-[4.5rem]" aria-label={minuteLabel}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="max-h-56">
@@ -148,7 +154,7 @@ function DateTimePicker({
                 setOpen(false);
               }}
             >
-              Hapus
+              {clearLabel}
             </Button>
           ) : null}
         </div>

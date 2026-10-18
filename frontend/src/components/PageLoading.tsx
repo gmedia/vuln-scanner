@@ -1,13 +1,15 @@
+import { useTranslation } from "react-i18next";
 import { Skeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 
 export function PageLoading() {
+  const { t } = useTranslation("common");
   return (
     <div
       className="w-full space-y-4 p-1"
       data-testid="page-loading"
       role="status"
       aria-busy="true"
-      aria-label="Loading"
+      aria-label={t("loading")}
     >
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">

@@ -32,5 +32,10 @@
   "sidebarTitle": "Bilah samping",
   "sidebarDescription": "Menampilkan bilah samping seluler.",
   "toggleSidebar": "Buka atau tutup bilah samping",
-  "close": "Tutup"
+  "close": "Tutup",
+  "loading": "Memuat",
+  "hourLabel24": "Jam (24 jam)",
+  "minuteLabel": "Menit",
+  "dateTimePlaceholder": "Pilih tanggal & jam",
+  "clear": "Hapus"
 }

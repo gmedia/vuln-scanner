@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import api from "@/api/scans";
 
 export interface ScanSchedule {
@@ -80,24 +81,27 @@ export async function listScheduleRuns(
   return data;
 }
 
-/** Map API/worker English errors to Bahasa for attach UX. */
-export function mapScheduleError(detail: string | null | undefined): string {
+/** Map API/worker errors to the active locale for attach UX. */
+export function mapScheduleError(
+  detail: string | null | undefined,
+  t: TFunction,
+): string {
   if (!detail) return "";
   const d = detail.toLowerCase();
   if (d.includes("insufficient credits")) {
-    return "Kredit tidak mencukupi. Jadwal dinonaktifkan otomatis.";
+    return t("errInsufficientCredits");
   }
   if (
     d.includes("maximum") &&
     (d.includes("10") || d.includes("enabled") || d.includes("schedule"))
   ) {
-    return `Batas ${MAX_ENABLED_SCHEDULES} jadwal aktif per organisasi tercapai. Nonaktifkan satu dulu.`;
+    return t("capCreateBlocked", { max: MAX_ENABLED_SCHEDULES });
   }
   if (d.includes("failed to dispatch")) {
-    return "Gagal mengantrikan scan. Coba lagi nanti atau hubungi ops.";
+    return t("errDispatchFailed");
   }
   if (d.includes("target is required") || d.includes("field required")) {
-    return "Target wajib diisi";
+    return t("targetRequired");
   }
   return detail;
 }

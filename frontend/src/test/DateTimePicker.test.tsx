@@ -41,8 +41,8 @@ describe("DateTimePicker", () => {
     );
     await user.click(screen.getByRole("button", { name: "Sejak" }));
     expect(document.querySelector(".rdp-root")).toBeTruthy();
-    expect(screen.getByLabelText("Jam (24 jam)")).toBeInTheDocument();
-    expect(screen.getByLabelText("Menit")).toBeInTheDocument();
+    expect(screen.getByLabelText("Hour (24-hour)")).toBeInTheDocument();
+    expect(screen.getByLabelText("Minute")).toBeInTheDocument();
     expect(document.querySelector('input[type="time"]')).toBeNull();
   });
 
@@ -57,7 +57,7 @@ describe("DateTimePicker", () => {
       />,
     );
     await user.click(screen.getByRole("button", { name: "Sejak" }));
-    await user.click(screen.getByRole("button", { name: "Hapus" }));
+    await user.click(screen.getByRole("button", { name: "Clear" }));
     expect(onChange).toHaveBeenCalledWith("");
   });
 });

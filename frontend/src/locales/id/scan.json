@@ -185,5 +185,12 @@
   "errMobileAndroid": "Jenis file tidak valid. Gunakan .apk atau .aab untuk Android.",
   "errMobileIos": "Jenis file tidak valid. Gunakan .ipa untuk iOS.",
   "errMobileTooLarge": "File terlalu besar. Ukuran maksimum 500MB.",
-  "errMobileNoFile": "Pilih file untuk dipindai."
+  "errMobileNoFile": "Pilih file untuk dipindai.",
+  "severityLegend": "Legenda tingkat keparahan",
+  "resultsTitle": "Hasil",
+  "errScanFallback": "Gagal memulai scan. Periksa koneksi Anda.",
+  "errScanTooLarge": "File terlalu besar untuk server atau CDN (sering ~100MB lewat Cloudflare). Coba paket yang lebih kecil.",
+  "errScanGateway": "Unggahan habis waktu atau origin memutus permintaan. Coba file lebih kecil atau koneksi lebih cepat.",
+  "errScanTimeout": "Unggahan habis waktu. APK besar mungkin melebihi batas CDN atau proxy.",
+  "errScanInterrupted": "Unggahan terputus (jaringan tereset atau batas body CDN). Coba file di bawah 80MB."
 }

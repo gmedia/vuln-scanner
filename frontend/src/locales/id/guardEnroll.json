@@ -1,0 +1,21 @@
+{
+  "hostStep1": "Pastikan host Linux/VPS/colo yang Anda kuasai, outbound HTTPS ke origin API app (bukan password Manager).",
+  "hostStep2": "Simpan token enroll di vault host (env/file mode 600). Jangan commit ke git atau tempel di chat publik.",
+  "hostStep3": "Dari host, POST {{enrollPath}} dengan JSON { token, agent_name } — agent_name unik per mesin (1–63 karakter).",
+  "hostStep4": "Response berisi agent_id, agent_key, manager_host, install_hint. Simpan agent_key hanya di host.",
+  "hostStep5": "Lanjut blok instalasi agen di bawah (per distro + manager_host dari response). Jangan menebak IP Manager.",
+  "hostStep6": "Start agen, lalu di dashboard Guard klik Sinkronkan. Cek tabel Agen (aktif/menunggu/terputus) dan Alert kritis.",
+  "installStep1": "Prasyarat: Linux 64-bit yang Anda kuasai; root/sudo; outbound ke manager_host (port komunikasi agen ↔ Manager — ikuti runbook ops bila non-default). Jangan buka password Manager di host.",
+  "installStep2": "Ambil field dari response enroll: agent_id, agent_key, manager_host, dan install_hint (jika ada, prioritaskan perintah di situ).",
+  "installStep3": "Pilih blok perintah distro di bawah (Debian/Ubuntu vs RHEL-family vs SUSE). Versi paket harus kompatibel dengan Manager lab/prod — tanya ops bila ragu. Jangan hardcode URL lab di ticket publik.",
+  "installStep4": "Setelah paket terpasang: set alamat Manager ke manager_host dari response (bukan tebakan). Path umum: {{ossecConfPath}} — elemen <address> di blok client.",
+  "installStep5": "Import kunci agen: gunakan agent_key (dan agent_id bila diminta tool) lewat utilitas resmi (sering: {{manageAgentsPath}} atau import key), atau ikuti install_hint. Key file mode 600; jangan log ke CI.",
+  "installStep6": "Aktifkan layanan: sudo systemctl daemon-reload && sudo systemctl enable --now wazuh-agent (nama unit bisa berbeda). Cek: systemctl status wazuh-agent.",
+  "installStep7": "Verifikasi di host: agen running; log lokal tanpa error auth berulang. Di app: Guard → Sinkronkan → status agen aktif (bukan menunggu lama). Alert kritis muncul setelah rule level memenuhi ambang (default ≥ 12).",
+  "installStep8": "Larangan: password/user Manager Wazuh, API key global app, atau alamat internal lab di git/chat/screenshot publik. Enroll selalu lewat token SaaS + HTTPS ke origin app.",
+  "installIntro": "Instalasi runtime agen di host target — perintah per distro Linux (placeholder saja). Utamakan install_hint + manager_host dari POST {{enrollPath}}. Bukan tutorial SIEM penuh; tanpa secret lab.",
+  "distroDebianBlurb": "Keluarga apt/dpkg. Ganti <WAZUH_VERSION> agar cocok Manager; utamakan install_hint bila ada.",
+  "distroRhelBlurb": "Keluarga rpm/dnf (yum di rilis lama). Nama unit tetap wazuh-agent pada paket resmi.",
+  "distroSuseBlurb": "zypper. Paket sering lewat mirror ops atau RPM setara; sesuaikan channel dengan Manager.",
+  "distroFooter": "Ganti <MANAGER_HOST> dari response enroll. Import agent_key lewat manage_agents (atau install_hint). Opsi paket .deb/.rpm lokal: dpkg -i / rpm -ivh dari mirror ops. Jangan menempel password Manager atau IP lab di chat/repo publik."
+}

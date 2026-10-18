@@ -387,7 +387,7 @@ function Schedules() {
       toast.success(t("toastCreated"));
     },
     onError: (err: unknown) => {
-      setFormError(mapScheduleError(apiDetail(err, t("errCreate"))));
+      setFormError(mapScheduleError(apiDetail(err, t("errCreate")), t));
     },
   });
 
@@ -400,7 +400,7 @@ function Schedules() {
       void qc.invalidateQueries({ queryKey: ["schedules"] });
     },
     onError: (err: unknown) => {
-      setActionError(mapScheduleError(apiDetail(err, t("errToggle"))));
+      setActionError(mapScheduleError(apiDetail(err, t("errToggle")), t));
     },
   });
 
@@ -412,7 +412,7 @@ function Schedules() {
       void qc.invalidateQueries({ queryKey: ["schedules"] });
     },
     onError: (err: unknown) => {
-      setActionError(mapScheduleError(apiDetail(err, t("errDelete"))));
+      setActionError(mapScheduleError(apiDetail(err, t("errDelete")), t));
     },
   });
 
@@ -640,7 +640,7 @@ function Schedules() {
               >
                 {data.map((s: ScanSchedule) => {
                   const runsOpen = !!expandedRuns[s.id];
-                  const mappedErr = mapScheduleError(s.last_error);
+                  const mappedErr = mapScheduleError(s.last_error, t);
                   return (
                     <li
                       key={s.id}
@@ -745,7 +745,7 @@ function Schedules() {
                   <TableBody>
                     {data.map((s: ScanSchedule) => {
                       const runsOpen = !!expandedRuns[s.id];
-                      const mappedErr = mapScheduleError(s.last_error);
+                      const mappedErr = mapScheduleError(s.last_error, t);
                       return (
                         <Fragment key={s.id}>
                           <TableRow

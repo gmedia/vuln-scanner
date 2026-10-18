@@ -733,7 +733,7 @@ function WorkspaceSettings() {
                 data-testid="workspace-billing-loading"
                 role="status"
                 aria-busy="true"
-                aria-label="Loading"
+                aria-label={t("common:loading")}
               >
                 {Array.from({ length: 2 }).map((_, i) => (
                   <div key={i} className="rounded-lg border border-border p-4">

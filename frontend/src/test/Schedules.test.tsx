@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Schedules from "@/pages/Schedules";
+import i18n from "@/i18n";
 import { mapScheduleError } from "@/api/schedules";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
@@ -77,18 +78,22 @@ const sampleSchedule = {
 };
 
 describe("mapScheduleError", () => {
+  const tId = i18n.getFixedT("id", "schedules");
+
   it("maps insufficient credits to Bahasa", () => {
-    expect(mapScheduleError("Insufficient credits")).toMatch(/Kredit tidak/);
+    expect(mapScheduleError("Insufficient credits", tId)).toMatch(
+      /Kredit tidak/,
+    );
   });
 
   it("maps max enabled cap to Bahasa", () => {
     expect(
-      mapScheduleError("Maximum 10 enabled schedules per user"),
+      mapScheduleError("Maximum 10 enabled schedules per user", tId),
     ).toMatch(/Batas 10/);
   });
 
   it("passes through unknown messages", () => {
-    expect(mapScheduleError("Something else")).toBe("Something else");
+    expect(mapScheduleError("Something else", tId)).toBe("Something else");
   });
 });
 
@@ -141,7 +146,7 @@ describe("Schedules page", () => {
     ]);
     renderAt();
     expect(
-      (await screen.findAllByText(/Kredit tidak mencukupi/)).length,
+      (await screen.findAllByText(/Insufficient credits/)).length,
     ).toBeGreaterThan(0);
     expect(
       screen.queryByRole("link", { name: /View credit history/i }),
@@ -292,7 +297,7 @@ describe("Schedules page", () => {
     await screen.findAllByText("Weekly external");
     await user.click(screen.getAllByRole("button", { name: /Enable/i })[0]);
     await waitFor(() =>
-      expect(screen.getByRole("alert")).toHaveTextContent(/Batas 10/),
+      expect(screen.getByRole("alert")).toHaveTextContent(/Limit 10/),
     );
   });
 

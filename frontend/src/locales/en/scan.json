@@ -185,5 +185,12 @@
   "errMobileAndroid": "Invalid file type. Expected .apk or .aab for Android.",
   "errMobileIos": "Invalid file type. Expected .ipa for iOS.",
   "errMobileTooLarge": "File too large. Maximum size is 500MB.",
-  "errMobileNoFile": "Please select a file to scan."
+  "errMobileNoFile": "Please select a file to scan.",
+  "severityLegend": "Severity legend",
+  "resultsTitle": "Results",
+  "errScanFallback": "Failed to start scan. Check your connection.",
+  "errScanTooLarge": "File too large for the server or CDN (often ~100MB via Cloudflare). Try a smaller package.",
+  "errScanGateway": "Upload timed out or the origin dropped the request. Retry a smaller file or a faster link.",
+  "errScanTimeout": "Upload timed out. Large APKs may exceed the CDN or proxy limit.",
+  "errScanInterrupted": "Upload was interrupted (network reset or CDN body limit). Try a file under 80MB."
 }

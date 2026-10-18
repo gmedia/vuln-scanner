@@ -74,5 +74,6 @@
   "overallDegraded": "Kinerja menurun",
   "overallPartial": "Gangguan sebagian",
   "overallMajor": "Gangguan besar",
-  "overallUnknown": "Tidak diketahui"
+  "overallUnknown": "Tidak diketahui",
+  "errSaveFailed": "Gagal menyimpan halaman status"
 }

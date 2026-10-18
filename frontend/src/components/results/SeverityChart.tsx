@@ -191,7 +191,7 @@ function SeverityChart({ summary, className }: SeverityChartProps) {
       <ul
         className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2"
         data-testid="severity-legend"
-        aria-label="Severity legend"
+          aria-label={t("severityLegend")}
       >
         {allSeverities.map((item) => {
           const pct =

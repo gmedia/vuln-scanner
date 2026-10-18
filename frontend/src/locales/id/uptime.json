@@ -98,5 +98,6 @@
   "outageTo": "Tanggal selesai",
   "outageClear": "Bersihkan",
   "outageCustomHint": "Rentang kustom hanya untuk outage dan bar, maksimal 90 hari ke belakang.",
-  "outageRangeError": "Rentang tidak valid. Tanggal mulai harus ≤ selesai, dalam 90 hari terakhir, dan tidak di masa depan."
+  "outageRangeError": "Rentang tidak valid. Tanggal mulai harus ≤ selesai, dalam 90 hari terakhir, dan tidak di masa depan.",
+  "errInvalidHeaders": "JSON headers tidak valid"
 }

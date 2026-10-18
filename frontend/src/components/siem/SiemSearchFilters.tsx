@@ -64,6 +64,9 @@ export function SiemSearchFilters({
               onChange={(since) => set({ since })}
               placeholder={t("datetimePlaceholder")}
               aria-label={t("since")}
+              hourLabel={t("common:hourLabel24")}
+              minuteLabel={t("common:minuteLabel")}
+              clearLabel={t("common:clear")}
             />
           </div>
           <div className="flex min-w-0 flex-col gap-1.5">
@@ -74,6 +77,9 @@ export function SiemSearchFilters({
               onChange={(until) => set({ until })}
               placeholder={t("datetimePlaceholder")}
               aria-label={t("until")}
+              hourLabel={t("common:hourLabel24")}
+              minuteLabel={t("common:minuteLabel")}
+              clearLabel={t("common:clear")}
             />
           </div>
           <div className="flex min-w-0 flex-col gap-1.5">

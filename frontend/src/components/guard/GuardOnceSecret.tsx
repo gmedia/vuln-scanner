@@ -8,11 +8,12 @@ import {
 } from "@/components/ui/Accordion";
 import type { GuardTranslate } from "@/components/guard/guardFormat";
 import {
-  GUARD_AGENT_INSTALL_INTRO,
-  GUARD_AGENT_INSTALL_STEPS,
-  GUARD_DISTRO_INSTALL_FOOTER,
+  GUARD_AGENT_INSTALL_INTRO_KEY,
+  GUARD_AGENT_INSTALL_STEP_KEYS,
+  GUARD_DISTRO_INSTALL_FOOTER_KEY,
   GUARD_DISTRO_INSTALL_GUIDES,
-  GUARD_HOST_SETUP_STEPS,
+  GUARD_ENROLL_PATH_VARS,
+  GUARD_HOST_SETUP_STEP_KEYS,
 } from "@/lib/guardEnrollHost";
 
 export function GuardOnceSecret({
@@ -43,8 +44,8 @@ export function GuardOnceSecret({
       <div>
         <p className="mb-1.5 font-medium text-foreground">{t("hostStepsTitle")}</p>
         <ol className="list-decimal space-y-1.5 pl-4 text-muted-foreground">
-          {GUARD_HOST_SETUP_STEPS.map((step) => (
-            <li key={step.slice(0, 32)}>{step}</li>
+          {GUARD_HOST_SETUP_STEP_KEYS.map((key) => (
+            <li key={key}>{t(`guardEnroll:${key}`, GUARD_ENROLL_PATH_VARS)}</li>
           ))}
         </ol>
       </div>
@@ -70,10 +71,15 @@ export function GuardOnceSecret({
         <p className="mb-1.5 font-medium text-foreground">
           {t("agentInstallTitle")}
         </p>
-        <p className="mb-2 text-muted-foreground">{GUARD_AGENT_INSTALL_INTRO}</p>
+        <p className="mb-2 text-muted-foreground">
+          {t(
+            `guardEnroll:${GUARD_AGENT_INSTALL_INTRO_KEY}`,
+            GUARD_ENROLL_PATH_VARS,
+          )}
+        </p>
         <ol className="list-decimal space-y-1.5 pl-4 text-muted-foreground">
-          {GUARD_AGENT_INSTALL_STEPS.map((step) => (
-            <li key={step.slice(0, 36)}>{step}</li>
+          {GUARD_AGENT_INSTALL_STEP_KEYS.map((key) => (
+            <li key={key}>{t(`guardEnroll:${key}`, GUARD_ENROLL_PATH_VARS)}</li>
           ))}
         </ol>
         <div
@@ -94,7 +100,7 @@ export function GuardOnceSecret({
                       {guide.title}
                     </span>
                     <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
-                      {guide.blurb}
+                      {t(`guardEnroll:${guide.blurbKey}`, GUARD_ENROLL_PATH_VARS)}
                     </span>
                   </span>
                 </AccordionTrigger>
@@ -106,7 +112,12 @@ export function GuardOnceSecret({
               </AccordionItem>
             ))}
           </Accordion>
-          <p className="text-muted-foreground">{GUARD_DISTRO_INSTALL_FOOTER}</p>
+          <p className="text-muted-foreground">
+            {t(
+              `guardEnroll:${GUARD_DISTRO_INSTALL_FOOTER_KEY}`,
+              GUARD_ENROLL_PATH_VARS,
+            )}
+          </p>
         </div>
       </div>
     </div>

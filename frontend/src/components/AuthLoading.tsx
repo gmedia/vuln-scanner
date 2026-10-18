@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/utils";
 
@@ -14,13 +15,14 @@ export function AuthLoading({
   fields?: 2 | 3;
   maxWidth?: keyof typeof maxWidthClass;
 }) {
+  const { t } = useTranslation("common");
   return (
     <div
       className="flex min-h-dvh items-start justify-center bg-background px-4 pb-10 pt-[max(1.25rem,env(safe-area-inset-top))] sm:items-center sm:py-10"
       data-testid="auth-loading"
       role="status"
       aria-busy="true"
-      aria-label="Loading"
+      aria-label={t("loading")}
     >
       <div className={cn("w-full", maxWidthClass[maxWidth])}>
         <div className="mb-5 flex flex-col items-center gap-1.5 text-center sm:mb-6">
