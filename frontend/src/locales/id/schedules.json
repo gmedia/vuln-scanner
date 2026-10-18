@@ -54,5 +54,7 @@
   "errCreate": "Gagal membuat jadwal",
   "errToggle": "Gagal mengubah status jadwal",
   "errDelete": "Gagal menghapus jadwal",
-  "targetRequired": "Target wajib diisi"
+  "targetRequired": "Target wajib diisi",
+  "errInsufficientCredits": "Kredit tidak mencukupi. Jadwal dinonaktifkan otomatis.",
+  "errDispatchFailed": "Gagal mengantrikan scan. Coba lagi nanti atau hubungi ops."
 }

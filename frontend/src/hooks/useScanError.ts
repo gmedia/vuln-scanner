@@ -1,7 +1,6 @@
 import { isAxiosError } from "axios";
+import i18n from "@/i18n";
 import type { ApiError } from "@/lib/utils";
-
-const FALLBACK = "Failed to start scan. Check your connection.";
 
 function detailFromBody(data: unknown): string | undefined {
   if (!data || typeof data !== "object") return undefined;
@@ -19,22 +18,22 @@ export function useScanError() {
 
       const status = error.response?.status;
       if (status === 413) {
-        return "File too large for the server or CDN (often ~100MB via Cloudflare). Try a smaller package.";
+        return i18n.t("scan:errScanTooLarge");
       }
       if (status === 502 || status === 503 || status === 504) {
-        return "Upload timed out or the origin dropped the request. Retry a smaller file or a faster link.";
+        return i18n.t("scan:errScanGateway");
       }
       if (
         error.code === "ECONNABORTED" ||
         error.message?.toLowerCase().includes("timeout")
       ) {
-        return "Upload timed out. Large APKs may exceed the CDN or proxy limit.";
+        return i18n.t("scan:errScanTimeout");
       }
       if (!error.response) {
-        return "Upload was interrupted (network reset or CDN body limit). Try a file under 80MB.";
+        return i18n.t("scan:errScanInterrupted");
       }
     }
-    return FALLBACK;
+    return i18n.t("scan:errScanFallback");
   };
 
   return handleScanError;

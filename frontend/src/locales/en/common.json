@@ -32,5 +32,10 @@
   "sidebarTitle": "Sidebar",
   "sidebarDescription": "Displays the mobile sidebar.",
   "toggleSidebar": "Toggle Sidebar",
-  "close": "Close"
+  "close": "Close",
+  "loading": "Loading",
+  "hourLabel24": "Hour (24-hour)",
+  "minuteLabel": "Minute",
+  "dateTimePlaceholder": "Select date & time",
+  "clear": "Clear"
 }

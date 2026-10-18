@@ -262,7 +262,7 @@ function UptimeMonitorForm({
             onClick={() => {
               const parsed = parseUptimeFormPayload(values);
               if (!parsed.ok) {
-                toast.error("Invalid headers JSON");
+                toast.error(t("errInvalidHeaders"));
                 return;
               }
               onSave(parsed.payload);

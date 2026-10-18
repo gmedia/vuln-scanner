@@ -24,6 +24,7 @@ vi.mock("axios", () => {
 });
 
 import axios from "axios";
+import i18n from "@/i18n";
 import {
   listSchedules,
   createSchedule,
@@ -51,9 +52,12 @@ describe("schedules API", () => {
   });
 
   it("mapScheduleError mentions per-organization cap", () => {
-    expect(
-      mapScheduleError("Maximum 10 enabled schedules per organization"),
-    ).toContain("per organisasi");
+    const message = mapScheduleError(
+      "Maximum 10 enabled schedules per organization",
+      i18n.getFixedT(null, "schedules"),
+    );
+    expect(message).toContain("10");
+    expect(message).toContain("organization");
   });
 
   it("listSchedules hits GET /api/schedules", async () => {

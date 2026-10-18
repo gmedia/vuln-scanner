@@ -29,33 +29,42 @@ export type EnrollResponseFields = {
   install_hint: string;
 };
 
-export const GUARD_HOST_SETUP_STEPS = [
-  "Pastikan host Linux/VPS/colo yang Anda kuasai, outbound HTTPS ke origin API app (bukan password Manager).",
-  "Simpan token enroll di vault host (env/file mode 600). Jangan commit ke git atau tempel di chat publik.",
-  "Dari host, POST /api/guard/enroll dengan JSON { token, agent_name } — agent_name unik per mesin (1–63 karakter).",
-  "Response berisi agent_id, agent_key, manager_host, install_hint. Simpan agent_key hanya di host.",
-  "Lanjut blok instalasi agen di bawah (per distro + manager_host dari response). Jangan menebak IP Manager.",
-  "Start agen, lalu di dashboard Guard klik Sinkronkan. Cek tabel Agen (aktif/menunggu/terputus) dan Alert kritis.",
+export const GUARD_HOST_SETUP_STEP_KEYS = [
+  "hostStep1",
+  "hostStep2",
+  "hostStep3",
+  "hostStep4",
+  "hostStep5",
+  "hostStep6",
 ] as const;
 
-export const GUARD_AGENT_INSTALL_STEPS = [
-  "Prasyarat: Linux 64-bit yang Anda kuasai; root/sudo; outbound ke manager_host (port komunikasi agen ↔ Manager — ikuti runbook ops bila non-default). Jangan buka password Manager di host.",
-  "Ambil field dari response enroll: agent_id, agent_key, manager_host, dan install_hint (jika ada, prioritaskan perintah di situ).",
-  "Pilih blok perintah distro di bawah (Debian/Ubuntu vs RHEL-family vs SUSE). Versi paket harus kompatibel dengan Manager lab/prod — tanya ops bila ragu. Jangan hardcode URL lab di ticket publik.",
-  "Setelah paket terpasang: set alamat Manager ke manager_host dari response (bukan tebakan). Path umum: /var/ossec/etc/ossec.conf — elemen <address> di blok client.",
-  "Import kunci agen: gunakan agent_key (dan agent_id bila diminta tool) lewat utilitas resmi (sering: /var/ossec/bin/manage_agents atau import key), atau ikuti install_hint. Key file mode 600; jangan log ke CI.",
-  "Aktifkan layanan: sudo systemctl daemon-reload && sudo systemctl enable --now wazuh-agent (nama unit bisa berbeda). Cek: systemctl status wazuh-agent.",
-  "Verifikasi di host: agen running; log lokal tanpa error auth berulang. Di app: Guard → Sinkronkan → status agen aktif (bukan menunggu lama). Alert kritis muncul setelah rule level memenuhi ambang (default ≥ 12).",
-  "Larangan: password/user Manager Wazuh, API key global app, atau alamat internal lab di git/chat/screenshot publik. Enroll selalu lewat token SaaS + HTTPS ke origin app.",
+export const GUARD_AGENT_INSTALL_STEP_KEYS = [
+  "installStep1",
+  "installStep2",
+  "installStep3",
+  "installStep4",
+  "installStep5",
+  "installStep6",
+  "installStep7",
+  "installStep8",
 ] as const;
 
-export const GUARD_AGENT_INSTALL_INTRO =
-  "Instalasi runtime agen di host target — perintah per distro Linux (placeholder saja). Utamakan install_hint + manager_host dari POST /api/guard/enroll. Bukan tutorial SIEM penuh; tanpa secret lab.";
+export const GUARD_AGENT_INSTALL_INTRO_KEY = "installIntro";
+
+export const GUARD_DISTRO_INSTALL_FOOTER_KEY = "distroFooter";
+
+// Route/file paths live outside the locale catalog so the i18n copy test can
+// keep rejecting raw route paths while the sentences stay readable.
+export const GUARD_ENROLL_PATH_VARS = {
+  enrollPath: "/api/guard/enroll",
+  ossecConfPath: "/var/ossec/etc/ossec.conf",
+  manageAgentsPath: "/var/ossec/bin/manage_agents",
+} as const;
 
 export type GuardDistroInstallGuide = {
   id: string;
   title: string;
-  blurb: string;
+  blurbKey: string;
   commands: readonly string[];
 };
 
@@ -63,8 +72,7 @@ export const GUARD_DISTRO_INSTALL_GUIDES: readonly GuardDistroInstallGuide[] = [
   {
     id: "debian-ubuntu",
     title: "Debian / Ubuntu",
-    blurb:
-      "Keluarga apt/dpkg. Ganti <WAZUH_VERSION> agar cocok Manager; utamakan install_hint bila ada.",
+    blurbKey: "distroDebianBlurb",
     commands: [
       "sudo apt-get update",
       "sudo apt-get install -y curl gnupg apt-transport-https",
@@ -82,8 +90,7 @@ export const GUARD_DISTRO_INSTALL_GUIDES: readonly GuardDistroInstallGuide[] = [
   {
     id: "rhel-family",
     title: "RHEL / CentOS / Rocky / AlmaLinux / Fedora",
-    blurb:
-      "Keluarga rpm/dnf (yum di rilis lama). Nama unit tetap wazuh-agent pada paket resmi.",
+    blurbKey: "distroRhelBlurb",
     commands: [
       "sudo dnf install -y curl",
       "sudo rpm --import https://packages.wazuh.com/key/GPG-KEY-WAZUH",
@@ -99,8 +106,7 @@ export const GUARD_DISTRO_INSTALL_GUIDES: readonly GuardDistroInstallGuide[] = [
   {
     id: "suse",
     title: "SLES / openSUSE",
-    blurb:
-      "zypper. Paket sering lewat mirror ops atau RPM setara; sesuaikan channel dengan Manager.",
+    blurbKey: "distroSuseBlurb",
     commands: [
       "sudo zypper refresh",
       "sudo zypper install -y curl",
@@ -113,6 +119,3 @@ export const GUARD_DISTRO_INSTALL_GUIDES: readonly GuardDistroInstallGuide[] = [
     ],
   },
 ] as const;
-
-export const GUARD_DISTRO_INSTALL_FOOTER =
-  "Ganti <MANAGER_HOST> dari response enroll. Import agent_key lewat manage_agents (atau install_hint). Opsi paket .deb/.rpm lokal: dpkg -i / rpm -ivh dari mirror ops. Jangan menempel password Manager atau IP lab di chat/repo publik.";

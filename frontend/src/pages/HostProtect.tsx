@@ -395,7 +395,7 @@ export default function HostProtect() {
                 <div
                   role="status"
                   aria-busy="true"
-                  aria-label="Loading"
+                  aria-label={t("common:loading")}
                   className="space-y-3"
                 >
                   {Array.from({ length: 3 }).map((_, i) => (

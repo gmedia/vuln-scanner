@@ -30,10 +30,12 @@ function TableRowSkeleton({
   rows = 5,
   columns = 4,
   className,
+  label = "Loading",
 }: {
   rows?: number;
   columns?: number;
   className?: string;
+  label?: string;
 }) {
   const barCount = Math.max(1, columns);
   return (
@@ -41,7 +43,7 @@ function TableRowSkeleton({
       className={cn("space-y-2", className)}
       role="status"
       aria-busy="true"
-      aria-label="Loading"
+      aria-label={label}
     >
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="flex h-10 min-h-10 items-center gap-3">

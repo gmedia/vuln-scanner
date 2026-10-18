@@ -1,4 +1,5 @@
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { SiemRail } from "@/components/siem/siemChrome";
@@ -44,6 +45,7 @@ export function ScanResultsPanel({
   readonly summary: ScanSummary;
   readonly onViewDetails: () => void;
 }) {
+  const { t } = useTranslation("scan");
   const critical = count(summary.critical);
   const high = count(summary.high);
   const medium = count(summary.medium);
@@ -61,7 +63,7 @@ export function ScanResultsPanel({
       testid="scan-results"
     >
       <ScanShellHead
-        title="Results"
+        title={t("resultsTitle")}
         aside={
           <Badge variant="completed" className="text-[10px]">
             COMPLETED
