@@ -279,9 +279,12 @@ export default function Uptime() {
             <AlertDialogDescription>{t("confirmDelete")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogCancel data-testid="uptime-delete-cancel">
+              {t("cancel")}
+            </AlertDialogCancel>
             <AlertDialogAction
               className={buttonVariants({ variant: "destructive" })}
+              data-testid="uptime-delete-confirm"
               onClick={() => {
                 if (pendingDeleteId) delMut.mutate(pendingDeleteId);
                 setPendingDeleteId(null);

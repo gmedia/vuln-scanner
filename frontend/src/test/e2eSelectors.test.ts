@@ -20,6 +20,10 @@ const BANNED = [
   },
   { kind: "a lucide icon class", pattern: /svg\.lucide-/ },
   { kind: "a positional index", pattern: /\.nth\(/ },
+  {
+    kind: "a native browser dialog",
+    pattern: /\.(?:on|once)\(\s*["']dialog["']/,
+  },
 ];
 
 describe("e2e specs select by stable hooks", () => {
