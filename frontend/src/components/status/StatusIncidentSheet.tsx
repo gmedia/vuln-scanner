@@ -137,9 +137,9 @@ function StatusIncidentForm({
             onChange={(e) => setTitle(e.target.value)}
           />
         </Field>
-        <Field label={t("impact")}>
+        <Field id="sp-inc-impact" label={t("impact")}>
           <Select value={impact} onValueChange={setImpact}>
-            <SelectTrigger className="h-10 min-h-10">
+            <SelectTrigger id="sp-inc-impact" className="h-10 min-h-10">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -153,9 +153,9 @@ function StatusIncidentForm({
         </Field>
         {isEdit ? null : (
           <>
-            <Field label={t("status")}>
+            <Field id="sp-inc-status" label={t("status")}>
               <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger className="h-10 min-h-10">
+                <SelectTrigger id="sp-inc-status" className="h-10 min-h-10">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

@@ -119,6 +119,7 @@ function ScheduleRowActions({
   atCap,
   togglePending,
   deletePending,
+  desktop = false,
   onToggle,
   onDelete,
 }: {
@@ -127,17 +128,26 @@ function ScheduleRowActions({
   atCap: boolean;
   togglePending: boolean;
   deletePending: boolean;
+  desktop?: boolean;
   onToggle: (id: string, enabled: boolean) => void;
   onDelete: (id: string) => void;
 }) {
   const { t } = useTranslation("schedules");
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const rowActionClass =
-    "min-h-11 w-full min-w-0 px-3 sm:h-8 sm:min-h-8 sm:w-8 sm:min-w-8 sm:shrink-0 sm:px-0";
-  const menuTriggerClass =
-    "h-11 w-11 min-h-11 min-w-11 p-0 sm:h-8 sm:w-8 sm:min-h-8 sm:min-w-8";
+  const rowActionClass = desktop
+    ? "h-9 w-9 min-h-9 min-w-9 shrink-0 px-0"
+    : "min-h-11 w-full min-w-0 px-3";
+  const menuTriggerClass = desktop
+    ? "h-9 w-9 min-h-9 min-w-9 p-0"
+    : "h-11 w-11 min-h-11 min-w-11 p-0";
   return (
-    <div className="flex w-full items-center justify-end gap-2 sm:w-auto sm:gap-1">
+    <div
+      className={
+        desktop
+          ? "flex w-auto items-center justify-end gap-1"
+          : "flex w-full items-center justify-end gap-2"
+      }
+    >
       {canCreate && (
         <Button
           type="button"
@@ -156,11 +166,11 @@ function ScheduleRowActions({
           onClick={() => onToggle(s.id, !s.enabled)}
         >
           {s.enabled ? (
-            <Pause className="mr-1 h-4 w-4 shrink-0 sm:mr-0" />
+            <Pause className={desktop ? "h-4 w-4 shrink-0" : "mr-1 h-4 w-4 shrink-0"} />
           ) : (
-            <Play className="mr-1 h-4 w-4 shrink-0 sm:mr-0" />
+            <Play className={desktop ? "h-4 w-4 shrink-0" : "mr-1 h-4 w-4 shrink-0"} />
           )}
-          <span className="min-w-0 truncate sm:sr-only">
+          <span className={desktop ? "sr-only" : "min-w-0 truncate"}>
             {s.enabled ? t("disable") : t("enable")}
           </span>
         </Button>
@@ -801,6 +811,7 @@ function Schedules() {
                                 atCap={atCap}
                                 togglePending={toggleMut.isPending}
                                 deletePending={deleteMut.isPending}
+                                desktop
                                 onToggle={(id, enabled) =>
                                   toggleMut.mutate({ id, enabled })
                                 }

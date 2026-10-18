@@ -13,6 +13,7 @@ function tcpTarget(): string | undefined {
 async function deleteUptimeRow(page: Page, row: Locator): Promise<void> {
   await row.getByTestId("uptime-actions").click();
   await page.getByTestId("uptime-delete").click();
+  await page.getByTestId("uptime-delete-confirm").click();
 }
 
 test.describe("Uptime @uptime", () => {
@@ -51,7 +52,6 @@ test.describe("Uptime @uptime", () => {
     const base = httpTarget().replace(/\/$/, "");
     const target = `${base}${base.includes("?") ? "&" : "?"}e2e=${stamp}`;
     await page.goto("/uptime");
-    page.on("dialog", (d) => d.accept());
     const leftovers = page
       .locator("main")
       .getByTestId("uptime-row")
@@ -97,7 +97,6 @@ test.describe("Uptime @uptime", () => {
       hasText: name,
     });
     await expect(row).toBeVisible({ timeout: 20_000 });
-    page.once("dialog", (d) => d.accept());
     await deleteUptimeRow(page, row);
     await expect(row).toHaveCount(0, { timeout: 20_000 });
   });
