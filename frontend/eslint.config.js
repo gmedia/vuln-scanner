@@ -29,6 +29,12 @@ export default tseslint.config(
           message:
             "Use shadcn Select from @/components/ui/Select, not native <select>.",
         },
+        {
+          selector:
+            "CallExpression[callee.object.name='window'][callee.property.name=/^(alert|confirm|prompt)$/]",
+          message:
+            "Use a controlled AlertDialog (or sonner toast), not window.confirm/alert/prompt.",
+        },
       ],
     },
   },

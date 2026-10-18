@@ -62,6 +62,8 @@ Every PR description must include:
 - [ ] [follow-up if any]
 ```
 
+UI PRs must also fill the design change protocol in [`.github/pull_request_template.md`](.github/pull_request_template.md) (six questions from [`docs/specs/design-invariants.md`](docs/specs/design-invariants.md) §3).
+
 ## Anti-patterns
 - Working on `main` branch
 - Waiting/polling for CI/CD
@@ -71,7 +73,7 @@ Every PR description must include:
 
 ## Design system (MANDATORY)
 
-Public marketing and in-app SPA share **one visual family**. Detail: `docs/AGENT_EXECUTION_GUIDE.md` §11, `docs/specs/shadcn-ui-migration.md` and `docs/specs/row-actions.md`.
+Public marketing and in-app SPA share **one visual family**. Start with [`docs/specs/design-invariants.md`](docs/specs/design-invariants.md) (Tier 1 invariants + change protocol); detail: `docs/AGENT_EXECUTION_GUIDE.md` §10, `docs/specs/shadcn-ui-migration.md` and `docs/specs/row-actions.md`.
 
 1. **Tokens** — copy `frontend/src/index.css` `:root` (`--background`, `--foreground`, `--primary` `hsl(142 71% 45%)`, `--border`, `--muted-foreground`). Do not invent a second palette (no `#0a7`, no Palatino-as-brand).
 2. **Public HTML islands** (`/blog`, future `/legal`, …) — **Landing chrome**, not a separate “editorial” skin: `h-12` header, BrandMark (`SINE` + `XIS` accent + crosshair), `max-w-6xl` / `2xl:max-w-[90rem]`, footer line + Sign in / Get started. Island stays FastAPI HTML (SEO); CSS must **rhyme** Landing, not Palatino briefing.
