@@ -14,7 +14,7 @@
 | Visual QA / screenshots | Recapture **SPA** on public origin after deploy; **HTML islands** (`/blog`, `/terms`, `/privacy`, `/status/{slug}`) are **not** React — Playwright on SPA origin may miss them if nginx routes to backend. |
 | New page | Add a `Route` in `App.tsx` **and** a row here in the same PR. Sidebar: `frontend/src/components/layout/Sidebar.tsx`. |
 | Auth | `ProtectedRoute` → JWT; unauthenticated → `/login` (invite query preserved). `AdminRoute` → `user.is_admin` else `/dashboard`. |
-| Design | Guide **§10** + `AGENTS.md`. Public HTML must **rhyme Landing**, not a second editorial skin. SPA: kit only; no native `<select>`. |
+| Design | [`design-invariants.md`](specs/design-invariants.md) (Tier 1 + protocol) → Guide **§10** + `AGENTS.md`. Public HTML must **rhyme Landing**, not a second editorial skin. SPA: kit only; no native `<select>`. |
 | Flags | Backend 404 / empty when off. SPA still **routes** `/siem` and `/uptime` even if API is flag-off — do not assume nav hide. |
 
 **Chrome families**

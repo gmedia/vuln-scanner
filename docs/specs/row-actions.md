@@ -1,8 +1,8 @@
 # Row actions in tables & card lists (v1)
 
-**Status:** active rule — **enforced** (not a proposal).
+**Status:** active rule — review + per-page tests (not a lint rule). Source scans in `frontend/src/test/designInvariants.test.ts` cover blocking dialogs and native `<select>`; alignment, menu choice, and `desktop` branching are verified in review and the checklist in §8.
 **Applies to:** any row-level control in a table's last column, and any mobile card's action area.
-**Summary rule:** [`AGENTS.md`](../../AGENTS.md) § Design system item 5.
+**Summary rule:** [`AGENTS.md`](../../AGENTS.md) § Design system item 5. Tier 1 table: [`design-invariants.md`](design-invariants.md).
 
 ---
 

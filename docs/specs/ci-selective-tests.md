@@ -35,6 +35,7 @@ There is **no `paths:` filter**. Docs-only PRs still pay Compose + Playwright.
 2. **Do not** run a **subset of pytest files** on CI while `--cov-fail-under` remains in `backend/pyproject.toml` / `workers/pyproject.toml`. Partial collection **fails the job** or forces a weaker gate.
 3. **Do not** change fail-under numbers in this epic.
 4. Vitest CI (`npm test` → `vitest run`) has **no** coverage gate; subset is *technically* safe but **not S1**.
+4a. **Design invariants always run** when `frontend/**` changes: `frontend-design-invariants` executes `designInvariants`, `themeTokens`, `toneColors`, `e2eSelectors`, and `i18n` regardless of selective Vitest globs. See [`design-invariants.md`](design-invariants.md).
 5. `deploy` must `needs` a **green aggregator**, never a possibly-skipped E2E job.
 6. Frozen e2e testids stay: `user-menu`, `org-switcher*`, `export-executive`, `rescan-button`, `guard-state`, `guide-desktop-toc`.
 7. Playwright ≠ Guard host enroll. No IPs/secrets in the spec or workflow comments beyond existing secret **names**.

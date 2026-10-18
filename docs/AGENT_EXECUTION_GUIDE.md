@@ -553,12 +553,14 @@ Detail: [`docs/multi-host-ops.md`](multi-host-ops.md) § Guard lab.
 
 ## 10) Design system (agent law)
 
-**Why:** `/blog` HTML island drifted into a Palatino “briefing” skin while Landing is Inter + BrandMark + shadcn tokens. Admin CMS used a native `<select>`. `AGENTS.md` had **no** design rule — that is now explicit.
+**Read first:** [`docs/specs/design-invariants.md`](specs/design-invariants.md) — Tier 1 invariants + the six-question change protocol. This section is the surface summary.
+
+**Why:** `/blog` HTML island drifted into a Palatino “briefing” skin while Landing is Sora + BrandMark + shadcn tokens. Admin CMS used a native `<select>`. `AGENTS.md` had **no** design rule — that is now explicit.
 
 | Surface | Must |
 |---------|------|
 | **Landing `/`** | Source of truth for **public** chrome: `BrandMark`, `h-12` `border-b`, `max-w-6xl` / `2xl:max-w-[90rem]`, `Button`, theme/i18n, footer `BRAND.footerLine` + `/blog` + login/register |
-| **HTML islands** (`GET /blog`, `/blog/{slug}`) | Same **tokens + chrome geometry**. FastAPI string is OK for SEO; **not** a second brand. Header: wordmark `SINE`+`XIS` (primary accent) + home/blog/sign-in/get-started. Body: `font-sans` stack matching `--font-sans` (Inter, ui-sans-serif). Background `--background` `hsl(0 0% 98%)`, text `--foreground`, links/CTAs `--primary` `hsl(142 71% 45%)`. One `h1` including empty index. |
+| **HTML islands** (`GET /blog`, `/blog/{slug}`) | Same **tokens + chrome geometry**. FastAPI string is OK for SEO; **not** a second brand. Header: wordmark `SINE`+`XIS` (primary accent) + home/blog/sign-in/get-started. Body: `font-sans` stack matching `--font-sans` (Sora, ui-sans-serif). Background `--background` `hsl(0 0% 98%)`, text `--foreground`, links/CTAs `--primary` `hsl(142 71% 45%)`. One `h1` including empty index. |
 | **In-app SPA (AppShell)** | **P15 S2 shipped:** no sticky product `h-12`. Chrome cluster (`user-menu`, `sign-out`, org-switcher, theme, i18n) lives in `SidebarFooter`. Page title is in-content `PageHeader`. Kit only: `frontend/src/components/ui/*`. New forms: `Label` + kit controls. **Forbidden:** native `<select>` (eslint `no-restricted-syntax` in `frontend/eslint.config.js`; use `Select`). Raw `<button>` only for icon toggles and full-width list/card rows — primary actions use `Button`. No placeholder-only fields without `Label`. **Filter bars:** equal `gap-3` grid, `h-10 min-h-10` on Input/Select/DatePicker/DateTimePicker/Apply; DateTimePicker trigger must match DatePicker (`border-border bg-input`). Pattern: Credit History. |
 | **Kit files** | Do not one-off restyle `components/ui` for a screenshot. See `docs/specs/shadcn-ui-migration.md`. |
 | **Row actions** (table last column + mobile card action area) | Right-align: `text-right` on head **and** cell (the kit's `TableHead` is `text-left`; `TableCell` sets none) — but if the cell wraps controls in a **block-level flex**, `text-right` is a **no-op**, use `justify-end`. 1 action → visible `Button`; 2+ secondary/admin → `…` `DropdownMenu`; `Select`/inputs/disclosure toggles stay **outside** menus. Menu items use `onSelect`; destructive last + separator; **never** nest `AlertDialogTrigger` in an item — use a **sibling controlled `AlertDialog`**. Confirm irreversible only. Mobile trigger ≥44px; branch on a `desktop` prop, **not** `sm:`. See `docs/specs/row-actions.md`. |

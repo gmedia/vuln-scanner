@@ -30,7 +30,7 @@ Default shadcn primitives already look correct. DIY markup (`window.confirm`, na
 | `schedule-create-card` | `Schedules.tsx` |
 | `guard-state`, `guard-disabled`, `guard-host-enroll-steps`, `guard-agent-install-steps`, `guard-distro-install-commands`, `guard-enroll-token-row`, `guard-agents`, `guard-alerts` | `Guard.tsx` (+ Guide distro block) |
 
-Card padding stays `p-6` / `pt-0`. Do not restyle kit files to “match screenshots” with one-off opacity/glass.
+Card padding stays `p-4` / `pt-0` (asserted by `src/test/Card.test.tsx`). Do not restyle kit files to “match screenshots” with one-off opacity/glass.
 
 ---
 
@@ -38,24 +38,22 @@ Card padding stays `p-6` / `pt-0`. Do not restyle kit files to “match screensh
 
 ### Installed under `frontend/src/components/ui/`
 
-accordion, alert, alert-dialog, Badge, Button, Calendar, Card, chart, DatePicker, DateTimePicker, Dialog, dropdown-menu, Input, Label, Pagination, Popover, Progress, ScrollArea, Select, Separator, sheet, sidebar, Skeleton, sonner, Table, Tabs, Textarea, Tooltip, breadcrumb.
+accordion, alert, alert-dialog, Badge, Button, badgeVariants, buttonVariants, Calendar, Card, chart, Checkbox, DatePicker, DateTimePicker, dropdown-menu, Input, Label, Pagination, Popover, Progress, Select, Separator, sheet, sidebar, Skeleton, sonner, Table, Tabs, Textarea, Tooltip.
 
 **Sidebar kit hazard:** `SidebarMenuButton size="lg"` in `frontend/src/components/ui/sidebar.tsx` has `group-data-[collapsible=icon]:p-0!`, which overrides base `group-data-[collapsible=icon]:p-2!`. It is unsafe for unguarded text/icon content inside the collapsed rail. See [`frontend/DESIGN.md`](../../frontend/DESIGN.md) § "App shell chrome (Sidebar / Header)" (#973, #975); don't restyle the kit for this surface.
 
-### Installed but unused (or only tests / sidebar)
+### Installed with limited use
 
 | Primitive | Notes |
 |-----------|--------|
-| **Dialog** | Tests / generic modal — confirms use **alert-dialog** |
 | **Tabs** | ScanDetail + SIEM shipped (Wave B); Guard optional skip |
-| **breadcrumb** | No page imports — AppShell optional |
 | **Tooltip** | Sidebar only |
 | **Sheet** | Mobile sidebar drawer **and mobile bottom-sheet filters/forms** (e.g. `components/ops/FilterSheet.tsx`). Bottom sheets must keep a drag handle affordance or a non-drag close (the `FilterSheet` Done button) and never replace the always-visible desktop control. |
 | **Popover** | Via DatePicker / DateTimePicker only |
 
 ### Not installed (official catalog ~46)
 
-avatar, carousel, checkbox, collapsible, command, context-menu, drawer, form, hover-card, input-otp, menubar, navigation-menu, radio-group, resizable, slider, switch, toggle, toggle-group, aspect-ratio.
+avatar, carousel, collapsible, command, context-menu, drawer, form, hover-card, input-otp, menubar, navigation-menu, radio-group, resizable, slider, switch, toggle, toggle-group, aspect-ratio.
 
 **Do not add** unless a wave below names them: carousel, menubar, context-menu, slider, aspect-ratio, input-otp (no 2FA), resizable, navigation-menu (sidebar-03 is enough).
 
