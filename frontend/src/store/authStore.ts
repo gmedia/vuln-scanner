@@ -12,9 +12,9 @@ function extractError(err: unknown, fallback: string): string {
       const retryAfter = err.response.headers?.["retry-after"];
       const seconds = retryAfter ? parseInt(retryAfter, 10) : null;
       if (seconds && !isNaN(seconds)) {
-        return `Too many attempts. Please wait ${seconds} seconds before trying again.`;
+        return i18n.t("common:waitSeconds", { seconds });
       }
-      return "Too many attempts. Please wait before trying again.";
+      return i18n.t("auth:errTooManyAttempts");
     }
     if (err.response?.data?.detail) {
       return err.response.data.detail;
@@ -193,7 +193,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       }
       return true;
     } catch (err) {
-      const message = extractError(err, "Gagal beralih organisasi");
+      const message = extractError(err, i18n.t("auth:errSwitchOrg"));
       set({ error: message });
       return false;
     }
@@ -215,7 +215,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ isLoading: false });
       return true;
     } catch (err) {
-      const message = extractError(err, "Login gagal");
+      const message = extractError(err, i18n.t("auth:errLogin"));
       set({ error: message, isLoading: false });
       return false;
     }
@@ -237,7 +237,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ isLoading: false });
       return true;
     } catch (err) {
-      const message = extractError(err, "Login gagal");
+      const message = extractError(err, i18n.t("auth:errLogin"));
       set({ error: message, isLoading: false });
       return false;
     }
@@ -254,7 +254,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         message: res.message ?? null,
       };
     } catch (err) {
-      const message = extractError(err, "Registrasi gagal");
+      const message = extractError(err, i18n.t("auth:errRegister"));
       set({ error: message, isLoading: false });
       return { ok: false, emailSent: null, message: null };
     }
@@ -291,7 +291,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       }
       return true;
     } catch (err) {
-      const message = extractError(err, "Verifikasi email gagal");
+      const message = extractError(err, i18n.t("auth:errVerifyEmail"));
       set({ error: message, isLoading: false });
       return false;
     }
@@ -308,10 +308,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         message: res.message ?? null,
       };
     } catch (err) {
-      const message = extractError(
-        err,
-        "Gagal mengirim ulang email verifikasi",
-      );
+      const message = extractError(err, i18n.t("auth:errResendVerification"));
       set({ error: message, isLoading: false });
       return { ok: false, emailSent: null, message: null };
     }
@@ -329,7 +326,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       }
       return true;
     } catch (err) {
-      const message = extractError(err, "Gagal memperbarui profil");
+      const message = extractError(err, i18n.t("auth:errUpdateProfile"));
       set({ error: message, isLoading: false });
       return false;
     }
@@ -359,7 +356,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ isLoading: false });
       return true;
     } catch (err) {
-      const message = extractError(err, "Gagal mengirim email reset password");
+      const message = extractError(err, i18n.t("auth:errForgotPassword"));
       set({ error: message, isLoading: false });
       return false;
     }
@@ -372,7 +369,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ isLoading: false, error: null });
       return true;
     } catch (err) {
-      const message = extractError(err, "Gagal mereset password");
+      const message = extractError(err, i18n.t("auth:errResetPassword"));
       set({ error: message, isLoading: false });
       return false;
     }

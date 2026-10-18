@@ -298,9 +298,13 @@ jobs:
                   GLOBS="$GLOBS src/test/credit/${stem}.test.tsx src/test/credit/${stem}.test.ts"
                   ;;
                 frontend/src/test/*.test.ts|frontend/src/test/*.test.tsx)
+                  # Test edits can lower coverage (deleted/weakened tests), so the
+                  # full suite must run to let the coverage gate judge them.
+                  PAGE_ONLY=false
                   GLOBS="$GLOBS ${f#frontend/}"
                   ;;
                 frontend/src/test/admin/*.test.ts|frontend/src/test/admin/*.test.tsx|frontend/src/test/credit/*.test.ts|frontend/src/test/credit/*.test.tsx)
+                  PAGE_ONLY=false
                   GLOBS="$GLOBS ${f#frontend/}"
                   ;;
                 frontend/*)
@@ -450,7 +454,10 @@ jobs:
             # shellcheck disable=SC2086
             npx vitest run $VITEST_GLOBS
           else
-            npm test
+            # Coverage thresholds live in vitest.config.ts. Enforce them only on
+            # a full run: a selective run covers a subset and would trip the
+            # global thresholds for the wrong reason.
+            npx vitest run --coverage
           fi
 
   frontend-build:

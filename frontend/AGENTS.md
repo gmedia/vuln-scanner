@@ -24,7 +24,7 @@ Vite + React + TS + shadcn. Node >=24. Dev :5173; prod compose publishes :5174.
 
 - ESLint: no native `<select>` in `src/` (e2e/tests exempt). Primary actions = `Button`.
 - Table/card **row actions**: follow [`../docs/specs/row-actions.md`](../docs/specs/row-actions.md) — action column is `text-right` (or `justify-end` when the cell wraps a block-level flex), menus use `onSelect` + a sibling controlled `AlertDialog` (never a nested trigger), and only irreversible actions get a confirmation.
-- Alias `@/*`. `npm test` = vitest run; coverage statements/lines 75, branches/functions 70.
+- Alias `@/*`. `npm test` = vitest run; coverage statements/lines 75, branches/functions 70 — **enforced in CI on full runs** (`npx vitest run --coverage`). Selective runs (`VITEST_GLOBS`) skip the gate by design. Never raise a threshold to make a red build green; add tests.
 - Proxy `/api` `/ws` → `http://backend:8000` (needs Docker DNS or override).
 
 ## ANTI-PATTERNS
