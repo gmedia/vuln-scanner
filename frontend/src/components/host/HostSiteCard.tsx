@@ -1,9 +1,21 @@
+import { useState } from "react";
 import { FolderKanban } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { HostHit, HostScan, HostSite } from "@/api/hostProtect";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { buttonVariants } from "@/components/ui/buttonVariants";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/Label";
 import {
   Select,
@@ -66,6 +78,7 @@ export default function HostSiteCard({
   onIgnore,
 }: HostSiteCardProps) {
   const { t } = useTranslation("host");
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const helperWhen = formatHelperPollAt(helperPollAt);
   const helperStale = isHelperPollStale(helperPollAt);
   const lastCount = lastScan?.hit_count ?? 0;
@@ -206,9 +219,7 @@ export default function HostSiteCard({
               variant="outline"
               size="sm"
               className="w-full min-h-11 text-destructive hover:text-destructive sm:min-h-10 sm:flex-1 lg:w-auto"
-              onClick={() => {
-                if (window.confirm(t("confirmDelete"))) onDelete();
-              }}
+              onClick={() => setDeleteOpen(true)}
             >
               {t("delete")}
             </Button>
@@ -347,6 +358,23 @@ export default function HostSiteCard({
           />
         )}
       </div>
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("delete")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("confirmDelete")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: "destructive" })}
+              onClick={onDelete}
+            >
+              {t("delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -523,9 +523,9 @@ export default function StatusPage() {
             <OpsShellBody className="space-y-4">
               <div className="grid grid-cols-1 gap-3 rounded-md border border-border bg-muted/30 p-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="flex min-w-0 flex-col gap-1.5">
-                  <Label>{t("monitor")}</Label>
+                  <Label htmlFor="sp-monitor">{t("monitor")}</Label>
                   <Select value={monitorId} onValueChange={setMonitorId}>
-                    <SelectTrigger className="h-10 min-h-10">
+                    <SelectTrigger id="sp-monitor" className="h-10 min-h-10">
                       <SelectValue placeholder={t("monitor")} />
                     </SelectTrigger>
                     <SelectContent>

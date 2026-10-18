@@ -493,7 +493,6 @@ describe("Assets page", () => {
         tags: [],
       },
     ]);
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
     renderPage();
     await waitFor(() =>
       expect(screen.getByTestId("asset-card-a1")).toBeInTheDocument(),
@@ -509,11 +508,11 @@ describe("Assets page", () => {
     expect(wrap.style.transform).toBe("translateX(-96px)");
 
     fireEvent.click(screen.getByTestId("asset-swipe-delete-a1"));
-    expect(confirmSpy).toHaveBeenCalledWith("Delete this asset?");
+    const dialog = await screen.findByRole("alertdialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
     await waitFor(() =>
       expect(vi.mocked(deleteAsset).mock.calls[0]?.[0]).toBe("a1"),
     );
-    confirmSpy.mockRestore();
   });
 
   it("filters by type with the segmented control and clears all filters", async () => {

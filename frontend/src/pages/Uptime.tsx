@@ -14,6 +14,17 @@ import {
 } from "@/api/uptime";
 import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
+import { buttonVariants } from "@/components/ui/buttonVariants";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Skeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import { UptimeFiltersSection } from "@/components/uptime/UptimeFiltersSection";
@@ -37,6 +48,7 @@ export default function Uptime() {
   const [stateFilter, setStateFilter] = useState<UptimeStateFilter>("all");
   const [typeFilter, setTypeFilter] = useState<UptimeTypeFilter>("all");
   const [search, setSearch] = useState("");
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const list = useQuery({
     queryKey: ["uptime"],
@@ -251,12 +263,35 @@ export default function Uptime() {
           onHistory={(id) => navigate(`/uptime/${id}`)}
           onEdit={fillFromMonitor}
           onPause={(id) => pauseMut.mutate(id)}
-          onDelete={(id) => {
-            if (window.confirm(t("confirmDelete"))) delMut.mutate(id);
-          }}
+          onDelete={(id) => setPendingDeleteId(id)}
           stateLabel={stateLabel}
         />
       )}
+      <AlertDialog
+        open={pendingDeleteId !== null}
+        onOpenChange={(next) => {
+          if (!next) setPendingDeleteId(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("delete")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("confirmDelete")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: "destructive" })}
+              onClick={() => {
+                if (pendingDeleteId) delMut.mutate(pendingDeleteId);
+                setPendingDeleteId(null);
+              }}
+            >
+              {t("delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

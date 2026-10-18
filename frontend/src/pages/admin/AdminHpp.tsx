@@ -317,7 +317,7 @@ function AdminHpp() {
                             onChange={(e) =>
                               handleChange(item.key, e.target.value)
                             }
-                            className="h-8 w-full max-w-[10rem] font-mono text-xs tabular-nums"
+                            className="h-10 min-h-10 w-full max-w-[10rem] font-mono text-xs tabular-nums"
                           />
                         </TableCell>
                         <TableCell className="py-1.5">

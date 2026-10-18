@@ -370,7 +370,6 @@ describe("Uptime page", () => {
         uptime_24h: 99.9,
       },
     ]);
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
     renderPage();
     await waitFor(() =>
       expect(screen.getByTestId("uptime-card-m1")).toBeInTheDocument(),
@@ -386,11 +385,11 @@ describe("Uptime page", () => {
     expect(wrap.style.transform).toBe("translateX(-96px)");
 
     fireEvent.click(screen.getByTestId("uptime-swipe-delete-m1"));
-    expect(confirmSpy).toHaveBeenCalledWith("Delete this monitor?");
+    const dialog = await screen.findByRole("alertdialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
     await waitFor(() =>
       expect(vi.mocked(deleteMonitor).mock.calls[0]?.[0]).toBe("m1"),
     );
-    confirmSpy.mockRestore();
   });
 
   it("keeps an exact HTTP expect_status on create", () => {
