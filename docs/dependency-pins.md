@@ -31,7 +31,14 @@ Server **8** vs client **6.4** is normal: the wire protocol is compatible for ou
 
 ## Frontend npm residuals
 
-See [SECURITY.md — Accepted residual dependency risks](../SECURITY.md#accepted-residual-dependency-risks) for React Router GHSA-qwww-vcr4-c8h2 and override pins.
+`npm audit` (full, including dev) is **clean**: 0 vulnerabilities. The React Router
+GHSA-qwww-vcr4-c8h2 residual is **resolved** — it was patched in `7.18.2` and the SPA is on
+`7.18.4`.
+
+Security overrides live in `frontend/package.json`; their **floor matters** (an override one
+patch below the first patched version keeps the vulnerability while looking like a fix).
+CI job `deps-audit` enforces this — see
+[SECURITY.md — Accepted residual dependency risks](../SECURITY.md#accepted-residual-dependency-risks).
 
 ## Broker smoke (prod or staging)
 
