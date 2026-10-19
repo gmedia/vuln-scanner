@@ -27,6 +27,7 @@ import {
 } from "@/components/admin/AdminShell";
 import { mutationTone } from "@/components/admin/adminChrome";
 import PageHeader from "@/components/layout/PageHeader";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import PageHeaderBack from "@/components/layout/PageHeaderBack";
 import { adminApi } from "@/api/admin";
 import { formatCredits } from "@/lib/utils";
@@ -341,15 +342,11 @@ function AdminUserDetail() {
           </AdminShell>
         </div>
       ) : (
-        <div
-          className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
-          data-testid="admin-user-not-found"
-        >
-          <UserX className="h-8 w-8 text-muted-foreground" aria-hidden />
-          <p className="text-sm font-medium text-foreground">
-            {t("userNotFound")}
-          </p>
-        </div>
+        <EmptyState
+          testId="admin-user-not-found"
+          icon={UserX}
+          title={t("userNotFound")}
+        />
       )}
     </div>
   );

@@ -2,6 +2,7 @@ import { ScrollText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AiUsage } from "@/api/ai";
 import { formatAiTime, formatIdr } from "@/components/admin/aiFormat";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import {
@@ -44,22 +45,22 @@ export function AiUsagePanel({
         {loading ? (
           <TableRowSkeleton rows={5} columns={4} />
         ) : items.length === 0 ? (
-          <div
-            className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
-            data-testid="ai-usage-empty"
-          >
-            <ScrollText className="h-8 w-8 text-muted-foreground" aria-hidden />
-            <p className="text-sm font-medium text-foreground">{t("usageEmpty")}</p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="min-h-11"
-              onClick={onSeeCatalog}
-            >
-              {t("usageEmptyHint")}
-            </Button>
-          </div>
+          <EmptyState
+            testId="ai-usage-empty"
+            icon={ScrollText}
+            title={t("usageEmpty")}
+            action={
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-11"
+                onClick={onSeeCatalog}
+              >
+                {t("usageEmptyHint")}
+              </Button>
+            }
+          />
         ) : (
           <>
             <div className="space-y-2 md:hidden" data-testid="ai-usage-list-mobile">

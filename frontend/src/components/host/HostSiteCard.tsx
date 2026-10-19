@@ -3,6 +3,7 @@ import { FolderKanban } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { HostHit, HostScan, HostSite } from "@/api/hostProtect";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { buttonVariants } from "@/components/ui/buttonVariants";
@@ -341,14 +342,15 @@ export default function HostSiteCard({
           ) : null}
         </div>
         {siteHits.length === 0 ? (
-          <div
-            className="flex min-h-[6rem] flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center"
-            data-testid="host-hits-empty"
-          >
-            <p className="max-w-prose text-sm text-muted-foreground">
-              {emptyHitsCopy}
-            </p>
-          </div>
+          <EmptyState
+            testId="host-hits-empty"
+            variant="dashed"
+            size="none"
+            className="min-h-[6rem] gap-1 px-4 py-6"
+            title={emptyHitsCopy}
+            titleTone="muted"
+            titleClassName="max-w-prose"
+          />
         ) : (
           <HostHitsList
             hits={siteHits}

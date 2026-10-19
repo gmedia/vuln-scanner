@@ -427,24 +427,24 @@ export default function UptimeDetail() {
 
   if (!id || notFound) {
     return (
-      <div
-        data-testid="uptime-detail-not-found"
-        className="flex min-h-[16rem] flex-col items-center justify-center gap-3 px-6 py-16 text-center"
-      >
-        <Activity className="h-8 w-8 text-muted-foreground" aria-hidden />
-        <h2 className="text-sm font-medium text-foreground">
-          {t("detailNotFound")}
-        </h2>
-        <p className="max-w-md text-sm text-muted-foreground">
-          {t("detailNotFoundHint")}
-        </p>
-        <Button variant="outline" asChild>
-          <Link to="/uptime">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {t("backToList")}
-          </Link>
-        </Button>
-      </div>
+      <EmptyState
+        testId="uptime-detail-not-found"
+        size="lg"
+        variant="bare"
+        className="md:py-16"
+        icon={Activity}
+        title={t("detailNotFound")}
+        hint={t("detailNotFoundHint")}
+        hintClassName="text-sm"
+        action={
+          <Button variant="outline" asChild>
+            <Link to="/uptime">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              {t("backToList")}
+            </Link>
+          </Button>
+        }
+      />
     );
   }
 

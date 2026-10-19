@@ -51,6 +51,7 @@ import {
 import { SiemRail } from "@/components/siem/siemChrome";
 import { adminRailClass } from "@/components/admin/adminChrome";
 import PageHeader from "@/components/layout/PageHeader";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import {
   adminApi,
   downloadAdminInvoicePdf,
@@ -370,15 +371,11 @@ function AdminInvoices() {
           {invoicesQ.isLoading ? (
             <TableRowSkeleton rows={4} columns={7} />
           ) : invoices.length === 0 ? (
-            <div
-              className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
-              data-testid="admin-invoices-empty"
-            >
-              <Receipt className="h-8 w-8 text-muted-foreground" aria-hidden />
-              <p className="text-sm font-medium text-foreground">
-                {t("invoicesEmpty")}
-              </p>
-            </div>
+            <EmptyState
+              testId="admin-invoices-empty"
+              icon={Receipt}
+              title={t("invoicesEmpty")}
+            />
           ) : (
             <>
               <div

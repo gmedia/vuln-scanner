@@ -28,6 +28,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { AlertTriangle, Bug, Shield } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import PageHeader from "@/components/layout/PageHeader";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { Button } from "@/components/ui/Button";
 import {
   OpsShell,
@@ -252,21 +253,21 @@ export default function HostProtect() {
     return (
       <div className="space-y-6" data-testid="host-page">
         <PageHeader title={t("title")} description={t("subtitle")} />
-        <div className="flex min-h-[12rem] flex-col items-center justify-center gap-3 rounded-xl border border-border bg-muted/40 px-6 py-16 text-center md:min-h-[16rem] md:py-20">
-          <Shield className="h-8 w-8 text-muted-foreground" aria-hidden />
-          <p className="text-balance text-sm font-medium text-foreground">
-            {t("title")}
-          </p>
-          <p
-            className="max-w-md text-balance text-sm text-muted-foreground"
-            data-testid="host-feature-off"
-          >
-            {t("featureOff")}
-          </p>
-          <Button variant="outline" className="mt-2 min-h-11" asChild>
-            <Link to="/guide">Guide</Link>
-          </Button>
-        </div>
+        <EmptyState
+          size="md"
+          className="py-16 md:py-20"
+          icon={Shield}
+          title={t("title")}
+          titleClassName="text-balance"
+          hint={t("featureOff")}
+          hintTestId="host-feature-off"
+          hintClassName="text-balance text-sm"
+          action={
+            <Button variant="outline" className="mt-2 min-h-11" asChild>
+              <Link to="/guide">Guide</Link>
+            </Button>
+          }
+        />
       </div>
     );
   }
@@ -308,21 +309,21 @@ export default function HostProtect() {
       <HostInstallCard />
 
       {agents.length === 0 && !agentsQ.isLoading ? (
-        <div
-          data-testid="host-no-agents"
-          className="flex min-h-[8rem] flex-col items-center justify-center gap-3 rounded-xl border border-border bg-muted/40 px-6 py-12 text-center"
-        >
-          <Shield className="h-8 w-8 text-muted-foreground" aria-hidden />
-          <p className="text-balance text-sm font-medium text-foreground">
-            {t("noAgents")}
-          </p>
-          <p className="max-w-md text-balance text-sm text-muted-foreground">
-            {t("emptyHint")}
-          </p>
-          <Button variant="outline" className="mt-1 min-h-11" asChild>
-            <Link to="/guard">{t("openGuard")}</Link>
-          </Button>
-        </div>
+        <EmptyState
+          testId="host-no-agents"
+          size="none"
+          className="min-h-[8rem] gap-3 px-6 py-12"
+          icon={Shield}
+          title={t("noAgents")}
+          titleClassName="text-balance"
+          hint={t("emptyHint")}
+          hintClassName="text-balance text-sm"
+          action={
+            <Button variant="outline" className="mt-1 min-h-11" asChild>
+              <Link to="/guard">{t("openGuard")}</Link>
+            </Button>
+          }
+        />
       ) : null}
 
       {featureOn && agents.length > 0 && fleetStale ? (
@@ -420,26 +421,26 @@ export default function HostProtect() {
               </OpsShellBody>
             </OpsShell>
           ) : items.length === 0 && !sitesQ.isLoading && agents.length > 0 ? (
-            <div
-              data-testid="host-empty"
-              className="flex min-h-[12rem] flex-col items-center justify-center gap-3 rounded-xl border border-border bg-muted/40 px-6 py-16 text-center md:min-h-[16rem] md:py-20"
-            >
-              <Shield className="h-8 w-8 text-muted-foreground" aria-hidden />
-              <p className="text-balance text-sm font-medium text-foreground">
-                {t("empty")}
-              </p>
-              <p className="max-w-md text-balance text-sm text-muted-foreground">
-                {t("emptyHint")}
-              </p>
-              <Button
-                className="mt-2 min-h-11"
-                data-testid="host-empty-cta"
-                disabled={atCap || agents.length === 0}
-                onClick={openCreate}
-              >
-                {t("emptyCta")}
-              </Button>
-            </div>
+            <EmptyState
+              testId="host-empty"
+              size="md"
+              className="py-16 md:py-20"
+              icon={Shield}
+              title={t("empty")}
+              titleClassName="text-balance"
+              hint={t("emptyHint")}
+              hintClassName="text-balance text-sm"
+              action={
+                <Button
+                  className="mt-2 min-h-11"
+                  data-testid="host-empty-cta"
+                  disabled={atCap || agents.length === 0}
+                  onClick={openCreate}
+                >
+                  {t("emptyCta")}
+                </Button>
+              }
+            />
           ) : (
             <ul className="space-y-3">
               {items.map((s: HostSite, idx: number) => {

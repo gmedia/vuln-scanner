@@ -41,6 +41,7 @@ import {
   type BlogPostWrite,
 } from "@/api/admin";
 import PageHeader from "@/components/layout/PageHeader";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { useTranslation } from "react-i18next";
 
 const emptyForm: BlogPostWrite = {
@@ -229,15 +230,11 @@ function AdminBlog() {
           {isLoading ? (
             <TableRowSkeleton rows={5} columns={4} />
           ) : !data?.items.length ? (
-            <div
-              className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
-              data-testid="blog-empty"
-            >
-              <FileText className="h-8 w-8 text-muted-foreground" aria-hidden />
-              <p className="text-sm font-medium text-foreground">
-                {t("blogEmpty")}
-              </p>
-            </div>
+            <EmptyState
+              testId="blog-empty"
+              icon={FileText}
+              title={t("blogEmpty")}
+            />
           ) : (
             <>
               <div className="space-y-2 md:hidden" data-testid="blog-list-mobile">

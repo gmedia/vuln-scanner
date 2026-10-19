@@ -13,6 +13,7 @@ import {
   type UptimeMonitor,
 } from "@/api/uptime";
 import PageHeader from "@/components/layout/PageHeader";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { Button } from "@/components/ui/Button";
 import { buttonVariants } from "@/components/ui/buttonVariants";
 import {
@@ -238,22 +239,27 @@ export default function Uptime() {
         </>
       ) : items.length === 0 ? (
         <Card data-testid="uptime-empty" className="overflow-hidden">
-          <CardContent className="flex min-h-[12rem] flex-col items-center justify-center gap-3 px-6 py-16 text-center md:min-h-[16rem] md:py-20">
-            <Activity className="h-8 w-8 text-muted-foreground" aria-hidden />
-            <p className="text-balance text-sm font-medium text-foreground">
-              {t("empty")}
-            </p>
-            <p className="max-w-md text-balance text-sm text-muted-foreground">
-              {t("emptyHint")}
-            </p>
-            <Button
-              className="mt-2 min-h-11"
-              data-testid="uptime-empty-cta"
-              disabled={atCap}
-              onClick={openCreate}
-            >
-              {t("emptyCta")}
-            </Button>
+          <CardContent className="p-0">
+            <EmptyState
+              size="md"
+              variant="bare"
+              className="py-16 md:py-20"
+              icon={Activity}
+              title={t("empty")}
+              titleClassName="text-balance"
+              hint={t("emptyHint")}
+              hintClassName="text-balance text-sm"
+              action={
+                <Button
+                  className="mt-2 min-h-11"
+                  data-testid="uptime-empty-cta"
+                  disabled={atCap}
+                  onClick={openCreate}
+                >
+                  {t("emptyCta")}
+                </Button>
+              }
+            />
           </CardContent>
         </Card>
       ) : (
