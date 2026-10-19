@@ -30,6 +30,7 @@ import {
 import { SiemRail } from "@/components/siem/siemChrome";
 import { adminRailClass, userTone } from "@/components/admin/adminChrome";
 import PageHeader from "@/components/layout/PageHeader";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { adminApi } from "@/api/admin";
 import type { AdminUserItem } from "@/api/admin";
 import { useTranslation } from "react-i18next";
@@ -117,18 +118,12 @@ function AdminUsers() {
           {isLoading && !data ? (
             <TableRowSkeleton rows={5} columns={8} />
           ) : !data || data.users.length === 0 ? (
-            <div
-              className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
-              data-testid="admin-users-empty"
-            >
-              <Users className="h-8 w-8 text-muted-foreground" aria-hidden />
-              <p className="text-sm font-medium text-foreground">
-                {t("usersEmpty")}
-              </p>
-              <p className="max-w-md text-xs text-muted-foreground">
-                {search ? t("usersEmptySearch") : t("usersEmptyNone")}
-              </p>
-            </div>
+            <EmptyState
+              testId="admin-users-empty"
+              icon={Users}
+              title={t("usersEmpty")}
+              hint={search ? t("usersEmptySearch") : t("usersEmptyNone")}
+            />
           ) : (
             <>
               <div className="space-y-2 md:hidden">

@@ -1,5 +1,6 @@
 import { Shield } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import type { HostWafEvent } from "@/api/hostWaf";
 import { Badge } from "@/components/ui/Badge";
 import {
@@ -53,16 +54,12 @@ export function HostWafEventsList({
         </p>
       </div>
       {events.length === 0 ? (
-        <div
-          data-testid="host-waf-events-empty"
-          className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
-        >
-          <Shield className="h-8 w-8 text-muted-foreground" aria-hidden />
-          <p className="text-sm font-medium text-foreground">{t("wafEvents")}</p>
-          <p className="max-w-md text-xs text-muted-foreground">
-            {t("wafEventsEmpty")}
-          </p>
-        </div>
+        <EmptyState
+          testId="host-waf-events-empty"
+          icon={Shield}
+          title={t("wafEvents")}
+          hint={t("wafEventsEmpty")}
+        />
       ) : (
         <div data-testid="host-waf-events">
           <div

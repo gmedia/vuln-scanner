@@ -21,6 +21,9 @@ export type EmptyStateProps = {
   readonly variant?: EmptyStateVariant;
   readonly size?: EmptyStateSize;
   readonly titleTone?: "muted" | "strong";
+  readonly titleClassName?: string;
+  readonly hintClassName?: string;
+  readonly hintTestId?: string;
   readonly className?: string;
   readonly iconClassName?: string;
 };
@@ -48,6 +51,9 @@ export function EmptyState({
   variant = "island",
   size = "sm",
   titleTone = "strong",
+  titleClassName,
+  hintClassName,
+  hintTestId,
   className,
   iconClassName,
 }: EmptyStateProps) {
@@ -73,12 +79,21 @@ export function EmptyState({
           titleTone === "strong"
             ? "font-medium text-foreground"
             : "text-muted-foreground",
+          titleClassName,
         )}
       >
         {title}
       </p>
       {hint ? (
-        <p className="max-w-md text-xs text-muted-foreground">{hint}</p>
+        <p
+          data-testid={hintTestId}
+          className={cn(
+            "max-w-md text-xs text-muted-foreground",
+            hintClassName,
+          )}
+        >
+          {hint}
+        </p>
       ) : null}
       {action}
     </div>

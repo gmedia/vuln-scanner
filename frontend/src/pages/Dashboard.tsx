@@ -45,6 +45,7 @@ import { listGuardAgents, listGuardAlerts } from "@/api/guard";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
 import PageHeader from "@/components/layout/PageHeader";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { useTranslation } from "react-i18next";
 
 const PAGE_LIMIT = 20;
@@ -389,43 +390,48 @@ function Dashboard() {
             {isFirstLoad ? (
               <TableRowSkeleton rows={6} columns={5} />
             ) : scans.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-border bg-muted/40 px-4 py-12 text-center">
-                <Radar className="h-8 w-8 text-muted-foreground" aria-hidden />
-                <p className="text-sm font-medium text-foreground">
-                  {t("noScansYet")}
-                </p>
-                <p className="max-w-md text-xs text-muted-foreground">
-                  {canCreateScans ? t("emptyCanCreate") : t("emptyCannotCreate")}
-                </p>
-                {canCreateScans && (
-                  <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-                    <Button asChild size="sm" className="text-xs">
-                      <Link to="/scan/ip">
-                        <Plus className="mr-1.5 h-3.5 w-3.5" />
-                        {t("scanIp")}
-                      </Link>
-                    </Button>
-                    <Button
-                      asChild
-                      variant="outline"
-                      size="sm"
-                      className="text-xs"
-                    >
-                      <Link to="/schedules" data-testid="empty-schedules-link">
-                        <CalendarClock className="mr-1.5 h-3.5 w-3.5" />
-                        {t("setSchedule")}
-                      </Link>
-                    </Button>
-                  </div>
-                )}
-              </div>
+              <EmptyState
+                size="none"
+                className="gap-3 px-4 py-12"
+                icon={Radar}
+                title={t("noScansYet")}
+                hint={
+                  canCreateScans ? t("emptyCanCreate") : t("emptyCannotCreate")
+                }
+                action={
+                  canCreateScans ? (
+                    <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+                      <Button asChild size="sm" className="text-xs">
+                        <Link to="/scan/ip">
+                          <Plus className="mr-1.5 h-3.5 w-3.5" />
+                          {t("scanIp")}
+                        </Link>
+                      </Button>
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                      >
+                        <Link to="/schedules" data-testid="empty-schedules-link">
+                          <CalendarClock className="mr-1.5 h-3.5 w-3.5" />
+                          {t("setSchedule")}
+                        </Link>
+                      </Button>
+                    </div>
+                  ) : null
+                }
+              />
             ) : displayed.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-8 text-center">
-                <Radar className="h-6 w-6 text-muted-foreground" aria-hidden />
-                <p className="text-xs text-muted-foreground">
-                  {t("allLabRows")}
-                </p>
-              </div>
+              <EmptyState
+                size="none"
+                className="gap-2 px-4 py-8"
+                icon={Radar}
+                iconClassName="h-6 w-6"
+                title={t("allLabRows")}
+                titleTone="muted"
+                titleClassName="text-xs"
+              />
             ) : (
               <>
                 <div className="space-y-2 md:hidden">

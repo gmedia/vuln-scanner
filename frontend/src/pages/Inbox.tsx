@@ -37,6 +37,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/Pagination";
 import PageHeader from "@/components/layout/PageHeader";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { inboxApi, type InboxItem } from "@/api/inbox";
 import { useTranslation } from "react-i18next";
 import { htmlLang, isAppLocale } from "@/i18n/locales";
@@ -264,14 +265,15 @@ function Inbox() {
     );
   } else if (!data || data.items.length === 0) {
     listBody = (
-      <div
-        className="m-4 flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
-        data-testid="inbox-empty"
-      >
-        <InboxIcon className="h-8 w-8 text-muted-foreground" aria-hidden />
-        <p className="text-sm text-foreground">{emptyTitle}</p>
-        <p className="max-w-sm text-xs text-muted-foreground">{emptyHint}</p>
-      </div>
+      <EmptyState
+        testId="inbox-empty"
+        className="m-4"
+        icon={InboxIcon}
+        title={emptyTitle}
+        titleClassName="font-normal"
+        hint={emptyHint}
+        hintClassName="max-w-sm"
+      />
     );
   } else {
     listBody = (

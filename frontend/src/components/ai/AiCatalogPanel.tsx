@@ -2,6 +2,7 @@ import { Library } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AiPublicModel } from "@/api/ai";
 import { formatIdr } from "@/components/admin/aiFormat";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import {
   Card,
   CardContent,
@@ -39,11 +40,11 @@ export function AiCatalogPanel({
         {loading ? (
           <TableRowSkeleton rows={5} columns={4} />
         ) : models.length === 0 ? (
-          <div className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
-            <Library className="h-8 w-8 text-muted-foreground" aria-hidden />
-            <p className="text-sm font-medium text-foreground">{t("catalogEmpty")}</p>
-            <p className="text-xs text-muted-foreground">{t("catalogEmptyHint")}</p>
-          </div>
+          <EmptyState
+            icon={Library}
+            title={t("catalogEmpty")}
+            hint={t("catalogEmptyHint")}
+          />
         ) : (
           <>
             <div

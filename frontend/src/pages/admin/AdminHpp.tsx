@@ -56,6 +56,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import PageHeader from "@/components/layout/PageHeader";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { adminApi, type HppRateItem } from "@/api/admin";
 import { useTranslation } from "react-i18next";
 import { htmlLang, isAppLocale } from "@/i18n/locales";
@@ -264,18 +265,11 @@ function AdminHpp() {
           {ratesLoading ? (
             <TableRowSkeleton rows={5} columns={4} />
           ) : !rates?.length ? (
-            <div
-              className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
-              data-testid="hpp-rates-empty"
-            >
-              <Calculator
-                className="h-8 w-8 text-muted-foreground"
-                aria-hidden
-              />
-              <p className="text-sm font-medium text-foreground">
-                {t("hppRatesEmpty")}
-              </p>
-            </div>
+            <EmptyState
+              testId="hpp-rates-empty"
+              icon={Calculator}
+              title={t("hppRatesEmpty")}
+            />
           ) : (
             <div className="hidden md:block">
               <div className="overflow-hidden rounded-md border border-border">
@@ -518,15 +512,15 @@ function AdminHpp() {
           {costsLoading ? (
             <TableRowSkeleton rows={2} columns={5} />
           ) : !costLines?.length ? (
-            <div
-              className="flex min-h-[6rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-6 text-center"
-              data-testid="hpp-costs-empty"
-            >
-              <Receipt className="h-6 w-6 text-muted-foreground" aria-hidden />
-              <p className="text-sm text-muted-foreground">
-                {t("hppCostsEmpty")}
-              </p>
-            </div>
+            <EmptyState
+              testId="hpp-costs-empty"
+              size="none"
+              className="min-h-[6rem] gap-2 px-6 py-6"
+              icon={Receipt}
+              iconClassName="h-6 w-6"
+              title={t("hppCostsEmpty")}
+              titleTone="muted"
+            />
           ) : (
             <div className="overflow-hidden rounded-md border border-border">
               <Table className="table-fixed">
