@@ -22,7 +22,7 @@ websockets==17.2
 pyjwt[crypto]==2.13.0
 cryptography==50.0.2
 bcrypt==5.0.0
-sentry-sdk[fastapi]==2.71.0
+sentry-sdk[fastapi]==2.72.0
 prometheus-fastapi-instrumentator==8.1.0
 aiosmtplib==5.1.2
 # S2 SES send (lazy import; SMTP fallback without it)
