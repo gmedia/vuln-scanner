@@ -80,7 +80,7 @@ describe("Guard console states", () => {
     vi.mocked(guardApi.listGuardAlerts).mockResolvedValue([]);
     vi.mocked(guardApi.listEnrollTokens).mockResolvedValue([]);
     vi.mocked(guardApi.enableGuard).mockResolvedValue({ ...STATUS });
-    vi.mocked(guardApi.syncGuard).mockResolvedValue({ ...STATUS });
+    vi.mocked(guardApi.syncGuard).mockResolvedValue({ ok: true });
   });
 
   it("shows the disabled island and the enable action when Guard is off", async () => {
