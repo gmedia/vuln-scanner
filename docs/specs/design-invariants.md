@@ -36,7 +36,7 @@ If a lower layer contradicts a higher layer, the higher layer wins and the lower
 | 10 | Native `<button>` only for icon toggles, full-width list/card rows, and kit internals. Primary actions use `Button`. | Review |
 | 11 | Every form control has an accessible name: `Label htmlFor` + matching `id`, or `aria-label`. Placeholder-only is forbidden. | Machine: `designInvariants.test.ts` (invariant 20); Review for label wording |
 | 12 | Filter bars copy Credit History: equal `gap-3` grid, field wrapper `flex min-w-0 flex-col gap-1.5`, controls `h-10 min-h-10`, mobile `FilterSheet` where the reference uses one. No `grid-cols-12` or far-right Apply gutter. | Review; SIEM has a machine check |
-| 13 | Row actions: `text-right` on head and cell, `justify-end` for block flex, 1 action = visible `Button`, 2+ = `DropdownMenu`, `onSelect`, destructive last + separator, sibling controlled `AlertDialog`, irreversible only, mobile ≥ 44px, `desktop` prop not `sm:`. | Review + per-page tests; see [`row-actions.md`](row-actions.md) |
+| 13 | Row actions: `text-right` on head and cell, `justify-end` for block flex, 1 action = visible `Button`, 2+ = `DropdownMenu`, `onSelect`, destructive last + separator, sibling controlled `AlertDialog`, irreversible only, mobile ≥ 44px, `desktop` prop not `sm:`. | Machine: single-action `MoreHorizontal` menu + nested `AlertDialogTrigger` (invariant 23); Review + per-page tests for the rest; see [`row-actions.md`](row-actions.md) |
 | 14 | Do not restyle `components/ui/*` for one screenshot. Kit changes are their own PR with a written reason. | Review |
 | 15 | Frozen e2e testids stay; new controls get a new stable testid. | Machine: existing unit/E2E queries; Review |
 | 16 | Do not add a primitive, token, radius, shadow, font, or motion value without updating the inventory and `index.css` in the same PR. | Review |
@@ -46,6 +46,7 @@ If a lower layer contradicts a higher layer, the higher layer wins and the lower
 | 20 | Every `Input`, `Textarea`, and `SelectTrigger` outside `components/ui/` has an accessible name: `id` (paired with `Label htmlFor`), `aria-label`, or `aria-labelledby`. | Machine: `designInvariants.test.ts` |
 | 21 | Empty panels render `EmptyState`. A hand-rolled panel (`min-h-[6rem|8rem|12rem|16rem]`, dashed muted box, or `rounded-xl` muted island) is a violation. `EMPTY_PANEL_RATCHET` lists temporary exceptions; stale entries fail, so the list only shrinks. | Machine: `designInvariants.test.ts` |
 | 22 | Design docs (`frontend/DESIGN.md`, `frontend/AGENTS.md`) may only reference `components/` `pages/` `lib/` `hooks/` `theme/` source paths that exist, and must not name a retired primitive. | Machine: `docContract.test.ts` |
+| 23 | Row-action menus: a `MoreHorizontal` trigger must wrap 2+ actions (1 action = visible `Button`), and `AlertDialogTrigger` must never sit inside a `DropdownMenuItem` (use a sibling controlled dialog). | Machine: `designInvariants.test.ts` |
 
 ### Adding to the allowlist
 

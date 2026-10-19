@@ -1,6 +1,6 @@
 # Row actions in tables & card lists (v1)
 
-**Status:** active rule — review + per-page tests (not a lint rule). Source scans in `frontend/src/test/designInvariants.test.ts` cover blocking dialogs and native `<select>`; alignment, menu choice, and `desktop` branching are verified in review and the checklist in §8.
+**Status:** active rule — partly machine-checked. `frontend/src/test/designInvariants.test.ts` now enforces two of the rules on every run: a `MoreHorizontal` row menu must not wrap a single action, and `AlertDialogTrigger` must not be nested inside a `DropdownMenuItem`. Blocking dialogs and native `<select>` are checked in the same file. Alignment, separator order, `onSelect`, `aria-label`, and `desktop` branching remain review + per-page tests (§8).
 **Applies to:** any row-level control in a table's last column, and any mobile card's action area.
 **Summary rule:** [`AGENTS.md`](../../AGENTS.md) § Design system item 5. Tier 1 table: [`design-invariants.md`](design-invariants.md).
 
@@ -106,11 +106,11 @@ A toast is not a safety mechanism. The confirm action uses `className={buttonVar
 ## 8. Checklist
 
 - [ ] `text-right` on action head **and** cell — or `justify-end` if the cell wraps a block-level flex
-- [ ] a single available action is **not** wrapped in a menu
+- [ ] a single available action is **not** wrapped in a menu — machine-checked for `MoreHorizontal` triggers
 - [ ] `Select` / inputs / disclosure toggles are **outside** the menu
 - [ ] destructive item last, `variant="destructive"`, separator before it
 - [ ] confirmation **only** for irreversible actions
-- [ ] dialog is a **sibling controlled** `AlertDialog`, never a trigger nested in a menu item
+- [ ] dialog is a **sibling controlled** `AlertDialog`, never a trigger nested in a menu item — machine-checked
 - [ ] menu items use `onSelect`, not `onClick`
 - [ ] trigger has `aria-label`; `actionsMenu` present in **both** `en` and `id`
 - [ ] mobile trigger ≥ 44px; both surfaces branch on a `desktop` prop, not `sm:`

@@ -121,6 +121,75 @@ function jsxTagBlocks(
   return blocks;
 }
 
+function jsxBlocks(
+  source: string,
+  name: string,
+): Array<{ readonly line: number; readonly block: string }> {
+  const blocks: Array<{ line: number; block: string }> = [];
+  const open = new RegExp(`<${name}(?=[\\s/>])`, "g");
+  const nested = new RegExp(`<${name}(?=[\\s/>])`, "g");
+  const closeTag = `</${name}>`;
+  for (const match of source.matchAll(open)) {
+    const start = match.index ?? 0;
+    let depth = 0;
+    let cursor = start;
+    let end = source.length;
+    while (cursor < source.length) {
+      const rest = source.slice(cursor);
+      const nextOpenMatch = nested.exec(rest);
+      nested.lastIndex = 0;
+      const nextOpen = nextOpenMatch ? cursor + (nextOpenMatch.index ?? 0) : -1;
+      const nextClose = source.indexOf(closeTag, cursor);
+      if (nextClose < 0) break;
+      if (nextOpen >= 0 && nextOpen < nextClose) {
+        depth += 1;
+        cursor = nextOpen + name.length + 1;
+        continue;
+      }
+      depth -= 1;
+      cursor = nextClose + closeTag.length;
+      if (depth === 0) {
+        end = cursor;
+        break;
+      }
+    }
+    blocks.push({
+      line: source.slice(0, start).split("\n").length,
+      block: source.slice(start, end),
+    });
+  }
+  return blocks;
+}
+
+function rowActionViolations(): { total: number; bad: Violation[] } {
+  const bad: Violation[] = [];
+  let total = 0;
+  for (const [path, source] of FILES) {
+    const file = rel(path);
+    for (const { line, block } of jsxBlocks(source, "DropdownMenu")) {
+      total += 1;
+      if (block.includes("MoreHorizontal")) {
+        const items = block.match(/<DropdownMenuItem\b/g)?.length ?? 0;
+        if (items === 1) {
+          bad.push({
+            file,
+            line,
+            text: "MoreHorizontal menu wraps a single action",
+          });
+        }
+      }
+      if (/<DropdownMenuItem\b[\s\S]*?<AlertDialogTrigger\b/.test(block)) {
+        bad.push({
+          file,
+          line,
+          text: "AlertDialogTrigger nested inside DropdownMenuItem",
+        });
+      }
+    }
+  }
+  return { total, bad };
+}
+
 function scanControls(): { total: number; unlabeled: Violation[] } {
   const unlabeled: Violation[] = [];
   let total = 0;
@@ -225,6 +294,15 @@ describe("design invariants", () => {
     expect(
       unlabeled,
       `Add id + Label htmlFor, or aria-label:\n${report(unlabeled)}`,
+    ).toEqual([]);
+  });
+
+  it("keeps row-action menus to the documented shape", () => {
+    const { total, bad } = rowActionViolations();
+    expect(total).toBeGreaterThan(10);
+    expect(
+      bad,
+      `One action = visible Button; 2+ = menu; confirm with a sibling AlertDialog:\n${report(bad)}`,
     ).toEqual([]);
   });
 
