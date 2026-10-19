@@ -20,6 +20,7 @@ Deploy and lab helpers. Human ops: `docs/deploy.md`. New server + new domain bri
 | `check-env-inventory.sh` | Drift guard: compose keys + CI-written keys must exist in `.env.example`. Runs in CI (`env-inventory` job) |
 | `check-requirements-sync.sh` | Drift guard: shared Python packages must be pinned to the same version in `backend/` and `workers/` (workers import `app.*`). Runs in CI (`deps-sync` job) |
 | `check-dependency-audit.mjs` | Fails on unaccepted HIGH/CRITICAL `npm audit` advisories; accepted risks live in `.github/dependency-audit-allowlist.json`. Runs in CI (`deps-audit` job) |
+| `check-pip-audit.py` | Fails on unaccepted Python advisories in `backend/` + `workers/` requirements (`pip-audit`); same allowlist with `ecosystem: "pip"`. Runs in CI (`deps-audit-python` job) |
 
 ## ANTI-PATTERNS
 

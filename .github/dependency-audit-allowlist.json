@@ -1,4 +1,4 @@
 {
-  "$comment": "Accepted HIGH/CRITICAL dependency advisories for the frontend. Enforced by scripts/check-dependency-audit.mjs (CI job deps-audit). Every entry needs an id (GHSA), package, reason, and expires date. Prefer fixing; an entry here is a decision, not a workaround.",
+  "$comment": "Accepted dependency advisories. Enforced by scripts/check-dependency-audit.mjs (npm, CI job deps-audit) and scripts/check-pip-audit.py (pip, CI job deps-audit-python). Each entry needs ecosystem (npm|pip, default npm), id (GHSA/CVE), package, reason, expires (ISO date). Prefer fixing; an entry here is a decision, not a workaround.",
   "entries": []
 }
