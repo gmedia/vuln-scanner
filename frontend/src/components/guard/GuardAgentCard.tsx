@@ -16,6 +16,7 @@ import {
 } from "@/components/guard/guardFormat";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { Badge } from "@/components/ui/Badge";
+import { RAILED_ROW_CLASS } from "@/components/patterns/RailedShell";
 
 export type GuardAgentViewProps = {
   readonly agent: GuardAgent;
@@ -44,7 +45,7 @@ export function GuardAgentCard({
 }: GuardAgentViewProps) {
   return (
     <div
-      className="relative overflow-hidden rounded-lg border border-border bg-card p-3 pl-4"
+      className={RAILED_ROW_CLASS}
       data-testid="guard-agent-card"
     >
       <SiemRail className={agentRailClass(agent)} />

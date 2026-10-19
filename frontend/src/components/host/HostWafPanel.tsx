@@ -41,6 +41,8 @@ import {
   wafModeRailClass,
 } from "@/components/host/hostChrome";
 import { useAuthStore } from "@/store/authStore";
+import { RAILED_CARD_CLASS } from "@/components/patterns/RailedShell";
+import { cn } from "@/lib/utils";
 
 export default function HostWafPanel({
   sites,
@@ -157,7 +159,7 @@ export default function HostWafPanel({
         <EmptyState titleTone="muted" icon={Shield} title={t("wafNeedSite")} />
       ) : (
         <>
-          <div className="relative overflow-hidden rounded-lg border border-border bg-card px-4 py-4 pl-4">
+          <div className={cn(RAILED_CARD_CLASS, "px-4 py-4")}>
             <SiemRail className={wafModeRailClass(mode)} />
             <div className="grid grid-cols-1 gap-3 pl-2 sm:grid-cols-2">
               <div className="flex min-w-0 flex-col gap-1.5">
@@ -261,7 +263,7 @@ export default function HostWafPanel({
             </div>
           </div>
           {selected ? (
-            <div className="relative overflow-hidden rounded-lg border border-border bg-card px-4 py-4 pl-4">
+            <div className={cn(RAILED_CARD_CLASS, "px-4 py-4")}>
               <SiemRail className="bg-sky-600" />
               <div className="space-y-2 pl-2">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -297,7 +299,7 @@ export default function HostWafPanel({
               </div>
             </div>
           ) : null}
-          <div className="relative overflow-hidden rounded-lg border border-border bg-card px-4 py-4 pl-4">
+          <div className={cn(RAILED_CARD_CLASS, "px-4 py-4")}>
             <SiemRail className="bg-border" />
             <ul className="space-y-2 pl-2">
               <li className="flex items-start gap-2">

@@ -1,8 +1,10 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { AUTH_CARD_CLASS } from "@/components/layout/AuthLayout";
-import { RailedShell } from "@/components/patterns/RailedShell";
-import { SiemRail } from "@/components/siem/siemChrome";
+import {
+  RailedNotice,
+  RailedShell,
+} from "@/components/patterns/RailedShell";
 import {
   authRailClass,
   authWashClass,
@@ -119,22 +121,17 @@ export function AuthNotice({
   readonly className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-md border bg-card px-3 py-2 pl-4",
-        NOTICE_BORDER[tone],
-        authWashClass(tone),
-        className,
-      )}
+    <RailedNotice
+      railClass={authRailClass(tone)}
+      borderClass={NOTICE_BORDER[tone]}
+      wash={authWashClass(tone)}
+      textClass={NOTICE_TEXT[tone]}
+      role={role}
+      className={className}
+      layout="paragraph"
+      contentTestid={`auth-notice-${tone}`}
     >
-      <SiemRail className={authRailClass(tone)} />
-      <p
-        role={role}
-        data-testid={`auth-notice-${tone}`}
-        className={cn("pl-2 text-xs leading-relaxed", NOTICE_TEXT[tone])}
-      >
-        {children}
-      </p>
-    </div>
+      {children}
+    </RailedNotice>
   );
 }

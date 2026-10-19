@@ -188,7 +188,7 @@ P15 flatten: KPI strip is **not** inside a status Card. Hero is a sibling of the
 |------|----------|--------------|--------------|
 | react-scan / react-grab not wired | SPA entry | AGENTS.md forbids extra deps for a visual slice | Separate tooling PR |
 | Duplicate mobile + desktop incident markup | StatusIncidentList | Frozen testids on both card and row | Named a11y slice |
-| `SiemRail` / `GuardPulse` imported into status, `EmptyState` from `components/patterns/` | chrome | One rail/pulse primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
+| `SiemRail` / `GuardPulse` imported into status, `EmptyState` from `components/patterns/` | chrome | One rail/pulse primitive; railed surfaces share `components/patterns/RailedShell.tsx`, so this is a single import, not a third family | Keep import |
 | Public `/status/{slug}` HTML not restyled | FastAPI island | Authenticated SPA only; public must rhyme Landing | Named public-status slice |
 | `StatusPage.tsx` already >250 LOC | page | Extracting identity/host would mix a visual slice with a module split | Named extract |
 | Lazyweb pack `generate_report` not filed | research log | `update.sh` pipefail; screens on disk are the harvest | Ignore |
@@ -362,7 +362,7 @@ P15 flatten: fleet KPI strip is **not** inside a monitors Card. Detail hero is a
 |------|----------|--------------|--------------|
 | react-scan / react-grab not wired | SPA entry | AGENTS.md forbids extra deps for a visual slice | Separate tooling PR |
 | Duplicate mobile + desktop monitor / history markup | UptimeMonitorList / UptimeHistoryPanel | Frozen `uptime-row` is desktop-only; history has mobile+desktop testids | Named a11y slice |
-| `SiemRail` / `GuardPulse` imported into uptime, `EmptyState` from `components/patterns/` | chrome | One rail/pulse primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
+| `SiemRail` / `GuardPulse` imported into uptime, `EmptyState` from `components/patterns/` | chrome | One rail/pulse primitive; railed surfaces share `components/patterns/RailedShell.tsx`, so this is a single import, not a third family | Keep import |
 | `UptimeDetail.tsx` still large after hero/KPI extract | page | Range/outage/sample logic is the page; further split would mix visual slice with a module split | Named extract |
 | Filters accordion stays `rounded-md` while KPI tiles go `rounded-lg` | UptimeFiltersSection | Frozen class match on `rounded-md` + `last:border-b` | Keep |
 | Lazyweb pack `generate_report` not filed | research log | `/tmp/lazyweb-refs` empty this session; sibling P15 is the harvest | Ignore |
@@ -450,7 +450,7 @@ Borders-only + 2px rails. No nested Card-in-Card.
 
 | Item | Location | Why accepted | Owner / Exit |
 |------|----------|--------------|--------------|
-| `OpsShell` is a **second** shared shell alongside the six per-surface shells | `components/ops/` | This slice only needs the two uptime/status pages; migrating the six existing shells is a separate, test-heavy refactor | Named migration PR |
+| ~~`OpsShell` is a second shared shell alongside the six per-surface shells~~ | `components/patterns/RailedShell.tsx` | **Resolved**: `OpsShell`, `ScanShell`, `AdminShell`, `WorkspaceShell`, `ProfileShell`, and `AuthCard` are now adapters over one primitive | Done |
 | `StatusPage` / `UptimeDetail` keep queries + mutations in the page | pages | This slice restyles chrome only | Named extract |
-| Prior sections' accepted-debt rows still say "extracting `components/ops/` is a third-family risk" | earlier sections | Those notes were accurate for their scope; this section is the first to invert that trade-off. Left as-is so the decision history stays readable | Update when the migration lands |
+| ~~Prior sections' accepted-debt rows said "extracting `components/ops/` is a third-family risk"~~ | earlier sections | **Resolved**: the shared primitive landed in `components/patterns/`, which is not a third family, so those rows were retargeted | Done |
 | Print contract stays invoice-only (see the print specs) | print specs | Multiple SPA surfaces; merging would pollute print | Keep split |

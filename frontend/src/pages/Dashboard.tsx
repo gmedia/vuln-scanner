@@ -47,6 +47,7 @@ import { cn } from "@/lib/utils";
 import PageHeader from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/patterns/EmptyState";
 import { useTranslation } from "react-i18next";
+import { RAILED_CARD_CLASS } from "@/components/patterns/RailedShell";
 
 const PAGE_LIMIT = 20;
 const RECENT_CAP = 8;
@@ -316,7 +317,7 @@ function Dashboard() {
       {attention.length > 0 && (
         <div
           data-testid="attention-strip"
-          className="relative overflow-hidden rounded-lg border border-destructive/40 bg-destructive/[0.04] px-4 py-3 pl-4"
+          className={cn(RAILED_CARD_CLASS, "border-destructive/40 bg-destructive/[0.04] px-4 py-3")}
         >
           <SiemRail className="bg-destructive" />
           <div className="pl-2">
@@ -619,7 +620,7 @@ function Dashboard() {
         </div>
 
         <div className="flex min-h-0 flex-col gap-4 lg:col-span-4">
-          <div className="relative overflow-hidden rounded-lg border border-border bg-card pl-4">
+          <div className={RAILED_CARD_CLASS}>
             <SiemRail className={attachRail} />
             <div className="border-b border-border px-4 py-3">
               <h3 className="text-sm font-medium tracking-wide">
@@ -654,7 +655,7 @@ function Dashboard() {
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-lg border border-border bg-card pl-4">
+          <div className={RAILED_CARD_CLASS}>
             <SiemRail className={guardRail} />
             <div className="border-b border-border px-4 py-3">
               <h3 className="text-sm font-medium tracking-wide">

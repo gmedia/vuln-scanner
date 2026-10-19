@@ -6,13 +6,15 @@ import {
   SINEXIS_INSTALL_RAW_URL,
   SINEXIS_INSTALL_WGET,
 } from "@/lib/sinexisInstall";
+import { RAILED_CARD_CLASS } from "@/components/patterns/RailedShell";
+import { cn } from "@/lib/utils";
 
 export default function HostInstallCard() {
   const { t } = useTranslation("host");
   return (
     <div
       data-testid="host-install-card"
-      className="relative overflow-hidden rounded-lg border border-border bg-card px-4 py-3 pl-4"
+      className={cn(RAILED_CARD_CLASS, "px-4 py-3")}
     >
       <SiemRail className="bg-primary" />
       <div className="flex flex-col gap-3 pl-2 sm:flex-row sm:items-start sm:justify-between">

@@ -169,7 +169,7 @@ P15 flatten: KPI strip is **not** inside a status Card. Enroll, agents, and aler
 |------|----------|--------------|--------------|
 | react-scan / react-grab not wired | SPA entry | AGENTS.md forbids extra deps for a visual slice | Separate tooling PR |
 | Duplicate mobile + desktop agent/token markup | GuardAgents / Enroll | Frozen testids on both card and row; `useIsMobile` rewrite is out of a visual slice | Named a11y slice |
-| `SiemRail` imported into Guard, `EmptyState` from `components/patterns/` | chrome | One rail + one empty primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
+| `SiemRail` imported into Guard, `EmptyState` from `components/patterns/` | chrome | One rail + one empty primitive; railed surfaces share `components/patterns/RailedShell.tsx`, so this is a single import, not a third family | Keep import |
 | No IP column on agent table | agents | Current columns frozen by unit tests (`Last seen`, `Version`, `min-w-[40rem]`) | Named column slice |
 | Lazyweb pack `generate_report` not filed | research log | Deprecated MCP path; in-repo SIEM harvest is the contract | Ignore |
 | Print contract stays invoice-only (see the print specs) | print specs | Multiple SPA surfaces; merging would pollute print | Keep split |

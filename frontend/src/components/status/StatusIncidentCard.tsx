@@ -14,6 +14,7 @@ import { SiemRail } from "@/components/siem/siemChrome";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
+import { RAILED_ROW_CLASS } from "@/components/patterns/RailedShell";
 
 type Panel = "idle" | "update";
 
@@ -35,7 +36,7 @@ export function StatusIncidentCard({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-lg border border-border bg-card p-3 pl-4",
+        RAILED_ROW_CLASS,
         open && "bg-amber-500/[0.04]",
       )}
       data-testid={`status-incident-card-${incident.id}`}

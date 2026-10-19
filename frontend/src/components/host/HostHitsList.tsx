@@ -32,6 +32,7 @@ import {
   hitStatusVariant,
 } from "@/components/host/hostChrome";
 import { cn } from "@/lib/utils";
+import { RAILED_ROW_CLASS } from "@/components/patterns/RailedShell";
 
 export type HostHitsListProps = {
   readonly hits: readonly HostHit[];
@@ -173,7 +174,7 @@ export default function HostHitsList({
           <div
             key={h.id}
             className={cn(
-              "relative overflow-hidden rounded-lg border border-border bg-card p-3 pl-4",
+              RAILED_ROW_CLASS,
               (h.class === "webshell" || h.class === "backdoor") &&
                 "bg-destructive/[0.04]",
             )}

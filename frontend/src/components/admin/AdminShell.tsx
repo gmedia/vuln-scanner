@@ -3,11 +3,11 @@ import type { ReactNode } from "react";
 import { StatTile } from "@/components/patterns/StatTile";
 import {
   RailedIconChip,
+  RailedNotice,
   RailedShell,
   RailedShellBody,
   RailedShellHead,
 } from "@/components/patterns/RailedShell";
-import { SiemRail } from "@/components/siem/siemChrome";
 import { Skeleton } from "@/components/ui/Skeleton";
 import {
   adminRailClass,
@@ -17,7 +17,6 @@ import {
   type AdminKpiKind,
   type AdminTone,
 } from "@/components/admin/adminChrome";
-import { cn } from "@/lib/utils";
 import { TONE_TEXT } from "@/lib/toneColors";
 
 export function AdminShell({
@@ -149,20 +148,15 @@ export function AdminNotice({
   readonly role?: "alert" | "status";
 }) {
   return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-md border bg-card px-3 py-2 pl-4",
-        NOTICE_BORDER[tone],
-        adminWashClass(tone),
-      )}
+    <RailedNotice
+      railClass={adminRailClass(tone)}
+      borderClass={NOTICE_BORDER[tone]}
+      wash={adminWashClass(tone)}
+      textClass={NOTICE_TEXT[tone]}
+      role={role}
+      layout="paragraph"
     >
-      <SiemRail className={adminRailClass(tone)} />
-      <p
-        role={role}
-        className={cn("pl-2 text-xs leading-relaxed", NOTICE_TEXT[tone])}
-      >
-        {children}
-      </p>
-    </div>
+      {children}
+    </RailedNotice>
   );
 }

@@ -145,6 +145,6 @@ P15 flatten: the KPI strip is **not** inside PageHeader and **not** inside the r
 |------|----------|--------------|--------------|
 | `DashboardKpiStrip` uses `StatTile valueFirst` while every other strip is label-first | Dashboard | Frozen `previousElementSibling` + `TONE_TEXT.red` contract in `Dashboard.test.tsx` | Named test refactor if the contract changes |
 | Duplicate mobile + desktop recent-row markup | Dashboard | Frozen both-surface rendering; `useIsMobile` would drop one tree | Named a11y slice |
-| `SiemRail` / `GuardPulse` imported into dashboard | chrome | One rail/pulse primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
+| `SiemRail` / `GuardPulse` imported into dashboard | chrome | One rail/pulse primitive; railed surfaces share `components/patterns/RailedShell.tsx`, so this is a single import, not a third family | Keep import |
 | Dashboard keeps local `severityCount` / `latestPerTarget` helpers | page | Pre-existing; this slice restyles chrome only | Named extract |
 | Print contract stays invoice-only (see the print specs) | print specs | Multiple SPA surfaces; merging would pollute print | Keep split |

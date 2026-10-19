@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { invoiceTone, workspaceRailClass } from "@/components/workspace/workspaceChrome";
 import type { OrgInvoiceItem } from "@/api/orgs";
+import { RAILED_CARD_CLASS } from "@/components/patterns/RailedShell";
 
 function invoiceStatusVariant(
   status: string,
@@ -54,7 +55,7 @@ export function WorkspaceInvoiceCard({
   return (
     <li
       data-testid={`workspace-invoice-${invoice.id}`}
-      className="relative overflow-hidden rounded-lg border border-border bg-card pl-4"
+      className={RAILED_CARD_CLASS}
     >
       <SiemRail className={workspaceRailClass(invoiceTone(invoice.status))} />
       <div className="flex items-start justify-between gap-3 p-4 pb-3">

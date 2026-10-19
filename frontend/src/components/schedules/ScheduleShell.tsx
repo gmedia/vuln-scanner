@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { cn } from "@/lib/utils";
+import { RAILED_CARD_CLASS } from "@/components/patterns/RailedShell";
 
 export function ScheduleShell({
   railClass,
@@ -20,7 +21,7 @@ export function ScheduleShell({
     <div
       data-testid={testid}
       className={cn(
-        "relative overflow-hidden rounded-lg border border-border bg-card pl-4",
+        RAILED_CARD_CLASS,
         wash,
         className,
       )}

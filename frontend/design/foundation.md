@@ -118,7 +118,17 @@ All spacing derives from **4px**.
 - **Exempt**: category colours that are not status (`assetChrome` sky/violet type chips) and the `GuardPulse` animation classes.
 - **Tests**: `src/test/toneMap.test.ts` asserts every mapping and scans the 12 status chrome modules for hard-coded rail literals.
 
-#### EmptyState (shared empty panel)
+#### RailedShell (shared railed surface)
+
+- **Location**: `frontend/src/components/patterns/RailedShell.tsx` — `RailedShell`, `RailedShellHead`, `RailedShellBody`, `RailedNotice`, `RailedIconChip`, plus `RAILED_CARD_CLASS`, `RAILED_ROW_CLASS`, `RAILED_NOTICE_CLASS`.
+- **Rule**: a bordered surface with a 2px `SiemRail` down the left edge is built from this module. Do not hand-write `relative overflow-hidden … pl-4`.
+- **Adapters**: `OpsShell`, `ScanShell`, `AdminShell`, `WorkspaceShell`, `ProfileShell`, `AuthCard` are thin wrappers that keep their public props. Prefer those inside their surface; use `RailedShell` directly only for a one-off card.
+- **Variants**: `frame="card"` (kit `Card`, default) or `frame="plain"` (plain `div` with `rounded-lg border bg-card`); `as="article"` for heroes; `wash` for a tone overlay; `className` for extra layout (e.g. `lg:col-span-2`).
+- **Class constants**: `RAILED_CARD_CLASS` (shell), `RAILED_ROW_CLASS` (`p-3` mobile row card), `RAILED_NOTICE_CLASS` (`rounded-md`, notice). Compose with `cn(CONST, "…")` — if you add `px-*`, restate `pl-4` so the rail gutter survives.
+- **RailedNotice**: `railClass`, `borderClass`, `wash`, `textClass`, `role`, `layout` (`flex` default, `paragraph` for `<p>`), `contentTestid`.
+- **Tests**: `src/test/RailedShell.test.tsx`; invariant 25 in `design-invariants.md`.
+
+### EmptyState (shared empty panel)
 
 - **Location**: `frontend/src/components/patterns/EmptyState.tsx`. **This is the only empty-state implementation.** Do not declare a local `EmptyIsland` / `EmptyState` / `EmptyPanel`.
 - **Variants**: `island` (default — `rounded-xl border border-border bg-muted/40`), `dashed` (section that will fill in later), `bare` (borderless centered, full-page not-found), `inline` (borderless, for table cells and mobile list rows).

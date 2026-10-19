@@ -21,6 +21,7 @@ import {
 import { SiemRail } from "@/components/siem/siemChrome";
 import { wafActionRailClass } from "@/components/host/hostChrome";
 import { cn } from "@/lib/utils";
+import { RAILED_ROW_CLASS } from "@/components/patterns/RailedShell";
 
 export const HOST_WAF_EVENTS_PAGE_SIZE = 20;
 
@@ -70,7 +71,7 @@ export function HostWafEventsList({
               <div
                 key={e.id}
                 className={cn(
-                  "relative overflow-hidden rounded-lg border border-border bg-card p-3 pl-4",
+                  RAILED_ROW_CLASS,
                   e.action === "block" && "bg-destructive/[0.04]",
                 )}
                 data-testid={`host-waf-event-card-${e.id}`}

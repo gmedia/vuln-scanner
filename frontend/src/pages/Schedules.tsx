@@ -90,6 +90,7 @@ import { useAuthStore } from "@/store/authStore";
 import PageHeader from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/patterns/EmptyState";
 import { useTranslation } from "react-i18next";
+import { RAILED_ROW_CLASS } from "@/components/patterns/RailedShell";
 
 function formatWhen(iso: string | null, locale: string): string {
   if (!iso) return "—";
@@ -657,7 +658,7 @@ function Schedules() {
                     <li
                       key={s.id}
                       className={cn(
-                        "relative overflow-hidden rounded-lg border border-border bg-card p-3 pl-4",
+                        RAILED_ROW_CLASS,
                         scheduleWashClass(scheduleTone(s)),
                       )}
                     >

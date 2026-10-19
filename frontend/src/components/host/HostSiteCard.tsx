@@ -38,6 +38,7 @@ import {
   isHelperPollStale,
 } from "@/lib/sinexisInstall";
 import { cn } from "@/lib/utils";
+import { RAILED_CARD_CLASS } from "@/components/patterns/RailedShell";
 
 export type HostSiteCardProps = {
   readonly site: HostSite;
@@ -136,7 +137,7 @@ export default function HostSiteCard({
     <div
       data-testid={`host-site-card-${site.id}`}
       className={cn(
-        "relative overflow-hidden rounded-lg border border-border bg-card pl-4",
+        RAILED_CARD_CLASS,
         hostToneWashClass(tone),
       )}
     >

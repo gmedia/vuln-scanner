@@ -7,6 +7,8 @@ import { SiemRail } from "@/components/siem/siemChrome";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { RAILED_CARD_CLASS } from "@/components/patterns/RailedShell";
+import { cn } from "@/lib/utils";
 
 export function GuardAlertsPanel({
   loading,
@@ -59,7 +61,7 @@ export function GuardAlertsPanel({
             {alerts.map((al) => (
               <li
                 key={al.id}
-                className="relative overflow-hidden rounded-lg border border-border bg-destructive/[0.04] px-3 py-2 pl-4 text-sm"
+                className={cn(RAILED_CARD_CLASS, "bg-destructive/[0.04] px-3 py-2 pl-4 text-sm")}
               >
                 <SiemRail className="bg-destructive" />
                 <div className="flex flex-wrap items-center gap-2">

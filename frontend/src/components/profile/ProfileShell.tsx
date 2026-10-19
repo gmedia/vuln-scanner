@@ -1,16 +1,15 @@
 import type { ReactNode } from "react";
 import {
+  RailedNotice,
   RailedShell,
   RailedShellBody,
   RailedShellHead,
 } from "@/components/patterns/RailedShell";
-import { SiemRail } from "@/components/siem/siemChrome";
 import {
   profileRailClass,
   profileWashClass,
   type ProfileTone,
 } from "@/components/profile/profileChrome";
-import { cn } from "@/lib/utils";
 import { TONE_TEXT } from "@/lib/toneColors";
 
 export function ProfileShell({
@@ -116,23 +115,14 @@ export function ProfileNotice({
   readonly role?: "alert" | "status";
 }) {
   return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-md border bg-card px-3 py-2 pl-4",
-        NOTICE_BORDER[tone],
-        profileWashClass(tone),
-      )}
+    <RailedNotice
+      railClass={profileRailClass(tone)}
+      borderClass={NOTICE_BORDER[tone]}
+      wash={profileWashClass(tone)}
+      textClass={NOTICE_TEXT[tone]}
+      role={role}
     >
-      <SiemRail className={profileRailClass(tone)} />
-      <div
-        role={role}
-        className={cn(
-          "flex items-start gap-2 pl-2 text-xs leading-relaxed",
-          NOTICE_TEXT[tone],
-        )}
-      >
-        {children}
-      </div>
-    </div>
+      {children}
+    </RailedNotice>
   );
 }

@@ -8,6 +8,7 @@ import {
   stateWashClass,
 } from "@/components/uptime/uptimeChrome";
 import { cn } from "@/lib/utils";
+import { RAILED_CARD_CLASS } from "@/components/patterns/RailedShell";
 
 export function UptimeHealthHero({
   monitor,
@@ -21,7 +22,7 @@ export function UptimeHealthHero({
   const wash = stateWashClass(monitor.state, monitor.enabled);
   const pulse = monitor.enabled && monitor.state === "up";
   return (
-    <article className="relative overflow-hidden rounded-lg border border-border bg-card pl-4">
+    <article className={RAILED_CARD_CLASS}>
       <SiemRail className={stateRailClass(monitor.state, monitor.enabled)} />
       {wash ? (
         <span

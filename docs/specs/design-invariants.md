@@ -48,6 +48,7 @@ If a lower layer contradicts a higher layer, the higher layer wins and the lower
 | 22 | Design docs (`frontend/DESIGN.md`, `frontend/design/*.md`, `frontend/AGENTS.md`) may only reference `components/` `pages/` `lib/` `hooks/` `theme/` source paths that exist, and must not name a retired primitive. | Machine: `docContract.test.ts` |
 | 23 | Row-action menus: a `MoreHorizontal` trigger must wrap 2+ actions (1 action = visible `Button`), and `AlertDialogTrigger` must never sit inside a `DropdownMenuItem` (use a sibling controlled dialog). | Machine: `designInvariants.test.ts` |
 | 24 | Design contracts are split: `frontend/DESIGN.md` is the index and every `frontend/design/*.md` must be linked from it and keep the eight contract sections. Every relative link in the design docs must resolve. Do not re-inline a surface into the index. | Machine: `docContract.test.ts` + `scripts/check-design-links.mjs` |
+| 25 | Railed surfaces use `RailedShell` (or `RAILED_CARD_CLASS` / `RAILED_ROW_CLASS` / `RAILED_NOTICE_CLASS`) from `components/patterns/RailedShell.tsx`. Do not hand-write `relative overflow-hidden … pl-4`. | Machine: `designInvariants.test.ts` |
 
 ### Adding to the allowlist
 

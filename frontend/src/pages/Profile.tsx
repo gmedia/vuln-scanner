@@ -36,6 +36,7 @@ import {
 import { SiemRail } from "@/components/siem/siemChrome";
 import { StatTile } from "@/components/patterns/StatTile";
 import PageHeader from "@/components/layout/PageHeader";
+import { RAILED_CARD_CLASS } from "@/components/patterns/RailedShell";
 
 function emailInitials(email: string | undefined): string {
   const local = (email ?? "").split("@")[0]?.trim() ?? "";
@@ -226,7 +227,7 @@ function Profile() {
 
       <div
         data-testid="profile-identity"
-        className="relative overflow-hidden rounded-lg border border-border bg-card pl-4"
+        className={RAILED_CARD_CLASS}
       >
         <SiemRail className="bg-primary" />
         <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-start sm:justify-between">

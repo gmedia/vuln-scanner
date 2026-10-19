@@ -16,7 +16,10 @@ import {
 import { useScanDetail, useScanDiff, useScanFindings } from "@/hooks/useScan";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { EmptyState } from "@/components/patterns/EmptyState";
-import { RailedShell } from "@/components/patterns/RailedShell";
+import {
+  RAILED_CARD_CLASS,
+  RailedShell,
+} from "@/components/patterns/RailedShell";
 import { type ScanDiff, downloadFile, printFile } from "@/api/scans";
 import type {
   FindingsSortDir,
@@ -259,7 +262,7 @@ function ScanDetail() {
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="relative overflow-hidden rounded-lg border border-border bg-card px-4 py-3 pl-4"
+              className={cn(RAILED_CARD_CLASS, "px-4 py-3")}
             >
               <SiemRail className="bg-border" />
               <Skeleton className="mb-2 ml-2 h-3 w-16" />
@@ -269,7 +272,7 @@ function ScanDetail() {
         </div>
         <Skeleton className="h-9 w-72" data-testid="scan-tabs-loading" />
         <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.6fr)_minmax(22rem,0.9fr)] 2xl:items-start">
-          <div className="relative overflow-hidden rounded-lg border border-border bg-card pl-4">
+          <div className={RAILED_CARD_CLASS}>
             <SiemRail className="bg-border" />
             <div className="border-b border-border px-4 py-3">
               <Skeleton className="h-4 w-40" />
@@ -280,7 +283,7 @@ function ScanDetail() {
           </div>
           <div className="grid gap-5 lg:grid-cols-3 2xl:grid-cols-1">
             <div
-              className="relative overflow-hidden rounded-lg border border-border bg-card pl-4 lg:col-span-1"
+              className={cn(RAILED_CARD_CLASS, "lg:col-span-1")}
               data-testid="scan-severity-loading"
             >
               <SiemRail className="bg-border" />
@@ -290,7 +293,7 @@ function ScanDetail() {
               </div>
             </div>
             <div
-              className="relative overflow-hidden rounded-lg border border-border bg-card pl-4 lg:col-span-2"
+              className={cn(RAILED_CARD_CLASS, "lg:col-span-2")}
               data-testid="scan-info-loading"
             >
               <SiemRail className="bg-border" />
@@ -793,7 +796,7 @@ function DiffBadgeStrip({ diff }: { diff: ScanDiff }) {
   if (!hasBaseline && !hasDelta) {
     return (
       <div
-        className="relative overflow-hidden rounded-lg border border-dashed border-border bg-muted/20 px-4 py-3 pl-4"
+        className={cn(RAILED_CARD_CLASS, "border-dashed bg-muted/20 px-4 py-3")}
         data-testid="scan-diff-no-baseline"
         role="status"
       >
@@ -805,7 +808,7 @@ function DiffBadgeStrip({ diff }: { diff: ScanDiff }) {
 
   return (
     <div
-      className="relative overflow-hidden rounded-lg border border-border bg-card px-4 py-3 pl-4"
+      className={cn(RAILED_CARD_CLASS, "px-4 py-3")}
       data-testid="scan-diff-badge"
     >
       <SiemRail className={diffRailClass(diff)} />
