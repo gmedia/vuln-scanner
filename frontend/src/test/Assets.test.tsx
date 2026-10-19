@@ -4,7 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Assets from "@/pages/Assets";
-import { mapAssetError, quotaTone } from "@/components/assets/assetChrome";
+import { mapAssetError } from "@/components/assets/assetChrome";
+import { quotaState } from "@/lib/quota";
 import { deleteAsset } from "@/api/assets";
 
 const mockList = vi.fn();
@@ -58,12 +59,12 @@ describe("Assets page", () => {
   });
 
   it("maps quota tone from percent and cap", () => {
-    expect(quotaTone(0, false)).toBe("ok");
-    expect(quotaTone(69, false)).toBe("ok");
-    expect(quotaTone(70, false)).toBe("warn");
-    expect(quotaTone(89, false)).toBe("warn");
-    expect(quotaTone(90, false)).toBe("cap");
-    expect(quotaTone(10, true)).toBe("cap");
+    expect(quotaState(0, 10).tone).toBe("ok");
+    expect(quotaState(7, 10).tone).toBe("ok");
+    expect(quotaState(8, 10).tone).toBe("warn");
+    expect(quotaState(9, 10).tone).toBe("warn");
+    expect(quotaState(10, 10).tone).toBe("cap");
+    expect(quotaState(11, 10).tone).toBe("cap");
   });
 
   it("shows an empty state with a CTA", async () => {

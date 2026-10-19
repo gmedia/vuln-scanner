@@ -599,8 +599,8 @@ Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. 
 | Accent | `--primary` `hsl(142 71% 45%)` | Add, empty CTA, quota OK rail/bar |
 | Domain | `bg-sky-600` rail + sky type chip | Domain assets, Domains KPI tile |
 | IP | `bg-violet-500` rail + violet type chip | IP assets, IPs KPI tile |
-| Quota warn | `bg-amber-600` rail + amber `Progress` indicator | ≥70% and <90% of SKU cap |
-| Quota cap | `bg-destructive` rail + destructive indicator | ≥90% or `count >= limit` |
+| Quota warn | `bg-amber-600` rail + amber `Progress` indicator | ≥80% and <100% of SKU cap |
+| Quota cap | `bg-destructive` rail + destructive indicator | `count >= limit` |
 | Scheduled | `bg-primary` rail when count > 0, else `bg-border` | Scheduled KPI tile |
 | Guard linked | kit `Badge variant="info"` | Existing chip — do not recolor |
 

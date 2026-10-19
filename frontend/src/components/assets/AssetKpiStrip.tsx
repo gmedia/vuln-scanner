@@ -3,7 +3,7 @@ import { Progress } from "@/components/ui/Progress";
 import {
   quotaIndicatorClass,
   quotaRailClass,
-  quotaTone,
+  quotaState,
   type AssetTranslate,
 } from "@/components/assets/assetChrome";
 
@@ -26,10 +26,7 @@ export function AssetKpiStrip({
   ips,
   t,
 }: AssetKpiStripProps) {
-  const quotaPct =
-    limit > 0 ? Math.min(100, Math.round((count / limit) * 100)) : 0;
-  const atCap = count >= limit;
-  const tone = quotaTone(quotaPct, atCap);
+  const { pct: quotaPct, tone } = quotaState(count, limit);
 
   return (
     <StatGrid testid="assets-kpi-strip" className="gap-3">

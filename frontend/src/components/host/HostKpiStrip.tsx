@@ -4,6 +4,11 @@ import { StatGrid, StatTile } from "@/components/patterns/StatTile";
 import { Badge } from "@/components/ui/Badge";
 import { Progress } from "@/components/ui/Progress";
 import { TONE_TEXT } from "@/lib/toneColors";
+import {
+  quotaIndicatorClass as sharedQuotaIndicatorClass,
+  quotaRailClass as sharedQuotaRailClass,
+  quotaState,
+} from "@/lib/quota";
 
 export type HostKpiStripProps = {
   readonly sku: string;
@@ -29,20 +34,14 @@ export default function HostKpiStrip({
   const { t } = useTranslation("host");
   if (!featureOn) return null;
 
-  const quotaPct =
-    limit > 0 ? Math.min(100, Math.round((count / limit) * 100)) : 0;
-  const isFull = quotaPct >= 100 && limit > 0;
-  const isNearCap = quotaPct >= 80 && !isFull;
-  const quotaRailClass = isFull
-    ? "bg-destructive"
-    : isNearCap
-      ? "bg-amber-600"
-      : "bg-primary";
-  const quotaIndicatorClass = isFull
-    ? "bg-destructive"
-    : isNearCap
-      ? "bg-amber-600"
-      : undefined;
+  const {
+    pct: quotaPct,
+    tone: quotaToneState,
+    atCap: isFull,
+  } = quotaState(count, limit);
+  const isNearCap = quotaToneState === "warn";
+  const quotaRailClass = sharedQuotaRailClass(quotaToneState);
+  const quotaIndicatorClass = sharedQuotaIndicatorClass(quotaToneState);
   const quotaValueClass = isFull
     ? "text-destructive sm:text-2xl"
     : isNearCap
