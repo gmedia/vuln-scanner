@@ -3,6 +3,11 @@ import { GuardPulse } from "@/components/guard/guardChrome";
 import { StatGrid, StatTile } from "@/components/patterns/StatTile";
 import { Progress } from "@/components/ui/Progress";
 import { TONE_TEXT } from "@/lib/toneColors";
+import {
+  quotaIndicatorClass as sharedQuotaIndicatorClass,
+  quotaRailClass as sharedQuotaRailClass,
+  quotaState,
+} from "@/lib/quota";
 
 export function UptimeKpiRow({
   upCount,
@@ -18,25 +23,19 @@ export function UptimeKpiRow({
   readonly sku: string;
 }) {
   const { t } = useTranslation("uptime");
-  const quotaPct =
-    limit > 0 ? Math.min(100, Math.round((enabledCount / limit) * 100)) : 0;
-  const isFull = quotaPct >= 100 && limit > 0;
-  const isNearCap = quotaPct >= 80 && !isFull;
+  const {
+    pct: quotaPct,
+    tone: quotaToneState,
+    atCap: isFull,
+  } = quotaState(enabledCount, limit);
+  const isNearCap = quotaToneState === "warn";
   const skuCountClassName = isFull
     ? "text-sm text-destructive"
     : isNearCap
       ? `text-sm ${TONE_TEXT.amber}`
       : "text-sm text-foreground";
-  const quotaIndicatorClassName = isFull
-    ? "bg-destructive"
-    : isNearCap
-      ? "bg-amber-600"
-      : undefined;
-  const skuRailClass = isFull
-    ? "bg-destructive"
-    : isNearCap
-      ? "bg-amber-600"
-      : "bg-primary";
+  const quotaIndicatorClassName = sharedQuotaIndicatorClass(quotaToneState);
+  const skuRailClass = sharedQuotaRailClass(quotaToneState);
   const quotaLabel = t("skuShort", { count: enabledCount, limit, sku });
   return (
     <StatGrid

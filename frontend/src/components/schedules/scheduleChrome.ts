@@ -1,4 +1,9 @@
 import { toneRail, toneWash } from "@/lib/toneMap";
+import {
+  quotaIndicatorClass as sharedQuotaIndicatorClass,
+  quotaRailClass as sharedQuotaRailClass,
+  quotaState,
+} from "@/lib/quota";
 
 export type ScheduleTone = "critical" | "enabled" | "disabled";
 
@@ -19,18 +24,14 @@ export function scheduleWashClass(tone: ScheduleTone): string | undefined {
 }
 
 export function quotaRailClass(enabled: number, max: number): string {
-  if (max > 0 && enabled >= max) return toneRail("danger");
-  if (max > 0 && enabled / max >= 0.8) return toneRail("warn");
-  return toneRail("primary");
+  return sharedQuotaRailClass(quotaState(enabled, max).tone);
 }
 
 export function quotaIndicatorClass(
   enabled: number,
   max: number,
 ): string | undefined {
-  if (max > 0 && enabled >= max) return toneRail("danger");
-  if (max > 0 && enabled / max >= 0.8) return toneRail("warn");
-  return undefined;
+  return sharedQuotaIndicatorClass(quotaState(enabled, max).tone);
 }
 
 export function listTone(

@@ -1,6 +1,13 @@
 import { fetchAssetPack, fetchAssetPackHtml } from "@/api/assets";
 import { TONE_CHIP_TEXT } from "@/lib/toneColors";
 
+export type { QuotaTone } from "@/lib/quota";
+export {
+  quotaIndicatorClass,
+  quotaRailClass,
+  quotaState,
+} from "@/lib/quota";
+
 export type AssetTranslate = (
   key: string,
   options?: Record<string, string | number>,
@@ -9,8 +16,6 @@ export type AssetTranslate = (
 export type AssetScanType = "ip" | "domain";
 
 export type TypeFilter = "all" | "ip" | "domain";
-
-export type QuotaTone = "ok" | "warn" | "cap";
 
 export function parseTags(raw: string): string[] {
   const seen = new Set<string>();
@@ -63,41 +68,6 @@ export function typeLabelKey(scanType: string): "typeIp" | "typeDomain" {
   return scanType === "ip" ? "typeIp" : "typeDomain";
 }
 
-export function quotaTone(pct: number, atCap: boolean): QuotaTone {
-  if (atCap || pct >= 90) return "cap";
-  if (pct >= 70) return "warn";
-  return "ok";
-}
-
-export function quotaRailClass(tone: QuotaTone): string {
-  switch (tone) {
-    case "cap":
-      return "bg-destructive";
-    case "warn":
-      return "bg-amber-600";
-    case "ok":
-      return "bg-primary";
-    default: {
-      const _exhaustive: never = tone;
-      return _exhaustive;
-    }
-  }
-}
-
-export function quotaIndicatorClass(tone: QuotaTone): string | undefined {
-  switch (tone) {
-    case "cap":
-      return "bg-destructive";
-    case "warn":
-      return "bg-amber-600";
-    case "ok":
-      return undefined;
-    default: {
-      const _exhaustive: never = tone;
-      return _exhaustive;
-    }
-  }
-}
 
 export async function downloadPackJson(): Promise<void> {
   const pack = await fetchAssetPack();
