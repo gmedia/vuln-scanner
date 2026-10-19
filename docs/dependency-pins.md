@@ -71,12 +71,24 @@ Missing Pango on a laptop `pip` install → API **503** `PDF rendering unavailab
 |-------|-----|--------|
 | **SQLAlchemy** (backend + workers) | `sqlalchemy[asyncio]==2.1.4` | `2.0.51` → `2.1.4` |
 | **psycopg** (sync driver) | `psycopg[binary]==3.3.6` | Replaces `psycopg2-binary`. SQLAlchemy 2.1 defaults `postgresql://` to the **psycopg (psycopg3)** dialect |
-| **asyncpg** (async driver) | `asyncpg==0.31.0` (backend) / `0.32.0` (workers) | `DATABASE_URL` = `postgresql+asyncpg://` — unchanged |
+| **asyncpg** (async driver) | `asyncpg==0.32.0` (backend + workers) | `DATABASE_URL` = `postgresql+asyncpg://` — unchanged |
 
 SQLAlchemy 2.1 changed the default DBAPI for a bare `postgresql://` URL from `psycopg2` to `psycopg` (psycopg3). The repo standardizes on **one driver** (psycopg3):
 
 - `DATABASE_URL_SYNC` stays **bare** (`postgresql://…`). It feeds SQLAlchemy (`create_engine`, Alembic) **and** the raw readiness probes in `backend/prestart.sh` / `workers/entrypoint.sh` (`psycopg.connect`). Do **not** add `+psycopg2` — psycopg3 accepts the bare URI, and the shell probes are not SQLAlchemy.
 - PEP-646 typing in 2.1 requires **Mypy ≥ 1.7** and surfaced 4 `var-annotated` locals in `workers/tasks/host_protect.py`; fixed with annotations, not `type: ignore`.
+
+## SES SDK (`boto3`) in workers
+
+| Layer | Pin | Notes |
+|-------|-----|--------|
+| **boto3** (backend + workers) | `boto3>=1.43.114` | SES v2 send path in `app/services/email.py` |
+
+Workers send mail through the **backend** module `app.services.email` (scan-diff notifications via `workers/utils/scan_notify.py`, uptime alerts via `workers/tasks/uptime.py`). `SES_ENABLED` is process-wide, so when it is on the worker takes the same branch as the API.
+
+Without the SDK in the worker image the import fails and `_ses_send_sync` returns `None`, so the worker **silently falls back to the SMTP bridge** while the API uses SES — same config, two different providers. The worker therefore declares the SDK with the same floor as the backend.
+
+`scripts/check-requirements-sync.sh` (CI job `deps-sync`) compares the **specifier** of every package declared in both files, including ranges, so this cannot drift again.
 
 ## Do not
 
