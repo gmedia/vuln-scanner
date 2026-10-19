@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/Tabs";
 import { useTranslation } from "react-i18next";
 import PageHeader from "@/components/layout/PageHeader";
-import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { OpsShell, OpsShellBody } from "@/components/ops/OpsShell";
 import { SiemCasesPanel } from "@/components/siem/SiemCasesPanel";
 import { SiemEventInspector } from "@/components/siem/SiemEventInspector";
@@ -82,7 +82,8 @@ export default function Siem() {
       ) : null}
 
       {c.featureOff ? (
-        <SiemEmptyIsland
+        <EmptyState
+          titleTone="muted"
           icon={PowerOff}
           title={t("featureOff")}
           testId="siem-feature-off"
@@ -90,7 +91,8 @@ export default function Siem() {
       ) : null}
 
       {c.enterpriseOnly ? (
-        <SiemEmptyIsland
+        <EmptyState
+          titleTone="muted"
           icon={ShieldAlert}
           title={c.enterpriseDetail ?? t("enterpriseOnly")}
           testId="siem-enterprise-only"
@@ -138,7 +140,8 @@ export default function Siem() {
           ) : null}
 
           {c.agents.length === 0 && !c.agentsQ.isLoading ? (
-            <SiemEmptyIsland
+            <EmptyState
+          titleTone="muted"
               icon={Siren}
               title={t("noAgents")}
               testId="siem-no-agents"

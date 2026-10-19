@@ -18,9 +18,14 @@ const ARBITRARY_HEX_CLASS =
 const NATIVE_SELECT = /<select[\s>]/;
 const LOCAL_TILE =
   /(?:function|const)\s+(?:KpiTile|StatTile|StatCard|KpiCard)\b/;
+const LOCAL_EMPTY =
+  /(?:function|const)\s+(?:EmptyIsland|EmptyState|EmptyPanel)\b/;
 
 const TILE_ALLOWLIST: ReadonlySet<string> = new Set([
   "components/patterns/StatTile.tsx",
+]);
+const EMPTY_ALLOWLIST: ReadonlySet<string> = new Set([
+  "components/patterns/EmptyState.tsx",
 ]);
 
 const SOURCES = import.meta.glob("../**/*.{ts,tsx}", {
@@ -95,6 +100,14 @@ describe("design invariants", () => {
     expect(
       bad,
       `Use StatTile from components/patterns/StatTile:\n${report(bad)}`,
+    ).toEqual([]);
+  });
+
+  it("bans local empty-state implementations", () => {
+    const bad = scan(LOCAL_EMPTY, EMPTY_ALLOWLIST);
+    expect(
+      bad,
+      `Use EmptyState from components/patterns/EmptyState:\n${report(bad)}`,
     ).toEqual([]);
   });
 });

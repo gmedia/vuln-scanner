@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Siren } from "lucide-react";
 import type { GuardAlert } from "@/api/guard";
 import { formatWhen, type GuardTranslate } from "@/components/guard/guardFormat";
-import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -42,7 +42,7 @@ export function GuardAlertsPanel({
           </div>
         ) : alerts.length === 0 ? (
           <div className="space-y-3">
-            <SiemEmptyIsland icon={Siren} title={t("noAlerts")} />
+            <EmptyState titleTone="muted" icon={Siren} title={t("noAlerts")} />
             <p className="text-center text-xs text-muted-foreground">
               {t("noAlertsHint")}
             </p>

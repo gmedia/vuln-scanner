@@ -8,7 +8,7 @@ import {
 } from "@/components/guard/GuardKpiStrip";
 import { GuardHostTokenOnce } from "@/components/guard/GuardOnceSecret";
 import { useGuardConsole } from "@/components/guard/useGuardConsole";
-import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { isAuthSessionError } from "@/components/siem/siemErrors";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/Button";
@@ -103,7 +103,8 @@ export default function Guard() {
       ) : null}
 
       {!g.enabled && !g.statusQ.isLoading && !g.statusQ.isError ? (
-        <SiemEmptyIsland
+        <EmptyState
+          titleTone="muted"
           icon={Monitor}
           title={g.t("disabledHint")}
           testId="guard-disabled"

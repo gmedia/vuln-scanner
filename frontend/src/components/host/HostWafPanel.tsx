@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/Select";
-import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { SiemRail } from "@/components/siem/siemChrome";
 import {
   HOST_WAF_EVENTS_PAGE_SIZE,
@@ -138,7 +138,8 @@ export default function HostWafPanel({
   if (featureOff) {
     return (
       <div data-testid="host-waf-panel">
-        <SiemEmptyIsland
+        <EmptyState
+          titleTone="muted"
           icon={Shield}
           title={t("wafFeatureOff")}
           testId="host-waf-off"
@@ -153,7 +154,7 @@ export default function HostWafPanel({
         {t("wafHint")}
       </p>
       {sites.length === 0 ? (
-        <SiemEmptyIsland icon={Shield} title={t("wafNeedSite")} />
+        <EmptyState titleTone="muted" icon={Shield} title={t("wafNeedSite")} />
       ) : (
         <>
           <div className="relative overflow-hidden rounded-lg border border-border bg-card px-4 py-4 pl-4">

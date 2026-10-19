@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/Pagination";
 import { Skeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/Tabs";
-import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { UptimeDetailKpiStrip } from "@/components/uptime/UptimeDetailKpiStrip";
 import { UptimeHealthHero } from "@/components/uptime/UptimeHealthHero";
@@ -679,7 +679,7 @@ export default function UptimeDetail() {
             <Skeleton className="h-16 w-full" />
           ) : outages.length === 0 ? (
             <div className="m-4">
-              <SiemEmptyIsland icon={Activity} title={t("outagesEmpty")} />
+              <EmptyState titleTone="muted" icon={Activity} title={t("outagesEmpty")} />
             </div>
           ) : (
             <ul className="space-y-2">
