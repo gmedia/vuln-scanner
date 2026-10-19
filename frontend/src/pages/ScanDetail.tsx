@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useScanDetail, useScanDiff, useScanFindings } from "@/hooks/useScan";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { type ScanDiff, downloadFile, printFile } from "@/api/scans";
 import type {
   FindingsSortDir,
@@ -630,12 +631,13 @@ function ScanDetail() {
           {scan.status === "completed" && diff ? (
             <DiffBadgeStrip diff={diff} />
           ) : (
-            <div
-              className="rounded-xl border border-border bg-muted/40 px-6 py-8 text-center text-sm text-muted-foreground"
-              data-testid="scan-diff-pending"
-            >
-              {t("diffAfterComplete")}
-            </div>
+            <EmptyState
+              testId="scan-diff-pending"
+              size="none"
+              className="px-6 py-8"
+              titleTone="muted"
+              title={t("diffAfterComplete")}
+            />
           )}
         </TabsContent>
 
@@ -766,12 +768,13 @@ function ScanDetail() {
               </div>
             </div>
           ) : (
-            <div
-              className="rounded-xl border border-border bg-muted/40 px-6 py-8 text-center text-sm text-muted-foreground"
-              data-testid="scan-export-empty"
-            >
-              {t("noExport")}
-            </div>
+            <EmptyState
+              testId="scan-export-empty"
+              size="none"
+              className="px-6 py-8"
+              titleTone="muted"
+              title={t("noExport")}
+            />
           )}
         </TabsContent>
       </Tabs>

@@ -66,6 +66,16 @@ describe("EmptyState", () => {
     );
   });
 
+  it("renders borderless and unpadded for table cells", () => {
+    const { container } = render(
+      <EmptyState variant="inline" size="none" title="No rows" />,
+    );
+    const panel = container.firstElementChild as HTMLElement;
+    expect(panel.className).not.toContain("border");
+    expect(panel.className).not.toContain("min-h-");
+    expect(panel.className).not.toContain("px-");
+  });
+
   it("renders an action node", () => {
     render(
       <EmptyState
