@@ -1,7 +1,11 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
+import {
+  RailedShell,
+  RailedShellBody,
+  RailedShellHead,
+} from "@/components/patterns/RailedShell";
 import { SiemRail } from "@/components/siem/siemChrome";
-import { Card } from "@/components/ui/Card";
 import {
   workspaceRailClass,
   workspaceWashClass,
@@ -24,17 +28,14 @@ export function WorkspaceShell({
   readonly testid?: string;
 }) {
   return (
-    <Card
-      data-testid={testid}
-      className={cn(
-        "relative overflow-hidden pl-4",
-        wash ? workspaceWashClass(tone) : undefined,
-        className,
-      )}
+    <RailedShell
+      railClass={workspaceRailClass(tone)}
+      wash={wash ? workspaceWashClass(tone) : undefined}
+      className={className}
+      testid={testid}
     >
-      <SiemRail className={workspaceRailClass(tone)} />
       {children}
-    </Card>
+    </RailedShell>
   );
 }
 
@@ -69,24 +70,17 @@ export function WorkspaceShellHead({
   readonly className?: string;
 }) {
   return (
-    <div className={cn("border-b border-border px-4 py-3", className)}>
-      {children ?? (
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="flex min-w-0 items-start gap-3">
-            {icon ? <WorkspaceIconChip icon={icon} /> : null}
-            <div className="min-w-0">
-              {title ? (
-                <h3 className="text-sm font-medium tracking-wide">{title}</h3>
-              ) : null}
-              {hint ? (
-                <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>
-              ) : null}
-            </div>
-          </div>
-          {aside ? <div className="shrink-0">{aside}</div> : null}
-        </div>
-      )}
-    </div>
+    <RailedShellHead
+      icon={icon}
+      iconChip="md"
+      align="start"
+      title={title}
+      hint={hint}
+      aside={aside}
+      className={className}
+    >
+      {children}
+    </RailedShellHead>
   );
 }
 
@@ -97,7 +91,7 @@ export function WorkspaceShellBody({
   readonly children: ReactNode;
   readonly className?: string;
 }) {
-  return <div className={cn("px-4 py-4", className)}>{children}</div>;
+  return <RailedShellBody className={className}>{children}</RailedShellBody>;
 }
 
 const NOTICE_BORDER: Record<WorkspaceTone, string> = {

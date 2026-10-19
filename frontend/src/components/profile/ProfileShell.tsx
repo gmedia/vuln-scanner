@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
+import {
+  RailedShell,
+  RailedShellBody,
+  RailedShellHead,
+} from "@/components/patterns/RailedShell";
 import { SiemRail } from "@/components/siem/siemChrome";
-import { Card } from "@/components/ui/Card";
 import {
   profileRailClass,
   profileWashClass,
@@ -23,17 +27,14 @@ export function ProfileShell({
   readonly testid?: string;
 }) {
   return (
-    <Card
-      data-testid={testid}
-      className={cn(
-        "relative overflow-hidden pl-4",
-        wash ? profileWashClass(tone) : undefined,
-        className,
-      )}
+    <RailedShell
+      railClass={profileRailClass(tone)}
+      wash={wash ? profileWashClass(tone) : undefined}
+      className={className}
+      testid={testid}
     >
-      <SiemRail className={profileRailClass(tone)} />
       {children}
-    </Card>
+    </RailedShell>
   );
 }
 
@@ -51,21 +52,16 @@ export function ProfileShellHead({
   readonly className?: string;
 }) {
   return (
-    <div className={cn("border-b border-border px-4 py-3", className)}>
-      {children ?? (
-        <div className="flex items-start gap-3">
-          {Icon}
-          <div className="min-w-0">
-            {title ? (
-              <h3 className="text-sm font-medium tracking-wide">{title}</h3>
-            ) : null}
-            {hint ? (
-              <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>
-            ) : null}
-          </div>
-        </div>
-      )}
-    </div>
+    <RailedShellHead
+      iconNode={Icon}
+      iconChip="none"
+      align="start"
+      title={title}
+      hint={hint}
+      className={className}
+    >
+      {children}
+    </RailedShellHead>
   );
 }
 
@@ -76,7 +72,7 @@ export function ProfileShellBody({
   readonly children: ReactNode;
   readonly className?: string;
 }) {
-  return <div className={cn("px-4 py-4", className)}>{children}</div>;
+  return <RailedShellBody className={className}>{children}</RailedShellBody>;
 }
 
 export function ProfileIconChip({
