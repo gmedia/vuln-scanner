@@ -1,22 +1,15 @@
 import { TONE_TEXT } from "@/lib/toneColors";
+import { toneRail, toneWash } from "@/lib/toneMap";
 
 export type AdminTone =
   "primary" | "success" | "danger" | "warn" | "info" | "alert" | "idle";
 
 export function adminRailClass(tone: AdminTone): string {
-  if (tone === "danger") return "bg-destructive";
-  if (tone === "warn") return "bg-amber-600";
-  if (tone === "alert") return "bg-orange-600";
-  if (tone === "info") return "bg-sky-600";
-  if (tone === "idle") return "bg-border";
-  return "bg-primary";
+  return toneRail(tone);
 }
 
 export function adminWashClass(tone: AdminTone): string | undefined {
-  if (tone === "danger") return "bg-destructive/[0.04]";
-  if (tone === "warn") return "bg-amber-500/[0.04]";
-  if (tone === "success") return "bg-primary/5";
-  return undefined;
+  return toneWash(tone);
 }
 
 export type AdminKpiKind =

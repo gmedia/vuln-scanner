@@ -1,4 +1,5 @@
 import { TONE_TEXT } from "@/lib/toneColors";
+import { toneRail, toneWash } from "@/lib/toneMap";
 
 export function overallValueClass(
   overall: string | null,
@@ -24,12 +25,12 @@ export function overallRailClass(
   overall: string | null,
   published: boolean,
 ): string {
-  if (!published) return "bg-border";
-  if (overall === "major") return "bg-destructive";
-  if (overall === "partial") return "bg-orange-600";
-  if (overall === "degraded") return "bg-amber-600";
-  if (overall === "operational") return "bg-primary";
-  return "bg-border";
+  if (!published) return toneRail("idle");
+  if (overall === "major") return toneRail("critical");
+  if (overall === "partial") return toneRail("high");
+  if (overall === "degraded") return toneRail("warn");
+  if (overall === "operational") return toneRail("primary");
+  return toneRail("idle");
 }
 
 export function overallWashClass(
@@ -37,7 +38,7 @@ export function overallWashClass(
   published: boolean,
 ): string | null {
   if (!published) return null;
-  if (overall === "operational") return "bg-primary/5";
+  if (overall === "operational") return toneWash("completed") ?? null;
   if (overall === "major") return "bg-destructive/5";
   return null;
 }
@@ -50,10 +51,10 @@ export function componentStateBadge(state: string | null) {
 }
 
 export function componentRailClass(state: string | null): string {
-  if (state === "up") return "bg-primary";
-  if (state === "down") return "bg-destructive";
-  if (state === "degraded") return "bg-amber-600";
-  return "bg-border";
+  if (state === "up") return toneRail("primary");
+  if (state === "down") return toneRail("critical");
+  if (state === "degraded") return toneRail("warn");
+  return toneRail("idle");
 }
 
 export function hostnameStatusVariant(status: string) {
@@ -64,26 +65,26 @@ export function hostnameStatusVariant(status: string) {
 }
 
 export function hostnameRailClass(status: string): string {
-  if (status === "active") return "bg-primary";
-  if (status === "failed") return "bg-destructive";
-  if (status === "pending_txt") return "bg-amber-600";
-  return "bg-border";
+  if (status === "active") return toneRail("primary");
+  if (status === "failed") return toneRail("critical");
+  if (status === "pending_txt") return toneRail("warn");
+  return toneRail("idle");
 }
 
 export function incidentRailClass(status: string): string {
-  if (status === "resolved") return "bg-primary";
-  if (status === "investigating") return "bg-amber-600";
-  if (status === "identified") return "bg-orange-600";
-  if (status === "monitoring") return "bg-sky-600";
-  return "bg-border";
+  if (status === "resolved") return toneRail("primary");
+  if (status === "investigating") return toneRail("warn");
+  if (status === "identified") return toneRail("high");
+  if (status === "monitoring") return toneRail("info");
+  return toneRail("idle");
 }
 
 export function incidentsListRailClass(statuses: readonly string[]): string {
-  if (statuses.length === 0) return "bg-border";
-  if (statuses.some((s) => s === "investigating")) return "bg-amber-600";
-  if (statuses.some((s) => s === "identified")) return "bg-orange-600";
-  if (statuses.some((s) => s === "monitoring")) return "bg-sky-600";
-  return "bg-primary";
+  if (statuses.length === 0) return toneRail("idle");
+  if (statuses.some((s) => s === "investigating")) return toneRail("warn");
+  if (statuses.some((s) => s === "identified")) return toneRail("high");
+  if (statuses.some((s) => s === "monitoring")) return toneRail("info");
+  return toneRail("primary");
 }
 
 export const HOSTNAME_STATUS_KEYS: Record<string, string> = {

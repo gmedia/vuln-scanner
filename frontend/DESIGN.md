@@ -110,6 +110,14 @@ All spacing derives from **4px**.
 
 ## 5. Components
 
+### toneMap (shared rail / wash / text colours)
+
+- **Location**: `frontend/src/lib/toneMap.ts` — `Tone`, `toneRail`, `toneWash`, `toneText`.
+- **Rule**: a chrome module may own its `*Tone` union and the *decision* (e.g. `siteTone`), but the colour strings come from `toneRail` / `toneWash` / `toneText`. Do not write `return "bg-destructive"` in a status mapper.
+- **Vocabulary**: `primary`, `success`, `enabled`, `completed`, `danger`, `critical`, `failed`, `warn`, `pending`, `alert`, `high`, `info`, `running`, `medium`, `low`, `idle`, `disabled`.
+- **Exempt**: category colours that are not status (`assetChrome` sky/violet type chips) and the `GuardPulse` animation classes.
+- **Tests**: `src/test/toneMap.test.ts` asserts every mapping and scans the 12 status chrome modules for hard-coded rail literals.
+
 ### EmptyState (shared empty panel)
 
 - **Location**: `frontend/src/components/patterns/EmptyState.tsx`. **This is the only empty-state implementation.** Do not declare a local `EmptyIsland` / `EmptyState` / `EmptyPanel`.

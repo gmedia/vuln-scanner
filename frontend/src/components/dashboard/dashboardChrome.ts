@@ -1,3 +1,5 @@
+import { toneRail, toneWash } from "@/lib/toneMap";
+
 export type DashboardTone =
   "critical" | "high" | "failed" | "running" | "pending" | "completed" | "idle";
 
@@ -20,17 +22,11 @@ export function scanTone(input: {
 }
 
 export function dashboardRailClass(tone: DashboardTone): string {
-  if (tone === "critical" || tone === "failed") return "bg-destructive";
-  if (tone === "high") return "bg-orange-600";
-  if (tone === "running") return "bg-sky-600";
-  if (tone === "pending") return "bg-amber-600";
-  if (tone === "completed") return "bg-primary";
-  return "bg-border";
+  return toneRail(tone);
 }
 
 export function dashboardWashClass(tone: DashboardTone): string | null {
-  if (tone === "critical" || tone === "failed") return "bg-destructive/[0.04]";
-  return null;
+  return toneWash(tone) ?? null;
 }
 
 export function worstScanTone(

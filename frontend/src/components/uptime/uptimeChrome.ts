@@ -1,4 +1,5 @@
 import { TONE_TEXT } from "@/lib/toneColors";
+import { toneRail, toneWash } from "@/lib/toneMap";
 
 export function stateBadgeVariant(state: string) {
   if (state === "up") return "completed" as const;
@@ -8,17 +9,17 @@ export function stateBadgeVariant(state: string) {
 }
 
 export function stateRailClass(state: string, enabled = true): string {
-  if (!enabled) return "bg-border";
-  if (state === "up") return "bg-primary";
-  if (state === "down") return "bg-destructive";
-  if (state === "degraded") return "bg-amber-600";
-  return "bg-border";
+  if (!enabled) return toneRail("disabled");
+  if (state === "up") return toneRail("primary");
+  if (state === "down") return toneRail("critical");
+  if (state === "degraded") return toneRail("warn");
+  return toneRail("idle");
 }
 
 export function stateWashClass(state: string, enabled = true): string | null {
   if (!enabled) return null;
-  if (state === "up") return "bg-primary/5";
-  if (state === "down") return "bg-destructive/[0.04]";
+  if (state === "up") return toneWash("completed") ?? null;
+  if (state === "down") return toneWash("critical") ?? null;
   return null;
 }
 
@@ -31,5 +32,5 @@ export function stateValueClass(state: string, enabled = true): string {
 }
 
 export function outagesRailClass(count: number): string {
-  return count > 0 ? "bg-destructive" : "bg-border";
+  return count > 0 ? toneRail("critical") : toneRail("idle");
 }

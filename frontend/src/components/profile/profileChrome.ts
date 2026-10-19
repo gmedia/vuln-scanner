@@ -1,17 +1,13 @@
+import { toneRail, toneWash } from "@/lib/toneMap";
+
 export type ProfileTone = "primary" | "success" | "danger" | "warn" | "idle";
 
 export function profileRailClass(tone: ProfileTone): string {
-  if (tone === "danger") return "bg-destructive";
-  if (tone === "warn") return "bg-amber-600";
-  if (tone === "idle") return "bg-border";
-  return "bg-primary";
+  return toneRail(tone);
 }
 
 export function profileWashClass(tone: ProfileTone): string | undefined {
-  if (tone === "danger") return "bg-destructive/[0.04]";
-  if (tone === "warn") return "bg-amber-500/[0.04]";
-  if (tone === "success") return "bg-primary/5";
-  return undefined;
+  return toneWash(tone);
 }
 
 export function verificationTone(verified: boolean): ProfileTone {
