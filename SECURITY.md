@@ -53,20 +53,35 @@ VulnScanner does not operate a bug bounty program. Vulnerability reports are acc
 
 Tracked so `npm audit` / dependency scanners do not force unsafe “fixes.” Revisit when a **compatible patched release** exists.
 
-### React Router — GHSA-qwww-vcr4-c8h2 (high)
+**Current state: no accepted residuals.** `npm audit` (full, including dev) reports **0 vulnerabilities** in `frontend/`. Keep it that way — if a new advisory appears, add a row here with the evidence, not a silent override.
+
+### React Router — GHSA-qwww-vcr4-c8h2 (high) — **RESOLVED**
 
 | Field | Value |
 |-------|--------|
-| Packages | `react-router` / `react-router-dom` (frontend SPA, currently 7.18.x line) |
+| Packages | `react-router` / `react-router-dom` (frontend SPA) |
 | Advisory | [GHSA-qwww-vcr4-c8h2](https://github.com/advisories/GHSA-qwww-vcr4-c8h2) — RSC Mode CSRF bypass (follow-up to CVE-2026-22030) |
 | Advisory note | Affects apps using **unstable RSC** APIs only |
 | Our usage | `BrowserRouter` in `frontend/src/main.tsx` only — **no** RSC / unstable RSC routes |
-| Why not auto-fix | `npm audit fix --force` proposes **downgrade** to `react-router-dom@7.11.0` (regressive). No patched **7.x** release; first patched line is `react-router@8.3.0`, while `react-router-dom@8` was not published when last reviewed |
-| Decision | **Accept** residual audit finding until we can bump to a patched `react-router-dom` without a force-downgrade |
-| Revisit when | `react-router-dom` ships a release that depends on patched `react-router` (≥8.3 or a future 7.x patch), then open a dedicated bump PR + full frontend CI |
+| Vulnerable ranges | `>= 7.12.0, < 7.18.2` and `>= 8.0.0, < 8.3.0` |
+| Installed | `react-router-dom@7.18.4` → **outside both ranges** |
+| Status | **Closed by the 7.18.4 bump.** `npm audit` no longer reports it |
 
-Do **not** run `npm audit fix --force` for this GHSA on the SPA.
+**Correction (2026-10-19):** this section previously claimed *“No patched 7.x release; first patched line is `react-router@8.3.0`.”* That was **wrong** — the advisory lists `7.18.2` as a patched 7.x release. The residual was already resolved by the time anyone re-read the row. Verify the advisory's `vulnerableVersionRange` / `firstPatchedVersion` before recording a risk as accepted.
+
+Do **not** run `npm audit fix --force` for a React Router advisory on the SPA — it proposes a regressive downgrade.
 
 ### Related frontend pins
 
-Transitive highs cleared on main via overrides (see `frontend/package.json`): `brace-expansion` ≥5.0.5, `undici` ≥7.29.0. Keep optional lock entries (e.g. `@emnapi/*`) intact so `npm ci` stays in sync — see PR history on lockfile hygiene.
+Transitive highs are cleared on `main` via `overrides` in `frontend/package.json`. **The floors matter**: an override set one patch below the first patched version silently keeps the vulnerability while looking like a fix.
+
+| Package | Override | Why that floor |
+|---|---|---|
+| `brace-expansion` | `^5.0.12` | Advisory covers `4.0.0 – 5.0.11`; the old `^5.0.5` resolved to a vulnerable build |
+| `undici` | `^8.12.1` | Advisory covers `7.0.0 – 7.29.0`; the old `^7.29.0` pinned **exactly** the last vulnerable version, and forced `undici` *below* `jsdom@30`'s own `^8.12.1` requirement |
+| `browserslist` | `^4.29.4` | Advisory covers `<=4.28.6` |
+| `baseline-browser-mapping` | `^2.11.29` | Advisory covers `>=2.0.0 <2.11.0` |
+
+Keep optional lock entries (e.g. `@emnapi/*`) intact so `npm ci` stays in sync — see PR history on lockfile hygiene.
+
+**Verifying an override actually helps:** check the installed version against the advisory range (`npm ls <pkg>` / `node_modules/<pkg>/package.json`), not just that an override exists. `npm audit` is the source of truth.
