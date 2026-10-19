@@ -3,8 +3,26 @@ import redis.asyncio as redis
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import settings
+from app.middleware.auth import ApiKeyMiddleware
 
 API_KEY = settings.api_key
+
+
+def _find_middleware(app, cls):
+    """Return the first `cls` instance in the ASGI middleware chain.
+
+    The stack is nested (`outer.app` -> next), and the number of wrappers is a
+    FastAPI implementation detail: 0.143 inserted `ExceptionTelemetryMiddleware`
+    around the app, which broke the old `middleware_stack.app` assumption.
+    """
+    current = app.middleware_stack
+    for _ in range(50):
+        if current is None:
+            break
+        if isinstance(current, cls):
+            return current
+        current = getattr(current, "app", None)
+    raise AssertionError(f"{cls.__name__} not found in the middleware chain")
 
 
 def test_auth_missing_key(client):
@@ -215,8 +233,6 @@ def test_redis_down_key_rate_limit_503(client, mock_celery, monkeypatch):
     assert create_resp.status_code == 201
     plain_key = create_resp.json()["key"]
 
-    from app.middleware.auth import ApiKeyMiddleware
-
     call_count = 0
 
     async def mock_get_redis_error():
@@ -228,10 +244,7 @@ def test_redis_down_key_rate_limit_503(client, mock_celery, monkeypatch):
 
         return _fake_redis
 
-    middleware_instance = client.app.middleware_stack.app
-    assert isinstance(middleware_instance, ApiKeyMiddleware), (
-        f"Expected ApiKeyMiddleware, got {type(middleware_instance)}"
-    )
+    middleware_instance = _find_middleware(client.app, ApiKeyMiddleware)
     monkeypatch.setattr(middleware_instance, "_get_redis", mock_get_redis_error)
 
     resp = client.get("/api/scan/history", headers={"X-API-Key": plain_key})
@@ -286,13 +299,11 @@ def test_excluded_paths_all_skip_auth(client):
 
 def test_redis_down_ip_rate_limit_503(client, monkeypatch):
     """When Redis raises RedisError during IP rate limit check → 503."""
-    from app.middleware.auth import ApiKeyMiddleware
 
     async def mock_get_redis_error():
         raise redis.RedisError("Connection refused")
 
-    middleware_instance = client.app.middleware_stack.app
-    assert isinstance(middleware_instance, ApiKeyMiddleware)
+    middleware_instance = _find_middleware(client.app, ApiKeyMiddleware)
     monkeypatch.setattr(middleware_instance, "_get_redis", mock_get_redis_error)
 
     resp = client.get("/api/scan/history", headers={"X-API-Key": API_KEY})
