@@ -18,6 +18,7 @@ Deploy and lab helpers. Human ops: `docs/deploy.md`. New server + new domain bri
 | `pg-backup.sh` | Scheduled Postgres `pg_dump -Fc` → optional age/gpg encryption → object storage; prunes local retention |
 | `pg-restore.sh` | `--list` archive TOC (non-destructive) or `--yes` restore (`pg_restore --clean --if-exists --no-owner`) |
 | `check-env-inventory.sh` | Drift guard: compose keys + CI-written keys must exist in `.env.example`. Runs in CI (`env-inventory` job) |
+| `check-requirements-sync.sh` | Drift guard: shared Python packages must be pinned to the same version in `backend/` and `workers/` (workers import `app.*`). Runs in CI (`deps-sync` job) |
 
 ## ANTI-PATTERNS
 
