@@ -485,6 +485,7 @@ jobs:
         run: |
           npx vitest run \
             src/test/designInvariants.test.ts \
+            src/test/docContract.test.ts \
             src/test/themeTokens.test.ts \
             src/test/toneColors.test.ts \
             src/test/e2eSelectors.test.ts \

@@ -45,6 +45,7 @@ If a lower layer contradicts a higher layer, the higher layer wins and the lower
 | 19 | Rail/wash/value colours come from `lib/toneMap.ts` (`toneRail`, `toneWash`, `toneText`). Status chrome modules keep their `*Tone` type but must not hard-code `bg-<status>` literals. | Machine: `toneMap.test.ts` |
 | 20 | Every `Input`, `Textarea`, and `SelectTrigger` outside `components/ui/` has an accessible name: `id` (paired with `Label htmlFor`), `aria-label`, or `aria-labelledby`. | Machine: `designInvariants.test.ts` |
 | 21 | Empty panels render `EmptyState`. A hand-rolled panel (`min-h-[6rem|8rem|12rem|16rem]`, dashed muted box, or `rounded-xl` muted island) is a violation. `EMPTY_PANEL_RATCHET` lists temporary exceptions; stale entries fail, so the list only shrinks. | Machine: `designInvariants.test.ts` |
+| 22 | Design docs (`frontend/DESIGN.md`, `frontend/AGENTS.md`) may only reference `components/` `pages/` `lib/` `hooks/` `theme/` source paths that exist, and must not name a retired primitive. | Machine: `docContract.test.ts` |
 
 ### Adding to the allowlist
 
