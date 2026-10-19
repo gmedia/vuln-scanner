@@ -2,6 +2,46 @@
 
 Operational reference so Redis/Celery and frontend audit residuals stay intentional, not accidental drift.
 
+## Container base images
+
+All Dockerfiles pin their base by **digest** (`tag@sha256:…`), not by tag alone, so a build is
+reproducible. The cost is that a pinned digest **never picks up security fixes on its own** —
+that is why the pins are tracked here and refreshed deliberately.
+
+| Dockerfile | Base | Refreshed |
+|---|---|---|
+| `backend/Dockerfile` | `python:3.12-slim-bookworm` | 2026-10-19 |
+| `workers/Dockerfile` | `python:3.12-slim-bookworm` (same digest) | 2026-10-19 |
+| `frontend/Dockerfile` (dev + builder) | `node:24.22-alpine` | 2026-10-19 |
+| `frontend/Dockerfile` (production) | `nginxinc/nginx-unprivileged:1.31-alpine` | 2026-10-19 |
+| `nginx/Dockerfile` (local compose) | `nginx:1.31-alpine` | 2026-10-19 |
+
+### Why this matters
+
+The pins had drifted: `python` was built 2026-06-24 and `nginx-unprivileged` 2025-06-23
+(**1.27**, four minors behind). Trivy reported **100 open alerts** on `main` — 6 critical
+(`perl` path traversal / heap overflow in the Debian base) and 30 high (`expat`, `curl`).
+
+Three things combined to hide it:
+1. `dependabot.yml` declared `package-ecosystem: docker` with `directory: "/"`, but **no
+   Dockerfile lives at the repo root** — so Dependabot never found a single one.
+2. Digests never move on their own.
+3. The Trivy jobs use `continue-on-error: true`, so findings only reached the Security tab.
+
+### Rules
+
+- **Dependabot covers every Dockerfile directory** (`/backend`, `/workers`, `/frontend`,
+  `/nginx`). Do not point it at `/` — that silently matches nothing.
+- `frontend/package.json` `engines.node` is a real constraint: the image tag must satisfy it.
+  Node was `24.11` while engines said `>=24.15.0` (raised for jsdom 30); the image is now
+  `24.22`.
+- **`nginx/default.conf` uses `http2 on;`** (new syntax since 1.25.1), not
+  `listen … http2`. The host templates (`nginx/sinexis.app.conf`, `nginx/vs.appmedia.id.conf`)
+  still use the deprecated form because the **host** nginx version is managed outside this
+  repo; switch them only after confirming the host runs ≥ 1.25.1.
+- Refresh a digest deliberately: pull the tag, take `RepoDigests`, and note the date above.
+  Do not `apt-get upgrade` inside the Dockerfile to paper over a stale base.
+
 ## Redis server vs Python clients
 
 | Layer | Pin | Notes |
