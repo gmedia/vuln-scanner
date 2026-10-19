@@ -1,5 +1,9 @@
 import { TONE_TEXT } from "@/lib/toneColors";
 import { toneRail, toneWash } from "@/lib/toneMap";
+import {
+  invoiceListTone as sharedInvoiceListTone,
+  invoiceStatusTone as sharedInvoiceStatusTone,
+} from "@/lib/invoiceTone";
 
 export type AdminTone =
   "primary" | "success" | "danger" | "warn" | "info" | "alert" | "idle";
@@ -60,18 +64,11 @@ export function reportTone(
 }
 
 export function invoiceStatusTone(status: string): AdminTone {
-  if (status === "paid") return "success";
-  if (status === "sent") return "warn";
-  if (status === "void") return "danger";
-  return "idle";
+  return sharedInvoiceStatusTone(status);
 }
 
 export function invoiceListTone(statuses: readonly string[]): AdminTone {
-  if (statuses.length === 0) return "idle";
-  if (statuses.includes("void")) return "danger";
-  if (statuses.includes("sent")) return "warn";
-  if (statuses.includes("paid")) return "success";
-  return "idle";
+  return sharedInvoiceListTone(statuses);
 }
 
 export function blogStatusTone(status: string): AdminTone {

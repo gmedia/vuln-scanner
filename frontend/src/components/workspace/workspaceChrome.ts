@@ -1,4 +1,8 @@
 import { toneRail, toneWash } from "@/lib/toneMap";
+import {
+  invoiceListTone as sharedInvoiceListTone,
+  invoiceStatusTone as sharedInvoiceStatusTone,
+} from "@/lib/invoiceTone";
 
 export type WorkspaceTone =
   "primary" | "success" | "danger" | "warn" | "info" | "idle";
@@ -19,10 +23,7 @@ export function roleTone(role: string): WorkspaceTone {
 }
 
 export function invoiceTone(status: string): WorkspaceTone {
-  if (status === "paid") return "success";
-  if (status === "sent") return "warn";
-  if (status === "void") return "danger";
-  return "idle";
+  return sharedInvoiceStatusTone(status);
 }
 
 export function countTone(count: number | undefined): WorkspaceTone {
@@ -30,11 +31,7 @@ export function countTone(count: number | undefined): WorkspaceTone {
 }
 
 export function invoiceListTone(statuses: readonly string[]): WorkspaceTone {
-  if (statuses.length === 0) return "idle";
-  if (statuses.includes("void")) return "danger";
-  if (statuses.includes("sent")) return "warn";
-  if (statuses.includes("paid")) return "success";
-  return "idle";
+  return sharedInvoiceListTone(statuses);
 }
 
 export function formTone(input: {
