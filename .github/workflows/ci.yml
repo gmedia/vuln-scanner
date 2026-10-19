@@ -908,6 +908,26 @@ jobs:
       - name: Check backend/workers requirement pins match
         run: bash scripts/check-requirements-sync.sh
 
+  deps-audit:
+    name: deps-audit
+    needs: [changes]
+    if: ${{ (github.event_name != 'workflow_dispatch' || !inputs.skip_tests)
+            && (needs.changes.outputs.always_full == 'true'
+                || needs.changes.outputs.frontend == 'true') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci --no-audit --no-fund
+      - name: Check no unaccepted HIGH/CRITICAL advisories
+        run: node scripts/check-dependency-audit.mjs
+
   env-inventory:
     name: env-inventory
     needs: [changes]
@@ -939,6 +959,7 @@ jobs:
       - e2e-tests
       - env-inventory
       - deps-sync
+      - deps-audit
     if: ${{ always() && !cancelled() }}
     steps:
       - name: Fail if any required job failed

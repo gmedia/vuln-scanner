@@ -1,0 +1,4 @@
+{
+  "$comment": "Accepted HIGH/CRITICAL dependency advisories for the frontend. Enforced by scripts/check-dependency-audit.mjs (CI job deps-audit). Every entry needs an id (GHSA), package, reason, and expires date. Prefer fixing; an entry here is a decision, not a workaround.",
+  "entries": []
+}
