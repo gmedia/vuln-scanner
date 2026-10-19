@@ -1,10 +1,8 @@
-import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { GuardPulse } from "@/components/guard/guardChrome";
-import { SiemRail } from "@/components/siem/siemChrome";
+import { StatGrid, StatTile } from "@/components/patterns/StatTile";
 import { Badge } from "@/components/ui/Badge";
 import { Progress } from "@/components/ui/Progress";
-import { cn } from "@/lib/utils";
 import { TONE_TEXT } from "@/lib/toneColors";
 
 export type HostKpiStripProps = {
@@ -17,46 +15,6 @@ export type HostKpiStripProps = {
   readonly fleetStale: boolean;
   readonly featureOn: boolean;
 };
-
-function KpiTile({
-  label,
-  value,
-  railClass,
-  pulse = false,
-  extra,
-  valueClass = "font-mono text-lg font-bold tabular-nums text-foreground",
-  testid,
-}: {
-  readonly label: string;
-  readonly value: ReactNode;
-  readonly railClass: string;
-  readonly pulse?: boolean;
-  readonly extra?: ReactNode;
-  readonly valueClass?: string;
-  readonly testid: string;
-}) {
-  return (
-    <div
-      data-testid={testid}
-      className="relative min-w-0 overflow-hidden rounded-lg border border-border bg-card px-4 py-3 pl-4"
-    >
-      <SiemRail className={railClass} />
-      <p className="pl-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-      <div
-        className={cn(
-          "mt-1 flex flex-wrap items-center gap-2 pl-2",
-          valueClass,
-        )}
-      >
-        {value}
-        {pulse ? <GuardPulse /> : null}
-      </div>
-      {extra ? <div className="mt-2 pl-2">{extra}</div> : null}
-    </div>
-  );
-}
 
 export default function HostKpiStrip({
   sku,
@@ -86,10 +44,10 @@ export default function HostKpiStrip({
       ? "bg-amber-600"
       : undefined;
   const quotaValueClass = isFull
-    ? "font-mono text-lg font-bold tabular-nums text-destructive sm:text-2xl"
+    ? "text-destructive sm:text-2xl"
     : isNearCap
-      ? `font-mono text-lg font-bold tabular-nums ${TONE_TEXT.amber} sm:text-2xl`
-      : "font-mono text-lg font-bold tabular-nums text-foreground sm:text-2xl";
+      ? `${TONE_TEXT.amber} sm:text-2xl`
+      : "sm:text-2xl";
   const helperOk = agentsCount > 0 && !fleetStale;
   const helperRailClass =
     agentsCount === 0
@@ -99,12 +57,13 @@ export default function HostKpiStrip({
         : "bg-destructive";
 
   return (
-    <section
-      data-testid="host-overview"
-      aria-label={t("title")}
-      className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4"
+    <StatGrid
+      testid="host-overview"
+      label={t("title")}
+      as="section"
+      className="lg:grid-cols-4"
     >
-      <KpiTile
+      <StatTile
         testid="host-overview-sites"
         label={t("overviewSites")}
         value={
@@ -113,7 +72,7 @@ export default function HostKpiStrip({
           </span>
         }
         railClass={quotaRailClass}
-        valueClass={quotaValueClass}
+        valueClassName={quotaValueClass}
         extra={
           <div className="space-y-1">
             <p className="text-[10px] text-muted-foreground">
@@ -131,18 +90,18 @@ export default function HostKpiStrip({
           </div>
         }
       />
-      <KpiTile
+      <StatTile
         testid="host-overview-agents"
         label={t("overviewAgents")}
         value={agentsCount > 0 ? String(agentsCount) : t("overviewNoAgents")}
         railClass={agentsCount > 0 ? "bg-primary" : "bg-border"}
-        valueClass={
+        valueClassName={
           agentsCount > 0
-            ? "font-mono text-lg font-bold tabular-nums text-foreground sm:text-2xl"
+            ? "sm:text-2xl"
             : "truncate text-sm font-semibold text-muted-foreground"
         }
       />
-      <KpiTile
+      <StatTile
         testid="host-overview-decision"
         label={t("overviewNeedsDecision")}
         value={
@@ -156,24 +115,24 @@ export default function HostKpiStrip({
           </span>
         }
         railClass={needsDecision > 0 ? "bg-destructive" : "bg-border"}
-        valueClass={
+        valueClassName={
           needsDecision > 0
-            ? "font-mono text-lg font-bold tabular-nums text-destructive sm:text-2xl"
-            : "font-mono text-lg font-bold tabular-nums text-muted-foreground sm:text-2xl"
+            ? "text-destructive sm:text-2xl"
+            : "text-muted-foreground sm:text-2xl"
         }
       />
-      <KpiTile
+      <StatTile
         testid="host-overview-helper"
         label={t("kpiHelper")}
         value={fleetStale ? t("overviewHelperStale") : t("overviewHelperOk")}
         railClass={helperRailClass}
-        pulse={helperOk}
-        valueClass={
+        pulse={helperOk ? <GuardPulse /> : null}
+        valueClassName={
           fleetStale
             ? "text-sm font-semibold leading-tight text-destructive"
-            : "text-sm font-semibold leading-tight text-foreground"
+            : "text-sm font-semibold leading-tight"
         }
       />
-    </section>
+    </StatGrid>
   );
 }

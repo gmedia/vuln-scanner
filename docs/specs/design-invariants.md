@@ -40,6 +40,7 @@ If a lower layer contradicts a higher layer, the higher layer wins and the lower
 | 14 | Do not restyle `components/ui/*` for one screenshot. Kit changes are their own PR with a written reason. | Review |
 | 15 | Frozen e2e testids stay; new controls get a new stable testid. | Machine: existing unit/E2E queries; Review |
 | 16 | Do not add a primitive, token, radius, shadow, font, or motion value without updating the inventory and `index.css` in the same PR. | Review |
+| 17 | KPI/metric tiles use `StatTile` + `StatGrid` from `components/patterns/StatTile.tsx`. No page-local `KpiTile` / `StatTile` / `StatCard`. | Machine: `designInvariants.test.ts` |
 
 ### Adding to the allowlist
 

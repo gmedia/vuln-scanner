@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
+import { StatTile } from "@/components/patterns/StatTile";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -115,33 +116,18 @@ export function AdminKpiTile({
 }) {
   const tone = kpiTone(kind);
   return (
-    <div
-      data-testid={`admin-kpi-${kind}`}
-      className="relative min-w-0 overflow-hidden rounded-lg border border-border bg-card px-4 py-3 pl-4"
-    >
-      <SiemRail className={adminRailClass(tone)} />
-      <div className="flex items-center gap-2 pl-2">
-        <Icon
-          className={cn("h-3.5 w-3.5 shrink-0", kpiValueClass(tone))}
-          aria-hidden
-        />
-        <span className="min-w-0 truncate text-[10px] uppercase tracking-wider text-muted-foreground">
-          {label}
-        </span>
-      </div>
-      {isLoading ? (
-        <Skeleton className="mt-1.5 ml-2 h-8 w-20" />
-      ) : (
-        <span
-          className={cn(
-            "mt-1 block pl-2 font-mono text-2xl font-bold tracking-tight tabular-nums",
-            kpiValueClass(tone),
-          )}
-        >
-          {value.toLocaleString()}
-        </span>
-      )}
-    </div>
+    <StatTile
+      testid={`admin-kpi-${kind}`}
+      label={label}
+      icon={Icon}
+      iconClassName={kpiValueClass(tone)}
+      value={value.toLocaleString()}
+      railClass={adminRailClass(tone)}
+      valueClassName="text-2xl tracking-tight"
+      labelClassName="font-normal"
+      isLoading={isLoading}
+      skeleton={<Skeleton className="mt-1.5 ml-2 h-8 w-20" />}
+    />
   );
 }
 

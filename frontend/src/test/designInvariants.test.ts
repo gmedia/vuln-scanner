@@ -16,6 +16,12 @@ const NUMERIC_HSL = /hsl[a]?\(\s*\d/;
 const ARBITRARY_HEX_CLASS =
   /(?:bg|text|border|ring|fill|stroke)-\[#[0-9a-fA-F]{3,8}\]/;
 const NATIVE_SELECT = /<select[\s>]/;
+const LOCAL_TILE =
+  /(?:function|const)\s+(?:KpiTile|StatTile|StatCard|KpiCard)\b/;
+
+const TILE_ALLOWLIST: ReadonlySet<string> = new Set([
+  "components/patterns/StatTile.tsx",
+]);
 
 const SOURCES = import.meta.glob("../**/*.{ts,tsx}", {
   query: "?raw",
@@ -81,6 +87,14 @@ describe("design invariants", () => {
     expect(
       bad,
       `Use index.css tokens or lib/toneColors.ts instead:\n${report(bad)}`,
+    ).toEqual([]);
+  });
+
+  it("bans local KPI tile implementations", () => {
+    const bad = scan(LOCAL_TILE, TILE_ALLOWLIST);
+    expect(
+      bad,
+      `Use StatTile from components/patterns/StatTile:\n${report(bad)}`,
     ).toEqual([]);
   });
 });

@@ -1,13 +1,8 @@
-import type { ReactNode } from "react";
 import type { GuardStatus } from "@/api/guard";
 import { GuardPulse } from "@/components/guard/guardChrome";
-import {
-  formatWhen,
-  type GuardTranslate,
-} from "@/components/guard/guardFormat";
-import { SiemRail } from "@/components/siem/siemChrome";
+import { formatWhen, type GuardTranslate } from "@/components/guard/guardFormat";
+import { StatGrid, StatGridSkeleton, StatTile } from "@/components/patterns/StatTile";
 import { Badge } from "@/components/ui/Badge";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { TONE_CHIP_TEXT } from "@/lib/toneColors";
 
 type GuardHealth = "on" | "degraded" | "off";
@@ -17,38 +12,6 @@ const STATE_RAIL: Record<GuardHealth, string> = {
   degraded: "bg-amber-600",
   off: "bg-border",
 };
-
-function KpiTile({
-  label,
-  value,
-  railClass,
-  pulse = false,
-  extra,
-  valueClass = "font-mono text-lg font-bold tabular-nums text-foreground",
-}: {
-  readonly label: string;
-  readonly value: ReactNode;
-  readonly railClass: string;
-  readonly pulse?: boolean;
-  readonly extra?: ReactNode;
-  readonly valueClass?: string;
-}) {
-  return (
-    <div className="relative overflow-hidden rounded-lg border border-border bg-card px-4 py-3 pl-4">
-      <SiemRail className={railClass} />
-      <p className="pl-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-      <div
-        className={`mt-1 flex flex-wrap items-center gap-2 pl-2 ${valueClass}`}
-      >
-        {value}
-        {pulse ? <GuardPulse /> : null}
-        {extra}
-      </div>
-    </div>
-  );
-}
 
 export function GuardKpiStrip({
   status,
@@ -70,11 +33,8 @@ export function GuardKpiStrip({
       : "on";
   const on = status.enabled;
   return (
-    <div
-      data-testid="guard-kpi-strip"
-      className="grid grid-cols-2 gap-3 lg:grid-cols-4"
-    >
-      <KpiTile
+    <StatGrid testid="guard-kpi-strip" className="gap-3">
+      <StatTile
         label={t("guardState")}
         value={
           <span data-testid="guard-state" data-enabled={on ? "true" : "false"}>
@@ -84,8 +44,9 @@ export function GuardKpiStrip({
           </span>
         }
         railClass={STATE_RAIL[health]}
-        pulse={health === "on"}
-        valueClass="text-sm font-semibold text-foreground"
+        pulse={health === "on" ? <GuardPulse /> : null}
+        valueClassName="text-sm font-semibold"
+        extraPlacement="inline"
         extra={
           status.degraded ? (
             <Badge className={`bg-amber-500/15 ${TONE_CHIP_TEXT.amber}`}>
@@ -94,35 +55,25 @@ export function GuardKpiStrip({
           ) : null
         }
       />
-      <KpiTile
+      <StatTile
         label={t("agents")}
         value={on ? String(agentCount) : "—"}
         railClass="bg-border"
       />
-      <KpiTile
+      <StatTile
         label={t("alertsTitle")}
         value={on ? String(alertCount) : "—"}
         railClass={on && alertCount > 0 ? "bg-destructive" : "bg-border"}
       />
-      <KpiTile
+      <StatTile
         label={t("kpiLastSync")}
         value={on ? formatWhen(status.last_inventory_sync_at, dateLocale) : "—"}
         railClass="bg-border"
       />
-    </div>
+    </StatGrid>
   );
 }
 
 export function GuardKpiSkeleton() {
-  return (
-    <div
-      data-testid="guard-kpi-skeleton"
-      className="grid grid-cols-2 gap-3 lg:grid-cols-4"
-    >
-      <Skeleton className="h-[4.5rem] rounded-lg" />
-      <Skeleton className="h-[4.5rem] rounded-lg" />
-      <Skeleton className="h-[4.5rem] rounded-lg" />
-      <Skeleton className="h-[4.5rem] rounded-lg" />
-    </div>
-  );
+  return <StatGridSkeleton testid="guard-kpi-skeleton" />;
 }

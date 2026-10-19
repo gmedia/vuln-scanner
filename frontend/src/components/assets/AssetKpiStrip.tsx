@@ -1,42 +1,11 @@
-import type { ReactNode } from "react";
-import { SiemRail } from "@/components/siem/siemChrome";
+import { StatGrid, StatGridSkeleton, StatTile } from "@/components/patterns/StatTile";
 import { Progress } from "@/components/ui/Progress";
-import { Skeleton } from "@/components/ui/Skeleton";
 import {
   quotaIndicatorClass,
   quotaRailClass,
   quotaTone,
   type AssetTranslate,
 } from "@/components/assets/assetChrome";
-
-function KpiTile({
-  label,
-  value,
-  railClass,
-  extra,
-  valueClass = "font-mono text-lg font-bold tabular-nums text-foreground",
-}: {
-  readonly label: string;
-  readonly value: ReactNode;
-  readonly railClass: string;
-  readonly extra?: ReactNode;
-  readonly valueClass?: string;
-}) {
-  return (
-    <div className="relative overflow-hidden rounded-lg border border-border bg-card px-4 py-3 pl-4">
-      <SiemRail className={railClass} />
-      <p className="pl-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-      <div
-        className={`mt-1 flex flex-wrap items-center gap-2 pl-2 ${valueClass}`}
-      >
-        {value}
-      </div>
-      {extra ? <div className="mt-2 pl-2">{extra}</div> : null}
-    </div>
-  );
-}
 
 export type AssetKpiStripProps = {
   readonly sku: string;
@@ -63,11 +32,8 @@ export function AssetKpiStrip({
   const tone = quotaTone(quotaPct, atCap);
 
   return (
-    <div
-      data-testid="assets-kpi-strip"
-      className="grid grid-cols-2 gap-3 lg:grid-cols-4"
-    >
-      <KpiTile
+    <StatGrid testid="assets-kpi-strip" className="gap-3">
+      <StatTile
         label={t("kpiQuota")}
         value={
           <span className="text-sm font-medium text-foreground">
@@ -75,7 +41,7 @@ export function AssetKpiStrip({
           </span>
         }
         railClass={quotaRailClass(tone)}
-        valueClass="text-sm font-semibold text-foreground"
+        valueClassName="text-sm font-semibold"
         extra={
           <Progress
             value={quotaPct}
@@ -84,35 +50,25 @@ export function AssetKpiStrip({
           />
         }
       />
-      <KpiTile
+      <StatTile
         label={t("kpiScheduled")}
         value={String(scheduled)}
         railClass={scheduled > 0 ? "bg-primary" : "bg-border"}
       />
-      <KpiTile
+      <StatTile
         label={t("kpiDomains")}
         value={String(domains)}
         railClass={domains > 0 ? "bg-sky-600" : "bg-border"}
       />
-      <KpiTile
+      <StatTile
         label={t("kpiIps")}
         value={String(ips)}
         railClass={ips > 0 ? "bg-violet-500" : "bg-border"}
       />
-    </div>
+    </StatGrid>
   );
 }
 
 export function AssetKpiSkeleton() {
-  return (
-    <div
-      data-testid="assets-kpi-skeleton"
-      className="grid grid-cols-2 gap-3 lg:grid-cols-4"
-    >
-      <Skeleton className="h-[4.5rem] rounded-lg" />
-      <Skeleton className="h-[4.5rem] rounded-lg" />
-      <Skeleton className="h-[4.5rem] rounded-lg" />
-      <Skeleton className="h-[4.5rem] rounded-lg" />
-    </div>
-  );
+  return <StatGridSkeleton testid="assets-kpi-skeleton" />;
 }

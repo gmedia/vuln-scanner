@@ -1,49 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { GuardPulse } from "@/components/guard/guardChrome";
-import { SiemRail } from "@/components/siem/siemChrome";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { StatGrid, StatGridSkeleton, StatTile } from "@/components/patterns/StatTile";
 import { hostnameRailClass } from "@/components/status/statusChrome";
-import { cn } from "@/lib/utils";
-
-function KpiTile({
-  label,
-  value,
-  valueClass,
-  railClass,
-  pulse = false,
-}: {
-  readonly label: string;
-  readonly value: string;
-  readonly valueClass: string;
-  readonly railClass: string;
-  readonly pulse?: boolean;
-}) {
-  return (
-    <div className="relative overflow-hidden rounded-lg border border-border bg-card px-4 py-3 pl-4">
-      <SiemRail className={railClass} />
-      <p className="pl-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-      <div className={cn("mt-1 flex min-w-0 items-center pl-2", valueClass)}>
-        <span className="min-w-0 truncate">{value}</span>
-        {pulse ? <GuardPulse /> : null}
-      </div>
-    </div>
-  );
-}
 
 export function StatusKpiSkeleton() {
-  return (
-    <div
-      data-testid="status-kpi-skeleton"
-      className="grid grid-cols-2 gap-3 lg:grid-cols-4"
-    >
-      <Skeleton className="h-[4.5rem] rounded-lg" />
-      <Skeleton className="h-[4.5rem] rounded-lg" />
-      <Skeleton className="h-[4.5rem] rounded-lg" />
-      <Skeleton className="h-[4.5rem] rounded-lg" />
-    </div>
-  );
+  return <StatGridSkeleton testid="status-kpi-skeleton" />;
 }
 
 export function StatusKpiRow({
@@ -69,43 +30,50 @@ export function StatusKpiRow({
   const componentRail =
     downCount > 0 ? "bg-destructive" : upCount > 0 ? "bg-primary" : "bg-border";
   return (
-    <div
-      data-testid="status-kpi-strip"
-      className="grid grid-cols-2 gap-3 lg:grid-cols-4"
-    >
-      <KpiTile
+    <StatGrid testid="status-kpi-strip" className="gap-3">
+      <StatTile
         label={t("statPublished")}
-        value={published ? publishedLabel : unpublishedLabel}
+        value={
+          <span className="min-w-0 truncate">
+            {published ? publishedLabel : unpublishedLabel}
+          </span>
+        }
         railClass={published ? "bg-primary" : "bg-border"}
-        pulse={published}
-        valueClass={
+        pulse={published ? <GuardPulse /> : null}
+        valueClassName={
           published
             ? "text-lg font-semibold text-foreground"
             : "text-lg font-semibold text-muted-foreground"
         }
       />
-      <KpiTile
+      <StatTile
         label={t("statComponents")}
-        value={`${upCount} ${t("stateUp")} · ${downCount} ${t("stateDown")}`}
+        value={
+          <span className="min-w-0 truncate">
+            {`${upCount} ${t("stateUp")} · ${downCount} ${t("stateDown")}`}
+          </span>
+        }
         railClass={componentRail}
-        valueClass={
+        valueClassName={
           downCount > 0
-            ? "font-mono text-lg font-bold tabular-nums text-destructive"
-            : "font-mono text-lg font-bold tabular-nums text-foreground"
+            ? "text-destructive"
+            : "text-foreground"
         }
       />
-      <KpiTile
+      <StatTile
         label={t("hostnameStatus")}
-        value={hostnameLabel}
+        value={
+          <span className="min-w-0 truncate">{hostnameLabel}</span>
+        }
         railClass={hostnameRailClass(hostnameStatus)}
-        valueClass="text-lg font-semibold text-foreground"
+        valueClassName="text-lg font-semibold text-foreground"
       />
-      <KpiTile
+      <StatTile
         label={t("publicUrl")}
-        value={publicPath}
+        value={<span className="min-w-0 truncate">{publicPath}</span>}
         railClass="bg-border"
-        valueClass="font-mono text-sm text-foreground"
+        valueClassName="text-sm text-foreground"
       />
-    </div>
+    </StatGrid>
   );
 }
