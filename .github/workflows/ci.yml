@@ -484,6 +484,9 @@ jobs:
       - name: Design links
         working-directory: .
         run: node scripts/check-design-links.mjs
+      - name: Design docs
+        working-directory: .
+        run: node scripts/check-design-docs.mjs
       - name: Design invariants
         run: |
           npx vitest run \
