@@ -25,9 +25,11 @@ for f in "$BACKEND" "$WORKERS"; do
   [[ -f "$f" ]] || { echo "error: missing $f (run from the repo root)" >&2; exit 2; }
 done
 
-# Emit "name<TAB>version" for every exact `name==version` pin.
+# Emit "name<TAB>specifier" for every pinned requirement, including ranges
+# (`>=`, `~=`, `==`). A package declared in both files with different
+# specifiers is drift too — e.g. backend `boto3>=1.34` vs workers `boto3>=1.43`.
 pins() {
-  sed -nE 's/^([A-Za-z0-9_.-]+)(\[[^]]*\])?==([^ ;#]+).*/\1\t\3/p' "$1" \
+  sed -nE 's/^([A-Za-z0-9_.-]+)(\[[^]]*\])?([=<>!~][^ ;#]*).*/\1\t\3/p' "$1" \
     | tr '[:upper:]' '[:lower:]' \
     | sort -u
 }
@@ -61,7 +63,7 @@ while IFS= read -r name; do
 done <<<"$shared"
 
 if [[ "$fail" -ne 0 ]]; then
-  echo "FAIL: shared packages pinned to different versions:" >&2
+  echo "FAIL: shared packages declared with different specifiers:" >&2
   printf '%s' "$mismatches" >&2
   echo >&2
   echo "workers import backend modules, so these must match. Align the pins in" >&2
@@ -69,4 +71,4 @@ if [[ "$fail" -ne 0 ]]; then
   exit 1
 fi
 
-echo "OK: $(wc -l <<<"$shared" | tr -d ' ') shared pinned packages match across $BACKEND and $WORKERS."
+echo "OK: $(wc -l <<<"$shared" | tr -d ' ') shared requirements match across $BACKEND and $WORKERS."

@@ -12,6 +12,11 @@ httpx==0.28.1
 python-dotenv==1.2.4
 loguru==0.7.3
 aiosmtplib==5.1.3
+# Workers send email via app.services.email (scan diff, uptime alerts).
+# That module uses SES when SES_ENABLED=true, so the SDK must be present here
+# too — otherwise worker mail silently degrades to the SMTP bridge while the
+# API uses SES. Same floor as backend/requirements.txt.
+boto3>=1.43.114
 pytest==9.1.1
 pytest-asyncio==1.4.0
 pytest-cov==7.1.0
